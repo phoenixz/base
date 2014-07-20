@@ -1,0 +1,55 @@
+Xapian is an external library that allows you to add advanced indexing and search facilities to
+yur own website. BASE has support for easy xapian use built in, though the library must be build
+or installed manually. This document explains how to build or install this library, and how to use
+the functionalities in the xapianbase library.
+
+
+
+*** HOW TO BUILD / INSTALL XAPIAN EXTERNAL LIBRARY ***
+
+* Install Xapian under Ubuntu (This seems NOT to work for Mint!)
+
+http://trac.xapian.org/wiki/FAQ/PHP%20Bindings%20Package
+
+sudo apt-get build-dep xapian-bindings devscripts
+sudo apt-get install php5-dev php5-cli devscripts
+apt-get source xapian-bindings
+cd xapian-bindings-1.2.*
+rm -f debian/control debian/*-stamp
+env PHP_VERSIONS=5 debian/rules maint
+sed -i 's!include_path=php5$!include_path=$(srcdir)/php5!' php/Makefile.in
+echo auto-commit >> debian/source/options
+env DEB_BUILD_OPTIONS=nocheck debuild -e PHP_VERSIONS=5 -us -uc
+cd ..
+sudo dpkg -i php5-xapian_*.deb
+
+IMPORTANT! : When updating Xapian database in PHP, Do NOT forget to flush the
+             Xapian database data with $database = null and $indexer = null or
+             all unflushed data will be lost
+
+* Install Xapian under CentOS6.4 with PHP5.3
+Just do yum install xapian-core php-xapian.x86_64
+
+Install Xapian under CentOS6.4 with PHP5.5
+sudo su -
+Download latest xapian-core and xapian-bindings from http://xapian.org/download to /usr/src
+tar -xvf both files, in core, ./configure; make -j cores; make install. In bindings, ./configure --with-php; make -j cores; make install
+
+The xapian.php will probably be installed in /usr/local/share/php5/ but PHP won't look there, so symlink to /usr/share/php!
+
+See http://xapian.org/docs/bindings/php/ for more information
+
+
+
+*** HOW TO USE XAPIAN BASE LIBRARY ***
+
+NOTE: There are two libraries related to xapian; "xapian.php" and "xapianbase.php". The former is
+the official xapian interface, the latter is the BASE xapian library that contains functions to
+make usage easier. You should normally load "xapianbase", which autoamtically will also load
+"xapian" by itself
+
+Use load_libs('xapianbase'); to load the library and have the functions available
+
+The xapianbase will give you the xapianbase object which you can use
+
+// :TODO: ADD DOCUMENTATION

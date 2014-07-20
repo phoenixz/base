@@ -1,0 +1,20 @@
+#!/usr/bin/php
+<?php
+/*
+ * This script will initialize the mailer system, basically ensure that
+ * the basic paths are available
+ */
+require_once(dirname(__FILE__).'/../../../libs/startup.php');
+
+try{
+    load_libs('file');
+
+    file_ensure_path(ROOT.'data/content/en/mailer');
+    touch(ROOT.'data/content/en/mailer/template.html');
+
+    log_console('Initialized mailer system', 'init', 'green');
+
+}catch(Exception $e){
+    throw new lsException('scripts/base/mailer/init: Failed', $e);
+}
+?>

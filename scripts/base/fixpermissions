@@ -1,0 +1,64 @@
+#!/usr/bin/php
+<?php
+/*
+ * This is the project permission fix script.
+ *
+ * All permissions will fall under these rules:
+ *
+ * All directories will be 0770, but have sticky bit set
+ * All files will be 0660 permission
+ * All script files (executables) will have 0770 permission
+ *
+ * All tree user and group will be set to $_CONFIG[deploy][user] $_CONFIG[deploy][group]
+ *
+ * @copyright Sven Oostenbrink <support@svenoostenbrink.com>
+ */
+require_once(dirname(__FILE__).'/../../libs/startup.php');
+
+try{
+    /*
+     * Load deployment configuration
+     */
+    include(dirname(__FILE__).'/../../config/deploy.php');
+
+    log_console('Updating project file permissions...', 'deploy', 'white');
+
+    $target = argument('target', true, ENVIRONMENT);
+
+    if(empty($_CONFIG['deploy'][$target])){
+        throw new lsException('Specified target environment "'.str_log($target).'" has no deploy configuration $_CONFIG[deploy]['.str_log($target).']', 'missingconfiguration');
+    }
+
+    $deploy_config = $_CONFIG['deploy'][$target];
+
+    if(empty($deploy_config['user'])){
+        throw new lsException('No $_CONFIG[deploy]['.str_log($target).'][user] specified', 'missingconfiguration');
+    }
+
+    if(empty($deploy_config['group'])){
+        throw new lsException('No $_CONFIG[deploy][group] specified', 'missingconfiguration');
+    }
+
+    if(empty($deploy_config['dir_mode'])){
+        throw new lsException('No $_CONFIG[deploy][dir_mode] specified');
+    }
+
+    if(empty($deploy_config['file_mode'])){
+        throw new lsException('No $_CONFIG[deploy][file_mode] specified');
+    }
+
+    passthru((!empty($deploy_config['sudo']) ? ' sudo' : '').' chown '.$deploy_config['user'].':'.$deploy_config['group'].' '.$deploy_config['target_dir'].' -R;
+              echo "Updated owner:group permissions...";
+              '.(!empty($deploy_config['sudo']) ? ' sudo' : '').' find '.$deploy_config['target_dir'].' -type d -exec chmod '.$deploy_config['dir_mode'].' {} \;;
+              echo "Updated directory modes...";
+              '.(!empty($deploy_config['sudo']) ? ' sudo' : '').' find '.$deploy_config['target_dir'].' -type f -exec chmod '.$deploy_config['file_mode'].' {} \;;
+              echo "Updated file modes...";
+              '.(!empty($deploy_config['sudo']) ? ' sudo' : '').' find '.slash($deploy_config['target_dir']).'scripts -type f -exec chmod 0750 {} \;;
+              echo "Updated script modes...";');
+
+    log_console('Updated project file permissions...', 'deploy', 'green');
+
+}catch(Exception $e){
+    throw new lsException('scripts/base/fixpermissions: Failed', $e);
+}
+?>

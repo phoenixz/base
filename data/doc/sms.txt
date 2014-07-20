@@ -1,0 +1,8 @@
+// :TODO: Add documentation
+
+The SMS library still need to be implemented
+
+See for ideas:
+
+mail -s "Server Down" yourphonenumber@your.sms.gateway.com
+http://www.reddit.com/r/linux/comments/20c58i/send_an_sms_text_message_from_the_command_line/

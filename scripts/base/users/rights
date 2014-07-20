@@ -1,0 +1,242 @@
+#!/usr/bin/php
+<?php
+/*
+ * This script manages is a user is an admin or not
+ */
+$quiet = true;
+require_once(dirname(__FILE__).'/../../../libs/startup.php');
+
+try{
+    $user = right_or_redirect('admin');
+
+    load_libs('user,rights');
+
+    $target_user = argument('user', true);
+
+    if($target_user){
+        if(!$target_user = sql_get('SELECT * FROM `users` WHERE `id` = :id OR `name` = :name OR `email` = :email', array(':name' => $target_user, ':email' => $target_user, ':id' => $target_user))){
+            throw new lsException('base/users/rights: Specified user "'.str_log(argument('user', true)).'" does not exist', 'notexists');
+        }
+    }
+
+//    $right['id'] = sql_get('SELECT `id` FROM `rights` WHERE `name` = "admin"', 'id');
+
+    switch(argument(0)){
+        case 'list':
+            log_console('Showing currently available rights', '');
+
+            $list = sql_list('SELECT    `name`,
+                                        `description`
+                              FROM      `rights`');
+
+            log_console(str_size('Name', 20).' Description', '', 'white');
+
+            foreach($list as $name => $description){
+                log_console(str_size($name, 20).' '.$description, '');
+            }
+
+            break;
+
+        case 'for':
+            // FALLTHROUGH
+        case 'has':
+            if(!$target_user){
+                throw new lsException('base/users/rights: No user specified', 'notspecified');
+            }
+
+            log_console('Showing rights for user "'.user_name($target_user).'"', '');
+
+            if(!$target_user){
+                throw new lsException('base/users/rights: No user specified', 'notspecified');
+            }
+
+            $list = sql_list('SELECT    `rights`.`name`,
+                                        `rights`.`description`
+
+                              FROM      `users_rights`
+
+                              LEFT JOIN `rights`
+                              ON        `rights`.`id`             = `users_rights`.`rights_id`
+
+                              WHERE     `users_rights`.`users_id` = :users_id',
+
+                              array(':users_id' => $target_user['id']));
+
+            if(!$list){
+                log_console('This user has no rights assigned', '', 'yellow');
+
+            }else{
+                log_console(str_size('Name', 16).'Description', '', 'white');
+
+                foreach($list as $name => $description){
+                    log_console(str_size($name, 16).$description, '');
+                }
+            }
+
+            die(0);
+
+        case 'add':
+            // FALLTHROUGH
+        case 'set':
+            // FALLTHROUGH
+        case 'give':
+            if(!$target_user){
+                throw new lsException('base/users/rights: No user specified', 'notspecified');
+            }
+
+            if(in_array('admin', $argv)){
+                throw new lsException('The right "admin" can only be assigned with the "admin" script', 'invalid');
+            }
+
+            /*
+             * Make sure rights have been specified
+             */
+            if(!$arguments = argument('rights', 'all')){
+                if(!$arguments = argument('right', 'all')){
+                    throw new lsException('No "rights" or "right" keyword, or no rights list specified', 'notspecified');
+                }
+            }
+
+            /*
+             * Ensure that specified rights exist, and get more detailed rights data
+             */
+            foreach($arguments as $key => $value){
+                if(!$right = rights_get($value, 'id,name')){
+                    throw new lsException('Unknown right "'.str_log($value).'" specified', 'unknown');
+                }
+
+                $rights[$right['name']] = $right;
+            }
+
+            /*
+             * Add the specified rights
+             */
+            foreach($rights as $right){
+                if(!sql_get('SELECT `id` FROM `users_rights` WHERE `users_id` = :users_id AND `rights_id` = :rights_id', array(':users_id' => $target_user['id'], ':rights_id' => $right['id']), 'id')){
+                    sql_query('INSERT INTO `users_rights` (`addedby`, `rights_id`, `users_id`, `name`)
+                               VALUES                     (:addedby , :rights_id , :users_id , :name )',
+
+                               array(':addedby'   => $_SESSION['user']['id'],
+                                     ':users_id'  => $target_user['id'],
+                                     ':rights_id' => $right['id'],
+                                     ':name'      => $right['name']));
+                }
+            }
+
+            log_console('Added rights "'.str_log(array_keys($rights)).'" to user "'.user_name($target_user).'"', '', 'white');
+            break;
+
+        case 'unset':
+            // FALLTHROUGH
+        case 'take':
+            if(!$target_user){
+                throw new lsException('base/users/rights: No user specified', 'notspecified');
+            }
+
+            /*
+             * Add specified rights to this user
+             */
+            unset($argv[0]);
+            unset($argv[1]);
+
+            if(in_array('admin', $argv)){
+                throw new lsException('The right "admin" can only be removed with the "admin" script', 'invalid');
+            }
+
+            /*
+             * Ensure that specified rights exist, and get more detailed rights data
+             */
+            foreach($argv as $key => $value){
+                if(!$right = rights_get($value, 'id,name')){
+                    throw new lsException('Unknown right "'.str_log($value).'" specified', 'unknown');
+                }
+
+                $rights[$key] = $right;
+            }
+
+            /*
+             * Add the specified rights
+             */
+            foreach($rights as $right){
+                sql_query('DELETE FROM `users_rights`
+                           WHERE       `users_id`  = :users_id
+                           AND         `rights_id` = :rights_id',
+
+                           array(':users_id'  => $target_user['id'],
+                                 ':rights_id' => $right['id']));
+            }
+
+            log_console('Removed rights "'.str_log($argv).'" from user "'.user_name($target_user).'"', '', 'white');
+            break;
+
+        case 'create':
+            try{
+                if(!argument(1)){
+                    throw new lsException('No right name specified', 'notspecified');
+                }
+
+                if(sql_get('SELECT `id` FROM `rights` WHERE `name` = :name', array(':name' => argument(1)))){
+                    throw new lsException('The right "'.str_log(argument(1)).'" already exists', 'exists');
+                }
+
+
+                sql_query('INSERT INTO `rights` (`addedby`, `name`, `description`)
+                           VALUES               (:addedby , :name , :description)',
+
+                           array(':addedby'    => $user['id'],
+                                 ':name'       => argument(1),
+                                 ':description'=> argument(2, '')));
+
+                log_console('Created new right "'.argument(1).'"', '', 'white');
+                break;
+
+            }catch(Exception $e){
+                throw new lsException('Failed to create new right', $e);
+            }
+
+        case 'delete':
+            // FALLTHROUGH
+        case 'remove':
+            // FALLTHROUGH
+        case 'erase':
+            // FALLTHROUGH
+        case 'take':
+            try{
+                if(!argument(1)){
+                    throw new lsException('No right name specified', 'notspecified');
+                }
+
+                if(in_array(argument(1), array('god', 'devil', 'admin'))){
+                    throw new lsException('The right "'.str_log(argument(1)).'" cannot be deleted', 'invalid');
+                }
+
+                if(!$id = sql_get('SELECT `id` FROM `rights` WHERE `name` = :name', 'id', array(':name' => argument(1)))){
+                    if(!argument('force')){
+                        throw new lsException('The right "'.str_log(argument(1)).'" does not exist', 'notexist');
+                    }
+                }
+
+                sql_query('DELETE FROM `rights`
+                           WHERE       `id` = :id',
+
+                           array(':id' => $id));
+
+                log_console('Deleted right "'.argument(1).'"', '', 'white');
+                break;
+
+            }catch(Exception $e){
+                throw new lsException('Failed to create new right', $e);
+            }
+
+        default:
+            if(!argument(0)){
+                throw new lsException('base/users/rights: No option specified. Please specify one of "list, for/has, add/set/give, unset/take, create, delete/remove/erase"', 'notspecified');
+            }
+
+            throw new lsException('base/users/rights: Invalid option "'.str_log(argument(0)).'" specified', 'unknown');
+    }
+
+}catch(Exception $e){
+    throw new lsException('base/users/rights: Failed', $e);
+}
+?>

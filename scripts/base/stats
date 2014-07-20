@@ -1,0 +1,33 @@
+#!/usr/bin/php
+<?php
+/*
+ * This script can return various stats about the website
+ */
+require_once(dirname(__FILE__).'/../../libs/startup.php');
+
+
+try{
+    foreach($argv as $arg){
+        switch($arg){
+            case 'all':
+// :TODO: Implement
+                break;
+
+            case 'users':
+// :TODO: Implement
+                break;
+
+            case 'sessions':
+// :TODO: Implement
+                break;
+
+            case 'errors':
+// :TODO: Implement
+                break;
+        }
+    }
+
+}catch(Exception $e){
+    throw new lsException('scripts/stat: Failed', $e);
+}
+?>

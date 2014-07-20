@@ -1,0 +1,28 @@
+#!/usr/bin/php
+<?php
+/*
+ * This script will try to send mails from all mailers that have been set to "running"
+ */
+$quiet = true;
+require_once(dirname(__FILE__).'/../../../libs/startup.php');
+
+try{
+    cli_only();
+    this_script_already_runs();
+
+    $wait  = argument('wait' , true);
+    $count = argument('count', true);
+    $test  = not_empty(argument('test', true), argument('debug', true));
+
+    load_libs('mailer');
+    if($count = mailer_send($count, $wait, $test)){
+        log_console('Sent "'.$count.'" mails', '', 'white');
+
+    }else{
+        log_console('No mails sent', '', 'yellow');
+    }
+
+}catch(Exception $e){
+    throw new lsException('scripts/mailer/send: Failed', $e);
+}
+?>

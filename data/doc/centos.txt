@@ -1,0 +1,60 @@
+This document contains general pointers for seting up CentOS servers with PHP
+and possible project requirements like pigz, axel, postfix, etc.
+
+
+
+*** THIS IS FOR CENTOS 6.5 INSTALLS ***
+NOTE: If for some reason EL5 was installed on an EL6 machine, just remove the rpm, then yum clean all, install the EL6 and continue!
+
+# Setup pigz and lbzip2 for parrallel zipping, Add these lines to .bashrc
+alias pgztar="tar tar --use-compress-program=pigz"
+alias pbztar="tar tar --use-compress-program=lbzip2"
+
+Enable the centosplus repo in /etc/yum.repos.d/CentOS-Base.repo (Just set enabled=0 to enabled=1)
+
+Install the epel repository, then the remi repository like this:
+rpm -Uvh http://dl.fedoraproject.org/pub/epel/6/x86_64/epel-release-6-8.noarch.rpm
+rpm -Uvh http://rpms.famillecollet.com/enterprise/remi-release-6.rpm
+// rpm -Uvh http://mirror.webtatic.com/yum/el6/latest.rpm NOT NEEDED
+
+Always install these packages:
+yum install dstat php-mysql php-simplepie php-pecl-memcached php-common php-pdo php php-IDNA_Convert php-process php-enchant php-pear php-gd php-mcrypt php-pecl-mongo php-cli php-mbstring php-xml php-PHPMailer php-pgsql php-pecl-memcache php-suhosin git mytop iotop htop mysql-devel mysql mysql-libs mysql-server phpMemcachedAdmin awstats ntp ImageMagick-devel ImageMagick-devel php-pecl-imagick denyhosts gcc gcc-c++ make patch pam-devel openssl*  wget vim-common vim-enhanced mc yum-plugin-priorities libuuid-devel uuid php-devel php-xapian wordpress phpMemcachedAdmin php-mbstring php-mcrypt php-gd php-cli php-devel php-process php-pdo php-pear php-PHPMailer php-enchant php-apc php-process php-xml xapian-core xapian-core-libs xapian-core-devel dmidecode yum-utils fedora-packager perl-GD.x86_64 perl-GDGraph.noarch pigz lbzip2
+yum groupinstall "Development Tools"
+
+
+*** THIS IS FOR CENTOS 6.4 INSTALLS ***
+NOTE: If for some reason EL5 was installed on an EL6 machine, just remove the rpm, then yum clean all, install the EL6 and continue!
+
+Enable the centosplus repo in /etc/yum.repos.d/CentOS-Base.repo (Just set enabled=0 to enabled=1)
+
+Install the epel repository, then the remi repository like this:
+rpm -Uvh http://dl.fedoraproject.org/pub/epel/6/x86_64/epel-release-6-8.noarch.rpm
+rpm -Uvh http://rpms.famillecollet.com/enterprise/remi-release-6.rpm
+// rpm -Uvh http://mirror.webtatic.com/yum/el6/latest.rpm NOT NEEDED
+
+Always install these packages:
+yum install dstat php-mysql php-simplepie php-pecl-memcached php-pecl-apc php-common php-pdo php php-IDNA_Convert php-process php-enchant php-pear php-gd php-mcrypt php-pecl-mongo php-cli php-mbstring php-xml php-PHPMailer php-pgsql php-pecl-memcache php-suhosin git mytop iotop htop mysql-devel mysql mysql-libs mysql-server phpMemcachedAdmin awstats ntp ImageMagick-devel ImageMagick-devel php-pecl-imagick denyhosts gcc gcc-c++ make patch pam-devel openssl*  wget vim-common vim-enhanced mc yum-plugin-priorities libuuid-devel uuid php-devel php-xapian wordpress phpMemcachedAdmin php-mbstring php-mcrypt php-gd php-cli php-devel php-process php-pdo php-pear php-PHPMailer php-enchant php-apc php-process php-xml xapian-core xapian-core-libs xapian-core-devel dmidecode yum-utils fedora-packager perl-GD.x86_64 perl-GDGraph.noarch pigz lbzip2
+yum groupinstall "Development Tools"
+
+See http://wiki.centos.org/PackageManagement/Yum/Priorities
+DO NOT FORGET TO SET REMI PRIORITIES!
+
+optionally
+yum install spamassassin
+
+Install wordpress if wordpress is needed, this should now work out of the box with:
+yum install wordpress
+
+See also php.txt for PHP configuration!
+
+To install postfix autoresponder:
+see http://www.linuxmail.info/postfix-vacation-autoresponder/
+yum install mysql-server php php-mysql php-imap php-mbstring perl-MIME-EncWords perl-MIME-Charset perl-Email-Valid perl-Mail-Sendmail
+
+
+Install axel:
+yum install http://pkgs.repoforge.org/axel/axel-2.4-1.el6.rf.x86_64.rpm
+(see http://pkgs.repoforge.org/axel/)
+
+Install Xapian:
+See xapian.txt

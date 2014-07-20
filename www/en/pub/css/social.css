@@ -1,0 +1,32 @@
+a.social{
+    color: #E6E6E6;
+    text-decoration: none;
+    padding-left: 2em;
+}
+.social.facebook{
+    background: url("/pub/img/base/social/fb.png") no-repeat scroll 0 0;
+}
+
+.social.facebook:hover{
+    color: #47639E;
+    background: url("/pub/img/base/social/fb_hover.png") no-repeat scroll 0 0;
+}
+
+.social.twitter{
+    background: url("/pub/img/base/social/tw.png") no-repeat scroll 0 0;
+}
+
+.social.twitter:hover{
+    color: #2ABCE1;
+    background: url("/pub/img/base/social/tw_hover.png") no-repeat scroll 0 0;
+}
+
+.social.youtube{
+    background: url("/pub/img/base/social/yt.png") no-repeat scroll 0 0;
+}
+
+.social.youtube:hover{
+    color: #E73746;
+    background: url("/pub/img/base/social/yt_hover.png") no-repeat scroll 0 0;
+}
+

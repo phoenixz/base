@@ -1,0 +1,39 @@
+// :TODO: Add documentation
+
+/config                                         This directory contains all configuration files
+/config/base                                    Here are all configuration files that modify settings rfom /config/base/default.php
+/config/base/default.php                        This is the default system configuration file, DO NOT MODIFY ANYTHING HERE!
+/data                                           The data directory contains all that is not library, script, or browser page
+/data/doc                                       This directory contains all documentation
+/data/geo                                       This directory contains data files for the GEO library, DO NOT MODIFY ANYTHING HERE!
+/data/packages                                  ?
+/init                                           This directory contains all system init files
+/init/framework/                                This directory contains all BASE system init files, DO NOT MODIFY ANYTHING HERE!
+/init/project/                                  This directory contains all project specific system init files
+/js/                                            This is a symlink to /www/en/pub/js
+/libs/                                          This is a symlink to /www/en/libs
+/scripts/                                       This directory contains all command line scripts
+/scripts/base/                                  This directory contains base scripts, DO NOT MODIFY ANYTHING HERE!
+/scripts/base/init                              This script can initialize (or upgrade) the system from scratch
+/scripts/base/update                            This script fetches all BASE files, and update the current project with the last BASE version
+/scripts/base/sync                              This script synchronizes all data files and databases related to the project from the specified environment
+/scripts/base/deploy                            This script
+/scripts/base/translate                         This script
+/scripts/tests/                                 This directory contains test scripts that show if
+/scripts/tests/all                              This script
+/tmp/                                           (auto created if needed), temporary files. Only allowed action is deleting this entire directory with contents
+/www/                                           This directory contains all browser accessible files (but is not browser accessible itself!)
+/www/en/                                        This directory contains all English browser accessible files.
+/www/en/admin/                                  This directory contains the (English) admin pages
+/www/en/ajax/                                   This directory contains the (English) AJAX interfaces
+/www/en/libs/                                   This directory contains the (English) PHP libraries
+/www/en/libs/mobile/                            This directory contains the (English) AJAX interfaces
+/www/en/libs/pub/                               This directory contains the public files (CSS, JS, images, etc)
+/www/en/libs/css/base/style.css
+/www/en/libs/css/SUBENVIRONMENT/base/style.css  This directory contains all CSS files for the sub environment SUBENVIRONMENT
+/www/en/libs/img/
+/www/en/libs/img/base/
+/www/en/libs/img/SUBENVIRONMENT/base/           This directory contains all image files for the sub environment SUBENVIRONMENT
+/www/en/libs/js/
+/www/en/tests/
+/www/en/index.php                               This is the default index page

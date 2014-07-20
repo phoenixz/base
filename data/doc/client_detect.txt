@@ -1,0 +1,9 @@
+// :TODO: Add documentation
+
+client_detect() (located in system.php library file) can detect what client we are dealing with (
+crawler, desktop, mobile, etc)
+
+See browscap.txt for required PHP configuration
+
+NOTE! Though it may be useful in certain situations, client detection is prone to failing and not
+considered a "best practice"!

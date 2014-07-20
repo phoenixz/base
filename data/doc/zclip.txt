@@ -1,0 +1,35 @@
+zclip is a "copy to clipboard" jQuery plugin, to help copy text to the computers clipboard
+automatically. BASE has zclip support built-in in the "js" library so that the plugin can
+be used with ease. This document explains how to use the  js_zclip_copy() function.
+
+Homepage : http://steamdev.com/zclip/#download
+
+Use load_libs('js'); to load the "js" library file
+
+Use function js_zclip_copy($click_selector, $copy, $add_script_tag = false, $params = null);
+
+$click_selector (required) will set the selector of where should be clicked to copy
+
+$copy (required) will contain the data that has to be copied.
+IMPORTANT! This should be a JS function that returns the current value! If not, the text upon page load will be used.
+
+Example for returning current (not data as it was on page load, so after user modifications) data:
+js_zclip_copy('#copyPromoHtmlCode', 'function(){ return $("#promoHtmlCode").val(); }')
+
+This, once #copyPromoHtmlCode is clicked, will get the value of #promoHtmlCode and copy it to the clipboard.
+
+IMPORTANT! If multiple copy instances should be used, then in the $copy place a JS function that checks what ID was clicked, and return the
+required data from there.
+
+Example for multiple copy buttons:
+.js_zclip_copy('.copyClipboard', 'function(){ if($(this).prop("id") == "copyPromoHtmlCode") {
+			   return $("#promoHtmlCode").val();
+			} else {
+				return "http://" + $("#domain").val() + ".domain.com";
+			}
+		}'));
+
+
+$add_script_tag (if true) will add the <script> tags
+
+$params can contain extra object parameters, see http://steamdev.com/zclip/#download for more info on those

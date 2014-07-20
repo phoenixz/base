@@ -1,0 +1,37 @@
+#!/usr/bin/php
+<?php
+/*
+ * This script can be used th access various cache functions
+ */
+require_once(dirname(__FILE__).'/../../libs/startup.php');
+
+
+try{
+    foreach($argv as $arg){
+        switch($arg){
+            case 'clear':
+                /*
+                 * Clear the cache
+                 */
+                log_console('cache: Clearing cache', 'cache/clear');
+                cache_clear();
+                break;
+
+            case 'size':
+// :TODO: Implement
+                break;
+
+            case 'files':
+// :TODO: Implement
+                break;
+
+            case 'find':
+// :TODO: Implement
+                break;
+        }
+    }
+
+}catch(Exception $e){
+    throw new lsException('scripts/cache: Failed', $e);
+}
+?>

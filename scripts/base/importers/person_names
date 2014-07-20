@@ -1,0 +1,167 @@
+#!/usr/bin/php
+<?php
+/*
+ * This script will import person names from persons data source.
+ */
+require_once(dirname(__FILE__).'/../../../libs/startup.php');
+
+try{
+    if(!$language = argument(0)){
+        throw new lsException('No language specified, please specify one of "en"');
+    }
+
+    if($language == 'clear'){
+        /*
+         * Don't import, just clear the persons_names table.
+         */
+        sql_query('TRUNCATE `persons_names`');
+        log_console('Cleared persons_names table', 'done', 'green');
+        exit(0);
+    }
+
+    if(!in_array($language, array('en'))){
+        throw new lsException('No valid language specified, please specify one of "en"');
+    }
+
+    if($count = sql_get('SELECT COUNT(`id`) AS count FROM `persons_names`;', 'count')){
+        if(!argument('force')){
+            return cli_die(0, 'Persons_names table already contains data', 'yellow');
+        }
+
+        log_console('Persons_names table already contains data, truncating', 'truncate', 'yellow');
+        sql_query('TRUNCATE `synonyms`;');
+    }
+
+    load_libs('file');
+
+    /*
+     * Find the persons names data project location
+     */
+    if(file_exists($path = realpath(ROOT.'../data/persons/'.$language))){
+       $import_path = slash($path);
+
+    }elseif(file_exists($path = realpath(ROOT.'../../data/persons/'.$language))){
+       $import_path = slash($path);
+
+    }else{
+        throw new lsException('Could not find "persons" project path');
+    }
+
+    /*
+     * Extract the available persons names files.
+     */
+    log_console('Unpacking synonyms data file "'.$import_path.'"');
+    safe_exec('rm -f '.$import_path.'*.txt');
+    safe_exec('cd '.$import_path.'; tar -xvf names.tgz');
+
+    /*
+     * Disable indices and fks to speed up inserts
+     */
+    sql_query('DELETE FROM `synonyms` WHERE `language` = :language;', array(':language' => $language));
+    sql_query('SET autocommit = 0;');
+    sql_query('SET unique_checks = 0;');
+    sql_query('SET foreign_key_checks = 0;');
+    sql_query('ALTER TABLE `synonyms` DISABLE KEYS;');
+
+    log_console('Importing names', 'importing', '', false);
+
+    /*
+     * Open male, female and last names datafiles
+     */
+    $f       = fopen($import_path.'female.txt', 'r');
+    $m       = fopen($import_path.'male.txt'  , 'r');
+    $l       = fopen($import_path.'last.txt'  , 'r');
+    $done    = false;
+    $count   = 0;
+    $execute = array(':language' => $language);
+
+    $p = sql_prepare('INSERT INTO `persons_names` (`language`, `male`, `male_priority`, `female`, `female_priority`, `last`, `last_priority`)
+                      VALUES                      (:language , :male , :male_priority , :female , :female_priority , :last , :last_priority )');
+
+    while(!$done){
+        usleep(10);
+
+        /*
+         * Get a male, female and last entry
+         */
+        if($m){
+            $male   = fgets($m);
+        }
+
+        if($f){
+            $female = fgets($f);
+        }
+
+        if($l){
+            $last   = fgets($l);
+        }
+
+        /*
+         * See of any of the files has EOF
+         */
+        if(is_resource($m) and feof($m)){
+            $m    = false;
+            $male = null;
+        }
+
+        if(is_resource($f) and feof($f)){
+            $f      = false;
+            $female = null;
+        }
+
+        if(is_resource($l) and feof($l)){
+            $l    = false;
+            $last = null;
+        }
+
+        if(!$m and !$f and !$l){
+            /*
+             * All datafiles are EOF
+             */
+            $done = true;
+        }
+
+        $execute[':male']            = strtolower(str_until($male  , ' '));
+        $execute[':female']          = strtolower(str_until($female, ' '));
+        $execute[':last']            = strtolower(str_until($last  , ' '));
+        $execute[':male_priority']   = strtolower(str_rfrom($male  , ' '));
+        $execute[':female_priority'] = strtolower(str_rfrom($female, ' '));
+        $execute[':last_priority']   = strtolower(str_rfrom($last  , ' '));
+
+        $p->execute($execute);
+
+        /*
+         * Show a marker to show progress. On every 1000 names, commit
+         */
+        if(!fmod(++$count, 200)){
+            log_console('.', '', 'green', false);
+
+            if(!fmod($count, 1000)){
+                sql_query('COMMIT;');
+            }
+        }
+    }
+
+    log_console('Done', '');
+    log_console('Finished import, cleaning up', 'cleaning', 'white');
+
+    /*
+     * Commit and re-enable indices and fks, we're done
+     */
+    sql_query('COMMIT;');
+    sql_query('SET autocommit = 1;');
+    sql_query('SET unique_checks = 1;');
+    sql_query('SET foreign_key_checks = 1;');
+    sql_query('ALTER TABLE `synonyms` ENABLE KEYS;');
+
+    /*
+     * Dump the data text files
+     */
+    safe_exec('rm -f '.$import_path.'*.txt');
+
+    log_console('All done, added "'.str_log($count).'" entries', 'finished', 'green');
+
+}catch(Exception $e){
+    cli_error('scripts/base/importers/persons_names: Failed', $e);
+}
+?>

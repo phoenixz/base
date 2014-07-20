@@ -1,0 +1,11 @@
+// :TODO: Add documentation
+
+BASE uses PHP PDO to interface with databases. All PDO supported database should function, though
+until now, only MySQL has been verified.
+
+AVAILABLE STORED PROCEDURES FOR MYSQL:
+
+DISTANCE (latA DOUBLE, lonA DOUBLE, latB DOUBLE, LonB DOUBLE)
+Returns the distance in KM between specified lat / long and row lat / long. Can be used
+to order a result set by distance from the specified lat / long
+See http://derickrethans.nl/spatial-indexes-mysql.html

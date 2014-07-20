@@ -1,0 +1,26 @@
+#!/usr/bin/php
+<?php
+/*
+ * This script can cancel specified or all mailings
+ */
+$quiet = true;
+require_once(dirname(__FILE__).'/../../../libs/startup.php');
+
+
+try{
+    cli_only();
+    this_script_already_runs();
+
+    load_libs('mailer');
+
+    if($count = mailer_cancel($argv)){
+        log_console('Canceled "'.$count.'" mailers', '', 'white');
+
+    }else{
+        log_console('No mailers canceled', '', 'yellow');
+    }
+
+}catch(Exception $e){
+    throw new lsException('scripts/mailer/cancel: Failed', $e);
+}
+?>

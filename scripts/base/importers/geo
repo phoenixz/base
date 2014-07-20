@@ -1,0 +1,759 @@
+#!/usr/bin/php
+<?php
+/*
+ * This script can be used to import geo data from the geodata project
+ */
+$usage = "./scripts/base/importers/geo\n".
+         "./scripts/base/importers/geo clear\n".
+         "./scripts/base/importers/geo download\n".
+         "./scripts/base/importers/geo loaddata [username USERNAME] [password PASSWORD] [database DATABASE] \n".
+         "./scripts/base/importers/geo fixdata\n".
+         "./scripts/base/importers/geo import countries&|states&|counties&|cities | all country (COUNTRY,COUNTYCODE,etc...)";
+
+$help  = "The geo importer script can import geo data like countries, states, counties and cities from the geoname database repository";
+
+require_once(dirname(__FILE__).'/../../../libs/startup.php');
+
+try{
+    this_script_already_runs();
+    cli_only();
+
+    /*
+     * Get some optional data required for loaddata
+     */
+    $username = argument('user'    , true, argument('username'  , true, 'geonames'));
+    $password = argument('pass'    , true, argument('password'  , true, 'geonames'));
+    $database = argument('database', true, 'geonames');
+
+    /*
+     * Import related data
+     */
+    $threshold = argument('threshold', true, 100);
+
+    switch(argument(0)){
+        case 'clear':
+            log_console('Clearing all GEO data', '', 'white');
+
+            sql_query('SET autocommit         = 1;');
+            sql_query('SET unique_checks      = 1;');
+            sql_query('SET foreign_key_checks = 1;');
+
+            log_console('Clearing cities', '', '');
+            sql_query('DELETE FROM geo_cities;');
+
+            log_console('Clearing counties', '', '');
+            sql_query('DELETE FROM geo_counties;');
+
+            log_console('Clearing states', '', '');
+            sql_query('DELETE FROM geo_states;');
+
+            if(argument('all')){
+                log_console('Clearing countries', '', '');
+                sql_query('DELETE FROM geo_countries;');
+
+                log_console('Clearing continents', '', '');
+                sql_query('DELETE FROM geo_continents;');
+            }
+
+            break;
+
+        case 'download':
+            load_libs('file');
+
+            log_console('DOWNLOAD', '', 'white');
+            log_console('Deleting old data...');
+
+            /*
+             * Get the global data path where the geonames data is stored
+             */
+            $geoimport_path = get_global_data_path('geonames');
+
+            foreach(array('allCountries', 'admin1CodesASCII', 'admin2Codes', 'allCountries', 'alternateNames', 'countryInfo', 'featureCodes_en', 'hierarchy', 'iso-languagecodes', 'timeZones') as $file){
+                file_delete($geoimport_path.$file.'*');
+            }
+
+            log_console('Downloading data, this may take a while...');
+            $result = passthru('cd '.$geoimport_path.'; '.$geoimport_path.'geonames_importer.sh -a download-data');
+
+            break;
+
+        case 'loaddata':
+            log_console('LOADDATA', '', 'white');
+
+            /*
+             * Get the global data path where the geonames data is stored
+             */
+            $geoimport_path = get_global_data_path('geonames');
+
+            if(!$username or !$password){
+                throw new lsException('No user name and / or password specified', 'notspecified');
+            }
+
+            /*
+             * Fix geonames_importer.sh
+             *
+             * geonames_importer.sh SHOWS THE FUCKING PASSWORD ON SCREEN..
+             * Now inline passwords used here are not 100% ideal, they are still
+             * visible in the process list, but to display it on screen is a bit much
+             *
+             * Also, in case of error, its returning exit code 0 which does not work very
+             * nice
+             */
+            $data = file_get_contents($geoimport_path.'geonames_importer.sh');
+            $data = str_replace('echo "Password: "', '#echo "Password: "', $data);
+            $data = str_replace('echo "[FAILED]"', 'echo "[GEONAMES_IMPORTER FAILED]"; exit 1', $data);
+            file_put_contents($geoimport_path.'geonames_importer.sh', $data);
+
+            /*
+             * Due to a fucked up MySQL "security feature" that does not allow LOAD DATA LOCAL INFILE
+             * but MAY allow LOAD DATA INFILE (which requires the file to be in /var/lib/mysql), we
+             * need to modify the ./geonames_import_data.sql file a little.
+             *
+             * IF this is the situation, the import would fail with the rather cryptic message
+             * "ERROR 1148 (42000) at line 1: The used command is not allowed with this MySQL version"
+             *
+             * Use the "notlocal" command line option to overcome this problem, but DO NOTE! Root
+             * rights are required for this since a symlink in /var/lib/mysql is required.
+             *
+             * See data/doc/geo.txt for more information
+             */
+            if(argument('notlocal')){
+                log_console('Updating geonames_import_data.sql for non local import', 'warning', 'yellow');
+
+                $uniqid = uniqid();
+
+                $data   = file_get_contents($geoimport_path.'geonames_import_data.sql');
+                $data   = str_replace('LOAD DATA LOCAL INFILE ', 'LOAD DATA INFILE'   , $data);
+                $data   = str_replace('LOAD DATA INFILE \'./'  , 'LOAD DATA INFILE \'', $data);
+                $data   = str_replace('LOAD DATA INFILE \''    , 'LOAD DATA INFILE \''.$uniqid.'/', $data);
+
+                file_put_contents($geoimport_path.'geonames_import_data.sql', $data);
+
+                symlink($geoimport_path, '/var/lib/mysql/'.$uniqid);
+            }
+
+            try{
+                passthru('cd '.$geoimport_path.' ; ./geonames_importer.sh -a create-db -u '.$username.' -p "'.$password.'" -n "'.$database.'"');
+                passthru('cd '.$geoimport_path.' ; ./geonames_importer.sh -a import-dumps -u '.$username.' -p "'.$password.'" -n "'.$database.'"');
+
+            }catch(Exception $e){
+                throw new lsException('Import failed. In case of "The used command is not allowed with this MySQL version" error, please try the "notlocal" command line option, see geo.txt documentation for more information', $e);
+            }
+
+            if(argument('notlocal')){
+                /*
+                 * Remove dat symlink
+                 */
+                unlink('/var/lib/mysql/'.$uniqid);
+            }
+
+            break;
+
+        case 'fixdata':
+            log_console('FIXDATA', '', 'white');
+
+            $geosql = new PDO('mysql:dbname='.$database.';host=localhost', $username, $password);
+            $geosql->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
+            $geosql->query('USE `'.$database.'`;');
+            $geosql->query('SET NAMES '.$_CONFIG['db']['charset']);
+            $geosql->query('SET CHARACTER SET '.$_CONFIG['db']['charset']);
+
+            $r = $geosql->query('SHOW TABLES LIKE "geonames"');
+
+            if(!$r->rowCount()){
+                log_console('Renaming geonames table', '');
+                $geosql->query('RENAME TABLE `geoname` TO `geonames`;');
+            }
+
+            $r = $geosql->query('SHOW COLUMNS FROM `geonames` WHERE `Field` = "parents_id"');
+
+            if(!$r->rowCount()){
+                log_console('Adding parents_id to geonames table', '');
+                $geosql->query('ALTER TABLE `geonames` ADD COLUMN `parents_id` INT(11) AFTER `geonameid`;');
+            }
+
+            log_console('Applying hierarchy', '');
+
+            $r     = $geosql->query('SELECT * FROM `hierarchy`;');
+            $p     = $geosql->prepare('UPDATE `geonames` SET `parents_id` = :parents_id WHERE `geonameid` = :childs_id');
+            $count = 0;
+
+            while($row = $r->fetch(PDO::FETCH_ASSOC)){
+                if(!fmod($count++, 100)){
+                    $message = 'Applied "'.($count - 1).'" hierarchy entries';
+
+                    log_console($message, '', '', false);
+                    echo cli_code_back(strlen($message));
+                }
+
+                $p->execute(array(':parents_id' => $row['parentId'],
+                                  ':childs_id'  => $row['childId']));
+            }
+
+            $geosql->query('ALTER TABLE `geonames` ADD INDEX (`geonameid`);');
+            $geosql->query('ALTER TABLE `geonames` ADD INDEX (`parents_id`);');
+            $geosql->query('ALTER TABLE `geonames` ADD INDEX (`name`);');
+            $geosql->query('ALTER TABLE `geonames` ADD INDEX (`country`);');
+            $geosql->query('ALTER TABLE `geonames` ADD INDEX (`admin1`);');
+            $geosql->query('ALTER TABLE `geonames` ADD INDEX (`admin2`);');
+            $geosql->query('ALTER TABLE `geonames` ADD INDEX (`moddate`);');
+            $geosql->query('ALTER TABLE `geonames` ADD INDEX (`latitude`);');
+            $geosql->query('ALTER TABLE `geonames` ADD INDEX (`longitude`);');
+
+            ///*
+            // * Remove double entries
+            // */
+            //$geosql->query('SELECT geonameid, name, country, latitude, longiture, moddate FROM geonames GROUPBY name, latitude, longitude HAVING COUNT(*) > 1');
+
+            break;
+
+        case 'import':
+            if(!$country_list = argument('country', true)){
+                throw new lsException('No country list specified to import data from. Please specify "country COUNTRY,COUNTRY,COUNTRY"', 'notspecified');
+            }
+
+            $country_list = explode(',', $country_list);
+
+            foreach($country_list as &$country){
+                $country = strtolower(mb_trim($country));
+            }
+
+            unset($country);
+
+            $geosql = new PDO('mysql:dbname='.$database.';host=localhost', $username, $password);
+            $geosql->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
+            $geosql->query('USE '.$database.';');
+            $geosql->query('SET NAMES '.$_CONFIG['db']['charset']);
+            $geosql->query('SET CHARACTER SET '.$_CONFIG['db']['charset']);
+
+            load_libs('seo');
+
+            $types = array('all'        => argument('all'),
+                           'continents' => argument('continents') || argument('all'),
+                           'regions'    => argument('regions')    || argument('all'),
+                           'countries'  => argument('countries')  || argument('all'),
+                           'states'     => argument('states')     || argument('all'),
+                           'counties'   => argument('counties')   || argument('all'),
+                           'cities'     => argument('cities')     || argument('all'));
+
+            log_console('Caching timezone data...', '', '');
+            $timezones = sql_list('SELECT `code`, `id` FROM geo_timezones;');
+
+            sql_query('SET autocommit         = 0;');
+            sql_query('SET unique_checks      = 0;');
+            sql_query('SET foreign_key_checks = 0;');
+
+            /*
+             * Import continents?
+             */
+            if($types['continents']){
+
+                log_console('Clearing old continents...', '', '');
+                sql_query('DELETE FROM `geo_continents`');
+
+                log_console('Importing continents...', '', '');
+                $r = $geosql->query('SELECT * FROM `continentCodes`');
+
+                while($row = $r->fetch(PDO::FETCH_ASSOC)){
+                    $geonamedata = $geosql->query('SELECT * FROM `geonames` WHERE `geonameid` = '.cfi($row['geonameid']));
+                    $geonamedata = $geonamedata->fetch(PDO::FETCH_ASSOC);
+
+                    sql_query('INSERT INTO `geo_continents`(`geonames_id`, `timezones_id`, `code`, `name`, `seoname`, `alternate_names`, `latitude`, `longitude`, `moddate`)
+                               VALUES                      (:geonames_id , :timezones_id , :code , :name , :seoname , :alternate_names , :latitude , :longitude , :moddate)',
+
+                               array(':geonames_id'          => $row['geonameid'],
+                                     ':timezones_id'         => isset_get($timezones[$geonamedata['timezone']]),
+                                     ':code'                 => $row['code'],
+                                     ':name'                 => $row['name'],
+                                     ':seoname'              => seo_generate_unique_name($row['name'], 'geo_continents'),
+                                     ':alternate_names'      => $geonamedata['alternatenames'],
+                                     ':latitude'             => $geonamedata['latitude'],
+                                     ':longitude'            => $geonamedata['longitude'],
+                                     ':timezones_id'         => isset_get($timezones[$geonamedata['timezone']]),
+                                     ':moddate'              => $geonamedata['moddate']));
+                }
+
+                sql_query('COMMIT;');
+            }
+
+            /*
+             * Cache the continents list
+             */
+            log_console('Caching continents...', '', '');
+
+            $continents = sql_list('SELECT `code`, `id` FROM geo_continents');
+
+            /*
+             * Import countries?
+             */
+            if($types['countries']){
+                log_console('Importing countries...', '', '');
+                $r = $geosql->query('SELECT * FROM `countryinfo`');
+
+                $country_exists_statement = sql_prepare('SELECT `id`
+                                                         FROM    `geo_countries`
+                                                         WHERE   `geonames_id` = :geonames_id
+                                                         OR      `code`        = :code
+                                                         OR      `name`        = :name');
+
+                while($row = $r->fetch(PDO::FETCH_ASSOC)){
+                    $geonamedata = $geosql->query('SELECT * FROM `geonames` WHERE `geonameid` = '.cfi($row['geonameId']));
+                    $geonamedata = $geonamedata->fetch(PDO::FETCH_ASSOC);
+
+                    $country_exists_statement->execute(array(':geonames_id' => $row['geonameId'], ':code' => $row['iso_alpha2'], 'name' => $row['name']));
+
+                    if($country_exists_statement->rowCount()){
+                        log_console('The country "'.str_log($row['name']).'" already exists and will be skipped', 'skip', 'yellow');
+                        continue;
+                    }
+
+                    sql_query('INSERT INTO `geo_countries` (`geonames_id`, `continents_id`, `timezones_id`, `code`, `iso_alpha2`, `iso_alpha3`, `iso_numeric`, `fips_code`, `tld`, `name`, `seoname`, `equivalent_fips_code`, `neighbours`, `languages`, `postal_code_regex`, `postal_code_format`, `phone`, `currency`, `currency_name`, `population`, `areainsqkm`, `capital`, `latitude`, `longitude`, `alternate_names`, `moddate`)
+                               VALUES                      (:geonames_id , :continents_id , :timezones_id , :code , :iso_alpha2 , :iso_alpha3 , :iso_numeric , :fips_code , :tld , :name , :seoname , :equivalent_fips_code , :neighbours , :languages , :postal_code_regex , :postal_code_format , :phone , :currency , :currency_name , :population , :areainsqkm , :capital , :latitude , :longitude , :alternate_names , :moddate )',
+
+                               array(':geonames_id'          => $row['geonameId'],
+                                     ':continents_id'        => isset_get($continents[$row['continent']]),
+                                     ':timezones_id'         => isset_get($timezones[$geonamedata['timezone']]),
+                                     ':code'                 => $row['iso_alpha2'],
+                                     ':iso_alpha2'           => $row['iso_alpha2'],
+                                     ':iso_alpha3'           => $row['iso_alpha3'],
+                                     ':iso_numeric'          => $row['iso_numeric'],
+                                     ':fips_code'            => $row['fips_code'],
+                                     ':tld'                  => $row['tld'],
+                                     ':name'                 => $row['name'],
+                                     ':seoname'              => seo_generate_unique_name($row['name'], 'geo_countries'),
+                                     ':equivalent_fips_code' => $row['equivalentFipsCode'],
+                                     ':neighbours'           => $row['neighbours'],
+                                     ':languages'            => $row['languages'],
+                                     ':postal_code_regex'    => $row['postalCodeRegex'],
+                                     ':postal_code_format'   => $row['postalCodeFormat'],
+                                     ':phone'                => $row['Phone'],
+                                     ':currency'             => $row['currency'],
+                                     ':currency_name'        => $row['currencyName'],
+                                     ':population'           => $row['population'],
+                                     ':areainsqkm'           => $row['areainsqkm'],
+                                     ':capital'              => $row['capital'],
+                                     ':latitude'             => $geonamedata['latitude'],
+                                     ':longitude'            => $geonamedata['longitude'],
+                                     ':alternate_names'      => $geonamedata['alternatenames'],
+                                     ':moddate'              => $geonamedata['moddate']));
+                }
+
+                sql_query('COMMIT;');
+            }
+
+            if(in_array('all', $country_list)){
+                /*
+                 * Import all countries
+                 */
+                log_console('Importing for all countries. Please be patient, this may take a while!!', 'warning', 'yellow');
+                $countries = sql_list('SELECT `id` FROM `geo_countries`');
+
+            }else{
+                /*
+                 * Import only for the specified countries
+                 */
+                log_console('ONLY ADDING FOR THESE COUNTRIES:', '', 'yellow');
+
+                foreach(array_force($country_list) as $country){
+                    if(strtolower($country) == 'all'){
+
+                    }else{
+                        if(!$result = sql_get('SELECT `id`, `name` FROM `geo_countries` WHERE `name` = :name OR `seoname` = :seoname or `code` = :code', array('name' => $country, 'seoname' => $country, 'code' => $country))){
+                            throw new lsException('Specified country "'.str_log($country).'" not found');
+                        }
+
+                        log_console($result['name'], '', 'yellow');
+                        $countries[] = $result['id'];
+                    }
+                }
+            }
+
+            /*
+             * Now import for all countries
+             */
+            foreach($countries as $country){
+                /*
+                 * Import states?
+                 */
+                if($types['states']){
+                    log_console('Importing states...', '', '');
+                    log_console('Buffering countries...', '', '');
+
+                    $countries      = sql_list('SELECT `id`, `geonames_id`, `name`, `seoname`, `code` FROM `geo_countries`'.($country ? ' WHERE `id` = '.$country : ''));
+                    $country_idlist = array();
+
+                    foreach($countries as $id => $country){
+                        $country_idlist[] = $id;
+                    }
+
+// :DELETE: Delete following 2 lines. States will no longer be deleted. Before insert, a check will be done if the state already exists, and if so, it will be skipped
+                    //log_console('Clearing old states...', '', '');
+                    //sql_query('DELETE FROM `geo_states` WHERE `countries_id` IN ('.str_force($country_idlist).');');
+                    $state_exists_statement = sql_prepare(' SELECT `id`
+                                                            FROM    `geo_states`
+                                                            WHERE   `geonames_id`  = :geonames_id
+                                                            OR     (`countries_id` = :countries_id
+                                                                AND `name`         = :name)');
+
+
+                    foreach($countries as $id => $country_data){
+                        log_console('Importing states for country "'.$country_data['name'].'"...', '', '');
+                        $r = $geosql->query('SELECT * FROM `geonames` WHERE `parents_id` = '.cfi($country_data['geonames_id']));
+
+                        while($row = $r->fetch(PDO::FETCH_ASSOC)){
+                            $state_exists_statement->execute(array(':geonames_id' => $row['geonameid'], ':countries_id' => $id, 'name' => $row['name']));
+
+                            if($state_exists_statement->rowCount()){
+                                log_console('The state "'.str_log($row['name']).'" in country "'.str_log($country_data['name']).'" already exists and will be skipped', 'skip', 'yellow');
+                                continue;
+                            }
+
+                            sql_query('INSERT INTO `geo_states`(`geonames_id`, `countries_id`, `country_code`, `timezones_id`, `code`, `name`, `seoname`, `alternate_names`, `latitude`, `longitude`, `population`, `elevation`, `admin1`, `admin2`, `moddate`)
+                                       VALUES                  (:geonames_id , :countries_id , :country_code , :timezones_id , :code , :name , :seoname , :alternate_names , :latitude , :longitude , :population , :elevation , :admin1 , :admin2 , :moddate )',
+
+                                       array(':geonames_id'     => $row['geonameid'],
+                                             ':countries_id'    => $id,
+                                             ':country_code'    => $country_data['code'],
+                                             ':timezones_id'    => isset_get($timezones[$row['timezone']]),
+                                             ':code'            => $row['cc2'],
+                                             ':name'            => $row['name'],
+                                             ':seoname'         => seo_generate_unique_name($row['name'], 'geo_states'),
+                                             ':alternate_names' => $row['alternatenames'],
+                                             ':latitude'        => $row['latitude'],
+                                             ':longitude'       => $row['longitude'],
+                                             ':population'      => $row['population'],
+                                             ':elevation'       => $row['elevation'],
+                                             ':admin1'          => $row['admin1'],
+                                             ':admin2'          => $row['admin2'],
+                                             ':moddate'         => $row['moddate']));
+                        }
+                    }
+
+                    sql_query('COMMIT;');
+                }
+
+                /*
+                 * Import counties?
+                 */
+                if($types['counties']){
+// :DELETE: Delete following 2 lines. Counties will no longer be deleted. Before insert, a check will be done if the county already exists, and if so, it will be skipped
+                    //log_console('Clearing old counties...', '', '');
+                    //sql_query('DELETE FROM `geo_counties`');
+
+                    log_console('Importing counties...', '', '');
+
+                    $county_exists_statement = sql_prepare('SELECT  `id`
+                                                            FROM    `geo_counties`
+                                                            WHERE   `geonames_id` = :geonames_id
+                                                            OR     (`states_id`   = :states_id
+                                                                AND `name`        = :name)');
+
+                    if(empty($countries)){
+                        log_console('Buffering countries...', '', '');
+                        $countries = sql_list('SELECT `id`, `geonames_id`, `name`, `seoname`, `code`, `admin1`, `admin2` FROM `geo_countries`'.($country ? ' WHERE `id` = '.$country : ''));
+                    }
+
+                    foreach($countries as $countries_id => $country_data){
+                        if(empty($states[$country_data['seoname']])){
+                            $states[$country_data['seoname']] = sql_list('SELECT `id`, `geonames_id`, `name`, `seoname`, `code`, `admin1`, `admin2` FROM `geo_states` WHERE `countries_id` = '.$countries_id);
+                        }
+
+                        foreach($states[$country_data['seoname']] as $states_id => $state_data){
+                            log_console('Importing counties for state "'.str_log($state_data['name']).'" for country "'.$country_data['name'].'"...', '', '');
+
+                            $r = $geosql->query($q='SELECT *
+                                                 FROM   `geonames`
+                                                 WHERE  `parents_id` = '.cfi($state_data['geonames_id']).'
+                                                 AND    `fclass`     = "A"');
+
+                            if(!$r->rowCount()){
+                                /*
+                                 * Looks like this state has no counties specified, just states > cities
+                                 */
+                                log_console('Looks like state "'.str_log($state_data['name']).'" does not have counties, skipping', 'skip', 'yellow');
+                                continue;
+                            }
+
+                            while($row = $r->fetch(PDO::FETCH_ASSOC)){
+                                $county_exists_statement->execute(array(':geonames_id' => $row['geonameid'], ':states_id' => $states_id, 'name' => $row['name']));
+
+                                if($county_exists_statement->rowCount()){
+                                    log_console('The county "'.str_log($row['name']).'" in country "'.str_log($country_data['name']).'" already exists and will be skipped', 'skip', 'yellow');
+                                    continue;
+                                }
+
+                                sql_query('INSERT INTO `geo_counties`(`geonames_id`, `countries_id`, `states_id`, `timezones_id`, `code`, `name`, `seoname`, `alternate_names`, `latitude`, `longitude`, `population`, `elevation`, `admin1`, `admin2`, `moddate`)
+                                           VALUES                    (:geonames_id , :countries_id , :states_id , :timezones_id , :code , :name , :seoname , :alternate_names , :latitude , :longitude , :population , :elevation , :admin1 , :admin2 , :moddate )',
+
+                                           array(':geonames_id'     => $row['geonameid'],
+                                                 ':countries_id'    => $countries_id,
+                                                 ':states_id'       => $states_id,
+                                                 ':timezones_id'    => isset_get($timezones[$row['timezone']]),
+                                                 ':code'            => $row['cc2'],
+                                                 ':name'            => $row['name'],
+                                                 ':seoname'         => seo_generate_unique_name($row['name'], 'geo_counties'),
+                                                 ':alternate_names' => $row['alternatenames'],
+                                                 ':latitude'        => $row['latitude'],
+                                                 ':longitude'       => $row['longitude'],
+                                                 ':population'      => $row['population'],
+                                                 ':elevation'       => $row['elevation'],
+                                                 ':admin1'          => $row['admin1'],
+                                                 ':admin2'          => $row['admin2'],
+                                                 ':moddate'         => $row['moddate']));
+                            }
+                        }
+                    }
+
+                    sql_query('COMMIT;');
+                }
+
+                /*
+                 * Import cities?
+                 */
+                if($types['cities']){
+    // :DELETE: Delete following 2 lines. Cities will no longer be deleted. Before insert, a check will be done if the city already exists, and if so, it will be skipped
+                    //log_console('Clearing old cities...', '', '');
+                    //sql_query('DELETE FROM `geo_cities`');
+
+                    log_console('Importing cities...', '', '');
+
+                    if(empty($countries)){
+                        log_console('Buffering countries...', '', '');
+                        $countries = sql_list('SELECT `id`, `geonames_id`, `name`, `seoname`, `code` FROM `geo_countries`'.($country ? ' WHERE `id` = '.$country : ''));
+                    }
+
+                    $city_exists_statement = sql_prepare('SELECT `geonames_id`, `name`, `moddate`
+                                                          FROM   `geo_cities`
+                                                          WHERE  `name`         = :name
+                                                          AND    `country_code` = :country
+                                                          AND    `latitude`     = :latitude
+                                                          AND    `longitude`    = :longitude');
+
+                    /*
+                     * Add cities for all countries
+                     */
+                    foreach($countries as $countries_id => $country_data){
+                        log_console('Buffering states for country "'.$country_data['name'].'"...', '', '');
+                        $states[$country_data['seoname']] = sql_list('SELECT `id`, `geonames_id`, `name`, `seoname`, `code`, `admin1`, `admin2` FROM `geo_states` WHERE `countries_id` = '.$countries_id);
+
+                        unset($usecounties);
+
+                        /*
+                         * Add cities for all states
+                         */
+                        foreach($states[$country_data['seoname']] as $states_id => $state_data){
+                            log_console('Buffering counties for state "'.$state_data['name'].'" of country "'.$country_data['name'].'"...', '', '');
+                            $counties[$country_data['seoname']][$state_data['seoname']] = sql_list('SELECT `id`, `geonames_id`, `name`, `seoname`, `code`, `admin1`, `admin2` FROM `geo_counties` WHERE `states_id` = '.$states_id);
+
+                            /*
+                             * Search for cities within counties. If no cities are found in any county, this means that s
+                             */
+                            if(!isset($usecounties)){
+                                if(empty($counties[$country_data['seoname']][$state_data['seoname']])){
+                                    log_console('State "'.$state_data['name'].'" has no counties, assuming no counties for country "'.$country_data['name'].'"', 'notavailable', 'yellow');
+                                    $usecounties = false;
+
+                                }else{
+                                    log_console('Counting cities in state and counties (Some geonames countries have missing counties - cities links)', 'searching', 'white');
+
+                                    $state_cities_count  = $geosql->query('SELECT COUNT(*) AS count
+                                                                           FROM   `geonames`
+                                                                           WHERE  `country`     = "'.$country_data['code'].'"
+                                                                           AND    `fcode`       IN ("PPL", "PPLA", "PPLA2", "PPLA3", "PPLA4")
+                                                                           AND    `admin1`      = "'.$state_data['admin1'].'"
+                                                                           AND    `population` != 0');
+
+                                    $state_cities_count  = $state_cities_count->fetch(PDO::FETCH_ASSOC);
+                                    $state_cities_count  = $state_cities_count['count'];
+
+                                    $county_cities_count = 0;
+
+                                    $r_search = $geosql->prepare('SELECT COUNT(*) AS count
+                                                                  FROM   `geonames`
+                                                                  WHERE  `country`     = :country
+                                                                  AND    `fcode`       IN ("PPL", "PPLA", "PPLA2", "PPLA3", "PPLA4")
+                                                                  AND    `admin1`      = :admin1
+                                                                  AND    `admin2`      = :admin2
+                                                                  AND    `population` != 0');
+
+                                    /*
+                                     * Count the cities for all counties together, they should match the cities for the state
+                                     */
+                                    foreach($counties[$country_data['seoname']][$state_data['seoname']] as $counties_id => $county_data){
+                                        $r_search->execute(array(':country' => $country_data['code'],
+                                                                 ':admin1'  => $county_data['admin1'],
+                                                                 ':admin2'  => $county_data['admin2']));
+
+                                        $count = $r_search->fetch(PDO::FETCH_ASSOC);
+
+                                        $county_cities_count += $count['count'];
+                                    }
+
+                                    if($state_cities_count == $county_cities_count){
+                                        /*
+                                         * Okay, we found cities for a county, we can presume that all counties are then okay.
+                                         */
+                                        $usecounties = true;
+                                        log_console('Cities per county match cities per state, using counties - cities links', 'match', 'white');
+
+                                    }else{
+                                        $usecounties = false;
+                                        log_console('Cities per county does NOT match cities per state, NOT using counties - cities links', 'mismatch', 'yellow');
+                                    }
+                                }
+                            }
+
+                            if(!$usecounties){
+                                log_console('Adding citied without counties - cities links');
+
+                                /*
+                                 * This state has no counties
+                                 */
+                                $r = $geosql->query('SELECT *
+                                                     FROM   `geonames`
+                                                     WHERE  `country`     = "'.$country_data['code'].'"
+                                                     AND    `fcode`       IN ("PPL", "PPLA", "PPLA2", "PPLA3", "PPLA4")
+                                                     AND    `admin1`      = "'.$state_data['admin1'].'"
+                                                     AND    `population`  > '.cfi($threshold));
+
+                                log_console('Importing cities for state "'.$state_data['name'].'" for country "'.$country_data['name'].'"...', '', '');
+
+                                while($row = $r->fetch(PDO::FETCH_ASSOC)){
+                                    $city_exists_statement->execute(array(':name'      => $row['name'],
+                                                                          ':country'   => $row['country'],
+                                                                          ':latitude'  => $row['latitude'],
+                                                                          ':longitude' => $row['longitude']));
+
+                                    if($city_exists_statement->rowCount()){
+                                        /*
+                                         * This city already exists. Only update this if its newer
+                                         */
+                                        $databasedate = $city_exists_statement->fetch(PDO::FETCH_ASSOC);
+                                        $databasedate = new DateTime($databasedate['moddate']);
+                                        $newdate      = new DateTime($row['moddate']);
+
+                                        if($newdate > $databasedate){
+// :TODO: Update the city instead of adding.
+                                        }else{
+                                            log_console('City "'.str_log($row['name']).'" in state "'.str_log($state_data['name']).'" in country "'.str_log($country_data['name']).'" already exists, skipping', 'skip', 'yellow');
+                                        }
+
+                                    }else{
+                                        sql_query('INSERT INTO `geo_cities`(`is_city`, `geonames_id`, `countries_id`, `country_code`, `states_id`, `timezones_id`, `timezone`, `name`, `seoname`, `alternate_names`, `latitude`, `longitude`, `population`, `elevation`, `admin1`, `admin2`, `feature_code`, `moddate`)
+                                                   VALUES                  (true     , :geonames_id , :countries_id , :country_code , :states_id , :timezones_id , :timezone , :name , :seoname , :alternate_names , :latitude , :longitude , :population , :elevation , :admin1 , :admin2 , :feature_code , :moddate )',
+
+                                                   array(':geonames_id'     => $row['geonameid'],
+                                                         ':countries_id'    => $countries_id,
+                                                         ':country_code'    => $country_data['code'],
+                                                         ':states_id'       => $states_id,
+                                                         ':timezone'        => $row['timezone'],
+                                                         ':timezones_id'    => isset_get($timezones[$row['timezone']]),
+                                                         ':name'            => $row['name'],
+                                                         ':seoname'         => seo_generate_unique_name($row['name'], 'geo_cities'),
+                                                         ':alternate_names' => $row['alternatenames'],
+                                                         ':latitude'        => $row['latitude'],
+                                                         ':longitude'       => $row['longitude'],
+                                                         ':population'      => $row['population'],
+                                                         ':elevation'       => $row['elevation'],
+                                                         ':feature_code'    => $row['fcode'],
+                                                         ':admin1'          => $row['admin1'],
+                                                         ':admin2'          => $row['admin2'],
+                                                         ':moddate'         => $row['moddate']));
+                                    }
+
+                                    sql_query('COMMIT;');
+                                }
+
+                            }else{
+                                log_console('Adding citied with counties - cities links');
+
+                                /*
+                                 * Add all cities for this county
+                                 */
+                                foreach($counties[$country_data['seoname']][$state_data['seoname']] as $counties_id => $county_data){
+                                    log_console('Importing cities for county "'.$county_data['name'].'" for state "'.$state_data['name'].'" for country "'.$country_data['name'].'"...', '', '');
+
+                                    /*
+                                     * Search for all cities
+                                     */
+                                    $r = $geosql->query('SELECT *
+                                                         FROM   `geonames`
+                                                         WHERE  `country`     = "'.$country_data['code'].'"
+                                                         AND    `fcode`       IN ("PPL", "PPLA", "PPLA2", "PPLA3", "PPLA4")
+                                                         AND    `admin1`      = "'.$county_data['admin1'].'"
+                                                         AND    `admin2`      = "'.$county_data['admin2'].'"
+                                                         AND    `population`  > '.cfi($threshold));
+
+                                    while($row = $r->fetch(PDO::FETCH_ASSOC)){
+
+                                        $city_exists_statement->execute(array(':name'      => $row['name'],
+                                                                              ':country'   => $row['country'],
+                                                                              ':latitude'  => $row['latitude'],
+                                                                              ':longitude' => $row['longitude']));
+
+                                        if($city_exists_statement->rowCount()){
+                                            /*
+                                             * This city already exists. Only update this if its newer
+                                             */
+                                            $databasedate = $city_exists_statement->fetch(PDO::FETCH_ASSOC);
+                                            $databasedate = new DateTime($databasedate['moddate']);
+                                            $newdate      = new DateTime($row['moddate']);
+
+                                            if($newdate > $databasedate){
+    // :TODO: Update the city instead of adding.
+                                            }else{
+                                                log_console('City "'.str_log($row['name']).'" in state "'.str_log($state_data['name']).'" in country "'.str_log($country_data['name']).'" already exists, skipping', 'skip', 'yellow');
+                                            }
+
+                                        }else{
+                                            sql_query('INSERT INTO `geo_cities`(`is_city`, `geonames_id`, `countries_id`, `country_code`, `states_id`, `counties_id`, `timezones_id`, `timezone`, `name`, `seoname`, `alternate_names`, `latitude`, `longitude`, `population`, `elevation`, `admin1`, `admin2`, `feature_code`, `moddate`)
+                                                       VALUES                  (true     , :geonames_id , :countries_id , :country_code , :states_id , :counties_id , :timezones_id , :timezone , :name , :seoname , :alternate_names , :latitude , :longitude , :population , :elevation , :admin1 , :admin2 , :feature_code , :moddate )',
+
+                                                       array(':geonames_id'     => $row['geonameid'],
+                                                             ':countries_id'    => $countries_id,
+                                                             ':country_code'    => $country_data['code'],
+                                                             ':states_id'       => $states_id,
+                                                             ':counties_id'     => $counties_id,
+                                                             ':timezone'        => $row['timezone'],
+                                                             ':timezones_id'    => isset_get($timezones[$row['timezone']]),
+                                                             ':name'            => $row['name'],
+                                                             ':seoname'         => seo_generate_unique_name($row['name'], 'geo_cities'),
+                                                             ':alternate_names' => $row['alternatenames'],
+                                                             ':latitude'        => $row['latitude'],
+                                                             ':longitude'       => $row['longitude'],
+                                                             ':population'      => $row['population'],
+                                                             ':elevation'       => $row['elevation'],
+                                                             ':feature_code'    => $row['fcode'],
+                                                             ':admin1'          => $row['admin1'],
+                                                             ':admin2'          => $row['admin2'],
+                                                             ':moddate'         => $row['moddate']));
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+
+                    sql_query('COMMIT;');
+                }
+            }
+
+            break;
+
+        case '':
+            throw new lsException('No command specified. Please specify one of "clear", "download", "loaddata", "fixdata", "import"', 'notspecified');
+
+        default:
+            throw new lsException('Unknown do "'.str_log(argument(0)).'" specified. Please specify one of "clear", "download", "loaddata", "fixdata", "import"', 'unknown');
+    }
+
+    sql_query('SET autocommit         = 1;');
+    sql_query('SET unique_checks      = 1;');
+    sql_query('SET foreign_key_checks = 1;');
+
+    log_console('DONE!', '', 'green');
+
+}catch(Exception $e){
+    cli_error('scripts/base/importers/geo: Failed', $e);
+}
+?>

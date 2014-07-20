@@ -1,0 +1,6 @@
+// :TODO: Add documentation
+
+Always make full backup of:
+/etc (one file)
+/var/www/project/PROJECTNAME (each their own file)
+MySQL databases of all projects

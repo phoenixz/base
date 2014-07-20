@@ -1,0 +1,31 @@
+#!/usr/bin/php
+<?php
+/*
+ * This script lists available users
+ */
+$quiet = true;
+require_once(dirname(__FILE__).'/../../../libs/startup.php');
+
+
+try{
+    load_libs('user');
+
+    $limit = cfi(argument(0));
+
+    $r = sql_query('SELECT `id`, `name`, `admin`, `username`, `email`, `status` FROM `users`'.($limit ? ' LIMIT '.$limit : ''));
+
+    if(!$r->rowCount()){
+        log_console('There are currently no users registered', '', 'yellow');
+
+    }else{
+        log_console('#id    Username     Status     Admin Real name                        Email                            ', '', 'white');
+
+        while($user = sql_fetch($r)){
+            log_console(str_size($user['id'], 6, ' ', true).' '.str_size($user['username'], 12).' '.str_size(status($user['status']), 10).' '.str_size(($user['admin'] ? 'Yes' : ''), 5).' '.str_size($user['name'], 32).' '.str_size($user['email'], 32), '', '');
+        }
+    }
+
+}catch(Exception $e){
+    throw new lsException('base/users/list: Failed', $e);
+}
+?>

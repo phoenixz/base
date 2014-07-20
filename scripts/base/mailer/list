@@ -1,0 +1,61 @@
+#!/usr/bin/php
+<?php
+/*
+ * This script can list specified or all mailings
+ */
+$quiet = true;
+require_once(dirname(__FILE__).'/../../../libs/startup.php');
+
+
+try{
+    cli_only();
+    this_script_already_runs();
+
+    $status = argument('status', true);
+
+    load_libs('mailer');
+
+    log_console('Mailer list for "'.PROJECT.'"', '', 'white');
+
+    if(!$list = mailer_list($status, '`id`, `name`, `addedon`, `starton`, `startedon`, `finishedon`, `status`')){
+        if($status){
+            log_console('There currently are no mailers for this project with the status "'.str_log($status).'"', '', 'yellow');
+
+        }else{
+            log_console('There currently are no mailers for this project', '', 'yellow');
+        }
+
+    }else{
+        log_console('#id   Name                   Status           Added on             Start on              Started on              Finished on             Sent / Total   ', '', 'white');
+
+        foreach($list as $id => $data){
+            $all   = mailer_get_recipientcount($id);
+            $sent  = mailer_get_recipientcount($id, 'sent');
+
+            switch($data['status']){
+                case 'finished':
+                    $color = 'green';
+                    break;
+
+                case 'started':
+                    $color = 'yellow';
+                    break;
+
+                case 'failed':
+                    // FALLTHROUGH
+                case 'error':
+                    $color = 'red';
+                    break;
+
+                default:
+                    $color = '';
+            }
+
+            log_console(str_size($id, 5).' '.str_size($data['name'], 22).' '.str_size($data['status'], 16).' '.str_size($data['addedon'], 19).'  '.str_size($data['starton'], 19).'  '.str_size($data['startedon'], 19).'  '.str_size($data['finishedon'], 19).'  '.str_size($sent, 7, ' ', true).' / '.str_size($all, 7, ' ', true), '', $color);
+        }
+    }
+
+}catch(Exception $e){
+    throw new lsException('scripts/mailer/list: Failed', $e);
+}
+?>

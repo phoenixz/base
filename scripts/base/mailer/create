@@ -1,0 +1,34 @@
+#!/usr/bin/php
+<?php
+/*
+ * This script can create new mailings
+ */
+$quiet = true;
+require_once(dirname(__FILE__).'/../../../libs/startup.php');
+
+try{
+    cli_only();
+    this_script_already_runs();
+
+    $params['name']       = not_empty(argument('name'     , true), argument('title'        , true));
+    $params['content']    = not_empty(argument('content'  , true), argument('content_file' , true));
+    $params['from']       = not_empty(argument('from'     , true), argument('replace_from' , true));
+    $params['to']         = not_empty(argument('to'       , true), argument('replace_to'   , true));
+    $params['from_name']  = not_empty(argument('fromname' , true), argument('from_name'    , true));
+    $params['from_email'] = not_empty(argument('fromemail', true), argument('from_email'   , true));
+
+    $params['subject']    = argument('subject', true);
+    $params['starton']    = argument('starton', true, null);
+    $params['users']      = argument('users'  , true);
+
+    $params['status']     = (argument('start') ? 'started' : null);
+
+    load_libs('mailer');
+    mailer_insert($params);
+
+    log_console('Created mailer "'.$params['name'].'"', 'info', 'white');
+
+}catch(Exception $e){
+    throw new lsException('scripts/mailer/create: Failed', $e);
+}
+?>

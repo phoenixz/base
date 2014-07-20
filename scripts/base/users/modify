@@ -1,0 +1,90 @@
+#!/usr/bin/php
+<?php
+/*
+ * This script can modify certain aspects of users
+ */
+$quiet = true;
+require_once(dirname(__FILE__).'/../../../libs/startup.php');
+
+
+try{
+    load_libs('user');
+
+    if(!$user = user_get(argument(0))){
+        throw new lsException('Specified user "'.str_log(argument(0)).'" does not exist', 'notexists');
+    }
+
+    /*
+     * Modify what exactly?
+     */
+    if($value = argument('name', true)){
+        /*
+         * Modify the users real name
+         */
+        sql_query('UPDATE `users`
+                   SET    `name` = :name
+                   WHERE  `id`   = :id',
+
+                   array(':name' => $value,
+                         ':id'   => $user['id']));
+
+        log_console('Updated real name to "'.str_log($value).'"', 'name', 'green');
+        $modified = true;
+    }
+
+    if($value = argument('username', true)){
+        /*
+         * Modify the users username
+         */
+        sql_query('UPDATE `users`
+                   SET    `username` = :username
+                   WHERE  `id`       = :id',
+
+                   array(':username' => $value,
+                         ':id'       => $user['id']));
+
+        log_console('Updated username to "'.str_log($value).'"', 'username', 'green');
+        $modified = true;
+    }
+
+    if($value = argument('email', true)){
+        /*
+         * Modify the users email
+         */
+        sql_query('UPDATE `users`
+                   SET    `email` = :email
+                   WHERE  `id`    = :id',
+
+                   array(':email' => $value,
+                         ':id'    => $user['id']));
+
+        log_console('Updated email to "'.str_log($value).'"', 'email', 'green');
+        $modified = true;
+    }
+
+    if($value = argument('status', true)){
+        /*
+         * Modify the users status
+         */
+        sql_query('UPDATE `users`
+                   SET    `status` = :status
+                   WHERE  `id`     = :id',
+
+                   array(':status' => $value,
+                         ':id'     => $user['id']));
+
+        log_console('Updated status to "'.str_log($value).'"', 'status', 'green');
+        $modified = true;
+    }
+
+    if(!isset_get($modified)){
+        log_console('Not modified anything for user "'.$user['email'].'"', 'finished', 'yellow');
+
+    }else{
+        log_console('Finished modifying user "'.$user['email'].'"', 'finished', 'white');
+    }
+
+}catch(Exception $e){
+    throw new lsException('scripts/users/modify: Failed', $e);
+}
+?>

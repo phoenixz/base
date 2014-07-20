@@ -1,0 +1,43 @@
+// :TODO: Add documentation
+
+This document contains a list of hosting providers I have found. NOTE! This list is in no way an
+endorsement for any of these hosters, I may have tried some, while others not. Use this list only
+to help you see what is out there.
+
+IMPORTANT: OPENVZ (Virtuozzo for example) providers may give VPS that cannot have swap!
+
+Hosting comparisson: http://serverbear.com/compare
+
+http://www.uplinkvps.com/budget-kvm-vps-hosting/
+https://www.wholesaleinternet.net/dedicated/
+http://www.up4hosting.com/vps.html
+http://www.needaserver.net/
+http://www.karashost.com/
+http://quickweb.co.nz/index.htm
+http://lowendbox.com/
+
+FlexVPS:
+http://www.webhostingtalk.com/showthread.php?s=a40fff7808fc1af24083bb40537c8862&t=1283832
+http://www.servint.net/vps.php?tag=wht_sticky_vps&refid=BFC131455306&affid=30001
+
+Liquidweb:
+http://www.webhostingtalk.com/showthread.php?s=a40fff7808fc1af24083bb40537c8862&t=1279104
+http://www.liquidweb.com/StormServers/pricing.html
+
+Wiredtree:
+http://www.webhostingtalk.com/showthread.php?t=1307132
+https://www.wiredtree.com/managedvps/managedvps.php
+
+Knownhost: (NO SWAP!!!!)
+http://www.webhostingtalk.com/showthread.php?t=1306484
+http://www.knownhost.com/managed-vps-packages.html
+
+Futurehosting:
+http://www.webhostingtalk.com/showthread.php?t=1306324
+http://www.futurehosting.com/virtual-servers/#managed-tab
+
+Servercrate:
+servercrate.com
+
+CHEAP (From knownhost, but unmanaged):
+http://www.rocketvps.com/vps.html

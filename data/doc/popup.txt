@@ -1,0 +1,48 @@
+// :TODO: Add documentation
+
+How to create popups
+
+1.
+
+On any element add base_popup_create(url);
+
+<a class="bRedB" rel="nofollow" onclick="base_popup_create(\'/popup/contact.php?cid='.$comp['cid'].'\')">'.tr('Contact').'</a>
+
+2. the popup html file should have these classes
+
+jsPopup (on outer div of popup)
+jsPopupInner  (on actual popup (for centering))
+jsPopupContent (on the content div of the popup), for replaceing of content
+jsPopupClose (to close the popup, so on X and background with transparancy
+
+<div class="hPopup jsPopup">
+	<div class="boxC boxShadow boxPopup jsPopupInner">
+		<div class="boxInner">
+			<div class="PopupClose jsPopupClose"></div>
+			<h2 class="taC">'.tr('Contact Us').'</h2><br/>
+			<div class="hpCatW jsPopupContent">
+				<form name="FcbSignup" class="sForm FormSubmit" id="contactus">
+					<div class="sFormUser">
+						<input type="text" autocomplete="off" placeholder="'.tr('Your Name').'" name="name"/><br/>
+					</div>
+					<div class="sFormEmail">
+						<input type="text" autofocus="" autocomplete="off" value="" name="email" placeholder="'.tr('Your Email Address').'"><br/>
+					</div>
+					<div class="sFormPass">
+						<input type="text" autocomplete="off" placeholder="'.tr('Your Phonenumber').'" name="phone"><br/>
+					</div>
+					<div class="sFormAddCom">
+						<p>'.tr('Message').':</p>
+						<div class="sFormRel">
+							<textarea name="message"></textarea>
+						</div>
+					</div>
+					<input type="hidden" value="'.cfi($_GET['cid']).'" name="cid">
+					<input type="submit" value="'.tr('Send').'">
+				</form>
+				<div class="cB"></div>
+			</div>
+		</div>
+	</div>
+	<div class="BlBg jsPopupClose"></div>
+</div>

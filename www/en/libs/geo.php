@@ -1,0 +1,268 @@
+<?php
+/*
+ * GEO library
+ *
+ * This contains all kinds of geography related functions
+ *
+ * @license http://opensource.org/licenses/GPL-2.0 GNU Public License, Version 2
+ * @copyright Sven Oostenbrink <support@svenoostenbrink.com>
+ */
+
+
+// :DELETE: These codes can now be found in the database
+///*
+// * Return US states with their codes
+// */
+//function geo_us_states(){
+//    try{
+//        return array('al' => 'alabama',
+//                     'ak' => 'alaska',
+//                     'az' => 'arizona',
+//                     'ar' => 'arkansas',
+//                     'ca' => 'california',
+//                     'co' => 'colorado',
+//                     'ct' => 'connecticut',
+//                     'de' => 'delaware',
+//                     'dc' => 'columbia', //district of columbia
+//                     'fl' => 'florida',
+//                     'ga' => 'georgia',
+//                     'hi' => 'hawaii',
+//                     'id' => 'idaho',
+//                     'il' => 'illinois',
+//                     'in' => 'indiana',
+//                     'ia' => 'iowa',
+//                     'ks' => 'kansas',
+//                     'ky' => 'kentucky',
+//                     'la' => 'louisiana',
+//                     'me' => 'maine',
+//                     'md' => 'maryland',
+//                     'ma' => 'massachusetts',
+//                     'mi' => 'michigan',
+//                     'mn' => 'minnesota',
+//                     'ms' => 'mississippi',
+//                     'mo' => 'missouri',
+//                     'mt' => 'montana',
+//                     'ne' => 'nebraska',
+//                     'nv' => 'nevada',
+//                     'nh' => 'new hampshire',
+//                     'nj' => 'new jersey',
+//                     'nm' => 'new mexico',
+//                     'ny' => 'new york',
+//                     'nc' => 'north carolina',
+//                     'nd' => 'north dakota',
+//                     'oh' => 'ohio',
+//                     'ok' => 'oklahoma',
+//                     'or' => 'oregon',
+//                     'pa' => 'pennsylvania',
+//                     'ri' => 'rhode island',
+//                     'sc' => 'south carolina',
+//                     'sd' => 'south dakota',
+//                     'tn' => 'tennessee',
+//                     'tx' => 'texas',
+//                     'ut' => 'utah',
+//                     'vt' => 'vermont',
+//                     'va' => 'virginia',
+//                     'wa' => 'washington',
+//                     'wv' => 'west virginia',
+//                     'wi' => 'wisconsin',
+//                     'wy' => 'wyoming');
+//
+//    }catch(Exception $e){
+//        throw new lsException('geo_us_states(): Failed', $e);
+//    }
+//}
+
+
+
+/*
+ * Get HTML countries select list
+ */
+function geo_countries_select($params) {
+    try{
+        array_params ($params);
+        array_default($params, 'class'       , '');
+        array_default($params, 'disabled'    , false);
+        array_default($params, 'id_column'   , 'id');
+        array_default($params, 'name'        , 'countries_id');
+        array_default($params, 'none'        , tr('Select a country'));
+        array_default($params, 'option_class', '');
+
+        $cache_key = serialize($params);
+
+        if($retval = cache_read($cache_key)){
+            return $retval;
+        }
+
+        /*
+         * If only one country is available, then select it automatically
+         */
+        $params['resource'] = sql_query('SELECT `'.$params['id_column'].'`, `name` FROM `geo_countries` ORDER BY `name` ASC');
+
+        return cache_write($cache_key, html_select($params));
+
+    }catch(Exception $e){
+        throw new lsException('geo_countries_select(): Failed', $e);
+    }
+}
+
+
+
+/*
+ * Get HTML states select list
+ */
+function geo_states_select($params, $bodyonly = false, $selected= 0, $name = '', $none = '', $class = '', $option_class = '', $disabled = false) {
+    try{
+        array_params ($params);
+        array_default($params, 'selected'        , $selected);
+        array_default($params, 'class'           , $class);
+        array_default($params, 'disabled'        , $disabled);
+        array_default($params, 'id_column'       , 'id');
+        array_default($params, 'name'            , $name);
+        array_default($params, 'none'            , not_empty($none, tr('Select a state')));
+        array_default($params, 'option_class'    , $option_class);
+//        array_default($params, 'column'          , 'states_id');
+        array_default($params, 'countries_column', 'countries_id');
+
+        $cache_key = serialize($params);
+
+        if($retval = cache_read($cache_key)){
+            return $retval;
+        }
+
+        /*
+         * Only show cities if a state has been selected
+         */
+        if(empty($params[$params['countries_column']])){
+            /*
+             * Don't show any cities at all
+             */
+            $params['resource'] = false;
+
+        }else{
+            /*
+             * If only one state is available, then select it automatically
+             */
+            $params['resource'] = sql_query('SELECT `'.$params['id_column'].'`, `name` FROM `geo_states` WHERE countries_id = :countries_id  ORDER BY `name` ASC', array(':countries_id' => $params['countries_id']));
+        }
+
+        load_libs('html');
+        return cache_write($cache_key, html_select($params));
+
+    }catch(Exception $e){
+        throw new lsException('geo_states_select(): Failed', $e);
+    }
+}
+
+
+
+/*
+ * Get HTML cities select list
+ */
+function geo_cities_select($params, $selected = 0, $name = '', $none = '', $class = '', $option_class = '', $disabled = false) {
+    try{
+        array_params ($params);
+        array_default($params, 'selected'     , $selected);
+        array_default($params, 'class'        , $class);
+        array_default($params, 'disabled'     , $disabled);
+        array_default($params, 'id_column'    , 'id');
+        array_default($params, 'name'         , $name);
+        array_default($params, 'none'         , not_empty($none, tr('Select a city')));
+        array_default($params, 'option_class' , $option_class);
+//        array_default($params, 'column'       , 'cities_id');
+        array_default($params, 'states_column', 'states_id');
+
+        $cache_key = serialize($params);
+
+        if($retval = cache_read($cache_key)){
+            return $retval;
+        }
+
+        /*
+         * Only show cities if a state has been selected
+         */
+        if(empty($params[$params['states_column']])){
+            /*
+             * Don't show any cities at all
+             */
+            $params['resource'] = false;
+
+        }else{
+            $params['resource'] = sql_query('SELECT `'.$params['id_column'].'`, `name` FROM `geo_cities` WHERE `states_id` = :states_id ORDER BY `name` ASC', array(':states_id' => $params['states_id']));
+        }
+
+        return cache_write($cache_key, html_select($params));
+
+    }catch(Exception $e){
+        throw new lsException('geo_cities_select(): Failed', $e);
+    }
+}
+
+
+
+/*
+ * Return specified column (or all) for the specified country
+ */
+function geo_countries_get($country, $column = false){
+    try{
+        $country = sql_get_id_or_name($country, true, true);
+
+        if(!$column){
+            $columns = '*';
+
+        }else{
+            $columns = cfm($column);
+        }
+
+        return sql_get('SELECT '.$columns.' FROM geo_countries WHERE '.$country['where'], $column, $country['execute']);
+
+    }catch(lsException $e){
+        throw new lsException('geo_countries_get() Failed', $e);
+    }
+}
+
+
+
+/*
+ * Return specified column (or all) for the specified state
+ */
+function geo_states_get($state, $column = false){
+    try{
+        $state = sql_get_id_or_name($state);
+
+        if(!$column){
+            $columns = '*';
+
+        }else{
+            $columns = cfm($column);
+        }
+
+        return sql_get('SELECT '.$columns.' FROM geo_states WHERE '.$state['where'], $column, $state['execute']);
+
+    }catch(lsException $e){
+        throw new lsException('geo_states_get() Failed', $e);
+    }
+}
+
+
+
+/*
+ * Return specified column (or all) for the specified city
+ */
+function geo_cities_get($city, $column = false){
+    try{
+        $city = sql_get_id_or_name($city);
+
+        if(!$column){
+            $columns = '*';
+
+        }else{
+            $columns = cfm($column);
+        }
+
+        return sql_get('SELECT '.$columns.' FROM geo_cities WHERE '.$city['where'], $column, $city['execute']);
+
+    }catch(lsException $e){
+        throw new lsException('geo_cities_get() Failed', $e);
+    }
+}
+?>

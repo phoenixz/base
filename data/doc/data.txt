@@ -1,0 +1,12 @@
+// :TODO: Add documentation
+
+This document contains information on sources of data for various purposes
+
+Hospitals in US (and probably other government related organizations)
+http://catalog.data.gov/dataset/hospital-general-information
+
+Synonyms
+http://chimprewriter.com/download/
+
+GEO
+Simple US cities states dump : http://www.farinspace.com/us-cities-and-state-sql-dump/

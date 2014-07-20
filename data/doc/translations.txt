@@ -1,0 +1,26 @@
+// :TODO: Add documentation
+
+BASE has support for multilingual websites. It uses static, pre translated texts for speed, so
+during the running of the PHP script, no translations have to be done. This does mean, however,
+that before the website can be run in a different language, that BASE has to do the complete
+translation. Each language has its own language code under www/ and for each translation, a
+complete translated tree copy will be made.
+
+BASE contains two types of texts that may be translated.
+
+Type one are the small, usually one short phrase or word texts. These texts are all marked
+throughout the code with the tr() function {system library}. The translator can search for these
+tr() texts, and replace them with the correct translations from the database (if available)
+
+Type two are larger patches of texts which are stored in separate HTML files in
+ROOT/data/content/LANGUAGE/. Again, each language must have its own complete tree, and each HTML
+file should have a copy in each language. These files are added to the site using the
+load_content() function {system library}
+
+The translation system checks the configuration $_CONFIG['languages']['available'] to see what
+languages should be available, and with the ROOT/scripts/base/translate script, the translations
+will be made. Usually, upon site deployment using ./scripts/base/deploy, these translations will be
+made automatically.
+
+A translator can make the required translations in an admin web interface with the "translate" page
+(See ROOT/www/en/admin/translate.php)

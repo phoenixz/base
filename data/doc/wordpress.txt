@@ -1,0 +1,38 @@
+BASE has a wordpress library available that allows you to post pages or posts via the HTML admin
+interface. These library functions do NOT use the normal API to post pages since this API contains
+several bugs and limitations.
+
+I have found that posting many pages with parent pages in wordpress slows WP down to a crash around
+10.000 pages since for every admin page load it will load a combo box showing all possible parents.
+Because of this, it is necesary to disable that parents select box which can be done with the
+following wordpress plugin
+
+In wordpresroot/wp-content/plugins, add the following PHP code in the file file test.php. Then go to
+wordpress admin section > plugins > disabled plugins, then enable plugin "test"
+
+See:
+http://codex.wordpress.org/images/b/b3/donthack.jpg
+http://codex.wordpress.org/Function_Reference/remove_meta_box
+http://codex.wordpress.org/Functions_File_Explained
+
+<?php
+/**
+ * @package Test
+ * @version 1.6
+ */
+/*
+Plugin Name: Test
+Plugin URI: http://websiteofplugin.com/urlwhereupdatemaybefound
+Description: This will just disable the admin page editor parents id selector.
+Author: author name
+Version: 0.1
+Author URI: http://websiteofauthor.com
+*/
+
+function remove_publish_box()
+{
+        remove_meta_box( 'pageparentdiv', 'page', 'side' );
+}
+
+add_action( 'admin_menu', 'remove_publish_box' );
+?>

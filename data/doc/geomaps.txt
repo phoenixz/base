@@ -1,0 +1,8 @@
+// :TODO: Add documentation
+
+Possibly interresting libraries that may (or not) be supported
+http://www.geocontext.org/publ/2010/04/profiler/en/
+http://leafletjs.com/features.html
+
+Interresting documentation:
+http://habaneroconsulting.com/en/insights/Opening-native-map-apps-from-the-mobile-browser.aspx#.Ugu74-ZDvgg

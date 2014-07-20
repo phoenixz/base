@@ -1,0 +1,47 @@
+#!/usr/bin/php
+<?php
+/*
+ * This script can add or remove members from notification classes
+ */
+$quiet = true;
+require_once(dirname(__FILE__).'/../../../libs/startup.php');
+
+
+try{
+    switch(argument(0)){
+        case 'add':
+            // FALLTHROUGH
+        case 'make':
+            /*
+             * Add specified members to specified class
+             */
+            $params = array('name'    => argument(1),
+                            'members' => argument(2));
+
+            load_libs('notifications');
+            $count = notifications_members_insert($params);
+
+            log_console('Added "'.$count.'" new members to notification class "'.str_log($params['name']).'"', null, 'white');
+            break;
+
+        case 'remove':
+            // FALLTHROUGH
+        case 'delete':
+            // FALLTHROUGH
+        case 'erase':
+            $params['name']        = argument(0);
+            $params['methods']     = argument(1);
+            $params['status']      = argument('status', true);
+            $params['description'] = argument('description', true);
+
+            load_libs('notifications');
+            notifications_classes_insert($params);
+
+            log_console('Removed "'.count($members).'" members from notification class "'.str_log($params['name']).'"', null, 'white');
+            break;
+    }
+
+}catch(Exception $e){
+    throw new lsException('scripts/notifications/members: Failed', $e);
+}
+?>

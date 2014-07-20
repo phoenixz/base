@@ -1,0 +1,10 @@
+// :TODO: Add documentation
+
+./scripts/base/importers/personsnames will import names from ROOT/../data/persons/LANGUAGE
+Data will be imported in tables data_names. To keep data compact, this table has 3 columns,
+male, female, last, and the names are
+
+To extract persons names from data, see
+http://alias-i.com/lingpipe/demos/tutorial/ne/read-me.html
+http://library.witpress.com/pages/PaperInfo.asp?PaperID=14219
+http://nlp.stanford.edu/software/CRF-NER.shtml

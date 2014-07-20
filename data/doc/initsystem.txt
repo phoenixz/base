@@ -1,0 +1,28 @@
+// :TODO: Add documentation
+
+BASE has an init system that will imediately setup your website to be ready
+to use. If updates are available, this same init system can also update your
+website to be up to date again automatically. use ./scripts/base/init to
+perform the init process. Use the "force" arugment to force init from zero
+(WARNING: This will destroy your database and start from scratch). Due to
+"force" being slightly dangerous, it does not work on production, where the
+option "dump" has to be used to first dump the database, then a subsequent
+normal init will reestablish a new database
+
+BASE basically tracks 4 versions; a framework versions (in code and database) and a project version
+(in code and database). If the init script is run, and either of the framework or project the
+database version differs from the code version, the init script will try to execute the required
+PHP scripts that lie in between that difference to make the database version match the code version
+again
+
+ROOT/scripts/base/init arguments:
+
+force
+
+fromprojectversion     This will force the init script to start from the specified project version
+                       file. It basically tells the script that the real project database version
+                       should be ignored, and the specified one should be used instead
+
+fromframeworkversion   This will force the init script to start from the specified framework version
+                       file. It basically tells the script that the real framework database version
+                       should be ignored, and the specified one should be used instead

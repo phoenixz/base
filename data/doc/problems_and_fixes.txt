@@ -1,0 +1,31 @@
+// :TODO: Add documentation
+
+This document contains various "problems and their solutions" that I have encountered
+
+Problem:
+"Headers already sent" errors like
+
+Warning: session_start() [function.session-start]: Cannot send session cache limiter - headers already sent"
+Warning: header() [function.header]: Cannot send headers - headers already sent"
+
+But all on on line 1 of some root .php file :
+This file either contains a space at the beginning, or a BOM. Since BOM is
+not directly visible (a HEX editor will show it), it may cause confusion
+
+Solution:
+run the ./scripts/base/clearbom script, it will clear all BOMs from all PHP scripts. This script
+normally automatically runs with the ROOT/scripts/base/deploy script
+
+
+
+Problem:
+PHP mail() slow?
+Make sure that the computer hostname is myhost.domain.com, and that the
+following line is in your /etc/hosts file (where "myserver" is the hostname
+of your computer)!
+
+127.0.0.1               localhost localhost.localdomain myhost.domain.com
+
+NOTE: The reason why its slow is that sendmail waits for 60 seconds (WHY??)
+when the hostname is not a FQDN, so "myhost" will cause this problem whereas
+"myhost.domain.com" will not

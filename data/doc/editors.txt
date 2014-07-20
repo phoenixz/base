@@ -1,0 +1,16 @@
+// :TODO: Add documentation
+
+The editors library currently ony has the tinymce editor implemented
+
+The tinymce editor has the jbimages images uploader plugin bundled.
+pub/js/base/tinymce/plugins/jbimages/config.php contains configuration,
+but all configuration is setup so that it can be set by correctly configuring
+$_CONFIG[editors][images]
+
+TinyMCE documentation:
+How to configure menu entries: http://www.tinymce.com/wiki.php/Configuration:menu
+How to configure menu bar: http://www.tinymce.com/wiki.php/Configuration:menubar
+Toolbar controls: http://www.tinymce.com/wiki.php/Controls
+Plugins: http://www.tinymce.com/wiki.php/Plugins
+
+TinyMCE image upload: http://justboil.me/

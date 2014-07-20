@@ -1,0 +1,27 @@
+// :TODO: Add documentation
+
+The geo library is built to work wit geonames.org data.
+
+Use the ./scripts/base/geoimport script to import geo data from the geodata
+project The geodata project should be located either parrallel to this project
+(ie, if this is projects/foobar, then the geodata project should be in
+projects/geodata) or one level up (ie, if this project is located in
+projects/customer/foobar, then the geodata project should be again in
+projects/geodata)
+
+Belgium cities skip 482000 stopat 20000
+US cities skip 6011770 stopat UNKNOWN
+
+See
+http://download.geonames.org/export/dump/readme.txt
+http://www.geonames.org/export/codes.html
+http://download.geonames.org/export/dump/
+
+geo importer problems:
+If the geo importer fails with "The used command is not allowed with this MySQL version"
+then please try the notlocal commandline option. The reason for this is that some newer
+MySQL servers have a "security" feature of completely not allowing LOAD DATA LOCAL INFILE
+anymore, but they do allow LOAD DATA INFILE which requires files to be located in
+/var/lib/mysql. Do note that, due to the required locations of these files, a symlink will
+be made there which require root rights. Also note that LOAD DATA INFILE requires File_priv Y
+in the mysql user table for that user!

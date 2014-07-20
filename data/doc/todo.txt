@@ -1,0 +1,19 @@
+Add more documenation in PHPDoc format
+Add library for simple PHPDoc management, should be able to rebuild documentation on library changes
+Verify correct functioning of translation system
+Add CSS / JS compressors for production
+Add CSS / JS builder code that can group all required CSS / JS together so that only one CSS / JS has to be used per page
+Improve global data directory management
+Implement auto download / management of required dependancies
+
+Add support for topcoat : http://topcoat.io/topcoat/#notification
+Add support for mandrill mailer : http://www.mandrill.com/?utm_source=cloud&utm_medium=newsletter&utm_campaign=8-13
+Add support for jqueryui - bootstrap : https://github.com/addyosmani/jquery-ui-bootstrap
+
+Check what can be improved to speedup site: http://yslow.org/user-guide/
+
+Add support for openstreetmap http://www.openstreetmap.org/#map=5/51.500/-0.100
+
+Add support for javascript libraries
+http://kineticjs.com/  Cool Canvas library
+http://socketo.me/     HTTP Socket support for PHP, yay!

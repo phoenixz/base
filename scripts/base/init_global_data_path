@@ -1,0 +1,44 @@
+#!/usr/bin/php
+<?php
+/*
+ * This is an empty test script template
+ */
+$usage = "./scripts/base/init_global_data_path [PATH]\n";
+
+$help  = "This script will initialize the global data path where data that can be shared between multiple projects (Like geodata data files) is stored";
+
+require_once(dirname(__FILE__).'/../../libs/startup.php');
+
+try{
+    log_console('Initializing global data path', '', 'white');
+
+    if(!$path = argument(0)){
+        log_console('Please type the absolute path of the data directory [<enter> for /var/www/data]:', '', '', false);
+        $path = readline();
+    }
+
+    if(!$path){
+        $path = '/var/www/data';
+    }
+
+    if(substr($path, 0, 1) != '/'){
+        throw new lsException('The specified path "'.str_log($path).'" is invalid. An absolute path (starting with a forward slash /) is required', 'invalid');
+    }
+
+    $path = slash($path);
+
+    load_libs('file');
+    mkdir($path, $_CONFIG['fs']['dir_mode'], true);
+
+    /*
+     * Install geoname script
+     */
+    mkdir($path.'geonames', $_CONFIG['fs']['dir_mode'], true);
+    file_copy_tree(ROOT.'data/sources/geonames', $path.'geonames');
+
+    $return = $path;
+
+}catch(Exception $e){
+    cli_error('scripts/base/empty: Failed', $e);
+}
+?>

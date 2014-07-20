@@ -1,0 +1,7 @@
+# robots.txt for http://
+
+User-agent: *
+Disallow: /tmp
+Disallow: /signup.php
+Disallow: /signin.php
+Disallow: /signout.php

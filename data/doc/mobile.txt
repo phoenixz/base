@@ -1,0 +1,42 @@
+// :TODO: Add documentation
+
+This documentation contains information relevant to mobile support on BASE
+
+* $_CONFIG['mobile']['enabled'] can be set to true (mobile is supported), false
+  (mobile is disabled) or "limited" (mobile is only available to specified
+  users)
+
+* If mobile is enabled, and a mobile device is detected, base will
+  automatically switch to mobile site by setting $_SESSION[mobile]['site']
+  to true
+
+* If the current session is in mobile site mode, for each page in www/LANGUAGE
+  it will look in www/LANGUAGE/mobile if a mobile version is available and if
+  a mobile version is available, execute that one instead of the standard page.
+  If no mobile version is available, the normal page will be executed instead.
+
+* startup library sets for each page load $GLOBALS['page_is_mobile'] if
+  current page is running as mobile or not
+
+* startup library sets for session $_SESSION[mobile] and $_SESSION[device]
+  associative arrays
+
+* $_SESSION[mobile] contains information about current mobile settings
+  (mobile_detect() is used for this)
+
+* $_SESSION[device] contains information about the current client device
+  (detect_client() is used for this)
+
+* www/LANGUAGE/gotomobile.php sets $_SESSION[mobile]['site'] to true, and
+  tries to redirect back to the origin as inteligently as possible
+
+* www/LANGUAGE/gotonormal.php sets $_SESSION[mobile]['site'] to false, and
+  tries to redirect back to the origin as inteligently as possible
+
+* $GLOBALS['page_is_mobile'] is set to true if the current page is in mobile
+  mode, false if not. This variable is set on each page load, and is a reliable
+  way to determine if a mobile page is processed or a normal one.
+
+
+Interresting mobile documentation:
+* http://developer.android.com/guide/appendix/g-app-intents.html

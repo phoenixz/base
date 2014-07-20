@@ -1,0 +1,33 @@
+#!/usr/bin/php
+<?php
+/*
+ * This script will try to add the specified users to the specified mailing
+ */
+$quiet = true;
+require_once(dirname(__FILE__).'/../../../libs/startup.php');
+
+try{
+    cli_only();
+    this_script_already_runs();
+
+    load_libs('mailer');
+
+    $count = 0;
+    $users = not_empty(argument('users', true), argument('user', true), $argv);
+
+    foreach(array_force($users) as $user){
+        mailer_unsubscribe($user);
+        $count++;
+    }
+
+    if($count){
+        log_console('Unsubscribed "'.$count.'" users from mailings', '', 'white');
+
+    }else{
+        log_console('Unsubscribed no users from mailings', '', 'yellow');
+    }
+
+}catch(Exception $e){
+    throw new lsException('scripts/mailer/unsubscribe: Failed', $e);
+}
+?>

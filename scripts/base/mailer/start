@@ -1,0 +1,37 @@
+#!/usr/bin/php
+<?php
+/*
+ * This script can start specified or all mailings
+ */
+$quiet = true;
+require_once(dirname(__FILE__).'/../../../libs/startup.php');
+
+
+try{
+    cli_only();
+    this_script_already_runs();
+
+    load_libs('mailer');
+
+    if(argument('auto')){
+        $count = mailer_start('auto');
+
+    }elseif(argument('all')){
+        $count = mailer_start('all');
+
+    }else{
+        $mailers = argument('mailers', true, argument('mailer', true, argument('mailings', true)));
+        $count   = mailer_start($mailers);
+    }
+
+    if($count){
+        log_console('Started "'.$count.'" mailers', '', 'white');
+
+    }else{
+        log_console('No mailers started', '', 'yellow');
+    }
+
+}catch(Exception $e){
+    throw new lsException('scripts/mailer/start: Failed', $e);
+}
+?>

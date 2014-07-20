@@ -1,0 +1,7 @@
+// :TODO: Add documentation
+
+The PHP $_SESSION may contain the following data (depending on situation)
+
+$_SESSION['user']
+
+$_SESSION['mobile']

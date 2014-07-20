@@ -1,0 +1,71 @@
+#!/usr/bin/php
+<?php
+/*
+ * This script will download and import the latest version of the geoip data
+ */
+require_once(dirname(__FILE__).'/../../../libs/startup.php');
+
+try{
+    log_console('Updating GEOIP data', 'geoip', 'white');
+
+    load_libs('file');
+    $tmpdir = file_temp_dir();
+
+    log_console('Downloading geoip', 'downloading');
+    passthru('wget http://geolite.maxmind.com/download/geoip/database/GeoLiteCity_CSV/GeoLiteCity-latest.zip -O '.$tmpdir.'GeoLiteCity-latest.zip');
+
+    if(!file_exists($tmpdir.'GeoLiteCity-latest.zip')){
+        throw new lsException('The geoip file "'.$tmpdir.'GeoLiteCity-latest.zip" was downloaded but not found at its location', 'notexist');
+    }
+
+    log_console('Unzipping geoip', 'unzipping');
+    safe_exec('cd '.$tmpdir.'; unzip '.$tmpdir.'GeoLiteCity-latest.zip');
+
+    log_console('Converting encoding of GEOIP', 'converting');
+    safe_exec('cd '.$tmpdir.'GeoLiteCity_*/;iconv -t UTF-8 -f "ISO-8859-1" GeoLiteCity-Blocks.csv -o ../geoip_blocks.csv >>/tmp/mysqlimport.log 2>&1');
+    safe_exec('cd '.$tmpdir.'GeoLiteCity_*/;iconv -t UTF-8 -f "ISO-8859-1" GeoLiteCity-Location.csv -o ../geoip_location.csv >>/tmp/mysqlimport.log 2>&1');
+
+    if(!file_exists($tmpdir.'geoip_blocks.csv')){
+        throw new lsException('The required file "'.$tmpdir.'geoip_blocks.csv" is missing');
+    }
+
+    /*
+     * Due to a fucked up MySQL "security feature" that does not allow LOAD DATA LOCAL INFILE
+     * but MAY allow LOAD DATA INFILE (which requires the file to be in /var/lib/mysql), we
+     * need to modify the ./geonames_import_data.sql file a little.
+     *
+     * IF this is the situation, the import would fail with the rather cryptic message
+     * "ERROR 1148 (42000) at line 1: The used command is not allowed with this MySQL version"
+     *
+     * Use the "notlocal" command line option to overcome this problem, but DO NOTE! Root
+     * rights are required for this since a symlink in /var/lib/mysql is required.
+     *
+     * See data/doc/geo.txt for more information
+     */
+    if(argument('notlocal')){
+        log_console('Placing symlink for non local import', 'warning', 'yellow');
+        symlink($tmpdir, '/var/lib/mysql/'.uniqid());
+    }
+
+    log_console('Importing GEOIP blogs', 'importing');
+    sql_query('TRUNCATE `geoip_blocks`');
+    safe_exec('mysqlimport --fields-terminated-by="," --fields-optionally-enclosed-by="\"" --lines-terminated-by="\n" --local --user='.$_CONFIG['db']['user'].' --password='.$_CONFIG['db']['pass'].' '.$_CONFIG['db']['db'].' '.$tmpdir.'geoip_blocks.csv>>/tmp/mysqlimport.log 2>&1');
+
+    log_console('Importing GEOIP locations', 'importing');
+    sql_query('TRUNCATE `geoip_location`');
+    safe_exec('mysqlimport --fields-terminated-by="," --fields-optionally-enclosed-by="\"" --lines-terminated-by="\n" --local --user='.$_CONFIG['db']['user'].' --password='.$_CONFIG['db']['pass'].' '.$_CONFIG['db']['db'].' '.$tmpdir.'geoip_location.csv >>/tmp/mysqlimport.log 2>&1');
+
+    if(argument('notlocal')){
+        /*
+         * Remove dat symlink
+         */
+        log_console('Removing notlocal MySQL symlink "'.'/var/lib/mysql/'.$uniqid.'"', 'cleaning');
+        unlink('/var/lib/mysql/'.$uniqid);
+    }
+
+    log_console('Done', 'done', 'white');
+
+}catch(Exception $e){
+    throw new lsException('scripts/importers/geoip: Failed', $e);
+}
+?>

@@ -1,0 +1,23 @@
+#!/usr/bin/php
+<?php
+/*
+ * This script can invalidate all cached objects on the connected servers
+ */
+require_once(dirname(__FILE__).'/../../../libs/startup.php');
+
+try{
+    if(!mc_connect()){
+        if($_CONFIG['memcached']){
+            throw new lsException('Could not connect to any of the configured memcached servers', 'failed');
+        }
+
+        log_console('Could not clear any memcached servers, memcached has been disabled in the configuration', 'disabled', 'yellow');
+    }
+
+    $GLOBALS['memcached']->flush(argument('delay', true, 0));
+    log_console('Finished clearing all objects in memcached with a delay of "'.argument('delay', true, 0).'" seconds', 'finished', 'white');
+
+}catch(Exception $e){
+    throw new lsException('scripts/memcached/clear: Failed', $e);
+}
+?>

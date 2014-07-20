@@ -1,0 +1,44 @@
+#!/usr/bin/php
+<?php
+/*
+ * This script will try to add the specified users to the specified mailing
+ */
+$quiet = true;
+require_once(dirname(__FILE__).'/../../../libs/startup.php');
+
+try{
+    cli_only();
+    this_script_already_runs();
+
+    $mailing = argument('mailing', true, argument('mailer', true));
+    $users   = argument('users'  , true);
+
+    load_libs('mailer');
+
+    if(!$mailings_id = mailer_get($mailing)){
+        throw new lsException('Mailing "'.$mailing.'" does not exist', 'notexist');
+    }
+
+    if(!$users){
+        throw new lsException('No users specified', 'notspecified');
+    }
+
+    $mailings_id = $mailings_id['id'];
+
+    if($count = mailer_add_users($users, $mailings_id)){
+        log_console('Added "'.$count.'" users to mailing "'.$mailing.'"', '', 'white');
+        log_console('If the amount of added users is less than specifiend, then probably some of these users were already recipients of the mailing, and not added again', '');
+
+    }else{
+        log_console('No users added to mailing "'.$mailing.'"', '', 'yellow');
+        log_console('Maybe the specified users are already recipients of the mailing, and so not added again?', '');
+    }
+
+}catch(Exception $e){
+    log_error($e);
+    log_console('addusers failed', '', 'error');
+    log_console('USAGE: ', '', 'white', false);
+    log_console('addusers mailing mailername|mailerid users email,username|all', '');
+    die();
+}
+?>

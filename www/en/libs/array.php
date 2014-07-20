@@ -1,0 +1,653 @@
+<?php
+/*
+ * Array library
+ *
+ * This library file contains extra array functions
+ *
+ * @license http://opensource.org/licenses/GPL-2.0 GNU Public License, Version 2
+ * @copyright Sven Oostenbrink <support@svenoostenbrink.com>
+ */
+
+
+
+/*
+ * Return the next key right after specified $key
+ */
+function array_next($array, $currentkey){
+    foreach($array as $key => $value){
+        if(isset($next)){
+            return $key;
+        }
+
+        if($key === $currentkey){
+            $next = true;
+        }
+    }
+}
+
+
+
+/*
+ * Return the next key right after specified $key
+ *
+ * If the specified key is not found, $currentvalue will be returned.
+ */
+function array_next_value(&$array, $currentvalue){
+    foreach($array as $key => $value){
+        if(isset($next)){
+            return $value;
+        }
+
+        if($value === $currentvalue){
+            $next = true;
+        }
+    }
+
+    if(!empty($next)){
+        /*
+         * The currentvalue was found, but it was at the end of the array
+         */
+        throw new lsException('array_next_value(): Found currentvalue "'.str_log($currentvalue).'" but it was the last item in the array, there is no next', 'invalid');
+    }
+}
+
+
+
+/*
+ * Set the default value for the specified key of the specified array if it does not exist
+ */
+function array_default(&$source, $key, $default){
+    try{
+        if(isset($source[$key])){
+            return false;
+        }
+
+        $source[$key] = $default;
+
+        return $default;
+
+    }catch(Exception $e){
+        if(!is_array($source)){
+            throw new lsException('array_default(): Specified source is not an array', 'invalid');
+        }
+
+        throw new lsException('array_default(): Failed', $e);
+    }
+}
+
+
+
+/*
+ * Make sure the array is cleared, but with specified keys available
+ */
+function array_clear(&$array, $keys, $value = null){
+    $array = array();
+    return array_ensure($array, $keys, $value);
+}
+
+
+
+/*
+ * Make sure the specified keys are available on the array
+ */
+function array_ensure(&$array, $keys, $value = null){
+    if(!is_array($array)){
+        $array = array();
+    }
+
+    if(!is_array($keys)){
+        if(!is_string($keys)){
+            throw new lsException('array_ensure(): Invalid $keys specified. Should be either a numeric array or a CSV string');
+        }
+
+        $keys = explode(',', $keys);
+    }
+
+    foreach($keys as $key){
+        if(!isset($array[$key])){
+            $array[$key] = $value;
+        }
+    }
+
+    return $array;
+}
+
+
+
+/*
+ * Return an array from the given object, recursively
+ */
+function array_from_object($object, $recurse = true){
+    try{
+        if(!is_object($object)){
+            throw new lsException('array_from_object(): Specified variable is not an object');
+        }
+
+        $retval = array();
+
+        foreach($object as $key => $value){
+            if(is_object($value) and $recurse){
+                $value = array_from_object($value, true);
+            }
+
+            $retval['data'][$key] = $value;
+        }
+
+        return $retval;
+
+    }catch(Exception $e){
+        throw new lsException('array_from_object(): Failed', $e);
+    }
+}
+
+
+
+/*
+ * Return a random value from the specified array
+ */
+function array_random_value($array){
+    return $array[array_rand($array)];
+}
+
+// :DEPRECATED: Use the above function
+function array_get_random($array){
+    return $array[array_rand($array)];
+}
+
+
+
+/*
+ * Implode the array with keys
+ */
+function array_implode_with_keys($source, $row_separator, $key_separator = ':', $auto_quote = false, $recurse = true){
+    try{
+        if(!is_array($source)){
+            throw new lsException('array_implode_with_keys(): Specified source is not an array but an "'.gettype($source).'"');
+        }
+
+        $retval = array();
+
+        foreach($source as $key => $value){
+            if(is_array($value)){
+                /*
+                 * Recurse?
+                 */
+                if(!$recurse){
+                    throw new lsException('array_implode_with_keys(): Specified source contains sub arrays and recurse is not enabled');
+                }
+
+                $retval[] .= $key.$key_separator.$row_separator.array_implode_with_keys($value, $row_separator, $key_separator, $auto_quote, $recurse);
+
+            }else{
+                if($auto_quote){
+                    $retval[] .= $key.$key_separator.str_auto_quote($value);
+
+                }else{
+                    $retval[] .= $key.$key_separator.$value;
+                }
+            }
+        }
+
+        return implode($row_separator, $retval);
+
+    }catch(Exception $e){
+        throw new lsException('array_implode_with_keys(): Failed', $e);
+    }
+}
+
+
+
+/*
+ * Implode the array with keys
+ */
+function array_merge_complete(){
+    try{
+        $arguments = func_get_args();
+
+        if(count($arguments) < 2){
+            throw new lsException('array_merge_complete(): Specify at least 2 arrays');
+        }
+
+        $retval = array();
+        $count  = 0;
+
+        foreach($arguments as $argk => $argv){
+            $count++;
+
+            if(!is_array($argv)){
+                throw new lsException('array_merge_complete(): Specified argument #'.$count.' is not an array');
+            }
+
+            foreach($argv as $key => $value){
+                if(is_array($value) and isset($retval[$key]) and is_array($retval[$key])){
+                    $retval[$key] = array_merge_complete($retval[$key], $value);
+
+                }else{
+                    $retval[$key] = $value;
+                }
+            }
+        }
+
+        return $retval;
+
+    }catch(Exception $e){
+        throw new lsException('array_merge_complete(): Failed', $e);
+    }
+}
+
+
+
+/*
+ * Specified variable may be either string or array, but ensure that its returned as an array.
+ */
+function array_force($source, $separator = ','){
+    if(!$source){
+        return array();
+    }
+
+    if(!is_array($source)){
+        if(!is_string($source)){
+            if(!is_numeric($source)){
+                throw new lsException('array_force(): Specified source is neither array or string or numeric');
+            }
+
+            return array($source);
+        }
+
+        return explode($separator, $source);
+    }
+
+    return $source;
+}
+
+
+
+/*
+ * If specified params is not an array, then make it an array with the current value under the specified string_key
+ * If numeric_key is set, and params is numeric, then use the numeric key instead
+ */
+function array_params(&$params, $string_key = false, $numeric_key = false){
+    try{
+        if(is_array($params)){
+            return true;
+        }
+
+        if($numeric_key and is_numeric($params)){
+            $params = array($numeric_key => $params);
+
+        }elseif($string_key){
+            $params = array($string_key => $params);
+
+        }else{
+            $params = array();
+        }
+
+        return false;
+
+    }catch(Exception $e){
+        throw new lsException('array_params(): Failed', $e);
+    }
+}
+
+
+
+/*
+ * Limit the specified array to the specified amount of entries
+ */
+function array_limit($source, $count, $return_source = true){
+    try{
+        if(!is_array($source)){
+            throw new lsException('array_limit(): Specified source is not an array');
+        }
+
+        if(!is_numeric($count) or ($count < 0)){
+            throw new lsException('array_limit(): Specified count is not valid');
+        }
+
+        $retval = array();
+
+        while(count($source) > $count){
+            $retval[] = array_pop($source);
+        }
+
+        if($return_source){
+            return $source;
+        }
+
+        return $retval;
+
+    }catch(Exception $e){
+        throw new lsException('array_limit(): Failed', $e);
+    }
+}
+
+
+
+/*
+ *
+ */
+function array_filter_values($source, $values){
+    try{
+        if(!is_array($source)){
+            throw new lsException('array_filter_values(): Specified source is not an array', 'invalid');
+        }
+
+        foreach(array_force($values) as $value){
+            if(($key = array_search($value, $source)) !== false){
+                unset($source[$key]);
+            }
+        }
+
+        return $source;
+
+    }catch(Exception $e){
+        throw new lsException('array_filter_values(): Failed');
+    }
+}
+
+
+
+/*
+ * Return an array with the amount of values where each value name is $base_valuename# and # is a sequential number
+ */
+function array_sequential_values($count, $base_valuename){
+    try{
+        if(!is_numeric($count) or ($count < 1)){
+            throw new lsException('array_sequential_values(): Invalid count specified. Make sure count is numeric, and greater than 0', 'invalid');
+        }
+
+        for($i = 0; $i < $count; $i++){
+            $retval[] = $base_valuename.$i;
+        }
+
+        return $retval;
+
+    }catch(Exception $e){
+        throw new lsException('array_sequential_values(): Failed', $e);
+    }
+}
+
+
+
+/*
+ * Return the source array with the keys all replaced by sequential values based on base_keyname
+ */
+function array_sequential_keys($source, $base_keyname){
+    try{
+        if(!is_array($source)){
+            throw new lsException('array_sequential_keys(): Specified source is an "'.gettype($source).'", but it should be an array', 'invalid');
+        }
+
+        $i      = 0;
+        $retval = array();
+
+        foreach($source as $value){
+
+            $retval[$base_keyname.$i++] = $value;
+        }
+
+        return $retval;
+
+    }catch(Exception $e){
+        throw new lsException('array_sequential_keys(): Failed', $e);
+    }
+}
+
+
+
+/*
+ * Return the source array with the specified keys kept, all else removed.
+ */
+function array_keep($source, $keys){
+    try{
+        $retval = array();
+
+        foreach(array_force($keys) as $key){
+            if(isset($source[$key])){
+                $retval[$key] = $source[$key];
+            }
+        }
+
+        return $retval;
+
+    }catch(Exception $e){
+        throw new lsException('array_keep(): Failed', $e);
+    }
+}
+
+
+
+/*
+ * Return the source array with the specified keys removed.
+ */
+function array_remove($source, $keys){
+    try{
+        foreach(array_force($keys) as $key){
+            unset($source[$key]);
+        }
+
+        return $source;
+
+    }catch(Exception $e){
+        throw new lsException('array_remove(): Failed', $e);
+    }
+}
+
+
+
+/*
+ * Return all array parts from (but without) the specified key
+ */
+function array_from($source, $from_key){
+    try{
+        if(!is_array($source)){
+            throw new lsException('array_from(): Specified source is an "'.gettype($source).'", but it should be an array', 'invalid');
+        }
+
+        $retval = array();
+        $add    = false;
+
+        foreach($source as $key => $value){
+            if(!$add){
+                if($key == $from_key){
+                    $add = true;
+                }
+
+                continue;
+            }
+
+            $retval[$key] = $value;
+        }
+
+        return $retval;
+
+    }catch(Exception $e){
+        throw new lsException('array_from(): Failed', $e);
+    }
+}
+
+
+
+/*
+ * Return all array parts until (but without) the specified key
+ */
+function array_until($source, $until_key){
+    try{
+        if(!is_array($source)){
+            throw new lsException('array_until(): Specified source is an "'.gettype($source).'", but it should be an array', 'invalid');
+        }
+
+        $retval = array();
+
+        foreach($source as $key => $value){
+            if($key == $until_key){
+                break;
+            }
+
+            $retval[$key] = $value;
+        }
+
+        return $retval;
+
+    }catch(Exception $e){
+        throw new lsException('array_until(): Failed', $e);
+    }
+}
+
+
+
+/*
+ * Merge two arrays together, using the values of array1 as keys, and the values of array2 as values
+ */
+function array_merge_keys_values($keys, $values){
+    try{
+        if(!is_array($keys)){
+            throw new lsException('array_merge_keys_values(): Specified keys variable is an "'.gettype($keys).'", but it should be an array', 'invalid');
+        }
+
+        if(!is_array($values)){
+            throw new lsException('array_merge_keys_values(): Specified values variable is an "'.gettype($values).'", but it should be an array', 'invalid');
+        }
+
+        $retval = array();
+
+        foreach($keys as $key){
+            if(!isset($next)){
+                $next = true;
+                $retval[$key] = reset($values);
+
+            }else{
+                $retval[$key] = next($values);
+            }
+        }
+
+        return $retval;
+
+    }catch(Exception $e){
+        throw new lsException('array_until(): Failed', $e);
+    }
+}
+
+
+
+/*
+ * Prefix all keys in this array with the specified prefix
+ */
+function array_prefix($source, $prefix, $auto = false){
+    try{
+        if(!is_array($source)){
+            throw new lsException('array_prefix_keys(): Specified source is an "'.gettype($source).'", but it should be an array', 'invalid');
+        }
+
+        $count  = 0;
+        $retval = array();
+
+        foreach($source as $key => $value){
+            if($auto){
+                $retval[$prefix.$count++] = $value;
+
+            }else{
+                $retval[$prefix.$key] = $value;
+            }
+        }
+
+        return $retval;
+
+    }catch(Exception $e){
+        throw new lsException('array_prefix_keys(): Failed', $e);
+    }
+}
+
+
+
+/*
+ * Return the array keys that has a STRING value that contains the specified keyword
+ *
+ * NOTE: Non string values will be quietly ignored!
+ */
+function array_find($array, $keyword){
+    try{
+        $retval = array();
+
+        foreach($array as $key => $value){
+            if(is_string($value)){
+                if(strpos($value, $keyword) !== false){
+                    $retval[$key] = $value;
+                }
+            }
+        }
+
+        return $retval;
+
+    }catch(Exception $e){
+        throw new lsException('array_find(): Failed', $e);
+    }
+}
+
+
+
+/*
+ * Copy all elements from source to target, and clean them up
+ */
+function array_copy_clean($source, $target){
+    try{
+        foreach($source as $key => $value){
+            if(is_string($value)){
+                $target[$key] = mb_trim($value);
+
+            }elseif($value !== null){
+                $target[$key] = $value;
+            }
+        }
+
+        return $target;
+
+    }catch(Exception $e){
+        throw new lsException('array_copy_clean(): Failed', $e);
+    }
+}
+
+
+
+/*
+ * Return an array with all the values in the specified column
+ */
+function array_get_column($source, $column){
+    try{
+        $retval = array();
+
+        foreach($source as $id => $value){
+            if(isset($value[$column])){
+                $retval[] = $value[$column];
+            }
+        }
+
+        return $retval;
+
+    }catch(Exception $e){
+        throw new lsException('array_get_column(): Failed', $e);
+    }
+}
+
+
+
+/*
+ * Return the value of one of the first found key of the specified keys
+ */
+function array_extract_first($source, $keys){
+    try{
+        if(!is_array($source)){
+            throw new lsException('array_extract(): Specified source is not an array');
+        }
+
+        foreach(array_force($keys) as $key){
+            if(!empty($source[$key])){
+                return $source[$key];
+            }
+        }
+
+    }catch(Exception $e){
+        throw new lsException('array_extract(): Failed', $e);
+    }
+}
+?>

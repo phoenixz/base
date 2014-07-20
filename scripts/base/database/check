@@ -1,0 +1,75 @@
+#!/usr/bin/php
+<?php
+/*
+ * This script can check and optionally repair database tables
+ */
+include_once(dirname(__FILE__).'/../../../libs/startup.php');
+
+try{
+    $repair = argument('repair');
+    $show   = argument('show');
+
+    if(!$user = argument('username', true)){
+        throw new lsException('No database username specified', 'notspecified');
+    }
+
+    if(!$password = argument('password', true)){
+        throw new lsException('No database password specified', 'notspecified');
+    }
+
+    load_libs('file');
+
+    log_console('Executing mysqlcheck on all database tables, this may take a minute');
+
+    $results = safe_exec('mysqlcheck -A -p'.$password.' 2>&1');
+
+    log_console('MySQL check finished, parsing results');
+
+    foreach($results as $line => $value){
+        if(strpos($value, 'dump/reload') !== false){
+            $fails[] = $results[$line - 1];
+        }
+    }
+
+    if(empty($fails)){
+        log_console('Table check finished, all tables from all databases on the MySQL server have passed ok', 'info', 'green');
+        die(0);
+    }
+
+    if(!$repair){
+        log_console('Table check finished, "'.count($fails).'" tables failed the check but no repair has been done (use the "repair" option)', 'warning', 'yellow');
+
+        if($show){
+            log_console('Failed tables (database.table):', '', 'yellow');
+
+            foreach($fails as $name){
+                log_console($name, '', 'yellow');
+            }
+        }
+
+        die(1);
+    }
+
+    /*
+     * Start table repair
+     */
+    foreach($fails as $name){
+        try{
+            $database = str_until($name, '.');
+            $table    = str_from ($name, '.');
+
+            script_exec('baes/database/dropload', array('username' => $username,
+                                                        'password' => $password,
+                                                        'database' => $database,
+                                                        'table'    => $table));
+
+        }catch(Exception $e){
+            log_error($e);
+            log_error('Failed to fix db.table "'.$name.'"');
+        }
+    }
+
+}catch(Exception $e){
+    throw new lsException('scripts/database/check: Failed', $e);
+}
+?>

@@ -1,0 +1,63 @@
+// :TODO: Complete documentation
+
+Base based projects can add SSO support for various platforms using the sso.php library.
+
+The "sso.php" library uses the "socialmedia-oauth-login" library set by a symlink called "sol" All these should be in the libs directory.
+
+Each SSO platform requires $_CONFIG['sso'][PLATFORMNAME] configuration, and support in the sso() function call
+
+An SSO test program is located in www/en/tests/sso.php
+
+Facebook:
+	Using a valid Google account, create an app in https://developers.facebook.com/apps
+	Place the app id and secret in $_CONFIG['sso']['facebook']......
+
+	Scope may be one of
+
+
+Google:
+	Using a valid Facebook account, create an app in https://code.google.com/apis/console
+	Place the app id and secret in $_CONFIG['sso']['google']......
+
+	Scope may be one of
+
+
+Microsoft:
+	Using a valid Microsoft account, create an app in https://account.live.com/developers/applications/create
+	Edit apps in https://account.live.com/developers/applications
+	Place the app id and secret in $_CONFIG['sso']['microsoft']......
+
+	Scope may be one of
+
+
+PayPal:
+	Using a valid paypal account, create and edit apps in https://developer.paypal.com/webapps/developer/applications/myapps
+	Place the app id and secret in $_CONFIG['sso']['paypal']......
+
+	Scope may be one of
+
+
+Twitter:
+	Using a valid twitter account, create and edit apps in https://dev.twitter.com/apps
+	Place the app id and secret in $_CONFIG['sso']['twitter']......
+
+	Scope may be one of
+
+
+LinkedIn:
+	Using a valid linkedin account, create and edit apps in https://www.linkedin.com/secure/developer
+	Place the app id and secret in $_CONFIG['sso']['linkedin']......
+
+	Scope may be one of
+	r_basicprofile
+	r_fullprofile
+	r_emailaddress
+	r_network
+	r_contactinfo
+	rw_nus
+	rw_groups
+	w_messages
+
+Reddit:
+
+Yandex:

@@ -1,0 +1,62 @@
+#!/usr/bin/php
+<?php
+/*
+ * This is the init script for the project. Run this script to ensure that the
+ * database is running with the same version as the code
+ *
+ * Command line options:
+ *
+ * force                : Force a core database dump, and init from 0. This
+ *                        option does NOT work on production environments
+ *
+ * dump                 : Dump the core database (this DOES work in production)
+ *
+ * fromprojectversion   : Make init fake the current project version registered
+ *                        in the databaes to be the version number that follows
+ *                        this option
+ *
+ * fromframeworkversion : Make init fake the current project version registered
+ *                        in the databaes to be the version number that follows
+ *                        this option
+ *
+ * @copyright Sven Oostenbrink <support@svenoostenbrink.com>
+ */
+$quiet = false;
+require_once(dirname(__FILE__).'/../../libs/startup.php');
+
+try{
+    load_libs(array('init'));
+
+    cli_only();
+    this_script_already_runs();
+
+    if(argument('drop')){
+        /*
+         * Drop the core database
+         */
+        if(is_object($GLOBALS['sql']) and $GLOBALS['sql'] instanceof PDO){
+            $GLOBALS['sql']->query('DROP DATABASE '.$_CONFIG['db']['db']);
+
+            log_console('Dropped database "'.str_log($_CONFIG['db']['db']).'"', 'warning', 'yellow');
+            die();
+        }
+    }
+
+    if($pfrom = argument('fromprojectversion', true, null)){
+        if(!str_is_version($pfrom)){
+            throw new lsException('The specified fromprojectversion "'.str_log($pfrom).'" is not a valid version format. Please supply a version in format "n.n.n"', 'invalid');
+        }
+    }
+
+    if($ffrom = argument('fromframeworkversion', true, null)){
+        if(!str_is_version($ffrom)){
+            throw new lsException('The specified fromframeworkversion "'.str_log($ffrom).'" is not a valid version format. Please supply a version in format "n.n.n"', 'invalid');
+        }
+    }
+
+    init($pfrom, $ffrom);
+
+}catch(Exception $e){
+    throw new lsException('scripts/base/init: Failed', $e);
+}
+?>

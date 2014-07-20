@@ -1,0 +1,16 @@
+// :TODO: Add documentation
+
+All configuration files are in /config
+
+Configuration files are cascading (files that are read later can override configuration settings made in files read earlier), and will be read in this order:
+
+/config/default.php (This file may NEVER be modified as it is a base configuration file, it will be overwritten by the /scripts/base/update script!)
+/config/production[_SUBENVIRONMENTNAME].php This is the production configuration. The _SUBENVIRONMENT part is optional, and will be used only if the site uses sub environments
+[/config/ENVIRONMENT[_SUBENVIRONMENTNAME].php] Optionally read, only if not in production. ENVIRONMENT will be the name of the configured environment
+
+
+ENVIRONMENTS
+
+
+
+SUBENVIRONMENTS (optional)

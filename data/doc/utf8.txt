@@ -1,0 +1,75 @@
+// :TODO: Add documentation
+
+Base now uses the portable-utf8 library (see http://pageconfig.com/post/portable-utf8 for documentation and updates)
+Library file is utf8.php
+
+For more info:
+(Some info on PHP and UT8)    http://www.slideshare.net/andreizm/the-good-the-bad-and-the-ugly-what-happened-to-unicode-and-php-6
+(Article about portable-utf8) http://www.sitepoint.com/bringing-unicode-to-php-with-portable-utf8/?utm_medium=email&utm_campaign=SitePoint+PHP+Newsletter++10+September+2013&utm_content=SitePoint+PHP+Newsletter++10+September+2013+CID_079484e7eb2d60d4a4df6ac5cd0dc606&utm_source=Newsletter&utm_term=Bringing%20Unicode%20to%20PHP%20with%20Portable%20UTF-8
+
+Function Name               For             Details
+@since v 1.3
+utf8_str_replace            str_replace     UTF-8 aware replace all occurrences of a string with another string.
+utf8_str_repeat             str_repeat      Repeat a UTF-8 encoded string.
+utf8_str_pad                str_pad         Pad a UTF-8 string to given length with another string.
+utf8_strrpos                strrpos         Find position of last occurrence of a char in a UTF-8 string.
+utf8_remove_duplicates                      Removes duplicate occurrences of a string in another string.
+utf8_ws                                     Returns an array of Unicode White Space characters.
+utf8_trim_util                              For internal use - Prepares a string and given chars for trim operations.
+utf8_trim                   trim            Strip white space or other characters from beginning and end of a UTF-8 string.
+utf8_ltrim                  ltrim           Strip whitespace or other characters from beginning of a UTF-8 string.
+utf8_rtrim                  rtrim           Strip whitespace or other characters from end of a UTF-8 string.
+utf8_strtolower             strtolower      Make a UTF-8 string Lower Case.
+utf8_strtoupper             strtoupper      Make a UTF-8 string Upper Case.
+utf8_case_table                             Returns an array of all lower and upper case UTF-8 encoded characters.
+utf8_ucfirst                ucfirst         Makes string's first char Uppercase.
+utf8_lcfirst                lcfirst         Makes string's first char Lowercase.
+utf8_ucwords                ucwords         Uppercase the first character of each word in a string.
+utf8_stripos                stripos         Find position of first occurrence of a case-insensitive string.
+utf8_strripos               strripos        Find position of last occurrence of a case-insensitive string.
+mbstring_loaded                             Checks whether mbstring is available on the server.
+iconv_loaded                                Checks whether iconv is available on the server.
+
+@since v 1.2
+utf8_string                                 Makes a string from UTF-8 code points.
+utf8_substr_count            substr_count   Count the number of sub string occurrences.
+is_ascii                                    Checks if a string is 7 bit ASCII.
+utf8_range                  range           Returns an array of characters between two codepoints (int or hex) or UTF8 characters.
+utf8_hash                                   Generates a hash/string of random UTF-8 characters.
+utf8_chr_map                                Applies callback to all UTF-8 characters.
+utf8_access                 $string[$i]     Provides a way to access individual UTF-8 characters.
+utf8_str_sort                               Sort ascending/descending with respect to codepoints of all characters.
+utf8_strip_tags             strip_tags      Removes HTML tags from string.
+
+@since v 1.1
+utf8_ord                    ord             Returns Unicode Code Point of UTF-8 encoded character.
+utf8_chr                    chr             Opposite of utf8_ord. Accepts a Unicode Code Point and returns the corresponding UTF-8 encoded character.
+utf8_strlen                 strlen          Returns number of UTF-8 characters in the string.
+utf8_split                  str_split       Breaks a string into an array of UTF-8 character(s).
+utf8_chunk_split            chunk_split     Splits a UTF-8 encoded string into smaller chunks of specified length. For base64, use the native chunk_split.
+utf8_substr                 substr          Accepts a UTF-8 encoded string and returns a part of it.
+utf8_rev                    strrev          UTF-8 aware string reverse.
+utf8_strpos                 strpos          Finds the position of a string in another string, and returns the offset UTF-8 character count.
+utf8_max                    max             Accepts array or string and returns a character with maximum Code Point.
+utf8_min                    min             - Opposite of utf8_max.
+utf8_word_count             str_word_count  Counts the number of words in a UTF-8 encoded string.
+utf8_str_shuffle                            Shuffles all characters of a UTF-8 encoded string.
+pcre_utf8_support                           Checks if the u modifier is available that enables UTF-8 support in PCRE functions.
+is_utf8                                     Checks if a string is UTF-8 encoded.
+utf8_url_slug                               Creates a UTF-8 encoded URL Slug allowing safe Non-ASCII characters in SEO friendly URLs.
+utf8_clean                                  Removes invalid byte sequence from a UTF-8 encoded string.
+utf8_fits_inside                            Checks if the character length of a string is less than or equal to a specific size. Useful for MySQL INSERT.
+utf8_chr_size_list                          Returns an array containing number of bytes (1-4) taken by each UTF-8 encoded character.
+utf8_max_chr_width                          Takes a string and returns the maximum character width of any character in the string. Ranges from 1 to 4.
+utf8_single_chr_html_encode                 Encodes a Unicode character like Ӓ to &#1234; encoded form.
+utf8_html_encode                            Same as utf8_single_chr_html_encode, but applies to a whole string and creates a stream of encoded sequences.
+utf8_bom                                    Returns the UTF-8 Byte Order Mark (BOM) Character.
+is_bom                                      Accepts a multi-byte character and tells whether it is BOM or not.
+utf8_file_has_bom                           Checks if a UTF-8 encoded file has a BOM (at the start).
+utf8_string_has_bom                         Checks if a string starts with BOM.
+utf8_add_bom_to_string                      Prepends BOM character to a string.
+utf8_count_chars                            Accepts a sinle string argument and returns details of characters in that string.
+utf8_codepoints                             Accepts a string and returns Code Points of all of its characters as integer (e.g 1740) or as string (e.g U+06CC).
+utf8_int_to_unicode_style                   Accepts an integer and converts to U+xxxx Unicode representation.
+utf8_unicode_style_to_int                   Accepts a Code Point as U+xxxx and converts to integer.
+utf8_chr_to_unicode_style                   Accepts a UTF-8 encoded character and returns Code Point as U+xxxx.

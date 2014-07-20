@@ -1,0 +1,17 @@
+If you want to build multiple websites that all use the same code base, but
+have different configuration, database, CSS, etc, then subenvironments can help
+you. Examples of this could be multiple directory websites for different
+cities, where each one has their own configuration, CSS layout, and database,
+but they all are of one and the same project.
+
+A sub environment causes BASE to load an extra configuration file for each
+subenvironment it loads. If your environment would be "test", and your sub
+environment "amsterdam", BASE would load configuration files
+./config/production.php, ./config/production_amsterdam.php,
+./config/test.php, ./config/test_amsterdam.php. This way, you can have
+different configurations for the different sub environments. To use these
+different sub environments, in apache specify SetEnv PROJECT_SUBENVIRONMENT
+subenvironmentname and on the shell specify export
+PROJECT_SUBENVIRONMENT=subenvironmentname;, or run commands like
+./scripts/base/init subenv amsterdam. To be abel use sub environments, set
+REQUIRE_SUBENVIRONMENTS in ./config/projects.php to "true"

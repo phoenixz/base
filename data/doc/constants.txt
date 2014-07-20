@@ -1,0 +1,20 @@
+// :TODO: Add documentation
+
+These are the default system contstants created by the base system
+
+PROJECT                 (defined in /config/project.php) Contains the name of the project
+PLATFORM                (defined in libs/startup.php)    Contains what platform is running (either "shell" or "apache") NOTE: "apache" will soon change to "www"
+ENVIRONMENT             (defined in libs/startup.php)    Contains the configured environment for the project at its current location. On production, this should always be "production"
+REQUIRE_SUBENVIRONMENTS (defined in /config/project.php) Contains true or false, depending on if the project uses sub environments (multiple sub projects all based off the same code) or not. If true, a PROJECTNAME_SUBENVIRONMENT should be defined!
+SUBENVIRONMENT          (defined in libs/startup.php)    Contains the name of the current subenvironment
+SUBENVIRONMENTNAME      (defined in libs/startup.php)    Contains the pretty name of the current subenvironment
+ROOT [important!]       (defined in libs/startup.php)    Contains the path to the root of this project. This is a very important constant and used all over.
+LANGUAGE                (defined in libs/startup.php)    Contains the 2 character ISO code of the current language
+PWD [scripts only]      (defined in libs/startup.php)    Contains the path from where this command was executed (Shell only)
+SCRIPT                  (defined in libs/startup.php)    Contains the name of the script that was executed (shell and browser)
+FORCE                   (defined in libs/startup.php)    Contains the condition of the "force" argument. Either true or false. Sets if force is to be used on certain actions
+TEST                    (defined in libs/startup.php)    Contains the condition of the "force" argument. Either true or false. Sets if running in test mode or not
+LIMIT [scripts only]    (defined in libs/startup.php)    DEPRECATED
+STARTDIR [scripts only] (defined in libs/startup.php)    Contains
+TMP                     (defined in libs/startup.php)    Contains the temporary directory, ending in slash
+LIBS                    (defined in libs/startup.php)    Contains the library directory, ending in slash

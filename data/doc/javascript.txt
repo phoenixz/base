@@ -1,0 +1,13 @@
+// :TODO: Add documentation
+
+All libraries specified in $_CONFIG[cdn][js][default_libs] will be loaded (in order of specification)
+
+
+base.js will extend jQuery with the following methods
+$.handleDone()
+This can be used for the $.ajax() .done calls like this
+$.ajax().done($.handleDone);
+
+$.handleFail()
+This can be used for the $.ajax() .fail calls like this
+$.ajax().fail($.handleFail);

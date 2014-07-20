@@ -1,0 +1,45 @@
+#!/usr/bin/php
+<?php
+/*
+ * This is an array test script template
+ */
+$quiet = true;
+require_once(dirname(__FILE__).'/../../libs/startup.php');
+
+try{
+	cli_only();
+	load_libs('test,array');
+
+    foreach($argv as $arg){
+        switch($arg){
+            case 'all':
+// :TODO: Implement
+                break;
+        }
+    }
+
+
+
+	test('array_implode_with_keys()', 'Function call should convert associative array to string with keys and values', function(){
+		if(array_implode_with_keys(array('foo' => 'bar', 'test' => 'test'), "\n", ' => ') != "foo => bar\ntest => test"){
+			throw new lsException('Did not convert array to correct string');
+		}
+	});
+
+	test('array_implode_with_keys()', 'Function call should convert associative array with sub arrays to string with keys and values', function(){
+		if(array_implode_with_keys(array('foo' => 'bar', 'test' => array('foo' => 'bar', 'test' => 'test')), "|", ' => ') != "foo => bar|test => |foo => bar|test => test"){
+			throw new lsException('Did not convert array with sub arrays to correct string');
+		}
+	});
+
+	test_completed('array_implode_with_keys()');
+
+
+
+	// Completed system tests
+	test_completed('array', 'library');
+
+}catch(Exception $e){
+    throw new lsException('scripts/tests/array: Failed', $e);
+}
+?>

@@ -1,0 +1,51 @@
+#!/usr/bin/php
+<?php
+/*
+ * This is an empty test script template
+ */
+$quiet = true;
+require_once(dirname(__FILE__).'/../../libs/startup.php');
+
+try{
+	cli_only();
+	load_libs('facebook,google,microsoft,file');
+
+    foreach($argv as $arg){
+        switch($arg){
+            case 'all':
+// :TODO: Implement
+                break;
+        }
+    }
+
+
+
+	test('facebook_get_avatar()', 'Function should obtain facebook avatar for specified facebook id (Sven Oostenbrink) and convert it into the configured number of sub avatars', function(){
+        global $_CONFIG;
+
+		$avatar = facebook_get_avatar(array('fb_id' => 1368195482));
+
+        foreach($_CONFIG['avatars']['types'] as $type => $data){
+            if(!file_exists($file = ROOT.'www/avatars/'.$avatar.'_'.$type.'.jpg')){
+                throw new lsException('Did not create avatar type "'.str_log($type).'"');
+
+            }else{
+                /*
+                 * Remove the temporary avatar file
+                 */
+                file_delete($file);
+            }
+        }
+	});
+
+	test_completed('facebook_get_avatar()');
+
+
+
+	// Completed avatar tests
+	test_completed('avatars', 'library');
+
+}catch(Exception $e){
+    throw new lsException('scripts/tests/avatars: Failed', $e);
+}
+?>

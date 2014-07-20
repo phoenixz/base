@@ -1,0 +1,22 @@
+#!/usr/bin/php
+<?php
+/*
+ * This is a test interface that lets the admin do some diagnostics
+ */
+require_once(dirname(__FILE__).'/../../libs/startup.php');
+
+try{
+    if(this_script_already_runs()){
+        echo "This script is already running and it cannot run twice!\n";
+
+    }else{
+        while(true){
+            echo "WHHEEE!! I got the world to my own!!\n";
+            sleep(1);
+        }
+    }
+
+}catch(Exception $e){
+    throw new lsException('scripts/test: Failed', $e);
+}
+?>

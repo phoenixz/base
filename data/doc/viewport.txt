@@ -1,0 +1,8 @@
+// :TODO: Add documentation
+
+Viewport meta tags are required for mobile devices.
+
+For more info, see
+https://developer.mozilla.org/en-US/docs/Mozilla/Mobile/Viewport_meta_tag
+http://www.quirksmode.org/mobile/viewports.html
+http://developer.apple.com/library/ios/#documentation/AppleApplications/Reference/SafariWebContent/UsingtheViewport/UsingtheViewport.html

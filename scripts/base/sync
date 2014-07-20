@@ -1,0 +1,189 @@
+#!/usr/bin/php
+<?php
+/*
+ * This script will copy the target environments database and sync its files
+ *
+ * Possible arguments:
+ *
+ * ENVIRONMENTNAME            -
+ *
+ * SUBENVIRONMENTNAME         -
+ *
+ * nodump                     - Do not do the temporary mysql dump on the
+ *                              target environment
+ *
+ * nocopy                     - Do not copy the temporary mysql dump on the
+ *                              target environment
+ *
+ * noimport                   - Do not import the temporary mysql dump from
+ *                              the target environment
+ *
+ * nodelete                   - Do not delete the temporary mysql dump from
+ *                              the target environment
+ *
+ * nosync                     - Do not sync configured data directories
+ *
+ * deletesync / syncdelete    - Delete data file paths before syncing (warning:
+ *                              This would cause rsync to redownload all files)
+ *
+ * @copyright Sven Oostenbrink <support@svenoostenbrink.com>
+ */
+require_once(dirname(__FILE__).'/../../libs/startup.php');
+
+try{
+    cli_only();
+    load_libs('array');
+
+    if(empty($argv[0])){
+        throw new lsException('No source environment specified');
+    }
+
+    if($argv[0] == ENVIRONMENT){
+        throw new lsException('Cannot sync this own environment "'.ENVIRONMENT.'"');
+    }
+
+    if(empty($argv[1]) and REQUIRE_SUBENVIRONMENTS){
+        throw new lsException('No source subenvironment specified, this project specifically requires subenvironments');
+    }
+
+
+    /*
+     * Check command line parameters
+     */
+    $nodump     =   argument('nodump');
+    $nocopy     =   argument('nocopy');
+    $noimport   =   argument('noimport');
+    $nodelete   =   argument('nodelete');
+    $nosync     =   argument('nosync');
+    $deletesync =   (argument('deletesync') or argument('syncdelete'));
+
+
+    /*
+     * Get configuration for specified environment
+     */
+    include(ROOT.'config/sync.php');
+
+    /*
+     * Get configuration for specified environment
+     */
+    include(ROOT.'config/sync.php');
+    $source_config = array_merge_complete(get_environment_configuration('production'), get_environment_configuration($argv[0], isset_get($argv[1])));
+    $local_config  = get_environment_configuration(ENVIRONMENT, isset_get($argv[1]));
+    $project       = strtolower(PROJECT);
+
+
+    /*
+     * Create SQL dump of source DB
+     */
+    if($nodump){
+        log_console('NOT creating SQL dump file on remote server due to "nodump" command line parameters', 'sync', 'yellow');
+
+    }else{
+        log_console('Creating SQL dump file on remote server...', 'sync', 'white');
+        passthru($command = 'ssh -t '.$source_config['deploy']['target_user'].'@'.$source_config['deploy']['target_server'].' \'mysqldump -u '.$source_config['db']['user'].' -p'.$source_config['db']['pass'].' -B '.$source_config['db']['db'].' | gzip > /tmp/'.$project.'_'.$source_config['db']['db'].'.sql.gz\'');
+    }
+
+
+    /*
+     * SCP SQL dump to local machine
+     */
+    if($nocopy){
+        log_console('NOT copying remote SQL file locally due to "nocopy" command line parameters', 'sync', 'yellow');
+
+    }else{
+        log_console('Copying remote SQL file locally...', 'sync', 'white');
+        passthru($command = 'scp '.$source_config['deploy']['target_user'].'@'.$source_config['deploy']['target_server'].':/tmp/'.$project.'_'.$source_config['db']['db'].'.sql.gz /tmp/'.$project.'_'.$source_config['db']['db'].'.sql.gz');
+    }
+
+
+    /*
+     * Import SQL file to local database
+     */
+    if($noimport){
+        log_console('NOT importing remote SQL dump file in local MySQL server due to "noimport" command line parameters', 'sync', 'yellow');
+
+    }else{
+        log_console('Importing remote SQL dump file in local MySQL server...', 'sync', 'white');
+        passthru($command = 'cat /tmp/'.$project.'_'.$source_config['db']['db'].'.sql.gz | gunzip | mysql -u '.$_CONFIG['db']['user'].' -p'.$_CONFIG['db']['pass'].' -B '.$_CONFIG['db']['db']);
+    }
+
+
+    /*
+     * Remove temporary SQL dump file on source
+     */
+    if($nodelete){
+        log_console('NOT removing temporary remote SQL dump file from local and remote server due to "nodelete" command line parameters', 'sync', 'yellow');
+
+    }else{
+        log_console('Removing temporary remote SQL dump file from local and remote server...', 'sync', 'white');
+        passthru($command = 'ssh -t '.$source_config['deploy']['target_user'].'@'.$source_config['deploy']['target_server'].' \'rm -f /tmp/'.$project.'_'.$source_config['db']['db'].'.sql.gz\'');
+        passthru($command = 'rm -f /tmp/'.$project.'_'.$source_config['db']['db'].'.sql.gz');
+    }
+
+
+    /*
+     * Sync all
+     */
+    if($nosync){
+        log_console('NOT syncing remote paths with local server due to "nosync" command line parameters', 'sync', 'yellow');
+
+    }else{
+        log_console('Syncing remote paths with local server...', 'sync', 'white');
+
+        foreach($_CONFIG['sync'] as $path){
+            log_console('Syncing path "'.$path.'"...', 'sync', 'white');
+
+            if($deletesync){
+                log_console('Deleting local path "'.$path.'"...', 'sync', 'white');
+                passthru($command = 'rm '.ROOT.$path.' -rf');
+            }
+
+            passthru($command = 'rsync -acz --progress -p '.$source_config['deploy']['target_user'].'@'.$source_config['deploy']['target_server'].':'.slash($source_config['deploy']['target_dir']).$path.'/ '.ROOT.$path);
+        }
+    }
+
+    log_console('Finished!', 'sync', 'green');
+
+}catch(Exception $e){
+    log_error($e);
+
+    if(REQUIRE_SUBENVIRONMENTS){
+        log_error('Usage: ./scripts/base/sync ENVIRONMENT SUBENVIRONMENT');
+
+    }else{
+        log_error('Usage: ./scripts/base/sync ENVIRONMENT');
+    }
+}
+
+
+
+/*
+ *
+ */
+function get_environment_configuration($environment, $subenvironment = ''){
+    include($file = ROOT.'config/base/default.php');
+    include($file = ROOT.'config/production.php');
+
+    if($subenvironment){
+        include($file = ROOT.'config/production_'.$subenvironment.'.php');
+
+        if($environment != 'production'){
+            include($file = ROOT.'config/'.$environment.'_'.$subenvironment.'.php');
+        }
+
+    }else{
+        if($environment != 'production'){
+            include($file = ROOT.'config/'.$environment.'.php');
+        }
+    }
+
+    /*
+     * Optionally load the platform specific configuration file, if it exists
+     */
+    if(file_exists($file = ROOT.'config/'.$environment.'_'.PLATFORM.'.php')){
+        include($file);
+    }
+
+    return $_CONFIG;
+}
+?>

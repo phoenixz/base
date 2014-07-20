@@ -1,0 +1,229 @@
+#!/usr/bin/php
+<?php
+/*
+ * This script can translate php code
+ *
+ * noutf / noutf8 / noutf8check  : Do not perform file content UTF8 checks
+ *
+ * scan / scanonly / onlyscan    : Only perform translation scan, do not actually translate the files (NOT YET IMPLEMENTED)
+ *
+ * noupdate / nodb               : Do not send updated translations back to the translation server (NOT YET IMPLEMENTED)
+ *
+ * @copyright Sven Oostenbrink <support@svenoostenbrink.com>, Johan Geuze
+ */
+require_once(dirname(__FILE__).'/../../libs/startup.php');
+
+/*
+ * Only these languages are allowed
+ */
+$allowable_languages = array('es',
+							 'pt',
+							 'nl',
+							 'de');
+
+
+/*
+ * Validate command line parameters
+ */
+if(empty($argv[0])) {
+	log_error('No language specified', 'scripts/base/translate');
+	log_error('Usage: ./scripts/base/translate LANGUAGE, where LANGUAGE is one of "'.implode(', ', $allowable_languages).'"');
+	return;
+}
+
+if(!in_array($argv[0], $allowable_languages)) {
+    if($argv[0] == 'en'){
+        log_message('Ignoring translation to English', 'scripts/base/translate', 'yellow');
+        return;
+    }
+
+	log_error('Unknown language "'.$argv[0].'" specified', 'scripts/base/translate');
+	log_error('Usage: ./scripts/base/translate LANGUAGE, where LANGUAGE is one of "'.implode(', ', $allowable_languages).'"');
+	return;
+}
+
+/*
+ * Check command line parameters
+ */
+$onlyscan        = (argument('scan')  or argument('onlyscan') or argument('scanonly'));
+$noutf8check     = (argument('noutf') or argument('noutf8')   or argument('noutf8check'));
+
+$target_language = $argv[0];
+
+load_libs('file,inet,curl');
+
+try{
+	$source_dir = ROOT.'www/en';
+	$target_dir = ROOT.'www/'.$target_language;
+
+	log_console('scripts/translate: Starting '.$target_language, 'script/base/translate', 'white');
+	log_console('Searching for translateable strings : '       , 'script/base/translate', '', false);
+
+	if($noutf8check){
+		log_console('Skipping UTF8 check due to "noutf8check" command line parameter', 'translate', 'yellow');
+	}
+
+	$translations = array();
+	$failed_html  = array();
+	$failed_php   = array();
+	$count        = 0;
+
+	foreach(listdir($source_dir, true) as $id => $file) {
+		if(file_get_extension($file) != 'php') {
+			continue;
+		}
+
+		$content = file_get_contents($file);
+
+		/*
+		 * UTF8 check!
+		 */
+		if(!$noutf8check){
+			if(!str_is_utf8($content)){
+				/*
+				 * Crap, this file is not UTF8 and will bork the translator. Update file contents, and safe file to force all files be UTF8
+				 */
+				$content = utf8_encode($content);
+				file_put_contents($file, $content);
+
+				$forcedutf8[str_replace(ROOT, '', $file)] = true;
+
+				log_console('*', '', 'yellow', false);
+			}
+		}
+
+		preg_match_all('/tr\([\'"](.*?)[\'"](?:\s*?,\s*?.*?\s*?,\s*?.*?)?\)/iu', $content , $matches, PREG_PATTERN_ORDER);
+
+		if(!empty($matches[1])) {
+			foreach($matches[1] as $key => $value) {
+				if(strip_tags($value) != $value) {
+					/*
+					 * Translation string contains HTML!
+					 */
+					log_console('#', '', 'red', false);
+					$failed_html[$value] = $file;
+					$count++;
+
+				} elseif(strstr($value,'.$')) {
+					/*
+					 * Translation string contains PHP variables!
+					 */
+					log_console('#', '', 'red', false);
+					$failed_php[$value] = $file;
+					$count++;
+
+				} else {
+					/*
+					 * Translation string is ok
+					 */
+					log_console('#', '', 'green', false);
+					$short_file = str_replace(ROOT, '', $file);
+					$translations[$short_file][$value] = '';
+					$count++;
+				}
+			}
+		}
+	}
+
+	echo " Found ".number_format($count)." strings\n";
+
+	if(count($failed_html) > 0) {
+		foreach($failed_html as $string => $file) {
+			log_console('Contains HTML : "'.$string.'" in '.$file, 'script/base/translate', 'red', true);
+		}
+
+		return;
+	}
+
+	if(count($failed_php) > 0) {
+		foreach($failed_php as $string => $file) {
+			log_console('Contains PHP : "'.$string.'" in '.$file, 'script/base/translate', 'red', true);
+		}
+
+		return;
+	}
+
+	log_console('Requesting translations from server ', 'script/base/translate', '', false);
+
+	//construct data for sending
+	$data = array('project'         => PROJECT,
+				  'translations'    => $translations,
+				  'target_language' => $target_language);
+
+	//encrypt the data
+	$encrypted_data = str_encrypt(serialize($data),'translateplease');
+
+	//send translations to server and wait for response
+	$response       = curl_get('http://'.$_CONFIG['system']['translator'].'/translate.php', '', array('data' => $encrypted_data));
+	$returned_data  = unserialize(str_decrypt(trim($response['data']),'translateplease'));
+
+	if(is_array($returned_data) and ($returned_data['status'] == 'success')) {
+		log_console('Received translations', 'script/base/translate', 'green', true);
+		$translations = $returned_data['translations'];
+
+		//translations ready, start processing.
+		//delete target dir
+		try{
+			log_console('Deleting target dir '.$target_dir, 'script/base/translate', '', true);
+			shell_exec('rm -rf '.$target_dir);
+
+			// Copy english to target dir
+			log_console('Copying '.$source_dir.' => '.$target_dir, 'script/base/translate', '', true);
+			shell_exec('cp -a '.$source_dir.' '.$target_dir);
+
+			// CSS should be symlink since it wont change between languages
+			file_delete_tree(slash($target_dir).'pub/css');
+			symlink('../../en/pub/css', slash($target_dir).'pub/css');
+
+			//Apply translations
+			log_console('Applying translations', 'script/base/translate', '', true);
+
+			foreach($translations as $short_file => $data) {
+				log_console($short_file.' : ', 'script/base/translate', '', false);
+
+				if(!empty($forcedutf8[$short_file])){
+					log_console('*FORCED-UTF8* ', '', 'yellow', false);
+				}
+
+				if(!file_exists(ROOT.$short_file)) {
+					log_console(' File not found', '', 'red', true);
+
+				}else{
+					//store new file
+					$filedata    = file_get_contents(ROOT.$short_file);
+					$target_file = str_replace($source_dir, $target_dir, ROOT.$short_file);
+
+					//replace strings
+					foreach($data as $source => $translation) {
+						log_console('#', '', '', false);
+
+						$from     = array('tr("'.$source.'"'     , "tr('".$source."'");
+						$to       = array('tr("'.$translation.'"', "tr('".$translation."'");
+						$filedata = str_replace($from, $to, $filedata);
+					}
+
+					file_put_contents($target_file, $filedata);
+					log_console(' Saved', '', 'green', true);
+				}
+			}
+
+			log_console('Translation completed', 'script/base/translate','purple',true);
+
+			if($returned_data['stats']['translations_missing'] > 0) {
+				log_console('Translations missing : '.number_format($returned_data['stats']['translations_missing']),'script/base/translate','yellow',true);
+			}
+
+			log_console('Translations successful : '.number_format($returned_data['stats']['translations_done']),'script/base/translate','',true);
+
+		}catch(Exception $e){
+			throw new lsException('translate: Unable to delete target dir '.$target_dir, $e);
+		}
+
+	} else {
+		log_console('Failed to receive translations', '', 'red', true);
+	}
+
+}catch(Exception $e){
+	throw new lsException('translate: Failed', $e);
+}
+?>

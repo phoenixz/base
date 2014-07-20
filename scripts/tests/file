@@ -1,0 +1,42 @@
+#!/usr/bin/php
+<?php
+/*
+ * This is an file test script template
+ */
+$quiet = true;
+require_once(dirname(__FILE__).'/../../libs/startup.php');
+
+try{
+	cli_only();
+	load_libs('test,file');
+
+    foreach($argv as $arg){
+        switch($arg){
+            case 'all':
+// :TODO: Implement
+                break;
+        }
+    }
+
+	test('file_clear_path()', 'Function call should clear test path', function(){
+		$file = TESTPATH.'file_clear_path/'.file_assign_target(TESTPATH.'file_clear_path/');
+
+		touch($file);
+
+		file_clear_path($file);
+
+		if(file_exists(dirname($file)) or file_exists(dirname(dirname($file)))){
+			throw new lsException('Function did not clear test path');
+		}
+	});
+
+	test_completed('file_clear_path()');
+
+
+	// Completed system tests
+	test_completed('file', 'library');
+
+}catch(Exception $e){
+    throw new lsException('scripts/tests/file: Failed', $e);
+}
+?>

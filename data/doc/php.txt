@@ -1,0 +1,30 @@
+// :TODO: Add documentation
+
+Common PHP setup and configuration
+
+PHP Suhosin configuration
+extension = suhosin.so
+suhosin.executor.max_depth = 100
+suhosin.executor.include.max_traversal = 5
+suhosin.executor.disable_eval = On
+suhosin.executor.disable_emodifier = On
+suhosin.mail.protect = 1
+suhosin.cookie.encrypt = 1
+suhosin.cookie.cryptkey = PUT SOME ENCRYPTION KEY HERE!
+suhosin.request.max_array_depth = 50
+suhosin.request.max_array_index_length = 64
+suhosin.request.max_totalname_length = 256
+suhosin.request.max_value_length = 1000000
+suhosin.request.max_vars = 1000
+suhosin.request.max_varname_length = 64
+suhosin.request.disallow_nul = 1
+
+
+suhosin.upload.max_uploads = 100
+suhosin.upload.disallow_elf = 1
+suhosin.protectkey = 1
+
+
+
+
+PHP APC configuration

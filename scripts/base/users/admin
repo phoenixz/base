@@ -1,0 +1,147 @@
+#!/usr/bin/php
+<?php
+/*
+ * This script manages is a user is an admin or not
+ */
+$quiet = true;
+require_once(dirname(__FILE__).'/../../../libs/startup.php');
+
+try{
+    load_libs('user');
+
+    try{
+        $user = right_or_redirect('admin', null, null, false);
+
+    }catch(Exception $e){
+        if(($e->getCode() != 'noright') or sql_get('SELECT COUNT(*) AS count FROM `users` WHERE `admin` = 1', 'count')){
+            /*
+             * This is not a rights exception, and there are admins available
+             */
+            throw $e;
+        }
+
+        /*
+         * norights exception. The user has no admin rights,
+         * but there are no other admins, so we're in an init situation.
+         * continue..
+         */
+        log_message('Access denied override for user "'.str_log(user_name($_SESSION['user'])).'" in script "'.str_log($_SERVER['PHP_SELF']).'" for missing right "admin" because there are currently no admins', 'accessoverride', 'green');
+        $user     = user_or_redirect();
+        $noadmins = true;
+    }
+
+    if(!$target_user = argument(1)){
+        throw new lsException('base/users/admin: No user specified', 'notspecified');
+    }
+
+    if(!$target_user = sql_get('SELECT `id`, `name`, `username`, `email` FROM `users` WHERE `id` = :id OR `username` = :username OR `email` = :email', array(':id' => $target_user, ':username' => $target_user, ':email' => $target_user))){
+        throw new lsException('base/users/admin: Specified user "'.str_log(argument(1)).'" does not exist', 'notexists');
+    }
+
+    load_libs('rights');
+
+    $rights_id = sql_get('SELECT `id` FROM `rights` WHERE `name` = "admin"', 'id');
+
+    switch(argument(0)){
+        case 'is':
+            $flag  = (boolean) sql_get('SELECT `id`
+                                        FROM   `users`
+                                        WHERE  `id`        = :id
+                                        AND    `admin`     = 1',
+
+                                       array(':id'         => $target_user['id']));
+
+            $right = (boolean) sql_get('SELECT `id`
+                                        FROM   `users_rights`
+                                        WHERE  `users_id`  = :users_id
+                                        AND    `rights_id` = :rights_id',
+
+                                       array(':users_id'   => $target_user['id'],
+                                             ':rights_id'  => $rights_id));
+
+            if($right != $flag){
+                /*
+                 * Both right and flag should either be set or not
+                 */
+                log_console('User "'.user_name($target_user).'" has an invalid (partial) admin configuration "right:'.($right ? 'true' : 'false').',flag:'.($flag ? 'true' : 'false').'"', 'partial', 'yellow');
+            }
+
+            if($right and $flag){
+                log_console('User "'.user_name($target_user).'" is an admin', 'isadmin', 'green');
+                die(0);
+            }
+
+            log_console('User "'.user_name($target_user).'" is NOT an admin', 'isadmin', 'yellow');
+            die(0);
+
+        case 'add':
+            // FALLTHROUGH
+        case 'set':
+            // FALLTHROUGH
+        case 'make':
+            /*
+             * Make this user an admin
+             */
+            if(!isset_get($noadmins) and ($target_user['id'] == $user['id'])){
+                if(sql_get('SELECT COUNT(*) AS count FROM `users` WHERE `admin` = 1', 'count')){
+                    /*
+                     * There are other admin users available
+                     */
+                    throw new lsException('This action cannot be executed on your self', 'denied');
+                }
+            }
+
+            sql_query('UPDATE `users` SET `admin` = 1 WHERE `id` = :id', array(':id' => $target_user['id']));
+
+            if(!sql_get('SELECT `id` FROM `users_rights` WHERE `users_id` = :users_id AND `name` = "admin"', array(':users_id' => $target_user['id']), 'id')){
+                sql_query('INSERT INTO `users_rights` (`addedby`, `rights_id`, `users_id`, `name`)
+                           VALUES                     (:addedby , :rights_id , :users_id , "admin")',
+
+                           array(':addedby'   => $_SESSION['user']['id'],
+                                 ':users_id'  => $target_user['id'],
+                                 ':rights_id' => $rights_id));
+            }
+
+            log_console('User "'.user_name($target_user).'" is now an admin', 'admin', 'white');
+            break;
+
+        case 'rm':
+            // FALLTHROUGH
+        case 'del':
+            // FALLTHROUGH
+        case 'delete':
+            // FALLTHROUGH
+        case 'remove':
+            // FALLTHROUGH
+        case 'reset':
+            /*
+             * Make this user NO LONGER an admin
+             */
+            if($target_user['id'] == $user['id']){
+                throw new lsException('This action cannot be executed on your self', 'denied');
+            }
+
+            sql_query('UPDATE `users` SET `admin` = 0 WHERE `id` = :users_id', array(':users_id' => $target_user['id']));
+
+            sql_query('DELETE FROM `users`
+                       WHERE       `users_id`  = :users_id
+                       AND         `rights_id` = :rights_id',
+
+                      array(':users_id'  => $target_user['id'],
+                            ':rights_id' => $rights_id));
+
+            log_console('User "'.user_name($target_user).'" is no longer an admin', '', 'white');
+            break;
+
+        default:
+            if(!argument(0)){
+                throw new lsException('base/users/admin: No option specified', 'notspecified');
+            }
+
+            throw new lsException('base/users/admin: Invalid option "'.str_log(argument(0)).'" specified', 'unknown');
+    }
+
+}catch(Exception $e){
+    throw new lsException('base/users/admin: Failed', $e);
+}
+?>

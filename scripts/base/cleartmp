@@ -1,0 +1,22 @@
+#!/usr/bin/php
+<?php
+/*
+ * This script can clear the contents of the tmp directory
+ */
+require_once(dirname(__FILE__).'/../../libs/startup.php');
+
+try{
+    log_console('Clearing configured tmp path "'.TMP.'"', 'clearing', 'white');
+
+    rename(TMP, $delete = unslash(TMP).'~delete');
+    mkdir(TMP, $_CONFIG['fs']['dir_mode'], true);
+
+    load_libs('file');
+    file_delete_tree($delete);
+
+    log_console('Done', 'done', 'green');
+
+}catch(Exception $e){
+    throw new lsException('scripts/base/cleartmp: Failed', $e);
+}
+?>

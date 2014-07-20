@@ -1,0 +1,12 @@
+/data/nogit
+/data/cache
+/data/tests/tests
+/data/xapian
+*~
+*.kate-swp
+/www/*
+!/www/dev
+!/www/en
+tmp/
+data/sources/synonyms/thesaurus_en.txt
+data/backups

@@ -1,0 +1,95 @@
+#!/usr/bin/php
+<?php
+/*
+ * This script will backup a table or database, then drop it,
+ * and then reload it from the SQL backup.
+ */
+require_once(dirname(__FILE__).'/../../../libs/startup.php');
+
+try{
+    $noclean  = argument('noclean', false, argument('nocleanup', false));
+    $backup   = argument('backup');
+    $database = argument('database', true, argument('db', true));
+    $table    = argument('table', true);
+    $time     = new DateTime();
+    $time     = $time->format('YmdHis');
+
+    if(!$user = argument('username', true)){
+        throw new lsException('No database username specified', 'notspecified');
+    }
+
+    if(!$password = argument('password', true)){
+        throw new lsException('No database password specified', 'notspecified');
+    }
+
+    if(!$database){
+        throw new lsException('No database specified', 'notspecified');
+    }
+
+    load_libs('file');
+    file_ensure_path(ROOT.'data/tmp/dropload');
+    file_ensure_path(ROOT.'data/backups/databases');
+
+    if($table){
+        /*
+         * Dump a temp from the table, and a complete backup of the entire database
+         */
+        file_delete($file = ROOT.'data/tmp/dropload/'.$database.'.'.$table.'.sql');
+
+        log_console('Dumping table "'.str_log($table).'" from database "'.str_log($database).'"', 'dropload');
+        safe_exec('mysqldump -u '.$user.' -p'.$password.' --database '.$database.' --table '.$table.' > '.$file.' 2> /dev/null', null, false);
+
+    }else{
+        /*
+         * Dump a temp from the table, and a complete backup of the entire database
+         */
+        file_delete($file = ROOT.'data/tmp/tables/'.$database.'.sql');
+
+        log_console('Dumping database "'.str_log($database).'"', 'dropload');
+        safe_exec('mysqldump -u '.$user.' -p'.$password.' --database '.$database.' --table '.$table.' > '.$file, null, false);
+    }
+
+    if($backup){
+        log_console('Creating extra backup of database "'.str_log($database).'" in data/backups/databases', 'dropload');
+        safe_exec('mysqldump -u '.$user.' -p'.$password.' --database '.$database.' | gzip > '.ROOT.'data/backups/databases/'.$database.'.'.$time.'.sql.gz');
+    }
+
+    if($table){
+        /*
+         * Reload the table
+         */
+//log_console('Dropping table "'.str_log($table).'" database "'.str_log($database).'"', 'dropload');
+//safe_exec('mysql -u '.$user.' -p'.$password.' -e \'DROP TABLE '.$database.'.'.$table.'\'');
+
+        log_console('Reloading table "'.str_log($table).'" database "'.str_log($database).'"', 'dropload');
+        safe_exec('mysql -u '.$user.' -p'.$password.' --database '.$database.' < '.$file);
+
+    }else{
+        /*
+         * Reload the database
+         */
+//log_console('Dropping database "'.str_log($database).'"', 'dropload');
+//safe_exec('mysql -u '.$user.' -p'.$password.' -e \'DROP DATABASE '.$database.'\'');
+
+        log_console('Reloading database "'.str_log($database).'"', 'dropload');
+        safe_exec('mysql -u '.$user.' -p'.$password.' --database '.$database.' < '.$file);
+    }
+
+    if(!$noclean){
+        /*
+         * Cleanup the temp files as best as possible
+         */
+        file_clear_path($file);
+    }
+
+    if($table){
+        log_console('Fixed table "'.$table.'" from database "'.$database.'"', 'dropload', 'green');
+
+    }else{
+        log_console('Fixed database "'.$database.'"', 'dropload', 'green');
+    }
+
+}catch(Exception $e){
+    throw new lsException('scripts/database/dropload: Failed', $e);
+}
+?>

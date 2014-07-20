@@ -1,0 +1,7 @@
+// :TODO: Add documentation
+
+For gradients, see http://www.colorzilla.com/gradient-editor/
+For div layouts, see http://www.barelyfitz.com/screencast/html-training/css/positioning/
+For forms  CSS layouts, see http://www.slideshare.net/AaronGustafson/learning-to-love-forms-web-directions-south-07
+For best practices for form layout, see http://www.slideshare.net/psykoreactor/best-practices-for-form-design
+For HTML best practices, see http://net.tutsplus.com/tutorials/html-css-techniques/30-html-best-practices-for-beginners/

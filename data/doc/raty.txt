@@ -1,0 +1,5 @@
+// :TODO: Add documentation
+
+Raty is a jQuery plugin that allows star rating management
+
+Homepage : http://wbotelhos.com/raty

@@ -1,0 +1,39 @@
+// :TODO: Add documentation
+
+This document contains the steps required to start a new base project using Apache
+
+UPDATE APACHE
+cd /etc/apache2/sites-available
+cp base PROJECTNAME
+Update PROJECTNAME file to use the correct PROJECTNAME_ENVIRONMENT
+Add PROJECTNAME_SUBENVIRONMENT, if project requires sub environments
+Update DocumentDirectory Apache configuration, update log file names, etc.
+Add PROJECTNAME to /etc/hosts file, so you can access it directly from browser
+
+CREATE GIT REPO
+On dev server, go to /git/ and git init --bare --shared=0660 PROJECTNAME.git
+On local server, go to ~/projects/ and git clone dev:/git/PROJECTNAME.git
+cd PROJECTNAME (This will be ROOT for your project)
+git pull ../base production
+
+SETUP BASIC CONFIGURATION
+Edit ROOT/config/project.php
+Update define('PROJECT' to the name of your project (UPPER CASE)
+Update define('REQUIRE_SUBENVIRONMENTS' to true if this project requires subenvironments
+Update define('SEED' to some large random string
+
+Edit ROOT/config/production.php
+Update $_CONFIG['cookie']['domain'], $_CONFIG['db']['db'], $_CONFIG['domain'], and $_CONFIG['name'] to correct values
+Update $_CONFIG['sso'] to correct values (if required, if not, set to false)
+Update $_CONFIG['deploy'] configuration
+
+INITIALIZE
+Goto the projects root directory
+./script/base/init (Init should finish successfully)
+
+CHECK
+Open project domain in browser
+
+UPDATE GIT
+git ci -m 'Updated config'
+git push origin master

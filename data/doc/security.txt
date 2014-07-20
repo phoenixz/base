@@ -1,0 +1,7 @@
+// :TODO: Add documentation
+
+http://www.fail2ban.org/wiki/index.php/Main_Page
+
+Install CSF firewall:
+    http://configserver.com/cp/csf.html
+    http://configserver.com/free/csf/install.txt

@@ -1,0 +1,39 @@
+// :TODO: Add documentation
+
+#See http://linuxawy.net/archive/2013/07/setting-up-qmail-server-on-centos6
+
+yum install gcc gcc-c++ make patch pam-devel openssl*  wget vim-common vim-enhanced -y
+
+cd /usr/local/src
+wget http://www.qmail.org/netqmail-1.06.tar.gz
+wget http://cr.yp.to/ucspi-tcp/ucspi-tcp-0.88.tar.gz
+wget http://cr.yp.to/daemontools/daemontools-0.76.tar.gz
+wget http://cr.yp.to/checkpwd/checkpassword-0.90.tar.gz
+# The next server was offline, so we got the package from the line below that
+#wget http://members.elysium.pl/brush/qmail-smtpd-auth/dist/qmail-smtpd-auth-0.31.tar.gz
+wget http://tomclegg.net/qmail/qmail-smtpd-auth-0.31.tar.gz
+
+mkdir /package
+mv /usr/local/src/daemontools-0.76.tar.gz /package
+
+groupadd nofiles
+useradd -g nofiles -d /var/qmail qmaild
+useradd -g nofiles -d /var/qmail qmaill
+useradd -g nofiles -d /var/qmail qmailp
+useradd -g nofiles -d /var/qmail/alias alias
+groupadd qmail
+useradd -g qmail -d /var/qmail qmailq
+useradd -g qmail -d /var/qmail qmailr
+useradd -g qmail -d /var/qmail qmails
+
+cd /usr/local/src
+tar -xzvf netqmail-1.06.tar.gz
+
+cd /usr/local/src
+tar -xzvf qmail-smtpd-auth-0.31.tar.gz
+cd qmail-smtpd-auth-0.31/
+cp README.auth base64.c base64.h ../netqmail-1.06
+patch -d ../netqmail-1.06 < auth.patch
+
+cd /usr/local/src/netqmail-1.06
+make setup check

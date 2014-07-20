@@ -1,0 +1,4 @@
+// :TODO: Add documentation
+
+install all projects in /var/www/projects/PROJECTNAME
+symlink /var/www/projects/PROJECTNAME/en to /var/www/html/PROJECTNAME

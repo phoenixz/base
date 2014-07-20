@@ -1,0 +1,77 @@
+#!/usr/bin/php
+<?php
+/*
+ * This is the backup script
+ *
+ * @copyright Sven Oostenbrink <support@svenoostenbrink.com>
+ */
+$usage = "backup database mysql username USERNAME password PASSWORD [database DATABASE]\n".
+         "backup path PATH\n".
+         "backup sync SOURCE DESTINATION\n".
+         "backup default\n".
+         "backup (same as backup default)\n";
+         "backup clean|clear\n";
+
+$help  = "The backup script can create (zipped) backups of directory trees, and databases, and / or sync them with a remote localtion. It currently only supports MySQL databases";
+
+require_once(dirname(__FILE__).'/../../libs/startup.php');
+
+try{
+    load_libs('backup');
+
+    $params['date'] = new DateTime();
+
+    log_console('Started backup with datetime stamp "'.str_log($params['date']->format('Ymd-His')).'"', 'start', 'white');
+
+    if(argument('mysql')){
+        $params['username'] = argument('username', true);
+        $params['password'] = argument('password', true);
+        $params['database'] = argument('database', true, true);
+
+        $do     = true;
+        $target = backup_mysql($params);
+
+        log_console('Finished MySQL backup to "'.str_log($target).'"', 'finished', 'green');
+    }
+
+    if($params['path'] = argument('path', true)){
+        /*
+         *
+         */
+        $do     = true;
+        $target = backup_path($params);
+
+        log_console('Finished path backup', 'finished', 'green');
+    }
+
+    if(argument('sync')){
+        /*
+         *
+         */
+        $params['source'] = argument(1);
+        $params['target'] = argument(2);
+
+        $do     = true;
+        $target = backup_sync($params);
+
+        log_console('Finished backup sync from "'.str_log($params['source']).'" to "'.str_log($params['destination']).'"', 'finished', 'green');
+    }
+
+    if(argument('clean') or argument('clear')){
+        /*
+         *
+         */
+        $do     = true;
+        $target = backups_cleanup(array());
+
+        log_console('Finished backup clear on "'.str_log($target).'"', 'finished', 'green');
+    }
+
+    if(empty($do)){
+        throw new lsException('No or unknown arguments specified. Please specify at least one of "mysql", "path", "sync", or "clean"', 'notspecified');
+    }
+
+}catch(Exception $e){
+    cli_error('scripts/base/backup: Failed', $e);
+}
+?>

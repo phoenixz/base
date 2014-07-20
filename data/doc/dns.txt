@@ -1,0 +1,11 @@
+// :TODO: Add documentation
+
+http://www.zytrax.com/books/dns/ch7/queries.html
+https://kb.isc.org/article/AA-01031 for ARM (Documentation on bind / named)
+
+
+// Domain age checker
+http://moonsy.com/domain_age/
+
+// DNS diagnostics
+http://www.dnsstuff.com/

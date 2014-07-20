@@ -1,0 +1,12 @@
+Create your own bootstrap theme: http://pikock.github.io/bootstrap-magic/
+Bootstrap themes and templates:
+    https://wrapbootstrap.com/
+    http://themeforest.net/collections/2712342-bootstrap-templates
+    http://themeforest.net/category/site-templates/corporate
+    http://vandelaydesign.com/blog/design/bootstrap-themes/
+    https://wrapbootstrap.com/
+Bootstrap Admin theme: http://themeforest.net/item/supr-responsive-admin-template/2834580
+Bootstrap with jquery-ui: https://github.com/addyosmani/jquery-ui-bootstrap
+Bootstrap live WYSIWYG editor: https://wrapbootstrap.com/theme/bootstrap-live-editor-WB0DFT966
+
+Bootstrap snippets: http://bootsnipp.com, http://bootsnipp.com/resources

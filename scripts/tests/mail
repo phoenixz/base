@@ -1,0 +1,38 @@
+#!/usr/bin/php
+<?php
+/*
+ * This is a mail test script template
+ */
+$quiet = true;
+require_once(dirname(__FILE__).'/../../libs/startup.php');
+
+try{
+	cli_only();
+	load_libs('test,mail');
+
+    foreach($argv as $arg){
+        switch($arg){
+            case 'all':
+// :TODO: Implement
+                break;
+        }
+    }
+
+	test('mail()', 'Function call should send test mail to devs@sven.com.mx because not in production, and sent to external email', function(){
+		mail_send_templated_email(array('to_name'  => 'Blergh von Blah',
+										'to_email' => 'test@testblah.blah'), 'Test subject', 'Test Body');
+
+		mail_send_templated_email(array('to_name'  => 'Sven Oostenbrink',
+										'to_email' => 'so.oostenbrink@gmail.com'), 'Test subject', 'Test Body');
+	});
+
+	test_completed('mail()');
+
+
+	// Completed system tests
+	test_completed('mail', 'library');
+
+}catch(Exception $e){
+    throw new lsException('scripts/tests/mail: Failed', $e);
+}
+?>

@@ -1,0 +1,29 @@
+#!/usr/bin/php
+<?php
+/*
+ * This is an empty test script template
+ */
+$quiet = true;
+require_once(dirname(__FILE__).'/../../libs/startup.php');
+
+
+try{
+    foreach($argv as $arg){
+        switch(strtolower($arg)){
+            case 'php':
+                //FALLTHROUGH
+            case 'serialize':
+                //FALLTHROUGH
+            case 'serialized':
+                die(serialize(array('framework' => FRAMEWORKCODEVERSION,
+                                    'project'   => PROJECTCODEVERSION)));
+        }
+    }
+
+}catch(Exception $e){
+    throw new lsException('scripts/empty: Failed', $e);
+}
+
+
+die('framework: '.FRAMEWORKCODEVERSION.' project: '.PROJECTCODEVERSION."\n");
+?>

@@ -1,0 +1,80 @@
+// :TODO: Add documentation
+
+Blacklist check:
+http://www.anti-abuse.org/multi-rbl-check/
+http://rbl-check.org/rbl-quick-check/abfrage/
+
+Configure SPF TXT record
+Configure DKIM and DKIM TXT record
+Register with yahoo, hotmail, gmail, aol, prodigy, etc
+
+SPF
+http://www.openspf.org/
+https://www.google.com.mx/search?q=spf+mailing&safe=off&bav=on.2,or.r_cp.r_qf.&cad=b&bvm=pv.xjs.s.en_US.ClVHbHStgs4.O&ech=1&psi=BeB3UsjeE8K62wXYtIGoBA.1383597224807.3&emsg=NCSR&noj=1&ei=BeB3UsjeE8K62wXYtIGoBA
+http://tland12.blogspot.mx/2013/07/opendkim-with-postfix-on-centos-64.html
+https://support.google.com/a/answer/178723?hl=en&ref_topic=2759192
+
+# May be for old centos version
+#From http://www.howtoforge.com/set-up-dkim-domainkeys-identified-mail-working-with-postfix-on-centos-using-opendkim :
+#yum install sendmail-devel openssl-devel
+
+How to install
+http://tland12.blogspot.mx/2013/07/opendkim-with-postfix-on-centos-64.html
+
+DKIM
+http://stevejenkins.com/blog/2011/08/installing-opendkim-rpm-via-yum-with-postfix-or-sendmail-for-rhel-centos-fedora/
+https://help.ubuntu.com/community/Postfix/DKIM
+Test DKIM records: http://www.protodave.com/tools/dkim-key-checker/
+
+BLACKLIST PROBLEMS
+https://workaround.org/ispmail/squeeze/smtpd-restrictions-spf-dkim-and-greylisting
+
+
+Considder DMARC? Does not allow relay mails (ie, the domain has to send the mails itself)
+http://dmarc.org/overview.html
+
+TXT record for specific domain providers
+https://support.google.com/a/topic/1409901
+
+
+
+Here's a list of things to try with Hotmail, based on my experience:
+
+Sign up for Hotmail's JMRP (Junk Mail Reporting Program). They will send you a notification every time someone clicks on a "this is spam" button. Remove these addresses from your mailing list. This will lower your complaint rates over time.
+
+Sign up for Hotmail's SNDS (Smart Network Data Services). This will provide a web-based login where you can get information on what they are doing with your email. You can also see if you have spamtrap hits and how many complaints you get.
+
+Make sure your bounce processing is working. If you're sending to addresses you should have removed from the list but didn't, hotmail will count these against you.
+
+Check to make sure that the HTML on your email is valid.
+
+Check to make sure that your email has valid character sets. If you're sending Windows-1252 codepage characters and calling them ISO-8859-1 (latin 1) this can cause a problem with Hotmail.
+
+Check your SMTP server transaction logs to see if Hotmail is giving you any specific guidance, such as error messages saying you have a low reputation.
+
+Make sure you are not spreading your mail over too many IP addresses. You talked about keeping the volume "low". If you do this by spreading mail over multiple IPs, that can count against you, as this is a tactic called "snowshoeing" that is used by spammers.
+
+Send at least 20k messages/day/IP to start with, so that you'll send enough mail to build a good reputation at Hotmail. If you don't send enough mail on an IP address, sometimes you don't give them enough data to build a reputation on you.
+
+Realize that Hotmail's standard policy is to spam filter mail from a new IP address by not delivering it to either the Inbox or the Junk folder. This really is a pain because your mail completely disappears. They do this even to good senders. Then once you build a reputation, they will start putting the mail into the Inbox or Junk folders. There is a way that sometimes works to contact their tech support and have them reset this policy for you. (Contact me at dharris@drh.net if you're interested in help.)
+
+Try sending your message from a different well-established IP address and see if it gets filtered. Try sending other messages from this IP address and see if they are filtered. This can help to identify if the problem is IP-based or message-based.
+
+Contact Hotmail. Don't ask them to un-block you off the bat, but ask why you're being blocked and what you can do to help fix things. With Hotmail you need to be persistent, replying to the same ticket multiple times if needed until you get to someone that can help you.
+
+
+
+
+
+
+
+
+
+HOTMAIL:
+https://support.msn.com/eform.aspx?productKey=edfsjmrpp&ct=eformts
+http://mail.live.com/mail/services.aspx
+http://www.microsoft.com/mscorp/safety/technologies/senderid/default.mspx
+http://www.returnpath.com/partner-content/certified-whitelist/
+https://support.msn.com/eform.aspx?productKey=edfsjmrpp&ct=eformts&scrx=1
+https://postmaster.live.com/snds/index.aspx
+https://postmaster.live.com/snds/

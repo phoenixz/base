@@ -1,0 +1,25 @@
+#!/usr/bin/php
+<?php
+/*
+ * This is an empty test script template
+ */
+$usage = "./scripts/base/empty OPTIONS\n".
+         "./scripts/base/empty\n";
+
+$help  = "This is the help contents";
+
+require_once(dirname(__FILE__).'/../../libs/startup.php');
+
+try{
+    foreach($argv as $arg){
+        switch($arg){
+            case 'all':
+// :TODO: Implement
+                break;
+        }
+    }
+
+}catch(Exception $e){
+    cli_error('scripts/base/empty: Failed', $e);
+}
+?>

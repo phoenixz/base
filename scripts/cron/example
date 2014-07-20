@@ -1,0 +1,21 @@
+#!/usr/bin/php
+<?php
+/*
+ * Example cron script
+ */
+require_once(dirname(__FILE__).'/../../libs/startup.php');
+
+try{
+    $commands = array('base/backup database mysql',
+                      '');
+
+    foreach($commands as $command){
+        if(!$command or(substr($command, 0, 1) == '#')) continue;
+
+        script_exec($command);
+    }
+
+}catch(Exception $e){
+    throw new lsException('scripts/cron/example: Failed', $e);
+}
+?>

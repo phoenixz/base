@@ -1,0 +1,12 @@
+// :TODO: Add documentation
+
+BASE uses the PHP PDO library for database access. In theory, all databases
+supported by PDO should work, though BASE has only been tested with MySQL.
+
+Most tables have an "`id` INT(11) NOT NULL PRIMARY KEY AUTO_INCREMENT" column
+If a status is required for each row, use "`status` VARCHAR(16) NULL" column.
+Most tables are InnoDB
+
+
+Possibly interresting:
+http://probcomp.csail.mit.edu/bayesdb/

@@ -1,0 +1,99 @@
+// :TODO: Add documentation
+
+* Easy to use
+  Just include the startup.php library like this: require_once(dirname(__FILE__).'/../libs/startup.php');
+  and correct for the location as necesary. After this line, the following libraries (with their functions)
+  will automatically be loaded: startup, system, strings, arrays, and pdo. The system will have checked if
+  the running script is a web page or a command line script, and have executed appropriate actions. If the
+  current script is a command line, the cli library will be loaded as well, if the current script is a webpage
+  then the html and http libraries will also be loaded. Configuration for the current environment will also
+  have been loaded. Check the libraries for which functions will be available.
+
+  Some pointers:
+  load_libs(); [system library] accepts a CSV string or array with library names to load
+  str_from(haystack, needle); [string library] returns the haystack string from (and without) the specified needle
+  str_until(haystack, needle); returns the haystack string until (and without) the specified needle
+  argument(name); [cli library] returns true if the specified argument name has been specified
+  argument(name, true); [cli library] Returns the value right after the specified argument name. Ideal for "script add user", argument("add") will return "user"
+  argument(number); [cli library] returns the value of the specified nth argument
+  html_select(data); [html library] returns complete <select></select> HTML code with contents
+  html_js_load(js_file_name_without_extension); [html library] registers that the specified javascript file should be loaded to the server. BASE will ensure that its added either in the <head> tag, or in case of delayed loading, at the end of the <body> block
+  html_css_load(css_file_name_without_extension); [html library] registers that the specified css file should be loaded to the server. BASE will ensure that its added either in the <head> tag, or in case of delayed loading, at the end of the <body> block
+
+* Auto redirect to sign in page upon session timeout (with POST support)
+
+* SSO login for Facebook, Google, Microsoft, Reddit,
+
+* Single command system init and upgrade system
+
+* Command line scripts
+
+* User support on command line scripts
+
+* Debugging tools show() showdie() debug_sql()
+
+* Improved SQL error handling
+
+* PDO database
+
+* Extended string function library (WITH UTF8 support)
+
+* Extended array function library
+
+* Environment (and sub environment) based configuration handling
+
+* Single command system update script
+
+* Single command system deploy script
+
+* Auto translation system
+
+* Mobile site detection and handling
+
+* Admin section
+
+* JS and CSS loading functions
+
+* GEO IP location built in
+
+* Complete geonames based world / continents / countries / states / provences / cities database with long / lat for each entity
+
+* Synonyms and persons names library
+
+* Ratings library "Raty"
+
+* Google maps support
+
+* Simple memcached library
+
+* Caching library
+
+* Notifications system
+
+* User / rights manager
+
+* Blogging system based on tinymce editor
+
+* Global data location manager
+
+* Sync data between development / test / prodcution
+
+* Get contents proxy
+
+* Backup library
+
+* Curl library
+
+* User data validation
+
+* HTML functions library
+
+* Database pages
+
+* simpledom library
+
+* Sound library
+
+* Upload functions library
+
+* JSON library

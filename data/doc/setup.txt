@@ -1,0 +1,9 @@
+// :TODO: Add documentation
+
+This is the base project setup documentation. All BASE project requirements are documented here.
+
+To ignore all content files (All translatable data/content/*.html files that should be translated)
+
+	Run command : git config --global core.excludesfile ~/.gitignore_global
+
+	Then create ~/.gitignore_global, and there add "data/content/"

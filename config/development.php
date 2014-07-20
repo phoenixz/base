@@ -1,0 +1,21 @@
+<?php
+//Debug or not?
+$_CONFIG['debug']                  = true;
+
+// Content configuration
+$_CONFIG['content']['autocreate']  = true;
+
+// Always use NON minimized files for development!
+$_CONFIG['cdn']['min']             = false;
+
+// Mail configuration
+$_CONFIG['mail']['developer']      = 'support@svenoostenbrink.com';
+
+// Cookie configuration
+$_CONFIG['cookie']['domain']       = '.base.sven';
+
+//domain
+$_CONFIG['domain']                 = 'base.sven';
+
+$_CONFIG['notifications']['force'] = true;
+?>

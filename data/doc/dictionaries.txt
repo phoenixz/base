@@ -1,0 +1,9 @@
+// :TODO: Add documentation
+
+Ensure that package "miscfiles" is installed (Ubuntu, see your own repo documentation for alternatives)
+
+See /usr/share/dict/ for various dictionaries
+See /usr/share/doc/miscfiles/ for various data lists
+See  /usr/share/misc/ for various data lists
+
+See http://www.outpost9.com/files/WordLists.html for various words lists

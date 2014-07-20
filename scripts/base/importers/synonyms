@@ -1,0 +1,119 @@
+#!/usr/bin/php
+<?php
+/*
+ * This script will import synonym data from data/sources/synonyms,
+ * and populate the synonyms table.
+ */
+require_once(dirname(__FILE__).'/../../../libs/startup.php');
+
+try{
+    if(!$language = argument(0)){
+        throw new lsException('No language specified, please specify one of "en"');
+    }
+
+    if($language == 'clear'){
+        /*
+         * Don't import, just clear the synonyms table.
+         */
+        sql_query('DELETE FROM `synonyms`');
+        log_console('Cleared synonyms table', 'done', 'green');
+        exit(0);
+    }
+
+    if(!in_array($language, array('en'))){
+        throw new lsException('No valid language specified, please specify one of "en"');
+    }
+
+    if($count = sql_get('SELECT COUNT(`id`) AS count FROM `synonyms`;', 'count')){
+        if(!argument('force')){
+            return cli_die(0, 'Synonyms table already contains data', 'yellow');
+        }
+
+        log_console('Synonyms table already contains data, truncating', 'truncate', 'yellow');
+        sql_query('TRUNCATE `synonyms`;');
+    }
+
+    load_libs('file');
+
+    /*
+     * Extract the thesaurus.txt file. Before that, try to delete it to be sure its no longer there.
+     */
+    log_console('Unpacking synonyms data file "'.ROOT.'data/sources/synonyms/thesaurus_'.$language.'.tgz"');
+
+    file_delete(ROOT.'data/sources/synonyms/thesaurus_'.$language.'.txt');
+    safe_exec('cd '.ROOT.'data/sources/synonyms; tar -zxvf thesaurus_'.$language.'.tgz');
+
+    log_console('Importing synonyms from data file', 'importing', '', false);
+
+    $f       = fopen(ROOT.'data/sources/synonyms/thesaurus_'.$language.'.txt', 'r');
+    $count   = 0;
+    $lcount  = 0;
+    $execute = array(':language' => $language);
+
+    /*
+     * Disable indices and fks to speed up inserts
+     */
+    sql_query('DELETE FROM `synonyms` WHERE `language` = :language;', array(':language' => $language));
+    sql_query('SET autocommit = 0;');
+    sql_query('SET unique_checks = 0;');
+    sql_query('SET foreign_key_checks = 0;');
+    sql_query('ALTER TABLE `synonyms` DISABLE KEYS;');
+
+
+    $p = sql_prepare('INSERT INTO `synonyms` (`language`, `word`, `type`, `synonyms`)
+                      VALUES                 (:language , :word , :type , :synonyms )');
+
+    while($line = fgets($f)){
+        usleep(10);
+
+        if(strpos($line, '|') === false){
+            continue;
+        }
+
+        if($lcount <= 0){
+            $execute['word'] = str_until($line, '|');
+            $lcount          = (integer) str_from($line, '|');
+
+            if(!fmod(++$count, 200)){
+                log_console('.', '', 'green', false);
+
+                if(!fmod($count, 1000)){
+                    sql_query('COMMIT;');
+                }
+            }
+
+        }else{
+            /*
+             * This line should contain synonyms
+             */
+            $lcount--;
+            $execute['type']     = str_until($line, '|');
+            $execute['synonyms'] = str_replace('|', ',', str_from($line, '|'));
+
+            $p->execute($execute);
+        }
+    }
+
+    log_console('Done', '');
+    log_console('Finishing up...');
+
+    /*
+     * Commit and re-enable indices and fks, we're done
+     */
+    sql_query('COMMIT;');
+    sql_query('SET autocommit = 1;');
+    sql_query('SET unique_checks = 1;');
+    sql_query('SET foreign_key_checks = 1;');
+    sql_query('ALTER TABLE `synonyms` ENABLE KEYS;');
+
+    /*
+     * Dump the thesaurus file, we won't need it anymore
+     */
+    file_delete(ROOT.'data/sources/synonyms/thesaurus_'.$language.'.txt');
+
+    log_console('Done!', 'done', 'green');
+
+}catch(Exception $e){
+    throw new lsException('scripts/importers/synonyms: Failed', $e);
+}
+?>

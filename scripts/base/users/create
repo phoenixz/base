@@ -1,0 +1,29 @@
+#!/usr/bin/php
+<?php
+/*
+ * This script can create new users
+ */
+$quiet = true;
+require_once(dirname(__FILE__).'/../../../libs/startup.php');
+
+
+try{
+    $params['name']      = argument('name'     , true);
+    $params['email']     = argument('email'    , true);
+    $params['username']  = argument('username' , true);
+    $params['password']  = argument('password' , true);
+    $params['latitude']  = argument('latitude' , true);
+    $params['longitude'] = argument('longitude', true);
+    $params['status']    = argument('status'   , true);
+    $params['admin']     = argument('admin');
+    $params['validated'] = true;
+
+    load_libs('user');
+    user_insert($params);
+
+    log_console('Added user "'.$params['email'].'"', null, 'white');
+
+}catch(Exception $e){
+    throw new lsException('scripts/users/create: Failed', $e);
+}
+?>
