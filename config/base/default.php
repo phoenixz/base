@@ -66,6 +66,9 @@ $_CONFIG['charset']            = 'UTF-8';                                       
 // Detect client?
 $_CONFIG['client_detect']      = true;                                                                      // Should system try a client_detect() on first page of session? If yes, system will try to obtain client data (stored in $_SESSION[client]), is it mobile, is it spider, etc.
 
+// PHP composer configuration
+$_CONFIG['composer']           = array('global'           => false);
+
 // Content configuration
 $_CONFIG['content']            = array('autocreate'       => false);                                        // When using load_content(), if content is missing should it be created automatically? Normally, use "true" on development and test machines, "false" on production
 
