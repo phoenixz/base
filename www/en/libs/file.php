@@ -1007,24 +1007,6 @@ function file_chmod_tree($path, $filemode, $dirmode = 0770) {
 
 
 /*
- * Below are obsolete wrapper functions, that should no longer be used
- */
-function listdir($path = '.', $recursive = true) {
-    return file_list_tree($path, $recursive);
-}
-
-
-
-/*
- * Here be wrappers, DO NOT USE THESE FOR NEW PROJECTS, CONSIDDER THEM TO BE REMOVED SOON!
- */
-function tempdir($prefix = '', $system = null, $mode = null){
-    return file_temp_dir($prefix, $system, $mode);
-}
-
-
-
-/*
  * Return the extension for the specified file
  */
 function file_extension($file){
@@ -1160,4 +1142,37 @@ function file_session_store($label, $file = null, $path = TMP){
         throw new lsException('file_session_store(): Failed', $e);
     }
 }
-?>
+
+
+
+/*
+ * Checks if the specified path exists, is a dir, and optionally, if its writable or not
+ */
+function file_check_dir($path, $writable = false){
+    try{
+        if(!file_exists($path)){
+            throw new lsException('file_check_dir(): The specified path "'.str_log($path).'" does not exist', 'notexists');
+        }
+
+        if(!is_dir($path)){
+            throw new lsException('file_check_dir(): The specified path "'.str_log($path).'" is not a directory', 'notadirectory');
+        }
+
+        if($writable and !is_writable($path)){
+            throw new lsException('file_check_dir(): The specified path "'.str_log($path).'" is not writable', 'notwritable');
+        }
+
+    }catch(Exception $e){
+        throw new lsException('file_check_dir(): Failed', $e);
+    }
+}
+
+/*
+ * Below are obsolete wrapper functions, that should no longer be used
+ */
+function listdir($path = '.', $recursive = true) {
+    return file_list_tree($path, $recursive);
+}
+function tempdir($prefix = '', $system = null, $mode = null){
+    return file_temp_dir($prefix, $system, $mode);
+}?>
