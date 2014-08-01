@@ -124,7 +124,7 @@ function jqueryui_date_range($from_selector, $to_selector, $params = null){
 
         }else{
             $html = '   <input class="'.$params['class'].'" type="text" id="'.$from_selector.'" name="'.$from_selector.'" value="'.substr(cfm(isset_get($params['from'], '')), 0, 10).'" placeholder="'.isset_get($params['placeholders']['from']).'">
-                        <input class="'.$params['class'].'" type="text" id="'.$to_selector.'" name="'.$to_selector.'" value="'.substr(cfm(isset_get($params['to'], '')), 0, 10).'" placeholder="'.isset_get($params['placeholders']['until']).'">';
+                        <input class="'.$params['class'].'" type="text" id="'.$to_selector.'" name="'.$to_selector.'" value="'.substr(cfm(isset_get($params['until'], '')), 0, 10).'" placeholder="'.isset_get($params['placeholders']['until']).'">';
         }
 
         return $html.html_script('$(function() {
