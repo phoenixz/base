@@ -137,6 +137,9 @@ $_CONFIG['imagemagic_convert'] = '/usr/bin/convert';                            
 $_CONFIG['init']               = array('shell'            => true,                                          // Sets if system init can be executed by shell
                                        'apache'           => false);                                        // Sets if system init can be executed by www (IMPORTANT: This is not supported yet!)
 
+// jQuery UI configuration
+$_CONFIG['jquery-ui']          = array('theme'            => 'smoothness');                                 // Sets the default UI theme for jquery-ui
+
 // Language
 $_CONFIG['language']           = array('default'          => 'auto',                                        // If www user has no language specified, this determines the default language. Either a 2 char language code (en, es, nl, ru, pr, etc) or "auto" to do GEOIP language detection
                                        'fallback'         => 'en',                                          // If language default was set to "auto" and GEOIP detection failed, what will be the fallback language? 2 char language code like "en", "es", "nl", etc.
