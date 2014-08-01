@@ -14,7 +14,10 @@
  * Set the jQuery UI theme
  */
 html_load_js('base/jquery-ui/jquery-ui');
-html_load_css('base/jquery-ui/themes/'.$_CONFIG['jquery-ui']['theme'].'/jquery-ui');
+
+if(!empty($_CONFIG['jquery-ui']['theme'])){
+    html_load_css('base/jquery-ui/themes/'.$_CONFIG['jquery-ui']['theme'].'/jquery-ui');
+}
 
 
 
@@ -80,9 +83,22 @@ function jqueryui_date($selector, $params = null){
 function jqueryui_date_range($from_selector, $to_selector, $params = null){
     try{
         array_params($params);
-        array_default($params, 'labels'        , array('from' => tr('From'), 'to' => tr('To')));
-        array_default($params, 'placeholders'  , array('from' => tr('From'), 'to' => tr('To')));
-        array_default($params, 'numberofmonths', 1);
+        array_default($params, 'labels'          , array('from' => tr('From'), 'to' => tr('To')));
+        array_default($params, 'placeholders'    , array('from' => tr('From'), 'to' => tr('To')));
+        array_default($params, 'number_of_months', 1);
+        array_default($params, 'change_month'    , true);
+        array_default($params, 'default_date'    , '+1w');
+        array_default($params, 'auto_submit'     , true);
+
+        if($params['auto_submit']){
+            array_default($params, 'on_select'       , 'function (date) {
+                                                            $(this).closest("form").submit();
+                                                        }');
+
+        }else{
+            array_default($params, 'on_select'       , 'function (date) {
+                                                        }');
+        }
 
         html_load_css('base/jquery-ui/jquery.ui.datepicker');
 
@@ -106,21 +122,23 @@ function jqueryui_date_range($from_selector, $to_selector, $params = null){
 
         return $html.html_script('$(function() {
             $( "#'.$from_selector.'" ).datepicker({
-                defaultDate: "+1w",
-                changeMonth: true,
-                numberOfMonths: '.$params['numberofmonths'].',
+                defaultDate: "'.$params['default_date'].'",
+                changeMonth: '.($params['change_month'] ? 'true' : 'false').',
+                numberOfMonths: '.$params['number_of_months'].',
                 onClose: function( selectedDate ) {
                     $( "#'.$to_selector.'" ).datepicker( "option", "minDate", selectedDate );
                 }
+                onSelect: '.$params['on_select'].'
             });
 
             $( "#'.$to_selector.'" ).datepicker({
-                defaultDate: "+1w",
-                changeMonth: true,
-                numberOfMonths: '.$params['numberofmonths'].',
+                defaultDate: "'.$params['default_date'].'",
+                changeMonth: '.($params['change_month'] ? 'true' : 'false').',
+                numberOfMonths: '.$params['number_of_months'].',
                 onClose: function( selectedDate ) {
                     $( "#'.$from_selector.'" ).datepicker( "option", "maxDate", selectedDate );
-                }
+                },
+                onSelect: '.$params['on_select'].'
             });
         });');
 
