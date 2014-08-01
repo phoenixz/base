@@ -1,9 +1,7 @@
 #!/usr/bin/php
 <?php
 /*
- * This is the BASE update script
- *
- * @copyright Sven Oostenbrink <support@svenoostenbrink.com>, Johan Geuze
+ * This is an empty test script template
  */
 $usage = "./scripts/base/update [local]\n".
          "./scripts/base/update\n";
@@ -79,7 +77,7 @@ try{
         // Scripts
         log_console('Scripts', 'copy', 'purple');
         echo shell_exec('rsync -av --no-perms --delete '.$base_server.':'.$base_directory.'/scripts/base/* '.ROOT.'scripts/base/');
-        echo shell_exec('rsync -av --no-perms --delete '.$base_server.':'.$base_directory.'/scripts/tests '.ROOT.'scripts/');
+        echo shell_exec('rsync -av --no-perms --delete '.$base_server.':'.$base_directory.'/scripts/tests/* '.ROOT.'scripts/base/');
 
         // Framework init files
         log_console('Framework updates', 'copy', 'purple');
@@ -91,23 +89,23 @@ try{
 
         // Javascript
         log_console('Javascript', 'copy', 'purple');
-        echo shell_exec('rsync -av --no-perms --delete '.$base_server.':'.$base_directory.'/www/en/pub/js/base '.ROOT.'www/en/pub/js/');
+        echo shell_exec('rsync -av --no-perms --delete '.$base_server.':'.$base_directory.'/www/en/pub/js/base/* '.ROOT.'www/en/pub/js/base/');
 
         // CSS
         log_console('Stylesheets', 'copy', 'purple');
-        echo shell_exec('rsync -av --no-perms --delete '.$base_server.':'.$base_directory.'/www/en/pub/css/base '.ROOT.'www/en/pub/css/');
+        echo shell_exec('rsync -av --no-perms --delete '.$base_server.':'.$base_directory.'/www/en/pub/css/base/* '.ROOT.'www/en/pub/css/base/');
 
         // Images
         log_console('Images', 'copy', 'purple');
-        echo shell_exec('rsync -av --no-perms --delete '.$base_server.':'.$base_directory.'/www/en/pub/img/base '.ROOT.'www/en/pub/img/');
+        echo shell_exec('rsync -av --no-perms --delete '.$base_server.':'.$base_directory.'/www/en/pub/img/base/* '.ROOT.'www/en/pub/img/base/');
 
         // Documentation
         log_console('Documentation', 'copy', 'purple');
-        echo shell_exec('rsync -av --no-perms '.$base_server.':'.$base_directory.'/data/doc '.ROOT.'data/');
+        echo shell_exec('rsync -av --no-perms '.$base_server.':'.$base_directory.'/data/doc/* '.ROOT.'data/doc/');
 
         // Sources
         log_console('Data sources', 'copy', 'purple');
-        echo shell_exec('rsync -av --no-perms '.$base_server.':'.$base_directory.'/data/sources '.ROOT.'data/');
+        echo shell_exec('rsync -av --no-perms '.$base_server.':'.$base_directory.'/data/sources/* '.ROOT.'data/sources/');
     }
 
     //execute init script
