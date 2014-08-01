@@ -4,21 +4,33 @@
  *
  * This library contains various functions to work with wordpress
  *
- * @license http://opensource.org/licenses/GPL-2.0 GNU Public License, Version 2
- * @copyright Sven Oostenbrink <support@svenoostenbrink.com>
+ * See doc/wordpress.txt for more information and a (possible) problem fix on wordpress hanging
+ * after 10.000+ pages!
+ *
+ * @copyright Sven Oostenbrink
+ * @license http://opensource.org/licenses/gpl-license.php GNU Public License
  */
 
 
 
 /*
- * Signin into the admin console
+ * Signin into the word press admin console
+ *
+ * @params array $params ['url']        [REQUIRED]
+ * @params array $params ['username']   [REQUIRED]
+ * @params array $params ['password']   [REQUIRED]
+ * @params array $params ['rememberme'] [OPTIONAL]
+ * @params array $params ['simulation'] [OPTIONAL]
+ * @params array $params ['redirect']   [OPTIONAL]
+ *
+ * @return array an associative array containing a cURL object.
  */
 function wp_admin_signin($params){
     try{
         array_params($params);
-        array_default($params, 'rememberme', true);
-        array_default($params, 'simulation', false); // false, partial, or full
-        array_default($params, 'redirect'  , isset_get($params['url']));
+        array_default($params, 'rememberme', true);                      // Check the "remember me" box in the admin login screen
+        array_default($params, 'simulation', false);                     // false, partial, or full. "partial" will sign in, but not really post, full will not sign in and not post at all. False will just sign in and post normally.
+        array_default($params, 'redirect'  , isset_get($params['url'])); //
 
         if(empty($params['url'])){
             throw new lsException('wp_signin_admin(): No URL specified', 'notspecified');
