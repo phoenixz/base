@@ -131,6 +131,14 @@ set_exception_handler('uncaught_exception');
 
 
 /*
+ * Verify project data
+ */
+if(empty(SEED) or (PROJECTCODEVERSION == '0.0.0')){
+    throw new lsException(tr('startup: Project data in "ROOT/config/project.php" has not been configured. Please ensure SEED has a value specified and PROJECTCODEVERSION is not "0.0.0"'), 'projectnotsetup');
+}
+
+
+/*
  * Load configuration of product environment, then overwrite with current environment
  */
 try{
