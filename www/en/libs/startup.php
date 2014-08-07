@@ -406,8 +406,9 @@ try{
                 }else{
                     define('SCRIPT', $_SERVER['PHP_SELF']);
                 }
+
 // :TODO: Should these command line arguments also be removed from the $argv array, since these are also system arguments???
-                define('PWD'     , slash($_SERVER['PWD']));
+                define('PWD'     , slash(isset_get($_SERVER['PWD'])));
                 define('FORCE'   , argument('force'));
                 define('TEST'    , argument('test'));
                 define('LIMIT'   , in_array('limit', $argv) ? array_next_value($argv, 'limit') : false);

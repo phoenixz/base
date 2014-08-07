@@ -181,7 +181,20 @@ function notifications_email($event, $message, $users, $alternate_subenvironment
                              'From'         => str_capitalize($_CONFIG['domain']).' Notifier <notifier@'.$_CONFIG['domain'].'>',
                              'To'           => (empty($user['name']) ? $user : $user['name']).' <'.isset_get($user['email']).'>');
 
+            $start = microtime(true);
             mail($user['email'], '['.strtoupper(cfm($event)).' : '.strtoupper($_CONFIG['domain']).' / '.strtoupper(php_uname('n')).' / '.strtoupper(ENVIRONMENT).(REQUIRE_SUBENVIRONMENTS ? ' / '.($alternate_subenvironment ? $alternate_subenvironment : SUBENVIRONMENT ) : '').']', $message, mail_headers($headers));
+
+            if((microtime(true) - $start) > 15){
+                /*
+                 * Mail command took too long, this is probably a configuration error
+                 * in /etc/hosts where either localhost is missing, or localhost.localdomain,
+                 * or the hostname itself.
+                 *
+                 * Since this error occurs in the notification system itself, this makes it
+                 * rather hard to notify for, so for now, just log the problem in the database
+                 */
+                log_error('notifications_email(): The PHP mail() command took "'.(microtime(true) - $start).'" seconds to send the message "'.str_log($message).'". This usually is caused by a misconfiguration of /etc/hosts, where one (or multiples) of localhost, localhost.localdomain, or the machines hostname will be missing', 'mailslow');
+            }
         }
 
     }catch(Exception $e){

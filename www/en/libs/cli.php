@@ -8,6 +8,19 @@
  * @copyright Sven Oostenbrink <support@svenoostenbrink.com>, Johan Geuze
  */
 
+
+
+/*
+ * Ensure that the posix extension is available.
+ */
+$GLOBALS['posix'] = true;
+if(!function_exists('posix_getuid')){
+    log_error('WARNING: The POSIX extension seems to be unavailable, this may cause some functionalities to fail or give unexpected results', 'noposix');
+    $GLOBALS['posix'] = false;
+}
+
+
+
 /*
  * Downloaded from http://www.if-not-true-then-false.com/2010/php-class-for-coloring-php-command-line-cli-scripts-output-php-output-colorizing-using-bash-shell-colors/
  */
@@ -422,5 +435,35 @@ function cli_show_usage($usage, $color){
     }catch(Exception $e){
         throw new lsException('cli_show_usage(): Failed', $e);
     }
+}
+
+
+
+/*
+ * Exception if this script is not being run as root user
+ */
+function cli_root_only(){
+    if($GLOBALS['posix']){
+        if(posix_getuid()){
+            throw new lsException('cli_root_only(): This script can ONLY be executed by the root user', 'notrootnotallowed');
+        }
+    }
+
+    return true;
+}
+
+
+
+/*
+ * Exception if this script is being run as root user
+ */
+function cli_not_root(){
+    if($GLOBALS['posix']){
+        if(!posix_getuid()){
+            throw new lsException('cli_not_root(): This script can NOT be executed by the root user', 'rootnotallowed');
+        }
+    }
+
+    return true;
 }
 ?>
