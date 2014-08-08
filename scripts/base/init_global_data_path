@@ -12,13 +12,31 @@ require_once(dirname(__FILE__).'/../../libs/startup.php');
 try{
     log_console('Initializing global data path', '', 'white');
 
-    if(!$path = argument(0)){
-        log_console('Please type the absolute path of the data directory [<enter> for /var/www/data]:', '', '', false);
-        $path = readline();
-    }
+    if(empty($_CONFIG['data']['global'])){
+        if(!$path = argument(0)){
+            log_console('Please type the absolute path of the data directory [<enter> for '.$_CONFIG['data']['global'].']:', '', '', false);
+            $path = readline('');
+        }
 
-    if(!$path){
-        $path = '/var/www/data';
+    }elseif($_CONFIG['data']['global'] === true){
+        /*
+         * Auto detect best location.
+         *
+         * For root user: /var/lib/data
+         * For other users: USER_HOME_DIR/data
+         */
+        if(cli_is_root()){
+            $path = '/var/lib/data/';
+
+        }elseif(!empty($_SERVER['HOME'])){
+            $path = slash($_SERVER['HOME']).'data/';
+
+        }else{
+            /*
+             * Umm, we don't have a user data directory
+             */
+            throw new lsException('No user home directory found for non root user', 'nohomedir');
+        }
     }
 
     if(substr($path, 0, 1) != '/'){
@@ -27,18 +45,35 @@ try{
 
     $path = slash($path);
 
-    load_libs('file');
-    mkdir($path, $_CONFIG['fs']['dir_mode'], true);
+    log_console('Trying to use location "'.str_log($path).'" for global data directory', 'tryingpath', 'white');
 
-    /*
-     * Install geoname script
-     */
-    mkdir($path.'geonames', $_CONFIG['fs']['dir_mode'], true);
-    file_copy_tree(ROOT.'data/sources/geonames', $path.'geonames');
+    load_libs('file');
+
+    try{
+        if(file_exists($path)){
+            /*
+             * Wut? Requested path already exists, we're done here!
+             */
+            log_console(tr('Warning: The specified global data path "%path%" already exists', array('%path%' => $path)), 'pathalreadyexists', 'yellow');
+
+        }else{
+            mkdir($path, $_CONFIG['fs']['dir_mode'], true);
+        }
+
+    }catch(Exception $e){
+        throw new lsException('The specified path "'.str_log($path).'" could not be created', $e);
+    }
+
+// :GARBAGE: The global data directory should be supplied by automatically downloading required files from their respectitive URL's
+    ///*
+    // * Install geoname script
+    // */
+    //mkdir($path.'geonames', $_CONFIG['fs']['dir_mode'], true);
+    //file_copy_tree(ROOT.'data/sources/geonames', $path.'geonames');
 
     $return = $path;
 
 }catch(Exception $e){
-    cli_error('scripts/base/empty: Failed', $e);
+    cli_error('scripts/base/init_global_data_path: Failed', $e);
 }
 ?>

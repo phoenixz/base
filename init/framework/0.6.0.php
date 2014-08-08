@@ -301,7 +301,7 @@ foreach($subregions as $code => $data){
  */
 $path  = get_global_data_path();
 
-$h     = fopen($path.'sources/geo/features.txt', 'r');
+$h     = fopen(file_ensure_file($path.'sources/geo/features.txt'), 'r');
 $count = 0;
 
 log_console('Populating geo_features table', '', '', false);
@@ -332,7 +332,7 @@ log_console('Done', '');
 /*
  * Fill timezones table
  */
-$h     = fopen($path.'sources/geo/timezones.txt', 'r');
+$h     = fopen(file_ensure_file($path.'sources/geo/timezones.txt'), 'r');
 $count = 0;
 
 log_console('Populating geo_timezones table', '', '', false);

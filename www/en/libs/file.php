@@ -235,6 +235,34 @@ function file_create_target_path($path, $singledir = false, $length = false) {
 
 
 /*
+ * Ensure that the specified file exists in the specified path
+ */
+function file_ensure_file($file, $mode = null) {
+    try{
+        file_ensure_path(dirname($file));
+
+        if(!file_exists($file)){
+            /*
+             * Create the file
+             */
+            log_console('file_ensure_file(): Warning: file "'.str_log($file).'" did not existed and was created empty to ensure system stability, but information may be missing', 'filenotexists', 'yellow');
+            touch($file);
+
+            if($mode){
+                chmod($file, $mode);
+            }
+        }
+
+        return $file;
+
+    }catch(Exception $e){
+        throw new lsException('file_ensure_file(): Failed', $e);
+    }
+}
+
+
+
+/*
  * Ensures existence of specified path
  */
 function file_ensure_path($path, $mode = null) {

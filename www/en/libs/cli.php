@@ -442,11 +442,22 @@ function cli_show_usage($usage, $color){
 /*
  * Exception if this script is not being run as root user
  */
-function cli_root_only(){
+function cli_is_root(){
     if($GLOBALS['posix']){
-        if(posix_getuid()){
-            throw new lsException('cli_root_only(): This script can ONLY be executed by the root user', 'notrootnotallowed');
-        }
+        return posix_getuid() == 0;
+    }
+
+    return false;
+}
+
+
+
+/*
+ * Exception if this script is not being run as root user
+ */
+function cli_root_only(){
+    if(!cli_is_root()){
+        throw new lsException('cli_root_only(): This script can ONLY be executed by the root user', 'notrootnotallowed');
     }
 
     return true;
@@ -458,10 +469,8 @@ function cli_root_only(){
  * Exception if this script is being run as root user
  */
 function cli_not_root(){
-    if($GLOBALS['posix']){
-        if(!posix_getuid()){
-            throw new lsException('cli_not_root(): This script can NOT be executed by the root user', 'rootnotallowed');
-        }
+    if(cli_is_root()){
+        throw new lsException('cli_not_root(): This script can NOT be executed by the root user', 'rootnotallowed');
     }
 
     return true;

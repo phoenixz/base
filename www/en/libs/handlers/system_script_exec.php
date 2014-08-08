@@ -92,6 +92,6 @@ try{
     }
 
 }catch(Exception $e){
-    throw new lsException('script_exec(): Failed', $e);
+    throw new lsException('script_exec(): Failed to execute "'.str_log($script).'"', $e);
 }
 ?>

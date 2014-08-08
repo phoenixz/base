@@ -86,6 +86,9 @@ $_CONFIG['cors']               = '';
 $_CONFIG['curl']               = array('proxy'            => 'http://proxy.localhost/file_get_contents_proxy.php?url=',
                                        'user_agent'       => 'Mozilla/5.0 (Windows NT 5.1; rv:10.0.2) Gecko/20100101 Firefox/10.0.2');
 
+// Global data location configuration
+$_CONFIG['data']               = array('global'           => true); // Set to TRUE to enable auto detect
+
 // Database configuration
 $_CONFIG['db']                 = array('driver'           => 'mysql',                                       // PDO Driver used to communicate with the database server. For now, only MySQL has been tested, no others have been used yet, use at your own discretion
                                        'host'             => 'localhost',                                   // Hostname for SQL server
