@@ -47,14 +47,14 @@ class Colors {
         $this->foreground_colors['light_gray']   = '0;37';
         $this->foreground_colors['white']        = '1;37';
 
-        $this->background_colors['black']      = '40';
-        $this->background_colors['red']        = '41';
-        $this->background_colors['green']      = '42';
-        $this->background_colors['yellow']     = '43';
-        $this->background_colors['blue']       = '44';
-        $this->background_colors['magenta']    = '45';
-        $this->background_colors['cyan']       = '46';
-        $this->background_colors['light_gray'] = '47';
+        $this->background_colors['black']        = '40';
+        $this->background_colors['red']          = '41';
+        $this->background_colors['green']        = '42';
+        $this->background_colors['yellow']       = '43';
+        $this->background_colors['blue']         = '44';
+        $this->background_colors['magenta']      = '45';
+        $this->background_colors['cyan']         = '46';
+        $this->background_colors['light_gray']   = '47';
     }
 
     // Returns colored string
@@ -88,23 +88,23 @@ class Colors {
     }
 
     public function white($string) {
-        return $this->getColoredString($string,'white', 'black');
+        return $this->getColoredString($string, 'white' , 'black');
     }
 
     public function red($string) {
-        return $this->getColoredString($string,'red', 'black');
+        return $this->getColoredString($string, 'red'   , 'black');
     }
 
     public function yellow($string) {
-        return $this->getColoredString($string,'yellow', 'black');
+        return $this->getColoredString($string, 'yellow', 'black');
     }
 
     public function green($string) {
-        return $this->getColoredString($string,'green', 'black');
+        return $this->getColoredString($string, 'green' , 'black');
     }
 
     public function purple($string) {
-        return $this->getColoredString($string,'purple', 'black');
+        return $this->getColoredString($string, 'purple', 'black');
     }
 }
 
