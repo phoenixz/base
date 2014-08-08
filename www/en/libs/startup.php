@@ -79,7 +79,7 @@ try{
                 define('SUBENVIRONMENTNAME', strtolower($env));
 
             }else{
-                die("startup: No required sub environment specified for project \"".PROJECT."\"\n");
+                die("\033[0;31mstartup: No required sub environment specified for project \"".PROJECT."\"\033[0m\n");
             }
         }
 
@@ -87,7 +87,7 @@ try{
         /*/
          * No environment set in ENV, maybe given by parameter?
          */
-        die("startup: No required environment specified for project \"".PROJECT."\"\n");
+        die("\033[0;31mstartup: No required environment specified for project \"".PROJECT."\"\033[0m\n");
     }
 
     /*
@@ -182,17 +182,17 @@ try{
      */
     if(SUBENVIRONMENT){
         if(!file_exists($file)){
-            die("startup: Missing configuration file \"".str_log($file)."\" for environment \"".str_log(ENVIRONMENT)."\" with subenvironment \"".str_log(SUBENVIRONMENT)."\"\n");
+            die("\033[0;31mstartup: Missing configuration file \"".str_log($file)."\" for environment \"".str_log(ENVIRONMENT)."\" with subenvironment \"".str_log(SUBENVIRONMENT)."\"\033[0m\n");
         }
 
-        die("startup: Failed to load configuration for environment \"".str_log(ENVIRONMENT)."\" with subenvironment \"".str_log(SUBENVIRONMENT)."\"\n");
+        die("\033[0;31mstartup: Failed to load configuration for environment \"".str_log(ENVIRONMENT)."\" with subenvironment \"".str_log(SUBENVIRONMENT)."\"\033[0m\n");
 
     }else{
         if(!file_exists($file)){
-            die("startup: Missing configuration file \"".str_log($file)."\" for environment \"".str_log(ENVIRONMENT)."\"\n");
+            die("\033[0;31mstartup: Missing configuration file \"".str_log($file)."\" for environment \"".str_log(ENVIRONMENT)."\"\033[0m\n");
         }
 
-        die("startup: Failed to load configuration for environment \"".str_log(ENVIRONMENT)."\"\n");
+        die("\033[0;31mstartup: Failed to load configuration for environment \"".str_log(ENVIRONMENT)."\"\033[0m\n");
     }
 }
 
