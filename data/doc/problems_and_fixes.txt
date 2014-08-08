@@ -20,7 +20,9 @@ normally automatically runs with the ROOT/scripts/base/deploy script
 
 Problem:
 PHP mail() slow?
-Make sure that the computer hostname is myhost.domain.com, and that the
+1) Use postfix instead of sendmail
+
+2) Make sure that the computer hostname is myhost.domain.com, and that the
 following line is in your /etc/hosts file (where "myserver" is the hostname
 of your computer)!
 
