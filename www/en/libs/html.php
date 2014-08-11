@@ -630,7 +630,7 @@ function html_flash($messages = '', $type = 'info', $basicmessage = null){
         foreach($messages as $message){
             if(is_object($message) and $message instanceof Exception){
                 $message = array('type'    => 'error',
-                                 'message' => $message->getMessage(),
+                                 'message' => trim(str_from($message->getMessage(), '():')),
                                  'basic'   => $basicmessage);
             }
 
@@ -719,7 +719,7 @@ function html_flash_set($messages, $type = 'info', $basicmessage = null){
     foreach($messages as $message){
         if(is_object($message) and $message instanceof Exception){
             $type    = 'error';
-            $message = $message->getMessage();
+            $message = trim(str_from($message->getMessage(), '():'));
             $basic   = $basicmessage;
         }
 
