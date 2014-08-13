@@ -872,8 +872,12 @@ function html_select_body($params, $selected = null, $none = '', $class = '', $a
                     $retval  .= '<option'.($params['class'] ? ' class="'.$params['class'].'"' : '').''.(($key == $params['selected']) ? ' selected' : '').' value="'.$key.'">'.$value.'</option>';
                 }
 
-            }else{
-                if($params['auto_select'] and ($params['resource']-> rowCount() == 1)){
+            }elseif(is_object($params['resource'])){
+                if(!($params['resource'] instanceof PDOStatement)){
+                    throw new lsException(tr('html_select_body(): Specified resource object is not an instance of PDOStatement'), 'invalidresource');
+                }
+
+                if($params['auto_select'] and ($params['resource']->rowCount() == 1)){
                     /*
                      * Auto select the only available element
                      */
@@ -887,6 +891,9 @@ function html_select_body($params, $selected = null, $none = '', $class = '', $a
                     $notempty = true;
                     $retval  .= '<option'.($params['class'] ? ' class="'.$params['class'].'"' : '').''.(($row[$params['id_column']] == $params['selected']) ? ' selected' : '').' value="'.$row[$params['id_column']].'">'.$row['name'].'</option>';
                 }
+
+            }else{
+                throw new lsException(tr('html_select_body(): Specified resource "'.str_log($params['resource']).'" is neither an array or resource'), 'invalidresource');
             }
 
         }elseif($params['resource'] !== false){
