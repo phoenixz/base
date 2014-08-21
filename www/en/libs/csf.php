@@ -24,7 +24,7 @@ if(PLATFORM == 'shell'){
  */
 function csf_get_exec(){
     try{
-        return safe_exec('which csf 2> /dev/null');
+        return shell_exec('which csf 2> /dev/null');
 
     }catch(Exception $e){
         throw new lsException('csf_get_exec(): Failed', $e);
@@ -38,17 +38,21 @@ function csf_get_exec(){
  */
 function csf_install(){
     try{
-        if(!$csf = csf_get_exec()){
-            throw new lsException('csf_install(): CSF has already been installed', 'executablenotfound');
+        if($csf = csf_get_exec()){
+            throw new lsException('csf_install(): CSF has already been installed and is available from "'.str_log($csf).'"', 'executablenotfound');
         }
 
-        file_copy_progress('http://configserver.com/free/csf.tgz', TMP.'csf.tgz');
-        safe_exec('tar -xf '.TMP.'csf.tgz');
-        safe_exec('cd '.TMP.'csf/; ./install.sh');
+        copy('http://configserver.com/free/csf.tgz', TMP.'csf.tgz');
+        safe_exec('cd '.TMP.'; tar -xf '.TMP.'csf.tgz; cd '.TMP.'csf/; ./install.sh');
 
         if(!$csf = csf_get_exec()){
             throw new lsException('csf_install(): The CSF executable could not be found after installation', 'executablenotfound');
         }
+
+        /*
+         * Cleanup
+         */
+        safe_exec('rm '.TMP.'csf/ -rf');
 
         return $csf;
 
