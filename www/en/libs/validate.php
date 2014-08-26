@@ -310,6 +310,20 @@ class validate_form {
     /*
      *
      */
+    function isNumeric($value, $msg) {
+        if($value != cfi($value)){
+            $this->errors[] = $msg;
+
+        }else{
+            return $value;
+        }
+    }
+
+
+
+    /*
+     *
+     */
     function isValidPhonenumber($value, $msg) {
         $value = strtolower(cfm($value));
         if(!$value) return '';
@@ -707,6 +721,10 @@ class validate_form {
 
     function is_valid_email($value, $msg) {
         return $this->isValidEmail($value, $msg);
+    }
+
+    function is_numeric($value, $msg) {
+        return $this->isNumeric($value, $msg);
     }
 
     function is_valid_phonenumber($value, $msg) {
