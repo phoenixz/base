@@ -719,7 +719,8 @@ function html_flash_set($messages, $type = 'info', $basicmessage = null){
     foreach($messages as $message){
         if(is_object($message) and $message instanceof Exception){
             $type    = 'error';
-            $message = trim(str_from($message->getMessage(), '():'));
+            $message = $message->getMessage();
+            $message = (strstr($message, '():') ? trim(str_from($message, '():')) : $message);
             $basic   = $basicmessage;
         }
 
