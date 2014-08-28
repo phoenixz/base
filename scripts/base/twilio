@@ -1,0 +1,38 @@
+#!/usr/bin/php
+<?php
+/*
+ * This is an empty test script template
+ */
+$usage = "./scripts/base/twilio SUBENVIRONMENT / all\n".
+         "./scripts/base/twilio\n";
+
+$help  = "This script is an interface to the twilio API";
+
+$quiet = true;
+
+require_once(dirname(__FILE__).'/../../libs/startup.php');
+
+try{
+    load_libs('twilio');
+
+    $twilio = twilio_load();
+    $people = array('+524776701102' => 'Sven Oostenbrink');
+
+    /*
+     * Send messages
+     */
+    foreach ($people as $number => $name) {
+        $sms = $twilio->account->messages->sendMessage('224-757-4076', $number, 'Hey '.$name.', Bring Bananas! Don\'t ask why, you don\'t want to know!');
+
+        log_console('Sent message to "'.$name.'"', 'SMS');
+    }
+
+    /*
+     * Check for received messages
+     */
+`
+
+}catch(Exception $e){
+    cli_error('scripts/base/twilio: Failed', $e);
+}
+?>
