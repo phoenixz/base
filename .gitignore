@@ -10,3 +10,4 @@
 tmp/
 data/sources/synonyms/thesaurus_en.txt
 data/backups
+/www/en/libs/external
