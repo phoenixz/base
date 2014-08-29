@@ -214,7 +214,7 @@ class validate_form {
     /*
      *
      */
-    function __construct(&$source = null, $columns = null){
+    function __construct(&$source = null, $columns = null, $default_value = null){
         try{
             if(is_array($source)){
                 $this->source = $source;
@@ -231,7 +231,7 @@ class validate_form {
                 array_default($source, 'id', 0);
 
                 if($columns){
-                    array_ensure($source, $columns);
+                    array_ensure($source, $columns, $default_value);
                 }
             }
 
