@@ -890,7 +890,15 @@ function html_select_body($params, $selected = null, $none = '', $class = '', $a
                  */
                 while($row = sql_fetch($params['resource'])){
                     $notempty = true;
-                    $retval  .= '<option'.($params['class'] ? ' class="'.$params['class'].'"' : '').''.(($row[$params['id_column']] == $params['selected']) ? ' selected' : '').' value="'.$row[$params['id_column']].'">'.$row['name'].'</option>';
+
+                    /*
+                     * To avoid select problems with "none" entries, empty id column values are not allowed
+                     */
+                    if(!$row[$params['id_column']]){
+                        $row[$params['id_column']] = str_random(8);
+                    }
+
+                    $retval  .= '<option'.($params['class'] ? ' class="'.$params['class'].'"' : '').''.(($row[$params['id_column']] === $params['selected']) ? ' selected' : '').' value="'.$row[$params['id_column']].'">'.$row['name'].'</option>';
                 }
 
             }else{
