@@ -1,0 +1,42 @@
+#!/usr/bin/php
+<?php
+/*
+ * This is an empty test script template
+ */
+$usage = "./scripts/base/session command OPTIONS\n".
+         "./scripts/base/session take SESSION_ID\n";
+         "./scripts/base/session list\n";
+
+$help  = "This script manages sessions. The \"list\" command can list all currently active sessions, and the  \"take\" command can take over the specified session id. Do note that with \"take\" you will have access to the session, but the original session owner will still also have session access";
+
+require_once(dirname(__FILE__).'/../../../libs/startup.php');
+
+try{
+    load_libs('session');
+
+    switch(argument(0)){
+        case 'take':
+            if(!argument(1)){
+                throw new lsException('No session ID to take specified', 'nosessionid');
+            }
+
+            session_take(argument(1));
+            break;
+
+        case 'list':
+            foreach(session_list() as $session){
+                echo $session."\n";
+            }
+
+            break;
+
+        case '':
+            throw new lsException('No command specified', 'nocommand');
+        default:
+            throw new lsException('Unknown command "'.argument(0).'" specified', 'unknowncommand');
+    }
+
+}catch(Exception $e){
+    cli_error('scripts/base/sessions/list: Failed', $e);
+}
+?>
