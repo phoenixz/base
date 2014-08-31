@@ -725,15 +725,24 @@ function user_load_rights($user){
 /*
  * Make the current session the specified user
  */
-function user_switch($user){
+function user_switch($username){
     try{
         /*
          * Does the specified user exist?
          */
+        if(!$user = sql_get('SELECT *, `email` FROM `users` WHERE `name` = :name', array(':name' => $username))){
+            throw new lsException('user_switch(): The specified user "'.str_log($username).'" does not exist', 'usernotexist');
+        }
 
-         /*
-          *
-          */
+        /*
+         * Switch the current session to the new user
+         */
+        $_SESSION['user'] = $user;
+
+        /*
+         * Store last login
+         */
+        sql_query('UPDATE `users` SET `last_login` = DATE(NOW()) WHERE `id` = '.cfi($user['id']).';');
 
     }catch(Exception $e){
         throw new lsException('user_switch(): Failed', $e);
