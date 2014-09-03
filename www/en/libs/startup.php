@@ -119,7 +119,7 @@ try{
     unset($libraries);
 
 }catch(Exception $e){
-    throw new lsException('startup: Failed to load system library "'.str_log($library).'"', $e);
+    throw new bException('startup: Failed to load system library "'.str_log($library).'"', $e);
 }
 
 
@@ -134,7 +134,7 @@ set_exception_handler('uncaught_exception');
  * Verify project data
  */
 if(!defined("SEED") or !SEED or (PROJECTCODEVERSION == '0.0.0')){
-    throw new lsException(tr('startup: Project data in "ROOT/config/project.php" has not been configured. Please ensure SEED has a value specified and PROJECTCODEVERSION is not "0.0.0"'), 'projectnotsetup');
+    throw new bException(tr('startup: Project data in "ROOT/config/project.php" has not been configured. Please ensure SEED has a value specified and PROJECTCODEVERSION is not "0.0.0"'), 'projectnotsetup');
 }
 
 
@@ -222,10 +222,10 @@ try{
         }
 
         if(!file_exists($file)){
-            throw new lsException('startup: The debug '.str_log($type).' file "'.str_log($file).'" does not exist', $e);
+            throw new bException('startup: The debug '.str_log($type).' file "'.str_log($file).'" does not exist', $e);
         }
 
-        throw new lsException('startup: Failed to load the debug '.str_log($type).' file "'.str_log($file).'"', $e);
+        throw new bException('startup: Failed to load the debug '.str_log($type).' file "'.str_log($file).'"', $e);
     }
 
 
@@ -282,7 +282,7 @@ try{
                 break;
 
             default:
-                throw new lsException('startup: Unknown $_CONFIG[tmp] "'.str_log($_CONFIG['tmp']).'" specified. Please use only "local" or "global"', 'unknown');
+                throw new bException('startup: Unknown $_CONFIG[tmp] "'.str_log($_CONFIG['tmp']).'" specified. Please use only "local" or "global"', 'unknown');
         }
 
         switch(PLATFORM){
@@ -325,7 +325,7 @@ try{
                         $length = strlen($test);
 
                         if(substr($_SERVER['SERVER_NAME'], -$length, $length) != $test){
-                            throw new lsException('startup: Specified cookie domain "'.str_log($_CONFIG['cookie']['domain']).'" is invalid for current domain "'.str_log($_SERVER['SERVER_NAME']).'"', 'cookiedomain');
+                            throw new bException('startup: Specified cookie domain "'.str_log($_CONFIG['cookie']['domain']).'" is invalid for current domain "'.str_log($_SERVER['SERVER_NAME']).'"', 'cookiedomain');
                         }
 
                         unset($test);
@@ -353,7 +353,7 @@ try{
                              * permissions of PHP session directory?
                              */
 // :TODO: Add check on SCRIPT file if it contains BOM!
-                            throw new lsException('startup: session start and session regenerate both failed, check PHP session directory', $e);
+                            throw new bException('startup: session start and session regenerate both failed, check PHP session directory', $e);
                         }
                     }
 
@@ -379,10 +379,10 @@ try{
 
                 }catch(Exception $e){
                     if(!is_writable(session_save_path())){
-                        throw new lsException('startup: Session startup failed because the session path "'.session_save_path().'" is not writable for platform "'.PLATFORM.'"', $e);
+                        throw new bException('startup: Session startup failed because the session path "'.session_save_path().'" is not writable for platform "'.PLATFORM.'"', $e);
                     }
 
-                    throw new lsException('Session startup failed', $e);
+                    throw new bException('Session startup failed', $e);
                 }
 
                 /*
@@ -432,7 +432,7 @@ try{
                         unset($password);
 
                     }catch(Exception $e){
-                        throw new lsException('startup: Failed to signin with specified user or email "'.str_log($signin).'"', $e);
+                        throw new bException('startup: Failed to signin with specified user or email "'.str_log($signin).'"', $e);
                     }
 
                 }elseif(!empty($_SERVER['USER'])){
@@ -450,7 +450,7 @@ try{
 
                     }catch(Exception $e){
                         if(SCRIPT != 'init'){
-                            throw new lsException('startup: Auto shell user signin has failed', $e);
+                            throw new bException('startup: Auto shell user signin has failed', $e);
                         }
 
                         /*
@@ -464,11 +464,11 @@ try{
                 break;
 
             default:
-                throw new lsException('startup: Unknown platform "'.str_log(PLATFORM).'" detected', 'unknownplatform');
+                throw new bException('startup: Unknown platform "'.str_log(PLATFORM).'" detected', 'unknownplatform');
         }
 
     }catch(Exception $e){
-        throw new lsException('startup: Platform specific processing failed', $e);
+        throw new bException('startup: Platform specific processing failed', $e);
     }
 
 
@@ -528,7 +528,7 @@ try{
         }
 
         if(empty($_CONFIG['language']['supported'][$language])){
-            throw new lsException('startup: Specified language code "'.str_log($language).'" is not supported', 'invalidlanguage');
+            throw new bException('startup: Specified language code "'.str_log($language).'" is not supported', 'invalidlanguage');
         }
 
         define('LANGUAGE', $language);
@@ -549,7 +549,7 @@ try{
             define('LANGUAGE', 'en');
         }
 
-        $e = new lsException('startup: Language selection failed', $e);
+        $e = new bException('startup: Language selection failed', $e);
     }
 
 
@@ -573,7 +573,7 @@ try{
             $e->addMessage($f->getMessage());
 
         }else{
-            $e = new lsException('startup: Failed to load custom library', $f);
+            $e = new bException('startup: Failed to load custom library', $f);
         }
 
         unset($f);
@@ -671,6 +671,6 @@ try{
     }
 
 }catch(Exception $e){
-    throw new lsException('startup: Failed', $e);
+    throw new bException('startup: Failed', $e);
 }
 ?>

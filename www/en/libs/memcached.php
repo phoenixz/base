@@ -86,7 +86,7 @@ function mc_connect() {
         return $GLOBALS['memcached'];
 
     }catch(Exception $e){
-        throw new lsException('mc_connect(): failed', $e);
+        throw new bException('mc_connect(): failed', $e);
     }
 }
 
@@ -123,7 +123,7 @@ function mc_put($key, $value, $expiration_time = null) {
         $GLOBALS['memcached']->set($_CONFIG['memcached']['prefix'].$key, $value, $expiration_time);
 
     }catch(Exception $e){
-        throw new lsException('mc_put(): failed', $e);
+        throw new bException('mc_put(): failed', $e);
     }
 }
 
@@ -153,7 +153,7 @@ function mc_get($key) {
         return $value;
 
     }catch(Exception $e){
-        throw new lsException('mc_get(): Failed', $e);
+        throw new bException('mc_get(): Failed', $e);
     }
 }
 
@@ -175,7 +175,7 @@ function mc_del($key) {
         $GLOBALS['memcached']->delete($_CONFIG['memcached']['prefix'].$key);
 
     }catch(Exception $e){
-        throw new lsException('mc_del(): Failed', $e);
+        throw new bException('mc_del(): Failed', $e);
     }
 }
 ?>

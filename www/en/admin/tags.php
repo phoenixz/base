@@ -24,7 +24,7 @@ if(!empty($_POST['docreate'])){
                          ':description' => $_POST['description']));
 
         if(!sql_insert_id()){
-            throw new lsException('The database insert returned no id', 'noinsertid');
+            throw new bException('The database insert returned no id', 'noinsertid');
         }
 
         html_flash_set(tr('The tag "'.str_log($_POST['name']).'" has been added'), 'success');
@@ -72,7 +72,7 @@ if(!empty($_POST['docreate'])){
                               ':description' => $_POST['description']));
 
         if(!$r->rowCount()){
-            throw new lsException('The database query returned no updated entries', 'noaffectedrows');
+            throw new bException('The database query returned no updated entries', 'noaffectedrows');
         }
 
         html_flash_set(tr('The tag "'.str_log($_POST['name']).'" has been updated'), 'success');
@@ -106,7 +106,7 @@ if(!empty($_POST['docreate'])){
                 break;
 
             default:
-                throw new lsException('Unknown status action "'.str_log($_POST['setstatus']).'"', 'unknown');
+                throw new bException('Unknown status action "'.str_log($_POST['setstatus']).'"', 'unknown');
         }
 
     }catch(Exception $e){

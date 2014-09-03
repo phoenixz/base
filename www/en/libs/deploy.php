@@ -24,7 +24,7 @@ function deploy_update_config($subenvironment){
 		$_CONFIG['deploy'] = array_merge($_CONFIG['deploy'], deploy_get_config($subenvironment));
 
     }catch(Exception $e){
-        throw new lsException('deploy_update_config(): Failed', $e);
+        throw new bException('deploy_update_config(): Failed', $e);
     }
 }
 
@@ -36,7 +36,7 @@ function deploy_update_config($subenvironment){
 function deploy_get_config($subenvironment){
     try{
 		if(!$subenvironment){
-			throw new lsException('deploy_get_config(): No subenvironment specified');
+			throw new bException('deploy_get_config(): No subenvironment specified');
 		}
 
 		$_CONFIG = array('deploy' => array());
@@ -46,7 +46,7 @@ function deploy_get_config($subenvironment){
 		return $_CONFIG['deploy'];
 
     }catch(Exception $e){
-        throw new lsException('deploy_get_config(): Failed', $e);
+        throw new bException('deploy_get_config(): Failed', $e);
     }
 }
 ?>

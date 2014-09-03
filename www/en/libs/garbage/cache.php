@@ -25,7 +25,7 @@ function cache_read($name){
         return file_get_contents($path.$name);
 
     }catch(Exception $e){
-        throw new lsException('cache_read(): Failed', $e);
+        throw new bException('cache_read(): Failed', $e);
     }
 }
 
@@ -45,7 +45,7 @@ function cache_write($name, $data){
         return $data;
 
     }catch(Exception $e){
-        throw new lsException('cache_write(): Failed', $e);
+        throw new bException('cache_write(): Failed', $e);
     }
 }
 
@@ -62,7 +62,7 @@ function cache_clear(){
         mkdir($path);
 
     }catch(Exception $e){
-        throw new lsException('cache_clear(): Failed', $e);
+        throw new bException('cache_clear(): Failed', $e);
     }
 }
 ?>

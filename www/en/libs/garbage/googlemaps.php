@@ -26,7 +26,7 @@ function google_map_head(){
 function google_map_body($params){
     try{
         if(!is_array($params)){
-            throw new lsException('google_get_map(): Specified params is not an array');
+            throw new bException('google_get_map(): Specified params is not an array');
         }
 
         array_default($params            , 'settings', array());
@@ -135,7 +135,7 @@ function google_map_body($params){
 			}';
 
     }catch(Exception $e){
-        throw new lsException('google_get_map(): Failed', $e);
+        throw new bException('google_get_map(): Failed', $e);
     }
 }
 ?>

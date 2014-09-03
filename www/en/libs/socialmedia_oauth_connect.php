@@ -333,10 +333,10 @@ class socialmedia_oauth_connect
 				break;
 
 			case '';
-				throw new lsException('No provider specified');
+				throw new bException('No provider specified');
 
 			default:
-				throw new lsException('Provider "'.$this->provider.'" is not yet a supported. We will release soon. Contact kayalshri@gmail.com!');
+				throw new bException('Provider "'.$this->provider.'" is not yet a supported. We will release soon. Contact kayalshri@gmail.com!');
 		}
   	}
 

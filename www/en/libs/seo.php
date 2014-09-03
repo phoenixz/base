@@ -51,7 +51,7 @@ function seo_generate_unique_name($string, $table, $ownid = null, $field = 'seon
         }
 
     }catch(Exception $e){
-        throw new lsException('seo_generate_unique_name(): Failed', $e);
+        throw new bException('seo_generate_unique_name(): Failed', $e);
     }
 }
 
@@ -107,7 +107,7 @@ function seo_create_string($source, $replace = '-') {
         }
 
     }catch(Exception $e){
-        throw new lsException('seo_create_string(): Failed', $e);
+        throw new bException('seo_create_string(): Failed', $e);
     }
 }
 

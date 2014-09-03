@@ -5,6 +5,6 @@ try{
     page_show('maintenance', true, $force, $data);
 
 }catch(Exception $e){
-    throw new lsException('page_maintenance(): Failed', $e);
+    throw new bException('page_maintenance(): Failed', $e);
 }
 ?>

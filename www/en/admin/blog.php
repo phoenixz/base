@@ -33,14 +33,14 @@ try{
             $v->has_min_chars($blog['description'], 50, tr('Please ensure that the description has a minimum of 50 characters'));
 
             if(!$v->is_valid()) {
-               throw new lsException(str_force($v->get_errors(), ', '), 'errors');
+               throw new bException(str_force($v->get_errors(), ', '), 'errors');
             }
 
             if(sql_get('SELECT `id` FROM `blogs` WHERE `name` = :name', array(':name' => $blog['name']), 'id')){
                 /*
                  * A blog with this name already exists
                  */
-                throw new lsException(tr('A blog with the name "%blog%" already exists', '%blog%', $blog['name']), 'exists');
+                throw new bException(tr('A blog with the name "%blog%" already exists', '%blog%', $blog['name']), 'exists');
 
             }else{
                 $blog['seoname']     = seo_generate_unique_name($blog['name'], 'blogs', $blog['id']);
@@ -96,28 +96,28 @@ try{
             $v->has_min_chars($blog['description'], 50, tr('Please ensure that the description has a minimum of 50 characters'));
 
             if(!$v->is_valid()) {
-               throw new lsException(str_force($v->get_errors(), ', '), 'errors');
+               throw new bException(str_force($v->get_errors(), ', '), 'errors');
             }
 
             if(!$dbblog = sql_get('SELECT * FROM `blogs` WHERE `id` = :id', array(':id' => $blog['id']))){
                 /*
                  * Cannot update this blog, it does not exist!
                  */
-                throw new lsException(tr('The specified blogs id does not exist'), 'notexists');
+                throw new bException(tr('The specified blogs id does not exist'), 'notexists');
             }
 
             if(($dbblog['createdby'] != $_SESSION['user']['id']) and !$_SESSION['user']['admin']){
                 /*
                  * This blog is not from this user and this user is also not an admin!
                  */
-                throw new lsException(tr('This blog is not yours, and you are not an admin'), 'accessdenied');
+                throw new bException(tr('This blog is not yours, and you are not an admin'), 'accessdenied');
             }
 
             if(sql_get('SELECT `id` FROM `blogs` WHERE `name` = :name AND `id` != :id', array(':name' => $blog['name'], ':id' => $blog['id']), 'id')){
                 /*
                  * Another blog with this name already exists
                  */
-                throw new lsException(tr('A blog with the name "%blog%" already exists', '%blog%', $blog['name']));
+                throw new bException(tr('A blog with the name "%blog%" already exists', '%blog%', $blog['name']));
 
             }else{
                 /*

@@ -36,15 +36,15 @@ function rsync($params, $target = ''){
         array_default($params, 'shell'      , 'ssh');
 
         if(!$params['source']){
-            throw new lsException('rsync(): No source specified', 'notspecified');
+            throw new bException('rsync(): No source specified', 'notspecified');
         }
 
         if(!$params['destination']){
-            throw new lsException('rsync(): No destination specified', 'notspecified');
+            throw new bException('rsync(): No destination specified', 'notspecified');
         }
 
         if($params['source'] == $params['destination']){
-            throw new lsException('rsync(): No destination specified', 'notspecified');
+            throw new bException('rsync(): No destination specified', 'notspecified');
         }
 
         $command = 'rsync';
@@ -111,7 +111,7 @@ function rsync($params, $target = ''){
         }
 
     }catch(Exception $e){
-        throw new lsException('rsync(): Failed', $e);
+        throw new bException('rsync(): Failed', $e);
     }
 }
 ?>

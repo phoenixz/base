@@ -51,7 +51,7 @@ class validate_jquery {
                 break;
 
             default:
-                throw new lsException('validate_jquery->validate(): Unknown rule "'.str_log($rule).'" specified', 'unknown');
+                throw new bException('validate_jquery->validate(): Unknown rule "'.str_log($rule).'" specified', 'unknown');
         }
 
         $this->validations[$element][] = array('rule'  => $rule,
@@ -66,16 +66,16 @@ class validate_jquery {
 
             if(!is_string($params)){
                 if(!is_array($params)){
-                    throw new lsException('validate_jquery->output_validation(): Invalid $params specified. Must be either string, or assoc array containing at least "id"');
+                    throw new bException('validate_jquery->output_validation(): Invalid $params specified. Must be either string, or assoc array containing at least "id"');
                 }
 
                 if(empty($params['id'])){
-                    throw new lsException('validate_jquery->output_validation(): Invalid $params specified. Must be either string, or assoc array containing at least "id"');
+                    throw new bException('validate_jquery->output_validation(): Invalid $params specified. Must be either string, or assoc array containing at least "id"');
                 }
 
             }else{
                 if(!$params){
-                    throw new lsException('validate_jquery->output_validation(): Empty $params specified');
+                    throw new bException('validate_jquery->output_validation(): Empty $params specified');
                 }
 
                 $params = array('id' => $params);
@@ -133,7 +133,7 @@ class validate_jquery {
 
                 if(!empty($params['submithandler'])){
                     if(!empty($params['submithandler'])){
-                        throw new lsException('validateJquery->output_validation(): Both submithandler and quickhandler are specified, these handlers are mutually exclusive');
+                        throw new bException('validateJquery->output_validation(): Both submithandler and quickhandler are specified, these handlers are mutually exclusive');
                     }
 
                     $html .= ",\n".'submitHandler : function(form){'.$params['submithandler'].'}';
@@ -141,14 +141,14 @@ class validate_jquery {
 
                 if(!empty($params['quickhandler'])){
                     if(!is_array($params['quickhandler'])){
-                        throw new lsException('validateJquery->output_validation(): Invalid quickhandler specified, it should be an assoc array');
+                        throw new bException('validateJquery->output_validation(): Invalid quickhandler specified, it should be an assoc array');
                     }
 
                     $handler = $params['quickhandler'];
 
                     foreach(array('target', 'fail') as $key){
                         if(empty($handler[$key])){
-                            throw new lsException('validateJquery->output_validation(): No quickhandler key "'.$key.'" specified');
+                            throw new bException('validateJquery->output_validation(): No quickhandler key "'.$key.'" specified');
                         }
                     }
 
@@ -195,7 +195,7 @@ class validate_jquery {
             return $html .= '</script>';
 
         }catch(Exception $e){
-            throw new lsException('validateJquery->output_validation(): Failed', $e);
+            throw new bException('validateJquery->output_validation(): Failed', $e);
         }
     }
 }
@@ -236,7 +236,7 @@ class validate_form {
             }
 
         }catch(Exception $e){
-            throw new lsException('validate_form->__construct(): Failed', $e);
+            throw new bException('validate_form->__construct(): Failed', $e);
         }
     }
 
@@ -632,10 +632,10 @@ class validate_form {
 
         }catch(Exception $e){
             if($e->code == 'invalid'){
-                throw new lsException('validate_form->is_time(): Specified time "'.str_log($value).'" is invalid', $e);
+                throw new bException('validate_form->is_time(): Specified time "'.str_log($value).'" is invalid', $e);
             }
 
-            throw new lsException('validate_form->is_time(): Failed', $e);
+            throw new bException('validate_form->is_time(): Failed', $e);
         }
     }
 
@@ -678,7 +678,7 @@ class validate_form {
      */
     function getErrors($separator = null){
         if(!count($this->errors)){
-            throw new lsException('validate->getErrors(): There are no errors', 'noerrors');
+            throw new bException('validate->getErrors(): There are no errors', 'noerrors');
         }
 
         if($separator){

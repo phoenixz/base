@@ -35,10 +35,10 @@ function sql_query($sql) {
     error_log('PHP SQL_ERROR: '.mysqli_error($_CONFIG['dbconnection']).' on '.$sql);
 
     if (ENVIRONMENT != 'production') {
-        throw new lsException(nl2br($body));
+        throw new bException(nl2br($body));
     }
 
-    throw new lsException(tr('An error has been detected, our staff has been notified about this problem.'));
+    throw new bException(tr('An error has been detected, our staff has been notified about this problem.'));
 }
 
 
@@ -57,13 +57,13 @@ function sql_fetch($r, $column = false) {
 		$r = mysqli_fetch_assoc($r);
 
 		if(!isset($r[$column])){
-			throw new lsException('sql_fetch(): Specified column "'.str_log($column).'" does not exist in the specified result set');
+			throw new bException('sql_fetch(): Specified column "'.str_log($column).'" does not exist in the specified result set');
 		}
 
 		return $r[$column];
 
 	}catch(Exception $e){
-		throw new lsException('sql_fetch(): Failed', $e);
+		throw new bException('sql_fetch(): Failed', $e);
 	}
 }
 
@@ -167,12 +167,12 @@ function sql_connect() {
 			 * Forced init is NOT allowed on production (for obvious safety reasons, doh!)
 			 */
 			if(ENVIRONMENT == 'production'){
-				throw new lsException('sql_connect(): For safety reasons, init force is NOT allowed on production environment! Please drop the database yourself manually and continue with a normal init', 'denied');
+				throw new bException('sql_connect(): For safety reasons, init force is NOT allowed on production environment! Please drop the database yourself manually and continue with a normal init', 'denied');
 			}
 
 			if(!str_is_version(FORCE)){
 				if(!is_bool(FORCE)){
-					throw new lsException('sql_connect(): Invalid "force" sub parameter "'.str_log(FORCE).'" specified. "force" can only be followed by a valid init version number', 'invalidforce');
+					throw new bException('sql_connect(): Invalid "force" sub parameter "'.str_log(FORCE).'" specified. "force" can only be followed by a valid init version number', 'invalidforce');
 				}
 
 				/*
@@ -260,7 +260,7 @@ function sql_connect() {
 function sql_import($file) {
 	try {
 		if(!file_exists($file)){
-			throw new lsException('sql_import(): Specified file "'.str_log($file).'" does not exist', 'notexist');
+			throw new bException('sql_import(): Specified file "'.str_log($file).'" does not exist', 'notexist');
 		}
 
 		$tel    = 0;
@@ -293,7 +293,7 @@ function sql_import($file) {
 		fclose($handle);
 
 	}catch(Exception $e){
-		throw new lsException('sql_import(): Failed to import file "'.$file.'"', $e);
+		throw new bException('sql_import(): Failed to import file "'.$file.'"', $e);
 	}
 }
 
@@ -323,7 +323,7 @@ function sql_index_exists($table, $index, $query = ''){
         return $retval;
 
     }catch(Exception $e){
-        throw new lsException('sql_index_exists(): Failed', $e);
+        throw new bException('sql_index_exists(): Failed', $e);
     }
 }
 
@@ -353,7 +353,7 @@ function sql_column_exists($table, $column, $query = ''){
         return $retval;
 
     }catch(Exception $e){
-        throw new lsException('sql_column_exists(): Failed', $e);
+        throw new bException('sql_column_exists(): Failed', $e);
     }
 }
 
@@ -387,7 +387,7 @@ function sql_foreignkey_exists($table, $foreign_key, $query = '', $database = ''
         return $retval;
 
     }catch(Exception $e){
-        throw new lsException('sql_foreignkey_exists(): Failed', $e);
+        throw new bException('sql_foreignkey_exists(): Failed', $e);
     }
 }
 

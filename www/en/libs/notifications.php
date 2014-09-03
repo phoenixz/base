@@ -107,7 +107,7 @@ function notifications_do($event, $message, $classes = null, $alternate_subenvir
             foreach($methods as $method){
                 switch($method){
                     case 'sms':
-                        throw new lsException('notifications_do(): SMS notifications are not yet supported');
+                        throw new bException('notifications_do(): SMS notifications are not yet supported');
 
                     case 'email':
                         notifications_email($event, $message, $members);
@@ -118,7 +118,7 @@ function notifications_do($event, $message, $classes = null, $alternate_subenvir
                         break;
 
                     default:
-                        throw new lsException('notifications_do(): Unknown method "'.str_log($method).'" specified');
+                        throw new bException('notifications_do(): Unknown method "'.str_log($method).'" specified');
                 }
             }
         }
@@ -137,7 +137,7 @@ function notifications_do($event, $message, $classes = null, $alternate_subenvir
             }
         }
 
-        throw new lsException('notifications_do(): Failed', $e);
+        throw new bException('notifications_do(): Failed', $e);
     }
 }
 
@@ -198,7 +198,7 @@ function notifications_email($event, $message, $users, $alternate_subenvironment
         }
 
     }catch(Exception $e){
-        throw new lsException('notifications_email(): Failed', $e);
+        throw new bException('notifications_email(): Failed', $e);
     }
 }
 
@@ -230,7 +230,7 @@ function notifications_prowl($event, $message, $users, $alternate_subenvironment
         }
 
     }catch(Exception $e){
-        throw new lsException('notifications_prowl(): Failed', $e);
+        throw new bException('notifications_prowl(): Failed', $e);
     }
 }
 
@@ -246,11 +246,11 @@ function notifications_classes_insert($params){
         user_or_redirect();
 
         if(empty($params['name'])){
-            throw new lsException('notifications_classes_insert(): No name specified', 'notspecified');
+            throw new bException('notifications_classes_insert(): No name specified', 'notspecified');
         }
 
         if(empty($params['methods'])){
-            throw new lsException('notifications_classes_insert(): No methods specified', 'notspecified');
+            throw new bException('notifications_classes_insert(): No methods specified', 'notspecified');
         }
 
         if(!is_array($params['methods'])){
@@ -259,7 +259,7 @@ function notifications_classes_insert($params){
 
         foreach($params['methods'] as $method){
             if(!in_array($method, array('email', 'prowl'))){
-                throw new lsException('notifications_classes_insert(): Unknown method "'.str_log($method).'" specified', 'unknown');
+                throw new bException('notifications_classes_insert(): Unknown method "'.str_log($method).'" specified', 'unknown');
             }
         }
 
@@ -275,7 +275,7 @@ function notifications_classes_insert($params){
         return sql_insert_id();
 
     }catch(Exception $e){
-        throw new lsException('notifications_classes_insert(): Failed', $e);
+        throw new bException('notifications_classes_insert(): Failed', $e);
     }
 }
 
@@ -292,7 +292,7 @@ function notifications_members_insert($params){
 
         if(empty($params['classes_id'])){
             if(empty($params['name'])){
-                throw new lsException('notifications_members_insert(): No notification class specified', 'notspecified');
+                throw new bException('notifications_members_insert(): No notification class specified', 'notspecified');
             }
 
             $class = sql_get('SELECT `id`,
@@ -307,14 +307,14 @@ function notifications_members_insert($params){
                                     ':name' => $params['name']));
 
             if(!$class){
-                throw new lsException('notifications_members_insert(): Specified notification class "'.str_log($params['classes_id']).'" does not exist', 'notexists');
+                throw new bException('notifications_members_insert(): Specified notification class "'.str_log($params['classes_id']).'" does not exist', 'notexists');
             }
 
             $params['classes_id'] = $class['id'];
         }
 
         if(empty($params['members'])){
-            throw new lsException('notifications_members_insert(): No members specified', 'notspecified');
+            throw new bException('notifications_members_insert(): No members specified', 'notspecified');
         }
 
         load_libs('user');
@@ -352,7 +352,7 @@ function notifications_members_insert($params){
         return $count;
 
     }catch(Exception $e){
-        throw new lsException('notifications_members_insert(): Failed', $e);
+        throw new bException('notifications_members_insert(): Failed', $e);
     }
 }
 
@@ -384,7 +384,7 @@ function notifications_desktop($params){
         }
 
     }catch(Exception $e){
-        throw new lsException('notifications_desktop(): Failed', $e);
+        throw new bException('notifications_desktop(): Failed', $e);
     }
 }
 ?>

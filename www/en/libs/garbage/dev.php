@@ -21,7 +21,7 @@ function dev_sync_from($environment){
          * First check if specified environment exists.
          */
         if(empty($_CONFIG['dev']['environments'][$environment])){
-            throw new lsException('dev_sync_from(): Specified environment "'.$environment.'" does not exist', 'notexist');
+            throw new bException('dev_sync_from(): Specified environment "'.$environment.'" does not exist', 'notexist');
         }
 
         $environment = $_CONFIG['dev']['environments'][$environment];
@@ -40,7 +40,7 @@ function dev_sync_from($environment){
         shell_exec('rsync');
 
     }catch(Exception $e){
-        throw new lsException('dev_sync_from(): Failed', $e);
+        throw new bException('dev_sync_from(): Failed', $e);
     }
 }
 ?>

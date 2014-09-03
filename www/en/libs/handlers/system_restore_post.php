@@ -4,7 +4,7 @@
  */
 try{
     if(!is_array($_SESSION['post'])){
-        throw new lsException(tr('restore_post(): Invalid POST data found'), 'invalidpostdata');
+        throw new bException(tr('restore_post(): Invalid POST data found'), 'invalidpostdata');
     }
 
     /*
@@ -46,7 +46,7 @@ try{
             break;
 
         default:
-            throw new lsException(tr('restore_post(): Invalid POST data type "'.str_log(isset_get($_SESSION['post']['type'])).'" found'), 'invalidposttype');
+            throw new bException(tr('restore_post(): Invalid POST data type "'.str_log(isset_get($_SESSION['post']['type'])).'" found'), 'invalidposttype');
     }
 
     /*
@@ -80,6 +80,6 @@ try{
     return true;
 
 }catch(Exception $e){
-    throw new lsException('restore_post(): Failed', $e);
+    throw new bException('restore_post(): Failed', $e);
 }
 ?>

@@ -145,7 +145,7 @@ function debug_html($value, $key = 'Unknown', $trace_offset = 0){
                         </table>';
 
     }catch(Exception $e){
-        throw new lsException('debug_html(): Failed', $e);
+        throw new bException('debug_html(): Failed', $e);
     }
 }
 
@@ -273,7 +273,7 @@ function debug_html_row($value, $key = 'Unknown', $type = null){
         }
 
     }catch(Exception $e){
-        throw new lsException('debug_html_row(): Failed', $e);
+        throw new bException('debug_html_row(): Failed', $e);
     }
 }
 
@@ -419,7 +419,7 @@ function debug_sql($query, $column = null, $execute = null, $return_only = false
         return show($query);
 
     }catch(Exception $e){
-        throw new lsException('debug_sql(): Failed', $e);
+        throw new bException('debug_sql(): Failed', $e);
     }
 }
 
@@ -444,7 +444,7 @@ function debug_trace($filters = 'args'){
         return $trace;
 
     }catch(Exception $e){
-        throw new lsException('debug_trace(): Failed', $e);
+        throw new bException('debug_trace(): Failed', $e);
     }
 }
 ?>

@@ -228,7 +228,7 @@ showdie($e);
                 break;
 
             default:
-                throw new lsException('backup_mysql(): Unknown compression type "'.str_log($params['compression']).'" specified', 'unknown');
+                throw new bException('backup_mysql(): Unknown compression type "'.str_log($params['compression']).'" specified', 'unknown');
         }
 
         $command .= ' > "'.$target.'"';
@@ -238,7 +238,7 @@ showdie($e);
         return $params['target'];
 
     }catch(Exception $e){
-        throw new lsException('backup_mysql(): Failed', $e);
+        throw new bException('backup_mysql(): Failed', $e);
     }
 }
 
@@ -305,7 +305,7 @@ function backup_path($params){
          * Make sure source path exists and is a directory
          */
         if(!file_exists($params['path'])){
-            throw new lsException('backup_path(): The specified path "'.str_log($params['path']).'" does not exist', 'notexists');
+            throw new bException('backup_path(): The specified path "'.str_log($params['path']).'" does not exist', 'notexists');
         }
 
         if(!is_dir($params['path'])){
@@ -354,7 +354,7 @@ function backup_path($params){
                 break;
 
             default:
-                throw new lsException('backup_path(): Unknown compression type "'.str_log($params['compression']).'" specified', 'unknown');
+                throw new bException('backup_path(): Unknown compression type "'.str_log($params['compression']).'" specified', 'unknown');
         }
 
         $target   = $params['target'].basename($params['path']).'.'.$extension;
@@ -366,7 +366,7 @@ function backup_path($params){
         return $target;
 
     }catch(Exception $e){
-        throw new lsException('backup_path(): Failed', $e);
+        throw new bException('backup_path(): Failed', $e);
     }
 }
 
@@ -398,7 +398,7 @@ function backup_sync($params){
         return $params['target'];
 
     }catch(Exception $e){
-        throw new lsException('backup_sync(): Failed', $e);
+        throw new bException('backup_sync(): Failed', $e);
     }
 }
 
@@ -423,11 +423,11 @@ function backups_cleanup($params){
          * Check the backup target path, it should contain only date directories (anything else will be ignored)
          */
         if(!file_exists($params['target'])){
-            throw new lsException('backups_cleanup(): Target path "'.$params['target'].'" does not exist', 'notexists');
+            throw new bException('backups_cleanup(): Target path "'.$params['target'].'" does not exist', 'notexists');
         }
 
         if(!is_dir($params['target'])){
-            throw new lsException('backups_cleanup(): Target path "'.$params['target'].'" is not a directory', 'notexists');
+            throw new bException('backups_cleanup(): Target path "'.$params['target'].'" is not a directory', 'notexists');
         }
 
         /*
@@ -509,7 +509,7 @@ function backups_cleanup($params){
         return $params['target'];
 
     }catch(Exception $e){
-        throw new lsException('backups_cleanup(): Failed', $e);
+        throw new bException('backups_cleanup(): Failed', $e);
     }
 }
 
@@ -535,7 +535,7 @@ show($rel_diff->days.' | '.$clear);
         return false;
 
     }catch(Exception $e){
-        throw new lsException('backups_cleanup_delete(): Failed', $e);
+        throw new bException('backups_cleanup_delete(): Failed', $e);
     }
 }
 ?>

@@ -5,7 +5,7 @@ try{
     load_libs('admin,json,blogs');
 
     if(empty($_POST['id'])){
-        throw new lsException(tr('No photo specified'));
+        throw new bException(tr('No photo specified'));
     }
 
     $user = right_or_redirect('admin', '/signin.php', 'json');

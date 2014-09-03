@@ -112,7 +112,7 @@ function str_capitalize($source, $position = 0){
 function str_from($source, $needle, $more = 0){
     try{
         if(!$needle){
-            throw new lsException('str_from(): No needle specified');
+            throw new bException('str_from(): No needle specified');
         }
 
         $pos = mb_strpos($source, $needle);
@@ -122,7 +122,7 @@ function str_from($source, $needle, $more = 0){
         return mb_substr($source, $pos + mb_strlen($needle) - $more);
 
     }catch(Exception $e){
-        throw new lsException('str_from(): Failed for "'.str_log($source).'"', $e);
+        throw new bException('str_from(): Failed for "'.str_log($source).'"', $e);
     }
 }
 
@@ -134,7 +134,7 @@ function str_from($source, $needle, $more = 0){
 function str_until($source, $needle, $more = 0, $start = 0){
     try{
         if(!$needle){
-            throw new lsException('str_until(): No needle specified');
+            throw new bException('str_until(): No needle specified');
         }
 
         $pos = mb_strpos($source, $needle);
@@ -144,7 +144,7 @@ function str_until($source, $needle, $more = 0, $start = 0){
         return mb_substr($source, $start, $pos + $more);
 
     }catch(Exception $e){
-        throw new lsException('str_until(): Failed for "'.str_log($source).'"', $e);
+        throw new bException('str_until(): Failed for "'.str_log($source).'"', $e);
     }
 }
 
@@ -156,7 +156,7 @@ function str_until($source, $needle, $more = 0, $start = 0){
 function str_rfrom($source, $needle, $more = 0){
     try{
         if(!$needle){
-            throw new lsException('str_rfrom(): No needle specified');
+            throw new bException('str_rfrom(): No needle specified');
         }
 
         $pos = mb_strrpos($source, $needle);
@@ -166,7 +166,7 @@ function str_rfrom($source, $needle, $more = 0){
         return mb_substr($source, $pos + mb_strlen($needle) - $more);
 
     }catch(Exception $e){
-        throw new lsException('str_rfrom(): Failed for "'.str_log($source).'"', $e);
+        throw new bException('str_rfrom(): Failed for "'.str_log($source).'"', $e);
     }
 }
 
@@ -178,7 +178,7 @@ function str_rfrom($source, $needle, $more = 0){
 function str_runtil($source, $needle, $more = 0, $start = 0){
     try{
         if(!$needle){
-            throw new lsException('str_runtil(): No needle specified');
+            throw new bException('str_runtil(): No needle specified');
         }
 
         $pos = mb_strrpos($source, $needle);
@@ -188,7 +188,7 @@ function str_runtil($source, $needle, $more = 0, $start = 0){
         return mb_substr($source, $start, $pos + $more);
 
     }catch(Exception $e){
-        throw new lsException('str_runtil(): Failed for "'.str_log($source).'"', $e);
+        throw new bException('str_runtil(): Failed for "'.str_log($source).'"', $e);
     }
 }
 
@@ -199,7 +199,7 @@ function str_runtil($source, $needle, $more = 0, $start = 0){
  */
 function str_truncate($source, $length, $fill = ' ... ', $method = 'right', $on_word = false){
     if(!$length or ($length < (mb_strlen($fill) + 1))){
-        throw new lsException('str_truncate(): No length or insufficient length specified. You must specify a length of minimal $fill length + 1');
+        throw new bException('str_truncate(): No length or insufficient length specified. You must specify a length of minimal $fill length + 1');
     }
 
     if($length >= mb_strlen($source)){
@@ -240,7 +240,7 @@ function str_truncate($source, $length, $fill = ' ... ', $method = 'right', $on_
             return $fill.trim($retval);
 
         default:
-            throw new lsException('str_truncate(): Invalid method "'.$method.'" specified, please use "left", "center", or "right" or undefined which will default to "right"');
+            throw new bException('str_truncate(): Invalid method "'.$method.'" specified, please use "left", "center", or "right" or undefined which will default to "right"');
     }
 }
 
@@ -253,7 +253,7 @@ function str_random($length = 8, $unique = false, $characters = '0123456789abcde
     $charlen    = mb_strlen($characters);
 
     if($unique and ($length > $charlen)){
-        throw new lsException('str_random(): Can not create unique character random string with size "'.str_log($length).'". When $unique is requested, the string length can not be larger than "'.str_log($charlen).'" because there are no more then that amount of unique characters');
+        throw new bException('str_random(): Can not create unique character random string with size "'.str_log($length).'". When $unique is requested, the string length can not be larger than "'.str_log($charlen).'" because there are no more then that amount of unique characters');
     }
 
     for ($i = 0; $i < $length; $i++) {
@@ -387,7 +387,7 @@ function str_ends($string, $char){
         return $string.$char;
 
     }catch(Exception $e){
-        throw new lsException('str_ends(): Failed', $e);
+        throw new bException('str_ends(): Failed', $e);
     }
 }
 
@@ -432,7 +432,7 @@ function str_ends_not($string, $chars, $loop = true){
         return $string;
 
     }catch(Exception $e){
-        throw new lsException('str_ends_not(): Failed', $e);
+        throw new bException('str_ends_not(): Failed', $e);
     }
 }
 
@@ -507,7 +507,7 @@ function str_log($source, $truncate = 511, $separator = ', '){
         return str_replace("\n", ' ', str_truncate($source, $truncate, ' ... ', 'center'));
 
     }catch(Exception $e){
-        throw new lsException('str_log(): Failed', $e);
+        throw new bException('str_log(): Failed', $e);
     }
 }
 
@@ -551,11 +551,11 @@ function str_explode($separator, $source){
  */
 function str_interleave($source, $interleave, $end = 0, $chunksize = 1){
     if(!$source){
-        throw new lsException('str_interleave: No source specified');
+        throw new bException('str_interleave: No source specified');
     }
 
     if(!$interleave){
-        throw new lsException('str_interleave: No interleave specified');
+        throw new bException('str_interleave: No interleave specified');
     }
 
     if($end){
@@ -706,7 +706,7 @@ function str_has_keywords($text, $keywords, $has_all = false, $regex = false, $u
     try{
         if(!is_array($keywords)){
             if(!is_string($keywords) and !is_numeric($keywords)){
-                throw new lsException('str_has_keywords(): Specified keywords are neither string or array', 'invalid');
+                throw new bException('str_has_keywords(): Specified keywords are neither string or array', 'invalid');
             }
 
             if($regex){
@@ -756,7 +756,7 @@ function str_has_keywords($text, $keywords, $has_all = false, $regex = false, $u
         return $count == count($keywords);
 
     }catch(Exception $e){
-        throw new lsException('str_has_keywords(): Failed', $e);
+        throw new bException('str_has_keywords(): Failed', $e);
     }
 }
 
@@ -860,7 +860,7 @@ function str_caps($string, $type){
                         break;
 
                     default:
-                        throw new lsException('str_caps(): Unknown type "'.str_log($type).'" specified', 'unknowntype');
+                        throw new bException('str_caps(): Unknown type "'.str_log($type).'" specified', 'unknowntype');
                 }
 
                 str_replace($word, $replace, $string);
@@ -870,7 +870,7 @@ function str_caps($string, $type){
         return $string;
 
     }catch(Exception $e){
-        throw new lsException('str_caps(): Failed', $e);
+        throw new bException('str_caps(): Failed', $e);
     }
 }
 
@@ -920,7 +920,7 @@ function str_caps_guess($string){
         }
 
     }catch(Exception $e){
-        throw new lsException('str_caps_guess_type(): Failed', $e);
+        throw new bException('str_caps_guess_type(): Failed', $e);
     }
 }
 
@@ -937,7 +937,7 @@ function str_force($source, $separator = ','){
                     return '';
                 }
 
-                throw new lsException('str_force(): Specified source is neither array or string');
+                throw new bException('str_force(): Specified source is neither array or string');
             }
 
             return implode($separator, $source);
@@ -946,7 +946,7 @@ function str_force($source, $separator = ','){
         return $source;
 
     }catch(Exception $e){
-        throw new lsException('str_force(): Failed', $e);
+        throw new bException('str_force(): Failed', $e);
     }
 }
 
@@ -974,7 +974,7 @@ function str_size($source, $size, $add = ' ', $prefix = false){
         return $source.str_repeat($add, $size - $strlen);
 
     }catch(Exception $e){
-        throw new lsException('str_size(): Failed', $e);
+        throw new bException('str_size(): Failed', $e);
     }
 }
 
@@ -992,7 +992,7 @@ function str_escape($string, $escape = '"'){
         return $string;
 
     }catch(Exception $e){
-        throw new lsException('str_escape(): Failed', $e);
+        throw new bException('str_escape(): Failed', $e);
     }
 }
 
@@ -1013,7 +1013,7 @@ function str_xor($a, $b){
         return $retval;
 
     }catch(Exception $e){
-        throw new lsException('str_xor(): Failed', $e);
+        throw new bException('str_xor(): Failed', $e);
     }
 }
 
@@ -1055,7 +1055,7 @@ function str_diff(){
         return array_merge(diff(array_slice($old, 0, $omax), array_slice($new, 0, $nmax)), array_slice($new, $nmax, $maxlen), diff(array_slice($old, $omax + $maxlen), array_slice($new, $nmax + $maxlen)));
 
     }catch(Exception $e){
-        throw new lsException('str_diff(): Failed', $e);
+        throw new bException('str_diff(): Failed', $e);
     }
 }
 

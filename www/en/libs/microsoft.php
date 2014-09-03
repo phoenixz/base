@@ -21,7 +21,7 @@ function microsoft_get_avatar($user){
 		if(is_array($user)){
 			if(empty($user['ms_id'])){
 				if(empty($user['id'])){
-					throw new lsException('microsoft_get_avatar: Specified user array contains no "id" or "ms_id"');
+					throw new bException('microsoft_get_avatar: Specified user array contains no "id" or "ms_id"');
 				}
 
 				$user = sql_get('SELECT `ms_id` FROM `users` WHERE `id` = '.cfi($user['id']));
@@ -34,7 +34,7 @@ function microsoft_get_avatar($user){
 		}
 
 		if(!$user){
-			throw new lsException('microsoft_get_avatar(): No microsoft ID specified');
+			throw new bException('microsoft_get_avatar(): No microsoft ID specified');
 		}
 
 		// Avatars are on http://graph.facebook.com/USERID/picture
@@ -50,7 +50,7 @@ function microsoft_get_avatar($user){
 		return user_update_avatar($user, $retval);
 
 	}catch(Exception $e){
-		throw new lsException('facebook_get_avatar(): Failed', $e);
+		throw new bException('facebook_get_avatar(): Failed', $e);
 	}
 }
 ?>

@@ -24,7 +24,7 @@ function pdo_query($query,$data_array) {
 		return $r;
 
     }catch(Exception $e){
-        throw new lsException('pdo_query(): Failed', $e);
+        throw new bException('pdo_query(): Failed', $e);
     }
 }
 
@@ -39,7 +39,7 @@ function pdo_fetch_assoc($r) {
 		return $r->fetch(PDO::FETCH_ASSOC);
 
 	}catch(Exception $e){
-		throw new lsException('pdo_fetch_assoc(): Failed', $e);
+		throw new bException('pdo_fetch_assoc(): Failed', $e);
 	}
 }
 
@@ -67,7 +67,7 @@ function pdo_index_exists($table, $index, $query = ''){
         return $r['Key_name'];
 
     }catch(Exception $e){
-        throw new lsException('pdo_index_exists(): Failed', $e);
+        throw new bException('pdo_index_exists(): Failed', $e);
     }
 }
 
@@ -97,7 +97,7 @@ function pdo_column_exists($table, $column, $query = ''){
         return $r['Type'];
 
     }catch(Exception $e){
-        throw new lsException('pdo_column_exists(): Failed', $e);
+        throw new bException('pdo_column_exists(): Failed', $e);
     }
 }
 
@@ -133,7 +133,7 @@ function pdo_foreignkey_exists($table, $foreign_key, $query = '', $database = ''
         return $foreign_key;
 
     }catch(Exception $e){
-        throw new lsException('pdo_foreignkey_exists(): Failed', $e);
+        throw new bException('pdo_foreignkey_exists(): Failed', $e);
     }
 }
 ?>

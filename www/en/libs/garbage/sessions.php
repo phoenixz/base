@@ -24,11 +24,11 @@ function sessions_signin($credentials){
 
     try{
         if(empty($credentials['username'])){
-            throw new lsException('sessions_signin(): No username specified', 'notspecified');
+            throw new bException('sessions_signin(): No username specified', 'notspecified');
         }
 
         if(empty($credentials['password'])){
-            throw new lsException('sessions_signin(): No password specified', 'notspecified');
+            throw new bException('sessions_signin(): No password specified', 'notspecified');
         }
 
         //sessions_validate_username($credentials['username']);
@@ -37,7 +37,7 @@ function sessions_signin($credentials){
         load_libs('users');
 
         if(!$user = users_get($credentials['username'])){
-            throw new lsException('sessions_signin(): Specified user "'.$credentials['username'].'" does not exist', 'notexist');
+            throw new bException('sessions_signin(): Specified user "'.$credentials['username'].'" does not exist', 'notexist');
         }
 
         if(sessions_compare_passwords($credentials['password'], $user['password'])){
@@ -45,7 +45,7 @@ function sessions_signin($credentials){
             $_SESSION['user']['rights'] = array_flip(get_rights($user));
 
         }else{
-            throw new lsException('sessions_signin(): Password incorrect', 'password');
+            throw new bException('sessions_signin(): Password incorrect', 'password');
         }
 
         /*
@@ -58,7 +58,7 @@ function sessions_signin($credentials){
         redirect($_CONFIG['redirects']['aftersignin']);
 
     }catch(Exception $e){
-        throw new lsException('sessions_signin(): Failed', $e);
+        throw new bException('sessions_signin(): Failed', $e);
     }
 }
 
@@ -82,7 +82,7 @@ function sessions_signout(){
         }
 
     }catch(Exception $e){
-        throw new lsException('sessions_signout(): Failed');
+        throw new bException('sessions_signout(): Failed');
     }
 }
 
@@ -145,7 +145,7 @@ function sessions_password_hash($value, $useseed = 'auto', $hash = 'auto', $usem
         /*
          * Hash can't process this
          */
-        throw new lsException('sessions_password_hash(): No value specified');
+        throw new bException('sessions_password_hash(): No value specified');
     }
 
     global $seed, $_CONFIG;
@@ -183,12 +183,12 @@ function sessions_password_hash($value, $useseed = 'auto', $hash = 'auto', $usem
             break;
 
         case 'sha256':
-throw new lsException('sessions_password_hash: sha256 support is not yet implemented');
+throw new bException('sessions_password_hash: sha256 support is not yet implemented');
             $retval = sha256($value);
             break;
 
         default:
-            throw new lsException('sessions_password_hash(): Unknown hash "'.$hash.'" specified');
+            throw new bException('sessions_password_hash(): Unknown hash "'.$hash.'" specified');
 
     }
 
@@ -232,7 +232,7 @@ function sessions_mark_god(){
         return false;
 
     }catch(Exception $e){
-        throw new lsException('sessions_mark_god(): Failed', $e);
+        throw new bException('sessions_mark_god(): Failed', $e);
     }
 }
 ?>

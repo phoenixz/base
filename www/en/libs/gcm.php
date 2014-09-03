@@ -21,7 +21,7 @@ function gcm_send_notification($registatoin_ids, $message) {
         load_libs('json');
 
         if(!function_exists('curl_init')){
-            throw new lsException('gcm_send_notification(): PHP CURL is not installed, this function cannot work without this library');
+            throw new bException('gcm_send_notification(): PHP CURL is not installed, this function cannot work without this library');
         }
 
         if(!is_array($registatoin_ids)){

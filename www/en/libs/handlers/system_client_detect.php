@@ -116,6 +116,6 @@ try{
     return mobile_detect();
 
 }catch(Exception $e){
-    throw new lsException('client_detect(): Failed', $e);
+    throw new bException('client_detect(): Failed', $e);
 }
 ?>

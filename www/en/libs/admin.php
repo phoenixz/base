@@ -38,7 +38,7 @@ function admin_start($params = '', $flash = null, $flash_type = null) {
         //     * This is not a user or not an admin user. either way, don't show admin menu
         //     */
         //    load_libs('user');
-        //    throw new lsException('admin_menu($params): User "'.str_log(user_name(isset_get($_SESSION['user']))).'" is not an admin', 'notadmin');
+        //    throw new bException('admin_menu($params): User "'.str_log(user_name(isset_get($_SESSION['user']))).'" is not an admin', 'notadmin');
         //}
 
         array_params($params, 'title');
@@ -88,7 +88,7 @@ function admin_start($params = '', $flash = null, $flash_type = null) {
 //                    html_flash($flash, $flash_type);
 
     }catch(Exception $e){
-        throw new lsException('admin_start(): Failed', $e);
+        throw new bException('admin_start(): Failed', $e);
     }
 }
 

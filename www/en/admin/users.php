@@ -15,11 +15,11 @@ try{
              * Delete the specified users
              */
             if(empty($_POST['id'])){
-                throw new lsException('Cannot delete users, no users selected', 'notspecified');
+                throw new bException('Cannot delete users, no users selected', 'notspecified');
             }
 
             if(!is_array($_POST['id'])){
-                throw new lsException('Cannot delete users, invalid data specified', 'invalid');
+                throw new bException('Cannot delete users, invalid data specified', 'invalid');
             }
 
             $in = sql_in($_POST['id'], ':id');
@@ -40,11 +40,11 @@ try{
              * Erase the specified users
              */
             if(empty($_POST['id'])){
-                throw new lsException('Cannot erase users, no users selected', 'notspecified');
+                throw new bException('Cannot erase users, no users selected', 'notspecified');
             }
 
             if(!is_array($_POST['id'])){
-                throw new lsException('Cannot erase users, invalid data specified', 'invalid');
+                throw new bException('Cannot erase users, invalid data specified', 'invalid');
             }
 
             $in = sql_in($_POST['id'], ':id');
@@ -65,11 +65,11 @@ try{
              * Undelete the specified users
              */
             if(empty($_POST['id'])){
-                throw new lsException('Cannot undelete users, no users selected', 'notspecified');
+                throw new bException('Cannot undelete users, no users selected', 'notspecified');
             }
 
             if(!is_array($_POST['id'])){
-                throw new lsException('Cannot undelete users, invalid data specified', 'invalid');
+                throw new bException('Cannot undelete users, invalid data specified', 'invalid');
             }
 
             $in = sql_in($_POST['id'], ':id');

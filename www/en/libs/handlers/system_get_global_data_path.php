@@ -34,13 +34,13 @@ try{
          * Cleanup path. If realpath fails, we know something is amiss
          */
         if(!$found = realpath($found)){
-            throw new lsException('get_global_data_path(): Found path "'.$path.'" failed realpath() check', 'pathfailed');
+            throw new bException('get_global_data_path(): Found path "'.$path.'" failed realpath() check', 'pathfailed');
         }
     }
 
     if(!$found){
         if(PLATFORM != 'shell'){
-            throw new lsException('get_global_data_path(): Global data path not found', 'notfound');
+            throw new bException('get_global_data_path(): Global data path not found', 'notfound');
         }
 
         try{
@@ -53,7 +53,7 @@ try{
                 /*
                  * Something went wrong and it was not created anyway
                  */
-                throw new lsException('get_global_data_path(): ./script/base/init_global_data_path reported path "'.str_log($path).'" was created but it could not be found', 'failed');
+                throw new bException('get_global_data_path(): ./script/base/init_global_data_path reported path "'.str_log($path).'" was created but it could not be found', 'failed');
             }
 
             /*
@@ -63,7 +63,7 @@ try{
             $path = slash($path);
 
         }catch(Exception $e){
-            throw new lsException('get_global_data_path(): Global data path not found, or init_global_data_path failed / aborted', $e);
+            throw new bException('get_global_data_path(): Global data path not found, or init_global_data_path failed / aborted', $e);
         }
     }
 
@@ -72,7 +72,7 @@ try{
      */
     if($section and !file_exists($path.$section)){
         if(!$force){
-            throw new lsException('get_global_data_path(): The specified section "'.str_log($section).'" does not exist in the found global data path "'.str_log($path).'"', 'notfound');
+            throw new bException('get_global_data_path(): The specified section "'.str_log($section).'" does not exist in the found global data path "'.str_log($path).'"', 'notfound');
         }
 
         load_libs('file');
@@ -84,12 +84,12 @@ try{
          * Curious, the path exists, but realpath failed and returned false..
          * This should never happen since we ensured the path above! This is just an extra check in case of.. weird problems :)
          */
-        throw new lsException('The found global data path "'.str_log($path).'" is invalid (realpath returned false)', 'invalid');
+        throw new bException('The found global data path "'.str_log($path).'" is invalid (realpath returned false)', 'invalid');
     }
 
     return slash($global_path);
 
-}catch(lsException $e){
-    throw new lsException('get_global_data_path(): Failed', $e);
+}catch(bException $e){
+    throw new bException('get_global_data_path(): Failed', $e);
 }
 ?>

@@ -112,11 +112,11 @@ function time_difference($start, $end, $precision = 'auto', $decimals = 2){
                 return time_difference($start, $end, 'years', $decimals);
 
             default:
-                throw new lsException('time_difference(): Unknown precision "'.str_log($precision).'" specified', 'unknown');
+                throw new bException('time_difference(): Unknown precision "'.str_log($precision).'" specified', 'unknown');
         }
 
     }catch(Exception $e){
-        throw new lsException('time_difference(): Failed', $e);
+        throw new bException('time_difference(): Failed', $e);
     }
 }
 
@@ -209,16 +209,16 @@ function date_time_validate($time, $format = false, $separator = ':'){
             /*
              * The time format is either not valid at all, or not valid for the specifed 12H or 24H format
              */
-            throw new lsException('date_time_validate(): Specified time "'.str_log($time).'" is not a valid "'.str_log($format).'" format time', 'invalid');
+            throw new bException('date_time_validate(): Specified time "'.str_log($time).'" is not a valid "'.str_log($format).'" format time', 'invalid');
         }
 
         /*
          * The time format is not valid
          */
-        throw new lsException('date_time_validate(): Specified time "'.str_log($time).'" is not a valid time format', 'invalid');
+        throw new bException('date_time_validate(): Specified time "'.str_log($time).'" is not a valid time format', 'invalid');
 
     }catch(Exception $e){
-        throw new lsException('date_time_validate(): Failed', $e);
+        throw new bException('date_time_validate(): Failed', $e);
     }
 }
 
@@ -272,7 +272,7 @@ function date_time_format($time, $format = 24, $separator = ':'){
             return $time['hours'].$separator.$time['minutes'].$separator.$time['seconds'];
 
         default:
-            throw lsException('date_time_format(): Unknown format "'.str_log($format).'" specified', 'unknown');
+            throw bException('date_time_format(): Unknown format "'.str_log($format).'" specified', 'unknown');
     }
 }
 ?>

@@ -26,7 +26,7 @@ function paypal_version() {
 	try{
 		return $_CONFIG['paypal']['version'];
 	}catch(Exception $e){
-		throw new lsException('paypal_version(): Failed', $e);
+		throw new bException('paypal_version(): Failed', $e);
 	}
 }
 
@@ -70,7 +70,7 @@ function paypal_change_subscription_status($profile_id, $action='Cancel') {
 
 		// If no response was received from PayPal there is no point parsing the response
 		if( ! $response ) {
-			throw new lsException('paypal_change_subscription_status(): Failed ' . curl_error( $ch ) . '(' . curl_errno( $ch ) . ')', '');
+			throw new bException('paypal_change_subscription_status(): Failed ' . curl_error( $ch ) . '(' . curl_errno( $ch ) . ')', '');
 		}
 
 		curl_close( $ch );
@@ -79,7 +79,7 @@ function paypal_change_subscription_status($profile_id, $action='Cancel') {
 		parse_str( $response, $parsed_response );
 		return $parsed_response;
 	}catch(Exception $e){
-		throw new lsException('paypal_change_subscription_status(): Failed', $e);
+		throw new bException('paypal_change_subscription_status(): Failed', $e);
 	}
 }
 
@@ -136,7 +136,7 @@ function paypal_subscription_button($params=array()) {
 		</form>';
 		return $html;
 	}catch(Exception $e){
-		throw new lsException('paypal_subscription_button(): Failed', $e);
+		throw new bException('paypal_subscription_button(): Failed', $e);
 	}
 }
 
@@ -158,10 +158,10 @@ function paypal_ipn_log() {
 			sql_query("insert into paypal_payments (custom,item_number,subscr_id,buyer_email,txn_type,currency_code,amount,logdate,raw_paypal_data,payment_status) values ('".cfm(isset_get($_POST['custom']))."','".cfm(isset_get($_POST['item_number']))."','".cfm(isset_get($_POST['subscr_id']))."','".cfm(isset_get($_POST['payer_email']))."','".cfm(isset_get($_POST['txn_type']))."','".cfm(isset_get($_POST['mc_currency']))."','".cfm(isset_get($_POST['mc_gross']))."',".time().",'".cfm(json_encode_custom($_POST))."','".cfm(isset_get($_POST['payment_status']))."');");
 			return $_POST;
 		} else {
-			throw new lsException('paypal_ipn_log(): Failed ipn check','ipn_check_fail');
+			throw new bException('paypal_ipn_log(): Failed ipn check','ipn_check_fail');
 		}
 	}catch(Exception $e){
-		throw new lsException('paypal_ipn_log(): Failed', $e);
+		throw new bException('paypal_ipn_log(): Failed', $e);
 	}
 }
 
@@ -207,11 +207,11 @@ function paypal_check_ipn_request() {
 			if($res=='VERIFIED') {
 				return true;
 			} elseif($res=='INVALID') {
-				throw new lsException('paypal_check_ipn_request(): Returned FALSE', '');
+				throw new bException('paypal_check_ipn_request(): Returned FALSE', '');
 			}
 		}
 	}catch(Exception $e){
-		throw new lsException('paypal_check_ipn_request(): Failed', $e);
+		throw new bException('paypal_check_ipn_request(): Failed', $e);
 	}
 }
 ?>

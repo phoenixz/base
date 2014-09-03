@@ -16,7 +16,7 @@
 function js_flash($id = 'jsFlashMessage'){
 	try{
 		if(PLATFORM != 'apache'){
-			throw new lsException('js_flash(): This function can only be executed on a webserver!');
+			throw new bException('js_flash(): This function can only be executed on a webserver!');
 		}
 
 		html_load_js('base/flash');
@@ -24,7 +24,7 @@ function js_flash($id = 'jsFlashMessage'){
 		return '<div '.($id ? 'id="'.$id.'" ' : '').'class="sys_msg" style="display:none;"></div>';
 
 	}catch(Exception $e){
-		throw new lsException('js_flash(): Failed', $e);
+		throw new bException('js_flash(): Failed', $e);
 	}
 }
 
@@ -55,7 +55,7 @@ function js_zclip_copy($click_selector, $copy, $add_script_tag = false, $params 
 
 		}else{
 			if(!is_array($params)){
-				throw new lsException('js_zclip_copy(): $params should be specified as an array but is an "'.gettype($params).'"');
+				throw new bException('js_zclip_copy(): $params should be specified as an array but is an "'.gettype($params).'"');
 			}
 
 			/*
@@ -87,7 +87,7 @@ function js_zclip_copy($click_selector, $copy, $add_script_tag = false, $params 
 		return html_script($retval);
 
     }catch(Exception $e){
-        throw new lsException('js_zclip_copy(): Failed', $e);
+        throw new bException('js_zclip_copy(): Failed', $e);
     }
 }
 ?>

@@ -12,7 +12,7 @@ function has_access($rights = '', $user = null){
     try{
         if(!is_array($rights)){
             if(!is_string($rights)){
-                throw new lsException('has_access(): Invalid rights specified, must be either a CSV string, or an array');
+                throw new bException('has_access(): Invalid rights specified, must be either a CSV string, or an array');
             }
 
             $rights = str_explode(',', $rights);
@@ -69,7 +69,7 @@ function has_access($rights = '', $user = null){
         return true;
 
     }catch(Exception $e){
-        throw new lsException('has_access(): Failed', $e);
+        throw new bException('has_access(): Failed', $e);
     }
 }
 
@@ -91,7 +91,7 @@ function access_or_redirect($rights = '', $redirect = null){
         }
 
     }catch(Exception $e){
-        throw new lsException('access_or_redirect(): Failed', $e);
+        throw new bException('access_or_redirect(): Failed', $e);
     }
 }
 
@@ -105,12 +105,12 @@ function get_rights($user){
         if(!is_numeric($user)){
             if(!is_string($user)){
                 if(!is_array($user)){
-                    throw new lsException('get_rights(): Invalid user specified, either user id, user name, or valid user array containing user id or email.');
+                    throw new bException('get_rights(): Invalid user specified, either user id, user name, or valid user array containing user id or email.');
                 }
 
                 if(empty($user['id'])){
                     if(empty($user['email'])){
-                        throw new lsException('get_rights(): Invalid user array specified, user array must contain either id and or email.');
+                        throw new bException('get_rights(): Invalid user array specified, user array must contain either id and or email.');
                     }
 
                     $user = $user['email'];
@@ -167,7 +167,7 @@ function get_rights($user){
             load_libs('users');
 
             if(!users_exists($user)){
-                throw new lsException('get_rights(): Specified user "'.str_log($user).'" does not exist', 'notexist');
+                throw new bException('get_rights(): Specified user "'.str_log($user).'" does not exist', 'notexist');
             }
         }
 
@@ -179,7 +179,7 @@ function get_rights($user){
 
 
     }catch(Exception $e){
-        throw new lsException('get_rights(): Failed', $e);
+        throw new bException('get_rights(): Failed', $e);
     }
 }
 /*
@@ -229,7 +229,7 @@ function is_god($user = null){
         return isset($user['rights']['god']);
 
     }catch(Exception $e){
-        throw new lsException('is_god(): Failed', $e);
+        throw new bException('is_god(): Failed', $e);
     }
 }
 
@@ -251,14 +251,14 @@ function has_limited_access($config_setting, $limited_section, $site = null){
 	}
 
 	if($config_setting and ($config_setting != 'limited')){
-		throw new lsException('has_limited_access(): Invalid $config_setting value "'.$config_setting.'" specified. $config_setting can only be TRUE, FALSE or "limited"');
+		throw new bException('has_limited_access(): Invalid $config_setting value "'.$config_setting.'" specified. $config_setting can only be TRUE, FALSE or "limited"');
 	}
 
 	/*
 	* Section MUST be specified
 	*/
 	if(!$limited_section){
-		throw new lsException('has_limited_access(): No $limited_section specified');
+		throw new bException('has_limited_access(): No $limited_section specified');
 	}
 
 	/*
@@ -518,7 +518,7 @@ function client_detect(){
 						//                            return client_detect();
 						//                        }
 
-						throw new lsException('client_detect(): Failed', $e);
+						throw new bException('client_detect(): Failed', $e);
 					}
 
 					}else{
@@ -686,7 +686,7 @@ function html_header($params = array(), $script = ''){
         <body>';
 
     }catch(Exception $e){
-        throw new lsException('html_header(): Failed', $e);
+        throw new bException('html_header(): Failed', $e);
     }
 }
 
@@ -760,7 +760,7 @@ function html_pager($url, $count, $page){
         return $retval.'</ul>';
 
     }catch(Exception $e){
-        throw new lsException('html_pager(): Failed', $e);
+        throw new bException('html_pager(): Failed', $e);
     }
 }
 

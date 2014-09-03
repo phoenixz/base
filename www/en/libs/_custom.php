@@ -33,7 +33,7 @@ function c_html_header($params = null, $meta = null){
         return html_header($params, $meta).c_page_header($params);
 
     }catch(Exception $e){
-        throw new lsException('c_page_header(): Failed', $e);
+        throw new bException('c_page_header(): Failed', $e);
     }
 }
 
@@ -60,7 +60,7 @@ function c_page_header(){
         return $html;
 
     }catch(Exception $e){
-        throw new lsException('c_page_header(): Failed', $e);
+        throw new bException('c_page_header(): Failed', $e);
     }
 }
 ?>

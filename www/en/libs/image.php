@@ -31,10 +31,10 @@ function image_get_text($image) {
 
     }catch(Exception $e){
         if(!safe_exec('which tesseract')){
-            throw new lsException('image_get_text(): Failed to find the "tesseract" command, is it installed?', $e);
+            throw new bException('image_get_text(): Failed to find the "tesseract" command, is it installed?', $e);
         }
 
-        throw new lsException('image_get_text(): Failed to get text from image "'.str_log($image).'"', $e);
+        throw new bException('image_get_text(): Failed to get text from image "'.str_log($image).'"', $e);
     }
 }
 
@@ -51,7 +51,7 @@ function image_convert($source, $destination, $x, $y, $type, $params = array()) 
          * Validations
          */
         if(file_exists($destination)){
-            throw new lsException('image_convert(): Destination file "'.$destination.'" already exists');
+            throw new bException('image_convert(): Destination file "'.$destination.'" already exists');
         }
 
         /*
@@ -102,7 +102,7 @@ function image_convert($source, $destination, $x, $y, $type, $params = array()) 
                     break;
 
                 default:
-                    throw new lsException('image_convert(): Unknown parameter key "'.str_log($key).'" specified', 'unknown');
+                    throw new bException('image_convert(): Unknown parameter key "'.str_log($key).'" specified', 'unknown');
             }
         }
 
@@ -161,14 +161,14 @@ function image_convert($source, $destination, $x, $y, $type, $params = array()) 
                 break;
 
             default:
-                throw new lsException('image_convert(): Unknown type "'.str_log($type).'" specified', 'unknown');
+                throw new bException('image_convert(): Unknown type "'.str_log($type).'" specified', 'unknown');
         }
 
         /*
          * Verify results
          */
         if(!file_exists($destination)) {
-            throw new lsException('image_convert(): Destination file "'.str_log($destination).'" not found after conversion', 'notfound');
+            throw new bException('image_convert(): Destination file "'.str_log($destination).'" not found after conversion', 'notfound');
         }
 
         if(!empty($params['updatemode'])){
@@ -178,7 +178,7 @@ function image_convert($source, $destination, $x, $y, $type, $params = array()) 
         return $destination;
 
     }catch(Exception $e){
-        throw new lsException('image_convert(): Failed', $e);
+        throw new bException('image_convert(): Failed', $e);
     }
 }
 
@@ -189,11 +189,11 @@ function image_convert($source, $destination, $x, $y, $type, $params = array()) 
  */
 function image_is_valid($filename, $minw = 0, $minh = 0) {
     if(!$img_size = getimagesize($filename)){
-        throw new lsException('image_is_valid(): File "'.str_log($filename).'" is not an image');
+        throw new bException('image_is_valid(): File "'.str_log($filename).'" is not an image');
     }
 
     if(($img_size[0] < $minw) or ($img_size[1] < $minh)) {
-        throw new lsException('image_is_valid(): File "'.str_log($filename).'" has wxh "'.str_log($img_size[0].'x'.$img_size[1]).'" where a minimum wxh of "'.str_log($minw.'x'.$minh).'" is required');
+        throw new bException('image_is_valid(): File "'.str_log($filename).'" has wxh "'.str_log($img_size[0].'x'.$img_size[1]).'" where a minimum wxh of "'.str_log($minw.'x'.$minh).'" is required');
     }
 
     return true;
@@ -212,7 +212,7 @@ function image_create_avatars($file){
 
         foreach($_CONFIG['avatars']['types'] as $name => $type){
             if(count($type  = explode('x', $type)) != 3){
-                throw new lsException('image_create_avatar(): Invalid avatar type configuration for type "'.str_log($name).'"', 'invalid/config');
+                throw new bException('image_create_avatar(): Invalid avatar type configuration for type "'.str_log($name).'"', 'invalid/config');
             }
 
             image_convert($file, ROOT.'www/avatars/'.$destination.'_'.$name.'.'.file_get_extension($file), $type[0], $type[1], $type[2]);
@@ -221,7 +221,7 @@ function image_create_avatars($file){
         return $destination;
 
     }catch(Exception $e){
-        throw new lsException('image_create_avatar(): Failed to create avatars for image file "'.str_log($file).'"', $e);
+        throw new bException('image_create_avatar(): Failed to create avatars for image file "'.str_log($file).'"', $e);
     }
 }
 
@@ -239,7 +239,7 @@ function image_type($filename){
         return false;
 
     }catch(Exception $e){
-        throw new lsException('image_is(): Failed', $e);
+        throw new bException('image_is(): Failed', $e);
     }
 }
 
@@ -292,7 +292,7 @@ function image_send($file, $cache_maxage = 86400){
         }
 
     }catch(Exception $e){
-        throw new lsException('image_send(): Failed', $e);
+        throw new bException('image_send(): Failed', $e);
     }
 }
 
@@ -321,7 +321,7 @@ function image_fix_extension($file){
          * If the file is not an image then we're done
          */
         if(str_until($mimetype, '/') != 'image'){
-            throw new lsException('image_fix_extension(): Specified file "'.str_log($file).'" is not an image', 'invalid');
+            throw new bException('image_fix_extension(): Specified file "'.str_log($file).'" is not an image', 'invalid');
         }
 
         /*
@@ -343,7 +343,7 @@ function image_fix_extension($file){
         return $file;
 
     }catch(Exception $e){
-        throw new lsException('image_fix_extension(): Failed', $e);
+        throw new bException('image_fix_extension(): Failed', $e);
     }
 }
 
@@ -386,7 +386,7 @@ function image_fancybox($params = null){
         return html_script('$("'.$selector.'").fancybox({'.implode(',', $options).'});');
 
     }catch(Exception $e){
-        throw new lsException('image_fancybox(): Failed', $e);
+        throw new bException('image_fancybox(): Failed', $e);
     }
 }
 
@@ -414,11 +414,11 @@ function image_watermark($params){
          */
         foreach(array('image' => $params['image'], 'watermark' => $params['watermark']) as $type => $filename){
             if(!file_exists($params['target'])){
-                throw new lsException(tr('image_watermark(): The specified %type% file "%file%" does not exists', array('%type%' => $type, '%file%' => str_log($filename))), 'imagenotexists');
+                throw new bException(tr('image_watermark(): The specified %type% file "%file%" does not exists', array('%type%' => $type, '%file%' => str_log($filename))), 'imagenotexists');
             }
 
             if(!$size = getimagesize($filename)){
-                throw new lsException(tr('image_watermark(): The specified %type% file "%file%" is not a valid image', array('%type%' => $type, '%file%' => str_log($filename))), 'imagenotvalid');
+                throw new bException(tr('image_watermark(): The specified %type% file "%file%" is not a valid image', array('%type%' => $type, '%file%' => str_log($filename))), 'imagenotvalid');
             }
         }
 
@@ -428,7 +428,7 @@ function image_watermark($params){
          * Make sure the target does not yet exist, UNLESS we're writing to the same image
          */
         if((realpath($params['target']) != realpath($params['image'])) and file_exists($params['target'])){
-            throw new lsException('image_watermark(): The specified target "'.str_log($params['target']).'" already exists', 'targetexists');
+            throw new bException('image_watermark(): The specified target "'.str_log($params['target']).'" already exists', 'targetexists');
         }
 
         /*
@@ -454,7 +454,7 @@ function image_watermark($params){
         imagedestroy($watermark);
 
     }catch(Exception $e){
-        throw new lsException('image_watermark(): Failed', $e);
+        throw new bException('image_watermark(): Failed', $e);
     }
 }
 
@@ -513,24 +513,24 @@ function imagecreatefromany($filename){
             case IMAGETYPE_XBM:
                 // FALLTHROUGH
             case IMAGETYPE_ICO:
-                throw new lsException('imagecreatefromany(): Image types "'.exif_imagetype($filename).'" of file "'.str_log($filename).'" is not supported', 'notsupported');
+                throw new bException('imagecreatefromany(): Image types "'.exif_imagetype($filename).'" of file "'.str_log($filename).'" is not supported', 'notsupported');
 
             default:
-                throw new lsException('imagecreatefromany(): The file "'.exif_imagetype($filename).'" is not an image', 'notsupported');
+                throw new bException('imagecreatefromany(): The file "'.exif_imagetype($filename).'" is not an image', 'notsupported');
         }
 
         if(!$resource){
-            throw new lsException('imagecreatefromany(): Failed to open image type "'.exif_imagetype($filename).'" file "'.$filename.'"', 'failed');
+            throw new bException('imagecreatefromany(): Failed to open image type "'.exif_imagetype($filename).'" file "'.$filename.'"', 'failed');
         }
 
         return $resource;
 
     }catch(Exception $e){
         if(!file_exists($filename)){
-            throw new lsException('imagecreatefromany(): Specified file "'.str_log($filename).'" does not exist', $e);
+            throw new bException('imagecreatefromany(): Specified file "'.str_log($filename).'" does not exist', $e);
         }
 
-        throw new lsException('imagecreatefromany(): Failed', $e);
+        throw new bException('imagecreatefromany(): Failed', $e);
     }
 }
 
@@ -563,7 +563,7 @@ function imagecopymerge_alpha($dst_im, $src_im, $dst_x, $dst_y, $src_x, $src_y, 
         imagecopymerge($dst_im, $cut, $dst_x, $dst_y, 0, 0, $src_w, $src_h, $pct);
 
     }catch(Exception $e){
-        throw new lsException('imagecopymerge_alpha(): Failed for source image "'.str_log($src_im).'"', $e);
+        throw new bException('imagecopymerge_alpha(): Failed for source image "'.str_log($src_im).'"', $e);
     }
 }
 ?>

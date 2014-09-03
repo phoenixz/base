@@ -63,7 +63,7 @@ function bytes_convert($amount, $unit = 'auto', $precision = 2, $add_suffix = fa
          * Calculate back to bytes
          */
         if(!preg_match('/(\d+(?:\.\d+)?)(\w{1,3})/', $amount, $matches))  {
-            throw new lsException('bytes_convert(): Specified amount "'.$amount.'" is not a valid byte amount. Format should be either n, or nKB, nKiB, etc');
+            throw new bException('bytes_convert(): Specified amount "'.$amount.'" is not a valid byte amount. Format should be either n, or nKB, nKiB, etc');
         }
 
         switch(strtolower($matches[2])){
@@ -131,7 +131,7 @@ function bytes_convert($amount, $unit = 'auto', $precision = 2, $add_suffix = fa
                 break;
 
             default:
-                throw new lsException('bytes_convert(): Specified suffix "'.$suffix.'" on amount "'.$amount.'" is not a valid. Should be one of b, or KB, KiB, mb, mib, etc');
+                throw new bException('bytes_convert(): Specified suffix "'.$suffix.'" on amount "'.$amount.'" is not a valid. Should be one of b, or KB, KiB, mb, mib, etc');
         }
     }
 
@@ -229,7 +229,7 @@ function bytes_convert($amount, $unit = 'auto', $precision = 2, $add_suffix = fa
             break;
 
         default:
-            throw new lsException('bytes_convert(): Specified unit "'.$unit.'" is not a valid. Should be one of b, or KB, KiB, mb, mib, etc');
+            throw new bException('bytes_convert(): Specified unit "'.$unit.'" is not a valid. Should be one of b, or KB, KiB, mb, mib, etc');
     }
 
     $amount = number_format(round($amount, $precision), $precision);

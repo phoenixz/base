@@ -49,7 +49,7 @@ function sitemap_build($params = array()){
 
         foreach($params['languages'] as $code => $language){
             if(empty($_CONFIG['language']['supported'][$code])){
-                throw new lsException('sitemap_build(): Specified (or configured) build language "'.str_log($code).'" is not supported in $_CONFIG[languages][supported]', 'notsupported');
+                throw new bException('sitemap_build(): Specified (or configured) build language "'.str_log($code).'" is not supported in $_CONFIG[languages][supported]', 'notsupported');
             }
         }
 
@@ -82,7 +82,7 @@ function sitemap_build($params = array()){
                 }
 
                 if(ENVIRONMENT == 'production'){
-                    throw new lsException('sitemap_build(): Specified language "'.str_log($language).'" path "'.str_log($path).'" does not exist', 'notexist');
+                    throw new bException('sitemap_build(): Specified language "'.str_log($language).'" path "'.str_log($path).'" does not exist', 'notexist');
 
                 }else{
                     /*
@@ -225,7 +225,7 @@ continue;
         }
 
     }catch(Exception $e){
-        throw new lsException('sitemap_build(): Failed', $e);
+        throw new bException('sitemap_build(): Failed', $e);
     }
 }
 
@@ -272,7 +272,7 @@ function sitemap_xml($params = array(), $return = false){
         echo $xml;
 
     }catch(Exception $e){
-        throw new lsException('sitemap_xml(): Failed', $e);
+        throw new bException('sitemap_xml(): Failed', $e);
     }
 }
 
@@ -312,7 +312,7 @@ function sitemap_html($params = array(), $return = false){
         echo $html;
 
     }catch(Exception $e){
-        throw new lsException('sitemap_html(): Failed', $e);
+        throw new bException('sitemap_html(): Failed', $e);
     }
 }
 
@@ -342,7 +342,7 @@ function sitemap_txt($params = array(), $return = false){
         echo $text;
 
     }catch(Exception $e){
-        throw new lsException('sitemap_txt(): Failed', $e);
+        throw new bException('sitemap_txt(): Failed', $e);
     }
 }
 
@@ -359,19 +359,19 @@ function sitemap_get_build_resource($params){
         $build  = sql_get('SELECT `id`, `createdon` FROM `sitemap_builds` WHERE `language` = :language ORDER BY `createdon` DESC LIMIT 1', array(':language' => str_log($params['language'])));
 
         if(!$build){
-            throw new lsException('sitemap_getbuild(): No sitemap builds found', 'notfound');
+            throw new bException('sitemap_getbuild(): No sitemap builds found', 'notfound');
         }
 
         $r = sql_query('SELECT * FROM `sitemap_data` WHERE `builds_id` = :builds_id', array(':builds_id' => $build['id']));
 
         if(!$r->rowCount()){
-            throw new lsException('sitemap_getbuild(): Build "'.$build['id'].'" from date "'.$build['createdon'].'" for language "'.str_log($params['language']).'" has no data', 'empty');
+            throw new bException('sitemap_getbuild(): Build "'.$build['id'].'" from date "'.$build['createdon'].'" for language "'.str_log($params['language']).'" has no data', 'empty');
         }
 
         return $r;
 
     }catch(Exception $e){
-        throw new lsException('sitemap_getbuild(): Failed', $e);
+        throw new bException('sitemap_getbuild(): Failed', $e);
     }
 }
 ?>

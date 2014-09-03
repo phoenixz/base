@@ -38,7 +38,7 @@ function jqueryui_accordeon($selector, $options = 'collapsible: true,heightStyle
                             });');
 
     }catch(Exception $e){
-        throw new lsException('jqueryui_accordeon(): Failed', $e);
+        throw new bException('jqueryui_accordeon(): Failed', $e);
     }
 }
 
@@ -78,7 +78,7 @@ function jqueryui_date($selector, $params = null){
         });');
 
     }catch(Exception $e){
-        throw new lsException('jqueryui_date(): Failed', $e);
+        throw new bException('jqueryui_date(): Failed', $e);
     }
 }
 
@@ -152,7 +152,7 @@ function jqueryui_date_range($from_selector, $to_selector, $params = null){
         });');
 
     }catch(Exception $e){
-        throw new lsException('jqueryui_date_range(): Failed', $e);
+        throw new bException('jqueryui_date_range(): Failed', $e);
     }
 }
 ?>

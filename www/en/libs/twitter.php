@@ -77,7 +77,7 @@ function twitter_get_bearer_token(){
 		return $bearer_token->{'access_token'};
 
 	}catch(Exception $e){
-		throw new lsException('twitter_get_bearer_token(): Failed', $e);
+		throw new bException('twitter_get_bearer_token(): Failed', $e);
 	}
 }
 
@@ -124,7 +124,7 @@ function twitter_invalidate_bearer_token($bearer_token){
 		return $retrievedhtml;
 
 	}catch(Exception $e){
-		throw new lsException('twitter_invalidate_bearer_token(): Failed', $e);
+		throw new bException('twitter_invalidate_bearer_token(): Failed', $e);
 	}
 }
 
@@ -165,7 +165,7 @@ function twitter_search_for_a_term($bearer_token, $query, $result_type='mixed', 
 		return $retrievedhtml;
 
 	}catch(Exception $e){
-		throw new lsException('twitter_search_for_a_term(): Failed', $e);
+		throw new bException('twitter_search_for_a_term(): Failed', $e);
 	}
 }
 

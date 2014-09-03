@@ -30,7 +30,7 @@ try{
 
     $code = 'error/'.$e->code;
 
-    if($e instanceof lsException){
+    if($e instanceof bException){
         $messages = $e->getMessages();
 
     }else{
@@ -55,7 +55,7 @@ try{
     }else{
         log_screen('* '.tr('Uncaught exception').' *', $code);
 
-        if($e instanceof lsException){
+        if($e instanceof bException){
             foreach($messages as $key => $message){
                 log_screen($key.': '.$message, $code);
             }
@@ -65,7 +65,7 @@ try{
         }
 
 
-        if(($e instanceof lsException) and ($data = $e->getData())){
+        if(($e instanceof bException) and ($data = $e->getData())){
             show('');
             show('ERROR DATA:');
 

@@ -3,7 +3,7 @@ try{
     global $_CONFIG;
 
     if(PLATFORM != 'apache'){
-        throw new lsException('redirect(): This function can only be called on webservers');
+        throw new bException('redirect(): This function can only be called on webservers');
     }
 
     if(!$target){
@@ -30,6 +30,6 @@ try{
     die();
 
 }catch(Exception $e){
-    throw new lsException('redirect(): Failed', $e);
+    throw new bException('redirect(): Failed', $e);
 }
 ?>

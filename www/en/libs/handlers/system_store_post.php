@@ -8,7 +8,7 @@
  */
 try{
     if(empty($_POST)){
-        throw new lsException(tr('store_post(): $_POST is empty'), 'postempty');
+        throw new bException(tr('store_post(): $_POST is empty'), 'postempty');
     }
 
     $_SESSION['post'] = array('redirect' => $redirect,
@@ -17,6 +17,6 @@ try{
                               'post'     => $_POST);
 
 }catch(Exception $e){
-    throw new lsException('store_post(): Failed', $e);
+    throw new bException('store_post(): Failed', $e);
 }
 ?>

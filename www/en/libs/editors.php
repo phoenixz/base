@@ -28,7 +28,7 @@ function editors_nicedit($params){
 //               html_script('nicEditors.findEditor('.$params['name'].');');
 
     }catch(Exception $e){
-        throw new lsException('editors_nicedit(): Failed', $e);
+        throw new bException('editors_nicedit(): Failed', $e);
     }
 }
 
@@ -101,7 +101,7 @@ function editors_tinymce($params){
         return $html;
 
     }catch(Exception $e){
-        throw new lsException('editors_tinymce(): Failed', $e);
+        throw new bException('editors_tinymce(): Failed', $e);
     }
 }
 ?>

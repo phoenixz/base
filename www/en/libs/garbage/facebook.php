@@ -60,7 +60,7 @@ function facebook_get_avatar_url($user){
         return '';
 
     }catch(Exception $e){
-        throw new lsException('facebook_get_avatar_url(): Failed', $e);
+        throw new bException('facebook_get_avatar_url(): Failed', $e);
     }
 }
 
@@ -80,7 +80,7 @@ function facebook_set_users_avatar($user){
         users_add_avatar($user, facebook_get_avatar_url($user));
 
     }catch(Exception $e){
-        throw new lsException('facebook_set_users_avatar(): Failed', $e);
+        throw new bException('facebook_set_users_avatar(): Failed', $e);
     }
 }
 ?>

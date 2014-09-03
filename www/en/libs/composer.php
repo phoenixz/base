@@ -14,7 +14,7 @@
  * Do a version check so we're sure this stuff is supported
  */
 if(version_compare(PHP_VERSION, '5.3.2') < 0){
-    throw new lsException('composer library: PHP composer requires PHP 5.3.2+', 'notsupported');
+    throw new bException('composer library: PHP composer requires PHP 5.3.2+', 'notsupported');
 }
 
 
@@ -60,7 +60,7 @@ function composer_phar_location(){
         return false;
 
     }catch(Exception $e){
-        throw new lsException('composer_phar_location(): Failed', $e);
+        throw new bException('composer_phar_location(): Failed', $e);
     }
 }
 
@@ -111,7 +111,7 @@ function composer_phar_install($global = null){
         return $path;
 
     }catch(Exception $e){
-        throw new lsException('composer_phar_install(): Failed', $e);
+        throw new bException('composer_phar_install(): Failed', $e);
     }
 }
 
@@ -130,7 +130,7 @@ function composer_phar_ensure($global = null){
         return composer_phar_install($global);
 
     }catch(Exception $e){
-        throw new lsException('composer_phar_ensure(): Failed', $e);
+        throw new bException('composer_phar_ensure(): Failed', $e);
     }
 }
 
@@ -152,7 +152,7 @@ function composer_install($arguments, $global = null){
         }
 
     }catch(Exception $e){
-        throw new lsException('composer_install(): Failed', $e);
+        throw new bException('composer_install(): Failed', $e);
     }
 }
 ?>

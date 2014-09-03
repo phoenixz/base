@@ -26,7 +26,7 @@ function popup_create($content){
                 </div>';
 
     }catch(Exception $e){
-        throw new lsException('popup_create(): Failed', $e);
+        throw new bException('popup_create(): Failed', $e);
     }
 }
 ?>

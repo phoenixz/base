@@ -122,10 +122,10 @@ function json_reply($reply = null, $result = 'OK', $httpcode = null){
 function json_error($message, $default_message = null){
     if(is_object($message)){
         /*
-         * Assume this is an lsException object
+         * Assume this is an bException object
          */
-        if(!($message instanceof lsException)){
-            throw new lsException('json_error(): Specified message must either be a string or an lsException ojbect, but is neither');
+        if(!($message instanceof bException)){
+            throw new bException('json_error(): Specified message must either be a string or an bException ojbect, but is neither');
         }
 
         if($default_message === null){
@@ -168,25 +168,25 @@ function json_decode_custom($json, $as_array = true){
             break;
 
         case JSON_ERROR_DEPTH:
-            throw new lsException('json_decode_custom(): Maximum stack depth exceeded');
+            throw new bException('json_decode_custom(): Maximum stack depth exceeded');
 
         case JSON_ERROR_STATE_MISMATCH:
-            throw new lsException('json_decode_custom(): Underflow or the modes mismatch');
+            throw new bException('json_decode_custom(): Underflow or the modes mismatch');
 
         case JSON_ERROR_CTRL_CHAR:
-            throw new lsException('json_decode_custom(): Unexpected control character found');
+            throw new bException('json_decode_custom(): Unexpected control character found');
 
         case JSON_ERROR_SYNTAX:
-            throw new lsException('json_decode_custom(): Syntax error, malformed JSON');
+            throw new bException('json_decode_custom(): Syntax error, malformed JSON');
 
         case JSON_ERROR_UTF8:
             /*
              * Only PHP 5.3+
              */
-            throw new lsException('json_decode_custom(): Malformed UTF-8 characters, possibly incorrectly encoded');
+            throw new bException('json_decode_custom(): Malformed UTF-8 characters, possibly incorrectly encoded');
 
         default:
-            throw new lsException('json_decode_custom(): Unknown JSON error occured');
+            throw new bException('json_decode_custom(): Unknown JSON error occured');
     }
 
     return $retval;

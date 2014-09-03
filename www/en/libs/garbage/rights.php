@@ -25,7 +25,7 @@ function rights_exists($right){
 
     try{
         if(empty($right)){
-            throw new lsException('rights_exists(): No right specified');
+            throw new bException('rights_exists(): No right specified');
 
         }elseif(is_numeric($right)){
             $query  = 'SELECT `rights`.`name` FROM `rights` WHERE `rights`.`id`   = :right';
@@ -34,7 +34,7 @@ function rights_exists($right){
             $query = 'SELECT `rights`.`id`    FROM `rights` WHERE `rights`.`name` = :right';
 
         }else{
-            throw new lsException('rights_exists(): Invalid right "'.str_safe($right).'" specified, must be either numeric, or string');
+            throw new bException('rights_exists(): Invalid right "'.str_safe($right).'" specified, must be either numeric, or string');
         }
 
         $q = $pdo->prepare($query);
@@ -47,7 +47,7 @@ function rights_exists($right){
         return $q->fetchColumn(0);
 
     }catch(Exception $e){
-        throw new lsException('rights_exists(): Failed', $e);
+        throw new bException('rights_exists(): Failed', $e);
     }
 }
 
@@ -62,7 +62,7 @@ function rights_insert($right, $description = ''){
     try{
         if(!is_array($right)){
             if(!is_string($right)){
-                throw new lsException('right_insert(): right should be specified as a string or an array containing "name"');
+                throw new bException('right_insert(): right should be specified as a string or an array containing "name"');
             }
 
             $right = array('name'        => $right,
@@ -70,11 +70,11 @@ function rights_insert($right, $description = ''){
         }
 
         if(empty($right['name'])){
-            throw new lsException('right_insert(): No name specified');
+            throw new bException('right_insert(): No name specified');
         }
 
         if($right['name'] == 'devil'){
-            throw new lsException('right_insert(): The devil right can not be added to the system');
+            throw new bException('right_insert(): The devil right can not be added to the system');
         }
 
         $pdo_data = pdo_insert($right, rights_columns());
@@ -87,7 +87,7 @@ function rights_insert($right, $description = ''){
         return $pdo->lastInsertId();
 
     }catch(Exception $e){
-        throw new lsException('rights_insert(): Failed', $e);
+        throw new bException('rights_insert(): Failed', $e);
     }
 }
 
@@ -101,11 +101,11 @@ function rights_update(){
 
     try{
         if(!is_array($right)){
-            throw new lsException('rights_update(): right was not specified as array');
+            throw new bException('rights_update(): right was not specified as array');
         }
 
         if(!empty($right['name']) and($right['name'] == 'devil')){
-            throw new lsException('rights_update(): The devil right can not be added to the system');
+            throw new bException('rights_update(): The devil right can not be added to the system');
         }
 
         $pdo_data = pdo_update($right, rights_columns(), 'id');
@@ -119,7 +119,7 @@ function rights_update(){
         return $q->rowCount();
 
     }catch(Exception $e){
-        throw new lsException('rights_update(): Failed', $e);
+        throw new bException('rights_update(): Failed', $e);
     }
 }
 
@@ -134,14 +134,14 @@ function rights_delete($right){
     try{
         if(is_array($right)){
             if(empty($right['id'])){
-                throw new lsException('rights_delete(): User specified as array, but id missing');
+                throw new bException('rights_delete(): User specified as array, but id missing');
             }
 
             $right = $right['id'];
         }
 
         if(empty($right)){
-            throw new lsException('rights_delete(): No right specified');
+            throw new bException('rights_delete(): No right specified');
 
         }elseif(is_numeric($right)){
             $query   = 'UPDATE `rights` SET `rights`.`status` = -1  WHERE `rights`.`id`   = :right';
@@ -150,7 +150,7 @@ function rights_delete($right){
             $query   = 'UPDATE `rights` SET `rights`.`status` = -1  WHERE `rights`.`name` = :right';
 
         }else{
-            throw new lsException('rights_delete(): Invalid right "'.str_safe($right).'" specified, must be either numeric, or string');
+            throw new bException('rights_delete(): Invalid right "'.str_safe($right).'" specified, must be either numeric, or string');
         }
 
         $q = $pdo->prepare($query);
@@ -159,7 +159,7 @@ function rights_delete($right){
         return $q->rowCount();
 
     }catch(Exception $e){
-        throw new lsException('rights_delete(): Failed', $e);
+        throw new bException('rights_delete(): Failed', $e);
     }
 }
 
@@ -174,14 +174,14 @@ function rights_erase($right){
     try{
         if(is_array($right)){
             if(empty($right['id'])){
-                throw new lsException('rights_erase(): User specified as array, but id missing');
+                throw new bException('rights_erase(): User specified as array, but id missing');
             }
 
             $right = $right['id'];
         }
 
         if(empty($right)){
-            throw new lsException('rights_erase(): No right specified');
+            throw new bException('rights_erase(): No right specified');
 
         }elseif(is_numeric($right)){
             $query   = 'DELETE FROM `rights` WHERE `rights`.`id` = :right';
@@ -190,7 +190,7 @@ function rights_erase($right){
             $query   = 'DELETE FROM `rights` WHERE `rights`.`name` = :right';
 
         }else{
-            throw new lsException('rights_erase(): Invalid right "'.str_safe($right).'" specified, must be either numeric, or string');
+            throw new bException('rights_erase(): Invalid right "'.str_safe($right).'" specified, must be either numeric, or string');
         }
 
         $q = $pdo->prepare($query);
@@ -200,7 +200,7 @@ function rights_erase($right){
 
 
     }catch(Exception $e){
-        throw new lsException('rights_erase(): Failed', $e);
+        throw new bException('rights_erase(): Failed', $e);
     }
 }
 
@@ -219,14 +219,14 @@ function rights_get($right, $columns = null){
 
         }elseif(!is_array($columns)){
             if(!is_string($columns)){
-                throw new lsException('rights_get(): Invalid columns specified, should be either CSV string or array', 'invalid');
+                throw new bException('rights_get(): Invalid columns specified, should be either CSV string or array', 'invalid');
             }
 
             $columns = explode(',', $columns);
         }
 
         if(empty($right)){
-            throw new lsException('rights_get(): No right specified', 'notspecified');
+            throw new bException('rights_get(): No right specified', 'notspecified');
 
         }elseif(is_numeric($right)){
             $query  = 'SELECT '.implode(',', $columns).' FROM `rights` WHERE `rights`.`id`   = :right';
@@ -235,7 +235,7 @@ function rights_get($right, $columns = null){
             $query = 'SELECT '.implode(',', $columns).' FROM `rights` WHERE (`rights`.`name` = :right)';
 
         }else{
-            throw new lsException('rights_get(): Invalid right "'.str_safe($right).'" specified, must be either numeric, or string', 'invalid');
+            throw new bException('rights_get(): Invalid right "'.str_safe($right).'" specified, must be either numeric, or string', 'invalid');
         }
 
         $q = $pdo->prepare($query);
@@ -249,10 +249,10 @@ function rights_get($right, $columns = null){
                 return $q->fetch(PDO::FETCH_ASSOC);
         }
 
-        throw new lsException('rights_get(): Found multiple results for right "'.str_log($right).'"');
+        throw new bException('rights_get(): Found multiple results for right "'.str_log($right).'"');
 
     }catch(Exception $e){
-        throw new lsException('rights_get(): Failed', $e);
+        throw new bException('rights_get(): Failed', $e);
     }
 }
 
@@ -281,7 +281,7 @@ function rights_list($columns = null, $count = null, $offset = null, $getcount =
 
         }elseif(!is_array($columns)){
             if(!is_string($columns)){
-                throw new lsException('rights_list(): Columns should be specified either as string or array', 'invalid');
+                throw new bException('rights_list(): Columns should be specified either as string or array', 'invalid');
             }
 
             $columns = explode(',', $columns);
@@ -316,7 +316,7 @@ function rights_list($columns = null, $count = null, $offset = null, $getcount =
         return $retval;
 
     }catch(Exception $e){
-        throw new lsException('rights_list(): Failed', $e);
+        throw new bException('rights_list(): Failed', $e);
     }
 }
 
@@ -366,7 +366,7 @@ function rights_users_update($user, $rights = null){
          */
         foreach($user['rights'] as $key => &$right){
             if(!$right){
-                throw new lsException('rights_users_update(): Empty right specified', 'emptyspecified');
+                throw new bException('rights_users_update(): Empty right specified', 'emptyspecified');
             }
 
 
@@ -411,7 +411,7 @@ function rights_users_update($user, $rights = null){
         }
 
     }catch(Exception $e){
-        throw new lsException('rights_users_update(): Failed', $e);
+        throw new bException('rights_users_update(): Failed', $e);
     }
 }
 
@@ -441,7 +441,7 @@ function rights_select($select = '', $name = 'rights_id', $god = true){
         return cache_write('rights_'.$name.'_'.$select.($god ? '_all' : ''), $retval.'</select>');
 
     }catch(Exception $e){
-        throw new lsException('rights_select(): Failed', $e);
+        throw new bException('rights_select(): Failed', $e);
     }
 }
 ?>

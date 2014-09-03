@@ -16,11 +16,11 @@ return;
 	try{
 		notify($_CONFIG['domain']['www']. ' ERROR', $message, -1, $_CONFIG['notifications']['error']);
 
-	}catch(lsException $e){
+	}catch(bException $e){
 		/*
 		 * Notification failed
 		 */
-		throw new lsException('notifyerror(): Failed', $e);
+		throw new bException('notifyerror(): Failed', $e);
 	}
 }
 
@@ -89,7 +89,7 @@ return;
 			}
 		}
 
-	}catch(lsException $e){
+	}catch(bException $e){
 		/*
 		 * Notification failed
 		 */
@@ -121,8 +121,8 @@ function notify_prowl($user, $subject, $message, $priority){
 
         return $prowl->add($application, $subject, $priority, $description, $url);
 
-	}catch(lsException $e){
-        throw new lsException('notify_prowl(): Failed', $e);
+	}catch(bException $e){
+        throw new bException('notify_prowl(): Failed', $e);
     }
 }
 
@@ -139,8 +139,8 @@ function notifymail($user, $subject, $message, $priority){
 
         mail($user, $subject, $message);
 
-	}catch(lsException $e){
-        throw new lsException('notifymail(): Failed', $e);
+	}catch(bException $e){
+        throw new bException('notifymail(): Failed', $e);
     }
 }
 

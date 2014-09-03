@@ -42,11 +42,11 @@ function http_status_message($code){
                              503 => 'Service Unavailable');
 
     if(!is_numeric($code) or ($code < 0) or ($code > 1000)){
-        throw new lsException('http_status_message(): Invalid code "'.str_log($code).'" specified');
+        throw new bException('http_status_message(): Invalid code "'.str_log($code).'" specified');
     }
 
     if(!isset($messages[$code])){
-        throw new lsException('http_status_message(): Specified code "'.str_log($code).'" is not supported');
+        throw new bException('http_status_message(): Specified code "'.str_log($code).'" is not supported');
     }
 
     return $messages[$code];
@@ -62,7 +62,7 @@ function http_header($code){
         header('HTTP/1.1 '.$code.' '.http_status_message($code));
 
     }catch(Exception $e){
-        throw new lsException('http_header(): Failed', $e);
+        throw new bException('http_header(): Failed', $e);
     }
 }
 
@@ -99,7 +99,7 @@ function http_start($params){
             break;
 
         default:
-            throw new lsException('http_start(): Unknown type "'.str_log($type).'" specified');
+            throw new bException('http_start(): Unknown type "'.str_log($type).'" specified');
     }
 }
 ?>

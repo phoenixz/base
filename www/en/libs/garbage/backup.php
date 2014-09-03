@@ -17,7 +17,7 @@ function backup_databases($databases, $target_path){
     try{
         if(!is_array($databases)){
             if(!is_string($databases)){
-                throw new lsException('backup_databases(): Databases should be specified either by string or array');
+                throw new bException('backup_databases(): Databases should be specified either by string or array');
             }
 
             $databases = explode(',', $databases);
@@ -25,7 +25,7 @@ function backup_databases($databases, $target_path){
 
         if(file_exists($target_path)){
             if(!is_dir($target_path)){
-                throw new lsException('backup_databases(): Specified target path "'.str_log($path).'" is not a directory');
+                throw new bException('backup_databases(): Specified target path "'.str_log($path).'" is not a directory');
             }
 
         }else{
@@ -37,14 +37,14 @@ function backup_databases($databases, $target_path){
          */
         foreach($databases as $database){
             if(!$database){
-                throw new lsException('backup_databases(): Empty database specified', 'emptyspecified');
+                throw new bException('backup_databases(): Empty database specified', 'emptyspecified');
             }
 
             backup_database($databases, $target_path);
         }
 
     }catch(Exception $e){
-        throw new lsException('backup_databases(): Failed', $e);
+        throw new bException('backup_databases(): Failed', $e);
     }
 }
 
@@ -56,12 +56,12 @@ function backup_databases($databases, $target_path){
 function backup_database($database, $username, $password, $target_path, $target_file = '', $gzip = true){
     try{
         if(!is_string($databases)){
-            throw new lsException('backup_databases(): Databases should be specified either by string or array');
+            throw new bException('backup_databases(): Databases should be specified either by string or array');
         }
 
         if(file_exists($target_path)){
             if(!is_dir($target_path)){
-                throw new lsException('backup_databases(): Specified target path "'.str_log($path).'" is not a directory');
+                throw new bException('backup_databases(): Specified target path "'.str_log($path).'" is not a directory');
             }
 
         }else{
@@ -77,7 +77,7 @@ function backup_database($database, $username, $password, $target_path, $target_
         }
 
         if(file_exists($target_path.$target_file)){
-            throw new lsException('backup_databases(): Specified target file "'.str_log($path).'" already exists in target path "'.str_log($path).'"');
+            throw new bException('backup_databases(): Specified target file "'.str_log($path).'" already exists in target path "'.str_log($path).'"');
         }
 
         /*
@@ -86,7 +86,7 @@ function backup_database($database, $username, $password, $target_path, $target_
         shell_exec('mysqldump -u '.$username.' -p '.$password.($gzip ? ' | gzip' : '').' > '.$target_path.$target_file);
 
     }catch(Exception $e){
-        throw new lsException('backup_database(): Failed', $e);
+        throw new bException('backup_database(): Failed', $e);
     }
 }
 ?>

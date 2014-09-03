@@ -30,7 +30,7 @@ function test($name, $description, $function){
 		log_console($name.' [TEST] '.$description, '', '', false);
 
         if(!is_callable($function)){
-            throw new lsException('test(): Specified function is not a function but a "'.gettype($function).'"');
+            throw new bException('test(): Specified function is not a function but a "'.gettype($function).'"');
         }
 
 		$function();
@@ -66,13 +66,13 @@ function test_completed($name, $type = 'test'){
 	log_console($name.' ['.$type.' COMPLETED] ', '', 'white', false);
 
     if(!isset($GLOBALS['tests']['errors'][$type])){
-        throw new lsException('test_completed(): Invalid type "" specified. Specify one of "test", "library" or "all"');
+        throw new bException('test_completed(): Invalid type "" specified. Specify one of "test", "library" or "all"');
     }
 
 	$errors = $GLOBALS['tests']['errors'][$type];
 
 	if(!is_array($errors)){
-		throw new lsException('test_completed(): The specified error list should have datatype array but has datatype "'.gettype($errors).'"');
+		throw new bException('test_completed(): The specified error list should have datatype array but has datatype "'.gettype($errors).'"');
 	}
 
 	if($errors){

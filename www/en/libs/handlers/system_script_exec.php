@@ -13,7 +13,7 @@ try{
 
     }elseif(!is_array($argv)){
         if(!is_string($argv)){
-            throw new lsException('script_exec(): Invalid argv specified. Should either be an array or a space delimited string');
+            throw new bException('script_exec(): Invalid argv specified. Should either be an array or a space delimited string');
         }
 
         $argv = explode(' ', $argv);
@@ -59,7 +59,7 @@ try{
 
                 }else{
                     if(!is_string($ok_exitcodes) and !is_numeric($ok_exitcodes)){
-                        throw new lsException('script_exec(): Invalid ok_exitcodes specified, should be either CSV string or array');
+                        throw new bException('script_exec(): Invalid ok_exitcodes specified, should be either CSV string or array');
                     }
 
                     $ok_exitcodes = explode(',', $ok_exitcodes);
@@ -68,8 +68,8 @@ try{
 
             if(!in_array($e->code, $ok_exitcodes)){
 // :TODO: Remove following line, it was not sending error output from the preceding script
-//                    throw new lsException('script_exec(): Script "'.str_log($script).'" failed with code "'.str_log($e->code).'"', $e->code, null);
-                throw new lsException('script_exec(): Script "'.str_log($script).'" failed with code "'.str_log($e->code).'"', $e);
+//                    throw new bException('script_exec(): Script "'.str_log($script).'" failed with code "'.str_log($e->code).'"', $e->code, null);
+                throw new bException('script_exec(): Script "'.str_log($script).'" failed with code "'.str_log($e->code).'"', $e);
             }
         }
     }
@@ -92,6 +92,6 @@ try{
     }
 
 }catch(Exception $e){
-    throw new lsException('script_exec(): Failed to execute "'.str_log($script).'"', $e);
+    throw new bException('script_exec(): Failed to execute "'.str_log($script).'"', $e);
 }
 ?>

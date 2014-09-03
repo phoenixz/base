@@ -23,7 +23,7 @@ switch(strtolower(isset_get($_POST['doaction']))){
             $v->is_equal         (isset_get($_POST['password']), isset_get($_POST['password2']), tr('Please ensure that the password and validation password are equal'));
 
             if(!$v->is_valid()) {
-                throw new lsException(implode(', ', $v->get_errors()), 'invalid');
+                throw new bException(implode(', ', $v->get_errors()), 'invalid');
             }
 
             sql_query('UPDATE `users` SET `password` = :password WHERE `id` = :id',

@@ -16,7 +16,7 @@ function crypto_getinfo(){
     try{
 
     }catch(Exception $e){
-        throw new lsException('crypto_getinfo(): Failed', $e);
+        throw new bException('crypto_getinfo(): Failed', $e);
     }
 }
 ?>

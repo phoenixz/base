@@ -29,7 +29,7 @@ switch($_CONFIG['cache']['method']){
         return false;
 
     default:
-        throw new lsException('cache library: Unknown cache method "'.str_log($_CONFIG['cache']['method']).'" configured', 'unknown');
+        throw new bException('cache library: Unknown cache method "'.str_log($_CONFIG['cache']['method']).'" configured', 'unknown');
 }
 
 
@@ -57,11 +57,11 @@ function cache_read($key){
                 return false;
 
             default:
-                throw new lsException('cache_read(): Unknown cache method "'.str_log($_CONFIG['cache']['method']).'" specified', 'unknown');
+                throw new bException('cache_read(): Unknown cache method "'.str_log($_CONFIG['cache']['method']).'" specified', 'unknown');
         }
 
     }catch(Exception $e){
-        throw new lsException('cache_read(): Failed', $e);
+        throw new bException('cache_read(): Failed', $e);
     }
 }
 
@@ -79,7 +79,7 @@ function cache_read_file($key){
         return file_get_contents($file);
 
     }catch(Exception $e){
-        throw new lsException('cache_read_file(): Failed', $e);
+        throw new bException('cache_read_file(): Failed', $e);
     }
 }
 
@@ -108,11 +108,11 @@ function cache_write($key, $value, $expire = null){
                 return $value;
 
             default:
-                throw new lsException('cache_write(): Unknown cache method "'.str_log($_CONFIG['cache']['method']).'" specified', 'unknown');
+                throw new bException('cache_write(): Unknown cache method "'.str_log($_CONFIG['cache']['method']).'" specified', 'unknown');
         }
 
     }catch(Exception $e){
-        throw new lsException('cache_write(): Failed', $e);
+        throw new bException('cache_write(): Failed', $e);
     }
 }
 
@@ -131,7 +131,7 @@ function cache_write_file($key, $value){
         return $value;
 
     }catch(Exception $e){
-        throw new lsException('cache_write_file(): Failed', $e);
+        throw new bException('cache_write_file(): Failed', $e);
     }
 }
 
@@ -170,7 +170,7 @@ function cache_key_hash($key){
         return $key;
 
     }catch(Exception $e){
-        throw new lsException('cache_key_hash(): Failed', $e);
+        throw new bException('cache_key_hash(): Failed', $e);
     }
 }
 
@@ -197,11 +197,11 @@ function cache_clear(){
                 break;
 
             default:
-                throw new lsException('cache_clear(): Unknown cache method "'.str_log($_CONFIG['cache']['method']).'" specified', 'unknown');
+                throw new bException('cache_clear(): Unknown cache method "'.str_log($_CONFIG['cache']['method']).'" specified', 'unknown');
         }
 
     }catch(Exception $e){
-        throw new lsException('cache_clear(): Failed', $e);
+        throw new bException('cache_clear(): Failed', $e);
     }
 }
 ?>

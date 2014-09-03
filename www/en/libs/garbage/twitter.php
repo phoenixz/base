@@ -15,7 +15,7 @@ function twitter_tweet($user, $message){
     try{
 
     }catch(Exception $e){
-        throw new lsException('twitter_tweet(): Failed', $e);
+        throw new bException('twitter_tweet(): Failed', $e);
     }
 }
 ?>

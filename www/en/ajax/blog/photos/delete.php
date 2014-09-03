@@ -7,7 +7,7 @@ try{
     $user = right_or_redirect('admin', '/signin.php', 'json');
 
     if(empty($_POST['id'])){
-        throw new lsException('ajax/blog/photos/delete: No photo specified', 'notspecified');
+        throw new bException('ajax/blog/photos/delete: No photo specified', 'notspecified');
     }
 
     $photo   = sql_get('SELECT `blogs_photos`.`id`, `blogs_photos`.`file`
@@ -20,11 +20,11 @@ try{
                         WHERE  `blogs_photos`.`id`       = '.cfi($_POST['id']));
 
     if(empty($photo['id'])){
-        throw new lsException('ajax/blog/photos/delete: Unknown photo_id "'.str_log($_POST['id']).'" specified', 'unknown');
+        throw new bException('ajax/blog/photos/delete: Unknown photo_id "'.str_log($_POST['id']).'" specified', 'unknown');
     }
 
     if(($photo['createdby'] != $_SESSION['user']['id']) and !has_right('god')){
-        throw new lsException('ajax/blog/photos/delete: This photo does not belong to you.', 'accessdenied');
+        throw new bException('ajax/blog/photos/delete: This photo does not belong to you.', 'accessdenied');
     }
 
     sql_query('DELETE FROM `blogs_photos`

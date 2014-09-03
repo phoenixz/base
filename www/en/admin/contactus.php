@@ -16,7 +16,7 @@ switch(isset_get($_POST['doaction'])){
              * Delete the specified contact messages
              */
             if(empty($_POST['id'])){
-                throw new lsException('No contact messages selected to delete', 'notspecified');
+                throw new bException('No contact messages selected to delete', 'notspecified');
             }
 
             $list = array_prefix(array_force($_POST['id']), ':id', true);
@@ -31,7 +31,7 @@ switch(isset_get($_POST['doaction'])){
                 html_flash_set(tr('Deleted %count% contact messages', '%count%', $r->rowCount()), 'success');
 
             }else{
-                throw new lsException(tr('Found no contact messages to delete'), 'notfound');
+                throw new bException(tr('Found no contact messages to delete'), 'notfound');
             }
 
         }catch(Exception $e){
@@ -46,7 +46,7 @@ switch(isset_get($_POST['doaction'])){
              * Delete the specified contact messages
              */
             if(empty($_POST['id'])){
-                throw new lsException('No contact messages selected to undelete', 'notspecified');
+                throw new bException('No contact messages selected to undelete', 'notspecified');
             }
 
             $list = array_prefix(array_force($_POST['id']), ':id', true);
@@ -61,7 +61,7 @@ switch(isset_get($_POST['doaction'])){
                 html_flash_set(tr('Undeleted %count% contact messages', '%count%', $r->rowCount()), 'success');
 
             }else{
-                throw new lsException(tr('Found no contact messages to undelete'), 'notfound');
+                throw new bException(tr('Found no contact messages to undelete'), 'notfound');
             }
 
         }catch(Exception $e){
@@ -76,7 +76,7 @@ switch(isset_get($_POST['doaction'])){
              * Delete the specified contact messages
              */
             if(empty($_POST['id'])){
-                throw new lsException('No contact messages selected to erase', 'notspecified');
+                throw new bException('No contact messages selected to erase', 'notspecified');
             }
 
             $list = array_prefix(array_force($_POST['id']), ':id', true);
@@ -87,7 +87,7 @@ switch(isset_get($_POST['doaction'])){
                 html_flash_set(tr('Erased %count% contact messages', '%count%', $r->rowCount()), 'success');
 
             }else{
-                throw new lsException(tr('Found no contact messages to erase'), 'notfound');
+                throw new bException(tr('Found no contact messages to erase'), 'notfound');
             }
 
         }catch(Exception $e){

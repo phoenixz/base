@@ -135,7 +135,7 @@ if(isset_get($_POST['status'])){
                  * Publish the specified blog posts
                  */
                 if(empty($_POST['id'])){
-                    throw new lsException('No '.$params['object_name'].' selected to publish', 'notspecified');
+                    throw new bException('No '.$params['object_name'].' selected to publish', 'notspecified');
                 }
 
                 $list = array_prefix(array_force($_POST['id']), ':id', true);
@@ -159,7 +159,7 @@ if(isset_get($_POST['status'])){
                     html_flash_set(tr('Published %count% '.$params['object_name'].'', '%count%', $r->rowCount()), 'success');
 
                 }else{
-                    throw new lsException(tr('Found no '.$params['object_name'].' to publish'), 'notfound');
+                    throw new bException(tr('Found no '.$params['object_name'].' to publish'), 'notfound');
                 }
 
             }catch(Exception $e){
@@ -175,7 +175,7 @@ if(isset_get($_POST['status'])){
                  * Delete the specified blog posts
                  */
                 if(empty($_POST['id'])){
-                    throw new lsException('No '.$params['object_name'].' selected to delete', 'notspecified');
+                    throw new bException('No '.$params['object_name'].' selected to delete', 'notspecified');
                 }
 
                 $list = array_prefix(array_force($_POST['id']), ':id', true);
@@ -198,7 +198,7 @@ if(isset_get($_POST['status'])){
                     html_flash_set(tr('Deleted %count% '.$params['object_name'].'', '%count%', $r->rowCount()), 'success');
 
                 }else{
-                    throw new lsException(tr('Found no '.$params['object_name'].' to delete'), 'notfound');
+                    throw new bException(tr('Found no '.$params['object_name'].' to delete'), 'notfound');
                 }
 
             }catch(Exception $e){
@@ -213,7 +213,7 @@ if(isset_get($_POST['status'])){
                  * Delete the specified blog posts
                  */
                 if(empty($_POST['id'])){
-                    throw new lsException('No '.$params['object_name'].' selected to undelete', 'notspecified');
+                    throw new bException('No '.$params['object_name'].' selected to undelete', 'notspecified');
                 }
 
                 $list = array_prefix(array_force($_POST['id']), ':id', true);
@@ -236,7 +236,7 @@ if(isset_get($_POST['status'])){
                     html_flash_set(tr('Undeleted %count% '.$params['object_name'].'', '%count%', $r->rowCount()), 'success');
 
                 }else{
-                    throw new lsException(tr('Found no '.$params['object_name'].' to undelete'), 'notfound');
+                    throw new bException(tr('Found no '.$params['object_name'].' to undelete'), 'notfound');
                 }
 
             }catch(Exception $e){
@@ -251,7 +251,7 @@ if(isset_get($_POST['status'])){
                  * Delete the specified blog posts
                  */
                 if(empty($_POST['id'])){
-                    throw new lsException('No '.$params['object_name'].' selected to erase', 'notspecified');
+                    throw new bException('No '.$params['object_name'].' selected to erase', 'notspecified');
                 }
 
                 $list = array_prefix(array_force($_POST['id']), ':id', true);
@@ -274,7 +274,7 @@ if(isset_get($_POST['status'])){
                     html_flash_set(tr('Erased %count% '.$params['object_name'].'', '%count%', $r->rowCount()), 'success');
 
                 }else{
-                    throw new lsException(tr('Found no '.$params['object_name'].' to erase'), 'notfound');
+                    throw new bException(tr('Found no '.$params['object_name'].' to erase'), 'notfound');
                 }
 
             }catch(Exception $e){
@@ -289,7 +289,7 @@ if(isset_get($_POST['status'])){
                  * Set status for the specified blog posts
                  */
                 if(empty($_POST['id'])){
-                    throw new lsException(tr('No %object% selected for status change', array('%object%' => $params['object_name'].'(s)')), 'notspecified');
+                    throw new bException(tr('No %object% selected for status change', array('%object%' => $params['object_name'].'(s)')), 'notspecified');
                 }
 
                 $list = array_prefix(array_force($_POST['id']), ':id', true);
@@ -314,7 +314,7 @@ if(isset_get($_POST['status'])){
                     html_flash_set(tr('Updated status for %count% %object% to "'.status($_POST['status'], $params['status_list']).'"', array('%count%' => $r->rowCount(), '%object%' => $params['object_name'].'(s)')), 'success');
 
                 }else{
-                    throw new lsException(tr('Found no %object% to change status', array('%object%' => $params['object_name'].'(s)')), 'notfound');
+                    throw new bException(tr('Found no %object% to change status', array('%object%' => $params['object_name'].'(s)')), 'notfound');
                 }
 
             }catch(Exception $e){
@@ -478,7 +478,7 @@ if(!$r->rowCount()){
                     break;
 
                 default:
-                    throw new lsException('Unknown column "'.str_log($column).'" specified');
+                    throw new bException('Unknown column "'.str_log($column).'" specified');
             }
         }
 

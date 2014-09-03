@@ -15,13 +15,13 @@ if(isset($_POST['dosignin'])){
         $v->hasMinChars($_POST['password'], 8, tr('Please ensure that the password has a minimum of 8 characters'));
 
         if(!$v->isValid()) {
-            throw new lsException('Signin failed with "'.$v->getErrors(', ').'"', 'validation');
+            throw new bException('Signin failed with "'.$v->getErrors(', ').'"', 'validation');
         }
 
         $user = user_authenticate($_POST['username'], $_POST['password']);
 
         if(!user_has_right($user, 'admin')){
-            throw new lsException('signin: User "'.user_name($user).'" is not an administrator', 'accessdenied');
+            throw new bException('signin: User "'.user_name($user).'" is not an administrator', 'accessdenied');
         }
 
         log_database('Admin authenticated: "'.$_POST['username'].'"', 'ADMIN');

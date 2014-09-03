@@ -9,7 +9,7 @@
 /*
  * Extend normal exception to automatically log to error log
  */
-class lsException extends Exception{
+class bException extends Exception{
     private $messages = array();
     private $data     = null;
     public  $code     = null;
@@ -27,11 +27,11 @@ class lsException extends Exception{
         }
 
         if(!$message){
-            throw new Exception('lsException: No exception message specified in file "'.current_file(1).'" @ line "'.current_line(1).'"');
+            throw new Exception('bException: No exception message specified in file "'.current_file(1).'" @ line "'.current_line(1).'"');
         }
 
         if(!empty($e)){
-            if($e instanceof lsException){
+            if($e instanceof bException){
                 $this->messages = $e->getMessages();
 
             }else{
@@ -50,7 +50,7 @@ class lsException extends Exception{
         }
 
         if(!$code){
-            if(is_object($e) and ($e instanceof lsException)){
+            if(is_object($e) and ($e instanceof bException)){
                 $code = $e->code;
             }
         }
@@ -136,7 +136,7 @@ function tr($msg, $from = false, $to = false){
         }
 
     }catch(Exception $e){
-        throw new lsException('tr(): Failed. Check the $from and $to configuration!', $e);
+        throw new bException('tr(): Failed. Check the $from and $to configuration!', $e);
     }
 }
 
@@ -164,7 +164,7 @@ function tr($msg, $from = false, $to = false){
 function cfm($string, $utf8 = true){
     if(!is_scalar($string)){
         if(!is_null($string)){
-            throw new lsException('cfm(): Specified variable should be datatype "string" but has datatype "'.gettype($string).'"', 'invalid');
+            throw new bException('cfm(): Specified variable should be datatype "string" but has datatype "'.gettype($string).'"', 'invalid');
         }
     }
 
@@ -225,7 +225,7 @@ function redirect($target = '', $clear_session_redirect = true){
 function session_redirect($method = 'http', $force = false){
     try{
         if(PLATFORM != 'apache'){
-            throw new lsException('session_redirect(): This function can only be called on webservers');
+            throw new bException('session_redirect(): This function can only be called on webservers');
         }
 
         if(empty($_SESSION['redirect'])){
@@ -266,11 +266,11 @@ function session_redirect($method = 'http', $force = false){
                 redirect($redirect);
 
             default:
-                throw new lsException('session_redirect(): Unknown method "'.str_log($method).'" specified. Please speficy one of "json", or "http"', 'unknown');
+                throw new bException('session_redirect(): Unknown method "'.str_log($method).'" specified. Please speficy one of "json", or "http"', 'unknown');
         }
 
     }catch(Exception $e){
-        throw new lsException('session_redirect(): Failed', $e);
+        throw new bException('session_redirect(): Failed', $e);
     }
 }
 
@@ -327,7 +327,7 @@ function load_content($file, $from = false, $to = false, $language = null, $auto
          * Simple validation of search / replace values
          */
         if($validate and (count($from) != count($to))){
-            throw new lsException('load_content(): search count "'.count($from).'" is not equal to replace count "'.count($to).'"', 'searchreplacecounts');
+            throw new bException('load_content(): search count "'.count($from).'" is not equal to replace count "'.count($to).'"', 'searchreplacecounts');
         }
 
         /*
@@ -346,7 +346,7 @@ function load_content($file, $from = false, $to = false, $language = null, $auto
                 /*
                  * Oops, specified $from array does not contain all replace markers
                  */
-                throw new lsException('load_content(): Missing markers "'.str_log($matches).'" for content file "'.str_log($realfile).'"', 'missingmarkers');
+                throw new bException('load_content(): Missing markers "'.str_log($matches).'" for content file "'.str_log($realfile).'"', 'missingmarkers');
             }
 
             return $retval;
@@ -362,7 +362,7 @@ function load_content($file, $from = false, $to = false, $language = null, $auto
         }
 
         if(!$autocreate){
-            throw new lsException('load_content(): Specified file "'.str_log($file).'" does not exist for language "'.str_log($language).'"', 'notexist');
+            throw new bException('load_content(): Specified file "'.str_log($file).'" does not exist for language "'.str_log($language).'"', 'notexist');
         }
 
         /*
@@ -393,7 +393,7 @@ function load_content($file, $from = false, $to = false, $language = null, $auto
                 log_database('load_content(): Search count does not match replace count', 'warning');
         }
 
-        throw new lsException('load_content(): Failed', $e);
+        throw new bException('load_content(): Failed', $e);
     }
 }
 
@@ -464,7 +464,7 @@ function log_message($message, $type = 'info', $color = null){
 
     try{
         if(is_object($message)){
-            if($message instanceof lsException){
+            if($message instanceof bException){
                 foreach($message->getMessages() as $key => $realmessage){
                     log_error($key.': '.$realmessage, $message->code);
                 }
@@ -473,7 +473,7 @@ function log_message($message, $type = 'info', $color = null){
 
             }elseif($message instanceof Exception){
 // :TODO: This will very likely cause an endless loop!
-throw new lsException('log_message(): DEVELOPMENT FIX! This exception is here to stop an endless loop', 'fatal');
+throw new bException('log_message(): DEVELOPMENT FIX! This exception is here to stop an endless loop', 'fatal');
                 return log_message($realmessage, 'error', 'red');
             }
         }
@@ -578,7 +578,7 @@ function log_console($message, $type = 'info', $color = null, $newline = true, $
         return true;
 
     }catch(Exception $e){
-        throw new lsException('log_console: Failed', $e, array('message' => $message));
+        throw new bException('log_console: Failed', $e, array('message' => $message));
     }
 }
 
@@ -601,7 +601,7 @@ function log_database($message, $type){
         $last = $message;
 
         if(is_numeric($type)){
-            throw new lsException('log_database(): Type cannot be numeric');
+            throw new bException('log_database(): Type cannot be numeric');
         }
 
         sql_query('INSERT DELAYED INTO `log` (`users_id`, `type`, `message`) VALUES ('.(isset($_SESSION['user']['id']) ? $_SESSION['user']['id'] : 'NULL').', "'.cfm($type).'", "'.cfm($message).'");');
@@ -629,7 +629,7 @@ function log_file($message, $type, $class = 'messages'){
 
     if(!is_scalar($class)){
         load_libs('json');
-        throw new lsException('log_file(): Specified class "'.str_truncate(json_encode_custom($class), 20).'" is not scalar');
+        throw new bException('log_file(): Specified class "'.str_truncate(json_encode_custom($class), 20).'" is not scalar');
     }
 
     if(!$h[$class]){
@@ -673,14 +673,14 @@ function load_libs($libraries){
 
         foreach($libraries as $library){
             if(!$library){
-                throw new lsException('load_libs(): Empty library specified', 'emptyspecified');
+                throw new bException('load_libs(): Empty library specified', 'emptyspecified');
             }
 
             include_once($libs.$library.'.php');
         }
 
     }catch(Exception $e){
-        throw new lsException('load_libs(): Failed to load libraries "'.str_log($libraries).'"', $e);
+        throw new bException('load_libs(): Failed to load libraries "'.str_log($libraries).'"', $e);
     }
 }
 
@@ -717,7 +717,7 @@ function load_config($files){
         }
 
     }catch(Exception $e){
-        throw new lsException('load_config(): Failed to load some or all of config file(s) "'.str_log($files).'"', $e);
+        throw new bException('load_config(): Failed to load some or all of config file(s) "'.str_log($files).'"', $e);
     }
 }
 
@@ -743,7 +743,7 @@ function debug($class = null){
     }
 
     if(!isset($_CONFIG['debug'][$class])){
-        throw new lsException('debug(): Unknown debug class "'.str_log($class).'" specified', 'unknown');
+        throw new bException('debug(): Unknown debug class "'.str_log($class).'" specified', 'unknown');
     }
 
     return $_CONFIG['debug'][$class];
@@ -794,7 +794,7 @@ function page_show($pagename, $die = false, $force = false, $data = null) {
         }
 
     }catch(Exception $e){
-        throw new lsException('page_show(): Failed to show page "'.str_log($pagename).'"', $e);
+        throw new bException('page_show(): Failed to show page "'.str_log($pagename).'"', $e);
     }
 }
 
@@ -839,7 +839,7 @@ function password($password, $algorithm = 'sha1'){
             return '*sha256*'.sha1(SEED.$password);
 
         default:
-            throw new lsException('password(): Unknown algorithm "'.str_log($algorithm).'" specified', 'unknown');
+            throw new bException('password(): Unknown algorithm "'.str_log($algorithm).'" specified', 'unknown');
     }
 }
 
@@ -903,7 +903,7 @@ function user_or_redirect($url = false, $method = 'http'){
                 /*
                  * No redirect requested, just wanted to know if there is a logged in user.
                  */
-                throw new lsException('user_or_redirect(): No user for this session', 'redirect');
+                throw new bException('user_or_redirect(): No user for this session', 'redirect');
             }
 
             if((PLATFORM == 'shell')){
@@ -914,7 +914,7 @@ function user_or_redirect($url = false, $method = 'http'){
                     $url = 'A user sign in is required';
                 }
 
-                throw new lsException($url, 'nouser');
+                throw new bException($url, 'nouser');
             }
 
             if(!$url){
@@ -954,7 +954,7 @@ function user_or_redirect($url = false, $method = 'http'){
                     redirect($url, false);
 
                 default:
-                    throw new lsException('user_or_redirect(): Unknown method "'.str_log($method).'" specified. Please speficy one of "json", or "http"', 'unknown');
+                    throw new bException('user_or_redirect(): Unknown method "'.str_log($method).'" specified. Please speficy one of "json", or "http"', 'unknown');
             }
         }
 
@@ -965,7 +965,7 @@ function user_or_redirect($url = false, $method = 'http'){
             throw $e;
         }
 
-        throw new lsException('user_or_redirect(): Failed', $e);
+        throw new bException('user_or_redirect(): Failed', $e);
     }
 }
 
@@ -1029,7 +1029,7 @@ function has_right($right, $log_fail = null){
         return true;
 
     }catch(Exception $e){
-        throw new lsException('has_right(): Failed', $e);
+        throw new bException('has_right(): Failed', $e);
     }
 }
 
@@ -1053,7 +1053,7 @@ function right_or_redirect($right, $url = null, $method = 'http', $log_fail = nu
                     $url = 'right_or_redirect(): The "'.str_log($right).'" right is required for this';
                 }
 
-                throw new lsException($url, 'noright');
+                throw new bException($url, 'noright');
             }
 
             if(!$url){
@@ -1078,14 +1078,14 @@ function right_or_redirect($right, $url = null, $method = 'http', $log_fail = nu
                     redirect($url, false);
 
                 default:
-                    throw new lsException('right_or_redirect(): Unknown method "'.str_log($method).'" specified. Please speficy one of "json", or "http"', 'unknown');
+                    throw new bException('right_or_redirect(): Unknown method "'.str_log($method).'" specified. Please speficy one of "json", or "http"', 'unknown');
             }
         }
 
         return $_SESSION['user'];
 
     }catch(Exception $e){
-        throw new lsException('right_or_redirect(): Failed', $e);
+        throw new bException('right_or_redirect(): Failed', $e);
     }
 }
 
@@ -1157,7 +1157,7 @@ function check_extended_session() {
         }
 
     }catch(Exception $e){
-        throw new lsException('user_create_extended_session(): Failed', $e);
+        throw new bException('user_create_extended_session(): Failed', $e);
     }
 }
 
@@ -1184,14 +1184,14 @@ function check_extended_session() {
 //    }
 //
 //    if($setting and ($setting != 'limited')){
-//        throw new lsException('has_limited_access(): Invalid setting value "'.str_log($setting).'" specified. $setting can only be TRUE, FALSE or "limited"');
+//        throw new bException('has_limited_access(): Invalid setting value "'.str_log($setting).'" specified. $setting can only be TRUE, FALSE or "limited"');
 //    }
 //
 //    /*
 //     * Section MUST be specified
 //     */
 //    if(!$section){
-//        throw new lsException('has_limited_access(): No limited_section specified');
+//        throw new bException('has_limited_access(): No limited_section specified');
 //    }
 //
 //    /*
@@ -1275,7 +1275,7 @@ function pick_random($count){
     }
 
     if(($count < 1) or ($count > count($args))){
-        throw new lsException('pick_random(): Invalid count "'.str_log($count).'" specified for "'.count($args).'" arguments');
+        throw new bException('pick_random(): Invalid count "'.str_log($count).'" specified for "'.count($args).'" arguments');
 
     }elseif($count == 1){
         if(empty($array)){
@@ -1367,7 +1367,7 @@ function session_request_register($key, $valid = null){
         return $_SESSION[$key];
 
     }catch(Exception $e){
-        throw new lsException('session_request_register(): Failed', $e);
+        throw new bException('session_request_register(): Failed', $e);
     }
 }
 
@@ -1410,7 +1410,7 @@ function in_source($source, $id, $return){
         return '';
 
     }catch(Exception $e){
-        throw new lsException('in_source(): Failed', $e);
+        throw new bException('in_source(): Failed', $e);
     }
 }
 

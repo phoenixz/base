@@ -27,7 +27,7 @@ function synonym($source, $params = array()){
         array_default($params, 'skip'    , null);
 
         if(!is_numeric($params['chance']) or ($params['chance'] < 0) or ($params['chance'] > 100)){
-            throw new lsException('synonym(): Invalid chance specified, please specify a numeric value in between 0 and 100', 'invalid');
+            throw new bException('synonym(): Invalid chance specified, please specify a numeric value in between 0 and 100', 'invalid');
         }
 
         if($params['skip']){
@@ -77,7 +77,7 @@ function synonym($source, $params = array()){
         }
 
     }catch(Exception $e){
-        throw new lsException('synonym(): Failed', $e);
+        throw new bException('synonym(): Failed', $e);
     }
 }
 
@@ -90,7 +90,7 @@ function synonym_get($word){
     try{
         if(!$data = sql_list('SELECT `synonyms` FROM `synonyms` WHERE `word` = :word', array(':word' => $word))){
             if(!sql_get('SELECT COUNT(`id`) AS count FROM `synonyms`', 'count')){
-                throw new lsException('synonym_get(): Synonyms table is empty. Please run ./scripts/base/importers/synonyms', 'empty');
+                throw new bException('synonym_get(): Synonyms table is empty. Please run ./scripts/base/importers/synonyms', 'empty');
             }
 
             return $word;
@@ -106,7 +106,7 @@ function synonym_get($word){
         return trim(array_random_value($data));
 
     }catch(Exception $e){
-        throw new lsException('synonym_get(): Failed', $e);
+        throw new bException('synonym_get(): Failed', $e);
     }
 }
 
@@ -124,7 +124,7 @@ function synonym_random($count = 1, $nospaces = false){
         }
 
         if(!$data = sql_list('SELECT `word` FROM `synonyms` ORDER BY RAND() LIMIT '.cfi($count), 'word')){
-            throw new lsException('synonym_get(): Synonyms table is empty', 'empty');
+            throw new bException('synonym_get(): Synonyms table is empty', 'empty');
         }
 
         if($count == 1){
@@ -146,7 +146,7 @@ function synonym_random($count = 1, $nospaces = false){
         return $data;
 
     }catch(Exception $e){
-        throw new lsException('synonym_random(): Failed', $e);
+        throw new bException('synonym_random(): Failed', $e);
     }
 }
 ?>

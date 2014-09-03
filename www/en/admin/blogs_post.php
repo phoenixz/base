@@ -102,7 +102,7 @@ if(empty($_GET['post'])){
                 /*
                  * A post with this name already exists
                  */
-                throw new lsException(tr('A post with the name "%name%" already exists', '%name%', str_log($post['name'])), 'exists');
+                throw new bException(tr('A post with the name "%name%" already exists', '%name%', str_log($post['name'])), 'exists');
             }
 
             $category = blogs_validate_category($post['category'], $blog, $params['categories_parent']);
@@ -194,14 +194,14 @@ if(empty($_GET['post'])){
                 /*
                  * This blog post does not exist
                  */
-                throw new lsException(tr('Can not update blog post "%name%", it does not exist', '%name%', str_log($post['name'])), 'notexists');
+                throw new bException(tr('Can not update blog post "%name%", it does not exist', '%name%', str_log($post['name'])), 'notexists');
             }
 
             if(sql_get('SELECT `id` FROM `blogs_posts` WHERE `blogs_id` = :blogs_id AND `id` != :id AND `name` = :name', array(':blogs_id' => $blog['id'], ':id' => $post['id'], ':name' => $post['name']), 'id')){
                 /*
                  * Another post with this name already exists
                  */
-                throw new lsException(tr('Another post with the name "%name%" already exists', '%name%', str_log($post['name'])), 'exists');
+                throw new bException(tr('Another post with the name "%name%" already exists', '%name%', str_log($post['name'])), 'exists');
             }
 
             $category = blogs_validate_category($post['category'], $blog, $params['categories_parent']);

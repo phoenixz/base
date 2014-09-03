@@ -18,7 +18,7 @@ function http($code){
         http_header($code);
 
     }catch(Exception $e){
-        throw new lsException('http(): Failed', $e);
+        throw new bException('http(): Failed', $e);
     }
 }
 
@@ -143,7 +143,7 @@ function inet_dig($domain, $section = false){
         $data   = str_from(shell_exec('dig '.cfm($domain).' ANY'), 'ANSWER: ');
 
         if(str_until($data, ',') == '0'){
-            throw new lsException('inet_dig(): Specified domain "'.str_log($domain).'" was not found', 'notfound');
+            throw new bException('inet_dig(): Specified domain "'.str_log($domain).'" was not found', 'notfound');
         }
 
         $data   = str_cut($data, "ANSWER SECTION:\n", "\n;;");
@@ -220,7 +220,7 @@ function inet_dig($domain, $section = false){
         return $retval;
 
     }catch(Exception $e){
-        throw new lsException('inet_dig(): Failed', $e);
+        throw new bException('inet_dig(): Failed', $e);
     }
 }
 ?>

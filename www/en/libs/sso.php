@@ -45,7 +45,7 @@ function sso($provider, $redirect = true, $get_check = true){
          * Check if specified provider is supported
          */
         if(empty($_CONFIG['sso'][$provider])){
-            throw new lsException('sso(): No configuration for SSO provider "'.str_log($provider).'" available', 'config');
+            throw new bException('sso(): No configuration for SSO provider "'.str_log($provider).'" available', 'config');
         }
 
         $oauth  = new socialmedia_oauth_connect();
@@ -56,7 +56,7 @@ function sso($provider, $redirect = true, $get_check = true){
          */
         foreach($_CONFIG['sso'][$provider] as $key => $value){
             if(($key != 'scope') and !$value){
-//				throw new lsException('sso(): Key "'.$key.'" of SSO provider "'.$provider.'" has not been set', 'config');
+//				throw new bException('sso(): Key "'.$key.'" of SSO provider "'.$provider.'" has not been set', 'config');
             }
         }
 
@@ -78,7 +78,7 @@ function sso($provider, $redirect = true, $get_check = true){
                 /*
                  * We got SOME info from an SSO login, but not the code, probably an error
                  */
-                throw new lsException('sso(): Provider "'.str_log($provider).'" redirected without code, probably an error. To avoid a redirect loop, this SSO has been canceled');
+                throw new bException('sso(): Provider "'.str_log($provider).'" redirected without code, probably an error. To avoid a redirect loop, this SSO has been canceled');
             }
 
             /*
@@ -132,7 +132,7 @@ function sso($provider, $redirect = true, $get_check = true){
                 $retval['token']  = $retval['data']['token'];
 
                 if(empty($retval['data']['email'])){
-                    throw new lsException('sso(): facebook_signin() data did not contain an email.', 'noemail');
+                    throw new bException('sso(): facebook_signin() data did not contain an email.', 'noemail');
                 }
 
                 unset($retval['data']['token']);
@@ -249,7 +249,7 @@ function sso($provider, $redirect = true, $get_check = true){
         user_signin($user);
 
     }catch(Exception $e){
-        throw new lsException('sso(): Failed', $e);
+        throw new bException('sso(): Failed', $e);
     }
 }
 
@@ -265,10 +265,10 @@ function sso_get_token($oauth, $provider){
 
         if(!empty($retval->error)){
             if(is_object($retval->error)){
-                throw new lsException('sso_get_token(): Provider "'.str_log($provider).'" returned error "'.str_log($retval->error->code).'" with message "'.str_log($retval->error->message).'"');
+                throw new bException('sso_get_token(): Provider "'.str_log($provider).'" returned error "'.str_log($retval->error->code).'" with message "'.str_log($retval->error->message).'"');
             }
 
-            throw new lsException('sso_get_token(): Provider "'.str_log($provider).'" returned error "'.str_log($retval->error).'"');
+            throw new bException('sso_get_token(): Provider "'.str_log($provider).'" returned error "'.str_log($retval->error).'"');
         }
 
         $retval = array_from_object($retval);
@@ -280,7 +280,7 @@ function sso_get_token($oauth, $provider){
         return $retval;
 
     }catch(Exception $e){
-        throw new lsException('sso_get_token(): Failed', $e);
+        throw new bException('sso_get_token(): Failed', $e);
     }
 }
 
@@ -306,7 +306,7 @@ function sso_get_profile($oauth, $code){
         return $profile;
 
     }catch(Exception $e){
-        throw new lsException('sso_get_profile(): Failed', $e);
+        throw new bException('sso_get_profile(): Failed', $e);
     }
 }
 

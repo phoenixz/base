@@ -15,7 +15,7 @@ function deploy_site($site){
     try{
 
     }catch(Exception $e){
-        throw new lsException('deploy_site(): Failed', $e);
+        throw new bException('deploy_site(): Failed', $e);
     }
 }
 
@@ -28,7 +28,7 @@ function deploy_insert($site){
     try{
 
     }catch(Exception $e){
-        throw new lsException('deploy_site(): Failed', $e);
+        throw new bException('deploy_site(): Failed', $e);
     }
 }
 ?>

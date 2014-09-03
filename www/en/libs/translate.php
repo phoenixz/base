@@ -21,7 +21,7 @@ function translate($text, $language = null){
         return $text;
 
     }catch(Exception $e){
-        throw new lsException('translate(): Failed', $e);
+        throw new bException('translate(): Failed', $e);
     }
 }
 ?>

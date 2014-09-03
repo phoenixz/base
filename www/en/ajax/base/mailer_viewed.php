@@ -3,7 +3,7 @@
 
     try{
         if(empty($_GET['code'])){
-            throw new lsException('ajax/base/mailer_access: No code specified');
+            throw new bException('ajax/base/mailer_access: No code specified');
         }
 
         load_libs('image,mailer');

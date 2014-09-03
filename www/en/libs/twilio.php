@@ -36,7 +36,7 @@ function twilio_install(){
         unlink(TMP.'twilio_install.zip');
 
     }catch(Exception $e){
-        throw new lsException('twilio_install(): Failed', $e);
+        throw new bException('twilio_install(): Failed', $e);
     }
 }
 
@@ -55,13 +55,13 @@ function twilio_load($accountsid = null, $accountstoken = null, $auto_install = 
             log_console('twilio_load(): Twilio API library not found', 'notinstalled');
 
             if(!$auto_install){
-                throw new lsException('twilio_load(): Twilio API library file "'.str_log($file).'" was not found', 'notinstalled');
+                throw new bException('twilio_load(): Twilio API library file "'.str_log($file).'" was not found', 'notinstalled');
             }
 
             twilio_install();
 
             if(!file_exists($file)){
-                throw new lsException('twilio_load(): Twilio API library file "'.str_log($file).'" was not found, and auto install seems to have failed', 'notinstalled');
+                throw new bException('twilio_load(): Twilio API library file "'.str_log($file).'" was not found, and auto install seems to have failed', 'notinstalled');
             }
         }
 
@@ -80,7 +80,7 @@ function twilio_load($accountsid = null, $accountstoken = null, $auto_install = 
         return new Services_Twilio($accountsid, $accountstoken);
 
     }catch(Exception $e){
-        throw new lsException('twilio_load(): Failed', $e);
+        throw new bException('twilio_load(): Failed', $e);
     }
 }
 ?>

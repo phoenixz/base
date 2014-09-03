@@ -28,24 +28,24 @@ function mailer_insert($params){
 
         foreach(array('name', 'subject', 'users') as $key){
             if(empty($params[$key])){
-                throw new lsException('mailer_insert(): No "'.str_log($key).'" specified');
+                throw new bException('mailer_insert(): No "'.str_log($key).'" specified');
             }
         }
 
         if(mailer_get($params, 'id')){
-            throw new lsException('mailer_insert(): A mailer with the name "'.$params['name'].'" already exists', 'exists');
+            throw new bException('mailer_insert(): A mailer with the name "'.$params['name'].'" already exists', 'exists');
         }
 
         if($params['starton'] and ($params['status'] != 'stopped')){
-            throw new lsException('mailer_insert(): Both starton and start were specified, please specify only one', 'invalid');
+            throw new bException('mailer_insert(): Both starton and start were specified, please specify only one', 'invalid');
         }
 
         if(empty($params['from_name'])){
-            throw new lsException('mailer_insert(): No from_name specified', 'notspecified');
+            throw new bException('mailer_insert(): No from_name specified', 'notspecified');
         }
 
         if(empty($params['from_email'])){
-            throw new lsException('mailer_insert(): No from_email specified', 'notspecified');
+            throw new bException('mailer_insert(): No from_email specified', 'notspecified');
         }
 
         load_libs('json,seo');
@@ -63,20 +63,20 @@ function mailer_insert($params){
         $params['to']   = array_force($params['to']);
 
         if(count($params['from']) != count($params['to'])){
-            throw new lsException('mailer_insert(): The element count specified in "from" ('.count($params['from']).'), does not match the element count specified in "to" ('.count($params['to']).')', 'invalid');
+            throw new bException('mailer_insert(): The element count specified in "from" ('.count($params['from']).'), does not match the element count specified in "to" ('.count($params['to']).')', 'invalid');
         }
 
         /*
          * Validate content file
          */
         if(!file_exists(ROOT.'data/content/'.(SUBENVIRONMENTNAME ? SUBENVIRONMENTNAME.'/' : '').LANGUAGE.'/mailer/template.html')){
-            throw new lsException('mailer_insert(): Template file "'.ROOT.'data/content/'.(SUBENVIRONMENTNAME ? SUBENVIRONMENTNAME.'/' : '').LANGUAGE.'/mailer/template.html" does not exist', 'notexist');
+            throw new bException('mailer_insert(): Template file "'.ROOT.'data/content/'.(SUBENVIRONMENTNAME ? SUBENVIRONMENTNAME.'/' : '').LANGUAGE.'/mailer/template.html" does not exist', 'notexist');
         }
 
         $params['content'] = cfm($params['content']);
 
         if(!file_exists($file = ROOT.'data/content/'.(SUBENVIRONMENTNAME ? SUBENVIRONMENTNAME.'/' : '').LANGUAGE.'/mailer/'.$params['content'].'.html')){
-            throw new lsException('mailer_insert(): Specified content file "'.$params['content'].'.html'.'" does not exist in email content path "'.ROOT.'data/content/'.LANGUAGE.'/mailer/'.'"', 'notexist');
+            throw new bException('mailer_insert(): Specified content file "'.$params['content'].'.html'.'" does not exist in email content path "'.ROOT.'data/content/'.LANGUAGE.'/mailer/'.'"', 'notexist');
         }
 
         /*
@@ -93,11 +93,11 @@ function mailer_insert($params){
             $missing['content']   = array_diff($params['from'], $matches);
 
             if(count($missing['content'])){
-                throw new lsException('mailer_insert(): Content file contains markers "'.implode(',', $missing['content']).'" that have not been defined in arguments', 'missing');
+                throw new bException('mailer_insert(): Content file contains markers "'.implode(',', $missing['content']).'" that have not been defined in arguments', 'missing');
             }
 
             //if(count($missing['arguments'])){
-            //    throw new lsException('mailer_insert(): Arguments contains markers "'.implode(',', $missing['arguments']).'" that have not been defined in content file ', 'missing');
+            //    throw new bException('mailer_insert(): Arguments contains markers "'.implode(',', $missing['arguments']).'" that have not been defined in content file ', 'missing');
             //}
         }
 
@@ -127,7 +127,7 @@ function mailer_insert($params){
         return $mailings_id;
 
     }catch(Exception $e){
-        throw new lsException('mailer_insert(): Failed', $e);
+        throw new bException('mailer_insert(): Failed', $e);
     }
 }
 
@@ -149,7 +149,7 @@ function mailer_add_users($users, $mailing, $validate_mailing = true){
         }
 
         if($mailings_id < 1){
-            throw new lsException('mailer_add_users(): Specified mailing "'.str_log($mailing).'" does not exist', 'notexist');
+            throw new bException('mailer_add_users(): Specified mailing "'.str_log($mailing).'" does not exist', 'notexist');
         }
 
         $count = 0;
@@ -216,7 +216,7 @@ function mailer_add_users($users, $mailing, $validate_mailing = true){
         return $count;
 
     }catch(Exception $e){
-        throw new lsException('mailer_add_users(): Failed', $e);
+        throw new bException('mailer_add_users(): Failed', $e);
     }
 }
 
@@ -244,7 +244,7 @@ function mailer_unsubscribe($user, $validate_user = true){
                    AND    `status` IS NULL', array(':users_id' => $user));
 
     }catch(Exception $e){
-        throw new lsException('mailer_unsubscribe(): Failed', $e);
+        throw new bException('mailer_unsubscribe(): Failed', $e);
     }
 }
 
@@ -265,7 +265,7 @@ function mailer_get($params, $columns = false){
         }
 
         if(empty($where)){
-            throw new lsException('mailer_get() No valid mailer columns specified (either id, and or name)', 'notspecified');
+            throw new bException('mailer_get() No valid mailer columns specified (either id, and or name)', 'notspecified');
         }
 
         return sql_get('SELECT '.($columns ? $columns : '*').'
@@ -275,7 +275,7 @@ function mailer_get($params, $columns = false){
                         WHERE  '.implode(' OR ', $where), $columns, $execute);
 
     }catch(Exception $e){
-        throw new lsException('mailer_get(): Failed', $e);
+        throw new bException('mailer_get(): Failed', $e);
     }
 }
 
@@ -297,7 +297,7 @@ function mailer_list($status = null, $columns = '`id`, `name`'){
                 break;
 
             default:
-                throw new lsException('mailer_list(): Unknown status "'.str_log($status).'" specified', 'unknown');
+                throw new bException('mailer_list(): Unknown status "'.str_log($status).'" specified', 'unknown');
         }
 
         if(empty($_SESSION['user']['admin'])){
@@ -321,7 +321,7 @@ function mailer_list($status = null, $columns = '`id`, `name`'){
         return sql_list('SELECT '.$columns.' FROM `mailer_mailings`'.$where, $execute);
 
     }catch(Exception $e){
-        throw new lsException('mailer_list(): Failed', $e);
+        throw new bException('mailer_list(): Failed', $e);
     }
 }
 
@@ -520,7 +520,7 @@ $mailing['language'] = 'en';
         return $sent;
 
     }catch(Exception $e){
-        throw new lsException('mailer_insert(): Failed', $e);
+        throw new bException('mailer_insert(): Failed', $e);
     }
 }
 
@@ -552,7 +552,7 @@ function mailer_get_recipient($code, $status = null){
                         ($status ? 'AND    `mailer_recipients`.`status` = :status' : ''), $execute);
 
     }catch(Exception $e){
-        throw new lsException('mailer_get_recipient(): Failed', $e);
+        throw new bException('mailer_get_recipient(): Failed', $e);
     }
 }
 
@@ -569,7 +569,7 @@ function mailer_viewed($code){
         $recipient = mailer_get_recipient($code, 'sent');
 
         if(!$recipient){
-            throw new lsException('mailer_viewed(): Specified code "'.str_log($code).'" does not exist', 'notexist');
+            throw new bException('mailer_viewed(): Specified code "'.str_log($code).'" does not exist', 'notexist');
         }
 
         sql_query('INSERT INTO `mailer_views` (`recipients_id`, `ip`, `host`, `referrer`)
@@ -583,7 +583,7 @@ function mailer_viewed($code){
         return $recipient['image'];
 
     }catch(Exception $e){
-        throw new lsException('mailer_viewed(): Failed for code "'.str_log($code).'"', $e);
+        throw new bException('mailer_viewed(): Failed for code "'.str_log($code).'"', $e);
     }
 }
 
@@ -597,7 +597,7 @@ function mailer_start($mailers){
         return mailer_status($mailers, 'started');
 
     }catch(Exception $e){
-        throw new lsException('mailer_start(): Failed', $e);
+        throw new bException('mailer_start(): Failed', $e);
     }
 }
 
@@ -611,7 +611,7 @@ function mailer_stop($mailers){
         return mailer_status($mailers, 'stopped');
 
     }catch(Exception $e){
-        throw new lsException('mailer_stop(): Failed', $e);
+        throw new bException('mailer_stop(): Failed', $e);
     }
 }
 
@@ -625,7 +625,7 @@ function mailer_delete($mailers){
         return mailer_status($mailers, 'deleted');
 
     }catch(Exception $e){
-        throw new lsException('mailer_delete(): Failed', $e);
+        throw new bException('mailer_delete(): Failed', $e);
     }
 }
 
@@ -639,7 +639,7 @@ function mailer_cancel($mailers){
         return mailer_status($mailers, 'canceled');
 
     }catch(Exception $e){
-        throw new lsException('mailer_cancel(): Failed', $e);
+        throw new bException('mailer_cancel(): Failed', $e);
     }
 }
 
@@ -661,10 +661,10 @@ function mailer_status($mailers, $status){
                 break;
 
             case 'finished':
-                throw new lsException('mailer_status(): Invalid status "'.str_log($status).'" specified, this status cannot be set', 'invalid');
+                throw new bException('mailer_status(): Invalid status "'.str_log($status).'" specified, this status cannot be set', 'invalid');
 
             default:
-                throw new lsException('mailer_status(): Unknown status "'.str_log($status).'" specified', 'unknown');
+                throw new bException('mailer_status(): Unknown status "'.str_log($status).'" specified', 'unknown');
         }
 
         switch(str_force($mailers)){
@@ -689,7 +689,7 @@ function mailer_status($mailers, $status){
                         break;
 
                     case 'deleted':
-                        throw new lsException('mailer_status(): Cannot delete all mailers!', 'invalid');
+                        throw new bException('mailer_status(): Cannot delete all mailers!', 'invalid');
                 }
 
                 break;
@@ -700,7 +700,7 @@ function mailer_status($mailers, $status){
                  * Automatically start all mailers that are programmed todo so.
                  */
                 if($status != 'started'){
-                    throw new lsException('mailer_status(): "auto" mailers can only be used in combination with status "started"', 'invalid');
+                    throw new bException('mailer_status(): "auto" mailers can only be used in combination with status "started"', 'invalid');
                 }
 
                 $where = ' AND `starton` < NOW() AND `status` != "started"';
@@ -714,7 +714,7 @@ function mailer_status($mailers, $status){
                 $mailers = array_force($mailers);
 
                 if(empty($mailers)){
-                    throw new lsException('mailer_status(): No mailer names specified');
+                    throw new bException('mailer_status(): No mailer names specified');
                 }
 
                 foreach($mailers as $mailer){
@@ -746,7 +746,7 @@ function mailer_status($mailers, $status){
                           WHERE  `status`   != "finished"'.$where, $execute)->rowCount();
 
     }catch(Exception $e){
-        throw new lsException('mailer_status(): Failed', $e);
+        throw new bException('mailer_status(): Failed', $e);
     }
 }
 
@@ -790,7 +790,7 @@ function mailer_get_recipientcount($mailings_id, $status = 'all'){
                 break;
 
             default:
-                throw new lsException('mailer_get_recipientcount(): Unknown status "'.str_log($status).'" specified', 'unknown');
+                throw new bException('mailer_get_recipientcount(): Unknown status "'.str_log($status).'" specified', 'unknown');
         }
 
         return sql_get('SELECT COUNT(`id`) AS count
@@ -804,7 +804,7 @@ function mailer_get_recipientcount($mailings_id, $status = 'all'){
                        $execute);
 
     }catch(Exception $e){
-        throw new lsException('mailer_get_usercount(): Failed', $e);
+        throw new bException('mailer_get_usercount(): Failed', $e);
     }
 }
 ?>

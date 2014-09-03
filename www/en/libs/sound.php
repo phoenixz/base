@@ -17,7 +17,7 @@ function sound_play($file){
         shell_exec('sudo nohup /usr/bin/aplay '.$file.' 2>/dev/null >/dev/null &');
 
     }catch(Exception $e){
-        throw new lsException('sound_play(): Failed', $e);
+        throw new bException('sound_play(): Failed', $e);
     }
 }
 ?>

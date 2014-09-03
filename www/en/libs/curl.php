@@ -41,7 +41,7 @@ function curl_get_proxy($url, $file = '', $serverurl = null) {
                      'data'   => $data);
 
     }catch(Exception $e){
-        throw new lsException('curl_get_proxy(): Failed', $e);
+        throw new bException('curl_get_proxy(): Failed', $e);
     }
 }
 
@@ -59,17 +59,17 @@ function curl_get_random_ip($allowipv6 = false) {
         $result = implode("\n", safe_exec('/sbin/ifconfig'));
 
         if(!preg_match_all('/(?:addr|inet):(\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}) /', $result, $matches)){
-            throw new lsException('curl_get_random_ip(): ifconfig returned no IPs');
+            throw new bException('curl_get_random_ip(): ifconfig returned no IPs');
         }
 
         if(!$matches or empty($matches[1])) {
-            throw new lsException('curl_get_random_ip(): No IP data found');
+            throw new bException('curl_get_random_ip(): No IP data found');
         }
 
         foreach($matches[1] as $ip){
 //            if(!preg_match('/\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}/', $ip)){
 //                if($allowipv6){
-//throw new lsException('curl_get_random_ip(): IPv6 support is not yet supported');
+//throw new bException('curl_get_random_ip(): IPv6 support is not yet supported');
 //                }
 //
 //                continue;
@@ -88,13 +88,13 @@ function curl_get_random_ip($allowipv6 = false) {
         unset($matches);
 
         if(empty($ips)) {
-            throw new lsException('curl_get_random_ip(): No IPs found');
+            throw new bException('curl_get_random_ip(): No IPs found');
         }
 
         return $ips[array_rand($ips)];
 
     }catch(Exception $e){
-        throw new lsException('curl_get_random_ip(): Failed', $e);
+        throw new bException('curl_get_random_ip(): Failed', $e);
     }
 }
 
@@ -118,7 +118,7 @@ function curl_get_random_ip($allowipv6 = false) {
 //        return $ips[0];
 //
 //    }catch(Exception $e){
-//        throw new lsException('curl_get_random_ip(): Failed', $e);
+//        throw new bException('curl_get_random_ip(): Failed', $e);
 //    }
 //}
 //
@@ -128,7 +128,7 @@ function curl_get_random_ip($allowipv6 = false) {
 //function curl_get($url) {
 //    try{
 //        if(!function_exists('curl_init')){
-//            throw new lsException('curl_get(): PHP CURL is not installed, this function cannot work without this library');
+//            throw new bException('curl_get(): PHP CURL is not installed, this function cannot work without this library');
 //        }
 //
 //        $ch = curl_init();
@@ -145,7 +145,7 @@ function curl_get_random_ip($allowipv6 = false) {
 //        return curl_exec($ch);
 //
 //    }catch(Exception $e){
-//        throw new lsException('curl_get(): Failed', $e);
+//        throw new bException('curl_get(): Failed', $e);
 //    }
 //}*/
 
@@ -196,11 +196,11 @@ function curl_get($params, $referer = null, $post = false, $options = array()){
                                            'Pragma: ');
 
         }elseif($params['httpheaders'] and !is_array($params['httpheaders'])){
-                throw new lsException('curl_get(): Invalid headers specified');
+                throw new bException('curl_get(): Invalid headers specified');
         }
 
         if(empty($params['url'])){
-            throw new lsException('curl_get(): No URL specified');
+            throw new bException('curl_get(): No URL specified');
         }
 
         load_libs('file');
@@ -335,7 +335,7 @@ function curl_get($params, $referer = null, $post = false, $options = array()){
                 $retval['data'] = $params['simulation'];
 
             }else{
-                throw new lsException('curl_get(): Unknown simulation type "'.str_log($params['simulation']).'" specified. Please use either false, "partial" or "full"', 'unknown');
+                throw new bException('curl_get(): Unknown simulation type "'.str_log($params['simulation']).'" specified. Please use either false, "partial" or "full"', 'unknown');
             }
         }
 
@@ -396,7 +396,7 @@ function curl_get($params, $referer = null, $post = false, $options = array()){
 
         if($retval['status']['http_code'] != 200){
             load_libs('http');
-            throw new lsException('curl_get(): URL "'.str_log($params['url']).'" gave HTTP "'.str_log($retval['status']['http_code']).'" "'.http_status_message($retval['status']['http_code']).'"', 'HTTP'.$retval['status']['http_code'], null, $retval);
+            throw new bException('curl_get(): URL "'.str_log($params['url']).'" gave HTTP "'.str_log($retval['status']['http_code']).'" "'.http_status_message($retval['status']['http_code']).'"', 'HTTP'.$retval['status']['http_code'], null, $retval);
         }
 
         $retry = 0;
@@ -416,7 +416,7 @@ function curl_get($params, $referer = null, $post = false, $options = array()){
             return curl_get($params, $referer, $post, $options);
         }
 
-        throw new lsException('curl_get(): Failed to get url "'.str_log($params['url']).'"', $e);
+        throw new bException('curl_get(): Failed to get url "'.str_log($params['url']).'"', $e);
     }
 }
 

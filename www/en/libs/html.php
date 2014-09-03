@@ -13,7 +13,7 @@
  */
 function html_only(){
     if(PLATFORM != 'apache'){
-        throw new lsException('html_only(): This can only be done over HTML', 'htmlonly');
+        throw new bException('html_only(): This can only be done over HTML', 'htmlonly');
     }
 }
 
@@ -167,7 +167,7 @@ function html_load_css($files = '', $media = null, $min = null){
 
     if(!is_array($files)){
         if(!is_string($files)){
-            throw new lsException('html_load_css(): Invalid files specification');
+            throw new bException('html_load_css(): Invalid files specification');
         }
 
         $files = explode(',', $files);
@@ -232,7 +232,7 @@ function html_generate_css(){
         return $retval;
 
     }catch(Exception $e){
-        throw new lsException('html_generate_css(): Failed', $e);
+        throw new bException('html_generate_css(): Failed', $e);
     }
 }
 
@@ -252,7 +252,7 @@ function html_load_js($files = '', $min = null, $option = null, $ie = null){
 
     if(!is_array($files)){
         if(!is_string($files)){
-            throw new lsException('html_load_js(): Invalid files specification');
+            throw new bException('html_load_js(): Invalid files specification');
         }
 
         $files = explode(',', $files);
@@ -425,7 +425,7 @@ function html_generate_js(){
         return $retval;
 
     }catch(Exception $e){
-        throw new lsException('html_generate_js(): Failed', $e);
+        throw new bException('html_generate_js(): Failed', $e);
     }
 }
 
@@ -450,11 +450,11 @@ function html_header($params = null, $meta = array()){
         array_default($params, 'favicon', true);
 
         if(empty($params['meta']['description'])){
-            throw new lsException('html_header(): No header meta description specified (SEO!)');
+            throw new bException('html_header(): No header meta description specified (SEO!)');
         }
 
         if(empty($params['meta']['keywords'])){
-            throw new lsException('html_header(): No header meta keywords specified (SEO!)');
+            throw new bException('html_header(): No header meta keywords specified (SEO!)');
         }
 
         if(!empty($_CONFIG['meta'])){
@@ -518,7 +518,7 @@ function html_header($params = null, $meta = array()){
                        $params['body']."\n";
 
     }catch(Exception $e){
-        throw new lsException('html_header(): Failed', $e);
+        throw new bException('html_header(): Failed', $e);
     }
 }
 
@@ -565,7 +565,7 @@ function html_title($params){
             return $params;
         }
 
-        throw new lsException('html_title(): Invalid title specified');
+        throw new bException('html_title(): Invalid title specified');
     }
 
     /*
@@ -588,7 +588,7 @@ function html_flash($messages = '', $type = 'info', $basicmessage = null){
 
     try{
         if(PLATFORM != 'apache'){
-            throw new lsException('html_flash(): This function can only be executed on a webserver!');
+            throw new bException('html_flash(): This function can only be executed on a webserver!');
         }
 
         if(!is_array($messages)){
@@ -675,7 +675,7 @@ function html_flash($messages = '', $type = 'info', $basicmessage = null){
                     break;
 
                 default:
-                    throw new lsException('html_flash(): Unknown flash type "'.str_log($usetype).'" specified. Please specify one of "info" or "success" or "attention" or "error"', 'flash/unknown');
+                    throw new bException('html_flash(): Unknown flash type "'.str_log($usetype).'" specified. Please specify one of "info" or "success" or "attention" or "error"', 'flash/unknown');
             }
 
     //        $retval .= '<div class="sys_bg sys_'.$usetype.'"></div><div class="'.$_CONFIG['flash']['css_name'].' sys_'.$usetype.'">'.$message.'</div>';
@@ -685,7 +685,7 @@ function html_flash($messages = '', $type = 'info', $basicmessage = null){
         return $retval;
 
     }catch(Exception $e){
-        throw new lsException('html_flash(): Failed', $e);
+        throw new bException('html_flash(): Failed', $e);
     }
 }
 
@@ -755,7 +755,7 @@ function html_select($params, $selected = null, $name = '', $none = '', $class =
         array_default($params, $params['id_column'], $params['name']);
 
         if(!$params['name']){
-            throw new lsException('html_select(): No name specified');
+            throw new bException('html_select(): No name specified');
         }
 
         if(is_numeric($params['disabled'])){
@@ -829,7 +829,7 @@ function html_select($params, $selected = null, $name = '', $none = '', $class =
         return $retval.html_script('$("'.$params['autosubmit'].'").change(function(){ $(this).closest("form").submit(); });');
 
     }catch(Exception $e){
-        throw new lsException('html_select(): Failed', $e);
+        throw new bException('html_select(): Failed', $e);
     }
 }
 
@@ -875,7 +875,7 @@ function html_select_body($params, $selected = null, $none = '', $class = '', $a
 
             }elseif(is_object($params['resource'])){
                 if(!($params['resource'] instanceof PDOStatement)){
-                    throw new lsException(tr('html_select_body(): Specified resource object is not an instance of PDOStatement'), 'invalidresource');
+                    throw new bException(tr('html_select_body(): Specified resource object is not an instance of PDOStatement'), 'invalidresource');
                 }
 
                 if($params['auto_select'] and ($params['resource']->rowCount() == 1)){
@@ -902,11 +902,11 @@ function html_select_body($params, $selected = null, $none = '', $class = '', $a
                 }
 
             }else{
-                throw new lsException(tr('html_select_body(): Specified resource "'.str_log($params['resource']).'" is neither an array or resource'), 'invalidresource');
+                throw new bException(tr('html_select_body(): Specified resource "'.str_log($params['resource']).'" is neither an array or resource'), 'invalidresource');
             }
 
         }elseif($params['resource'] !== false){
-            throw new lsException('html_select_body(): No valid resource specified');
+            throw new bException('html_select_body(): No valid resource specified');
         }
 
 
@@ -928,7 +928,7 @@ function html_select_body($params, $selected = null, $none = '', $class = '', $a
         return $retval;
 
     }catch(Exception $e){
-        throw new lsException('html_select_body(): Failed', $e);
+        throw new bException('html_select_body(): Failed', $e);
     }
 }
 
@@ -1029,7 +1029,7 @@ function html_favicon($icon = null, $mobile_icon = null, $sizes = null, $precomp
         }
 
     }catch(Exception $e){
-        throw new lsException('html_favicon(): Failed', $e);
+        throw new bException('html_favicon(): Failed', $e);
     }
 }
 
@@ -1041,11 +1041,11 @@ function html_favicon($icon = null, $mobile_icon = null, $sizes = null, $precomp
 function html_list($params, $selected = ''){
     try{
         if(!is_array($params)){
-            throw new lsException('html_list(): Specified params is not an array', 'invalid');
+            throw new bException('html_list(): Specified params is not an array', 'invalid');
         }
 
         if(empty($params['steps']) or !is_array($params['steps'])){
-            throw new lsException('html_list(): params[steps] is not specified or not an array', 'invalid');
+            throw new bException('html_list(): params[steps] is not specified or not an array', 'invalid');
         }
 
         array_default($params, 'selected'    , $selected);
@@ -1128,7 +1128,7 @@ function html_list($params, $selected = ''){
         return $retval.'</div>';
 
     }catch(Exception $e){
-        throw new lsException('html_list(): Failed', $e);
+        throw new bException('html_list(): Failed', $e);
     }
 }
 
@@ -1148,7 +1148,7 @@ function html_status_select($params){
         return html_select($params);
 
     }catch(Exception $e){
-        throw new lsException('html_status_select(): Failed', $e);
+        throw new bException('html_status_select(): Failed', $e);
     }
 }
 ?>

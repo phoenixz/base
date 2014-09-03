@@ -30,7 +30,7 @@ function rights_give($users, $rights){
                     /*
                      * This user does not exist...
                      */
-                    throw new lsException('rights_give(): The specified user "'.str_log($value).'" does not exist', 'notexist');
+                    throw new bException('rights_give(): The specified user "'.str_log($value).'" does not exist', 'notexist');
                 }
 
             }else{
@@ -38,7 +38,7 @@ function rights_give($users, $rights){
                     /*
                      * This user does not exist...
                      */
-                    throw new lsException('rights_give(): The specified users id "'.str_log($value).'" does not exist', 'notexist');
+                    throw new bException('rights_give(): The specified users id "'.str_log($value).'" does not exist', 'notexist');
                 }
             }
         }
@@ -52,7 +52,7 @@ function rights_give($users, $rights){
                     /*
                      * This right does not exist...
                      */
-                    throw new lsException('rights_give(): The specified right "'.str_log($value).'" does not exist', 'notexist');
+                    throw new bException('rights_give(): The specified right "'.str_log($value).'" does not exist', 'notexist');
                 }
 
             }else{
@@ -60,7 +60,7 @@ function rights_give($users, $rights){
                     /*
                      * This right does not exist...
                      */
-                    throw new lsException('rights_give(): The specified rights id "'.str_log($value).'" does not exist', 'notexist');
+                    throw new bException('rights_give(): The specified rights id "'.str_log($value).'" does not exist', 'notexist');
                 }
             }
         }
@@ -103,7 +103,7 @@ function rights_give($users, $rights){
         }
 
     }catch(Exception $e){
-        throw new lsException('rights_give(): Failed', $e);
+        throw new bException('rights_give(): Failed', $e);
     }
 }
 
@@ -129,7 +129,7 @@ function rights_take($users, $rights){
                     /*
                      * This user does not exist...
                      */
-                    throw new lsException('rights_give(): The specified user "'.str_log($value).'" does not exist', 'notexist');
+                    throw new bException('rights_give(): The specified user "'.str_log($value).'" does not exist', 'notexist');
                 }
 
             }else{
@@ -137,7 +137,7 @@ function rights_take($users, $rights){
                     /*
                      * This user does not exist...
                      */
-                    throw new lsException('rights_give(): The specified users id "'.str_log($value).'" does not exist', 'notexist');
+                    throw new bException('rights_give(): The specified users id "'.str_log($value).'" does not exist', 'notexist');
                 }
             }
         }
@@ -151,7 +151,7 @@ function rights_take($users, $rights){
                     /*
                      * This right does not exist...
                      */
-                    throw new lsException('rights_give(): The specified right "'.str_log($value).'" does not exist', 'notexist');
+                    throw new bException('rights_give(): The specified right "'.str_log($value).'" does not exist', 'notexist');
                 }
 
             }else{
@@ -159,7 +159,7 @@ function rights_take($users, $rights){
                     /*
                      * This right does not exist...
                      */
-                    throw new lsException('rights_give(): The specified rights id "'.str_log($value).'" does not exist', 'notexist');
+                    throw new bException('rights_give(): The specified rights id "'.str_log($value).'" does not exist', 'notexist');
                 }
             }
         }
@@ -182,7 +182,7 @@ function rights_take($users, $rights){
         }
 
     }catch(Exception $e){
-        throw new lsException('rights_take(): Failed', $e);
+        throw new bException('rights_take(): Failed', $e);
     }
 }
 
@@ -203,7 +203,7 @@ function rights_get($params, $columns = false){
         }
 
         if(empty($where)){
-            throw new lsException('rights_get() No valid rights columns specified (either id, and or name, and or description)', 'invalid');
+            throw new bException('rights_get() No valid rights columns specified (either id, and or name, and or description)', 'invalid');
         }
 
         return sql_get('SELECT '.($columns ? $columns : '*').'
@@ -211,7 +211,7 @@ function rights_get($params, $columns = false){
                         WHERE  '.implode(' OR ', $where), $columns, $execute);
 
     }catch(Exception $e){
-        throw new lsException('rights_get(): Failed', $e);
+        throw new bException('rights_get(): Failed', $e);
     }
 }
 
@@ -241,7 +241,7 @@ function rights_select($select = '', $name = 'rights_id', $god = true){
         return cache_write('rights_'.$name.'_'.$select.($god ? '_all' : ''), $retval.'</select>');
 
     }catch(Exception $e){
-        throw new lsException('rights_select(): Failed', $e);
+        throw new bException('rights_select(): Failed', $e);
     }
 }
 
@@ -260,7 +260,7 @@ function rights_has($user, $right){
         }
 
         if(!$target = sql_get('SELECT `id` FROM `users` WHERE `id` = :id OR `name` = :name OR `email` = :email', array(':name' => $user, ':email' => $user, ':id' => $user), 'id')){
-            throw new lsException('rights_has(): Specified user "'.str_log($user).'" does not exist', 'notexists');
+            throw new bException('rights_has(): Specified user "'.str_log($user).'" does not exist', 'notexists');
         }
 
         $rights = sql_list('SELECT `users_id`,
@@ -285,7 +285,7 @@ function rights_has($user, $right){
         return true;
 
     }catch(Exception $e){
-        throw new lsException('rights_has(): Failed', $e);
+        throw new bException('rights_has(): Failed', $e);
     }
 }
 ?>

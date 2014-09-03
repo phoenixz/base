@@ -12,37 +12,37 @@ if(isset_get($_POST['doadd'])){
          * First validate data
          */
         if(empty($_POST['user'])){
-            throw new lsException('No user specified', 'notspecified');
+            throw new bException('No user specified', 'notspecified');
         }
 
         if(empty($_POST['right'])){
-            throw new lsException('No right specified', 'notspecified');
+            throw new bException('No right specified', 'notspecified');
         }
 
         if(!is_numeric($_POST['user'])){
-            throw new lsException('Invalid user specified', 'invalid');
+            throw new bException('Invalid user specified', 'invalid');
         }
 
         if(!is_numeric($_POST['right'])){
-            throw new lsException('Invalid right specified', 'invalid');
+            throw new bException('Invalid right specified', 'invalid');
         }
 
         /*
          * User and right exist?
          */
         if(!$user = sql_get('SELECT `name` FROM `users` WHERE `id` = :id AND (`status` IS NULL)', 'name', array('id' => $_POST['user']))){
-            throw new lsException('Specified user "'.str_log($_POST['user']).'" does not exist', 'notexist');
+            throw new bException('Specified user "'.str_log($_POST['user']).'" does not exist', 'notexist');
         }
 
         if(!$right = sql_get('SELECT `name` FROM `rights` WHERE `id` = :id', 'name', array('id' => $_POST['right']))){
-            throw new lsException('Specified right "'.str_log($_POST['right']).'" does not exist', 'notexist');
+            throw new bException('Specified right "'.str_log($_POST['right']).'" does not exist', 'notexist');
         }
 
         /*
          * This user does not already have this right?
          */
         if(sql_get('SELECT `id` FROM `users_rights` WHERE `users_id` = :users_id AND `rights_id` = :rights_id', 'id', array(':users_id' => $_POST['user'], ':rights_id' => $_POST['right']))){
-            throw new lsException('User "'.str_log($user).'" already has the right "'.str_log($right).'"', 'alreadyadded');
+            throw new bException('User "'.str_log($user).'" already has the right "'.str_log($right).'"', 'alreadyadded');
         }
 
         sql_query('INSERT INTO `users_rights` (`addedby`, `users_id`, `rights_id`, `name`)

@@ -31,7 +31,7 @@ function user_data($id) {
         }
 
     }catch(Exception $e){
-        throw new lsException('user_data(): Failed', $e);
+        throw new bException('user_data(): Failed', $e);
     }
 }
 
@@ -51,7 +51,7 @@ function user_avatar($avatar, $type) {
         return $avatar.'_'.$type.'.jpg';
 
     }catch(Exception $e){
-        throw new lsException('user_avatar(): Failed', $e);
+        throw new bException('user_avatar(): Failed', $e);
     }
 }
 
@@ -66,7 +66,7 @@ function user_update_avatar($user, $avatar) {
     try{
         if(!is_numeric($user)){
             if(!is_array($user) or empty($user['id'])){
-                throw new lsException('user_update_avatar(): Invalid user specified');
+                throw new bException('user_update_avatar(): Invalid user specified');
             }
 
             $user = $user['id'];
@@ -77,7 +77,7 @@ function user_update_avatar($user, $avatar) {
         return $avatar;
 
     }catch(Exception $e){
-        throw new lsException('user_update_avatar(): Failed', $e);
+        throw new bException('user_update_avatar(): Failed', $e);
     }
 }
 
@@ -92,7 +92,7 @@ function user_find_avatar($user) {
     try{
         if(!is_array($user)){
             if(!is_numeric($user)){
-                throw new lsException('user_find_avatar(): Invalid user specified');
+                throw new bException('user_find_avatar(): Invalid user specified');
             }
 
             $user = sql_get('SELECT * FROM `users` WHERE id = '.cfi($user));
@@ -124,7 +124,7 @@ function user_find_avatar($user) {
 
 
     }catch(Exception $e){
-        throw new lsException('user_find_avatar(): Failed', $e);
+        throw new bException('user_find_avatar(): Failed', $e);
     }
 }
 
@@ -136,11 +136,11 @@ function user_find_avatar($user) {
 function user_authenticate($user, $password) {
     try{
         if(!is_scalar($user)){
-            throw new lsException('user_authenticate(): Specified username is not valid', 'invalid');
+            throw new bException('user_authenticate(): Specified username is not valid', 'invalid');
         }
 
         if(!$user = sql_get('SELECT * FROM `users` WHERE `email` = :email OR `username` = :username', array(':email' => $user, ':username' => $user))){
-            throw new lsException('user_authenticate(): Specified user "'.str_log($user).'" not found', 'notfound');
+            throw new bException('user_authenticate(): Specified user "'.str_log($user).'" not found', 'notfound');
         }
 
         if(substr($user['password'], 0, 1) != '*'){
@@ -163,11 +163,11 @@ function user_authenticate($user, $password) {
                 break;
 
             default:
-                throw new lsException('user_authenticate(): Unknown encryption type "'.str_log($encryption).'" in user password specification', 'unknown');
+                throw new bException('user_authenticate(): Unknown encryption type "'.str_log($encryption).'" in user password specification', 'unknown');
         }
 
         if($encryption != str_rfrom($user['password'], '*')){
-            throw new lsException('user_authenticate(): Specified password does not match stored password', 'password');
+            throw new bException('user_authenticate(): Specified password does not match stored password', 'password');
         }
 
         return $user;
@@ -177,7 +177,7 @@ function user_authenticate($user, $password) {
          * Wait a little bit so the authentication failure cannot be timed
          */
         usleep(mt_rand(1000, 2000000));
-        throw new lsException('user_authenticate(): Failed', $e);
+        throw new bException('user_authenticate(): Failed', $e);
     }
 }
 
@@ -191,7 +191,7 @@ function user_signin($user, $extended = false, $redirect = '/') {
 
     try{
         if(!is_array($user)){
-            throw new lsException('user_signin(): Specified user variable is not an array', 'invalid');
+            throw new bException('user_signin(): Specified user variable is not an array', 'invalid');
         }
 
         /*
@@ -199,7 +199,7 @@ function user_signin($user, $extended = false, $redirect = '/') {
          * Shell signin requires neither
          */
         if((PLATFORM == 'apache') and (empty($_COOKIE) or !session_id())){
-            throw new lsException('user_signin(): This user has no active session or no session id, so probably has no cookies', 'cookiesrequired');
+            throw new bException('user_signin(): This user has no active session or no session id, so probably has no cookies', 'cookiesrequired');
         }
 
         $_SESSION['user'] = $user;
@@ -228,7 +228,7 @@ function user_signin($user, $extended = false, $redirect = '/') {
         }
 
     }catch(Exception $e){
-        throw new lsException('user_signin(): Failed', $e);
+        throw new bException('user_signin(): Failed', $e);
     }
 }
 
@@ -256,7 +256,7 @@ function user_signout() {
         session_destroy();
 
     }catch(Exception $e){
-        throw new lsException('user_signout(): Failed', $e);
+        throw new bException('user_signout(): Failed', $e);
     }
 }
 
@@ -292,7 +292,7 @@ function user_create_extended_session($users_id) {
         return $code;
 
     }catch(Exception $e){
-        throw new lsException('user_create_extended_session(): Failed', $e);
+        throw new bException('user_create_extended_session(): Failed', $e);
     }
 }
 
@@ -324,17 +324,17 @@ function user_set_verification_code($user){
             sql_query('UPDATE `users` SET `validated` = "'.cfm($code).'" WHERE `email` = '.cfi($user));
 
         }else{
-            throw new lsException('user_set_verification_code(): Invalid user specified');
+            throw new bException('user_set_verification_code(): Invalid user specified');
         }
 
         if(!sql_affected_rows()){
-            throw new lsException('user_set_verification_code(): Specified user "'.str_log($user).'" does not exist');
+            throw new bException('user_set_verification_code(): Specified user "'.str_log($user).'" does not exist');
         }
 
         return $code;
 
     }catch(Exception $e){
-        throw new lsException('user_set_verification_code(): Failed', $e);
+        throw new bException('user_set_verification_code(): Failed', $e);
     }
 }
 
@@ -348,7 +348,7 @@ function user_check_blacklisted($name){
 //:TODO: Implement. THROW EXCEPTION IF BLACKLISTED!
 
     }catch(Exception $e){
-        throw new lsException('user_blacklisted(): Failed', $e);
+        throw new bException('user_blacklisted(): Failed', $e);
     }
 }
 
@@ -360,11 +360,11 @@ function user_check_blacklisted($name){
 function user_insert($params){
     try{
         if(!is_array($params)){
-            throw new lsException('user_insert(): Invalid params specified', 'invalid');
+            throw new bException('user_insert(): Invalid params specified', 'invalid');
         }
 
         if(empty($params['email'])){
-            throw new lsException('user_insert(): No email specified', 'notspecified');
+            throw new bException('user_insert(): No email specified', 'notspecified');
         }
 
         if(empty($params['name'])){
@@ -377,15 +377,15 @@ function user_insert($params){
         }
 
         //if(empty($params['username'])){
-        //    throw new lsException('user_insert(): No username specified', 'notspecified');
+        //    throw new bException('user_insert(): No username specified', 'notspecified');
         //}
 
         if(empty($params['password'])){
-            throw new lsException('user_insert(): No password specified', 'notspecified');
+            throw new bException('user_insert(): No password specified', 'notspecified');
         }
 
         if(user_get($params, 'id')){
-            throw new lsException('user_insert(): User with username "'.str_log(isset_get($params['username'])).'" or email "'.str_log(isset_get($params['email'])).'" already exists', 'exists');
+            throw new bException('user_insert(): User with username "'.str_log(isset_get($params['username'])).'" or email "'.str_log(isset_get($params['email'])).'" already exists', 'exists');
         }
 
         array_default($params, 'validated', false);
@@ -422,7 +422,7 @@ function user_insert($params){
         return sql_insert_id();
 
     }catch(Exception $e){
-        throw new lsException('user_insert(): Failed', $e);
+        throw new bException('user_insert(): Failed', $e);
     }
 }
 
@@ -437,15 +437,15 @@ function user_update($params){
         array_default($params, 'validated', false);
 
         if(!is_array($params)){
-            throw new lsException('user_update(): Invalid params specified', 'invalid');
+            throw new bException('user_update(): Invalid params specified', 'invalid');
         }
 
         if(empty($params['email'])){
-            throw new lsException('user_update(): No email specified', 'notspecified');
+            throw new bException('user_update(): No email specified', 'notspecified');
         }
 
         if(empty($params['id'])){
-            throw new lsException('user_update(): No users id specified', 'notspecified');
+            throw new bException('user_update(): No users id specified', 'notspecified');
         }
 
         if(empty($params['name'])){
@@ -458,7 +458,7 @@ function user_update($params){
         }
 
         if(!$user = user_get($params['id'])){
-            throw new lsException('user_update(): User with id "'.str_log($params['id']).'" does not exists', 'notexists');
+            throw new bException('user_update(): User with id "'.str_log($params['id']).'" does not exists', 'notexists');
         }
 
         $exists = sql_get('SELECT `id`, `email`, `username`
@@ -473,10 +473,10 @@ function user_update($params){
 
         if($exists){
             if($exists['username'] == $params['username']){
-                throw new lsException('user_update(): Another user already has the username "'.str_log($params['username']).'"', 'exists');
+                throw new bException('user_update(): Another user already has the username "'.str_log($params['username']).'"', 'exists');
 
             }else{
-                throw new lsException('user_update(): Another user already has the email "'.str_log($params['email']).'"', 'exists');
+                throw new bException('user_update(): Another user already has the email "'.str_log($params['email']).'"', 'exists');
             }
         }
 
@@ -504,7 +504,7 @@ function user_update($params){
         return $r->rowCount();
 
     }catch(Exception $e){
-        throw new lsException('user_update(): Failed', $e);
+        throw new bException('user_update(): Failed', $e);
     }
 }
 
@@ -519,23 +519,23 @@ function user_update_password($params){
         array_default($params, 'validated', false);
 
         if(!is_array($params)){
-            throw new lsException('user_update_password(): Invalid params specified', 'invalid');
+            throw new bException('user_update_password(): Invalid params specified', 'invalid');
         }
 
         if(empty($params['id'])){
-            throw new lsException('user_update_password(): No users id specified', 'idnotspecified');
+            throw new bException('user_update_password(): No users id specified', 'idnotspecified');
         }
 
         if(empty($params['password'])){
-            throw new lsException('user_update_password(): No password specified', 'passwordnotspecified');
+            throw new bException('user_update_password(): No password specified', 'passwordnotspecified');
         }
 
         if(empty($params['password2'])){
-            throw new lsException('user_update_password(): No validation password specified', 'validationnotspecified');
+            throw new bException('user_update_password(): No validation password specified', 'validationnotspecified');
         }
 
         if($params['password'] != $params['password2']){
-            throw new lsException('user_update_password(): Specified password does not match the validation password', 'passwordmismatch');
+            throw new bException('user_update_password(): Specified password does not match the validation password', 'passwordmismatch');
         }
 
         $r = sql_query('UPDATE `users`
@@ -553,7 +553,7 @@ function user_update_password($params){
              * because the user does not exist. check for this!
              */
             if(!sql_get('SELECT `id` FROM `users` WHERE `id` = :id', 'id', array(':id' => $params['id']))){
-                throw new lsException('user_update_password(): The specified users_id "'.str_log($params['id']).'" does not exist', 'notexist');
+                throw new bException('user_update_password(): The specified users_id "'.str_log($params['id']).'" does not exist', 'notexist');
             }
 
             /*
@@ -562,7 +562,7 @@ function user_update_password($params){
         }
 
     }catch(Exception $e){
-        throw new lsException('user_update_password(): Failed', $e);
+        throw new bException('user_update_password(): Failed', $e);
     }
 }
 
@@ -587,7 +587,7 @@ function user_get($params, $columns = false){
         }
 
         if(empty($where)){
-            throw new lsException('user_get() No valid usercolumns specified (either id, and or username, and or email)', 'invalid');
+            throw new bException('user_get() No valid usercolumns specified (either id, and or username, and or email)', 'invalid');
         }
 
         return sql_get('SELECT '.($columns ? $columns : '*').'
@@ -595,7 +595,7 @@ function user_get($params, $columns = false){
                         WHERE  '.implode(' OR ', $where), $columns, $execute);
 
     }catch(Exception $e){
-        throw new lsException('user_get(): Failed', $e);
+        throw new bException('user_get(): Failed', $e);
     }
 }
 
@@ -611,23 +611,23 @@ function user_signup($params){
         array_default($params, 'date_validated', null);
 
         if(empty($params['email'])){
-            throw new lsException('user_signup(): No email specified', 'notspecified');
+            throw new bException('user_signup(): No email specified', 'notspecified');
         }
 
         if($params['email'] != isset_get($params['email2'])){
-            throw new lsException('user_signup(): Validation email is not equal to email', 'notspecified');
+            throw new bException('user_signup(): Validation email is not equal to email', 'notspecified');
         }
 
         if(empty($params['password'])){
-            throw new lsException('user_signup(): No password specified', 'notspecified');
+            throw new bException('user_signup(): No password specified', 'notspecified');
         }
 
         if($params['password'] != isset_get($params['password2'])){
-            throw new lsException('user_signup(): Validation password is not equal to password', 'notspecified');
+            throw new bException('user_signup(): Validation password is not equal to password', 'notspecified');
         }
 
         if(empty($params['terms'])){
-            throw new lsException('user_signup(): Terms not accepted', 'terms');
+            throw new bException('user_signup(): Terms not accepted', 'terms');
         }
 
 //:TODO: Add more validations
@@ -637,7 +637,7 @@ function user_signup($params){
         return user_get($users_id);
 
     }catch(Exception $e){
-        throw new lsException('user_signup(): Failed', $e);
+        throw new bException('user_signup(): Failed', $e);
     }
 }
 
@@ -667,7 +667,7 @@ function user_name($user = null, $guest = null){
          * Fetch user data from DB
          */
         if(!$user = sql_get('SELECT `name` `username`, `email` FROM `users` WHERE `id` = :id', array(':id' => $user))){
-           throw new lsException('user_name(): Specified user id "'.str_log($user).'" does not exist', 'notexist');
+           throw new bException('user_name(): Specified user id "'.str_log($user).'" does not exist', 'notexist');
         }
     }
 
@@ -692,7 +692,7 @@ function user_has_right($user, $right) {
         return !empty($user['rights'][$right]) and empty($user['rights']['devil']);
 
     }catch(Exception $e){
-        throw new lsException('user_has_right(): Failed', $e);
+        throw new bException('user_has_right(): Failed', $e);
     }
 }
 
@@ -705,7 +705,7 @@ function user_load_rights($user){
     try{
         if(!is_numeric($user)){
             if(!is_array($user)){
-                throw new lsException('user_load_rights(): Invalid user, please specify either users_id or user array with id', 'invalid');
+                throw new bException('user_load_rights(): Invalid user, please specify either users_id or user array with id', 'invalid');
             }
 
             $user = isset_get($user['id']);
@@ -716,7 +716,7 @@ function user_load_rights($user){
                          WHERE  `users_id` = :users_id', array(':users_id' => $user));
 
     }catch(Exception $e){
-        throw new lsException('user_load_rights(): Failed', $e);
+        throw new bException('user_load_rights(): Failed', $e);
     }
 }
 
@@ -731,7 +731,7 @@ function user_switch($username){
          * Does the specified user exist?
          */
         if(!$user = sql_get('SELECT *, `email` FROM `users` WHERE `name` = :name', array(':name' => $username))){
-            throw new lsException('user_switch(): The specified user "'.str_log($username).'" does not exist', 'usernotexist');
+            throw new bException('user_switch(): The specified user "'.str_log($username).'" does not exist', 'usernotexist');
         }
 
         /*
@@ -745,7 +745,7 @@ function user_switch($username){
         sql_query('UPDATE `users` SET `last_login` = DATE(NOW()) WHERE `id` = '.cfi($user['id']).';');
 
     }catch(Exception $e){
-        throw new lsException('user_switch(): Failed', $e);
+        throw new bException('user_switch(): Failed', $e);
     }
 }
 ?>

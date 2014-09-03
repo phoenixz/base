@@ -52,7 +52,7 @@ function users_exists($user){
 
     try{
         if(empty($user)){
-            throw new lsException('users_exists(): No user specified');
+            throw new bException('users_exists(): No user specified');
 
         }elseif(is_numeric($user)){
             $query  = 'SELECT `users`.`email` FROM `users` WHERE `users`.`id`    = :user';
@@ -61,7 +61,7 @@ function users_exists($user){
             $query = 'SELECT `users`.`id`     FROM `users` WHERE `users`.`email` = :user';
 
         }else{
-            throw new lsException('users_exists(): Invalid user "'.str_safe($user).'" specified, must be either numeric, or string');
+            throw new bException('users_exists(): Invalid user "'.str_safe($user).'" specified, must be either numeric, or string');
         }
 
         $q = $pdo->prepare($query);
@@ -74,7 +74,7 @@ function users_exists($user){
         return $q->fetchColumn(0);
 
     }catch(Exception $e){
-        throw new lsException('users_exists(): Failed', $e);
+        throw new bException('users_exists(): Failed', $e);
     }
 }
 
@@ -89,7 +89,7 @@ function users_insert($user, $password = '', $rights = ''){
     try{
         if(!is_array($user)){
             if(!is_string($user)){
-                throw new lsException('user_insert(): user was not specified as array');
+                throw new bException('user_insert(): user was not specified as array');
             }
 
             $user = array('email'    => $user,
@@ -97,15 +97,15 @@ function users_insert($user, $password = '', $rights = ''){
         }
 
         if(empty($user['email'])){
-            throw new lsException('user_insert(): No email specified');
+            throw new bException('user_insert(): No email specified');
         }
 
         if(empty($user['username'])){
-            throw new lsException('user_insert(): No username specified');
+            throw new bException('user_insert(): No username specified');
         }
 
         if(empty($user['password'])){
-            throw new lsException('user_insert(): No password specified');
+            throw new bException('user_insert(): No password specified');
         }
 
         load_libs('sessions');
@@ -138,7 +138,7 @@ function users_insert($user, $password = '', $rights = ''){
         return $user['id'];
 
     }catch(Exception $e){
-        throw new lsException('users_insert(): Failed', $e);
+        throw new bException('users_insert(): Failed', $e);
     }
 }
 
@@ -152,15 +152,15 @@ function users_update(){
 
     try{
         if(!is_array($user)){
-            throw new lsException('users_update(): user was not specified as array');
+            throw new bException('users_update(): user was not specified as array');
         }
 
         if(empty($user['name'])){
-            throw new lsException('users_update(): No user name specified');
+            throw new bException('users_update(): No user name specified');
         }
 
         if(empty($user['id'])){
-            throw new lsException('users_update(): No user id specified');
+            throw new bException('users_update(): No user id specified');
         }
 
         unset($user['status']);
@@ -181,7 +181,7 @@ function users_update(){
         return $q->rowCount();
 
     }catch(Exception $e){
-        throw new lsException('users_update(): Failed', $e);
+        throw new bException('users_update(): Failed', $e);
     }
 }
 
@@ -196,14 +196,14 @@ function users_delete($user){
     try{
         if(is_array($user)){
             if(empty($user['id'])){
-                throw new lsException('users_delete(): User specified as array, but id missing');
+                throw new bException('users_delete(): User specified as array, but id missing');
             }
 
             $user = $user['id'];
         }
 
         if(empty($user)){
-            throw new lsException('users_delete(): No user specified');
+            throw new bException('users_delete(): No user specified');
 
         }elseif(is_numeric($user)){
             $query   = 'UPDATE `users` SET `users`.`status` = -1  WHERE `users`.`id`   = :user';
@@ -215,11 +215,11 @@ function users_delete($user){
                              ':email' => $user);
 
         }else{
-            throw new lsException('users_delete(): Invalid user "'.str_safe($user).'" specified, must be either numeric, or string');
+            throw new bException('users_delete(): Invalid user "'.str_safe($user).'" specified, must be either numeric, or string');
         }
 
         if(is_god($user) and !is_god()){
-            throw new lsException('users_delete(): User "'.str_safe($user).'" is a god user and cannot be deleted');
+            throw new bException('users_delete(): User "'.str_safe($user).'" is a god user and cannot be deleted');
         }
 
         $q = $pdo->prepare($query);
@@ -228,7 +228,7 @@ function users_delete($user){
         return $q->rowCount();
 
     }catch(Exception $e){
-        throw new lsException('users_delete(): Failed', $e);
+        throw new bException('users_delete(): Failed', $e);
     }
 }
 
@@ -243,14 +243,14 @@ function users_erase($user){
     try{
         if(is_array($user)){
             if(empty($user['id'])){
-                throw new lsException('users_erase(): User specified as array, but id missing');
+                throw new bException('users_erase(): User specified as array, but id missing');
             }
 
             $user = $user['id'];
         }
 
         if(empty($user)){
-            throw new lsException('users_erase(): No user specified');
+            throw new bException('users_erase(): No user specified');
 
         }elseif(is_numeric($user)){
             $query   = 'DELETE FROM `users` WHERE `users`.`id` = :user';
@@ -262,11 +262,11 @@ function users_erase($user){
                              ':email' => $user);
 
         }else{
-            throw new lsException('users_erase(): Invalid user "'.str_safe($user).'" specified, must be either numeric, or string');
+            throw new bException('users_erase(): Invalid user "'.str_safe($user).'" specified, must be either numeric, or string');
         }
 
         if(is_god($user) and !is_god()){
-            throw new lsException('users_erase(): User "'.str_safe($user).'" is a god user and cannot be erased');
+            throw new bException('users_erase(): User "'.str_safe($user).'" is a god user and cannot be erased');
         }
 
         $q = $pdo->prepare($query);
@@ -276,7 +276,7 @@ function users_erase($user){
 
 
     }catch(Exception $e){
-        throw new lsException('users_erase(): Failed', $e);
+        throw new bException('users_erase(): Failed', $e);
     }
 }
 
@@ -291,7 +291,7 @@ function users_get($user, $columns = ''){
     try{
         if(!is_array($columns)){
             if(!is_string($columns)){
-                throw new lsException('users_get(): Invalid columns specified, should be either CSV string or array', 'invalid');
+                throw new bException('users_get(): Invalid columns specified, should be either CSV string or array', 'invalid');
             }
 
             if($columns == 'all'){
@@ -319,7 +319,7 @@ function users_get($user, $columns = ''){
         }
 
         if(empty($user)){
-            throw new lsException('users_get(): No user specified', 'notspecified');
+            throw new bException('users_get(): No user specified', 'notspecified');
 
         }elseif(is_numeric($user)){
             $query   = 'SELECT '.implode(',', $columns).' FROM `users` WHERE `users`.`id` = :user';
@@ -331,7 +331,7 @@ function users_get($user, $columns = ''){
                              ':email' => $user);
 
         }else{
-            throw new lsException('users_get(): Invalid user "'.str_safe($user).'" specified, must be either numeric, or string', 'invalid');
+            throw new bException('users_get(): Invalid user "'.str_safe($user).'" specified, must be either numeric, or string', 'invalid');
         }
 
         if($columns){
@@ -344,10 +344,10 @@ function users_get($user, $columns = ''){
                     break;
 
                 case 0:
-                    throw new lsException('users_get(): Specified user "'.str_log($user).'" does not exist', 'notexist');
+                    throw new bException('users_get(): Specified user "'.str_log($user).'" does not exist', 'notexist');
 
                 default:
-                    throw new lsException('users_get(): Found multiple results for user "'.str_log($user).'"', 'multiple');
+                    throw new bException('users_get(): Found multiple results for user "'.str_log($user).'"', 'multiple');
             }
 
 
@@ -362,7 +362,7 @@ function users_get($user, $columns = ''){
              * Wut? No columns requested?
              * In THEORY this could not even happen.. but just in case
              */
-            throw new lsException('users_get(): No columns specified', 'nocolumns');
+            throw new bException('users_get(): No columns specified', 'nocolumns');
         }
 
         /*
@@ -376,7 +376,7 @@ function users_get($user, $columns = ''){
 
 
     }catch(Exception $e){
-        throw new lsException('users_get(): Failed', $e);
+        throw new bException('users_get(): Failed', $e);
     }
 }
 
@@ -405,7 +405,7 @@ function users_list($columns = null, $count = null, $offset = null, $getcount = 
 
         }elseif(!is_array($columns)){
             if(!is_string($columns)){
-                throw new lsException('rights_list(): Columns should be specified either as string or array', 'invalid');
+                throw new bException('rights_list(): Columns should be specified either as string or array', 'invalid');
             }
 
             $columns = explode(',', $columns);
@@ -440,7 +440,7 @@ function users_list($columns = null, $count = null, $offset = null, $getcount = 
         return $retval;
 
     }catch(Exception $e){
-        throw new lsException('users_list(): Failed', $e);
+        throw new bException('users_list(): Failed', $e);
     }
 }
 
@@ -456,7 +456,7 @@ function users_register($user){
         return users_insert($user);
 
     }catch(Exception $e){
-        throw new lsException('users_register(): Failed', $e);
+        throw new bException('users_register(): Failed', $e);
     }
 }
 
@@ -474,7 +474,7 @@ function users_authorize($user, $code){
         }
 
     }catch(Exception $e){
-        throw new lsException('users_authorize(): Failed', $e);
+        throw new bException('users_authorize(): Failed', $e);
     }
 }
 
@@ -492,7 +492,7 @@ function users_set_password($user, $code){
         }
 
     }catch(Exception $e){
-        throw new lsException('users_set_password(): Failed', $e);
+        throw new bException('users_set_password(): Failed', $e);
     }
 }
 
@@ -510,7 +510,7 @@ function users_set_syspassword($user, $code){
         }
 
     }catch(Exception $e){
-        throw new lsException('users_set_syspassword(): Failed', $e);
+        throw new bException('users_set_syspassword(): Failed', $e);
     }
 }
 
@@ -528,7 +528,7 @@ function users_request_password($user){
         }
 
     }catch(Exception $e){
-        throw new lsException('users_request_password(): Failed', $e);
+        throw new bException('users_request_password(): Failed', $e);
     }
 }
 
@@ -542,7 +542,7 @@ function users_check_blacklisted($user){
 //:TODO: Implement. THROW EXCEPTION IF BLACKLISTED!
 
     }catch(Exception $e){
-        throw new lsException('users_blacklisted(): Failed', $e);
+        throw new bException('users_blacklisted(): Failed', $e);
     }
 }
 
@@ -565,7 +565,7 @@ function users_add_avatar($user, $avatar){
                             VALUES                      ()');
 
     }catch(Exception $e){
-        throw new lsException('users_add_avatar(): Failed', $e);
+        throw new bException('users_add_avatar(): Failed', $e);
     }
 }
 
@@ -608,7 +608,7 @@ function users_set_default_avatar($user, $avatar){
         $r->execute(array(':id' => $id));
 
     }catch(Exception $e){
-        throw new lsException('users_set_default_avatar(): Failed', $e);
+        throw new bException('users_set_default_avatar(): Failed', $e);
     }
 }
 ?>

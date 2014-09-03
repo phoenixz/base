@@ -68,7 +68,7 @@
 //                     'wy' => 'wyoming');
 //
 //    }catch(Exception $e){
-//        throw new lsException('geo_us_states(): Failed', $e);
+//        throw new bException('geo_us_states(): Failed', $e);
 //    }
 //}
 
@@ -101,7 +101,7 @@ function geo_countries_select($params) {
         return cache_write($cache_key, html_select($params));
 
     }catch(Exception $e){
-        throw new lsException('geo_countries_select(): Failed', $e);
+        throw new bException('geo_countries_select(): Failed', $e);
     }
 }
 
@@ -149,7 +149,7 @@ function geo_states_select($params, $bodyonly = false, $selected= 0, $name = '',
         return cache_write($cache_key, html_select($params));
 
     }catch(Exception $e){
-        throw new lsException('geo_states_select(): Failed', $e);
+        throw new bException('geo_states_select(): Failed', $e);
     }
 }
 
@@ -193,7 +193,7 @@ function geo_cities_select($params, $selected = 0, $name = '', $none = '', $clas
         return cache_write($cache_key, html_select($params));
 
     }catch(Exception $e){
-        throw new lsException('geo_cities_select(): Failed', $e);
+        throw new bException('geo_cities_select(): Failed', $e);
     }
 }
 
@@ -215,8 +215,8 @@ function geo_countries_get($country, $column = false){
 
         return sql_get('SELECT '.$columns.' FROM geo_countries WHERE '.$country['where'], $column, $country['execute']);
 
-    }catch(lsException $e){
-        throw new lsException('geo_countries_get() Failed', $e);
+    }catch(bException $e){
+        throw new bException('geo_countries_get() Failed', $e);
     }
 }
 
@@ -238,8 +238,8 @@ function geo_states_get($state, $column = false){
 
         return sql_get('SELECT '.$columns.' FROM geo_states WHERE '.$state['where'], $column, $state['execute']);
 
-    }catch(lsException $e){
-        throw new lsException('geo_states_get() Failed', $e);
+    }catch(bException $e){
+        throw new bException('geo_states_get() Failed', $e);
     }
 }
 
@@ -261,8 +261,8 @@ function geo_cities_get($city, $column = false){
 
         return sql_get('SELECT '.$columns.' FROM geo_cities WHERE '.$city['where'], $column, $city['execute']);
 
-    }catch(lsException $e){
-        throw new lsException('geo_cities_get() Failed', $e);
+    }catch(bException $e){
+        throw new bException('geo_cities_get() Failed', $e);
     }
 }
 ?>

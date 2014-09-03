@@ -17,7 +17,7 @@ function upload_process(){
     try{
 
     }catch(Exception $e){
-        throw new lsException('upload_process(): Failed', $e);
+        throw new bException('upload_process(): Failed', $e);
     }
 }
 
@@ -53,7 +53,7 @@ function upload_ocupload($selector = "input[name=upload]", $url = '/ajax/upload.
                 });', $params['executeon']);
 
     }catch(Exception $e){
-        throw new lsException('upload_ocupload(): Failed', $e);
+        throw new bException('upload_ocupload(): Failed', $e);
     }
 }
 
@@ -166,7 +166,7 @@ function upload_get_html($type, $target = null, $params = null){
          *Determine what uploader to use
          */
         if(empty($type)){
-            throw new lsException('upload_get_html(): No upload widget type specified');
+            throw new bException('upload_get_html(): No upload widget type specified');
         }
 
         switch($type){
@@ -225,7 +225,7 @@ function upload_get_html($type, $target = null, $params = null){
                 break;
 
             default:
-                throw new lsException('upload_get_html(): Unknown widget type "'.str_log($type).'" specified');
+                throw new bException('upload_get_html(): Unknown widget type "'.str_log($type).'" specified');
         }
 
         if($params['lister']){
@@ -235,7 +235,7 @@ function upload_get_html($type, $target = null, $params = null){
         return $retval;
 
     }catch(Exception $e){
-        throw new lsException('upload_get_html(): Failed', $e);
+        throw new bException('upload_get_html(): Failed', $e);
     }
 }
 

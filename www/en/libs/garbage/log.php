@@ -41,7 +41,7 @@ function log_type_list(){
         return $retval;
 
     }catch(Exception $e){
-        throw new lsException('log_types(): Failed', $e);
+        throw new bException('log_types(): Failed', $e);
     }
 }
 
@@ -73,7 +73,7 @@ function log_type_select($select = '', $name = 'log_id', $god = true){
 //        return cache_write('log_type_'.$name.'_'.$select.($god ? '_all' : ''), $retval.'</select>');
 
     }catch(Exception $e){
-        throw new lsException('log_type_select(): Failed', $e);
+        throw new bException('log_type_select(): Failed', $e);
     }
 }
 
@@ -99,7 +99,7 @@ function log_list($columns = null, $type = null, $level = 0, $from = 0, $until =
 
         if(!is_array($columns)){
             if(!is_string($columns)){
-                throw new lsException('log_list(): Columns should be specified either as string or array', 'invalid');
+                throw new bException('log_list(): Columns should be specified either as string or array', 'invalid');
             }
 
             if($columns == 'all'){
@@ -197,7 +197,7 @@ function log_list($columns = null, $type = null, $level = 0, $from = 0, $until =
         return $retval;
 
     }catch(Exception $e){
-        throw new lsException('log_list(): Failed', $e);
+        throw new bException('log_list(): Failed', $e);
     }
 }
 ?>

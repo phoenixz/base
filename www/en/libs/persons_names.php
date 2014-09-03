@@ -34,7 +34,7 @@ function persons_names_get($gender, $name_count, $lastname_count){
                 break;
 
             default:
-                throw new lsException('persons_names_get(): Unknown gender "'.str_log($gender).'" specified', 'unknown');
+                throw new bException('persons_names_get(): Unknown gender "'.str_log($gender).'" specified', 'unknown');
         }
 
         $names     = sql_list('SELECT `'.$column.'` FROM `persons_names` LIMIT '.$lastname_count, $column);
@@ -43,7 +43,7 @@ function persons_names_get($gender, $name_count, $lastname_count){
         return $retval;
 
     }catch(Exception $e){
-        throw new lsException('persons_names_get(): Failed', $e);
+        throw new bException('persons_names_get(): Failed', $e);
     }
 }
 ?>

@@ -15,11 +15,11 @@ try{
              * Erase the specified rights
              */
             if(empty($_POST['id'])){
-                throw new lsException('Cannot erase rights, no rights selected', 'notspecified');
+                throw new bException('Cannot erase rights, no rights selected', 'notspecified');
             }
 
             if(!is_array($_POST['id'])){
-                throw new lsException('Cannot erase rights, invalid data specified', 'invalid');
+                throw new bException('Cannot erase rights, invalid data specified', 'invalid');
             }
 
             $in = sql_in($_POST['id'], ':id');

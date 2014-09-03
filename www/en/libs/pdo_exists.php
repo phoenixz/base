@@ -38,7 +38,7 @@ function sql_index_exists($table, $index, $query = ''){
         return $retval;
 
     }catch(Exception $e){
-        throw new lsException('sql_index_exists(): Failed', $e);
+        throw new bException('sql_index_exists(): Failed', $e);
     }
 }
 
@@ -75,7 +75,7 @@ function sql_table_exists($table, $query = ''){
         return $retval;
 
     }catch(Exception $e){
-        throw new lsException('sql_table_exists(): Failed', $e);
+        throw new bException('sql_table_exists(): Failed', $e);
     }
 }
 
@@ -112,7 +112,7 @@ function sql_column_exists($table, $column, $query = ''){
         return $retval;
 
     }catch(Exception $e){
-        throw new lsException('sql_column_exists(): Failed', $e);
+        throw new bException('sql_column_exists(): Failed', $e);
     }
 }
 
@@ -153,7 +153,7 @@ function sql_foreignkey_exists($table, $foreign_key, $query = '', $database = ''
         return $retval;
 
     }catch(Exception $e){
-        throw new lsException('sql_foreignkey_exists(): Failed', $e);
+        throw new bException('sql_foreignkey_exists(): Failed', $e);
     }
 }
 
@@ -194,7 +194,7 @@ function sql_function_exists($name, $query = '', $database = ''){
         return $retval;
 
     }catch(Exception $e){
-        throw new lsException('sql_function_exists(): Failed', $e);
+        throw new bException('sql_function_exists(): Failed', $e);
     }
 }
 ?>

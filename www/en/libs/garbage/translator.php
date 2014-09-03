@@ -15,7 +15,7 @@ function translator_insert(){
     try{
 
     }catch(Exception $e){
-        throw new lsException('translator_insert(): Failed', $e);
+        throw new bException('translator_insert(): Failed', $e);
     }
 }
 
@@ -33,7 +33,7 @@ function translator_process($project){
         }
 
     }catch(Exception $e){
-        throw new lsException('translator_process(): Failed', $e);
+        throw new bException('translator_process(): Failed', $e);
     }
 }
 

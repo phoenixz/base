@@ -115,7 +115,7 @@ class Colors {
  */
 function cli_only(){
     if(PLATFORM != 'shell'){
-        throw new lsException('cli_only(): This can only be done from command line', 'clionly');
+        throw new bException('cli_only(): This can only be done from command line', 'clionly');
     }
 }
 
@@ -138,7 +138,7 @@ function cli_die($exitcode, $message = '', $color = ''){
              * Do NOT die!!
              */
             if($exitcode){
-                throw new lsException('cli_die(): Script failed with exit code "'.str_log($exitcode).'"', $exitcode);
+                throw new bException('cli_die(): Script failed with exit code "'.str_log($exitcode).'"', $exitcode);
             }
 
             return $exitcode;
@@ -180,7 +180,7 @@ function cli_code_begin(){
 function this_script_already_runs($action = 'exception', $force = false){
     try{
         if(PLATFORM != 'shell'){
-            throw new lsException('this_script_already_runs(): This function does not work for platform "'.PLATFORM.'", it is only for "shell" usage');
+            throw new bException('this_script_already_runs(): This function does not work for platform "'.PLATFORM.'", it is only for "shell" usage');
         }
 
         exec('ps -eF | grep php | grep -v grep', $output);
@@ -204,7 +204,7 @@ function this_script_already_runs($action = 'exception', $force = false){
                 if(++$count >= 2){
                     switch($action){
                         case 'exception':
-                            throw new lsException('this_script_already_runs(): This script is already running', 'alreadyrunning');
+                            throw new bException('this_script_already_runs(): This script is already running', 'alreadyrunning');
 
                         case 'kill':
                             $thispid = getmypid();
@@ -232,7 +232,7 @@ function this_script_already_runs($action = 'exception', $force = false){
                             return false;
 
                         default:
-                            throw new lsException('this_script_already_runs(): Unknown action "'.str_log($action).'" specified', 'unknown');
+                            throw new bException('this_script_already_runs(): Unknown action "'.str_log($action).'" specified', 'unknown');
                     }
 
                     return true;
@@ -250,7 +250,7 @@ function this_script_already_runs($action = 'exception', $force = false){
             throw($e);
         }
 
-        throw new lsException('this_script_already_runs(): Failed', $e);
+        throw new bException('this_script_already_runs(): Failed', $e);
     }
 }
 
@@ -321,7 +321,7 @@ function cli_highlight($string, $keywords, $color){
         return $string;
 
     }catch(Exception $e){
-        throw new lsException('cli_highlight(): Failed', $e);
+        throw new bException('cli_highlight(): Failed', $e);
     }
 }
 
@@ -359,7 +359,7 @@ function cli_error($message, $e){
     /*
      * Add the last message
      */
-    $e = new lsException($message, $e);
+    $e = new bException($message, $e);
 
     uncaught_exception($e, false);
 
@@ -433,7 +433,7 @@ function cli_show_usage($usage, $color){
         }
 
     }catch(Exception $e){
-        throw new lsException('cli_show_usage(): Failed', $e);
+        throw new bException('cli_show_usage(): Failed', $e);
     }
 }
 
@@ -457,7 +457,7 @@ function cli_is_root(){
  */
 function cli_root_only(){
     if(!cli_is_root()){
-        throw new lsException('cli_root_only(): This script can ONLY be executed by the root user', 'notrootnotallowed');
+        throw new bException('cli_root_only(): This script can ONLY be executed by the root user', 'notrootnotallowed');
     }
 
     return true;
@@ -470,7 +470,7 @@ function cli_root_only(){
  */
 function cli_not_root(){
     if(cli_is_root()){
-        throw new lsException('cli_not_root(): This script can NOT be executed by the root user', 'rootnotallowed');
+        throw new bException('cli_not_root(): This script can NOT be executed by the root user', 'rootnotallowed');
     }
 
     return true;

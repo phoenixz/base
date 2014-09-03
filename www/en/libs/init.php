@@ -21,7 +21,7 @@ function init($projectfrom = null, $frameworkfrom = null){
          * Are we allowed to init?
          */
         if(!$_CONFIG['init'][PLATFORM]){
-            throw new lsException('init(): This platform is not authorized to do init()', 'denied');
+            throw new bException('init(): This platform is not authorized to do init()', 'denied');
         }
 
         load_libs('file,pdo_exists');
@@ -93,11 +93,11 @@ function init($projectfrom = null, $frameworkfrom = null){
         }
 
         if(version_compare(FRAMEWORKCODEVERSION, $codeversions['FRAMEWORK']) < 0){
-            throw new lsException('init(): Cannot continue, the FRAMEWORK code version is OLDER than the database version, the project is running with either old code or a too new database!', 'oldframeworkcode');
+            throw new bException('init(): Cannot continue, the FRAMEWORK code version is OLDER than the database version, the project is running with either old code or a too new database!', 'oldframeworkcode');
         }
 
         if(version_compare(PROJECTCODEVERSION, $codeversions['PROJECT']) < 0){
-            throw new lsException('init(): Cannot continue, the PROJECT code version is OLDER than the database version, the project is running with either old code or a too new database!', 'oldprojectcode');
+            throw new bException('init(): Cannot continue, the PROJECT code version is OLDER than the database version, the project is running with either old code or a too new database!', 'oldprojectcode');
         }
 
         /*
@@ -105,7 +105,7 @@ function init($projectfrom = null, $frameworkfrom = null){
          */
         if(FORCE){
             if(!is_bool(FORCE) and !str_is_version(FORCE)){
-                throw new lsException('init(): Invalid "force" sub parameter "'.str_log(FORCE).'" specified. "force" can only be followed by a valid init version number', 'invalidforce');
+                throw new bException('init(): Invalid "force" sub parameter "'.str_log(FORCE).'" specified. "force" can only be followed by a valid init version number', 'invalidforce');
             }
 
             $init = 'forced init';
@@ -187,7 +187,7 @@ function init($projectfrom = null, $frameworkfrom = null){
                                 /*
                                  * INIT FILE FAILED!
                                  */
-                                throw new lsException('init('.$type.'): Init file "'.$file.'" failed', $e);
+                                throw new bException('init('.$type.'): Init file "'.$file.'" failed', $e);
                             }
 
                             $versions[$type] = $version;
@@ -249,7 +249,7 @@ function init($projectfrom = null, $frameworkfrom = null){
             die(1);
         }
 
-        throw new lsException('init(): Failed', $e);
+        throw new bException('init(): Failed', $e);
     }
 }
 
@@ -298,7 +298,7 @@ function init_process_version_diff(){
     }
 
     if((PLATFORM == 'apache') or argument('noversioncheck')){
-        throw new lsException('init_process_version_diff(): Please run the init script because "'.str_log($versionerror).'"');
+        throw new bException('init_process_version_diff(): Please run the init script because "'.str_log($versionerror).'"');
     }
 }
 
@@ -326,7 +326,7 @@ function init_process_version_fail($e){
         }
 
     }else{
-        throw new lsException('init_process_version_fail(): Failed version detection', $e);
+        throw new bException('init_process_version_fail(): Failed version detection', $e);
     }
 }
 
@@ -351,7 +351,7 @@ function init_hook($hook, $disabled = false){
         }
 
     }catch(Exception $e){
-        throw new lsException('init_hook(): Hook "'.str_log($hook).'" failed', $e);
+        throw new bException('init_hook(): Hook "'.str_log($hook).'" failed', $e);
     }
 }
 
@@ -362,7 +362,7 @@ function init_hook($hook, $disabled = false){
  */
 function init_version_upgrade($version, $part){
     if(!str_is_version($version)){
-        throw new lsException('init_version_upgrade(): Specified version is not a valid n.n.n version format');
+        throw new bException('init_version_upgrade(): Specified version is not a valid n.n.n version format');
     }
 
     $version = explode('.', $version);
@@ -381,7 +381,7 @@ function init_version_upgrade($version, $part){
             break;
 
         default:
-            throw new lsException('init_version_upgrade(): Unknown version part type "" specified. Please specify one of "major", "minor", or "revision"');
+            throw new bException('init_version_upgrade(): Unknown version part type "" specified. Please specify one of "major", "minor", or "revision"');
     }
 
     return implode('.', $version);

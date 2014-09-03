@@ -21,7 +21,7 @@ function google_get_avatar($user){
         if(is_array($user)){
             if(empty($user['gp_id'])){
                 if(empty($user['id'])){
-                    throw new lsException('google_get_avatar: Specified user array contains no "id" or "gp_id"');
+                    throw new bException('google_get_avatar: Specified user array contains no "id" or "gp_id"');
                 }
 
                 $user = sql_get('SELECT `gp_id` FROM `users` WHERE `id` = '.cfi($user['id']));
@@ -34,7 +34,7 @@ function google_get_avatar($user){
         }
 
         if(!$user){
-            throw new lsException('google_get_avatar(): No google ID specified');
+            throw new bException('google_get_avatar(): No google ID specified');
         }
 
         // Avatars are on http://graph.facebook.com/USERID/picture
@@ -50,7 +50,7 @@ function google_get_avatar($user){
         return user_update_avatar($user, $retval);
 
     }catch(Exception $e){
-        throw new lsException('facebook_get_avatar(): Failed', $e);
+        throw new bException('facebook_get_avatar(): Failed', $e);
     }
 }
 ?>

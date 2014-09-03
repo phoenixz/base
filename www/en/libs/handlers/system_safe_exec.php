@@ -19,7 +19,7 @@ try{
 
             }else{
                 if(!is_string($ok_exitcodes) and !is_numeric($ok_exitcodes)){
-                    throw new lsException('safe_exec(): Invalid ok_exitcodes specified, should be either CSV string or array');
+                    throw new bException('safe_exec(): Invalid ok_exitcodes specified, should be either CSV string or array');
                 }
 
                 $ok_exitcodes = explode(',', $ok_exitcodes);
@@ -27,13 +27,13 @@ try{
         }
 
         if(!in_array($exitcode, $ok_exitcodes)){
-            throw new lsException('safe_exec(): Command "'.str_log($command).'" failed with exit code "'.str_log($exitcode).'", and output "'.print_r($output, true).'"', $exitcode, null, $output);
+            throw new bException('safe_exec(): Command "'.str_log($command).'" failed with exit code "'.str_log($exitcode).'", and output "'.print_r($output, true).'"', $exitcode, null, $output);
         }
     }
 
     return $output;
 
 }catch(Exception $e){
-    throw new lsException('safe_exec(): Failed', $e);
+    throw new bException('safe_exec(): Failed', $e);
 }
 ?>

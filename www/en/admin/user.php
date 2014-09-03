@@ -108,7 +108,7 @@ $html .= $vj->output_validation($params);
 function s_validate_post(){
     try{
         if(empty($_GET['user'])){
-            throw new lsException('No user specified', 'notspecified');
+            throw new bException('No user specified', 'notspecified');
         }
 
         array_ensure($_POST, 'name,username,email,password,password2');
@@ -135,13 +135,13 @@ function s_validate_post(){
         }
 
         if(!$v->is_valid()) {
-            throw new lsException(implode(', ', $v->get_errors()), 'invalid');
+            throw new bException(implode(', ', $v->get_errors()), 'invalid');
         }
 
         return $_POST;
 
     }catch(Exception $e){
-        throw new lsException('s_validate_post(): Failed', $e);
+        throw new bException('s_validate_post(): Failed', $e);
     }
 }
 

@@ -31,7 +31,7 @@ function geoip_get($ip, $column = '*'){
         return $data;
 
     }catch(Exception $e){
-        throw new lsException('geoip_get(): Failed', $e);
+        throw new bException('geoip_get(): Failed', $e);
     }
 }
 
@@ -45,7 +45,7 @@ function geoip_get_country($ip){
         return geoip_get($ip, 'country');
 
     }catch(Exception $e){
-        throw new lsException('geoip_get_country(): Failed', $e);
+        throw new bException('geoip_get_country(): Failed', $e);
     }
 }
 
@@ -59,7 +59,7 @@ function geoip_get_city($ip){
         return geoip_get($ip, 'city');
 
     }catch(Exception $e){
-        throw new lsException('geoip_get_city(): Failed', $e);
+        throw new bException('geoip_get_city(): Failed', $e);
     }
 }
 ?>

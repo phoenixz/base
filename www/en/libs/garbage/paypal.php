@@ -16,7 +16,7 @@ function paypal_pay(){
     try{
 
     }catch(Exception $e){
-        throw new lsException('paypal_pay(): Failed', $e);
+        throw new bException('paypal_pay(): Failed', $e);
     }
 }
 
@@ -29,7 +29,7 @@ function paypal_check_payment(){
     try{
 
     }catch(Exception $e){
-        throw new lsException('paypal_check_payment(): Failed', $e);
+        throw new bException('paypal_check_payment(): Failed', $e);
     }
 }
 ?>
