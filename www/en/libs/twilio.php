@@ -1,12 +1,16 @@
 <?php
 /*
- * Empty library
+ * This is the twilio API library
  *
- * This is an empty template library file
+ * This library contains helper functions for the twilio API
  *
  * @license http://opensource.org/licenses/GPL-2.0 GNU Public License, Version 2
  * @copyright Sven Oostenbrink <support@svenoostenbrink.com>
  */
+
+
+
+load_config('twilio');
 
 
 
@@ -66,8 +70,6 @@ function twilio_load($accountsid = null, $accountstoken = null, $auto_install = 
         }
 
         include($file);
-
-        load_config('twilio');
 
         if(!$accountstoken){
             $accountstoken = $_CONFIG['twilio']['accounts_token'];
