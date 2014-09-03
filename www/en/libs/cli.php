@@ -243,7 +243,7 @@ function this_script_already_runs($action = 'exception', $force = false){
         return false;
 
     }catch(Exception $e){
-        if($e->code == 'alreadyrunning'){
+        if($e->getCode() == 'alreadyrunning'){
             /*
             * Just keep throwing this one
             */

@@ -334,7 +334,7 @@ function sql_init($sql = 'sql', $db = null){
         /*
          *
          */
-        if($e->code == 1049){
+        if($e->getCode() == 1049){
             if(!empty($retry)){
                 static $retry = true;
 

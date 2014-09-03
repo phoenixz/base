@@ -52,7 +52,7 @@ try{
         include($_script_exec_file);
 
     }catch(Exception $e){
-        if($e->code){
+        if($e->getCode()){
             if(!is_array($ok_exitcodes)){
                 if(!$ok_exitcodes){
                     $ok_exitcodes = array();
@@ -66,10 +66,10 @@ try{
                 }
             }
 
-            if(!in_array($e->code, $ok_exitcodes)){
+            if(!in_array($e->getCode(), $ok_exitcodes)){
 // :TODO: Remove following line, it was not sending error output from the preceding script
-//                    throw new bException('script_exec(): Script "'.str_log($script).'" failed with code "'.str_log($e->code).'"', $e->code, null);
-                throw new bException('script_exec(): Script "'.str_log($script).'" failed with code "'.str_log($e->code).'"', $e);
+//                    throw new bException('script_exec(): Script "'.str_log($script).'" failed with code "'.str_log($e->getCode()).'"', $e->getCode(), null);
+                throw new bException('script_exec(): Script "'.str_log($script).'" failed with code "'.str_log($e->getCode()).'"', $e);
             }
         }
     }

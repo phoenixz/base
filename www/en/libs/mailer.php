@@ -482,7 +482,7 @@ $mailing['language'] = 'en';
                         }
 
                     }catch(Exception $e){
-                        if($e->code == 'missingmarkers'){
+                        if($e->getCode() == 'missingmarkers'){
                             /*
                              * This mailing is missing markers, and should be canceled all together
                              */

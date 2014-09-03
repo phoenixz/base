@@ -51,7 +51,7 @@ class bException extends Exception{
 
         if(!$code){
             if(is_object($e) and ($e instanceof bException)){
-                $code = $e->code;
+                $code = $e->getCode();
             }
         }
 
@@ -379,10 +379,10 @@ function load_content($file, $from = false, $to = false, $language = null, $auto
         return str_replace($from, $to, $default);
 
     }catch(Exception $e){
-        notify('error', "LOAD_CONTENT() FAILED [".$e->code."]\n".implode("\n", $e->getMessages()));
-        error_log("LOAD_CONTENT() FAILED [".$e->code."]\n".implode("\n", $e->getMessages()));
+        notify('error', "LOAD_CONTENT() FAILED [".$e->getCode()."]\n".implode("\n", $e->getMessages()));
+        error_log("LOAD_CONTENT() FAILED [".$e->getCode()."]\n".implode("\n", $e->getMessages()));
 
-        switch($e->code){
+        switch($e->getCode()){
             case 'notexist':
                 log_database('load_content(): File "'.cfm($language).'/'.cfm($file).'" does not exist', 'warning');
 
@@ -961,7 +961,7 @@ function user_or_redirect($url = false, $method = 'http'){
         return $_SESSION['user'];
 
     }catch(Exception $e){
-        if($e->code == 'redirect') {
+        if($e->getCode() == 'redirect') {
             throw $e;
         }
 

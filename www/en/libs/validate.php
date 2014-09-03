@@ -631,7 +631,7 @@ class validate_form {
             return $value['time'];
 
         }catch(Exception $e){
-            if($e->code == 'invalid'){
+            if($e->getCode() == 'invalid'){
                 throw new bException('validate_form->is_time(): Specified time "'.str_log($value).'" is invalid', $e);
             }
 

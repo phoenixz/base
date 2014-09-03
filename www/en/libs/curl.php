@@ -403,7 +403,7 @@ function curl_get($params, $referer = null, $post = false, $options = array()){
         return $retval;
 
     }catch(Exception $e){
-        if(($e->code == 'HTTP0') and (++$retry <= $params['retries'])){
+        if(($e->getCode() == 'HTTP0') and (++$retry <= $params['retries'])){
             /*
              * For whatever reason, connection gave HTTP code 0 which probably
              * means that the server died off completely. This again may mean

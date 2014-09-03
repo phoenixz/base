@@ -237,7 +237,7 @@ function sql_connect() {
 		}
 
 	}catch(Exception $e){
-		if($e->code === 'invalidforce'){
+		if($e->getCode() === 'invalidforce'){
 			foreach($e->getMessages() as $message){
 				log_screen($message);
 			}
