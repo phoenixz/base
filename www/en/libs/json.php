@@ -132,7 +132,7 @@ function json_error($message, $default_message = null){
             $default_message = tr('Something went wrong, please try again');
         }
 
-        $code = $message->getCode();
+        $code = $message->code;
 
 //        if(debug('messages') and (substr($code, 0, 5) == 'user/') or ($code == 'user')){
         if(debug('messages')){

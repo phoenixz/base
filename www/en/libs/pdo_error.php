@@ -16,7 +16,7 @@
  */
 function pdo_error($e, $query, $execute, $sql = null){
     if(!$e instanceof PDOException){
-        switch($e->getCode()){
+        switch($e->code){
             case 'forcedenied':
                 uncaught_exception($e, true);
 
@@ -61,7 +61,7 @@ function pdo_error($e, $query, $execute, $sql = null){
             $error = $e->errorInfo;
         }
 
-        switch($e->getCode()){
+        switch($e->code){
             case 'denied':
                 // FALLTHROUGH
             case 'invalidforce':

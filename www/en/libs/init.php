@@ -241,7 +241,7 @@ function init($projectfrom = null, $frameworkfrom = null){
         log_console('Finished all', 'init/finished', 'white');
 
     }catch(Exception $e){
-        if($e->getCode() === 'invalidforce'){
+        if($e->code === 'invalidforce'){
             foreach($e->getMessages() as $message){
                 log_screen($message);
             }

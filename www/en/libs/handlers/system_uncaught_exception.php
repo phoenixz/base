@@ -28,7 +28,7 @@ try{
 
     require_once(dirname(__FILE__).'/../debug.php');
 
-    $code = 'error/'.$e->getCode();
+    $code = 'error/'.$e->code;
 
     if($e instanceof lsException){
         $messages = $e->getMessages();
@@ -37,7 +37,7 @@ try{
         $messages = array($e->getMessage());
     }
 
-    if($e->getCode() === 'alreadyrunning'){
+    if($e->code === 'alreadyrunning'){
 // :TODO: Normally we SHOULD show something, no? maybe make it configurable by command line?
         die();
     }
@@ -93,7 +93,7 @@ try{
 
     }else{
         try{
-            notify('error', "UNCAUGHT EXCEPTION HANDLING FAILED[".$e->getCode()."]\n".implode("\n", $e->getMessages()));
+            notify('error', "UNCAUGHT EXCEPTION HANDLING FAILED[".$e->code."]\n".implode("\n", $e->getMessages()));
 
         }catch(Exception $e){
             /*

@@ -407,7 +407,7 @@ function blogs_validate_post($post, $params = null){
         return $post;
 
     }catch(Exception $e){
-        if($e->getCode() == 'validation'){
+        if($e->code == 'validation'){
             /*
              * Just throw the list of validation errors.
              */

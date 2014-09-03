@@ -103,6 +103,10 @@ function ensure_protocol($url, $protocol = 'http', $force = false){
  * Add specified query to the specified URL and return
  */
 function url_add_query($url, $query){
+    if(!$query){
+        return $url;
+    }
+
     if(strpos($url, '?') === false){
         return $url.'?'.$query;
     }

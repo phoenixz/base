@@ -126,7 +126,7 @@ function sql_fetch($r, $columns = false) {
          */
         foreach(array_force($columns) as $column){
             if(!array_key_exists($column, $result)){
-                throw new lsException('sql_fetch(): Specified column "'.str_log($column).'" does not exist in the specified result set');
+                throw new lsException('sql_fetch(): Specified column "'.str_log($column).'" does not exist in the specified result set', 'columnnotexist');
             }
 
             $retval[$column] = $result[$column];
@@ -334,7 +334,7 @@ function sql_init($sql = 'sql', $db = null){
         /*
          *
          */
-        if($e->getCode() == 1049){
+        if($e->code == 1049){
             if(!empty($retry)){
                 static $retry = true;
 

@@ -12,8 +12,12 @@
 class lsException extends Exception{
     private $messages = array();
     private $data     = null;
+    public  $code     = null;
 
     function __construct($message, $code = null, $e = null, $data = null){
+        /*
+         *
+         */
         if(!empty($code)){
             if(is_object($code)){
                 $data = $e;
@@ -47,18 +51,12 @@ class lsException extends Exception{
 
         if(!$code){
             if(is_object($e) and ($e instanceof lsException)){
-                $code = $e->getCode();
+                $code = $e->code;
             }
         }
 
-        if(is_numeric($code) or is_null($code)){
-            parent::__construct($orgmessage, $code);
-
-        }else{
-            parent::__construct($orgmessage, 0);
-            $this->code = $code;
-        }
-
+        parent::__construct($orgmessage, null);
+        $this->code       = (string) $code;
         $this->messages[] = $message;
     }
 
@@ -381,10 +379,10 @@ function load_content($file, $from = false, $to = false, $language = null, $auto
         return str_replace($from, $to, $default);
 
     }catch(Exception $e){
-        notify('error', "LOAD_CONTENT() FAILED [".$e->getCode()."]\n".implode("\n", $e->getMessages()));
-        error_log("LOAD_CONTENT() FAILED [".$e->getCode()."]\n".implode("\n", $e->getMessages()));
+        notify('error', "LOAD_CONTENT() FAILED [".$e->code."]\n".implode("\n", $e->getMessages()));
+        error_log("LOAD_CONTENT() FAILED [".$e->code."]\n".implode("\n", $e->getMessages()));
 
-        switch($e->getCode()){
+        switch($e->code){
             case 'notexist':
                 log_database('load_content(): File "'.cfm($language).'/'.cfm($file).'" does not exist', 'warning');
 
@@ -468,7 +466,7 @@ function log_message($message, $type = 'info', $color = null){
         if(is_object($message)){
             if($message instanceof lsException){
                 foreach($message->getMessages() as $key => $realmessage){
-                    log_error($key.': '.$realmessage, $message->getCode());
+                    log_error($key.': '.$realmessage, $message->code);
                 }
 
                 return;
@@ -963,7 +961,7 @@ function user_or_redirect($url = false, $method = 'http'){
         return $_SESSION['user'];
 
     }catch(Exception $e){
-        if($e->getCode() == 'redirect') {
+        if($e->code == 'redirect') {
             throw $e;
         }
 

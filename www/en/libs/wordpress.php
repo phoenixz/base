@@ -278,7 +278,7 @@ show($retval['curl']['data']);
         return $retval;
 
     }catch(Exception $e){
-        if((($e->getCode() == 'postid') or ($e->getCode() == 'posturl')) and (++$retry <= $params['retries'])){
+        if((($e->code == 'postid') or ($e->code == 'posturl')) and (++$retry <= $params['retries'])){
             /*
              * For whatever reason, connection gave HTTP code 0 which probably
              * means that the server died off completely. This again may mean
