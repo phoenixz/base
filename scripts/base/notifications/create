@@ -19,6 +19,6 @@ try{
     log_console('Added notification class "'.str_log($params['name']).'"', null, 'white');
 
 }catch(Exception $e){
-    throw new lsException('scripts/notifications/create: Failed', $e);
+    throw new ('scripts/notifications/create: Failed', $e);
 }
 ?>

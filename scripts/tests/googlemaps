@@ -35,6 +35,6 @@ try{
 	test_completed('googlemaps', 'library');
 
 }catch(Exception $e){
-    throw new lsException('scripts/tests/googlemaps: Failed', $e);
+    throw new ('scripts/tests/googlemaps: Failed', $e);
 }
 ?>

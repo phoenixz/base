@@ -23,6 +23,6 @@ try{
     }
 
 }catch(Exception $e){
-    throw new lsException('scripts/mailer/send: Failed', $e);
+    throw new ('scripts/mailer/send: Failed', $e);
 }
 ?>

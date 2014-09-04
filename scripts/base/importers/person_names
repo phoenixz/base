@@ -7,7 +7,7 @@ require_once(dirname(__FILE__).'/../../../libs/startup.php');
 
 try{
     if(!$language = argument(0)){
-        throw new lsException('No language specified, please specify one of "en"');
+        throw new ('No language specified, please specify one of "en"');
     }
 
     if($language == 'clear'){
@@ -20,7 +20,7 @@ try{
     }
 
     if(!in_array($language, array('en'))){
-        throw new lsException('No valid language specified, please specify one of "en"');
+        throw new ('No valid language specified, please specify one of "en"');
     }
 
     if($count = sql_get('SELECT COUNT(`id`) AS count FROM `persons_names`;', 'count')){
@@ -44,7 +44,7 @@ try{
        $import_path = slash($path);
 
     }else{
-        throw new lsException('Could not find "persons" project path');
+        throw new ('Could not find "persons" project path');
     }
 
     /*

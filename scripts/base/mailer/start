@@ -32,6 +32,6 @@ try{
     }
 
 }catch(Exception $e){
-    throw new lsException('scripts/mailer/start: Failed', $e);
+    throw new ('scripts/mailer/start: Failed', $e);
 }
 ?>

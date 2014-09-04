@@ -27,7 +27,7 @@ try{
 
         foreach($_CONFIG['avatars']['types'] as $type => $data){
             if(!file_exists($file = ROOT.'www/avatars/'.$avatar.'_'.$type.'.jpg')){
-                throw new lsException('Did not create avatar type "'.str_log($type).'"');
+                throw new ('Did not create avatar type "'.str_log($type).'"');
 
             }else{
                 /*
@@ -46,6 +46,6 @@ try{
 	test_completed('avatars', 'library');
 
 }catch(Exception $e){
-    throw new lsException('scripts/tests/avatars: Failed', $e);
+    throw new ('scripts/tests/avatars: Failed', $e);
 }
 ?>

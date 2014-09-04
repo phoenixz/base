@@ -26,6 +26,6 @@ try{
     }
 
 }catch(Exception $e){
-    throw new lsException('base/users/list: Failed', $e);
+    throw new ('base/users/list: Failed', $e);
 }
 ?>

@@ -29,6 +29,6 @@ try{
     log_console('Created mailer "'.$params['name'].'"', 'info', 'white');
 
 }catch(Exception $e){
-    throw new lsException('scripts/mailer/create: Failed', $e);
+    throw new ('scripts/mailer/create: Failed', $e);
 }
 ?>

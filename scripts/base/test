@@ -17,6 +17,6 @@ try{
     }
 
 }catch(Exception $e){
-    throw new lsException('scripts/test: Failed', $e);
+    throw new ('scripts/test: Failed', $e);
 }
 ?>

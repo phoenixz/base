@@ -18,6 +18,6 @@ try{
     }
 
 }catch(Exception $e){
-    throw new lsException('scripts/alreadyrunstest: Failed', $e);
+    throw new ('scripts/alreadyrunstest: Failed', $e);
 }
 ?>

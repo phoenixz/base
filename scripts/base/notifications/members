@@ -42,6 +42,6 @@ try{
     }
 
 }catch(Exception $e){
-    throw new lsException('scripts/notifications/members: Failed', $e);
+    throw new ('scripts/notifications/members: Failed', $e);
 }
 ?>

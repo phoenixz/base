@@ -35,12 +35,12 @@ try{
             /*
              * Umm, we don't have a user data directory
              */
-            throw new lsException('No user home directory found for non root user', 'nohomedir');
+            throw new ('No user home directory found for non root user', 'nohomedir');
         }
     }
 
     if(substr($path, 0, 1) != '/'){
-        throw new lsException('The specified path "'.str_log($path).'" is invalid. An absolute path (starting with a forward slash /) is required', 'invalid');
+        throw new ('The specified path "'.str_log($path).'" is invalid. An absolute path (starting with a forward slash /) is required', 'invalid');
     }
 
     $path = slash($path);
@@ -61,7 +61,7 @@ try{
         }
 
     }catch(Exception $e){
-        throw new lsException('The specified path "'.str_log($path).'" could not be created', $e);
+        throw new ('The specified path "'.str_log($path).'" could not be created', $e);
     }
 
 // :GARBAGE: The global data directory should be supplied by automatically downloading required files from their respectitive URL's

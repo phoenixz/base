@@ -24,7 +24,7 @@ try{
 		$ip = curl_get_random_ip();
 
 		if(!preg_match('/^\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}$/', $ip)){
-			throw new lsException('Did not return a valid IP, but "'.str_log($ip).'"');
+			throw new ('Did not return a valid IP, but "'.str_log($ip).'"');
 		}
 	});
 
@@ -40,11 +40,11 @@ try{
 	test('curl_get()', 'Function should return google.com 404 exception', function(){
 		try{
 			$google = curl_get('http://www.google.com/werkljw');
-			throw new lsException('Function did not throw exception for HTTP code "'.str_log($google['status']['http_code']).'"');
+			throw new ('Function did not throw exception for HTTP code "'.str_log($google['status']['http_code']).'"');
 
 		}catch(Exception $e){
 			if($e->getCode() != 'HTTP404'){
-				throw new lsException('Function returned invalid HTTP error code "'.$e->getCode().'"', $e);
+				throw new ('Function returned invalid HTTP error code "'.$e->getCode().'"', $e);
 			}
 
 			/*
@@ -62,6 +62,6 @@ try{
 	test_completed('curl', 'library');
 
 }catch(Exception $e){
-    throw new lsException('scripts/tests/curl: Failed', $e);
+    throw new ('scripts/tests/curl: Failed', $e);
 }
 ?>

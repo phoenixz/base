@@ -31,11 +31,11 @@ try{
     }
 
     if(!$target_user = argument(1)){
-        throw new lsException('base/users/admin: No user specified', 'notspecified');
+        throw new ('base/users/admin: No user specified', 'notspecified');
     }
 
     if(!$target_user = sql_get('SELECT `id`, `name`, `username`, `email` FROM `users` WHERE `id` = :id OR `username` = :username OR `email` = :email', array(':id' => $target_user, ':username' => $target_user, ':email' => $target_user))){
-        throw new lsException('base/users/admin: Specified user "'.str_log(argument(1)).'" does not exist', 'notexists');
+        throw new ('base/users/admin: Specified user "'.str_log(argument(1)).'" does not exist', 'notexists');
     }
 
     load_libs('rights');
@@ -87,7 +87,7 @@ try{
                     /*
                      * There are other admin users available
                      */
-                    throw new lsException('This action cannot be executed on your self', 'denied');
+                    throw new ('This action cannot be executed on your self', 'denied');
                 }
             }
 
@@ -118,7 +118,7 @@ try{
              * Make this user NO LONGER an admin
              */
             if($target_user['id'] == $user['id']){
-                throw new lsException('This action cannot be executed on your self', 'denied');
+                throw new ('This action cannot be executed on your self', 'denied');
             }
 
             sql_query('UPDATE `users` SET `admin` = 0 WHERE `id` = :users_id', array(':users_id' => $target_user['id']));
@@ -135,13 +135,13 @@ try{
 
         default:
             if(!argument(0)){
-                throw new lsException('base/users/admin: No option specified', 'notspecified');
+                throw new ('base/users/admin: No option specified', 'notspecified');
             }
 
-            throw new lsException('base/users/admin: Invalid option "'.str_log(argument(0)).'" specified', 'unknown');
+            throw new ('base/users/admin: Invalid option "'.str_log(argument(0)).'" specified', 'unknown');
     }
 
 }catch(Exception $e){
-    throw new lsException('base/users/admin: Failed', $e);
+    throw new ('base/users/admin: Failed', $e);
 }
 ?>

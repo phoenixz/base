@@ -49,6 +49,6 @@ try{
     }
 
 }catch(Exception $e){
-    throw new lsException('scripts/tests/all: Failed', $e);
+    throw new ('scripts/tests/all: Failed', $e);
 }
 ?>

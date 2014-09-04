@@ -22,13 +22,13 @@ try{
 
 	test('array_implode_with_keys()', 'Function call should convert associative array to string with keys and values', function(){
 		if(array_implode_with_keys(array('foo' => 'bar', 'test' => 'test'), "\n", ' => ') != "foo => bar\ntest => test"){
-			throw new lsException('Did not convert array to correct string');
+			throw new ('Did not convert array to correct string');
 		}
 	});
 
 	test('array_implode_with_keys()', 'Function call should convert associative array with sub arrays to string with keys and values', function(){
 		if(array_implode_with_keys(array('foo' => 'bar', 'test' => array('foo' => 'bar', 'test' => 'test')), "|", ' => ') != "foo => bar|test => |foo => bar|test => test"){
-			throw new lsException('Did not convert array with sub arrays to correct string');
+			throw new ('Did not convert array with sub arrays to correct string');
 		}
 	});
 
@@ -40,6 +40,6 @@ try{
 	test_completed('array', 'library');
 
 }catch(Exception $e){
-    throw new lsException('scripts/tests/array: Failed', $e);
+    throw new ('scripts/tests/array: Failed', $e);
 }
 ?>

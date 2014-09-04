@@ -17,7 +17,7 @@ try{
     switch(argument(0)){
         case 'take':
             if(!argument(1)){
-                throw new lsException('No session ID to take specified', 'nosessionid');
+                throw new ('No session ID to take specified', 'nosessionid');
             }
 
             session_take(argument(1));
@@ -31,9 +31,9 @@ try{
             break;
 
         case '':
-            throw new lsException('No command specified', 'nocommand');
+            throw new ('No command specified', 'nocommand');
         default:
-            throw new lsException('Unknown command "'.argument(0).'" specified', 'unknowncommand');
+            throw new ('Unknown command "'.argument(0).'" specified', 'unknowncommand');
     }
 
 }catch(Exception $e){

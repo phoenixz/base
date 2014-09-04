@@ -72,7 +72,7 @@ try{
     log_screen('Starting deploy of project "'.PROJECT.'"', 'deploy', 'white');
 
     if(ENVIRONMENT == 'production') {
-        throw new lsException('You are running the deply script on production environment? Are you high?', 'production');
+        throw new bException('You are running the deply script on production environment? Are you high?', 'production');
     }
 
     /*
@@ -90,11 +90,10 @@ try{
     $nopush      =  (argument('nopush')     or ($noversion and $notag));
 
     $message     =   argument('message'    , true);
-    $environment =   argument('environment', true, 'production');
     $targets     =   argument('target'     , true, argument('targets', true, argument('all', false, 'production')));
 
     if(!$message and !$notag){
-        throw new lsException('No tag message specified! please use ./scripts/base/deploy ..... message "commit message"', 'notspecified');
+        throw new bException('No tag message specified! please use ./scripts/base/deploy ..... message "commit message"', 'notspecified');
     }
 
     /*
@@ -103,14 +102,14 @@ try{
     include(ROOT.'config/deploy.php');
 
     if(empty($_CONFIG['deploy'])){
-        throw new lsException('No deploy configuration found', 'config');
+        throw new bException('No deploy configuration found', 'config');
     }
 
     /*
      * Check target configuration availability
      */
     if(!$targets){
-        throw new lsException('No target environment specified!', 'notspecified');
+        throw new bException('No target environment specified!', 'notspecified');
     }
 
     if($targets === true){
@@ -131,28 +130,28 @@ try{
         $targets = array($targets);
     }
 
-    foreach($targets as $target){
-        if(empty($_CONFIG['deploy'][$target])){
-            throw new lsException('Unknown target environment "'.str_log($target).'" specified', 'unknown');
+    foreach($targets as $target_environment){
+        if(empty($_CONFIG['deploy'][$target_environment])){
+            throw new bException('Unknown target environment "'.str_log($target_environment).'" specified', 'unknown');
         }
 
         /*
          * Ensure that target environment configuration file is available.
          */
-        if(!file_exists(ROOT.'config/'.$target.'.php')){
-            throw new lsException('Target environment "'.str_log($target).'" has no configuration file', 'missingfile');
+        if(!file_exists(ROOT.'config/'.$target_environment.'.php')){
+            throw new bException('Target environment "'.str_log($target_environment).'" has no configuration file', 'missingfile');
         }
 
-        $deploy_config = $_CONFIG['deploy'][$target];
+        $deploy_config = $_CONFIG['deploy'][$target_environment];
 
-        log_console('Deploying to target environment "'.str_log($target).'"', 'deploy', 'white');
+        log_console('Deploying to target environment "'.str_log($target_environment).'"', 'deploy', 'white');
 
         /*
          * Check if we dont have any commits
          */
         if(!trim(shell_exec('git status | grep "nothing to commit" | wc -l'))) {
             if(!FORCE){
-                throw new lsException('Git commit pending', 'COMMITFIRST');
+                throw new bException('Git commit pending', 'COMMITFIRST');
             }
         }
 
@@ -206,11 +205,11 @@ try{
             exec('find . -type f -name "*.php"', $output);
 
             if(!is_array($output)){
-                throw new lsException('Syntax check failed', 'production');
+                throw new bException('Syntax check failed', 'production');
             }
 
             if(!$output){
-                throw new lsException('No php files found.', 'production');
+                throw new bException('No php files found.', 'production');
             }
 
             foreach($output as $file){
@@ -224,7 +223,7 @@ try{
                 exec('php -l '.ROOT.$file.' > /dev/null', $syntaxoutput, $return);
 
                 if($return){
-                    throw new lsException('Content scan failed on file "'.$file.'" with "'.str_log($syntaxoutput).'"', 'production');
+                    throw new bException('Content scan failed on file "'.$file.'" with "'.str_log($syntaxoutput).'"', 'production');
                 }
 
                 log_console('#', '', 'green', false);
@@ -288,7 +287,7 @@ try{
         }else{
             log_console('Executing git push', 'deploy', 'white');
 
-            passthru('cd '.ROOT.'; git push origin '.$environment.'; git push --tags');
+            passthru('cd '.ROOT.'; git push origin '.$target_environment.'; git push --tags');
             init_hook('deploy_post_push', $nohooks);
         }
 
@@ -298,7 +297,7 @@ try{
          */
         if(!$noversion){
             log_console('Project version revision was updated, executing init to update project database', 'deploy', 'white');
-            passthru(ROOT.'script/base/init env '.$environment.($subenvironment ? ' subenv '.$subenvironment : ''));
+            passthru(ROOT.'script/base/init env '.$target_environment.($subenvironment ? ' subenv '.$subenvironment : ''));
         }
 
 
@@ -360,11 +359,11 @@ try{
                 exec('grep load_content  www scripts -R', $output);
 
                 if(!is_array($output)){
-                    throw new lsException('Content scan failed', 'production');
+                    throw new bException('Content scan failed', 'production');
                 }
 
                 if(!$output){
-                    throw new lsException('No "load_content" found which is impossible, because the system library has it.', 'production');
+                    throw new bException('No "load_content" found which is impossible, because the system library has it.', 'production');
                 }
 
                 /*
@@ -402,7 +401,7 @@ try{
                         exec('ssh -t -p '.isset_get($deploy_config['target_port'], 22).' '.$deploy_config['target_user'].'@'.$deploy_config['target_server'].' \'ls '.($file = $deploy_config['target_dir'].'data/content/'.$language.'/'.$file.'.html').' 2>&1 /dev/null\'', $contentoutput, $return);
 
                         if($return){
-                            throw new lsException('Missing content file "'.str_log($file).'" for language "'.str_log($language).'", defined in "'.$definedin.'"', 'production');
+                            throw new bException('Missing content file "'.str_log($file).'" for language "'.str_log($language).'", defined in "'.$definedin.'"', 'production');
                         }
                     }
                 }
@@ -441,7 +440,7 @@ try{
             }else{
                 log_screen(($subenvironment ? '('.$subenvironment.') ' : '').'Executing init on target server', 'deploy', 'white');
 
-                passthru($command = 'ssh -t -p '.isset_get($deploy_config['target_port'], 22).' '.$deploy_config['target_user'].'@'.$deploy_config['target_server'].' \''.$deploy_config['target_dir'].'/scripts/base/init env '.$environment.($subenvironment ? ' subenv '.$subenvironment : '').' \'');
+                passthru($command = 'ssh -t -p '.isset_get($deploy_config['target_port'], 22).' '.$deploy_config['target_user'].'@'.$deploy_config['target_server'].' \''.$deploy_config['target_dir'].'/scripts/base/init env '.$target_environment.($subenvironment ? ' subenv '.$subenvironment : '').' \'');
                 init_hook('deploy_post_init', $nohooks);
             }
 
@@ -455,7 +454,7 @@ try{
             }else{
                 log_screen(($subenvironment ? '('.$subenvironment.') ' : '').'Executing file permission update', 'deploy', 'white');
 
-                passthru($command = 'ssh -t -p '.isset_get($deploy_config['target_port'], 22).' '.$deploy_config['target_user'].'@'.$deploy_config['target_server'].' \''.$deploy_config['target_dir'].'/scripts/base/fixpermissions env '.$environment.($subenvironment ? ' subenv '.$subenvironment : '').' \'');
+                passthru($command = 'ssh -t -p '.isset_get($deploy_config['target_port'], 22).' '.$deploy_config['target_user'].'@'.$deploy_config['target_server'].' \''.$deploy_config['target_dir'].'/scripts/base/fixpermissions env '.$target_environment.($subenvironment ? ' subenv '.$subenvironment : '').' \'');
                 init_hook('deploy_post_permission', $nohooks);
             }
 
@@ -490,7 +489,7 @@ try{
         init_hook('deploy_post', $nohooks);
 
         if(count($subenvironments) > 1){
-            log_screen('Finished deploy for all environments in target "'.str_log($target).'"', 'deploy', 'white');
+            log_screen('Finished deploy for all environments in target "'.str_log($target_environment).'"', 'deploy', 'white');
         }
     }
 

@@ -35,15 +35,15 @@ try{
     load_libs('array');
 
     if(empty($argv[0])){
-        throw new lsException('No source environment specified');
+        throw new ('No source environment specified');
     }
 
     if($argv[0] == ENVIRONMENT){
-        throw new lsException('Cannot sync this own environment "'.ENVIRONMENT.'"');
+        throw new ('Cannot sync this own environment "'.ENVIRONMENT.'"');
     }
 
     if(empty($argv[1]) and REQUIRE_SUBENVIRONMENTS){
-        throw new lsException('No source subenvironment specified, this project specifically requires subenvironments');
+        throw new ('No source subenvironment specified, this project specifically requires subenvironments');
     }
 
 

@@ -8,6 +8,6 @@ require_once(dirname(__FILE__).'/../../libs/startup.php');
 try{
 
 }catch(Exception $e){
-    throw new lsException('scripts/hooks/example: Failed', $e);
+    throw new ('scripts/hooks/example: Failed', $e);
 }
 ?>

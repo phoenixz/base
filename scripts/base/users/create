@@ -24,6 +24,6 @@ try{
     log_console('Added user "'.$params['email'].'"', null, 'white');
 
 }catch(Exception $e){
-    throw new lsException('scripts/users/create: Failed', $e);
+    throw new ('scripts/users/create: Failed', $e);
 }
 ?>

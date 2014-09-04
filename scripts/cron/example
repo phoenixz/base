@@ -16,6 +16,6 @@ try{
     }
 
 }catch(Exception $e){
-    throw new lsException('scripts/cron/example: Failed', $e);
+    throw new ('scripts/cron/example: Failed', $e);
 }
 ?>

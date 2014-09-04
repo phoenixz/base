@@ -21,6 +21,6 @@ try{
     }
 
 }catch(Exception $e){
-    throw new lsException('scripts/mailer/delete: Failed', $e);
+    throw new ('scripts/mailer/delete: Failed', $e);
 }
 ?>
