@@ -216,7 +216,7 @@ try{
 			log_console('Translations successful : '.number_format($returned_data['stats']['translations_done']),'script/base/translate','',true);
 
 		}catch(Exception $e){
-			throw new ('translate: Unable to delete target dir '.$target_dir, $e);
+			throw new bException('translate: Unable to delete target dir '.$target_dir, $e);
 		}
 
 	} else {
@@ -224,6 +224,6 @@ try{
 	}
 
 }catch(Exception $e){
-	throw new ('translate: Failed', $e);
+	throw new bException('translate: Failed', $e);
 }
 ?>

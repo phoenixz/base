@@ -28,7 +28,7 @@ try{
     $branch = argument('branch', true, 'production');
 
     if(!$branch){
-        throw new ('No branch specified', 'nobranch');
+        throw new bException('No branch specified', 'nobranch');
     }
 
     if(TEST){
@@ -44,12 +44,12 @@ try{
 
     // Check if we are not on main base repository
     if(trim(shell_exec('grep "/git/base.git" '.ROOT.'.git/config'))) {
-        throw new ('Cannot be run on main base repository', 'WRONGREPOS');
+        throw new bException('Cannot be run on main base repository', 'WRONGREPOS');
     }
 
     // Check if we dont have any commits
     if(!trim(shell_exec('git status | grep "nothing to commit" | wc -l')) AND !FORCE) {
-        throw new ('Git commit pending', 'COMMITFIRST');
+        throw new bException('Git commit pending', 'COMMITFIRST');
     }
 
     //update libraries from base

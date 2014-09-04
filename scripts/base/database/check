@@ -10,11 +10,11 @@ try{
     $show   = argument('show');
 
     if(!$user = argument('username', true)){
-        throw new ('No database username specified', 'notspecified');
+        throw new bException('No database username specified', 'notspecified');
     }
 
     if(!$password = argument('password', true)){
-        throw new ('No database password specified', 'notspecified');
+        throw new bException('No database password specified', 'notspecified');
     }
 
     load_libs('file');
@@ -70,6 +70,6 @@ try{
     }
 
 }catch(Exception $e){
-    throw new ('scripts/database/check: Failed', $e);
+    throw new bException('scripts/database/check: Failed', $e);
 }
 ?>

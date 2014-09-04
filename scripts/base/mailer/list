@@ -56,6 +56,6 @@ try{
     }
 
 }catch(Exception $e){
-    throw new ('scripts/mailer/list: Failed', $e);
+    throw new bException('scripts/mailer/list: Failed', $e);
 }
 ?>

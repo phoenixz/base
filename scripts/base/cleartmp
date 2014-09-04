@@ -17,6 +17,6 @@ try{
     log_console('Done', 'done', 'green');
 
 }catch(Exception $e){
-    throw new ('scripts/base/cleartmp: Failed', $e);
+    throw new bException('scripts/base/cleartmp: Failed', $e);
 }
 ?>

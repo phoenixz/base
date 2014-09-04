@@ -72,6 +72,6 @@ try{
     file_copy_tree($source, $destination, $search, $replace, $extensions, $filemode);
 
 }catch(Exception $e){
-    throw new ('scripts/copytree: Failed', $e);
+    throw new bException('scripts/copytree: Failed', $e);
 }
 ?>

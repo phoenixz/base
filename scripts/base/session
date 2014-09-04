@@ -17,7 +17,7 @@ try{
     switch(argument(0)){
         case 'take':
             if(!argument(1)){
-                throw new ('No session ID to take specified', 'nosessionid');
+                throw new bException('No session ID to take specified', 'nosessionid');
             }
 
             session_take(argument(1));
@@ -31,9 +31,9 @@ try{
             break;
 
         case '':
-            throw new ('No command specified', 'nocommand');
+            throw new bException('No command specified', 'nocommand');
         default:
-            throw new ('Unknown command "'.argument(0).'" specified', 'unknowncommand');
+            throw new bException('Unknown command "'.argument(0).'" specified', 'unknowncommand');
     }
 
 }catch(Exception $e){

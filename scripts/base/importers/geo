@@ -86,7 +86,7 @@ try{
             $geoimport_path = get_global_data_path('geonames');
 
             if(!$username or !$password){
-                throw new ('No user name and / or password specified', 'notspecified');
+                throw new bException('No user name and / or password specified', 'notspecified');
             }
 
             /*
@@ -137,7 +137,7 @@ try{
                 passthru('cd '.$geoimport_path.' ; ./geonames_importer.sh -a import-dumps -u '.$username.' -p "'.$password.'" -n "'.$database.'"');
 
             }catch(Exception $e){
-                throw new ('Import failed. In case of "The used command is not allowed with this MySQL version" error, please try the "notlocal" command line option, see geo.txt documentation for more information', $e);
+                throw new bException('Import failed. In case of "The used command is not allowed with this MySQL version" error, please try the "notlocal" command line option, see geo.txt documentation for more information', $e);
             }
 
             if(argument('notlocal')){
@@ -209,7 +209,7 @@ try{
 
         case 'import':
             if(!$country_list = argument('country', true)){
-                throw new ('No country list specified to import data from. Please specify "country COUNTRY,COUNTRY,COUNTRY"', 'notspecified');
+                throw new bException('No country list specified to import data from. Please specify "country COUNTRY,COUNTRY,COUNTRY"', 'notspecified');
             }
 
             $country_list = explode(',', $country_list);
@@ -359,7 +359,7 @@ try{
 
                     }else{
                         if(!$result = sql_get('SELECT `id`, `name` FROM `geo_countries` WHERE `name` = :name OR `seoname` = :seoname or `code` = :code', array('name' => $country, 'seoname' => $country, 'code' => $country))){
-                            throw new ('Specified country "'.str_log($country).'" not found');
+                            throw new bException('Specified country "'.str_log($country).'" not found');
                         }
 
                         log_console($result['name'], '', 'yellow');
@@ -741,10 +741,10 @@ try{
             break;
 
         case '':
-            throw new ('No command specified. Please specify one of "clear", "download", "loaddata", "fixdata", "import"', 'notspecified');
+            throw new bException('No command specified. Please specify one of "clear", "download", "loaddata", "fixdata", "import"', 'notspecified');
 
         default:
-            throw new ('Unknown do "'.str_log(argument(0)).'" specified. Please specify one of "clear", "download", "loaddata", "fixdata", "import"', 'unknown');
+            throw new bException('Unknown do "'.str_log(argument(0)).'" specified. Please specify one of "clear", "download", "loaddata", "fixdata", "import"', 'unknown');
     }
 
     sql_query('SET autocommit         = 1;');

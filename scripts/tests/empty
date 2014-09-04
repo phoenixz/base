@@ -21,7 +21,7 @@ try{
 	test('emptyfunction()', 'Function call which should do blah blah', function(){
 		try{
 			if(emptyfunction('lkjerlkfwejf', 127)){
-				throw new ('Did not do blah blah');
+				throw new bException('Did not do blah blah');
 			}
 
 		}catch(Exception $e){
@@ -36,6 +36,6 @@ showdie($e);
 	test_completed('empty', 'library');
 
 }catch(Exception $e){
-    throw new ('scripts/tests/empty: Failed', $e);
+    throw new bException('scripts/tests/empty: Failed', $e);
 }
 ?>

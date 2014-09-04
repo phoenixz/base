@@ -68,7 +68,7 @@ try{
     }
 
     if(empty($do)){
-        throw new ('No or unknown arguments specified. Please specify at least one of "mysql", "path", "sync", or "clean"', 'notspecified');
+        throw new bException('No or unknown arguments specified. Please specify at least one of "mysql", "path", "sync", or "clean"', 'notspecified');
     }
 
 }catch(Exception $e){

@@ -33,6 +33,6 @@ try{
 	test_completed('mail', 'library');
 
 }catch(Exception $e){
-    throw new ('scripts/tests/mail: Failed', $e);
+    throw new bException('scripts/tests/mail: Failed', $e);
 }
 ?>

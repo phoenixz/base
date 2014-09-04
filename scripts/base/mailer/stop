@@ -21,6 +21,6 @@ try{
     }
 
 }catch(Exception $e){
-    throw new ('scripts/mailer/stop: Failed', $e);
+    throw new bException('scripts/mailer/stop: Failed', $e);
 }
 ?>

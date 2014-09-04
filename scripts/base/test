@@ -17,6 +17,6 @@ try{
     }
 
 }catch(Exception $e){
-    throw new ('scripts/test: Failed', $e);
+    throw new bException('scripts/test: Failed', $e);
 }
 ?>

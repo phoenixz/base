@@ -15,15 +15,15 @@ try{
     $time     = $time->format('YmdHis');
 
     if(!$user = argument('username', true)){
-        throw new ('No database username specified', 'notspecified');
+        throw new bException('No database username specified', 'notspecified');
     }
 
     if(!$password = argument('password', true)){
-        throw new ('No database password specified', 'notspecified');
+        throw new bException('No database password specified', 'notspecified');
     }
 
     if(!$database){
-        throw new ('No database specified', 'notspecified');
+        throw new bException('No database specified', 'notspecified');
     }
 
     load_libs('file');
@@ -90,6 +90,6 @@ try{
     }
 
 }catch(Exception $e){
-    throw new ('scripts/database/dropload: Failed', $e);
+    throw new bException('scripts/database/dropload: Failed', $e);
 }
 ?>

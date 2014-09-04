@@ -15,7 +15,7 @@ try{
 
     if($target_user){
         if(!$target_user = sql_get('SELECT * FROM `users` WHERE `id` = :id OR `name` = :name OR `email` = :email', array(':name' => $target_user, ':email' => $target_user, ':id' => $target_user))){
-            throw new ('base/users/rights: Specified user "'.str_log(argument('user', true)).'" does not exist', 'notexists');
+            throw new bException('base/users/rights: Specified user "'.str_log(argument('user', true)).'" does not exist', 'notexists');
         }
     }
 
@@ -41,13 +41,13 @@ try{
             // FALLTHROUGH
         case 'has':
             if(!$target_user){
-                throw new ('base/users/rights: No user specified', 'notspecified');
+                throw new bException('base/users/rights: No user specified', 'notspecified');
             }
 
             log_console('Showing rights for user "'.user_name($target_user).'"', '');
 
             if(!$target_user){
-                throw new ('base/users/rights: No user specified', 'notspecified');
+                throw new bException('base/users/rights: No user specified', 'notspecified');
             }
 
             $list = sql_list('SELECT    `rights`.`name`,
@@ -81,11 +81,11 @@ try{
             // FALLTHROUGH
         case 'give':
             if(!$target_user){
-                throw new ('base/users/rights: No user specified', 'notspecified');
+                throw new bException('base/users/rights: No user specified', 'notspecified');
             }
 
             if(in_array('admin', $argv)){
-                throw new ('The right "admin" can only be assigned with the "admin" script', 'invalid');
+                throw new bException('The right "admin" can only be assigned with the "admin" script', 'invalid');
             }
 
             /*
@@ -93,7 +93,7 @@ try{
              */
             if(!$arguments = argument('rights', 'all')){
                 if(!$arguments = argument('right', 'all')){
-                    throw new ('No "rights" or "right" keyword, or no rights list specified', 'notspecified');
+                    throw new bException('No "rights" or "right" keyword, or no rights list specified', 'notspecified');
                 }
             }
 
@@ -102,7 +102,7 @@ try{
              */
             foreach($arguments as $key => $value){
                 if(!$right = rights_get($value, 'id,name')){
-                    throw new ('Unknown right "'.str_log($value).'" specified', 'unknown');
+                    throw new bException('Unknown right "'.str_log($value).'" specified', 'unknown');
                 }
 
                 $rights[$right['name']] = $right;
@@ -130,7 +130,7 @@ try{
             // FALLTHROUGH
         case 'take':
             if(!$target_user){
-                throw new ('base/users/rights: No user specified', 'notspecified');
+                throw new bException('base/users/rights: No user specified', 'notspecified');
             }
 
             /*
@@ -140,7 +140,7 @@ try{
             unset($argv[1]);
 
             if(in_array('admin', $argv)){
-                throw new ('The right "admin" can only be removed with the "admin" script', 'invalid');
+                throw new bException('The right "admin" can only be removed with the "admin" script', 'invalid');
             }
 
             /*
@@ -148,7 +148,7 @@ try{
              */
             foreach($argv as $key => $value){
                 if(!$right = rights_get($value, 'id,name')){
-                    throw new ('Unknown right "'.str_log($value).'" specified', 'unknown');
+                    throw new bException('Unknown right "'.str_log($value).'" specified', 'unknown');
                 }
 
                 $rights[$key] = $right;
@@ -172,11 +172,11 @@ try{
         case 'create':
             try{
                 if(!argument(1)){
-                    throw new ('No right name specified', 'notspecified');
+                    throw new bException('No right name specified', 'notspecified');
                 }
 
                 if(sql_get('SELECT `id` FROM `rights` WHERE `name` = :name', array(':name' => argument(1)))){
-                    throw new ('The right "'.str_log(argument(1)).'" already exists', 'exists');
+                    throw new bException('The right "'.str_log(argument(1)).'" already exists', 'exists');
                 }
 
 
@@ -191,7 +191,7 @@ try{
                 break;
 
             }catch(Exception $e){
-                throw new ('Failed to create new right', $e);
+                throw new bException('Failed to create new right', $e);
             }
 
         case 'delete':
@@ -203,16 +203,16 @@ try{
         case 'take':
             try{
                 if(!argument(1)){
-                    throw new ('No right name specified', 'notspecified');
+                    throw new bException('No right name specified', 'notspecified');
                 }
 
                 if(in_array(argument(1), array('god', 'devil', 'admin'))){
-                    throw new ('The right "'.str_log(argument(1)).'" cannot be deleted', 'invalid');
+                    throw new bException('The right "'.str_log(argument(1)).'" cannot be deleted', 'invalid');
                 }
 
                 if(!$id = sql_get('SELECT `id` FROM `rights` WHERE `name` = :name', 'id', array(':name' => argument(1)))){
                     if(!argument('force')){
-                        throw new ('The right "'.str_log(argument(1)).'" does not exist', 'notexist');
+                        throw new bException('The right "'.str_log(argument(1)).'" does not exist', 'notexist');
                     }
                 }
 
@@ -225,18 +225,18 @@ try{
                 break;
 
             }catch(Exception $e){
-                throw new ('Failed to create new right', $e);
+                throw new bException('Failed to create new right', $e);
             }
 
         default:
             if(!argument(0)){
-                throw new ('base/users/rights: No option specified. Please specify one of "list, for/has, add/set/give, unset/take, create, delete/remove/erase"', 'notspecified');
+                throw new bException('base/users/rights: No option specified. Please specify one of "list, for/has, add/set/give, unset/take, create, delete/remove/erase"', 'notspecified');
             }
 
-            throw new ('base/users/rights: Invalid option "'.str_log(argument(0)).'" specified', 'unknown');
+            throw new bException('base/users/rights: Invalid option "'.str_log(argument(0)).'" specified', 'unknown');
     }
 
 }catch(Exception $e){
-    throw new ('base/users/rights: Failed', $e);
+    throw new bException('base/users/rights: Failed', $e);
 }
 ?>

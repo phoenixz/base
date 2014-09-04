@@ -32,6 +32,6 @@ try{
     }
 
 }catch(Exception $e){
-    throw new ('scripts/cache: Failed', $e);
+    throw new bException('scripts/cache: Failed', $e);
 }
 ?>

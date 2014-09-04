@@ -42,6 +42,6 @@ try{
     }
 
 }catch(Exception $e){
-    throw new ('scripts/notifications/members: Failed', $e);
+    throw new bException('scripts/notifications/members: Failed', $e);
 }
 ?>

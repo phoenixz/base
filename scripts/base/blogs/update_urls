@@ -26,6 +26,6 @@ try{
     log_console('Updated all blog posts with the URL configuration "'.str_log($_CONFIG['blogs']['url']).'"', 'finished', 'white');
 
 }catch(Exception $e){
-    throw new ('scripts/blogs/update_urls: Failed', $e);
+    throw new bException('scripts/blogs/update_urls: Failed', $e);
 }
 ?>

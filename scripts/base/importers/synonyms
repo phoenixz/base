@@ -8,7 +8,7 @@ require_once(dirname(__FILE__).'/../../../libs/startup.php');
 
 try{
     if(!$language = argument(0)){
-        throw new ('No language specified, please specify one of "en"');
+        throw new bException('No language specified, please specify one of "en"');
     }
 
     if($language == 'clear'){
@@ -21,7 +21,7 @@ try{
     }
 
     if(!in_array($language, array('en'))){
-        throw new ('No valid language specified, please specify one of "en"');
+        throw new bException('No valid language specified, please specify one of "en"');
     }
 
     if($count = sql_get('SELECT COUNT(`id`) AS count FROM `synonyms`;', 'count')){
@@ -114,6 +114,6 @@ try{
     log_console('Done!', 'done', 'green');
 
 }catch(Exception $e){
-    throw new ('scripts/importers/synonyms: Failed', $e);
+    throw new bException('scripts/importers/synonyms: Failed', $e);
 }
 ?>

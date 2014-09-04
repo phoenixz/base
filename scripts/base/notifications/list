@@ -48,7 +48,7 @@ try{
                           implode(',', $where));
 
         if(!$class){
-            throw new ('notifications/list: Specified notification class "'.str_log($arg).'" does not exist', 'notexists');
+            throw new bException('notifications/list: Specified notification class "'.str_log($arg).'" does not exist', 'notexists');
         }
 
         $r = sql_query('SELECT    `users`.`name`,
@@ -128,6 +128,6 @@ try{
     }
 
 }catch(Exception $e){
-    throw new ('base/notifications/list: Failed', $e);
+    throw new bException('base/notifications/list: Failed', $e);
 }
 ?>

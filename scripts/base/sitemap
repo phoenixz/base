@@ -41,7 +41,7 @@ try{
                 /*
                  * No language code specified
                  */
-                throw new ('No language code specified', 'notspecified');
+                throw new bException('No language code specified', 'notspecified');
             }
 
             $languages = strtolower(argument(2));
@@ -50,14 +50,14 @@ try{
                 /*
                  * Invalid language code specified
                  */
-                throw new ('Invalid language code "'.str_log(argument(2)).'" specified. A valid language code has only 2 letters', 'invalid');
+                throw new bException('Invalid language code "'.str_log(argument(2)).'" specified. A valid language code has only 2 letters', 'invalid');
             }
 
             if(!isset($_CONFIG['language']['supported'][$languages])){
                 /*
                  * Specified language not supported
                  */
-                throw new ('The specified language code "'.str_log(argument(2)).'" does not exist', 'notexist');
+                throw new bException('The specified language code "'.str_log(argument(2)).'" does not exist', 'notexist');
             }
 
             if($languages == 'all'){
@@ -129,10 +129,10 @@ try{
             break;
 
         case '':
-            throw new ('No argument specified', 'unknown');
+            throw new bException('No argument specified', 'unknown');
 
         default:
-            throw new ('Unknown argument "'.str_log(argument(0)).'" specified', 'unknown');
+            throw new bException('Unknown argument "'.str_log(argument(0)).'" specified', 'unknown');
     }
 
 }catch(Exception $e){

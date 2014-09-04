@@ -21,7 +21,7 @@ try{
     }
 
 }catch(Exception $e){
-    throw new ('scripts/empty: Failed', $e);
+    throw new bException('scripts/empty: Failed', $e);
 }
 
 

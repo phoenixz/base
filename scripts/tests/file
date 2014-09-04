@@ -26,7 +26,7 @@ try{
 		file_clear_path($file);
 
 		if(file_exists(dirname($file)) or file_exists(dirname(dirname($file)))){
-			throw new ('Function did not clear test path');
+			throw new bException('Function did not clear test path');
 		}
 	});
 
@@ -37,6 +37,6 @@ try{
 	test_completed('file', 'library');
 
 }catch(Exception $e){
-    throw new ('scripts/tests/file: Failed', $e);
+    throw new bException('scripts/tests/file: Failed', $e);
 }
 ?>

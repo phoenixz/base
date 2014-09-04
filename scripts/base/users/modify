@@ -11,7 +11,7 @@ try{
     load_libs('user');
 
     if(!$user = user_get(argument(0))){
-        throw new ('Specified user "'.str_log(argument(0)).'" does not exist', 'notexists');
+        throw new bException('Specified user "'.str_log(argument(0)).'" does not exist', 'notexists');
     }
 
     /*
@@ -85,6 +85,6 @@ try{
     }
 
 }catch(Exception $e){
-    throw new ('scripts/users/modify: Failed', $e);
+    throw new bException('scripts/users/modify: Failed', $e);
 }
 ?>

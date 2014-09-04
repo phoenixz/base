@@ -44,19 +44,19 @@ try{
 
     if($pfrom = argument('fromprojectversion', true, null)){
         if(!str_is_version($pfrom)){
-            throw new ('The specified fromprojectversion "'.str_log($pfrom).'" is not a valid version format. Please supply a version in format "n.n.n"', 'invalid');
+            throw new bException('The specified fromprojectversion "'.str_log($pfrom).'" is not a valid version format. Please supply a version in format "n.n.n"', 'invalid');
         }
     }
 
     if($ffrom = argument('fromframeworkversion', true, null)){
         if(!str_is_version($ffrom)){
-            throw new ('The specified fromframeworkversion "'.str_log($ffrom).'" is not a valid version format. Please supply a version in format "n.n.n"', 'invalid');
+            throw new bException('The specified fromframeworkversion "'.str_log($ffrom).'" is not a valid version format. Please supply a version in format "n.n.n"', 'invalid');
         }
     }
 
     init($pfrom, $ffrom);
 
 }catch(Exception $e){
-    throw new ('scripts/base/init: Failed', $e);
+    throw new bException('scripts/base/init: Failed', $e);
 }
 ?>

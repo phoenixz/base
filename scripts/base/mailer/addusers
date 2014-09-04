@@ -16,11 +16,11 @@ try{
     load_libs('mailer');
 
     if(!$mailings_id = mailer_get($mailing)){
-        throw new ('Mailing "'.$mailing.'" does not exist', 'notexist');
+        throw new bException('Mailing "'.$mailing.'" does not exist', 'notexist');
     }
 
     if(!$users){
-        throw new ('No users specified', 'notspecified');
+        throw new bException('No users specified', 'notspecified');
     }
 
     $mailings_id = $mailings_id['id'];

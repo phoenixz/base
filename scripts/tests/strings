@@ -20,13 +20,13 @@ try{
 
 	test('str_interleave()', 'Create fully forward slash interleaved string with UTF-8 support', function(){
         if(($test = str_interleave('This should be a fully forward slash interleaved string. Some UTF8 tests: ñ', '/', 0)) != 'T/h/i/s/ /s/h/o/u/l/d/ /b/e/ /a/ /f/u/l/l/y/ /f/o/r/w/a/r/d/ /s/l/a/s/h/ /i/n/t/e/r/l/e/a/v/e/d/ /s/t/r/i/n/g/./ /S/o/m/e/ /U/T/F/8/ /t/e/s/t/s/:/ /ñ'){
-            throw new ('Created incorrect string "'.$test.'"');
+            throw new bException('Created incorrect string "'.$test.'"');
         }
 	});
 
 	test('str_interleave()', 'Create a partially forward slash 2 character interleaved string with UTF-8 support', function(){
         if(($test = str_interleave('This should be a partially forward slash interleaved string. Some UTF8 tests: ñ', '/', 30, 2)) != 'Th/is/ s/ho/ul/d /be/ a/ p/ar/ti/al/ly/ f/orward slash interleaved string. Some UTF8 tests: ñ'){
-            throw new ('Created incorrect string "'.$test.'"');
+            throw new bException('Created incorrect string "'.$test.'"');
         }
 	});
 
@@ -36,7 +36,7 @@ try{
 
 	test('cfm()', 'TEST DESCRIPTION MISSING', function(){
         if(($test = cfm('This <b>should</b>\'""\' have escaped quotes. Some UTF8 tests: ñ')) != 'This should\\\'\"\"\\\' have escaped quotes. Some UTF8 tests: ñ'){
-            throw new ('Created incorrect string "'.$test.'"');
+            throw new bException('Created incorrect string "'.$test.'"');
         }
 	});
 
@@ -46,31 +46,31 @@ try{
 
 	test('str_truncate()', 'Function should truncate string after > character (displaying 25 characters in total)', function(){
         if(($test = str_truncate('Some UTF8 tests: ñ >This text should not be visible', 25)) != 'Some UTF8 tests: ñ > ... '){
-            throw new ('Created incorrect string "'.$test.'"');
+            throw new bException('Created incorrect string "'.$test.'"');
         }
 	});
 
 	test('str_truncate()', 'Function should truncate string after > character (displaying 25 characters in total), truncating with "***"', function(){
         if(($test = str_truncate('Some UTF8 tests: ñ >This text should not be visible', 25, '***')) != 'Some UTF8 tests: ñ >Th***'){
-            throw new ('Created incorrect string "'.$test.'"');
+            throw new bException('Created incorrect string "'.$test.'"');
         }
 	});
 
 	test('str_truncate()', 'Function should truncate string left (before > character) (displaying 25 characters in total)', function(){
         if(($test = str_truncate('This text should not be visible>Some UTF8 tests: ñ ', 25, ' ... ', 'left')) != ' ... >Some UTF8 tests: ñ'){
-            throw new ('Created incorrect string "'.$test.'"');
+            throw new bException('Created incorrect string "'.$test.'"');
         }
 	});
 
 	test('str_truncate()', 'Function should truncate string center (between > and < characters) (displaying 25 characters in total)', function(){
         if(($test = str_truncate('Some UTF8>This text should not be visible<tests   ñ', 25, ' ... ', 'center')) != 'Some UTF8> ... <tests   ñ'){
-            throw new ('Created incorrect string "'.$test.'"');
+            throw new bException('Created incorrect string "'.$test.'"');
         }
 	});
 
 	test('str_truncate()', 'Function should truncate string after 24 characters, with complete word boundary truncate', function(){
         if(($test = str_truncate('This text should notbbe visible>Some UTF8 tests: ññ ', 24, '...', 'right', true)) != 'This text should...'){
-            throw new ('Created incorrect string "'.$test.'"');
+            throw new bException('Created incorrect string "'.$test.'"');
         }
 	});
 
@@ -80,19 +80,19 @@ try{
 
 	test('str_ends_not()', 'Function should remove last / character only', function(){
         if(($test = str_ends_not('test//', '/', false)) != 'test/'){
-            throw new ('Created incorrect string "'.$test.'"');
+            throw new bException('Created incorrect string "'.$test.'"');
         }
 	});
 
 	test('str_ends_not()', 'Function should remove all / characters at the end', function(){
         if(($test = str_ends_not('test//', '/')) != 'test'){
-            throw new ('Created incorrect string "'.$test.'"');
+            throw new bException('Created incorrect string "'.$test.'"');
         }
 	});
 
 	test('str_ends_not()', 'Function should remove all t and / characters at the end', function(){
         if(($test = str_ends_not('test//', array('t', '/'))) != 'tes'){
-            throw new ('Created incorrect string "'.$test.'"');
+            throw new bException('Created incorrect string "'.$test.'"');
         }
 	});
 
@@ -104,6 +104,6 @@ try{
 	test_completed('strings', 'library');
 
 }catch(Exception $e){
-    throw new ('scripts/tests/strings: Failed', $e);
+    throw new bException('scripts/tests/strings: Failed', $e);
 }
 ?>

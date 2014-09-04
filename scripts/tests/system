@@ -25,7 +25,7 @@ try{
 		$t = isset_get($_GET['sdlkfjklsdjfkjshdfkjhs']);
 
 		if(isset($_GET['sdlkfjklsdjfkjshdfkjhs'])){
-			throw new ('Non existing variable did exist after isset_get() check on that function');
+			throw new bException('Non existing variable did exist after isset_get() check on that function');
 		}
 	});
 
@@ -33,7 +33,7 @@ try{
 		$t = array('returnthis' => 1);
 
 		if(isset_get($t['returnthis']) != 1){
-			throw new ('Returned incorrect value for requested key');
+			throw new bException('Returned incorrect value for requested key');
 		}
 	});
 
@@ -41,7 +41,7 @@ try{
 		$t = array('returnthis' => 1);
 
 		if(isset_get($t['returnsomethingelse'], 2) != 2){
-			throw new ('Returned incorrect alternative value');
+			throw new bException('Returned incorrect alternative value');
 		}
 	});
 
@@ -52,18 +52,18 @@ try{
 	// safe_exec() tests
 	test('safe_exec()', 'Function call should return this file name', function(){
 		if(substr(safe_exec('ls '.ROOT.'scripts/tests/system')[0], -20, 20) != 'scripts/tests/system'){
-			throw new ('Did not return filename "system"');
+			throw new bException('Did not return filename "system"');
 		}
 	});
 
 	test('safe_exec()', 'Function call which causes error exit code should cause exception', function(){
         try{
             safe_exec('lkjerlkfwejf');
-            throw new ('No exception thrown', 'notok');
+            throw new bException('No exception thrown', 'notok');
 
         }catch(Exception $e){
             if($e->getCode() === 'notok'){
-                throw new ('Did NOT throw exception on error exit code which has not been defined as OK', $e);
+                throw new bException('Did NOT throw exception on error exit code which has not been defined as OK', $e);
             }
         }
 	});
@@ -82,11 +82,11 @@ try{
 		$file = ROOT.'data/content/en/html/test.html';
 
 		if(!file_exists($file)){
-			throw new ('Did not create file in correct location');
+			throw new bException('Did not create file in correct location');
 		}
 
 		if(file_get_contents($file) != "File created html/test by ".realpath(PWD.$_SERVER['PHP_SELF'])."\nArray\n(\n    [0] => ###TEST###\n)\nArray\n(\n    [0] => TEST\n)\n"){
-			throw new ('Did not create correct file contents');
+			throw new bException('Did not create correct file contents');
 		}
 	});
 
@@ -114,6 +114,6 @@ try{
 	test_completed('system', 'library');
 
 }catch(Exception $e){
-    throw new ('scripts/tests/system: Failed', $e);
+    throw new bException('scripts/tests/system: Failed', $e);
 }
 ?>
