@@ -124,6 +124,13 @@ $_CONFIG['flash']              = array('css_name'         => 'flash',
                                        'button'           => '',
                                        'prefix'           => '');
 
+//
+$_CONFIG['formats']            = array('date'           => 'Ymd',
+                                       'time'           => 'YmdHis',
+                                       'human_date'     => 'd/m/Y',
+                                       'human_time'     => 'H:i:s meridian',
+                                       'human_datetime' => 'd/m/Y H:i:s meridian');
+
 // Filesystem configuration
 $_CONFIG['fs']                 = array('system_tempdir'   => true,                                          // ?
                                        'dir_mode'         => 0770,                                          // When the system creates directory, this sets what file mode it will have (Google unix file modes for more information)
