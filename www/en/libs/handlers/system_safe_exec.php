@@ -27,7 +27,10 @@ try{
         }
 
         if(!in_array($exitcode, $ok_exitcodes)){
-            throw new bException('safe_exec(): Command "'.str_log($command).'" failed with exit code "'.str_log($exitcode).'", and output "'.print_r($output, true).'"', $exitcode, null, $output);
+            load_libs('json');
+
+            $e =  new bException(json_encode_custom($output), $exitcode, null, $output);
+            throw new bException('safe_exec(): Command "'.str_log($command).'" failed with exit code "'.str_log($exitcode).'", and output "'.json_encode_custom($output, true).'"', $e);
         }
     }
 

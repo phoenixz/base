@@ -384,7 +384,7 @@ try{
                 break;
 
             case 'shell':
-                include(dirname(__FILE__).'/handlers/system_no_project_data.php');
+                include(dirname(__FILE__).'/handlers/system_platform_shell.php');
                 break;
 
             default:

@@ -21,33 +21,61 @@ try{
                     // FALLTHROUGH
                 case 'timezones':
                     if(!$count = sql_get('SELECT COUNT(*) AS `count` FROM mysql.time_zone_name;')){
-                        throw new lsException('MySQL timezone tables are empty');
+                        throw new bException('MySQL timezone tables are empty');
                     }
 
                     log_console($count, '', 'white');
-
                     break;
 
+                case '':
+                    throw new bException(tr('No "check" suboption specified. Please specify one of "timezones"'), 'notspecified');
+
                 default:
-                    throw new lsException(tr('Unknown "check" suboption "'.str_log(argument(1)).'" specified'), 'unknown');
+                    throw new bException(tr('Unknown "check" suboption "'.str_log(argument(1)).'" specified'), 'unknown');
             }
 
         case 'import':
             switch(argument(1)){
                 case 'timezones':
-                    log_console('Going to import timezones, please ensure MySQL root password is available!', 'import', 'white');
-                    safe_exec('mysql_tzinfo_to_sql /usr/share/zoneinfo | mysql -p  -u root mysql');
+                    try{
+                        log_console('Importing timezone data files in MySQL', 'import', 'white');
+                        log_console('You may ignore any "Warning: Unable to load \'/usr/share/zoneinfo/........\' as time zone. Skipping it." messages', 'import', 'white');
+                        log_console('Please fill in MySQL root password in the following "Enter password:" request', 'import', 'white');
+
+                        safe_exec('mysql_tzinfo_to_sql /usr/share/zoneinfo | mysql -p  -u root mysql');
+
+                    }catch(bException $e){
+                        /*
+                         * Something went wrong during import Get MySQL error
+                         */
+                        $message = $e->getMessages();
+                        $message = array_shift($message);
+                        $message = json_decode_custom($message);
+                        $message = array_shift($message);
+
+                        if(strstr($message, 'ERROR 1045')){
+                            throw new bException(tr('Incorrect MySQL root password supplied'), 'passwordicorrect');
+                        }
+
+                        throw $e;
+                    }
+
                     break;
 
+                case '':
+                    throw new bException(tr('No "import" suboption specified. Please specify one of "timezones"'), 'notspecified');
+
                 default:
-                    throw new lsException(tr('Unknown "import" suboption "'.str_log(argument(1)).'" specified'), 'unknown');
+                    throw new bException(tr('Unknown "import" suboption "'.str_log(argument(1)).'" specified'), 'unknown');
             }
 
+            break;
+
         case '':
-            throw new lsException(tr('No option specified. Please specify one of "import", or "repair"'), 'notspecified');
+            throw new bException(tr('No option specified. Please specify one of "import", or "repair"'), 'notspecified');
 
         default:
-            throw new lsException(tr('Unknown option "'.str_log(argument(0)).'" specified'), 'unknown');
+            throw new bException(tr('Unknown option "'.str_log(argument(0)).'" specified'), 'unknown');
     }
 
 }catch(Exception $e){
