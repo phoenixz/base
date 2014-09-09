@@ -1,0 +1,56 @@
+#!/usr/bin/php
+<?php
+/*
+ * This script can perform mysql maintenance actions
+ */
+$usage = "./scripts/base/sql/mysql OPTIONS\n".
+         "./scripts/base/sql/mysql\n";
+
+$help  = "This is the help contents";
+
+require_once(dirname(__FILE__).'/../../../libs/startup.php');
+
+try{
+    switch(strtolower(argument(0))){
+        case 'check':
+            /*
+             * Perform MySQL checks
+             */
+            switch(strtolower(argument(1))){
+                case 'timezone':
+                    // FALLTHROUGH
+                case 'timezones':
+                    if(!$count = sql_get('SELECT COUNT(*) AS `count` FROM mysql.time_zone_name;')){
+                        throw new lsException('MySQL timezone tables are empty');
+                    }
+
+                    log_console($count, '', 'white');
+
+                    break;
+
+                default:
+                    throw new lsException(tr('Unknown "check" suboption "'.str_log(argument(1)).'" specified'), 'unknown');
+            }
+
+        case 'import':
+            switch(argument(1)){
+                case 'timezones':
+                    log_console('Going to import timezones, please ensure MySQL root password is available!', 'import', 'white');
+                    safe_exec('mysql_tzinfo_to_sql /usr/share/zoneinfo | mysql -p  -u root mysql');
+                    break;
+
+                default:
+                    throw new lsException(tr('Unknown "import" suboption "'.str_log(argument(1)).'" specified'), 'unknown');
+            }
+
+        case '':
+            throw new lsException(tr('No option specified. Please specify one of "import", or "repair"'), 'notspecified');
+
+        default:
+            throw new lsException(tr('Unknown option "'.str_log(argument(0)).'" specified'), 'unknown');
+    }
+
+}catch(Exception $e){
+    cli_error('scripts/base/sql/mysql: Failed', $e);
+}
+?>

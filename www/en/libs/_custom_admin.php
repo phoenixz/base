@@ -1,6 +1,6 @@
 <?php
 /*
- * Admin library
+ * Empty custom Admin library
  *
  * This are functions only used for the admin section
  *

@@ -131,14 +131,6 @@ set_exception_handler('uncaught_exception');
 
 
 /*
- * Verify project data
- */
-if(!defined("SEED") or !SEED or (PROJECTCODEVERSION == '0.0.0')){
-    throw new bException(tr('startup: Project data in "ROOT/config/project.php" has not been configured. Please ensure SEED has a value specified and PROJECTCODEVERSION is not "0.0.0"'), 'projectnotsetup');
-}
-
-
-/*
  * Load configuration of product environment, then overwrite with current environment
  */
 try{
@@ -392,75 +384,7 @@ try{
                 break;
 
             case 'shell':
-                /*
-                 * Add CLI support library
-                 */
-                load_libs('cli'.(empty($_CONFIG['memcached']) ? '' : ',memcached'));
-
-                /*
-                 * Get script name and force option
-                 */
-                if(strpos($_SERVER['PHP_SELF'], '/') !== false) {
-                    define('SCRIPT', str_rfrom($_SERVER['PHP_SELF'], '/'));
-
-                }else{
-                    define('SCRIPT', $_SERVER['PHP_SELF']);
-                }
-
-// :TODO: Should these command line arguments also be removed from the $argv array, since these are also system arguments???
-                define('PWD'     , slash(isset_get($_SERVER['PWD'])));
-                define('FORCE'   , argument('force'));
-                define('TEST'    , argument('test'));
-                define('LIMIT'   , in_array('limit', $argv) ? array_next_value($argv, 'limit') : false);
-                define('STARTDIR', slash(getcwd()));
-
-                array_shift($argv);
-
-                /*
-                 * Check current shell environment username and try to
-                 * signin with the shells username (no authentication required,
-                 * assume that if the user is in the shell, he already
-                 * authenticated with the shell
-                 */
-                if(!empty($signin)){
-                    try{
-                        load_libs('user');
-                        $_SESSION['user'] = user_authenticate($signin, $password);
-                        log_console('Signed in as user "'.user_name($_SESSION['user']).'"', '', 'white');
-
-                        unset($signin);
-                        unset($password);
-
-                    }catch(Exception $e){
-                        throw new bException('startup: Failed to signin with specified user or email "'.str_log($signin).'"', $e);
-                    }
-
-                }elseif(!empty($_SERVER['USER'])){
-                    try{
-                        if($user = sql_get('SELECT `id`, `name`, `username`, `email`, `admin`
-                                            FROM   `users`
-                                            WHERE  `username` = :name
-                                            OR     `email`    = :email',
-
-                                            array(':name'  => $_SERVER['USER'],
-                                                  ':email' => $_SERVER['USER']))){
-                            load_libs('user');
-                            user_signin($user);
-                        }
-
-                    }catch(Exception $e){
-                        if(SCRIPT != 'init'){
-                            throw new bException('startup: Auto shell user signin has failed', $e);
-                        }
-
-                        /*
-                         * Init script don't need auto shell user signin
-                         * (for one, there may not even be a DB to do so!)
-                         */
-                        unset($e);
-                    }
-                }
-        //showdie($_SESSION);
+                include(dirname(__FILE__).'/handlers/system_no_project_data.php');
                 break;
 
             default:
@@ -579,11 +503,20 @@ try{
         unset($f);
     }
 
+
     /*
-     * Delayed exception throwing
+     * Delayed exception throwing for
      */
     if(isset($e)){
         throw $e;
+    }
+
+
+    /*
+     * Verify project data integrity
+     */
+    if(!defined("SEED") or !SEED or (PROJECTCODEVERSION == '0.0.0')){
+        return include(dirname(__FILE__).'/handlers/system_no_project_data.php');
     }
 
 
@@ -630,6 +563,7 @@ try{
              * This is an admin page
              */
             $GLOBALS['page_is_admin'] = true;
+            load_libs('custom_admin');
             restore_post();
 
         }elseif((!empty($_SESSION['mobile']['site']) and $_CONFIG['mobile']['enabled']) or !empty($_CONFIG['mobile']['force'])){

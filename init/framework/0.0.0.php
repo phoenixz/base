@@ -15,11 +15,27 @@ mkdir(ROOT.'data/pub', $_CONFIG['fs']['dir_mode'], true);
 
 
 /*
+ * Setup custom.php and custom_admin.php
+ */
+if(!file_exists(ROOT.'libs/custom.php')){
+    copy(ROOT.'libs/_custom.php'      , ROOT.'libs/custom.php');
+    log_console('Created custom.php file', 'created', 'green');
+}
+
+if(!file_exists(ROOT.'libs/custom_admin.php')){
+    copy(ROOT.'libs/_custom_admin.php', ROOT.'libs/custom_admin.php');
+    log_console('Created custom_admin.php file', 'created', 'green');
+}
+
+
+
+/*
  * Create database tables
  */
 sql_query('DROP TABLE IF EXISTS `log`;');
 sql_query('DROP TABLE IF EXISTS `users`;');
 sql_query('DROP TABLE IF EXISTS `versions`;');
+
 
 
 sql_query('CREATE TABLE `versions` (`id`        INT(11)    NOT NULL AUTO_INCREMENT PRIMARY KEY,
