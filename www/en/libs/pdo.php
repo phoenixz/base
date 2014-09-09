@@ -426,10 +426,11 @@ function sql_connect($connector) {
         }
 
         /*
-         * Ensure correct character set usage
+         * Ensure correct character set and timezone usage
          */
         $pdo->query('SET NAMES '.$connector['charset']);
         $pdo->query('SET CHARACTER SET '.$connector['charset']);
+        $pdo->query('SET time_zone = "'.$connector['timezone'].'";');
 
         if(!empty($connector['mode'])){
             $pdo->query('SET sql_mode="'.$connector['mode'].'";');

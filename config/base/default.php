@@ -99,7 +99,8 @@ $_CONFIG['db']                 = array('driver'           => 'mysql',           
                                        'buffered'         => true,                                          // Use buffered queries or not. See PHP documentation for more information
                                        'charset'          => 'utf8',                                        // Default character set for all database tables
                                        'collate'          => 'utf8_general_ci',                             // Default collate set for all database tables
-                                       'autoincrement'    => 1);                                            // Default autoincrement for all database tables (MySQL only)
+                                       'autoincrement'    => 1,                                             // Default autoincrement for all database tables (MySQL only)
+                                       'timezone'         => 'America/Mexico_City');                        // Default timezone to use
 
 //domain
 $_CONFIG['domain']             = '';                                                                        // The base domain of this website. for example, "mywebsite.com",  "thisismine.com.mx", etc.
