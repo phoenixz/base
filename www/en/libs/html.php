@@ -147,9 +147,9 @@ function html_init_css($min = null){
         /*
          * Use bootstrap CSS
          */
-        $GLOBALS['css'] = array('bootstrap'       => array('min' => $min, 'media' => null),
+        $GLOBALS['css'] = array($_CONFIG['bootstrap']['css'] => array('min' => $min, 'media' => null),
 //                                'bootstrap-theme' => array('min' => $min, 'media' => null),
-                                'style'           => array('min' => $min, 'media' => null));
+                                'style'                      => array('min' => $min, 'media' => null));
     }
 }
 
@@ -277,8 +277,8 @@ function html_load_js($files = '', $min = null, $option = null, $ie = null){
             /*
              * Use bootstrap JS
              */
-            $GLOBALS['js'] = array('bootstrap' => array('min' => $min),
-                                   'jquery'    => array('min' => $min));
+            $GLOBALS['js'] = array($_CONFIG['bootstrap']['js'] => array('min' => $min),
+                                   'jquery'                    => array('min' => $min));
         }
     }
 

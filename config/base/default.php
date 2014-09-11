@@ -29,6 +29,8 @@ $_CONFIG['blogs']               = array('enabled'         => false,
 
 // Use bootstrap?
 $_CONFIG['bootstrap']           = array('enabled'         => false,
+                                        'css'             => 'bootstrap',
+                                        'js'              => 'bootstrap',
                                         'viewport'        => 'width=device-width, initial-scale=1.0');
 
 //
