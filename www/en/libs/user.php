@@ -648,17 +648,17 @@ function user_signup($params){
  */
 function user_name($user = null, $guest = null){
     if(!$user){
-        /*
-         * Default to current session user name
-         */
-        if(empty($_SESSION['user'])){
-            /*
-             * There is no session user logged in
-             */
-            return not_empty($guest, tr('Guest'));
-        }
-
         $user = $_SESSION['user'];
+    }
+
+    /*
+     * Default to current session user name
+     */
+    if(empty($_SESSION['user']['name']) and empty($_SESSION['user']['email'])){
+        /*
+         * There is no session user logged in
+         */
+        return not_empty($guest, tr('Guest'));
     }
 
     if(is_numeric($user)){
