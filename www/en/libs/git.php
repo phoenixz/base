@@ -24,8 +24,13 @@ function git_branch($branch = null){
             /*
              * Get and return the branch
              */
-            $branch = safe_exec('cd '.ROOT.'; git branch');
-showdie($branch);
+            foreach(safe_exec('cd '.ROOT.'; git branch') as $branch){
+                if(substr(trim($branch), 0, 1) == '*'){
+                    return trim(substr(trim($branch), 1));
+                }
+            }
+
+            throw new bException(tr('git_branch(): Could not find current branch for "'.ROOT.'"'), 'branchnotfound');
         }
 
     }catch(Exception $e){

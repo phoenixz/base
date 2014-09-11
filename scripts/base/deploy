@@ -71,6 +71,10 @@ try{
 
     log_screen('Starting deploy of project "'.PROJECT.'"', 'deploy', 'white');
 
+    /*
+     * Ensure we're not running on the production environment.
+     * Deployment is always done to targets, and production is always a target, we cannot deploy from a target to a target
+     */
     if(ENVIRONMENT == 'production') {
         throw new bException('You are running the deply script on production environment? Are you high?', 'production');
     }
@@ -152,6 +156,20 @@ try{
         if(!trim(shell_exec('git status | grep "nothing to commit" | wc -l'))) {
             if(!FORCE){
                 throw new bException('Git commit pending', 'COMMITFIRST');
+            }
+        }
+
+        /*
+         * If we're going to deploy to production environment, ensure that we
+         * either are on master or production branch, since we won't deploy
+         * from any other branch (for safety)
+         */
+        if($target_environment == 'production'){
+            load_libs('git');
+            $branch = git_branch();
+
+            if(($branch != 'production') and ($branch != 'master')){
+                throw new bException(tr('Cannot deploy the current GIT branch "'.str_log($branch).'" to production environment. For safety, deployment to production environment is restricted to either "production" or "master" branches'), 'productioninvalidbranch');
             }
         }
 
