@@ -782,11 +782,11 @@ function page_show($pagename, $die = false, $force = false, $data = null) {
 
         if(($force != 'html') and (substr($_SERVER['PHP_SELF'], 0, 6) == '/ajax/')){
             // Execute ajax page
-            include(ROOT.'www/'.LANGUAGE.'/ajax/'.$pagename.'.php');
+            return include(ROOT.'www/'.LANGUAGE.'/ajax/'.$pagename.'.php');
 
         }else{
             // Execute HTML page
-            include(ROOT.'www/'.LANGUAGE.'/'.(!empty($GLOBALS['page_is_mobile']) ? 'mobile/' : '').$pagename.'.php');
+            return include(ROOT.'www/'.LANGUAGE.'/'.(!empty($GLOBALS['page_is_mobile']) ? 'mobile/' : '').$pagename.'.php');
         }
 
         if($die){
