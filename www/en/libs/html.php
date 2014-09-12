@@ -23,18 +23,23 @@ function html_only(){
  * Generate and return the HTML footer
  */
 function html_iefilter($html, $filter){
-    if(!$filter){
-        return $html;
+    try{
+        if(!$filter){
+            return $html;
+        }
+
+        if($mod = str_until(str_from($filter, '.'), '.')){
+            return "\n<!--[if ".$mod.' IE '.str_rfrom($filter, '.')."]>\n\t".$html."\n<![endif]-->\n";
+
+        }elseif($filter == 'ie'){
+            return "\n<!--[if IE ]>\n\t".$html."\n<![endif]-->\n";
+        }
+
+        return "\n<!--[if IE ".str_from($filter, 'ie')."]>\n\t".$html."\n<![endif]-->\n";
+
+    }catch(Exception $e){
+        throw new bException('html_iefilter(): Failed', $e);
     }
-
-    if($mod = str_until(str_from($filter, '.'), '.')){
-        return "\n<!--[if ".$mod.' IE '.str_rfrom($filter, '.')."]>\n\t".$html."\n<![endif]-->\n";
-
-    }elseif($filter == 'ie'){
-        return "\n<!--[if IE ]>\n\t".$html."\n<![endif]-->\n";
-    }
-
-    return "\n<!--[if IE ".str_from($filter, 'ie')."]>\n\t".$html."\n<![endif]-->\n";
 }
 
 
@@ -44,79 +49,84 @@ function html_iefilter($html, $filter){
  */
 // Why the blooody fuck are there eval() calls in this function?!!?!? REWRITE!
 function html_paging($current_page, $total_pages, $url_function) {
-    if($GLOBALS['page_is_mobile']){
-        $pages_ba = 0;
+    try{
+        if($GLOBALS['page_is_mobile']){
+            $pages_ba = 0;
 
-    }else{
-        $pages_ba = 3;
-    }
-
-    $prev_page  = $current_page - 1;
-    $next_page  = $current_page + 1;
-    $first_page = 0;
-    $last_page  = $total_pages;
-
-    $html= '<div class="hPaging">
-            <div class="Paging">';
-
-    //Previous Page
-    if($prev_page >= 0) {
-        $html .= '<a class="PagingPrev" href="'.eval('return '.str_replace('###PAGE###', $prev_page, $url_function)).'">'.tr('Previous').'</a>';
-    }
-
-    //Next page
-    if($next_page < $total_pages) {
-        $html .= '<a class="PagingNext" href="'.eval('return '.str_replace('###PAGE###', $next_page, $url_function)).'">'.tr('Next').'</a>';
-    }
-
-    $html .= '<p class="PagingContent">';
-
-    //first page
-    if($current_page > 3) {
-        $html .= '<a href="'.eval('return '.str_replace('###PAGE###', 0, $url_function)).'">1</a>
-                  <span>...</span>';
-    }
-
-    //3 pages before this one
-    $a = 0;
-    while($a < $pages_ba) {
-        $a++;
-
-        $page = $current_page - 4 + $a;
-
-        if($page >= 0) {
-            $html .= '<a href="'.eval('return '.str_replace('###PAGE###', $page, $url_function)).'">'.($page + 1).'</a>';
+        }else{
+            $pages_ba = 3;
         }
-    }
 
-    //current page
-    $html .= '<span>'.cfi($current_page + 1).'</span>';
+        $prev_page  = $current_page - 1;
+        $next_page  = $current_page + 1;
+        $first_page = 0;
+        $last_page  = $total_pages;
 
-    //3 pages after this one
-    $a = 0;
-    while($a < $pages_ba) {
-        $a++;
+        $html= '<div class="hPaging">
+                <div class="Paging">';
 
-        $page = $current_page + $a;
-
-        if($page<$total_pages) {
-            $html .= '<a href="'.eval('return '.str_replace('###PAGE###', $page, $url_function)).'">'.($page + 1).'</a>';
+        //Previous Page
+        if($prev_page >= 0) {
+            $html .= '<a class="PagingPrev" href="'.eval('return '.str_replace('###PAGE###', $prev_page, $url_function)).'">'.tr('Previous').'</a>';
         }
-    }
 
-    //Last page if its not already covered by next or 3 pages after (Not on mobile)
-    if(!$GLOBALS['page_is_mobile']){
-        if(($total_pages > $page) and ($total_pages != $next_page)) {
-            $html .= '<span>...</span>
-                      <a href="'.eval('return '.str_replace('###PAGE###', $total_pages, $url_function)).'">'.($total_pages + 1).'</a>';
+        //Next page
+        if($next_page < $total_pages) {
+            $html .= '<a class="PagingNext" href="'.eval('return '.str_replace('###PAGE###', $next_page, $url_function)).'">'.tr('Next').'</a>';
         }
+
+        $html .= '<p class="PagingContent">';
+
+        //first page
+        if($current_page > 3) {
+            $html .= '<a href="'.eval('return '.str_replace('###PAGE###', 0, $url_function)).'">1</a>
+                      <span>...</span>';
+        }
+
+        //3 pages before this one
+        $a = 0;
+        while($a < $pages_ba) {
+            $a++;
+
+            $page = $current_page - 4 + $a;
+
+            if($page >= 0) {
+                $html .= '<a href="'.eval('return '.str_replace('###PAGE###', $page, $url_function)).'">'.($page + 1).'</a>';
+            }
+        }
+
+        //current page
+        $html .= '<span>'.cfi($current_page + 1).'</span>';
+
+        //3 pages after this one
+        $a = 0;
+        while($a < $pages_ba) {
+            $a++;
+
+            $page = $current_page + $a;
+
+            if($page<$total_pages) {
+                $html .= '<a href="'.eval('return '.str_replace('###PAGE###', $page, $url_function)).'">'.($page + 1).'</a>';
+            }
+        }
+
+        //Last page if its not already covered by next or 3 pages after (Not on mobile)
+        if(!$GLOBALS['page_is_mobile']){
+            if(($total_pages > $page) and ($total_pages != $next_page)) {
+                $html .= '<span>...</span>
+                          <a href="'.eval('return '.str_replace('###PAGE###', $total_pages, $url_function)).'">'.($total_pages + 1).'</a>';
+            }
+        }
+
+        $html .= '</p>
+                </div>
+            </div>';
+
+        return $html;
+
+    }catch(Exception $e){
+        throw new bException('html_paging(): Failed', $e);
     }
-
-    $html .= '</p>
-            </div>
-        </div>';
-
-    return $html;
 }
 
 
@@ -127,29 +137,34 @@ function html_paging($current_page, $total_pages, $url_function) {
 function html_init_css($min = null){
     global $_CONFIG;
 
-    if($min === null){
-        $min = $_CONFIG['cdn']['min'];
-    }
+    try{
+        if($min === null){
+            $min = $_CONFIG['cdn']['min'];
+        }
 
-    if($GLOBALS['page_is_admin']){
-        /*
-         * Use normal admin CSS
-         */
-        $GLOBALS['css'] = array('admin' => array('min' => $min, 'media' => null));
+        if($GLOBALS['page_is_admin']){
+            /*
+             * Use normal admin CSS
+             */
+            $GLOBALS['css'] = array('admin' => array('min' => $min, 'media' => null));
 
-    }elseif($GLOBALS['page_is_mobile'] or empty($_CONFIG['bootstrap']['enabled'])){
-        /*
-         * Use normal, default CSS
-         */
-        $GLOBALS['css'] = array('style' => array('min' => $min, 'media' => null));
+        }elseif($GLOBALS['page_is_mobile'] or empty($_CONFIG['bootstrap']['enabled'])){
+            /*
+             * Use normal, default CSS
+             */
+            $GLOBALS['css'] = array('style' => array('min' => $min, 'media' => null));
 
-    }else{
-        /*
-         * Use bootstrap CSS
-         */
-        $GLOBALS['css'] = array($_CONFIG['bootstrap']['css'] => array('min' => $min, 'media' => null),
-//                                'bootstrap-theme' => array('min' => $min, 'media' => null),
-                                'style'                      => array('min' => $min, 'media' => null));
+        }else{
+            /*
+             * Use bootstrap CSS
+             */
+            $GLOBALS['css'] = array($_CONFIG['bootstrap']['css'] => array('min' => $min, 'media' => null),
+    //                                'bootstrap-theme' => array('min' => $min, 'media' => null),
+                                    'style'                      => array('min' => $min, 'media' => null));
+        }
+
+    }catch(Exception $e){
+        throw new bException('html_init_css(): Failed', $e);
     }
 }
 
@@ -161,36 +176,41 @@ function html_init_css($min = null){
 function html_load_css($files = '', $media = null, $min = null){
     global $_CONFIG;
 
-    if(!$files){
-        $files = array();
-    }
-
-    if(!is_array($files)){
-        if(!is_string($files)){
-            throw new bException('html_load_css(): Invalid files specification');
+    try{
+        if(!$files){
+            $files = array();
         }
 
-        $files = explode(',', $files);
-    }
+        if(!is_array($files)){
+            if(!is_string($files)){
+                throw new bException('html_load_css(): Invalid files specification');
+            }
 
-    if($media and is_bool($media)){
-        $min   = $media;
-        $media = null;
-    }
+            $files = explode(',', $files);
+        }
 
-    if($min === null){
-        $min = $_CONFIG['cdn']['min'];
-    }
+        if($media and is_bool($media)){
+            $min   = $media;
+            $media = null;
+        }
 
-    if(empty($GLOBALS['css'])){
-        html_init_css($min);
-    }
+        if($min === null){
+            $min = $_CONFIG['cdn']['min'];
+        }
 
-    foreach($files as $file){
-        if($file == 'style') continue;
+        if(empty($GLOBALS['css'])){
+            html_init_css($min);
+        }
 
-        $GLOBALS['css'][$file] = array('min'   => $min,
-                                       'media' => $media);
+        foreach($files as $file){
+            if($file == 'style') continue;
+
+            $GLOBALS['css'][$file] = array('min'   => $min,
+                                           'media' => $media);
+        }
+
+    }catch(Exception $e){
+        throw new bException('html_load_css(): Failed', $e);
     }
 }
 
@@ -246,68 +266,73 @@ function html_generate_css(){
 function html_load_js($files = '', $min = null, $option = null, $ie = null){
     global $_CONFIG;
 
-    if(!$files){
-        $files = array();
-    }
-
-    if(!is_array($files)){
-        if(!is_string($files)){
-            throw new bException('html_load_js(): Invalid files specification');
+    try{
+        if(!$files){
+            $files = array();
         }
 
-        $files = explode(',', $files);
-    }
-
-    if($min === null){
-        $min = $_CONFIG['cdn']['min'];
-    }
-
-    if(!isset($GLOBALS['js'])){
-        $GLOBALS['js'] = array();
-    }
-
-    if(empty($GLOBALS['js'])){
-        if($GLOBALS['page_is_mobile'] or empty($_CONFIG['bootstrap']['enabled'])){
-            /*
-             * Use normal, default JS
-             */
-            $GLOBALS['js'] = array('jquery' => array('min' => $min));
-
-        }else{
-            /*
-             * Use bootstrap JS
-             */
-            $GLOBALS['js'] = array($_CONFIG['bootstrap']['js'] => array('min' => $min),
-                                   'jquery'                    => array('min' => $min));
-        }
-    }
-
-    foreach($files as $file){
-        if(substr($file, 0, 4) != 'http') {
-            /*
-             * Compatibility code: ALL LOCAL JS FILES SHOULD ALWAYS BE SPECIFIED WITHOUT .js OR .min.js!!
-             */
-// :TODO: SEND EMAIL NOTIFICATIONS!
-            if(substr($file, -3, 3) == '.js'){
-                $file = substr($file, 0, -3);
-
-            }elseif((substr($file, -3, 3) == '.js') or (substr($file, -7, 7) == '.min.js')){
-                $file = substr($file, 0, -7);
+        if(!is_array($files)){
+            if(!is_string($files)){
+                throw new bException('html_load_js(): Invalid files specification');
             }
 
+            $files = explode(',', $files);
         }
 
-        $data = array('min' => $min);
-
-        if($option){
-            $data['option'] = $option;
+        if($min === null){
+            $min = $_CONFIG['cdn']['min'];
         }
 
-        if($ie){
-            $data['ie'] = $ie;
+        if(!isset($GLOBALS['js'])){
+            $GLOBALS['js'] = array();
         }
 
-        $GLOBALS['js'][$file] = $data;
+        if(empty($GLOBALS['js'])){
+            if($GLOBALS['page_is_mobile'] or empty($_CONFIG['bootstrap']['enabled'])){
+                /*
+                 * Use normal, default JS
+                 */
+                $GLOBALS['js'] = array('jquery' => array('min' => $min));
+
+            }else{
+                /*
+                 * Use bootstrap JS
+                 */
+                $GLOBALS['js'] = array($_CONFIG['bootstrap']['js'] => array('min' => $min),
+                                       'jquery'                    => array('min' => $min));
+            }
+        }
+
+        foreach($files as $file){
+            if(substr($file, 0, 4) != 'http') {
+                /*
+                 * Compatibility code: ALL LOCAL JS FILES SHOULD ALWAYS BE SPECIFIED WITHOUT .js OR .min.js!!
+                 */
+    // :TODO: SEND EMAIL NOTIFICATIONS!
+                if(substr($file, -3, 3) == '.js'){
+                    $file = substr($file, 0, -3);
+
+                }elseif((substr($file, -3, 3) == '.js') or (substr($file, -7, 7) == '.min.js')){
+                    $file = substr($file, 0, -7);
+                }
+
+            }
+
+            $data = array('min' => $min);
+
+            if($option){
+                $data['option'] = $option;
+            }
+
+            if($ie){
+                $data['ie'] = $ie;
+            }
+
+            $GLOBALS['js'][$file] = $data;
+        }
+
+    }catch(Exception $e){
+        throw new bException('html_load_js(): Failed', $e);
     }
 }
 
@@ -530,14 +555,19 @@ function html_header($params = null, $meta = array()){
 function html_footer(){
     global $_CONFIG;
 
-    if(empty($_CONFIG['cdn']['js']['load_delayed'])){
-        $retval = '';
+    try{
+        if(empty($_CONFIG['cdn']['js']['load_delayed'])){
+            $retval = '';
 
-    }else{
-        $retval = isset_get($GLOBALS['footer'], '');
+        }else{
+            $retval = isset_get($GLOBALS['footer'], '');
+        }
+
+        return $retval."</body>\n</html>";
+
+    }catch(Exception $e){
+        throw new bException('html_footer(): Failed', $e);
     }
-
-    return $retval."</body>\n</html>";
 }
 
 
@@ -548,34 +578,39 @@ function html_footer(){
 function html_title($params){
     global $_CONFIG;
 
-    $title = $_CONFIG['title'];
+    try{
+        $title = $_CONFIG['title'];
 
-    /*
-     * If no params are specified then just return the given title
-     */
-    if(empty($params)){
-        return $title;
-    }
-
-    /*
-     * If the given params is a plain string then override the configured title with this
-     */
-    if(!is_array($params)){
-        if(is_string($params)){
-            return $params;
+        /*
+         * If no params are specified then just return the given title
+         */
+        if(empty($params)){
+            return $title;
         }
 
-        throw new bException('html_title(): Invalid title specified');
-    }
+        /*
+         * If the given params is a plain string then override the configured title with this
+         */
+        if(!is_array($params)){
+            if(is_string($params)){
+                return $params;
+            }
 
-    /*
-     * Do a search / replace on all specified items to create correct title
-     */
-    foreach($params as $key => $value){
-        $title = str_replace($key, $value, $title);
-    }
+            throw new bException('html_title(): Invalid title specified');
+        }
 
-    return $title;
+        /*
+         * Do a search / replace on all specified items to create correct title
+         */
+        foreach($params as $key => $value){
+            $title = str_replace($key, $value, $title);
+        }
+
+        return $title;
+
+    }catch(Exception $e){
+        throw new bException('html_title(): Failed', $e);
+    }
 }
 
 
@@ -695,38 +730,43 @@ function html_flash($messages = '', $type = 'info', $basicmessage = null){
  * Show a flash message with the specified message
  */
 function html_flash_set($messages, $type = 'info', $basicmessage = null){
-    if(!$messages){
-        /*
-         * Wut? no message?
-         */
-        return false;
-    }
-
-    /*
-     * Ensure session flash data consistency
-     */
-    if(empty($_SESSION['flash'])){
-        $_SESSION['flash'] = array();
-
-    }elseif(!is_array($_SESSION['flash'])){
-        $_SESSION['flash'] = array($_SESSION['flash']);
-    }
-
-    if(!is_array($messages)){
-        $messages = array($messages);
-    }
-
-    foreach($messages as $message){
-        if(is_object($message) and $message instanceof Exception){
-            $type    = 'error';
-            $message = $message->getMessage();
-            $message = (strstr($message, '():') ? trim(str_from($message, '():')) : $message);
-            $basic   = $basicmessage;
+    try{
+        if(!$messages){
+            /*
+             * Wut? no message?
+             */
+            return false;
         }
 
-        $_SESSION['flash'][] = array('type'    => $type,
-                                     'basic'   => $basicmessage,
-                                     'message' => $message);
+        /*
+         * Ensure session flash data consistency
+         */
+        if(empty($_SESSION['flash'])){
+            $_SESSION['flash'] = array();
+
+        }elseif(!is_array($_SESSION['flash'])){
+            $_SESSION['flash'] = array($_SESSION['flash']);
+        }
+
+        if(!is_array($messages)){
+            $messages = array($messages);
+        }
+
+        foreach($messages as $message){
+            if(is_object($message) and $message instanceof Exception){
+                $type    = 'error';
+                $message = $message->getMessage();
+                $message = (strstr($message, '():') ? trim(str_from($message, '():')) : $message);
+                $basic   = $basicmessage;
+            }
+
+            $_SESSION['flash'][] = array('type'    => $type,
+                                         'basic'   => $basicmessage,
+                                         'message' => $message);
+        }
+
+    }catch(Exception $e){
+        throw new bException('html_flash_set(): Failed', $e);
     }
 }
 
@@ -942,52 +982,57 @@ function html_select_body($params, $selected = null, $none = '', $class = '', $a
 function html_script($script, $jquery_ready = true, $option = null, $type = null, $ie = false){
     global $_CONFIG;
 
-    if(is_bool($type)){
-        $jquery_ready = $type;
-        $type         = null;
-    }
-
-    if(is_null($type)){
-        $type = 'text/javascript';
-    }
-
-    /*
-     * Event wrapper
-     *
-     * On what event should this script be executed? Eithere boolean true for standard "document ready" or your own jQuery
-     *
-     * If false, no event wrapper will be added
-     */
-    if($jquery_ready){
-        if($jquery_ready === true){
-            $jquery_ready = '$(document).ready(function(e){ %script% });';
+    try{
+        if(is_bool($type)){
+            $jquery_ready = $type;
+            $type         = null;
         }
 
-        $script = str_replace('%script%', $script, $jquery_ready);
-    }
+        if(is_null($type)){
+            $type = 'text/javascript';
+        }
 
-    if(substr($script, 0, 1) == '>'){
-        $retval = '<script type="'.$type.'" src="/pub/js/'.substr($script, 1).'"'.($option ? ' '.$option : '').'></script>';
-
-    }else{
-        $retval = '<script type="'.$type.'"'.($option ? ' '.$option : '').">\n".
-                        $script.
-                  '</script>';
-    }
-
-    if($ie){
-        $retval = html_iefilter($retval, $ie);
-    }
-
-    if(!empty($_CONFIG['cdn']['js']['load_delayed'])){
         /*
-         * Add all <script> at the end of the page
+         * Event wrapper
+         *
+         * On what event should this script be executed? Eithere boolean true for standard "document ready" or your own jQuery
+         *
+         * If false, no event wrapper will be added
          */
-        $GLOBALS['footer'] = isset_get($GLOBALS['footer'], '')."\n".$retval;
-        $retval = '';
-    }
+        if($jquery_ready){
+            if($jquery_ready === true){
+                $jquery_ready = '$(document).ready(function(e){ %script% });';
+            }
 
-    return $retval;
+            $script = str_replace('%script%', $script, $jquery_ready);
+        }
+
+        if(substr($script, 0, 1) == '>'){
+            $retval = '<script type="'.$type.'" src="/pub/js/'.substr($script, 1).'"'.($option ? ' '.$option : '').'></script>';
+
+        }else{
+            $retval = '<script type="'.$type.'"'.($option ? ' '.$option : '').">\n".
+                            $script.
+                      '</script>';
+        }
+
+        if($ie){
+            $retval = html_iefilter($retval, $ie);
+        }
+
+        if(!empty($_CONFIG['cdn']['js']['load_delayed'])){
+            /*
+             * Add all <script> at the end of the page
+             */
+            $GLOBALS['footer'] = isset_get($GLOBALS['footer'], '')."\n".$retval;
+            $retval = '';
+        }
+
+        return $retval;
+
+    }catch(Exception $e){
+        throw new bException('html_script(): Failed', $e);
+    }
 }
 
 
