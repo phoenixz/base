@@ -96,6 +96,7 @@ function jqueryui_date_range($from_selector, $to_selector, $params = null){
         array_default($params, 'change_month'    , true);
         array_default($params, 'default_date'    , '+1w');
         array_default($params, 'auto_submit'     , true);
+        array_default($params, 'separator'       , '');
 
         if($params['auto_submit']){
             array_default($params, 'on_select', '   function (date) {
@@ -119,11 +120,13 @@ function jqueryui_date_range($from_selector, $to_selector, $params = null){
         if($params['labels']){
             $html = '   <label class="'.$params['class'].'" for="'.$from_selector.'">'.$params['labels']['from'].'</label>
                         <input class="'.$params['class'].'" type="text" id="'.$from_selector.'" name="'.$from_selector.'" value="'.substr(cfm(isset_get($params['from'], '')), 0, 10).'" placeholder="'.isset_get($params['placeholders']['from']).'">
+                        '.$params['separator'].'
                         <label class="'.$params['class'].'" for="'.$to_selector.'">'.$params['labels']['until'].'</label>
                         <input class="'.$params['class'].'" type="text" id="'.$to_selector.'" name="'.$to_selector.'" value="'.substr(cfm(isset_get($params['until'], '')), 0, 10).'" placeholder="'.isset_get($params['placeholders']['until']).'">';
 
         }else{
             $html = '   <input class="'.$params['class'].'" type="text" id="'.$from_selector.'" name="'.$from_selector.'" value="'.substr(cfm(isset_get($params['from'], '')), 0, 10).'" placeholder="'.isset_get($params['placeholders']['from']).'">
+                        '.$params['separator'].'
                         <input class="'.$params['class'].'" type="text" id="'.$to_selector.'" name="'.$to_selector.'" value="'.substr(cfm(isset_get($params['until'], '')), 0, 10).'" placeholder="'.isset_get($params['placeholders']['until']).'">';
         }
 
