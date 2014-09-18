@@ -416,7 +416,7 @@ function debug_sql($query, $column = null, $execute = null, $return_only = false
             return $query;
         }
 
-        return show($query);
+        return show(str_ends($query, ';'));
 
     }catch(Exception $e){
         throw new bException('debug_sql(): Failed', $e);
