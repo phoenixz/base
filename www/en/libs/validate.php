@@ -81,9 +81,7 @@ class validate_jquery {
                 $params = array('id' => $params);
             }
 
-            $html = '<script type="text/javascript">
-            $(document).ready(function(){
-                $("'.str_starts($params['id'], '#').'").validate({
+            $html = '$("'.str_starts($params['id'], '#').'").validate({
                 rules: {';
                 $kom = '';
 
@@ -174,7 +172,7 @@ class validate_jquery {
                     $html .= "var cbe = function(e){".$handler['fail']."};\n";
                 }
 
-            $html .= '});'."\n";
+            $html .= "\n";
 
 
             if($script){
@@ -192,7 +190,7 @@ class validate_jquery {
                         );';
             }
 
-            return $html .= '</script>';
+            return html_script($html);
 
         }catch(Exception $e){
             throw new bException('validateJquery->output_validation(): Failed', $e);

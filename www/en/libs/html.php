@@ -443,7 +443,7 @@ function html_generate_js(){
              * Load all JS scripts at the end (right before the </body> tag)
              * This may be useful for site startup speedups
              */
-            $GLOBALS['footer'] = $retval.isset_get($GLOBALS['footer'], '');
+            $GLOBALS['footer'] = $retval.isset_get($GLOBALS['footer'], '').isset_get($GLOBALS['script_delayed'], '');
             $retval            = '';
         }
 
@@ -791,6 +791,7 @@ function html_select($params, $selected = null, $name = '', $none = '', $class =
         array_default($params, 'autosubmit'  , false);
         array_default($params, 'onchange'    , '');
         array_default($params, 'id_column'   , 'id');
+        array_default($params, 'hide_empty'  , false);
 
         array_default($params, $params['id_column'], $params['name']);
 
@@ -798,8 +799,12 @@ function html_select($params, $selected = null, $name = '', $none = '', $class =
             throw new bException('html_select(): No name specified');
         }
 
-        if(is_numeric($params['disabled'])){
-            if(!$params['resource']){
+        if(!$params['resource']){
+            if($params['hide_empty']){
+                return '';
+            }
+
+            if(is_numeric($params['disabled'])){
                 $params['disabled'] = true;
 
             }else{
@@ -1028,7 +1033,17 @@ function html_script($script, $jquery_ready = true, $option = null, $type = null
             $retval = '';
         }
 
-        return $retval;
+        if(empty($_CONFIG['cdn']['js']['load_delayed'])){
+            return $retval;
+        }
+
+        /*
+         * SCRIPT tags are added all at the end of the page for faster loading
+         * (and to avoid problems with jQuery not yet being available)
+         */
+
+        $GLOBALS['script_delayed'] = $retval;
+        return '';
 
     }catch(Exception $e){
         throw new bException('html_script(): Failed', $e);
