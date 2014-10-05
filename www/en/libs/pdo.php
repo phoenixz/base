@@ -118,7 +118,7 @@ function sql_fetch($r, $columns = false) {
             /*
              * There are no entries
              */
-            return false;
+            return null;
         }
 
         /*
@@ -241,7 +241,7 @@ function sql_init($sql = 'sql', $db = null){
             /*
              * Already connected to DB
              */
-            return false;
+            return null;
         }
 
         if(empty($db)){
