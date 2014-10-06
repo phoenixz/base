@@ -748,4 +748,53 @@ function user_switch($username){
         throw new bException('user_switch(): Failed', $e);
     }
 }
+
+
+
+/*
+ * Find the password field when browser password saving has been disabled
+ */
+function user_ensure_signin_fields(&$post){
+    global $_CONFIG;
+
+    try{
+        if(empty($_CONFIG['security']['signin']['save_password'])){
+            /*
+             * Clear username and password fields, to ensure they are not being used
+             */
+            unset($_POST['username']);
+            unset($_POST['password']);
+
+            /*
+             * Password field is password********
+             */
+            foreach(array_max($_POST) as $key => $value){
+                if((substr($key, 0, 8) == 'password') and (strlen($key) == 16)){
+                    /*
+                     * This is the password field, set it.
+                     */
+                    $post['password'] = $post[$key];
+                    unset($post[$key]);
+
+                }elseif((substr($key, 0, 8) == 'username') and (strlen($key) == 16)){
+                    /*
+                     * This is the username field, set it.
+                     */
+                    $post['username'] = $post[$key];
+                    unset($post[$key]);
+                    continue;
+                }
+
+                if(isset($post['username']) and isset($post['password'])){
+                    break;
+                }
+            }
+        }
+
+        return $post;
+
+    }catch(Exception $e){
+        throw new bException('user_ensure_signin_fields(): Failed', $e);
+    }
+}
 ?>

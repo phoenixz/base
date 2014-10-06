@@ -236,7 +236,8 @@ $_CONFIG['redirects']          = array('index'            => 'index.php',       
                                        'aftersignout'     => 'index.php');                                  //Where will the site redirect to by default after a signout?
 
 // Security configuration
-$_CONFIG['security']           = array('user'             => 'apache',                                      //
+$_CONFIG['security']           = array('signin'           => array('save_password' => true),                //
+                                       'user'             => 'apache',                                      //
                                        'group'            => 'apache');                                     //
 
 // Sessions

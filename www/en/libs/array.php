@@ -650,4 +650,17 @@ function array_extract_first($source, $keys){
         throw new bException('array_extract(): Failed', $e);
     }
 }
+
+
+
+/*
+ * Check the specified array and ensure it has not too many elements (to avoid attack with processing foreach over 2000000 elements, for example)
+ */
+function array_max($source, $max = 20){
+    if(count($source) > $max){
+        throw new bException('array_max(): Specified array has too many elements', 'arraytoolarge');
+    }
+
+    return $source;
+}
 ?>
