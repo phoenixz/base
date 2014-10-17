@@ -617,7 +617,12 @@ function str_auto_quote($string){
  * Return if specified source is a valid version or not
  */
 function str_is_version($source){
-    return preg_match('/^\d{1,3}\.\d{1,3}\.\d{1,3}$/', $source);
+    try{
+        return preg_match('/^\d{1,3}\.\d{1,3}\.\d{1,3}$/', $source);
+
+    }catch(Exception $e){
+        throw new bException('str_is_version(): Failed', $e);
+    }
 }
 
 
@@ -645,7 +650,12 @@ function str_is_json($source){
  * IMPORTANT! COMMENT THE mb_trim() call in the mb.php libray!! The one there is NOT MB SAFE!!
  */
 function mb_trim($string) {
-  return preg_replace("/(^\s+)|(\s+$)/us", "", $string);
+    try{
+        return preg_replace("/(^\s+)|(\s+$)/us", "", $string);
+
+    }catch(Exception $e){
+        throw new bException('mb_trim(): Failed', $e);
+    }
 }
 
 
@@ -655,18 +665,23 @@ function mb_trim($string) {
  * Taken from http://php.net/manual/en/function.str-split.php
  */
 function mb_str_split($source, $l = 0) {
-    if ($l > 0) {
-        $retval = array();
-        $length = mb_strlen($source, 'UTF-8');
+    try{
+        if ($l > 0) {
+            $retval = array();
+            $length = mb_strlen($source, 'UTF-8');
 
-        for ($i = 0; $i < $length; $i += $l) {
-            $retval[] = mb_substr($source, $i, $l, 'UTF-8');
+            for ($i = 0; $i < $length; $i += $l) {
+                $retval[] = mb_substr($source, $i, $l, 'UTF-8');
+            }
+
+            return $retval;
         }
 
-        return $retval;
-    }
+        return preg_split("//u", $source, -1, PREG_SPLIT_NO_EMPTY);
 
-    return preg_split("//u", $source, -1, PREG_SPLIT_NO_EMPTY);
+    }catch(Exception $e){
+        throw new bException('mb_str_split(): Failed', $e);
+    }
 }
 
 
@@ -675,7 +690,12 @@ function mb_str_split($source, $l = 0) {
  * Ensure that specified string ends with slash
  */
 function slash($string){
-    return str_ends($string, '/');
+    try{
+        return str_ends($string, '/');
+
+    }catch(Exception $e){
+        throw new bException('slash(): Failed', $e);
+    }
 }
 
 
@@ -684,7 +704,12 @@ function slash($string){
  * Ensure that specified string ends NOT with slash
  */
 function unslash($string, $loop = true){
-    return str_ends_not($string, '/', $loop);
+    try{
+        return str_ends_not($string, '/', $loop);
+
+    }catch(Exception $e){
+        throw new bException('unslash(): Failed', $e);
+    }
 }
 
 
@@ -1027,6 +1052,27 @@ function str_similar($a, $b, $percent){
 }
 
 
+
+/*
+ * trim all strings in the specified array tree
+ */
+function str_trim_array($source){
+    try{
+        foreach($source as $key => &$value){
+            if(is_string($value)){
+                $value = mb_trim($value);
+
+            }elseif(is_array($value)){
+                $value = str_trim_array($value);
+            }
+        }
+
+        return $source;
+
+    }catch(Exception $e){
+        throw new bException('str_trim_array(): Failed', $e);
+    }
+}
 
 /*
  *

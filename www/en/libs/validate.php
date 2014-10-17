@@ -217,11 +217,7 @@ class validate_form {
             if(is_array($source)){
                 $this->source = $source;
 
-                foreach($source as $key => &$value){
-                    $value = mb_trim($value);
-                }
-
-                unset($value);
+                $source = str_trim_array($source);
 
                 /*
                  * Make sure "id" is always available, since it will near always be used.
