@@ -19,7 +19,10 @@ function seo_generate_unique_name($string, $table, $ownid = null, $field = 'seon
         $string = trim(seo_create_string($string, $replace));
         $id     = 0;
 
-        if(($ownid !== null) and !is_numeric($ownid)){
+        if($ownid and !is_numeric($ownid)){
+            /*
+             * ??
+             */
             $first_suffix = $replace;
             $replace      = $field;
             $field        = $ownid;
