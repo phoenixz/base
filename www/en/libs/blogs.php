@@ -267,7 +267,7 @@ function blogs_priorities_select($params, $selected = 0, $name = 'priority', $no
  * Update the keywords in the blogs_keywords table and the
  * seokeywords column in the blogs_posts table
  */
-function blogs_update_keywords($post_id, $keywords){
+function blogs_update_keywords($blogs_id, $post_id, $keywords){
     try{
         /*
          * Ensure all keywords of this blog post are gone
@@ -277,13 +277,14 @@ function blogs_update_keywords($post_id, $keywords){
         /*
          * Store the keywords
          */
-        $p = sql_prepare('INSERT INTO `blogs_keywords` (`blogs_posts_id`, `createdby`, `name`, `seoname`)
-                          VALUES                       (:blogs_posts_id , :createdby , :name , :seoname )');
+        $p = sql_prepare('INSERT INTO `blogs_keywords` (`blogs_id`, `blogs_posts_id`, `createdby`, `name`, `seoname`)
+                          VALUES                       (:blogs_id , :blogs_posts_id , :createdby , :name , :seoname )');
 
         foreach(array_force($keywords, ',') as $keyword){
             if(strlen($keyword) < 2) continue;
 
-            $p->execute(array(':blogs_posts_id' => $post_id,
+            $p->execute(array(':blogs_id'       => $blogs_id,
+                              ':blogs_posts_id' => $post_id,
                               ':createdby'      => $_SESSION['user']['id'],
                               ':name'           => mb_trim($keyword),
                               ':seoname'        => seo_create_string($keyword)));
