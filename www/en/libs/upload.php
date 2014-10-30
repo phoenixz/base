@@ -67,10 +67,9 @@ function upload_multi_js($element, $url, $done_script = '', $fail_script = '') {
     html_load_js('base/jfu/jquery.iframe-transport');
     html_load_js('base/jfu/jquery.fileupload');
 
-    return "<script>
-        $('".$element."').fileupload({
-            url      : '".$url."',
-            ".
+    return html_script('$("'.$element.'").fileupload({
+            url      : "'.$url.'",
+            '.
 
             ($done_script ?      'done  : function (e, data) { $.handleDone(data.result, '.$done_script.'); },' : '').
 
@@ -86,8 +85,7 @@ function upload_multi_js($element, $url, $done_script = '', $fail_script = '') {
 
                 $("#progress_nr").html(progress + "%");
             }
-        });
-        </script>';
+        });');
 }
 
 

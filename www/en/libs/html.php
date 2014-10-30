@@ -132,48 +132,9 @@ function html_paging($current_page, $total_pages, $url_function) {
 
 
 /*
- *
- */
-function html_init_css($min = null){
-    global $_CONFIG;
-
-    try{
-        if($min === null){
-            $min = $_CONFIG['cdn']['min'];
-        }
-
-        if($GLOBALS['page_is_admin']){
-            /*
-             * Use normal admin CSS
-             */
-            $GLOBALS['css'] = array('admin' => array('min' => $min, 'media' => null));
-
-        }elseif($GLOBALS['page_is_mobile'] or empty($_CONFIG['bootstrap']['enabled'])){
-            /*
-             * Use normal, default CSS
-             */
-            $GLOBALS['css'] = array('style' => array('min' => $min, 'media' => null));
-
-        }else{
-            /*
-             * Use bootstrap CSS
-             */
-            $GLOBALS['css'] = array($_CONFIG['bootstrap']['css'] => array('min' => $min, 'media' => null),
-    //                                'bootstrap-theme' => array('min' => $min, 'media' => null),
-                                    'style'                      => array('min' => $min, 'media' => null));
-        }
-
-    }catch(Exception $e){
-        throw new bException('html_init_css(): Failed', $e);
-    }
-}
-
-
-
-/*
  * Store libs for later loading
  */
-function html_load_css($files = '', $media = null, $min = null){
+function html_load_css($files = '', $media = null){
     global $_CONFIG;
 
     try{
@@ -189,17 +150,10 @@ function html_load_css($files = '', $media = null, $min = null){
             $files = explode(',', $files);
         }
 
-        if($media and is_bool($media)){
-            $min   = $media;
-            $media = null;
-        }
-
-        if($min === null){
-            $min = $_CONFIG['cdn']['min'];
-        }
+        $min = $_CONFIG['cdn']['min'];
 
         if(empty($GLOBALS['css'])){
-            html_init_css($min);
+            $GLOBALS['css'] = array();
         }
 
         foreach($files as $file){
@@ -224,7 +178,28 @@ function html_generate_css(){
 
     try{
         if(empty($GLOBALS['css'])){
-            html_init_css();
+            $GLOBALS['css'] = array();
+        }
+
+        if($GLOBALS['page_is_admin']){
+            /*
+             * Use normal admin CSS
+             */
+            $GLOBALS['css']['admin'] = array('media' => null);
+
+        }elseif($GLOBALS['page_is_mobile'] or empty($_CONFIG['bootstrap']['enabled'])){
+            /*
+             * Use normal, default CSS
+             */
+            $GLOBALS['css']['style'] = array('media' => null);
+
+        }else{
+            /*
+             * Use bootstrap CSS
+             */
+            $GLOBALS['css'][$_CONFIG['bootstrap']['css']] = array('media' => null);
+            $GLOBALS['css']['style']                      = array('media' => null);
+//            $GLOBALS['css'][''bootstrap-theme']           => array('media' => null),
         }
 
         if(!empty($_CONFIG['cdn']['css']['post']) and !$GLOBALS['page_is_admin']){
@@ -232,11 +207,12 @@ function html_generate_css(){
         }
 
         $retval = '';
+        $min    = $_CONFIG['cdn']['min'];
 
         foreach($GLOBALS['css'] as $file => $meta) {
             if(!$file) continue;
 
-            $html = '<link rel="stylesheet" type="text/css" href="'.$_CONFIG['root'].'/pub/css/'.((SUBENVIRONMENT and (substr($file, 0, 5) != 'base/')) ? SUBENVIRONMENT.'/' : '').(!empty($GLOBALS['page_is_mobile']) ? 'mobile/' : '').$file.($meta['min'] ? '.min.css' : '.css').'"'.($meta['media'] ? ' media="'.$meta['media'].'"' : '').'>';
+            $html = '<link rel="stylesheet" type="text/css" href="'.$_CONFIG['root'].'/pub/css/'.((SUBENVIRONMENT and (substr($file, 0, 5) != 'base/')) ? SUBENVIRONMENT.'/' : '').(!empty($GLOBALS['page_is_mobile']) ? 'mobile/' : '').$file.($min ? '.min.css' : '.css').'"'.($meta['media'] ? ' media="'.$meta['media'].'"' : '').'>';
 
             if(substr($file, 0, 2) == 'ie'){
                 $retval .= html_iefilter($html, str_until(str_from($file, 'ie'), '.'));
@@ -263,7 +239,7 @@ function html_generate_css(){
  *
  * $option may be either "async" or "defer", see http://www.w3schools.com/tags/att_script_async.asp
  */
-function html_load_js($files = '', $min = null, $option = null, $ie = null){
+function html_load_js($files = '', $option = null, $ie = null){
     global $_CONFIG;
 
     try{
@@ -279,28 +255,12 @@ function html_load_js($files = '', $min = null, $option = null, $ie = null){
             $files = explode(',', $files);
         }
 
-        if($min === null){
-            $min = $_CONFIG['cdn']['min'];
-        }
+        //if($min === null){
+        //    $min = $_CONFIG['cdn']['min'];
+        //}
 
         if(!isset($GLOBALS['js'])){
             $GLOBALS['js'] = array();
-        }
-
-        if(empty($GLOBALS['js'])){
-            if($GLOBALS['page_is_mobile'] or empty($_CONFIG['bootstrap']['enabled'])){
-                /*
-                 * Use normal, default JS
-                 */
-                $GLOBALS['js'] = array('jquery' => array('min' => $min));
-
-            }else{
-                /*
-                 * Use bootstrap JS
-                 */
-                $GLOBALS['js'] = array($_CONFIG['bootstrap']['js'] => array('min' => $min),
-                                       'jquery'                    => array('min' => $min));
-            }
         }
 
         foreach($files as $file){
@@ -308,7 +268,7 @@ function html_load_js($files = '', $min = null, $option = null, $ie = null){
                 /*
                  * Compatibility code: ALL LOCAL JS FILES SHOULD ALWAYS BE SPECIFIED WITHOUT .js OR .min.js!!
                  */
-    // :TODO: SEND EMAIL NOTIFICATIONS!
+// :TODO: SEND EMAIL NOTIFICATIONS IF THESE ARE FOUND!
                 if(substr($file, -3, 3) == '.js'){
                     $file = substr($file, 0, -3);
 
@@ -318,7 +278,7 @@ function html_load_js($files = '', $min = null, $option = null, $ie = null){
 
             }
 
-            $data = array('min' => $min);
+            $data = array();
 
             if($option){
                 $data['option'] = $option;
@@ -345,7 +305,7 @@ function html_generate_js(){
     global $_CONFIG;
 
     try{
-        if(!isset($GLOBALS['js'])){
+        if(empty($GLOBALS['js'])){
             return '';
         }
 
@@ -353,7 +313,7 @@ function html_generate_js(){
          * Shortcut to JS configuration
          */
         $js     = $_CONFIG['cdn']['js'];
-        $min    = $_CONFIG['cdn']['min'];
+        $min    = ($_CONFIG['cdn']['min'] ? '.min' : '');
 
         $libs   = array();
         $retval = '';
@@ -366,15 +326,16 @@ function html_generate_js(){
                 $lib .= $js['jquery_version'];
             }
 
-            $libs[$lib] = array('min' => $min);
+            $libs[$lib] = array();
         }
 
         /*
          * Load JS libraries
          */
-        foreach(array_merge($libs, $GLOBALS['js']) as $file => $data) {
-            if(!$file)            continue;
-            if($file == 'jquery') continue;
+        foreach($GLOBALS['js'] = array_merge($libs, $GLOBALS['js']) as $file => $data) {
+            if(!$file)                 continue;
+            if($file == 'jquery')      continue;
+            if($file == 'base/jquery') continue;
 
             if(substr($file, 0, 4) == 'http') {
                 /*
@@ -424,7 +385,7 @@ function html_generate_js(){
                     if($skip) continue;
                 }
 
-                $html = '<script'.(!empty($data['option']) ? ' '.$data['option'] : '').' type="text/javascript" src="'.$_CONFIG['root'].'/pub/js/'.$file.($data['min'] ? '.min.js' : '.js').'"></script>';
+                $html = '<script'.(!empty($data['option']) ? ' '.$data['option'] : '').' type="text/javascript" src="'.$_CONFIG['root'].'/pub/js/'.$file.$min.'.js"></script>';
             }
 
             /*
@@ -438,16 +399,29 @@ function html_generate_js(){
             }
         }
 
+        /*
+         * Should all JS scripts be loaded at the end (right before the </body> tag)?
+         * This may be useful for site startup speedups
+         */
         if(!empty($js['load_delayed'])){
-            /*
-             * Load all JS scripts at the end (right before the </body> tag)
-             * This may be useful for site startup speedups
-             */
             $GLOBALS['footer'] = $retval.isset_get($GLOBALS['footer'], '').isset_get($GLOBALS['script_delayed'], '');
             $retval            = '';
         }
 
-        return $retval;
+        /*
+         * Always load jQuery!
+         * Always load jQuery in the HEAD so that in site <script> that use jQuery will work
+         */
+        $jquery = '<script'.(!empty($data['option']) ? ' '.$data['option'] : '').' type="text/javascript" src="'.$_CONFIG['root'].'/pub/js/base/jquery'.$min.".js\"></script>\n";
+
+        if(!$GLOBALS['page_is_mobile'] and !empty($_CONFIG['bootstrap']['enabled'])){
+            /*
+             * Use bootstrap JS
+             */
+            $jquery .= '<script'.(!empty($data['option']) ? ' '.$data['option'] : '').' type="text/javascript" src="'.$_CONFIG['root'].'/pub/js/'.$_CONFIG['bootstrap']['js'].$min.".js\"></script>\n";
+        }
+
+        return $jquery.$retval;
 
     }catch(Exception $e){
         throw new bException('html_generate_js(): Failed', $e);
@@ -556,14 +530,11 @@ function html_footer(){
     global $_CONFIG;
 
     try{
-        if(empty($_CONFIG['cdn']['js']['load_delayed'])){
-            $retval = '';
-
-        }else{
-            $retval = isset_get($GLOBALS['footer'], '');
+        if(empty($GLOBALS['footer'])){
+            return "</body>\n</html>";
         }
 
-        return $retval."</body>\n</html>";
+        return $GLOBALS['footer']."</body>\n</html>";
 
     }catch(Exception $e){
         throw new bException('html_footer(): Failed', $e);
