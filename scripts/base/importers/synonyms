@@ -38,14 +38,15 @@ try{
     /*
      * Extract the thesaurus.txt file. Before that, try to delete it to be sure its no longer there.
      */
-    log_console('Unpacking synonyms data file "'.ROOT.'data/sources/synonyms/thesaurus_'.$language.'.tgz"');
+    $path = get_global_data_path('sources/synonyms');
 
-    file_delete(ROOT.'data/sources/synonyms/thesaurus_'.$language.'.txt');
-    safe_exec('cd '.ROOT.'data/sources/synonyms; tar -zxvf thesaurus_'.$language.'.tgz');
+    log_console('Unpacking synonyms data file "'.$path.'thesaurus_'.$language.'.tgz"');
 
+    file_delete($file = TMP.'thesaurus_'.$language.'.txt');
+    safe_exec('cd '.$path.'; tar -zxvf thesaurus_'.$language.'.tgz -C '.TMP);
     log_console('Importing synonyms from data file', 'importing', '', false);
 
-    $f       = fopen(ROOT.'data/sources/synonyms/thesaurus_'.$language.'.txt', 'r');
+    $f       = fopen($file, 'r');
     $count   = 0;
     $lcount  = 0;
     $execute = array(':language' => $language);
@@ -109,7 +110,7 @@ try{
     /*
      * Dump the thesaurus file, we won't need it anymore
      */
-    file_delete(ROOT.'data/sources/synonyms/thesaurus_'.$language.'.txt');
+    file_delete($file);
 
     log_console('Done!', 'done', 'green');
 
