@@ -14,6 +14,9 @@ $_CONFIG['cookie']['domain']    = '.base';
 
 //database
 $_CONFIG['db']['db']            = 'base';
+$_CONFIG['db']['user']          = 'base';
+$_CONFIG['db']['pass']          = 'base';
+$_CONFIG['db']['timezone']      = 'America/Los_Angeles';
 
 //domain
 $_CONFIG['domain']              = 'base';
