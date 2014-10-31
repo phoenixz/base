@@ -3,27 +3,39 @@
 /*
  * Update the URL's of all blogs (run this after the blog URL configuration was changed)
  */
-require_once(dirname(__FILE__).'/../../libs/startup.php');
+require_once(dirname(__FILE__).'/../../../libs/startup.php');
 
 try{
     log_console('Updating all blog posts with the URL configuration "'.str_log($_CONFIG['blogs']['url']).'"', 'update_urls', 'white');
 
     load_libs('blogs');
 
-    $r = sql_query('SELECT `id, `name`, `seoname`, `createdon`, `modifiedon`, `createdby`, `category` FROM `blogs_posts`');
+    $r = sql_query('SELECT `id`,
+                           `name`,
+                           `seoname`,
+                           `createdon`,
+                           `modifiedon`,
+                           `createdby`,
+                           `category`
+
+                    FROM   `blogs_posts`');
 
     while($post = sql_fetch($r)){
-        log_console('Updating blog post "'.str_log($post['seoname']).'"', 'updating');
+        $url = blogs_post_url($post);
+
+        log_console('Updating blog post '.str_log(str_size('"'.str_truncate($post['seoname'], 40).'"', 42, ' ')).' to URL "'.str_log($url).'"', 'updating');
 
         sql_query('UPDATE `blogs_posts`
+
                    SET    `url` = :url
+
                    WHERE  `id`  = :id',
 
-                   array(':url' => blogs_post_url($post, $current_domain = true),
-                         ':id'  => $id));
+                   array(':url' => $url,
+                         ':id'  => $post['id']));
     }
 
-    log_console('Updated all blog posts with the URL configuration "'.str_log($_CONFIG['blogs']['url']).'"', 'finished', 'white');
+    log_console('Updated all blog posts with the URL configuration "'.str_log($_CONFIG['blogs']['url']).'"', 'finished', 'green');
 
 }catch(Exception $e){
     throw new bException('scripts/blogs/update_urls: Failed', $e);
