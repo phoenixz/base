@@ -844,26 +844,31 @@ function password($password, $algorithm = 'sha1'){
 }
 
 
-
 /*
  * Return complete domain with HTTP and all
  */
+// :MOVE: Move this function to the html library
 function domain($current_url = false, $protocol = 'http://'){
     global $_CONFIG;
 
-    if(!$protocol){
-        $protocol = '';
-    }
+    try{
+        if(!$protocol){
+            $protocol = '';
+        }
 
-    if(!$current_url){
-        return $protocol.$_CONFIG['domain'].$_CONFIG['root'];
-    }
+        if(!$current_url){
+            return $protocol.$_CONFIG['domain'].$_CONFIG['root'];
+        }
 
-    if($current_url === true){
-        return $protocol.$_CONFIG['domain'].$_SERVER['REQUEST_URI'];
-    }
+        if($current_url === true){
+            return $protocol.$_CONFIG['domain'].$_SERVER['REQUEST_URI'];
+        }
 
-    return $protocol.$_CONFIG['domain'].$_CONFIG['root'].str_starts($current_url, '/');
+        return $protocol.$_CONFIG['domain'].$_CONFIG['root'].str_starts($current_url, '/');
+
+    }catch(Exception $e){
+        throw new bException('domain(): Failed', $e);
+    }
 }
 
 
@@ -871,22 +876,36 @@ function domain($current_url = false, $protocol = 'http://'){
 /*
  * Return complete current domain with HTTP and all
  */
+// :MOVE: Move this function to the html library
 function current_domain($current_url = false, $protocol = 'http://'){
-    global $_CONFIG;
+    try{
+        global $_CONFIG;
 
-    if(!$protocol){
-        $protocol = '';
+        if(!$protocol){
+            $protocol = '';
+        }
+
+        if(empty($_SERVER['SERVER_NAME'])){
+            $server_name = $_CONFIG['domain'];
+
+        }else{
+            $server_name = $_SERVER['SERVER_NAME'];
+        }
+
+
+        if(!$current_url){
+            return $protocol.$server_name.$_CONFIG['root'];
+        }
+
+        if($current_url === true){
+            return $protocol.$server_name.$_SERVER['REQUEST_URI'];
+        }
+
+        return $protocol.$server_name.$_CONFIG['root'].str_starts($current_url, '/');
+
+    }catch(Exception $e){
+        throw new bException('current_domain(): Failed', $e);
     }
-
-    if(!$current_url){
-        return $protocol.$_SERVER['SERVER_NAME'].$_CONFIG['root'];
-    }
-
-    if($current_url === true){
-        return $protocol.$_SERVER['SERVER_NAME'].$_SERVER['REQUEST_URI'];
-    }
-
-    return $protocol.$_SERVER['SERVER_NAME'].$_CONFIG['root'].str_starts($current_url, '/');
 }
 
 
