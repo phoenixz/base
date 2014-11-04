@@ -10,7 +10,7 @@ try{
         throw new bException('ajax/blog/photos/delete: No photo specified', 'notspecified');
     }
 
-    $photo   = sql_get('SELECT `blogs_photos`.`id`, `blogs_photos`.`file`
+    $photo   = sql_get('SELECT `blogs_photos`.`id`, `blogs_photos`.`createdby`, `blogs_photos`.`file`
 
                         FROM   `blogs_photos`
 
