@@ -8,6 +8,8 @@ $usage = "./scripts/base/empty OPTIONS\n".
 
 $help  = "This is the help contents";
 
+$quiet = true; # Set to false if no startup log messages should be displayed
+
 require_once(dirname(__FILE__).'/../../libs/startup.php');
 
 try{
