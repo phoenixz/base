@@ -430,7 +430,21 @@ function sql_connect($connector) {
          */
         $pdo->query('SET NAMES '.$connector['charset']);
         $pdo->query('SET CHARACTER SET '.$connector['charset']);
-        $pdo->query('SET time_zone = "'.$connector['timezone'].'";');
+
+        try{
+            $pdo->query('SET time_zone = "'.$connector['timezone'].'";');
+
+        }catch(Exception $e){
+            if(empty($GLOBALS['no_time_zone'])){
+                throw $e;
+            }
+
+            /*
+             * Indicate that time_zone settings failed (this will subsequently be used by the init system to automatically initialize that as well)
+             */
+            unset($GLOBALS['no_time_zone']);
+            $GLOBALS['time_zone_fail'] = true;
+        }
 
         if(!empty($connector['mode'])){
             $pdo->query('SET sql_mode="'.$connector['mode'].'";');

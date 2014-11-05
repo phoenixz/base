@@ -551,14 +551,21 @@ function log_console($message, $type = 'info', $color = null, $newline = true, $
         if(PLATFORM != 'shell') return false;
 
         if($type){
-            $message = '['.$type.'] '.$message;
-
             if((strpos($type, 'error') !== false) and ($color === null)){
-                $color = 'red';
-            }
+                $color   = 'red';
+                $message = '['.$type.'] '.$message;
 
-            if((strpos($type, 'warning') !== false) and ($color === null)){
-                $color = 'yellow';
+            }elseif((strpos($type, 'warning') !== false) and ($color === null)){
+                $color   = 'yellow';
+                $message = '['.$type.'] '.$message;
+
+            }else{
+                if(strpos($message, '():') !== false){
+                    $message = '['.$type.'] '.ltrim(str_from($message, '():'));
+
+                }else{
+                    $message = '['.$type.'] '.$message;
+                }
             }
         }
 

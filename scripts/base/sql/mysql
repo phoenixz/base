@@ -8,6 +8,11 @@ $usage = "./scripts/base/sql/mysql OPTIONS\n".
 
 $help  = "This is the help contents";
 
+/*
+ * This variable will avoid a crash if MySQL has no timezone data available yet
+ */
+$no_time_zone = true;
+
 require_once(dirname(__FILE__).'/../../../libs/startup.php');
 
 try{

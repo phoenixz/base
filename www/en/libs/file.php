@@ -524,7 +524,11 @@ function file_is($file){
 function file_list_tree($path = '.', $recursive = true) {
     try{
         if(!is_dir($path)) {
-        throw new bException('file_list_tree(): Specified path "'.str_log($path).'" is not a directory', 'path');
+            if(!is_file($path)){
+                throw new bException('file_list_tree(): Specified path "'.str_log($path).'" is not a directory', 'path');
+            }
+
+            return array($path);
         }
 
         $files = array();
@@ -536,7 +540,7 @@ function file_list_tree($path = '.', $recursive = true) {
                 continue;
             }
 
-            $filepath = $path . '/' . $file;
+            $filepath = slash($path).$file;
 
             if( is_dir($filepath) and $recursive){
                 $files = array_merge($files, file_list_tree($filepath));

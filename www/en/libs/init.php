@@ -40,6 +40,14 @@ function init($projectfrom = null, $frameworkfrom = null){
          */
         sql_init();
 
+        if(!empty($GLOBALS['time_zone_fail'])){
+            /*
+             * MySQL has no time_zone data, first initialize that, then reconnect
+             */
+
+            sql_init();
+        }
+
         /*
          * Determine framework DB version (either from DB, or from command line)
          */
