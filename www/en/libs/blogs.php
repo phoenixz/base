@@ -266,11 +266,20 @@ function blogs_priorities_select($params, $selected = 0, $name = 'priority', $no
 /*
  * Update the key-value store for this blog post
  */
-function blogs_update_key_value_store($blogs_posts_id, $post){
+function blogs_update_key_value_store($blogs_posts_id, $post, $data){
     try{
         load_libs('seo');
 
         foreach($post['key_value'] as $key => $value){
+            foreach($data as $entry){
+                if(($entry['name'] == $key) and !empty($entry['resource'])){
+                    /*
+                     * Translate SEO value to label value
+                     */
+                    $value = isset_get($entry['resource'][$value], 'unknown');
+                }
+            }
+
             sql_query('INSERT INTO `blogs_key_values` (`blogs_posts_id`, `key`, `value`)
                        VALUES                         (:blogs_posts_id , :key , :value )
 
