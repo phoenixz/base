@@ -157,7 +157,6 @@ function uglify_css($path = null){
                 if(file_exists(substr($file, 0, -8).'.css')){
                     log_console('uglify_css(): Deleting existing minified file "'.str_log($file).'" as a source is available', 'uglify');
                     file_delete($file);
-                    continue;
 
                 }else{
                     log_console('uglify_css(): Using minified file "'.str_log($file).'" as source as source is available yet', 'uglify');
@@ -321,7 +320,6 @@ function uglify_js($path = null){
                 if(file_exists(substr($file, 0, -7).'.js')){
                     log_console('uglify_js(): Deleting existing minified file "'.str_log($file).'" as a source is available', 'uglify');
                     file_delete($file);
-                    continue;
 
                 }else{
                     log_console('uglify_js(): Using minified file "'.str_log($file).'" as source as source is available yet', 'uglify');
