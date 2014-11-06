@@ -18,8 +18,7 @@ load_libs('node');
  * Ensure that npm is available
  */
 function uglify_check(){
-    global $npm;
-    global $node_modules;
+    global $npm, $node, $node_modules;
 
     try{
         $node         = node_check();
@@ -91,9 +90,9 @@ function uglify_css_check(){
  * Uglify all CSS files in www/en/pub/css
  */
 function uglify_css($path = null){
-    global $npm, $node_modules;
+    global $npm, $node, $node_modules;
     static $check;
-show('CSS');
+
     try{
         if(empty($check)){
             $check = true;
@@ -181,7 +180,7 @@ show('CSS');
             }
 
             log_console('uglify_css(): Compressing CSS file "'.str_log($file).'"', 'uglify');
-            safe_exec($node.' '.$node_modules.' --output '.substr($file, 0, -4).'.min.css '.$file);
+            safe_exec($node.' '.$node_modules.'uglifycss/uglifycss '.$file.' > '.substr($file, 0, -4).'.min.css');
         }
 
     }catch(Exception $e){
@@ -249,7 +248,7 @@ function uglify_js_check(){
  * Uglify all js files in www/en/pub/js
  */
 function uglify_js($path = null){
-    global $npm, $node_modules;
+    global $npm, $node, $node_modules;
     static $check;
 
     try{
@@ -339,7 +338,7 @@ function uglify_js($path = null){
             }
 
             log_console('uglify_js(): Compressing javascript file "'.str_log($file).'"', 'uglify');
-            safe_exec($node.' '.$node_modules.' --output '.substr($file, 0, -3).'.min.js '.$file);
+            safe_exec($node.' '.$node_modules.'uglify-js/bin/uglifyjs --output '.substr($file, 0, -3).'.min.js '.$file);
         }
 
     }catch(Exception $e){
