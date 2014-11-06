@@ -102,7 +102,7 @@ function uglify_css($path = null){
 
         if(empty($path)){
             /*
-             * Start at the base CSS path
+             * Start at the base css path
              */
             $path = ROOT.'pub/css/';
         }
@@ -125,25 +125,97 @@ function uglify_css($path = null){
                  * Recurse into sub directories
                  */
                 uglify_css($file);
+
+                $processed[str_rfrom($file, '/')] = true;
                 continue;
             }
 
             if(is_link($file)){
-                if((substr($file, -4, 4) == '.css') or (substr($file, -8, 8) == '.min.css')){
+                /*
+                 * The file is a symlink
+                 */
+                $target = readlink($file);
+
+                if(substr($file, -8, 8) == '.min.css'){
                     /*
-                     * Remove all CSS symlinks, minified or not
+                     * Delete the minimized symlinks, we'll regenerate them for the normal files
                      */
-                    log_console('uglify_css(): Deleting CSS symlink "'.str_log($file).'"', 'uglify', 'yellow');
                     file_delete($file);
+
+                    $processed[str_rfrom($file, '/')] = true;
+                    continue;
+
+                }elseif(substr($file, -4, 4) == '.css'){
+                    /*
+                     * If the symlink target does not exist, we can just ignore it
+                     */
+                    if(!file_exists($path.$target)){
+                        log_console('uglify_css(): Ignorning symlink "'.str_log($file).'" with non existing target', 'uglify', 'yellow');
+
+                        $processed[str_rfrom($file, '/')] = true;
+                        continue;
+                    }
+
+                    /*
+                     * If the symlink points to any path above or outside the current path, then only ensure there is a .min symlink for it
+                     */
+                    if(!strstr($path.$target, str_runtil($file, '/'))){
+                        log_console('uglify_css(): Found symlink "'.str_log($file).'" with target "'.str_log($target).'" that points to location outside symlink path, ensuring minimized version pointing to the same file', 'uglify', 'yellow');
+
+                        if(file_exists(substr($file, 0, -4).'.min.css')){
+                            file_delete(substr($file, 0, -4).'.min.css');
+                        }
+
+                        symlink($target, substr($file, 0, -4).'.min.css');
+
+                        $processed[str_rfrom($file, '/')] = true;
+                        continue;
+                    }
+
+                    if(substr($file, 0, -4) == substr($target, 0, -8)){
+                        /*
+                         * This non minimized version points towards a minimized version of the same file. Move the minimized version to the normal version,
+                         * and make a minimized version
+                         */
+                        log_console('uglify_css(): Found symlink "'.str_log($file).'" pointing to its minimized version. Switching files', 'uglify', 'yellow');
+
+                        file_delete($file);
+                        rename($target, $file);
+                        symlink($file, $target);
+
+                        $processed[str_rfrom($file, '/')] = true;
+                        continue;
+                    }
+
+                    /*
+                     * Create a symlink for the minimized file to the minimized version
+                     */
+                    if(substr($target, -8, 8) != '.min.css'){
+                        /*
+                         * Correct the targets file extension
+                         */
+                        $target = substr($target, 0, -4).'.min.css';
+                    }
+
+                    log_console('uglify_css(): Created minimized symlink for file "'.str_log($file).'"', 'uglify');
+                    file_delete(substr($file, 0, -4).'.min.css');
+                    symlink($target, substr($file, 0, -4).'.min.css');
+
+                    $processed[str_rfrom($file, '/')] = true;
+                    continue;
+
+                }else{
+                    log_console('uglify_css(): Ignorning non css symlink "'.str_log($file).'"', 'uglify', 'yellow');
+
+                    $processed[str_rfrom($file, '/')] = true;
                     continue;
                 }
-
-                log_console('uglify_css(): Ignorning non CSS symlink "'.str_log($file).'"', 'uglify', 'yellow');
-                continue;
             }
 
             if(!is_file($file)){
                 log_console('uglify_css(): Ignorning unknown type file "'.str_log($file).'"', 'uglify', 'yellow');
+
+                $processed[str_rfrom($file, '/')] = true;
                 continue;
             }
 
@@ -154,12 +226,12 @@ function uglify_css($path = null){
                  *
                  * Reason for this is that sometimes we only have minified versions available.
                  */
-                if(file_exists(substr($file, 0, -8).'.css')){
-                    log_console('uglify_css(): Deleting existing minified file "'.str_log($file).'" as a source is available', 'uglify');
-                    file_delete($file);
+                if(file_exists(substr($file, 0, -8).'.css') and !is_link(substr($file, 0, -8).'.css')){
+                    log_console('uglify_css(): Ignoring minified file "'.str_log($file).'" as a source is available', 'uglify');
+//                    file_delete($file);
 
                 }else{
-                    log_console('uglify_css(): Using minified file "'.str_log($file).'" as source as source is available yet', 'uglify');
+                    log_console('uglify_css(): Using minified file "'.str_log($file).'" as source is available', 'uglify');
                     rename($file, substr($file, 0, -8).'.css');
                 }
 
@@ -169,20 +241,27 @@ function uglify_css($path = null){
             if(substr($file, -4, 4) != '.css'){
                 if(substr($file, -3, 3) == '.js'){
                     /*
-                     * Found a javascript file in the CSS path
+                     * Found a js file in the CSS path
                      */
-                    log_console('uglify_css(): Found javascript file "'.str_log($file).'" in CSS path, switching to uglify-js', 'uglify', 'yellow');
+                    log_console('uglify_css(): Found js file "'.str_log($file).'" in CSS path, switching to uglifyjs', 'uglify', 'yellow');
                     uglify_js($file);
+
+                    $processed[str_rfrom($file, '/')] = true;
                     continue;
                 }
 
                 log_console('uglify_css(): Ignorning non CSS file "'.str_log($file).'"', 'uglify', 'yellow');
+
+                $processed[str_rfrom($file, '/')] = true;
                 continue;
             }
 
             try{
                 log_console('uglify_css(): Compressing CSS file "'.str_log($file).'"', 'uglify');
-                safe_exec($node.' '.$node_modules.'uglifycss/uglifycss '.$file.' > '.substr($file, 0, -4).'.min.css');
+                file_delete(substr($file, 0, -4).'.min.css');
+                safe_exec($node.' '.$node_modules.'uglify-css/bin/uglifycss --output '.substr($file, 0, -4).'.min.css '.$file);
+
+                $processed[str_rfrom($file, '/')] = true;
 
             }catch(Exception $e){
                 log_error('Failed to compress file "'.str_log($file).'"', 'error/uglify');
@@ -289,14 +368,8 @@ function uglify_js($path = null){
                  * Recurse into sub directories
                  */
                 uglify_js($file);
-                continue;
-            }
 
-            /*
-             * If the symlink target does not exist, then ignore the symlink
-             */
-            if(!strstr($target, str_runtil($file, '/'))){
-                log_console('uglify_js(): Ignoring symlink "'.str_log($file).'" with non existing target "'.str_log($target).'"', 'uglify', 'yellow');
+                $processed[str_rfrom($file, '/')] = true;
                 continue;
             }
 
@@ -312,19 +385,24 @@ function uglify_js($path = null){
                      */
                     file_delete($file);
 
+                    $processed[str_rfrom($file, '/')] = true;
+                    continue;
+
                 }elseif(substr($file, -3, 3) == '.js'){
                     /*
                      * If the symlink target does not exist, we can just ignore it
                      */
-                    if(!file_exists($target)){
+                    if(!file_exists($path.$target)){
                         log_console('uglify_js(): Ignorning symlink "'.str_log($file).'" with non existing target', 'uglify', 'yellow');
+
+                        $processed[str_rfrom($file, '/')] = true;
                         continue;
                     }
 
                     /*
                      * If the symlink points to any path above or outside the current path, then only ensure there is a .min symlink for it
                      */
-                    if(!strstr($target, str_runtil($file, '/'))){
+                    if(!strstr($path.$target, str_runtil($file, '/'))){
                         log_console('uglify_js(): Found symlink "'.str_log($file).'" with target "'.str_log($target).'" that points to location outside symlink path, ensuring minimized version pointing to the same file', 'uglify', 'yellow');
 
                         if(file_exists(substr($file, 0, -3).'.min.js')){
@@ -332,6 +410,8 @@ function uglify_js($path = null){
                         }
 
                         symlink($target, substr($file, 0, -3).'.min.js');
+
+                        $processed[str_rfrom($file, '/')] = true;
                         continue;
                     }
 
@@ -345,32 +425,40 @@ function uglify_js($path = null){
                         file_delete($file);
                         rename($target, $file);
                         symlink($file, $target);
-                        continue;
 
+                        $processed[str_rfrom($file, '/')] = true;
+                        continue;
                     }
 
                     /*
                      * Create a symlink for the minimized file to the minimized version
                      */
-                    if(substr($taget, -7, 7) != '.min.js'){
+                    if(substr($target, -7, 7) != '.min.js'){
                         /*
                          * Correct the targets file extension
                          */
-                        $target = substr($taget, 0, -7).'.min.js';
+                        $target = substr($target, 0, -3).'.min.js';
                     }
 
                     log_console('uglify_js(): Created minimized symlink for file "'.str_log($file).'"', 'uglify');
+                    file_delete(substr($file, 0, -3).'.min.js');
                     symlink($target, substr($file, 0, -3).'.min.js');
+
+                    $processed[str_rfrom($file, '/')] = true;
                     continue;
 
                 }else{
                     log_console('uglify_js(): Ignorning non js symlink "'.str_log($file).'"', 'uglify', 'yellow');
+
+                    $processed[str_rfrom($file, '/')] = true;
                     continue;
                 }
             }
 
             if(!is_file($file)){
                 log_console('uglify_js(): Ignorning unknown type file "'.str_log($file).'"', 'uglify', 'yellow');
+
+                $processed[str_rfrom($file, '/')] = true;
                 continue;
             }
 
@@ -381,12 +469,12 @@ function uglify_js($path = null){
                  *
                  * Reason for this is that sometimes we only have minified versions available.
                  */
-                if(file_exists(substr($file, 0, -7).'.js')){
-                    log_console('uglify_js(): Deleting existing minified file "'.str_log($file).'" as a source is available', 'uglify');
-                    file_delete($file);
+                if(file_exists(substr($file, 0, -7).'.js') and !is_link(substr($file, 0, -7).'.js')){
+                    log_console('uglify_js(): Ignoring minified file "'.str_log($file).'" as a source is available', 'uglify');
+//                    file_delete($file);
 
                 }else{
-                    log_console('uglify_js(): Using minified file "'.str_log($file).'" as source as source is available yet', 'uglify');
+                    log_console('uglify_js(): Using minified file "'.str_log($file).'" as source is available', 'uglify');
                     rename($file, substr($file, 0, -7).'.js');
                 }
 
@@ -400,19 +488,25 @@ function uglify_js($path = null){
                      */
                     log_console('uglify_js(): Found CSS file "'.str_log($file).'" in javascript path, switching to uglifycss', 'uglify', 'yellow');
                     uglify_css($file);
+
+                    $processed[str_rfrom($file, '/')] = true;
                     continue;
                 }
 
                 log_console('uglify_js(): Ignorning non javascript file "'.str_log($file).'"', 'uglify', 'yellow');
+
+                $processed[str_rfrom($file, '/')] = true;
                 continue;
             }
 
             try{
                 log_console('uglify_js(): Compressing javascript file "'.str_log($file).'"', 'uglify');
+                file_delete(substr($file, 0, -3).'.min.js');
                 safe_exec($node.' '.$node_modules.'uglify-js/bin/uglifyjs --output '.substr($file, 0, -3).'.min.js '.$file);
 
+                $processed[str_rfrom($file, '/')] = true;
+
             }catch(Exception $e){
-showdie($e);
                 log_error('Failed to compress file "'.str_log($file).'"', 'error/uglify');
             }
         }
