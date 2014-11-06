@@ -264,6 +264,31 @@ function blogs_priorities_select($params, $selected = 0, $name = 'priority', $no
 
 
 /*
+ * Update the key-value store for this blog post
+ */
+function blogs_update_key_value_store($blogs_posts_id, $post){
+    try{
+        load_libs('seo');
+
+        foreach($post['key_value'] as $key => $value){
+            sql_query('INSERT INTO `blogs_key_values` (`blogs_posts_id`, `key`, `value`)
+                       VALUES                         (:blogs_posts_id , :key , :value )
+
+                       ON DUPLICATE KEY UPDATE `value` = :value',
+
+                       array(':blogs_posts_id' => $blogs_posts_id,
+                             ':key'            => $key,
+                             ':value'          => $value));
+        }
+
+    }catch(Exception $e){
+        throw new bException('blogs_update_key_value_store(): Failed', $e);
+    }
+}
+
+
+
+/*
  * Update the keywords in the blogs_keywords table and the
  * seokeywords column in the blogs_posts table
  */
