@@ -161,8 +161,9 @@ function uglify_css($path = null){
                 }else{
                     log_console('uglify_css(): Using minified file "'.str_log($file).'" as source as source is available yet', 'uglify');
                     rename($file, substr($file, 0, -8).'.css');
-                    $file = substr($file, 0, -8).'.css';
                 }
+
+                $file = substr($file, 0, -8).'.css';
             }
 
             if(substr($file, -4, 4) != '.css'){
@@ -324,8 +325,9 @@ function uglify_js($path = null){
                 }else{
                     log_console('uglify_js(): Using minified file "'.str_log($file).'" as source as source is available yet', 'uglify');
                     rename($file, substr($file, 0, -7).'.js');
-                    $file = substr($file, 0, -7).'.js';
                 }
+
+                $file = substr($file, 0, -7).'.js';
             }
 
             if(substr($file, -3, 3) != '.js'){
@@ -347,6 +349,7 @@ function uglify_js($path = null){
                 safe_exec($node.' '.$node_modules.'uglify-js/bin/uglifyjs --output '.substr($file, 0, -3).'.min.js '.$file);
 
             }catch(Exception $e){
+showdie($e);
                 log_error('Failed to compress file "'.str_log($file).'"', 'error/uglify');
             }
         }
