@@ -1368,7 +1368,7 @@ function file_copy_progress($source, $target, $callback){
         copy($source, $target, $c);
 
     }catch(Exception $e){
-        throw new bException('', $e);
+        throw new bException('file_copy_progress(): Failed', $e);
     }
 }
 
