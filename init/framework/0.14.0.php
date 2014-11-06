@@ -14,20 +14,20 @@ sql_query('DROP TABLE IF EXISTS `blogs_key_values`');
 
 
 
-sql_query('CREATE TABLE `blogs_key_values` (`id`          INT(11)      NOT NULL AUTO_INCREMENT PRIMARY KEY,
-                                            `createdon`   TIMESTAMP    NOT NULL DEFAULT CURRENT_TIMESTAMP,
-                                            `blogs_id`    INT(11)          NULL,
-                                            `key`         VARCHAR(16)      NULL,
-                                            `seokey`      VARCHAR(16)      NULL,
-                                            `value`       VARCHAR(128)     NULL,
+sql_query('CREATE TABLE `blogs_key_values` (`id`             INT(11)      NOT NULL AUTO_INCREMENT PRIMARY KEY,
+                                            `createdon`      TIMESTAMP    NOT NULL DEFAULT CURRENT_TIMESTAMP,
+                                            `blogs_posts_id` INT(11)          NULL,
+                                            `key`            VARCHAR(16)      NULL,
+                                            `seokey`         VARCHAR(16)      NULL,
+                                            `value`          VARCHAR(128)     NULL,
 
                                             INDEX (`createdon`),
-                                            INDEX (`blogs_id`),
+                                            INDEX (`blogs_posts_id`),
                                             INDEX (`key`),
                                             INDEX (`seokey`),
-                                            UNIQUE(`blogs_id`, `seokey`),
+                                            UNIQUE(`blogs_posts_id`, `seokey`),
 
-                                            CONSTRAINT `fk_blogs_key_values_blogs_id` FOREIGN KEY (`blogs_id`)  REFERENCES `blogs` (`id`) ON DELETE CASCADE
+                                            CONSTRAINT `fk_blogs_key_values_blogs_posts_id` FOREIGN KEY (`blogs_posts_id`)  REFERENCES `blogs_posts` (`id`) ON DELETE CASCADE
 
                                            ) ENGINE=InnoDB AUTO_INCREMENT='.$_CONFIG['db']['autoincrement'].' DEFAULT CHARSET="'.$_CONFIG['db']['charset'].'" COLLATE="'.$_CONFIG['db']['collate'].'";');
 ?>
