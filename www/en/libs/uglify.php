@@ -162,6 +162,7 @@ function uglify_css($path = null){
                 }else{
                     log_console('uglify_css(): Using minified file "'.str_log($file).'" as source as source is available yet', 'uglify');
                     rename($file, substr($file, 0, -8).'.css');
+                    $file = substr($file, 0, -8).'.css';
                 }
             }
 
@@ -320,6 +321,7 @@ function uglify_js($path = null){
                 }else{
                     log_console('uglify_js(): Using minified file "'.str_log($file).'" as source as source is available yet', 'uglify');
                     rename($file, substr($file, 0, -7).'.js');
+                    $file = substr($file, 0, -7).'.css';
                 }
             }
 
