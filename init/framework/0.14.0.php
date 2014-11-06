@@ -18,14 +18,12 @@ sql_query('CREATE TABLE `blogs_key_values` (`id`             INT(11)      NOT NU
                                             `createdon`      TIMESTAMP    NOT NULL DEFAULT CURRENT_TIMESTAMP,
                                             `blogs_posts_id` INT(11)          NULL,
                                             `key`            VARCHAR(16)      NULL,
-                                            `seokey`         VARCHAR(16)      NULL,
                                             `value`          VARCHAR(128)     NULL,
 
                                             INDEX (`createdon`),
                                             INDEX (`blogs_posts_id`),
                                             INDEX (`key`),
-                                            INDEX (`seokey`),
-                                            UNIQUE(`blogs_posts_id`, `seokey`),
+                                            UNIQUE(`blogs_posts_id`, `key`),
 
                                             CONSTRAINT `fk_blogs_key_values_blogs_posts_id` FOREIGN KEY (`blogs_posts_id`)  REFERENCES `blogs_posts` (`id`) ON DELETE CASCADE
 
