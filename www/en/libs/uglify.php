@@ -180,8 +180,13 @@ function uglify_css($path = null){
                 continue;
             }
 
-            log_console('uglify_css(): Compressing CSS file "'.str_log($file).'"', 'uglify');
-            safe_exec($node.' '.$node_modules.'uglifycss/uglifycss '.$file.' > '.substr($file, 0, -4).'.min.css');
+            try{
+                log_console('uglify_css(): Compressing CSS file "'.str_log($file).'"', 'uglify');
+                safe_exec($node.' '.$node_modules.'uglifycss/uglifycss '.$file.' > '.substr($file, 0, -4).'.min.css');
+
+            }catch(Exception $e){
+                log_error('Failed to compress file "'.str_log($file).'"', 'error/uglify');
+            }
         }
 
     }catch(Exception $e){
@@ -339,8 +344,13 @@ function uglify_js($path = null){
                 continue;
             }
 
-            log_console('uglify_js(): Compressing javascript file "'.str_log($file).'"', 'uglify');
-            safe_exec($node.' '.$node_modules.'uglify-js/bin/uglifyjs --output '.substr($file, 0, -3).'.min.js '.$file);
+             try{
+                log_console('uglify_js(): Compressing javascript file "'.str_log($file).'"', 'uglify');
+                safe_exec($node.' '.$node_modules.'uglify-js/bin/uglifyjs --output '.substr($file, 0, -3).'.min.js '.$file);
+
+            }catch(Exception $e){
+                log_error('Failed to compress file "'.str_log($file).'"', 'error/uglify');
+            }
         }
 
     }catch(Exception $e){
