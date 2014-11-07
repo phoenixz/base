@@ -326,6 +326,13 @@ try{
 
                     session_set_cookie_params($_CONFIG['cookie']['lifetime'], $_CONFIG['cookie']['path'], $_CONFIG['cookie']['domain'], $_CONFIG['cookie']['secure'], $_CONFIG['cookie']['httponly']);
 
+                    if(!empty($_CONFIG['sessions']['shared_memory'])){
+                        /*
+                         * Store session data in share memory. This is very useful for security on shared servers if you do not want your session data available to other users
+                         */
+                        ini_set('session.save_handler', 'mm');
+                    }
+
                     try{
                         session_start();
 

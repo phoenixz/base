@@ -226,6 +226,9 @@ $_CONFIG['paypal']             = array('version'          => 'sandbox',         
 $_CONFIG['plans']              = array('silver' => null,
                                        'gold'   => null);
 
+//domain
+$_CONFIG['protocol']           = 'http://';                                                                 // The base protocol of this website. Basically either "http://",  or "https://".
+
 // The URL root of the website
 $_CONFIG['root']               = '';
 
@@ -241,7 +244,9 @@ $_CONFIG['security']           = array('signin'           => array('save_passwor
                                        'group'            => 'apache');                                     //
 
 // Sessions
-$_CONFIG['sessions']           = array('extended'         => array('age'           => 2592000,              //
+$_CONFIG['sessions']           = array('shared_memory'    => false,                                         // Store session data in shared memory, very useful for security on shared servers!
+
+                                       'extended'         => array('age'           => 2592000,              //
                                                                    'clear'         => true),                //
 
                                        'signin'           => array('force'         => false,                //

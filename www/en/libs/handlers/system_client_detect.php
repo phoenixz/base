@@ -50,7 +50,7 @@ try{
                         $ua = get_browser(null, true);
 
                     }catch(Exception $e){
-                        log_error('client_detect(): Failed', $e);
+                        log_error($e);
                     }
 
                 }

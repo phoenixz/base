@@ -855,12 +855,12 @@ function password($password, $algorithm = 'sha1'){
  * Return complete domain with HTTP and all
  */
 // :MOVE: Move this function to the html library
-function domain($current_url = false, $protocol = 'http://'){
+function domain($current_url = false, $protocol = null){
     global $_CONFIG;
 
     try{
         if(!$protocol){
-            $protocol = '';
+            $protocol = $_CONFIG['protocol'];
         }
 
         if(!$current_url){
@@ -884,12 +884,12 @@ function domain($current_url = false, $protocol = 'http://'){
  * Return complete current domain with HTTP and all
  */
 // :MOVE: Move this function to the html library
-function current_domain($current_url = false, $protocol = 'http://'){
-    try{
-        global $_CONFIG;
+function current_domain($current_url = false, $protocol = null){
+    global $_CONFIG;
 
+    try{
         if(!$protocol){
-            $protocol = '';
+            $protocol = $_CONFIG['protocol'];
         }
 
         if(empty($_SERVER['SERVER_NAME'])){
