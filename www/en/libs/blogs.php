@@ -179,7 +179,7 @@ function blogs_categories_select($params) {
         array_default($params, 'selected'    , 0);
         array_default($params, 'class'       , '');
         array_default($params, 'disabled'    , false);
-        array_default($params, 'name'        , 'category');
+        array_default($params, 'name'        , 'seocategory');
         array_default($params, 'column'      , '`blogs_categories`.`seoname`');
         array_default($params, 'none'        , tr('Select a category'));
         array_default($params, 'option_class', '');
@@ -385,10 +385,10 @@ function blogs_validate_post($post, $params = null){
         array_default($params, 'object_name', 'blog posts');
 
         // Validate input
-        $v = new validate_form($post, 'name,category,body,keywords,description,language,group,priority,urlref,status');
+        $v = new validate_form($post, 'name,seocategory,body,keywords,description,language,group,priority,urlref,status');
 
-        $v->is_checked   ($post['name']       , tr('Please provide the name of your %objectname%', '%objectname%', $params['object_name']));
-        $v->is_not_empty ($post['category']   , tr('Please provide a category for your %objectname%', '%objectname%', $params['object_name']));
+        $v->is_checked   ($post['name']       , tr('Please provide the name of your %objectname%'     , '%objectname%', $params['object_name']));
+        $v->is_not_empty ($post['seocategory'], tr('Please provide a category for your %objectname%'  , '%objectname%', $params['object_name']));
         $v->is_not_empty ($post['body']       , tr('Please provide the body text of your %objectname%', '%objectname%', $params['object_name']));
 
         $v->has_min_chars($post['name']       ,                  4, tr('Please ensure that the name has a minimum of 4 characters'));
