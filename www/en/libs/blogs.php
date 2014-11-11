@@ -10,6 +10,10 @@
 
 
 
+load_config('blogs');
+
+
+
 /*
  * List available blogs
  */
@@ -450,6 +454,8 @@ function blogs_validate_post($post, $params = null){
  * Process uploaded club photo
  */
 function blogs_photos_upload($files, $post){
+    global $_CONFIG;
+
     try{
         load_libs('file,image,upload');
 
@@ -492,8 +498,13 @@ function blogs_photos_upload($files, $post){
         $file  = $files;
         $photo = $post['blog_name'].'/'.file_assign_target_clean(ROOT.'www/photos/'.$post['blog_name'].'/', '_small.jpg', false, 4);
 
-        image_convert($file['tmp_name'][0], ROOT.'www/photos/'.$photo.'_small.jpg', 219, 130, 'thumb');
-        image_convert($file['tmp_name'][0], ROOT.'www/photos/'.$photo.'_big.jpg'  , 640, 480, 'resize');
+        if(!empty($_CONFIG['blog']['images']['resize']['thumbs']['x']) or !empty($_CONFIG['blog']['images']['resize']['thumbs']['y'])){
+            image_convert($file['tmp_name'][0], ROOT.'www/photos/'.$photo.'_small.jpg', $_CONFIG['blog']['images']['resize']['thumbs']['x'], $_CONFIG['blog']['images']['resize']['thumbs']['y'], 'thumb');
+        }
+
+        if(!empty($_CONFIG['blog']['images']['resize']['images']['x']) or !empty($_CONFIG['blog']['images']['resize']['images']['y'])){
+            image_convert($file['tmp_name'][0], ROOT.'www/photos/'.$photo.'_big.jpg'  , $_CONFIG['blog']['images']['resize']['images']['x'], $_CONFIG['blog']['images']['resize']['images']['y'], 'resize');
+        }
 
         $res  = sql_query('INSERT INTO `blogs_photos` (`createdby`, `blogs_posts_id`, `file`)
                            VALUES                     (:createdby , :blogs_posts_id , :file )',

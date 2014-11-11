@@ -4,7 +4,7 @@ include_once(dirname(__FILE__).'/../../../libs/startup.php');
 try{
     load_libs('admin,json,file,upload');
 
-    $user = right_or_redirect('admin', '/signin.php', 'json');
+    $user = right_or_redirect('admin', '/admin/signin.php', 'json');
 
     if(empty($_POST['id'])){
         throw new bException('ajax/blog/photos/delete: No photo specified', 'notspecified');
