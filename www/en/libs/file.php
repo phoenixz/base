@@ -1059,6 +1059,10 @@ function file_get_local($file){
                 throw new bException('file_get_local(): Specified file "'.str_log($file).'" does not exist');
             }
 
+            if(is_uploaded_file($file)){
+                $file = file_get_uploaded($file);
+            }
+
             return $file;
         }
 

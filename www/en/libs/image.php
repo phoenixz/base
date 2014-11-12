@@ -51,7 +51,7 @@ function image_convert($source, $destination, $x, $y, $type, $params = array()) 
          * Validations
          */
         if(file_exists($destination)){
-            throw new bException('image_convert(): Destination file "'.$destination.'" already exists');
+            throw new bException('image_convert(): Destination file "'.str_log($destination).'" already exists');
         }
 
         /*

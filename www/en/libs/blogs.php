@@ -496,16 +496,26 @@ function blogs_photos_upload($files, $post){
          *
          */
         $file  = $files;
+        $file  = file_get_local($file['tmp_name'][0]);
         $photo = $post['blog_name'].'/'.file_assign_target_clean(ROOT.'www/photos/'.$post['blog_name'].'/', '_small.jpg', false, 4);
 
-        if(!empty($_CONFIG['blog']['images']['resize']['thumbs']['x']) or !empty($_CONFIG['blog']['images']['resize']['thumbs']['y'])){
-            image_convert($file['tmp_name'][0], ROOT.'www/photos/'.$photo.'_small.jpg', $_CONFIG['blog']['images']['resize']['thumbs']['x'], $_CONFIG['blog']['images']['resize']['thumbs']['y'], 'thumb');
+        if(!empty($_CONFIG['blogs']['images']['resize']['thumbs']['x']) or !empty($_CONFIG['blogs']['images']['resize']['thumbs']['y'])){
+            image_convert($file, ROOT.'www/photos/'.$photo.'_small.jpg', $_CONFIG['blogs']['images']['resize']['thumbs']['x'], $_CONFIG['blogs']['images']['resize']['thumbs']['y'], 'thumb');
+
+        }else{
+            copy($file, ROOT.'www/photos/'.$photo.'_small.jpg');
         }
 
-        if(!empty($_CONFIG['blog']['images']['resize']['images']['x']) or !empty($_CONFIG['blog']['images']['resize']['images']['y'])){
-            image_convert($file['tmp_name'][0], ROOT.'www/photos/'.$photo.'_big.jpg'  , $_CONFIG['blog']['images']['resize']['images']['x'], $_CONFIG['blog']['images']['resize']['images']['y'], 'resize');
+        if(!empty($_CONFIG['blogs']['images']['resize']['images']['x']) or !empty($_CONFIG['blogs']['images']['resize']['images']['y'])){
+            image_convert($file, ROOT.'www/photos/'.$photo.'_big.jpg'  , $_CONFIG['blogs']['images']['resize']['images']['x'], $_CONFIG['blogs']['images']['resize']['images']['y'], 'resize');
+
+        }else{
+            copy($file, ROOT.'www/photos/'.$photo.'_big.jpg');
         }
 
+        /*
+         *
+         */
         $res  = sql_query('INSERT INTO `blogs_photos` (`createdby`, `blogs_posts_id`, `file`)
                            VALUES                     (:createdby , :blogs_posts_id , :file )',
 
