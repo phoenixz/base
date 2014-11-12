@@ -1,4 +1,4 @@
-gg<?php
+<?php
 /*
  * Basic BASE configuration file. DO NOT MODIFY THIS FILE! This file contains default values
  * that may be overwritten when you perform a system update!
@@ -8,9 +8,6 @@ gg<?php
  * @license http://opensource.org/licenses/GPL-2.0 GNU Public License, Version 2
  * @copyright Sven Oostenbrink <support@svenoostenbrink.com>, Johan Geuze
  */
-
-
-// Blog configuration
 $_CONFIG['blogs']               = array('enabled'         => false,
 
                                         'images'          => array('resize'         => array('thumbs'        => array('x' => false,
@@ -19,6 +16,4 @@ $_CONFIG['blogs']               = array('enabled'         => false,
                                                                                              'images'        => array('x' => false,
                                                                                                                       'y' => false)),
                                         'url'             => '/%category%/%date%/%seoname%.html');
-
-                                        $_CONFIG['blog']['images']['resize']['thumb']['x']
 ?>
