@@ -370,7 +370,7 @@ function debug_value($format, $size = null){
             return 'aaaaaaaa';
 
         case 'checked':
-            if($type){
+            if($size){
                 return ' checked ';
             }
 
