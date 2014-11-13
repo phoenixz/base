@@ -118,7 +118,8 @@ function blogs_post_url($post, $current_domain = true){
                           'createdon',
                           'blog',
                           'seoname',
-                          'category');
+                          'category',
+                          'seocategory');
 
         foreach($sections as $section){
             switch($section){
