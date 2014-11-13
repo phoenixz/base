@@ -16,7 +16,7 @@ try{
                            `createdon`,
                            `modifiedon`,
                            `createdby`,
-                           `category`
+                           `category`,
                            `seocategory`
 
                     FROM   `blogs_posts`');
