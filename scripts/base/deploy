@@ -61,7 +61,7 @@
 $usage = "./scripts/base/deploy SUBENVIRONMENT / all\n".
          "./scripts/base/deploy\n";
 
-$help  = "The deploy script can deploy the project to the production server";
+$help  = "The deploy script can deploy the project to target environments, like trial, production, etc";
 
 require_once(dirname(__FILE__).'/../../libs/startup.php');
 
@@ -94,7 +94,7 @@ try{
     $nopush      =  (argument('nopush')     or ($noversion and $notag));
 
     $message     =   argument('message'    , true);
-    $targets     =   argument('target'     , true, argument('targets', true, argument('all', false, 'production')));
+    $targets     =   argument('target'     , true, argument('targets', true, argument('all', false)));
 
     if(!$message and !$notag){
         throw new bException('No tag message specified! please use ./scripts/base/deploy ..... message "commit message"', 'notspecified');
@@ -132,6 +132,10 @@ try{
 
     }else{
         $targets = array($targets);
+    }
+
+    if(!$targets){
+        throw new bException('No deployment targets specified', 'notspecified');
     }
 
     foreach($targets as $target_environment){
