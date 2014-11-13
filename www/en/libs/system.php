@@ -213,7 +213,7 @@ function isset_get(&$variable, $return = null, $altreturn = null){
 /*
  * Redirect
  */
-function redirect($target = '', $clear_session_redirect = true){
+function redirect($target = '', $clear_session_redirect = true, $http_code = 302){
     return include(dirname(__FILE__).'/handlers/system_redirect.php');
 }
 

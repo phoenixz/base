@@ -10,6 +10,36 @@ try{
         $target = $_CONFIG['redirects']['index'];
     }
 
+    if(is_numeric($clear_session_redirect)){
+        $http_code              = $clear_session_redirect;
+        $clear_session_redirect = true;
+    }
+
+    /*
+     * Validate the specified http_code, must be one of
+     *
+     * 301 Moved Permanently
+     * 302 Found
+     * 303 See Other
+     * 307 Temporary Redirect
+     */
+    switch($http_code){
+        case 301:
+            // FALLTHROUGH
+        case 302:
+            // FALLTHROUGH
+        case 303:
+            // FALLTHROUGH
+        case 307:
+            /*
+             * All valid
+             */
+            break;
+
+        default:
+            throw new bException('redirect(): Invalid HTTP code "'.str_log($http_code).'" specified', 'invalid_http_code');
+    }
+
     if($target == 'self'){
         /*
          * Special redirect. Redirect to this very page. Usefull for right after POST requests to avoid "confirm post submissions"
@@ -26,7 +56,7 @@ try{
         $target = $_CONFIG['root'].$target;
     }
 
-    header("Location:".$target);
+    header("Location:".$target, true, $http_code);
     die();
 
 }catch(Exception $e){
