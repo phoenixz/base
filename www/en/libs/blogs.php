@@ -113,6 +113,7 @@ function blogs_post_url($post, $current_domain = true){
 
     try{
         $url      = $_CONFIG['blogs']['url'];
+
         $sections = array('time',
                           'date',
                           'createdon',
@@ -121,6 +122,7 @@ function blogs_post_url($post, $current_domain = true){
                           'category',
                           'seocategory');
 
+// :TODO: Check if $post contains the variables that are configured! If not, at least notify!!!!
         foreach($sections as $section){
             switch($section){
                 case 'date':
