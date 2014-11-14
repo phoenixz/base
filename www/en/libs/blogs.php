@@ -278,14 +278,16 @@ function blogs_update_key_value_store($blogs_posts_id, $post, $data){
         load_libs('seo');
 
         foreach($post['key_value'] as $key => $value){
-            sql_query('INSERT INTO `blogs_key_values` (`blogs_posts_id`, `key`, `value`)
-                       VALUES                         (:blogs_posts_id , :key , :value )
+            sql_query('INSERT INTO `blogs_key_values` (`blogs_posts_id`, `key`, `value`, `seovalue`)
+                       VALUES                         (:blogs_posts_id , :key , :value , :seovalue )
 
-                       ON DUPLICATE KEY UPDATE `value` = :value',
+                       ON DUPLICATE KEY UPDATE `value`    = :value,
+                                               `seovalue` = :seovalue',
 
                        array(':blogs_posts_id' => $blogs_posts_id,
                              ':key'            => $key,
-                             ':value'          => $value));
+                             ':value'          => $value,
+                             ':seovalue'       => seo_create_string($value)));
         }
 
     }catch(Exception $e){
