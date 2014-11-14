@@ -164,20 +164,21 @@ function debug_html_row($value, $key = 'Unknown', $type = null){
             case 'string':
                 if(is_numeric($value)){
                     $type = 'numeric';
+
+                    if(is_integer($value)){
+                        $type .= ' (integer)';
+
+                    }elseif(is_float($value)){
+                        $type .= ' (float)';
+
+                    }elseif(is_string($value)){
+                        $type .= ' (string)';
+
+                    }else{
+                        $type .= ' (unknown)';
+                    }
                 }
 
-                if(is_integer($value)){
-                    $type .= ' (integer)';
-
-                }elseif(is_float($value)){
-                    $type .= ' (float)';
-
-                }elseif(is_string($value)){
-                    $type .= ' (string)';
-
-                }else{
-                    $type .= ' (unknown)';
-                }
                 //FALLTHROUGH
 
             case 'integer':

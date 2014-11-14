@@ -198,7 +198,7 @@ function array_implode_with_keys($source, $row_separator, $key_separator = ':', 
 
 
 /*
- * Implode the array with keys
+ *
  */
 function array_merge_complete(){
     try{
@@ -662,5 +662,33 @@ function array_max($source, $max = 20){
     }
 
     return $source;
+}
+
+
+
+/*
+ *
+ */
+function array_value_to_keys($source){
+    try{
+        if(!is_array($source)){
+            throw new bException('array_value_to_keys(): Specified source is not an array');
+        }
+
+        $retval = array();
+
+        foreach($source as $value){
+            if(!is_scalar($value)){
+                throw new bException('array_value_to_keys(): Specified source array contains non scalar values, cannot use non scalar values for the keys');
+            }
+
+            $retval[$value] = $value;
+        }
+
+        return $retval;
+
+    }catch(Exception $e){
+        throw new bException('array_value_to_keys(): Failed', $e);
+    }
 }
 ?>
