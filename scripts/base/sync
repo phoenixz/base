@@ -86,7 +86,7 @@ try{
 
     }else{
         log_console('Creating SQL dump file on remote server...', 'sync', 'white');
-        passthru($command = 'ssh -t '.$source_config['deploy'][$environment]['target_user'].'@'.$source_config['deploy'][$environment]['target_server'].' \'mysqldump -u '.$source_config['db']['user'].' -p'.$source_config['db']['pass'].' -B '.$source_config['db']['db'].' | gzip > /tmp/'.$project.'_'.$source_config['db']['db'].'.sql.gz\'');
+        passthru($command = 'ssh -p '.$source_config['deploy'][$environment]['target_port'].' -t '.$source_config['deploy'][$environment]['target_user'].'@'.$source_config['deploy'][$environment]['target_server'].' \'mysqldump -u '.$source_config['db']['user'].' -p'.$source_config['db']['pass'].' -B '.$source_config['db']['db'].' | gzip > /tmp/'.$project.'_'.$source_config['db']['db'].'.sql.gz\'');
     }
 
 
@@ -98,7 +98,7 @@ try{
 
     }else{
         log_console('Copying remote SQL file locally...', 'sync', 'white');
-        passthru($command = 'scp '.$source_config['deploy'][$environment]['target_user'].'@'.$source_config['deploy'][$environment]['target_server'].':/tmp/'.$project.'_'.$source_config['db']['db'].'.sql.gz /tmp/'.$project.'_'.$source_config['db']['db'].'.sql.gz');
+        passthru($command = 'scp -P '.$source_config['deploy'][$environment]['target_port'].' '.$source_config['deploy'][$environment]['target_user'].'@'.$source_config['deploy'][$environment]['target_server'].':/tmp/'.$project.'_'.$source_config['db']['db'].'.sql.gz /tmp/'.$project.'_'.$source_config['db']['db'].'.sql.gz');
     }
 
 
@@ -122,7 +122,7 @@ try{
 
     }else{
         log_console('Removing temporary remote SQL dump file from local and remote server...', 'sync', 'white');
-        passthru($command = 'ssh -t '.$source_config['deploy'][$environment]['target_user'].'@'.$source_config['deploy'][$environment]['target_server'].' \'rm -f /tmp/'.$project.'_'.$source_config['db']['db'].'.sql.gz\'');
+        passthru($command = 'ssh -p '.$source_config['deploy'][$environment]['target_port'].' -t '.$source_config['deploy'][$environment]['target_user'].'@'.$source_config['deploy'][$environment]['target_server'].' \'rm -f /tmp/'.$project.'_'.$source_config['db']['db'].'.sql.gz\'');
         passthru($command = 'rm -f /tmp/'.$project.'_'.$source_config['db']['db'].'.sql.gz');
     }
 
@@ -144,7 +144,7 @@ try{
                 passthru($command = 'rm '.ROOT.$path.' -rf');
             }
 
-            passthru($command = 'rsync -acz --progress -p '.$source_config['deploy'][$environment]['target_user'].'@'.$source_config['deploy'][$environment]['target_server'].':'.slash($source_config['deploy'][$environment]['target_dir']).$path.'/ '.ROOT.$path);
+            passthru($command = 'rsync -acz --progress -p -e "ssh -p '.$source_config['deploy'][$environment]['target_port'].'" '.$source_config['deploy'][$environment]['target_user'].'@'.$source_config['deploy'][$environment]['target_server'].':'.slash($source_config['deploy'][$environment]['target_dir']).$path.'/ '.ROOT.$path.' --exclude="*.php" --exclude="/scripts/*" ');
         }
     }
 
