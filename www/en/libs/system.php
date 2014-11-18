@@ -703,6 +703,8 @@ function load_config($files){
         $files = array_force($files);
 
         foreach($files as $file){
+            $included = false;
+
             /*
              * Include first the default configuration file, if available, then
              * production configuration file, and then, if available, the
@@ -714,12 +716,20 @@ function load_config($files){
                 include($path);
             }
 
-            include(ROOT.'config/production_'.$file.'.php');
+            $path = ROOT.'config/production_'.$file.'.php';
+
+            if(file_exists($path)){
+                include($path);
+            }
 
             $path = ROOT.'config/'.ENVIRONMENT.'_'.$file.'.php';
 
             if(file_exists($path)){
                 include($path);
+            }
+
+            if(!$included){
+                throw new bException('load_config(): Specified configuration file "'.str_log($file).'" was not found', 'configuration_not_found');
             }
         }
 
