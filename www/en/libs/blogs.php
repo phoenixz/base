@@ -396,34 +396,35 @@ function blogs_validate_post($post, $params = null){
         // Validate input
         $v = new validate_form($post, 'name,seocategory,body,keywords,description,language,group,priority,urlref,status');
 
-        $v->is_checked   ($post['name']       , tr('Please provide the name of your %objectname%'     , '%objectname%', $params['object_name']));
-        $v->is_not_empty ($post['seocategory'], tr('Please provide a category for your %objectname%'  , '%objectname%', $params['object_name']));
-        $v->is_not_empty ($post['body']       , tr('Please provide the body text of your %objectname%', '%objectname%', $params['object_name']));
+        $v->isChecked   ($post['name']      , tr('Please provide the name of your %objectname%'     , '%objectname%', $params['object_name']));
+        $v->isNotEmpty ($post['seocategory'], tr('Please provide a category for your %objectname%'  , '%objectname%', $params['object_name']));
+        $v->isNotEmpty ($post['body']       , tr('Please provide the body text of your %objectname%', '%objectname%', $params['object_name']));
 
-        $v->has_min_chars($post['name']       ,                  4, tr('Please ensure that the name has a minimum of 4 characters'));
-        $v->has_min_chars($post['body']       , $params['bodymin'], tr('Please ensure that the body text has a minimum of '.$params['bodymin'].' characters'));
+        $v->hasMinChars($post['name']       ,                  4, tr('Please ensure that the name has a minimum of 4 characters'));
+        $v->hasMinChars($post['body']       , $params['bodymin'], tr('Please ensure that the body text has a minimum of '.$params['bodymin'].' characters'));
 
         if(!empty($params['use_groups'])){
-            $v->is_not_empty ($post['group'], tr('Please provide a group for your %objectname%', '%objectname%', $params['object_name']));
+            $v->isNotEmpty ($post['group'], tr('Please provide a group for your %objectname%', '%objectname%', $params['object_name']));
         }
 
         if(!empty($params['use_language'])){
-            $v->is_not_empty($post['language'], tr('Please select a language for your %objectname%', '%objectname%', $params['object_name']));
-            $v->hasChars($post['keywords'], 2, tr('Please provide a valid language'));
+            $v->isNotEmpty($post['language'],    tr('Please select a language for your %objectname%', '%objectname%', $params['object_name']));
+            $v->hasChars($post['keywords']  , 2, tr('Please provide a valid language'));
         }
 
         if($params['use_priorities']){
-            $v->is_not_empty ($post['priority'], tr('Please provide a priority for your %objectname%', '%objectname%', $params['object_name']));
+            $v->isNotEmpty ($post['priority'], tr('Please provide a priority for your %objectname%', '%objectname%', $params['object_name']));
         }
 
         if(!empty($params['use_keywords'])){
-            $v->has_min_chars($post['keywords'], 2, tr('Please ensure that the keywords have a minimum of 2 characters'));
-            $v->is_not_empty ($post['keywords'],     tr('Please provide keywords for your %objectname%', '%objectname%', $params['object_name']));
+            $v->hasMinChars($post['keywords'], 2, tr('Please ensure that the keywords have a minimum of 2 characters'));
+            $v->isNotEmpty ($post['keywords'],    tr('Please provide keywords for your %objectname%', '%objectname%', $params['object_name']));
         }
 
         if(!empty($params['use_description'])){
-            $v->is_not_empty ($post['description'],      tr('Please provide a description for your %objectname%', '%objectname%', $params['object_name']));
-            $v->has_min_chars($post['description'],  16, tr('Please ensure that the body text has a minimum of 16 characters'));
+            $v->isNotEmpty ($post['description'],       tr('Please provide a description for your %objectname%', '%objectname%', $params['object_name']));
+            $v->hasMinChars($post['description'],   16, tr('Please ensure that the description has a minimum of 16 characters'));
+            $v->hasMaxChars($post['description'],  160, tr('Please ensure that the description has a maximum of 160 characters'));
         }
 
         if(!empty($params['use_status'])){
@@ -435,7 +436,7 @@ function blogs_validate_post($post, $params = null){
             $post['status'] = null;
         }
 
-        if(!$v->is_valid()) {
+        if(!$v->isValid()) {
            throw new bException(str_force($v->get_errors(), ', '), 'validation');
         }
 
