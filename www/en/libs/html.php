@@ -453,7 +453,7 @@ function html_header($params = null, $meta = array()){
         }
 
         if(!empty($params['css'])){
-            html_load_js($params['css']);
+            html_load_css($params['css']);
         }
 
         if(empty($params['meta']['description'])){
