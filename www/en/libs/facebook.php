@@ -13,7 +13,136 @@
 /*
  *
  */
-load_libs('ext/facebook');
+// :TEST: Are both ext/facebook,ext/fb needed? or only one?
+load_libs('ext/facebook,ext/fb');
+
+use Facebook\HttpClients\FacebookHttpable;
+use Facebook\HttpClients\FacebookCurl;
+use Facebook\HttpClients\FacebookCurlHttpClient;
+
+use Facebook\Entities\AccessToken;
+use Facebook\FacebookSession;
+use Facebook\FacebookRedirectLoginHelper;
+use Facebook\FacebookRequest;
+use Facebook\FacebookResponse;
+use Facebook\FacebookSDKException;
+use Facebook\FacebookRequestException;
+use Facebook\GraphUser;
+use Facebook\FacebookOtherException;
+use Facebook\FacebookAuthorizationException;
+use Facebook\GraphObject;
+use Facebook\GraphSessionInfo;
+
+
+
+/*
+ *
+ */
+function facebook_post_message($msg, $token) {
+    global $_CONFIG;
+
+    try{
+        $app_id     = $_CONFIG['sso']['facebook']['appid'];
+        $app_secret = $_CONFIG['sso']['facebook']['secret'];
+
+        FacebookSession::setDefaultApplication($app_id, $app_secret);
+
+        $message  = array ('message' => $msg,
+                           'link'    => domain('/'));
+
+        $session  = new FacebookSession($token);
+        $request  = new FacebookRequest($session, 'POST', '/me/feed', $message);
+        $response = $request->execute()->getGraphObject()->asArray();
+
+        return $response;
+
+    }catch(Exception $e){
+        throw new bException('facebook_post_message(): Failed', $e);
+    }
+}
+
+
+
+/*
+ *
+ */
+function facebook_redirect_to_authorize($return = false) {
+    global $_CONFIG;
+
+    try{
+        $app_id     = $_CONFIG['sso']['facebook']['appid'];
+        $app_secret = $_CONFIG['sso']['facebook']['secret'];
+        $scope      = $_CONFIG['sso']['facebook']['scope'];
+        $redirect   = $_CONFIG['sso']['facebook']['redirect'];
+
+        FacebookSession::setDefaultApplication($app_id, $app_secret);
+        $helper = new FacebookRedirectLoginHelper($redirect);
+
+        if($return){
+            return $helper->getLoginUrl($scope);
+        }
+
+        redirect($helper->getLoginUrl($scope));
+
+    }catch(Exception $e){
+        throw new bException('facebook_redirect_to_authorize(): Failed', $e);
+    }
+}
+
+
+
+/*
+ *
+ */
+function facebook_get_user_token() {
+    global $_CONFIG;
+
+    try{
+        $app_id     = $_CONFIG['sso']['facebook']['appid'];
+        $app_secret = $_CONFIG['sso']['facebook']['secret'];
+        $redirect   = $_CONFIG['sso']['facebook']['redirect'];
+
+        FacebookSession::setDefaultApplication($app_id, $app_secret);
+
+        $helper  = new FacebookRedirectLoginHelper($redirect);
+        $session = $helper->getSessionFromRedirect();
+
+        if($session){
+            return $session->getToken();
+        }
+
+    }catch(FacebookRequestException $e) {
+        throw new bException('facebook_get_user_token(): Failed with FacebookRequestException', $e);
+
+    }catch(\Exception $e) {
+        throw new bException('facebook_get_user_token(): Failed', $e);
+    }
+}
+
+
+
+/*
+ *
+ */
+function facebook_user_info($token) {
+    global $_CONFIG;
+
+    try{
+        $app_id     = $_CONFIG['sso']['facebook']['appid'];
+        $app_secret = $_CONFIG['sso']['facebook']['secret'];
+
+        FacebookSession::setDefaultApplication($app_id, $app_secret);
+
+        $session  = new FacebookSession($token);
+        $request  = new FacebookRequest($session, 'GET', '/me');
+        $response = $request->execute()->getGraphObject(GraphUser::className());
+
+        return $response;
+
+    }catch(Exception $e){
+        throw new bException('facebook_user_info(): Failed', $e);
+    }
+}
 
 
 
@@ -33,10 +162,10 @@ function facebook_signin(){
 		$fbuser   = $facebook->getUser();
 
 		if($fbuser) {
-			$fb_data = $facebook->api('/me');
+			$fb_data          = $facebook->api('/me');
 
 			//access token!
-			$access_token = $facebook->getAccessToken();
+			$access_token     = $facebook->getAccessToken();
 
 			//store for later use
 			$fb_data['token'] = $access_token;
