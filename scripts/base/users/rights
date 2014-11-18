@@ -7,7 +7,7 @@ $quiet = true;
 require_once(dirname(__FILE__).'/../../../libs/startup.php');
 
 try{
-    $user = right_or_redirect('admin');
+    $user = right_or_redirect('admin,rights');
 
     load_libs('user,rights');
 
@@ -172,7 +172,11 @@ try{
         case 'create':
             try{
                 if(!argument(1)){
-                    throw new bException('No right name specified', 'notspecified');
+                    throw new bException('No rights name specified', 'notspecified');
+                }
+
+                if(!argument(2)){
+                    throw new bException('No rights description specified', 'notspecified');
                 }
 
                 if(sql_get('SELECT `id` FROM `rights` WHERE `name` = :name', array(':name' => argument(1)))){
