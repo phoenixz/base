@@ -448,6 +448,14 @@ function html_header($params = null, $meta = array()){
         array_default($params, 'extra'  , '');
         array_default($params, 'favicon', true);
 
+        if(!empty($params['js'])){
+            html_load_js($params['js']);
+        }
+
+        if(!empty($params['css'])){
+            html_load_js($params['css']);
+        }
+
         if(empty($params['meta']['description'])){
             throw new bException('html_header(): No header meta description specified (SEO!)');
         }
