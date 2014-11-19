@@ -59,6 +59,7 @@ try{
     $noimport        = argument('noimport');
     $nodelete        = argument('nodelete');
     $nosync          = argument('nosync');
+    $noinit          = argument('noinit');
     $deletesync      = (argument('deletesync') or argument('syncdelete'));
     $environment     = $argv[0];
     $sub_environment = isset_get($argv[1]);
@@ -146,6 +147,14 @@ try{
 
             passthru($command = 'rsync -acz --progress -p -e "ssh -p '.$source_config['deploy'][$environment]['target_port'].'" '.$source_config['deploy'][$environment]['target_user'].'@'.$source_config['deploy'][$environment]['target_server'].':'.slash($source_config['deploy'][$environment]['target_dir']).$path.'/ '.ROOT.$path.' --exclude="*.php" --exclude="*.css" --exclude="*.js" --exclude="/scripts/*" ');
         }
+    }
+
+    if($noinit){
+        log_console('NOT running init due to "nonoinit" command line parameters', 'sync', 'yellow');
+
+    }else{
+        log_console('Executing init script to ensure that database will be up to date', 'sync', 'white');
+        script_exec('base/init');
     }
 
     log_console('Finished!', 'sync', 'green');
