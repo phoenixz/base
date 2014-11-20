@@ -713,18 +713,21 @@ function load_config($files){
             $path = ROOT.'config/base/'.$file.'.php';
 
             if(file_exists($path)){
+                $included = true;
                 include($path);
             }
 
             $path = ROOT.'config/production_'.$file.'.php';
 
             if(file_exists($path)){
+                $included = true;
                 include($path);
             }
 
             $path = ROOT.'config/'.ENVIRONMENT.'_'.$file.'.php';
 
             if(file_exists($path)){
+                $included = true;
                 include($path);
             }
 
