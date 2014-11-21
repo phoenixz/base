@@ -805,7 +805,7 @@ function blogs_update_urls($blogs = null, $category = null){
             /*
              * Walk over all posts in the selected filter, and update the URL's
              */
-            $r = sql_query(debug_sql($query, $execute));
+            $r = sql_query($query, $execute);
 
             while($post = sql_fetch($r)){
                 $post['url_template'] = $blog['url_template'];
