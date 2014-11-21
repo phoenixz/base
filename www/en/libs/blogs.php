@@ -681,7 +681,10 @@ function blogs_post_url($post, $current_domain = true){
                           'category',
                           'seocategory');
 
-// :TODO: Check if $post contains the variables that are configured! If not, at least notify!!!!
+        if(empty($post['blog'])){
+            $post['blog'] = sql_get('SELECT `seoname` FROM `blogs` WHERE `id` = :id', array(':id' => $post['blogs_id']), 'seoname');
+        }
+
         foreach($sections as $section){
             switch($section){
                 case 'date':
@@ -710,9 +713,27 @@ function blogs_post_url($post, $current_domain = true){
 
 /*
  * Update the URL's for blog posts
+ * Can update all posts, all posts for multiple blogs, or all posts within one category within one blog
  */
 function blogs_update_urls($blogs = null, $category = null){
     try{
+        if($category){
+            /*
+             * Only update for a specific category
+             * Ensure that the category exists. If no blog was specified, then get the blog from the specified category
+             */
+            if(is_numeric($category)){
+                $category = sql_get('SELECT `id`, `blogs_id`, `name` FROM `blogs_categories` WHERE `id`      = :id'     , array(':id'     => $category));
+
+            }else{
+                $category = sql_get('SELECT `id`, `blogs_id`, `name` FROM `blogs_categories` WHERE `seoname` = :seoname', array(':seoname'=> $category));
+            }
+
+            if(!$blogs){
+                $blogs = $category['blogs_id'];
+            }
+        }
+
         if(!$blogs){
             /*
              * No specific blog was specified? process the posts for all blogs
@@ -726,15 +747,6 @@ function blogs_update_urls($blogs = null, $category = null){
             }
 
             return;
-        }
-
-        if($category){
-            /*
-             * Only update for a specific category
-             */
-            if(!is_numeric($category)){
-                $category = sql_get('SELECT `id` FROM `blogs_categories` WHERE `seoname` = :seoname', array(':seoname'=> $category));
-            }
         }
 
         foreach(array_force($blogs) as $blogname){
@@ -778,15 +790,22 @@ function blogs_update_urls($blogs = null, $category = null){
             if($category){
                 /*
                  * Add category filter
+                 * Since categories are limited to specific blogs, ensure
+                 * that this category is available within the blog
                  */
+                if($category['blogs_id'] != $blog['id']){
+                    log_console('blogs_update_urls(): The category "'.str_log($category['name']).'" does not exist for the blog "'.str_log($blog['name']).'", skipping', 'skip', 'yellow');
+                    continue;
+                }
+
                 $query                    .= ' AND `categories_id` = :categories_id';
-                $execute[':categories_id'] = $category;
+                $execute[':categories_id'] = $category['id'];
             }
 
             /*
              * Walk over all posts in the selected filter, and update the URL's
              */
-            $r = sql_query($query, $execute);
+            $r = sql_query(debug_sql($query, $execute));
 
             while($post = sql_fetch($r)){
                 $post['url_template'] = $blog['url_template'];
