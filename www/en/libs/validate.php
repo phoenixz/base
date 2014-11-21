@@ -81,7 +81,9 @@ class validate_jquery {
                 $params = array('id' => $params);
             }
 
-            $html = '$("'.str_starts($params['id'], '#').'").validate({
+            $params['id'] = str_starts($params['id'], '#');
+
+            $html = 'validator = $("'.$params['id'].'").validate({
                 rules: {';
                 $kom = '';
 
@@ -130,36 +132,46 @@ class validate_jquery {
                 $html .= '}';
 
                 if(!empty($params['submithandler'])){
-                    if(!empty($params['submithandler'])){
+                    if(!empty($params['quickhandler'])){
                         throw new bException('validateJquery->output_validation(): Both submithandler and quickhandler are specified, these handlers are mutually exclusive');
                     }
 
                     $html .= ",\n".'submitHandler : function(form){'.$params['submithandler'].'}';
-                }
 
-                if(!empty($params['quickhandler'])){
+                }elseif(!empty($params['quickhandler'])){
                     if(!is_array($params['quickhandler'])){
                         throw new bException('validateJquery->output_validation(): Invalid quickhandler specified, it should be an assoc array');
                     }
 
                     $handler = $params['quickhandler'];
 
-                    foreach(array('target', 'fail') as $key){
-                        if(empty($handler[$key])){
-                            throw new bException('validateJquery->output_validation(): No quickhandler key "'.$key.'" specified');
-                        }
-                    }
+// :DELETE: These checks are no longer necesary since now we have default values
+                    //foreach(array('target', 'fail') as $key){
+                    //    if(empty($handler[$key])){
+                    //        throw new bException('validateJquery->output_validation(): No quickhandler key "'.$key.'" specified');
+                    //    }
+                    //}
 
-                    array_default($handler, 'done', '');
-                    array_default($handler, 'json', true);
+                    array_default($handler, 'done'  , '');
+                    array_default($handler, 'json'  , true);
+                    array_default($handler, 'fail'  , '$.handleFail(e, cbe)');
+                    array_default($handler, 'target', "$(".$params['id'].").prop('action')");
 
                     $html .= ",\nsubmitHandler : function(form){\$.post(\"".$handler['target']."\", $(form).serialize())
                             .done(function(data)   { $.handleDone(data, function(data){".$handler['done']."}, cbe) })
-                            .fail(function(a, b, e){ $.handleFail(e, cbe) });
+                            .fail(function(a, b, e){ ".$handler['fail']." });
                         }\n";
 // :TODO:SVEN:20120709: Remove this crap. Only left here just in case its needed ..
                 //e.stopPropagation();
                 //return false;';
+                }
+
+                if(!empty($params['onsubmit'])){
+                    $html .= ",\nonsubmit : ".$params['onsubmit']."\n";
+                }
+
+                if(!empty($params['invalidhandler'])){
+                    $html .= ",\ninvalidHandler: function(error, validator){".$params['invalidhandler']."}\n";
                 }
 
                 if(!empty($params['errorplacement'])){
@@ -190,7 +202,13 @@ class validate_jquery {
                         );';
             }
 
-            return html_script($html);
+            return html_script('
+                var validator;
+
+                $(document).ready(function(e){
+                    '.$html.'
+                });
+            ', false);
 
         }catch(Exception $e){
             throw new bException('validateJquery->output_validation(): Failed', $e);
@@ -693,6 +711,7 @@ class validate_form {
     /*
      * DEPRECATED, DO NOT USE ALL FOLLOWING METHIDS! Only still available to avoid missing method crashes
      */
+/*
     function get_errors($separator = null){
         return $this->getErrors($separator);
     }
@@ -800,6 +819,6 @@ class validate_form {
     function set_error($msg) {
         return $this->setError($msg);
     }
+*/
 }
-
 ?>

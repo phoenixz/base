@@ -832,9 +832,11 @@ function html_select($params, $selected = null, $name = '', $none = '', $class =
             /*
              * Execute the JS code for an onchange
              */
-            return $retval.html_script('$("#'.$params['id'].'").onsubmit(function(){ '.$params['onchange'].' });');
+            $retval .= html_script('$("#'.$params['id'].'").change(function(){ '.$params['onchange'].' });');
 
-        }elseif(!$params['autosubmit']){
+        }
+
+        if(!$params['autosubmit']){
             /*
              * There is no onchange and no autosubmit
              */
