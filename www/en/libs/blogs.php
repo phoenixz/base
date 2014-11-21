@@ -105,51 +105,6 @@ function blogs_post($blog){
 
 
 /*
- * Generate and return a URL for the specified blog post,
- * based on blog url configuration
- */
-function blogs_post_url($post, $current_domain = true){
-    global $_CONFIG;
-
-    try{
-        $url      = $_CONFIG['blogs']['url'];
-
-        $sections = array('time',
-                          'date',
-                          'createdon',
-                          'blog',
-                          'seoname',
-                          'category',
-                          'seocategory');
-
-// :TODO: Check if $post contains the variables that are configured! If not, at least notify!!!!
-        foreach($sections as $section){
-            switch($section){
-                case 'date':
-                    $post[$section] = str_until(isset_get($post['createdon']), ' ');
-                    break;
-
-                case 'time':
-                    $post[$section] = str_from(isset_get($post['createdon']), ' ');
-            }
-
-            $url = str_replace('%'.$section.'%', isset_get($post[$section]), $url);
-        }
-
-        if($current_domain){
-            return current_domain($url);
-        }
-
-        return domain($url);
-
-    }catch(Exception $e){
-        throw new bException('blogs_url(): Failed', $e);
-    }
-}
-
-
-
-/*
  * Return HTML select list containing all available blogs
  */
 function blogs_select($params, $selected = 0, $name = 'blog', $none = '', $class = '', $option_class = '', $disabled = false) {
@@ -680,6 +635,178 @@ function blogs_validate_category($category, $blog){
 
     }catch(Exception $e){
         throw new bException('blogs_validate_category(): Failed', $e);
+    }
+}
+
+
+
+/*
+ * Generate and return a URL for the specified blog post,
+ * based on blog url configuration
+ */
+function blogs_post_url($post, $current_domain = true){
+    global $_CONFIG;
+
+    try{
+        /*
+         * What URL template to use?
+         */
+        if(empty($post['url_template'])){
+            if(empty($post['blogs_id'])){
+                throw new bException('blogs_post_url(): No URL template or blogs_id specified for post "'.str_log($post).'"', 'not_specified');
+            }
+
+            $post['url_template'] = sql_get('SELECT `url_template` FROM `blogs` WHERE `id` = :id', array(':id' => $post['blogs_id']), 'url_template');
+        }
+
+        if(empty($post['url_template'])){
+            /*
+             * This blog has no URL template configured, so use the default one
+             */
+            $url = $_CONFIG['blogs']['url'];
+
+        }else{
+            $url = $post['url_template'];
+        }
+
+        if(!$url){
+            throw new bException('blogs_post_url(): Unable to find a URL template', 'not_specified');
+        }
+
+        $sections = array('time',
+                          'date',
+                          'createdon',
+                          'blog',
+                          'seoname',
+                          'category',
+                          'seocategory');
+
+// :TODO: Check if $post contains the variables that are configured! If not, at least notify!!!!
+        foreach($sections as $section){
+            switch($section){
+                case 'date':
+                    $post[$section] = str_until(isset_get($post['createdon']), ' ');
+                    break;
+
+                case 'time':
+                    $post[$section] = str_from(isset_get($post['createdon']), ' ');
+            }
+
+            $url = str_replace('%'.$section.'%', isset_get($post[$section]), $url);
+        }
+
+        if($current_domain){
+            return current_domain($url);
+        }
+
+        return domain($url);
+
+    }catch(Exception $e){
+        throw new bException('blogs_post_url(): Failed', $e);
+    }
+}
+
+
+
+/*
+ * Update the URL's for blog posts
+ */
+function blogs_update_urls($blogs = null, $category = null){
+    try{
+        if(!$blogs){
+            /*
+             * No specific blog was specified? process the posts for all blogs
+             */
+            $r = sql_query('SELECT `id` FROM `blogs`');
+
+            log_console('blogs_update_urls(): Updating posts for all blogs', 'blogs_update_urls');
+
+            while($blog = sql_fetch($r)){
+                blogs_update_urls($blog['id'], $category);
+            }
+
+            return;
+        }
+
+        if($category){
+            /*
+             * Only update for a specific category
+             */
+            if(!is_numeric($category)){
+                $category = sql_get('SELECT `id` FROM `blogs_categories` WHERE `seoname` = :seoname', array(':seoname'=> $category));
+            }
+        }
+
+        foreach(array_force($blogs) as $blogname){
+            /*
+             * Get blog data either from ID or seoname
+             */
+            if(is_numeric($blogname)){
+                $blog = sql_get('SELECT `id`, `name`, `seoname`, `url_template` FROM `blogs` WHERE `id`      = :id'     , array(':id'      => $blogname));
+
+            }else{
+                $blog = sql_get('SELECT `id`, `name`, `seoname`, `url_template` FROM `blogs` WHERE `seoname` = :seoname', array(':seoname' => $blogname));
+            }
+
+            if(!$blog){
+                log_console('blogs_update_urls(): Specified blog "'.str_log($blogname).'" does not exist, skipping', 'skip', 'yellow');
+                continue;
+            }
+
+            log_console('blogs_update_urls(): Updating posts for blog '.str_log(str_size('"'.str_truncate($blog['name'], 40).'"', 42, ' ')), 'blogs_update_urls', 'white');
+
+            /*
+             * Walk over all posts of the specified blog
+             */
+            $query   = 'SELECT `id`,
+                               `blogs_id`,
+                               `url`,
+                               `name`,
+                               `seoname`,
+                               `createdon`,
+                               `modifiedon`,
+                               `createdby`,
+                               `category`,
+                               `seocategory`
+
+                        FROM   `blogs_posts`
+
+                        WHERE  `blogs_id` = :id';
+
+            $execute = array(':id' => $blog['id']);
+
+            if($category){
+                /*
+                 * Add category filter
+                 */
+                $query                    .= ' AND `categories_id` = :categories_id';
+                $execute[':categories_id'] = $category;
+            }
+
+            /*
+             * Walk over all posts in the selected filter, and update the URL's
+             */
+            $r = sql_query($query, $execute);
+
+            while($post = sql_fetch($r)){
+                $post['url_template'] = $blog['url_template'];
+                $url                  = blogs_post_url($post);
+
+                log_console('blogs_update_urls(): Updating blog post '.str_log(str_size('"'.str_truncate($post['seoname'], 40).'"', 42, ' ')).' to URL "'.str_log($url).'"', 'blogs_update_urls');
+
+                sql_query('UPDATE `blogs_posts`
+
+                           SET    `url` = :url
+
+                           WHERE  `id`  = :id',
+
+                           array(':url' => $url,
+                                 ':id'  => $post['id']));
+            }
+        }
+
+    }catch(Exception $e){
+        throw new bException('blogs_update_urls(): Failed', $e);
     }
 }
 ?>
