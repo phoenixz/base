@@ -439,7 +439,7 @@ try{
                 log_screen(($subenvironment ? '('.$subenvironment.') ' : '').'NOT deploying, due to "nodeploy" or "test" command line parameter', 'deploy', 'yellow');
 
             }else{
-                $exclude = ' --exclude="www/en/sitemap.html*" --exclude="www/en/sitemap.xml*" --exclude="www/en/mock" ';
+                $exclude = ' --exclude="www/en/sitemap.html*" --exclude="www/en/sitemap.xml*" --exclude="www/en/mock --exclude="data/mocks/mock " ';
 
                 if(count($deploy_config['exclude_dirs'])) {
                     foreach($deploy_config['exclude_dirs'] as $key => $dir) {
