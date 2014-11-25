@@ -50,7 +50,7 @@ function show($data = '', $return = false, $quiet = false, $trace_offset = 1){
     }
 
     if(PLATFORM == 'apache'){
-        echo debug_html($data, 'Unknown', $trace_offset);
+        echo debug_html($data, tr('Unknown'), $trace_offset);
 
 /*
         if(is_scalar($data) or is_null($data)){
@@ -77,7 +77,7 @@ function show($data = '', $return = false, $quiet = false, $trace_offset = 1){
 */
     }else{
         if(is_scalar($data)){
-            $retval .= (!$quiet ? 'DEBUG SHOW ('.current_file($trace_offset).'@'.current_line($trace_offset).'): ' : '').$data."\n";
+            $retval .= (!$quiet ? tr('DEBUG SHOW (%file%@%line%)', array('%file%' => current_file($trace_offset), '%line%' => current_line($trace_offset))) : '').$data."\n";
 
         }else{
             /*
@@ -88,7 +88,7 @@ function show($data = '', $return = false, $quiet = false, $trace_offset = 1){
             }
 
             if(!$quiet){
-                $retval .= "DEBUG SHOW (".current_file($trace_offset).'@'.current_line($trace_offset).")\n";
+                $retval .= tr('DEBUG SHOW (%file%@%line%)', array('%file%' => current_file($trace_offset), '%line%' => current_line($trace_offset)))."\n";
             }
 
             $retval .= print_r($data, true);
@@ -109,10 +109,14 @@ function show($data = '', $return = false, $quiet = false, $trace_offset = 1){
 /*
  * Show nice HTML table with all debug data
  */
-function debug_html($value, $key = 'Unknown', $trace_offset = 0){
+function debug_html($value, $key = null, $trace_offset = 0){
     static $style;
 
     try{
+        if($key === null){
+            $key = tr('Unknown');
+        }
+
         if(empty($style)){
             $style  = true;
 
@@ -141,7 +145,7 @@ function debug_html($value, $key = 'Unknown', $trace_offset = 0){
 
         return $retval.'<table class="debug">
                             <thead><td colspan="4">'.current_file(1 + $trace_offset).'@'.current_line(1 + $trace_offset).'</td></thead>
-                            <thead><td>Name</td><td>Type</td><td>Size</td><td>Value</td></thead>'.debug_html_row($value, $key).'
+                            <thead><td>'.tr('Key').'</td><td>'.tr('Type').'</td><td>'.tr('Size').'</td><td>'.tr('Value').'</td></thead>'.debug_html_row($value, $key).'
                         </table>';
 
     }catch(Exception $e){
@@ -154,29 +158,36 @@ function debug_html($value, $key = 'Unknown', $trace_offset = 0){
 /*
  * Show HTML <tr> for the specified debug data
  */
-function debug_html_row($value, $key = 'Unknown', $type = null){
+function debug_html_row($value, $key = null, $type = null){
     try{
         if($type === null){
             $type = gettype($value);
         }
 
+        if($key === null){
+            $key = tr('Unknown');
+        }
+
         switch($type){
             case 'string':
                 if(is_numeric($value)){
-                    $type = 'numeric';
+                    $type = tr('numeric');
 
                     if(is_integer($value)){
-                        $type .= ' (integer)';
+                        $type .= tr(' (integer)');
 
                     }elseif(is_float($value)){
-                        $type .= ' (float)';
+                        $type .= tr(' (float)');
 
                     }elseif(is_string($value)){
-                        $type .= ' (string)';
+                        $type .= tr(' (string)');
 
                     }else{
-                        $type .= ' (unknown)';
+                        $type .= tr(' (unknown)');
                     }
+
+                }else{
+                    $type = tr('string');
                 }
 
                 //FALLTHROUGH
@@ -197,7 +208,7 @@ function debug_html_row($value, $key = 'Unknown', $type = null){
                             <td>'.$key.'</td>
                             <td>'.$type.'</td>
                             <td>1</td>
-                            <td>'.($value ? 'true' : 'false').'</td>
+                            <td>'.($value ? tr('true') : tr('false')).'</td>
                         </tr>';
 
             case 'NULL':
@@ -240,7 +251,7 @@ function debug_html_row($value, $key = 'Unknown', $type = null){
                             <td>'.count($value).'</td>
                             <td style="padding:0">
                                 <table class="debug">
-                                    <thead><td>Name</td><td>Type</td><td>Size</td><td>Value</td></thead>'.$retval.'
+                                    <thead><td>'.tr('Key').'</td><td>'.tr('Type').'</td><td>'.tr('Size').'</td><td>'.tr('Value').'</td></thead>'.$retval.'
                                 </table>
                             </td>
                         </tr>';
@@ -272,7 +283,7 @@ function debug_html_row($value, $key = 'Unknown', $type = null){
                             <td>?</td>
                             <td style="padding:0">
                                 <table class="debug">
-                                    <thead><td>Name</td><td>Type</td><td>Size</td><td>Value</td></thead>'.$retval.'
+                                    <thead><td>'.tr('Key').'</td><td>'.tr('Type').'</td><td>'.tr('Size').'</td><td>'.tr('Value').'</td></thead>'.$retval.'
                                 </table>
                             </td>
                         </tr>';
@@ -280,7 +291,7 @@ function debug_html_row($value, $key = 'Unknown', $type = null){
             default:
                 return '<tr>
                             <td>'.$key.'</td>
-                            <td>Unknown</td>
+                            <td>'.tr('Unknown').'</td>
                             <td>???</td>
                             <td>'.htmlentities($value).'</td>
                         </tr>';
@@ -418,10 +429,10 @@ function debug_sql($query, $column = null, $execute = null, $return_only = false
                     $query = str_replace($key, $value, $query);
 
                 }elseif(is_null($value)){
-                    $query = str_replace($key, ' NULL ', $query);
+                    $query = str_replace($key, ' '.tr('NULL').' ', $query);
 
                 }else{
-                    $query = str_replace($key, '"'.(!is_scalar($value) ? ' [NOT SCALAR] ' : '').str_force($value).'"', $query);
+                    $query = str_replace($key, '"'.(!is_scalar($value) ? ' ['.tr('NOT SCALAR').'] ' : '').str_force($value).'"', $query);
                 }
             }
         }
