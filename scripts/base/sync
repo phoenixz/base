@@ -156,11 +156,11 @@ try{
         /*
          * The init script wll check the database version, but that is very likely already read by now into a constant.
          * After a sync, the REAL current database version is very likely different and will have to be re-read. This can
-         * only be done in a separate process, so dont execute the init with script_exec() but safe_exec so that its
-         * executed in a completely separate PHP process.
+         * only be done in a separate process, so dont execute the init with script_exec() but passthru() so that its
+         * executed in a completely separate PHP process, while still dumping output on command line
          */
         log_console('Executing init script to ensure that database will be up to date', 'sync', 'white');
-        safe_exec(ROOT.'scripts/base/init');
+        passthru(ROOT.'scripts/base/init');
     }
 
     log_console('Finished!', 'sync', 'green');
