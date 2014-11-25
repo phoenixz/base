@@ -87,7 +87,7 @@ try{
 
     }else{
         log_console('Creating SQL dump file on remote server...', 'sync', 'white');
-        passthru($command = 'ssh -p '.$source_config['deploy'][$environment]['target_port'].' -t '.$source_config['deploy'][$environment]['target_user'].'@'.$source_config['deploy'][$environment]['target_server'].' \'mysqldump -u '.$source_config['db']['user'].' -p\''.$source_config['db']['pass'].'\' -B '.$source_config['db']['db'].' | gzip > /tmp/'.$project.'_'.$source_config['db']['db'].'.sql.gz\'');
+        passthru($command = 'ssh -p '.$source_config['deploy'][$environment]['target_port'].' -t '.$source_config['deploy'][$environment]['target_user'].'@'.$source_config['deploy'][$environment]['target_server'].' \'mysqldump -u '.$source_config['db']['user'].' -p"'.$source_config['db']['pass'].'" -B '.$source_config['db']['db'].' | gzip > /tmp/'.$project.'_'.$source_config['db']['db'].'.sql.gz\'');
     }
 
 
@@ -111,7 +111,7 @@ try{
 
     }else{
         log_console('Importing remote SQL dump file in local MySQL server...', 'sync', 'white');
-        passthru($command = 'cat /tmp/'.$project.'_'.$source_config['db']['db'].'.sql.gz | gunzip | mysql -u '.$_CONFIG['db']['user'].' -p\''.$_CONFIG['db']['pass'].'\' -B '.$_CONFIG['db']['db']);
+        passthru($command = 'cat /tmp/'.$project.'_'.$source_config['db']['db'].'.sql.gz | gunzip | mysql -u '.$_CONFIG['db']['user'].' -p'.$_CONFIG['db']['pass'].' -B '.$_CONFIG['db']['db']);
     }
 
 
