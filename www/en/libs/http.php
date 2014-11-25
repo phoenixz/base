@@ -9,6 +9,24 @@
 
 
 /*
+ * Ensure that the $_GET values with the specied keys are also available in $_POST
+ */
+function http_get_to_post($keys, $overwrite = true){
+    try{
+        foreach(array_force($keys) as $key){
+            if(isset($_GET[$key]) and ($overwrite or empty($_POST[$key]))){
+                $_POST[$key] = $_GET[$key];
+            }
+        }
+
+    }catch(Exception $e){
+        throw new bException('http_get_to_post(): Failed', $e);
+    }
+}
+
+
+
+/*
  * Build URL
  */
 function http_build_url($url, $query){
