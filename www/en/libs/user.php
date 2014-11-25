@@ -133,14 +133,14 @@ function user_find_avatar($user) {
 /*
  * `cate the specified user with the specified password
  */
-function user_authenticate($user, $password) {
+function user_authenticate($username, $password) {
     try{
-        if(!is_scalar($user)){
+        if(!is_scalar($username)){
             throw new bException('user_authenticate(): Specified username is not valid', 'invalid');
         }
 
-        if(!$user = sql_get('SELECT * FROM `users` WHERE `email` = :email OR `username` = :username', array(':email' => $user, ':username' => $user))){
-            throw new bException('user_authenticate(): Specified user "'.str_log($user).'" not found', 'notfound');
+        if(!$user = sql_get('SELECT * FROM `users` WHERE `email` = :email OR `username` = :username', array(':email' => $username, ':username' => $username))){
+            throw new bException('user_authenticate(): Specified user "'.str_log($username).'" not found', 'notfound');
         }
 
         if(substr($user['password'], 0, 1) != '*'){
