@@ -124,8 +124,8 @@ function uncaught_exception($e, $die = 1){
  */
 function tr($msg, $from = false, $to = false){
     try{
-        if($from != false){
-            if($to != false){
+        if($from !== false){
+            if($to !== false){
                 return str_replace($from, $to, $msg);
             }
 

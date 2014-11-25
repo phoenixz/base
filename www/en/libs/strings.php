@@ -1054,16 +1054,18 @@ function str_similar($a, $b, $percent){
 
 
 /*
- * trim all strings in the specified array tree
+ * Recursively trim all strings in the specified array tree
  */
-function str_trim_array($source){
+function str_trim_array($source, $recurse = true){
     try{
         foreach($source as $key => &$value){
             if(is_string($value)){
                 $value = mb_trim($value);
 
             }elseif(is_array($value)){
-                $value = str_trim_array($value);
+                if($recurse){
+                    $value = str_trim_array($value);
+                }
             }
         }
 
