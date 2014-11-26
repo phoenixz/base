@@ -124,8 +124,8 @@ function uncaught_exception($e, $die = 1){
  */
 function tr($msg, $from = false, $to = false){
     try{
-        if($from !== false){
-            if($to !== false){
+        if($from != false){
+            if($to != false){
                 return str_replace($from, $to, $msg);
             }
 
@@ -213,7 +213,7 @@ function isset_get(&$variable, $return = null, $altreturn = null){
 /*
  * Redirect
  */
-function redirect($target = '', $clear_session_redirect = true, $http_code = 302){
+function redirect($target = '', $clear_session_redirect = true){
     return include(dirname(__FILE__).'/handlers/system_redirect.php');
 }
 
@@ -703,8 +703,6 @@ function load_config($files){
         $files = array_force($files);
 
         foreach($files as $file){
-            $included = false;
-
             /*
              * Include first the default configuration file, if available, then
              * production configuration file, and then, if available, the
@@ -713,26 +711,15 @@ function load_config($files){
             $path = ROOT.'config/base/'.$file.'.php';
 
             if(file_exists($path)){
-                $included = true;
                 include($path);
             }
 
-            $path = ROOT.'config/production_'.$file.'.php';
-
-            if(file_exists($path)){
-                $included = true;
-                include($path);
-            }
+            include(ROOT.'config/production_'.$file.'.php');
 
             $path = ROOT.'config/'.ENVIRONMENT.'_'.$file.'.php';
 
             if(file_exists($path)){
-                $included = true;
                 include($path);
-            }
-
-            if(!$included){
-                throw new bException('load_config(): Specified configuration file "'.str_log($file).'" was not found', 'configuration_not_found');
             }
         }
 
@@ -1015,7 +1002,7 @@ function user_or_redirect($url = false, $method = 'http'){
  * This function will automatically load the rights for this user if
  * they are not yet in the session variable
  */
-function has_right($right, $log_fail = null){
+function has_rights($rights, $log_fail = null){
     try{
         /*
          * Dynamically load the user rights
@@ -1036,39 +1023,41 @@ function has_right($right, $log_fail = null){
             return true;
         }
 
-        if(empty($_SESSION['user']['rights'][$right]) or !empty($_SESSION['user']['rights']['devil'])){
-            /*
-             * Admin right is the ONLY right that can be specified in the users table,
-             * and is loaded in the $_SESSION['user'] array. So if the "admin" right is
-             * requested, but not available in the rights list, we can alternatively look
-             * in the $_SESSION['user']['admin']
-             */
-            if(($right != 'admin') or empty($_SESSION['user']['admin'])){
-                if(($log_fail === null)){
-                    /*
-                     * By default, show access denied messages on shell, but not on browser
-                     */
-                    if(PLATFORM == 'shell'){
-                        $log_fail = true;
+        foreach(array_force($rights) as $right){
+            if(empty($_SESSION['user']['rights'][$right]) or !empty($_SESSION['user']['rights']['devil'])){
+                /*
+                 * Admin right is the ONLY right that can be specified in the users table,
+                 * and is loaded in the $_SESSION['user'] array. So if the "admin" right is
+                 * requested, but not available in the rights list, we can alternatively look
+                 * in the $_SESSION['user']['admin']
+                 */
+                if(($right != 'admin') or empty($_SESSION['user']['admin'])){
+                    if(($log_fail === null)){
+                        /*
+                         * By default, show access denied messages on shell, but not on browser
+                         */
+                        if(PLATFORM == 'shell'){
+                            $log_fail = true;
 
-                    }else{
-                        $log_fail = false;
+                        }else{
+                            $log_fail = false;
+                        }
                     }
-                }
 
-                if($log_fail){
-                    load_libs('user');
-                    log_message('has_right(): Access denied for user "'.str_log(user_name($_SESSION['user'])).'" in page "'.str_log($_SERVER['PHP_SELF']).'" for missing right "'.str_log($right).'"', 'accessdenied', 'yellow');
-                }
+                    if($log_fail){
+                        load_libs('user');
+                        log_message('has_rights(): Access denied for user "'.str_log(user_name($_SESSION['user'])).'" in page "'.str_log($_SERVER['PHP_SELF']).'" for missing right "'.str_log($right).'"', 'accessdenied', 'yellow');
+                    }
 
-                return false;
+                    return false;
+                }
             }
         }
 
         return true;
 
     }catch(Exception $e){
-        throw new bException('has_right(): Failed', $e);
+        throw new bException('has_rights(): Failed', $e);
     }
 }
 
@@ -1077,19 +1066,19 @@ function has_right($right, $log_fail = null){
 /*
  * Either a right is logged in or the person will be redirected to the specified URL
  */
-function right_or_redirect($right, $url = null, $method = 'http', $log_fail = null){
+function rights_or_redirect($rights, $url = null, $method = 'http', $log_fail = null){
     global $_CONFIG;
 
     try{
         user_or_redirect($url, $method);
 
-        if(!has_right($right, $log_fail)){
+        if(!has_rights($rights, $log_fail)){
             if((PLATFORM == 'shell')){
                 /*
                  * Hey, we're not in a browser!
                  */
                 if(!$url){
-                    $url = 'right_or_redirect(): The "'.str_log($right).'" right is required for this';
+                    $url = 'rights_or_redirect(): The "'.str_log($rights).'" rights are required for this';
                 }
 
                 throw new bException($url, 'noright');
@@ -1117,14 +1106,14 @@ function right_or_redirect($right, $url = null, $method = 'http', $log_fail = nu
                     redirect($url, false);
 
                 default:
-                    throw new bException('right_or_redirect(): Unknown method "'.str_log($method).'" specified. Please speficy one of "json", or "http"', 'unknown');
+                    throw new bException('rights_or_redirect(): Unknown method "'.str_log($method).'" specified. Please speficy one of "json", or "http"', 'unknown');
             }
         }
 
         return $_SESSION['user'];
 
     }catch(Exception $e){
-        throw new bException('right_or_redirect(): Failed', $e);
+        throw new bException('rights_or_redirect(): Failed', $e);
     }
 }
 
@@ -1199,67 +1188,6 @@ function check_extended_session() {
         throw new bException('user_create_extended_session(): Failed', $e);
     }
 }
-
-
-// :DEPRECATED: This is replaced with has_right(), right_or_redirect(), user_or_redirect(), etc
-///*
-// * Returns if this client has (or has no) access to the specified section / system of the site. that has limited access
-// */
-//function has_limited_access($setting, $section){
-//    global $_CONFIG;
-//
-//    /*
-//     * Both true and false can continue as normal
-//     */
-//    if($setting === true){
-//        return true;
-//    }
-//
-//    if($setting === false){
-//        /*
-//         * This basically means nobody has access
-//         */
-//        return false;
-//    }
-//
-//    if($setting and ($setting != 'limited')){
-//        throw new bException('has_limited_access(): Invalid setting value "'.str_log($setting).'" specified. $setting can only be TRUE, FALSE or "limited"');
-//    }
-//
-//    /*
-//     * Section MUST be specified
-//     */
-//    if(!$section){
-//        throw new bException('has_limited_access(): No limited_section specified');
-//    }
-//
-//    /*
-//     * Check if this user has access to limited access section
-//     */
-//    if(isset($_CONFIG['limited'][$section])){
-//        /*
-//        * Access granted when either the limited_section is true, or if $site is in its array
-//        */
-//        if(($_CONFIG['limited'][$section] === true) or in_array($site, $_CONFIG['limited'][$section])){
-//            return 'limited';
-//        }
-//    }
-//
-//    return false;
-//}
-//
-//
-//
-///*
-// * If has no access, give a 404
-// */
-//function has_limited_access_or_404($setting, $section, $site = null){
-//    if(!$access = has_limited_access($setting, $section, $site)){
-//        page_404();
-//    }
-//
-//    return $access;
-//}
 
 
 
@@ -1473,5 +1401,17 @@ function restore_post(){
     }
 
     return include(dirname(__FILE__).'/handlers/system_restore_post.php');
+}
+
+
+
+/*
+ * DEPRECIATED FUNCTIONS, WILL BE REMOVED SOON!
+ */
+function has_right($rights, $log_fail = null){
+    return has_rights($rights, $log_fail = null);
+}
+function right_or_redirect($rights, $url = null, $method = 'http', $log_fail = null){
+    return rights_or_redirect($rights, $url = null, $method = 'http', $log_fail = null);
 }
 ?>
