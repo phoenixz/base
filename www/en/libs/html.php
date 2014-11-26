@@ -299,7 +299,7 @@ function html_load_js($files = '', $option = null, $ie = null){
 
 
 /*
- * Display libs in header
+ * Display libs in header and or footer
  */
 function html_generate_js(){
     global $_CONFIG;
@@ -333,9 +333,9 @@ function html_generate_js(){
          * Load JS libraries
          */
         foreach($GLOBALS['js'] = array_merge($libs, $GLOBALS['js']) as $file => $data) {
-            if(!$file)                 continue;
-            if($file == 'jquery')      continue;
-            if($file == 'base/jquery') continue;
+            if(!$file)                               continue;
+            if(str_rfrom($file, '/') == 'jquery')    continue; // jQuery js is always loaded in the header
+            if(str_rfrom($file, '/') == 'bootstrap') continue; // bootstrap js is always loaded in the header
 
             if(substr($file, 0, 4) == 'http') {
                 /*
