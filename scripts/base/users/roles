@@ -7,54 +7,18 @@ $quiet = true;
 require_once(dirname(__FILE__).'/../../../libs/startup.php');
 
 try{
-    $user = right_or_redirect('admin,users,rights');
+    $user = right_or_redirect('admin,users,roles');
 
-    load_libs('user,rights');
-
-    if(!$target_user = argument('user', true)){
-        throw new bException('base/users/rights: No user specified', 'notspecified');
-    }
-
-    $query   = 'SELECT `id`,
-                       `name`,
-                       `username`,
-                       `email`
-
-                FROM   `users`
-
-                WHERE (`id`       = :id
-                OR     `username` = :username
-                OR     `email`    = :email)';
-
-    $execute = array(':id'       => $target_user,
-                     ':username' => $target_user,
-                     ':email'    => $target_user);
-
-    /*
-     * Consider only users with a specific type as real users?
-     */
-    if($_CONFIG['users']['type_filter'] !== false){
-        if($_CONFIG['users']['type_filter'] === null){
-            $query           .= ' AND `users`.`type` IS NULL';
-
-        }else{
-            $query           .= ' AND `users`.`type` = :type';
-            $execute[':type'] = $_CONFIG['users']['type_filter'];
-        }
-    }
-
-    if(!$target_user = sql_get($query, $execute)){
-        throw new bException('base/users/rights: Specified user "'.str_log(argument(1)).'" does not exist', 'notexists');
-    }
+    load_libs('user');
 
     switch(argument(0)){
         case 'list':
-            log_console('Showing currently available rights', '');
+            log_console('Showing currently available roles', '');
 
             $list = sql_list('SELECT    `name`,
                                         `description`
 
-                              FROM      `rights`');
+                              FROM      `roles`');
 
             log_console(str_size('Name', 20).' Description', '', 'white');
 
@@ -64,33 +28,31 @@ try{
 
             break;
 
-        case 'for':
+        case 'right':
             // FALLTHROUGH
-        case 'has':
+        case 'rights':
             if(!$target_user){
-                throw new bException('base/users/rights: No user specified', 'notspecified');
+                throw new bException('base/users/roles: No user specified', 'notspecified');
             }
 
-            log_console('Showing rights for user "'.user_name($target_user).'"', '');
+            log_console('Showing rights for role "'.user_name($target_user).'"', '');
 
-            if(!$target_user){
-                throw new bException('base/users/rights: No user specified', 'notspecified');
-            }
+            $role = s_get_role();
 
-            $list = sql_list('SELECT    `rights`.`name`,
-                                        `rights`.`description`
+            $list = sql_list('SELECT    `roles`.`name`,
+                                        `roles`.`description`
 
-                              FROM      `users_rights`
+                              FROM      `roles_rights`
 
-                              LEFT JOIN `rights`
-                              ON        `rights`.`id`             = `users_rights`.`rights_id`
+                              LEFT JOIN `roles`
+                              ON        `roles`.`id`          = `roles_rights`.`roles_id`
 
-                              WHERE     `users_rights`.`users_id` = :users_id',
+                              WHERE     `roles_rights`.`name` = :name',
 
-                              array(':users_id' => $target_user['id']));
+                              array(':roles_id' => $role['id']));
 
             if(!$list){
-                log_console('This user has no rights assigned', '', 'yellow');
+                log_console('This role has no rights assigned', '', 'yellow');
 
             }else{
                 log_console(str_size('Name', 16).'Description', '', 'white');
@@ -102,18 +64,11 @@ try{
 
             die(0);
 
-        case 'add':
-            // FALLTHROUGH
         case 'set':
             // FALLTHROUGH
         case 'give':
-            if(!$target_user){
-                throw new bException('base/users/rights: No user specified', 'notspecified');
-            }
-
-            if(in_array('admin', $argv)){
-                throw new bException('The right "admin" can only be assigned with the "admin" script', 'invalid');
-            }
+            $role = s_get_role();
+            $user = s_get_role();
 
             /*
              * Make sure rights have been specified
@@ -157,7 +112,7 @@ try{
             // FALLTHROUGH
         case 'take':
             if(!$target_user){
-                throw new bException('base/users/rights: No user specified', 'notspecified');
+                throw new bException('base/users/roles: No user specified', 'notspecified');
             }
 
             /*
@@ -199,30 +154,30 @@ try{
         case 'create':
             try{
                 if(!argument(1)){
-                    throw new bException('No rights name specified', 'notspecified');
+                    throw new bException('No role name specified', 'notspecified');
                 }
 
                 if(!argument(2)){
-                    throw new bException('No rights description specified', 'notspecified');
+                    throw new bException('No role description specified', 'notspecified');
                 }
 
-                if(sql_get('SELECT `id` FROM `rights` WHERE `name` = :name', array(':name' => argument(1)))){
-                    throw new bException('The right "'.str_log(argument(1)).'" already exists', 'exists');
+                if(sql_get('SELECT `id` FROM `roles` WHERE `name` = :name', array(':name' => argument(1)))){
+                    throw new bException('The role "'.str_log(argument(1)).'" already exists', 'exists');
                 }
 
 
-                sql_query('INSERT INTO `rights` (`addedby`, `name`, `description`)
+                sql_query('INSERT INTO `roles` (`addedby`, `name`, `description`)
                            VALUES               (:addedby , :name , :description)',
 
                            array(':addedby'    => $user['id'],
                                  ':name'       => argument(1),
                                  ':description'=> argument(2, '')));
 
-                log_console('Created new right "'.argument(1).'"', '', 'white');
+                log_console('Created new role "'.argument(1).'"', '', 'white');
                 break;
 
             }catch(Exception $e){
-                throw new bException('Failed to create new right', $e);
+                throw new bException('Failed to create new role', $e);
             }
 
         case 'delete':
@@ -230,44 +185,125 @@ try{
         case 'remove':
             // FALLTHROUGH
         case 'erase':
-            // FALLTHROUGH
-        case 'take':
             try{
                 if(!argument(1)){
-                    throw new bException('No right name specified', 'notspecified');
+                    throw new bException('No role name specified', 'notspecified');
                 }
 
                 if(in_array(argument(1), array('god', 'devil', 'admin'))){
-                    throw new bException('The right "'.str_log(argument(1)).'" cannot be deleted', 'invalid');
+                    throw new bException('The role "'.str_log(argument(1)).'" cannot be deleted', 'invalid');
                 }
 
-                if(!$id = sql_get('SELECT `id` FROM `rights` WHERE `name` = :name', 'id', array(':name' => argument(1)))){
+                if(!$id = sql_get('SELECT `id` FROM `roles` WHERE `name` = :name', 'id', array(':name' => argument(1)))){
                     if(!argument('force')){
-                        throw new bException('The right "'.str_log(argument(1)).'" does not exist', 'notexist');
+                        throw new bException('The role "'.str_log(argument(1)).'" does not exist', 'notexist');
                     }
                 }
 
-                sql_query('DELETE FROM `rights`
+                sql_query('DELETE FROM `roles`
                            WHERE       `id` = :id',
 
                            array(':id' => $id));
 
-                log_console('Deleted right "'.argument(1).'"', '', 'white');
+                log_console('Deleted role "'.argument(1).'"', '', 'white');
                 break;
 
             }catch(Exception $e){
-                throw new bException('Failed to delete new right', $e);
+                throw new bException('Failed to delete new role', $e);
             }
 
         default:
             if(!argument(0)){
-                throw new bException('base/users/rights: No option specified. Please specify one of "list, for/has, add/set/give, unset/take, create, delete/remove/erase"', 'notspecified');
+                throw new bException('base/users/roles: No option specified. Please specify one of "list, for/has, add/set/give, unset/take, create, delete/remove/erase"', 'notspecified');
             }
 
-            throw new bException('base/users/rights: Invalid option "'.str_log(argument(0)).'" specified', 'unknown');
+            throw new bException('base/users/roles: Invalid option "'.str_log(argument(0)).'" specified', 'unknown');
     }
 
 }catch(Exception $e){
-    throw new bException('base/users/rights: Failed', $e);
+    throw new bException('base/users/roles: Failed', $e);
+}
+
+
+
+/*
+ *
+ */
+function s_get_user(){
+    try{
+        if(!$user = argument('user', true)){
+            throw new bException('s_get_user(): No user specified', 'notspecified');
+        }
+
+        $query   = 'SELECT `id`,
+                           `name`,
+                           `username`,
+                           `email`
+
+                    FROM   `users`
+
+                    WHERE (`id`       = :id
+                    OR     `username` = :username
+                    OR     `email`    = :email)';
+
+        $execute = array(':id'       => $user,
+                         ':username' => $user,
+                         ':email'    => $user);
+
+        /*
+         * Consider only users with a specific type as real users?
+         */
+        if($_CONFIG['users']['type_filter'] !== false){
+            if($_CONFIG['users']['type_filter'] === null){
+                $query           .= ' AND `users`.`type` IS NULL';
+
+            }else{
+                $query           .= ' AND `users`.`type` = :type';
+                $execute[':type'] = $_CONFIG['users']['type_filter'];
+            }
+        }
+
+        if(!$user = sql_get($query, $execute)){
+            throw new bException('s_get_user(): Specified user "'.str_log(argument(1)).'" does not exist', 'notexists');
+        }
+
+        return $user;
+
+    }catch(Exception $e){
+        throw new bException('s_get_user(): Failed', $e);
+    }
+}
+
+
+
+/*
+ *
+ */
+function s_get_role(){
+    try{
+        if(!$target_role = argument('role', true)){
+            throw new bException('s_get_role(): No role specified', 'notspecified');
+        }
+
+        $role = sql_get('SELECT `id`,
+                                `name`,
+
+                         FROM   `roles`
+
+                         WHERE (`id`   = :id
+                         OR     `name` = :name',
+
+                         array(':id'   => $target_role,
+                               ':name' => $target_role));
+
+        if(!$role = sql_get($query, $execute)){
+            throw new bException('s_get_role(): Specified role "'.str_log(argument(1)).'" does not exist', 'notexists');
+        }
+
+        return $role;
+
+    }catch(Exception $e){
+        throw new bException('s_get_role(): Failed', $e);
+    }
 }
 ?>

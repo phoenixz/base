@@ -13,16 +13,20 @@ try{
         $user = right_or_redirect('admin', null, null, false);
 
     }catch(Exception $e){
-        if(($e->getCode() != 'noright') or sql_get('SELECT COUNT(*) AS count FROM `users` WHERE `admin` = 1', 'count')){
+        /*
+         * Don't fail right away, there may not be any other admin users available!
+         * If there are no admin users, he will be allowed to make himself, or anyone else an admin
+         */
+        if(($e->getCode() != 'noright') or sql_get('SELECT COUNT(*) AS `count` FROM `users_rights` WHERE `name` = "admin"', 'count')){
             /*
-             * This is not a rights exception, and there are admins available
+             * This is not a rights exception, or there are admins available
              */
             throw $e;
         }
 
         /*
          * norights exception. The user has no admin rights,
-         * but there are no other admins, so we're in an init situation.
+         * but there are no other admins, so we're probably in an first init process.
          * continue..
          */
         log_message('Access denied override for user "'.str_log(user_name($_SESSION['user'])).'" in script "'.str_log($_SERVER['PHP_SELF']).'" for missing right "admin" because there are currently no admins', 'accessoverride', 'green');
@@ -34,39 +38,56 @@ try{
         throw new bException('base/users/admin: No user specified', 'notspecified');
     }
 
-    if(!$target_user = sql_get('SELECT `id`, `name`, `username`, `email` FROM `users` WHERE `id` = :id OR `username` = :username OR `email` = :email', array(':id' => $target_user, ':username' => $target_user, ':email' => $target_user))){
+    $query   = 'SELECT `id`,
+                       `name`,
+                       `username`,
+                       `email`
+
+                FROM   `users`
+
+                WHERE (`id`       = :id
+                OR     `username` = :username
+                OR     `email`    = :email)';
+
+    $execute = array(':id'       => $target_user,
+                     ':username' => $target_user,
+                     ':email'    => $target_user);
+
+    /*
+     * Consider only users with a specific type as real users?
+     */
+    if($_CONFIG['users']['type_filter'] !== false){
+        if($_CONFIG['users']['type_filter'] === null){
+            $query           .= ' AND `users`.`type` IS NULL';
+
+        }else{
+            $query           .= ' AND `users`.`type` = :type';
+            $execute[':type'] = $_CONFIG['users']['type_filter'];
+        }
+    }
+
+    if(!$target_user = sql_get($query, $execute)){
         throw new bException('base/users/admin: Specified user "'.str_log(argument(1)).'" does not exist', 'notexists');
     }
 
-    load_libs('rights');
-
     $rights_id = sql_get('SELECT `id` FROM `rights` WHERE `name` = "admin"', 'id');
+
+    load_libs('rights');
 
     switch(argument(0)){
         case 'is':
-            $flag  = (boolean) sql_get('SELECT `id`
-                                        FROM   `users`
-                                        WHERE  `id`        = :id
-                                        AND    `admin`     = 1',
-
-                                       array(':id'         => $target_user['id']));
-
             $right = (boolean) sql_get('SELECT `id`
+
                                         FROM   `users_rights`
+
                                         WHERE  `users_id`  = :users_id
-                                        AND    `rights_id` = :rights_id',
+                                        AND    `rights_id` = :rights_id
+                                        AND    `type`      IS NULL',
 
                                        array(':users_id'   => $target_user['id'],
                                              ':rights_id'  => $rights_id));
 
-            if($right != $flag){
-                /*
-                 * Both right and flag should either be set or not
-                 */
-                log_console('User "'.user_name($target_user).'" has an invalid (partial) admin configuration "right:'.($right ? 'true' : 'false').',flag:'.($flag ? 'true' : 'false').'"', 'partial', 'yellow');
-            }
-
-            if($right and $flag){
+            if($right){
                 log_console('User "'.user_name($target_user).'" is an admin', 'isadmin', 'green');
                 die(0);
             }
@@ -87,11 +108,9 @@ try{
                     /*
                      * There are other admin users available
                      */
-                    throw new bException('This action cannot be executed on your self', 'denied');
+                    throw new bException('This action cannot be executed on your self if there are other admin users available', 'denied');
                 }
             }
-
-            sql_query('UPDATE `users` SET `admin` = 1 WHERE `id` = :id', array(':id' => $target_user['id']));
 
             if(!sql_get('SELECT `id` FROM `users_rights` WHERE `users_id` = :users_id AND `name` = "admin"', array(':users_id' => $target_user['id']), 'id')){
                 sql_query('INSERT INTO `users_rights` (`addedby`, `rights_id`, `users_id`, `name`)
@@ -120,8 +139,6 @@ try{
             if($target_user['id'] == $user['id']){
                 throw new bException('This action cannot be executed on your self', 'denied');
             }
-
-            sql_query('UPDATE `users` SET `admin` = 0 WHERE `id` = :users_id', array(':users_id' => $target_user['id']));
 
             sql_query('DELETE FROM `users`
                        WHERE       `users_id`  = :users_id

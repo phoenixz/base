@@ -8,10 +8,30 @@ require_once(dirname(__FILE__).'/../../../libs/startup.php');
 
 
 try{
+    $user = right_or_redirect('admin,users,modify');
+
     load_libs('user');
 
     if(!$user = user_get(argument(0))){
         throw new bException('Specified user "'.str_log(argument(0)).'" does not exist', 'notexists');
+    }
+
+    $where   = 'WHERE  `id`   = :id';
+
+    $execute = array(':value' => $value,
+                     ':id'    => $user['id']);
+
+    /*
+     * Consider only users with a specific type as real users?
+     */
+    if($_CONFIG['users']['type_filter'] !== false){
+        if($_CONFIG['users']['type_filter'] === null){
+            $where           .= ' AND `users`.`type` IS NULL';
+
+        }else{
+            $where           .= ' AND`users`.`type` = :type';
+            $execute[':type'] = $_CONFIG['users']['type_filter'];
+        }
     }
 
     /*
@@ -22,11 +42,9 @@ try{
          * Modify the users real name
          */
         sql_query('UPDATE `users`
-                   SET    `name` = :name
-                   WHERE  `id`   = :id',
+                   SET    `name` = :value'.$where,
 
-                   array(':name' => $value,
-                         ':id'   => $user['id']));
+                   $execute);
 
         log_console('Updated real name to "'.str_log($value).'"', 'name', 'green');
         $modified = true;
@@ -37,11 +55,10 @@ try{
          * Modify the users username
          */
         sql_query('UPDATE `users`
-                   SET    `username` = :username
-                   WHERE  `id`       = :id',
+                   SET    `username` = :value
+                   WHERE  `id`       = :id'.$where,
 
-                   array(':username' => $value,
-                         ':id'       => $user['id']));
+                   $execute);
 
         log_console('Updated username to "'.str_log($value).'"', 'username', 'green');
         $modified = true;
@@ -52,11 +69,10 @@ try{
          * Modify the users email
          */
         sql_query('UPDATE `users`
-                   SET    `email` = :email
-                   WHERE  `id`    = :id',
+                   SET    `email` = :value
+                   WHERE  `id`    = :id'.$where,
 
-                   array(':email' => $value,
-                         ':id'    => $user['id']));
+                   $execute);
 
         log_console('Updated email to "'.str_log($value).'"', 'email', 'green');
         $modified = true;
@@ -67,11 +83,10 @@ try{
          * Modify the users status
          */
         sql_query('UPDATE `users`
-                   SET    `status` = :status
-                   WHERE  `id`     = :id',
+                   SET    `status` = :value
+                   WHERE  `id`     = :id'.$where,
 
-                   array(':status' => $value,
-                         ':id'     => $user['id']));
+                   $execute);
 
         log_console('Updated status to "'.str_log($value).'"', 'status', 'green');
         $modified = true;

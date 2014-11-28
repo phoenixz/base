@@ -15,13 +15,23 @@ try{
     $params['latitude']  = argument('latitude' , true);
     $params['longitude'] = argument('longitude', true);
     $params['status']    = argument('status'   , true);
+    $params['type']      = argument('type'     , true);
     $params['admin']     = argument('admin');
     $params['validated'] = true;
 
     load_libs('user');
     user_insert($params);
 
-    log_console('Added user "'.$params['email'].'"', null, 'white');
+    if($params['admin']){
+        /*
+         * Make this user an administrator
+         */
+        script_exec('base/users/admin make "'.$params['name'].'"');
+        log_console('Added admin user "'.$params['email'].'"', null, 'white');
+
+    }else{
+        log_console('Added standard user user "'.$params['email'].'"', null, 'white');
+    }
 
 }catch(Exception $e){
     throw new bException('scripts/users/create: Failed', $e);
