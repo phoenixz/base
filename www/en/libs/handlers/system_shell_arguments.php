@@ -29,19 +29,19 @@ try{
                 $GLOBALS['quiet'] = false;
                 break;
 
-            //case '-l':
-            //    // FALLTHROUGH
-            //case 'signin':
-            //    /*
-            //     * Set current session user
-            //     */
-            //    $signin   = $arg;
-            //    $password = $argv[$argid + 1];
-            //    $password = $argv[$argid + 1];
-            //
-            //    unset($argv[$argid]);
-            //    unset($argv[$argid + 1]);
-            //    break;
+            case '-l':
+                // FALLTHROUGH
+            case 'signin':
+                /*
+                 * Set current session user
+                 */
+                $signin   = $arg;
+                $password = $argv[$argid + 1];
+                $password = $argv[$argid + 1];
+
+                unset($argv[$argid]);
+                unset($argv[$argid + 1]);
+                break;
 
             case 'language':
                 /*

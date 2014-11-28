@@ -357,161 +357,126 @@ function user_check_blacklisted($name){
 /*
  * Add a new user
  */
-function user_insert($params){
+function user_signup($params){
     try{
         if(!is_array($params)){
-            throw new bException('user_insert(): Invalid params specified', 'invalid');
+            throw new bException(tr('user_signup(): Invalid params specified'), 'invalid');
         }
 
         if(empty($params['email'])){
-            throw new bException('user_insert(): No email specified', 'notspecified');
+            throw new bException(tr('user_signup(): Please specify an email address'), 'notspecified');
         }
-
-        if(empty($params['name'])){
-            if(!empty($params['username'])){
-                $params['name'] = isset_get($params['username']);
-
-            }else{
-                $params['name'] = isset_get($params['email']);
-            }
-        }
-
-        //if(empty($params['username'])){
-        //    throw new bException('user_insert(): No username specified', 'notspecified');
-        //}
 
         if(empty($params['password'])){
-            throw new bException('user_insert(): No password specified', 'notspecified');
+            throw new bException(tr('user_signup(): Please specify a password'), 'notspecified');
         }
 
         if(user_get($params, 'id')){
-            throw new bException('user_insert(): User with username "'.str_log(isset_get($params['username'])).'" or email "'.str_log(isset_get($params['email'])).'" already exists', 'exists');
+            throw new bException(tr('user_signup(): User with username "%name%" or email "%email%" already exists', array('%name%' => str_log(isset_get($params['username'])), '%email%' => str_log(isset_get($params['email'])))), 'exists');
         }
 
-        array_default($params, 'validated', false);
+        sql_query('INSERT INTO `users` (`status`, `createdby`, `username`, `password`, `name`, `email`)
+                   VALUES              ("empty" , :createdby , :username , :password , :name , :email )',
 
-        $params['password'] = password($params['password']);
-
-        sql_query('INSERT INTO `users` (`status`, `username`, `password`, `name`, `email`, `avatar`, `validated`, `date_validated`                             , `fb_id`, `fb_token`, `gp_id`, `gp_token`, `ms_id`, `ms_token_authentication`, `ms_token_access`, `tw_id`, `tw_token`, `yh_id`, `yh_token`, `language`, `gender`, `latitude`, `longitude`, `country`)
-                   VALUES              (:status , :username , :password , :name , :email , :avatar , :validated , '.($params['validated'] ? 'NOW()' : 'NULL').', :fb_id , :fb_token , :gp_id , :gp_token , :ms_id , :ms_token_authentication , :ms_token_access , :tw_id , :tw_token , :yh_id , :yh_token , :language , :gender , :latitude , :longitude, :country )',
-
-                   array(':username'                => isset_get($params['username']),
-                         ':password'                => $params['password'],
-                         ':email'                   => $params['email'],
-                         ':name'                    => $params['name'],
-                         ':status'                  => isset_get($params['status']),
-                         ':avatar'                  => isset_get($params['avatar']),
-                         ':validated'               => ($params['validated'] ? str_random(32) : null),
-                         ':fb_id'                   => isset_get($params['fb_id']),
-                         ':fb_token'                => isset_get($params['fb_token']),
-                         ':gp_id'                   => isset_get($params['gp_id']),
-                         ':gp_token'                => isset_get($params['gp_token']),
-                         ':ms_id'                   => isset_get($params['ms_id']),
-                         ':ms_token_authentication' => isset_get($params['ms_token_authentication']),
-                         ':ms_token_access'         => isset_get($params['ms_token_access']),
-                         ':tw_id'                   => isset_get($params['tw_id']),
-                         ':tw_token'                => isset_get($params['tw_token']),
-                         ':yh_id'                   => isset_get($params['yh_id']),
-                         ':yh_token'                => isset_get($params['yh_token']),
-                         ':language'                => isset_get($params['language']),
-                         ':gender'                  => isset_get($params['gender']),
-                         ':latitude'                => isset_get($params['latitude']),
-                         ':longitude'               => isset_get($params['longitude']),
-                         ':country'                 => isset_get($params['country'])));
+                   array(':createdby' => isset_get($_SESSION['user']['id']),
+                         ':username'  => isset_get($params['username']),
+                         ':name'      => isset_get($params['name']),
+                         ':password'  => password($params['password']),
+                         ':email'     => $params['email']));
 
         return sql_insert_id();
 
     }catch(Exception $e){
-        throw new bException('user_insert(): Failed', $e);
+        throw new bException('user_signup(): Failed', $e);
     }
 }
 
 
+// :DELETE: There should not be an update function for tables!!!! This should be implemented in the pages directly
+///*
+// * Update specified user
+// */
+//function user_update($params){
+//    try{
+//        array_params($params);
+//        array_default($params, 'validated', false);
+//
+//        if(!is_array($params)){
+//            throw new bException('user_update(): Invalid params specified', 'invalid');
+//        }
+//
+//        if(empty($params['email'])){
+//            throw new bException('user_update(): No email specified', 'notspecified');
+//        }
+//
+//        if(empty($params['id'])){
+//            throw new bException('user_update(): No users id specified', 'notspecified');
+//        }
+//
+//        if(empty($params['name'])){
+//            if(!empty($params['username'])){
+//                $params['name'] = isset_get($params['username']);
+//
+//            }else{
+//                $params['name'] = isset_get($params['email']);
+//            }
+//        }
+//
+//        if(!$user = user_get($params['id'])){
+//            throw new bException('user_update(): User with id "'.str_log($params['id']).'" does not exists', 'notexists');
+//        }
+//
+//        $exists = sql_get('SELECT `id`, `email`, `username`
+//                           FROM   `users`
+//                           WHERE  `id`      != :id
+//                           AND   (`email`    = :email
+//                           OR     `username` = :username )',
+//
+//                           array(':id'       => $params['id'],
+//                                 ':email'    => $params['email'],
+//                                 ':username' => $params['username']));
+//
+//        if($exists){
+//            if($exists['username'] == $params['username']){
+//                throw new bException('user_update(): Another user already has the username "'.str_log($params['username']).'"', 'exists');
+//
+//            }else{
+//                throw new bException('user_update(): Another user already has the email "'.str_log($params['email']).'"', 'exists');
+//            }
+//        }
+//
+//        $r = sql_query('UPDATE `users`
+//                        SET    `username`  = :username,
+//                               `name`      = :name,
+//                               `email`     = :email,
+//                               `language`  = :language,
+//                               `gender`    = :gender,
+//                               `latitude`  = :latitude,
+//                               `longitude` = :longitude,
+//                               `country`   = :country
+//                        WHERE  `id`        = :id',
+//
+//                        array(':id'        => isset_get($params['id']),
+//                              ':username'  => isset_get($params['username']),
+//                              ':name'      => $params['name'],
+//                              ':email'     => $params['email'],
+//                              ':language'  => isset_get($params['language']),
+//                              ':gender'    => isset_get($params['gender']),
+//                              ':latitude'  => isset_get($params['latitude']),
+//                              ':longitude' => isset_get($params['longitude']),
+//                              ':country'   => isset_get($params['country'])));
+//
+//        return $r->rowCount();
+//
+//    }catch(Exception $e){
+//        throw new bException('user_update(): Failed', $e);
+//    }
+//}
+
+
 
 /*
- * Update specified user
- */
-function user_update($params){
-    try{
-        array_params($params);
-        array_default($params, 'validated', false);
-
-        if(!is_array($params)){
-            throw new bException('user_update(): Invalid params specified', 'invalid');
-        }
-
-        if(empty($params['email'])){
-            throw new bException('user_update(): No email specified', 'notspecified');
-        }
-
-        if(empty($params['id'])){
-            throw new bException('user_update(): No users id specified', 'notspecified');
-        }
-
-        if(empty($params['name'])){
-            if(!empty($params['username'])){
-                $params['name'] = isset_get($params['username']);
-
-            }else{
-                $params['name'] = isset_get($params['email']);
-            }
-        }
-
-        if(!$user = user_get($params['id'])){
-            throw new bException('user_update(): User with id "'.str_log($params['id']).'" does not exists', 'notexists');
-        }
-
-        $exists = sql_get('SELECT `id`, `email`, `username`
-                           FROM   `users`
-                           WHERE  `id`      != :id
-                           AND   (`email`    = :email
-                           OR     `username` = :username )',
-
-                           array(':id'       => $params['id'],
-                                 ':email'    => $params['email'],
-                                 ':username' => $params['username']));
-
-        if($exists){
-            if($exists['username'] == $params['username']){
-                throw new bException('user_update(): Another user already has the username "'.str_log($params['username']).'"', 'exists');
-
-            }else{
-                throw new bException('user_update(): Another user already has the email "'.str_log($params['email']).'"', 'exists');
-            }
-        }
-
-        $r = sql_query('UPDATE `users`
-                        SET    `username`  = :username,
-                               `name`      = :name,
-                               `email`     = :email,
-                               `language`  = :language,
-                               `gender`    = :gender,
-                               `latitude`  = :latitude,
-                               `longitude` = :longitude,
-                               `country`   = :country
-                        WHERE  `id`        = :id',
-
-                        array(':id'        => isset_get($params['id']),
-                              ':username'  => isset_get($params['username']),
-                              ':name'      => $params['name'],
-                              ':email'     => $params['email'],
-                              ':language'  => isset_get($params['language']),
-                              ':gender'    => isset_get($params['gender']),
-                              ':latitude'  => isset_get($params['latitude']),
-                              ':longitude' => isset_get($params['longitude']),
-                              ':country'   => isset_get($params['country'])));
-
-        return $r->rowCount();
-
-    }catch(Exception $e){
-        throw new bException('user_update(): Failed', $e);
-    }
-}
-
-
-
-/*
- * Update specified user
+ * Update user password
  */
 function user_update_password($params){
     try{
@@ -519,23 +484,23 @@ function user_update_password($params){
         array_default($params, 'validated', false);
 
         if(!is_array($params)){
-            throw new bException('user_update_password(): Invalid params specified', 'invalid');
+            throw new bException(tr('user_update_password(): Invalid params specified'), 'invalid');
         }
 
         if(empty($params['id'])){
-            throw new bException('user_update_password(): No users id specified', 'idnotspecified');
+            throw new bException(tr('user_update_password(): No users id specified'), 'not_specified');
         }
 
         if(empty($params['password'])){
-            throw new bException('user_update_password(): No password specified', 'passwordnotspecified');
+            throw new bException(tr('user_update_password(): Please specify a password'), 'not_specified');
         }
 
         if(empty($params['password2'])){
-            throw new bException('user_update_password(): No validation password specified', 'validationnotspecified');
+            throw new bException(tr('user_update_password(): No validation password specified'), 'not_specified');
         }
 
         if($params['password'] != $params['password2']){
-            throw new bException('user_update_password(): Specified password does not match the validation password', 'passwordmismatch');
+            throw new bException(tr('user_update_password(): Specified password does not match the validation password'), 'mismatch');
         }
 
         $r = sql_query('UPDATE `users`
@@ -553,7 +518,7 @@ function user_update_password($params){
              * because the user does not exist. check for this!
              */
             if(!sql_get('SELECT `id` FROM `users` WHERE `id` = :id', 'id', array(':id' => $params['id']))){
-                throw new bException('user_update_password(): The specified users_id "'.str_log($params['id']).'" does not exist', 'notexist');
+                throw new bException(tr('user_update_password(): The specified users_id "'.str_log($params['id']).'" does not exist'), 'notexist');
             }
 
             /*
@@ -596,48 +561,6 @@ function user_get($params, $columns = false){
 
     }catch(Exception $e){
         throw new bException('user_get(): Failed', $e);
-    }
-}
-
-
-
-/*
- *
- */
-function user_signup($params){
-    try{
-        array_params($params);
-        array_default($params, 'validated'     , false);
-        array_default($params, 'date_validated', null);
-
-        if(empty($params['email'])){
-            throw new bException('user_signup(): No email specified', 'notspecified');
-        }
-
-        if($params['email'] != isset_get($params['email2'])){
-            throw new bException('user_signup(): Validation email is not equal to email', 'notspecified');
-        }
-
-        if(empty($params['password'])){
-            throw new bException('user_signup(): No password specified', 'notspecified');
-        }
-
-        if($params['password'] != isset_get($params['password2'])){
-            throw new bException('user_signup(): Validation password is not equal to password', 'notspecified');
-        }
-
-        if(empty($params['terms'])){
-            throw new bException('user_signup(): Terms not accepted', 'terms');
-        }
-
-//:TODO: Add more validations
-
-        $users_id = user_insert($params);
-//:TODO: Send verification email!
-        return user_get($users_id);
-
-    }catch(Exception $e){
-        throw new bException('user_signup(): Failed', $e);
     }
 }
 

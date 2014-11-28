@@ -16,7 +16,7 @@
 /*
  * Framework version
  */
-define('FRAMEWORKCODEVERSION', '0.14.3');
+define('FRAMEWORKCODEVERSION', '0.15.0');
 
 
 /*
@@ -293,37 +293,15 @@ try{
                      * We are in maintenance mode, have to show mainenance page.
                      */
                     $GLOBALS['page_force'] = true;
-                    define('SCRIPT', 'maintenance');
+// :TODO: The following line should not be necessary
+//                    define('SCRIPT', 'maintenance');
+                    page_maintenance('By configuration');
 
                 }else{
                     define('SCRIPT', str_runtil(str_rfrom($_SERVER['PHP_SELF'], '/'), '.php'));
                 }
 
                 try{
-                    if($_CONFIG['cookie']['domain']){
-                        /*
-                         * Test cookie domain limitation
-                         *
-                         * If the configured cookie domain is different from the current domain then all cookie will inexplicably fail without warning,
-                         * so this must be detected to avoid lots of hair pulling and throwing arturo off the balcony incidents :)
-                         */
-                        if(substr($_CONFIG['cookie']['domain'], 0, 1) == '.'){
-                            $test = substr($_CONFIG['cookie']['domain'], 1);
-
-                        }else{
-                            $test = $_CONFIG['cookie']['domain'];
-                        }
-
-                        $length = strlen($test);
-
-                        if(substr($_SERVER['SERVER_NAME'], -$length, $length) != $test){
-                            throw new bException('startup: Specified cookie domain "'.str_log($_CONFIG['cookie']['domain']).'" is invalid for current domain "'.str_log($_SERVER['SERVER_NAME']).'"', 'cookiedomain');
-                        }
-
-                        unset($test);
-                        unset($length);
-                    }
-
                     session_set_cookie_params($_CONFIG['cookie']['lifetime'], $_CONFIG['cookie']['path'], $_CONFIG['cookie']['domain'], $_CONFIG['cookie']['secure'], $_CONFIG['cookie']['httponly']);
 
                     if(!empty($_CONFIG['sessions']['shared_memory'])){
@@ -378,11 +356,44 @@ try{
 
                 }catch(Exception $e){
                     if(!is_writable(session_save_path())){
-                        throw new bException('startup: Session startup failed because the session path "'.session_save_path().'" is not writable for platform "'.PLATFORM.'"', $e);
+                        throw new bException('startup: Session startup failed because the session path "'.str_log(session_save_path()).'" is not writable for platform "'.PLATFORM.'"', $e);
                     }
 
                     throw new bException('Session startup failed', $e);
                 }
+
+
+                /*
+                 * Check the cookie domain configuration to see if its valid. This should only have to be checked
+                 * at first session page load. Since $_SESSION[language] should always be set, we can check its not set,
+                 * we know we have a fresh and new session.
+                 */
+                if(empty($_SESSION['language'])){
+                    if($_CONFIG['cookie']['domain']){
+                        /*
+                         * Test cookie domain limitation
+                         *
+                         * If the configured cookie domain is different from the current domain then all cookie will inexplicably fail without warning,
+                         * so this must be detected to avoid lots of hair pulling and throwing arturo off the balcony incidents :)
+                         */
+                        if(substr($_CONFIG['cookie']['domain'], 0, 1) == '.'){
+                            $test = substr($_CONFIG['cookie']['domain'], 1);
+
+                        }else{
+                            $test = $_CONFIG['cookie']['domain'];
+                        }
+
+                        $length = strlen($test);
+
+                        if(substr($_SERVER['SERVER_NAME'], -$length, $length) != $test){
+                            throw new bException('startup: Specified cookie domain "'.str_log($_CONFIG['cookie']['domain']).'" is invalid for current domain "'.str_log($_SERVER['SERVER_NAME']).'"', 'cookiedomain');
+                        }
+
+                        unset($test);
+                        unset($length);
+                    }
+                }
+
 
                 /*
                  * Add HTTP support library
@@ -442,6 +453,7 @@ try{
                             /*
                              * If anything goes wrong, fall back to US english
                              */
+// :TODO: Notifications?
                             $language = isset_get($_CONFIG['language']['fallback'], 'en');
                         }
 

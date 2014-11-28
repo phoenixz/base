@@ -756,6 +756,8 @@ function html_flash_set($messages, $type = 'info', $basicmessage = null){
  * Return an HTML <select> list
  */
 function html_select($params, $selected = null, $name = '', $none = '', $class = '', $option_class = '', $disabled = false) {
+    static $count = 0;
+
     try{
         array_params ($params, 'resource');
         array_default($params, 'class'       , $class);
@@ -771,6 +773,7 @@ function html_select($params, $selected = null, $name = '', $none = '', $class =
         array_default($params, 'onchange'    , '');
         array_default($params, 'id_column'   , 'id');
         array_default($params, 'hide_empty'  , false);
+        array_default($params, 'autofocus'   , false);
 
         array_default($params, $params['id_column'], $params['name']);
 
@@ -817,6 +820,10 @@ function html_select($params, $selected = null, $name = '', $none = '', $class =
             //}
         }
 
+        if(substr($params['id'], -2, 2) == '[]'){
+            $params['id'] = substr($params['id'], 0, -2).$count++;
+        }
+
         if($params['disabled']){
             /*
              * Add a hidden element with the name to ensure that multiple selects with [] will not show holes
@@ -824,7 +831,7 @@ function html_select($params, $selected = null, $name = '', $none = '', $class =
             $retval = '<select'.($params[$params['id_column']] ? ' id="'.$params['id'].'_disabled"' : '').' name="'.$params['name'].'" '.($class ? ' class="'.$class.'"' : '').($params['disabled'] ? ' disabled' : '').'>'.
                       $body.'</select><input type="hidden" name="'.$params['name'].'" >';
         }else{
-            $retval = '<select'.($params[$params['id_column']] ? ' id="'.$params['id'].'"' : '').' name="'.$params['name'].'" '.($class ? ' class="'.$class.'"' : '').($params['disabled'] ? ' disabled' : '').'>'.
+            $retval = '<select'.($params[$params['id_column']] ? ' id="'.$params['id'].'"' : '').' name="'.$params['name'].'" '.($class ? ' class="'.$class.'"' : '').($params['disabled'] ? ' disabled' : '').($params['autofocus'] ? ' autofocus' : '').'>'.
                       $body.'</select>';
         }
 
@@ -1190,6 +1197,29 @@ function html_status_select($params){
 
     }catch(Exception $e){
         throw new bException('html_status_select(): Failed', $e);
+    }
+}
+
+
+
+/*
+ *
+ */
+function html_form(){
+    return '<input type="hidden" name="dosubmit" value="1">';
+}
+
+
+
+/*
+ *
+ */
+function html_hidden($source, $key = 'id'){
+    try{
+        return '<input type="hidden" name="'.$key.'" value="'.isset_get($source[$key]).'">';
+
+    }catch(Exception $e){
+        throw new bException('html_hidden(): Failed', $e);
     }
 }
 ?>

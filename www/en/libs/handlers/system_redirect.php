@@ -13,6 +13,9 @@ try{
     if(is_numeric($clear_session_redirect)){
         $http_code              = $clear_session_redirect;
         $clear_session_redirect = true;
+
+    }else{
+        $http_code              = 301;
     }
 
     /*

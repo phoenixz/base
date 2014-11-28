@@ -620,8 +620,9 @@ function log_database($message, $type){
         /*
          * Don't exception here because the exception may cause another log_database() call and loop endlessly
          */
-        return false;
     }
+
+    return $message;
 }
 
 
@@ -854,7 +855,6 @@ function password($password, $algorithm = 'sha1'){
 /*
  * Return complete domain with HTTP and all
  */
-// :MOVE: Move this function to the html library
 function domain($current_url = false, $protocol = null){
     global $_CONFIG;
 
@@ -881,50 +881,13 @@ function domain($current_url = false, $protocol = null){
 
 
 /*
- * Return complete current domain with HTTP and all
- */
-// :MOVE: Move this function to the html library
-function current_domain($current_url = false, $protocol = null){
-    global $_CONFIG;
-
-    try{
-        if(!$protocol){
-            $protocol = $_CONFIG['protocol'];
-        }
-
-        if(empty($_SERVER['SERVER_NAME'])){
-            $server_name = $_CONFIG['domain'];
-
-        }else{
-            $server_name = $_SERVER['SERVER_NAME'];
-        }
-
-
-        if(!$current_url){
-            return $protocol.$server_name.$_CONFIG['root'];
-        }
-
-        if($current_url === true){
-            return $protocol.$server_name.$_SERVER['REQUEST_URI'];
-        }
-
-        return $protocol.$server_name.$_CONFIG['root'].str_starts($current_url, '/');
-
-    }catch(Exception $e){
-        throw new bException('current_domain(): Failed', $e);
-    }
-}
-
-
-
-/*
  * Either a user is logged in or the person will be redirected to the specified URL
  */
 function user_or_redirect($url = false, $method = 'http'){
     global $_CONFIG;
 
     try{
-        if(empty($_SESSION['user'])){
+        if(empty($_SESSION['user']['id'])){
             if($url === false){
                 /*
                  * No redirect requested, just wanted to know if there is a logged in user.
@@ -937,14 +900,14 @@ function user_or_redirect($url = false, $method = 'http'){
                  * Hey, we're not in a browser!
                  */
                 if(!$url){
-                    $url = 'A user sign in is required';
+                    $url = tr('A user sign in is required');
                 }
 
                 throw new bException($url, 'nouser');
             }
 
             if(!$url){
-                $url = 'signin.php';
+                $url = str_replace('%page%', str_log(urlencode($_SERVER['SCRIPT_NAME'])), isset_get($_CONFIG['redirects']['signin'], 'signin.php'));
             }
 
             $url = $_CONFIG['root'].$url;
@@ -1085,7 +1048,7 @@ function rights_or_redirect($rights, $url = null, $method = 'http', $log_fail = 
             }
 
             if(!$url){
-                $url = 'signin.php';
+                $url = str_replace('%page%', str_log(urlencode($_SERVER['SCRIPT_NAME'])), isset_get($_CONFIG['redirects']['forbidden'], 'signin.php'));
             }
 
             $url = $_CONFIG['root'].$url;

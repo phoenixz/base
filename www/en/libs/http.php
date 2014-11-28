@@ -9,6 +9,42 @@
 
 
 /*
+ * Return complete current domain with HTTP and all
+ */
+function current_domain($current_url = false, $protocol = null){
+    global $_CONFIG;
+
+    try{
+        if(!$protocol){
+            $protocol = $_CONFIG['protocol'];
+        }
+
+        if(empty($_SERVER['SERVER_NAME'])){
+            $server_name = $_CONFIG['domain'];
+
+        }else{
+            $server_name = $_SERVER['SERVER_NAME'];
+        }
+
+
+        if(!$current_url){
+            return $protocol.$server_name.$_CONFIG['root'];
+        }
+
+        if($current_url === true){
+            return $protocol.$server_name.$_SERVER['REQUEST_URI'];
+        }
+
+        return $protocol.$server_name.$_CONFIG['root'].str_starts($current_url, '/');
+
+    }catch(Exception $e){
+        throw new bException('current_domain(): Failed', $e);
+    }
+}
+
+
+
+/*
  * Ensure that the $_GET values with the specied keys are also available in $_POST
  */
 function http_get_to_post($keys, $overwrite = true){
