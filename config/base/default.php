@@ -236,7 +236,8 @@ $_CONFIG['root']               = '';
 $_CONFIG['redirects']          = array('index'            => 'index.php',                                   // What is the default index page for this site
                                        'signin'           => 'signin.php',                                  // What is the default signin page for this site
                                        'aftersignin'      => 'index.php',                                   // Where will the site redirect to by default after a signin?
-                                       'aftersignout'     => 'index.php');                                  //Where will the site redirect to by default after a signout?
+                                       'aftersignout'     => 'index.php',                                   // Where will the site redirect to by default after a signout?
+                                       'forbidden'        => 'forbidden.php?page=%page%');                  // Where will the site redirect to by default after forbidden access?
 
 // Security configuration
 $_CONFIG['security']           = array('signin'           => array('save_password' => true),                //
@@ -291,6 +292,9 @@ $_CONFIG['system']             = array('translator'       => 'translator.localho
 
 //Xapian search
 $_CONFIG['xapian']             = array('dir'              => ROOT.'data/xapian/');                          // Base path for Xapian databases
+
+//User configuration
+$_CONFIG['users']              = array('type_filter'      => false);                                        // Should only users of a certain type be considered "users" or not. Set to "false" if all types are considered users
 
 // Temporary path location, either "local" (ROOT/tmp/) or "global" (/tmp/)
 $_CONFIG['tmp']                = 'local';                                                                   // Either "local" or "global". "local" will save all temporary files in ROOT/tmp, "global" will save all temporary files in /tmp/PROJECT/
