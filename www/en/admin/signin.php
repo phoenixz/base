@@ -1,10 +1,12 @@
 <?php
 include_once(dirname(__FILE__).'/../libs/startup.php');
 
-load_libs('admin,user,validate');
+load_libs('validate');
 
 if(isset($_POST['dosignin'])){
     try{
+        user_ensure_signin_fields($_POST);
+
         // Validate input
         $v = new validate_form($_POST, 'username,password');
 
@@ -33,9 +35,9 @@ if(isset($_POST['dosignin'])){
         switch($e->getCode()){
             case 'notfound':
                 // FALLTHROUGH
-            case 'password':
-                // FALLTHROUGH
             case 'accessdenied':
+                // FALLTHROUGH
+            case 'password':
                 html_flash_set($e->getMessage(), 'error', tr('Invalid credentials'));
                 break;
 
@@ -45,13 +47,53 @@ if(isset($_POST['dosignin'])){
     }
 }
 
-$html = html_flash().'<form id="signin" name="signin" method="post" action="'.$_SERVER['REQUEST_URI'].'">
-    <label>'.tr('Username').'</label><br>
-    <input name="username" type="text" value="'.isset_get($_POST['username'], '').'" placeholder="'.tr('Your username').'"><br>
-    <label>'.tr('Password').'</label><br>
-    <input name="password" type="password" placeholder="'.tr('Your password').'"><br>
-    <input type="submit" name="dosignin" value="'.tr('Sign in').'">
-</form>';
+/*
+ * Get the form name for the password field in case save password option is not allowed
+ */
+if(empty($_CONFIG['security']['signin']['save_password'])){
+    $username = 'username'.str_random(8);
+    $password = 'password'.str_random(8);
+
+    $username = '<input type="text" class="form-control" placeholder="'.tr('Your email or username').'" name="'.$username.'" id="'.$username.'" value="'.isset_get($_POST['username']).'">';
+    $password = '<input type="password" style="display:none"/>
+                 <input type="password" class="form-control" placeholder="'.tr('Your password').'" name="'.$password.'" id="'.$password.'">';
+
+}else{
+    $username = '<input type="text" class="form-control" placeholder="'.tr('Your email or username').'" name="username" id="username" value="'.isset_get($_POST['username']).'">';
+    $password = '<input type="password" class="form-control" placeholder="'.tr('Your password').'" name="password" id="password">';
+}
+
+$html = '   <div class="row">
+                <div class="col-md-12">
+                    <section class="panel">
+                        <header class="panel-heading">
+                            <h2 class="panel-title">'.tr('Please sign in to continue...').'</h2>
+                            <p>'.html_flash().'</p>
+                        </header>
+                        <div class="panel-body">
+                            <form id="signin" name="signin" method="post" action="'.$_SERVER['REQUEST_URI'].'">
+                                <div class="col-md-6">
+                                    <div class="input-group mb-md">
+                                        <span class="input-group-addon">
+                                            <i class="fa fa-user"></i>
+                                        </span>
+                                        '.$username.'
+                                    </div>
+                                    <div class="input-group mb-md">
+                                        <span class="input-group-addon">
+                                            <i class="fa fa-key"></i>
+                                        </span>
+                                        '.$password.'
+                                    </div>
+                                    <div class="input-group mb-md">
+                                        <input type="submit" class="mb-xs mt-xs mr-xs btn btn-primary" name="dosignin" value="'.tr('Sign in').'">
+                                    </div>
+                                </div>
+                            </form>
+                        </div>
+                    </section>
+                </div>
+            </div>';
 
 /*
  * Add JS validation
@@ -69,5 +111,9 @@ $params = array('id'   => 'signin',
 
 $html .= $vj->output_validation($params);
 
-echo admin_page($html, tr('Sign in'));
+$params = array('title'       => tr('Sign in'),
+                'icon'        => 'fa-sign-in',
+                'breadcrumbs' => array(tr('Sign in')));
+
+echo ca_page($html, $params);
 ?>

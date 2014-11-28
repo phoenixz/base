@@ -1,8 +1,7 @@
 <?php
 require_once(dirname(__FILE__).'/../libs/startup.php');
 
-right_or_redirect('admin');
-load_libs('admin,user');
+right_or_redirect('admin,blog');
 
 $selected = isset_get($_GET['blog']);
 

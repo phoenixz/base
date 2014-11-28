@@ -2,7 +2,7 @@
 require_once(dirname(__FILE__).'/../libs/startup.php');
 
 right_or_redirect('admin');
-load_libs('admin,user,validate');
+load_libs('validate');
 
 if(!$user = sql_get('SELECT * FROM `users` WHERE `id` = :id', array(':id' => isset_get($_POST['id'], isset_get($_GET['id']))))){
     html_flash_set('Can not update password, no user specified', 'error');
@@ -19,11 +19,11 @@ switch(strtolower(isset_get($_POST['doaction']))){
 
             // Validate input
             $v = new validate_form();
-            $v->is_valid_password($_POST['password'], tr('Please provide a password with minimum 8 characters'));
+            $v->isValid_password($_POST['password'], tr('Please provide a password with minimum 8 characters'));
             $v->is_equal         (isset_get($_POST['password']), isset_get($_POST['password2']), tr('Please ensure that the password and validation password are equal'));
 
-            if(!$v->is_valid()) {
-                throw new bException(implode(', ', $v->get_errors()), 'invalid');
+            if(!$v->isValid()) {
+                throw new bException(implode(', ', $v->getErrors()), 'invalid');
             }
 
             sql_query('UPDATE `users` SET `password` = :password WHERE `id` = :id',

@@ -1,8 +1,12 @@
 <?php
 require_once(dirname(__FILE__).'/../libs/startup.php');
 
+if(SCRIPT == 'blogs_post'){
+    page_404();
+}
+
 right_or_redirect('admin');
-load_libs('admin,editors,blogs,validate,upload');
+load_libs('editors,blogs,validate,upload');
 
 
 

@@ -1,6 +1,8 @@
 <?php
 require_once(dirname(__FILE__).'/../libs/startup.php');
 
+page_404();
+
 array_ensure($_GET, 'blog', 'projects');
 array_ensure($_GET, 'post', null);
 

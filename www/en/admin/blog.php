@@ -1,8 +1,8 @@
 <?php
 require_once(dirname(__FILE__).'/../libs/startup.php');
 
-right_or_redirect('admin');
-load_libs('admin,validate');
+right_or_redirect('admin,blog');
+load_libs('validate');
 
 /*
  * Edit or add?
@@ -22,18 +22,18 @@ try{
             // Validate input
             $v = new validate_form($blog, 'name,slogan,keywords,description');
 
-            $v->is_checked   ($blog['name']       , tr('Please provide the name of your blog'));
-            $v->is_not_empty ($blog['slogan']     , tr('Please provide a slogan for your blog'));
-            $v->is_not_empty ($blog['keywords']   , tr('Please provide keywords for your blog'));
-            $v->is_not_empty ($blog['description'], tr('Please provide a description of your blog'));
+            $v->isChecked   ($blog['name']       , tr('Please provide the name of your blog'));
+            $v->isNotEmpty ($blog['slogan']     , tr('Please provide a slogan for your blog'));
+            $v->isNotEmpty ($blog['keywords']   , tr('Please provide keywords for your blog'));
+            $v->isNotEmpty ($blog['description'], tr('Please provide a description of your blog'));
 
-            $v->has_min_chars($blog['name']       ,  4, tr('Please ensure that the name has a minimum of 4 characters'));
-            $v->has_min_chars($blog['slogan']     ,  6, tr('Please ensure that the slogan has a minimum of 6 characters'));
-            $v->has_min_chars($blog['keywords']   ,  8, tr('Please ensure that the keywords have a minimum of 8 characters'));
-            $v->has_min_chars($blog['description'], 50, tr('Please ensure that the description has a minimum of 50 characters'));
+            $v->hasMinChars($blog['name']       ,  4, tr('Please ensure that the name has a minimum of 4 characters'));
+            $v->hasMinChars($blog['slogan']     ,  6, tr('Please ensure that the slogan has a minimum of 6 characters'));
+            $v->hasMinChars($blog['keywords']   ,  8, tr('Please ensure that the keywords have a minimum of 8 characters'));
+            $v->hasMinChars($blog['description'], 50, tr('Please ensure that the description has a minimum of 50 characters'));
 
-            if(!$v->is_valid()) {
-               throw new bException(str_force($v->get_errors(), ', '), 'errors');
+            if(!$v->isValid()) {
+               throw new bException(str_force($v->getErrors(), ', '), 'errors');
             }
 
             if(sql_get('SELECT `id` FROM `blogs` WHERE `name` = :name', array(':name' => $blog['name']), 'id')){
@@ -85,18 +85,18 @@ try{
             // Validate input
             $v = new validate_form($blog);
 
-            $v->is_checked   ($blog['name']       , tr('Please provide the name of your blog'));
-            $v->is_not_empty ($blog['slogan']     , tr('Please provide a slogan for your blog'));
-            $v->is_not_empty ($blog['keywords']   , tr('Please provide keywords for your blog'));
-            $v->is_not_empty ($blog['description'], tr('Please provide a description of your blog'));
+            $v->isChecked   ($blog['name']       , tr('Please provide the name of your blog'));
+            $v->isNotEmpty ($blog['slogan']     , tr('Please provide a slogan for your blog'));
+            $v->isNotEmpty ($blog['keywords']   , tr('Please provide keywords for your blog'));
+            $v->isNotEmpty ($blog['description'], tr('Please provide a description of your blog'));
 
-            $v->has_min_chars($blog['name']       ,  4, tr('Please ensure that the name has a minimum of 4 characters'));
-            $v->has_min_chars($blog['slogan']     ,  6, tr('Please ensure that the slogan has a minimum of 6 characters'));
-            $v->has_min_chars($blog['keywords']   ,  8, tr('Please ensure that the keywords have a minimum of 8 characters'));
-            $v->has_min_chars($blog['description'], 50, tr('Please ensure that the description has a minimum of 50 characters'));
+            $v->hasMinChars($blog['name']       ,  4, tr('Please ensure that the name has a minimum of 4 characters'));
+            $v->hasMinChars($blog['slogan']     ,  6, tr('Please ensure that the slogan has a minimum of 6 characters'));
+            $v->hasMinChars($blog['keywords']   ,  8, tr('Please ensure that the keywords have a minimum of 8 characters'));
+            $v->hasMinChars($blog['description'], 50, tr('Please ensure that the description has a minimum of 50 characters'));
 
-            if(!$v->is_valid()) {
-               throw new bException(str_force($v->get_errors(), ', '), 'errors');
+            if(!$v->isValid()) {
+               throw new bException(str_force($v->getErrors(), ', '), 'errors');
             }
 
             if(!$dbblog = sql_get('SELECT * FROM `blogs` WHERE `id` = :id', array(':id' => $blog['id']))){

@@ -1,8 +1,8 @@
 <?php
 require_once(dirname(__FILE__).'/../libs/startup.php');
 
-right_or_redirect('admin');
-load_libs('admin,user,blogs,validate');
+right_or_redirect('admin,blog');
+load_libs('blogs,validate');
 
 /*
  * Ensure we have an existing blog with access!
@@ -58,13 +58,13 @@ switch(isset_get($_POST['doaction'])){
             // Validate input
             $v = new validate_form($category, 'name,keywords,description');
 
-            $v->is_not_empty ($category['name']       , tr('Please provide the name of your category'));
-            $v->is_not_empty ($category['keywords']   , tr('Please provide the keywords for your category'));
-            $v->is_not_empty ($category['description'], tr('Please provide the description for your category'));
+            $v->isNotEmpty ($category['name']       , tr('Please provide the name of your category'));
+            $v->isNotEmpty ($category['keywords']   , tr('Please provide the keywords for your category'));
+            $v->isNotEmpty ($category['description'], tr('Please provide the description for your category'));
 
-            $v->has_min_chars($category['name']       ,  3, tr('Please ensure that the name has a minimum of 3 characters'));
-            $v->has_min_chars($category['keywords']   ,  8, tr('Please ensure that the keywords have a minimum of 8 characters'));
-            $v->has_min_chars($category['description'], 32, tr('Please ensure that the description has a minimum of 32 characters'));
+            $v->hasMinChars($category['name']       ,  3, tr('Please ensure that the name has a minimum of 3 characters'));
+            $v->hasMinChars($category['keywords']   ,  8, tr('Please ensure that the keywords have a minimum of 8 characters'));
+            $v->hasMinChars($category['description'], 32, tr('Please ensure that the description has a minimum of 32 characters'));
 
             if(empty($category['parent'])){
                 $category['parents_id'] = null;
@@ -90,8 +90,8 @@ switch(isset_get($_POST['doaction'])){
                 $category['parents_id'] = $parent['id'];
             }
 
-            if(!$v->is_valid()) {
-               throw new bException(str_force($v->get_errors(), ', '), 'errors');
+            if(!$v->isValid()) {
+               throw new bException(str_force($v->getErrors(), ', '), 'errors');
 
             }
 
@@ -144,13 +144,13 @@ switch(isset_get($_POST['doaction'])){
             // Validate input
             $v = new validate_form($category);
 
-            $v->is_not_empty ($category['name']       , tr('Please provide the name of your category'));
-            $v->is_not_empty ($category['keywords']   , tr('Please provide the keywords for your category'));
-            $v->is_not_empty ($category['description'], tr('Please provide the description for your category'));
+            $v->isNotEmpty ($category['name']       , tr('Please provide the name of your category'));
+            $v->isNotEmpty ($category['keywords']   , tr('Please provide the keywords for your category'));
+            $v->isNotEmpty ($category['description'], tr('Please provide the description for your category'));
 
-            $v->has_min_chars($category['name']       ,  3, tr('Please ensure that the name has a minimum of 3 characters'));
-            $v->has_min_chars($category['keywords']   ,  8, tr('Please ensure that the keywords have a minimum of 8 characters'));
-            $v->has_min_chars($category['description'], 32, tr('Please ensure that the descriptiin has a minimum of 32 characters'));
+            $v->hasMinChars($category['name']       ,  3, tr('Please ensure that the name has a minimum of 3 characters'));
+            $v->hasMinChars($category['keywords']   ,  8, tr('Please ensure that the keywords have a minimum of 8 characters'));
+            $v->hasMinChars($category['description'], 32, tr('Please ensure that the descriptiin has a minimum of 32 characters'));
 
             if(empty($category['parent'])){
                 $category['parents_id'] = null;
@@ -176,8 +176,8 @@ switch(isset_get($_POST['doaction'])){
                 $category['parents_id'] = $parent['id'];
             }
 
-            if(!$v->is_valid()) {
-               throw new bException(str_force($v->get_errors(), ', '), 'errors');
+            if(!$v->isValid()) {
+               throw new bException(str_force($v->getErrors(), ', '), 'errors');
             }
 
             if(!$dbcategory = sql_get('SELECT * FROM `blogs_categories` WHERE `blogs_id` = :blogs_id AND `id` = :id', array(':blogs_id' => $blog['id'], ':id' => $category['id']))){

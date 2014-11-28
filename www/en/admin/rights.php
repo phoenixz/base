@@ -1,13 +1,68 @@
 <?php
 require_once(dirname(__FILE__).'/../libs/startup.php');
 
-right_or_redirect('admin,users');
-load_libs('admin');
+$limit = 50;
 
+rights_or_redirect('admin,rights');
+
+
+/*
+ * Process requested actions
+ */
 try{
     switch(isset_get($_POST['action'])){
-        case 'add':
+        case '':
+            break;
+
+        case 'create':
             redirect(domain('/admin/right.php'));
+
+        case 'delete':
+            /*
+             * Erase the specified rights
+             */
+            if(empty($_POST['id'])){
+                throw new bException('Cannot erase rights, no rights selected', 'notspecified');
+            }
+
+            if(!is_array($_POST['id'])){
+                throw new bException('Cannot erase rights, invalid data specified', 'invalid');
+            }
+
+            $in = sql_in($_POST['id'], ':id');
+            $r  = sql_query('UPDATE `rights` SET `status` = "deleted" WHERE `id` IN ('.implode(',', array_keys($in)).')', $in);
+
+            if(!$r->rowCount()){
+                html_flash_set('No user rights have been deleted', 'warning');
+
+            }else{
+                html_flash_set(log_database('Deleted "'.$r->rowCount().'" rights "', 'rights_deleted'), 'success');
+            }
+
+            break;
+
+        case 'undelete':
+            /*
+             * Erase the specified rights
+             */
+            if(empty($_POST['id'])){
+                throw new bException('Cannot undelete rights, no rights selected', 'notspecified');
+            }
+
+            if(!is_array($_POST['id'])){
+                throw new bException('Cannot undelete rights, invalid data specified', 'invalid');
+            }
+
+            $in = sql_in($_POST['id'], ':id');
+            $r  = sql_query('UPDATE `rights` SET `status` = NULL WHERE `id` IN ('.implode(',', array_keys($in)).')', $in);
+
+            if(!$r->rowCount()){
+                html_flash_set('No user rights have been undeleted', 'warning');
+
+            }else{
+                html_flash_set(log_database('Undeleted "'.$r->rowCount().'" rights "', 'rights_undeleted'), 'success');
+            }
+
             break;
 
         case 'erase':
@@ -23,106 +78,166 @@ try{
             }
 
             $in = sql_in($_POST['id'], ':id');
-            $r  = sql_query('DELETE FROM `users_rights` WHERE `id` IN ('.implode(',', array_keys($in)).')', $in);
+            $r  = sql_query('DELETE FROM `rights` WHERE `id` IN ('.implode(',', array_keys($in)).')', $in);
 
             if(!$r->rowCount()){
-                html_flash_set('No user rights have been removed', 'error');
+                html_flash_set('No user rights have been erased', 'warning');
 
             }else{
-                log_database('Removed rights "'.json_encode_custom($_POST['id']).'"', 'removeuserright');
-                html_flash_set('"'.$r->rowCount().'" user rights have been erased', 'error');
+                html_flash_set(log_database('Erased "'.$r->rowCount().'" rights "', 'rights_erased'), 'success');
             }
 
             break;
+
+        default:
+            /*
+             * Unknown action specified
+             */
+            html_flash_set(tr('Unknown action "%action%" specified', '%action%', str_log($_POST['action'])), 'error');
     }
 
 }catch(Exception $e){
     html_flash_set($e);
 }
 
-$action  = array('name'       => 'action',
-                 'none'       => tr('Action'),
-                 'autosubmit' => true,
-                 'resource'   => array('add'   => tr('Add right'),
-                                      'erase' => tr('Erase rights')));
 
-$users   = array('name'       => 'user',
-                 'class'      => 'filter',
-                 'none'       => tr('All users'),
-                 'autosubmit' => true,
-                 'selected'   => isset_get($_POST['user']),
-                 'resource'   => sql_query('SELECT `name` AS `id`, `name` FROM `users` WHERE `status` IS NULL'));
+/*
+ * Select sections dependant on the view
+ */
+switch(isset_get($_POST['view'])){
+    case '':
+        // FALLTHROUGH
+    case 'normal':
+        $where   = ' WHERE `rights`.`status` IS NULL';
 
-$rights  = array('name'       => 'right',
-                 'class'      => 'filter',
-                 'none'       => tr('All rights'),
-                 'autosubmit' => true,
-                 'selected'   => isset_get($_POST['right']),
-                 'resource'   => sql_query('SELECT `name` AS `id`, `name` FROM `rights`'));
+        $actions = array('name'       => 'action',
+                         'none'       => tr('Action'),
+                         'autosubmit' => true,
+                         'resource'   => array('create' => tr('Create new right'),
+                                               'delete' => tr('Delete selected rights')));
 
-$execute = array();
+        break;
 
-$limit   = 50;
+    case 'deleted':
+        $where   = ' WHERE `rights`.`status` = "deleted"';
 
-$html    = '<h2>'.tr('User rights').'</h2>
-                <form action="'.domain(true).'" method="post">
-                                    '.html_select($users).'
-                                    '.html_select($rights);
+        $actions = array('name'       => 'action',
+                         'none'       => tr('Action'),
+                         'autosubmit' => true,
+                         'resource'   => array('undelete' => tr('Undelete selected rights'),
+                                               'erase'    => tr('Erase selected rights')));
 
-$query   = 'SELECT    `users_rights`.`id`,
-                      `users_rights`.`addedby`,
-                      `users_rights`.`addedon`,
-                      `users_rights`.`name` AS `right`,
-                      `users`.`name`        AS `user`,
-                      `addedby`.`name`      AS `addedby`
-
-            FROM      `users_rights`
-
-            LEFT JOIN `users`
-            ON        `users`.`id`   = `users_rights`.`users_id`
-
-            LEFT JOIN `users` AS addedby
-            ON        `addedby`.`id` = `users_rights`.`addedby`
-
-            ORDER BY  `users`.`name` ASC, `right` ASC';
-
-if(!empty($_POST['user'])){
-    $query  .= ' WHERE `users`.`name` = :user';
-    $execute = array(':user' => $_POST['user']);
+    default:
+        html_flash_set('Unknown view filter "'.str_log($_POST['view']).'" specified', 'error');
+        redirect(true);
 }
 
+
+/*
+ * Setup filters
+ */
+$views    = array('name'       => 'view',
+                  'none'       => false,
+                  'class'      => 'filter form-control mb-xs mt-xs mr-xs btn btn-default dropdown-toggle',
+                  'autosubmit' => true,
+                  'selected'   => isset_get($_POST['view']),
+                  'resource'   => array('normal'  => tr('View normal rights'),
+                                        'deleted' => tr('View deleted rights')));
+
+/*
+ * Build and execute query
+ */
+$execute = array();
+
+$query   = 'SELECT    `rights`.`id`,
+                      `rights`.`name`,
+                      `rights`.`description`,
+                      `rights`.`createdon`,
+                      `users`.`name` AS `createdby`
+
+            FROM      `rights`
+
+            LEFT JOIN `users`
+            ON        `users`.`id`   = `rights`.`createdby`'.$where;
+
 if(!empty($_POST['right'])){
-    $query  .= ' WHERE `users_rights`.`name` = :right';
+    $query  .= ' AND `rights`.`name` = :right';
     $execute = array(':right' => $_POST['right']);
 }
 
-$r = sql_query($query, $execute);
+$r = sql_query($query.' ORDER BY  `rights`.`name` ASC', $execute);
+
+
+/*
+ * Build HTML
+ */
+$html    = '<form action="'.domain(true).'" method="post">
+                <div class="row">
+                    <div class="col-md-12">
+                        <section class="panel">
+                            <header class="panel-heading">
+                                <h2 class="panel-title">'.tr('User rights').'</h2>
+                                <p>
+                                    '.html_flash().'
+                                    <div class="form-group">
+                                        <div class="col-sm-8">
+                                            <div class="row">
+                                                <div class="col-sm-4">
+                                                    '.html_select($views).'
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </p>
+                            </header>
+                            <div class="panel-body">';
 
 if(!$r->rowCount()){
-    $html .= '<p>'.tr('There are currently no user registered').'</p>';
+    $html .= '<p>'.tr('No rights were found with the current filter').'</p>';
 
 }else{
-    $html .= '<table class="link select"><thead><td class="select"><input type="checkbox" name="id[]" class="all"></td><td>'.tr('Username').'</td><td>'.tr('Right').'</td><td>'.tr('Given by').'</td><td>'.tr('Given on').'</td></thead>';
+    $html .= '  <div class="table-responsive">
+                    <table class="select link table mb-none table-striped table-hover">
+                        <thead>
+                            <th class="select"><input type="checkbox" name="id[]" class="all"></th>
+                            <th>'.tr('Name').'</th>
+                            <th>'.tr('Created by').'</th>
+                            <th>'.tr('Created on').'</th>
+                            <th>'.tr('Description').'</th>
+                            <th>'.tr('Rights').'</th>
+                        </thead>';
 
     while($right = sql_fetch($r)){
+        $a                 = '<a href="'.domain('/admin/right.php?right='.$right['name']).'">';
+
+        $right['createdon'] = new DateTime($right['createdon']);
+        $right['createdon'] = $right['createdon']->format($_CONFIG['formats']['human_datetime']);
+
         $html .= '  <tr>
                         <td class="select"><input type="checkbox" name="id[]" value="'.$right['id'].'"></td>
-                        <td>'.$right['user'].'</td>
-                        <td>'.$right['right'].'</td>
-                        <td>'.$right['addedby'].'</td>
-                        <td>'.$right['addedon'].'</td>
+                        <td>'.$a.$right['name'].'</a></td>
+                        <td>'.$a.$right['createdby'].'</a></td>
+                        <td>'.$a.$right['createdon'].'</a></td>
+                        <td>'.$a.$right['description'].'</a></td>
                     </tr>';
     }
 
-    $html .= '</table>';
+    $html .= '  </table>
+            </div>';
 }
 
-$html .= '  </table>'.
-                html_select($action);
+$html .=                    html_select($actions).'
+                        </div>
+                    </section>
+                </div>
+            </div>
+        </form>';
 
-log_database('Viewed user rights', 'viewuserrights');
+log_database('Viewed user rights', 'rights_viewed');
 
-echo admin_start(tr('Admin Dashboard')).
-    $html.
-    admin_end();
+$params = array('icon'        => 'fa-lock',
+                'title'       => tr('rights'),
+                'breadcrumbs' => array(tr('rights'), tr('Manage')));
+
+echo ca_page($html, $params);
 ?>

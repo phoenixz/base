@@ -1,12 +1,12 @@
 <?php
 require_once(dirname(__FILE__).'/../libs/startup.php');
 
-load_libs('admin');
+redirect('/admin/signin.php');
 
 if(isset($_GET['logout'])) {
 	log_database('Logout : "'.$_SESSION['admin']['name'].'"', 'ADMIN');
 	unset($_SESSION['admin']);
-	redirect('login.php');
+	redirect('signin.php');
 }
 
 if(isset($_POST['dosubmit'])) {

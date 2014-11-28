@@ -1,10 +1,12 @@
 <?php
 require_once(dirname(__FILE__).'/../libs/startup.php');
 
+if(SCRIPT == 'blogs_posts'){
+    page_404();
+}
+
 right_or_redirect('admin');
-load_libs('admin,editors,blogs,user');
-
-
+load_libs('editors,blogs');
 
 /*
  * Ensure we have an existing blog with access!

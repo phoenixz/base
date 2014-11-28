@@ -1,8 +1,9 @@
 <?php
 require_once(dirname(__FILE__).'/../libs/startup.php');
 
+page_404();
+
 right_or_redirect('admin');
-load_libs('admin,user');
 
 $selected = isset_get($_GET['id']);
 
