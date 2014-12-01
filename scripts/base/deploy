@@ -33,7 +33,9 @@
  *
  * noinit                     - Do not execute an init on the target server
  *
- * stash [UNDER CONSTRUCTION] - Execute a "git stash" before and "git stash
+ * nositemap                  - Do not automatically reupdate the sitemap files
+ *
+ * stash                      - Execute a "git stash" before and "git stash
  *                              pop" after deploy, in case the WT contained
  *                              changes
  *
@@ -52,6 +54,7 @@
  * deploy_post_deploy
  * deploy_post_permission
  * deploy_post_init
+ * deploy_post_sitemap
  * deploy_post_notify
  * deploy_post_deploy
  * deploy_post
@@ -61,13 +64,71 @@
 $usage = "./scripts/base/deploy SUBENVIRONMENT / all\n".
          "./scripts/base/deploy\n";
 
-$help  = "The deploy script can deploy the project to target environments, like trial, production, etc";
+$help  = "The deploy script can deploy the project to target environments, like trial, production, etc.
+This is the project deploy script
+
+Possible arguments:
+
+subenv SUBENVIRONMENTNAME  - Deploy another sub environment than the
+                             current default
+
+all                        - Deploy all sub environments
+
+nodeploy / test            - Do not deploy, only translate
+
+nonotify                   - Do not send notifications
+
+dosyntax / doparse         - Do PHP syntax check parse
+
+docontent / docontentcheck - Check content files
+
+notranslate                - Do not execute file translation
+
+nohook / nohooks           - Do not execute hooks
+
+upversion / upversions     - Update version (Does not do so by default)
+
+notag / notags             - Do not tag current version (tagging is
+                             automatically disabled if doversion has
+                             NOT been set)
+
+nopush                     - Do not automatically git push all changes and
+                             tags
+
+noinit                     - Do not execute an init on the target server
+
+nositemap                  - Do not automatically reupdate the sitemap files
+
+stash                      - Execute a \"git stash\" before and \"git stash
+                             pop\" after deploy, in case the WT contained
+                             changes
+
+HOOK SCRIPTS: Below are shown (in order) the hook scripts that will be
+              executed If the hook scripts exist (in ROOT/scripts/hooks)
+              they will be executed. If not, they will be ignored
+
+deploy_pre
+deploy_post_content
+deploy_post_syntax
+deploy_post_version
+deploy_post_tag
+deploy_post_push
+deploy_pre_deploy
+deploy_post_translation
+deploy_post_deploy
+deploy_post_permission
+deploy_post_init
+deploy_post_sitemap
+deploy_post_notify
+deploy_post_deploy
+deploy_post";
 
 require_once(dirname(__FILE__).'/../../libs/startup.php');
 
 try{
     cli_only();
     load_libs('init,deploy');
+    load_config('sitemap');
 
     log_screen('Starting deploy of project "'.PROJECT.'"', 'deploy', 'white');
 
@@ -83,6 +144,7 @@ try{
      * Check command line parameters
      */
     $noinit      =   argument('noinit');
+    $nositemap   =   argument('nositemap', isset_get($_CONFIG['sitemap']['ondeploy']));
     $nohooks     =  (argument('nohook')     or argument('nohooks'));
     $nosyntax    = !(argument('dosyntax')   or argument('doparse'));
     $nodeploy    =  (argument('nodeploy')   or argument('test'));
@@ -92,6 +154,7 @@ try{
 
     $notag       =  (argument('notag')      or argument('notags') or $noversion);
     $nopush      =  (argument('nopush')     or ($noversion and $notag));
+    $stash       =   argument('stash');
 
     $message     =   argument('message'    , true);
     $targets     =   argument('target'     , true, argument('targets', true, argument('all', false)));
@@ -160,7 +223,14 @@ try{
         if(!trim(shell_exec('git status | grep "nothing to commit" | wc -l'))) {
             if(!FORCE){
                 throw new bException('Git commit pending', 'COMMITFIRST');
+
+            }elseif($stash){
+                log_console('Changes detected, git stashing changes before comming', 'stash', 'yellw');
+                ('git stash');
             }
+
+        }else{
+            $stash = false;
         }
 
         /*
@@ -454,6 +524,20 @@ try{
 
 
             /*
+             * Fix permissions
+             */
+            if($nofixperms){
+                log_screen(($subenvironment ? '('.$subenvironment.') ' : '').'Skipping file permission update due to "nofixpermissions" command line parameter', 'deploy', 'yellow');
+
+            }else{
+                log_screen(($subenvironment ? '('.$subenvironment.') ' : '').'Executing file permission update', 'deploy', 'white');
+
+                passthru($command = 'ssh -t -p '.isset_get($deploy_config['target_port'], 22).' '.$deploy_config['target_user'].'@'.$deploy_config['target_server'].' \''.$deploy_config['target_dir'].'/scripts/base/fixpermissions env '.$target_environment.($subenvironment ? ' subenv '.$subenvironment : '').' \'');
+                init_hook('deploy_post_permission', $nohooks);
+            }
+
+
+            /*
              * Execute init on target
              */
             if($noinit){
@@ -468,16 +552,21 @@ try{
 
 
             /*
-             * Fix permissions
+             * Auto rebuild the sitemap?
              */
-            if($nofixperms){
-                log_screen(($subenvironment ? '('.$subenvironment.') ' : '').'Skipping file permission update due to "nofixpermissions" command line parameter', 'deploy', 'yellow');
+            if($nositemap){
+                log_screen(($subenvironment ? '('.$subenvironment.') ' : '').'Skipping auto sitemap deploy due to "nositemap" command line parameter', 'deploy', 'yellow');
 
             }else{
-                log_screen(($subenvironment ? '('.$subenvironment.') ' : '').'Executing file permission update', 'deploy', 'white');
+                log_screen(($subenvironment ? '('.$subenvironment.') ' : '').'Executing sitemap scan and deploy on target server', 'deploy', 'white');
 
-                passthru($command = 'ssh -t -p '.isset_get($deploy_config['target_port'], 22).' '.$deploy_config['target_user'].'@'.$deploy_config['target_server'].' \''.$deploy_config['target_dir'].'/scripts/base/fixpermissions env '.$target_environment.($subenvironment ? ' subenv '.$subenvironment : '').' \'');
-                init_hook('deploy_post_permission', $nohooks);
+                passthru($command = 'ssh -t -p '.isset_get($deploy_config['target_port'], 22).' '.$deploy_config['target_user'].'@'.$deploy_config['target_server'].' \''.$deploy_config['target_dir'].'/scripts/base/sitemap scan '.$target_environment.($subenvironment ? ' subenv '.$subenvironment : '').' \'');
+
+                foreach($deploy_config['languages'] as $language){
+                    passthru($command = 'ssh -t -p '.isset_get($deploy_config['target_port'], 22).' '.$deploy_config['target_user'].'@'.$deploy_config['target_server'].' \''.$deploy_config['target_dir'].'/scripts/base/sitemap deploy html '.$language.' env '.$target_environment.($subenvironment ? ' subenv '.$subenvironment : '').' \'');
+                    passthru($command = 'ssh -t -p '.isset_get($deploy_config['target_port'], 22).' '.$deploy_config['target_user'].'@'.$deploy_config['target_server'].' \''.$deploy_config['target_dir'].'/scripts/base/sitemap deploy  xml '.$language.' env '.$target_environment.($subenvironment ? ' subenv '.$subenvironment : '').' \'');
+                }
+                init_hook('deploy_post_sitemap', $nohooks);
             }
 
 
@@ -494,6 +583,11 @@ try{
                 init_hook('deploy_post_notify', $nohooks);
             }
 
+
+            if($stash){
+                log_console('Git stashed changes detected, unstashing', 'stash', 'yellw');
+                ('git stash pop');
+            }
 
             /*
              * Done!

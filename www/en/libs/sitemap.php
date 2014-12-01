@@ -61,7 +61,7 @@ function sitemap_scan($params = array()){
         foreach($params['languages'] as $code => $language){
             log_console('Processing language "'.$language.'"', 'language');
 
-            sql_query('INSERT INTO `sitemap_scans` (`createdby`, `language`)
+            sql_query('INSERT INTO `sitemap_builds` (`createdby`, `language`)
                        VALUES                       (:createdby , :language )',
 
                        array(':createdby' => $_SESSION['user']['id'],
@@ -359,7 +359,7 @@ function sitemap_get_build_resource($params){
         array_params($params);
         array_default($params, 'language', LANGUAGE);
 
-        $build  = sql_get('SELECT `id`, `createdon` FROM `sitemap_scans` WHERE `language` = :language ORDER BY `createdon` DESC LIMIT 1', array(':language' => str_log($params['language'])));
+        $build  = sql_get('SELECT `id`, `createdon` FROM `sitemap_builds` WHERE `language` = :language ORDER BY `createdon` DESC LIMIT 1', array(':language' => str_log($params['language'])));
 
         if(!$build){
             throw new bException('sitemap_getbuild(): No sitemap builds found', 'notfound');
