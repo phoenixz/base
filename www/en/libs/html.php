@@ -464,6 +464,11 @@ function html_header($params = null, $meta = array()){
             throw new bException('html_header(): No header meta keywords specified (SEO!)');
         }
 
+        if(!empty($params['meta']['noindex'])){
+            $params['meta']['robots'] = 'noindex';
+            unset($params['meta']['noindex']);
+        }
+
         if(!empty($_CONFIG['meta'])){
             /*
              * Add default configured meta tags
