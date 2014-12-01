@@ -1,5 +1,6 @@
 <?php
-$_CONFIG['sitemap'] = array('change_frequency' => 'never',                      // ENUM("always", "hourly", "daily", "weekly", "monthly", "yearly", "never")
+$_CONFIG['sitemap'] = array('ondeploy'         => true,                         // true | false. If set true, will always regenerate the sitemap on each deploy
+                            'change_frequency' => 'never',                      // ENUM("always", "hourly", "daily", "weekly", "monthly", "yearly", "never")
                             'languages'        => null,                         // null (all) or array with required languages
                             'priority'         => 0,                            // Priority level, can usually be left at 0
                             'modified'         => null,                         // File modified. Either "auto", "current" or a static date. If "auto", the file last modified date will be used. If "current", the current date will be used. If a static date, then that will be used
