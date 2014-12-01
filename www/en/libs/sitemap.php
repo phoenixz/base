@@ -21,9 +21,9 @@ load_config('sitemap');
 
 
 /*
- * Build a sitemap in database
+ * Scan the site, and create sitemap data in database
  */
-function sitemap_build($params = array()){
+function sitemap_scan($params = array()){
     global $_CONFIG;
 
     try{
@@ -49,7 +49,7 @@ function sitemap_build($params = array()){
 
         foreach($params['languages'] as $code => $language){
             if(empty($_CONFIG['language']['supported'][$code])){
-                throw new bException('sitemap_build(): Specified (or configured) build language "'.str_log($code).'" is not supported in $_CONFIG[languages][supported]', 'notsupported');
+                throw new bException('sitemap_scan(): Specified (or configured) build language "'.str_log($code).'" is not supported in $_CONFIG[languages][supported]', 'notsupported');
             }
         }
 
@@ -61,7 +61,7 @@ function sitemap_build($params = array()){
         foreach($params['languages'] as $code => $language){
             log_console('Processing language "'.$language.'"', 'language');
 
-            sql_query('INSERT INTO `sitemap_builds` (`createdby`, `language`)
+            sql_query('INSERT INTO `sitemap_scans` (`createdby`, `language`)
                        VALUES                       (:createdby , :language )',
 
                        array(':createdby' => $_SESSION['user']['id'],
@@ -82,18 +82,20 @@ function sitemap_build($params = array()){
                 }
 
                 if(ENVIRONMENT == 'production'){
-                    throw new bException('sitemap_build(): Specified language "'.str_log($language).'" path "'.str_log($path).'" does not exist', 'notexist');
+                    throw new bException('sitemap_scan(): Specified language "'.str_log($language).'" path "'.str_log($path).'" does not exist', 'notexist');
 
                 }else{
                     /*
                      * In development mode its no big deal, just notify and continue
                      */
-                    log_error('sitemap_build(): Specified language "'.str_log($language).'" path "'.str_log($path).'" does not exist, skipping', 'notexist', 'yellow');
+                    log_error('sitemap_scan(): Specified language "'.str_log($language).'" path "'.str_log($path).'" does not exist, skipping', 'notexist', 'yellow');
                     continue;
                 }
             }
 
             while(false !== ($file = readdir($h))){
+                $file_original = $file;
+
                 if(substr($file, 0, 1) == '.'){
                     /*
                      * Skip . .. and all hidden files
@@ -119,7 +121,7 @@ function sitemap_build($params = array()){
                      * Recurse
                      */
                     $params['path'] = $path.$file;
-                    sitemap_build($params);
+                    sitemap_scan($params);
                 }
 
                 /*
@@ -134,11 +136,13 @@ function sitemap_build($params = array()){
 
                 /*
                  * If its a PHP / HTML file, try to get the meta description
+                 * Example line: <meta name="description" content="Welcome to CleanLab Template, a wonderful and premium product for multipurpose websites" />
                  */
                 if($extension == 'html'){
                     $type        = 'html';
                     $description = file_get_contents($path.$file);
-                    $description = str_until(str_from($data, ''), '');
+                    $description = str_until(str_from($data, 'name="description"'), '>');
+                    $description = trim(str_until(str_from($data, 'content="'), '"'));
 
                 }elseif($extension == 'php'){
                     $type = 'html';
@@ -172,11 +176,7 @@ continue;
                  * Rename file if needed
                  */
                 if(isset($params['rename'][$file])){
-                    $file_original = $file;
-                    $file          = $params['rename'][$file];
-
-                }else{
-                    $file_original = null;
+                    $file = $params['rename'][$file];
                 }
 
                 switch($params['modified']){
@@ -184,21 +184,24 @@ continue;
                         /*
                          * Use the file last modified date
                          */
-                        $modified = '';
+                        $modified = new DateTime();
+                        $modified->setTimestamp(filemtime($path.$file_original));
+                        $modified = $modified->format('c');
                         break;
 
                     case 'current':
                         /*
                          * Use the current date
                          */
-                        $modified = '';
+                        $modified = date();
                         break;
 
                     default:
                         /*
-                         * It HAS to be a valid date!
+                         * Take the specified modification date
                          */
-                        $modified = '';
+                        $modified = new DateTime($params['modified']);
+                        $modified = $modified->format('c');
                         break;
                 }
 
@@ -225,7 +228,7 @@ continue;
         }
 
     }catch(Exception $e){
-        throw new bException('sitemap_build(): Failed', $e);
+        throw new bException('sitemap_scan(): Failed', $e);
     }
 }
 
@@ -356,7 +359,7 @@ function sitemap_get_build_resource($params){
         array_params($params);
         array_default($params, 'language', LANGUAGE);
 
-        $build  = sql_get('SELECT `id`, `createdon` FROM `sitemap_builds` WHERE `language` = :language ORDER BY `createdon` DESC LIMIT 1', array(':language' => str_log($params['language'])));
+        $build  = sql_get('SELECT `id`, `createdon` FROM `sitemap_scans` WHERE `language` = :language ORDER BY `createdon` DESC LIMIT 1', array(':language' => str_log($params['language'])));
 
         if(!$build){
             throw new bException('sitemap_getbuild(): No sitemap builds found', 'notfound');

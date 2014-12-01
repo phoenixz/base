@@ -9,9 +9,10 @@
  * Copyright (C), 2011 - 2012 - Sven Oostenbrink, so.oostenbrink@gmail.com
  */
 $usage = "sitemap list\n".
-         "sitemap build\n".
+         "sitemap scan\n".
+         "sitemap scan \"16-08-2014 18:04:58\"\n".
          "sitemap show html|xml|txt LANGUAGECODE\n".
-         "sitemap install html|xml|txt LANGUAGECODE";
+         "sitemap deploy html|xml|txt LANGUAGECODE";
 
 $help  = "The sitemap script can create sitemaps in various formats. It has two modes, build and generate. Build mode (\"build\" argument) will scan the www/LANGUAGE/ directory for accessible files, and store these in the database. The generate mode (\"html\", \"xml\", and \"txt\" will generate the sitemap files in the required format and place them in the www/LANGUAGE/ dir for each available or specified language";
 
@@ -24,18 +25,27 @@ try{
 
     right_or_redirect('admin');
 
-    switch(argument(0)){
+    $option = argument(0);
+
+    switch($option){
         case 'build':
+            log_console('The "build" option has been depreciated, please use "scan" instead');
+            // FALLTHROUGH
+        case 'scan':
             log_error('Building sitemap', 'start', 'white');
-            sitemap_build();
+            sitemap_scan((argument(1) ? array('modified' => argument(1)) : null));
             log_error('Done!', 'finished', 'green');
             break;
 
         case 'install':
+            log_console('The "install" option has been depreciated, please use "deploy" instead');
+            $option = 'deploy';
+            // FALLTHROUGH
+        case 'deploy':
             // FALLTHROUGH
         case 'show':
             /*
-             * Install or show sitemap file
+             * Deploy or show sitemap file
              */
             if(!argument(2)){
                 /*
@@ -81,9 +91,9 @@ try{
             foreach($languages as $language){
                 $params = array('language' => $language);
 
-                if(argument(0) == 'install'){
+                if($option == 'deploy'){
                     /*
-                     * To install the file, the sitemap generate functions cannot send headers themselves and die,
+                     * To deploy the file, the sitemap generate functions cannot send headers themselves and die,
                      * they have to return the data so that it can be placed in the file here
                      */
                     $return    = true;
@@ -105,11 +115,14 @@ try{
                     case 'txt':
                         $data = sitemap_txt($params, $return);
                         break;
+
+                    default:
+                        throw new bException('Unknown file type "'.str_log(argument(1)).'" specified', 'unknown');
                 }
 
-                if(argument(0) == 'install'){
+                if($option == 'deploy'){
                     file_put_contents(ROOT.'www/'.$language.'/sitemap.'.$extension, $data);
-                    log_console('Installed sitemap.'.str_log($extension).' for language "'.str_log($language).'"', 'installed', 'green');
+                    log_console('Deployed sitemap type '.str_log(argument(1)).' for language "'.str_log($language).'"', 'deployed', 'green');
                 }
             }
 
@@ -132,7 +145,7 @@ try{
             throw new bException('No argument specified', 'unknown');
 
         default:
-            throw new bException('Unknown argument "'.str_log(argument(0)).'" specified', 'unknown');
+            throw new bException('Unknown argument "'.str_log($option).'" specified', 'unknown');
     }
 
 }catch(Exception $e){
