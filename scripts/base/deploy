@@ -128,7 +128,6 @@ require_once(dirname(__FILE__).'/../../libs/startup.php');
 try{
     cli_only();
     load_libs('init,deploy');
-    load_config('sitemap');
 
     log_screen('Starting deploy of project "'.PROJECT.'"', 'deploy', 'white');
 
@@ -144,7 +143,7 @@ try{
      * Check command line parameters
      */
     $noinit      =   argument('noinit');
-    $nositemap   =   argument('nositemap', isset_get($_CONFIG['sitemap']['ondeploy']));
+    $nositemap   =   argument('nositemap', !isset_get($_CONFIG['deploy']['sitemap'], true));
     $nohooks     =  (argument('nohook')     or argument('nohooks'));
     $nosyntax    = !(argument('dosyntax')   or argument('doparse'));
     $nodeploy    =  (argument('nodeploy')   or argument('test'));
@@ -222,11 +221,12 @@ try{
          */
         if(!trim(shell_exec('git status | grep "nothing to commit" | wc -l'))) {
             if(!FORCE){
-                throw new bException('Git commit pending', 'COMMITFIRST');
+                if(!$stash){
+                    throw new bException('Git commit pending', 'COMMITFIRST');
+                }
 
-            }elseif($stash){
-                log_console('Changes detected, git stashing changes before comming', 'stash', 'yellw');
-                ('git stash');
+                log_console('Changes detected, git stashing changes before comming', 'stash', 'yellow');
+                safe_exec('git stash');
             }
 
         }else{
@@ -585,8 +585,8 @@ try{
 
 
             if($stash){
-                log_console('Git stashed changes detected, unstashing', 'stash', 'yellw');
-                ('git stash pop');
+                log_console('Git stashed changes detected, unstashing', 'stash', 'yellow');
+                safe_exec('git stash pop');
             }
 
             /*
