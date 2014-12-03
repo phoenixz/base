@@ -122,21 +122,21 @@ function uncaught_exception($e, $die = 1){
 /*
  * for translations
  */
-function tr($msg, $from = false, $to = false){
+function tr($text, $from = false, $to = false){
     try{
         if($from != false){
             if($to != false){
-                return str_replace($from, $to, $msg);
+                return str_replace($from, $to, $text);
             }
 
-            return str_replace(array_keys($from), array_values($from), $msg);
+            return str_replace(array_keys($from), array_values($from), $text);
 
         }else{
-            return $msg;
+            return $text;
         }
 
     }catch(Exception $e){
-        throw new bException('tr(): Failed. Check the $from and $to configuration!', $e);
+        throw new bException('tr(): Failed with text "'.str_log($text).'". Check the $from and $to configuration!', $e);
     }
 }
 

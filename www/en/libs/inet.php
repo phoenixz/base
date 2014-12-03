@@ -9,20 +9,6 @@
  */
 
 
-/*
- * Send HTTP header
- */
-function http($code){
-    try{
-        load_libs('http');
-        http_header($code);
-
-    }catch(Exception $e){
-        throw new bException('http(): Failed', $e);
-    }
-}
-
-
 
 /*
  * Correct domain name

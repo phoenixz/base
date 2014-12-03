@@ -7,14 +7,17 @@
  * Written by Sven Oostenbrink
  *
  * Copyright (C), 2011 - 2012 - Sven Oostenbrink, so.oostenbrink@gmail.com
+ *
+ * Sitemap scanner should honor robots.txt and meta robots noindex!
+ * Sitemap scanner should extract descriptions from pages
  */
 $usage = "sitemap list\n".
          "sitemap scan\n".
          "sitemap scan \"16-08-2014 18:04:58\"\n".
-         "sitemap show html|xml|txt LANGUAGECODE\n".
-         "sitemap deploy html|xml|txt LANGUAGECODE";
+         "sitemap show html|xml|txt|robots LANGUAGECODE\n".
+         "sitemap deploy html|xml|txt|robots LANGUAGECODE";
 
-$help  = "The sitemap script can create sitemaps in various formats. It has two modes, build and generate. Build mode (\"build\" argument) will scan the www/LANGUAGE/ directory for accessible files, and store these in the database. The generate mode (\"html\", \"xml\", and \"txt\" will generate the sitemap files in the required format and place them in the www/LANGUAGE/ dir for each available or specified language";
+$help  = "The sitemap script can scan the entire website, and create sitemap files in various formats. It has two modes, scan and deploy. Scan mode (\"scan\" argument) will scan the site according to configuration and start with the index file, and possible other files configured in \$_CONFIG[sitemap] (see config/base/sitemap.php and config/sitemap.php), and store these in the database. The deploy mode (\"html\", \"xml\", and \"txt\" will generate and deploy the sitemap files in the required format and place them in the www/LANGUAGE/ dir for each available or specified language";
 
 require_once(dirname(__FILE__).'/../../libs/startup.php');
 
@@ -28,12 +31,28 @@ try{
     $option = argument(0);
 
     switch($option){
+        case 'clean':
+            // FALLTHROUGH
+        case 'clear':
+            /*
+             * Clear sitemap database.
+             */
+            log_console('Clearing sitemap database tables...', 'clear', 'white');
+            sql_query('DELETE FROM `sitemap_data`');
+            sql_query('DELETE FROM `sitemap_scans`');
+            log_console('Sitemap database tables have been cleared', 'finished', 'green');
+            break;
+
         case 'build':
             log_console('The "build" option has been depreciated, please use "scan" instead');
             // FALLTHROUGH
         case 'scan':
+            $params['show_skip'] = argument('show_skip', false);
+            $params['modified']  = argument('modified' , true);
+            $params['languages'] = not_empty(argument('languages' , true), argument('language' , true));
+
             log_error('Building sitemap', 'start', 'white');
-            sitemap_scan((argument(1) ? array('modified' => argument(1)) : null));
+            sitemap_scan($params);
             log_error('Done!', 'finished', 'green');
             break;
 
@@ -116,13 +135,23 @@ try{
                         $data = sitemap_txt($params, $return);
                         break;
 
+                    case 'robots':
+                        $data = sitemap_robots($params, $return);
+                        break;
+
                     default:
-                        throw new bException('Unknown file type "'.str_log(argument(1)).'" specified', 'unknown');
+                        throw new bException('Unknown file type "'.str_log(argument(1)).'" specified. Please specify one of "html|xml|txt|robots"', 'unknown');
                 }
 
                 if($option == 'deploy'){
-                    file_put_contents(ROOT.'www/'.$language.'/sitemap.'.$extension, $data);
-                    log_console('Deployed sitemap type '.str_log(argument(1)).' for language "'.str_log($language).'"', 'deployed', 'green');
+                    if(argument(1) == 'robots'){
+                        file_put_contents(ROOT.'www/'.$language.'/robots.txt', $data);
+                        log_console('Deployed sitemap robots.txt', 'deployed', 'green');
+
+                    }else{
+                        file_put_contents(ROOT.'www/'.$language.'/sitemap.'.$extension, $data);
+                        log_console('Deployed sitemap type '.str_log(argument(1)).' for language "'.str_log($language).'"', 'deployed', 'green');
+                    }
                 }
             }
 

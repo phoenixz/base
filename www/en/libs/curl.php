@@ -172,6 +172,7 @@ function curl_get($params, $referer = null, $post = false, $options = array()){
         array_default($params, 'getstatus'      , true);
         array_default($params, 'cookies'        , true);
         array_default($params, 'getcookies'     , false);
+        array_default($params, 'getheaders'     , true);
         array_default($params, 'followlocation' , true);
         array_default($params, 'httpheaders'    , true);
         array_default($params, 'content-type'   , false);
@@ -269,9 +270,9 @@ function curl_get($params, $referer = null, $post = false, $options = array()){
 
         curl_setopt($ch, CURLOPT_VERBOSE       , not_empty($params['verbose'], null));
         curl_setopt($ch, CURLOPT_REFERER       , not_empty($params['referer'], null));
-        curl_setopt($ch, CURLOPT_HEADER        , ($params['getcookies']     ?  1 : 0));
-        curl_setopt($ch, CURLOPT_FOLLOWLOCATION, ($params['followlocation'] ?  1 : 0));
-        curl_setopt($ch, CURLOPT_MAXREDIRS     , ($params['followlocation'] ? 50 : null));
+        curl_setopt($ch, CURLOPT_HEADER        , ($params['getcookies'] or $params['getheaders'] ?  1 : 0));
+        curl_setopt($ch, CURLOPT_FOLLOWLOCATION, ($params['followlocation']                      ?  1 : 0));
+        curl_setopt($ch, CURLOPT_MAXREDIRS     , ($params['followlocation']                      ? 50 : null));
 
         if($params['post'] !== false) {
             if($params['content-type']){

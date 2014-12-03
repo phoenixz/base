@@ -104,7 +104,7 @@ function json_reply($reply = null, $result = 'OK', $httpcode = null){
 
     if($httpcode){
         load_libs('http');
-        http_header($httpcode);
+        http_headers($httpcode);
     }
 
     header('Content-Type: application/json');

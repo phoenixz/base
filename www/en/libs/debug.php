@@ -77,7 +77,7 @@ function show($data = '', $return = false, $quiet = false, $trace_offset = 1){
 */
     }else{
         if(is_scalar($data)){
-            $retval .= (!$quiet ? tr('DEBUG SHOW (%file%@%line%)', array('%file%' => current_file($trace_offset), '%line%' => current_line($trace_offset))) : '').$data."\n";
+            $retval .= (!$quiet ? tr('DEBUG SHOW (%file%@%line%) ', array('%file%' => current_file($trace_offset), '%line%' => current_line($trace_offset))) : '').$data."\n";
 
         }else{
             /*
@@ -88,7 +88,7 @@ function show($data = '', $return = false, $quiet = false, $trace_offset = 1){
             }
 
             if(!$quiet){
-                $retval .= tr('DEBUG SHOW (%file%@%line%)', array('%file%' => current_file($trace_offset), '%line%' => current_line($trace_offset)))."\n";
+                $retval .= tr('DEBUG SHOW (%file%@%line%) ', array('%file%' => current_file($trace_offset), '%line%' => current_line($trace_offset)))."\n";
             }
 
             $retval .= print_r($data, true);

@@ -143,7 +143,7 @@ try{
      * Check command line parameters
      */
     $noinit      =   argument('noinit');
-    $nositemap   =   argument('nositemap', !isset_get($_CONFIG['deploy']['sitemap'], true));
+    $nositemap   =   argument('nositemap');
     $nohooks     =  (argument('nohook')     or argument('nohooks'));
     $nosyntax    = !(argument('dosyntax')   or argument('doparse'));
     $nodeploy    =  (argument('nodeploy')   or argument('test'));
@@ -560,11 +560,12 @@ try{
             }else{
                 log_screen(($subenvironment ? '('.$subenvironment.') ' : '').'Executing sitemap scan and deploy on target server', 'deploy', 'white');
 
-                passthru($command = 'ssh -t -p '.isset_get($deploy_config['target_port'], 22).' '.$deploy_config['target_user'].'@'.$deploy_config['target_server'].' \''.$deploy_config['target_dir'].'/scripts/base/sitemap scan '.$target_environment.($subenvironment ? ' subenv '.$subenvironment : '').' \'');
+                passthru($command = 'ssh -t -p '.isset_get($deploy_config['target_port'], 22).' '.$deploy_config['target_user'].'@'.$deploy_config['target_server'].' \''.$deploy_config['target_dir'].'/scripts/base/sitemap scan env '.$target_environment.($subenvironment ? ' subenv '.$subenvironment : '').' \'');
 
                 foreach($deploy_config['languages'] as $language){
-                    passthru($command = 'ssh -t -p '.isset_get($deploy_config['target_port'], 22).' '.$deploy_config['target_user'].'@'.$deploy_config['target_server'].' \''.$deploy_config['target_dir'].'/scripts/base/sitemap deploy html '.$language.' env '.$target_environment.($subenvironment ? ' subenv '.$subenvironment : '').' \'');
-                    passthru($command = 'ssh -t -p '.isset_get($deploy_config['target_port'], 22).' '.$deploy_config['target_user'].'@'.$deploy_config['target_server'].' \''.$deploy_config['target_dir'].'/scripts/base/sitemap deploy  xml '.$language.' env '.$target_environment.($subenvironment ? ' subenv '.$subenvironment : '').' \'');
+                    passthru($command = 'ssh -t -p '.isset_get($deploy_config['target_port'], 22).' '.$deploy_config['target_user'].'@'.$deploy_config['target_server'].' \''.$deploy_config['target_dir'].'/scripts/base/sitemap deploy   html '.$language.' env '.$target_environment.($subenvironment ? ' subenv '.$subenvironment : '').' \'');
+                    passthru($command = 'ssh -t -p '.isset_get($deploy_config['target_port'], 22).' '.$deploy_config['target_user'].'@'.$deploy_config['target_server'].' \''.$deploy_config['target_dir'].'/scripts/base/sitemap deploy    xml '.$language.' env '.$target_environment.($subenvironment ? ' subenv '.$subenvironment : '').' \'');
+                    passthru($command = 'ssh -t -p '.isset_get($deploy_config['target_port'], 22).' '.$deploy_config['target_user'].'@'.$deploy_config['target_server'].' \''.$deploy_config['target_dir'].'/scripts/base/sitemap deploy robots '.$language.' env '.$target_environment.($subenvironment ? ' subenv '.$subenvironment : '').' \'');
                 }
                 init_hook('deploy_post_sitemap', $nohooks);
             }

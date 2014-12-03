@@ -111,12 +111,20 @@ function http_status_message($code){
 /*
  * Send HTTP header for the specified code
  */
-function http_header($code){
+function http_headers($params){
     try{
-        header('HTTP/1.1 '.$code.' '.http_status_message($code));
+        array_params($params, 'http_code');
+        array_default($params, 'http_code', 200);
+
+        http_response_code($params['http_code']);
+
+        if($params['http_code'] == 200){
+            header('Last-Modified: '.gmdate('r', filemtime($_SERVER['SCRIPT_FILENAME'])));
+//            header('Last-Modified: '.gmdate('D, d M Y H:i:s', filemtime($_SERVER['SCRIPT_FILENAME'])).' GMT', true, 200);
+        }
 
     }catch(Exception $e){
-        throw new bException('http_header(): Failed', $e);
+        throw new bException('http_headers(): Failed', $e);
     }
 }
 
@@ -155,5 +163,14 @@ function http_start($params){
         default:
             throw new bException('http_start(): Unknown type "'.str_log($type).'" specified');
     }
+}
+
+
+
+/*
+ * Depreciated, HTTP codes are now sent by http_headers()
+ */
+function http_header(){
+    throw new bException('http_header() is no longer supported, set the http_code in html_header($params) which will send it to http_headers()', 'depreciated');
 }
 ?>

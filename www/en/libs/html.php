@@ -438,15 +438,15 @@ function html_header($params = null, $meta = array()){
 
     try{
         array_params($params, 'title');
-        array_default($params, 'http'   , 'html');
-        array_default($params, 'doctype', 'html');
-        array_default($params, 'html'   , 'html');
-        array_default($params, 'body'   , '<body>');
-        array_default($params, 'title'  , null);
-        array_default($params, 'meta'   , $meta);
-        array_default($params, 'link'   , array());
-        array_default($params, 'extra'  , '');
-        array_default($params, 'favicon', true);
+        array_default($params, 'http'     , 'html');
+        array_default($params, 'doctype'  , 'html');
+        array_default($params, 'html'     , 'html');
+        array_default($params, 'body'     , '<body>');
+        array_default($params, 'title'    , null);
+        array_default($params, 'meta'     , $meta);
+        array_default($params, 'link'     , array());
+        array_default($params, 'extra'    , '');
+        array_default($params, 'favicon'  , true);
 
         if(!empty($params['js'])){
             html_load_js($params['js']);
@@ -482,7 +482,8 @@ function html_header($params = null, $meta = array()){
 
         $params['title'] = html_title($params['title']);
 
-        $retval = "<!DOCTYPE ".$params['doctype'].">\n".
+        $retval = http_headers($params).
+                  "<!DOCTYPE ".$params['doctype'].">\n".
                   "<".$params['html'].">\n".
                   "<head>\n".
                   "<meta http-equiv=\"Content-Type\" content=\"text/html;charset=".$_CONFIG['charset']."\">\n".
@@ -1226,5 +1227,18 @@ function html_hidden($source, $key = 'id'){
     }catch(Exception $e){
         throw new bException('html_hidden(): Failed', $e);
     }
+}
+
+
+
+/*
+ * Create the page using the custom library c_page function and add content-length header and send HTML to client
+ */
+function html_send($params, $meta, $html){
+    $html = c_page($params, $meta, $html);
+
+    header('Content-Length: '.mb_strlen($html));
+    echo $html;
+    die();
 }
 ?>
