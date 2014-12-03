@@ -120,6 +120,11 @@ function uglify_css($path = null){
         }
 
         foreach(file_list_tree($path) as $file){
+            /*
+             * Update path for each file since the file may be in a sub directory
+             */
+            $path = slash(dirname($file));
+
             if(is_dir($file)){
                 /*
                  * Recurse into sub directories
@@ -150,7 +155,7 @@ function uglify_css($path = null){
                      * If the symlink target does not exist, we can just ignore it
                      */
                     if(!file_exists($path.$target)){
-                        log_console('uglify_css(): Ignorning symlink "'.str_log($file).'" with non existing target', 'uglify', 'yellow');
+                        log_console('uglify_css(): Ignorning symlink "'.str_log($file).'" with non existing target "'.str_log($path.$target).'"', 'uglify', 'yellow');
 
                         $processed[str_rfrom($file, '/')] = true;
                         continue;
@@ -363,6 +368,11 @@ function uglify_js($path = null){
         }
 
         foreach(file_list_tree($path) as $file){
+            /*
+             * Update path for each file since the file may be in a sub directory
+             */
+            $path = slash(dirname($file));
+
             if(is_dir($file)){
                 /*
                  * Recurse into sub directories
@@ -393,7 +403,7 @@ function uglify_js($path = null){
                      * If the symlink target does not exist, we can just ignore it
                      */
                     if(!file_exists($path.$target)){
-                        log_console('uglify_js(): Ignorning symlink "'.str_log($file).'" with non existing target', 'uglify', 'yellow');
+                        log_console('uglify_js(): Ignorning symlink "'.str_log($file).'" with non existing target "'.str_log($path.$target).'"', 'uglify', 'yellow');
 
                         $processed[str_rfrom($file, '/')] = true;
                         continue;
