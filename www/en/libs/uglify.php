@@ -177,7 +177,7 @@ function uglify_css($path = null){
                         continue;
                     }
 
-                    if(substr($file, 0, -4) == substr($target, 0, -8)){
+                    if(substr(basename($file), 0, -4) == substr($target, 0, -8)){
                         /*
                          * This non minimized version points towards a minimized version of the same file. Move the minimized version to the normal version,
                          * and make a minimized version
@@ -185,8 +185,8 @@ function uglify_css($path = null){
                         log_console('uglify_css(): Found symlink "'.str_log($file).'" pointing to its minimized version. Switching files', 'uglify', 'yellow');
 
                         file_delete($file);
-                        rename($target, $file);
-                        symlink($file, $target);
+                        rename($path.$target, $file);
+                        copy($file, $path.$target);
 
                         $processed[str_rfrom($file, '/')] = true;
                         continue;
@@ -425,7 +425,7 @@ function uglify_js($path = null){
                         continue;
                     }
 
-                    if(substr($file, 0, -3) == substr($target, 0, -7)){
+                    if(substr(basename($file), 0, -3) == substr($target, 0, -7)){
                         /*
                          * This non minimized version points towards a minimized version of the same file. Move the minimized version to the normal version,
                          * and make a minimized version
@@ -433,8 +433,8 @@ function uglify_js($path = null){
                         log_console('uglify_js(): Found symlink "'.str_log($file).'" pointing to its minimized version. Switching files', 'uglify', 'yellow');
 
                         file_delete($file);
-                        rename($target, $file);
-                        symlink($file, $target);
+                        rename($path.$target, $file);
+                        copy($file, $path.$target);
 
                         $processed[str_rfrom($file, '/')] = true;
                         continue;
