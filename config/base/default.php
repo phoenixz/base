@@ -292,9 +292,13 @@ $_CONFIG['title']              = 'Base';                                        
 $_CONFIG['system']             = array('translator'       => 'translator.localhost',                        //
                                        'updater'          => 'updater.svenoostenbrink.com');                //
 
+// Temporary path location, either "local" (ROOT/tmp/) or "global" (/tmp/)
+$_CONFIG['tmp']                = 'local';                                                                   // Either "local" or "global". "local" will save all temporary files in ROOT/tmp, "global" will save all temporary files in /tmp/PROJECT/
+
+// User configuration
+$_CONFIG['users']              = array('type_filter'      => null);
+
 //Xapian search
 $_CONFIG['xapian']             = array('dir'              => ROOT.'data/xapian/');                          // Base path for Xapian databases
 
-// Temporary path location, either "local" (ROOT/tmp/) or "global" (/tmp/)
-$_CONFIG['tmp']                = 'local';                                                                   // Either "local" or "global". "local" will save all temporary files in ROOT/tmp, "global" will save all temporary files in /tmp/PROJECT/
 ?>
