@@ -1028,13 +1028,13 @@ function has_rights($rights, &$user = null){
 /*
  * Either a right is logged in or the person will be redirected to the specified URL
  */
-function rights_or_redirect($rights, $url = null, $method = 'http', $log_fail = null){
+function rights_or_redirect($rights, $url = null, $method = 'http'){
     global $_CONFIG;
 
     try{
         user_or_redirect($url, $method);
 
-        if(!has_rights($rights, $log_fail)){
+        if(!has_rights($rights)){
             if((PLATFORM == 'shell')){
                 /*
                  * Hey, we're not in a browser!

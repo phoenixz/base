@@ -87,7 +87,7 @@ function blogs_post($blog){
 
                     WHERE  `id`     = :id';
 
-        if(!has_rights('admin', false)){
+        if(!has_rights('admin')){
             /*
              * Only the user itself can post this
              */
