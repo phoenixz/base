@@ -29,12 +29,11 @@ array_shift($argv);
  * assume that if the user is in the shell, he already
  * authenticated with the shell
  */
-load_libs('user');
-
 if(!empty($signin)){
     try{
+        load_libs('user');
         $_SESSION['user'] = user_authenticate($signin, $password);
-        log_console('Signed in as user "'.user_name($_SESSION['user']).'"', '', 'white');
+        log_console('startup: Signed in as user "'.user_name($_SESSION['user']).'"', '', 'white');
 
         unset($signin);
         unset($password);
@@ -45,20 +44,23 @@ if(!empty($signin)){
 
 }elseif(!empty($_SERVER['USER'])){
     try{
-        if(!$user = sql_get('SELECT `id`, `name`, `username`, `email`
+        $user = sql_get('SELECT `id`,
+                                `name`,
+                                `username`,
+                                `email`
 
-                            FROM   `users`
+                         FROM   `users`
 
-                            WHERE  `username` = :name
-                            OR     `email`    = :email',
+                         WHERE  `username` = :name
+                         OR     `email`    = :email',
 
-                            array(':name'  => $_SERVER['USER'],
-                                  ':email' => $_SERVER['USER']))){
+                         array(':name'  => $_SERVER['USER'],
+                               ':email' => $_SERVER['USER']));
 
-            throw new bException('startup: Current server user "'.$_SERVER['USER'].'" does not exist in the database. Please use one of the "signin username password" or "-l username password" options', 'not_exist');
+        if($user){
+            load_libs('user');
+            user_signin($user);
         }
-
-        user_signin($user);
 
     }catch(Exception $e){
         if(SCRIPT != 'init'){
