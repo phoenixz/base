@@ -8,7 +8,9 @@
  * @license http://opensource.org/licenses/GPL-2.0 GNU Public License, Version 2
  * @copyright Sven Oostenbrink <support@svenoostenbrink.com>, Johan Geuze
  */
-$_CONFIG['sitemap'] = array('change_frequency' => 'never',                                  // ENUM("always", "hourly", "daily", "weekly", "monthly", "yearly", "never")
+$_CONFIG['sitemap'] = array('enabled'          => true,                                     // true | false, if disabled, the sitemap script will refuse to work
+
+                            'change_frequency' => 'never',                                  // ENUM("always", "hourly", "daily", "weekly", "monthly", "yearly", "never")
 
                             'disallow'         => array('/\/google.html/i'      => null,    // List of REGEX paths that should always show as "Decline"
                                                         '/\/microsoft.html/i'   => null,

@@ -22,6 +22,11 @@ $help  = "The sitemap script can scan the entire website, and create sitemap fil
 require_once(dirname(__FILE__).'/../../libs/startup.php');
 
 try{
+    if(empty($_CONFIG['sitemap']['enabled'])){
+        log_console('scripts/base/sitemap: Sitemap has been disabled in the configuration', 'disabled', 'yellow');
+        cli_die(0);
+    }
+
     cli_basic_arguments();
 
     load_libs('sitemap');
