@@ -142,8 +142,8 @@ function sitemap_xml($params = array(), $return = false){
             $xml .= "<url>\n".
                     '   <loc>'.domain('/'.$url['url'])."</loc>\n".
                     '   <lastmod>'.$url['modified']->format('Y-m-d\TH:i:sP')."</lastmod>\n".
-                    '   <changefreq>'.$url['changefreq']."</changefreq>\n".
-                    '   <priority>'.$url['priority']."</priority>\n".
+                    ($_CONFIG['sitemap']['show_changefreq'] ? '   <changefreq>'.$url['changefreq']."</changefreq>\n" : '').
+                    ($_CONFIG['sitemap']['show_priority']   ? '   <priority>'.$url['priority']."</priority>\n"       : '').
                     "</url>\n";
         }
 
@@ -185,8 +185,8 @@ function sitemap_html($params = array(), $return = false){
             $html .= "<li>\n".
                     '   <span>'.domain('/'.$url['url'])."</span>\n".
                     '   <span>'.$url['modified']->format('Y-m-d\TH:i:sP')."</span>\n".
-                    '   <span>'.$url['changefreq']."</span>\n".
-                    '   <span>'.$url['priority']."</span>\n".
+                    ($_CONFIG['sitemap']['show_changefreq'] ? '   <span>'.$url['changefreq']."</span>\n" : '').
+                    ($_CONFIG['sitemap']['show_priority']   ? '   <span>'.$url['priority']."</span>\n"   : '').
                     "</li>\n";
         }
 

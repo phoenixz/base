@@ -48,5 +48,8 @@ $_CONFIG['sitemap'] = array('enabled'          => true,                         
                             'priority'         => 0,                                        // Priority level, can usually be left at 0
                             'scan'             => array('/index.html'),                     // Files that should be scanned. If contains %language% then these files willl be scanned for each language. Links from there will be scanned as well as long as they are within the same domain and not in the ignore list.
 
+                            'show_changefreq'  => true,                                     // Show change frequency
+                            'show_priority'    => true,                                     // Show priority
+
                             'xsl'              => '/sitemap.xsl');                          // XSL file, in case the XML file should be displayed nicely
 ?>
