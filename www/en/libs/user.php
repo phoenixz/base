@@ -675,25 +675,26 @@ function user_name($user = null, $guest = null){
 
 
 
-/*
- * Returns true either if the user has the specified right and not the devil right, or the "god" right
- */
-function user_has_rights($user, $right) {
-    try{
-        if(!isset($user['rights'])){
-            $user['rights'] = user_load_rights($user);
-        }
-
-        if(!empty($user['rights']['god'])){
-            return true;
-        }
-
-        return !empty($user['rights'][$right]) and empty($user['rights']['devil']);
-
-    }catch(Exception $e){
-        throw new bException('user_has_rights(): Failed', $e);
-    }
-}
+// :DELETE: has_rights() can now perform the same functionality
+///*
+// * Returns true either if the user has the specified right and not the devil right, or the "god" right
+// */
+//function user_has_rights($user, $right) {
+//    try{
+//        if(!isset($user['rights'])){
+//            $user['rights'] = user_load_rights($user);
+//        }
+//
+//        if(!empty($user['rights']['god'])){
+//            return true;
+//        }
+//
+//        return !empty($user['rights'][$right]) and empty($user['rights']['devil']);
+//
+//    }catch(Exception $e){
+//        throw new bException('user_has_rights(): Failed', $e);
+//    }
+//}
 
 
 

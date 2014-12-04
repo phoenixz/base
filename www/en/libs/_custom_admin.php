@@ -33,7 +33,7 @@ function admin_start($params = '', $flash = null, $flash_type = null) {
     global $_CONFIG;
 
     try{
-        //if(!has_right('admin')){
+        //if(!has_rights('admin')){
         //    /*
         //     * This is not a user or not an admin user. either way, don't show admin menu
         //     */
@@ -109,7 +109,7 @@ function admin_end() {
 function admin_menu($params) {
     global $_CONFIG;
 
-    if(!has_right('admin')){
+    if(!has_rights('admin')){
         return '';
     }
 
@@ -120,13 +120,13 @@ function admin_menu($params) {
     $html = '<ul>';
 
     foreach($_CONFIG['admin']['pages'] as $right => $menu) {
-        if(has_right($right)) {
+        if(has_rights($right)) {
             $html .= '<li'.(($menu['script'] == $params['script']) ? ' class="selected"' : '').'><a'.(empty($menu['target']) ? '' : ' target="'.$menu['target'].'"').' href="'.$menu['script'].'">'.$menu['title'].'</a></li>';
         }
 
         if(!empty($menu['subs'])){
             foreach($menu['subs'] as $right => $menu) {
-                if(has_right($right)) {
+                if(has_rights($right)) {
                     $html .= '<li class="sub'.(($menu['script'] == $params['script']) ? ' selected' : '').'"><a'.(empty($menu['target']) ? '' : ' target="'.$menu['target'].'"').' href="'.$menu['script'].'">'.$menu['title'].'</a></li>';
                 }
             }

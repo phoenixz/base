@@ -1364,16 +1364,4 @@ function restore_post(){
 
     return include(dirname(__FILE__).'/handlers/system_restore_post.php');
 }
-
-
-
-/*
- * DEPRECIATED FUNCTIONS, WILL BE REMOVED SOON!
- */
-function has_right($rights, $log_fail = null){
-    return has_rights($rights, $log_fail = null);
-}
-function right_or_redirect($rights, $url = null, $method = 'http', $log_fail = null){
-    return rights_or_redirect($rights, $url = null, $method = 'http', $log_fail = null);
-}
 ?>
