@@ -76,7 +76,7 @@ function mobile_detect(){
 	/*
 	* Reset mobile enabled configuration to limited access
 	*/
-	if($_CONFIG['mobile']['enabled'] = has_right('mobile')){
+	if($_CONFIG['mobile']['enabled'] = has_rights('mobile')){
 		/*
 		 * Autoredirect to mobile site?
 		 */

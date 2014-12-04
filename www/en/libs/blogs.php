@@ -87,7 +87,7 @@ function blogs_post($blog){
 
                     WHERE  `id`     = :id';
 
-        if(!has_right('admin', false)){
+        if(!has_rights('admin', false)){
             /*
              * Only the user itself can post this
              */
@@ -440,7 +440,7 @@ function blogs_photos_upload($files, $post){
             throw new bException('blogs_photos_upload(): Unknown blog post specified', 'unknown');
         }
 
-        if(($post['createdby'] != $_SESSION['user']['id']) and !has_right('god')){
+        if(($post['createdby'] != $_SESSION['user']['id']) and !has_rights('god')){
             throw new bException('blogs_photos_upload(): Cannot upload photos, this post is not yours', 'accessdenied');
         }
 
@@ -526,7 +526,7 @@ function blogs_photo_description($user, $photo_id, $description){
             throw new bException('blogs_photo_description(): Unknown blog post photo specified', 'unknown');
         }
 
-        if(($photo['createdby'] != $_SESSION['user']['id']) and !has_right('god')){
+        if(($photo['createdby'] != $_SESSION['user']['id']) and !has_rights('god')){
             throw new bException('blogs_photo_description(): Cannot upload photos, this post is not yours', 'accessdenied');
         }
 

@@ -239,7 +239,10 @@ $_CONFIG['redirects']          = array('index'            => 'index.php',       
                                        'aftersignout'     => 'index.php');                                  //Where will the site redirect to by default after a signout?
 
 // Security configuration
-$_CONFIG['security']           = array('signin'           => array('save_password' => true),                //
+$_CONFIG['security']           = array('signin'           => array('save_password' => true,                 //
+                                                                   'ip_lock'       => true,                 // Either "false", "true" (which makes it lock to users with the right ip_lock), or "ip address"
+                                                                   'two_factor'    => false),               // Either "false" or a valid twilio "from" phone number
+
                                        'user'             => 'apache',                                      //
                                        'group'            => 'apache');                                     //
 

@@ -965,13 +965,28 @@ function user_or_redirect($url = false, $method = 'http'){
  * This function will automatically load the rights for this user if
  * they are not yet in the session variable
  */
-function has_rights($rights, $log_fail = null){
+function has_rights($rights, &$user = null){
     try{
+        if($user === null){
+            if(empty($_SESSION['user'])){
+                /*
+                 * No user specified and there is no session user either,
+                 * so there are absolutely no rights at all
+                 */
+                return false;
+            }
+
+            $user = &$_SESSION['user'];
+
+        }elseif(!is_array($user)){
+            throw new bException(tr('has_rights(): Specified user is not an array'), 'invalid');
+        }
+
         /*
          * Dynamically load the user rights
          */
-        if(empty($_SESSION['user']['rights'])){
-            if(empty($_SESSION['user'])){
+        if(empty($user['rights'])){
+            if(empty($user)){
                 /*
                  * There is no user, so there are no rights at all
                  */
@@ -979,41 +994,25 @@ function has_rights($rights, $log_fail = null){
             }
 
             load_libs('user');
-            $_SESSION['user']['rights'] = user_load_rights($_SESSION['user']);
+            $user['rights'] = user_load_rights($user);
         }
 
-        if(!empty($_SESSION['user']['rights']['god'])){
+        if(empty($rights)){
+            throw new bException('has_rights(): No rights specified');
+        }
+
+        if(!empty($user['rights']['god'])){
             return true;
         }
 
         foreach(array_force($rights) as $right){
-            if(empty($_SESSION['user']['rights'][$right]) or !empty($_SESSION['user']['rights']['devil'])){
-                /*
-                 * Admin right is the ONLY right that can be specified in the users table,
-                 * and is loaded in the $_SESSION['user'] array. So if the "admin" right is
-                 * requested, but not available in the rights list, we can alternatively look
-                 * in the $_SESSION['user']['admin']
-                 */
-                if(($right != 'admin') or empty($_SESSION['user']['admin'])){
-                    if(($log_fail === null)){
-                        /*
-                         * By default, show access denied messages on shell, but not on browser
-                         */
-                        if(PLATFORM == 'shell'){
-                            $log_fail = true;
-
-                        }else{
-                            $log_fail = false;
-                        }
-                    }
-
-                    if($log_fail){
-                        load_libs('user');
-                        log_message('has_rights(): Access denied for user "'.str_log(user_name($_SESSION['user'])).'" in page "'.str_log($_SERVER['PHP_SELF']).'" for missing right "'.str_log($right).'"', 'accessdenied', 'yellow');
-                    }
-
-                    return false;
+            if(empty($user['rights'][$right]) or !empty($user['rights']['devil'])){
+                if(PLATFORM == 'shell'){
+                    load_libs('user');
+                    log_message('has_rights(): Access denied for user "'.str_log(user_name($_SESSION['user'])).'" in page "'.str_log($_SERVER['PHP_SELF']).'" for missing right "'.str_log($right).'"', 'accessdenied', 'yellow');
                 }
+
+                return false;
             }
         }
 

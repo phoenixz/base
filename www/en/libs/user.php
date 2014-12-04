@@ -134,6 +134,8 @@ function user_find_avatar($user) {
  * `cate the specified user with the specified password
  */
 function user_authenticate($username, $password) {
+    global $_CONFIG;
+
     try{
         if(!is_scalar($username)){
             throw new bException('user_authenticate(): Specified username is not valid', 'invalid');
@@ -170,6 +172,59 @@ function user_authenticate($username, $password) {
             throw new bException('user_authenticate(): Specified password does not match stored password', 'password');
         }
 
+
+        /*
+         * Apply IP locking system
+         */
+        if($_CONFIG['security']['signin']['ip_lock'] and (PLATFORM == 'apache')){
+            $ip = $_CONFIG['security']['signin']['ip_lock'];
+
+            if($ip === true){
+                /*
+                 * Get the last locked IP from the database
+                 * If there is none, then it's not a problem, it will never match, and
+                 * require a user with iplock rights to set
+                 */
+                $ip = sql_get('SELECT `ip` FROM `ip_locks` ORDER BY `id` DESC LIMIT 1', 'ip');
+            }
+
+            if($ip != $_SERVER['REMOTE_ADDR']){
+                if(!has_rights('iplock', $user)){
+                    throw new bException('user_authenticate(): Your current IP "'.str_log($_SERVER['REMOTE_ADDR']).'" is not allowed to login', 'iplock');
+                }
+
+                /*
+                 * This user can reset the iplock by simply logging in
+                 */
+                sql_query('INSERT INTO `ip_locks` (`createdby`, `ip`)
+                           VALUES                 (:createdby , :ip )',
+
+                           array(':createdby' => $user['id'],
+                                 ':ip'        => $_SERVER['REMOTE_ADDR']));
+
+                html_flash_set('Updated IP lock to "'.str_log($_SERVER['REMOTE_ADDR']).'"', 'info');
+            }
+        }
+
+        /*
+         * Use two factor authentication, the user has to authenticate by SMS as well
+         */
+        if($_CONFIG['security']['signin']['two_factor']){
+            if(empty($user['phone'])){
+                throw new bException('user_autohenticate(): Two factor authentication impossible for user "'.$user['id'].' / '.$user['name'].'" because no phone is registered', 'twofactor_nophone');
+            }
+
+            $user['authenticated'] = 'two_factor';
+            $user['two_factor']    = uniqid();
+
+            load_libs('twilio');
+            $twilio = twilio_load();
+            $twilio->account->messages->sendMessage($_CONFIG['security']['signin']['twofactor'], $user['phone'], 'The "'.$_CONFIG['name'].'"authentication code is "'.$user['two_factor'].'"');
+
+            return $user;
+        }
+
+        $user['authenticated'] = true;
         return $user;
 
     }catch(Exception $e){
@@ -177,6 +232,14 @@ function user_authenticate($username, $password) {
          * Wait a little bit so the authentication failure cannot be timed
          */
         usleep(mt_rand(1000, 2000000));
+
+        if($e->getCode() == 'password'){
+            if($date = sql_get('SELECT `createdon` FROM `passwords` WHERE `users_id` = :users_id AND `password` = :password', 'id', array(':users_id' => isset_get($user['id']), ':password' => isset_get($encryption)))){
+                $date = new DateTime($date);
+                throw new bException('user_authenticate(): Your password was updated on "'.str_log($date->format($_CONFIG['formats']['human_date'])).'"', 'oldpassword');
+            }
+        }
+
         throw new bException('user_authenticate(): Failed', $e);
     }
 }
@@ -503,6 +566,8 @@ function user_update_password($params){
             throw new bException(tr('user_update_password(): Specified password does not match the validation password'), 'mismatch');
         }
 
+        $password = password($params['password']);
+
         $r = sql_query('UPDATE `users`
 
                         SET    `password` = :password
@@ -510,7 +575,7 @@ function user_update_password($params){
                         WHERE  `id`       = :id',
 
                         array(':id'       => $params['id'],
-                              ':password' => password($params['password'])));
+                              ':password' => $password));
 
         if(!$r->rowCount()){
             /*
@@ -525,6 +590,17 @@ function user_update_password($params){
              * Password remains the same, no problem
              */
         }
+
+
+        /*
+         * Add the new password to the password storage
+         */
+        sql_query('INSERT INTO `passwords` (`createdby`, `users_id`, `password`)
+                   VALUES                  (:createdby , :users_id , :password )',
+
+                   array(':createdby' => $_SESSION['user']['id'],
+                         ':users_id'  => $params['id'],
+                         ':password'  => $password));
 
     }catch(Exception $e){
         throw new bException('user_update_password(): Failed', $e);
@@ -602,7 +678,7 @@ function user_name($user = null, $guest = null){
 /*
  * Returns true either if the user has the specified right and not the devil right, or the "god" right
  */
-function user_has_right($user, $right) {
+function user_has_rights($user, $right) {
     try{
         if(!isset($user['rights'])){
             $user['rights'] = user_load_rights($user);
@@ -615,7 +691,7 @@ function user_has_right($user, $right) {
         return !empty($user['rights'][$right]) and empty($user['rights']['devil']);
 
     }catch(Exception $e){
-        throw new bException('user_has_right(): Failed', $e);
+        throw new bException('user_has_rights(): Failed', $e);
     }
 }
 
@@ -718,6 +794,56 @@ function user_ensure_signin_fields(&$post){
 
     }catch(Exception $e){
         throw new bException('user_ensure_signin_fields(): Failed', $e);
+    }
+}
+
+
+
+/*
+ * Update the rights for this user.
+ * Requires a user array with $user['id'], and $user['roles_id']
+ */
+function user_update_rights($user){
+    try{
+        if(empty($user['id'])){
+            throw new bException('user_update_rights(): Cannot update rights, no user specified', 'not_specified');
+        }
+
+        if(empty($user['roles_id'])){
+            throw new bException('user_update_rights(): Cannot update rights, no role specified', 'not_specified');
+        }
+
+        /*
+         * Get new rights, delete all old rights, and prepare the query to insert these new rights
+         */
+        sql_query('DELETE FROM `users_rights` WHERE `users_id` = :users_id', array(':users_id' => $user['id']));
+
+        $rights  = sql_list('SELECT    `rights`.`id`,
+                                       `rights`.`name`
+
+                             FROM      `roles_rights`
+
+                             LEFT JOIN `rights`
+                             ON        `rights`.`id` = `roles_rights`.`rights_id`
+
+                             WHERE     `roles_id` = :roles_id',
+
+                             array(':roles_id' => $user['roles_id']));
+
+        $p       = sql_prepare('INSERT INTO `users_rights` (`users_id`, `rights_id`, `name`)
+                                VALUES                     (:users_id , :rights_id , :name )');
+
+        $execute = array(':users_id' => $user['id']);
+
+        foreach($rights as $id => $name){
+            $execute[':rights_id'] = $id;
+            $execute[':name']      = $name;
+
+            $p->execute($execute);
+        }
+
+    }catch(Exception $e){
+        throw new bException('user_update_rights(): Failed', $e);
     }
 }
 ?>
