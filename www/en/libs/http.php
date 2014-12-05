@@ -173,4 +173,15 @@ function http_start($params){
 function http_header(){
     throw new bException('http_header() is no longer supported, set the http_code in html_header($params) which will send it to http_headers()', 'depreciated');
 }
+
+
+
+/*
+ * For PHP < 5.4.0, where http_response_code will be missing
+ * Taken from http://php.net/manual/en/function.http-response-code.php
+ * Thanks to craig at craigfrancis dot co dot uk
+ */
+if (!function_exists('http_response_code')){
+    include(dirname(__FILE__).'/handlers/http_response_code.php');
+}
 ?>
