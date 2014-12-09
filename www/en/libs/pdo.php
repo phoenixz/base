@@ -75,7 +75,7 @@ function sql_query($query, $execute = false, $handle_exceptions = true, $sql = '
             pdo_error($e, $query, $execute, $GLOBALS[$sql]);
 
         }catch(Exception $e){
-            throw new bException('sql_query(): Query "'.str_log($query).'" Failed', $e);
+            throw new bException('sql_query(): Failed', $e);
         }
     }
 }

@@ -650,7 +650,7 @@ function html_flash($messages = '', $type = 'info', $basicmessage = null){
         foreach($messages as $message){
             if(is_object($message) and $message instanceof Exception){
                 $message = array('type'    => 'error',
-                                 'message' => trim(str_from($message->getMessage(), '():')),
+                                 'message' => $message->getMessage(),
                                  'basic'   => $basicmessage);
             }
 
@@ -698,6 +698,13 @@ function html_flash($messages = '', $type = 'info', $basicmessage = null){
                     throw new bException('html_flash(): Unknown flash type "'.str_log($usetype).'" specified. Please specify one of "info" or "success" or "attention" or "error"', 'flash/unknown');
             }
 
+            if(!debug()){
+                /*
+                 * Don't show "function_name(): " part of message
+                 */
+                $message = trim(str_from($message, '():'));
+            }
+
     //        $retval .= '<div class="sys_bg sys_'.$usetype.'"></div><div class="'.$_CONFIG['flash']['css_name'].' sys_'.$usetype.'">'.$message.'</div>';
             $retval .= '<div class="'.$_CONFIG['flash']['css_name'].' '.$_CONFIG['flash']['prefix'].$usetype.'">'.$_CONFIG['flash']['button'].$message.'</div>';
         }
@@ -734,17 +741,22 @@ function html_flash_set($messages, $type = 'info', $basicmessage = null){
         }
 
         if(!is_array($messages)){
-            $messages = array($messages);
+            if(is_object($messages) and $messages instanceof Exception){
+                $type     = 'error';
+                $messages = $messages->getMessage();
+                $messages = (strstr($messages, '():') ? trim(str_from($messages, '():')) : $messages);
+                $basic    = $basicmessage;
+            }
+
+            if(is_string($messages) and (strpos($messages, "\n") !== false)){
+                $messages = explode("\n", $messages);
+
+            }else{
+                $messages = array($messages);
+            }
         }
 
         foreach($messages as $message){
-            if(is_object($message) and $message instanceof Exception){
-                $type    = 'error';
-                $message = $message->getMessage();
-                $message = (strstr($message, '():') ? trim(str_from($message, '():')) : $message);
-                $basic   = $basicmessage;
-            }
-
             $_SESSION['flash'][] = array('type'    => $type,
                                          'basic'   => $basicmessage,
                                          'message' => $message);

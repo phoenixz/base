@@ -30,6 +30,10 @@ class bException extends Exception{
             throw new Exception('bException: No exception message specified in file "'.current_file(1).'" @ line "'.current_line(1).'"');
         }
 
+        if(is_array($message)){
+            $message = implode("\n", $message);
+        }
+
         if(!empty($e)){
             if($e instanceof bException){
                 $this->messages = $e->getMessages();

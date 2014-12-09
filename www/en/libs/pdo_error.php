@@ -205,7 +205,7 @@ function pdo_error($e, $query, $execute, $sql = null){
                         }
 
                         load_libs('debug');
-                        throw new bException('pdo_error(): Query "'.str_log(debug_sql($query, $execute, true)).'" failed', $e);
+                        throw new bException('pdo_error(): Query "'.str_log(debug_sql(preg_replace('!\s+!', ' ', $query), null, $execute, true)).'" failed', $e);
 
                         $body = "SQL STATE ERROR : \"".$error[0]."\"\n".
                                 "DRIVER ERROR    : \"".$error[1]."\"\n".

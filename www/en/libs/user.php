@@ -754,7 +754,7 @@ function user_switch($username){
 /*
  * Find the password field when browser password saving has been disabled
  */
-function user_ensure_signin_fields(&$post){
+function user_process_signin_fields($post){
     global $_CONFIG;
 
     try{
@@ -762,13 +762,13 @@ function user_ensure_signin_fields(&$post){
             /*
              * Clear username and password fields, to ensure they are not being used
              */
-            unset($_POST['username']);
-            unset($_POST['password']);
+            unset($post['username']);
+            unset($post['password']);
 
             /*
              * Password field is password********
              */
-            foreach(array_max($_POST) as $key => $value){
+            foreach(array_max($post) as $key => $value){
                 if((substr($key, 0, 8) == 'password') and (strlen($key) == 16)){
                     /*
                      * This is the password field, set it.
@@ -794,7 +794,7 @@ function user_ensure_signin_fields(&$post){
         return $post;
 
     }catch(Exception $e){
-        throw new bException('user_ensure_signin_fields(): Failed', $e);
+        throw new bException('user_process_signin_fields(): Failed', $e);
     }
 }
 

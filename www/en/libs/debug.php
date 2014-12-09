@@ -28,7 +28,7 @@ function showrandomdie($data = '', $return = false, $quiet = false, $trace_offse
 /*
  * Short hand for show and then die
  */
-function showdie($data = '', $return = false, $quiet = false, $trace_offset = 2){
+function showdie($data = null, $return = false, $quiet = false, $trace_offset = 2){
     show($data, $return, $quiet, $trace_offset);
     die();
 }
@@ -38,7 +38,7 @@ function showdie($data = '', $return = false, $quiet = false, $trace_offset = 2)
 /*
  * Show debug data in a readable format
  */
-function show($data = '', $return = false, $quiet = false, $trace_offset = 1){
+function show($data = null, $return = false, $quiet = false, $trace_offset = 1){
     $retval = '';
 
     if(ENVIRONMENT== 'production'){
@@ -441,7 +441,7 @@ function debug_sql($query, $column = null, $execute = null, $return_only = false
             return $query;
         }
 
-        return show(str_ends($query, ';'));
+        return show(str_ends($query, ';'), false, false, 2);
 
     }catch(Exception $e){
         throw new bException('debug_sql(): Failed', $e);
