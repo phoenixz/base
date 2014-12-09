@@ -202,7 +202,7 @@ function user_authenticate($username, $password) {
                            array(':createdby' => $user['id'],
                                  ':ip'        => $_SERVER['REMOTE_ADDR']));
 
-                html_flash_set('Updated IP lock to "'.str_log($_SERVER['REMOTE_ADDR']).'"', 'info');
+                html_flash_set(log_database('Updated IP lock to "'.str_log($_SERVER['REMOTE_ADDR']).'"', 'ip_locks_updated'), 'info');
             }
         }
 
