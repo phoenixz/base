@@ -189,7 +189,7 @@ function user_authenticate($username, $password) {
             }
 
             if($ip != $_SERVER['REMOTE_ADDR']){
-                if(!has_rights('iplock', $user)){
+                if(!has_rights('ip_lock', $user)){
                     throw new bException('user_authenticate(): Your current IP "'.str_log($_SERVER['REMOTE_ADDR']).'" is not allowed to login', 'iplock');
                 }
 
