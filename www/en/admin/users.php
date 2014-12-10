@@ -3,7 +3,7 @@ require_once(dirname(__FILE__).'/../libs/startup.php');
 
 $limit = 50;
 
-right_or_redirect('admin,users');
+rights_or_redirect('admin,users');
 
 
 /*

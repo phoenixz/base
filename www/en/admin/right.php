@@ -10,7 +10,7 @@ $right = array();
 
 /*
  * Are we editing a right?
- * If so then get the role data from the DB
+ * If so then get the right data from the DB
  */
 if(!empty($_GET['right'])){
     $db = sql_get('SELECT    `rights`.`id`,
@@ -38,7 +38,7 @@ if(!empty($_GET['right'])){
         redirect(domain('/admin/rights.php'));
     }
 
-    log_database(tr('View role "'.str_log($_GET['role']).'"'), 'role_view');
+    log_database(tr('View right "'.str_log($_GET['right']).'"'), 'right_view');
 
     $right = array_merge($db, $right);
     unset($db);
@@ -233,7 +233,7 @@ function s_validate_right(&$right){
         $v->hasMaxChars ($right['name'],  16, tr('Please ensure that the name has a maximum of 16 characters'));
 
         if(strpos($right['name'], ' ') !== false){
-            $v->setError(tr('Please ensure that the name contains no spaces'));
+            $v->setError(tr('Please ensure that the rights name contains no spaces'));
         }
 
         $v->isNotEmpty  ($right['description']     , tr('Please provide a description'));
@@ -255,7 +255,7 @@ function s_validate_right(&$right){
         sort($right['rights']);
 
         if(!$v->isValid()) {
-            throw new bException(implode(', ', $v->getErrors()), 'invalid');
+            throw new bException($v->getErrors(), 'invalid');
         }
 
     }catch(Exception $e){

@@ -19,6 +19,7 @@ if(!empty($_GET['user'])){
                              `users`.`name`,
                              `users`.`email`,
                              `users`.`username`,
+                             `users`.`phones`,
                              `users`.`roles_id`,
                              `users`.`commentary`,
                              `createdby`.`name`  AS `createdby`,
@@ -113,31 +114,6 @@ try{
         s_validate_user($user);
 
         /*
-         * Ensure that the username and email are available
-         */
-        $exists = sql_get('SELECT `email`,
-                                  `username`
-
-                           FROM   `users`
-
-                           WHERE  `id`      != :id
-                           AND   (`email`    = :email
-                           OR     `username` = :username )',
-
-                           array(':id'       => $user['id'],
-                                 ':email'    => $user['email'],
-                                 ':username' => $user['username']));
-
-        if($exists){
-            if($exists['username'] == $params['username']){
-                throw new bException('The username "'.str_log($params['username']).'" is already in use by another user', 'exists');
-
-            }else{
-                throw new bException('The email "'.str_log($params['email']).'" is already in use by another user', 'exists');
-            }
-        }
-
-        /*
          * Update the user
          */
         $r = sql_query('UPDATE `users`
@@ -154,6 +130,7 @@ try{
                                `longitude`               = :longitude,
                                `roles_id`                = :roles_id,
                                `role`                    = :role,
+                               `phones`                  = :phones,
                                `country`                 = :country,
                                `commentary`              = :commentary,
                                `avatar`                  = :avatar,
@@ -183,6 +160,7 @@ try{
                               ':longitude'               => $user['longitude'],
                               ':roles_id'                => $user['roles_id'],
                               ':role'                    => $user['role'],
+                              ':phones'                  => $user['phones'],
                               ':status'                  => $user['status'],
                               ':avatar'                  => $user['avatar'],
                               ':validated'               => ($user['validated'] ? str_random(32) : null),
@@ -204,14 +182,14 @@ try{
             user_update_password($user);
         }
 
-        s_update_rights($user);
+        user_update_rights($user);
 
         /*
          * This update might have been done because of a create user action
          */
         if(!isset_get($_POST['docreate'])){
-            html_flash_set(log_database('Updated user "'.str_log(isset_get($_POST['name'])).'"', 'user_update'), 'success');
-            redirect(domain('/admin/user.php?user='.$user['name']));
+            html_flash_set(log_database('Updated user "'.str_log(isset_get($_POST['username'])).'"', 'user_update'), 'success');
+            redirect(domain('/admin/user.php?user='.$user['username']));
         }
 
         $user = array();
@@ -222,6 +200,10 @@ try{
         }
 
         user_switch($user['name']);
+
+        html_flash_set('You are now the user "'.$user['name'].'"', 'success');
+        html_flash_set('NOTICE: You will now be limited to the access level of user "'.$user['name'].'"', 'warning');
+
         redirect(true);
     }
 
@@ -302,7 +284,19 @@ $html .= '                      <div class="form-group">
                                     </div>
                                 </div>
                                 <div class="form-group">
-                                    <label class="col-md-3 control-label" for="role">'.tr('Role').'</label>
+                                    <label class="col-md-3 control-label" for="phones">'.tr('Phones').'</label>
+                                    <div class="col-md-6">
+                                        <input type="text" name="phones" id="phones" class="form-control" value="'.isset_get($user['phones']).'" maxlength="255">
+                                    </div>
+                                </div>
+                                <div class="form-group">
+                                    <label class="col-md-3 control-label" for="commentary">'.tr('Commentary').'</label>
+                                    <div class="col-md-6">
+                                        <textarea name="commentary" id="commentary" class="form-control" maxlength="2047" rows="5">'.isset_get($user['commentary']).'</textarea>
+                                    </div>
+                                </div>
+                                <div class="form-group">
+                                    <label class="col-md-3 control-label" for="role">'.tr('Role and rights').'</label>
                                     <div class="col-md-6">
                                         '.html_select($users).'
                                     </div>
@@ -314,14 +308,43 @@ $html .= '                      <div class="form-group">
                                             '.($user['roles_id'] ? sql_get('SELECT `description` FROM `roles` WHERE `id` = :id', 'description', array(':id' => $user['roles_id'])) : tr('No role description available, no role has been selected yet')).'
                                         </p>
                                     </div>
-                                </div>
-                                <div class="form-group">
-                                    <label class="col-md-3 control-label" for="commentary">'.tr('Commentary').'</label>
+                                </div>';
+
+if(!empty($user['roles_id'])){
+    $html .= '                  <div class="form-group">
+                                    <label class="col-md-3 control-label" for="rights"> </label>
                                     <div class="col-md-6">
-                                        <textarea name="commentary" id="commentary" class="form-control" maxlength="2047">'.isset_get($user['commentary']).'</textarea>
+                                        <h4>'.tr('Rights associated with this role').'</h4>
+                                        <table class="link select table mb-none table-striped table-hover">
+                                            <thead>
+                                                <th>'.tr('Name').'</th>
+                                                <th>'.tr('Description').'</th>
+                                            </thead>';
+
+    $r = sql_query('SELECT    `users_rights`.`name` AS `id`,
+                              `users_rights`.`name`,
+                              `rights`.`description`
+
+                    FROM      `users_rights`
+
+                    LEFT JOIN `rights`
+                    ON        `rights`.`id` = `users_rights`.`rights_id`
+
+                    WHERE     `users_id` = :users_id',
+
+                    array(':users_id' => $user['id']));
+
+    while($user_right = sql_fetch($r)){
+        $a     = '<a href="'.domain('/admin/right.php?right='.$user_right['id']).'">';
+        $html .= '<tr><td>'.$a.$user_right['name'].'</a></td><td>'.$a.$user_right['description'].'</a></td></tr>';
+    }
+
+    $html .= '                          </table>
                                     </div>
-                                </div>
-                                <hr>
+                                </div>';
+}
+
+$html .= '                      <hr>
                                 <div class="form-group">
                                     <label class="col-md-3 control-label" for="password">'.tr('Password').'</label>
                                     <div class="col-md-6">
@@ -365,8 +388,8 @@ if(empty($user['id'])){
     $vj->validate('password', 'minlength', '8'   , '<span class="FcbErrorTail"></span>'.tr('Please ensure that the password has at least 8 characters'));
 }
 
-//$html .= $vj->output_validation(array('id'   => 'user',
-//                                      'json' => false));
+$html .= $vj->output_validation(array('id'   => 'user',
+                                      'json' => false));
 
 $params = array('title'       => tr('User'),
                 'icon'        => 'fa-user',
@@ -378,10 +401,10 @@ echo ca_page($html, $params);
 /*
  *
  */
-function s_validate_user(&$user){
+function s_validate_user(&$user, $id = null){
     try{
         // Validate input
-        $v = new validate_form($user, 'name,username,email,password,password2,role,commentary,gender,latitude,longitude,language,country,fb_id,fb_token,gp_id,gp_token,ms_id,ms_token_authentication,ms_token_access,tw_id,tw_token,yh_id,yh_token,status,validated,avatar');
+        $v = new validate_form($user, 'name,username,email,password,password2,role,commentary,gender,latitude,longitude,language,country,fb_id,fb_token,gp_id,gp_token,ms_id,ms_token_authentication,ms_token_access,tw_id,tw_token,yh_id,yh_token,status,validated,avatar,phones');
 
         $user['email2'] = $user['email'];
         $user['terms']  = true;
@@ -412,61 +435,112 @@ function s_validate_user(&$user){
             $v->isEqual     ($user['password'], $user['password2'], tr('Please ensure that the password and validation password match'));
         }
 
+        /*
+         * Ensure that the username and email are not in use
+         */
+        $query = 'SELECT `email`,
+                         `username`
+
+                  FROM   `users`';
+
+        if(empty($user['id'])){
+            $where   = ' WHERE (`email`    = :email
+                         OR     `username` = :username )';
+
+            $execute = array(':email'      => $user['email'],
+                             ':username'   => $user['username']);
+
+        }else{
+            $where   = ' WHERE  `id`      != :id
+                         AND   (`email`    = :email
+                         OR     `username` = :username )';
+
+            $execute = array(':id'         => $user['id'],
+                             ':email'      => $user['email'],
+                             ':username'   => $user['username']);
+        }
+
+        $exists = sql_get($query.$where, $execute);
+
+        if($exists){
+            if($exists['username'] == $user['username']){
+                $v->setError(tr('The username "%username%" is already in use by another user', array('%username%' => str_log($user['username']))));
+
+            }else{
+                $v->setError(tr('The email "%email%" is already in use by another user', array('%email%' => str_log($user['email']))));
+            }
+        }
+
+        /*
+         * Ensure that the phones are not in use
+         */
+        if(!empty($user['phones'])){
+            $user['phones'] = explode(',', $user['phones']);
+
+            foreach($user['phones'] as &$phone){
+                $phone = trim($phone);
+            }
+
+            unset($phone);
+
+            $user['phones'] = implode(',', $user['phones']);
+            $execute        = sql_in($user['phones'], ':phone');
+
+            foreach($execute as &$phone){
+                if($v->isValidPhonenumber($phone, tr('The phone number "%phone%" is not valid', array('%phone%' => $phone)))){
+                    $phone = '%'.$phone.'%';
+                }
+            }
+
+            unset($phone);
+
+            $where   = array();
+
+            $query   = 'SELECT `id`,
+                               `phones`,
+                               `username`
+
+                        FROM   `users` WHERE';
+
+            foreach($execute as $key => $value){
+                $where[] = '`phones` LIKE '.$key;
+            }
+
+            $query .= ' ('.implode(' OR ', $where).')';
+
+            if(!empty($user['id'])){
+                $query         .= ' AND `users`.`id` != :id';
+                $execute[':id'] = $user['id'];
+            }
+
+            $exists = sql_list($query, $execute);
+
+            if($exists){
+                /*
+                 * One or more phone numbers already exist with one or multiple users. Cross check and
+                 * create a list of where the number was found
+                 */
+                foreach(array_force($user['phones']) as $value){
+                    foreach($exists as $exist){
+                        $key = array_search($value, array_force($exist['phones']));
+
+                        if($key !== false){
+                            /*
+                             * The current phone number is already in use by another user
+                             */
+                            $v->setError(tr('The phone "%phone%" is already in use by user "%user%"', array('%phone%' => str_log($value), '%user%' => '<a target="_blank" href="'.domain('/admin/user.php?user='.$exist['username']).'">'.$exist['username'].'</a>')));
+                        }
+                    }
+                }
+            }
+        }
+
         if(!$v->isValid()) {
-            throw new bException(implode(', ', $v->getErrors()), 'invalid');
+            throw new bException($v->getErrors(), 'error');
         }
 
     }catch(Exception $e){
         throw new bException('s_validate_user(): Failed', $e);
-    }
-}
-
-
-
-/*
- *
- */
-function s_update_rights($user){
-    try{
-        if(empty($user['id'])){
-            throw new bException('s_update_rights(): Cannot update rights, no user specified', 'not_specified');
-        }
-
-        if(empty($user['roles_id'])){
-            throw new bException('s_update_rights(): Cannot update rights, no role specified', 'not_specified');
-        }
-
-        /*
-         * Get new rights, delete all old rights, and prepare the query to insert these new rights
-         */
-        sql_query('DELETE FROM `users_rights` WHERE `users_id` = :users_id', array(':users_id' => $user['id']));
-
-        $rights  = sql_list('SELECT    `rights`.`id`,
-                                       `rights`.`name`
-
-                             FROM      `roles_rights`
-
-                             LEFT JOIN `rights`
-                             ON        `rights`.`id` = `roles_rights`.`rights_id`
-
-                             WHERE     `roles_id` = :roles_id',
-
-                             array(':roles_id' => $user['roles_id']));
-
-        $p       = sql_prepare('INSERT INTO `users_rights` (`users_id`, `rights_id`, `name`)
-                                VALUES                     (:users_id , :rights_id , :name )');
-
-        $execute = array(':users_id' => $user['id']);
-
-        foreach($rights as $id => $name){
-            $execute[':rights_id'] = $id;
-            $execute[':name']      = $name;
-
-            $p->execute($execute);
-        }
-
-    }catch(Exception $e){
-        throw new bException('s_update_rights(): Failed', $e);
     }
 }
 ?>

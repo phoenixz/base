@@ -5,7 +5,7 @@ load_libs('validate');
 
 if(isset($_POST['dosignin'])){
     try{
-        user_ensure_signin_fields($_POST);
+        $_POST = user_process_signin_fields($_POST);
 
         // Validate input
         $v = new validate_form($_POST, 'username,password');
@@ -22,7 +22,7 @@ if(isset($_POST['dosignin'])){
 
         $user = user_authenticate($_POST['username'], $_POST['password']);
 
-        if(!user_has_right($user, 'admin')){
+        if(!has_rights('admin', $user)){
             throw new bException('signin: User "'.user_name($user).'" is not an administrator', 'accessdenied');
         }
 

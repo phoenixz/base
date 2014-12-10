@@ -1,7 +1,7 @@
 <?php
 require_once(dirname(__FILE__).'/../libs/startup.php');
 
-right_or_redirect('admin');
+rights_or_redirect('admin');
 load_libs('validate');
 
 if(!$user = sql_get('SELECT * FROM `users` WHERE `id` = :id', array(':id' => isset_get($_POST['id'], isset_get($_GET['id']))))){
@@ -23,7 +23,7 @@ switch(strtolower(isset_get($_POST['doaction']))){
             $v->is_equal         (isset_get($_POST['password']), isset_get($_POST['password2']), tr('Please ensure that the password and validation password are equal'));
 
             if(!$v->isValid()) {
-                throw new bException(implode(', ', $v->getErrors()), 'invalid');
+                throw new bException($v->getErrors(), 'invalid');
             }
 
             sql_query('UPDATE `users` SET `password` = :password WHERE `id` = :id',

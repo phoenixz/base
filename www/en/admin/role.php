@@ -108,7 +108,7 @@ try{
         $role['id']     = sql_insert_id();
         $role['rights'] = s_update_rights($role);
 
-        html_flash_set(log_database('Created role "'.str_log($role['name']).'" with rights "'.str_log(str_force($role['rights'])).'"', 'role_create'), 'success');
+        html_flash_set(log_database(tr('Created role "%role%" with rights "%rights%"', array('%role%' => str_log($role['name']), '%rights%' => str_log(str_force($role['rights'])))), 'role_create'), 'success');
 
         $role = array();
 
@@ -122,13 +122,18 @@ try{
          */
         s_validate_role($role);
 
+
         /*
          * This role does not exist yet?
          */
-        if(sql_get('SELECT `name` FROM `roles` WHERE `name` = :name AND `id` != :id', 'id', array(':name' => $role['name'], ':id' => $role['id']))){
+        if(sql_get('SELECT `name` FROM `roles` WHERE `name` = :name AND `id` != :id', 'name', array(':name' => $role['name'], ':id' => $role['id']))){
             throw new bException(tr('The role "%name%" already exists', '%name%', str_log($role['name'])), 'exists');
         }
 
+
+        /*
+         * Update the role
+         */
         sql_query('UPDATE `roles`
 
                    SET    `modifiedby`  = :modifiedby,
@@ -143,9 +148,46 @@ try{
                          ':name'        => $role['name'],
                          ':description' => $role['description']));
 
+
+        /*
+         * Update the role name in the users table
+         */
+        sql_query('UPDATE `users`
+
+                   SET    `role`        = :role
+
+                   WHERE  `roles_id`    = :roles_id',
+
+                   array(':roles_id'    => $role['id'],
+                         ':role'        => $role['name']));
+
+
+        /*
+         * Update the available rights for this role
+         */
         $role['rights'] = s_update_rights($role);
 
+
+        /*
+         * Update the rights for all users that have this role
+         */
+        $r = sql_query('SELECT `id` FROM `users` WHERE `roles_id` = :roles_id', array(':roles_id' => $role['id']));
+
+        while($user = sql_fetch($r)){
+            $user['roles_id'] = $role['id'];
+            user_update_rights($user);
+        }
+
+
+        /*
+         * Done!
+         */
         html_flash_set(log_database('Updated role "'.str_log($role['name']).'" with rights "'.str_log(str_force($role['rights'])).'"', 'role_update'), 'success');
+
+        if($r->rowCount()){
+            html_flash_set(tr('Updated rights for "%count%" users with the role "%role%"', array('%count%' => $r->rowCount(), '%role%' => str_log($role['name']))), 'success');
+        }
+
         redirect(domain('/admin/role.php?role='.$role['name']));
     }
 
@@ -268,9 +310,9 @@ $html .= '                      <div class="form-group">
 $vj = new validate_jquery();
 
 $vj->validate('name'       , 'required' , 'true', '<span class="FcbErrorTail"></span>'.tr('Please provide a name'));
-$vj->validate('name'       , 'minlength', '3'   , '<span class="FcbErrorTail"></span>'.tr('Please ensure that the name has at least 3 characters'));
+$vj->validate('name'       , 'minlength',    '2', '<span class="FcbErrorTail"></span>'.tr('Please ensure that the name has at least 2 characters'));
 $vj->validate('description', 'required' , 'true', '<span class="FcbErrorTail"></span>'.tr('Please provide a description'));
-$vj->validate('description', 'minlength', '32'  , '<span class="FcbErrorTail"></span>'.tr('Please ensure that the description has at least 32 characters'));
+$vj->validate('description', 'minlength',   '16', '<span class="FcbErrorTail"></span>'.tr('Please ensure that the description has at least 16 characters'));
 
 $html .= $vj->output_validation(array('id'   => 'role',
 				                      'json' => false));
@@ -292,11 +334,11 @@ function s_validate_role(&$role){
         $v = new validate_form($role, 'name,description,rights');
 
         $v->isNotEmpty  ($role['name']     , tr('Please provide a name'));
-        $v->hasMinChars ($role['name'],   4, tr('Please ensure that the name has a minimum of 4 characters'));
-        $v->hasMaxChars ($role['name'],  32, tr('Please ensure that the name has a maximum of 32 characters'));
+        $v->hasMinChars ($role['name'],   2, tr('Please ensure that the name has a minimum of 2 characters'));
+        $v->hasMaxChars ($role['name'],  16, tr('Please ensure that the name has a maximum of 16 characters'));
 
         if(strpos($role['name'], ' ') !== false){
-            $v->setError(tr('Please ensure that the name contains no spaces'));
+            $v->setError(tr('Please ensure that the role name contains no spaces'));
         }
 
         if($role['name'] == 'none'){
@@ -322,7 +364,7 @@ function s_validate_role(&$role){
         sort($role['rights']);
 
         if(!$v->isValid()) {
-            throw new bException(implode(', ', $v->getErrors()), 'invalid');
+            throw new bException($v->getErrors(), 'invalid');
         }
 
     }catch(Exception $e){
