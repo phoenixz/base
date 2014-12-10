@@ -63,23 +63,6 @@ function http_get_to_post($keys, $overwrite = true){
 
 
 /*
- * Build URL
- */
-function http_build_url($url, $query){
-    if(!$query){
-        return $url;
-    }
-
-    if(strpos($url, '?') !== false){
-        return $url.'&'.$query;
-    }
-
-    return $url.'?'.$query;
-}
-
-
-
-/*
  * Return status message for specified code
  */
 function http_status_message($code){
@@ -183,5 +166,68 @@ function http_header(){
  */
 if (!function_exists('http_response_code')){
     include(dirname(__FILE__).'/handlers/http_response_code.php');
+}
+
+
+
+/*
+ * Add a variable to the specified URL
+ */
+function http_add_variable($url, $key, $value){
+    try{
+        if(!$key or !$value){
+            return $url;
+        }
+
+        if(strpos($url, '?') !== false){
+            return $url.'&'.urlencode($key.'='.$value);
+        }
+
+        return $url.'?'.urlencode($key.'='.$value);
+
+    }catch(Exception $e){
+        throw new bException('http_add_variable(): Failed', $e);
+    }
+}
+
+
+
+/*
+ * Remove a variable from the specified URL
+ */
+function http_remove_variable($url, $key){
+    try{
+throw new bException('http_remove_variable() is under construction!');
+        //if(!$key){
+        //    return $url;
+        //}
+        //
+        //if($pos = strpos($url, $key.'=') === false){
+        //    return $url;
+        //}
+        //
+        //if($pos2 = strpos($url, '&', $pos) === false){
+        //    return substr($url, 0, $pos).;
+        //}
+        //
+        //return substr($url, 0, );
+
+    }catch(Exception $e){
+        throw new bException('http_remove_variable(): Failed', $e);
+    }
+}
+
+
+
+/*
+ * Here be depreciated wrappers
+ */
+function http_build_url($url, $query){
+    try{
+        return http_add_variable($url, str_until($query, '='), str_from($query, '='));
+
+    }catch(Exception $e){
+        throw new bException('http_build_url(DEPRECIATED): Failed', $e);
+    }
 }
 ?>

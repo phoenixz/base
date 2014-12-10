@@ -615,7 +615,8 @@ function log_database($message, $type){
             throw new bException('log_database(): Type cannot be numeric');
         }
 
-        sql_query('INSERT DELAYED INTO `log` (`users_id`, `type`, `message`) VALUES ('.(isset($_SESSION['user']['id']) ? $_SESSION['user']['id'] : 'NULL').', "'.cfm($type).'", "'.cfm($message).'");');
+        sql_query('INSERT DELAYED INTO `log` (`createdby`                                                            , `ip`                                    ,  `type`         , `message`          )
+                   VALUES                    ('.(isset($_SESSION['user']['id']) ? $_SESSION['user']['id'] : 'NULL').', "'.isset_get($_SERVER['REMOTE_ADDR']).'", "'.cfm($type).'", "'.cfm($message).'");');
 
     }catch(Exception $e){
 // :TODO: Add Notifications!

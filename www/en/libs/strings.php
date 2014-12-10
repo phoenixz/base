@@ -489,7 +489,7 @@ function str_log($source, $truncate = 511, $separator = ', '){
         if(!is_scalar($source)){
             if(is_array($source)){
                 try{
-                    $source = mb_trim(implode($separator, $source));
+                    $source = mb_trim(json_encode_custom($source));
 
                 }catch(Exception $e){
                     /*

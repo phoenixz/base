@@ -1,4 +1,10 @@
 <?php
+/*
+ * Handler code for script_exec() function
+ *
+ *
+ */
+// :TODO: This will fail for PLATFORM apache since $argv will not be defined! Implement fix for that
 global $_CONFIG;
 
 try{

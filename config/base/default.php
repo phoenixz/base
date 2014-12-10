@@ -240,7 +240,7 @@ $_CONFIG['redirects']          = array('index'            => 'index.php',       
 
 // Security configuration
 $_CONFIG['security']           = array('signin'           => array('save_password' => true,                 // Allow the browser client to save the passwords. If set to false, different form names will be used to stop browsers from saving passwords
-                                                                   'ip_lock'       => false,                // Either "false", "true" (which makes it lock to users with the right ip_lock), or "ip address"
+                                                                   'ip_lock'       => false,                // Either "false", "true" or number n (which makes it lock to users with the right ip_lock), or "ip address" or array("ip address", "ip address", ...). If specified as true, only 1 IP will be allowed. If specified as number N, up to N IP addresses will be allowed. If specified as "ip address", only that IP address will be allowed. If specified as array("ip address", ...) all IP addresses in that array will be allowed
                                                                    'two_factor'    => false),               // Either "false" or a valid twilio "from" phone number
 
                                        'user'             => 'apache',                                      //

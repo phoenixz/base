@@ -177,33 +177,7 @@ function user_authenticate($username, $password) {
          * Apply IP locking system
          */
         if($_CONFIG['security']['signin']['ip_lock'] and (PLATFORM == 'apache')){
-            $ip = $_CONFIG['security']['signin']['ip_lock'];
-
-            if($ip === true){
-                /*
-                 * Get the last locked IP from the database
-                 * If there is none, then it's not a problem, it will never match, and
-                 * require a user with iplock rights to set
-                 */
-                $ip = sql_get('SELECT `ip` FROM `ip_locks` ORDER BY `id` DESC LIMIT 1', 'ip');
-            }
-
-            if($ip != $_SERVER['REMOTE_ADDR']){
-                if(!has_rights('ip_lock', $user)){
-                    throw new bException('user_authenticate(): Your current IP "'.str_log($_SERVER['REMOTE_ADDR']).'" is not allowed to login', 'iplock');
-                }
-
-                /*
-                 * This user can reset the iplock by simply logging in
-                 */
-                sql_query('INSERT INTO `ip_locks` (`createdby`, `ip`)
-                           VALUES                 (:createdby , :ip )',
-
-                           array(':createdby' => $user['id'],
-                                 ':ip'        => $_SERVER['REMOTE_ADDR']));
-
-                html_flash_set(log_database('Updated IP lock to "'.str_log($_SERVER['REMOTE_ADDR']).'"', 'ip_locks_updated'), 'info');
-            }
+            include(dirname(__FILE__).'/handlers/user_ip_lock.php');
         }
 
         /*
