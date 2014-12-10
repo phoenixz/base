@@ -702,7 +702,7 @@ function html_flash($messages = '', $type = 'info', $basicmessage = null){
                 /*
                  * Don't show "function_name(): " part of message
                  */
-                $message = trim(str_from($message, ':'));
+                $message = trim(str_from($message, '():'));
             }
 
     //        $retval .= '<div class="sys_bg sys_'.$usetype.'"></div><div class="'.$_CONFIG['flash']['css_name'].' sys_'.$usetype.'">'.$message.'</div>';
@@ -744,7 +744,7 @@ function html_flash_set($messages, $type = 'info', $basicmessage = null){
             if(is_object($messages) and $messages instanceof Exception){
                 $type     = 'error';
                 $messages = $messages->getMessage();
-                $messages = (strstr($messages, ':') ? trim(str_from($messages, ':')) : $messages);
+                $messages = (strstr($messages, '():') ? trim(str_from($messages, '():')) : $messages);
                 $basic    = $basicmessage;
             }
 
