@@ -699,6 +699,7 @@ function blogs_post_url($post, $current_domain = true){
         }
 
         if($current_domain){
+            load_libs('http');
             return current_domain($url);
         }
 
