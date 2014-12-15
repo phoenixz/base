@@ -569,7 +569,7 @@ if($selected or $action == 'add'){
                                     <div class="form-group">
                                         <label class="col-md-3 control-label" for="keywords">'.tr('Description').'</label>
                                         <div class="col-md-9">
-                                            <input type="text" name="description" id="description" class="form-control" value="'.isset_get($category['description']).'" maxlength="155">
+                                            <input type="text" name="description" id="description" class="form-control" value="'.isset_get($category['description']).'" maxlength="160">
                                         </div>
                                     </div>
                                     <input type="hidden" name="id" value="'.isset_get($category['id']).'">'.

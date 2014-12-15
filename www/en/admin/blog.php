@@ -23,15 +23,16 @@ try{
                 // Validate input
                 $v = new validate_form($blog, 'name,url_template,slogan,keywords,description');
 
-                $v->isChecked  ($blog['name']       , tr('Please provide the name of your blog'));
-                $v->isNotEmpty ($blog['slogan']     , tr('Please provide a slogan for your blog'));
-                $v->isNotEmpty ($blog['keywords']   , tr('Please provide keywords for your blog'));
-                $v->isNotEmpty ($blog['description'], tr('Please provide a description of your blog'));
+                $v->isChecked  ($blog['name']            , tr('Please provide the name of your blog'));
+                $v->isNotEmpty ($blog['slogan']          , tr('Please provide a slogan for your blog'));
+                $v->isNotEmpty ($blog['keywords']        , tr('Please provide keywords for your blog'));
+                $v->isNotEmpty ($blog['description']     , tr('Please provide a description of your blog'));
 
-                $v->hasMinChars($blog['name']       ,  4, tr('Please ensure that the name has a minimum of 4 characters'));
-                $v->hasMinChars($blog['slogan']     ,  6, tr('Please ensure that the slogan has a minimum of 6 characters'));
-                $v->hasMinChars($blog['keywords']   ,  8, tr('Please ensure that the keywords have a minimum of 8 characters'));
-                $v->hasMinChars($blog['description'], 50, tr('Please ensure that the description has a minimum of 50 characters'));
+                $v->hasMinChars($blog['name']       ,   4, tr('Please ensure that the name has a minimum of 4 characters'));
+                $v->hasMinChars($blog['slogan']     ,   6, tr('Please ensure that the slogan has a minimum of 6 characters'));
+                $v->hasMinChars($blog['keywords']   ,   8, tr('Please ensure that the keywords have a minimum of 8 characters'));
+                $v->hasMinChars($blog['description'],  32, tr('Please ensure that the description has a minimum of 32 characters'));
+                $v->hasMaxChars($blog['description'], 160, tr('Please ensure that the description has a maximum of 160 characters'));
 
                 if(!$v->isValid()) {
                    throw new bException(str_force($v->getErrors(), ', '), 'errors');
@@ -233,7 +234,7 @@ $html .= '                      <div class="form-group">
                                 <div class="form-group">
                                     <label class="col-md-3 control-label" for="code">'.tr('Description').'</label>
                                     <div class="col-md-9">
-                                        <input type="text" name="description" id="description" class="form-control" value="'.isset_get($blog['description']).'" maxlength="255">
+                                        <input type="text" name="description" id="description" class="form-control" value="'.isset_get($blog['description']).'" maxlength="160">
                                     </div>
                                 </div>'.
                                 (isset_get($blog['id']) ? '<input type="submit" class="mb-xs mt-xs mr-xs btn btn-primary" name="formaction" id="formaction" value="'.tr('Update').'"> '
@@ -248,7 +249,7 @@ $html .= '                      <div class="form-group">
 //                    <li><label for="name">'.tr('Name').'</label><input type="text" name="name" id="name" value="'.isset_get($blog['name']).'" maxlength="64"></li>
 //                    <li><label for="slogan">'.tr('Slogan').'</label><input type="text" name="slogan" id="slogan" value="'.isset_get($blog['slogan']).'" maxlength="255"></li>
 //                    <li><label for="keywords">'.tr('Keywords').'</label><input type="text" name="keywords" id="keywords" value="'.isset_get($blog['keywords']).'" maxlength="255"></li>
-//                    <li><label for="description">'.tr('Description').'</label><input type="text" name="description" id="description" value="'.isset_get($blog['description']).'" maxlength="155"></li>
+//                    <li><label for="description">'.tr('Description').'</label><input type="text" name="description" id="description" value="'.isset_get($blog['description']).'" maxlength="160"></li>
 //                </ul>
 //                <input type="hidden" name="id" id="id" value="'.isset_get($blog['id']).'">'.
 //                (($mode == 'create') ? '<input type="submit" name="docreate" id="docreate" value="'.tr('Create').'"> <a class="button submit" href="'.domain('/admin/blogs.php'.(empty($blog['seoname']) ? '' : '?blog='.$blog['seoname'])).'">'.tr('Back').'</a>'
@@ -264,10 +265,12 @@ $vj->validate('slogan'     , 'required' , 'true', '<span class="FcbErrorTail"></
 $vj->validate('keywords'   , 'required' , 'true', '<span class="FcbErrorTail"></span>'.tr('Please provide keywords for your blog'));
 $vj->validate('description', 'required' , 'true', '<span class="FcbErrorTail"></span>'.tr('Please provide a description of your blog'));
 
-$vj->validate('name'       , 'minlength', '4'   , '<span class="FcbErrorTail"></span>'.tr('Please ensure that the name has at least 4 characters'));
-$vj->validate('slogan'     , 'minlength', '6'   , '<span class="FcbErrorTail"></span>'.tr('Please ensure that the slogan has at least 6 characters'));
-$vj->validate('keywords'   , 'minlength', '8'   , '<span class="FcbErrorTail"></span>'.tr('Please ensure that the keywords have at least 8 characters'));
-$vj->validate('description', 'minlength', '50'  , '<span class="FcbErrorTail"></span>'.tr('Please ensure that the description has at least 50 characters'));
+$vj->validate('name'       , 'minlength',    '4', '<span class="FcbErrorTail"></span>'.tr('Please ensure that the name has at least 4 characters'));
+$vj->validate('slogan'     , 'minlength',    '6', '<span class="FcbErrorTail"></span>'.tr('Please ensure that the slogan has at least 6 characters'));
+$vj->validate('keywords'   , 'minlength',    '8', '<span class="FcbErrorTail"></span>'.tr('Please ensure that the keywords have at least 8 characters'));
+
+$vj->validate('description', 'minlength',   '16', '<span class="FcbErrorTail"></span>'.tr('Please ensure that the description has at least 16 characters'));
+$vj->validate('description', 'maxlength',  '160', '<span class="FcbErrorTail"></span>'.tr('Please ensure that the description has at least 160 characters'));
 
 $params = array('id'   => 'blog',
                 'json' => false);
