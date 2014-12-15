@@ -384,7 +384,7 @@ function s_update_rights($role){
         }
 
         if(isset_get($role['rights']) and !is_array($role['rights'])){
-            throw new lsException('s_update_rights(): The specified rights list is invalid', 'invalid');
+            throw new bException('s_update_rights(): The specified rights list is invalid', 'invalid');
         }
 
         sql_query('DELETE FROM `roles_rights` WHERE `roles_id` = :roles_id', array(':roles_id' => $role['id']));

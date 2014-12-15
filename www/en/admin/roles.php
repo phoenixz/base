@@ -1,9 +1,11 @@
 <?php
 require_once(dirname(__FILE__).'/../libs/startup.php');
 
-$limit = 50;
-
 rights_or_redirect('admin,roles');
+
+$std_limit = 500;
+
+$limit     = sql_valid_limit(isset_get($_GET['limit']), $std_limit);
 
 
 /*
@@ -104,11 +106,11 @@ try{
 /*
  * Select sections dependant on the view
  */
-switch(isset_get($_POST['view'])){
+switch(isset_get($_GET['view'])){
     case '':
         // FALLTHROUGH
     case 'normal':
-        $where   = ' WHERE `roles`.`status` IS NULL';
+        $where[] = '`roles`.`status` IS NULL';
 
         $actions = array('name'       => 'action',
                          'none'       => tr('Action'),
@@ -119,7 +121,7 @@ switch(isset_get($_POST['view'])){
         break;
 
     case 'deleted':
-        $where   = ' WHERE `roles`.`status` = "deleted"';
+        $where[] = '`roles`.`status` = "deleted"';
 
         $actions = array('name'       => 'action',
                          'none'       => tr('Action'),
@@ -127,9 +129,11 @@ switch(isset_get($_POST['view'])){
                          'resource'   => array('undelete' => tr('Undelete selected roles'),
                                                'erase'    => tr('Erase selected roles')));
 
+        break;
+
     default:
-        html_flash_set('Unknown view filter "'.str_log($_POST['view']).'" specified', 'error');
-        redirect(true);
+        html_flash_set('Unknown view filter "'.str_log($_GET['view']).'" specified', 'error');
+        redirect(false);
 }
 
 
@@ -140,7 +144,7 @@ $views    = array('name'       => 'view',
                   'none'       => false,
                   'class'      => 'filter form-control mb-xs mt-xs mr-xs btn btn-default dropdown-toggle',
                   'autosubmit' => true,
-                  'selected'   => isset_get($_POST['view']),
+                  'selected'   => isset_get($_GET['view']),
                   'resource'   => array('normal'  => tr('View normal roles'),
                                         'deleted' => tr('View deleted roles')));
 
@@ -148,7 +152,7 @@ $rights   = array('name'       => 'right',
                   'class'      => 'filter form-control mb-xs mt-xs mr-xs btn btn-default dropdown-toggle',
                   'none'       => tr('Show all rights'),
                   'autosubmit' => true,
-                  'selected'   => isset_get($_POST['right']),
+                  'selected'   => isset_get($_GET['right']),
                   'resource'   => sql_query('SELECT `name` AS `id`, `name` FROM `rights` ORDER BY `name`'));
 
 
@@ -166,41 +170,88 @@ $query   = 'SELECT    `roles`.`id`,
             FROM      `roles`
 
             LEFT JOIN `users`
-            ON        `users`.`id`   = `roles`.`createdby`'.$where;
+            ON        `users`.`id`   = `roles`.`createdby`';
 
-if(!empty($_POST['role'])){
-    $query  .= ' AND `roles`.`name` = :role';
-    $execute = array(':role' => $_POST['role']);
+
+/*
+ * Apply role filter
+ */
+if(!empty($_GET['role'])){
+    $where[] = ' `roles`.`name` = :role';
+    $execute = array(':role' => $_GET['role']);
 }
 
-$r = sql_query($query.' ORDER BY  `roles`.`name` ASC', $execute);
+
+/*
+ * Apply generic filter
+ */
+if(!empty($_GET['filter'])){
+    $where[]              = ' (`roles`.`name` LIKE :name OR `users`.`name` LIKE :username)';
+    $execute[':name']     = '%'.$_GET['filter'].'%';
+    $execute[':username'] = '%'.$_GET['filter'].'%';
+}
+
+
+/*
+ * Execute query
+ */
+if(!empty($where)){
+    $query .= ' WHERE '.implode(' AND ', $where);
+}
+
+$query .= ' ORDER BY `roles`.`name`';
+
+if($limit){
+    $query .= ' LIMIT '.$limit;
+}
+
+$r = sql_query($query, $execute);
 
 
 /*
  * Build HTML
  */
-$html    = '<form action="'.domain(true).'" method="post">
-                <div class="row">
-                    <div class="col-md-12">
-                        <section class="panel">
-                            <header class="panel-heading">
-                                <h2 class="panel-title">'.tr('User roles').'</h2>
-                                <p>
-                                    '.html_flash().'
-                                    <div class="form-group">
-                                        <div class="col-sm-8">
+$html    = '<div class="row">
+                <div class="col-md-12">
+                    <section class="panel">
+                        <header class="panel-heading">
+                            <h2 class="panel-title">'.tr('User roles').'</h2>
+                            <p>
+                                '.html_flash().'
+                                <div class="form-group">
+                                    <div class="col-sm-12">
+                                        <form action="'.domain(true).'" method="get">
                                             <div class="row">
-                                                <div class="col-sm-4">
+                                                <div class="col-sm-2">
                                                     '.html_select($views).'
                                                 </div>
-                                                <div class="col-sm-4">
+                                                <div class="visible-xs mb-md"></div>
+                                                <div class="col-sm-2">
                                                     '.html_select($rights).'
                                                 </div>
+                                                <div class="col-sm-2">
+                                                    <div class="input-group input-group-icon">
+                                                        <input type="text" class="form-control col-md-3" name="filter" id="filter" value="'.str_log(isset_get($_GET['filter'], '')).'" placeholder="General filter">
+                                                        <span class="input-group-addon">
+                                                            <span class="icon"><i class="fa fa-search"></i></span>
+                                                        </span>
+                                                    </div>
+                                                </div>
+                                                <div class="col-sm-2">
+                                                    <input type="text" class="form-control col-md-3" name="limit" id="limit" value="'.str_log(isset_get($_GET['limit'], '')).'" placeholder="'.tr('Row limit (default %entries% entries)', array('%entries%' => str_log($std_limit))).'">
+                                                </div>
+                                                <div class="visible-xs mb-md"></div>
+                                                <div class="col-sm-2">
+                                                    <input type="submit" class="mb-xs mr-xs btn btn-sm btn-primary" name="reload" id="reload" value="'.tr('Reload').'">
+                                                </div>
+                                                <div class="visible-xs mb-md"></div>
                                             </div>
-                                        </div>
+                                        </form>
                                     </div>
-                                </p>
-                            </header>
+                                </div>
+                            </p>
+                        </header>
+                        <form action="'.domain(true).'" method="post">
                             <div class="panel-body">';
 
 if(!$r->rowCount()){
@@ -234,11 +285,11 @@ if(!$r->rowCount()){
 
                                        array(':roles_id' => $role['id']));
 
-        if(!empty($_POST['right'])){
+        if(!empty($_GET['right'])){
             /*
              * Filter by the specified right.
              */
-            if(!in_array($_POST['right'], $role['rights'])){
+            if(!in_array($_GET['right'], $role['rights'])){
                 continue;
             }
         }
@@ -259,10 +310,10 @@ if(!$r->rowCount()){
 
 $html .=                    html_select($actions).'
                         </div>
-                    </section>
-                </div>
+                    </form>
+                </section>
             </div>
-        </form>';
+        </div>';
 
 log_database('Viewed user roles', 'roles_viewed');
 

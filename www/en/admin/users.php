@@ -1,9 +1,11 @@
 <?php
 require_once(dirname(__FILE__).'/../libs/startup.php');
 
-$limit = 50;
-
 rights_or_redirect('admin,users');
+
+$std_limit = 500;
+
+$limit     = sql_valid_limit(isset_get($_GET['limit']), $std_limit);
 
 
 /*
@@ -120,7 +122,7 @@ $views   = array('name'       => 'view',
                  'class'      => 'filter form-control mb-xs mt-xs mr-xs btn btn-default dropdown-toggle',
                  'none'       => tr('Normal users'),
                  'autosubmit' => true,
-                 'selected'   => isset_get($_POST['view']),
+                 'selected'   => isset_get($_GET['view']),
                  'resource'   => array('deleted' => tr('Deleted users'),
                                        'all'     => tr('All users'),
                                        'empty'   => tr('Empty users')));
@@ -129,7 +131,7 @@ $roles   = array('name'       => 'role',
                  'class'      => 'filter form-control mb-xs mt-xs mr-xs btn btn-default dropdown-toggle',
                  'none'       => tr('Show all roles'),
                  'autosubmit' => true,
-                 'selected'   => isset_get($_POST['role']),
+                 'selected'   => isset_get($_GET['role']),
                  'resource'   => array_merge(array('none' => tr('None')), sql_list('SELECT `name` AS `id`, `name` FROM `roles` ORDER BY `name`')));
 
 
@@ -164,10 +166,10 @@ $query   = 'SELECT `users`.`id`,
  */
 if($_CONFIG['users']['type_filter'] !== false){
     if($_CONFIG['users']['type_filter'] === null){
-        $query           .= ' WHERE `users`.`type` IS NULL';
+        $where[]          = ' `users`.`type` IS NULL';
 
     }else{
-        $query           .= ' WHERE `users`.`type` = :type';
+        $where[]          = ' `users`.`type` = :type';
         $execute[':type'] = $_CONFIG['users']['type_filter'];
     }
 
@@ -175,17 +177,17 @@ if($_CONFIG['users']['type_filter'] !== false){
     /*
      * Don't filter on type
      */
-    $query  .= ' WHERE `users`.`type` = `users`.`type`';
+    $where[] = ' `users`.`type` = `users`.`type`';
 }
 
 
 /*
  * Select sections dependant on the view
  */
-switch(isset_get($_POST['view'])){
+switch(isset_get($_GET['view'])){
     case '':
     case 'normal':
-        $query  .= ' AND `users`.`status` IS NULL';
+        $where[] = ' `users`.`status` IS NULL';
 
         $actions = array('name'       => 'action',
                          'none'       => tr('Action'),
@@ -206,7 +208,7 @@ switch(isset_get($_POST['view'])){
         break;
 
     case 'empty':
-        $query  .= ' AND `users`.`status` = "empty"';
+        $where[] = ' `users`.`status` = "empty"';
 
         $actions = array('name'       => 'action',
                          'none'       => tr('Action'),
@@ -216,7 +218,7 @@ switch(isset_get($_POST['view'])){
         break;
 
     case 'deleted':
-        $query .= ' AND `users`.`status` = "deleted"';
+        $where[] = ' `users`.`status` = "deleted"';
 
         $actions = array('name'       => 'action',
                          'none'       => tr('Action'),
@@ -226,7 +228,7 @@ switch(isset_get($_POST['view'])){
         break;
 
     default:
-        html_flash_set('Unknown view filter "'.str_log($_POST['view']).'" specified', 'error');
+        html_flash_set('Unknown view filter "'.str_log($_GET['view']).'" specified', 'error');
         redirect(true);
 }
 
@@ -234,22 +236,39 @@ switch(isset_get($_POST['view'])){
 /*
  * Apply role filter
  */
-if(isset_get($_POST['role'])){
-    if($_POST['role'] == 'none'){
-        $query           .= ' AND `users`.`role` IS NULL';
+if(isset_get($_GET['role'])){
+    if($_GET['role'] == 'none'){
+        $where[]          = ' `users`.`role` IS NULL';
 
     }else{
-        $query           .= ' AND `users`.`role` = :role';
-        $execute[':role'] = cfm($_POST['role']);
+        $where[]          = ' `users`.`role` = :role';
+        $execute[':role'] = cfm($_GET['role']);
     }
+}
+
+
+/*
+ * Apply generic filter
+ */
+if(!empty($_GET['filter'])){
+    $where[]              = ' (`users`.`name` LIKE :name OR `users`.`email` LIKE :email OR `users`.`username` LIKE :username)';
+    $execute[':name']     = '%'.$_GET['filter'].'%';
+    $execute[':email']    = '%'.$_GET['filter'].'%';
+    $execute[':username'] = '%'.$_GET['filter'].'%';
 }
 
 
 /*
  * Execute query
  */
+if(!empty($where)){
+    $query .= ' WHERE '.implode(' AND ', $where);
+}
+
+$query .= ' ORDER BY `users`.`name`';
+
 if($limit){
-    $query .= ' ORDER BY `users`.`name` LIMIT '.$limit;
+    $query .= ' LIMIT '.$limit;
 }
 
 $r = sql_query($query, $execute);
@@ -258,24 +277,45 @@ $r = sql_query($query, $execute);
 /*
  * Build HTML
  */
-$html = '   <form action="'.domain(true).'" method="post">
-                <div class="row">
-                    <div class="col-md-12">
-                        <section class="panel">
-                            <header class="panel-heading">
-                                <h2 class="panel-title">'.tr('Deleted users').'</h2>
-                                <p>
-                                    '.html_flash().'
+$html = '   <div class="row">
+                <div class="col-md-12">
+                    <section class="panel">
+                        <header class="panel-heading">
+                            <h2 class="panel-title">'.tr('Manage users').'</h2>
+                            <p>
+                                '.html_flash().'
+                                <form action="'.domain(true).'" method="get">
                                     <div class="row">
-                                        <div class="col-sm-3">
+                                        <div class="col-sm-2">
                                             '.html_select($views).'
                                         </div>
-                                        <div class="col-sm-3">
+                                        <div class="visible-xs mb-md"></div>
+                                        <div class="col-sm-2">
                                             '.html_select($roles).'
                                         </div>
+                                        <div class="visible-xs mb-md"></div>
+                                        <div class="col-sm-2">
+                                            <div class="input-group input-group-icon">
+                                                <input type="text" class="form-control col-md-3" name="filter" id="filter" value="'.str_log(isset_get($_GET['filter'], '')).'" placeholder="General filter">
+                                                <span class="input-group-addon">
+                                                    <span class="icon"><i class="fa fa-search"></i></span>
+                                                </span>
+                                            </div>
+                                        </div>
+                                        <div class="visible-xs mb-md"></div>
+                                        <div class="col-sm-2">
+                                            <input type="text" class="form-control col-md-3" name="limit" id="limit" value="'.str_log(isset_get($_GET['limit'], '')).'" placeholder="'.tr('Row limit (default %entries% entries)', array('%entries%' => str_log($std_limit))).'">
+                                        </div>
+                                        <div class="visible-xs mb-md"></div>
+                                        <div class="col-sm-2">
+                                            <input type="submit" class="mb-xs mr-xs btn btn-sm btn-primary" name="reload" id="reload" value="'.tr('Reload').'">
+                                        </div>
+                                        <div class="visible-xs mb-md"></div>
                                     </div>
-                                </p>
-                            </header>
+                                </form>
+                            </p>
+                        </header>
+                        <form action="'.domain(true).'" method="post">
                             <div class="panel-body">';
 
 if(!$r->rowCount()){
@@ -288,7 +328,7 @@ if(!$r->rowCount()){
                             <th class="select">
                                 <input type="checkbox" name="id[]" class="all"></th><th>'.tr('Username').'
                             </th>
-                            '.((isset_get($_POST['view']) == 'all') ? '<th>'.tr('Status').'</th>' : '').'
+                            '.((isset_get($_GET['view']) == 'all') ? '<th>'.tr('Status').'</th>' : '').'
                             <th>'.tr('Role').'</th>
                             <th>'.tr('Admin').'</th>
                             <th>'.tr('God').'</th>
@@ -303,7 +343,7 @@ if(!$r->rowCount()){
         $html .= '  <tr>
                         <td class="select"><input type="checkbox" name="id[]" value="'.$user['id'].'"'.(in_array($user['id'], (array) isset_get($_POST['id'])) ? ' checked' : '').'></td>
                         <td>'.$a.$user['username'].'</a></td>
-                        '.((isset_get($_POST['view']) == 'all') ? '<td>'.status($user['status']).'</a></td>' : '').'
+                        '.((isset_get($_GET['view']) == 'all') ? '<td>'.status($user['status']).'</a></td>' : '').'
                         <td>'.$a.($user['role'] ? $user['role'] : tr('None')).'</a></td>
                         <td>'.$a.($user['admin'] ? tr('Yes') : tr('No')).'</a></td>
                         <td>'.$a.($user['god']   ? tr('Yes') : tr('No')).'</a></td>
@@ -319,10 +359,10 @@ if(!$r->rowCount()){
 
 $html .=                html_select($actions).'
                     </div>
-                </section>
-            </div>
+                </form>
+            </section>
         </div>
-    </form>';
+    </div>';
 
 log_database('Viewed users', 'users_viewed');
 

@@ -1,8 +1,8 @@
 <?php
 require_once(dirname(__FILE__).'/../libs/startup.php');
 
-right_or_redirect('admin,blog');
-load_libs('blogs,validate');
+rights_or_redirect('admin');
+load_libs('admin,user,blogs,validate');
 
 /*
  * Ensure we have an existing blog with access!
@@ -17,7 +17,7 @@ if(!$blog = sql_get('SELECT `id`, `name`, `createdby`, `seoname` FROM `blogs` WH
     redirect('/admin/blogs.php');
 }
 
-if(($blog['createdby'] != $_SESSION['user']['id']) and !has_right('god')) {
+if(($blog['createdby'] != $_SESSION['user']['id']) and !has_rights('god')) {
     html_flash_set(tr('You do not have access to the blog "'.$blog['name'].'"'), 'error');
     redirect('/admin/blogs_posts.php?blog='.$blog['seoname']);
 }
@@ -45,8 +45,11 @@ if($action == 'add'){
 /*
  * We have to do something?
  */
-switch(isset_get($_POST['doaction'])){
-    case tr('Create'):
+switch(strtolower(isset_get($_POST['doaction']))){
+    case tr('add'):
+        redirect(domain(http_build_url($_SERVER['REQUEST_URI'], 'doaction=add')));
+
+    case tr('create'):
         try{
             load_libs('seo');
 
@@ -58,13 +61,15 @@ switch(isset_get($_POST['doaction'])){
             // Validate input
             $v = new validate_form($category, 'name,keywords,description');
 
-            $v->isNotEmpty ($category['name']       , tr('Please provide the name of your category'));
-            $v->isNotEmpty ($category['keywords']   , tr('Please provide the keywords for your category'));
-            $v->isNotEmpty ($category['description'], tr('Please provide the description for your category'));
+            $v->isNotEmpty ($category['name']            , tr('Please provide the name of your category'));
+            $v->isNotEmpty ($category['keywords']        , tr('Please provide the keywords for your category'));
+            $v->isNotEmpty ($category['description']     , tr('Please provide the description for your category'));
 
-            $v->hasMinChars($category['name']       ,  3, tr('Please ensure that the name has a minimum of 3 characters'));
-            $v->hasMinChars($category['keywords']   ,  8, tr('Please ensure that the keywords have a minimum of 8 characters'));
-            $v->hasMinChars($category['description'], 32, tr('Please ensure that the description has a minimum of 32 characters'));
+            $v->hasMinChars($category['name']       ,   3, tr('Please ensure that the name has a minimum of 3 characters'));
+            $v->hasMinChars($category['keywords']   ,   8, tr('Please ensure that the keywords have a minimum of 8 characters'));
+            $v->hasMaxChars($category['keywords']   , 255, tr('Please ensure that the keywords have a maximum of 255 characters'));
+            $v->hasMinChars($category['description'],  32, tr('Please ensure that the description has a minimum of 32 characters'));
+            $v->hasMaxChars($category['description'], 160, tr('Please ensure that the description has a maximum of 160 characters'));
 
             if(empty($category['parent'])){
                 $category['parents_id'] = null;
@@ -127,12 +132,12 @@ switch(isset_get($_POST['doaction'])){
             $category  = array();
 
         }catch(Exception $e){
-            $flash = tr('Failed to create new category because  "%message%"', '%message%', $e->getMessage());
+            html_flash_set(tr('Failed to create new category because  "%message%"', array('%message%' => $e->getMessage())), 'error');
         }
 
         break;
 
-    case tr('Update'):
+    case tr('update'):
         try{
             load_libs('seo');
 
@@ -187,7 +192,7 @@ switch(isset_get($_POST['doaction'])){
                 throw new bException(tr('The specified categories id does not exist in the blog "'.$blog['name'].'"'), 'notexists');
             }
 
-            if(($dbcategory['createdby'] != $_SESSION['user']['id']) and !$_SESSION['user']['admin']){
+            if(($dbcategory['createdby'] != $_SESSION['user']['id']) and !has_rights('admin')){
                 /*
                  * This category is not from this user and this user is also not an admin!
                  */
@@ -235,6 +240,26 @@ switch(isset_get($_POST['doaction'])){
                              ':description' => $category['description']));
 
             /*
+             * Since blog category name may have changed, update all blog posts with that categories_id,
+             * Since category name may also be a part of the blog posts URL, update all blog posts for
+             * this blog and category as well
+             */
+            sql_query('UPDATE `blogs_posts`
+
+                       SET    `category`      = :category,
+                              `seocategory`   = :seocategory
+
+                       WHERE  `categories_id` = :categories_id',
+
+                       array(':category'      => $category['name'],
+                             ':seocategory'   => $category['seoname'],
+                             ':categories_id' => $category['id']));
+
+
+            blogs_update_urls(null, $category['seoname']);
+
+
+            /*
              * Due to the update, the name might have changed.
              * Redirect to ensure that the name in the URL is correct
              */
@@ -242,12 +267,12 @@ switch(isset_get($_POST['doaction'])){
             redirect('/admin/blogs_categories.php?blog='.$blog['seoname']);
 
         }catch(Exception $e){
-            $flash = tr('Failed to update category because "%message%"', '%message%', $e->getMessage());
+            html_flash_set(tr('Failed to update category because "%message%"', array('%message%' => $e->getMessage())), 'error');
         }
 
         break;
 
-    case tr('Delete'):
+    case tr('delete'):
         try{
             /*
              * Delete the specified categories
@@ -258,11 +283,11 @@ switch(isset_get($_POST['doaction'])){
 
             $list = array_prefix(array_force($_POST['id']), ':id', true);
 
-            $r = sql_query('UPDATE `blogs_categories`
-                            SET    `status` = "deleted"
-                            WHERE  `status` IS NULL AND `id` IN ('.implode(', ', array_keys($list)).')',
+            $r    = sql_query('UPDATE `blogs_categories`
+                               SET    `status` = "deleted"
+                               WHERE  `status` IS NULL AND `id` IN ('.implode(', ', array_keys($list)).')',
 
-                       $list);
+                               $list);
 
             if($r->rowCount()){
                 html_flash_set(tr('Deleted %count% categories', '%count%', $r->rowCount()), 'success');
@@ -272,12 +297,12 @@ switch(isset_get($_POST['doaction'])){
             }
 
         }catch(Exception $e){
-            html_flash_set(tr('Failed to delete categories because "'.$e->getMessage().'"'), 'error');
+            html_flash_set(tr('Failed to delete categories because "%message%"', array('%message%' => $e->getMessage())), 'error');
         }
 
         break;
 
-    case tr('Undelete'):
+    case tr('undelete'):
         try{
             /*
              * Delete the specified categories
@@ -302,12 +327,12 @@ switch(isset_get($_POST['doaction'])){
             }
 
         }catch(Exception $e){
-            html_flash_set(tr('Failed to undelete categories because "'.$e->getMessage().'"'), 'error');
+            html_flash_set(tr('Failed to undelete categories because "%message%"', array('%message%' => $e->getMessage())), 'error');
         }
 
         break;
 
-    case tr('Erase'):
+    case tr('erase'):
         try{
             /*
              * Delete the specified categories
@@ -328,91 +353,234 @@ switch(isset_get($_POST['doaction'])){
             }
 
         }catch(Exception $e){
-            html_flash_set(tr('Failed to erase categories because "'.$e->getMessage().'"'), 'error');
+            html_flash_set(tr('Failed to erase categories because "%message%"', array('%message%' => $e->getMessage())), 'error');
         }
 }
 
-$html = '   <h2>'.tr('Available categories for blog "'.$blog['name'].'"').'</h2>
-            <div class="display">
-                '.html_flash().'
-                <form action="'.domain('/admin/blogs_categories.php?blog='.$blog['seoname']).'" method="post">
-                    <table class="link select">';
+/*
+ * Do we have view filters?
+ */
+switch (isset_get($_POST['view'])){
+    case 'all':
+        $title     = '<h2 class="panel-title">'.tr('All categories for blog "'.$blog['name'].'"').'</h2>';
 
-$categories = sql_list('SELECT    `blogs_categories`.`id`,
-                                  `blogs_categories`.`createdon`,
-                                  `blogs_categories`.`status`,
-                                  `blogs_categories`.`name`,
-                                  `blogs_categories`.`seoname`,
-                                  `blogs_categories`.`parents_id`
+        $actions   = array('name'       => 'doaction',
+                           'class'      => 'btn-primary mb-xs',
+                           'none'       => tr('Action'),
+                           'resource'   => array('add'      => tr('Create'),
+                                                 'delete'   => tr('Delete'),
+                                                 'undelete' => tr('Undelete')),
+                           'autosubmit' => true);
+        break;
 
-                        FROM      `blogs_categories`
+    case 'deleted':
+        $title     = '<h2 class="panel-title">'.tr('Deleted categories for blog "'.$blog['name'].'"').'</h2>';
 
-                        WHERE     `blogs_categories`.`blogs_id` = :blogs_id', array(':blogs_id' => $blog['id']));
+        $filters[] = ' `blogs_categories`.`status` = "deleted" ';
 
+        $actions   = array('name'       => 'doaction',
+                           'class'      => 'btn-primary mb-xs',
+                           'none'       => tr('Action'),
+                           'resource'   => array('undelete' => tr('Undelete')),
+                           'autosubmit' => true);
+        break;
+
+    case '':
+        // FALLTHROUGH
+    default:
+        $title     = '<h2 class="panel-title">'.tr('Available categories for blog "'.$blog['name'].'"').'</h2>';
+
+        $filters[] = ' `blogs_categories`.`status` IS NULL ';
+
+        $actions   = array('name'       => 'doaction',
+                           'class'      => 'btn-primary mb-xs',
+                           'none'       => tr('Action'),
+                           'resource'   => array('add'    => tr('Create'),
+                                                 'delete' => tr('Delete')),
+                           'autosubmit' => true);
+}
+
+
+
+/*
+ *
+ */
+$limit = 50;
+
+$view  = array('name'       => 'view',
+               'class'      => 'filter form-control mb-md',
+               'none'       => tr('View'),
+               'selected'   => isset_get($_POST['view']),
+               'resource'   => array(''        => tr('Active'),
+                                     'deleted' => tr('Deleted'),
+                                     'empty'   => tr('Empty'),
+                                     'all'     => tr('All')),
+               'autosubmit' => true);
+
+$query      = 'SELECT    `blogs_categories`.`id`,
+                         `blogs_categories`.`createdon`,
+                         `blogs_categories`.`status`,
+                         `blogs_categories`.`name`,
+                         `blogs_categories`.`seoname`,
+                         `blogs_categories`.`parents_id`
+
+               FROM      `blogs_categories`
+
+               WHERE     `blogs_categories`.`blogs_id` = :blogs_id';
+
+
+
+/*
+ * Add filters to the query
+ */
+if(!empty($filters)){
+    $query .= ' AND '.implode(' AND ', $filters);
+}
+
+
+
+/*
+ *
+ */
+$execute    = array(':blogs_id' => $blog['id']);
+$categories = sql_list($query.' ORDER BY `blogs_categories`.`name`', $execute);
+
+
+
+/*
+ *
+ */
+$html = '   <form action="'.domain(true).'" method="post">
+                <div class="row">
+                    <div class="col-md-12">
+                        <section class="panel">
+                            <header class="panel-heading">
+                                '.$title.'
+                                <p>
+                                    '.html_flash().'
+                                    <div class="form-group">
+                                        <div class="col-sm-8">
+                                            <div class="row">
+                                                <div class="col-sm-4">
+                                                    '.html_select($view).'
+                                                </div>
+                                                <div class="visible-xs mb-md"></div>
+                                                <div class="col-sm-4">
+                                                    <div class="input-group input-group-icon">
+                                                        <input type="text" class="filter form-control col-md-3" name="filter" value="'.isset_get($_POST['filter']).'" placeholder="Filter...">
+                                                        <span class="input-group-addon">
+                                                            <span class="icon"><i class="fa fa-search"></i></span>
+                                                        </span>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </p>
+                            </header>
+                            <div class="panel-body">';
+
+
+
+/*
+ *
+ */
 if(!$categories){
-    $html .= '<tr><td>'.tr('There are no categories for this blog yet').'</td></tr>';
+    $html .= '<p>'.tr('No blogs found with this filter').'</p>';
 
 }else{
-    $html .= '<thead><td class="select"><input type="checkbox" name="all" class="all"></td><td>'.tr('Category').'</td><td>'.tr('Created on').'</td><td>'.tr('Parent').'</td><td>'.tr('Status').'</td></thead>';
+    $html .= '  <div class="table-responsive">
+                    <table class="link select table mb-none table-striped table-hover">
+                        <thead>
+                            <th class="select"><input type="checkbox" name="id[]" class="all"></th>
+                            <th>'.tr('Category').'</th>
+                            <th>'.tr('Category SEO').'</th>
+                            <th>'.tr('Created on').'</th>
+                            <th>'.tr('Parent').'</th>
+                            <th>'.tr('Status').'</th>
+                        </thead>';
 
     foreach($categories as $id => $cat){
-        $html .= '<tr'.(($selected == $cat['seoname']) ? ' class="selected"' : '').'><td class="select"><input type="checkbox" name="id" id="id" value="'.$id.'"></td>
-                      <td><a href="'.domain('/admin/blogs_categories.php?blog='.$blog['seoname'].'&category='.$cat['seoname']).'">'.$cat['name'].'</a></td>
-                      <td><a href="'.domain('/admin/blogs_categories.php?blog='.$blog['seoname'].'&category='.$cat['seoname']).'">'.$cat['createdon'].'</a></td>
-                      <td><a href="'.domain('/admin/blogs_categories.php?blog='.$blog['seoname'].'&category='.$cat['seoname']).'">'.isset_get($categories[$cat['parents_id']]['name']).'</a></td>
-                      <td><a href="'.domain('/admin/blogs_categories.php?blog='.$blog['seoname'].'&category='.$cat['seoname']).'">'.status($cat['status']).'</a></td>
+        $a = '<a href="'.domain('/admin/blogs_categories.php?blog='.$blog['seoname'].'&category='.$cat['seoname']).'">';
+
+        $html .= '<tr'.(($selected == $cat['seoname']) ? ' class="selected"' : '').'><td class="select"><input type="checkbox" name="id[]" value="'.$id.'"></td>
+                      <td>'.$a.$cat['name'].'</a></td>
+                      <td>'.$a.$cat['seoname'].'</a></td>
+                      <td>'.$a.$cat['createdon'].'</a></td>
+                      <td>'.$a.isset_get($categories[$cat['parents_id']]['name']).'</a></td>
+                      <td>'.$a.status($cat['status']).'</a></td>
                   </tr>';
     }
+
+    $html .= '</table>';
 }
 
-$html .= '</table>
-          <a class="button submit" href="'.domain('/admin/blogs_categories.php?blog='.$blog['seoname'].'&doaction=add').'">'.tr('Create').'</a>';
+$html .=                    html_select($actions).'
+                            <a class="mb-xs mt-xs mr-xs btn btn-primary" href="'.domain('/admin/blogs.php?blog='.$blog['seoname']).'">'.tr('Back').'</a>
+                        </div>
+                    </section>
+                </div>
+            </div>
+        </form>';
 
-if($categories){
-    $html .= ' <input type="submit" name="doaction" value="'.tr('Delete').'">
-               <input type="submit" name="doaction" value="'.tr('Undelete').'">
-               <input type="submit" name="doaction" value="'.tr('Erase').'">';
-}
 
-$html .= ' <a class="button submit" href="'.domain('/admin/blogs.php?blog='.$blog['seoname']).'">'.tr('Back').'</a>
-        </form>
-    </div>';
 
+/*
+ *
+ */
 if($selected or $action == 'add'){
     if(isset_get($flash)){
-
+        html_flash_set($flash, $flash_type);
     }
 
     $cat_select = array('name'     => 'parent',
+                        'class'    => 'form-control mb-md',
                         'blogs_id' => $blog['id'],
                         'selected' => isset_get($categories[isset_get($category['parents_id'])]['name'], ''),
                         'filter'   => array('seoname' => isset_get($category['seoname'])));
 
-    $html .= '<hr>
-              <div class="category">
-                '.html_flash().'
-                <form id="category" name="category" action="'.domain('/admin/blogs_categories.php?blog='.$blog['seoname'].(isset($_GET['doaction']) ? '&doaction='.$_GET['doaction'] : '')).'" method="post">
-                    <fieldset>
-                        <legend>'.str_log((isset($category['name']) ? 'Modify category "'.$category['name'].'"' : tr('Create new category'))).'</legend>
-                        <ul class="form display">
-                            <li><label>'.tr('Name').'</label><input type="text" name="name" id="name" value="'.isset_get($category['name']).'"  maxlength="64"></li>
-                            <li><label>'.tr('Parent category').'</label>'.blogs_categories_select($cat_select).'</li>
-                            <li><label for="keywords">'.tr('Keywords').'</label><input type="text" name="keywords" id="keywords" value="'.isset_get($category['keywords']).'" maxlength="255"></li>
-                            <li><label for="description">'.tr('Description').'</label><input type="text" name="description" id="description" value="'.isset_get($category['description']).'"  maxlength="155"></li>
-                        </ul>';
-
-    if($action == 'add'){
-        $html .= '<input type="submit" name="doaction" value="'.tr('Create').'">';
-
-    }else{
-        $html .= '<input type="submit" name="doaction" value="'.tr('Update').'">';
-    }
-
-    $html .= '                  <a class="button submit" href="'.domain('/admin/blogs_categories.php?blog='.$blog['seoname']).'">'.tr('Cancel').'</a>
-                            </fieldset>
-                            <input type="hidden" name="id" value="'.isset_get($category['id']).'">
-                        </form>
-                    </div>';
+    $html .= '  <form id="category" name="category" action="'.domain('/admin/blogs_categories.php?blog='.$blog['seoname'].(isset($_GET['doaction']) ? '&doaction='.$_GET['doaction'] : '')).'" method="post">
+                    <div class="row">
+                        <div class="col-md-'.(empty($blog['id']) ? '12' : '6').'">
+                            <section class="panel">
+                                <header class="panel-heading">
+                                    <h2 class="panel-title">'.(empty($blog['id']) ? tr('Create new blog') : tr('Modify blog')).'</h2>
+                                    <p>'.html_flash().'</p>
+                                </header>
+                                <div class="panel-body">
+                                    <div class="form-group">
+                                        <label class="col-md-3 control-label" for="keywords">'.tr('Name').'</label>
+                                        <div class="col-md-9">
+                                            <input type="text" name="name" id="name" class="form-control" value="'.isset_get($category['name']).'" maxlength="64">
+                                        </div>
+                                    </div>
+                                    <div class="form-group">
+                                        <label class="col-md-3 control-label" for="keywords">'.tr('Parent category').'</label>
+                                        <div class="col-md-9">
+                                            '.blogs_categories_select($cat_select).'
+                                        </div>
+                                    </div>
+                                    <div class="form-group">
+                                        <label class="col-md-3 control-label" for="keywords">'.tr('Keywords').'</label>
+                                        <div class="col-md-9">
+                                            <input type="text" name="keywords" id="keywords" class="form-control" value="'.isset_get($category['keywords']).'" maxlength="255">
+                                        </div>
+                                    </div>
+                                    <div class="form-group">
+                                        <label class="col-md-3 control-label" for="keywords">'.tr('Description').'</label>
+                                        <div class="col-md-9">
+                                            <input type="text" name="description" id="description" class="form-control" value="'.isset_get($category['description']).'" maxlength="155">
+                                        </div>
+                                    </div>
+                                    <input type="hidden" name="id" value="'.isset_get($category['id']).'">'.
+                                (($action == 'add') ? '<input type="submit" class="mb-md mt-md mr-md btn btn-primary" name="doaction" id="doaction" value="'.tr('Create').'"> '
+                                                    : '<input type="submit" class="mb-md mt-md mr-md btn btn-primary" name="doaction" id="doaction" value="'.tr('Update').'"> ').'
+                                    <a class="mb-xs mt-xs mr-xs btn btn-primary" href="'.domain('/admin/blogs_categories.php?blog='.$blog['seoname']).'">'.tr('Cancel').'</a>
+                                </div>
+                            </section>
+                        </div>
+                    </div>
+                </form>';
 
     /*
      * Add JS validation
@@ -425,7 +593,7 @@ if($selected or $action == 'add'){
 
     $vj->validate('name'       , 'minlength', '3'   , '<span class="FcbErrorTail"></span>'.tr('Please ensure that the name has at least 3 characters'));
     $vj->validate('keywords'   , 'minlength', '8'   , '<span class="FcbErrorTail"></span>'.tr('Please ensure that the keywords have at least 8 characters'));
-    $vj->validate('description', 'minlength', '32'  , '<span class="FcbErrorTail"></span>'.tr('Please ensure that the description has at least 32 characters'));
+    $vj->validate('description', 'minlength', '16'  , '<span class="FcbErrorTail"></span>'.tr('Please ensure that the description has at least 16 characters'));
 
     $params = array('id'   => 'category',
                     'json' => false);
@@ -433,5 +601,11 @@ if($selected or $action == 'add'){
     $html .= $vj->output_validation($params);
 }
 
-echo admin_page($html, tr('Blog categories management'));
+
+$params = array('icon'        => 'fa-users',
+                'title'       => tr('Blog categories management'),
+                'breadcrumbs' => array(tr('Blogs'), tr('Categories'), tr('Manage')),
+                'script'      => 'blogs.php');
+
+echo ca_page($html, $params);
 ?>

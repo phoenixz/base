@@ -1,7 +1,10 @@
 <?php
 require_once(dirname(__FILE__).'/../libs/startup.php');
 
-rights_or_redirect('admin,users,modify');
+if(empty($profile)){
+    rights_or_redirect('admin,users,modify');
+}
+
 load_libs('user,validate');
 
 
@@ -85,6 +88,10 @@ if(!empty($_POST['dosubmit'])){
  */
 try{
     if(isset_get($_POST['docreate'])){
+        if(!empty($profile)){
+            throw new bException('Unknown option "docreate" specified', 'unknown');
+        }
+
         /*
          * Create a new user
          */
@@ -104,97 +111,180 @@ try{
     }
 
     if(isset_get($_POST['doupdate'])){
-        if(empty($user['id'])){
-            throw new bException('Cannot update, no user specified', 'notspecified');
+        if(empty($profile)){
+            if(empty($user['id'])){
+                throw new bException('Cannot update, no user specified', 'notspecified');
+            }
+
+            /*
+             * Validate data
+             */
+            s_validate_user($user);
+
+            /*
+             * Update the user
+             */
+            $r = sql_query('UPDATE `users`
+
+                            SET    `modifiedby`              = :modifiedby,
+                                   `modifiedon`              = NOW(),
+                                   `status`                  = :status,
+                                   `username`                = :username,
+                                   `name`                    = :name,
+                                   `email`                   = :email,
+                                   `language`                = :language,
+                                   `gender`                  = :gender,
+                                   `latitude`                = :latitude,
+                                   `longitude`               = :longitude,
+                                   `roles_id`                = :roles_id,
+                                   `role`                    = :role,
+                                   `phones`                  = :phones,
+                                   `country`                 = :country,
+                                   `commentary`              = :commentary,
+                                   `avatar`                  = :avatar,
+                                   `validated`               = :validated,
+                                   `fb_id`                   = :fb_id,
+                                   `fb_token`                = :fb_token,
+                                   `gp_id`                   = :gp_id,
+                                   `gp_token`                = :gp_token,
+                                   `ms_id`                   = :ms_id,
+                                   `ms_token_authentication` = :ms_token_authentication,
+                                   `ms_token_access`         = :ms_token_access,
+                                   `tw_id`                   = :tw_id,
+                                   `tw_token`                = :tw_token,
+                                   `yh_id`                   = :yh_id,
+                                   `yh_token`                = :yh_token
+
+                            WHERE  `id`                      = :id',
+
+                            array(':modifiedby'              => isset_get($_SESSION['user']['id']),
+                                  ':id'                      => $user['id'],
+                                  ':username'                => $user['username'],
+                                  ':name'                    => $user['name'],
+                                  ':email'                   => $user['email'],
+                                  ':language'                => $user['language'],
+                                  ':gender'                  => $user['gender'],
+                                  ':latitude'                => $user['latitude'],
+                                  ':longitude'               => $user['longitude'],
+                                  ':roles_id'                => $user['roles_id'],
+                                  ':role'                    => $user['role'],
+                                  ':phones'                  => $user['phones'],
+                                  ':status'                  => $user['status'],
+                                  ':avatar'                  => $user['avatar'],
+                                  ':validated'               => ($user['validated'] ? str_random(32) : null),
+                                  ':commentary'              => $user['commentary'],
+                                  ':fb_id'                   => $user['fb_id'],
+                                  ':fb_token'                => $user['fb_token'],
+                                  ':gp_id'                   => $user['gp_id'],
+                                  ':gp_token'                => $user['gp_token'],
+                                  ':ms_id'                   => $user['ms_id'],
+                                  ':ms_token_authentication' => $user['ms_token_authentication'],
+                                  ':ms_token_access'         => $user['ms_token_access'],
+                                  ':tw_id'                   => $user['tw_id'],
+                                  ':tw_token'                => $user['tw_token'],
+                                  ':yh_id'                   => $user['yh_id'],
+                                  ':yh_token'                => $user['yh_token'],
+                                  ':country'                 => $user['country']));
+
+            if(!empty($user['password'])){
+                user_update_password($user);
+            }
+
+            user_update_rights($user);
+
+            /*
+             * This update might have been done because of a create user action
+             */
+            if(!isset_get($_POST['docreate'])){
+                html_flash_set(log_database('Updated user "'.str_log(isset_get($_POST['username'])).'"', 'user_update'), 'success');
+                redirect(domain('/admin/user.php?user='.$user['username']));
+            }
+
+            $user = array();
+
+        }else{
+            if(empty($user['id'])){
+                throw new bException('Cannot update, no user specified', 'notspecified');
+            }
+
+            /*
+             * Validate data
+             */
+            s_validate_user($user);
+
+            /*
+             * Update the user
+             */
+            $r = sql_query('UPDATE `users`
+
+                            SET    `modifiedby`              = :modifiedby,
+                                   `modifiedon`              = NOW(),
+                                   `status`                  = :status,
+                                   `username`                = :username,
+                                   `name`                    = :name,
+                                   `email`                   = :email,
+                                   `language`                = :language,
+                                   `gender`                  = :gender,
+                                   `latitude`                = :latitude,
+                                   `longitude`               = :longitude,
+                                   `phones`                  = :phones,
+                                   `country`                 = :country,
+                                   `avatar`                  = :avatar,
+                                   `fb_id`                   = :fb_id,
+                                   `fb_token`                = :fb_token,
+                                   `gp_id`                   = :gp_id,
+                                   `gp_token`                = :gp_token,
+                                   `ms_id`                   = :ms_id,
+                                   `ms_token_authentication` = :ms_token_authentication,
+                                   `ms_token_access`         = :ms_token_access,
+                                   `tw_id`                   = :tw_id,
+                                   `tw_token`                = :tw_token,
+                                   `yh_id`                   = :yh_id,
+                                   `yh_token`                = :yh_token
+
+                            WHERE  `id`                      = :id',
+
+                            array(':modifiedby'              => isset_get($_SESSION['user']['id']),
+                                  ':id'                      => $user['id'],
+                                  ':username'                => $user['username'],
+                                  ':name'                    => $user['name'],
+                                  ':email'                   => $user['email'],
+                                  ':language'                => $user['language'],
+                                  ':gender'                  => $user['gender'],
+                                  ':latitude'                => $user['latitude'],
+                                  ':longitude'               => $user['longitude'],
+                                  ':phones'                  => $user['phones'],
+                                  ':status'                  => $user['status'],
+                                  ':avatar'                  => $user['avatar'],
+                                  ':fb_id'                   => $user['fb_id'],
+                                  ':fb_token'                => $user['fb_token'],
+                                  ':gp_id'                   => $user['gp_id'],
+                                  ':gp_token'                => $user['gp_token'],
+                                  ':ms_id'                   => $user['ms_id'],
+                                  ':ms_token_authentication' => $user['ms_token_authentication'],
+                                  ':ms_token_access'         => $user['ms_token_access'],
+                                  ':tw_id'                   => $user['tw_id'],
+                                  ':tw_token'                => $user['tw_token'],
+                                  ':yh_id'                   => $user['yh_id'],
+                                  ':yh_token'                => $user['yh_token'],
+                                  ':country'                 => $user['country']));
+
+            if(!empty($user['password'])){
+                user_update_password($user);
+            }
+
+            /*
+             * This update might have been done because of a create user action
+             */
+            html_flash_set(log_database('Updated profile "'.str_log(isset_get($_POST['username'])).'"', 'user_update'), 'success');
+            redirect(true);
         }
-
-        /*
-         * Validate data
-         */
-        s_validate_user($user);
-
-        /*
-         * Update the user
-         */
-        $r = sql_query('UPDATE `users`
-
-                        SET    `modifiedby`              = :modifiedby,
-                               `modifiedon`              = NOW(),
-                               `status`                  = :status,
-                               `username`                = :username,
-                               `name`                    = :name,
-                               `email`                   = :email,
-                               `language`                = :language,
-                               `gender`                  = :gender,
-                               `latitude`                = :latitude,
-                               `longitude`               = :longitude,
-                               `roles_id`                = :roles_id,
-                               `role`                    = :role,
-                               `phones`                  = :phones,
-                               `country`                 = :country,
-                               `commentary`              = :commentary,
-                               `avatar`                  = :avatar,
-                               `validated`               = :validated,
-                               `fb_id`                   = :fb_id,
-                               `fb_token`                = :fb_token,
-                               `gp_id`                   = :gp_id,
-                               `gp_token`                = :gp_token,
-                               `ms_id`                   = :ms_id,
-                               `ms_token_authentication` = :ms_token_authentication,
-                               `ms_token_access`         = :ms_token_access,
-                               `tw_id`                   = :tw_id,
-                               `tw_token`                = :tw_token,
-                               `yh_id`                   = :yh_id,
-                               `yh_token`                = :yh_token
-
-                        WHERE  `id`                      = :id',
-
-                        array(':modifiedby'              => isset_get($_SESSION['user']['id']),
-                              ':id'                      => $user['id'],
-                              ':username'                => $user['username'],
-                              ':name'                    => $user['name'],
-                              ':email'                   => $user['email'],
-                              ':language'                => $user['language'],
-                              ':gender'                  => $user['gender'],
-                              ':latitude'                => $user['latitude'],
-                              ':longitude'               => $user['longitude'],
-                              ':roles_id'                => $user['roles_id'],
-                              ':role'                    => $user['role'],
-                              ':phones'                  => $user['phones'],
-                              ':status'                  => $user['status'],
-                              ':avatar'                  => $user['avatar'],
-                              ':validated'               => ($user['validated'] ? str_random(32) : null),
-                              ':commentary'              => $user['commentary'],
-                              ':fb_id'                   => $user['fb_id'],
-                              ':fb_token'                => $user['fb_token'],
-                              ':gp_id'                   => $user['gp_id'],
-                              ':gp_token'                => $user['gp_token'],
-                              ':ms_id'                   => $user['ms_id'],
-                              ':ms_token_authentication' => $user['ms_token_authentication'],
-                              ':ms_token_access'         => $user['ms_token_access'],
-                              ':tw_id'                   => $user['tw_id'],
-                              ':tw_token'                => $user['tw_token'],
-                              ':yh_id'                   => $user['yh_id'],
-                              ':yh_token'                => $user['yh_token'],
-                              ':country'                 => $user['country']));
-
-        if(!empty($user['password'])){
-            user_update_password($user);
-        }
-
-        user_update_rights($user);
-
-        /*
-         * This update might have been done because of a create user action
-         */
-        if(!isset_get($_POST['docreate'])){
-            html_flash_set(log_database('Updated user "'.str_log(isset_get($_POST['username'])).'"', 'user_update'), 'success');
-            redirect(domain('/admin/user.php?user='.$user['username']));
-        }
-
-        $user = array();
 
     }elseif(isset_get($_POST['dobecome'])){
+        if(!empty($profile)){
+            throw new bException('Unknown option "dobecome" specified', 'unknown');
+        }
+
         if(!$user){
             throw new bException('Cannot become user, no user available', 'nouseravailable');
         }
@@ -215,9 +305,10 @@ try{
 /*
  *
  */
-$users = array('name'       => 'roles_id',
+$roles = array('name'       => 'roles_id',
                'class'      => 'filter form-control',
                'selected'   => isset_get($user['roles_id']),
+               'disabled'   => !empty($profile),
                'autosubmit' => true,
                'onchange'   => '$("#user").validate().settings.rules = {};',
                'resource'   => sql_list('SELECT `id`, `name` FROM `roles` WHERE `status` IS NULL ORDER BY `name`'));
@@ -233,7 +324,7 @@ $html = '   <form name="user" id="user" action="'.domain(true).'" method="post">
                     <div class="col-md-12">
                         <section class="panel">
                             <header class="panel-heading">
-                                <h2 class="panel-title">'.(isset_get($user['id']) ? tr('Update user') : tr('Create user')).'</h2>
+                                <h2 class="panel-title">'.(isset_get($user['id']) ? (empty($profile) ? tr('Update user') : tr('Manage your profile')) : tr('Create user')).'</h2>
                                 <p>'.html_flash().'</p>
                             </header>
                             <div class="panel-body">';
@@ -288,17 +379,21 @@ $html .= '                      <div class="form-group">
                                     <div class="col-md-6">
                                         <input type="text" name="phones" id="phones" class="form-control" value="'.isset_get($user['phones']).'" maxlength="255">
                                     </div>
-                                </div>
-                                <div class="form-group">
+                                </div>';
+
+if(empty($profile)){
+    $html .= '                  <div class="form-group">
                                     <label class="col-md-3 control-label" for="commentary">'.tr('Commentary').'</label>
                                     <div class="col-md-6">
                                         <textarea name="commentary" id="commentary" class="form-control" maxlength="2047" rows="5">'.isset_get($user['commentary']).'</textarea>
                                     </div>
-                                </div>
-                                <div class="form-group">
+                                </div>';
+}
+
+$html .= '                      <div class="form-group">
                                     <label class="col-md-3 control-label" for="role">'.tr('Role and rights').'</label>
                                     <div class="col-md-6">
-                                        '.html_select($users).'
+                                        '.html_select($roles).'
                                     </div>
                                 </div>
                                 <div class="form-group">
@@ -335,8 +430,13 @@ if(!empty($user['roles_id'])){
                     array(':users_id' => $user['id']));
 
     while($user_right = sql_fetch($r)){
-        $a     = '<a href="'.domain('/admin/right.php?right='.$user_right['id']).'">';
-        $html .= '<tr><td>'.$a.$user_right['name'].'</a></td><td>'.$a.$user_right['description'].'</a></td></tr>';
+        if(empty($profile)){
+            $a     = '<a href="'.domain('/admin/right.php?right='.$user_right['id']).'">';
+            $html .= '<tr><td>'.$a.$user_right['name'].'</a></td><td>'.$a.$user_right['description'].'</a></td></tr>';
+
+        }else{
+            $html .= '<tr><td>'.$user_right['name'].'</td><td>'.$user_right['description'].'</td></tr>';
+        }
     }
 
     $html .= '                          </table>
@@ -357,8 +457,8 @@ $html .= '                      <hr>
                                         <input type="password" name="password2" id="password2" class="form-control" value="" maxlength="32">
                                     </div>
                                 </div>'.
-                                (isset_get($user['id']) ? '<input type="submit" class="mb-xs mt-xs mr-xs btn btn-primary" name="doupdate" id="doupdate" value="'.tr('Update').'">
-                                                           <input type="submit" class="mb-xs mt-xs mr-xs btn btn-warning" name="dobecome" id="dobecome" value="'.tr('Become user').'">'
+                                (isset_get($user['id']) ? '<input type="submit" class="mb-xs mt-xs mr-xs btn btn-primary" name="doupdate" id="doupdate" value="'.tr('Update').'">'.
+                                                           (empty($profile) ? '<input type="submit" class="mb-xs mt-xs mr-xs btn btn-warning" name="dobecome" id="dobecome" value="'.tr('Become user').'">' : '')
 
                                                         : '<input type="submit" class="mb-xs mt-xs mr-xs btn btn-primary" name="docreate" id="docreate" value="'.tr('Create').'">').'
                             </div>
@@ -377,8 +477,11 @@ $vj->validate('name'     , 'required' , 'true'     , '<span class="FcbErrorTail"
 $vj->validate('name'     , 'minlength', '2'        , '<span class="FcbErrorTail"></span>'.tr('Please ensure that the real name has at least 2 characters'));
 $vj->validate('email'    , 'required' , 'true'     , '<span class="FcbErrorTail"></span>'.tr('Please provide your email address'));
 $vj->validate('email'    , 'email'    , 'true'     , '<span class="FcbErrorTail"></span>'.tr('Please provide a valid email address'));
-$vj->validate('roles_id' , 'required' , 'true'     , '<span class="FcbErrorTail"></span>'.tr('Please provide a role'));
 $vj->validate('password2', 'equalTo'  , '#password', '<span class="FcbErrorTail"></span>'.tr('The password fields need to be equal'));
+
+if(empty($profile)){
+    $vj->validate('roles_id' , 'required' , 'true'     , '<span class="FcbErrorTail"></span>'.tr('Please provide a role'));
+}
 
 if(empty($user['id'])){
     /*
@@ -391,9 +494,9 @@ if(empty($user['id'])){
 $html .= $vj->output_validation(array('id'   => 'user',
                                       'json' => false));
 
-$params = array('title'       => tr('User'),
+$params = array('title'       => (empty($profile) ? tr('User') : tr('Profile')),
                 'icon'        => 'fa-user',
-                'breadcrumbs' => array(tr('Users'), tr('Modify')));
+                'breadcrumbs' => array(tr('Users'), (empty($profile) ? tr('Modify') : tr('Profile'))));
 
 echo ca_page($html, $params);
 
@@ -402,6 +505,8 @@ echo ca_page($html, $params);
  *
  */
 function s_validate_user(&$user, $id = null){
+    global $profile;
+
     try{
         // Validate input
         $v = new validate_form($user, 'name,username,email,password,password2,role,commentary,gender,latitude,longitude,language,country,fb_id,fb_token,gp_id,gp_token,ms_id,ms_token_authentication,ms_token_access,tw_id,tw_token,yh_id,yh_token,status,validated,avatar,phones');
@@ -417,7 +522,9 @@ function s_validate_user(&$user, $id = null){
         $v->isNotEmpty  ($user['name']       , tr('Please provide a real name'));
         $v->hasMinChars ($user['name']    , 2, tr('Please ensure that the real name has a minimum of 2 characters'));
 
-        $v->isNotEmpty  ($user['roles_id']   , tr('Please provide a role'));
+        if(empty($profile)){
+            $v->isNotEmpty  ($user['roles_id']   , tr('Please provide a role'));
+        }
 
         if($user['roles_id']){
             if(!$role = sql_get('SELECT `id`, `name` FROM `roles` WHERE `id` = :id AND `status` IS NULL', array(':id' => $user['roles_id']))){

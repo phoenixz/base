@@ -1,14 +1,40 @@
 <?php
 require_once(dirname(__FILE__).'/../libs/startup.php');
 
-right_or_redirect('admin,blog');
+rights_or_redirect('admin');
+load_libs('user');
 
 $selected = isset_get($_GET['blog']);
 
+if($selected){
+    $selected_blog = sql_get('SELECT * FROM `blogs` WHERE `seoname` = :seoname', array(':seoname' => $selected));
+
+    if($selected_blog){
+        /*
+         *
+         */
+        switch(isset_get($_POST['doblogaction'])){
+            case 'modify_blog':
+                redirect(domain('/admin/blog.php?blog='.$selected_blog['seoname']));
+
+            case 'manage_categories':
+                redirect(domain('/admin/blogs_categories.php?blog='.$selected_blog['seoname']));
+
+            case 'manage_posts':
+                redirect(domain('/admin/blogs_posts.php?blog='.$selected_blog['seoname']));
+        }
+    }
+}
+
+
+
 /*
- * We have to do something?
+ *
  */
 switch(isset_get($_POST['doaction'])){
+    case tr('create'):
+        redirect('/admin/blog.php');
+
     case tr('Delete'):
         try{
             /*
@@ -34,7 +60,7 @@ switch(isset_get($_POST['doaction'])){
             }
 
         }catch(Exception $e){
-            html_flash_set(tr('Failed to delete blogs because "'.$e->getMessage().'"'), 'error');
+            html_flash_set(tr('Failed to delete blogs because "%message%"', array('%message%' => $e->getMessage())), 'error');
         }
 
         break;
@@ -64,7 +90,7 @@ switch(isset_get($_POST['doaction'])){
             }
 
         }catch(Exception $e){
-            html_flash_set(tr('Failed to undelete blogs because "'.$e->getMessage().'"'), 'error');
+            html_flash_set(tr('Failed to undelete blogs because "%message%"', array('%message%' => $e->getMessage())), 'error');
         }
 
         break;
@@ -90,36 +116,167 @@ switch(isset_get($_POST['doaction'])){
             }
 
         }catch(Exception $e){
-            html_flash_set(tr('Failed to erase blogs because "'.$e->getMessage().'"'), 'error');
+            html_flash_set(tr('Failed to erase blogs because "%message%"', array('%message%' => $e->getMessage())), 'error');
         }
 }
 
-$html = '<h2>'.tr('Available blogs').'</h2>
-<div class="display">
-    <form action="'.domain('/admin/blogs.php').'" method="post">
-        <table class="link select">';
 
-$r = sql_query('SELECT    `blogs`.`id`           AS blog_id,
-                          `blogs`.`createdon`    AS blog_createdon,
-                          `blogs`.`status`       AS blog_status,
-                          `blogs`.`name`         AS blog_name,
-                          `blogs`.`seoname`      AS blog_seoname,
-                          `blogs`.`slogan`       AS blog_slogan,
 
-                          `users`.`name`,
-                          `users`.`email`,
-                          `users`.`username`
+$filters = array();
 
-                FROM      `blogs`
 
-                LEFT JOIN `users`
-                ON        `users`.`id` = `blogs`.`createdby`');
+
+/*
+ * Do we have view filters?
+ */
+switch (isset_get($_GET['view'])){
+    case 'all':
+        $title     = '<h2 class="panel-title">'.tr('All blogs').'</h2>';
+
+        $actions   = array('name'       => 'doaction',
+                           'none'       => tr('Action'),
+                           'resource'   => array('create'   => tr('Create'),
+                                                 'delete'   => tr('Delete'),
+                                                 'undelete' => tr('Undelete')),
+                           'autosubmit' => true);
+        break;
+
+    case 'deleted':
+        $title     = '<h2 class="panel-title">'.tr('Deleted blogs').'</h2>';
+
+        $filters[] = ' `blogs`.`status` = "deleted" ';
+
+        $actions   = array('name'       => 'doaction',
+                           'none'       => tr('Action'),
+                           'resource'   => array('undelete' => tr('Undelete')),
+                           'autosubmit' => true);
+        break;
+
+    case '':
+        // FALLTHROUGH
+    default:
+        $title     = '<h2 class="panel-title">'.tr('Blogs').'</h2>';
+
+        $filters[] = ' `blogs`.`status` IS NULL ';
+
+        $actions   = array('name'       => 'doaction',
+                           'none'       => tr('Action'),
+                           'resource'   => array('create' => tr('Create'),
+                                                 'delete' => tr('Delete')),
+                           'autosubmit' => true);
+        break;
+}
+
+
+
+/*
+ *
+ */
+$limit = 50;
+
+$view  = array('name'       => 'view',
+               'class'      => 'filter form-control mb-md',
+               'none'       => tr('View'),
+               'selected'   => isset_get($_GET['view']),
+               'resource'   => array(''        => tr('Active'),
+                                     'deleted' => tr('Deleted'),
+                                     'empty'   => tr('Empty'),
+                                     'all'     => tr('All')),
+               'autosubmit' => true);
+
+$query = 'SELECT    `blogs`.`id`           AS blog_id,
+                    `blogs`.`createdon`    AS blog_createdon,
+                    `blogs`.`status`       AS blog_status,
+                    `blogs`.`name`         AS blog_name,
+                    `blogs`.`seoname`      AS blog_seoname,
+                    `blogs`.`slogan`       AS blog_slogan,
+
+                    `users`.`name`,
+                    `users`.`email`,
+                    `users`.`username`
+
+          FROM      `blogs`
+
+          LEFT JOIN `users`
+          ON        `users`.`id` = `blogs`.`createdby`';
+
+
+
+/*
+ * Do we have a generic filter?
+ */
+if(!empty($_GET['filter'])){
+    $filters[] = ' (`users`.`name` LIKE :name OR `leaders`.`name` LIKE :leader OR `users`.`code` LIKE :code OR `users`.`phones` LIKE :phone) ';
+
+    $execute[':name']   = '%'.$_GET['filter'].'%';
+    $execute[':leader'] = '%'.$_GET['filter'].'%';
+    $execute[':code']   = '%'.$_GET['filter'].'%';
+    $execute[':phone']  = '%'.$_GET['filter'].'%';
+}
+
+
+/*
+ * Add filters to the query
+ */
+if(!empty($filters)){
+    $query .= ' WHERE '.implode(' AND ', $filters);
+}
+
+
+
+$r = sql_query($query, isset_get($execute));
+
+
+
+/*
+ *
+ */
+$html = '   <div class="row">
+                <div class="col-md-12">
+                    <section class="panel">
+                        <header class="panel-heading">
+                            '.$title.'
+                            <p>
+                                '.html_flash().'
+                                <div class="form-group">
+                                    <div class="col-sm-8">
+                                        <form action="'.domain(true).'" method="get">
+                                            <div class="row">
+                                                <div class="col-sm-4">
+                                                    '.html_select($view).'
+                                                </div>
+                                                <div class="visible-xs mb-md"></div>
+                                                <div class="col-sm-4">
+                                                    <div class="input-group input-group-icon">
+                                                        <input type="text" class="filter form-control col-md-3" name="filter" value="'.isset_get($_GET['filter']).'" placeholder="Filter...">
+                                                        <span class="input-group-addon">
+                                                            <span class="icon"><i class="fa fa-search"></i></span>
+                                                        </span>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </form>
+                                    </div>
+                                </div>
+                            </p>
+                        </header>
+                        <form action="'.domain(true).'" method="post">
+                            <div class="panel-body">';
 
 if(!$r->rowCount()){
-    $html .= '<tr><td>'.tr('There are no blogs yet').'</td></tr>';
+    $html .= '<p>'.tr('No blogs found with this filter').'</p>';
 
 }else{
-    $html .= '<thead><td class="select"><input type="checkbox" name="id[]" class="all"></td><td>'.tr('Blog').'</td><td>'.tr('Created on').'</td><td>'.tr('Owner').'</td><td>'.tr('Slogan').'</td><td>'.tr('Status').'</td></thead>';
+    $html .= '  <div class="table-responsive">
+                    <table class="link select table mb-none table-striped table-hover">
+                        <thead>
+                            <th class="select"><input type="checkbox" name="id[]" class="all"></th>
+                            <th>'.tr('Blog').'</th>
+                            <th>'.tr('Created on').'</th>
+                            <th>'.tr('Owner').'</th>
+                            <th>'.tr('Slogan').'</th>
+                            <th>'.tr('Status').'</th>
+                        </thead>';
 
     while($blog = sql_fetch($r)){
         $html .= '<tr'.($selected == $blog['blog_seoname'] ? ' class="selected"' : '').'>
@@ -131,64 +288,138 @@ if(!$r->rowCount()){
                       <td><a href="'.domain('/admin/blogs.php?blog='.$blog['blog_seoname']).'">'.status($blog['blog_status']).'</a></td>
                   </tr>';
     }
+
+    $html .= '  </table>
+            </div>';
 }
 
-$html .= '</table>
-          <a class="button submit" href="'.domain('/admin/blog.php').'">'.tr('Create').'</a> ';
-
-if($r->rowCount()){
-    $html .= '<input type="submit" name="doaction" value="'.tr('Delete').'">
-              <input type="submit" name="doaction" value="'.tr('Undelete').'">
-              <input type="submit" name="doaction" value="'.tr('Erase').'">';
-}
-
-$html .= '</form>
+$html .=                    (empty($actions) ? '' : html_select($actions)).'
+                        </div>
+                    </form>
+                </section>
+            </div>
         </div>';
+
+
 
 /*
  * If a blog was selected, show it here
  */
 if($selected){
-    if(!$blog = sql_get('SELECT * FROM `blogs` WHERE `seoname` = :seoname', array(':seoname' => $_GET['blog']))){
+    if(!$selected_blog){
         /*
          * Specified blog does not exist
          */
-        $html .= '<hr>
-                  <div class="blog">
-                      <h2>The specified blog "'.str_log($_GET['blog']).'" does not exist</h2>
-                  </div>';
+        $html .= '  <div class="row">
+                        <div class="col-md-'.(empty($selected_blog['id']) ? '12' : '6').'">
+                            <section class="panel">
+                                <header class="panel-heading">
+                                    <h2 class="panel-title">'.tr('Specified blog does not exist').'</h2>
+                                </header>
+                                <div class="panel-body">
+                                    <div class="form-group">
+                                        <label class="col-md-3 control-label" for="name">'.tr('Name').'</label>
+                                        <div class="col-md-9">
+                                            <p>'.tr('The specified blog "%blog%" does not exist', array('%blog%' => str_log($selected))).'</p>
+                                        </div>
+                                    </div>
+                                </div>';
 
     }else{
-        $count_all        = sql_get('SELECT COUNT(`id`) AS count FROM `blogs_posts`      WHERE                            `blogs_id` = :id', array(':id' => $blog['id']), 'count');
-        $count_published  = sql_get('SELECT COUNT(`id`) AS count FROM `blogs_posts`      WHERE `status` = "published" AND `blogs_id` = :id', array(':id' => $blog['id']), 'count');
-        $count_categories = sql_get('SELECT COUNT(`id`) AS count FROM `blogs_categories` WHERE                            `blogs_id` = :id', array(':id' => $blog['id']), 'count');
+        $count_all        = sql_get('SELECT COUNT(`id`) AS count FROM `blogs_posts`      WHERE                            `blogs_id` = :id', array(':id' => $selected_blog['id']), 'count');
+        $count_published  = sql_get('SELECT COUNT(`id`) AS count FROM `blogs_posts`      WHERE `status` = "published" AND `blogs_id` = :id', array(':id' => $selected_blog['id']), 'count');
+        $count_categories = sql_get('SELECT COUNT(`id`) AS count FROM `blogs_categories` WHERE                            `blogs_id` = :id', array(':id' => $selected_blog['id']), 'count');
 
-        $categories       = sql_list('SELECT `name` FROM `blogs_categories` WHERE `blogs_id` = :id LIMIT 20', array(':id' => $blog['id']));
+        $categories       = sql_list('SELECT `name` FROM `blogs_categories` WHERE `blogs_id` = :id LIMIT 20', array(':id' => $selected_blog['id']));
 
-        $html .= '<hr>
-                  <div class="blog">
-                    <form>
-                        <fieldset>
-                            <legend>Blog "'.str_log($blog['name']).'"</legend>
-                            <ul class="form display">
-                                <li><label>'.tr('Name').'</label><p>'.$blog['name'].'</p></li>
-                                <li><label>'.tr('Created by').'</label><p>'.user_name($blog['createdby']).'</p></li>
-                                <li><label>'.tr('Slogan').'</label><p>'.$blog['slogan'].'</li>
-                                <li><label>'.tr('Keywords').'</label><p>'.$blog['keywords'].'</p></li>
-                                <li><label>'.tr('Description').'</label><p>'.$blog['description'].'</p></li>
-                                <li><label>'.tr('Posts').'</label> '.$count_all.'</li>
-                                <li><label>'.tr('Published posts').'</label> '.$count_published.'</li>
-                                <li><label>'.tr('Categories').'</label> '.$count_categories.($count_categories ? ' ('.str_force($categories).')' : '').'</li>
-                            </ul>
-                            <a class="button" href="'.domain('/admin/blog.php?blog='.$blog['seoname']).'">'.tr('Modify').'</a>
-                            <a class="button" href="'.domain('/admin/blogs_categories.php?blog='.$blog['seoname']).'">'.tr('Manage categories').'</a>
-                            <a class="button" href="'.domain('/admin/blogs_posts.php?blog='.$blog['seoname']).'">'.tr('Manage posts').'</a>'.
-                       '</fieldset>
-                    </form>
-                </div>';
+        $blog_button      = array('name'       => 'doblogaction',
+                                  'class'      => 'btn-primary',
+                                  'none'       => tr('Action'),
+                                  'resource'   => array('modify_blog'       => tr('Modify'),
+                                                        'manage_categories' => tr('Manage categories'),
+                                                        'manage_posts'      => tr('Manage posts')),
+                                  'autosubmit' => true);
+
+        $html .= '  <form id="blogdata" name="blogdata" action="'.domain('/admin/blogs.php?blog='.$selected_blog['seoname']).'" method="post">
+                        <div class="row">
+                            <div class="col-md-'.(empty($selected_blog['id']) ? '12' : '6').'">
+                                <section class="panel">
+                                    <header class="panel-heading">
+                                        <h2 class="panel-title">'.tr('Blog information').'</h2>
+                                        <p>'.html_flash().'</p>
+                                    </header>
+                                    <div class="panel-body">
+                                        <div class="form-group">
+                                            <div class="col-md-9">
+                                                <div class="form-group">
+                                                    <label class=" col-md-3 control-label">'.tr('Name').'</label>
+                                                    <div class="col-lg-6">
+                                                        <p class="form-control-static">'.$selected_blog['name'].'</p>
+                                                    </div>
+                                                </div>
+                                                <div class="form-group">
+                                                    <label class=" col-md-3 control-label">'.tr('URL template').'</label>
+                                                    <div class="col-lg-6">
+                                                        <p class="form-control-static">'.isset_get($selected_blog['url_template'], isset_get($_CONFIG['blogs']['url'])).'</p>
+                                                    </div>
+                                                </div>
+                                                <div class="form-group">
+                                                    <label class=" col-md-3 control-label">'.tr('Created by').'</label>
+                                                    <div class="col-lg-6">
+                                                        <p class="form-control-static">'.user_name($selected_blog['createdby']).'</p>
+                                                    </div>
+                                                </div>
+                                                <div class="form-group">
+                                                    <label class=" col-md-3 control-label">'.tr('Slogan').'</label>
+                                                    <div class="col-lg-6">
+                                                        <p class="form-control-static">'.$selected_blog['slogan'].'</p>
+                                                    </div>
+                                                </div>
+                                                <div class="form-group">
+                                                    <label class=" col-md-3 control-label">'.tr('Keywords').'</label>
+                                                    <div class="col-lg-6">
+                                                        <p class="form-control-static">'.$selected_blog['keywords'].'</p>
+                                                    </div>
+                                                </div>
+                                                <div class="form-group">
+                                                    <label class=" col-md-3 control-label">'.tr('Description').'</label>
+                                                    <div class="col-lg-6">
+                                                        <p class="form-control-static">'.$selected_blog['description'].'</p>
+                                                    </div>
+                                                </div>
+                                                <div class="form-group">
+                                                    <label class=" col-md-3 control-label">'.tr('Posts').'</label>
+                                                    <div class="col-lg-6">
+                                                        <p class="form-control-static">'.$count_all.'</p>
+                                                    </div>
+                                                </div>
+                                                <div class="form-group">
+                                                    <label class=" col-md-3 control-label">'.tr('Published posts').'</label>
+                                                    <div class="col-lg-6">
+                                                        <p class="form-control-static">'.$count_published.'</p>
+                                                    </div>
+                                                </div>
+                                                <div class="form-group">
+                                                    <label class=" col-md-3 control-label">'.tr('Categories').'</label>
+                                                    <div class="col-lg-6">
+                                                        <p class="form-control-static">'.$count_categories.($count_categories ? ' ('.str_force($categories).')' : '').'</p>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        '.html_select($blog_button).'
+                                    </div>
+                                </section>
+                            </div>
+                        </div>
+                    </form>';
     }
 }
 
-echo admin_page($html, array('title'  => tr('Blogs management'),
-                             'script' => 'blogs.php'));
+$params = array('icon'        => 'fa-users',
+                'title'       => tr('Blogs management'),
+                'breadcrumbs' => array(tr('Rererrers'), tr('Manage')),
+                'script'      => 'blogs.php');
+
+echo ca_page($html, $params);
 ?>
