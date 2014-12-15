@@ -215,72 +215,6 @@ function isset_get(&$variable, $return = null, $altreturn = null){
 
 
 /*
- * Redirect
- */
-function redirect($target = '', $clear_session_redirect = true){
-    return include(dirname(__FILE__).'/handlers/system_redirect.php');
-}
-
-
-
-/*
- * Redirect if the session redirector is set
- */
-function session_redirect($method = 'http', $force = false){
-    try{
-        if(PLATFORM != 'apache'){
-            throw new bException('session_redirect(): This function can only be called on webservers');
-        }
-
-        if(empty($_SESSION['redirect'])){
-            if(!$force){
-                return false;
-            }
-
-            /*
-             * If there is no redirection, then forcibly redirect to this one
-             */
-            $_SESSION['redirect'] = $force;
-        }
-
-        $redirect = $_SESSION['redirect'];
-
-        switch($method){
-            case 'json':
-                if(!function_exists('json_reply')){
-                    load_libs('json');
-                }
-
-                unset($_SESSION['redirect']);
-                unset($_SESSION['sso_referrer']);
-
-                /*
-                 * Send JSON redirect. json_reply() will end script, so no break needed
-                 */
-                json_reply(isset_get($redirect, '/'), 'redirect');
-
-            case 'http':
-                /*
-                 * Send HTTP redirect. redirect() will end script, so no break
-                 * needed
-                 *
-                 * Also, no need to unset SESSION redirect and sso_referrer,
-                 * since redirect() will also do this
-                 */
-                redirect($redirect);
-
-            default:
-                throw new bException('session_redirect(): Unknown method "'.str_log($method).'" specified. Please speficy one of "json", or "http"', 'unknown');
-        }
-
-    }catch(Exception $e){
-        throw new bException('session_redirect(): Failed', $e);
-    }
-}
-
-
-
-/*
  * Is email valid?
  */
 function is_valid_email($email){
@@ -615,8 +549,13 @@ function log_database($message, $type){
             throw new bException('log_database(): Type cannot be numeric');
         }
 
-        sql_query('INSERT DELAYED INTO `log` (`createdby`                                                            , `ip`                                    ,  `type`         , `message`          )
-                   VALUES                    ('.(isset($_SESSION['user']['id']) ? $_SESSION['user']['id'] : 'NULL').', "'.isset_get($_SERVER['REMOTE_ADDR']).'", "'.cfm($type).'", "'.cfm($message).'");');
+        sql_query('INSERT DELAYED INTO `log` (`createdby`, `ip`, `type`, `message`)
+                   VALUES                    (:createdby , :ip , :type , :message )',
+
+                   array(':createdby' => isset_get($_SESSION['user']['id']),
+                         ':ip'        => isset_get($_SERVER['REMOTE_ADDR']),
+                         ':type'      => cfm($type),
+                         ':message'   => $message));
 
     }catch(Exception $e){
 // :TODO: Add Notifications!
@@ -1346,27 +1285,5 @@ function in_source($source, $id, $return){
     }catch(Exception $e){
         throw new bException('in_source(): Failed', $e);
     }
-}
-
-
-
-/*
- * Store post data in $_SESSION
- */
-function store_post($redirect){
-    return include(dirname(__FILE__).'/handlers/system_store_post.php');
-}
-
-
-
-/*
- * Restore post data from $_SESSION IF available
- */
-function restore_post(){
-    if(empty($_SESSION['post'])){
-        return false;
-    }
-
-    return include(dirname(__FILE__).'/handlers/system_restore_post.php');
 }
 ?>

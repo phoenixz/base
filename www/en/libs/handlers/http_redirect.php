@@ -6,7 +6,25 @@ try{
         throw new bException('redirect(): This function can only be called on webservers');
     }
 
-    if(!$target){
+    /*
+     * Special targets?
+     */
+    if($target === true){
+        /*
+         * Special redirect. Redirect to this very page. Usefull for right after POST requests to avoid "confirm post submissions"
+         */
+        $target = $_SERVER['REQUEST_URI'];
+
+    }elseif($target === false){
+        /*
+         * Special redirect. Redirect to this very page, but without query
+         */
+        $target = $_SERVER['PHP_SELF'];
+
+    }elseif(!$target){
+        /*
+         * No target specified, redirect to index page
+         */
         $target = $_CONFIG['redirects']['index'];
     }
 
@@ -41,13 +59,6 @@ try{
 
         default:
             throw new bException('redirect(): Invalid HTTP code "'.str_log($http_code).'" specified', 'invalid_http_code');
-    }
-
-    if($target == 'self'){
-        /*
-         * Special redirect. Redirect to this very page. Usefull for right after POST requests to avoid "confirm post submissions"
-         */
-        $target = $_SERVER['REQUEST_URI'];
     }
 
     if($clear_session_redirect){

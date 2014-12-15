@@ -160,7 +160,7 @@ function pdo_error($e, $query, $execute, $sql = null){
                         /*
                          * Syntax error or access violation
                          */
-                        throw new bException('pdo_error(): Query "'.str_log($query).'" has a syntax error', $e);
+                        throw new bException('pdo_error(): Query "'.str_log($query, 4096).'" has a syntax error', $e);
 
                     case 1072:
                         /*

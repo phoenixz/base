@@ -846,8 +846,8 @@ function html_select($params, $selected = null, $name = '', $none = '', $class =
             /*
              * Add a hidden element with the name to ensure that multiple selects with [] will not show holes
              */
-            $retval = '<select'.($params[$params['id_column']] ? ' id="'.$params['id'].'_disabled"' : '').' name="'.$params['name'].'" '.($class ? ' class="'.$class.'"' : '').($params['disabled'] ? ' disabled' : '').'>'.
-                      $body.'</select><input type="hidden" name="'.$params['name'].'" >';
+            return '<select'.($params[$params['id_column']] ? ' id="'.$params['id'].'_disabled"' : '').' name="'.$params['name'].'" '.($class ? ' class="'.$class.'"' : '').' readonly disabled>'.
+                    $body.'</select><input type="hidden" name="'.$params['name'].'" >';
         }else{
             $retval = '<select'.($params[$params['id_column']] ? ' id="'.$params['id'].'"' : '').' name="'.$params['name'].'" '.($class ? ' class="'.$class.'"' : '').($params['disabled'] ? ' disabled' : '').($params['autofocus'] ? ' autofocus' : '').'>'.
                       $body.'</select>';

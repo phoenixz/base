@@ -8,6 +8,12 @@
 
 
 
+if(PLATFORM != 'apache'){
+    throw new bException('http library (): This library can only be loaded by PHP running from a webserver');
+}
+
+
+
 /*
  * Return complete current domain with HTTP and all
  */
@@ -40,6 +46,90 @@ function current_domain($current_url = false, $protocol = null){
     }catch(Exception $e){
         throw new bException('current_domain(): Failed', $e);
     }
+}
+
+
+
+/*
+ * Redirect
+ */
+function redirect($target = '', $clear_session_redirect = true){
+    return include(dirname(__FILE__).'/handlers/http_redirect.php');
+}
+
+
+
+/*
+ * Redirect if the session redirector is set
+ */
+function session_redirect($method = 'http', $force = false){
+    try{
+        if(empty($_SESSION['redirect'])){
+            if(!$force){
+                return false;
+            }
+
+            /*
+             * If there is no redirection, then forcibly redirect to this one
+             */
+            $_SESSION['redirect'] = $force;
+        }
+
+        $redirect = $_SESSION['redirect'];
+
+        switch($method){
+            case 'json':
+                if(!function_exists('json_reply')){
+                    load_libs('json');
+                }
+
+                unset($_SESSION['redirect']);
+                unset($_SESSION['sso_referrer']);
+
+                /*
+                 * Send JSON redirect. json_reply() will end script, so no break needed
+                 */
+                json_reply(isset_get($redirect, '/'), 'redirect');
+
+            case 'http':
+                /*
+                 * Send HTTP redirect. redirect() will end script, so no break
+                 * needed
+                 *
+                 * Also, no need to unset SESSION redirect and sso_referrer,
+                 * since redirect() will also do this
+                 */
+                redirect($redirect);
+
+            default:
+                throw new bException('session_redirect(): Unknown method "'.str_log($method).'" specified. Please speficy one of "json", or "http"', 'unknown');
+        }
+
+    }catch(Exception $e){
+        throw new bException('session_redirect(): Failed', $e);
+    }
+}
+
+
+
+/*
+ * Store post data in $_SESSION
+ */
+function store_post($redirect){
+    return include(dirname(__FILE__).'/handlers/system_store_post.php');
+}
+
+
+
+/*
+ * Restore post data from $_SESSION IF available
+ */
+function restore_post(){
+    if(empty($_SESSION['post'])){
+        return false;
+    }
+
+    return include(dirname(__FILE__).'/handlers/system_restore_post.php');
 }
 
 
@@ -118,13 +208,6 @@ function http_headers($params){
  */
 function http_start($params){
     global $_CONFIG;
-
-    if(PLATFORM != 'apache'){
-        /*
-         * This is only necesary on web servers
-         */
-        return false;
-    }
 
     array_params($params, 'type');
     array_default($params, 'type', 'html');

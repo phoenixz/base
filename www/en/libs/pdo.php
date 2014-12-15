@@ -857,6 +857,37 @@ function sql_list_cached($key, $query, $column = false, $execute = false, $expir
 
 
 /*
+ *
+ */
+function sql_valid_limit($limit, $std_limit = 50){
+    global $_CONFIG;
+
+    try{
+        if(!is_numeric($limit) or ($limit < 0) or ($limit > $_CONFIG['db']['limit_max'])){
+            /*
+             * Specified limit is not valid
+             */
+            if(!is_numeric($limit) or ($limit < 0) or ($limit > $_CONFIG['db']['limit_max'])){
+                /*
+                 * Oops, specified standard limit is not valid
+                 */
+// :TODO: Add notification here!
+                return $_CONFIG['db']['limit_max'];
+            }
+
+            return $std_limit;
+        }
+
+        return $limit;
+
+    }catch(Exception $e){
+        throw new bException('sql_valid_limit(): Failed', $e);
+    }
+}
+
+
+
+/*
  * COMPATIBILITY FUNCTIONS
  *
  * These functions below exist only for compatibility between pdo.php and mysqli.php

@@ -97,11 +97,12 @@ $_CONFIG['db']                 = array('driver'           => 'mysql',           
                                        'user'             => 'base',                                        // Username to login to SQL server
                                        'pass'             => 'base',                                        // Password to login to SQL server
                                        'db'               => 'base',                                        // Name of core database on SQL server
-                                       'mode'             => 'PIPES_AS_CONCAT,IGNORE_SPACE,NO_KEY_OPTIONS,NO_TABLE_OPTIONS,NO_FIELD_OPTIONS',                                 // Special options for SQL server
+                                       'autoincrement'    => 1,                                             // Default autoincrement for all database tables (MySQL only)
                                        'buffered'         => true,                                          // Use buffered queries or not. See PHP documentation for more information
                                        'charset'          => 'utf8',                                        // Default character set for all database tables
                                        'collate'          => 'utf8_general_ci',                             // Default collate set for all database tables
-                                       'autoincrement'    => 1,                                             // Default autoincrement for all database tables (MySQL only)
+                                       'limit_max'        => 10000,                                         // Standard SQL allowed LIMIT specified in table displays, for example, to avoid displaying a table with a milion entries, for example
+                                       'mode'             => 'PIPES_AS_CONCAT,IGNORE_SPACE,NO_KEY_OPTIONS,NO_TABLE_OPTIONS,NO_FIELD_OPTIONS',                                 // Special options for SQL server
                                        'timezone'         => 'America/Mexico_City');                        // Default timezone to use
 
 //domain
