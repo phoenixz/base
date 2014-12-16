@@ -821,4 +821,88 @@ function user_update_rights($user){
         throw new bException('user_update_rights(): Failed', $e);
     }
 }
+
+
+
+/*
+ * Simple function to test password strength
+ * Found on http://www.phpro.org/examples/Password-Strength-Tester.html
+ *
+ * Rewritten for use in BASE project by Sven Oostenbrink
+ */
+// :TODO: Improve. This function uses some bad algorithms that could cause false high ranking passwords
+function user_password_strength($password){
+    try{
+        /*
+         * Get the length of the password
+         */
+        $strength = 0;
+        $length   = strlen($password);
+
+        if($length < 8){
+            if(!$length){
+                throw new bException('user_password_strength(): Empty passw', 'password_to_short');
+            }
+
+            throw new bException('user_password_strength(): Specified password is too short', 'password_to_short');
+        }
+
+        /*
+         * Check if password is not all lower case
+         */
+        if(strtolower($password) != $password){
+            $strength += 1;
+        }
+
+        /*
+         * Check if password is not all upper case
+         */
+        if(strtoupper($password) == $password){
+            $strength += 1;
+        }
+
+        /*
+         * Check string length
+         */
+        if($length <= 15){
+            $strength += 1;
+
+        }elseif($length <= 35){
+            $strength += 2;
+
+        }else{
+            $strength += 3;
+        }
+
+        /*
+         * Get the numbers in the password
+         */
+        preg_match_all('/[0-9]/', $password, $numbers);
+        $strength += count($numbers[0]);
+
+        /*
+         * Check for special chars
+         */
+        preg_match_all('/[|!@#$%&*\/=?,;.:\-_+~^\\\]/', $password, $specialchars);
+        $strength += sizeof($specialchars[0]);
+
+        /*
+         * Get the number of unique chars
+         */
+        $chars            = str_split($password);
+        $num_unique_chars = sizeof(array_unique($chars));
+        $strength += $num_unique_chars * 2;
+
+        /*
+         * Strength is a number 1-10;
+         */
+        $strength = $strength > 99 ? 99 : $strength;
+        $strength = floor($strength / 10 + 1);
+
+        return $strength;
+
+    }catch(Exception $e){
+        throw new bException('user_password_strength(): Failed', $e);
+    }
+}
 ?>
