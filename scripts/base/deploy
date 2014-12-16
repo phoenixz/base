@@ -10,34 +10,34 @@
  *
  * all                        - Deploy all sub environments
  *
- * nodeploy / test            - Do not deploy, only translate
- *
- * nonotify                   - Do not send notifications
+ * docontent / docontentcheck - Check content files
  *
  * dosyntax / doparse         - Do PHP syntax check parse
  *
- * docontent / docontentcheck - Check content files
- *
- * notranslate                - Do not execute file translation
+ * nodeploy / test            - Do not deploy, only translate
  *
  * nohook / nohooks           - Do not execute hooks
  *
- * upversion / upversions     - Update version (Does not do so by default)
+ * noinit                     - Do not execute an init on the target server
+ *
+ * nonotify                   - Do not send notifications
+ *
+ * nopush                     - Do not automatically git push all changes and
+ *                              tags
+ *
+ * nositemap                  - Do not automatically reupdate the sitemap files
  *
  * notag / notags             - Do not tag current version (tagging is
  *                              automatically disabled if doversion has
  *                              NOT been set)
  *
- * nopush                     - Do not automatically git push all changes and
- *                              tags
- *
- * noinit                     - Do not execute an init on the target server
- *
- * nositemap                  - Do not automatically reupdate the sitemap files
+ * notranslate                - Do not execute file translation
  *
  * stash                      - Execute a "git stash" before and "git stash
  *                              pop" after deploy, in case the WT contained
  *                              changes
+ *
+ * upversion / upversions     - Update version (Does not do so by default)
  *
  * HOOK SCRIPTS: Below are shown (in order) the hook scripts that will be
  *               executed If the hook scripts exist (in ROOT/scripts/hooks)
@@ -517,9 +517,30 @@ try{
                     }
                 }
 
+                if(!empty($deploy_config['rsync_parrallel'])){
+                    /*
+                     * Make a copy on the server, rsync that copy, then move that copy in place of the current version. This will cause less down time due to version differences
+                     */
+                    log_screen(($subenvironment ? '('.$subenvironment.') ' : '').'Deploying in rsync to parrallel mode...', 'deploy', 'white');
+                    log_screen(($subenvironment ? '('.$subenvironment.') ' : '').'Creating copy of current version...', 'deploy', 'white');
+
+                    passthru('ssh -t -p '.isset_get($deploy_config['target_port'], 22).' '.$deploy_config['target_user'].'@'.$deploy_config['target_server'].' \'cp -a '.$deploy_config['target_dir'].' '.$deploy_config['target_dir'].'~\'');
+                    $deploy_config['target_dir'] .= '~';
+                }
+
                 log_screen(($subenvironment ? '('.$subenvironment.') ' : '').'Deploying project to target server "'.$deploy_config['target_server'].'" on path "'.$deploy_config['target_dir'].'"...', 'deploy', 'white');
                 passthru('rsync -acz --progress -p --delete '.($deploy_config['sudo'] ? '--rsync-path="sudo rsync" ' : '').'-e "ssh -p '.$deploy_config['target_port'].'" '.ROOT.' '.$deploy_config['target_user'].'@'.$deploy_config['target_server'].':'.$deploy_config['target_dir'].' '.$exclude);
                 init_hook('deploy_post_deploy', $nohooks);
+
+                if(!empty($deploy_config['rsync_parrallel'])){
+                    $deploy_config['target_dir'] = substr($deploy_config['target_dir'], 0, -1);
+
+                    log_screen(($subenvironment ? '('.$subenvironment.') ' : '').'Moving new version in place...', 'deploy', 'white');
+                    passthru('ssh -t -p '.isset_get($deploy_config['target_port'], 22).' '.$deploy_config['target_user'].'@'.$deploy_config['target_server'].' \'mv '.$deploy_config['target_dir'].' '.$deploy_config['target_dir'].'~deploy; mv '.$deploy_config['target_dir'].'~ '.$deploy_config['target_dir'].'\'');
+
+                    log_screen(($subenvironment ? '('.$subenvironment.') ' : '').'Deleting old version...', 'deploy', 'white');
+                    passthru('ssh -t -p '.isset_get($deploy_config['target_port'], 22).' '.$deploy_config['target_user'].'@'.$deploy_config['target_server'].' \'rm '.$deploy_config['target_dir'].'~deploy -rf\'');
+                }
             }
 
 
