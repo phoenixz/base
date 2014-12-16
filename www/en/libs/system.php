@@ -1267,17 +1267,14 @@ function get_global_data_path($section = '', $force = true){
 /*
  * Will return $return if the specified item id is in the specified source.
  */
-function in_source($source, $id, $return){
+function in_source($source, $key, $return){
     try{
         if(!is_array($source)){
-            /*
-             * We have no source, I suppose its not checked.
-             */
-            return '';
+            throw new bException('in_source(): Specified source should be an array', 'invalid');
         }
 
-        if(in_array($id, $source)){
-            return ' checked ';
+        if(isset_get($source, $key)){
+            return $return;
         }
 
         return '';
