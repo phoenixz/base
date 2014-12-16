@@ -142,22 +142,22 @@ if(empty($_CONFIG['security']['signin']['ip_lock'])){
     /*
      * Setup filters
      */
-    $users    = array('name'       => 'user',
-                      'none'       => 'Filter by IP Lock enabled user',
-                      'class'      => 'filter form-control mb-xs mt-xs mr-xs btn btn-default dropdown-toggle',
-                      'autosubmit' => true,
-                      'selected'   => isset_get($_POST['view']),
-                      'resource'   => sql_query('SELECT   `users`.`username` AS `id`,
-                                                          `users`.`name`
+    $users   = array('name'       => 'user',
+                     'none'       => 'Filter by IP Lock enabled user',
+                     'class'      => 'filter form-control mb-xs mt-xs mr-xs btn btn-default dropdown-toggle',
+                     'autosubmit' => true,
+                     'selected'   => isset_get($_GET['user']),
+                     'resource'   => sql_query('SELECT   `users`.`username` AS `id`,
+                                                         `users`.`name`
 
-                                                 FROM     `users`
+                                                FROM     `users`
 
-                                                 JOIN     `users_rights`
-                                                 ON      (`users_rights`.`name`     = "ip_lock"
-                                                 OR       `users_rights`.`name`     = "god")
-                                                 AND      `users_rights`.`users_id` = `users`.`id`
+                                                JOIN     `users_rights`
+                                                ON      (`users_rights`.`name`     = "ip_lock"
+                                                OR       `users_rights`.`name`     = "god")
+                                                AND      `users_rights`.`users_id` = `users`.`id`
 
-                                                 ORDER BY `users`.`name`'));
+                                                ORDER BY `users`.`name`'));
 
 
     /*
@@ -165,58 +165,59 @@ if(empty($_CONFIG['security']['signin']['ip_lock'])){
      */
     $execute = array();
 
-    $query   = 'SELECT    `ip_locks`.`id`,
-                          `ip_locks`.`createdon`,
-                          `ip_locks`.`ip`,
-                          `users`.`username`,
-                          `users`.`name` AS `createdby`
+    $query   = 'SELECT `ip_locks`.`id`,
+                       `ip_locks`.`createdon`,
+                       `ip_locks`.`ip`,
+                       `users`.`username`,
+                       `users`.`name` AS `createdby`
 
-                FROM      `ip_locks`
+                FROM   `ip_locks`
 
-                LEFT JOIN `users`
-                ON        `users`.`id`   = `ip_locks`.`createdby`';
+                JOIN   `users`
+                ON     `users`.`id`   = `ip_locks`.`createdby`';
 
-    if(!empty($_POST['user'])){
-        $query  .= ' AND `users`.`name` = :user';
-        $execute = array(':user' => $_POST['user']);
+    if(!empty($_GET['user'])){
+        $query  .= ' AND `users`.`username` = :user';
+        $execute = array(':user' => $_GET['user']);
     }
 
     $r = sql_query($query.' ORDER BY  `ip_locks`.`id` DESC LIMIT 100', $execute);
 
+    $l = array_flip(sql_list('SELECT `ip` FROM `ip_locks` ORDER BY `id` DESC LIMIT '.$_CONFIG['security']['signin']['ip_lock']));
 
     /*
      * Build HTML
      */
-    $html    = '<form action="'.domain(true).'" method="post">
-                    <div class="row">
-                        <div class="col-md-12">
-                            <section class="panel">
-                                <header class="panel-heading">
-                                    <h2 class="panel-title">'.tr('IP Locks').'</h2>
-                                    <p>
-                                        '.html_flash().'
-                                        <div class="form-group">
-                                            <div class="col-sm-8">
+    $html    = '<div class="row">
+                    <div class="col-md-12">
+                        <section class="panel">
+                            <header class="panel-heading">
+                                <h2 class="panel-title">'.tr('IP Locks').'</h2>
+                                <p>
+                                    '.html_flash().'
+                                    <div class="form-group">
+                                        <div class="col-sm-8">
+                                            <form action="'.domain(true).'" method="get">
                                                 <div class="row">
                                                     <div class="col-sm-4">
                                                         '.html_select($users).'
                                                     </div>
                                                 </div>
-                                            </div>
+                                            </form>
                                         </div>
-                                    </p>
-                                    <p>
-                                        '.tr('There are up to "%count%" IP\'s locked for sign in. All green entries are locked and available', array('%count%' => $_CONFIG['security']['signin']['ip_lock'])).'
-                                    </p>
-                                </header>
+                                    </div>
+                                </p>
+                                <p>
+                                    '.tr('There are up to "%count%" IP\'s locked for sign in. All green entries are locked and available', array('%count%' => $_CONFIG['security']['signin']['ip_lock'])).'
+                                </p>
+                            </header>
+                            <form action="'.domain(true).'" method="post">
                                 <div class="panel-body">';
 
     if(!$r->rowCount()){
         $html .= '<p>'.tr('No IP locks with the current filter').'</p>';
 
     }else{
-        $count = $_CONFIG['security']['signin']['ip_lock'];
-
         $html .= '  <div class="table-responsive">
                         <table class="select link table mb-none table-striped table-hover table-striped">
                             <thead>
@@ -227,8 +228,9 @@ if(empty($_CONFIG['security']['signin']['ip_lock'])){
                             </thead>';
 
         while($ip = sql_fetch($r)){
-            if($count-- > 0){
+            if(isset($l[$ip['ip']])){
                 $class = ' class="confirmed"';
+                unset($l[$ip['ip']]);
 
             }else{
                 $class = '';
@@ -265,10 +267,10 @@ if(empty($_CONFIG['security']['signin']['ip_lock'])){
                                     <input type="text" name="ip" id="ip" class="form-control" value="'.isset_get($club['address']).'" maxlength="15">
                                 </div>
                             </div>
-                        </section>
-                    </div>
+                        </form>
+                    </section>
                 </div>
-            </form>';
+            </div>';
 
     log_database('Viewed IP locks', 'ip_locks_viewed');
 }
