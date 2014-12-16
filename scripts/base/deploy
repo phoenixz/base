@@ -524,7 +524,7 @@ try{
                     log_screen(($subenvironment ? '('.$subenvironment.') ' : '').'Deploying in rsync to parrallel mode...', 'deploy', 'white');
                     log_screen(($subenvironment ? '('.$subenvironment.') ' : '').'Creating copy of current version...', 'deploy', 'white');
 
-                    passthru('ssh -t -p '.isset_get($deploy_config['target_port'], 22).' '.$deploy_config['target_user'].'@'.$deploy_config['target_server'].' \'cp -a '.$deploy_config['target_dir'].' '.$deploy_config['target_dir'].'~\'');
+                    passthru('ssh -t -p '.isset_get($deploy_config['target_port'], 22).' '.$deploy_config['target_user'].'@'.$deploy_config['target_server'].' \'rm '.$deploy_config['target_dir'].'~ -rf; cp -a '.$deploy_config['target_dir'].' '.$deploy_config['target_dir'].'~\'');
                     $deploy_config['target_dir'] .= '~';
                 }
 
