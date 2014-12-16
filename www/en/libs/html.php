@@ -333,9 +333,12 @@ function html_generate_js(){
          * Load JS libraries
          */
         foreach($GLOBALS['js'] = array_merge($libs, $GLOBALS['js']) as $file => $data) {
-            if(!$file)                               continue;
-            if(str_rfrom($file, '/') == 'jquery')    continue; // jQuery js is always loaded in the header
-            if(str_rfrom($file, '/') == 'bootstrap') continue; // bootstrap js is always loaded in the header
+            if(!$file) continue;
+
+            $check = str_rfrom(str_starts($file, '/'), '/');
+
+            if($check == 'jquery')    continue; // jQuery js is always loaded in the header
+            if($check == 'bootstrap') continue; // bootstrap js is always loaded in the header
 
             if(substr($file, 0, 4) == 'http') {
                 /*
