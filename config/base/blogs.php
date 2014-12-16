@@ -10,10 +10,11 @@
  */
 $_CONFIG['blogs']               = array('enabled'         => false,
 
-                                        'images'          => array('resize'         => array('thumbs'        => array('x' => false,
-                                                                                                                      'y' => false)),
-
-                                                                                             'images'        => array('x' => false,
-                                                                                                                      'y' => false)),
+// :DEPRECIATED: This information is now stored in the database with the blogs so that it can be defined on a per-blog basis
+                                        //'images'          => array('resize'         => array('thumbs'        => array('x' => false,
+                                        //                                                                              'y' => false)),
+                                        //
+                                        //                                                     'images'        => array('x' => false,
+                                        //                                                                              'y' => false)),
                                         'url'             => '/%category%/%date%/%seoname%.html');
 ?>

@@ -323,6 +323,8 @@ class validate_form {
      *
      */
     function isNumeric($value, $msg) {
+        if(!$value) return '';
+
         if($value != cfi($value)){
             $this->errors[] = $msg;
 

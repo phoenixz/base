@@ -18,25 +18,7 @@ try{
                 /*
                  * Create the specified blog
                  */
-                $blog = $_POST;
-
-                // Validate input
-                $v = new validate_form($blog, 'name,url_template,slogan,keywords,description');
-
-                $v->isChecked  ($blog['name']            , tr('Please provide the name of your blog'));
-                $v->isNotEmpty ($blog['slogan']          , tr('Please provide a slogan for your blog'));
-                $v->isNotEmpty ($blog['keywords']        , tr('Please provide keywords for your blog'));
-                $v->isNotEmpty ($blog['description']     , tr('Please provide a description of your blog'));
-
-                $v->hasMinChars($blog['name']       ,   4, tr('Please ensure that the name has a minimum of 4 characters'));
-                $v->hasMinChars($blog['slogan']     ,   6, tr('Please ensure that the slogan has a minimum of 6 characters'));
-                $v->hasMinChars($blog['keywords']   ,   8, tr('Please ensure that the keywords have a minimum of 8 characters'));
-                $v->hasMinChars($blog['description'],  32, tr('Please ensure that the description has a minimum of 32 characters'));
-                $v->hasMaxChars($blog['description'], 160, tr('Please ensure that the description has a maximum of 160 characters'));
-
-                if(!$v->isValid()) {
-                   throw new bException(str_force($v->getErrors(), ', '), 'errors');
-                }
+                $blog = s_validate_blog($_POST);
 
                 if(sql_get('SELECT `id` FROM `blogs` WHERE `name` = :name', array(':name' => $blog['name']), 'id')){
                     /*
@@ -49,13 +31,17 @@ try{
                     $blog['keywords']    = blogs_clean_keywords($blog['keywords']);
                     $blog['seokeywords'] = blogs_seo_keywords($blog['keywords']);
 
-                    sql_query('INSERT INTO `blogs` (`createdby`, `name`, `seoname`, `slogan`, `url_template`, `keywords`, `seokeywords`, `description`)
-                               VALUES              (:createdby , :name , :seoname , :slogan , :url_template , :keywords , :seokeywords , :description )',
+                    sql_query('INSERT INTO `blogs` (`createdby`, `name`, `seoname`, `slogan`, `url_template`, `thumbs_x`, `thumbs_y`, `images_x`, `images_y`, `keywords`, `seokeywords`, `description`)
+                               VALUES              (:createdby , :name , :seoname , :slogan , :url_template , :thumbs_x , :thumbs_y , :images_x , :images_y , :keywords , :seokeywords , :description )',
 
                                array(':createdby'    => $_SESSION['user']['id'],
                                      ':name'         => $blog['name'],
                                      ':seoname'      => $blog['seoname'],
                                      ':url_template' => $blog['url_template'],
+                                     ':thumbs_x'     => not_empty($blog['thumbs_x']),
+                                     ':thumbs_y'     => not_empty($blog['thumbs_y']),
+                                     ':images_x'     => not_empty($blog['images_x']),
+                                     ':images_y'     => not_empty($blog['images_y']),
                                      ':slogan'       => $blog['slogan'],
                                      ':keywords'     => $blog['keywords'],
                                      ':seokeywords'  => $blog['seokeywords'],
@@ -88,25 +74,7 @@ try{
                 /*
                  * Update the specified blog
                  */
-                $blog = $_POST;
-
-                // Validate input
-                $v = new validate_form($blog, 'name,url_template,slogan,keywords,description');
-
-                $v->isChecked  ($blog['name']             , tr('Please provide the name of your blog'));
-                $v->isNotEmpty ($blog['slogan']           , tr('Please provide a slogan for your blog'));
-                $v->isNotEmpty ($blog['keywords']         , tr('Please provide keywords for your blog'));
-                $v->isNotEmpty ($blog['description']      , tr('Please provide a description of your blog'));
-
-                $v->hasMinChars($blog['name']        ,   4, tr('Please ensure that the name has a minimum of 4 characters'));
-                $v->hasMinChars($blog['slogan']      ,   6, tr('Please ensure that the slogan has a minimum of 6 characters'));
-                $v->hasMinChars($blog['keywords']    ,   8, tr('Please ensure that the keywords have a minimum of 8 characters'));
-                $v->hasMinChars($blog['description'] ,  50, tr('Please ensure that the description has a minimum of 50 characters'));
-                $v->hasMaxChars($blog['url_template'], 255, tr('Please ensure that the URL has a maximum of 255 characters'));
-
-                if(!$v->isValid()) {
-                   throw new bException(str_force($v->getErrors(), ', '), 'errors');
-                }
+                $blog = s_validate_blog($_POST);
 
                 if(!$dbblog = sql_get('SELECT * FROM `blogs` WHERE `seoname` = :seoname', array(':seoname' => $_GET['blog']))){
                     /*
@@ -147,6 +115,10 @@ try{
                                       `name`         = :name,
                                       `seoname`      = :seoname,
                                       `url_template` = :url_template,
+                                      `thumbs_x`     = :thumbs_x,
+                                      `thumbs_y`     = :thumbs_y,
+                                      `images_x`     = :images_x,
+                                      `images_y`     = :images_y,
                                       `slogan`       = :slogan,
                                       `keywords`     = :keywords,
                                       `seokeywords`  = :seokeywords,
@@ -159,6 +131,10 @@ try{
                                      ':name'         => $blog['name'],
                                      ':seoname'      => $blog['seoname'],
                                      ':url_template' => $blog['url_template'],
+                                     ':thumbs_x'     => not_empty($blog['thumbs_x']),
+                                     ':thumbs_y'     => not_empty($blog['thumbs_y']),
+                                     ':images_x'     => not_empty($blog['images_x']),
+                                     ':images_y'     => not_empty($blog['images_y']),
                                      ':slogan'       => $blog['slogan'],
                                      ':keywords'     => $blog['keywords'],
                                      ':seokeywords'  => $blog['seokeywords'],
@@ -197,6 +173,9 @@ $html = '   <form id="blog" name="blog" action="'.domain('/admin/blog.php'.(isse
                                 <p>'.html_flash().'</p>
                             </header>
                             <div class="panel-body">
+                                <p>
+                                    '.tr('Here you can modify the blog basic configuration. Each blog will have its own, unique configuration').'
+                                </p>
                                 <div class="form-group">
                                     <label class="col-md-3 control-label" for="name">'.tr('Name').'</label>
                                     <div class="col-md-9">
@@ -236,6 +215,34 @@ $html .= '                      <div class="form-group">
                                     <div class="col-md-9">
                                         <input type="text" name="description" id="description" class="form-control" value="'.isset_get($blog['description']).'" maxlength="160">
                                     </div>
+                                </div>
+                                <hr>
+                                <p>
+                                    '.tr('If specified, these will be the standard sizes for images and thumbnails in the blogs. If left empty, the X and or Y values will not be modified').'
+                                </p>
+                                <div class="form-group">
+                                    <label class="col-md-3 control-label" for="thumbs_x">'.tr('Thumbs X').'</label>
+                                    <div class="col-md-9">
+                                        <input type="text" name="thumbs_x" id="thumbs_x" class="form-control" value="'.isset_get($blog['thumbs_x']).'" maxlength="5">
+                                    </div>
+                                </div>
+                                <div class="form-group">
+                                    <label class="col-md-3 control-label" for="thumbs_y">'.tr('Thumbs Y').'</label>
+                                    <div class="col-md-9">
+                                        <input type="text" name="thumbs_y" id="thumbs_y" class="form-control" value="'.isset_get($blog['thumbs_y']).'" maxlength="5">
+                                    </div>
+                                </div>
+                                <div class="form-group">
+                                    <label class="col-md-3 control-label" for="images_x">'.tr('Images X').'</label>
+                                    <div class="col-md-9">
+                                        <input type="text" name="images_x" id="images_x" class="form-control" value="'.isset_get($blog['images_x']).'" maxlength="5">
+                                    </div>
+                                </div>
+                                <div class="form-group">
+                                    <label class="col-md-3 control-label" for="images_y">'.tr('Image Y').'</label>
+                                    <div class="col-md-9">
+                                        <input type="text" name="images_y" id="images_y" class="form-control" value="'.isset_get($blog['images_y']).'" maxlength="5">
+                                    </div>
                                 </div>'.
                                 (isset_get($blog['id']) ? '<input type="submit" class="mb-xs mt-xs mr-xs btn btn-primary" name="formaction" id="formaction" value="'.tr('Update').'"> '
                                                             : '<input type="submit" class="mb-xs mt-xs mr-xs btn btn-primary" name="formaction" id="formaction" value="'.tr('Create').'"> ').'
@@ -260,24 +267,105 @@ $html .= '                      <div class="form-group">
  */
 $vj = new validate_jquery();
 
-$vj->validate('name'       , 'required' , 'true', '<span class="FcbErrorTail"></span>'.tr('Please provide the name of your blog'));
-$vj->validate('slogan'     , 'required' , 'true', '<span class="FcbErrorTail"></span>'.tr('Please provide a description of your blog'));
-$vj->validate('keywords'   , 'required' , 'true', '<span class="FcbErrorTail"></span>'.tr('Please provide keywords for your blog'));
-$vj->validate('description', 'required' , 'true', '<span class="FcbErrorTail"></span>'.tr('Please provide a description of your blog'));
+$vj->validate('name'       , 'required' ,              'true', '<span class="FcbErrorTail"></span>'.tr('Please provide the name of your blog'));
+$vj->validate('slogan'     , 'required' ,              'true', '<span class="FcbErrorTail"></span>'.tr('Please provide a description of your blog'));
+$vj->validate('keywords'   , 'required' ,              'true', '<span class="FcbErrorTail"></span>'.tr('Please provide keywords for your blog'));
+$vj->validate('description', 'required' ,              'true', '<span class="FcbErrorTail"></span>'.tr('Please provide a description of your blog'));
 
-$vj->validate('name'       , 'minlength',    '4', '<span class="FcbErrorTail"></span>'.tr('Please ensure that the name has at least 4 characters'));
-$vj->validate('slogan'     , 'minlength',    '6', '<span class="FcbErrorTail"></span>'.tr('Please ensure that the slogan has at least 6 characters'));
-$vj->validate('keywords'   , 'minlength',    '8', '<span class="FcbErrorTail"></span>'.tr('Please ensure that the keywords have at least 8 characters'));
+$vj->validate('name'       , 'minlength',                 '4', '<span class="FcbErrorTail"></span>'.tr('Please ensure that the name has at least 4 characters'));
+$vj->validate('slogan'     , 'minlength',                 '6', '<span class="FcbErrorTail"></span>'.tr('Please ensure that the slogan has at least 6 characters'));
+$vj->validate('keywords'   , 'minlength',                 '8', '<span class="FcbErrorTail"></span>'.tr('Please ensure that the keywords have at least 8 characters'));
 
-$vj->validate('description', 'minlength',   '16', '<span class="FcbErrorTail"></span>'.tr('Please ensure that the description has at least 16 characters'));
-$vj->validate('description', 'maxlength',  '160', '<span class="FcbErrorTail"></span>'.tr('Please ensure that the description has at least 160 characters'));
+$vj->validate('description', 'minlength',                '16', '<span class="FcbErrorTail"></span>'.tr('Please ensure that the description has at least 16 characters'));
+$vj->validate('description', 'maxlength',               '160', '<span class="FcbErrorTail"></span>'.tr('Please ensure that the description has at least 160 characters'));
 
-$params = array('id'   => 'blog',
-                'json' => false);
+$vj->validate('thumbs_x'   , 'regex'    , '^[0-9]{0,3}(px)?$', '<span class="FcbErrorTail"></span>'.tr('Please specify a valid thumbs X value between 10 - 500'));
+$vj->validate('thumbs_y'   , 'regex'    , '^[0-9]{0,3}(px)?$', '<span class="FcbErrorTail"></span>'.tr('Please specify a valid thumbs Y value between 10 - 500'));
+$vj->validate('images_x'   , 'regex'    , '^[0-9]{0,4}(px)?$', '<span class="FcbErrorTail"></span>'.tr('Please specify a valid thumbs X value between 50 - 5000'));
+$vj->validate('images_y'   , 'regex'    , '^[0-9]{0,4}(px)?$', '<span class="FcbErrorTail"></span>'.tr('Please specify a valid thumbs Y value between 50 - 5000'));
+
+$html .= $vj->output_validation(array('id'   => 'blog',
+                                      'json' => false));
 
 $params = array('title'       => tr('Blog'),
                 'icon'        => 'fa-user',
                 'breadcrumbs' => array(tr('Blog'), tr('Modify')));
 
 echo ca_page($html, $params);
+
+
+/*
+ *
+ */
+function s_validate_blog($blog){
+    try{
+        // Validate input
+        $v = new validate_form($blog, 'name,url_template,slogan,keywords,description,thumbs_x,thumbs_y,images_x,images_y');
+
+        $blog['thumbs_x'] = str_replace('px', '', str_force($blog['thumbs_x']));
+        $blog['thumbs_y'] = str_replace('px', '', str_force($blog['thumbs_y']));
+        $blog['images_x'] = str_replace('px', '', str_force($blog['images_x']));
+        $blog['images_y'] = str_replace('px', '', str_force($blog['images_y']));
+
+        $v->isChecked  ($blog['name']            , tr('Please provide the name of your blog'));
+        $v->isNotEmpty ($blog['slogan']          , tr('Please provide a slogan for your blog'));
+        $v->isNotEmpty ($blog['keywords']        , tr('Please provide keywords for your blog'));
+        $v->isNotEmpty ($blog['description']     , tr('Please provide a description of your blog'));
+        $v->isNumeric  ($blog['thumbs_x']        , tr('Please ensure that the thumbs x size is numeric'));
+        $v->isNumeric  ($blog['thumbs_y']        , tr('Please ensure that the thumbs y size is numeric'));
+        $v->isNumeric  ($blog['images_x']        , tr('Please ensure that the images x size is numeric'));
+        $v->isNumeric  ($blog['images_y']        , tr('Please ensure that the images y size is numeric'));
+
+        $v->hasMinChars($blog['name']       ,   4, tr('Please ensure that the name has a minimum of 4 characters'));
+        $v->hasMinChars($blog['slogan']     ,   6, tr('Please ensure that the slogan has a minimum of 6 characters'));
+        $v->hasMinChars($blog['keywords']   ,   8, tr('Please ensure that the keywords have a minimum of 8 characters'));
+        $v->hasMinChars($blog['description'],  32, tr('Please ensure that the description has a minimum of 32 characters'));
+        $v->hasMaxChars($blog['description'], 160, tr('Please ensure that the description has a maximum of 160 characters'));
+
+        if(!$blog['thumbs_x']){
+            $blog['thumbs_x'] = null;
+
+        }else{
+            if(($blog['thumbs_x'] < 10) or ($blog['thumbs_x'] > 500)){
+                $v->setError(tr('Please ensure that the thumbs x value is between 10 and 500'));
+            }
+        }
+
+        if(!$blog['thumbs_y']){
+            $blog['thumbs_y'] = null;
+
+        }else{
+            if(($blog['thumbs_y'] < 10) or ($blog['thumbs_y'] > 500)){
+                $v->setError(tr('Please ensure that the thumbs y value is between 10 and 500'));
+            }
+        }
+
+        if(!$blog['images_x']){
+            $blog['images_x'] = null;
+
+        }else{
+            if(($blog['images_x'] < 50) or ($blog['images_x'] > 5000)){
+                $v->setError(tr('Please ensure that the images x value is between 50 and 5000'));
+            }
+        }
+
+        if(!$blog['images_y']){
+            $blog['images_y'] = null;
+
+        }else{
+            if(($blog['images_y'] < 50) or ($blog['images_y'] > 5000)){
+                $v->setError(tr('Please ensure that the images y value is between 50 and 5000'));
+            }
+        }
+
+        if(!$v->isValid()) {
+           throw new bException($v->getErrors(), 'validation');
+        }
+
+        return $blog;
+
+    }catch(Exception $e){
+        throw new bException('s_validate_blog(): Failed', $e);
+    }
+}
 ?>

@@ -427,7 +427,12 @@ function blogs_photos_upload($files, $post){
         $post = sql_get('SELECT `blogs_posts`.`id`,
                                 `blogs_posts`.`createdby`,
                                 `blogs_posts`.`seoname`,
-                                `blogs`.`seoname` AS blog_name
+
+                                `blogs`.`seoname` AS blog_name,
+                                `blogs`.`images_x`,
+                                `blogs`.`images_y`,
+                                `blogs`.`thumbs_x`,
+                                `blogs`.`thumbs_y`
 
                          FROM   `blogs_posts`
 
@@ -460,15 +465,15 @@ function blogs_photos_upload($files, $post){
         $file  = file_get_local($file['tmp_name'][0]);
         $photo = $post['blog_name'].'/'.file_assign_target_clean(ROOT.'www/photos/'.$post['blog_name'].'/', '_small.jpg', false, 4);
 
-        if(!empty($_CONFIG['blogs']['images']['resize']['thumbs']['x']) or !empty($_CONFIG['blogs']['images']['resize']['thumbs']['y'])){
-            image_convert($file, ROOT.'www/photos/'.$photo.'_small.jpg', $_CONFIG['blogs']['images']['resize']['thumbs']['x'], $_CONFIG['blogs']['images']['resize']['thumbs']['y'], 'thumb');
+        if(!empty($post['thumbs_x']) or !empty($post['thumbs_y'])){
+            image_convert($file, ROOT.'www/photos/'.$photo.'_small.jpg', $post['thumbs_x'], $post['thumbs_y'], 'thumb');
 
         }else{
             copy($file, ROOT.'www/photos/'.$photo.'_small.jpg');
         }
 
-        if(!empty($_CONFIG['blogs']['images']['resize']['images']['x']) or !empty($_CONFIG['blogs']['images']['resize']['images']['y'])){
-            image_convert($file, ROOT.'www/photos/'.$photo.'_big.jpg'  , $_CONFIG['blogs']['images']['resize']['images']['x'], $_CONFIG['blogs']['images']['resize']['images']['y'], 'resize');
+        if(!empty($post['images_x']) or !empty($post['images_y'])){
+            image_convert($file, ROOT.'www/photos/'.$photo.'_big.jpg'  , $post['images_x'], $post['images_y'], 'resize');
 
         }else{
             copy($file, ROOT.'www/photos/'.$photo.'_big.jpg');
