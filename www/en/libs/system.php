@@ -650,21 +650,13 @@ function load_config($files){
         foreach($files as $file){
             /*
              * Include first the default configuration file, if available, then
-             * production configuration file, and then, if available, the
-             * environment file
+             * production configuration file, if available, and then, if
+             * available, the environment file
              */
-            $path = ROOT.'config/base/'.$file.'.php';
-
-            if(file_exists($path)){
-                include($path);
-            }
-
-            include(ROOT.'config/production_'.$file.'.php');
-
-            $path = ROOT.'config/'.ENVIRONMENT.'_'.$file.'.php';
-
-            if(file_exists($path)){
-                include($path);
+            foreach(array(ROOT.'config/base/'.$file.'.php', ROOT.'config/production_'.$file.'.php', ROOT.'config/'.ENVIRONMENT.'_'.$file.'.php') as $path){
+                if(file_exists($path)){
+                    include($path);
+                }
             }
         }
 

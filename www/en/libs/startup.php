@@ -184,7 +184,7 @@ try{
             die("\033[0;31mstartup: Missing configuration file \"".str_log($file)."\" for environment \"".str_log(ENVIRONMENT)."\"\033[0m\n");
         }
 
-        die("\033[0;31mstartup: Failed to load configuration for environment \"".str_log(ENVIRONMENT)."\"\033[0m\n");
+        die("\033[0;31mstartup: Failed to load $pathuration for environment \"".str_log(ENVIRONMENT)."\"\033[0m\n");
     }
 }
 
@@ -582,6 +582,7 @@ try{
              * This is an admin page
              */
             $GLOBALS['page_is_admin'] = true;
+            load_config('admin');
             load_libs('custom_admin');
             restore_post();
 
