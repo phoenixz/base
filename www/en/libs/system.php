@@ -1265,7 +1265,7 @@ function in_source($source, $key, $return){
             throw new bException('in_source(): Specified source should be an array', 'invalid');
         }
 
-        if(isset_get($source, $key)){
+        if(isset_get($source[$key])){
             return $return;
         }
 
