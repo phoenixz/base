@@ -58,7 +58,7 @@ function sql_query($query, $execute = false, $handle_exceptions = true, $sql = '
 
             foreach($execute as $key => $value){
                 if(!is_scalar($value) and !is_null($value)){
-                    throw new bException('sql_query(): Specified key "'.str_log($key).'" in the execute array for query "'.str_log($query).'" is NOT scalar!', 'invalid');
+                    throw new bException('sql_query(): Specified key "'.str_log($key).'" in the execute array for query "'.str_log($query, 4096).'" is NOT scalar!', 'invalid');
                 }
             }
 
@@ -170,7 +170,7 @@ function sql_get($query, $column = null, $execute = null, $sql = 'sql') {
 
     }catch(Exception $e){
         if(strtolower(substr(trim($query), 0, 6)) != 'select'){
-            throw new bException('sql_get(): Query "'.str_log($query).'" is not a select query and as such cannot return results', $e);
+            throw new bException('sql_get(): Query "'.str_log($query, 4096).'" is not a select query and as such cannot return results', $e);
         }
 
         throw new bException('sql_get(): Failed', $e);
@@ -221,7 +221,7 @@ function sql_list($query, $column = null, $execute = null, $sql = 'sql') {
 
     }catch(Exception $e){
         if(strtolower(substr(trim($query), 0, 6)) != 'select'){
-            throw new bException('sql_list(): Query "'.str_log($query).'" is not a select query and as such cannot return results', $e);
+            throw new bException('sql_list(): Query "'.str_log($query, 4096).'" is not a select query and as such cannot return results', $e);
         }
 
         throw new bException('sql_list(): Failed', $e);

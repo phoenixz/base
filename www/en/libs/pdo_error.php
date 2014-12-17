@@ -84,10 +84,10 @@ function pdo_error($e, $query, $execute, $sql = null){
                 preg_match_all('/:\w+/imus', $query, $matches);
 
                 if(count($matches[0]) != count($execute)){
-                    throw new bException('pdo_error(): Query "'.str_log($query).'" failed with error HY093, the number of query tokens does not match the number of bound variables. The query contains tokens "'.str_log(implode(',', $matches['0'])).'", where the bound variables are "'.str_log(implode(',', array_keys($execute))).'"', $e);
+                    throw new bException('pdo_error(): Query "'.str_log($query, 4096).'" failed with error HY093, the number of query tokens does not match the number of bound variables. The query contains tokens "'.str_log(implode(',', $matches['0'])).'", where the bound variables are "'.str_log(implode(',', array_keys($execute))).'"', $e);
                 }
 
-                throw new bException('pdo_error(): Query "'.str_log($query).'" failed with error HY093, One or more query tokens does not match the bound variables keys. The query contains tokens "'.str_log(implode(',', $matches['0'])).'", where the bound variables are "'.str_log(implode(',', array_keys($execute))).'"', $e);
+                throw new bException('pdo_error(): Query "'.str_log($query, 4096).'" failed with error HY093, One or more query tokens does not match the bound variables keys. The query contains tokens "'.str_log(implode(',', $matches['0'])).'", where the bound variables are "'.str_log(implode(',', array_keys($execute))).'"', $e);
 
             case '23000':
                 /*
@@ -99,7 +99,7 @@ function pdo_error($e, $query, $execute, $sql = null){
 //                /*
 //                 * Integrity constraint violation: Duplicate entry
 //                 */
-//                throw new bException('pdo_error(): Query "'.str_log($query).'" tries to insert or update a column row with a unique index to a value that already exists', $e);
+//                throw new bException('pdo_error(): Query "'.str_log($query, 4096).'" tries to insert or update a column row with a unique index to a value that already exists', $e);
 
             default:
                 switch(isset_get($error[1])){
@@ -109,13 +109,13 @@ function pdo_error($e, $query, $execute, $sql = null){
                          */
                         if(!is_array($query)){
                             if(empty($query['db'])){
-                                throw new bException('pdo_error(): "'.str_log($query).'" failed, access to databaes denied', $e);
+                                throw new bException('pdo_error(): "'.str_log($query, 4096).'" failed, access to databaes denied', $e);
                             }
 
                             throw new bException('pdo_error(): Cannot use database "'.str_log($query['db']).'", this user has no access to it', $e);
                         }
 
-                        throw new bException('pdo_error(): Cannot use database with query "'.str_log($query).'", this user has no access to it', $e);
+                        throw new bException('pdo_error(): Cannot use database with query "'.str_log($query, 4096).'", this user has no access to it', $e);
 
                     case 1049:
                         /*
@@ -148,13 +148,13 @@ function pdo_error($e, $query, $execute, $sql = null){
                         /*
                          * Integrity constraint violation
                          */
-                        throw new bException('pdo_error(): Query "'.str_log($query).'" contains an abiguous column', $e);
+                        throw new bException('pdo_error(): Query "'.str_log($query, 4096).'" contains an abiguous column', $e);
 
                     case 1054:
                         /*
                          * Column not found
                          */
-                        throw new bException('pdo_error(): Query "'.str_log($query).'" refers to a column that does not exist', $e);
+                        throw new bException('pdo_error(): Query "'.str_log($query, 4096).'" refers to a column that does not exist', $e);
 
                     case 1064:
                         /*
@@ -166,7 +166,7 @@ function pdo_error($e, $query, $execute, $sql = null){
                         /*
                          * Adding index error, index probably does not exist
                          */
-                        throw new bException('pdo_error(): Query "'.str_log($query).'" failed with error 1072 with the message "'.isset_get($error[2]).'"', $e);
+                        throw new bException('pdo_error(): Query "'.str_log($query, 4096).'" failed with error 1072 with the message "'.isset_get($error[2]).'"', $e);
 
                     case 1005:
                         //FALLTHROUGH
@@ -184,16 +184,16 @@ function pdo_error($e, $query, $execute, $sql = null){
                             $fk = str_replace("\n", ' ', $fk);
 
                         }catch(Exception $e){
-                            throw new bException('pdo_error(): Query "'.str_log($query).'" failed with error 1005, but another error was encountered while trying to obtain FK error data', $e);
+                            throw new bException('pdo_error(): Query "'.str_log($query, 4096).'" failed with error 1005, but another error was encountered while trying to obtain FK error data', $e);
                         }
 
-                        throw new bException('pdo_error(): Query "'.str_log($query).'" failed with error 1005 with the message "'.$fk.'"', $e);
+                        throw new bException('pdo_error(): Query "'.str_log($query, 4096).'" failed with error 1005 with the message "'.$fk.'"', $e);
 
                     case 1146:
                         /*
                          * Base table or view not found
                          */
-                        throw new bException('pdo_error(): Query "'.str_log($query).'" refers to a base table or view that does not exist', $e);
+                        throw new bException('pdo_error(): Query "'.str_log($query, 4096).'" refers to a base table or view that does not exist', $e);
 
                     default:
                         if(!is_string($query)){
@@ -210,7 +210,7 @@ function pdo_error($e, $query, $execute, $sql = null){
                         $body = "SQL STATE ERROR : \"".$error[0]."\"\n".
                                 "DRIVER ERROR    : \"".$error[1]."\"\n".
                                 "ERROR MESSAGE   : \"".$error[2]."\"\n".
-                                "query           : \"".(PLATFORM == 'apache' ? "<b>".str_log($query)."</b>" : str_log($query))."\"\n".
+                                "query           : \"".(PLATFORM == 'apache' ? "<b>".str_log($query, 4096)."</b>" : str_log($query, 4096))."\"\n".
                                 "date            : \"".date('d m y h:i:s')."\"\n";
 
                         if(isset($_SESSION)) {
@@ -221,7 +221,7 @@ function pdo_error($e, $query, $execute, $sql = null){
                                   GET    : ".print_r($_GET,true)."
                                   SERVER : ".print_r($_SERVER,true)."\n";
 
-                        error_log('PHP SQL_ERROR: '.str_log($error[2]).' on '.str_log($query));
+                        error_log('PHP SQL_ERROR: '.str_log($error[2]).' on '.str_log($query, 4096));
 
                         if (ENVIRONMENT != 'production') {
                             throw new bException(nl2br($body), $e);
