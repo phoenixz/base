@@ -22,6 +22,9 @@ if($selected){
 
             case 'manage_posts':
                 redirect(domain('/admin/blogs_posts.php?blog='.$selected_blog['seoname']));
+
+            case 'manage_key_value_descriptions':
+                redirect(domain('/admin/blogs_key_value_descriptions.php?blog='.$selected_blog['seoname']));
         }
     }
 }
@@ -134,6 +137,7 @@ switch (isset_get($_GET['view'])){
         $title     = '<h2 class="panel-title">'.tr('All blogs').'</h2>';
 
         $actions   = array('name'       => 'doaction',
+                           'class'      => 'form-action input-sm',
                            'none'       => tr('Action'),
                            'resource'   => array('create'   => tr('Create'),
                                                  'delete'   => tr('Delete'),
@@ -147,6 +151,7 @@ switch (isset_get($_GET['view'])){
         $filters[] = ' `blogs`.`status` = "deleted" ';
 
         $actions   = array('name'       => 'doaction',
+                           'class'      => 'form-action input-sm',
                            'none'       => tr('Action'),
                            'resource'   => array('undelete' => tr('Undelete')),
                            'autosubmit' => true);
@@ -160,6 +165,7 @@ switch (isset_get($_GET['view'])){
         $filters[] = ' `blogs`.`status` IS NULL ';
 
         $actions   = array('name'       => 'doaction',
+                           'class'      => 'form-action input-sm',
                            'none'       => tr('Action'),
                            'resource'   => array('create' => tr('Create'),
                                                  'delete' => tr('Delete')),
@@ -334,11 +340,12 @@ if($selected){
 
         $blog_button      = array('name'       => 'doblogaction',
                                   'class'      => 'btn-primary',
+                                  'autosubmit' => true,
                                   'none'       => tr('Action'),
-                                  'resource'   => array('modify_blog'       => tr('Modify'),
-                                                        'manage_categories' => tr('Manage categories'),
-                                                        'manage_posts'      => tr('Manage posts')),
-                                  'autosubmit' => true);
+                                  'resource'   => array('modify_blog'                   => tr('Modify'),
+                                                        'manage_categories'             => tr('Manage categories'),
+                                                        'manage_posts'                  => tr('Manage posts'),
+                                                        'manage_key_value_descriptions' => tr('Manage key-value descriptions')));
 
         $html .= '  <form id="blogdata" name="blogdata" action="'.domain('/admin/blogs.php?blog='.$selected_blog['seoname']).'" method="post">
                         <div class="row">

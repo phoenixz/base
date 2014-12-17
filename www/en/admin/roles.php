@@ -113,6 +113,7 @@ switch(isset_get($_GET['view'])){
         $where[] = '`roles`.`status` IS NULL';
 
         $actions = array('name'       => 'action',
+                         'class'      => 'form-action input-sm',
                          'none'       => tr('Action'),
                          'autosubmit' => true,
                          'resource'   => array('create' => tr('Create new role'),
@@ -124,6 +125,7 @@ switch(isset_get($_GET['view'])){
         $where[] = '`roles`.`status` = "deleted"';
 
         $actions = array('name'       => 'action',
+                         'class'      => 'form-action input-sm',
                          'none'       => tr('Action'),
                          'autosubmit' => true,
                          'resource'   => array('undelete' => tr('Undelete selected roles'),

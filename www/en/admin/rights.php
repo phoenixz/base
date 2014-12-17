@@ -113,6 +113,7 @@ switch(isset_get($_GET['view'])){
         $where[] = ' `rights`.`status` IS NULL';
 
         $actions = array('name'       => 'action',
+                         'class'      => 'form-action input-sm',
                          'none'       => tr('Action'),
                          'autosubmit' => true,
                          'resource'   => array('create' => tr('Create new right'),
@@ -124,6 +125,7 @@ switch(isset_get($_GET['view'])){
         $where[] = ' `rights`.`status` = "deleted"';
 
         $actions = array('name'       => 'action',
+                         'class'      => 'form-action input-sm',
                          'none'       => tr('Action'),
                          'autosubmit' => true,
                          'resource'   => array('undelete' => tr('Undelete selected rights'),

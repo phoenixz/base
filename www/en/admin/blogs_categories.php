@@ -365,7 +365,7 @@ switch (isset_get($_POST['view'])){
         $title     = '<h2 class="panel-title">'.tr('All categories for blog "'.$blog['name'].'"').'</h2>';
 
         $actions   = array('name'       => 'doaction',
-                           'class'      => 'btn-primary mb-xs',
+                           'class'      => 'btn-primary mb-xs form-action input-sm',
                            'none'       => tr('Action'),
                            'resource'   => array('add'      => tr('Create'),
                                                  'delete'   => tr('Delete'),
@@ -379,7 +379,7 @@ switch (isset_get($_POST['view'])){
         $filters[] = ' `blogs_categories`.`status` = "deleted" ';
 
         $actions   = array('name'       => 'doaction',
-                           'class'      => 'btn-primary mb-xs',
+                           'class'      => 'btn-primary mb-xs form-action input-sm',
                            'none'       => tr('Action'),
                            'resource'   => array('undelete' => tr('Undelete')),
                            'autosubmit' => true);
@@ -393,7 +393,7 @@ switch (isset_get($_POST['view'])){
         $filters[] = ' `blogs_categories`.`status` IS NULL ';
 
         $actions   = array('name'       => 'doaction',
-                           'class'      => 'btn-primary mb-xs',
+                           'class'      => 'btn-primary mb-xs form-action input-sm',
                            'none'       => tr('Action'),
                            'resource'   => array('add'    => tr('Create'),
                                                  'delete' => tr('Delete')),

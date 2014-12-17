@@ -346,6 +346,7 @@ switch(isset_get($_POST['doaction'])){
  *
  */
 $actions   = array('name'       => 'doaction',
+                   'class'      => 'form-action input-sm',
                    'none'       => tr('Action'),
                    'resource'   => array('create'   => tr('Create'),
                                          'delete'   => tr('Delete'),
