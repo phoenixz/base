@@ -9,7 +9,7 @@ try{
     /*
      * Special targets?
      */
-    if($target === true){
+    if(($target === true) or ($target === 'self')){
         /*
          * Special redirect. Redirect to this very page. Usefull for right after POST requests to avoid "confirm post submissions"
          */
