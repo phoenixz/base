@@ -34,23 +34,6 @@ try{
     cli_only();
     load_libs('array');
 
-    if(empty($argv[0])){
-        throw new bException('No source environment specified');
-    }
-
-    if($argv[0] == ENVIRONMENT){
-        throw new bException('Cannot sync this own environment "'.ENVIRONMENT.'"');
-    }
-
-    if(empty($argv[1]) and REQUIRE_SUBENVIRONMENTS){
-        throw new bException('No source subenvironment specified, this project specifically requires subenvironments');
-    }
-
-    if(!empty($argv[1]) and !REQUIRE_SUBENVIRONMENTS){
-        throw new bException('Source subenvironment specified, but this project does not use subenvironments');
-    }
-
-
     /*
      * Check command line parameters
      */
@@ -61,8 +44,29 @@ try{
     $nosync          = argument('nosync');
     $noinit          = argument('noinit');
     $deletesync      = (argument('deletesync') or argument('syncdelete'));
-    $environment     = $argv[0];
-    $sub_environment = isset_get($argv[1]);
+    $environment     = argument('environment'    , true);
+    $sub_environment = argument('sub_environment', true);
+
+
+    if(empty($environment)){
+        throw new bException('No source environment specified, please use "environment ENVIRONMENT"');
+    }
+
+    if(empty($environment)){
+        throw new bException('No source environment specified, please use "environment ENVIRONMENT"');
+    }
+
+    if($environment == ENVIRONMENT){
+        throw new bException('Cannot sync from own environment "'.ENVIRONMENT.'"');
+    }
+
+    if(empty($sub_environment) and REQUIRE_SUBENVIRONMENTS){
+        throw new bException('No source subenvironment specified, this project specifically requires subenvironments');
+    }
+
+    if(!empty($sub_environment) and !REQUIRE_SUBENVIRONMENTS){
+        throw new bException('Source subenvironment specified, but this project does not use subenvironments');
+    }
 
 
     /*
