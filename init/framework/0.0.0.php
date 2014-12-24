@@ -1,9 +1,4 @@
 <?php
-/*
- * First BASE framework init file
- * @license http://opensource.org/licenses/GPL-2.0 GNU Public License, Version 2
- * @copyright Sven Oostenbrink <so.oostenbrink@gmail.com>, Johan Geuze
- */
 
 /*
  * Clear data store
@@ -15,27 +10,11 @@ mkdir(ROOT.'data/pub', $_CONFIG['fs']['dir_mode'], true);
 
 
 /*
- * Setup custom.php and custom_admin.php
- */
-if(!file_exists(ROOT.'libs/custom.php')){
-    copy(ROOT.'libs/_custom.php'      , ROOT.'libs/custom.php');
-    log_console('Created custom.php file', 'created', 'green');
-}
-
-if(!file_exists(ROOT.'libs/custom_admin.php')){
-    copy(ROOT.'libs/_custom_admin.php', ROOT.'libs/custom_admin.php');
-    log_console('Created custom_admin.php file', 'created', 'green');
-}
-
-
-
-/*
  * Create database tables
  */
 sql_query('DROP TABLE IF EXISTS `log`;');
 sql_query('DROP TABLE IF EXISTS `users`;');
 sql_query('DROP TABLE IF EXISTS `versions`;');
-
 
 
 sql_query('CREATE TABLE `versions` (`id`        INT(11)    NOT NULL AUTO_INCREMENT PRIMARY KEY,
@@ -92,4 +71,15 @@ sql_query('CREATE TABLE `users` (`id`           INT(11)      NOT NULL AUTO_INCRE
                                  UNIQUE(`fb_id`)
 
                                 ) ENGINE=InnoDB AUTO_INCREMENT='.$_CONFIG['db']['autoincrement'].' DEFAULT CHARSET="'.$_CONFIG['db']['charset'].'" COLLATE="'.$_CONFIG['db']['collate'].'";');
+
+/*
+ * Check MySQL timezone availability
+ */
+if(!sql_get('SELECT CONVERT_TZ("2012-06-07 12:00:00", "GMT", "America/New_York") AS `time`', 'time')){
+    log_console('No timezone data found in MySQL, importing timezone data files now', 'import', 'white');
+    log_console('Please fill in MySQL root password in the following "Enter password:" request', 'import', 'white');
+    log_console('You may ignore any "Warning: Unable to load \'/usr/share/zoneinfo/........\' as time zone. Skipping it." messages', 'import', 'yellow');
+
+    safe_exec('mysql_tzinfo_to_sql /usr/share/zoneinfo | mysql -p  -u root mysql');
+}
 ?>

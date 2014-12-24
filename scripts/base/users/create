@@ -8,7 +8,19 @@ require_once(dirname(__FILE__).'/../../../libs/startup.php');
 
 
 try{
-    $params['name']      = argument('name'     , true);
+    try{
+        cli_rights('admin,users,modify');
+
+    }catch(Exception $e){
+        /*
+         * Are there any users at all? If not, then allow for creation of one user.
+         */
+        if(sql_get('SELECT COUNT(`id`) AS count FROM `users`', 'count')){
+            throw $e;
+        }
+    }
+
+    $params['name']      = argument('name'     , true, '');
     $params['email']     = argument('email'    , true);
     $params['username']  = argument('username' , true);
     $params['password']  = argument('password' , true);
@@ -19,8 +31,44 @@ try{
     $params['admin']     = argument('admin');
     $params['validated'] = true;
 
-    load_libs('user');
-    user_insert($params);
+    if(!$params['username']){
+        throw new bException('No username specified', 'not_specified');
+    }
+
+    if(!$params['email']){
+        throw new bException('No email specified', 'not_specified');
+    }
+
+    if(!$params['name']){
+        throw new bException('No name specified', 'not_specified');
+    }
+
+    if(!$params['password']){
+        throw new bException('No password specified', 'not_specified');
+    }
+
+    if($user = sql_get('SELECT `id`, `username`, `name`, `email` FROM `users` WHERE `username` = :username OR `email` = :email', array(':username' => $params['username'], ':email' => $params['email']))){
+        if($user['username'] == $params['username']){
+            throw new bException(tr('The username "%username%" is already in use', array('%username%' => $params['username'])), 'exists');
+        }
+
+        throw new bException(tr('The email "%email%" is already in use', array('%email%' => $params['email'])), 'exists');
+    }
+
+    sql_query('INSERT INTO `users` (`createdby`, `name`, `email`, `username`, `password`, `latitude`, `longitude`, `status`, `type`, `validated`)
+               VALUES              (:createdby , :name , :email , :username , :password , :latitude , :longitude , :status , :type , :validated )',
+
+               array(':createdby' => isset_get($_SESSION['user']['id']),
+                     ':name'      => $params['name'],
+                     ':email'     => $params['email'],
+                     ':username'  => $params['username'],
+                     ':password'  => password($params['password']),
+                     ':latitude'  => $params['latitude'],
+                     ':longitude' => $params['longitude'],
+                     ':status'    => $params['status'],
+                     ':type'      => $params['type'],
+                     ':validated' => $params['validated']));
+
 
     if($params['admin']){
         /*

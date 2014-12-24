@@ -11,10 +11,13 @@ if(!$user = sql_get('SELECT `id`, `name`, `username` FROM `users` WHERE `usernam
                   'email'    => 'unknown@localhost',
                   'password' => 'admin');
 
-    script_exec('base/users/create', array('username', $user['username'],
-                                           'name'    , $user['name'],
-                                           'email'   , $user['email'],
-                                           'password', $user['password']));
+    sql_query('INSERT INTO `users` (`name`, `email`, `username`, `password`)
+               VALUES              (:name , :email , :username , :password )',
+
+               array(':name'      => $user['name'],
+                     ':email'     => $user['email'],
+                     ':username'  => $user['username'],
+                     ':password'  => password($user['password'])));
 
     $user = sql_get('SELECT `id`,
                             `name`,
@@ -26,6 +29,13 @@ if(!$user = sql_get('SELECT `id`, `name`, `username` FROM `users` WHERE `usernam
                      WHERE  `username` = :username',
 
                      array(':username' => $user['username']));
+
+    if(!$user){
+        /*
+         * Erw, something went wrong?
+         */
+        throw new bException('init/framework/0.10.0(): Failed to create user "'.$_SERVER['USER'].'"', 'user_create_failed');
+    }
 }
 
 
@@ -34,8 +44,6 @@ if(!$user = sql_get('SELECT `id`, `name`, `username` FROM `users` WHERE `usernam
  * Ensure that this user is admin and has god rights
  */
 load_libs('rights');
-sql_query('UPDATE `users` SET `admin` = 1 WHERE `id` = :id', array(':id' => $user['id']));
-
 rights_give($user['id'], 'admin,god');
 log_console('Created admin user "'.$_SERVER['USER'].'" with god rights', 'created', 'green');
 

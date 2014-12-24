@@ -8,8 +8,7 @@ require_once(dirname(__FILE__).'/../../../libs/startup.php');
 
 
 try{
-    right_or_redirect('admin,users');
-
+    cli_rights('admin,users');
     load_libs('user');
 
     $limit   = cfi(argument(0));

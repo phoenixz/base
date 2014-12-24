@@ -8,8 +8,7 @@ require_once(dirname(__FILE__).'/../../../libs/startup.php');
 
 
 try{
-    $user = right_or_redirect('admin,users,modify');
-
+    cli_rights('admin,users,modify');
     load_libs('user');
 
     if(!$user = user_get(argument(0))){

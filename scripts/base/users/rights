@@ -7,8 +7,7 @@ $quiet = true;
 require_once(dirname(__FILE__).'/../../../libs/startup.php');
 
 try{
-    $user = right_or_redirect('admin,users,rights');
-
+    cli_rights('admin,users,rights');
     load_libs('user,rights');
 
     if(!$target_user = argument('user', true)){

@@ -413,16 +413,17 @@ function cli_basic_arguments(){
 function cli_show_usage($usage, $color){
     try{
         if(!$usage){
-            log_console('Sorry, this script has no usage description defined yet', '', 'yellow');
+            log_console(tr('Sorry, this script has no usage description defined yet'), '', 'yellow');
 
         }else{
-            $usage = array_force($usage, "\n");
+            $usage = array_force(trim($usage), "\n");
 
             if(count($usage) == 1){
-                log_console('Usage: '.array_shift($usage), '', $color);
+                log_console(tr('Usage:')       , '', $color);
+                log_console(array_shift($usage), '', $color);
 
             }else{
-                log_console('Usage:', '', $color);
+                log_console(tr('Usage:'), '', $color);
 
                 foreach(array_force($usage, "\n") as $line){
                     log_console($line, '', $color);
@@ -474,5 +475,16 @@ function cli_not_root(){
     }
 
     return true;
+}
+
+
+
+/*
+ * Stop the script on insufficient rights
+ */
+function cli_rights($rights){
+    if(!has_rights($rights)){
+        throw new bException('cli_rights(): You do not have the required rights to use this script', 'access_denied');
+    }
 }
 ?>

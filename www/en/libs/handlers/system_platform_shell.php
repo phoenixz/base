@@ -42,7 +42,7 @@ if(!empty($signin)){
         throw new bException('startup: Failed to signin with specified user or email "'.str_log($signin).'"', $e);
     }
 
-}elseif(!empty($_SERVER['USER'])){
+}elseif(!empty($_SERVER['USER']) and !argument('nologin')){
     try{
         $user = sql_get('SELECT `id`,
                                 `name`,

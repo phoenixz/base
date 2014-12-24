@@ -9,15 +9,12 @@ require_once(dirname(__FILE__).'/../../../libs/startup.php');
 try{
     load_libs('user');
 
-    try{
-        $user = right_or_redirect('admin', null, null, false);
-
-    }catch(Exception $e){
+    if(!has_rights('admin')){
         /*
          * Don't fail right away, there may not be any other admin users available!
          * If there are no admin users, he will be allowed to make himself, or anyone else an admin
          */
-        if(($e->getCode() != 'noright') or sql_get('SELECT COUNT(*) AS `count` FROM `users_rights` WHERE `name` = "admin"', 'count')){
+        if(sql_get('SELECT COUNT(*) AS `count` FROM `users_rights` WHERE `name` = "admin"', 'count')){
             /*
              * This is not a rights exception, or there are admins available
              */
@@ -30,7 +27,6 @@ try{
          * continue..
          */
         log_message('Access denied override for user "'.str_log(user_name($_SESSION['user'])).'" in script "'.str_log($_SERVER['PHP_SELF']).'" for missing right "admin" because there are currently no admins', 'accessoverride', 'green');
-        $user     = user_or_redirect();
         $noadmins = true;
     }
 
@@ -103,7 +99,7 @@ try{
             /*
              * Make this user an admin
              */
-            if(!isset_get($noadmins) and ($target_user['id'] == $user['id'])){
+            if(!isset_get($noadmins) and ($target_user['id'] == $_SESSION['user']['id'])){
                 if(sql_get('SELECT COUNT(*) AS count FROM `users` WHERE `admin` = 1', 'count')){
                     /*
                      * There are other admin users available
@@ -136,7 +132,7 @@ try{
             /*
              * Make this user NO LONGER an admin
              */
-            if($target_user['id'] == $user['id']){
+            if($target_user['id'] == $_SESSION['user']['id']){
                 throw new bException('This action cannot be executed on your self', 'denied');
             }
 

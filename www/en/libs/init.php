@@ -89,7 +89,7 @@ function init($projectfrom = null, $frameworkfrom = null){
                                           'name'     => 'System Init',
                                           'username' => 'init',
                                           'email'    => 'init@'.$_CONFIG['domain'],
-                                          'admin'    => true);
+                                          'rights'   => array('admin', 'users', 'rights'));
             }
 
         }elseif(!FORCE and (FRAMEWORKCODEVERSION == $codeversions['FRAMEWORK']) and (PROJECTCODEVERSION == $codeversions['PROJECT'])){

@@ -435,7 +435,7 @@ function sql_connect($connector) {
             $pdo->query('SET time_zone = "'.$connector['timezone'].'";');
 
         }catch(Exception $e){
-            if(empty($GLOBALS['no_time_zone'])){
+            if(empty($GLOBALS['no_time_zone']) and (SCRIPT != 'init')){
                 throw $e;
             }
 
