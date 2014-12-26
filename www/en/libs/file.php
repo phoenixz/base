@@ -1379,6 +1379,50 @@ function file_copy_progress($source, $target, $callback){
 
 
 /*
+ *
+ */
+function file_mode_readable($mode){
+    try{
+        $retval = '';
+        $mode   = substr((string) decoct($mode), -3, 3);
+
+        for($i = 0; $i < 3; $i++){
+            $number = (integer) substr($mode, $i, 1);
+
+            if(($number - 4) >= 0){
+                $retval .= 'r';
+                $number -= 4;
+
+            }else{
+                $retval .= '-';
+            }
+
+            if(($number - 2) >= 0){
+                $retval .= 'w';
+                $number -= 2;
+
+            }else{
+                $retval .= '-';
+            }
+
+            if(($number - 1) >= 0){
+                $retval .= 'x';
+
+            }else{
+                $retval .= '-';
+            }
+        }
+
+        return $retval;
+
+    }catch(Exception $e){
+        throw new bException('file_mode_readable(): Failed', $e);
+    }
+}
+
+
+
+/*
  * Below are obsolete wrapper functions, that should no longer be used
  */
 function listdir($path = '.', $recursive = true) {
