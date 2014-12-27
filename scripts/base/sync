@@ -121,7 +121,7 @@ try{
         log_console('Importing remote SQL dump file in local MySQL server...', 'sync', 'white');
         passthru($command = 'cd /tmp/; rm /tmp/'.$project.'_'.$source_config['db']['db'].'.sql -f; gunzip /tmp/'.$project.'_'.$source_config['db']['db'].'.sql.gz');
         passthru($command = 'cd /tmp/; sed -i -e"s/USE \`'.$source_config['db']['db'].'\`;/USE \`'.$_CONFIG['db']['db'].'\`;/" /tmp/'.$project.'_'.$source_config['db']['db'].'.sql');
-        passthru($command = 'cat /tmp/'.$project.'_'.$source_config['db']['db'].'.sql | mysql -u '.$_CONFIG['db']['user'].' -p'.$_CONFIG['db']['pass'].' -B '.$_CONFIG['db']['db']);
+        passthru($command = 'cat /tmp/'.$project.'_'.$source_config['db']['db'].'.sql | mysql -u '.$_CONFIG['db']['user'].' -p"'.$_CONFIG['db']['pass'].'" -B '.$_CONFIG['db']['db']);
     }
 
 
