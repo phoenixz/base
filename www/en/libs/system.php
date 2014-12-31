@@ -128,16 +128,16 @@ function uncaught_exception($e, $die = 1){
  */
 function tr($text, $from = false, $to = false){
     try{
-        if($from != false){
-            if($to != false){
+        if($from){
+            if($to){
                 return str_replace($from, $to, $text);
             }
 
             return str_replace(array_keys($from), array_values($from), $text);
 
-        }else{
-            return $text;
         }
+
+        return $text;
 
     }catch(Exception $e){
         throw new bException('tr(): Failed with text "'.str_log($text).'". Check the $from and $to configuration!', $e);
