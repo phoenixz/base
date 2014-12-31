@@ -156,7 +156,7 @@ try{
     $stash       =   argument('stash');
 
     $message     =   argument('message'    , true);
-    $targets     =   argument('target'     , true, argument('targets', true, argument('all', false)));
+    $targets     =   argument('target'     , 'all', argument('targets', 'all', argument('all', false)));
 
     if(!$message and !$notag){
         throw new bException('No tag message specified! please use ./scripts/base/deploy ..... message "commit message"', 'notspecified');
@@ -192,7 +192,11 @@ try{
         $targets = array_keys($_CONFIG['deploy']);
         log_console('Deploying to ALL target environments!', 'warning', 'yellow');
 
+    }elseif(is_array($targets)){
+        log_console('Deploying to specified target environments "'.str_log(str_force($targets, ', ')).'"', 'warning', 'yellow');
+
     }else{
+        log_console('Deploying to specified target environment "'.str_log($targets).'"', 'warning', 'yellow');
         $targets = array($targets);
     }
 
