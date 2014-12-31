@@ -178,6 +178,10 @@ try{
         throw new bException('No target environment specified!', 'notspecified');
     }
 
+    if(count($targets) == 1){
+        $targets = array_pop($targets);
+    }
+
     if($targets === true){
         /*
          * "./scripts/base/deploy all" was used
