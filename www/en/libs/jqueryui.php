@@ -62,7 +62,7 @@ function jqueryui_date($selector, $params = null){
                                                     }');
         }
 
-        $html = '<input type="text" id="'.$selector.'" name="'.$selector.'" placeholder="'.$params['placeholder'].'">';
+        $html = '<input type="text" class="'.$params['class'].' date" id="'.$selector.'" name="'.$selector.'" placeholder="'.$params['placeholder'].'">';
 
         return html_script('$(function() {
             $( "#'.$selector.'" ).datepicker({
@@ -110,7 +110,7 @@ function jqueryui_time($selector, $params = null){
         //                                            }');
         //}
 
-        $html    = '<input type="text" class="'.$params['class'].'" id="'.$selector.'" name="'.$selector.'" placeholder="'.$params['placeholder'].'"'.($params['default_time'] ? ' value="'.$params['default_time'].'"' : '').'>';
+        $html    = '<input type="text" class="'.$params['class'].' time" id="'.$selector.'" name="'.$selector.'" placeholder="'.$params['placeholder'].'"'.($params['default_time'] ? ' value="'.$params['default_time'].'"' : '').'>';
 
         $script  = '$(function() {
                         $( "#'.$selector.'" ).timepicker({
