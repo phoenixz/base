@@ -117,7 +117,7 @@ function jqueryui_time($selector, $params = null){
                             step: "'.$params['step'].'",
                             timeFormat: "'.$params['time_format'].'",
                             showDuration: '.($params['show_duration'] ? 'true' : 'false').',
-                            forceRoundTime: '.$params['force_round_time'].',
+                            forceRoundTime: '.($params['force_round_time'] ? 'true' : 'false').',
                             '.(isset_get($params['scroll_default']) ? 'scrollDefault: "'.$params['scroll_default'].'",' : '').'
                             '.(isset_get($params['min_time'])       ? 'minTime:       "'.$params['min_time'].'",'       : '').'
                             '.(isset_get($params['max_time'])       ? 'maxTime:       "'.$params['max_time'].'",'       : '').'
