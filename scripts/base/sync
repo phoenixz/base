@@ -84,6 +84,14 @@ try{
 
 
     /*
+     * Environment exists?
+     */
+    if(empty($source_config['deploy'][$environment])){
+        throw new bException(tr('The specified environment "%environment%" does not exist', array('%environment%' => $environment)), 'not_exist');
+    }
+
+
+    /*
      * Create SQL dump of source DB
      */
     if($nodump){
