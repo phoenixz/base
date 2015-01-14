@@ -78,6 +78,28 @@ function array_default(&$source, $key, $default){
 
 
 /*
+ * Ensure that the specified keys are available. If not, exception
+ */
+function array_key_check($source, $keys){
+    try{
+        foreach(array_force($keys) as $key){
+            if(!isset($source[$key]) or ($source[$key] == null)){
+                throw new bException('array_key_check(): Key "'.str_log($key).'" was not specified in array', 'not_specified');
+            }
+        }
+
+    }catch(Exception $e){
+        if($e->getCode() == 'not_specified'){
+            throw $e;
+        }
+
+        throw new bException('array_key_check(): Failed', $e);
+    }
+}
+
+
+
+/*
  * Make sure the array is cleared, but with specified keys available
  */
 function array_clear(&$array, $keys, $value = null){

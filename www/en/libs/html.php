@@ -45,84 +45,197 @@ function html_iefilter($html, $filter){
 
 
 /*
- * Standard Pagination
+ * Pagination function, can create any type of HTML paging structure
+ *
+ * Example usage:
+ * $html .= html_paging(array('html'    => '<div class="center mbottom50">
+ *                                              <ul class="pagination clearfix reset-list">
+ *                                                  %list%
+ *                                              </ul>
+ *                                          </div>',
+ *                            'current' => isset_get($current_page, 1),
+ *                            'count'   => sql_get('SELECT COUNT(`id`) AS count FROM `blogs_posts` '.$where, $execute, 'count'),
+ *                            'active'  => 'class="active"',
+ *                            'url'     => c_city_url($category['seoname'], $_GET['category'], '%page%'),
+ *                            'page'    => '<li%active%><a href="%url%">%page%</a></li>',
+ *                            'prev'    => '<li><a href="%url%">'.tr('Prev').'</a></li>',
+ *                            'next'    => '<li><a href="%url%">'.tr('Next').'</a></li>',
+ *                            'first'   => '<li><a href="%url%">'.tr('First').'</a></li>',
+ *                            'last'    => '<li><a href="%url%">'.tr('Last').'</a></li>')).'
+ *
  */
-// Why the blooody fuck are there eval() calls in this function?!!?!? REWRITE!
-function html_paging($current_page, $total_pages, $url_function) {
+function html_paging($params){
+    global $_CONFIG;
+
     try{
-        if($GLOBALS['page_is_mobile']){
-            $pages_ba = 0;
+        array_params($params);
 
-        }else{
-            $pages_ba = 3;
+        array_default($params, 'current'       , isset_get($_GET['page']));
+        array_default($params, 'prev_next'     , isset_get($_CONFIG['paging']['prev_next']));
+        array_default($params, 'first_last'    , isset_get($_CONFIG['paging']['first_last']));
+        array_default($params, 'show_pages'    , $_CONFIG['paging']['show_pages']);
+        array_default($params, 'items_per_page', $_CONFIG['paging']['items_per_page']);
+        array_default($params, 'hide_first'    , $_CONFIG['paging']['hide_first']);
+        array_default($params, 'hide_single'   , $_CONFIG['paging']['hide_single']);
+
+        array_key_check($params, 'current,show_pages,count,html,page,url'.($params['prev_next'] ? ',prev,next' : '').($params['first_last'] ? ',first,last' : ''));
+
+        $page_count = ceil($params['count'] / $params['items_per_page']);
+        $html       = $params['html'];
+        $url        = $params['url'];
+        $current    = $params['current'];
+        $list       = '';
+
+        if(($page_count <= 1) and $params['hide_single']){
+            /*
+             * There is only one page and we don't want to see a single page pager
+             */
+            return '';
         }
 
-        $prev_page  = $current_page - 1;
-        $next_page  = $current_page + 1;
-        $first_page = 0;
-        $last_page  = $total_pages;
-
-        $html= '<div class="hPaging">
-                <div class="Paging">';
-
-        //Previous Page
-        if($prev_page >= 0) {
-            $html .= '<a class="PagingPrev" href="'.eval('return '.str_replace('###PAGE###', $prev_page, $url_function)).'">'.tr('Previous').'</a>';
+        if(!fmod($params['show_pages'], 2)){
+            throw new bException('html_paging(): show_pages should always be an odd number (1, 3, 5, etc)', 'invalid');
         }
 
-        //Next page
-        if($next_page < $total_pages) {
-            $html .= '<a class="PagingNext" href="'.eval('return '.str_replace('###PAGE###', $next_page, $url_function)).'">'.tr('Next').'</a>';
+        if($page_count < $params['show_pages']){
+            $params['show_pages'] = $page_count;
         }
 
-        $html .= '<p class="PagingContent">';
-
-        //first page
-        if($current_page > 3) {
-            $html .= '<a href="'.eval('return '.str_replace('###PAGE###', 0, $url_function)).'">1</a>
-                      <span>...</span>';
+        /*
+         * Add the first button
+         */
+        if($params['first_last'] and ($current > 1)){
+            $line_url = str_replace('%page%', ($params['hide_first'] ? '' : 1), $url);
+            $list    .= str_replace('%page%', 1                               , str_replace('%url%', $line_url, $params['first']));
         }
 
-        //3 pages before this one
-        $a = 0;
-        while($a < $pages_ba) {
-            $a++;
+        /*
+         * Add the previous button
+         */
+        if($params['prev_next'] and ($current > 1)){
+            $line_url = str_replace('%page%', ((($current == 2) and $params['hide_first']) ? '' : $current - 1), $url);
+            $list    .= str_replace('%page%', 1                                                                , str_replace('%url%', $line_url, $params['prev']));
+        }
 
-            $page = $current_page - 4 + $a;
+        /*
+         * Build the center page list with the current page in the center
+         */
+        $current = $current - floor($params['show_pages'] / 2);
 
-            if($page >= 0) {
-                $html .= '<a href="'.eval('return '.str_replace('###PAGE###', $page, $url_function)).'">'.($page + 1).'</a>';
+        /*
+         * Unless we fall over the <1 limit
+         */
+        if($current < 1){
+            $current = 1;
+        }
+
+        for($current; $current <= $page_count; $current++){
+            $line_url = str_replace('%page%', ((($current == 1) and $params['hide_first']) ? '' : $current), $url);
+            $line     = str_replace('%page%', $current, str_replace('%url%', $line_url, $params['page']));
+
+            if($current == $params['current']){
+                $line = str_replace('%active%', ' '.$params['active'].' ', $line);
+
+            }else{
+                $line = str_replace('%active%', ''                       , $line);
             }
+
+            $list .= $line;
+
         }
 
-        //current page
-        $html .= '<span>'.cfi($current_page + 1).'</span>';
-
-        //3 pages after this one
-        $a = 0;
-        while($a < $pages_ba) {
-            $a++;
-
-            $page = $current_page + $a;
-
-            if($page<$total_pages) {
-                $html .= '<a href="'.eval('return '.str_replace('###PAGE###', $page, $url_function)).'">'.($page + 1).'</a>';
-            }
+        /*
+         * Add the next button
+         */
+        if($params['prev_next'] and ($params['current'] < $page_count)){
+            $list .= str_replace('%page%', $params['current'] + 1, str_replace('%url%', $url, $params['next']));
         }
 
-        //Last page if its not already covered by next or 3 pages after (Not on mobile)
-        if(!$GLOBALS['page_is_mobile']){
-            if(($total_pages > $page) and ($total_pages != $next_page)) {
-                $html .= '<span>...</span>
-                          <a href="'.eval('return '.str_replace('###PAGE###', $total_pages, $url_function)).'">'.($total_pages + 1).'</a>';
-            }
+        /*
+         * Add the last button
+         */
+        if($params['first_last'] and ($params['current'] < $page_count)){
+            $list .= str_replace('%page%', $page_count, str_replace('%url%', $url, $params['last']));
         }
 
-        $html .= '</p>
-                </div>
-            </div>';
+        $html = str_replace('%list%', $list, $html);
 
         return $html;
+
+// :DELETE: This is the old paging code, which was crap and no longer supported. Delete ASAP
+        //if($GLOBALS['page_is_mobile']){
+        //    $pages_ba = 0;
+        //
+        //}else{
+        //    $pages_ba = 3;
+        //}
+        //
+        //$prev_page  = $current_page - 1;
+        //$next_page  = $current_page + 1;
+        //$first_page = 0;
+        //$last_page  = $total_pages;
+        //
+        //$html= '<div class="hPaging">
+        //        <div class="Paging">';
+        //
+        ////Previous Page
+        //if($prev_page >= 0) {
+        //    $html .= '<a class="PagingPrev" href="'.eval('return '.str_replace('###PAGE###', $prev_page, $url_function)).'">'.tr('Previous').'</a>';
+        //}
+        //
+        ////Next page
+        //if($next_page < $total_pages) {
+        //    $html .= '<a class="PagingNext" href="'.eval('return '.str_replace('###PAGE###', $next_page, $url_function)).'">'.tr('Next').'</a>';
+        //}
+        //
+        //$html .= '<p class="PagingContent">';
+        //
+        ////first page
+        //if($current_page > 3) {
+        //    $html .= '<a href="'.eval('return '.str_replace('###PAGE###', 0, $url_function)).'">1</a>
+        //              <span>...</span>';
+        //}
+        //
+        ////3 pages before this one
+        //$a = 0;
+        //while($a < $pages_ba) {
+        //    $a++;
+        //
+        //    $page = $current_page - 4 + $a;
+        //
+        //    if($page >= 0) {
+        //        $html .= '<a href="'.eval('return '.str_replace('###PAGE###', $page, $url_function)).'">'.($page + 1).'</a>';
+        //    }
+        //}
+        //
+        ////current page
+        //$html .= '<span>'.cfi($current_page + 1).'</span>';
+        //
+        ////3 pages after this one
+        //$a = 0;
+        //while($a < $pages_ba) {
+        //    $a++;
+        //
+        //    $page = $current_page + $a;
+        //
+        //    if($page<$total_pages) {
+        //        $html .= '<a href="'.eval('return '.str_replace('###PAGE###', $page, $url_function)).'">'.($page + 1).'</a>';
+        //    }
+        //}
+        //
+        ////Last page if its not already covered by next or 3 pages after (Not on mobile)
+        //if(!$GLOBALS['page_is_mobile']){
+        //    if(($total_pages > $page) and ($total_pages != $next_page)) {
+        //        $html .= '<span>...</span>
+        //                  <a href="'.eval('return '.str_replace('###PAGE###', $total_pages, $url_function)).'">'.($total_pages + 1).'</a>';
+        //    }
+        //}
+        //
+        //$html .= '</p>
+        //        </div>
+        //    </div>';
+        //
+        //return $html;
 
     }catch(Exception $e){
         throw new bException('html_paging(): Failed', $e);
