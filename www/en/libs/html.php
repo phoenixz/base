@@ -611,8 +611,10 @@ function html_header($params = null, $meta = array()){
          * Add required fonts
          */
         if(!empty($_CONFIG['cdn']['fonts'])){
-            foreach($_CONFIG['cdn']['fonts'] as $font){
-                $retval .= "<link href=\"".$font."\" rel=\"stylesheet\" type=\"text/css\">\n";
+            if((ENVIRONMENT == 'production') or (empty($_CONFIG['cdn']['production_fonts']))){
+                foreach($_CONFIG['cdn']['fonts'] as $font){
+                    $retval .= "<link href=\"".$font."\" rel=\"stylesheet\" type=\"text/css\">\n";
+                }
             }
         }
 

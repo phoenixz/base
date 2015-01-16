@@ -43,6 +43,10 @@ $_CONFIG['cdn']                = array('min'              => true,              
 
                                        'css'              => array('post'           => false),              // The default last CSS file to be loaded (after all others have been loaded, so that this one can override any CSS rule if needed)
 
+                                       'fonts'            => array(),                                       // Load font files?
+
+                                       'production_fonts' => false,                                         // Load font files only for production?
+
                                        'js'               => array('jquery_version' => 1,                   // Major version of jQuery to use, either 1 or 2 for jQuery 1.X or 2.X
 
                                                                    'default_libs'   => array('base/jquery', 'base/strings', 'base/base'),   // Default JS libraries to be loaded
