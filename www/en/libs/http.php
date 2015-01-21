@@ -263,10 +263,10 @@ function http_add_variable($url, $key, $value){
         }
 
         if(strpos($url, '?') !== false){
-            return $url.'&'.urlencode($key.'='.$value);
+            return $url.'&'.urlencode($key).'='.urlencode($value);
         }
 
-        return $url.'?'.urlencode($key.'='.$value);
+        return $url.'?'.urlencode($key).'='.urlencode($value);
 
     }catch(Exception $e){
         throw new bException('http_add_variable(): Failed', $e);
