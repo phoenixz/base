@@ -337,6 +337,16 @@ try{
                     check_extended_session();
 
                     /*
+                     * Check session protocol. If the session was HTTP and now HTTPS or reverse, then drop the session and start a new session
+                     */
+                    if(empty($_SESSION['protocol'])){
+                        $_SESSION['protocol'] = $_SERVER['SERVER_PROTOCOL'];
+
+                    }elseif($_SESSION['protocol'] != $_SERVER['SERVER_PROTOCOL']){
+                        include(dirname(__FILE__).'/startup_protocol_check.php');
+                    }
+
+                    /*
                      * Language might have been set by GET or POST
                      */
                     if(!empty($_REQUEST['language'])){
