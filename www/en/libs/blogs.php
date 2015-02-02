@@ -509,6 +509,40 @@ function blogs_photos_upload($files, $post){
 
 
 /*
+ * Find and return a free priority for blog photo
+ */
+function blogs_photos_get_free_priority($blogs_posts_id, $insert = false){
+    global $_CONFIG;
+
+    try{
+        if($insert){
+            /*
+             * Insert mode, return the first possible priority, in case there is a gap (ideally should be highest though, if there are no gaps)
+             */
+            $list = sql_list('SELECT `priority` FROM `blogs_photos` WHERE `blogs_posts_id` = :blogs_posts_id ORDER BY `priority` ASC', array(':blogs_posts_id' => $blogs_posts_id));
+
+            for($current = 1; ; $current++){
+                if(!in_array($current, $list)){
+                    return $current;
+                }
+            }
+
+            return $current;
+        }
+
+        /*
+         * Highest mode, return the highest priority + 1
+         */
+        return (integer) sql_get('SELECT MAX(`priority`) FROM `blogs_photos` WHERE `blogs_posts_id` = :blogs_posts_id', array(':blogs_posts_id' => $blogs_posts_id)) + 1;
+
+    }catch(Exception $e){
+        throw new bException('blogs_photos_get_free_priority(): Failed', $e);
+    }
+}
+
+
+
+/*
  * Photo description
  */
 function blogs_photo_description($user, $photo_id, $description){
