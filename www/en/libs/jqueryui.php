@@ -50,11 +50,11 @@ function jqueryui_accordeon($selector, $options = 'collapsible: true,heightStyle
 function jqueryui_date($selector, $params = null){
     try{
         array_params($params);
-        array_default($params, 'placeholder'   , '');
-        array_default($params, 'numberofmonths', 1);
-        array_default($params, 'change_month'  , true);
-        array_default($params, 'default_date'  , '+1w');
-        array_default($params, 'auto_submit'   , true);
+        array_default($params, 'placeholder'     , tr('Select a date'));
+        array_default($params, 'number_of_months', 1);
+        array_default($params, 'change_month'    , true);
+        array_default($params, 'default_date'    , '+1w');
+        array_default($params, 'auto_submit'     , true);
 
         if($params['auto_submit']){
             array_default($params, 'on_select', '   function (date) {
@@ -62,18 +62,21 @@ function jqueryui_date($selector, $params = null){
                                                     }');
         }
 
-        $html = '<input type="text" class="'.$params['class'].' date" id="'.$selector.'" name="'.$selector.'" placeholder="'.$params['placeholder'].'">';
+        if(isset_get($params['value'])){
+            $params['value'] = system_date_format($params['value'], 'human_date');
+        }
 
-        return html_script('$(function() {
+        $html = '<input type="text" class="'.$params['class'].' date" id="'.$selector.'" name="'.$selector.'" placeholder="'.$params['placeholder'].'" value="'.isset_get($params['value']).'">';
+
+        return $html.html_script('$(function() {
             $( "#'.$selector.'" ).datepicker({
                 defaultDate: "'.$params['default_date'].'",
                 changeMonth: '.($params['change_month'] ? 'true' : 'false').',
                 numberOfMonths: '.$params['number_of_months'].',
-                '.(isset_get($params['from'])      ? 'minDate:  "'.$params['from'].'",'      : '').'
-                '.(isset_get($params['until'])     ? 'maxDate:  "'.$params['until'].'",'     : '').'
-                '.(isset_get($params['on_close'])  ? 'onClose:  "'.$params['on_close'].'",'  : '').'
-                '.(isset_get($params['on_select']) ? 'onSelect: "'.$params['on_select'].'",' : '').'
-                numberOfMonths: '.$params['numberofmonths'].'
+                '.(isset_get($params['from'])      ? 'minDate:  "'.$params['from'].'",'     : '').'
+                '.(isset_get($params['until'])     ? 'maxDate:  "'.$params['until'].'",'    : '').'
+                '.(isset_get($params['on_close'])  ? 'onClose:   '.$params['on_close'].','  : '').'
+                '.(isset_get($params['on_select']) ? 'onSelect:  '.$params['on_select'].',' : '').'
             });
         });');
 

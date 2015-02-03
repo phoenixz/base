@@ -1275,4 +1275,28 @@ function in_source($source, $key, $return){
         throw new bException('in_source(): Failed', $e);
     }
 }
+
+
+
+/*
+ *
+ */
+function system_date_format($date, $format = 'human_datetime'){
+    global $_CONFIG;
+
+    try{
+        if($format == 'mysql'){
+            $format = 'Y-m-d H:i:s';
+
+        }else{
+            $format = $_CONFIG['formats'][$format];
+        }
+
+        $date   = new DateTime($date);
+        return $date->format($format);
+
+    }catch(Exception $e){
+        throw new bException('system_date_format(): Failed', $e);
+    }
+}
 ?>
