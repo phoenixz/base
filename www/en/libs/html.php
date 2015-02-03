@@ -77,6 +77,7 @@ function html_paging($params){
         array_default($params, 'items_per_page', $_CONFIG['paging']['items_per_page']);
         array_default($params, 'hide_first'    , $_CONFIG['paging']['hide_first']);
         array_default($params, 'hide_single'   , $_CONFIG['paging']['hide_single']);
+        array_default($params, 'hide_ends'     , $_CONFIG['paging']['hide_ends']);
 
         array_key_check($params, 'current,show_pages,count,html,page,url'.($params['prev_next'] ? ',prev,next' : '').($params['first_last'] ? ',first,last' : ''));
 
@@ -93,6 +94,12 @@ function html_paging($params){
             return '';
         }
 
+        if($params['hide_ends']){
+            if(!isset_get($params['disabled'])){
+                throw new bException('html_paging(): hide_ends set to true, but no "disabled" option specified', 'invalid');
+            }
+        }
+
         if(!fmod($params['show_pages'], 2)){
             throw new bException('html_paging(): show_pages should always be an odd number (1, 3, 5, etc)', 'invalid');
         }
@@ -104,17 +111,31 @@ function html_paging($params){
         /*
          * Add the first button
          */
-        if($params['first_last'] and ($current > 1)){
+        if($params['first_last']){
+            if($current > 1){
+                $disabled = '';
+
+            }else{
+                $disabled = $params['disabled'];
+            }
+
             $line_url = str_replace('%page%', ($params['hide_first'] ? '' : 1), $url);
-            $list    .= str_replace('%page%', 1                               , str_replace('%url%', $line_url, $params['first']));
+            $list    .= str_replace('%disabled%', $disabled, str_replace('%page%', 1, str_replace('%url%', $line_url, $params['first'])));
         }
 
         /*
          * Add the previous button
          */
-        if($params['prev_next'] and ($current > 1)){
+        if($params['prev_next']){
+            if($current > 1){
+                $disabled = '';
+
+            }else{
+                $disabled = $params['disabled'];
+            }
+
             $line_url = str_replace('%page%', ((($current == 2) and $params['hide_first']) ? '' : $current - 1), $url);
-            $list    .= str_replace('%page%', 1                                                                , str_replace('%url%', $line_url, $params['prev']));
+            $list    .= str_replace('%disabled%', $disabled, str_replace('%page%', 1, str_replace('%url%', $line_url, $params['prev'])));
         }
 
         /*
@@ -147,15 +168,29 @@ function html_paging($params){
         /*
          * Add the next button
          */
-        if($params['prev_next'] and ($params['current'] < $page_count)){
-            $list .= str_replace('%page%', $params['current'] + 1, str_replace('%url%', $url, $params['next']));
+        if($params['prev_next']){
+            if($params['current'] < $page_count){
+                $disabled = '';
+
+            }else{
+                $disabled = $params['disabled'];
+            }
+
+            $list .= str_replace('%disabled%', $disabled, str_replace('%page%', $params['current'] + 1, str_replace('%url%', $url, $params['next'])));
         }
 
         /*
          * Add the last button
          */
-        if($params['first_last'] and ($params['current'] < $page_count)){
-            $list .= str_replace('%page%', $page_count, str_replace('%url%', $url, $params['last']));
+        if($params['first_last']){
+            if($params['current'] < $page_count){
+                $disabled = '';
+
+            }else{
+                $disabled = $params['disabled'];
+            }
+
+            $list .= str_replace('%disabled%', $disabled, str_replace('%page%', $page_count, str_replace('%url%', $url, $params['last'])));
         }
 
         $html = str_replace('%list%', $list, $html);
