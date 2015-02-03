@@ -1,9 +1,10 @@
 #!/usr/bin/php
 <?php
 /*
- * This is an empty test script template
+ * This is the update script that will update your BASE installation with the latest software
  */
 $usage = "./scripts/base/update [local]\n".
+         "./scripts/base/update branch BRANCH_NAME\n";
          "./scripts/base/update\n";
 
 $help  = "The deploy script can pull all the latest BASE updates from either a local BASE repository, or the central main BASE repository";
@@ -11,21 +12,22 @@ $help  = "The deploy script can pull all the latest BASE updates from either a l
 require_once(dirname(__FILE__).'/../../libs/startup.php');
 
 try{
+    $branch   = argument('branch', true, 'production');
+    $noinit   = argument('noinit');
+    $nocommit = argument('nocommit');
+
+    load_config('update');
+
     if(argument('local')){
         /*
          * Get the data from the local base repository instead of the centralized one
          */
-        $base_server    = 'localhost';
-        $base_directory = '/home/'.getenv('USER').'/projects/base';
-
-        log_screen('scripts/update: Running in "local" mode, getting all base data from "'.$base_directory.'" for faster update', 'deploy/test', 'yellow');
+        $base = $_CONFIG['update']['local'];
+        log_screen('scripts/update: Running in "local" mode, getting all base data from "'.$base['path'].'" for faster update', 'deploy/test', 'yellow');
 
     }else{
-        $base_directory = '/var/www/projects/base';
-        $base_server    = $_CONFIG['system']['updater'];
+        $base = $_CONFIG['update']['local'];
     }
-
-    $branch = argument('branch', true, 'production');
 
     if(!$branch){
         throw new bException('No branch specified', 'nobranch');
@@ -39,84 +41,121 @@ try{
         log_screen('scripts/update: Running update script in forced mode, WILL UPDATE EVEN IF GIT CHANGES AND / OR MINOR PROBLEMS ARE FOUND!', 'deploy/force', 'yellow');
     }
 
-    // Ensure we are at the root of the project within this context, or git will fail!
+    /*
+     * Ensure we are at the root of the project within this context, or git will fail!
+     */
     chdir(ROOT);
 
-    // Check if we are not on main base repository
+    /*
+     * Check if we are not on main base repository
+     */
     if(trim(shell_exec('grep "/git/base.git" '.ROOT.'.git/config'))) {
         throw new bException('Cannot be run on main base repository', 'WRONGREPOS');
     }
 
-    // Check if we dont have any commits
+    /*
+     * Check if we dont have any commits
+     */
     if(!trim(shell_exec('git status | grep "nothing to commit" | wc -l')) AND !FORCE) {
         throw new bException('Git commit pending', 'COMMITFIRST');
     }
 
-    //update libraries from base
+    /*
+     * Verify data
+     */
+    if(!$base['host']){
+        throw new bException(tr('No update host configured'), 'notspecified');
+    }
+
+    if(!$base['port']){
+        throw new bException(tr('No update host port configured'), 'notspecified');
+    }
+
+    /*
+     * Update libraries from base
+     */
     if(argument('local')){
         log_console('Skipping base branch update due to local mode', 'update', 'yellow');
 
     }else{
         log_console('Updating from base branch "'.$branch.'"', 'update', 'white');
-        echo shell_exec('ssh -t '.$base_server.' "cd '.$base_directory.'; git reset --hard; git checkout '.$branch.'; git pull origin '.$branch.'"');
+        echo shell_exec('ssh -t '.$base['host'].' -p '.$base['port'].' "cd '.$base['path'].'; git reset --hard; git checkout '.$branch.'; git pull origin '.$branch.'"');
     }
 
-    //copy from base
+    /*
+     * Copy from base
+     */
     log_console('Copying from base', 'update', 'white');
 
     if(empty($test)){
-        // Libraries
+        /*
+         * Libraries
+         */
         log_console('Libs', 'copy', 'purple');
-        echo shell_exec('rsync -av --no-perms '.$base_server.':'.$base_directory.'/www/en/libs '.ROOT.'www/en/');
-        echo shell_exec('rsync -av --no-perms '.$base_server.':'.$base_directory.'/www/en/tests '.ROOT.'www/en/');
+        echo shell_exec('rsync -e "ssh -p '.$base['port'].'" -av --no-perms '.$base['host'].':'.$base['path'].'/www/en/libs '.ROOT.'www/en/');
+        echo shell_exec('rsync -e "ssh -p '.$base['port'].'" -av --no-perms '.$base['host'].':'.$base['path'].'/www/en/tests '.ROOT.'www/en/');
 
         // Base AJAX files
         log_console('Ajax', 'copy', 'purple');
-        echo shell_exec('rsync -av --no-perms '.$base_server.':'.$base_directory.'/www/en/ajax/base '.ROOT.'www/en/ajax/');
+        echo shell_exec('rsync -e "ssh -p '.$base['port'].'" -av --no-perms '.$base['host'].':'.$base['path'].'/www/en/ajax/base '.ROOT.'www/en/ajax/');
 
         // Scripts
         log_console('Scripts', 'copy', 'purple');
-        echo shell_exec('rsync -av --no-perms --delete '.$base_server.':'.$base_directory.'/scripts/base/* '.ROOT.'scripts/base/');
-        echo shell_exec('rsync -av --no-perms --delete '.$base_server.':'.$base_directory.'/scripts/tests/* '.ROOT.'scripts/base/');
+        echo shell_exec('rsync -e "ssh -p '.$base['port'].'" -av --no-perms --delete '.$base['host'].':'.$base['path'].'/scripts/base/* '.ROOT.'scripts/base/');
+        echo shell_exec('rsync -e "ssh -p '.$base['port'].'" -av --no-perms --delete '.$base['host'].':'.$base['path'].'/scripts/tests/* '.ROOT.'scripts/base/');
 
         // Framework init files
         log_console('Framework updates', 'copy', 'purple');
-        echo shell_exec('rsync -av --no-perms --delete '.$base_server.':'.$base_directory.'/init/framework/* '.ROOT.'init/framework/');
+        echo shell_exec('rsync -e "ssh -p '.$base['port'].'" -av --no-perms --delete '.$base['host'].':'.$base['path'].'/init/framework/* '.ROOT.'init/framework/');
 
         // Base configuration
         log_console('Config', 'copy', 'purple');
-        echo shell_exec('rsync -av --no-perms --delete '.$base_server.':'.$base_directory.'/config/base/* '.ROOT.'config/base/');
+        echo shell_exec('rsync -e "ssh -p '.$base['port'].'" -av --no-perms --delete '.$base['host'].':'.$base['path'].'/config/base/* '.ROOT.'config/base/');
 
         // Javascript
         log_console('Javascript', 'copy', 'purple');
-        echo shell_exec('rsync -av --no-perms --delete '.$base_server.':'.$base_directory.'/www/en/pub/js/base/* '.ROOT.'www/en/pub/js/base/');
+        echo shell_exec('rsync -e "ssh -p '.$base['port'].'" -av --no-perms --delete '.$base['host'].':'.$base['path'].'/www/en/pub/js/base/* '.ROOT.'www/en/pub/js/base/');
 
         // CSS
         log_console('Stylesheets', 'copy', 'purple');
-        echo shell_exec('rsync -av --no-perms --delete '.$base_server.':'.$base_directory.'/www/en/pub/css/base/* '.ROOT.'www/en/pub/css/base/');
+        echo shell_exec('rsync -e "ssh -p '.$base['port'].'" -av --no-perms --delete '.$base['host'].':'.$base['path'].'/www/en/pub/css/base/* '.ROOT.'www/en/pub/css/base/');
 
         // Images
         log_console('Images', 'copy', 'purple');
-        echo shell_exec('rsync -av --no-perms --delete '.$base_server.':'.$base_directory.'/www/en/pub/img/base/* '.ROOT.'www/en/pub/img/base/');
+        echo shell_exec('rsync -e "ssh -p '.$base['port'].'" -av --no-perms --delete '.$base['host'].':'.$base['path'].'/www/en/pub/img/base/* '.ROOT.'www/en/pub/img/base/');
 
         // Documentation
         log_console('Documentation', 'copy', 'purple');
-        echo shell_exec('rsync -av --no-perms '.$base_server.':'.$base_directory.'/data/doc/* '.ROOT.'data/doc/');
+        echo shell_exec('rsync -e "ssh -p '.$base['port'].'" -av --no-perms '.$base['host'].':'.$base['path'].'/data/doc/* '.ROOT.'data/doc/');
 
         // Sources
         log_console('Data sources', 'copy', 'purple');
-        echo shell_exec('rsync -av --no-perms '.$base_server.':'.$base_directory.'/data/sources/* '.ROOT.'data/sources/');
+        echo shell_exec('rsync -e "ssh -p '.$base['port'].'" -av --no-perms '.$base['host'].':'.$base['path'].'/data/sources/* '.ROOT.'data/sources/');
     }
 
-    //execute init script
-    log_console('Excuting init script', 'update', 'white');
-    echo shell_exec('cd '.ROOT.'scripts/base/;export '.PROJECT.'_ENVIRONMENT='.ENVIRONMENT.'; php init');
+    /*
+     * Execute init script
+     */
+    if($noinit){
+        log_console('Skipping system init due to "noinit" option', 'update', 'yellow');
 
-    //Done
-    log_console('Commit updates', 'update', 'white');
-    echo shell_exec('cd '.ROOT.';git add .;git commit -am "Update from base"');
+    }else{
+        log_console('Excuting system init', 'update', 'white');
+        echo shell_exec('cd '.ROOT.'scripts/base/;export '.PROJECT.'_ENVIRONMENT='.ENVIRONMENT.'; php init');
+    }
 
-    log_console('Done', 'update', 'white');
+    /*
+     * Done
+     */
+    if($nocommit){
+        log_console('Skipping git commit due to "nocommit" option', 'update', 'yellow');
+
+    }else{
+        log_console('Git commit updates', 'update', 'white');
+        echo shell_exec('cd '.ROOT.';git add .;git commit -am "Update from base"');
+    }
+
+    log_console('Done', 'update', 'green');
 
 }catch(Exception $e){
     cli_error('scripts/base/update: Failed', $e);

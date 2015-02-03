@@ -298,8 +298,7 @@ $_CONFIG['timezone']           = 'America/Mexico_City';                         
 $_CONFIG['title']              = 'Base';                                                                    //
 
 // System configuration
-$_CONFIG['system']             = array('translator'       => 'translator.localhost',                        //
-                                       'updater'          => 'updater.svenoostenbrink.com');                //
+$_CONFIG['system']             = array('translator'       => 'translator.localhost');                       //
 
 // Temporary path location, either "local" (ROOT/tmp/) or "global" (/tmp/)
 $_CONFIG['tmp']                = 'local';                                                                   // Either "local" or "global". "local" will save all temporary files in ROOT/tmp, "global" will save all temporary files in /tmp/PROJECT/
