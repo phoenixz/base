@@ -212,7 +212,8 @@ $_CONFIG['paging']             = array('items_per_page'   => 20,                
                                        'prev_next'        => true,                                          // Show previous - next links
                                        'first_last'       => true,                                          // Show first - last links
                                        'hide_first'       => true,                                          // Hide first number (number 1) in URL, useful for links like all.html, all2.html, etc
-                                       'hide_single'      => true);                                         // Hide pager if there is only a single page
+                                       'hide_single'      => true,                                          // Hide pager if there is only a single page
+                                       'hide_ends'        => true);                                         // Hide the "first" and "last" options
 
 //Password configuration
 $_CONFIG['password']           = array('hash'             => 'sha1',                                        //

@@ -75,9 +75,9 @@ function html_paging($params){
         array_default($params, 'first_last'    , isset_get($_CONFIG['paging']['first_last']));
         array_default($params, 'show_pages'    , $_CONFIG['paging']['show_pages']);
         array_default($params, 'items_per_page', $_CONFIG['paging']['items_per_page']);
-        array_default($params, 'hide_first'    , $_CONFIG['paging']['hide_first']);
         array_default($params, 'hide_single'   , $_CONFIG['paging']['hide_single']);
         array_default($params, 'hide_ends'     , $_CONFIG['paging']['hide_ends']);
+        array_default($params, 'disabled'      , '');
 
         array_key_check($params, 'current,show_pages,count,html,page,url'.($params['prev_next'] ? ',prev,next' : '').($params['first_last'] ? ',first,last' : ''));
 
@@ -87,17 +87,15 @@ function html_paging($params){
         $current    = $params['current'];
         $list       = '';
 
+        if(!$params['hide_ends']){
+            $params['disabled'] = '';
+        }
+
         if(($page_count <= 1) and $params['hide_single']){
             /*
              * There is only one page and we don't want to see a single page pager
              */
             return '';
-        }
-
-        if($params['hide_ends']){
-            if(!isset_get($params['disabled'])){
-                throw new bException('html_paging(): hide_ends set to true, but no "disabled" option specified', 'invalid');
-            }
         }
 
         if(!fmod($params['show_pages'], 2)){
@@ -119,7 +117,7 @@ function html_paging($params){
                 $disabled = $params['disabled'];
             }
 
-            $line_url = str_replace('%page%', ($params['hide_first'] ? '' : 1), $url);
+            $line_url = str_replace('%page%', ($params['hide_ends'] ? '' : 1), $url);
             $list    .= str_replace('%disabled%', $disabled, str_replace('%page%', 1, str_replace('%url%', $line_url, $params['first'])));
         }
 
@@ -134,7 +132,7 @@ function html_paging($params){
                 $disabled = $params['disabled'];
             }
 
-            $line_url = str_replace('%page%', ((($current == 2) and $params['hide_first']) ? '' : $current - 1), $url);
+            $line_url = str_replace('%page%', ((($current == 2) and $params['hide_ends']) ? '' : $current - 1), $url);
             $list    .= str_replace('%disabled%', $disabled, str_replace('%page%', 1, str_replace('%url%', $line_url, $params['prev'])));
         }
 
@@ -151,7 +149,7 @@ function html_paging($params){
         }
 
         for($current; $current <= $page_count; $current++){
-            $line_url = str_replace('%page%', ((($current == 1) and $params['hide_first']) ? '' : $current), $url);
+            $line_url = str_replace('%page%', ((($current == 1) and $params['hide_ends']) ? '' : $current), $url);
             $line     = str_replace('%page%', $current, str_replace('%url%', $line_url, $params['page']));
 
             if($current == $params['current']){
