@@ -15,6 +15,19 @@ load_config('twilio');
 
 
 /*
+ * Configuration tests only to be ran in debug mode
+ */
+if(debug()){
+    foreach($_CONFIG['twilio']['sources'] as $phone => $name){
+        if(!is_numeric($phone)){
+            throw new bException('twilio(): Specified phone number "'.str_log($phone).'" is invalid, it should contain no formatting, no spaces, only numbers');
+        }
+    }
+}
+
+
+
+/*
  * Install twilio using PEAR
  */
 function twilio_install(){
@@ -83,6 +96,31 @@ function twilio_load($accountsid = null, $accountstoken = null, $auto_install = 
 
     }catch(Exception $e){
         throw new bException('twilio_load(): Failed', $e);
+    }
+}
+
+
+
+/*
+ * Return (if possible) a name for the phone
+ */
+function twilio_name_phones($phones){
+    global $_CONFIG;
+
+    try{
+        $phones = ca_clean_phones($phones);
+        $phones = array_force($phones);
+
+        foreach($phones as &$phone){
+            if(isset($_CONFIG['twilio']['sources'][$phone])){
+                $phone = $_CONFIG['twilio']['sources'][$phone];
+            }
+        }
+
+        return str_force($phones, ', ');
+
+    }catch(Exception $e){
+        throw new bException('twilio_name_phones(): Failed', $e);
     }
 }
 ?>
