@@ -16,13 +16,13 @@ try{
     load_libs('twilio');
 
     $twilio = twilio_load();
-    $people = array('+524776701102' => 'Sven Oostenbrink');
+    $people = array('phonenumber' => 'name');
 
     /*
      * Send messages
      */
     foreach ($people as $number => $name) {
-        $sms = $twilio->account->messages->sendMessage('224-757-4076', $number, 'Hey '.$name.', Bring Bananas! Don\'t ask why, you don\'t want to know!');
+        $sms = $twilio->account->messages->sendMessage('twilio_phonenumber', $number, 'Message');
 
         log_console('Sent message to "'.$name.'"', 'SMS');
     }
