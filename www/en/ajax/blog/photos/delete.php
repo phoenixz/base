@@ -4,7 +4,7 @@ include_once(dirname(__FILE__).'/../../../libs/startup.php');
 try{
     load_libs('admin,json,file,upload');
 
-    $user = right_or_redirect('admin', '/admin/signin.php', 'json');
+    $user = rights_or_redirect('admin', '/admin/signin.php', 'json');
 
     if(empty($_POST['id'])){
         throw new bException('ajax/blog/photos/delete: No photo specified', 'notspecified');
@@ -23,7 +23,7 @@ try{
         throw new bException('ajax/blog/photos/delete: Unknown photo_id "'.str_log($_POST['id']).'" specified', 'unknown');
     }
 
-    if(($photo['createdby'] != $_SESSION['user']['id']) and !has_right('god')){
+    if(($photo['createdby'] != $_SESSION['user']['id']) and !has_rights('god')){
         throw new bException('ajax/blog/photos/delete: This photo does not belong to you.', 'accessdenied');
     }
 

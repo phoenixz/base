@@ -38,9 +38,11 @@ try{
         throw new bException('Can not move priority up, it is already at 0', 'invalid');
     }
 
-    sql_query('UPDATE `blogs_photos` SET `priority` = NULL WHERE `id` = :id', array(':id' => $photo['id']));
-    sql_query('UPDATE `blogs_photos` SET `priority` = (`priority` + 1) WHERE `blogs_posts_id` = :blogs_posts_id AND `priority` = :priority', array(':blogs_posts_id' => $photo['blogs_posts_id'], ':priority' => $photo['priority'] - 1));
-    sql_query('UPDATE `blogs_photos` SET `priority` = :priority WHERE `id` = :id', array(':id' => $photo['id'], ':priority' => $photo['priority'] - 1));
+//    sql_query('UPDATE `blogs_photos` SET `priority` = NULL WHERE `id` = :id', array(':id' => $photo['id']));
+    sql_query('START TRANSACTION');
+        sql_query('UPDATE `blogs_photos` SET `priority` = (`priority` + 1) WHERE `blogs_posts_id` = :blogs_posts_id AND `priority` = :priority', array(':blogs_posts_id' => $photo['blogs_posts_id'], ':priority' => $photo['priority'] - 1));
+        sql_query('UPDATE `blogs_photos` SET `priority` = :priority WHERE `id` = :id', array(':id' => $photo['id'], ':priority' => $photo['priority'] - 1));
+    sql_query('COMMIT');
 
 }catch(Exception $e){
     switch($e->getCode()){
