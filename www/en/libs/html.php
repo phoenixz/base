@@ -1018,7 +1018,7 @@ function html_select_body($params, $selected = null, $none = '', $class = '', $a
         array_default($params, 'id_column'  , 'id');
 
         if($params['none']){
-            $retval = '<option'.($params['class'] ? ' class="'.$params['class'].'"' : '').''.(!$params['selected'] ? ' selected' : '').' value="">'.$params['none'].'</option>';
+            $retval = '<option'.($params['class'] ? ' class="'.$params['class'].'"' : '').''.(($params['selected'] === null) ? ' selected' : '').' value="">'.$params['none'].'</option>';
 
         }else{
             $retval = '';
@@ -1039,7 +1039,7 @@ function html_select_body($params, $selected = null, $none = '', $class = '', $a
                  */
                 foreach($params['resource'] as $key => $value){
                     $notempty = true;
-                    $retval  .= '<option'.($params['class'] ? ' class="'.$params['class'].'"' : '').''.(($key == $params['selected']) ? ' selected' : '').' value="'.$key.'">'.$value.'</option>';
+                    $retval  .= '<option'.($params['class'] ? ' class="'.$params['class'].'"' : '').''.((($params['selected'] !== null) and ($key == $params['selected'])) ? ' selected' : '').' value="'.$key.'">'.$value.'</option>';
                 }
 
             }elseif(is_object($params['resource'])){
