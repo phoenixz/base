@@ -123,4 +123,105 @@ function twilio_name_phones($phones){
         throw new bException('twilio_name_phones(): Failed', $e);
     }
 }
+
+
+
+/*
+ *
+ */
+function twilio_get_conversation($phone_local, $phone_remote){
+    try{
+        $conversation = sql_get('SELECT `id`, `last_messages` FROM `conversations` WHERE `phone_remote` = :phone_remote AND `phone_local` = :phone_local', array(':phone_local' => $phone_local, ':phone_remote' => $phone_remote));
+
+        if(!$conversation){
+            /*
+             * This phone combo has no conversation yet, create it now.
+             */
+            sql_query('INSERT INTO `conversations` (`phone_local`, `phone_remote`)
+                       VALUES                      (:phone_local , :phone_remote )',
+
+                       array(':phone_local'  => $phone_local,
+                             ':phone_remote' => $phone_remote));
+
+            $conversation = array('id'            => sql_insert_id(),
+                                  'last_messages' => '');
+        }
+
+        return $conversation;
+
+    }catch(Exception $e){
+        throw new bException('twilio_get_conversation(): Failed', $e);
+    }
+}
+
+
+
+/*
+ * Update the specified conversation with the specified message
+ */
+function twilio_update_conversation($conversation, $direction, $message, $replied){
+    global $_CONFIG;
+
+    try{
+        load_libs('json');
+
+        if(empty($conversation['id'])){
+            throw new bException('twilio_update_conversation(): No conversation id specified', 'notspecified');
+        }
+
+        if(empty($direction)){
+            throw new bException('twilio_update_conversation(): No conversation direction specified', 'notspecified');
+        }
+
+        if(empty($message)){
+            throw new bException('twilio_update_conversation(): No conversation message specified', 'notspecified');
+        }
+
+        if($conversation['last_messages']){
+            $conversation['last_messages'] = json_decode_custom($conversation['last_messages']);
+
+            /*
+             * Ensure the conversation does not pass the max size
+             */
+            if(count($conversation['last_messages']) >= $_CONFIG['twilio']['conversations']['size']){
+                array_pop($conversation['last_messages']);
+            }
+
+        }else{
+            $conversation['last_messages'] = array();
+        }
+
+        array_unshift($conversation['last_messages'], array('direction' => $direction, 'message' => $message));
+
+        $conversation['last_messages'] = json_encode_custom($conversation['last_messages']);
+
+        if($replied){
+            sql_query('UPDATE `conversations`
+
+                       SET    `last_messages` = :last_messages,
+                              `modifiedon`    = NOW(),
+                              `replied`       = NOW();
+
+                       WHERE  `id`            = :id',
+
+                       array(':id'            => $conversation['id'],
+                             ':last_messages' => $conversation['last_messages']));
+
+        }else{
+            sql_query('UPDATE `conversations`
+
+                       SET    `last_messages` = :last_messages,
+                              `modifiedon`    = NOW(),
+                              `replied`       = NULL;
+
+                       WHERE  `id`            = :id',
+
+                       array(':id'            => $conversation['id'],
+                             ':last_messages' => $conversation['last_messages']));
+        }
+
+    }catch(Exception $e){
+        throw new bException('twilio_update_conversation(): Failed', $e);
+    }
+}
 ?>
