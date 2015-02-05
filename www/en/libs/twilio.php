@@ -108,7 +108,7 @@ function twilio_name_phones($phones){
     global $_CONFIG;
 
     try{
-        $phones = ca_clean_phones($phones);
+        $phones = twilio_full_phones($phones);
         $phones = array_force($phones);
 
         foreach($phones as &$phone){
@@ -130,15 +130,34 @@ function twilio_name_phones($phones){
  *
  */
 function twilio_get_conversation($phone_local, $phone_remote){
+    global $_CONFIG;
+
     try{
-        $conversation = sql_get('SELECT `id`, `last_messages` FROM `conversations` WHERE `phone_remote` = :phone_remote AND `phone_local` = :phone_local', array(':phone_local' => $phone_local, ':phone_remote' => $phone_remote));
+        $phone_local  = twilio_full_phones($phone_local);
+        $phone_remote = twilio_full_phones($phone_remote);
+
+        /*
+         * Determine the local and remote phones
+         */
+        if(empty($_CONFIG['twilio']['sources'][$phone_local])){
+            $tmp          = $phone_remote;
+            $phone_remote = $phone_local;
+            $phone_local  = $tmp;
+
+            unset($tmp);
+        }
+
+        /*
+         * Find an existing conversation for the specified phones
+         */
+        $conversation = sql_get('SELECT `id`, `last_messages` FROM `twilio_conversations` WHERE `phone_remote` = :phone_remote AND `phone_local` = :phone_local', array(':phone_local' => $phone_local, ':phone_remote' => $phone_remote));
 
         if(!$conversation){
             /*
              * This phone combo has no conversation yet, create it now.
              */
-            sql_query('INSERT INTO `conversations` (`phone_local`, `phone_remote`)
-                       VALUES                      (:phone_local , :phone_remote )',
+            sql_query('INSERT INTO `twilio_conversations` (`phone_local`, `phone_remote`)
+                       VALUES                             (:phone_local , :phone_remote )',
 
                        array(':phone_local'  => $phone_local,
                              ':phone_remote' => $phone_remote));
@@ -196,11 +215,11 @@ function twilio_update_conversation($conversation, $direction, $message, $replie
         $conversation['last_messages'] = json_encode_custom($conversation['last_messages']);
 
         if($replied){
-            sql_query('UPDATE `conversations`
+            sql_query('UPDATE `twilio_conversations`
 
                        SET    `last_messages` = :last_messages,
                               `modifiedon`    = NOW(),
-                              `replied`       = NOW();
+                              `replied`       = NOW()
 
                        WHERE  `id`            = :id',
 
@@ -208,11 +227,11 @@ function twilio_update_conversation($conversation, $direction, $message, $replie
                              ':last_messages' => $conversation['last_messages']));
 
         }else{
-            sql_query('UPDATE `conversations`
+            sql_query('UPDATE `twilio_conversations`
 
                        SET    `last_messages` = :last_messages,
                               `modifiedon`    = NOW(),
-                              `replied`       = NULL;
+                              `replied`       = NULL
 
                        WHERE  `id`            = :id',
 
@@ -222,6 +241,40 @@ function twilio_update_conversation($conversation, $direction, $message, $replie
 
     }catch(Exception $e){
         throw new bException('twilio_update_conversation(): Failed', $e);
+    }
+}
+
+
+
+/*
+ * Return a phone number that always includes a country code
+ */
+function twilio_full_phones($phones){
+    global $_CONFIG;
+
+    try{
+        $phones = array_force($phones);
+
+        foreach($phones as &$phone){
+            $phone = trim($phone);
+
+            if(substr($phone, 0, 1) == '+'){
+                /*
+                 * Phone has a country code
+                 */
+                continue;
+            }
+
+            /*
+             * Assume this is a US phone, return with +1
+             */
+            $phone = '+'.$_CONFIG['twilio']['defaults']['country_code'].$phone;
+        }
+
+        return str_force($phones, ',');
+
+    }catch(Exception $e){
+        throw new bException('twilio_full_phones(): Failed', $e);
     }
 }
 ?>

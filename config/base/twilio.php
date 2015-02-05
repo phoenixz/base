@@ -4,5 +4,7 @@ $_CONFIG['twilio'] = array('accounts_id'    => null,
 
                            'sources'        => null,
 
-                           'conversations'  => array('size'       => 3));
+                           'conversations'  => array('size'         => 3),
+
+                           'defaults'       => array('country_code' => 1));
 ?>
