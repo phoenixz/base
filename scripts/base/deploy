@@ -581,7 +581,12 @@ try{
             }else{
                 log_screen(($subenvironment ? '('.$subenvironment.') ' : '').'Executing file permission update', 'deploy', 'white');
 
-                passthru($command = 'ssh -t -p '.isset_get($deploy_config['target_port'], 22).' '.$deploy_config['target_user'].'@'.$deploy_config['target_server'].' \''.$deploy_config['target_dir'].'/scripts/base/fixpermissions env '.$target_environment.($subenvironment ? ' subenv '.$subenvironment : '').' nologin \'', $exitcode);
+                if(!empty($deploy_config['rsync_parrallel'])){
+                    passthru($command = 'ssh -t -p '.isset_get($deploy_config['target_port'], 22).' '.$deploy_config['target_user'].'@'.$deploy_config['target_server'].' \''.$deploy_config['target_dir'].'/scripts/base/fixpermissions env '.$target_environment.($subenvironment ? ' subenv '.$subenvironment : '').' nologin target_dir '.$deploy_config['target_dir'].'\' ', $exitcode);
+
+                }else{
+                    passthru($command = 'ssh -t -p '.isset_get($deploy_config['target_port'], 22).' '.$deploy_config['target_user'].'@'.$deploy_config['target_server'].' \''.$deploy_config['target_dir'].'/scripts/base/fixpermissions env '.$target_environment.($subenvironment ? ' subenv '.$subenvironment : '').' nologin \'', $exitcode);
+                }
 
                 if($exitcode){
                     throw new bException('Fixpermissions failed with exit code "'.str_log($exitcode).'"', 'fixpermissions');

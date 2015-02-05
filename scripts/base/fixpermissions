@@ -23,13 +23,13 @@ try{
 
     log_console('Updating project file permissions...', 'deploy', 'white');
 
-    $target = argument('target', true, ENVIRONMENT);
+    $target        = argument('target', true, ENVIRONMENT);
+    $deploy_config = $_CONFIG['deploy'][$target];
+    $target_dir    = argument('target_dir', true, $deploy_config['target_dir']);
 
     if(empty($_CONFIG['deploy'][$target])){
         throw new bException('Specified target environment "'.str_log($target).'" has no deploy configuration $_CONFIG[deploy]['.str_log($target).']', 'missingconfiguration');
     }
-
-    $deploy_config = $_CONFIG['deploy'][$target];
 
     if(empty($deploy_config['user'])){
         throw new bException('No $_CONFIG[deploy]['.str_log($target).'][user] specified', 'missingconfiguration');
@@ -47,7 +47,7 @@ try{
         throw new bException('No $_CONFIG[deploy][file_mode] specified');
     }
 
-    passthru((!empty($deploy_config['sudo']) ? ' sudo' : '').' chown '.$deploy_config['user'].':'.$deploy_config['group'].' '.$deploy_config['target_dir'].' -R;', $exitcode);
+    passthru((!empty($deploy_config['sudo']) ? ' sudo' : '').' chown '.$deploy_config['user'].':'.$deploy_config['group'].' '.$target_dir.' -R;', $exitcode);
 
     if($exitcode){
         throw new bException('Failed to update target directory tree user/group ownership', 'update_ownership');
@@ -55,7 +55,7 @@ try{
 
     log_console('Updated owner:group permissions', '', 'green');
 
-    passthru((!empty($deploy_config['sudo']) ? ' sudo' : '').' find '.$deploy_config['target_dir'].' -type d -exec chmod '.$deploy_config['dir_mode'].' {} \;', $exitcode);
+    passthru((!empty($deploy_config['sudo']) ? ' sudo' : '').' find '.$target_dir.' -type d -exec chmod '.$deploy_config['dir_mode'].' {} \;', $exitcode);
 
     if($exitcode){
         throw new bException('Failed to update target directories mode', 'update_dirmode');
@@ -63,7 +63,7 @@ try{
 
     log_console('Updated directories mode...', '', 'green');
 
-    passthru((!empty($deploy_config['sudo']) ? ' sudo' : '').' find '.$deploy_config['target_dir'].' -type f -exec chmod '.$deploy_config['file_mode'].' {} \;', $exitcode);
+    passthru((!empty($deploy_config['sudo']) ? ' sudo' : '').' find '.$target_dir.' -type f -exec chmod '.$deploy_config['file_mode'].' {} \;', $exitcode);
 
     if($exitcode){
         throw new bException('Failed to update target files mode', 'update_dirmode');
@@ -71,7 +71,7 @@ try{
 
     log_console('Updated files mode...', '', 'green');
 
-    passthru((!empty($deploy_config['sudo']) ? ' sudo' : '').' find '.slash($deploy_config['target_dir']).'scripts -type f -exec chmod 0750 {} \;', $exitcode);
+    passthru((!empty($deploy_config['sudo']) ? ' sudo' : '').' find '.slash($target_dir).'scripts -type f -exec chmod 0750 {} \;', $exitcode);
 
     if($exitcode){
         throw new bException('Failed to update script files mode', 'update_dirmode');
