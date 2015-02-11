@@ -139,11 +139,10 @@ try{
              */
             foreach($rights as $right){
                 if(!sql_get('SELECT `id` FROM `users_rights` WHERE `users_id` = :users_id AND `rights_id` = :rights_id', array(':users_id' => $target_user['id'], ':rights_id' => $right['id']), 'id')){
-                    sql_query('INSERT INTO `users_rights` (`createdby`, `rights_id`, `users_id`, `name`)
-                               VALUES                     (:createdby , :rights_id , :users_id , :name )',
+                    sql_query('INSERT INTO `users_rights` (`rights_id`, `users_id`, `name`)
+                               VALUES                     (:rights_id , :users_id , :name )',
 
-                               array(':createdby' => $_SESSION['user']['id'],
-                                     ':users_id'  => $target_user['id'],
+                               array(':users_id'  => $target_user['id'],
                                      ':rights_id' => $right['id'],
                                      ':name'      => $right['name']));
                 }
