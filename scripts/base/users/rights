@@ -139,10 +139,10 @@ try{
              */
             foreach($rights as $right){
                 if(!sql_get('SELECT `id` FROM `users_rights` WHERE `users_id` = :users_id AND `rights_id` = :rights_id', array(':users_id' => $target_user['id'], ':rights_id' => $right['id']), 'id')){
-                    sql_query('INSERT INTO `users_rights` (`addedby`, `rights_id`, `users_id`, `name`)
-                               VALUES                     (:addedby , :rights_id , :users_id , :name )',
+                    sql_query('INSERT INTO `users_rights` (`createdby`, `rights_id`, `users_id`, `name`)
+                               VALUES                     (:createdby , :rights_id , :users_id , :name )',
 
-                               array(':addedby'   => $_SESSION['user']['id'],
+                               array(':createdby' => $_SESSION['user']['id'],
                                      ':users_id'  => $target_user['id'],
                                      ':rights_id' => $right['id'],
                                      ':name'      => $right['name']));
@@ -210,10 +210,10 @@ try{
                 }
 
 
-                sql_query('INSERT INTO `rights` (`addedby`, `name`, `description`)
-                           VALUES               (:addedby , :name , :description)',
+                sql_query('INSERT INTO `rights` (`createdby`, `name`, `description`)
+                           VALUES               (:createdby , :name , :description)',
 
-                           array(':addedby'    => $user['id'],
+                           array(':createdby'    => $user['id'],
                                  ':name'       => argument(1),
                                  ':description'=> argument(2, '')));
 
