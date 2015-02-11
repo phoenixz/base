@@ -17,3 +17,5 @@ Add support for openstreetmap http://www.openstreetmap.org/#map=5/51.500/-0.100
 Add support for javascript libraries
 http://kineticjs.com/  Cool Canvas library
 http://socketo.me/     HTTP Socket support for PHP, yay!
+
+Add paypal support, either https://github.com/paypal/sdk-core-php (bad?) or https://github.com/paypal/PayPal-PHP-SDK
