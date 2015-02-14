@@ -18,10 +18,15 @@ load_config('twilio');
  * Configuration tests only to be ran in debug mode
  */
 if(debug()){
-    foreach($_CONFIG['twilio']['sources'] as $phone => $name){
-        if(!is_numeric($phone)){
-            throw new bException('twilio(): Specified phone number "'.str_log($phone).'" is invalid, it should contain no formatting, no spaces, only numbers');
+    try{
+        foreach($_CONFIG['twilio']['sources'] as $phone => $name){
+            if(!is_numeric($phone)){
+                throw new bException('twilio(): Specified phone number "'.str_log($phone).'" is invalid, it should contain no formatting, no spaces, only numbers');
+            }
         }
+
+    }catch(Exception $e){
+        throw new bException('twilio(): Library init failed, please check your twilio configuration', $e);
     }
 }
 
