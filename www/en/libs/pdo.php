@@ -859,23 +859,14 @@ function sql_list_cached($key, $query, $column = false, $execute = false, $expir
 /*
  *
  */
-function sql_valid_limit($limit, $std_limit = 50){
+function sql_valid_limit($limit){
     global $_CONFIG;
 
     try{
-        if(!is_numeric($limit) or ($limit < 0) or ($limit > $_CONFIG['db']['limit_max'])){
-            /*
-             * Specified limit is not valid
-             */
-            if(!is_numeric($limit) or ($limit < 0) or ($limit > $_CONFIG['db']['limit_max'])){
-                /*
-                 * Oops, specified standard limit is not valid
-                 */
-// :TODO: Add notification here!
-                return $_CONFIG['db']['limit_max'];
-            }
+        $limit = force_natural_number($limit);
 
-            return $std_limit;
+        if($limit > $_CONFIG['db']['limit_max']){
+            return $_CONFIG['db']['limit_max'];
         }
 
         return $limit;
