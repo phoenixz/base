@@ -39,7 +39,7 @@ function paging_generate($params){
         array_default($params, 'prev_next'     , isset_get($_CONFIG['paging']['prev_next']));
         array_default($params, 'first_last'    , isset_get($_CONFIG['paging']['first_last']));
         array_default($params, 'show_pages'    , $_CONFIG['paging']['show_pages']);
-        array_default($params, 'items_per_page', $_CONFIG['paging']['items_per_page']);
+        array_default($params, 'limit'         , $_CONFIG['paging']['limit']);
         array_default($params, 'hide_single'   , $_CONFIG['paging']['hide_single']);
         array_default($params, 'hide_ends'     , $_CONFIG['paging']['hide_ends']);
         array_default($params, 'disabled'      , '');
@@ -47,7 +47,7 @@ function paging_generate($params){
         array_key_check($params, 'show_pages,count,html,page,url'.($params['prev_next'] ? ',prev,next' : '').($params['first_last'] ? ',first,last' : ''));
 
         $params['current'] = force_natural_number($params['current']);
-        $page_count        = floor($params['count'] / $params['items_per_page']);
+        $page_count        = ceil($params['count'] / $params['limit']);
         $html              = $params['html'];
         $url               = $params['url'];
         $current           = $params['current'];
@@ -172,7 +172,7 @@ function paging_generate($params){
 
         $html = str_replace('%list%', $list, $html);
 
-        return $html;
+        return $html.'<input type="hidden" name="page" id="page" value="'.$current.'">';
 
 // :DELETE: This is the old paging code, which was crap and no longer supported. Delete ASAP
         //if($GLOBALS['page_is_mobile']){
@@ -268,10 +268,18 @@ function paging_check_page($page, $page_max, $default = 1){
     global $_CONFIG;
 
     try{
-        $page = force_natural_number($page, $default);
+        $checked_page = force_natural_number($page, $default);
+
+        if($page and ($checked_page != $page)){
+            html_flash_set(tr('The specified page "%page%" does not exist, showing page "%default%" instead', array('%page%' => $page, '%default%' => $default)), 'warning');
+            redirect(domain(true, 'page=1'));
+//            return $checked_page;
+        }
 
         if($page > $page_max){
-            return $default;
+            html_flash_set(tr('The specified page "%page%" does not exist, showing page "%default%" instead', array('%page%' => $page, '%default%' => $default)), 'warning');
+            redirect(domain(true, 'page=1'));
+//            return $default;
         }
 
         return $page;
@@ -290,17 +298,33 @@ function paging_data($page, $limit, $rows, $default_page = 1){
     global $_CONFIG;
 
     try{
-        $retval['limit'] = paging_limit($limit);
-        $retval['pages'] = floor($rows / $_CONFIG['paging']['items_per_page']);
-        $retval['page']  = paging_check_page($page, $retval['pages'], $default_page);
-        $retval['start'] = force_natural_number($retval['page']) * $retval['limit'];
-        $retval['stop']  = $retval['start'] + $retval['limit'];
-        $retval['count'] = $rows;
+        $retval['default_limit'] = $_CONFIG['paging']['limit'];
+        $retval['limit']         = paging_limit($limit, $retval['default_limit']);
+        $retval['display_limit'] = (($_CONFIG['paging']['limit'] == $retval['limit']) ? '' : $retval['limit']);
+        $retval['pages']         = ceil($rows / $retval['limit']);
+        $retval['page']          = paging_check_page($page, $retval['pages'], $default_page);
+        $retval['count']         = $rows;
+        $retval['start']         = (force_natural_number($retval['page']) - 1) * $retval['limit'] + 1;
+        $retval['stop']          = $retval['start'] + $retval['limit'] - 1;
+
+        if($retval['stop'] > $retval['count']){
+            /*
+             * The stop value overpassed the count by a bit, so we might show "showing entry 305 of 301 entries".. Fix this here
+             */
+            $retval['stop'] = $retval['count'];
+        }
+
+        if($retval['limit']){
+            $retval['query'] = ' LIMIT '.($retval['start'] - 1).', '.$retval['limit'];
+
+        }else{
+            $retval['query'] = '';
+        }
 
         return $retval;
 
     }catch(Exception $e){
-        throw new bException('paging_check(): Failed', $e);
+        throw new bException('paging_data(): Failed', $e);
     }
 }
 
@@ -309,11 +333,11 @@ function paging_data($page, $limit, $rows, $default_page = 1){
 /*
  *
  */
-function paging_limit($limit){
+function paging_limit($limit, $default_limit = null){
     global $_CONFIG;
 
     try{
-        return sql_valid_limit(not_empty($limit, $_CONFIG['paging']['items_per_page']));
+        return sql_valid_limit(not_empty($limit, $default_limit, $_CONFIG['paging']['limit']));
 
     }catch(Exception $e){
         throw new bException('paging_limit(): Failed', $e);

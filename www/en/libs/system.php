@@ -1299,9 +1299,14 @@ function system_date_format($date, $format = 'human_datetime'){
         return $date->format($format);
 
     }catch(Exception $e){
+        if(empty($_CONFIG['formats'][$format]) and ($format != 'mysql')){
+            throw new bException('system_date_format(): Specified format "'.str_log($format).'" does not exist', $e);
+        }
+
         throw new bException('system_date_format(): Failed', $e);
     }
 }
+
 
 
 /*

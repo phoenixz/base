@@ -207,7 +207,7 @@ $_CONFIG['notifications']      = array('force'            => false,
                                                                    'prowl'         => array('enabled' => false)));
 
 // Paging configuration
-$_CONFIG['paging']             = array('items_per_page'   => 20,                                            // The maximum amount of items shown per page
+$_CONFIG['paging']             = array('limit'            => 20,                                            // The maximum amount of items shown per page
                                        'show_pages'       => 5,                                             // The maximum amount of pages show, should always be an odd number, or an exception will be thrown!
                                        'prev_next'        => true,                                          // Show previous - next links
                                        'first_last'       => true,                                          // Show first - last links
