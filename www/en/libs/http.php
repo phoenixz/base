@@ -17,14 +17,10 @@ if(PLATFORM != 'apache'){
 /*
  * Return complete current domain with HTTP and all
  */
-function current_domain($current_url = false, $protocol = null){
+function current_domain($current_url = false, $query = null){
     global $_CONFIG;
 
     try{
-        if(!$protocol){
-            $protocol = $_CONFIG['protocol'];
-        }
-
         if(empty($_SERVER['SERVER_NAME'])){
             $server_name = $_CONFIG['domain'];
 
@@ -32,16 +28,22 @@ function current_domain($current_url = false, $protocol = null){
             $server_name = $_SERVER['SERVER_NAME'];
         }
 
-
         if(!$current_url){
-            return $protocol.$server_name.$_CONFIG['root'];
+            $retval = $_CONFIG['protocol'].$server_name.$_CONFIG['root'];
+
+        }elseif($current_url === true){
+            $retval = $_CONFIG['protocol'].$server_name.$_SERVER['REQUEST_URI'];
+
+        }else{
+            $retval = $_CONFIG['protocol'].$server_name.$_CONFIG['root'].str_starts($current_url, '/');
         }
 
-        if($current_url === true){
-            return $protocol.$server_name.$_SERVER['REQUEST_URI'];
+        if($query){
+            load_libs('inet');
+            $retval = url_add_query($retval, $query);
         }
 
-        return $protocol.$server_name.$_CONFIG['root'].str_starts($current_url, '/');
+        return $retval;
 
     }catch(Exception $e){
         throw new bException('current_domain(): Failed', $e);
