@@ -791,23 +791,26 @@ function password($password, $algorithm = 'sha1'){
 /*
  * Return complete domain with HTTP and all
  */
-function domain($current_url = false, $protocol = null){
+function domain($current_url = false, $query = null){
     global $_CONFIG;
 
     try{
-        if(!$protocol){
-            $protocol = $_CONFIG['protocol'];
-        }
-
         if(!$current_url){
-            return $protocol.$_CONFIG['domain'].$_CONFIG['root'];
+            $retval = $_CONFIG['protocol'].$_CONFIG['domain'].$_CONFIG['root'];
+
+        }elseif($current_url === true){
+            $retval = $_CONFIG['protocol'].$_CONFIG['domain'].$_SERVER['REQUEST_URI'];
+
+        }else{
+            $retval = $_CONFIG['protocol'].$_CONFIG['domain'].$_CONFIG['root'].str_starts($current_url, '/');
         }
 
-        if($current_url === true){
-            return $protocol.$_CONFIG['domain'].$_SERVER['REQUEST_URI'];
+        if($query){
+            load_libs('inet');
+            $retval = url_add_query($retval, $query);
         }
 
-        return $protocol.$_CONFIG['domain'].$_CONFIG['root'].str_starts($current_url, '/');
+        return $retval;
 
     }catch(Exception $e){
         throw new bException('domain(): Failed', $e);
@@ -1299,4 +1302,25 @@ function system_date_format($date, $format = 'human_datetime'){
         throw new bException('system_date_format(): Failed', $e);
     }
 }
+
+
+/*
+ *
+ */
+function force_natural_number($number, $default = 1){
+    if(!is_numeric($number)){
+        return $default;
+    }
+
+    if($number < 1){
+        return $default;
+    }
+
+    if(!is_int($number)){
+        return round($number);
+    }
+
+    return $number;
+}
+
 ?>
