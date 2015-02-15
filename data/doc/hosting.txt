@@ -41,3 +41,6 @@ servercrate.com
 
 CHEAP (From knownhost, but unmanaged):
 http://www.rocketvps.com/vps.html
+
+CHEAP DEDICATED
+http://www.xlhost.com/
