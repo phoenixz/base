@@ -106,7 +106,10 @@ $_CONFIG['db']                 = array('driver'           => 'mysql',           
                                        'charset'          => 'utf8',                                        // Default character set for all database tables
                                        'collate'          => 'utf8_general_ci',                             // Default collate set for all database tables
                                        'limit_max'        => 10000,                                         // Standard SQL allowed LIMIT specified in table displays, for example, to avoid displaying a table with a milion entries, for example
-                                       'mode'             => 'PIPES_AS_CONCAT,IGNORE_SPACE,NO_KEY_OPTIONS,NO_TABLE_OPTIONS,NO_FIELD_OPTIONS',                                 // Special options for SQL server
+                                       'mode'             => 'PIPES_AS_CONCAT,IGNORE_SPACE,NO_KEY_OPTIONS,NO_TABLE_OPTIONS,NO_FIELD_OPTIONS',   // Special mode options for MySQL server
+                                       'pdo_attributes'   => array(),                                       // Special PDO otions. By default, try to use MySQLND with PDO::ATTR_EMULATE_PREPARES to avoid internal data type changes from int > string!
+                                       //'pdo_attributes'   => array(PDO::ATTR_EMULATE_PREPARES  => false,    // Special PDO otions. By default, try to use MySQLND with PDO::ATTR_EMULATE_PREPARES to avoid internal data type changes from int > string!
+                                       //                            PDO::ATTR_STRINGIFY_FETCHES => false, ),
                                        'timezone'         => 'America/Mexico_City');                        // Default timezone to use
 
 //domain

@@ -384,8 +384,13 @@ function sql_connect($connector) {
          * Connect!
          */
         try{
-            $pdo = new PDO($connector['driver'].':;host='.$connector['host'], $connector['user'], $connector['pass']);
-            $pdo->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
+            $connector['pdo_attributes'][PDO::ATTR_ERRMODE] = PDO::ERRMODE_EXCEPTION;
+
+            if(!empty($connector['buffered'])){
+                $connector['pdo_attributes'][PDO::MYSQL_ATTR_USE_BUFFERED_QUERY] = true;
+            }
+
+            $pdo = new PDO($connector['driver'].':;host='.$connector['host'].';dbname='.$connector['db'], $connector['user'], $connector['pass'], $connector['pdo_attributes']);
 
         }catch(Exception $e){
             if($e->getMessage() == 'could not find driver'){
@@ -395,35 +400,34 @@ function sql_connect($connector) {
             throw new bException('sql_connect(): Failed to create PDO SQL object', $e);
         }
 
-        if(!empty($connector['buffered'])){
-            $pdo->setAttribute(PDO::MYSQL_ATTR_USE_BUFFERED_QUERY, true);
-        }
-
-        /*
-         * Try to use the database. If it doesnt exist, then create it now
-         */
-        try{
-            if(!empty($connector['db'])){
-                $pdo->query('USE '.$connector['db']);
-            }
-
-        }catch(Exception $e){
-            /*
-             * IMPORTANT!
-             * This pdo_error handler is RETURNED because
-             * if running init and database is not found,
-             * it will recursive retry and return the PDO SQL to sql_init()!
-             *
-             * Do NOT change this behaviour!
-             */
-            try{
-                load_libs('pdo_error');
-                return pdo_error($e, $connector, null, $pdo);
-
-            }catch(Exception $e){
-                throw new bException('sql_connect(): Failed', $e);
-            }
-        }
+// :TODO: Remove this code, since the databasename to use is set in the connection string
+//        /*
+//         * Try to use the database. If it doesnt exist, then create it now
+//         */
+//        try{
+//            if(!empty($connector['db'])){
+////                $pdo->query('USE '.$connector['db']);
+//            }
+//
+//        }catch(Exception $e){
+//show(debug_trace());
+//showdie($e);
+//            /*
+//             * IMPORTANT!
+//             * This pdo_error handler is RETURNED because
+//             * if running init and database is not found,
+//             * it will recursive retry and return the PDO SQL to sql_init()!
+//             *
+//             * Do NOT change this behaviour!
+//             */
+//            try{
+//                load_libs('pdo_error');
+//                return pdo_error($e, $connector, null, $pdo);
+//
+//            }catch(Exception $e){
+//                throw new bException('sql_connect(): Failed', $e);
+//            }
+//        }
 
         /*
          * Ensure correct character set and timezone usage
