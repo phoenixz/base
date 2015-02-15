@@ -293,6 +293,7 @@ try{
         }
 
 
+
         /*
          * Do a PHP syntax check on the entire project
          */
@@ -335,6 +336,7 @@ try{
         }
 
 
+
         /*
          * Do a project version revision upgrade
          */
@@ -364,6 +366,8 @@ try{
 
         }
 
+
+
         /*
          * Do system tag with the new version
          */
@@ -381,6 +385,7 @@ try{
 
             init_hook('deploy_post_tag', $nohooks);
         }
+
 
 
         /*
@@ -402,6 +407,7 @@ try{
         }
 
 
+
         /*
          * If versoin was upgraded, execute an init to avoid leaving the dev site inoperable
          */
@@ -413,6 +419,7 @@ try{
                 throw new bException('System init failed with exit code "'.str_log($exitcode).'"', 'local_init');
             }
         }
+
 
 
         /*
@@ -447,6 +454,7 @@ try{
                     }
                 }
             }
+
 
 
             /*
@@ -563,6 +571,7 @@ try{
 
                 log_screen(($subenvironment ? '('.$subenvironment.') ' : '').'Deploying project to target server "'.$deploy_config['target_server'].'" on path "'.$deploy_config['target_dir'].'"...', 'deploy', 'white');
                 passthru('rsync -acz --progress -p --delete '.($deploy_config['sudo'] ? '--rsync-path="sudo rsync" ' : '').'-e "ssh -p '.$deploy_config['target_port'].'" '.ROOT.' '.$deploy_config['target_user'].'@'.$deploy_config['target_server'].':'.$deploy_config['target_dir'].' '.$exclude, $exitcode);
+                exec('ssh -t -p '.isset_get($deploy_config['target_port'], 22).' '.$deploy_config['target_user'].'@'.$deploy_config['target_server'].' \'touch '.$deploy_config['target_dir'].'/data/.last_deploy\'', $contentoutput, $return);
 
                 if($exitcode){
                     throw new bException('Rsync failed with exit code "'.str_log($exitcode).'"', 'rsync');
@@ -570,6 +579,7 @@ try{
 
                 init_hook('deploy_post_deploy', $nohooks);
             }
+
 
 
             /*
@@ -639,6 +649,7 @@ try{
             }
 
 
+
             /*
              * Auto rebuild the sitemap?
              */
@@ -676,6 +687,7 @@ try{
 
                 init_hook('deploy_post_sitemap', $nohooks);
             }
+
 
 
             /*
