@@ -25,6 +25,9 @@
  * nopush                     - Do not automatically git push all changes and
  *                              tags
  *
+ * noparrallel                - Do not use parrallel rsync deploy, even if the
+ *                              website is configured to do so anyway
+ *
  * nositemap                  - Do not automatically reupdate the sitemap files
  *
  * notag / notags             - Do not tag current version (tagging is
@@ -409,45 +412,57 @@ try{
 
 
         /*
-         * If versoin was upgraded, execute an init to avoid leaving the dev site inoperable
-         */
-        if(!$noversion){
-            log_console('Project version revision was updated, executing init to update project database', 'deploy', 'white');
-            passthru(ROOT.'script/base/init env '.$target_environment.($subenvironment ? ' subenv '.$subenvironment : ''), $exitcode);
-
-            if($exitcode){
-                throw new bException('System init failed with exit code "'.str_log($exitcode).'"', 'local_init');
-            }
-        }
-
-
-
-        /*
          * Now go over all environments and translate and deploy
          */
         foreach($subenvironments as $subenvironment){
+            if($subenvironment){
+                $display_subenvironment = '('.$subenvironment.') ';
+                $subenv_subenvironment  = ' subenv '.$subenvironment;
+
+            }else{
+                $display_subenvironment = '';
+                $subenv_subenvironment  = '';
+            }
+
+
+
             /*
              * Load environment specific configuration and override current config
              */
             deploy_update_config($subenvironment);
 
-            log_screen(($subenvironment ? '('.$subenvironment.') ' : '').'Starting deploy '.($subenvironment ? 'for subenvironment "'.$subenvironment.'" ' : '').'on "'.date('d M Y h:i').'"', 'deploy', 'white');
+            log_screen($display_subenvironment.'Starting deploy '.($subenvironment ? 'for subenvironment "'.$subenvironment.'" ' : '').'on "'.date('d M Y h:i').'"', 'deploy', 'white');
 
             init_hook('deploy_pre_deploy', $nohooks);
+
+
+
+            /*
+             * If version was upgraded, execute an init to avoid leaving the dev site inoperable
+             */
+            if(!$noversion){
+                log_console('Project version revision was updated, executing init to update project database', 'deploy', 'white');
+                passthru(ROOT.'script/base/init env '.$target_environment.$subenv_subenvironment, $exitcode);
+
+                if($exitcode){
+                    throw new bException('System init failed with exit code "'.str_log($exitcode).'"', 'local_init');
+                }
+            }
+
 
 
             /*
              * Do code translation
              */
             if(argument('notranslate')){
-                log_screen(($subenvironment ? '('.$subenvironment.') ' : '').'Skipping translations due to "notranslate" option', 'deploy', 'yellow');
+                log_screen($display_subenvironment.'Skipping translations due to "notranslate" option', 'deploy', 'yellow');
 
             }else{
-                log_screen(($subenvironment ? '('.$subenvironment.') ' : '').'Executing translations', 'deploy', 'white');
+                log_screen($display_subenvironment.'Executing translations', 'deploy', 'white');
 
                 if(count($deploy_config['languages'])) {
                     foreach($deploy_config['languages'] as $language) {
-                        log_screen(($subenvironment ? '('.$subenvironment.') ' : '').'Translating to '.$language, 'deploy', 'white');
+                        log_screen($display_subenvironment.'Translating to '.$language, 'deploy', 'white');
                         script_exec('base/translate', array($language));
 
                         init_hook('deploy_post_translation', $nohooks);
@@ -461,10 +476,10 @@ try{
              * Do project BOM check
              */
             if(argument('nobomcheck')){
-                log_screen(($subenvironment ? '('.$subenvironment.') ' : '').'Skipping BOM check due to "nobomcheck" option', 'deploy', 'yellow');
+                log_screen($display_subenvironment.'Skipping BOM check due to "nobomcheck" option', 'deploy', 'yellow');
 
             }else{
-                log_screen(($subenvironment ? '('.$subenvironment.') ' : '').'Executing BOM check', 'deploy', 'white');
+                log_screen($display_subenvironment.'Executing BOM check', 'deploy', 'white');
                 script_exec('base/clearbom', 'quiet');
             }
 
@@ -473,10 +488,10 @@ try{
              * Do a content file check on the entire project
              */
             if($nocontent){
-                log_screen(($subenvironment ? '('.$subenvironment.') ' : '').'Skipping content file check due to "nocontent" command line parameter', 'deploy', 'yellow');
+                log_screen($display_subenvironment.'Skipping content file check due to "nocontent" command line parameter', 'deploy', 'yellow');
 
             }else{
-                log_screen(($subenvironment ? '('.$subenvironment.') ' : '').'Executing content file check', 'deploy', 'white');
+                log_screen($display_subenvironment.'Executing content file check', 'deploy', 'white');
 
                 exec('grep load_content  www scripts -R', $output);
 
@@ -536,12 +551,17 @@ try{
             /*
              * In case of rsync_parrallel option, copy the target dir and use the copy for the rsync and file permissions update
              */
+            if(argument('noparrallel')){
+                log_console($display_subenvironment.'Deploying in non rsync parrallel mode due to "noparrallel" option', 'yellow');
+                $deploy_config['rsync_parrallel'] = false;
+            }
+
             if(!empty($deploy_config['rsync_parrallel'])){
                 /*
                  * Make a copy on the server, rsync that copy, then move that copy in place of the current version. This will cause less down time due to version differences
                  */
-                log_screen(($subenvironment ? '('.$subenvironment.') ' : '').'Deploying in rsync to parrallel mode...', 'deploy', 'white');
-                log_screen(($subenvironment ? '('.$subenvironment.') ' : '').'Creating copy of current version...', 'deploy', 'white');
+                log_screen($display_subenvironment.'Deploying in rsync to parrallel mode...', 'deploy', 'white');
+                log_screen($display_subenvironment.'Creating copy of current version...', 'deploy', 'white');
 
                 passthru('ssh -t -p '.isset_get($deploy_config['target_port'], 22).' '.$deploy_config['target_user'].'@'.$deploy_config['target_server'].' \''.($deploy_config['sudo'] ? 'sudo ' : '').'rm '.$deploy_config['target_dir'].'~ -rf; '.($deploy_config['sudo'] ? 'sudo ' : '').'cp -a '.$deploy_config['target_dir'].' '.$deploy_config['target_dir'].'~\'', $exitcode);
 
@@ -558,7 +578,7 @@ try{
              * Do the deploy
              */
             if($nodeploy){
-                log_screen(($subenvironment ? '('.$subenvironment.') ' : '').'NOT deploying, due to "nodeploy" or "test" command line parameter', 'deploy', 'yellow');
+                log_screen($display_subenvironment.'NOT deploying, due to "nodeploy" or "test" command line parameter', 'deploy', 'yellow');
 
             }else{
                 $exclude = ' --exclude="www/en/sitemap.html*" --exclude="www/en/sitemap.xml*" --exclude="www/en/mock" --exclude="data/mocks" --exclude="data/mock" --exclude="data/uploads" ';
@@ -569,7 +589,7 @@ try{
                     }
                 }
 
-                log_screen(($subenvironment ? '('.$subenvironment.') ' : '').'Deploying project to target server "'.$deploy_config['target_server'].'" on path "'.$deploy_config['target_dir'].'"...', 'deploy', 'white');
+                log_screen($display_subenvironment.'Deploying project to target server "'.$deploy_config['target_server'].'" on path "'.$deploy_config['target_dir'].'"...', 'deploy', 'white');
                 passthru('rsync -acz --progress -p --delete '.($deploy_config['sudo'] ? '--rsync-path="sudo rsync" ' : '').'-e "ssh -p '.$deploy_config['target_port'].'" '.ROOT.' '.$deploy_config['target_user'].'@'.$deploy_config['target_server'].':'.$deploy_config['target_dir'].' '.$exclude, $exitcode);
                 exec('ssh -t -p '.isset_get($deploy_config['target_port'], 22).' '.$deploy_config['target_user'].'@'.$deploy_config['target_server'].' \'touch '.$deploy_config['target_dir'].'/data/.last_deploy\'', $contentoutput, $return);
 
@@ -586,16 +606,16 @@ try{
              * Fix permissions
              */
             if($nofixperms){
-                log_screen(($subenvironment ? '('.$subenvironment.') ' : '').'Skipping file permission update due to "nofixpermissions" command line parameter', 'deploy', 'yellow');
+                log_screen($display_subenvironment.'Skipping file permission update due to "nofixpermissions" command line parameter', 'deploy', 'yellow');
 
             }else{
-                log_screen(($subenvironment ? '('.$subenvironment.') ' : '').'Executing file permission update', 'deploy', 'white');
+                log_screen($display_subenvironment.'Executing file permission update', 'deploy', 'white');
 
                 if(!empty($deploy_config['rsync_parrallel'])){
-                    passthru($command = 'ssh -t -p '.isset_get($deploy_config['target_port'], 22).' '.$deploy_config['target_user'].'@'.$deploy_config['target_server'].' \''.$deploy_config['target_dir'].'/scripts/base/fixpermissions env '.$target_environment.($subenvironment ? ' subenv '.$subenvironment : '').' nologin target_dir '.$deploy_config['target_dir'].'\' ', $exitcode);
+                    passthru($command = 'ssh -t -p '.isset_get($deploy_config['target_port'], 22).' '.$deploy_config['target_user'].'@'.$deploy_config['target_server'].' \''.$deploy_config['target_dir'].'/scripts/base/fixpermissions env '.$target_environment.$subenv_subenvironment.' nologin target_dir '.$deploy_config['target_dir'].'\' ', $exitcode);
 
                 }else{
-                    passthru($command = 'ssh -t -p '.isset_get($deploy_config['target_port'], 22).' '.$deploy_config['target_user'].'@'.$deploy_config['target_server'].' \''.$deploy_config['target_dir'].'/scripts/base/fixpermissions env '.$target_environment.($subenvironment ? ' subenv '.$subenvironment : '').' nologin \'', $exitcode);
+                    passthru($command = 'ssh -t -p '.isset_get($deploy_config['target_port'], 22).' '.$deploy_config['target_user'].'@'.$deploy_config['target_server'].' \''.$deploy_config['target_dir'].'/scripts/base/fixpermissions env '.$target_environment.$subenv_subenvironment.' nologin \'', $exitcode);
                 }
 
                 if($exitcode){
@@ -613,14 +633,14 @@ try{
             if(!empty($deploy_config['rsync_parrallel'])){
                 $deploy_config['target_dir'] = substr($deploy_config['target_dir'], 0, -1);
 
-                log_screen(($subenvironment ? '('.$subenvironment.') ' : '').'Moving new version in place...', 'deploy', 'white');
+                log_screen($display_subenvironment.'Moving new version in place...', 'deploy', 'white');
                 passthru('ssh -t -p '.isset_get($deploy_config['target_port'], 22).' '.$deploy_config['target_user'].'@'.$deploy_config['target_server'].' \''.($deploy_config['sudo'] ? 'sudo ' : '').'mv '.$deploy_config['target_dir'].' '.$deploy_config['target_dir'].'~deploy; '.($deploy_config['sudo'] ? 'sudo ' : '').'mv '.$deploy_config['target_dir'].'~ '.$deploy_config['target_dir'].'\'', $exitcode);
 
                 if($exitcode){
                     throw new bException('Moving new version in place failed with exit code "'.str_log($exitcode).'"', 'rsync_parrallel_move');
                 }
 
-                log_screen(($subenvironment ? '('.$subenvironment.') ' : '').'Deleting old version...', 'deploy', 'white');
+                log_screen($display_subenvironment.'Deleting old version...', 'deploy', 'white');
                 passthru('ssh -t -p '.isset_get($deploy_config['target_port'], 22).' '.$deploy_config['target_user'].'@'.$deploy_config['target_server'].' \''.($deploy_config['sudo'] ? 'sudo ' : '').'rm '.$deploy_config['target_dir'].'~deploy -rf\'', $exitcode);
 
                 if($exitcode){
@@ -634,12 +654,12 @@ try{
              * Execute init on target
              */
             if($noinit){
-                log_screen(($subenvironment ? '('.$subenvironment.') ' : '').'Skipping target init due to "noinit" command line parameter', 'deploy', 'yellow');
+                log_screen($display_subenvironment.'Skipping target init due to "noinit" command line parameter', 'deploy', 'yellow');
 
             }else{
-                log_screen(($subenvironment ? '('.$subenvironment.') ' : '').'Executing init on target server', 'deploy', 'white');
+                log_screen($display_subenvironment.'Executing init on target server', 'deploy', 'white');
 
-                passthru($command = 'ssh -t -p '.isset_get($deploy_config['target_port'], 22).' '.$deploy_config['target_user'].'@'.$deploy_config['target_server'].' \''.$deploy_config['target_dir'].'/scripts/base/init env '.$target_environment.($subenvironment ? ' subenv '.$subenvironment : '').' \'', $exitcode);
+                passthru($command = 'ssh -t -p '.isset_get($deploy_config['target_port'], 22).' '.$deploy_config['target_user'].'@'.$deploy_config['target_server'].' \''.$deploy_config['target_dir'].'/scripts/base/init env '.$target_environment.$subenv_subenvironment.' \'', $exitcode);
 
                 if($exitcode){
                     throw new bException('Target version init failed with exit code "'.str_log($exitcode).'"', 'target_init');
@@ -654,31 +674,31 @@ try{
              * Auto rebuild the sitemap?
              */
             if($nositemap){
-                log_screen(($subenvironment ? '('.$subenvironment.') ' : '').'Skipping auto sitemap deploy due to "nositemap" command line parameter', 'deploy', 'yellow');
+                log_screen($display_subenvironment.'Skipping auto sitemap deploy due to "nositemap" command line parameter', 'deploy', 'yellow');
 
             }else{
-                log_screen(($subenvironment ? '('.$subenvironment.') ' : '').'Executing sitemap scan and deploy on target server', 'deploy', 'white');
+                log_screen($display_subenvironment.'Executing sitemap scan and deploy on target server', 'deploy', 'white');
 
-                passthru($command = 'ssh -t -p '.isset_get($deploy_config['target_port'], 22).' '.$deploy_config['target_user'].'@'.$deploy_config['target_server'].' \''.$deploy_config['target_dir'].'/scripts/base/sitemap scan env '.$target_environment.($subenvironment ? ' subenv '.$subenvironment : '').' \'', $exitcode);
+                passthru($command = 'ssh -t -p '.isset_get($deploy_config['target_port'], 22).' '.$deploy_config['target_user'].'@'.$deploy_config['target_server'].' \''.$deploy_config['target_dir'].'/scripts/base/sitemap scan env '.$target_environment.$subenv_subenvironment.' \'', $exitcode);
 
                 if($exitcode){
                     throw new bException('Target sitemap scan failed with exit code "'.str_log($exitcode).'"', 'target_sitemap_scan');
                 }
 
                 foreach($deploy_config['languages'] as $language){
-                    passthru($command = 'ssh -t -p '.isset_get($deploy_config['target_port'], 22).' '.$deploy_config['target_user'].'@'.$deploy_config['target_server'].' \''.$deploy_config['target_dir'].'/scripts/base/sitemap deploy   html '.$language.' env '.$target_environment.($subenvironment ? ' subenv '.$subenvironment : '').' \'', $exitcode);
+                    passthru($command = 'ssh -t -p '.isset_get($deploy_config['target_port'], 22).' '.$deploy_config['target_user'].'@'.$deploy_config['target_server'].' \''.$deploy_config['target_dir'].'/scripts/base/sitemap deploy   html '.$language.' env '.$target_environment.$subenv_subenvironment.' \'', $exitcode);
 
                     if($exitcode){
                         throw new bException('Target sitemap HTML build failed with exit code "'.str_log($exitcode).'"', 'target_sitemap_html');
                     }
 
-                    passthru($command = 'ssh -t -p '.isset_get($deploy_config['target_port'], 22).' '.$deploy_config['target_user'].'@'.$deploy_config['target_server'].' \''.$deploy_config['target_dir'].'/scripts/base/sitemap deploy    xml '.$language.' env '.$target_environment.($subenvironment ? ' subenv '.$subenvironment : '').' \'', $exitcode);
+                    passthru($command = 'ssh -t -p '.isset_get($deploy_config['target_port'], 22).' '.$deploy_config['target_user'].'@'.$deploy_config['target_server'].' \''.$deploy_config['target_dir'].'/scripts/base/sitemap deploy    xml '.$language.' env '.$target_environment.$subenv_subenvironment.' \'', $exitcode);
 
                     if($exitcode){
                         throw new bException('Target sitemap XML build failed with exit code "'.str_log($exitcode).'"', 'target_sitemap_xml');
                     }
 
-                    passthru($command = 'ssh -t -p '.isset_get($deploy_config['target_port'], 22).' '.$deploy_config['target_user'].'@'.$deploy_config['target_server'].' \''.$deploy_config['target_dir'].'/scripts/base/sitemap deploy robots '.$language.' env '.$target_environment.($subenvironment ? ' subenv '.$subenvironment : '').' \'', $exitcode);
+                    passthru($command = 'ssh -t -p '.isset_get($deploy_config['target_port'], 22).' '.$deploy_config['target_user'].'@'.$deploy_config['target_server'].' \''.$deploy_config['target_dir'].'/scripts/base/sitemap deploy robots '.$language.' env '.$target_environment.$subenv_subenvironment.' \'', $exitcode);
 
                     if($exitcode){
                         throw new bException('Target sitemap robots build failed with exit code "'.str_log($exitcode).'"', 'target_sitemap_robots');
@@ -694,10 +714,10 @@ try{
              * Send notifications
              */
             if(argument('nonotify')){
-                log_screen(($subenvironment ? '('.$subenvironment.') ' : '').'Skipping deploy notifications due to "nonotify" command line parameter', 'deploy', 'yellow');
+                log_screen($display_subenvironment.'Skipping deploy notifications due to "nonotify" command line parameter', 'deploy', 'yellow');
 
             }else{
-                log_screen(($subenvironment ? '('.$subenvironment.') ' : '').'Executing deploy notifications', 'deploy', 'white');
+                log_screen($display_subenvironment.'Executing deploy notifications', 'deploy', 'white');
 
                 notify('deploy', 'Deployed project "'.PROJECT.'" subenvironment "'.str_log($subenvironment).'" and languages "'.str_log(implode(', ', $deploy_config['languages'])).'"', null, $subenvironment);
                 init_hook('deploy_post_notify', $nohooks);
@@ -713,10 +733,10 @@ try{
              * Done!
              */
             if($subenvironment){
-                log_screen(($subenvironment ? '('.$subenvironment.') ' : '').'Finished deploy for project "'.strtolower(PROJECT).'" subenvironment "'.$subenvironment.'"', 'deploy', 'white');
+                log_screen($display_subenvironment.'Finished deploy for project "'.strtolower(PROJECT).'" subenvironment "'.$subenvironment.'"', 'deploy', 'white');
 
             }else{
-                log_screen(($subenvironment ? '('.$subenvironment.') ' : '').'Finished deploy for project "'.strtolower(PROJECT).'"', 'deploy', 'white');
+                log_screen($display_subenvironment.'Finished deploy for project "'.strtolower(PROJECT).'"', 'deploy', 'white');
             }
 
             init_hook('deploy_post_deploy', $nohooks);
