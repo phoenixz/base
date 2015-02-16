@@ -392,7 +392,7 @@ function blogs_validate_post($post, $params = null){
         }
 
         if(!$v->isValid()) {
-           throw new bException(str_force($v->get_errors(), ', '), 'validation');
+           throw new bException(str_force($v->getErrors(), ', '), 'validation');
         }
 
         return $post;
