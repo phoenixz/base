@@ -13,15 +13,36 @@
 /*
  * Return the next key right after specified $key
  */
-function array_next($array, $currentkey){
-    foreach($array as $key => $value){
-        if(isset($next)){
-            return $key;
+function array_next_key(&$array, $currentkey, $delete = false){
+    try{
+        foreach($array as $key => $value){
+            if(isset($next)){
+                if($delete){
+                    unset($array[$key]);
+                }
+
+                return $key;
+            }
+
+            if($key === $currentkey){
+                if($delete){
+                    unset($array[$key]);
+                }
+
+                $next = true;
+            }
         }
 
-        if($key === $currentkey){
-            $next = true;
+
+        if(!empty($next)){
+            /*
+             * The currentvalue was found, but it was at the end of the array
+             */
+            throw new bException('array_next_key(): Found currentkey "'.str_log($currentvalue).'" but it was the last item in the array, there is no next', '');
         }
+
+    }catch(Exception $e){
+        throw new bException('array_next_key(): Failed', $e);
     }
 }
 
@@ -32,22 +53,35 @@ function array_next($array, $currentkey){
  *
  * If the specified key is not found, $currentvalue will be returned.
  */
-function array_next_value(&$array, $currentvalue){
-    foreach($array as $key => $value){
-        if(isset($next)){
-            return $value;
+function array_next_value(&$array, $currentvalue, $delete = false){
+    try{
+        foreach($array as $key => $value){
+            if(isset($next)){
+                if($delete){
+                    unset($array[$key]);
+                }
+
+                return $value;
+            }
+
+            if($value === $currentvalue){
+                if($delete){
+                    unset($array[$key]);
+                }
+
+                $next = true;
+            }
         }
 
-        if($value === $currentvalue){
-            $next = true;
+        if(!empty($next)){
+            /*
+             * The currentvalue was found, but it was at the end of the array
+             */
+            throw new bException('array_next_value(): Found currentvalue "'.str_log($currentvalue).'" but it was the last item in the array, there is no next', 'invalid');
         }
-    }
 
-    if(!empty($next)){
-        /*
-         * The currentvalue was found, but it was at the end of the array
-         */
-        throw new bException('array_next_value(): Found currentvalue "'.str_log($currentvalue).'" but it was the last item in the array, there is no next', 'invalid');
+    }catch(Exception $e){
+        throw new bException('array_next_value(): Failed', $e);
     }
 }
 
@@ -103,8 +137,13 @@ function array_key_check($source, $keys){
  * Make sure the array is cleared, but with specified keys available
  */
 function array_clear(&$array, $keys, $value = null){
-    $array = array();
-    return array_ensure($array, $keys, $value);
+    try{
+        $array = array();
+        return array_ensure($array, $keys, $value);
+
+    }catch(Exception $e){
+        throw new bException('array_clear(): Failed', $e);
+    }
 }
 
 
@@ -113,25 +152,30 @@ function array_clear(&$array, $keys, $value = null){
  * Make sure the specified keys are available on the array
  */
 function array_ensure(&$array, $keys, $value = null){
-    if(!is_array($array)){
-        $array = array();
-    }
-
-    if(!is_array($keys)){
-        if(!is_string($keys)){
-            throw new bException('array_ensure(): Invalid $keys specified. Should be either a numeric array or a CSV string');
+    try{
+        if(!is_array($array)){
+            $array = array();
         }
 
-        $keys = explode(',', $keys);
-    }
+        if(!is_array($keys)){
+            if(!is_string($keys)){
+                throw new bException('array_ensure(): Invalid $keys specified. Should be either a numeric array or a CSV string');
+            }
 
-    foreach($keys as $key){
-        if(!isset($array[$key])){
-            $array[$key] = $value;
+            $keys = explode(',', $keys);
         }
-    }
 
-    return $array;
+        foreach($keys as $key){
+            if(!isset($array[$key])){
+                $array[$key] = $value;
+            }
+        }
+
+        return $array;
+
+    }catch(Exception $e){
+        throw new bException('array_ensure(): Failed', $e);
+    }
 }
 
 
@@ -168,12 +212,22 @@ function array_from_object($object, $recurse = true){
  * Return a random value from the specified array
  */
 function array_random_value($array){
-    return $array[array_rand($array)];
+    try{
+        return $array[array_rand($array)];
+
+    }catch(Exception $e){
+        throw new bException('array_random_value(): Failed', $e);
+    }
 }
 
 // :DEPRECATED: Use the above function
 function array_get_random($array){
-    return $array[array_rand($array)];
+    try{
+        return $array[array_rand($array)];
+
+    }catch(Exception $e){
+        throw new bException('array_get_random(): Failed', $e);
+    }
 }
 
 
@@ -263,23 +317,28 @@ function array_merge_complete(){
  * Specified variable may be either string or array, but ensure that its returned as an array.
  */
 function array_force($source, $separator = ','){
-    if(!$source){
-        return array();
-    }
-
-    if(!is_array($source)){
-        if(!is_string($source)){
-            if(!is_numeric($source)){
-                throw new bException('array_force(): Specified source is neither array or string or numeric');
-            }
-
-            return array($source);
+    try{
+        if(!$source){
+            return array();
         }
 
-        return explode($separator, $source);
-    }
+        if(!is_array($source)){
+            if(!is_string($source)){
+                if(!is_numeric($source)){
+                    throw new bException('array_force(): Specified source is neither array or string or numeric');
+                }
 
-    return $source;
+                return array($source);
+            }
+
+            return explode($separator, $source);
+        }
+
+        return $source;
+
+    }catch(Exception $e){
+        throw new bException('array_force(): Failed', $e);
+    }
 }
 
 
@@ -460,7 +519,7 @@ function array_remove($source, $keys){
 /*
  * Return all array parts from (but without) the specified key
  */
-function array_from($source, $from_key){
+function array_from(&$source, $from_key, $delete = false){
     try{
         if(!is_array($source)){
             throw new bException('array_from(): Specified source is an "'.gettype($source).'", but it should be an array', 'invalid');
@@ -472,6 +531,10 @@ function array_from($source, $from_key){
         foreach($source as $key => $value){
             if(!$add){
                 if($key == $from_key){
+                    if($delete){
+                        unset($source[$key]);
+                    }
+
                     $add = true;
                 }
 
@@ -479,6 +542,10 @@ function array_from($source, $from_key){
             }
 
             $retval[$key] = $value;
+
+            if($delete){
+                unset($source[$key]);
+            }
         }
 
         return $retval;

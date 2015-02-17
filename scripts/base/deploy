@@ -167,10 +167,9 @@ try{
     $nopush        =  (argument('nopush')     or ($noversion and $notag));
     $stash         =   argument('stash');
 
-    $message       =   argument('message'    , true);
-    $targets       =   argument('target'     , 'all', argument('targets', 'all', argument('all', false)));
-
+    $message       =   argument('message'     , true);
     $continuersync =  argument('continuersync', true);
+    $targets       =   argument('target'      , 'all', argument('targets', 'all', argument('all', false)));
 
     $tilde         = '~'.date('Ymd-His');
 

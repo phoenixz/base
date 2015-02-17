@@ -269,6 +269,7 @@ function argument($value, $next = null, $default = null){
         while($argument = isset_get($argv[$value++], $next)){
             switch($argument){
                 case 'force':
+                    // FALLTHROUGH
                 case 'test':
                     /*
                      * Ignore test and force arguments
@@ -279,9 +280,14 @@ function argument($value, $next = null, $default = null){
                     return $argument;
             }
         }
+
+        /*
+         * No arguments found (except perhaps for test or force)
+         */
+        return $default;
     }
 
-    if(!in_array($value, $argv)){
+    if(($key = array_search($value, $argv)) === false){
         /*
          * Specified argument not found
          */
@@ -293,15 +299,16 @@ function argument($value, $next = null, $default = null){
             /*
              * Return all following arguments, if available
              */
-            return array_from($argv, array_search($value, $argv));
+            return array_from($argv, array_search($value, $argv), true);
         }
 
         /*
          * Return next argument, if available
          */
-        return array_next_value($argv, $value);
+        return array_next_value($argv, $value, true);
     }
 
+    unset($argv[$key]);
     return true;
 }
 
