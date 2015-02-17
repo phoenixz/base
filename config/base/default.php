@@ -25,7 +25,7 @@ $_CONFIG['avatars']            = array('default'          => '/pub/img/img_avata
 
 // Blog configuration
 $_CONFIG['blogs']               = array('enabled'         => false,
-                                        'url'             => '/%category%/%date%/%seoname%.html');
+                                        'url'             => '/%seocategory%/%date%/%seoname%.html');
 
 // Use bootstrap?
 $_CONFIG['bootstrap']           = array('enabled'         => false,
