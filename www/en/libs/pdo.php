@@ -254,28 +254,7 @@ function sql_init($sql = 'sql', $db = null){
          * This is only required for the system connection
          */
         if((PLATFORM == 'shell') and (SCRIPT == 'init') and FORCE and ($sql == 'sql')){
-            /*
-             * We're doing a forced init from shell. Forced init will
-             * basically set database version to 0 BY DROPPING THE FUCKER SO BE CAREFUL!
-             *
-             * Forced init is NOT allowed on production (for obvious safety reasons, doh!)
-             */
-            if(ENVIRONMENT == 'production'){
-                throw new bException('sql_init(): For safety reasons, init force is NOT allowed on production environment! Please drop the database using "./scripts/base/init drop" or in the mysql console with "DROP DATABASE \''.str_log($_CONFIG['db']['db']).'\'"and continue with a standard init', 'forcedenied');
-            }
-
-            if(!str_is_version(FORCE)){
-                if(!is_bool(FORCE)){
-                    throw new bException('sql_init(): Invalid "force" sub parameter "'.str_log(FORCE).'" specified. "force" can only be followed by a valid init version number', 'invalidforce');
-                }
-
-                /*
-                 * Dump database, and recreate it
-                 */
-                $GLOBALS[$sql]->query('DROP   DATABASE IF EXISTS '.$_CONFIG['db']['db']);
-                $GLOBALS[$sql]->query('CREATE DATABASE '.$_CONFIG['db']['db']);
-                $GLOBALS[$sql]->query('USE             '.$_CONFIG['db']['db']);
-            }
+            include(dirname(__FILE__).'/handlers/pdo_init_force.php');
         }
 
         /*
@@ -331,27 +310,7 @@ function sql_init($sql = 'sql', $db = null){
         }
 
     }catch(Exception $e){
-        /*
-         *
-         */
-        if($e->getCode() == 1049){
-            if(!empty($retry)){
-                static $retry = true;
-
-                pdo_error_init($e, $_CONFIG['db']);
-                return sql_init();
-            }
-        }
-
-        $e = new bException('sql_init(): Failed', $e);
-
-        try{
-            load_libs('pdo_error');
-            return pdo_error($e, $_CONFIG['db'], null, isset_get($GLOBALS[$sql]));
-
-        }catch(Exception $e){
-            throw new bException('sql_init(): Failed', $e);
-        }
+        include(dirname(__FILE__).'/handlers/pdo_init_fail.php');
     }
 }
 
@@ -390,68 +349,27 @@ function sql_connect($connector) {
                 $connector['pdo_attributes'][PDO::MYSQL_ATTR_USE_BUFFERED_QUERY] = true;
             }
 
-            $pdo = new PDO($connector['driver'].':;host='.$connector['host'].';dbname='.$connector['db'], $connector['user'], $connector['pass'], $connector['pdo_attributes']);
-
-        }catch(Exception $e){
-            if($e->getMessage() == 'could not find driver'){
-                throw new bException('sql_connect(): Failed to connect with "'.str_log($connector['driver']).'" driver, it looks like its not available', $e);
-            }
-
-            throw new bException('sql_connect(): Failed to create PDO SQL object', $e);
-        }
-
-// :TODO: Remove this code, since the databasename to use is set in the connection string
-//        /*
-//         * Try to use the database. If it doesnt exist, then create it now
-//         */
-//        try{
-//            if(!empty($connector['db'])){
-////                $pdo->query('USE '.$connector['db']);
-//            }
-//
-//        }catch(Exception $e){
-//show(debug_trace());
-//showdie($e);
-//            /*
-//             * IMPORTANT!
-//             * This pdo_error handler is RETURNED because
-//             * if running init and database is not found,
-//             * it will recursive retry and return the PDO SQL to sql_init()!
-//             *
-//             * Do NOT change this behaviour!
-//             */
-//            try{
-//                load_libs('pdo_error');
-//                return pdo_error($e, $connector, null, $pdo);
-//
-//            }catch(Exception $e){
-//                throw new bException('sql_connect(): Failed', $e);
-//            }
-//        }
-
-        /*
-         * Ensure correct character set and timezone usage
-         */
-        $pdo->query('SET NAMES '.$connector['charset']);
-        $pdo->query('SET CHARACTER SET '.$connector['charset']);
-
-        try{
-            $pdo->query('SET time_zone = "'.$connector['timezone'].'";');
-
-        }catch(Exception $e){
-            if(empty($GLOBALS['no_time_zone']) and (SCRIPT != 'init')){
-                throw $e;
-            }
+            $pdo = new PDO($connector['driver'].':;host='.$connector['host'].(empty($connector['db']) ? '' : ';dbname='.$connector['db']), $connector['user'], $connector['pass'], $connector['pdo_attributes']);
 
             /*
-             * Indicate that time_zone settings failed (this will subsequently be used by the init system to automatically initialize that as well)
+             * Ensure correct character set and timezone usage
              */
-            unset($GLOBALS['no_time_zone']);
-            $GLOBALS['time_zone_fail'] = true;
-        }
+            $pdo->query('SET NAMES '.$connector['charset']);
+            $pdo->query('SET CHARACTER SET '.$connector['charset']);
 
-        if(!empty($connector['mode'])){
-            $pdo->query('SET sql_mode="'.$connector['mode'].'";');
+            try{
+                $pdo->query('SET time_zone = "'.$connector['timezone'].'";');
+
+            }catch(Exception $e){
+                include(dirname(__FILE__).'/handlers/pdo_timezone_fail.php');
+            }
+
+            if(!empty($connector['mode'])){
+                $pdo->query('SET sql_mode="'.$connector['mode'].'";');
+            }
+
+        }catch(Exception $e){
+            include(dirname(__FILE__).'/handlers/pdo_connect_exception.php');
         }
 
         return $pdo;
