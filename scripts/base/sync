@@ -163,7 +163,7 @@ try{
                 passthru($command = 'rm '.ROOT.$path.' -rf');
             }
 
-            passthru($command = 'rsync -acz --progress -p -e "ssh -p '.$source_config['deploy'][$environment]['target_port'].'" '.$source_config['deploy'][$environment]['target_user'].'@'.$source_config['deploy'][$environment]['target_server'].':'.slash($source_config['deploy'][$environment]['target_dir']).$path.'/ '.ROOT.$path.' --exclude="*.php" --exclude="*.css" --exclude="*.js" --exclude="/scripts/*" --exclude="/data/doc"');
+            passthru($command = 'rsync -acz --progress -p -e "ssh -p '.$source_config['deploy'][$environment]['target_port'].'" '.$source_config['deploy'][$environment]['target_user'].'@'.$source_config['deploy'][$environment]['target_server'].':'.slash($source_config['deploy'][$environment]['target_dir']).$path.'/ '.ROOT.$path.' --exclude="*.php" --exclude="*.css" --exclude="*.js" --exclude="/scripts/*" --exclude="/data/doc" --exclude="/data/system" --exclude="/data/mock*" --exclude="/data/sources"');
         }
     }
 

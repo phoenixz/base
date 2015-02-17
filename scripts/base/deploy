@@ -591,7 +591,7 @@ try{
 
                 log_screen($display_subenvironment.'Deploying project to target server "'.$deploy_config['target_server'].'" on path "'.$deploy_config['target_dir'].'"...', 'deploy', 'white');
                 passthru('rsync -acz --progress -p --delete '.($deploy_config['sudo'] ? '--rsync-path="sudo rsync" ' : '').'-e "ssh -p '.$deploy_config['target_port'].'" '.ROOT.' '.$deploy_config['target_user'].'@'.$deploy_config['target_server'].':'.$deploy_config['target_dir'].' '.$exclude, $exitcode);
-                exec('ssh -t -p '.isset_get($deploy_config['target_port'], 22).' '.$deploy_config['target_user'].'@'.$deploy_config['target_server'].' \'touch '.$deploy_config['target_dir'].'/data/.last_deploy\'', $contentoutput, $return);
+                exec('ssh -t -p '.isset_get($deploy_config['target_port'], 22).' '.$deploy_config['target_user'].'@'.$deploy_config['target_server'].' \'mkdir '.$deploy_config['target_dir'].'/data/system 2> /dev/null; touch '.$deploy_config['target_dir'].'/data/system/last_deploy\'', $contentoutput, $return);
 
                 if($exitcode){
                     throw new bException('Rsync failed with exit code "'.str_log($exitcode).'"', 'rsync');
