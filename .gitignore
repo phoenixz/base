@@ -3,6 +3,7 @@
 /data/tests/tests
 /data/xapian
 /data/uploads
+/data/system
 *~
 *.kate-swp
 /www/*
