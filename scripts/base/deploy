@@ -20,6 +20,8 @@
  *
  * noinit                     - Do not execute an init on the target server
  *
+ * noolddelete                - Do not delete the old version after deploy
+ *
  * nonotify                   - Do not send notifications
  *
  * nopush                     - Do not automatically git push all changes and
@@ -680,14 +682,19 @@ try{
              */
             if(!empty($deploy_config['rsync_parrallel'])){
                 log_screen($display_subenvironment.'Moving new version in place...', 'deploy', 'white');
-                passthru('ssh -t -p '.isset_get($deploy_config['target_port'], 22).' '.$deploy_config['target_user'].'@'.$deploy_config['target_server'].' \''.($deploy_config['sudo'] ? 'sudo ' : '').'mv '.$deploy_config['target_dir'].' '.$deploy_config['target_dir'].$tilde.'; '.($deploy_config['sudo'] ? 'sudo ' : '').'mv '.$deploy_config['target_dir'].$tilde.' '.$deploy_config['target_dir'].'\'', $exitcode);
+                passthru('ssh -t -p '.isset_get($deploy_config['target_port'], 22).' '.$deploy_config['target_user'].'@'.$deploy_config['target_server'].' \''.($deploy_config['sudo'] ? 'sudo ' : '').'mv '.$deploy_config['target_dir'].' '.$deploy_config['target_dir'].$tilde.'_old; '.($deploy_config['sudo'] ? 'sudo ' : '').'mv '.$deploy_config['target_dir'].$tilde.' '.$deploy_config['target_dir'].'\'', $exitcode);
 
                 if($exitcode){
                     throw new bException('Moving new version in place failed with exit code "'.str_log($exitcode).'"', 'rsync_parrallel_move');
                 }
 
-                log_screen($display_subenvironment.'Deleting old version...', 'deploy', 'white');
-                passthru('ssh -t -p '.isset_get($deploy_config['target_port'], 22).' '.$deploy_config['target_user'].'@'.$deploy_config['target_server'].' \''.($deploy_config['sudo'] ? 'sudo ' : '').'rm '.$deploy_config['target_dir'].$tilde.' -rf\'', $exitcode);
+                if(argument('noolddelete')){
+                    log_screen($display_subenvironment.'Not deleting old version due to "noolddelete" command line parameter', 'deploy', 'yellow');
+
+                }else{
+                    log_screen($display_subenvironment.'Deleting old version...', 'deploy', 'white');
+                    passthru('ssh -t -p '.isset_get($deploy_config['target_port'], 22).' '.$deploy_config['target_user'].'@'.$deploy_config['target_server'].' \''.($deploy_config['sudo'] ? 'sudo ' : '').'rm '.$deploy_config['target_dir'].$tilde.'_old -rf\'', $exitcode);
+                }
 
                 if($exitcode){
                     throw new bException('Deleting old version in place failed with exit code "'.str_log($exitcode).'"', 'rsync_parrallel_delete');
