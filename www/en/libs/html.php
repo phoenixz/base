@@ -1171,4 +1171,63 @@ function html_send($params, $meta, $html){
     echo $html;
     die();
 }
+
+
+
+/*
+ * Show the 404 page
+ */
+function page_404($force = false, $data = null) {
+    page_show('404', true, $force, $data);
+}
+
+
+
+/*
+ * Show the maintenance page
+ */
+function page_maintenance($reason, $force = false, $data = null) {
+    return include(dirname(__FILE__).'/handlers/system_page_maintenance.php');
+}
+
+
+
+/*
+ * Show the specified page
+ */
+function page_show($pagename, $die = false, $force = false, $data = null) {
+    global $_CONFIG;
+
+    try{
+        if(!defined('LANGUAGE')){
+            define('LANGUAGE', 'en');
+        }
+
+        if(($force != 'html') and (substr($_SERVER['PHP_SELF'], 0, 6) == '/ajax/')){
+            // Execute ajax page
+            return include(ROOT.'www/'.LANGUAGE.'/ajax/'.$pagename.'.php');
+
+        }else{
+            if($GLOBALS['page_is_admin']){
+                $prefix = 'admin/';
+
+            }elseif($GLOBALS['page_is_mobile']){
+                $prefix = 'mobile/';
+
+            }else{
+                $prefix = '';
+            }
+
+            // Execute HTML page
+            return include(ROOT.'www/'.LANGUAGE.'/'.$prefix.$pagename.'.php');
+        }
+
+        if($die){
+            die();
+        }
+
+    }catch(Exception $e){
+        throw new bException('page_show(): Failed to show page "'.str_log($pagename).'"', $e);
+    }
+}
 ?>
