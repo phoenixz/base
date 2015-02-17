@@ -81,6 +81,15 @@ nodeploy / test            - Do not deploy, only translate
 
 nonotify                   - Do not send notifications
 
+continuersync              - Only functional for sites that have
+                             rsync_parrallel configured, will attempt to
+                             continue an interrupted rsync to the copy of the
+                             target site. If it does not exist, it will start
+                             over as normal. This is useful for when a long
+                             rsync with large files was interrupted, and you do
+                             not want to have to restart the entire deploy from
+                             scratch
+
 dosyntax / doparse         - Do PHP syntax check parse
 
 docontent / docontentcheck - Check content files
@@ -145,23 +154,25 @@ try{
     /*
      * Check command line parameters
      */
-    $noinit      =   argument('noinit');
-    $nositemap   =   argument('nositemap');
-    $nohooks     =  (argument('nohook')     or argument('nohooks'));
-    $nosyntax    = !(argument('dosyntax')   or argument('doparse'));
-    $nodeploy    =  (argument('nodeploy')   or argument('test'));
-    $noversion   = !(argument('upversion')  or argument('upversions'));
-    $nocontent   = !(argument('docontent')  or argument('docontentcheck'));
-    $nofixperms  =  (argument('nofixperms') or argument('nofixpermissions'));
+    $noinit        =   argument('noinit');
+    $nositemap     =   argument('nositemap');
+    $nohooks       =  (argument('nohook')     or argument('nohooks'));
+    $nosyntax      = !(argument('dosyntax')   or argument('doparse'));
+    $nodeploy      =  (argument('nodeploy')   or argument('test'));
+    $noversion     = !(argument('upversion')  or argument('upversions'));
+    $nocontent     = !(argument('docontent')  or argument('docontentcheck'));
+    $nofixperms    =  (argument('nofixperms') or argument('nofixpermissions'));
 
-    $notag       =  (argument('notag')      or argument('notags') or $noversion);
-    $nopush      =  (argument('nopush')     or ($noversion and $notag));
-    $stash       =   argument('stash');
+    $notag         =  (argument('notag')      or argument('notags') or $noversion);
+    $nopush        =  (argument('nopush')     or ($noversion and $notag));
+    $stash         =   argument('stash');
 
-    $message     =   argument('message'    , true);
-    $targets     =   argument('target'     , 'all', argument('targets', 'all', argument('all', false)));
+    $message       =   argument('message'    , true);
+    $targets       =   argument('target'     , 'all', argument('targets', 'all', argument('all', false)));
 
-    $tilde       = '~'.date('Ymd-His');
+    $continuersync =  argument('continuersync', true);
+
+    $tilde         = '~'.date('Ymd-His');
 
     if(!$message and !$notag){
         throw new bException('No tag message specified! please use ./scripts/base/deploy ..... message "commit message"', 'notspecified');
@@ -558,17 +569,46 @@ try{
                 $deploy_config['rsync_parrallel'] = false;
             }
 
+            if($continuersync){
+                if(!$deploy_config['rsync_parrallel']){
+                    throw new bException(tr('The continuersync option was specified which makes no sense when either the project does not support rsync_parrallel, or when rsync_parrallel has been disabled because of the command line option "noparrallel"'), 'invalid');
+                }
+
+                /*
+                 * Validate $continuersync value
+                 */
+                if(!preg_match('/20\d{6}-\d{6}/', $continuersync)){
+                    throw new bException(tr('The specified continuersync option "'.str_log($continuersync).'" is invalid, it should be in the Ymd-His format'), 'invalid');
+                }
+            }
+
             if(!empty($deploy_config['rsync_parrallel'])){
                 /*
                  * Make a copy on the server, rsync that copy, then move that copy in place of the current version. This will cause less down time due to version differences
                  */
                 log_screen($display_subenvironment.'Deploying in rsync to parrallel mode...', 'deploy', 'white');
-                log_screen($display_subenvironment.'Creating copy of current version...', 'deploy', 'white');
 
-                passthru('ssh -t -p '.isset_get($deploy_config['target_port'], 22).' '.$deploy_config['target_user'].'@'.$deploy_config['target_server'].' \''.($deploy_config['sudo'] ? 'sudo ' : '').'rm '.$deploy_config['target_dir'].$tilde.' -rf; '.($deploy_config['sudo'] ? 'sudo ' : '').'cp -a '.$deploy_config['target_dir'].' '.$deploy_config['target_dir'].$tilde.'\'', $exitcode);
+                if($continuersync){
+                    /*
+                     * Search for existing copies
+                     */
+                    if(count(safe_exec('ssh -t -p '.isset_get($deploy_config['target_port'], 22).' '.$deploy_config['target_user'].'@'.$deploy_config['target_server'].' \'ls '.($deploy_config['target_dir']).'~'.$continuersync.' 2> /dev/null \'', 2)) < 2){
+                        /*
+                         * Does not exist
+                         */
+                        throw new bException(tr('The specified continuesync path "'.str_log(($deploy_config['target_dir']).'~'.$continuersync).'" on the target environment "'.str_log($target_environment).'" does not exist'), '');
+                    }
 
-                if($exitcode){
-                    throw new bException('rsync_parrallel setup failed with exit code "'.str_log($exitcode).'"', 'rsync_parrallel');
+                    $tilde = '~'.$continuersync;
+                    log_screen($display_subenvironment.' Continuing with specified copy "'.str_log($deploy_config['target_dir'].$tilde).'" of current version...', 'deploy', 'white');
+
+                }else{
+                    log_screen($display_subenvironment.'Creating copy of current version to "'.str_log($deploy_config['target_dir'].$tilde).'"...', 'deploy', 'white');
+                    passthru('ssh -t -p '.isset_get($deploy_config['target_port'], 22).' '.$deploy_config['target_user'].'@'.$deploy_config['target_server'].' \''.($deploy_config['sudo'] ? 'sudo ' : '').'rm '.$deploy_config['target_dir'].$tilde.' -rf; '.($deploy_config['sudo'] ? 'sudo ' : '').'cp -a '.$deploy_config['target_dir'].' '.$deploy_config['target_dir'].$tilde.'\'', $exitcode);
+
+                    if($exitcode){
+                        throw new bException('rsync_parrallel initial copy failed with exit code "'.str_log($exitcode).'"', 'rsync_parrallel');
+                    }
                 }
 
                 $deploy_config['target_dir'] .= $tilde;
@@ -630,20 +670,25 @@ try{
 
 
             /*
+             * From here, the target directory should be normal again
+             */
+            $deploy_config['target_dir'] = str_until($deploy_config['target_dir'], '~');
+
+
+
+            /*
              * In case of rsync_parrallel option, move the copy back in place, and remove the original
              */
             if(!empty($deploy_config['rsync_parrallel'])){
-                $deploy_config['target_dir'] = substr($deploy_config['target_dir'], 0, -1);
-
                 log_screen($display_subenvironment.'Moving new version in place...', 'deploy', 'white');
-                passthru('ssh -t -p '.isset_get($deploy_config['target_port'], 22).' '.$deploy_config['target_user'].'@'.$deploy_config['target_server'].' \''.($deploy_config['sudo'] ? 'sudo ' : '').'mv '.$deploy_config['target_dir'].' '.$deploy_config['target_dir'].$tilde.'_deploy; '.($deploy_config['sudo'] ? 'sudo ' : '').'mv '.$deploy_config['target_dir'].$tilde.' '.$deploy_config['target_dir'].'\'', $exitcode);
+                passthru('ssh -t -p '.isset_get($deploy_config['target_port'], 22).' '.$deploy_config['target_user'].'@'.$deploy_config['target_server'].' \''.($deploy_config['sudo'] ? 'sudo ' : '').'mv '.$deploy_config['target_dir'].' '.$deploy_config['target_dir'].$tilde.'; '.($deploy_config['sudo'] ? 'sudo ' : '').'mv '.$deploy_config['target_dir'].$tilde.' '.$deploy_config['target_dir'].'\'', $exitcode);
 
                 if($exitcode){
                     throw new bException('Moving new version in place failed with exit code "'.str_log($exitcode).'"', 'rsync_parrallel_move');
                 }
 
                 log_screen($display_subenvironment.'Deleting old version...', 'deploy', 'white');
-                passthru('ssh -t -p '.isset_get($deploy_config['target_port'], 22).' '.$deploy_config['target_user'].'@'.$deploy_config['target_server'].' \''.($deploy_config['sudo'] ? 'sudo ' : '').'rm '.$deploy_config['target_dir'].$tilde.'_deploy -rf\'', $exitcode);
+                passthru('ssh -t -p '.isset_get($deploy_config['target_port'], 22).' '.$deploy_config['target_user'].'@'.$deploy_config['target_server'].' \''.($deploy_config['sudo'] ? 'sudo ' : '').'rm '.$deploy_config['target_dir'].$tilde.' -rf\'', $exitcode);
 
                 if($exitcode){
                     throw new bException('Deleting old version in place failed with exit code "'.str_log($exitcode).'"', 'rsync_parrallel_delete');
