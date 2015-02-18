@@ -20,8 +20,6 @@
  *
  * noinit                     - Do not execute an init on the target server
  *
- * noolddelete                - Do not delete the old version after deploy
- *
  * nonotify                   - Do not send notifications
  *
  * nopush                     - Do not automatically git push all changes and
@@ -570,6 +568,10 @@ try{
                 $deploy_config['rsync_parrallel'] = false;
             }
 
+
+            /*
+             * Continue rsyncing a previously stopped deploy?
+             */
             if($continuersync){
                 if(!$deploy_config['rsync_parrallel']){
                     throw new bException(tr('The continuersync option was specified which makes no sense when either the project does not support rsync_parrallel, or when rsync_parrallel has been disabled because of the command line option "noparrallel"'), 'invalid');
@@ -578,10 +580,15 @@ try{
                 /*
                  * Validate $continuersync value
                  */
-                if(!preg_match('/20\d{6}-\d{6}/', $continuersync)){
-                    throw new bException(tr('The specified continuersync option "'.str_log($continuersync).'" is invalid, it should be in the Ymd-His format'), 'invalid');
+                while(!preg_match('/^20\d{6}-\d{6}$/', $continuersync)){
+                    if(!preg_match('/^'.str_rfrom($deploy_config['target_dir'], '/').'~20\d{6}-\d{6}\/?$/', $continuersync)){
+                        throw new bException(tr('The specified continuersync option "'.str_log($continuersync).'" is invalid, it should be in the Ymd-His format, or targetpath~Ymd-His'), 'invalid');
+                    }
+
+                    $continuersync = str_until(str_from($continuersync, '~'), '/');
                 }
             }
+
 
             if(!empty($deploy_config['rsync_parrallel'])){
                 /*
@@ -682,19 +689,14 @@ try{
              */
             if(!empty($deploy_config['rsync_parrallel'])){
                 log_screen($display_subenvironment.'Moving new version in place...', 'deploy', 'white');
-                passthru('ssh -t -p '.isset_get($deploy_config['target_port'], 22).' '.$deploy_config['target_user'].'@'.$deploy_config['target_server'].' \''.($deploy_config['sudo'] ? 'sudo ' : '').'mv '.$deploy_config['target_dir'].' '.$deploy_config['target_dir'].$tilde.'_old; '.($deploy_config['sudo'] ? 'sudo ' : '').'mv '.$deploy_config['target_dir'].$tilde.' '.$deploy_config['target_dir'].'\'', $exitcode);
+                passthru('ssh -t -p '.isset_get($deploy_config['target_port'], 22).' '.$deploy_config['target_user'].'@'.$deploy_config['target_server'].' \''.($deploy_config['sudo'] ? 'sudo ' : '').'mv '.$deploy_config['target_dir'].' '.$deploy_config['target_dir'].$tilde.'; '.($deploy_config['sudo'] ? 'sudo ' : '').'mv '.$deploy_config['target_dir'].$tilde.' '.$deploy_config['target_dir'].'\'', $exitcode);
 
                 if($exitcode){
                     throw new bException('Moving new version in place failed with exit code "'.str_log($exitcode).'"', 'rsync_parrallel_move');
                 }
 
-                if(argument('noolddelete')){
-                    log_screen($display_subenvironment.'Not deleting old version due to "noolddelete" command line parameter', 'deploy', 'yellow');
-
-                }else{
-                    log_screen($display_subenvironment.'Deleting old version...', 'deploy', 'white');
-                    passthru('ssh -t -p '.isset_get($deploy_config['target_port'], 22).' '.$deploy_config['target_user'].'@'.$deploy_config['target_server'].' \''.($deploy_config['sudo'] ? 'sudo ' : '').'rm '.$deploy_config['target_dir'].$tilde.'_old -rf\'', $exitcode);
-                }
+                log_screen($display_subenvironment.'Deleting old version...', 'deploy', 'white');
+                passthru('ssh -t -p '.isset_get($deploy_config['target_port'], 22).' '.$deploy_config['target_user'].'@'.$deploy_config['target_server'].' \''.($deploy_config['sudo'] ? 'sudo ' : '').'rm '.$deploy_config['target_dir'].$tilde.' -rf\'', $exitcode);
 
                 if($exitcode){
                     throw new bException('Deleting old version in place failed with exit code "'.str_log($exitcode).'"', 'rsync_parrallel_delete');
