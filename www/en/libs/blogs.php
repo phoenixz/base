@@ -289,8 +289,12 @@ function blogs_update_keywords($blogs_id, $post_id, $keywords){
 /*
  * Return keywords string for the specified keyword string where all keywords are trimmed
  */
-function blogs_clean_keywords($keywords){
+function blogs_clean_keywords($keywords, $allow_empty = false){
     try{
+        if(!$keywords and $allow_empty){
+            return '';
+        }
+
         $retval = array();
 
         foreach(array_force($keywords) as $keyword){
@@ -763,10 +767,13 @@ function blogs_update_urls($blogs = null, $category = null){
              * Ensure that the category exists. If no blog was specified, then get the blog from the specified category
              */
             if(is_numeric($category)){
-                $category = sql_get('SELECT `id`, `blogs_id`, `name` FROM `blogs_categories` WHERE `id`      = :id'     , array(':id'     => $category));
+                $category = sql_get('SELECT `id`, `blogs_id`, `seoname`, `name` FROM `blogs_categories` WHERE `id`      = :id'     , array(':id'     => $category));
 
-            }else{
-                $category = sql_get('SELECT `id`, `blogs_id`, `name` FROM `blogs_categories` WHERE `seoname` = :seoname', array(':seoname'=> $category));
+            }elseif(is_scalar($category)){
+                $category = sql_get('SELECT `id`, `blogs_id`, `seoname`, `name` FROM `blogs_categories` WHERE `seoname` = :seoname', array(':seoname'=> $category));
+
+            }elseif(!is_array($category)){
+                throw bException('blogs_update_urls(): Invalid category datatype specified. Either specify id, seoname, or full array', 'invalid');
             }
 
             if(!$blogs){
@@ -838,8 +845,8 @@ function blogs_update_urls($blogs = null, $category = null){
                     continue;
                 }
 
-                $query                    .= ' AND `categories_id` = :categories_id';
-                $execute[':categories_id'] = $category['id'];
+                $query              .= ' AND `seocategory` = :seoname';
+                $execute[':seoname'] = $category['seoname'];
             }
 
             /*
