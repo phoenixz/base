@@ -345,26 +345,97 @@ function blogs_seo_keywords($keywords){
 /*
  * Ensure that all post data is okay
  */
-function blogs_validate_post($post, $params = null){
+function blogs_validate_post(&$post, $blog, $params = null, $seoname = null){
     try{
         array_params($params);
         array_default($params, 'namemax'    , 64);
         array_default($params, 'bodymin'    , 100);
         array_default($params, 'object_name', 'blog posts');
 
-        // Validate input
-        $v = new validate_form($post, 'name,seocategory,body,keywords,description,language,group,priority,urlref,status');
+        load_libs('seo');
 
-        $v->isChecked   ($post['name']      , tr('Please provide the name of your %objectname%'     , '%objectname%', $params['object_name']));
+        // Validate input
+        $v = new validate_form($post, 'name,assigned_to,seocategory,body,keywords,description,language,group,priority,urlref,status');
+
+        $v->isChecked  ($post['name']       , tr('Please provide the name of your %objectname%'     , '%objectname%', $params['object_name']));
         $v->isNotEmpty ($post['seocategory'], tr('Please provide a category for your %objectname%'  , '%objectname%', $params['object_name']));
         $v->isNotEmpty ($post['body']       , tr('Please provide the body text of your %objectname%', '%objectname%', $params['object_name']));
 
         $v->hasMinChars($post['name']       ,                  4, tr('Please ensure that the name has a minimum of 4 characters'));
         $v->hasMinChars($post['body']       , $params['bodymin'], tr('Please ensure that the body text has a minimum of '.$params['bodymin'].' characters'));
 
-        if(!empty($params['use_groups'])){
-            $v->isNotEmpty ($post['group'], tr('Please provide a group for your %objectname%', '%objectname%', $params['object_name']));
+        if($seoname){
+            /*
+             * We're updating an existing blog
+             */
+            if(!$post['id'] = sql_get('SELECT `id` FROM `blogs_posts` WHERE `blogs_id` = :blogs_id AND `seoname` = :seoname', array(':blogs_id' => $blog['id'], ':seoname' => $seoname))){
+                /*
+                 * This blog post does not exist
+                 */
+                throw new bException(tr('Can not update blog "%blog%" post "%name%", it does not exist', array('%blog%' => $blog['name'], '%name%', str_log($post['name']))), 'notexists');
+            }
+
+            if(sql_get('SELECT `id` FROM `blogs_posts` WHERE `blogs_id` = :blogs_id AND `id` != :id AND `name` = :name', array(':blogs_id' => $blog['id'], ':id' => $post['id'], ':name' => $post['name']), 'id')){
+                /*
+                 * Another post with this name already exists
+                 */
+                $v->setError(tr('A post with the name "%name%" already exists', array('%name%' => str_log($post['name']))), $params['object_name']);
+            }
+
+        }else{
+            if(sql_get('SELECT `id` FROM `blogs_posts` WHERE `blogs_id` = :blogs_id AND `name` = :name', array(':blogs_id' => $blog['id'],':name' => $post['name']), 'id')){
+                /*
+                 * A post with this name already exists
+                 */
+                $v->setError(tr('A post with the name "%name%" already exists', array('%name%' => str_log($post['name']))), $params['object_name']);
+            }
         }
+
+        $category = blogs_validate_category($post['seocategory'], $blog, $params['categories_parent']);
+
+        $post['category']    = $category['name'];
+        $post['seocategory'] = $category['seoname'];
+
+        if($params['use_groups']){
+            $group = blogs_validate_category($post['group'], $blog, $params['groups_parent']);
+
+            $post['group']    = $group['name'];
+            $post['seogroup'] = $group['seoname'];
+
+            $v->isNotEmpty ($post['group'], tr('Please provide a group for your %objectname%', '%objectname%', $params['object_name']));
+
+        }else{
+            $post['group']    = '';
+            $post['seogroup'] = null;
+        }
+
+        if($params['use_keywords']){
+            $post['keywords']    = blogs_clean_keywords($post['keywords']);
+            $post['seokeywords'] = blogs_seo_keywords($post['keywords']);
+
+            $v->hasMinChars($post['keywords'], 2, tr('Please ensure that the keywords have a minimum of 2 characters'));
+            $v->isNotEmpty ($post['keywords'],    tr('Please provide keywords for your %objectname%', '%objectname%', $params['object_name']));
+
+        }else{
+            $post['keywords']    = '';
+            $post['seokeywords'] = '';
+        }
+
+        if($post['assigned_to']){
+            if(!$post['assigned_to_id'] = sql_get('SELECT `id` FROM `users` WHERE `name` = :name', 'id', array(':name' => $post['assigned_to']))){
+                throw new bException('The specified user "'.str_log($post['assigned_to']).'" does not exist', 'notexists');
+            }
+
+        }else{
+            $post['assigned_to_id'] = null;
+        }
+
+        $post['seoname']  = seo_generate_unique_name($post['name'], 'blogs_posts', $post['id']);
+        $post['blogs_id'] = $blog['id'];
+        $post['blog']     = $blog['seoname'];
+        $post['priority'] = blogs_priority($post['priority']);
+        $post['url']      = blogs_post_url($post);
+        $post['status']   = $params['status_default'];
 
         if(!empty($params['use_language'])){
             $v->isNotEmpty($post['language'],    tr('Please select a language for your %objectname%', '%objectname%', $params['object_name']));
@@ -375,11 +446,6 @@ function blogs_validate_post($post, $params = null){
             $v->isNotEmpty ($post['priority'], tr('Please provide a priority for your %objectname%', '%objectname%', $params['object_name']));
         }
 
-        if(!empty($params['use_keywords'])){
-            $v->hasMinChars($post['keywords'], 2, tr('Please ensure that the keywords have a minimum of 2 characters'));
-            $v->isNotEmpty ($post['keywords'],    tr('Please provide keywords for your %objectname%', '%objectname%', $params['object_name']));
-        }
-
         if(!empty($params['use_description'])){
             $v->isNotEmpty ($post['description'],       tr('Please provide a description for your %objectname%', '%objectname%', $params['object_name']));
             $v->hasMinChars($post['description'],   16, tr('Please ensure that the description has a minimum of 16 characters'));
@@ -388,7 +454,7 @@ function blogs_validate_post($post, $params = null){
 
         if(!empty($params['use_status'])){
             if(empty($params['status_select']['resource'][$post['status']])){
-                    $v->setError(tr('Please provide a valid status for your %objectname%', '%objectname%', $params['object_name']));
+                $v->setError(tr('Please provide a valid status for your %objectname%', '%objectname%', $params['object_name']));
             }
 
         }else{
@@ -398,8 +464,6 @@ function blogs_validate_post($post, $params = null){
         if(!$v->isValid()) {
            throw new bException(str_force($v->getErrors(), ', '), 'validation');
         }
-
-        return $post;
 
     }catch(Exception $e){
         if($e->getCode() == 'validation'){
