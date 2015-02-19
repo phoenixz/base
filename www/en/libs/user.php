@@ -619,7 +619,7 @@ function user_get($params, $columns = false){
 /*
  * Return either (in chronological order) name, username, or email for the user
  */
-function user_name($user = null, $guest = null){
+function user_name($user = null, $guest = null, $key_prefix = ''){
     if(!$user){
         $user = $_SESSION['user'];
     }
@@ -644,7 +644,7 @@ function user_name($user = null, $guest = null){
         }
     }
 
-    return not_empty(isset_get($user['name']), isset_get($user['username']), isset_get($user['email']), isset_get($user['id']));
+    return not_empty(isset_get($user[$key_prefix.'name']), isset_get($user[$key_prefix.'username']), isset_get($user[$key_prefix.'email']), isset_get($user[$key_prefix.'id']));
 }
 
 
