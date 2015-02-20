@@ -191,37 +191,36 @@ function blogs_categories_select($params) {
 
 
 
-/*
- * Return HTML select list containing all available blogs
- */
-function blogs_priorities_select($params, $selected = 0, $name = 'priority', $none = '', $class = '', $option_class = '', $disabled = false) {
-    try{
-        array_params ($params, 'seoname');
-        array_default($params, 'selected'    , $selected);
-        array_default($params, 'class'       , $class);
-        array_default($params, 'disabled'    , $disabled);
-        array_default($params, 'name'        , $name);
-        array_default($params, 'column'      , 'seoname');
-        array_default($params, 'none'        , not_empty($none, tr('Select a priority')));
-        array_default($params, 'option_class', $option_class);
-        array_default($params, 'filter'      , array());
-
-        if(empty($params['blogs_id'])){
-            throw new bException('blogs_priorities_select(): No blog specified', 'notspecified');
-        }
-
-        $params['resource'] = array('low'       => tr('Low'),
-                                    'normal'    => tr('Normal'),
-                                    'high'      => tr('High'),
-                                    'urgent'    => tr('Urgent'),
-                                    'immediate' => tr('Immediate'));
-
-        return html_select($params);
-
-    }catch(Exception $e){
-        throw new bException('blogs_priorities_select(): Failed', $e);
-    }
-}
+///*
+// * Return HTML select list containing all available blogs
+// */
+//function blogs_priorities_select($params, $selected = 0) {
+//    try{
+//        array_params ($params, 'seoname');
+//        array_default($params, 'selected'    , $selected);
+//        array_default($params, 'class'       , $class);
+//        array_default($params, 'disabled'    , $disabled);
+//        array_default($params, 'name'        , $name);
+//        array_default($params, 'none'        , not_empty($none, tr('Select a priority')));
+//        array_default($params, 'option_class', $option_class);
+//        array_default($params, 'filter'      , array());
+//
+//        if(empty($params['blogs_id'])){
+//            throw new bException('blogs_priorities_select(): No blog specified', 'notspecified');
+//        }
+//
+//        $params['resource'] = array(4 => tr('Low'),
+//                                    3 => tr('Normal'),
+//                                    2 => tr('High'),
+//                                    1 => tr('Urgent'),
+//                                    0 => tr('Immediate'));
+//
+//        return html_select($params);
+//
+//    }catch(Exception $e){
+//        throw new bException('blogs_priorities_select(): Failed', $e);
+//    }
+//}
 
 
 
@@ -368,7 +367,7 @@ function blogs_validate_post(&$post, $blog, $params = null, $seoname = null){
             /*
              * We're updating an existing blog
              */
-            if(!$post['id'] = sql_get('SELECT `id` FROM `blogs_posts` WHERE `blogs_id` = :blogs_id AND `seoname` = :seoname', array(':blogs_id' => $blog['id'], ':seoname' => $seoname))){
+            if(!$post['id'] = sql_get('SELECT `id` FROM `blogs_posts` WHERE `blogs_id` = :blogs_id AND `seoname` = :seoname', 'id', array(':blogs_id' => $blog['id'], ':seoname' => $seoname))){
                 /*
                  * This blog post does not exist
                  */
@@ -430,12 +429,18 @@ function blogs_validate_post(&$post, $blog, $params = null, $seoname = null){
             $post['assigned_to_id'] = null;
         }
 
+        if(!is_numeric($post['priority']) or ($post['priority'] < 0) or ($post['priority'] > 4) or (fmod($post['priority'], 1))){
+            throw new bException('The specified priority "'.str_log($post['priority']).'" is invalid, it must be one of 0, 1, 2, 3, or 4', 'invalid');
+        }
+
         $post['seoname']  = seo_generate_unique_name($post['name'], 'blogs_posts', $post['id']);
         $post['blogs_id'] = $blog['id'];
         $post['blog']     = $blog['seoname'];
-        $post['priority'] = blogs_priority($post['priority']);
         $post['url']      = blogs_post_url($post);
-        $post['status']   = $params['status_default'];
+
+        if(!isset($params['status_list'][$post['status']])){
+            throw new bException('The specified status "'.str_log($post['status']).'" is invalid, it must be either one of "'.str_log(str_force($params['status_list'])).'"', 'invalid');
+        }
 
         if(!empty($params['use_language'])){
             $v->isNotEmpty($post['language'],    tr('Please select a language for your %objectname%', '%objectname%', $params['object_name']));
@@ -675,11 +680,11 @@ function blogs_priority($priority){
 
     try{
         if(empty($list)){
-            $list = array(0 => 'low',
-                          1 => 'normal',
-                          2 => 'high',
-                          3 => 'urgent',
-                          4 => 'immediate');
+            $list = array(4 => tr('Low'),
+                          3 => tr('Normal'),
+                          2 => tr('High'),
+                          1 => tr('Urgent'),
+                          0 => tr('Immediate'));
         }
 
         if(is_numeric($priority)){
