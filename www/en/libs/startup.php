@@ -375,28 +375,40 @@ try{
                  * we know we have a fresh and new session.
                  */
                 if(empty($_SESSION['language'])){
-                    if($_CONFIG['cookie']['domain']){
-                        /*
-                         * Test cookie domain limitation
-                         *
-                         * If the configured cookie domain is different from the current domain then all cookie will inexplicably fail without warning,
-                         * so this must be detected to avoid lots of hair pulling and throwing arturo off the balcony incidents :)
-                         */
-                        if(substr($_CONFIG['cookie']['domain'], 0, 1) == '.'){
-                            $test = substr($_CONFIG['cookie']['domain'], 1);
+                    switch($_CONFIG['cookie']['domain']){
+                        case '':
+                            break;
 
-                        }else{
-                            $test = $_CONFIG['cookie']['domain'];
-                        }
+                        case 'auto':
+                            $_CONFIG['domain'] = $_SERVER['SERVER_NAME'];
+                            break;
 
-                        $length = strlen($test);
+                        case '.auto':
+                            $_CONFIG['domain'] = '.'.$_SERVER['SERVER_NAME'];
+                            break;
 
-                        if(substr($_SERVER['SERVER_NAME'], -$length, $length) != $test){
-                            throw new bException('startup: Specified cookie domain "'.str_log($_CONFIG['cookie']['domain']).'" is invalid for current domain "'.str_log($_SERVER['SERVER_NAME']).'"', 'cookiedomain');
-                        }
+                        default:
+                            /*
+                             * Test cookie domain limitation
+                             *
+                             * If the configured cookie domain is different from the current domain then all cookie will inexplicably fail without warning,
+                             * so this must be detected to avoid lots of hair pulling and throwing arturo off the balcony incidents :)
+                             */
+                            if(substr($_CONFIG['cookie']['domain'], 0, 1) == '.'){
+                                $test = substr($_CONFIG['cookie']['domain'], 1);
 
-                        unset($test);
-                        unset($length);
+                            }else{
+                                $test = $_CONFIG['cookie']['domain'];
+                            }
+
+                            $length = strlen($test);
+
+                            if(substr($_SERVER['SERVER_NAME'], -$length, $length) != $test){
+                                throw new bException('startup: Specified cookie domain "'.str_log($_CONFIG['cookie']['domain']).'" is invalid for current domain "'.str_log($_SERVER['SERVER_NAME']).'"', 'cookiedomain');
+                            }
+
+                            unset($test);
+                            unset($length);
                     }
                 }
 

@@ -753,6 +753,14 @@ function domain($current_url = false, $query = null){
     global $_CONFIG;
 
     try{
+        if(empty($_CONFIG['domain'])){
+            throw new bException(tr('domain(): $_CONFIG[domain] is not configured'), 'notspecified');
+        }
+
+        if($_CONFIG['domain'] == 'auto'){
+            $_CONFIG['domain'] = $_SERVER['SERVER_NAME'];
+        }
+
         if(!$current_url){
             $retval = $_CONFIG['protocol'].$_CONFIG['domain'].$_CONFIG['root'];
 

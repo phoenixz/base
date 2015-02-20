@@ -3,6 +3,23 @@
         throw new bException('sql_connect(): Failed to connect with "'.str_log($connector['driver']).'" driver, it looks like its not available', $e);
     }
 
+    /*
+     * Check that all connector values have been set!
+     */
+    foreach(array('driver', 'host', 'user', 'pass') as $key){
+        if(empty($connector[$key])){
+            if(ENVIRONMENT == 'production'){
+                throw new bException('sql_connect(): The database configuration has key "'.str_log($key).'" missing, check your database configuration in '.ROOT.'/config/production.php');
+            }
+
+            if(REQUIRE_SUBENVIRONMENTS){
+                throw new bException('sql_connect(): The database configuration has key "'.str_log($key).'" missing, check your database configuration in either '.ROOT.'/config/production.php and/or '.ROOT.'/config/'.ENVIRONMENT.'.php and/or '.ROOT.'/config/'.ENVIRONMENT.'_'.SUBENVIRONMENT.'.php');
+            }
+
+            throw new bException('sql_connect(): The database configuration has key "'.str_log($key).'" missing, check your database configuration in either '.ROOT.'/config/production.php and/or '.ROOT.'/config/'.ENVIRONMENT.'.php');
+        }
+    }
+
     if($e->getCode() == 1049){
         /*
          * Database not found!

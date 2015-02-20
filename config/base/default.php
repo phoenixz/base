@@ -81,7 +81,7 @@ $_CONFIG['content']            = array('autocreate'       => false);            
 // Cookie configuration
 $_CONFIG['cookie']             = array('lifetime'         => 0,
                                        'path'             => '/',
-                                       'domain'           => '.base',
+                                       'domain'           => 'auto',                                        // Domain limitation for cookies. Can be emtpy (no limitation), auto for SERVER_NAME, .auto for .SERVER_NAME which will limit to SERVER_NAME and sub domains, or a specific domain. NOTE: IF A SPECIFIC DOMAIN IS SPECIFIED, THEN IT MUST MATCH THE PRODUCTION DOMAIN (or .DOMAIN for domain and subdomains) OR BASE WILL CRASH AT STARTUP TO AVOID NON WORKING COOKIES!
                                        'secure'           => false,
                                        'httponly'         => false);
 
@@ -113,7 +113,7 @@ $_CONFIG['db']                 = array('driver'           => 'mysql',           
                                        'timezone'         => 'America/Mexico_City');                        // Default timezone to use
 
 //domain
-$_CONFIG['domain']             = '';                                                                        // The base domain of this website. for example, "mywebsite.com",  "thisismine.com.mx", etc.
+$_CONFIG['domain']             = 'auto';                                                                    // The base domain of this website. for example, "mywebsite.com",  "thisismine.com.mx", etc. If set to "auto" it will use $_SERVER[SERVER_NAME]
 
 // Editors configuration, tinymce jbimages plugin configuration
 $_CONFIG['editors']            = array('imageupload'      => 'session',                                     // "all" or "session" or "admin",
