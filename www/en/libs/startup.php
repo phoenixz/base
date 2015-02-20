@@ -83,6 +83,12 @@ try{
             }
         }
 
+    }elseif(empty($env)){
+        /*/
+         * No environment specified in project configuration
+         */
+        die("\033[0;31mstartup: No required environment name specified for project \"".PROJECT."\" in ".ROOT."config/project.php\033[0m\n");
+
     }else{
         /*/
          * No environment set in ENV, maybe given by parameter?

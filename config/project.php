@@ -32,7 +32,7 @@
  *                         settings specific to that sub environment
  */
 define('SEED'                   , '');
-define('PROJECT'                , 'BASE');
+define('PROJECT'                , '');
 define('PROJECTCODEVERSION'     , '0.0.0');
 define('REQUIRE_SUBENVIRONMENTS', false);
 ?>

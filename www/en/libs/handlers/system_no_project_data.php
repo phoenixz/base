@@ -1,5 +1,5 @@
 <?php
 if(!FORCE){
-    throw new bException(tr('startup: Project data in "ROOT/config/project.php" has not been configured. Please ensure SEED has a value specified and PROJECTCODEVERSION is not "0.0.0"'), 'projectnotsetup');
+    throw new bException(tr('startup: Project data in "ROOT/config/project.php" has not been fully configured. Please ensure that PROJECT is not empty, SEED is not empty, and PROJECTCODEVERSION is valid and not "0.0.0"'), 'projectnotsetup');
 }
 ?>

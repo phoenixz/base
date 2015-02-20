@@ -101,10 +101,18 @@ function init($projectfrom = null, $frameworkfrom = null){
         }
 
         if(version_compare(FRAMEWORKCODEVERSION, $codeversions['FRAMEWORK']) < 0){
+            if(!str_is_version(FRAMEWORKCODEVERSION)){
+                throw new bException('init(): Cannot continue, the FRAMEWORK code version "'.str_log(FRAMEWORKCODEVERSION).'" (Defined at the top of '.ROOT.'/libs/system.php) is invalid', 'invalidframeworkcode');
+            }
+
             throw new bException('init(): Cannot continue, the FRAMEWORK code version is OLDER than the database version, the project is running with either old code or a too new database!', 'oldframeworkcode');
         }
 
         if(version_compare(PROJECTCODEVERSION, $codeversions['PROJECT']) < 0){
+            if(!str_is_version(PROJECTCODEVERSION)){
+                throw new bException('init(): Cannot continue, the PROJECT code version "'.str_log(PROJECTCODEVERSION).'" (Defined in '.ROOT.'/config/project.php) is invalid', 'invalidframeworkcode');
+            }
+
             throw new bException('init(): Cannot continue, the PROJECT code version is OLDER than the database version, the project is running with either old code or a too new database!', 'oldprojectcode');
         }
 

@@ -648,6 +648,8 @@ function load_config($files){
         $files = array_force($files);
 
         foreach($files as $file){
+            $loaded = false;
+
             /*
              * Include first the default configuration file, if available, then
              * production configuration file, if available, and then, if
@@ -656,7 +658,12 @@ function load_config($files){
             foreach(array(ROOT.'config/base/'.$file.'.php', ROOT.'config/production_'.$file.'.php', ROOT.'config/'.ENVIRONMENT.'_'.$file.'.php') as $path){
                 if(file_exists($path)){
                     include($path);
+                    $loaded = true;
                 }
+            }
+
+            if(!$loaded){
+                throw new bException('load_config(): No configuration file was found for requested configuration "'.str_log($file).'"');
             }
         }
 
