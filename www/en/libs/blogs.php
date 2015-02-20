@@ -27,7 +27,7 @@ function blogs_list($user, $from = null, $until = null, $limit = null){
 
         $query   = 'SELECT `addedon`,
                            `rights_id`,
-                           `title`
+                           `name`
 
                     FROM   `blogs_posts`
 
@@ -356,13 +356,6 @@ function blogs_validate_post(&$post, $blog, $params = null, $seoname = null){
         // Validate input
         $v = new validate_form($post, 'name,assigned_to,seocategory,body,keywords,description,language,group,priority,urlref,status');
 
-        $v->isChecked  ($post['name']       , tr('Please provide the name of your %objectname%'     , '%objectname%', $params['object_name']));
-        $v->isNotEmpty ($post['seocategory'], tr('Please provide a category for your %objectname%'  , '%objectname%', $params['object_name']));
-        $v->isNotEmpty ($post['body']       , tr('Please provide the body text of your %objectname%', '%objectname%', $params['object_name']));
-
-        $v->hasMinChars($post['name']       ,                  4, tr('Please ensure that the name has a minimum of 4 characters'));
-        $v->hasMinChars($post['body']       , $params['bodymin'], tr('Please ensure that the body text has a minimum of '.$params['bodymin'].' characters'));
-
         if($seoname){
             /*
              * We're updating an existing blog
@@ -381,6 +374,17 @@ function blogs_validate_post(&$post, $blog, $params = null, $seoname = null){
                 $v->setError(tr('A post with the name "%name%" already exists', array('%name%' => str_log($post['name']))), $params['object_name']);
             }
 
+            if($params['use_append']){
+                /*
+                 * Only allow data to be appended to this post
+                 * Find changes between current and previous state and store those as well
+                 */
+                load_libs('user');
+
+                $changes = array();
+                $oldpost = sql_get('SELECT `assigned_to_id`, `priority`, `status`, `name`, `urlref`, `body` FROM `blogs_posts` WHERE `id` = :id', array(':id' => $post['id']));
+            }
+
         }else{
             if(sql_get('SELECT `id` FROM `blogs_posts` WHERE `blogs_id` = :blogs_id AND `name` = :name', array(':blogs_id' => $blog['id'],':name' => $post['name']), 'id')){
                 /*
@@ -389,6 +393,18 @@ function blogs_validate_post(&$post, $blog, $params = null, $seoname = null){
                 $v->setError(tr('A post with the name "%name%" already exists', array('%name%' => str_log($post['name']))), $params['object_name']);
             }
         }
+
+        if(!$params['use_append'] and !$seoname){
+            /*
+             * Only if we're editing in use_append mode we don't have to check body size
+             */
+            $v->hasMinChars($post['body'], $params['bodymin'], tr('Please ensure that the body text has a minimum of '.$params['bodymin'].' characters'));
+            $v->isNotEmpty ($post['body']                    , tr('Please provide the body text of your %objectname%', '%objectname%', $params['object_name']));
+        }
+
+        $v->isChecked  ($post['name']       , tr('Please provide the name of your %objectname%'     , '%objectname%', $params['object_name']));
+        $v->isNotEmpty ($post['seocategory'], tr('Please provide a category for your %objectname%'  , '%objectname%', $params['object_name']));
+        $v->hasMinChars($post['name']       , 4, tr('Please ensure that the name has a minimum of 4 characters'));
 
         $category = blogs_validate_category($post['seocategory'], $blog, $params['categories_parent']);
 
@@ -422,15 +438,11 @@ function blogs_validate_post(&$post, $blog, $params = null, $seoname = null){
 
         if($post['assigned_to']){
             if(!$post['assigned_to_id'] = sql_get('SELECT `id` FROM `users` WHERE `name` = :name', 'id', array(':name' => $post['assigned_to']))){
-                throw new bException('The specified user "'.str_log($post['assigned_to']).'" does not exist', 'notexists');
+                $v->setError('The specified assigned-to-user "'.str_log($post['assigned_to']).'" does not exist');
             }
 
         }else{
             $post['assigned_to_id'] = null;
-        }
-
-        if(!is_numeric($post['priority']) or ($post['priority'] < 0) or ($post['priority'] > 4) or (fmod($post['priority'], 1))){
-            throw new bException('The specified priority "'.str_log($post['priority']).'" is invalid, it must be one of 0, 1, 2, 3, or 4', 'invalid');
         }
 
         $post['seoname']  = seo_generate_unique_name($post['name'], 'blogs_posts', $post['id']);
@@ -439,7 +451,7 @@ function blogs_validate_post(&$post, $blog, $params = null, $seoname = null){
         $post['url']      = blogs_post_url($post);
 
         if(!isset($params['status_list'][$post['status']])){
-            throw new bException('The specified status "'.str_log($post['status']).'" is invalid, it must be either one of "'.str_log(str_force($params['status_list'])).'"', 'invalid');
+            $v->setError('The specified status "'.str_log($post['status']).'" is invalid, it must be either one of "'.str_log(str_force($params['status_list'])).'"');
         }
 
         if(!empty($params['use_language'])){
@@ -449,6 +461,10 @@ function blogs_validate_post(&$post, $blog, $params = null, $seoname = null){
 
         if($params['use_priorities']){
             $v->isNotEmpty ($post['priority'], tr('Please provide a priority for your %objectname%', '%objectname%', $params['object_name']));
+
+            if(!is_numeric($post['priority']) or ($post['priority'] < 0) or ($post['priority'] > 4) or (fmod($post['priority'], 1))){
+                $v->setError('The specified priority "'.str_log($post['priority']).'" is invalid, it must be one of 0, 1, 2, 3, or 4');
+            }
         }
 
         if(!empty($params['use_description'])){
@@ -470,7 +486,59 @@ function blogs_validate_post(&$post, $blog, $params = null, $seoname = null){
            throw new bException(str_force($v->getErrors(), ', '), 'validation');
         }
 
+        if($params['use_append']){
+            /*
+             * Only allow data to be appended to this post
+             * Find changes between current and previous state and store those as well
+             */
+            load_libs('user');
+
+            $changes      = array();
+            $oldpost      = sql_get('SELECT `assigned_to_id`, `priority`, `status`, `name`, `urlref`, `body` FROM `blogs_posts` WHERE `id` = :id', array(':id' => $post['id']));
+
+            if(isset_get($oldpost['assigned_to_id']) != $post['assigned_to_id']){
+                $user = sql_get('SELECT `id`, `name`, `username`, `email` FROM `users` WHERE `id` = :id', array(':id' => $post['assigned_to_id']));
+
+                if(isset_get($oldpost['assigned_to_id'])){
+                    $changes[] = tr('Re-assigned post to "%user%"', array('%user%' => user_name($user)));
+
+                }else{
+                    $changes[] = tr('Assigned post to "%user%"', array('%user%' => user_name($user)));
+                }
+            }
+
+            if(isset_get($oldpost['priority']) != $post['priority']){
+                $changes[] = tr('Set priority to "%priority%"', array('%priority%' => blogs_priority($post['priority'])));
+            }
+
+            if(isset_get($oldpost['urlref']) != $post['urlref']){
+                $changes[] = tr('Set URL to "%url%"', array('%url%' => $post['urlref']));
+            }
+
+            if(isset_get($oldpost['name']) != $post['name']){
+                $changes[] = tr('Set name to "%name%"', array('%name%' => $post['name']));
+            }
+
+            if(isset_get($oldpost['status']) != $post['status']){
+                $changes[] = tr('Set status to "%status%"', array('%status%' => $post['status']));
+            }
+
+            /*
+             * If no body was given, and no changes were made, then we don't update
+             */
+            if(!$post['body'] and !$changes){
+            throw new bException('blogs_validate_post(): Not updating, no changes were made', 'nochanges');
+            }
+
+            $post['body'] = str_replace('&nbsp;', ' ', $post['body']);
+            $post['body'] = '<h3>'.user_name($_SESSION['user']).' ['.system_date_format().']</h3><p><small>'.implode('<br>', $changes).'</small></p><p>'.$post['body'].'</p><hr>'.isset_get($oldpost['body'], '');
+        }
+
     }catch(Exception $e){
+        if(!empty($oldpost['body'])){
+            $post['body'] = $oldpost['body'];
+        }
+
         if($e->getCode() == 'validation'){
             /*
              * Just throw the list of validation errors.

@@ -1250,10 +1250,14 @@ function in_source($source, $key, $return){
 /*
  *
  */
-function system_date_format($date, $format = 'human_datetime'){
+function system_date_format($date = null, $format = 'human_datetime'){
     global $_CONFIG;
 
     try{
+        if(!$date){
+            $date = date('Y-m-d H:i:s');
+        }
+
         if($format == 'mysql'){
             $format = 'Y-m-d H:i:s';
 
