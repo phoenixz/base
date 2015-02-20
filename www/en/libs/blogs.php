@@ -396,7 +396,7 @@ function blogs_validate_post(&$post, $blog, $params = null, $seoname = null){
         $post['seocategory'] = $category['seoname'];
 
         if($params['use_groups']){
-            $group = blogs_validate_category($post['group'], $blog, $params['groups_parent']);
+            $group = blogs_validate_category($post['seogroup'], $blog, $params['groups_parent']);
 
             $post['group']    = $group['name'];
             $post['seogroup'] = $group['seoname'];
@@ -726,6 +726,10 @@ function blogs_priority($priority){
  */
 function blogs_validate_category($category, $blog){
     try{
+        if(!$category){
+            throw new bException(tr('blogs_validate_category(): No category specified'), 'notexist');
+        }
+
         if(!$retval = sql_get('SELECT `id`, `blogs_id`, `name`, `seoname` FROM `blogs_categories` WHERE `seoname` = :seoname', array(':seoname' => $category))){
 // :DELETE: Delete following 2 debug code lines
 //show(current_file(1).current_line(1));
@@ -733,14 +737,14 @@ function blogs_validate_category($category, $blog){
             /*
              * The specified category does not exist
              */
-            throw new bException(tr('The specified category "%category%" does not exists', '%category%', str_log($category)), 'notexist');
+            throw new bException(tr('blogs_validate_category(): The specified category "%category%" does not exists', array('%category%' => str_log($category))), 'notexist');
         }
 
         if($retval['blogs_id'] != $blog['id']){
             /*
              * The specified category is not of this blog
              */
-            throw new bException(tr('The specified category "%category%" is not of another blog', '%category%', str_log($category)), 'invalid');
+            throw new bException(tr('blogs_validate_category(): The specified category "%category%" is not of another blog', array('%category%' => str_log($category))), 'invalid');
         }
 
         return $retval;
