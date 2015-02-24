@@ -360,8 +360,16 @@ function cli_init_color(){
 /*
  * Show error on screen with usage
  */
-function cli_error($message, $e){
+function cli_error($message, $e = null){
     global $usage;
+
+    if(is_object($message)){
+        /*
+         * No message specified, only an exception object
+         */
+        $e       = $message;
+        $message = 'Failed';
+    }
 
     /*
      * Add the last message

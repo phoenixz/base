@@ -14,7 +14,7 @@ class bException extends Exception{
     private $data     = null;
     public  $code     = null;
 
-    function __construct($message, $code = null, $e = null, $data = null){
+    function __construct($messages, $code = null, $e = null, $data = null){
         /*
          *
          */
@@ -26,12 +26,12 @@ class bException extends Exception{
             }
         }
 
-        if(!$message){
+        if(!$messages){
             throw new Exception('bException: No exception message specified in file "'.current_file(1).'" @ line "'.current_line(1).'"');
         }
 
-        if(is_array($message)){
-            $message = implode("\n", $message);
+        if(!is_array($messages)){
+            $messages = array($messages);
         }
 
         if(!empty($e)){
@@ -49,7 +49,7 @@ class bException extends Exception{
             }
 
         }else{
-            $orgmessage = $message;
+            $orgmessage = reset($messages);
             $this->data = $data;
         }
 
@@ -61,7 +61,15 @@ class bException extends Exception{
 
         parent::__construct($orgmessage, null);
         $this->code       = (string) $code;
-        $this->messages[] = $message;
+
+        /*
+         * If there are any more messages left, then add them as well
+         */
+        if($messages){
+            foreach($messages as $message){
+                $this->messages[] = $message;
+            }
+        }
     }
 
     function addMessage($message){

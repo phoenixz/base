@@ -630,12 +630,16 @@ function sql_unique_id($table, $column = 'id', $max = 10000000, $sql = 'sql'){
  */
 function sql_filters($params, $columns, $table = ''){
     try{
-        $retval  = array();
+        $retval  = array('filters' => array(),
+                         'execute' => array());
+
         $filters = array_keep($params, $columns);
 
         foreach($filters as $key => $value){
-            $retval['filters'][]         = ($table ? '`'.$table.'`.' : '').'`'.$key.'` = :'.$key;
-            $retval['execute'][':'.$key] = $value;
+            $safe_key = str_replace('`.`', '_', $key);
+
+            $retval['filters'][]              = ($table ? '`'.$table.'`.' : '').'`'.$key.'` = :'.$safe_key;
+            $retval['execute'][':'.$safe_key] = $value;
         }
 
         return $retval;

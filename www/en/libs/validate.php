@@ -681,8 +681,14 @@ class validate_form {
     /*
      *
      */
-    function isValid() {
-        return !count($this->errors);
+    function isValid($exception = true) {
+        $valid = !count($this->errors);
+
+        if($exception and !$valid){
+            throw new bException($this->errors, 'validation');
+        }
+
+        return $valid;
     }
 
 
@@ -696,13 +702,22 @@ class validate_form {
         }
 
         if($separator){
-            $html = '';
+            if($separator === true){
+                if(PLATFORM == 'apache'){
+                    $separator = '<br />';
 
-            foreach($this->errors as $key => $value) {
-                $html .= $value.$separator;
+                }else{
+                    $separator = "\n";
+                }
             }
 
-            return $html;
+            $retval = '';
+
+            foreach($this->errors as $key => $value) {
+                $retval .= $value.$separator;
+            }
+
+            return $retval;
         }
 
         return $this->errors;
