@@ -536,7 +536,7 @@ function log_console($message, $type = 'info', $color = null, $newline = true, $
              * Log to STDERR instead of STDOUT
              */
             if(empty($fh)){
-                $fh = fopen('php://stderr','a'); //both (a)ppending, and (w)riting will work
+                $fh = fopen('php://stderr','w');
             }
 
             fwrite($fh, stripslashes(br2nl($message)).($newline ? "\n" : ""));
