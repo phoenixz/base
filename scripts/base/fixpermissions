@@ -113,7 +113,7 @@ try{
     /*
      * Update the file permissions of all paths in www
      */
-    passthru((!empty($deploy_config['sudo']) ? ' sudo' : '').' chmod '.$deploy_config['www_mode'].' '.slash($target_dir).'www/ ', $exitcode);
+    passthru((!empty($deploy_config['sudo']) ? ' sudo' : '').' chmod '.$deploy_config['www_mode'].' '.slash($target_dir).'www/ -R', $exitcode);
 
     if($exitcode){
         throw new bException('Failed to set www path mode', 'update_dirmode');
