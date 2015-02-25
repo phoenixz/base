@@ -31,8 +31,6 @@ function init($projectfrom = null, $frameworkfrom = null){
          */
         file_ensure_path(TMP.'www');
         touch(TMP.'www/.donotdelete');
-        file_delete_tree(ROOT.'www/tmp');
-        symlink(TMP.'www', ROOT.'www/tmp');
 
         /*
          * To do the init, we need the database version data. The database version check is ONLY executed on sql_connect(),
