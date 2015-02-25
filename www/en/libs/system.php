@@ -482,7 +482,7 @@ function log_screen($message, $type = 'info', $color = null){
  * Log specified message to console, but only if we are in console mode!
  */
 function log_console($message, $type = 'info', $color = null, $newline = true, $filter_double = false){
-    static $c, $last;
+    static $c, $fh, $last;
 
     try{
         if(($filter_double == true) and ($message == $last)){
@@ -498,10 +498,12 @@ function log_console($message, $type = 'info', $color = null, $newline = true, $
 
         if($type){
             if((strpos($type, 'error') !== false) and ($color === null)){
+                $error   = true;
                 $color   = 'red';
                 $message = '['.$type.'] '.$message;
 
             }elseif((strpos($type, 'warning') !== false) and ($color === null)){
+                $error   = true;
                 $color   = 'yellow';
                 $message = '['.$type.'] '.$message;
 
@@ -515,7 +517,7 @@ function log_console($message, $type = 'info', $color = null, $newline = true, $
             }
         }
 
-        if($color){
+        if($color and !NOCOLOR){
             load_libs('cli');
             $c = cli_init_color();
 
@@ -526,7 +528,19 @@ function log_console($message, $type = 'info', $color = null, $newline = true, $
             $message = $c->$color($message);
         }
 
-        echo stripslashes(br2nl($message)).($newline ? "\n" : "");
+        if(empty($error)){
+            echo stripslashes(br2nl($message)).($newline ? "\n" : "");
+
+        }else{
+            /*
+             * Log to STDERR instead of STDOUT
+             */
+            if(empty($fh)){
+                $fh = fopen('php://stderr','a'); //both (a)ppending, and (w)riting will work
+            }
+
+            fwrite($fh, stripslashes(br2nl($message)).($newline ? "\n" : ""));
+        }
 
         return true;
 
