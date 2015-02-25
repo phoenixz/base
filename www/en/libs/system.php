@@ -223,19 +223,6 @@ function isset_get(&$variable, $return = null, $altreturn = null){
 
 
 /*
- * Is email valid?
- */
-function is_valid_email($email){
-    if(!preg_match("/^[_a-z0-9-]+(\.[_a-z0-9-]+)*@[a-z0-9-]+(\.[a-z0-9-]+)*(\.[a-z]{2,4})$/i", $email)){
-        return false;
-    }
-
-    return true;
-}
-
-
-
-/*
  * Load html templates from disk
  */
 function load_content($file, $from = false, $to = false, $language = null, $autocreate = null, $validate = true){
@@ -1304,6 +1291,27 @@ function system_date_format($date = null, $format = 'human_datetime'){
 /*
  *
  */
+function is_natural_number($number){
+    if(!is_numeric($number)){
+        return false;
+    }
+
+    if($number < 1){
+        return false;
+    }
+
+    if($number != (integer) $number){
+        return false;
+    }
+
+    return true;
+}
+
+
+
+/*
+ *
+ */
 function force_natural_number($number, $default = 1){
     if(!is_numeric($number)){
         return $default;
@@ -1319,5 +1327,4 @@ function force_natural_number($number, $default = 1){
 
     return $number;
 }
-
 ?>

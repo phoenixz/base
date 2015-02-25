@@ -311,7 +311,7 @@ function init_process_version_diff(){
         }
     }
 
-    if((PLATFORM == 'apache') or argument('noversioncheck')){
+    if((PLATFORM == 'apache') or !argument('noversioncheck')){
         throw new bException('init_process_version_diff(): Please run the init script because "'.str_log($versionerror).'"');
     }
 }

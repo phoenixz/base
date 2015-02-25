@@ -309,7 +309,7 @@ class validate_form {
         $value = cfm($value);
         if(!$value) return '';
 
-        if(!is_valid_email($value)) {
+        if(!preg_match("/^[_a-z0-9-]+(\.[_a-z0-9-]+)*@[a-z0-9-]+(\.[a-z0-9-]+)*(\.[a-z]{2,4})$/i", $value)){
             $this->errors[] = $msg;
 
         }else{
@@ -722,120 +722,5 @@ class validate_form {
 
         return $this->errors;
     }
-
-
-
-    /*
-     * DEPRECATED, DO NOT USE ALL FOLLOWING METHIDS! Only still available to avoid missing method crashes
-     */
-/*
-    function get_errors($separator = null){
-        return $this->getErrors($separator);
-    }
-
-    function is_valid() {
-        return $this->isValid();
-    }
-
-    function is_not_empty($value, $msg) {
-        return $this->isNotEmpty($value, $msg);
-    }
-
-    function is_alphanum($value, $msg) {
-        return $this->isAlphanum($value, $msg);
-    }
-
-    function is_valid_name($value, $msg) {
-        return $this->isValidName($value, $msg);
-    }
-
-    function is_valid_email($value, $msg) {
-        return $this->isValidEmail($value, $msg);
-    }
-
-    function is_numeric($value, $msg) {
-        return $this->isNumeric($value, $msg);
-    }
-
-    function is_valid_phonenumber($value, $msg) {
-        return $this->isValidPhonenumber($value, $msg);
-    }
-
-    function is_equal($value, $value2, $msg) {
-        return $this->isEqual($value, $value2, $msg);
-    }
-
-    function is_between($value, $min, $max, $msg) {
-        return $this->isBetween($value, $min, $max, $msg);
-    }
-
-    function is_enabled($value, $msg) {
-        return $this->isEnabled($value, $msg);
-    }
-
-    function has_min_chars($value, $limit, $msg) {
-        return $this->hasMinChars($value, $limit, $msg);
-    }
-
-    function has_max_chars($value, $limit, $msg) {
-        return $this->hasMaxChars($value, $limit, $msg);
-    }
-
-    function is_valid_url($value, $msg) {
-        return $this->isValidUrl($value, $msg);
-    }
-
-    function is_valid_facebook_userpage($value, $msg) {
-        return $this->isValidFacebookUserpage($value, $msg);
-    }
-
-    function is_valid_twitter_userpage($value, $msg) {
-        return $this->isValidTwitterUserpage($value, $msg);
-    }
-
-    function is_valid_googleplus_userpage($value, $msg) {
-        return $this->isValidGoogleplusUserpage($value, $msg);
-    }
-
-    function is_valid_youtube_userpage($value, $msg) {
-        return $this->isValidYoutubeUserpage($value, $msg);
-    }
-
-    function is_valid_linkedin_userpage($value, $msg) {
-        return $this->isValidLinkedinUserpage($value, $msg);
-    }
-
-    function is_checked($value, $msg) {
-        return $this->isChecked($value, $msg);
-    }
-
-    function is_valid_password($value, $msg) {
-        return $this->isValidPassword($value, $msg);
-    }
-
-    function is_regex($value, $regex, $msg) {
-        return $this->isRegex($value, $regex, $msg);
-    }
-
-    function is_in_range($value, $min, $max, $msg) {
-        return $this->isInRange($value, $min, $max, $msg);
-    }
-
-    function is_date($value, $msg) {
-        return $this->isDate($value, $msg);
-    }
-
-    function is_time($value, $msg) {
-        return $this->isTime($value, $msg);
-    }
-
-    function sql_query($value, $msg) {
-        return $this->sqlQuery($value, $msg);
-    }
-
-    function set_error($msg) {
-        return $this->setError($msg);
-    }
-*/
 }
 ?>
