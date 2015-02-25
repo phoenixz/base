@@ -29,6 +29,8 @@ array_shift($argv);
  * signin with the shells username (no authentication required,
  * assume that if the user is in the shell, he already
  * authenticated with the shell
+ *
+ * Check for environment variable USER (used by shells) or LOGNAME (used by cron)
  */
 if(!empty($signin)){
     try{
@@ -43,7 +45,7 @@ if(!empty($signin)){
         throw new bException('startup: Failed to signin with specified user or email "'.str_log($signin).'"', $e);
     }
 
-}elseif(!empty($_SERVER['USER']) and !argument('nologin')){
+}elseif((!empty($_SERVER['USER']) or !empty($_SERVER['LOGNAME'])) and !argument('nologin')){
     try{
         $user = sql_get('SELECT `id`,
                                 `name`,
@@ -55,8 +57,8 @@ if(!empty($signin)){
                          WHERE  `username` = :name
                          OR     `email`    = :email',
 
-                         array(':name'  => $_SERVER['USER'],
-                               ':email' => $_SERVER['USER']));
+                         array(':name'  => isset_get($_SERVER['USER'], $_SERVER['LOGNAME']),
+                               ':email' => isset_get($_SERVER['USER'], $_SERVER['LOGNAME'])));
 
         if($user){
             load_libs('user');
