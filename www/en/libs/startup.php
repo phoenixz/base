@@ -420,7 +420,7 @@ try{
                 break;
 
             case 'shell':
-                include(dirname(__FILE__).'/handlers/system_platform_shell.php');
+                include(dirname(__FILE__).'/handlers/startup_platform_shell.php');
                 break;
 
             default:
@@ -553,7 +553,7 @@ try{
      * Verify project data integrity
      */
     if(!defined("SEED") or !SEED or (PROJECTCODEVERSION == '0.0.0')){
-        return include(dirname(__FILE__).'/handlers/system_no_project_data.php');
+        return include(dirname(__FILE__).'/handlers/startup_no_project_data.php');
     }
 
 
