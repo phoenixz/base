@@ -27,26 +27,40 @@ try{
     $deploy_config = $_CONFIG['deploy'][$target];
     $target_dir    = argument('target_dir', true, $deploy_config['target_dir']);
 
-    if(empty($_CONFIG['deploy'][$target])){
-        throw new bException('Specified target environment "'.str_log($target).'" has no deploy configuration $_CONFIG[deploy]['.str_log($target).']', 'missingconfiguration');
+    try{
+        if(empty($_CONFIG['deploy'][$target])){
+            throw new bException('Specified target environment "'.str_log($target).'" has no deploy configuration $_CONFIG[deploy]['.str_log($target).'] in "'.ROOT.'config/deploy.php"', 'missingconfiguration');
+        }
+
+        if(empty($deploy_config['user'])){
+            throw new bException('No $_CONFIG[deploy]['.str_log($target).'][user] specified', 'missingconfiguration');
+        }
+
+        if(empty($deploy_config['group'])){
+            throw new bException('No $_CONFIG[deploy]['.str_log($target).'][group] specified', 'missingconfiguration');
+        }
+
+        if(empty($deploy_config['dir_mode'])){
+            throw new bException('No $_CONFIG[deploy]['.str_log($target).'][dir_mode] specified', 'missingconfiguration');
+        }
+
+        if(empty($deploy_config['file_mode'])){
+            throw new bException('No $_CONFIG[deploy]['.str_log($target).'][file_mode] specified', 'missingconfiguration');
+        }
+
+        if(empty($deploy_config['www_mode'])){
+            throw new bException('No $_CONFIG[deploy]['.str_log($target).'][www_mode] specified', 'missingconfiguration');
+        }
+
+    }catch(Exception $e){
+        throw new bException('Check configuration in "'.ROOT.'config/deploy.php"', $e);
     }
 
-    if(empty($deploy_config['user'])){
-        throw new bException('No $_CONFIG[deploy]['.str_log($target).'][user] specified', 'missingconfiguration');
-    }
 
-    if(empty($deploy_config['group'])){
-        throw new bException('No $_CONFIG[deploy][group] specified', 'missingconfiguration');
-    }
 
-    if(empty($deploy_config['dir_mode'])){
-        throw new bException('No $_CONFIG[deploy][dir_mode] specified');
-    }
-
-    if(empty($deploy_config['file_mode'])){
-        throw new bException('No $_CONFIG[deploy][file_mode] specified');
-    }
-
+    /*
+     *
+     */
     passthru((!empty($deploy_config['sudo']) ? ' sudo' : '').' chown '.$deploy_config['user'].':'.$deploy_config['group'].' '.$target_dir.' -R;', $exitcode);
 
     if($exitcode){
@@ -55,6 +69,11 @@ try{
 
     log_console('Updated owner:group permissions', '', 'green');
 
+
+
+    /*
+     *
+     */
     passthru((!empty($deploy_config['sudo']) ? ' sudo' : '').' find '.$target_dir.' -type d -exec chmod '.$deploy_config['dir_mode'].' {} \;', $exitcode);
 
     if($exitcode){
@@ -63,6 +82,11 @@ try{
 
     log_console('Updated directories mode...', '', 'green');
 
+
+
+    /*
+     *
+     */
     passthru((!empty($deploy_config['sudo']) ? ' sudo' : '').' find '.$target_dir.' -type f -exec chmod '.$deploy_config['file_mode'].' {} \;', $exitcode);
 
     if($exitcode){
@@ -71,6 +95,11 @@ try{
 
     log_console('Updated files mode...', '', 'green');
 
+
+
+    /*
+     *
+     */
     passthru((!empty($deploy_config['sudo']) ? ' sudo' : '').' find '.slash($target_dir).'scripts -type f -exec chmod 0750 {} \;', $exitcode);
 
     if($exitcode){
@@ -79,7 +108,20 @@ try{
 
     log_console('Updated script files mode...', '', 'green');
 
-    log_console('Finished updating project file permissions...', 'filepermissions', 'green');
+
+
+    /*
+     * Update the file permissions of all paths in www
+     */
+    passthru((!empty($deploy_config['sudo']) ? ' sudo' : '').' chmod '.$deploy_config['php_mode'].' '.slash($target_dir).'www/ ', $exitcode);
+
+    if($exitcode){
+        throw new bException('Failed to set www path mode', 'update_dirmode');
+    }
+
+    log_console('Updated www path mode...', '', 'green');
+
+    log_console('Finished updating www directories permissions...', 'filepermissions', 'green');
 
 }catch(Exception $e){
     throw new bException('scripts/base/fixpermissions: Failed', $e);
