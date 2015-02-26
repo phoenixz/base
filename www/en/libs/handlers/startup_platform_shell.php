@@ -16,9 +16,9 @@ if(strpos($_SERVER['PHP_SELF'], '/') !== false) {
 
 // :TODO: Should these command line arguments also be removed from the $argv array, since these are also system arguments???
 define('PWD'     , slash(isset_get($_SERVER['PWD'])));
-define('FORCE'   , argument('force'));
+define('FORCE'   , argument('-f', false, argument('--force')));
 define('NOCOLOR' , argument('-c', false, argument('--nocolor')));
-define('TEST'    , argument('test'));
+define('TEST'    , argument('-t', false, argument('--test')));
 define('LIMIT'   , in_array('limit', $argv) ? array_next_value($argv, 'limit') : false);
 define('STARTDIR', slash(getcwd()));
 
