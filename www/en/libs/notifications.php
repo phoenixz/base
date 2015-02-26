@@ -75,7 +75,7 @@ function notifications_do($event, $message, $classes = null, $alternate_subenvir
             /*
              * No classes found to send notifications to
              */
-            throw new bException('notifications_do(): No classes found');
+            throw new bException('notifications_do(): No classes found for specified classes "'.str_log($classes).'"');
         }
 
         foreach($list as $id => $methods){
@@ -105,6 +105,14 @@ function notifications_do($event, $message, $classes = null, $alternate_subenvir
                                      WHERE     `notifications_members`.`classes_id` = :classes_id',
 
                                      array(':classes_id' => $id));
+            }
+
+            if(!$members){
+                /*
+                 * No classes found to send notifications to
+                 */
+                log_error('notifications_do(): No members found for class id "'.str_log($id).'"');
+                continue;
             }
 
             foreach($methods as $method){
@@ -198,7 +206,7 @@ function notifications_email($event, $message, $users, $alternate_subenvironment
                  * Since this error occurs in the notification system itself, this makes it
                  * rather hard to notify for, so for now, just log the problem in the database
                  */
-                log_error('notifications_email(): The PHP mail() command took "'.(microtime(true) - $start).'" seconds to send the message "'.str_log($message).'". This usually is caused by a misconfiguration of /etc/hosts, where one (or multiples) of localhost, localhost.localdomain, or the machines hostname will be missing. Also might be needed to have a FQD in the form of host.domain.com, like laptop.mydomain.com, which then in /etc/hosts may be configured to point to 127.0.1.1', 'mailslow');
+                log_error('notifications_email(): The PHP mail() command took "'.(microtime(true) - $start).'" seconds to send the message "'.str_log($message).'". This usually is caused by a misconfiguration of /etc/hosts, where one (or multiples) of localhost, localhost.localdomain, or the machines hostname will be missing. Also might be needed to have a FQD in the form of host.domain.com, like laptop.mydomain.com, which then in /etc/hosts may be configured to point to 127.0.1.1. See http://superuser.com/questions/626205/sendmail-very-slow-etc-hosts-configuration/626219#626219 and http://google.com for more information', 'mailslow');
             }
         }
 
