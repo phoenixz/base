@@ -28,23 +28,23 @@
             throw $e;
         }
 
+        log_console(tr('Database base server conntection failed because database "%db%" does not exist. Attempting to connect without using a database to correct issue', array('%db%' => $connector['db'])), '', 'yellow');
+
         /*
          * We're running the init script, so go ahead and create the DB already!
          */
-        $db = $connector['db'];
-        $connector['db'] = '';
-
-        sql_connect($connector);
-        load_libs('init');
-        init_process_version_diff();
-
+        $db  = $connector['db'];
+        unset($connector['db']);
         $pdo = sql_connect($connector);
+
+        log_console(tr('Successfully connected to database server. Attempting to create database "%db%"', array('%db%' => $db)), '', 'yellow');
+
         $pdo->query('CREATE DATABASE '.$db);
 
-        $connector['db'] = $db;
+        log_console(tr('Reconnecting to database server with database "%db%"', array('%db%' => $db)), '', 'yellow');
 
-        unset($pdo);
-        unset($db);
+        $connector['db'] = $db;
+        $pdo = sql_connect($connector);
 
     }else{
         try{

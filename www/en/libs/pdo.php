@@ -369,6 +369,7 @@ function sql_connect($connector) {
             }
 
         }catch(Exception $e){
+            log_console(tr('Encountered exception "%e%" while connecting to database server, attempting to resolve', array('%e%' => $e->getMessage())), '', 'yellow');
             include(dirname(__FILE__).'/handlers/pdo_connect_exception.php');
         }
 
