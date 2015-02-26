@@ -121,6 +121,20 @@ try{
 
     log_console('Updated www path mode...', '', 'green');
 
+
+
+
+    /*
+     * Update the file permissions of temp directory
+     */
+    passthru((!empty($deploy_config['sudo']) ? ' sudo' : '').' chmod ug+rwx,g+s,o-rwx '.slash($target_dir).'tmp/ -R', $exitcode);
+
+    if($exitcode){
+        throw new bException('Failed to set tmp path mode', 'update_dirmode');
+    }
+
+    log_console('Updated tmp path mode...', '', 'green');
+
     log_console('Finished updating www directories permissions...', 'filepermissions', 'green');
 
 }catch(Exception $e){
