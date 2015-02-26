@@ -8,10 +8,6 @@
 
 
 
-if(PLATFORM != 'apache'){
-    throw new bException('http library (): This library can only be loaded by PHP running from a webserver');
-}
-
 
 
 /*
