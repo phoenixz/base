@@ -99,15 +99,15 @@ function notify($event, $message, $classes = null, $alternate_subenvironment = n
     load_libs('notifications');
 
     try{
-        notifications_do($event, $message, $classes, $alternate_subenvironment);
+        return notifications_do($event, $message, $classes, $alternate_subenvironment);
 
     }catch(Exception $e){
         /*
          * Notification failed!
          *
-         * Now what?
+         * Do NOT cause exception, because it its not caught, it might cause another notification, that will fail, cause exception and an endless loop!
          */
-// :TODO: Implement
+        return false;
     }
 }
 

@@ -203,12 +203,6 @@ $_CONFIG['mobile']             = array('enabled'          => true,              
 // Name of the website
 $_CONFIG['name']               = 'base';
 
-// Notification configuration
-$_CONFIG['notifications']      = array('force'            => false,
-
-                                       'methods'          => array('email'         => array('enabled' => true),
-                                                                   'prowl'         => array('enabled' => false)));
-
 // Paging configuration
 $_CONFIG['paging']             = array('limit'            => 20,                                            // The maximum amount of items shown per page
                                        'show_pages'       => 5,                                             // The maximum amount of pages show, should always be an odd number, or an exception will be thrown!

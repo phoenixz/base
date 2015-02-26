@@ -3,16 +3,18 @@
 /*
  * This is an empty test script template
  */
-$usage = "./scripts/base/empty OPTIONS\n".
-         "./scripts/base/empty\n";
+$usage = "./scripts/base/empty\n".
+         "./scripts/base/empty option [option]\n";
 
-$help  = "This is the help contents";
+$help  = "No help available";
 
-$quiet = true; # Set to false if no startup log messages should be displayed
-
+$quiet = true;
 require_once(dirname(__FILE__).'/../../libs/startup.php');
 
 try{
+	cli_only();
+	load_libs('test');
+
     foreach($argv as $arg){
         switch($arg){
             case 'all':
@@ -21,7 +23,24 @@ try{
         }
     }
 
+	test('emptyfunction()', 'Function call which should do blah blah', function(){
+		try{
+			if(emptyfunction('lkjerlkfwejf', 127)){
+				throw new bException('Did not do blah blah');
+			}
+
+		}catch(Exception $e){
+showdie($e);
+		}
+	});
+
+	test_completed('empty()');
+
+
+	// Completed system tests
+	test_completed('empty', 'library');
+
 }catch(Exception $e){
-    cli_error('scripts/base/empty: Failed', $e);
+    cli_error($e);
 }
 ?>

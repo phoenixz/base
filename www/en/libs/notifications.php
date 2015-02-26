@@ -7,6 +7,7 @@
  * @license http://opensource.org/licenses/GPL-2.0 GNU Public License, Version 2
  * @copyright Sven Oostenbrink <support@svenoostenbrink.com>
  */
+load_config('notifications');
 
 
 
@@ -28,18 +29,9 @@ function notifications_do($event, $message, $classes = null, $alternate_subenvir
 
         /*
          * Validate classes
+         * By default, the event will be regarded as an class as well. If its not defined, it will later on simply be skipped
          */
-        if(!$classes){
-            $classes = array();
-        }
-
-        if(!is_array($classes)){
-            $classes = array($classes);
-        }
-
-        /*
-         * By default, the event will be regarded as an event as well. If its not defined, it will later on simply be skipped
-         */
+        $classes   = array_force($classes);
         $classes[] = $event;
 
         if(strtolower($event) == 'error'){
@@ -54,11 +46,6 @@ function notifications_do($event, $message, $classes = null, $alternate_subenvir
          */
         array_unique($classes);
 
-        /*
-         * Send notifications for each class
-         */
-        $keys = array_sequential_values(count($classes), ':classes');
-
         if(!isset_get($GLOBALS['sql'])){
             /*
              * WHOOPS! No database available, we're effed in the A here...
@@ -68,11 +55,27 @@ function notifications_do($event, $message, $classes = null, $alternate_subenvir
             $list = array('email');
 
         }else{
-            $list = sql_list('SELECT `id`, `methods`
-                              FROM   `notifications_classes`
-                              WHERE  `name` IN ('.implode(',', $keys).')',
+            /*
+             * Send notifications for each class
+             */
+            $in   = sql_in($classes);
+            $list = sql_list('SELECT `id`,
+                                     `methods`
 
-                              array_combine($keys, $classes));
+                              FROM   `notifications_classes`
+
+                              WHERE (`name` IN ('.implode(',', array_keys($in)).')
+                              OR     `id`   IN ('.implode(',', array_keys($in)).'))
+                              AND    `status` IS NULL',
+
+                              $in);
+        }
+
+        if(!$list){
+            /*
+             * No classes found to send notifications to
+             */
+            throw new bException('notifications_do(): No classes found');
         }
 
         foreach($list as $id => $methods){
@@ -107,7 +110,8 @@ function notifications_do($event, $message, $classes = null, $alternate_subenvir
             foreach($methods as $method){
                 switch($method){
                     case 'sms':
-                        throw new bException('notifications_do(): SMS notifications are not yet supported');
+throw new bException('notifications_do(): SMS notifications are not yet supported');
+                        load_libs('twilio');
 
                     case 'email':
                         notifications_email($event, $message, $members);
@@ -123,11 +127,12 @@ function notifications_do($event, $message, $classes = null, $alternate_subenvir
             }
         }
 
-    }catch(Exception $e){
-        if(SCRIPT == 'init'){
-            log_console('notifications_do(): Notification system failed with "'.str_log($e->getMessage()).'"', 'warning');
+        return true;
 
-        }else{
+    }catch(Exception $e){
+        log_error('notifications_do(): Notification system failed with "'.str_log($e->getMessage()).'"');
+
+        if(SCRIPT != 'init'){
             if(empty($_CONFIG['mail']['developer'])){
                 log_error('[notifications_do() FAILED : '.strtoupper($_CONFIG['domain']).' / '.strtoupper(php_uname('n')).' / '.strtoupper(ENVIRONMENT).(SUBENVIRONMENT ? ' / '.SUBENVIRONMENT : '').']', "notifications_do() failed with: ".implode("\n", $e->getMessages())."\n\nOriginal notification event was:\nEvent: \"".cfm($event)."\"\nMessage: \"".cfm($message)."\"");
                 log_error('WARNING! $_CONFIG[mail][developer] IS NOT SET, NOTIFICATIONS CANNOT BE SENT!');
@@ -386,5 +391,64 @@ function notifications_desktop($params){
     }catch(Exception $e){
         throw new bException('notifications_desktop(): Failed', $e);
     }
+}
+
+
+
+/*
+ *
+ */
+function notifications_validate_class($class){
+    load_libs('validate');
+
+    $v = new validate_form($class, 'name,methods,description');
+
+    $v->hasMinChars($class['name']       ,  2, tr('Please ensure that the notifications class name has more than 2 characters'));
+    $v->hasMaxChars($class['name']       ,  32, tr('Please ensure that the notifications class name has less than 32 characters'));
+    $v->hasMaxChars($class['description'], 255, tr('Please ensure that the notifications class description has less than 255 characters'));
+
+    $class['methods'] = explode(',', $class['methods']);
+
+    if(!count($class['methods'])){
+        $v->setError(tr('Please ensure you have at least one method specified'));
+
+    }elseif(count($class['methods']) > 3){
+        $v->setError(tr('Please ensure you have less than three methods specified'));
+    }
+
+    foreach($class['methods'] as &$method){
+        $method = trim($method);
+
+        switch($method){
+            case 'sms':
+            case 'email':
+                /*
+                 * These are valid methods
+                 */
+                break;
+
+            default:
+                $v->setError(tr('Unknown notifications method "%method%" specified', array('%method%' => $method)));
+        }
+    }
+
+    unset($method);
+
+    $class['methods'] = implode(',', $class['methods']);
+
+    if($class['id']){
+        if($id = sql_get('SELECT `id` FROM `notifications_classes` WHERE `name` = :name AND `id` != :id', 'id', array(':id' => $class['id'], ':name' => $class['name']))){
+            $v->setError(tr('Another notifications class with the name "%name%" already exists under the id "%id%"', array('%id%' => $id, '%name%' => $class['name'])));
+        }
+
+    }else{
+        if($id = sql_get('SELECT `id` FROM `notifications_classes` WHERE `name` = :name', 'id', array(':name' => $class['name']))){
+            $v->setError(tr('Another notifications class with the name "%name%" already exists under the id "%id%"', array('%id%' => $id, '%name%' => $class['name'])));
+        }
+    }
+
+    $v->isValid();
+
+    return $class;
 }
 ?>

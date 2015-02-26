@@ -676,11 +676,15 @@ function array_find($array, $keyword){
 
 
 /*
- * Copy all elements from source to target, and clean them up
+ * Copy all elements from source to target, and clean them up. Any columns specified in "skip" will be skipped
  */
-function array_copy_clean($source, $target){
+function array_copy_clean($target, $source, $skip = 'id'){
     try{
+        $skip = array_force($skip);
+
         foreach($source as $key => $value){
+            if(in_array($key, $skip)) continue;
+
             if(is_string($value)){
                 $target[$key] = mb_trim($value);
 
@@ -778,6 +782,31 @@ function array_value_to_keys($source){
 
     }catch(Exception $e){
         throw new bException('array_value_to_keys(): Failed', $e);
+    }
+}
+
+
+
+/*
+ *
+ */
+function array_filtered_merge(){
+    try{
+        $args = func_get_args();
+
+        if(count($args) < 3){
+            throw new bException('array_filtered_merge(): Function requires at least 3 arguments: filter, source, merge, .... ', 'missing_argument');
+        }
+
+        $filter = array_shift($args);
+        $source = array_shift($args);
+        $source = array_remove($source, $filter);
+        array_unshift($args, $source);
+
+        return call_user_func_array('array_merge', $args);
+
+    }catch(Exception $e){
+        throw new bException('array_filtered_merge(): Failed', $e);
     }
 }
 ?>

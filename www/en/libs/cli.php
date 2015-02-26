@@ -265,51 +265,85 @@ function this_script_already_runs($action = 'exception', $force = false){
 function argument($value, $next = null, $default = null){
     global $argv;
 
-    if(is_numeric($value)){
-        while($argument = isset_get($argv[$value++], $next)){
-            switch($argument){
-                case 'force':
-                    // FALLTHROUGH
-                case 'test':
-                    /*
-                     * Ignore test and force arguments
-                     */
-                    break;
+    try{
+        if(is_numeric($value)){
+            while($argument = isset_get($argv[$value++], $next)){
+                switch($argument){
+                    case 'force':
+                        // FALLTHROUGH
+                    case 'test':
+                        /*
+                         * Ignore test and force arguments
+                         */
+                        break;
 
-                default:
-                    return $argument;
+                    default:
+                        return $argument;
+                }
+            }
+
+            /*
+             * No arguments found (except perhaps for test or force)
+             */
+            return $default;
+        }
+
+        if($value === null){
+            $retval = $argv;
+            $argv   = array();
+            return $retval;
+        }
+
+        if(($key = array_search($value, $argv)) === false){
+            /*
+             * Specified argument not found
+             */
+            return $default;
+        }
+
+        if($next){
+            if($next === 'all'){
+                /*
+                 * Return all following arguments, if available
+                 */
+                return array_from($argv, array_search($value, $argv), true);
+            }
+
+            /*
+             * Return next argument, if available
+             */
+            return array_next_value($argv, $value, true);
+        }
+
+        unset($argv[$key]);
+        return true;
+
+    }catch(Exception $e){
+        throw new bException(tr('argument(): Failed'), $e);
+    }
+}
+
+
+
+/*
+ *
+ */
+function arguments($arguments){
+    try{
+        $arguments = array_force($arguments);
+        $retval    = array();
+
+        foreach($arguments as $argument){
+            if($value = argument($argument, true)){
+                $retval[$argument] = $value;
             }
         }
 
-        /*
-         * No arguments found (except perhaps for test or force)
-         */
-        return $default;
+        return $retval;
+
+    }catch(Exception $e){
+        throw new bException(tr('arguments(): Failed'), $e);
     }
-
-    if(($key = array_search($value, $argv)) === false){
-        /*
-         * Specified argument not found
-         */
-        return $default;
-    }
-
-    if($next){
-        if($next === 'all'){
-            /*
-             * Return all following arguments, if available
-             */
-            return array_from($argv, array_search($value, $argv), true);
-        }
-
-        /*
-         * Return next argument, if available
-         */
-        return array_next_value($argv, $value, true);
-    }
-
-    unset($argv[$key]);
-    return true;
 }
 
 
