@@ -49,7 +49,7 @@ sql_index_exists      ('notifications_classes', 'updatedon'                     
 sql_column_exists     ('notifications_classes', 'updatedon'                             ,  'ALTER TABLE `notifications_classes` CHANGE COLUMN `updatedon` `modifiedon` DATETIME NULL');
 sql_index_exists      ('notifications_classes', 'modifiedon'                            , '!ALTER TABLE `notifications_classes` ADD INDEX (`modifiedon`)');
 
-sql_column_exists     ('notifications_classes', 'description'                           ,  'ALTER TABLE `notifications` CHANGE COLUMN `description` `description` VARCHAR(255) NULL');
+sql_column_exists     ('notifications_classes', 'description'                           ,  'ALTER TABLE `notifications_classes` CHANGE COLUMN `description` `description` VARCHAR(255) NULL');
 
 sql_index_exists      ('notifications_classes', 'addedby_2'                             ,  'ALTER TABLE `notifications_classes` DROP INDEX  `addedby_2`');
 sql_index_exists      ('notifications_classes', 'name'                                  ,  'ALTER TABLE `notifications_classes` DROP INDEX  `name`');
