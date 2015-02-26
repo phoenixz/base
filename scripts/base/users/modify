@@ -9,16 +9,18 @@ require_once(dirname(__FILE__).'/../../../libs/startup.php');
 
 try{
     cli_rights('admin,users,modify');
-    load_libs('user');
+    load_libs('user,validate');
 
-    if(!$user = user_get(argument(0))){
-        throw new bException('Specified user "'.str_log(argument(0)).'" does not exist', 'notexists');
+    $user    = user_get(argument(0), 'id,name,username,email');
+    $where   = ' WHERE  `id`   = :id';
+    $execute = array(':id'    => $user['id']);
+    $v       = new validate_form();
+
+    if(!$user){
+        $v->setError(tr('Specified user "%user%" does not exist', array('%user%' => str_log(argument(0)))));
     }
 
-    $where   = 'WHERE  `id`   = :id';
 
-    $execute = array(':value' => $value,
-                     ':id'    => $user['id']);
 
     /*
      * Consider only users with a specific type as real users?
@@ -36,66 +38,79 @@ try{
     /*
      * Modify what exactly?
      */
-    if($value = argument('name', true)){
+    if($execute[':value'] = argument('name', true)){
         /*
          * Modify the users real name
          */
-        sql_query('UPDATE `users`
-                   SET    `name` = :value'.$where,
+        if(!$execute[':value']){
+            $v->setError(tr('Specified username "%name%" is not valid, it should be more than 2 characters', array('%name%' => $execute[':value'])));
 
-                   $execute);
+        }elseif(strlen($execute[':value']) >= 255){
+            $v->setError(tr('Specified username "%name%" is not valid, it should be less than 255 characters', array('%name%' => $execute[':value'])));
+        }
 
-        log_console('Updated real name to "'.str_log($value).'"', 'name', 'green');
+        $query = 'UPDATE `users`
+                  SET    `name` = :value';
+
+        log_console('Updating user real name to "'.str_log($execute[':value']).'"');
         $modified = true;
-    }
 
-    if($value = argument('username', true)){
+    }elseif($execute[':value'] = argument('username', true)){
         /*
          * Modify the users username
          */
-        sql_query('UPDATE `users`
-                   SET    `username` = :value
-                   WHERE  `id`       = :id'.$where,
+        if(!$execute[':value']){
+            $v->setError(tr('Specified username "%username%" is not valid, it should be more than 2 characters', array('%username%' => $execute[':value'])));
 
-                   $execute);
+        }elseif(strlen($execute[':value']) >= 64){
+            $v->setError(tr('Specified username "%username%" is not valid, it should be less than 64 characters', array('%username%' => $execute[':value'])));
+        }
 
-        log_console('Updated username to "'.str_log($value).'"', 'username', 'green');
+        $query = 'UPDATE `users`
+                  SET    `username` = :value';
+
+        log_console('Updating user name to "'.str_log($execute[':value']).'"');
         $modified = true;
-    }
 
-    if($value = argument('email', true)){
+    }elseif($execute[':value'] = argument('email', true)){
         /*
          * Modify the users email
          */
-        sql_query('UPDATE `users`
-                   SET    `email` = :value
-                   WHERE  `id`    = :id'.$where,
+        $v->isValidEmail($execute[':value'], tr('Specified email "%email%" is not a valid email address', array('%email%' => $execute[':value'])));
 
-                   $execute);
+        $query = 'UPDATE `users`
+                  SET    `email` = :value';
 
-        log_console('Updated email to "'.str_log($value).'"', 'email', 'green');
+        log_console('Updating user email to "'.str_log($execute[':value']).'"');
         $modified = true;
-    }
 
-    if($value = argument('status', true)){
+    }elseif($execute[':value'] = argument('status', true)){
         /*
          * Modify the users status
          */
-        sql_query('UPDATE `users`
-                   SET    `status` = :value
-                   WHERE  `id`     = :id'.$where,
+        if(!$execute[':value']){
+            $execute[':value'] = null;
 
-                   $execute);
+        }elseif(strlen($execute[':value']) > 16){
+            $v->setError(tr('Specified status "%status%" is not valid, it should be less than 16 characters', array('%status%' => $execute[':value'])));
+        }
 
-        log_console('Updated status to "'.str_log($value).'"', 'status', 'green');
+        $query = 'UPDATE `users`
+                  SET    `status` = :value';
+
+        log_console('Updating user status to "'.str_log($execute[':value']).'"');
         $modified = true;
     }
 
     if(!isset_get($modified)){
-        log_console('Not modified anything for user "'.$user['email'].'"', 'finished', 'yellow');
+        log_console('Not modified anything for user "'.user_name($user).'"', 'finished', 'yellow');
 
     }else{
-        log_console('Finished modifying user "'.$user['email'].'"', 'finished', 'white');
+        $v->isValid();
+
+        sql_query($query.$where, $execute);
+
+        log_console('Finished modifying user "'.user_name($user).'"', 'finished', 'white');
     }
 
 }catch(Exception $e){
