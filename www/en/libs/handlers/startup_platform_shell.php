@@ -47,34 +47,28 @@ if(!empty($signin)){
 
 }elseif((!empty($_SERVER['USER']) or !empty($_SERVER['LOGNAME'])) and !argument('nologin')){
     try{
-        $user = sql_get('SELECT `id`,
-                                `name`,
-                                `username`,
-                                `email`
+        if((SCRIPT != 'init') and (SCRIPT != 'update')){
+            $user = sql_get('SELECT `id`,
+                                    `name`,
+                                    `username`,
+                                    `email`
 
-                         FROM   `users`
+                             FROM   `users`
 
-                         WHERE  `username` = :name
-                         OR     `email`    = :email',
+                             WHERE  `username` = :name
+                             OR     `email`    = :email',
 
-                         array(':name'  => isset_get($_SERVER['USER'], $_SERVER['LOGNAME']),
-                               ':email' => isset_get($_SERVER['USER'], $_SERVER['LOGNAME'])));
+                             array(':name'  => isset_get($_SERVER['USER'], $_SERVER['LOGNAME']),
+                                   ':email' => isset_get($_SERVER['USER'], $_SERVER['LOGNAME'])));
 
-        if($user){
-            load_libs('user');
-            user_signin($user);
+            if($user){
+                load_libs('user');
+                user_signin($user);
+            }
         }
 
     }catch(Exception $e){
-        if(SCRIPT != 'init'){
-            throw new bException('startup: Auto shell user signin has failed', $e);
-        }
-
-        /*
-         * Init script don't need auto shell user signin
-         * (for one, there may not even be a DB to do so!)
-         */
-        unset($e);
+        throw new bException('startup: Auto shell user signin has failed', $e);
     }
 }
 //showdie($_SESSION);
