@@ -102,7 +102,7 @@ try{
         // Scripts
         log_console('Scripts', 'copy', 'purple');
         echo shell_exec('rsync -e "ssh -p '.$base['port'].'" -av --no-perms --delete '.$base['host'].':'.$base['path'].'/scripts/base/* '.ROOT.'scripts/base/');
-        echo shell_exec('rsync -e "ssh -p '.$base['port'].'" -av --no-perms --delete '.$base['host'].':'.$base['path'].'/scripts/tests/* '.ROOT.'scripts/base/');
+        echo shell_exec('rsync -e "ssh -p '.$base['port'].'" -av --no-perms --delete '.$base['host'].':'.$base['path'].'/scripts/tests/* '.ROOT.'scripts/tests/');
 
         // Framework init files
         log_console('Framework updates', 'copy', 'purple');
