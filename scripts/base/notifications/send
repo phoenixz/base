@@ -1,0 +1,45 @@
+#!/usr/bin/php
+<?php
+/*
+ * This is an empty test script template
+ */
+$usage = "./scripts/base/notifications/send CLASSNAME|CLASSID EVENT MESSAGE \n";
+
+$help  = "Send event notifications to the specified classes";
+
+$quiet = true;
+require_once(dirname(__FILE__).'/../../../libs/startup.php');
+
+try{
+	cli_only();
+
+    $class   = argument(0);
+    $event   = argument(1);
+
+    unset($argv[0]);
+    unset($argv[1]);
+
+    $message = implode(' ', argument(null));
+
+    if(empty($class)){
+        throw new bException(tr('No class name or id specified'), 'notspecified');
+    }
+
+    if(empty($class)){
+        throw new bException(tr('No event name specified'), 'notspecified');
+    }
+
+    if(empty($class)){
+        throw new bException(tr('No message specified'), 'notspecified');
+    }
+
+    if(!notify($event, $message, $class)){
+        throw new bException(tr('Failed to send notification'), 'failed');
+    }
+
+    log_console(tr('Sent notification "%event%"', array('%event%' => $event)), '', 'green');
+
+}catch(Exception $e){
+    cli_error($e);
+}
+?>

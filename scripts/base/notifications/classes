@@ -1,0 +1,187 @@
+#!/usr/bin/php
+<?php
+/*
+ * This script can create new notification classes
+ */
+$usage = "./scripts/base/notifications/classes list [all]\n".
+         "./scripts/base/notifications/classes create name NAME methods sms|email description DESCRIPTION\n".
+         "./scripts/base/notifications/classes modify ID|NAME name NAME methods sms|email description DESCRIPTION\n".
+         "./scripts/base/notifications/classes delete|undelete|erase ID|NAME\n";
+
+$help  = "The notifications/classes script can manage notification classes. You can list existing classes, create new ones, or modify delete, undelete and erase existing ones";
+
+$quiet = true;
+require_once(dirname(__FILE__).'/../../../libs/startup.php');
+load_libs('notifications');
+
+try{
+	cli_only();
+
+    switch($method = argument(0)){
+        case 'add':
+            // FALLTHROUGH
+        case 'create':
+            try{
+                $class = notifications_validate_class(array('name'        => argument('name'       , true),
+                                                            'methods'     => argument('methods'    , true),
+                                                            'description' => argument('description', true)));
+
+                sql_query('INSERT INTO `notifications_classes` (`createdby`, `name`, `methods`, `description`)
+                           VALUES                              (:createdby , :name , :methods , :description )',
+
+                           array(':createdby'   => $_SESSION['user']['id'],
+                                 ':name'        => $class['name'],
+                                 ':methods'     => $class['methods'],
+                                 ':description' => $class['description']));
+
+                log_console(tr('Created new notifications class "%class%"', array('%class%' => $class['name'])), '', 'green');
+
+            }catch(Exception $e){
+                throw new bException(tr('Failed to create new notifications class'), $e);
+            }
+
+            break;
+
+        case 'update':
+            // FALLTHROUGH
+        case 'modify':
+            try{
+                $class     = argument(1);
+                $old_class = sql_get('SELECT `id`, `name`, `methods`, `description` FROM `notifications_classes` WHERE `id` = :class OR `name` = :class', array(':class' => $class));
+
+                if(!$old_class){
+                    throw new bException(tr('The specified class "%class%" does not exist', array('%class%' => $class)), 'notexist');
+                }
+
+                $class = array_copy_clean($old_class, arguments('name,methods,description'));
+                $class = notifications_validate_class($class);
+
+                sql_query('UPDATE `notifications_classes`
+
+                           SET    `modifiedby`  = :modifiedby,
+                                  `modifiedon`  = NOW(),
+                                  `name`        = :name,
+                                  `methods`     = :methods,
+                                  `description` = :description
+
+                           WHERE  `id`          = :id',
+
+                           array(':id'          => $class['id'],
+                                 ':modifiedby'  => $_SESSION['user']['id'],
+                                 ':name'        => $class['name'],
+                                 ':methods'     => $class['methods'],
+                                 ':description' => $class['description']));
+
+                log_console(tr('Modified notifications class "%class%"', array('%class%' => $old_class['name'])), '', 'green');
+
+            }catch(Exception $e){
+                throw new bException(tr('Failed to update notifications class'), $e);
+            }
+
+            break;
+
+        case 'list':
+            $all = argument('all');
+            $r   = sql_query('SELECT    `notifications_classes`.`id`,
+                                        `notifications_classes`.`name`,
+                                        `notifications_classes`.`methods`,
+                                        `notifications_classes`.`description`,
+                                        COUNT(`notifications_members`.`id`) AS `members`
+
+                              FROM      `notifications_classes`
+
+                              LEFT JOIN `notifications_members`
+                              ON        `notifications_members`.`classes_id` = `notifications_classes`.`id`
+
+                              '.($all ? '' : ' WHERE `notifications_classes`.`status` IS NULL').'
+
+                              GROUP BY  `notifications_classes`.`id`');
+
+            if(!$r->rowCount()){
+                throw new bException(tr('No classes found'), 'notfound');
+            }
+
+            log_console('#id   Name             Methods                Members Description', '', 'white');
+
+            while($class = sql_fetch($r)){
+                log_console(str_size($class['id'], 5, ' ', true).' '.str_size($class['name'], 16).' '.str_size($class['methods'], 22).' '.str_size($class['members'], 8).' '.str_size($class['description'], 80), '');
+            }
+
+            break;
+
+        case 'delete':
+            try{
+                $count = s_set_status(argument(null), 'delete');
+                log_console(tr('Deleted "%count%" notification classes', array('%count%' => $count)), '', 'green');
+
+            }catch(Exception $e){
+                throw new bException(tr('Failed to delete notifications classes'), $e);
+            }
+
+            break;
+
+        case 'undelete':
+            try{
+                $count = s_set_status(argument(null), NULL);
+                log_console(tr('Undeleted "%count%" notification classes', array('%count%' => $count)), '', 'green');
+
+            }catch(Exception $e){
+                throw new bException(tr('Failed to undelete notifications classes'), $e);
+            }
+
+            break;
+
+        case 'erase':
+            try{
+                $count = s_set_status(argument(null), 'erase');
+                log_console(tr('Erased "%count%" notification classes', array('%count%' => $count)), '', 'green');
+
+            }catch(Exception $e){
+                throw new bException(tr('Failed to erase notifications classes'), $e);
+            }
+
+            break;
+
+        default:
+            throw new bException(tr('Unknown method "%method%" specified', array('%method%' => $method)));
+    }
+
+}catch(Exception $e){
+    cli_error($e);
+}
+
+
+
+/*
+ *
+ */
+function s_set_status($list, $status){
+    try{
+        $in    = sql_in($list);
+        $found = sql_list('SELECT `id` FROM `notifications_classes` WHERE `id` IN ('.implode(',', array_keys($in)).') OR `name` IN ('.implode(',', array_keys($in)).')', 'id', $in);
+
+        if(!$found){
+            throw new bException(tr('s_set_status(): Specified notifications classes not found'));
+        }
+
+        $in            = sql_in($found);
+
+        if($status == 'erased'){
+            /*
+             * Erase instead of setting status
+             */
+            $r = sql_query('DELETE FROM `notifications_classes` WHERE `id` IN ('.implode(',', array_keys($in)).') AND `status` = "deleted"', $in);
+
+        }else{
+            $in[':status'] = $status;
+            $r             = sql_query('UPDATE `notifications_classes` SET `status` = :status WHERE `id` IN ('.implode(',', array_keys($in)).')', $in);
+        }
+
+        return $r->rowCount();
+
+    }catch(Exception $e){
+        throw new bException('s_set_status(): Failed', $e);
+    }
+}
+
+?>

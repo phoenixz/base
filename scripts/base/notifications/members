@@ -1,47 +1,120 @@
 #!/usr/bin/php
 <?php
 /*
- * This script can add or remove members from notification classes
+ * This script can create new notification members
  */
+$usage = "./scripts/base/notifications/members list all|CLASSID|CLASSNAME\n".
+         "./scripts/base/notifications/members add CLASSID|CLASSNAME USERID|USERNAME\n".
+         "./scripts/base/notifications/members remove CLASSID|CLASSNAME USERID|USERNAME\n";
+
+$help  = "The notifications/members script can manage notification class members. You can list existing class members, or add or remove members from existing classes";
+
 $quiet = true;
 require_once(dirname(__FILE__).'/../../../libs/startup.php');
-
+load_libs('notifications');
 
 try{
-    switch(argument(0)){
+	cli_only();
+
+    switch($method = argument(0)){
         case 'add':
-            // FALLTHROUGH
-        case 'make':
-            /*
-             * Add specified members to specified class
-             */
-            $params = array('name'    => argument(1),
-                            'members' => argument(2));
+            try{
+                $data = s_get_user_class(argument(1), argument(2));
 
-            load_libs('notifications');
-            $count = notifications_members_insert($params);
+                if(sql_get('SELECT `id` FROM `notifications_members` WHERE `users_id` = :users_id AND `classes_id` = :classes_id', 'id', array(':users_id' => $data['users_id'], ':classes_id' => $data['classes_id']))){
+                    throw new bException(tr('User "%user%" is already a member of the notifications class "%class%"', array('%user%' => $data['user'], '%class%' => $data['class'])), 'alreadyexists');
+                }
 
-            log_console('Added "'.$count.'" new members to notification class "'.str_log($params['name']).'"', null, 'white');
+                sql_query('INSERT INTO `notifications_members` (`createdby`, `classes_id`, `users_id`)
+                           VALUES                              (:createdby , :classes_id , :users_id)',
+
+                           array(':createdby'  => $_SESSION['user']['id'],
+                                 ':classes_id' => $data['classes_id'],
+                                 ':users_id'   => $data['users_id']));
+
+                log_console(tr('Added user "%user%" to notifications class "%class%"', array('%user%' => $data['user'], '%class%' => $data['class'])), '', 'green');
+
+            }catch(Exception $e){
+                throw new bException(tr('Failed to add member to notifications class'), $e);
+            }
+
+            break;
+
+        case 'list':
+            $all = argument('all');
+            $r   = sql_query('SELECT    `notifications_members`.`id`,
+                                        `notifications_classes`.`name` AS `class_name`,
+                                        `users`.`name`                 AS `user_name`
+
+                              FROM      `notifications_members`
+
+                              LEFT JOIN `users`
+                              ON        `notifications_members`.`users_id`   = `users`.`id`
+
+                              LEFT JOIN `notifications_classes`
+                              ON        `notifications_members`.`classes_id` = `notifications_classes`.`id`');
+
+            if(!$r->rowCount()){
+                throw new bException(tr('No members found'), 'notfound');
+            }
+
+            log_console('#id   Notifications class             User', '', 'white');
+
+            while($member = sql_fetch($r)){
+                log_console(str_size($member['id'], 5, ' ', true).' '.str_size($member['class_name'], 32).' '.str_size($member['user_name'], 32), '');
+            }
+
             break;
 
         case 'remove':
-            // FALLTHROUGH
-        case 'delete':
-            // FALLTHROUGH
-        case 'erase':
-            $params['name']        = argument(0);
-            $params['methods']     = argument(1);
-            $params['status']      = argument('status', true);
-            $params['description'] = argument('description', true);
+            try{
+                $data = s_get_user_class(argument(1), argument(2));
+                $r    = sql_query('DELETE FROM `notifications_members` WHERE `classes_id` = :classes_id AND `users_id` = :users_id',
 
-            load_libs('notifications');
-            notifications_classes_insert($params);
+                                   array(':classes_id' => $data['classes_id'],
+                                         ':users_id'   => $data['users_id']));
 
-            log_console('Removed "'.count($members).'" members from notification class "'.str_log($params['name']).'"', null, 'white');
+                log_console(tr('Removed notification member', array('%count%' => $count)), '', 'green');
+
+            }catch(Exception $e){
+                throw new bException(tr('Failed to remove member from notifications class'), $e);
+            }
+
             break;
+
+        default:
+            throw new bException(tr('Unknown method "%method%" specified', array('%method%' => $method)));
     }
 
 }catch(Exception $e){
-    throw new bException('scripts/notifications/members: Failed', $e);
+    cli_error($e);
+}
+
+
+
+/*
+ *
+ */
+function s_get_user_class($class, $user){
+    try{
+        $retval['user']       = $user;
+        $retval['class']      = $class;
+
+        $retval['users_id']   = sql_get('SELECT `id` FROM `users`                 WHERE `id` = :user  OR `username` = :user' , 'id', array(':user' => $user));
+        $retval['classes_id'] = sql_get('SELECT `id` FROM `notifications_classes` WHERE `id` = :class OR `name`     = :class', 'id', array(':class' => $class));
+
+        if(!$retval['classes_id']){
+            throw new bException(tr('s_get_user_class(): Specified class "%name%" does not exist', array('%name%' => $class)));
+        }
+
+        if(!$retval['users_id']){
+            throw new bException(tr('s_get_user_class(): Specified user "%name%" does not exist', array('%name%' => $user)));
+        }
+
+        return $retval;
+
+    }catch(Exception $e){
+        throw new bException('s_get_user_class(): Failed', $e);
+    }
 }
 ?>
