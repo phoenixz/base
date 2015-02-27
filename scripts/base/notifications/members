@@ -13,6 +13,38 @@ $quiet = true;
 require_once(dirname(__FILE__).'/../../../libs/startup.php');
 load_libs('notifications');
 
+
+
+/*
+ *
+ */
+if(!function_exists('s_get_user_class')){
+    function s_get_user_class($class, $user){
+        try{
+            $retval['user']       = $user;
+            $retval['class']      = $class;
+
+            $retval['users_id']   = sql_get('SELECT `id` FROM `users`                 WHERE `id` = :user  OR `username` = :user' , 'id', array(':user' => $user));
+            $retval['classes_id'] = sql_get('SELECT `id` FROM `notifications_classes` WHERE `id` = :class OR `name`     = :class', 'id', array(':class' => $class));
+
+            if(!$retval['classes_id']){
+                throw new bException(tr('s_get_user_class(): Specified class "%name%" does not exist', array('%name%' => $class)));
+            }
+
+            if(!$retval['users_id']){
+                throw new bException(tr('s_get_user_class(): Specified user "%name%" does not exist', array('%name%' => $user)));
+            }
+
+            return $retval;
+
+        }catch(Exception $e){
+            throw new bException('s_get_user_class(): Failed', $e);
+        }
+    }
+}
+
+
+
 try{
 	cli_only();
 
@@ -28,7 +60,7 @@ try{
                 sql_query('INSERT INTO `notifications_members` (`createdby`, `classes_id`, `users_id`)
                            VALUES                              (:createdby , :classes_id , :users_id)',
 
-                           array(':createdby'  => $_SESSION['user']['id'],
+                           array(':createdby'  => isset_get($_SESSION['user']['id']),
                                  ':classes_id' => $data['classes_id'],
                                  ':users_id'   => $data['users_id']));
 
@@ -88,33 +120,5 @@ try{
 
 }catch(Exception $e){
     cli_error($e);
-}
-
-
-
-/*
- *
- */
-function s_get_user_class($class, $user){
-    try{
-        $retval['user']       = $user;
-        $retval['class']      = $class;
-
-        $retval['users_id']   = sql_get('SELECT `id` FROM `users`                 WHERE `id` = :user  OR `username` = :user' , 'id', array(':user' => $user));
-        $retval['classes_id'] = sql_get('SELECT `id` FROM `notifications_classes` WHERE `id` = :class OR `name`     = :class', 'id', array(':class' => $class));
-
-        if(!$retval['classes_id']){
-            throw new bException(tr('s_get_user_class(): Specified class "%name%" does not exist', array('%name%' => $class)));
-        }
-
-        if(!$retval['users_id']){
-            throw new bException(tr('s_get_user_class(): Specified user "%name%" does not exist', array('%name%' => $user)));
-        }
-
-        return $retval;
-
-    }catch(Exception $e){
-        throw new bException('s_get_user_class(): Failed', $e);
-    }
 }
 ?>
