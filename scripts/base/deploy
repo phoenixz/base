@@ -451,10 +451,10 @@ try{
 
         if($deploy_config['sudo']){
             if($deploy_config['sudo'] === true){
-                $sudo = 'sudo -e ';
+                $sudo = 'sudo ';
 
             }elseif(is_string($deploy_config['sudo'])){
-                $sudo = 'sudo -e -u '.$deploy_config['sudo'].' ';
+                $sudo = 'sudo -u '.$deploy_config['sudo'].' ';
 
             }else{
                 throw new bException('Invalid sudo configuration "%configuration%" found for target environment "%target%". It should be either true, false, or an (existing) username string', array('%configuration%' => $deploy_config['sudo'], '%^target%' => $target_environment));
