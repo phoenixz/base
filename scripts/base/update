@@ -155,7 +155,7 @@ try{
         echo shell_exec('cd '.ROOT.';git add .;git commit -am "Update from base"');
     }
 
-    log_console('Done', 'update', 'green');
+    log_console('Finished', '', 'green');
 
 }catch(Exception $e){
     cli_error('scripts/base/update: Failed', $e);

@@ -223,6 +223,217 @@ try{
         throw new bException('No deployment targets specified', 'notspecified');
     }
 
+
+
+    /*
+     * If we're going to deploy to production environment, ensure that we
+     * either are on master or production branch, since we won't deploy
+     * from any other branch (for safety)
+     */
+    if(in_array('production', $targets)){
+        load_libs('git');
+        $branch = git_branch();
+
+        if(($branch != 'production') and ($branch != 'master')){
+            if(!FORCE){
+                throw new bException(tr('Cannot deploy the current GIT branch "'.str_log($branch).'" to production environment. For safety, deployment to production environment is restricted to either "production" or "master" branches'), 'productioninvalidbranch');
+            }
+        }
+    }
+
+
+
+    /*
+     * Do project BOM check
+     */
+    if(argument('nobomcheck')){
+        log_screen('Skipping BOM check due to "nobomcheck" option', 'deploy', 'yellow');
+
+    }else{
+        log_screen('Executing BOM check', 'deploy', 'white');
+        script_exec('base/clearbom', 'quiet');
+    }
+
+
+
+    /*
+     * Do a PHP syntax check on the entire project
+     */
+    if($nosyntax){
+        log_console('Skipping PHP syntax check due to no "dosyntax" command line parameter', 'deploy', 'yellow');
+
+    }else{
+        log_console('Executing PHP syntax check', 'deploy', 'white');
+
+        exec('find . -type f -name "*.php"', $output);
+
+        if(!is_array($output)){
+            throw new bException('Syntax check failed', 'production');
+        }
+
+        if(!$output){
+            throw new bException('No php files found.', 'production');
+        }
+
+        foreach($output as $file){
+            if(substr($file, 0, 7) == './data/'){
+                /*
+                 * Do not check PHP files in ROOT/data
+                 */
+                continue;
+            }
+
+            exec('php -l '.ROOT.$file.' > /dev/null', $syntaxoutput, $return);
+
+            if($return){
+                throw new bException('Content scan failed on file "'.$file.'" with "'.str_log($syntaxoutput).'"', 'production');
+            }
+
+            log_console('#', '', 'green', false);
+        }
+
+        log_console('', '');
+        init_hook('deploy_post_content', $nohooks);
+
+    }
+
+
+
+    /*
+     * Do a content file check on the entire project
+     */
+    if($nocontent){
+        log_screen('Skipping content file check due to "nocontent" command line parameter', 'deploy', 'yellow');
+
+    }else{
+        log_screen('Executing content file check', 'deploy', 'white');
+
+        exec('grep load_content  www scripts -R', $output);
+
+        if(!is_array($output)){
+            throw new bException('Content scan failed', 'production');
+        }
+
+        if(!$output){
+            throw new bException('No "load_content" found which is impossible, because the system library has it.', 'production');
+        }
+
+        /*
+         * Extract a list of unique files
+         */
+        $files = array();
+
+        foreach($output as $line){
+            if(preg_match('/(.*?):.*?load_content\s*\(\s*\'(.*?)\'\s*,/i', $line, $matches)){
+                /*
+                 * Skip function definitions, comments, etc.
+                 */
+                if(empty($matches[2])){
+                    /*
+                     * Not a valid match, skip
+                     */
+                    continue;
+                }
+
+                $files[$matches[2]] = $matches[1];
+            }
+        }
+
+        /*
+         * Ensure content file availability
+         */
+        foreach($files as $file => $definedin){
+            if(substr($definedin, 0, 14) == 'scripts/tests/'){
+                continue;
+            }
+
+            foreach($deploy_config['languages'] as $language){
+                log_console('Searching for file "'.$file.'" on "'.$deploy_config['target_server'].'"', 'deploy');
+
+                exec('ssh -t -p '.isset_get($deploy_config['target_port'], 22).' '.$deploy_config['target_user'].'@'.$deploy_config['target_server'].' \'ls '.($file = $deploy_config['target_dir'].'data/content/'.$language.'/'.$file.'.html').' 2>&1 /dev/null\'', $contentoutput, $return);
+
+                if($return){
+                    throw new bException('Missing content file "'.str_log($file).'" for language "'.str_log($language).'", defined in "'.$definedin.'"', 'production');
+                }
+            }
+        }
+
+        init_hook('deploy_post_syntax', $nohooks);
+    }
+
+
+
+    /*
+     * Do a project version revision upgrade
+     */
+    if($noversion){
+        log_console('Skipping PHP version update due to no "doversion" command line parameter', 'deploy', 'yellow');
+
+    }else{
+        log_console('Executing PHP version update', 'deploy', 'white');
+
+        /*
+         * Get version data
+         */
+        $oldversion = PROJECTCODEVERSION;
+        $newversion = init_version_upgrade($oldversion, 'revision');
+
+        /*
+         * Update project configuration file
+         */
+        $data = file_get_contents(ROOT.'config/project.php');
+        $data = preg_replace('/\''.$oldversion.'\'\);/', '\''.$newversion.'\');', $data);
+
+        file_put_contents(ROOT.'config/project.php', $data);
+
+        exec('cd '.ROOT.'; git add config/project.php; git commit -m "Upgraded project \"'.PROJECT.'\" version to \"'.$newversion.'\""');
+
+        init_hook('deploy_post_version', $nohooks);
+
+    }
+
+
+
+    /*
+     * Do system tag with the new version
+     */
+    if($noversion or $notag){
+        log_console('Skipping git version tagging due to either no "doversion" or no "dotag" command line parameters', 'deploy', 'yellow');
+
+    }else{
+        log_console('Executing git version tagging', 'deploy', 'white');
+
+        passthru('cd '.ROOT.'; git tag -am "['.PROJECT.(REQUIRE_SUBENVIRONMENTS ? ' / '.(argument('all') ? 'all' : $subenvironments[0]) : '').' / '.$newversion.'] '.$message.'" '.$newversion.';', $exitcode);
+
+        if($exitcode){
+            throw new bException('Git tagging failed with exit code "'.str_log($exitcode).'"', 'git_tag');
+        }
+
+        init_hook('deploy_post_tag', $nohooks);
+    }
+
+
+
+    /*
+     * Do git push all changes and tags
+     */
+    if($noversion or $notag or $nopush){
+        log_console('Skipping git push for changes and tags due to no "doversion" or no "dotag" or no "dopush" command line parameters', 'deploy', 'yellow');
+
+    }else{
+        log_console('Executing git push', 'deploy', 'white');
+
+        passthru('cd '.ROOT.'; git push origin '.$target_environment.'; git push --tags', $exitcode);
+
+        if($exitcode){
+            throw new bException('Git push failed with exit code "'.str_log($exitcode).'"', 'git_push');
+        }
+
+        init_hook('deploy_post_push', $nohooks);
+    }
+
+
+
     foreach($targets as $target_environment){
         if(empty($_CONFIG['deploy'][$target_environment])){
             throw new bException('Unknown target environment "'.str_log($target_environment).'" specified', 'unknown');
@@ -254,22 +465,6 @@ try{
 
         }else{
             $stash = false;
-        }
-
-        /*
-         * If we're going to deploy to production environment, ensure that we
-         * either are on master or production branch, since we won't deploy
-         * from any other branch (for safety)
-         */
-        if($target_environment == 'production'){
-            load_libs('git');
-            $branch = git_branch();
-
-            if(($branch != 'production') and ($branch != 'master')){
-                if(!FORCE){
-                    throw new bException(tr('Cannot deploy the current GIT branch "'.str_log($branch).'" to production environment. For safety, deployment to production environment is restricted to either "production" or "master" branches'), 'productioninvalidbranch');
-                }
-            }
         }
 
         init_hook('deploy_pre', $nohooks);
@@ -307,120 +502,6 @@ try{
 
         }else{
             $subenvironments = array('');
-        }
-
-
-
-        /*
-         * Do a PHP syntax check on the entire project
-         */
-        if($nosyntax){
-            log_console('Skipping PHP syntax check due to no "dosyntax" command line parameter', 'deploy', 'yellow');
-
-        }else{
-            log_console('Executing PHP syntax check', 'deploy', 'white');
-
-            exec('find . -type f -name "*.php"', $output);
-
-            if(!is_array($output)){
-                throw new bException('Syntax check failed', 'production');
-            }
-
-            if(!$output){
-                throw new bException('No php files found.', 'production');
-            }
-
-            foreach($output as $file){
-                if(substr($file, 0, 7) == './data/'){
-                    /*
-                     * Do not check PHP files in ROOT/data
-                     */
-                    continue;
-                }
-
-                exec('php -l '.ROOT.$file.' > /dev/null', $syntaxoutput, $return);
-
-                if($return){
-                    throw new bException('Content scan failed on file "'.$file.'" with "'.str_log($syntaxoutput).'"', 'production');
-                }
-
-                log_console('#', '', 'green', false);
-            }
-
-            log_console('', '');
-            init_hook('deploy_post_content', $nohooks);
-
-        }
-
-
-
-        /*
-         * Do a project version revision upgrade
-         */
-        if($noversion){
-            log_console('Skipping PHP version update due to no "doversion" command line parameter', 'deploy', 'yellow');
-
-        }else{
-            log_console('Executing PHP version update', 'deploy', 'white');
-
-            /*
-             * Get version data
-             */
-            $oldversion = PROJECTCODEVERSION;
-            $newversion = init_version_upgrade($oldversion, 'revision');
-
-            /*
-             * Update project configuration file
-             */
-            $data = file_get_contents(ROOT.'config/project.php');
-            $data = preg_replace('/\''.$oldversion.'\'\);/', '\''.$newversion.'\');', $data);
-
-            file_put_contents(ROOT.'config/project.php', $data);
-
-            exec('cd '.ROOT.'; git add config/project.php; git commit -m "Upgraded project \"'.PROJECT.'\" version to \"'.$newversion.'\""');
-
-            init_hook('deploy_post_version', $nohooks);
-
-        }
-
-
-
-        /*
-         * Do system tag with the new version
-         */
-        if($noversion or $notag){
-            log_console('Skipping git version tagging due to either no "doversion" or no "dotag" command line parameters', 'deploy', 'yellow');
-
-        }else{
-            log_console('Executing git version tagging', 'deploy', 'white');
-
-            passthru('cd '.ROOT.'; git tag -am "['.PROJECT.(REQUIRE_SUBENVIRONMENTS ? ' / '.(argument('all') ? 'all' : $subenvironments[0]) : '').' / '.$newversion.'] '.$message.'" '.$newversion.';', $exitcode);
-
-            if($exitcode){
-                throw new bException('Git tagging failed with exit code "'.str_log($exitcode).'"', 'git_tag');
-            }
-
-            init_hook('deploy_post_tag', $nohooks);
-        }
-
-
-
-        /*
-         * Do git push all changes and tags
-         */
-        if($noversion or $notag or $nopush){
-            log_console('Skipping git push for changes and tags due to no "doversion" or no "dotag" or no "dopush" command line parameters', 'deploy', 'yellow');
-
-        }else{
-            log_console('Executing git push', 'deploy', 'white');
-
-            passthru('cd '.ROOT.'; git push origin '.$target_environment.'; git push --tags', $exitcode);
-
-            if($exitcode){
-                throw new bException('Git push failed with exit code "'.str_log($exitcode).'"', 'git_push');
-            }
-
-            init_hook('deploy_post_push', $nohooks);
         }
 
 
@@ -482,82 +563,6 @@ try{
                         init_hook('deploy_post_translation', $nohooks);
                     }
                 }
-            }
-
-
-
-            /*
-             * Do project BOM check
-             */
-            if(argument('nobomcheck')){
-                log_screen($display_subenvironment.'Skipping BOM check due to "nobomcheck" option', 'deploy', 'yellow');
-
-            }else{
-                log_screen($display_subenvironment.'Executing BOM check', 'deploy', 'white');
-                script_exec('base/clearbom', 'quiet');
-            }
-
-
-            /*
-             * Do a content file check on the entire project
-             */
-            if($nocontent){
-                log_screen($display_subenvironment.'Skipping content file check due to "nocontent" command line parameter', 'deploy', 'yellow');
-
-            }else{
-                log_screen($display_subenvironment.'Executing content file check', 'deploy', 'white');
-
-                exec('grep load_content  www scripts -R', $output);
-
-                if(!is_array($output)){
-                    throw new bException('Content scan failed', 'production');
-                }
-
-                if(!$output){
-                    throw new bException('No "load_content" found which is impossible, because the system library has it.', 'production');
-                }
-
-                /*
-                 * Extract a list of unique files
-                 */
-                $files = array();
-
-                foreach($output as $line){
-                    if(preg_match('/(.*?):.*?load_content\s*\(\s*\'(.*?)\'\s*,/i', $line, $matches)){
-                        /*
-                         * Skip function definitions, comments, etc.
-                         */
-                        if(empty($matches[2])){
-                            /*
-                             * Not a valid match, skip
-                             */
-                            continue;
-                        }
-
-                        $files[$matches[2]] = $matches[1];
-                    }
-                }
-
-                /*
-                 * Ensure content file availability
-                 */
-                foreach($files as $file => $definedin){
-                    if(substr($definedin, 0, 14) == 'scripts/tests/'){
-                        continue;
-                    }
-
-                    foreach($deploy_config['languages'] as $language){
-                        log_console('Searching for file "'.$file.'" on "'.$deploy_config['target_server'].'"', 'deploy');
-
-                        exec('ssh -t -p '.isset_get($deploy_config['target_port'], 22).' '.$deploy_config['target_user'].'@'.$deploy_config['target_server'].' \'ls '.($file = $deploy_config['target_dir'].'data/content/'.$language.'/'.$file.'.html').' 2>&1 /dev/null\'', $contentoutput, $return);
-
-                        if($return){
-                            throw new bException('Missing content file "'.str_log($file).'" for language "'.str_log($language).'", defined in "'.$definedin.'"', 'production');
-                        }
-                    }
-                }
-
-                init_hook('deploy_post_syntax', $nohooks);
             }
 
 
@@ -790,10 +795,10 @@ try{
              * Done!
              */
             if($subenvironment){
-                log_screen($display_subenvironment.'Finished deploy for project "'.strtolower(PROJECT).'" subenvironment "'.$subenvironment.'"', 'deploy', 'white');
+                log_screen($display_subenvironment.'Finished deploy for project "'.strtolower(PROJECT).'" subenvironment "'.$subenvironment.'"', 'deploy', 'green');
 
             }else{
-                log_screen($display_subenvironment.'Finished deploy for project "'.strtolower(PROJECT).'"', 'deploy', 'white');
+                log_screen($display_subenvironment.'Finished deploy for project "'.strtolower(PROJECT).'"', 'deploy', 'green');
             }
 
             init_hook('deploy_post_deploy', $nohooks);
@@ -802,14 +807,14 @@ try{
         init_hook('deploy_post', $nohooks);
 
         if(count($subenvironments) > 1){
-            log_screen('Finished deploy for all environments in target "'.str_log($target_environment).'"', 'deploy', 'white');
+            log_screen('Finished deploy for all environments in target "'.str_log($target_environment).'"', 'deploy', 'green');
         }
     }
 
     init_hook('deploy_finish', $nohooks);
 
     if(count($subenvironments) > 1){
-        log_screen('Finished deploy for all targets', 'deploy', 'white');
+        log_screen('Finished deploy for all targets', 'deploy', 'green');
     }
 
 }catch(Exception $e){
