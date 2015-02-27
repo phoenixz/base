@@ -1178,7 +1178,12 @@ function html_send($params, $meta, $html){
  * Show the 404 page
  */
 function page_404($force = false, $data = null) {
-    page_show('404', true, $force, $data);
+    if($GLOBALS['page_is_admin']){
+        page_show('admin/404', true, $force, $data);
+
+    }else{
+        page_show('404', true, $force, $data);
+    }
 }
 
 
@@ -1208,10 +1213,7 @@ function page_show($pagename, $die = false, $force = false, $data = null) {
             return include(ROOT.'www/'.LANGUAGE.'/ajax/'.$pagename.'.php');
 
         }else{
-            if($GLOBALS['page_is_admin']){
-                $prefix = 'admin/';
-
-            }elseif($GLOBALS['page_is_mobile']){
+            if($GLOBALS['page_is_mobile']){
                 $prefix = 'mobile/';
 
             }else{
