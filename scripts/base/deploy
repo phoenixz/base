@@ -447,6 +447,19 @@ try{
         }
 
         $deploy_config = $_CONFIG['deploy'][$target_environment];
+        $sudo          = '';
+
+        if($deploy_config['sudo']){
+            if($deploy_config['sudo'] === true){
+                $sudo = 'sudo -e ';
+
+            }elseif(is_string($deploy_config['sudo'])){
+                $sudo = 'sudo -e -u '.$deploy_config['sudo'].' ';
+
+            }else{
+                throw new bException('Invalid sudo configuration "%configuration%" found for target environment "%target%". It should be either true, false, or an (existing) username string', array('%configuration%' => $deploy_config['sudo'], '%^target%' => $target_environment));
+            }
+        }
 
         log_console('Deploying to target environment "'.str_log($target_environment).'"', 'deploy', 'white');
 
@@ -619,7 +632,7 @@ try{
 
                 }else{
                     log_screen($display_subenvironment.'Creating copy of current version to "'.str_log($deploy_config['target_dir'].$tilde).'"...', 'deploy', 'white');
-                    passthru('ssh -t -p '.isset_get($deploy_config['target_port'], 22).' '.$deploy_config['target_user'].'@'.$deploy_config['target_server'].' \''.($deploy_config['sudo'] ? 'sudo ' : '').'rm '.$deploy_config['target_dir'].$tilde.' -rf; '.($deploy_config['sudo'] ? 'sudo ' : '').'cp -a '.$deploy_config['target_dir'].' '.$deploy_config['target_dir'].$tilde.'\'', $exitcode);
+                    passthru('ssh -t -p '.isset_get($deploy_config['target_port'], 22).' '.$deploy_config['target_user'].'@'.$deploy_config['target_server'].' \''.$sudo.'rm '.$deploy_config['target_dir'].$tilde.' -rf; '.$sudo.'cp -a '.$deploy_config['target_dir'].' '.$deploy_config['target_dir'].$tilde.'\'', $exitcode);
 
                     if($exitcode){
                         throw new bException('rsync_parrallel initial copy failed with exit code "'.str_log($exitcode).'"', 'rsync_parrallel');
@@ -696,14 +709,14 @@ try{
              */
             if(!empty($deploy_config['rsync_parrallel'])){
                 log_screen($display_subenvironment.'Moving new version in place...', 'deploy', 'white');
-                passthru('ssh -t -p '.isset_get($deploy_config['target_port'], 22).' '.$deploy_config['target_user'].'@'.$deploy_config['target_server'].' \''.($deploy_config['sudo'] ? 'sudo ' : '').'mv '.$deploy_config['target_dir'].' '.$deploy_config['target_dir'].$tilde.'; '.($deploy_config['sudo'] ? 'sudo ' : '').'mv '.$deploy_config['target_dir'].$tilde.' '.$deploy_config['target_dir'].'\'', $exitcode);
+                passthru('ssh -t -p '.isset_get($deploy_config['target_port'], 22).' '.$deploy_config['target_user'].'@'.$deploy_config['target_server'].' \''.$sudo.'mv '.$deploy_config['target_dir'].' '.$deploy_config['target_dir'].$tilde.'; '.$sudo.'mv '.$deploy_config['target_dir'].$tilde.' '.$deploy_config['target_dir'].'\'', $exitcode);
 
                 if($exitcode){
                     throw new bException('Moving new version in place failed with exit code "'.str_log($exitcode).'"', 'rsync_parrallel_move');
                 }
 
                 log_screen($display_subenvironment.'Deleting old version...', 'deploy', 'white');
-                passthru('ssh -t -p '.isset_get($deploy_config['target_port'], 22).' '.$deploy_config['target_user'].'@'.$deploy_config['target_server'].' \''.($deploy_config['sudo'] ? 'sudo ' : '').'rm '.$deploy_config['target_dir'].$tilde.' -rf\'', $exitcode);
+                passthru('ssh -t -p '.isset_get($deploy_config['target_port'], 22).' '.$deploy_config['target_user'].'@'.$deploy_config['target_server'].' \''.$sudo.'rm '.$deploy_config['target_dir'].$tilde.' -rf\'', $exitcode);
 
                 if($exitcode){
                     throw new bException('Deleting old version in place failed with exit code "'.str_log($exitcode).'"', 'rsync_parrallel_delete');
@@ -721,7 +734,7 @@ try{
             }else{
                 log_screen($display_subenvironment.'Executing init on target server', 'deploy', 'white');
 
-                passthru($command = 'ssh -t -p '.isset_get($deploy_config['target_port'], 22).' '.$deploy_config['target_user'].'@'.$deploy_config['target_server'].' \''.$deploy_config['target_dir'].'/scripts/base/init env '.$target_environment.$subenv_subenvironment.' \'', $exitcode);
+                passthru($command = 'ssh -t -p '.isset_get($deploy_config['target_port'], 22).' '.$deploy_config['target_user'].'@'.$deploy_config['target_server'].' \''.$sudo.$deploy_config['target_dir'].'/scripts/base/init env '.$target_environment.$subenv_subenvironment.' \'', $exitcode);
 
                 if($exitcode){
                     throw new bException('Target version init failed with exit code "'.str_log($exitcode).'"', 'target_init');
