@@ -360,7 +360,7 @@ function blogs_validate_post(&$post, $blog, $params = null, $seoname = null){
             /*
              * We're updating an existing blog
              */
-            if(!$post['id'] = sql_get('SELECT `id` FROM `blogs_posts` WHERE `blogs_id` = :blogs_id AND `seoname` = :seoname', 'id', array(':blogs_id' => $blog['id'], ':seoname' => $seoname))){
+            if(!$post['id'] = sql_get('SELECT `id` FROM `blogs_posts` WHERE `blogs_id` = :blogs_id AND `'.($params['use_id'] ? 'id' : 'seoname').'` = :seoname', 'id', array(':blogs_id' => $blog['id'], ':seoname' => $seoname))){
                 /*
                  * This blog post does not exist
                  */
