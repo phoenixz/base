@@ -748,11 +748,11 @@ function blogs_priority($priority){
 
     try{
         if(empty($list)){
-            $list = array(4 => tr('Low'),
-                          3 => tr('Normal'),
-                          2 => tr('High'),
-                          1 => tr('Urgent'),
-                          0 => tr('Immediate'));
+            $list = array(5 => tr('Low'),
+                          4 => tr('Normal'),
+                          3 => tr('High'),
+                          2 => tr('Urgent'),
+                          1 => tr('Immediate'));
         }
 
         if(is_numeric($priority)){
