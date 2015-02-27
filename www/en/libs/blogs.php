@@ -386,7 +386,7 @@ function blogs_validate_post(&$post, $blog, $params = null, $seoname = null){
             }
 
         }else{
-            if(sql_get('SELECT `id` FROM `blogs_posts` WHERE `blogs_id` = :blogs_id AND `name` = :name', array(':blogs_id' => $blog['id'],':name' => $post['name']), 'id')){
+            if(sql_get('SELECT `id` FROM `blogs_posts` WHERE `blogs_id` != :blogs_id AND `name` = :name', array(':blogs_id' => $blog['id'],':name' => $post['name']), 'id')){
                 /*
                  * A post with this name already exists
                  */
@@ -394,7 +394,7 @@ function blogs_validate_post(&$post, $blog, $params = null, $seoname = null){
             }
         }
 
-        if(!$params['use_append'] and !$seoname){
+        if(empty($params['use_append']) and !$seoname){
             /*
              * Only if we're editing in use_append mode we don't have to check body size
              */
@@ -486,7 +486,7 @@ function blogs_validate_post(&$post, $blog, $params = null, $seoname = null){
            throw new bException(str_force($v->getErrors(), ', '), 'validation');
         }
 
-        if($params['use_append']){
+        if(!empty($params['use_append'])){
             /*
              * Only allow data to be appended to this post
              * Find changes between current and previous state and store those as well
