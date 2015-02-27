@@ -14,6 +14,44 @@ $quiet = true;
 require_once(dirname(__FILE__).'/../../../libs/startup.php');
 load_libs('notifications');
 
+
+
+/*
+ *
+ */
+if(!function_exists('s_set_status')){
+    function s_set_status($list, $status){
+        try{
+            $in    = sql_in($list);
+            $found = sql_list('SELECT `id` FROM `notifications_classes` WHERE `id` IN ('.implode(',', array_keys($in)).') OR `name` IN ('.implode(',', array_keys($in)).')', 'id', $in);
+
+            if(!$found){
+                throw new bException(tr('s_set_status(): Specified notifications classes not found'));
+            }
+
+            $in            = sql_in($found);
+
+            if($status == 'erased'){
+                /*
+                 * Erase instead of setting status
+                 */
+                $r = sql_query('DELETE FROM `notifications_classes` WHERE `id` IN ('.implode(',', array_keys($in)).') AND `status` = "deleted"', $in);
+
+            }else{
+                $in[':status'] = $status;
+                $r             = sql_query('UPDATE `notifications_classes` SET `status` = :status WHERE `id` IN ('.implode(',', array_keys($in)).')', $in);
+            }
+
+            return $r->rowCount();
+
+        }catch(Exception $e){
+            throw new bException('s_set_status(): Failed', $e);
+        }
+    }
+}
+
+
+
 try{
 	cli_only();
 
@@ -29,7 +67,7 @@ try{
                 sql_query('INSERT INTO `notifications_classes` (`createdby`, `name`, `methods`, `description`)
                            VALUES                              (:createdby , :name , :methods , :description )',
 
-                           array(':createdby'   => $_SESSION['user']['id'],
+                           array(':createdby'   => isset_get($_SESSION['user']['id']),
                                  ':name'        => $class['name'],
                                  ':methods'     => $class['methods'],
                                  ':description' => $class['description']));
@@ -149,39 +187,4 @@ try{
 }catch(Exception $e){
     cli_error($e);
 }
-
-
-
-/*
- *
- */
-function s_set_status($list, $status){
-    try{
-        $in    = sql_in($list);
-        $found = sql_list('SELECT `id` FROM `notifications_classes` WHERE `id` IN ('.implode(',', array_keys($in)).') OR `name` IN ('.implode(',', array_keys($in)).')', 'id', $in);
-
-        if(!$found){
-            throw new bException(tr('s_set_status(): Specified notifications classes not found'));
-        }
-
-        $in            = sql_in($found);
-
-        if($status == 'erased'){
-            /*
-             * Erase instead of setting status
-             */
-            $r = sql_query('DELETE FROM `notifications_classes` WHERE `id` IN ('.implode(',', array_keys($in)).') AND `status` = "deleted"', $in);
-
-        }else{
-            $in[':status'] = $status;
-            $r             = sql_query('UPDATE `notifications_classes` SET `status` = :status WHERE `id` IN ('.implode(',', array_keys($in)).')', $in);
-        }
-
-        return $r->rowCount();
-
-    }catch(Exception $e){
-        throw new bException('s_set_status(): Failed', $e);
-    }
-}
-
 ?>
