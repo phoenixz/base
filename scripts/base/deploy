@@ -402,15 +402,18 @@ try{
         }
 
         $deploy_config = $_CONFIG['deploy'][$target_environment];
-        $sudo          = '';
+        $sudo               = '';
+        $sudo_user          = '';
         $target_port   = isset_get($deploy_config['target_port'], 22);
 
         if($deploy_config['sudo']){
             if($deploy_config['sudo'] === true){
-                $sudo = 'sudo ';
+                $sudo      = 'sudo ';
+                $sudo_user = 'sudo ';
 
             }elseif(is_string($deploy_config['sudo'])){
-                $sudo = 'sudo -u '.$deploy_config['sudo'].' ';
+                $sudo      = 'sudo ';
+                $sudo_user = 'sudo -u '.$deploy_config['sudo'].' ';
 
             }else{
                 throw new bException('Invalid sudo configuration "%configuration%" found for target environment "%target%". It should be either true, false, or an (existing) username string', array('%configuration%' => $deploy_config['sudo'], '%^target%' => $target_environment));
@@ -637,7 +640,7 @@ try{
 
                 }else{
                     log_screen($display_subenvironment.'Creating copy of current version to "'.str_log($deploy_config['target_dir'].$tilde).'"...', 'deploy', 'white');
-                    passthru('ssh -t -p '.$target_port.' '.$deploy_config['target_user'].'@'.$deploy_config['target_server'].' \''.$sudo.'rm '.$deploy_config['target_dir'].$tilde.' -rf; '.$sudo.'cp -a '.$deploy_config['target_dir'].' '.$deploy_config['target_dir'].$tilde.'\'', $exitcode);
+                    passthru('ssh -t -p '.$target_port.' '.$deploy_config['target_user'].'@'.$deploy_config['target_server'].' \''.$sudo_user.'rm '.$deploy_config['target_dir'].$tilde.' -rf; '.$sudo_user.'cp -a '.$deploy_config['target_dir'].' '.$deploy_config['target_dir'].$tilde.'\'', $exitcode);
 
                     if($exitcode){
                         throw new bException('rsync_parrallel initial copy failed with exit code "'.str_log($exitcode).'"', 'rsync_parrallel');
@@ -714,14 +717,14 @@ try{
              */
             if(!empty($deploy_config['rsync_parrallel'])){
                 log_screen($display_subenvironment.'Moving new version in place...', 'deploy', 'white');
-                passthru('ssh -t -p '.$target_port.' '.$deploy_config['target_user'].'@'.$deploy_config['target_server'].' \''.$sudo.'mv '.$deploy_config['target_dir'].' '.$deploy_config['target_dir'].$tilde.'; '.$sudo.'mv '.$deploy_config['target_dir'].$tilde.' '.$deploy_config['target_dir'].'\'', $exitcode);
+                passthru('ssh -t -p '.$target_port.' '.$deploy_config['target_user'].'@'.$deploy_config['target_server'].' \''.$sudo_user.'mv '.$deploy_config['target_dir'].' '.$deploy_config['target_dir'].$tilde.'; '.$sudo_user.'mv '.$deploy_config['target_dir'].$tilde.' '.$deploy_config['target_dir'].'\'', $exitcode);
 
                 if($exitcode){
                     throw new bException('Moving new version in place failed with exit code "'.str_log($exitcode).'"', 'rsync_parrallel_move');
                 }
 
                 log_screen($display_subenvironment.'Deleting old version...', 'deploy', 'white');
-                passthru('ssh -t -p '.$target_port.' '.$deploy_config['target_user'].'@'.$deploy_config['target_server'].' \''.$sudo.'rm '.$deploy_config['target_dir'].$tilde.' -rf\'', $exitcode);
+                passthru('ssh -t -p '.$target_port.' '.$deploy_config['target_user'].'@'.$deploy_config['target_server'].' \''.$sudo_user.'rm '.$deploy_config['target_dir'].$tilde.' -rf\'', $exitcode);
 
                 if($exitcode){
                     throw new bException('Deleting old version in place failed with exit code "'.str_log($exitcode).'"', 'rsync_parrallel_delete');
@@ -739,7 +742,7 @@ try{
             }else{
                 log_screen($display_subenvironment.'Executing init on target server', 'deploy', 'white');
 
-                passthru($command = 'ssh -t -p '.$target_port.' '.$deploy_config['target_user'].'@'.$deploy_config['target_server'].' \''.$sudo.$deploy_config['target_dir'].'/scripts/base/init env '.$target_environment.$subenv_subenvironment.' \'', $exitcode);
+                passthru($command = 'ssh -t -p '.$target_port.' '.$deploy_config['target_user'].'@'.$deploy_config['target_server'].' \''.$sudo_user.$deploy_config['target_dir'].'/scripts/base/init env '.$target_environment.$subenv_subenvironment.' \'', $exitcode);
 
                 if($exitcode){
                     throw new bException('Target version init failed with exit code "'.str_log($exitcode).'"', 'target_init');
@@ -759,26 +762,26 @@ try{
             }else{
                 log_screen($display_subenvironment.'Executing sitemap scan and deploy on target server', 'deploy', 'white');
 
-                passthru($command = 'ssh -t -p '.$target_port.' '.$deploy_config['target_user'].'@'.$deploy_config['target_server'].' \''.$sudo.$deploy_config['target_dir'].'/scripts/base/sitemap scan env '.$target_environment.$subenv_subenvironment.' \'', $exitcode);
+                passthru($command = 'ssh -t -p '.$target_port.' '.$deploy_config['target_user'].'@'.$deploy_config['target_server'].' \''.$sudo_user.$deploy_config['target_dir'].'/scripts/base/sitemap scan env '.$target_environment.$subenv_subenvironment.' \'', $exitcode);
 
                 if($exitcode){
                     throw new bException('Target sitemap scan failed with exit code "'.str_log($exitcode).'"', 'target_sitemap_scan');
                 }
 
                 foreach($deploy_config['languages'] as $language){
-                    passthru($command = 'ssh -t -p '.$target_port.' '.$deploy_config['target_user'].'@'.$deploy_config['target_server'].' \''.$sudo.$deploy_config['target_dir'].'/scripts/base/sitemap deploy   html '.$language.' env '.$target_environment.$subenv_subenvironment.' \'', $exitcode);
+                    passthru($command = 'ssh -t -p '.$target_port.' '.$deploy_config['target_user'].'@'.$deploy_config['target_server'].' \''.$sudo_user.$deploy_config['target_dir'].'/scripts/base/sitemap deploy   html '.$language.' env '.$target_environment.$subenv_subenvironment.' \'', $exitcode);
 
                     if($exitcode){
                         throw new bException('Target sitemap HTML build failed with exit code "'.str_log($exitcode).'"', 'target_sitemap_html');
                     }
 
-                    passthru($command = 'ssh -t -p '.$target_port.' '.$deploy_config['target_user'].'@'.$deploy_config['target_server'].' \''.$sudo.$deploy_config['target_dir'].'/scripts/base/sitemap deploy    xml '.$language.' env '.$target_environment.$subenv_subenvironment.' \'', $exitcode);
+                    passthru($command = 'ssh -t -p '.$target_port.' '.$deploy_config['target_user'].'@'.$deploy_config['target_server'].' \''.$sudo_user.$deploy_config['target_dir'].'/scripts/base/sitemap deploy    xml '.$language.' env '.$target_environment.$subenv_subenvironment.' \'', $exitcode);
 
                     if($exitcode){
                         throw new bException('Target sitemap XML build failed with exit code "'.str_log($exitcode).'"', 'target_sitemap_xml');
                     }
 
-                    passthru($command = 'ssh -t -p '.$target_port.' '.$deploy_config['target_user'].'@'.$deploy_config['target_server'].' \''.$sudo.$deploy_config['target_dir'].'/scripts/base/sitemap deploy robots '.$language.' env '.$target_environment.$subenv_subenvironment.' \'', $exitcode);
+                    passthru($command = 'ssh -t -p '.$target_port.' '.$deploy_config['target_user'].'@'.$deploy_config['target_server'].' \''.$sudo_user.$deploy_config['target_dir'].'/scripts/base/sitemap deploy robots '.$language.' env '.$target_environment.$subenv_subenvironment.' \'', $exitcode);
 
                     if($exitcode){
                         throw new bException('Target sitemap robots build failed with exit code "'.str_log($exitcode).'"', 'target_sitemap_robots');
