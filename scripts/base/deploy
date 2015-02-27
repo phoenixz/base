@@ -209,7 +209,7 @@ try{
          * Get all deployment targets
          */
         $targets = array_keys($_CONFIG['deploy']);
-        log_console('Deploying to ALL target environments!', 'warning', 'yellow');
+        log_console(tr('Deploying to ALL target environments "%targets%"', array('%targets%' => str_log($targets))), 'warning', 'yellow');
 
     }elseif(is_array($targets)){
         log_console('Deploying to specified target environments "'.str_log(str_force($targets, ', ')).'"', 'warning', 'yellow');
