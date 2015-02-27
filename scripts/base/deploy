@@ -132,6 +132,7 @@ try{
     $notag         =  (argument('notag')      or argument('notags') or $noversion);
     $nopush        =  (argument('nopush')     or ($noversion and $notag));
     $stash         =   argument('stash');
+    $notouch       =   argument('notouch');
 
     $message       =   argument('message'      , true);
     $continuersync =   argument('continuersync', true);
