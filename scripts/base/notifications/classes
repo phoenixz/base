@@ -105,7 +105,7 @@ try{
                            WHERE  `id`          = :id',
 
                            array(':id'          => $class['id'],
-                                 ':modifiedby'  => $_SESSION['user']['id'],
+                                 ':modifiedby'  => isset_get($_SESSION['user']['id']),
                                  ':name'        => $class['name'],
                                  ':methods'     => $class['methods'],
                                  ':description' => $class['description']));
