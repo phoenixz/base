@@ -527,7 +527,7 @@ function blogs_validate_post(&$post, $blog, $params = null, $seoname = null){
              * If no body was given, and no changes were made, then we don't update
              */
             if(!$post['body'] and !$changes){
-            throw new bException('blogs_validate_post(): Not updating, no changes were made', 'nochanges');
+            throw new bException('blogs_validate_post(): No changes were made', 'nochanges');
             }
 
             $post['body'] = str_replace('&nbsp;', ' ', $post['body']);

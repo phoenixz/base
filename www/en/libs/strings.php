@@ -317,6 +317,15 @@ function str_nodouble($source, $replace = '-', $case_insensitive = true){
 /*
  *
  */
+function str_strip_function($string){
+    return trim(str_from($string, '():'));
+}
+
+
+
+/*
+ *
+ */
 function str_encrypt($string,$key) {
     //Encrypt
     $td = mcrypt_module_open('tripledes', '', 'ecb', '');
