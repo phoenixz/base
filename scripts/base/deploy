@@ -388,7 +388,8 @@ try{
             throw new bException('Target environment "'.str_log($target_environment).'" has no configuration file', 'missingfile');
         }
 
-        $deploy_config = $_CONFIG['deploy'][$target_environment];
+        $deploy_config               = $_CONFIG['deploy'][$target_environment];
+        $deploy_config['target_dir'] = unslash($deploy_config['target_dir']);
 
         log_console('Deploying to target environment "'.str_log($target_environment).'"', 'deploy', 'white');
 
@@ -633,10 +634,23 @@ try{
 
                 }else{
                     log_screen($display_subenvironment.'Creating copy of current version to "'.str_log($deploy_config['target_dir'].$tilde).'"...', 'deploy', 'white');
+
+                    /*
+                     * Does the project exist at all? or is it an initial deploy?
+                     */
+                    passthru('ssh -t -p '.$target_port.' '.$deploy_config['target_user'].'@'.$deploy_config['target_server'].' \''.$sudo.'ls '.$deploy_config['target_dir'].'\' > /dev/null 2>&1', $exitcode);
+
+                    if($exitcode){
+                        /*
+                         * Doesn't exist!
+                         */
+                        passthru('ssh -t -p '.$target_port.' '.$deploy_config['target_user'].'@'.$deploy_config['target_server'].' \''.$sudo.'mkdir '.$deploy_config['target_dir'].'\'', $exitcode);
+                    }
+
                     passthru('ssh -t -p '.$target_port.' '.$deploy_config['target_user'].'@'.$deploy_config['target_server'].' \''.$sudo.'rm '.$deploy_config['target_dir'].$tilde.' -rf; '.$sudo.'cp -a '.$deploy_config['target_dir'].' '.$deploy_config['target_dir'].$tilde.'\'', $exitcode);
 
                     if($exitcode){
-                        throw new bException('rsync_parrallel initial copy failed with exit code "'.str_log($exitcode).'"', 'rsync_parrallel');
+                        throw new bException('rsync_parrallel copy failed with exit code "'.str_log($exitcode).'"', 'rsync_parrallel');
                     }
                 }
 
