@@ -33,7 +33,7 @@ $html .= $vj->output_validation($params);
 class validate_jquery {
     var $validations = array();
 
-    function validate($element, $rule, $value, $msg) {
+    function validate($element, $rule, $value, $msg = null){
         switch($rule){
             case 'required':
                 // FALLTHROUGH
@@ -59,7 +59,7 @@ class validate_jquery {
                                                'msg'   => addslashes($msg));
     }
 
-    function output_validation($params, $script = '') {
+    function output_validation($params, $script = ''){
         try{
             load_libs('array');
             html_load_js('base/jquery.validate');
@@ -87,11 +87,11 @@ class validate_jquery {
                 rules: {';
                 $kom = '';
 
-                foreach($this->validations as $element => $validations) {
+                foreach($this->validations as $element => $validations){
                     $html .= $kom.$element.': {';
                     $kom2  = '';
 
-                    foreach($validations as $val) {
+                    foreach($validations as $val){
                         if(($val['value'] != 'true') and ($val['value'] != 'false')){
                             $val['value'] = '"'.$val['value'].'"';
 
@@ -116,11 +116,11 @@ class validate_jquery {
 
                 $kom = '';
 
-                foreach($this->validations as $element => $validations) {
+                foreach($this->validations as $element => $validations){
                     $html .= $kom.$element.': {';
                     $kom2  = '';
 
-                    foreach($validations as $val) {
+                    foreach($validations as $val){
                         $html .= $kom2.$val['rule'].':"'.$val['msg']."\"\n";
                         $kom2  = ',';
                     }
@@ -194,7 +194,7 @@ class validate_jquery {
             if(!empty($addregex)){
                 $html .= '$.validator.addMethod(
                             "regex",
-                            function(value, element, regexp) {
+                            function(value, element, regexp){
                                 var re = new RegExp(regexp);
                                 return this.optional(element) || re.test(value);
                             },
@@ -257,11 +257,12 @@ class validate_form {
     /*
      *
      */
-    function isNotEmpty($value, $msg) {
+    function isNotEmpty($value, $msg = null){
         $value = trim($value);
 
-        if(!$value) {
-            $this->errors[] = $msg;
+        if(!$value){
+            $this->setError($msg);
+            return false;
 
         }else{
             return $value;
@@ -273,11 +274,12 @@ class validate_form {
     /*
      *
      */
-    function isValidName($value, $msg) {
+    function isValidName($value, $msg = null){
         if(!$value) return '';
 
-        if(!is_string($value) and strlen($value) <= 64) {
-            $this->errors[] = $msg;
+        if(!is_string($value) and strlen($value) <= 64){
+            $this->setError($msg);
+            return false;
 
         }else{
             return cfm($value);
@@ -289,11 +291,12 @@ class validate_form {
     /*
      *
      */
-    function isAlphanum($value, $msg) {
+    function isAlphanum($value, $msg = null){
         if(!$value) return '';
 
-        if(!ctype_alnum($value)) {
-            $this->errors[] = $msg;
+        if(!ctype_alnum($value)){
+            $this->setError($msg);
+            return false;
 
         }else{
             return cfm($value);
@@ -305,12 +308,13 @@ class validate_form {
     /*
      *
      */
-    function isValidEmail($value, $msg) {
+    function isValidEmail($value, $msg = null){
         $value = cfm($value);
         if(!$value) return '';
 
         if(!preg_match("/^[_a-z0-9-]+(\.[_a-z0-9-]+)*@[a-z0-9-]+(\.[a-z0-9-]+)*(\.[a-z]{2,4})$/i", $value)){
-            $this->errors[] = $msg;
+            $this->setError($msg);
+            return false;
 
         }else{
             return $value;
@@ -322,11 +326,12 @@ class validate_form {
     /*
      *
      */
-    function isNumeric($value, $msg) {
+    function isNumeric($value, $msg = null){
         if(!$value) return '';
 
         if($value != cfi($value)){
-            $this->errors[] = $msg;
+            $this->setError($msg);
+            return false;
 
         }else{
             return $value;
@@ -338,13 +343,14 @@ class validate_form {
     /*
      *
      */
-    function isValidPhonenumber($value, $msg) {
+    function isValidPhonenumber($value, $msg = null){
         $value = strtolower(cfm($value));
         if(!$value) return '';
 
-//      if(!preg_match('^(?:(?:\+?1\s*(?:[.-]\s*)?)?(?:\(\s*([2-9]1[02-9]|[2-9][02-8]1|[2-9][02-8][02-9])\s*\)|([2-9]1[02-9]|[2-9][02-8]1|[2-9][02-8][02-9]))\s*(?:[.-]\s*)?)?([2-9]1[02-9]|[2-9][02-9]1|[2-9][02-9]{2})\s*(?:[.-]\s*)?([0-9]{4})(?:\s*(?:#|x\.?|ext\.?|extension)\s*(\d+))?$', $value)) {
-        if(!preg_match('/^(?:(?:\+|00)[1-9]{1,5}\s*)?(?:\(?[0-9]{1,4}\)?\s*)?[0-9]{2,4}(?:\s|-)?[0-9]{3,5}(?:x|ext[0-9]{1,5})?$/', $value)) {
-            $this->errors[] = $msg;
+//      if(!preg_match('^(?:(?:\+?1\s*(?:[.-]\s*)?)?(?:\(\s*([2-9]1[02-9]|[2-9][02-8]1|[2-9][02-8][02-9])\s*\)|([2-9]1[02-9]|[2-9][02-8]1|[2-9][02-8][02-9]))\s*(?:[.-]\s*)?)?([2-9]1[02-9]|[2-9][02-9]1|[2-9][02-9]{2})\s*(?:[.-]\s*)?([0-9]{4})(?:\s*(?:#|x\.?|ext\.?|extension)\s*(\d+))?$', $value)){
+        if(!preg_match('/^(?:(?:\+|00)[1-9]{1,5}\s*)?(?:\(?[0-9]{1,4}\)?\s*)?[0-9]{2,4}(?:\s|-)?[0-9]{3,5}(?:x|ext[0-9]{1,5})?$/', $value)){
+            $this->setError($msg);
+            return false;
 
         }else{
             return $value;
@@ -356,12 +362,13 @@ class validate_form {
     /*
      *
      */
-    function isEqual($value, $value2, $msg) {
+    function isEqual($value, $value2, $msg = null){
         $value  = trim($value);
         $value2 = trim($value2);
 
-        if($value != $value2) {
-            $this->errors[] = $msg;
+        if($value != $value2){
+            $this->setError($msg);
+            return false;
 
         }else{
             return $value;
@@ -373,12 +380,13 @@ class validate_form {
     /*
      *
      */
-    function isNotEqual($value, $value2, $msg) {
+    function isNotEqual($value, $value2, $msg = null){
         $value  = trim($value);
         $value2 = trim($value2);
 
-        if($value == $value2) {
-            $this->errors[] = $msg;
+        if($value == $value2){
+            $this->setError($msg);
+            return false;
 
         }else{
             return $value;
@@ -390,9 +398,10 @@ class validate_form {
     /*
      *
      */
-    function isBetween($value, $min, $max, $msg) {
-        if($value < $min and $value > $max) {
-            $this->errors[] = $msg;
+    function isBetween($value, $min, $max, $msg = null){
+        if($value < $min and $value > $max){
+            $this->setError($msg);
+            return false;
 
         }else{
             return $value;
@@ -404,11 +413,12 @@ class validate_form {
     /*
      *
      */
-    function isEnabled($value, $msg) {
+    function isEnabled($value, $msg = null){
         $value = cfm($value);
 
-        if(!$value) {
-            $this->errors[] = $msg;
+        if(!$value){
+            $this->setError($msg);
+            return false;
 
         }else{
             return $value;
@@ -420,14 +430,18 @@ class validate_form {
     /*
      *
      */
-    function hasMinChars($value, $limit, $msg) {
+    function hasNoChars($value, $chars, $msg = null){
         $value = trim($value);
 
-        if(strlen($value) < $limit) {
-            $this->errors[] = $msg;
+        foreach(array_force($chars) as $char){
+            if(strpos($value, $char)){
+                $this->setError($msg);
+            return false;
+                break;
 
-        }else{
-            return $value;
+            }else{
+                return $value;
+            }
         }
     }
 
@@ -436,11 +450,12 @@ class validate_form {
     /*
      *
      */
-    function hasMaxChars($value, $limit, $msg) {
+    function hasMinChars($value, $limit, $msg = null){
         $value = trim($value);
 
-        if(strlen($value) > $limit) {
-            $this->errors[] = $msg;
+        if(strlen($value) < $limit){
+            $this->setError($msg);
+            return false;
 
         }else{
             return $value;
@@ -452,11 +467,12 @@ class validate_form {
     /*
      *
      */
-    function hasChars($value, $limit, $msg) {
+    function hasMaxChars($value, $limit, $msg = null){
         $value = trim($value);
 
-        if(strlen($value) != $limit) {
-            $this->errors[] = $msg;
+        if(strlen($value) > $limit){
+            $this->setError($msg);
+            return false;
 
         }else{
             return $value;
@@ -468,11 +484,29 @@ class validate_form {
     /*
      *
      */
-    function isValidUrl($value, $msg) {
+    function hasChars($value, $limit, $msg = null){
+        $value = trim($value);
+
+        if(strlen($value) != $limit){
+            $this->setError($msg);
+            return false;
+
+        }else{
+            return $value;
+        }
+    }
+
+
+
+    /*
+     *
+     */
+    function isValidUrl($value, $msg = null){
         if(!$value) return '';
 
-        if(filter_var($value, FILTER_VALIDATE_URL) === FALSE) {
-            $this->errors[] = $msg;
+        if(filter_var($value, FILTER_VALIDATE_URL) === FALSE){
+            $this->setError($msg);
+            return false;
         } else {
             return $value;
         }
@@ -483,7 +517,7 @@ class validate_form {
     /*
      *
      */
-    function isValidFacebookUserpage($value, $msg) {
+    function isValidFacebookUserpage($value, $msg = null){
         $value  = cfm($value);
 
         if(!$value) return '';
@@ -492,7 +526,8 @@ class validate_form {
             return $value;
 
         }else{
-            $this->errors[] = $msg;
+            $this->setError($msg);
+            return false;
         }
     }
 
@@ -501,7 +536,7 @@ class validate_form {
     /*
      *
      */
-    function isValidTwitterUserpage($value, $msg) {
+    function isValidTwitterUserpage($value, $msg = null){
         $value  = cfm($value);
 
         if(!$value) return '';
@@ -510,7 +545,8 @@ class validate_form {
             return $value;
 
         }else{
-            $this->errors[] = $msg;
+            $this->setError($msg);
+            return false;
         }
     }
 
@@ -519,7 +555,7 @@ class validate_form {
     /*
      *
      */
-    function isValidGoogleplusUserpage($value, $msg) {
+    function isValidGoogleplusUserpage($value, $msg = null){
         $value  = cfm($value);
 
         if(!$value) return '';
@@ -528,7 +564,8 @@ class validate_form {
             return $matches[1];
 
         }else{
-            $this->errors[] = $msg;
+            $this->setError($msg);
+            return false;
         }
     }
 
@@ -537,7 +574,7 @@ class validate_form {
     /*
      *
      */
-    function isValidYoutubeUserpage($value, $msg) {
+    function isValidYoutubeUserpage($value, $msg = null){
         $value  = cfm($value);
 
         if(!$value) return '';
@@ -546,7 +583,8 @@ class validate_form {
             return $value;
 
         }else{
-            $this->errors[] = $msg;
+            $this->setError($msg);
+            return false;
         }
     }
 
@@ -555,7 +593,7 @@ class validate_form {
     /*
      *
      */
-    function isValidLinkedinUserpage($value, $msg) {
+    function isValidLinkedinUserpage($value, $msg = null){
         $value  = cfm($value);
 
         if(!$value) return '';
@@ -564,7 +602,8 @@ class validate_form {
             return $value;
 
         }else{
-            $this->errors[] = $msg;
+            $this->setError($msg);
+            return false;
         }
     }
 
@@ -573,9 +612,10 @@ class validate_form {
     /*
      *
      */
-    function isChecked($value, $msg) {
+    function isChecked($value, $msg = null){
         if(!$value){
-            $this->errors[] = $msg;
+            $this->setError($msg);
+            return false;
         }
     }
 
@@ -584,12 +624,13 @@ class validate_form {
     /*
      *
      */
-    function isValidPassword($value, $msg) {
+    function isValidPassword($value, $msg = null){
         if(strlen($value) >= 8){
             return $value;
 
         }else{
-            $this->errors[] = $msg;
+            $this->setError($msg);
+            return false;
         }
     }
 
@@ -598,12 +639,13 @@ class validate_form {
     /*
      *
      */
-    function isRegex($value, $regex, $msg) {
+    function isRegex($value, $regex, $msg = null){
         if(preg_match($regex, $value)){
             return $value;
 
         }else{
-            $this->errors[] = $msg;
+            $this->setError($msg);
+            return false;
         }
     }
 
@@ -612,9 +654,10 @@ class validate_form {
     /*
      *
      */
-    function isInRange($value, $min, $max, $msg) {
+    function isInRange($value, $min, $max, $msg = null){
         if(!is_numeric($value) or ($value < $min) or ($value > $max)){
-            $this->errors[] = $msg;
+            $this->setError($msg);
+            return false;
 
         }else{
             return $value;
@@ -626,7 +669,7 @@ class validate_form {
     /*
      *
      */
-    function isDate($value, $msg) {
+    function isDate($value, $msg = null){
 // :TODO: IMPLEMENT
         return $value;
     }
@@ -636,7 +679,7 @@ class validate_form {
     /*
      *
      */
-    function isTime($value, $msg) {
+    function isTime($value, $msg = null){
         try{
             load_libs('date');
 
@@ -658,11 +701,12 @@ class validate_form {
     /*
      *
      */
-    function sqlQuery($sql, $result, $msg) {
+    function sqlQuery($sql, $result, $msg = null){
         $res = sql_get($sql);
 
-        if($res['result'] != $result) {
-            $this->errors[] = $msg;
+        if($res['result'] != $result){
+            $this->setError($msg);
+            return false;
         }
     }
 
@@ -672,8 +716,11 @@ class validate_form {
      *
      */
     //set error, useful if validation is done outside of this script.
-    function setError($msg) {
-        $this->errors[] = $msg;
+    function setError($msg){
+        if($msg){
+            $this->setError($msg);
+            return false;
+        }
     }
 
 
@@ -681,10 +728,10 @@ class validate_form {
     /*
      *
      */
-    function isValid($exception = true) {
+    function isValid($throw_exception = true){
         $valid = !count($this->errors);
 
-        if($exception and !$valid){
+        if(!$valid and $throw_exception){
             throw new bException($this->errors, 'validation');
         }
 
@@ -713,7 +760,7 @@ class validate_form {
 
             $retval = '';
 
-            foreach($this->errors as $key => $value) {
+            foreach($this->errors as $key => $value){
                 $retval .= $value.$separator;
             }
 

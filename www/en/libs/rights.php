@@ -191,24 +191,30 @@ function rights_take($users, $rights){
 /*
  * Return requested data for specified rights
  */
-function rights_get($params, $columns = false){
+function rights_get($right, $columns = 'id,name,description'){
     try{
-        array_params($params, 'name', 'id');
-
-        foreach(array('id', 'email', 'name') as $key){
-            if(isset_get($params[$key])){
-                $where[]           = '`'.$key.'` = :'.$key;
-                $execute[':'.$key] = $params[$key];
-            }
+        if(!$right){
+            throw new bException(tr('rights_get(): No right specified'), 'notspecified');
         }
 
-        if(empty($where)){
-            throw new bException('rights_get() No valid rights columns specified (either id, and or name, and or description)', 'invalid');
+        if(!is_scalar($right)){
+            throw new bException(tr('rights_get(): Specified right "%right%" is not scalar', array('%right%' => $right)), 'invalid');
         }
 
-        return sql_get('SELECT '.($columns ? $columns : '*').'
-                        FROM   `rights`
-                        WHERE  '.implode(' OR ', $where), $columns, $execute);
+        $retval = sql_get('SELECT '.$columns.'
+
+                           FROM   `rights`
+
+                           WHERE  `id`   = :right
+                           OR     `name` = :right', $columns,
+
+                           array(':right' => $right));
+
+        if(!$retval){
+            throw new bException('roles_get(): Specified role "'.str_log($right).'" does not exist', 'notexists');
+        }
+
+        return $retval;
 
     }catch(Exception $e){
         throw new bException('rights_get(): Failed', $e);
@@ -286,6 +292,53 @@ function rights_has($user, $right){
 
     }catch(Exception $e){
         throw new bException('rights_has(): Failed', $e);
+    }
+}
+
+
+
+/*
+ *
+ */
+function rights_validate($right, $old_right = null){
+    try{
+        load_libs('validate');
+
+        if($old_right){
+            $right = array_merge($old_right, $right);
+        }
+
+        $v = new validate_form($right, 'name,description');
+        $v->isNotEmpty ($right['name']    , tr('No rights name specified'));
+        $v->hasMinChars($right['name'],  2, tr('Please ensure the right\'s name has at least 2 characters'));
+        $v->hasMaxChars($right['name'], 32, tr('Please ensure the right\'s name has less than 32 characters'));
+        $v->hasNoChars ($right['name'], ' ', tr('Please ensure the right\'s name contains no spaces'));
+
+        $v->isNotEmpty ($right['description']      , tr('No right\'s description specified'));
+        $v->hasMinChars($right['description'],    2, tr('Please ensure the right\'s description has at least 2 characters'));
+        $v->hasMaxChars($right['description'], 2047, tr('Please ensure the right\'s description has less than 2047 characters'));
+
+        if(is_numeric(substr($right['name'], 0, 1))){
+            $v->setError(tr('Please ensure that the rights\'s name does not start with a number'));
+        }
+
+        if(empty($right['id'])){
+            if($id = sql_get('SELECT `id` FROM `rights` WHERE `name` = :name', array(':name' => $right['name']))){
+                $v->setError(tr('The right "%right%" already exists with id "%id%"', array('%right%' => str_log($right['name']), '%id%' => $id)));
+            }
+
+        }else{
+            if($id = sql_get('SELECT `id` FROM `rights` WHERE `name` = :name AND `id` != :id', array(':name' => $right['name'], ':id' => $right['id']))){
+                $v->setError(tr('The right "%right%" already exists with id "%id%"', array('%right%' => str_log($right['name']), '%id%' => $id)));
+            }
+        }
+
+        $v->isValid();
+
+        return $right;
+
+    }catch(Exception $e){
+        throw new bException(tr('rights_validate(): Failed'), $e);
     }
 }
 ?>

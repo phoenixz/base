@@ -586,28 +586,32 @@ function user_update_password($params){
 /*
  * Return requested data for specified user
  */
-function user_get($params, $columns = false){
+function user_get($user, $columns = 'id,name,username,email'){
+    global $_CONFIG;
+
     try{
-        array_params($params, 'username', 'id');
-
-        if(!isset($params['email']) and isset($params['username'])){
-            $params['email'] = $params['username'];
+        if(!$user){
+            throw new bException(tr('user_get(): No user specified'), 'notspecified');
         }
 
-        foreach(array('id', 'email', 'username') as $key){
-            if(isset_get($params[$key])){
-                $where[]           = '`'.$key.'` = :'.$key;
-                $execute[':'.$key] = $params[$key];
-            }
+        if(!is_scalar($user)){
+            throw new bException(tr('user_get(): Specified user "%user%" is not scalar', array('%user%' => $user)), 'invalid');
         }
 
-        if(empty($where)){
-            throw new bException('user_get() No valid usercolumns specified (either id, and or username, and or email)', 'invalid');
+        $retval = sql_get('SELECT '.$columns.'
+
+                           FROM   `users`
+
+                           WHERE  `id`   = :user
+                           OR     `name` = :user', $columns,
+
+                           array(':user' => $user));
+
+        if(!$retval){
+            throw new bException('user_get(): Specified user "'.str_log($user).'" does not exist', 'notexists');
         }
 
-        return sql_get('SELECT '.($columns ? $columns : '*').'
-                        FROM   `users`
-                        WHERE  '.implode(' OR ', $where), $columns, $execute);
+        return $retval;
 
     }catch(Exception $e){
         throw new bException('user_get(): Failed', $e);
@@ -903,6 +907,73 @@ function user_password_strength($password){
 
     }catch(Exception $e){
         throw new bException('user_password_strength(): Failed', $e);
+    }
+}
+
+
+
+/*
+ *
+ */
+function users_validate($user, $old_user = null){
+    global $_CONFIG;
+
+    try{
+        if($old_user){
+            $user = array_merge($old_user, $user);
+        }
+
+        load_libs('validate');
+
+        $v     = new validate_form($user, 'name,username,email,status,password,latitude,longitude,type');
+        $v->isNotEmpty ($user['name']     , tr('No name specified'), 'notspecified');
+        $v->hasMinChars($user['name'],   2, tr('Please ensure the name has at least 2 characters'));
+        $v->hasMaxChars($user['name'], 255, tr('Please ensure the name has less than 255 characters'));
+
+        $v->isNotEmpty ($user['username']    , tr('No username specified'), 'notspecified');
+        $v->hasMinChars($user['username'],  2, tr('Please ensure the username has at least 2 characters'));
+        $v->hasMaxChars($user['username'], 64, tr('Please ensure the username has less than 255 characters'));
+
+        if(is_numeric(substr($user['username'], 0, 1))){
+            $v->setError(tr('Please ensure that the users name does not start with a number'));
+        }
+
+        $v->isNotEmpty  ($user['email'], tr('No email specified'), 'notspecified');
+        $v->isValidEmail($user['email'], tr('Specified email "%email%" is not a valid email address', array('%email%' => $user['email'])));
+
+        if(strlen($user['status']) > 16){
+            $v->setError(tr('Specified status "%status%" is not valid, it should be less than 16 characters', array('%status%' => $user['status'])));
+        }
+
+        if(!$user['password']){
+            $v->setError(tr('No password specified'), 'not_specified');
+        }
+
+        if(empty($user['id'])){
+            if($test = sql_get('SELECT `id`, `username`, `name` FROM `users` WHERE (`name` = :name OR `email` = :email)', array(':name' => $user['name'], ':email' => $user['email']))){
+                if($user['username'] == $test['username']){
+                    throw new bException(tr('The username "%username%" is already in use', array('%username%' => $user['username'])), 'exists');
+                }
+
+                throw new bException(tr('The email "%email%" is already in use', array('%email%' => $user['email'])), 'exists');
+            }
+
+        }else{
+            if($test = sql_get('SELECT `id`, `username`, `name` FROM `users` WHERE (`name` = :name OR `email` = :email) AND `id` != :id', array(':name' => $user['name'], ':email' => $user['email'], ':id' => $user['id']))){
+                if($user['username'] == $test['username']){
+                    throw new bException(tr('The username "%username%" is already in use', array('%username%' => $user['username'])), 'exists');
+                }
+
+                throw new bException(tr('The email "%email%" is already in use', array('%email%' => $user['email'])), 'exists');
+            }
+        }
+
+        $v->isValid();
+
+        return $user;
+
+    }catch(Exception $e){
+        throw new bException(tr('users_validate(): Failed'), $e);
     }
 }
 ?>

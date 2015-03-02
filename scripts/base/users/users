@@ -9,7 +9,8 @@ $usage = "./scripts/base/users/users list\n".
          "./scripts/base/users/users modify ID|USERNAME [username USERNAME]|[name NAME]|[email EMAIL]\n".
          "./scripts/base/users/users password ID|USERNAME PASSWORD\n".
          "./scripts/base/users/users delete|undelete|erase ID|USERNAME ID|USERNAME ...\n".
-         "./scripts/base/users/users whoami\n";
+         "./scripts/base/users/users whoami\n".
+         "./scripts/base/users/users role user USERID|USERNAME role ROLEID|ROLENAME\n";
 
 $help  = "This is the users management script";
 
@@ -39,7 +40,9 @@ try{
                 }
             }
 
-            $user = s_validate_user();
+            $user              = arguments('name,email,username,password,latitude,longitude,status,type');
+            $user['validated'] = true;
+            $user              = users_validate($user);
 
             sql_query('INSERT INTO `users` (`createdby`, `name`, `email`, `username`, `password`, `latitude`, `longitude`, `status`, `type`, `validated`)
                        VALUES              (:createdby , :name , :email , :username , :password , :latitude , :longitude , :status , :type , :validated )',
@@ -89,95 +92,81 @@ try{
                 throw new bException(tr('Specified user "%user%" does not exist', array('%user%' => str_log(argument(1)))), 'notexist');
             }
 
+            $new_user = arguments('name,email,username,password,latitude,longitude,status,type');
+            $user     = users_validate($new_user, $old_user);
+
             /*
              * Modify what exactly?
              */
-            if($execute[':value'] = argument('name', true)){
-                $execute[':value'] = trim($execute[':value']);
+            if($value = isset_get($new_user['name'])){
+                $execute[':name'] = trim($value);
+                $set[]             = '`name` = :name';
 
-                /*
-                 * Modify the users real name
-                 */
-                if(!$execute[':value']){
-                    $v->setError(tr('Specified username "%name%" is not valid, it should be more than 2 characters', array('%name%' => $execute[':value'])));
-
-                }elseif(strlen($execute[':value']) >= 255){
-                    $v->setError(tr('Specified username "%name%" is not valid, it should be less than 255 characters', array('%name%' => $execute[':value'])));
-                }
-
-                $query = 'UPDATE `users`
-                          SET    `name` = :value';
-
-                log_console(tr('Updating user real name to "%name%"', array('%name%' => str_log($execute[':value']))));
-                $modified = true;
-
-            }elseif($execute[':value'] = argument('username', true)){
-                $execute[':value'] = trim($execute[':value']);
-
-                /*
-                 * Modify the users username
-                 */
-                if(!$execute[':value']){
-                    $v->setError(tr('Specified username "%username%" is not valid, it should be more than 2 characters', array('%username%' => $execute[':value'])));
-
-                }elseif(strlen($execute[':value']) >= 64){
-                    $v->setError(tr('Specified username "%username%" is not valid, it should be less than 64 characters', array('%username%' => $execute[':value'])));
-                }
-
-                if(is_numeric(substr($execute[':value'], 0, 1))){
-                    $v->setError(tr('Username should not start with a number', array('%username%' => $execute[':value'])));
-                }
-
-                $query = 'UPDATE `users`
-                          SET    `username` = :value';
-
-                log_console(tr('Updating user name to "%name%"', array('%name%' => str_log($execute[':value']))));
-                $modified = true;
-
-            }elseif($execute[':value'] = argument('email', true)){
-                $execute[':value'] = trim($execute[':value']);
-
-                /*
-                 * Modify the users email
-                 */
-                $v->isValidEmail($execute[':value'], tr('Specified email "%email%" is not a valid email address', array('%email%' => $execute[':value'])));
-
-                $query = 'UPDATE `users`
-                          SET    `email` = :value';
-
-                log_console(tr('Updating user email to "%email%"', array('%email%' => str_log($execute[':value']))));
-                $modified = true;
-
-            }elseif($execute[':value'] = argument('status', true)){
-                $execute[':value'] = trim($execute[':value']);
-
-                /*
-                 * Modify the users status
-                 */
-                if(!$execute[':value']){
-                    $execute[':value'] = null;
-
-                }elseif(strlen($execute[':value']) > 16){
-                    $v->setError(tr('Specified status "%status%" is not valid, it should be less than 16 characters', array('%status%' => $execute[':value'])));
-                }
-
-                $query = 'UPDATE `users`
-                          SET    `status` = :value';
-
-                log_console(tr('Updating user status to "%status%"', array('%status%' => str_log($execute[':value']))));
-                $modified = true;
+                log_console(tr('Updating name to "%name%"', array('%name%' => str_log($execute[':name']))));
             }
 
-            $user = s_validate_user($old_user);
+            if($value = isset_get($new_user['username'])){
+                $execute[':username'] = $value;
+                $set[]                = '`username` = :username';
 
-            if(!isset_get($modified)){
+                log_console(tr('Updating username to "%name%"', array('%name%' => str_log($execute[':email']))));
+            }
+
+            if($value = isset_get($new_user['email'])){
+                $execute[':email'] = trim($value);
+                $set[]             = '`email` = :email';
+
+                log_console(tr('Updating email to "%email%"', array('%email%' => str_log($execute[':email']))));
+            }
+
+            if($value = isset_get($new_user['status'])){
+                $execute[':status'] = trim($value);
+                $set[]              = '`status` = :status';
+
+                log_console(tr('Updating user status to "%status%"', array('%status%' => str_log($execute[':status']))));
+            }
+
+            if(empty($set)){
                 log_console(tr('Not modified anything for user "%user%"', array('%user%' => user_name($user))), 'finished', 'yellow');
 
             }else{
-                sql_query($query.$where, $execute);
+                sql_query('UPDATE `users` SET '.implode(',', $set).$where, $execute);
                 log_console(tr('Modified user "%user%"', array('%user%' => user_name($user))), 'finished', 'green');
             }
 
+            break;
+
+        case 'giverole':
+            // FALLTHROUGH
+        case 'setrole':
+            load_libs('roles');
+
+            $role = argument('role', true);
+            $user = argument('user', true);
+
+            if(!$role){
+                throw new bException('No role specified');
+            }
+
+            if(!$user){
+                throw new bException('No user specified');
+            }
+
+            $role             = roles_get($role, 'id,name');
+            $user             = user_get($user);
+            $user['roles_id'] = $role['id'];
+
+            sql_query('UPDATE `users`
+
+                       SET    `roles_id` = :roles_id
+
+                       WHERE  `id`       = :users_id',
+
+                       array(':users_id' => $user['id'],
+                             ':roles_id' => $role['id']));
+
+            user_update_rights($user);
+            log_console(tr('Gave role "%role%" to user "%user%"', array('%role%' => $role['name'], '%user%' => user_name($user))), '', 'green');
             break;
 
         case 'list':
@@ -230,6 +219,60 @@ try{
 
                         while($user = sql_fetch($r)){
                             log_console(str_size($user['id'], 6, ' ', true).' '.str_size($user['username'], 12).' '.str_size(status($user['status']), 10).' '.str_size($user['type'], 10).' '.str_size($user['role'], 10).' '.str_size(($user['admin'] ? 'Yes' : ''), 5).' '.str_size(($user['god'] ? 'Yes' : ''), 3).' '.str_size(status($user['status']), 10).' '.str_size($user['name'], 32).' '.str_size($user['email'], 32), '', '');
+                        }
+                    }
+
+                    break;
+
+                case 'rights':
+                    log_console('Showing rights for users', '');
+
+                    $limit   = 200;
+
+                    $query   = 'SELECT    `users`.`id`,
+                                          `users`.`username`,
+                                          `users`.`email`,
+                                          `users`.`status`,
+                                          `users`.`roles_id`
+
+                                FROM      `users`';
+
+                    $execute = array();
+
+                    /*
+                     * Consider only users with a specific type as real users?
+                     */
+                    if($_CONFIG['users']['type_filter'] !== false){
+                        if($_CONFIG['users']['type_filter'] === null){
+                            $query           .= ' WHERE `users`.`type` IS NULL';
+
+                        }else{
+                            $query           .= ' WHERE `users`.`type` = :type';
+                            $execute[':type'] = $_CONFIG['users']['type_filter'];
+                        }
+                    }
+
+                    $r = sql_query($query.($limit ? ' LIMIT '.$limit : ''));
+
+                    if(!$r->rowCount()){
+                        log_console(tr('There are currently no users registered'), '', 'yellow');
+
+                    }else{
+                        log_console(tr('#id    Username     Status     Rights'), '', 'white');
+
+                        while($user = sql_fetch($r)){
+                            $rights = sql_list('SELECT    `rights`.`name`
+
+                                                FROM      `roles_rights`
+
+                                                JOIN      `rights`
+                                                ON        `rights`.`id` = `roles_rights`.`rights_id`
+
+                                                AND       `roles_id` = :roles_id',
+
+                                                array(':roles_id' => $user['roles_id']));
+
+                            log_console(str_size($user['id'], 6, ' ', true).' '.str_size($user['username'], 12).' '.str_size(status($user['status']), 10).' '.str_force($rights, ', '), '');
                         }
                     }
 
@@ -373,81 +416,6 @@ throw new bException('"LIST WITH RIGHT" IS UNDER CONSTRUCTION');
     }
 
 }catch(Exception $e){
-    throw new bException('scripts/users/create: Failed', $e);
-}
-
-
-
-/*
- *
- */
-function s_validate_user($user = null){
-    global $_CONFIG;
-
-    try{
-        if(!$user){
-            $user['name']      = argument('name'     , true, '');
-            $user['email']     = argument('email'    , true);
-            $user['username']  = argument('username' , true);
-            $user['password']  = argument('password' , true);
-            $user['latitude']  = argument('latitude' , true);
-            $user['longitude'] = argument('longitude', true);
-            $user['status']    = argument('status'   , true);
-            $user['type']      = argument('type'     , true);
-            $user['validated'] = true;
-        }
-
-        load_libs('validate');
-
-        $v     = new validate_form();
-        $v->isNotEmpty ($user['name']     , tr('No name specified'), 'notspecified');
-        $v->hasMinChars($user['name'],   2, tr('Please ensure the name has at least 2 characters'));
-        $v->hasMaxChars($user['name'], 255, tr('Please ensure the name has less than 255 characters'));
-
-        $v->isNotEmpty ($user['username']    , tr('No username specified'), 'notspecified');
-        $v->hasMinChars($user['username'],  2, tr('Please ensure the username has at least 2 characters'));
-        $v->hasMaxChars($user['username'], 64, tr('Please ensure the username has less than 255 characters'));
-
-        if(is_numeric(substr($user['username'], 0, 1))){
-            $v->setError(tr('Username should not start with a number', array('%username%' => $user['username'])));
-        }
-
-        $v->isNotEmpty  ($user['email'], tr('No email specified'), 'notspecified');
-        $v->isValidEmail($user['email'], tr('Specified email "%email%" is not a valid email address', array('%email%' => $user['email'])));
-
-        if(strlen($user['status']) > 16){
-            $v->setError(tr('Specified status "%status%" is not valid, it should be less than 16 characters', array('%status%' => $user['status'])));
-        }
-
-        if(!$user['password']){
-            $v->setError(tr('No password specified'), 'not_specified');
-        }
-
-        if(empty($user['id'])){
-            if($test = sql_get('SELECT `id`, `username`, `name` FROM `users` WHERE (`name` = :name OR `email` = :email)', array(':name' => $user['name'], ':email' => $user['email']))){
-                if($user['username'] == $test['username']){
-                    throw new bException(tr('The username "%username%" is already in use', array('%username%' => $user['username'])), 'exists');
-                }
-
-                throw new bException(tr('The email "%email%" is already in use', array('%email%' => $user['email'])), 'exists');
-            }
-
-        }else{
-            if($test = sql_get('SELECT `id`, `username`, `name` FROM `users` WHERE (`name` = :name OR `email` = :email) AND `id` != :id', array(':name' => $user['name'], ':email' => $user['email'], ':id' => $user['id']))){
-                if($user['username'] == $test['username']){
-                    throw new bException(tr('The username "%username%" is already in use', array('%username%' => $user['username'])), 'exists');
-                }
-
-                throw new bException(tr('The email "%email%" is already in use', array('%email%' => $user['email'])), 'exists');
-            }
-        }
-
-        $v->isValid();
-
-        return $user;
-
-    }catch(Exception $e){
-        throw new bException(tr('s_validate_user(): Failed'), $e);
-    }
+    cli_error($e);
 }
 ?>

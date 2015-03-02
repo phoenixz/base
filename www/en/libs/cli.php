@@ -267,6 +267,8 @@ function argument($value, $next = null, $default = null){
 
     try{
         if(is_numeric($value)){
+            $count = count($argv) - 1;
+
             while($argument = isset_get($argv[$value++], $next)){
                 switch($argument){
                     case 'force':
@@ -275,6 +277,10 @@ function argument($value, $next = null, $default = null){
                         /*
                          * Ignore test and force arguments
                          */
+                        if($value > $count){
+                            return $default;
+                        }
+
                         break;
 
                     default:
@@ -330,10 +336,16 @@ function argument($value, $next = null, $default = null){
  */
 function arguments($arguments){
     try{
-        $arguments = array_force($arguments);
         $retval    = array();
 
-        foreach($arguments as $argument){
+        foreach(array_force($arguments) as $argument){
+            if(is_numeric($argument)){
+                /*
+                 * If the key would be numeric, argument() would get into an endless loop
+                 */
+                throw new bException(tr('arguments(): The specified argument "%argument%" is numeric, and as such, invalid. arguments() can only check for key-value pairs, where the keys can not be numeric', array('%argument%' => $argument)), 'invalid');
+            }
+
             if($value = argument($argument, true)){
                 $retval[$argument] = $value;
             }

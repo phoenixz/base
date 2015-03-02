@@ -78,7 +78,7 @@ try{
 
         case 'create':
             try{
-                $right = s_validate_right();
+                $right = rights_validate(arguments('name,description'));
 
                 sql_query('INSERT INTO `rights` (`createdby`, `name`, `description`)
                            VALUES               (:createdby , :name , :description)',
@@ -102,13 +102,13 @@ try{
                     throw new bException(tr('No right specified'), 'notspecified');
                 }
 
-                $old_right = sql_get('SELECT `id` FROM `rights` WHERE `id` = :right OR `name` = :right', array(':right' => argument(1)));
+                $old_right = sql_get('SELECT `id`, `name`, `description` FROM `rights` WHERE `id` = :right OR `name` = :right', array(':right' => argument(1)));
 
                 if(!$old_right){
                     throw new bException(tr('Specified right "%right%" does not exist', array('%right%' => argument(1))), 'notspecified');
                 }
 
-                $right = s_validate_right();
+                $right = rights_validate(arguments('name,description'), $old_right);
 
                 sql_query('UPDATE `rights`
 
@@ -208,46 +208,5 @@ try{
 
 }catch(Exception $e){
     throw new bException('base/users/rights: Failed', $e);
-}
-
-
-
-/*
- *
- */
-function s_validate_right(){
-    try{
-        $right = array('name'        => argument('name'),
-                       'description' => argument('description'));
-
-        load_libs('validate');
-
-        $v     = new validate_form();
-        $v->isNotEmpty ($right['name']    , tr('No rights name specified'));
-        $v->hasMinChars($right['name'],  2, tr('Please ensure the rights name has at least 2 characters'));
-        $v->hasMaxChars($right['name'], 32, tr('Please ensure the rights name has less than 32 characters'));
-
-        $v->isNotEmpty ($right['description']      , tr('No rights description specified'));
-        $v->hasMinChars($right['description'],    2, tr('Please ensure the rights description has at least 2 characters'));
-        $v->hasMaxChars($right['description'], 2047, tr('Please ensure the rights description has less than 32 characters'));
-
-        if(empty($right['id'])){
-            if($id = sql_get('SELECT `id` FROM `rights` WHERE `name` = :name', array(':name' => $right['name']))){
-                $v->setError(tr('The right "%right%" already exists with id "%id%"', array('%right%' => str_log($right['name']), '%id%' => $id)));
-            }
-
-        }else{
-            if($id = sql_get('SELECT `id` FROM `rights` WHERE `name` = :name AND `id` != :id', array(':name' => $right['name'], ':id' => $right['id']))){
-                $v->setError(tr('The right "%right%" already exists with id "%id%"', array('%right%' => str_log($right['name']), '%id%' => $id)));
-            }
-        }
-
-        $v->isValid();
-
-        return $right;
-
-    }catch(Exception $e){
-        throw new bException(tr('s_validate_right(): Failed'), $e);
-    }
 }
 ?>
