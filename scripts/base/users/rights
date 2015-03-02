@@ -1,8 +1,16 @@
 #!/usr/bin/php
 <?php
 /*
- * This script manages is a user is an admin or not
+ * This script manages the available rights
  */
+$usage = "./scripts/base/users/rights list\n".
+         "./scripts/base/users/rights create name NAME description DESCRIPTION\n".
+         "./scripts/base/users/rights modify ID|NAME name NAME description DESCRIPTION\n".
+         "./scripts/base/users/rights delete|undelete|erase ID|RIGHT ID|RIGHT ...\n".
+         "./scripts/base/users/rights for USER\n";
+
+$help  = "This is the rights management script";
+
 $quiet = true;
 require_once(dirname(__FILE__).'/../../../libs/startup.php');
 
@@ -10,71 +18,38 @@ try{
     cli_rights('admin,users,rights');
     load_libs('user,rights');
 
-    if(!$target_user = argument('user', true)){
-        throw new bException('base/users/rights: No user specified', 'notspecified');
-    }
-
-    $query   = 'SELECT `id`,
-                       `name`,
-                       `username`,
-                       `email`
-
-                FROM   `users`
-
-                WHERE (`id`       = :id
-                OR     `username` = :username
-                OR     `email`    = :email)';
-
-    $execute = array(':id'       => $target_user,
-                     ':username' => $target_user,
-                     ':email'    => $target_user);
-
-    /*
-     * Consider only users with a specific type as real users?
-     */
-    if($_CONFIG['users']['type_filter'] !== false){
-        if($_CONFIG['users']['type_filter'] === null){
-            $query           .= ' AND `users`.`type` IS NULL';
-
-        }else{
-            $query           .= ' AND `users`.`type` = :type';
-            $execute[':type'] = $_CONFIG['users']['type_filter'];
-        }
-    }
-
-    if(!$target_user = sql_get($query, $execute)){
-        throw new bException('base/users/rights: Specified user "'.str_log(argument(1)).'" does not exist', 'notexists');
-    }
-
     switch(argument(0)){
         case 'list':
             log_console('Showing currently available rights', '');
 
-            $list = sql_list('SELECT    `name`,
-                                        `description`
+            $limit   = 200;
 
-                              FROM      `rights`');
+            $r       = sql_query('SELECT    `name`,
+                                            `status`,
+                                            `description`
 
-            log_console(str_size('Name', 20).' Description', '', 'white');
+                                  FROM      `rights`'.($limit ? ' LIMIT '.$limit : ''));
 
-            foreach($list as $name => $description){
-                log_console(str_size($name, 20).' '.$description, '');
+            log_console(str_size('Name', 20).' '.str_size('Status', 16).' Description', '', 'white');
+
+            while($right = sql_fetch($r)){
+                log_console(str_size($right['name'], 20).' '.str_size(status($right['status']), 16).' '.$right['description'], '');
             }
 
             break;
 
         case 'for':
-            // FALLTHROUGH
-        case 'has':
-            if(!$target_user){
-                throw new bException('base/users/rights: No user specified', 'notspecified');
+            if(!argument(1)){
+                throw new bException(tr('No user specified'), 'notspecified');
             }
 
-            log_console('Showing rights for user "'.user_name($target_user).'"', '');
+            $user = sql_get('SELECT `id`, `name`, `username`, `email` FROM `users` WHERE `id` = :user OR `name` = :user', array(':user' => argument(1)));
 
-            if(!$target_user){
-                throw new bException('base/users/rights: No user specified', 'notspecified');
+            if(!$user){
+                throw new bException(tr('Specified user "%user%" does not exist', array('%user%' => argument(1))), 'notexist');
             }
+
+            log_console('Showing rights for user "'.user_name($user).'"', '', 'white');
 
             $list = sql_list('SELECT    `rights`.`name`,
                                         `rights`.`description`
@@ -86,7 +61,7 @@ try{
 
                               WHERE     `users_rights`.`users_id` = :users_id',
 
-                              array(':users_id' => $target_user['id']));
+                              array(':users_id' => $user['id']));
 
             if(!$list){
                 log_console('This user has no rights assigned', '', 'yellow');
@@ -99,173 +74,180 @@ try{
                 }
             }
 
-            die(0);
-
-        case 'add':
-            // FALLTHROUGH
-        case 'set':
-            // FALLTHROUGH
-        case 'give':
-            if(!$target_user){
-                throw new bException('base/users/rights: No user specified', 'notspecified');
-            }
-
-            if(in_array('admin', $argv)){
-                throw new bException('The right "admin" can only be assigned with the "admin" script', 'invalid');
-            }
-
-            /*
-             * Make sure rights have been specified
-             */
-            if(!$arguments = argument('rights', 'all')){
-                if(!$arguments = argument('right', 'all')){
-                    throw new bException('No "rights" or "right" keyword, or no rights list specified', 'notspecified');
-                }
-            }
-
-            /*
-             * Ensure that specified rights exist, and get more detailed rights data
-             */
-            foreach($arguments as $key => $value){
-                if(!$right = rights_get($value, 'id,name')){
-                    throw new bException('Unknown right "'.str_log($value).'" specified', 'unknown');
-                }
-
-                $rights[$right['name']] = $right;
-            }
-
-            /*
-             * Add the specified rights
-             */
-            foreach($rights as $right){
-                if(!sql_get('SELECT `id` FROM `users_rights` WHERE `users_id` = :users_id AND `rights_id` = :rights_id', array(':users_id' => $target_user['id'], ':rights_id' => $right['id']), 'id')){
-                    sql_query('INSERT INTO `users_rights` (`rights_id`, `users_id`, `name`)
-                               VALUES                     (:rights_id , :users_id , :name )',
-
-                               array(':users_id'  => $target_user['id'],
-                                     ':rights_id' => $right['id'],
-                                     ':name'      => $right['name']));
-                }
-            }
-
-            log_console('Added rights "'.str_log(array_keys($rights)).'" to user "'.user_name($target_user).'"', '', 'white');
-            break;
-
-        case 'unset':
-            // FALLTHROUGH
-        case 'take':
-            if(!$target_user){
-                throw new bException('base/users/rights: No user specified', 'notspecified');
-            }
-
-            /*
-             * Add specified rights to this user
-             */
-            unset($argv[0]);
-            unset($argv[1]);
-
-            if(in_array('admin', $argv)){
-                throw new bException('The right "admin" can only be removed with the "admin" script', 'invalid');
-            }
-
-            /*
-             * Ensure that specified rights exist, and get more detailed rights data
-             */
-            foreach($argv as $key => $value){
-                if(!$right = rights_get($value, 'id,name')){
-                    throw new bException('Unknown right "'.str_log($value).'" specified', 'unknown');
-                }
-
-                $rights[$key] = $right;
-            }
-
-            /*
-             * Add the specified rights
-             */
-            foreach($rights as $right){
-                sql_query('DELETE FROM `users_rights`
-                           WHERE       `users_id`  = :users_id
-                           AND         `rights_id` = :rights_id',
-
-                           array(':users_id'  => $target_user['id'],
-                                 ':rights_id' => $right['id']));
-            }
-
-            log_console('Removed rights "'.str_log($argv).'" from user "'.user_name($target_user).'"', '', 'white');
             break;
 
         case 'create':
             try{
-                if(!argument(1)){
-                    throw new bException('No rights name specified', 'notspecified');
-                }
-
-                if(!argument(2)){
-                    throw new bException('No rights description specified', 'notspecified');
-                }
-
-                if(sql_get('SELECT `id` FROM `rights` WHERE `name` = :name', array(':name' => argument(1)))){
-                    throw new bException('The right "'.str_log(argument(1)).'" already exists', 'exists');
-                }
-
+                $right = s_validate_right();
 
                 sql_query('INSERT INTO `rights` (`createdby`, `name`, `description`)
                            VALUES               (:createdby , :name , :description)',
 
-                           array(':createdby'    => $user['id'],
-                                 ':name'       => argument(1),
-                                 ':description'=> argument(2, '')));
+                           array(':createdby'   => isset_get($_SESSION['user']['id']),
+                                 ':name'        => $right['name'],
+                                 ':description' => $right['description']));
 
-                log_console('Created new right "'.argument(1).'"', '', 'white');
+                log_console(tr('Created new right "%right%"', array('%right%' => str_log($right['name']))), '', 'green');
                 break;
 
             }catch(Exception $e){
                 throw new bException('Failed to create new right', $e);
             }
 
-        case 'delete':
-            // FALLTHROUGH
-        case 'remove':
-            // FALLTHROUGH
-        case 'erase':
-            // FALLTHROUGH
-        case 'take':
+            break;
+
+        case 'modify':
             try{
                 if(!argument(1)){
-                    throw new bException('No right name specified', 'notspecified');
+                    throw new bException(tr('No right specified'), 'notspecified');
                 }
 
-                if(in_array(argument(1), array('god', 'devil', 'admin'))){
-                    throw new bException('The right "'.str_log(argument(1)).'" cannot be deleted', 'invalid');
+                $old_right = sql_get('SELECT `id` FROM `rights` WHERE `id` = :right OR `name` = :right', array(':right' => argument(1)));
+
+                if(!$old_right){
+                    throw new bException(tr('Specified right "%right%" does not exist', array('%right%' => argument(1))), 'notspecified');
                 }
 
-                if(!$id = sql_get('SELECT `id` FROM `rights` WHERE `name` = :name', 'id', array(':name' => argument(1)))){
-                    if(!argument('force')){
-                        throw new bException('The right "'.str_log(argument(1)).'" does not exist', 'notexist');
-                    }
-                }
+                $right = s_validate_right();
 
-                sql_query('DELETE FROM `rights`
-                           WHERE       `id` = :id',
+                sql_query('UPDATE `rights`
 
-                           array(':id' => $id));
+                           SET    `modifiedon`  = NOW(),
+                                  `modifiedby`  = :modifiedby,
+                                  `name`        = :name,
+                                  `description` = :description
 
-                log_console('Deleted right "'.argument(1).'"', '', 'white');
+                           WHERE  `id`          = :id',
+
+                           array(':modifiedby'  => isset_get($_SESSION['user']['id']),
+                                 ':name'        => $right['name'],
+                                 ':description' => $right['description'],
+                                 ':id'          => $old_right['id']));
+
+                /*
+                 * Now also update the cached right names
+                 */
+                sql_query('UPDATE `users_rights`
+
+                           SET    `name` = :name
+
+                           WHERE  `id`   = :id',
+
+                           array(':id'   => $old_right['id'],
+                                 ':name' => $right['name']));
+
+                log_console(tr('Modified right "%right%"', array('%right%' => str_log($right['name']))), '', 'green');
                 break;
 
             }catch(Exception $e){
-                throw new bException('Failed to delete new right', $e);
+                throw new bException('Failed to modify right', $e);
             }
+
+            break;
+
+        case 'delete':
+            cli_rights('modify');
+            array_shift($argv);
+
+            if(empty($argv)){
+                throw new bException(tr('No rights specified'), 'notspecified');
+            }
+
+            $in = sql_in($argv);
+            $r  = sql_query(debug_sql('UPDATE `rights` SET `status` = "deleted" WHERE `name` IN ('.implode(',', array_keys($in)).') or `id` IN ('.implode(',', array_keys($in)).')', $in));
+
+            if(!$r->rowCount()){
+                throw new bException(tr('Not deleted any rights'), 'notfound');
+            }
+
+            log_console(tr('Deleted "%count%" rights', array('%count%' => $r->rowCount())), '', 'green');
+            break;
+
+        case 'undelete':
+            cli_rights('modify');
+            array_shift($argv);
+
+            if(empty($argv)){
+                throw new bException(tr('No rights specified'), 'notspecified');
+            }
+
+            $in = sql_in($argv);
+            $r  = sql_query(debug_sql('UPDATE `rights` SET `status` = NULL WHERE `name` IN ('.implode(',', array_keys($in)).') or `id` IN ('.implode(',', array_keys($in)).')', $in));
+
+            if(!$r->rowCount()){
+                throw new bException(tr('Not undeleted any rights'), 'notfound');
+            }
+
+            log_console(tr('Undeleted "%count%" rights', array('%count%' => $r->rowCount())), '', 'green');
+            break;
+
+        case 'erase':
+            cli_rights('modify');
+            array_shift($argv);
+
+            if(empty($argv)){
+                throw new bException(tr('No rights specified'), 'notspecified');
+            }
+
+            $in = sql_in($argv);
+            $r  = sql_query(debug_sql('DELETE FROM `rights` WHERE (`name` IN ('.implode(',', array_keys($in)).') or `id` IN ('.implode(',', array_keys($in)).')) AND `status` = "deleted"', $in));
+
+            if(!$r->rowCount()){
+                throw new bException(tr('Not erased any rights'), 'notfound');
+            }
+
+            log_console(tr('Erased "%count%" rights', array('%count%' => $r->rowCount())), '', 'green');
+            break;
+
+        case '':
+            throw new bException('base/users/rights: No option specified. Please specify one of "list, for/has, add/set/give, unset/take, create, delete/remove/erase"', 'notspecified');
 
         default:
-            if(!argument(0)){
-                throw new bException('base/users/rights: No option specified. Please specify one of "list, for/has, add/set/give, unset/take, create, delete/remove/erase"', 'notspecified');
-            }
-
             throw new bException('base/users/rights: Invalid option "'.str_log(argument(0)).'" specified', 'unknown');
     }
 
 }catch(Exception $e){
     throw new bException('base/users/rights: Failed', $e);
+}
+
+
+
+/*
+ *
+ */
+function s_validate_right(){
+    try{
+        $right = array('name'        => argument('name'),
+                       'description' => argument('description'));
+
+        load_libs('validate');
+
+        $v     = new validate_form();
+        $v->isNotEmpty ($right['name']    , tr('No rights name specified'));
+        $v->hasMinChars($right['name'],  2, tr('Please ensure the rights name has at least 2 characters'));
+        $v->hasMaxChars($right['name'], 32, tr('Please ensure the rights name has less than 32 characters'));
+
+        $v->isNotEmpty ($right['description']      , tr('No rights description specified'));
+        $v->hasMinChars($right['description'],    2, tr('Please ensure the rights description has at least 2 characters'));
+        $v->hasMaxChars($right['description'], 2047, tr('Please ensure the rights description has less than 32 characters'));
+
+        if(empty($right['id'])){
+            if($id = sql_get('SELECT `id` FROM `rights` WHERE `name` = :name', array(':name' => $right['name']))){
+                $v->setError(tr('The right "%right%" already exists with id "%id%"', array('%right%' => str_log($right['name']), '%id%' => $id)));
+            }
+
+        }else{
+            if($id = sql_get('SELECT `id` FROM `rights` WHERE `name` = :name AND `id` != :id', array(':name' => $right['name'], ':id' => $right['id']))){
+                $v->setError(tr('The right "%right%" already exists with id "%id%"', array('%right%' => str_log($right['name']), '%id%' => $id)));
+            }
+        }
+
+        $v->isValid();
+
+        return $right;
+
+    }catch(Exception $e){
+        throw new bException(tr('s_validate_right(): Failed'), $e);
+    }
 }
 ?>

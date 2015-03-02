@@ -150,6 +150,136 @@ try{
             log_console('Removed rights "'.str_log($argv).'" from user "'.user_name($target_user).'"', '', 'white');
             break;
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+        case 'add':
+            // FALLTHROUGH
+        case 'set':
+            // FALLTHROUGH
+        case 'give':
+            if(!$target_user){
+                throw new bException('base/users/rights: No user specified', 'notspecified');
+            }
+
+            if(in_array('admin', $argv)){
+                throw new bException('The right "admin" can only be assigned with the "admin" script', 'invalid');
+            }
+
+            /*
+             * Make sure rights have been specified
+             */
+            if(!$arguments = argument('rights', 'all')){
+                if(!$arguments = argument('right', 'all')){
+                    throw new bException('No "rights" or "right" keyword, or no rights list specified', 'notspecified');
+                }
+            }
+
+            /*
+             * Ensure that specified rights exist, and get more detailed rights data
+             */
+            foreach($arguments as $key => $value){
+                if(!$right = rights_get($value, 'id,name')){
+                    throw new bException('Unknown right "'.str_log($value).'" specified', 'unknown');
+                }
+
+                $rights[$right['name']] = $right;
+            }
+
+            /*
+             * Add the specified rights
+             */
+            foreach($rights as $right){
+                if(!sql_get('SELECT `id` FROM `users_rights` WHERE `users_id` = :users_id AND `rights_id` = :rights_id', array(':users_id' => $target_user['id'], ':rights_id' => $right['id']), 'id')){
+                    sql_query('INSERT INTO `users_rights` (`rights_id`, `users_id`, `name`)
+                               VALUES                     (:rights_id , :users_id , :name )',
+
+                               array(':users_id'  => $target_user['id'],
+                                     ':rights_id' => $right['id'],
+                                     ':name'      => $right['name']));
+                }
+            }
+
+            log_console('Added rights "'.str_log(array_keys($rights)).'" to user "'.user_name($target_user).'"', '', 'white');
+            break;
+
+        case 'unset':
+            // FALLTHROUGH
+        case 'take':
+            if(!$target_user){
+                throw new bException('base/users/rights: No user specified', 'notspecified');
+            }
+
+            /*
+             * Add specified rights to this user
+             */
+            unset($argv[0]);
+            unset($argv[1]);
+
+            if(in_array('admin', $argv)){
+                throw new bException('The right "admin" can only be removed with the "admin" script', 'invalid');
+            }
+
+            /*
+             * Ensure that specified rights exist, and get more detailed rights data
+             */
+            foreach($argv as $key => $value){
+                if(!$right = rights_get($value, 'id,name')){
+                    throw new bException('Unknown right "'.str_log($value).'" specified', 'unknown');
+                }
+
+                $rights[$key] = $right;
+            }
+
+            /*
+             * Add the specified rights
+             */
+            foreach($rights as $right){
+                sql_query('DELETE FROM `users_rights`
+                           WHERE       `users_id`  = :users_id
+                           AND         `rights_id` = :rights_id',
+
+                           array(':users_id'  => $target_user['id'],
+                                 ':rights_id' => $right['id']));
+            }
+
+            log_console('Removed rights "'.str_log($argv).'" from user "'.user_name($target_user).'"', '', 'white');
+            break;
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
         case 'create':
             try{
                 if(!argument(1)){

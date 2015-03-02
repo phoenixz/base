@@ -426,12 +426,12 @@ function cli_error($message, $e = null){
 function cli_basic_arguments(){
     global $usage, $help;
 
-    if(argument('usage') or argument('-u')){
+    if(argument('usage') or argument('-u') or argument('--usage')){
         cli_show_usage($usage, 'white');
         die(0);
     }
 
-    if(argument('help') or argument('-h')){
+    if(argument('help') or argument('-h') or argument('--help')){
         if(!$help){
             log_console('Sorry, this script has no help text defined yet', '', 'yellow');
 
