@@ -718,7 +718,7 @@ class validate_form {
     //set error, useful if validation is done outside of this script.
     function setError($msg){
         if($msg){
-            $this->setError($msg);
+            $this->errors[] = $msg;
             return false;
         }
     }
