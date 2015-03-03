@@ -2,7 +2,7 @@
 /*
  * Add timer library tables
  */
-sql_query('DROP TABLE IF EXISTS `timer`');
+sql_query('DROP TABLE IF EXISTS `timers`');
 
 sql_query('CREATE TABLE `timers` (`id`            INT(11)       NOT NULL AUTO_INCREMENT PRIMARY KEY,
                                   `createdon`     TIMESTAMP     NOT NULL DEFAULT CURRENT_TIMESTAMP,
