@@ -334,7 +334,7 @@ function argument($value, $next = null, $default = null){
 /*
  *
  */
-function arguments($arguments){
+function arguments($arguments, $force = false){
     try{
         $retval    = array();
 
@@ -346,7 +346,7 @@ function arguments($arguments){
                 throw new bException(tr('arguments(): The specified argument "%argument%" is numeric, and as such, invalid. arguments() can only check for key-value pairs, where the keys can not be numeric', array('%argument%' => $argument)), 'invalid');
             }
 
-            if($value = argument($argument, true)){
+            if(($value = argument($argument, true)) or $force){
                 $retval[$argument] = $value;
             }
         }
