@@ -523,6 +523,14 @@ function blogs_validate_post(&$post, $blog, $params = null, $seoname = null){
                 $changes[] = tr('Set status to "%status%"', array('%status%' => $post['status']));
             }
 
+            if(isset_get($oldpost['category']) != $post['category']){
+                $changes[] = tr('Set %categoryname% to "%category%"', array('%categoryname%' => strtolower($params['label_category']), '%category%' => $post['category']));
+            }
+
+            if(isset_get($oldpost['group']) != $post['group']){
+                $changes[] = tr('Set %groupname% to "%group%"', array('%groupname%' => strtolower($params['label_group']), '%group%' => $post['group']));
+            }
+
             /*
              * If no body was given, and no changes were made, then we don't update
              */
