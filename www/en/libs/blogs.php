@@ -462,8 +462,8 @@ function blogs_validate_post(&$post, $blog, $params = null, $seoname = null){
         if($params['use_priorities']){
             $v->isNotEmpty ($post['priority'], tr('Please provide a priority for your %objectname%', '%objectname%', $params['object_name']));
 
-            if(!is_numeric($post['priority']) or ($post['priority'] < 0) or ($post['priority'] > 4) or (fmod($post['priority'], 1))){
-                $v->setError('The specified priority "'.str_log($post['priority']).'" is invalid, it must be one of 0, 1, 2, 3, or 4');
+            if(!is_numeric($post['priority']) or ($post['priority'] < 1) or ($post['priority'] > 5) or (fmod($post['priority'], 1))){
+                $v->setError('The specified priority "'.str_log($post['priority']).'" is invalid, it must be one of 1, 2, 3, 4, or 5');
             }
         }
 
@@ -494,7 +494,7 @@ function blogs_validate_post(&$post, $blog, $params = null, $seoname = null){
             load_libs('user');
 
             $changes      = array();
-            $oldpost      = sql_get('SELECT `assigned_to_id`, `priority`, `status`, `name`, `urlref`, `body` FROM `blogs_posts` WHERE `id` = :id', array(':id' => $post['id']));
+            $oldpost      = sql_get('SELECT `assigned_to_id`, `priority`, `status`, `name`, `urlref`, `seogroup`, `seocategory`, `body` FROM `blogs_posts` WHERE `id` = :id', array(':id' => $post['id']));
 
             if(isset_get($oldpost['assigned_to_id']) != $post['assigned_to_id']){
                 $user = sql_get('SELECT `id`, `name`, `username`, `email` FROM `users` WHERE `id` = :id', array(':id' => $post['assigned_to_id']));
@@ -523,11 +523,11 @@ function blogs_validate_post(&$post, $blog, $params = null, $seoname = null){
                 $changes[] = tr('Set status to "%status%"', array('%status%' => $post['status']));
             }
 
-            if(isset_get($oldpost['category']) != $post['category']){
+            if(isset_get($oldpost['seocategory']) != $post['seocategory']){
                 $changes[] = tr('Set %categoryname% to "%category%"', array('%categoryname%' => strtolower($params['label_category']), '%category%' => $post['category']));
             }
 
-            if(isset_get($oldpost['group']) != $post['group']){
+            if(isset_get($oldpost['seogroup']) != $post['seogroup']){
                 $changes[] = tr('Set %groupname% to "%group%"', array('%groupname%' => strtolower($params['label_group']), '%group%' => $post['group']));
             }
 
@@ -535,11 +535,11 @@ function blogs_validate_post(&$post, $blog, $params = null, $seoname = null){
              * If no body was given, and no changes were made, then we don't update
              */
             if(!$post['body'] and !$changes){
-            throw new bException('blogs_validate_post(): No changes were made', 'nochanges');
+                throw new bException('blogs_validate_post(): No changes were made', 'nochanges');
             }
 
             $post['body'] = str_replace('&nbsp;', ' ', $post['body']);
-            $post['body'] = '<h3>'.user_name($_SESSION['user']).' ['.system_date_format().']</h3><p><small>'.implode('<br>', $changes).'</small></p><p>'.$post['body'].'</p><hr>'.isset_get($oldpost['body'], '');
+            $post['body'] = '<h3>'.user_name($_SESSION['user']).' <small>['.system_date_format().']</small></h3><p><small>'.implode('<br>', $changes).'</small></p><p>'.$post['body'].'</p><hr>'.isset_get($oldpost['body'], '');
         }
 
     }catch(Exception $e){
