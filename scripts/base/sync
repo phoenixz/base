@@ -201,6 +201,11 @@ try{
 
             passthru($command = 'rsync -acz --progress -p -e "ssh -p '.$source_config['deploy'][$environment]['target_port'].'" '.$source_config['deploy'][$environment]['target_user'].'@'.$source_config['deploy'][$environment]['target_server'].':'.slash($source_config['deploy'][$environment]['target_dir']).$path.'/ '.ROOT.$path.' --exclude="*.php" --exclude="*.css" --exclude="*.js" --exclude="/scripts/*" --exclude="/data/doc" --exclude="/data/system" --exclude="/data/mock*" --exclude="/data/sources" --exclude=".htaccess" --exclude=".git*"', $exitcode);
 
+            /*
+             * Ensure write permissions to all files to avoid syn crashes on write protected files
+             */
+            safe_exec('chmod ug+w '.ROOT.' -R');
+
             if($exitcode){
                 throw new bException('Rsync of remote files with local server failed with exit code "'.str_log($exitcode).'"', 'rsync');
             }
