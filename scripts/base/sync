@@ -115,6 +115,7 @@ try{
 
     }else{
         log_console('Copying remote SQL file locally...', 'sync', 'white');
+        passthru('rm /tmp/'.$project.'_'.$source_config['db']['db'].'.sql.gz -f');
         passthru($command = 'scp -P '.$source_config['deploy'][$environment]['target_port'].' '.$source_config['deploy'][$environment]['target_user'].'@'.$source_config['deploy'][$environment]['target_server'].':/tmp/'.$project.'_'.$source_config['db']['db'].'.sql.gz /tmp/'.$project.'_'.$source_config['db']['db'].'.sql.gz', $exitcode);
 
         if($exitcode){
