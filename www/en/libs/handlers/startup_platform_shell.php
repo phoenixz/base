@@ -21,6 +21,7 @@ define('NOCOLOR' , argument('-c', false, argument('--nocolor')));
 define('TEST'    , argument('-t', false, argument('--test')));
 define('LIMIT'   , in_array('limit', $argv) ? array_next_value($argv, 'limit') : false);
 define('STARTDIR', slash(getcwd()));
+define('NOLOGIN' , argument('-l') or isset_get($nologin));
 
 array_shift($argv);
 
@@ -45,7 +46,7 @@ if(!empty($signin)){
         throw new bException('startup: Failed to signin with specified user or email "'.str_log($signin).'"', $e);
     }
 
-}elseif((!empty($_SERVER['USER']) or !empty($_SERVER['LOGNAME'])) and !argument('nologin')){
+}elseif((!empty($_SERVER['USER']) or !empty($_SERVER['LOGNAME'])) and !NOLOGIN){
     try{
         if((SCRIPT != 'init') and (SCRIPT != 'update')){
             $user = sql_get('SELECT `id`,

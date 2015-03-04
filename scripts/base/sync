@@ -3,31 +3,36 @@
 /*
  * This script will copy the target environments database and sync its files
  *
- * Possible arguments:
- *
- * ENVIRONMENTNAME            -
- *
- * SUBENVIRONMENTNAME         -
- *
- * nodump                     - Do not do the temporary mysql dump on the
- *                              target environment
- *
- * nocopy                     - Do not copy the temporary mysql dump on the
- *                              target environment
- *
- * noimport                   - Do not import the temporary mysql dump from
- *                              the target environment
- *
- * nodelete                   - Do not delete the temporary mysql dump from
- *                              the target environment
- *
- * nosync                     - Do not sync configured data directories
- *
- * deletesync / syncdelete    - Delete data file paths before syncing (warning:
- *                              This would cause rsync to redownload all files)
- *
  * @copyright Sven Oostenbrink <support@svenoostenbrink.com>
  */
+$usage = "./scripts/base/sync environment ENVIRONMENT [subenvironment SUBENVIRONMENT] [OPTIONS]\n";
+
+$help  = "The sync script can sync the target environment (for example production) database, images, etc. locally so that bug testing can be done with real data.
+
+Possible arguments:
+
+noinit                     - Do not do execute a system init after the sync
+                             process has finished
+
+nodump                     - Do not do the temporary mysql dump on the
+                             target environment
+
+nocopy                     - Do not copy the temporary mysql dump on the
+                             target environment
+
+noimport                   - Do not import the temporary mysql dump from
+                             the target environment
+
+nodelete                   - Do not delete the temporary mysql dump from
+                             the target environment
+
+nosync                     - Do not sync configured data directories
+
+deletesync / syncdelete    - Delete data file paths before syncing (warning:
+                             This would cause rsync to redownload all files)";
+
+$nologin = true;
+
 require_once(dirname(__FILE__).'/../../libs/startup.php');
 
 try{
@@ -99,7 +104,7 @@ try{
 
     }else{
         log_console('Creating SQL dump file on remote server...', 'sync', 'white');
-        passthru($command = 'ssh -p '.$source_config['deploy'][$environment]['target_port'].' -t '.$source_config['deploy'][$environment]['target_user'].'@'.$source_config['deploy'][$environment]['target_server'].' \'mysqldump -n -e -R --dump-date --no-autocommit --add-drop-database -u '.$source_config['db']['user'].' -p'.escapeshellcmd($source_config['db']['pass']).' -B '.$source_config['db']['db'].' > >(gzip > /tmp/'.$project.'_'.$source_config['db']['db'].'.sql.gz)\'', $exitcode);
+        passthru($command = 'ssh -p '.$source_config['deploy'][$environment]['target_port'].' -t '.$source_config['deploy'][$environment]['target_user'].'@'.$source_config['deploy'][$environment]['target_server'].' \'rm /tmp/'.$project.'_'.$source_config['db']['db'].'.sql.gz -f; mysqldump -n -e -R --dump-date --no-autocommit --add-drop-database -u '.$source_config['db']['user'].' -p'.escapeshellcmd($source_config['db']['pass']).' -B '.$source_config['db']['db'].' > >(gzip > /tmp/'.$project.'_'.$source_config['db']['db'].'.sql.gz)\'', $exitcode);
 
         if($exitcode){
             throw new bException('Remote mysqldump failed with exit code "'.str_log($exitcode).'"', 'rsync');
@@ -115,7 +120,7 @@ try{
 
     }else{
         log_console('Copying remote SQL file locally...', 'sync', 'white');
-        passthru('rm /tmp/'.$project.'_'.$source_config['db']['db'].'.sql.gz -f');
+        passthru('rm /tmp/'.$project.'_'.$source_config['db']['db'].'.sql /tmp/'.$project.'_'.$source_config['db']['db'].'.sql.gz -f');
         passthru($command = 'scp -P '.$source_config['deploy'][$environment]['target_port'].' '.$source_config['deploy'][$environment]['target_user'].'@'.$source_config['deploy'][$environment]['target_server'].':/tmp/'.$project.'_'.$source_config['db']['db'].'.sql.gz /tmp/'.$project.'_'.$source_config['db']['db'].'.sql.gz', $exitcode);
 
         if($exitcode){
@@ -234,7 +239,7 @@ try{
     log_console('Finished!', 'sync', 'green');
 
 }catch(Exception $e){
-    cli_error('scripts/base/deploy: Failed', $e);
+    cli_error($e);
 }
 
 

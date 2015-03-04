@@ -7,7 +7,18 @@ $usage = "./scripts/base/update [local]\n".
          "./scripts/base/update branch BRANCH_NAME\n";
          "./scripts/base/update\n";
 
-$help  = "The deploy script can pull all the latest BASE updates from either a local BASE repository, or the central main BASE repository";
+$help  = "The deploy script can pull all the latest BASE updates from either a local BASE repository, or the central main BASE repository
+
+Possible arguments:
+
+noinit                     - Do not do execute a system init after the update
+                             process has finished
+
+nocommit                   - Do not automatically git commit after the update
+                             process has finished
+
+branch BRANCH              - Get the BASE updates from branch BRANCH instead
+                             of the standard production branch";
 
 require_once(dirname(__FILE__).'/../../libs/startup.php');
 
