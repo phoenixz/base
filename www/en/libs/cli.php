@@ -270,22 +270,7 @@ function argument($value, $next = null, $default = null){
             $count = count($argv) - 1;
 
             while($argument = isset_get($argv[$value++], $next)){
-                switch($argument){
-                    case 'force':
-                        // FALLTHROUGH
-                    case 'test':
-                        /*
-                         * Ignore test and force arguments
-                         */
-                        if($value > $count){
-                            return $default;
-                        }
-
-                        break;
-
-                    default:
-                        return $argument;
-                }
+                return $argument;
             }
 
             /*
