@@ -69,7 +69,16 @@ if(!empty($signin)){
         }
 
     }catch(Exception $e){
-        throw new bException('startup: Auto shell user signin has failed', $e);
+        if($e->getCode() != 'doinit'){
+            throw new bException('startup: Auto shell user signin has failed', $e);
+        }
+
+        /*
+         * The shell auto sign in failed due to INIT requirement, but we can just continue without login
+         */
+        log_console(tr('startup: Shell auto user sign in failed because the database required an init. Attempting to proceed without user session'), '', 'yellow');
+        $_SESSION = array();
+        unset($e);
     }
 }
 //showdie($_SESSION);
