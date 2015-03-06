@@ -180,7 +180,7 @@ $_CONFIG['mailer']             = array('sender'           => array('wait'  => 5,
                                                                    'count' => 100));
 
 // Mail configuration
-$_CONFIG['mail']               = array('developers'       => '');
+$_CONFIG['mail']               = array('developers'       => array());
 
 // Maintenance configuration
 $_CONFIG['maintenance']        = false;                                                                     // If set to true, the only page that will be displayed is the www/LANGUAGE/maintenance.php
