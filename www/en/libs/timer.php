@@ -55,7 +55,7 @@ function timer_stop($id){
                            array(':id'   => $id,
                                  ':time' => $time));
 
-        if(!$r->numRows()){
+        if(!$r->rowCount()){
             throw new bException(tr('timer_stop(): Specified id %id%" exist in memory, but not in the database', array('%id%' => $id)), 'notexist');
         }
 
