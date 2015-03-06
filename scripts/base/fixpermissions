@@ -24,6 +24,11 @@ try{
     log_console('Updating project file permissions...', 'deploy', 'white');
 
     $target        = argument('target', true, ENVIRONMENT);
+
+    if(empty($_CONFIG['deploy'][$target])){
+        throw new bException(tr('Selected environment "%env%" does not exist', array('%env%' => $target)), 'notexist');
+    }
+
     $deploy_config = $_CONFIG['deploy'][$target];
     $target_dir    = argument('target_dir', true, $deploy_config['target_dir']);
 
