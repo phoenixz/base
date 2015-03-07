@@ -84,6 +84,7 @@ try{
      * Get configuration for specified environment
      */
     $source_config = array_merge_complete(s_get_environment_configuration('production'), s_get_environment_configuration($environment, isset_get($sub_environment)));
+    $deploy_config = $source_config['deploy'][$environment];
     $local_config  = s_get_environment_configuration(ENVIRONMENT, isset_get($sub_environment));
     $project       = strtolower(PROJECT);
 
@@ -91,7 +92,7 @@ try{
     /*
      * Environment exists?
      */
-    if(empty($source_config['deploy'][$environment])){
+    if(empty($deploy_config)){
         throw new bException(tr('The specified environment "%environment%" does not exist', array('%environment%' => $environment)), 'not_exist');
     }
 
@@ -104,7 +105,7 @@ try{
 
     }else{
         log_console('Creating SQL dump file on remote server...', 'sync', 'white');
-        passthru($command = 'ssh -p '.$source_config['deploy'][$environment]['target_port'].' -t '.$source_config['deploy'][$environment]['target_user'].'@'.$source_config['deploy'][$environment]['target_server'].' \'rm /tmp/'.$project.'_'.$source_config['db']['db'].'.sql.gz -f; mysqldump -n -e -R --dump-date --no-autocommit --add-drop-database -u '.$source_config['db']['user'].' -p'.escapeshellcmd($source_config['db']['pass']).' -B '.$source_config['db']['db'].' > >(gzip > /tmp/'.$project.'_'.$source_config['db']['db'].'.sql.gz)\'', $exitcode);
+        passthru($command = 'ssh -p '.$deploy_config['target_port'].' -t '.$deploy_config['target_user'].'@'.$deploy_config['target_server'].' \'rm /tmp/'.$project.'_'.$source_config['db']['db'].'.sql.gz -f; mysqldump -n -e -R --dump-date --no-autocommit --add-drop-database -u '.$source_config['db']['user'].' -p'.escapeshellcmd($source_config['db']['pass']).' -B '.$source_config['db']['db'].' > >(gzip > /tmp/'.$project.'_'.$source_config['db']['db'].'.sql.gz)\'', $exitcode);
 
         if($exitcode){
             throw new bException('Remote mysqldump failed with exit code "'.str_log($exitcode).'"', 'rsync');
@@ -121,7 +122,7 @@ try{
     }else{
         log_console('Copying remote SQL file locally...', 'sync', 'white');
         passthru('rm /tmp/'.$project.'_'.$source_config['db']['db'].'.sql /tmp/'.$project.'_'.$source_config['db']['db'].'.sql.gz -f');
-        passthru($command = 'scp -P '.$source_config['deploy'][$environment]['target_port'].' '.$source_config['deploy'][$environment]['target_user'].'@'.$source_config['deploy'][$environment]['target_server'].':/tmp/'.$project.'_'.$source_config['db']['db'].'.sql.gz /tmp/'.$project.'_'.$source_config['db']['db'].'.sql.gz', $exitcode);
+        passthru($command = 'scp -P '.$deploy_config['target_port'].' '.$deploy_config['target_user'].'@'.$deploy_config['target_server'].':/tmp/'.$project.'_'.$source_config['db']['db'].'.sql.gz /tmp/'.$project.'_'.$source_config['db']['db'].'.sql.gz', $exitcode);
 
         if($exitcode){
             throw new bException('Copy of remote mysqldump file to local server failed with exit code "'.str_log($exitcode).'"', 'rsync');
@@ -170,7 +171,7 @@ try{
     }else{
         log_console('Removing temporary remote SQL dump file from local and remote server...', 'sync', 'white');
 
-        passthru($command = 'ssh -p '.$source_config['deploy'][$environment]['target_port'].' -t '.$source_config['deploy'][$environment]['target_user'].'@'.$source_config['deploy'][$environment]['target_server'].' \'rm -f /tmp/'.$project.'_'.$source_config['db']['db'].'.sql.gz\'', $exitcode);
+        passthru($command = 'ssh -p '.$deploy_config['target_port'].' -t '.$deploy_config['target_user'].'@'.$deploy_config['target_server'].' \'rm -f /tmp/'.$project.'_'.$source_config['db']['db'].'.sql.gz\'', $exitcode);
 
         if($exitcode){
             throw new bException('Removal of temporary mysqldump file on remote server failed with exit code "'.str_log($exitcode).'"', 'rsync');
@@ -205,7 +206,7 @@ try{
                 }
             }
 
-            passthru($command = 'rsync -acz --progress -p -e "ssh -p '.$source_config['deploy'][$environment]['target_port'].'" '.$source_config['deploy'][$environment]['target_user'].'@'.$source_config['deploy'][$environment]['target_server'].':'.slash($source_config['deploy'][$environment]['target_dir']).$path.'/ '.ROOT.$path.' --exclude="*.php" --exclude="*.css" --exclude="*.js" --exclude="/scripts/*" --exclude="/data/doc" --exclude="/data/system" --exclude="/data/mock*" --exclude="/data/sources" --exclude=".htaccess" --exclude=".git*"', $exitcode);
+            passthru($command = 'rsync -acz --progress -p '.($deploy_config['sudo'] ? '--rsync-path="sudo rsync" ' : '').'-e "ssh -p '.$deploy_config['target_port'].'" '.$deploy_config['target_user'].'@'.$deploy_config['target_server'].':'.slash($deploy_config['target_dir']).$path.'/ '.ROOT.$path.' --exclude="*.php" --exclude="*.css" --exclude="*.js" --exclude="/scripts/*" --exclude="/data/doc" --exclude="/data/system" --exclude="/data/mock*" --exclude="/data/sources" --exclude=".htaccess" --exclude=".git*"', $exitcode);
 
             /*
              * Ensure write permissions to all files to avoid syn crashes on write protected files
