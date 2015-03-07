@@ -161,7 +161,7 @@ function str_rfrom($source, $needle, $more = 0){
 
         $pos = mb_strrpos($source, $needle);
 
-        if($pos === false) return '';
+        if($pos === false) return $source;
 
         return mb_substr($source, $pos + mb_strlen($needle) - $more);
 
