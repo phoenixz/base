@@ -13,20 +13,11 @@ $help  = "The clearbom script will clear the BOM (Byte Order Mark) from all PHP 
 
 require_once(dirname(__FILE__).'/../../libs/startup.php');
 
-$path = argument('path', true, ROOT);
-
-log_console('Searching "'.str_log($path).'" for PHP files with BOM signatures', 'clearbom', 'white');
-
-if(!file_exists($path)){
-    throw new bException('The specified path "'.str_log($path).'" does not exist', 'notexist');
-}
-
-$count = clear_files($path);
-
-log_console('Processed all files, found "'.str_log($count).'" files wtih BOM', 'finished', 'white');
 
 
-
+/*
+ *
+ */
 if(!function_exists('clear_files')){
     function clear_files($path){
         try{
@@ -72,4 +63,21 @@ if(!function_exists('clear_files')){
         }
     }
 }
+
+
+
+/*
+ *
+ */
+$path = argument('path', true, ROOT);
+
+log_console('Searching "'.str_log($path).'" for PHP files with BOM signatures', 'clearbom', 'white');
+
+if(!file_exists($path)){
+    throw new bException('The specified path "'.str_log($path).'" does not exist', 'notexist');
+}
+
+$count = clear_files($path);
+
+log_console('Processed all files, found "'.str_log($count).'" files wtih BOM', 'finished', 'white');
 ?>
