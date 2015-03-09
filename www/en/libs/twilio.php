@@ -282,4 +282,26 @@ function twilio_full_phones($phones){
         throw new bException('twilio_full_phones(): Failed', $e);
     }
 }
+
+
+
+/*
+ * Verify that the specified phone number exists
+ */
+function twilio_verify_source_phone($phone){
+    global $_CONFIG;
+
+    try{
+        $phone = twilio_full_phones($phone);
+
+        if(isset($_CONFIG['twilio']['sources'][$phone])){
+            return $phone;
+        }
+
+        return null;
+
+    }catch(Exception $e){
+        throw new bException('twilio_verify_source_phone(): Failed', $e);
+    }
+}
 ?>
