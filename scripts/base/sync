@@ -35,213 +35,208 @@ $nologin = true;
 
 require_once(dirname(__FILE__).'/../../libs/startup.php');
 
-try{
-    cli_only();
-    load_libs('array');
+cli_only();
+load_libs('array');
 
+/*
+ * Check command line parameters
+ */
+$nodump          = argument('nodump');
+$nocopy          = argument('nocopy');
+$noimport        = argument('noimport');
+$nodelete        = argument('nodelete');
+$nosync          = argument('nosync');
+$noinit          = argument('noinit');
+$deletesync      = (argument('deletesync') or argument('syncdelete'));
+$environment     = argument('environment'    , true);
+$sub_environment = argument('sub_environment', true);
+
+
+if(empty($environment)){
+    throw new bException('No source environment specified, please use "environment ENVIRONMENT"');
+}
+
+if(empty($environment)){
+    throw new bException('No source environment specified, please use "environment ENVIRONMENT"');
+}
+
+if($environment == ENVIRONMENT){
+    throw new bException('Cannot sync from own environment "'.ENVIRONMENT.'"');
+}
+
+if(empty($sub_environment) and REQUIRE_SUBENVIRONMENTS){
+    throw new bException('No source subenvironment specified, this project specifically requires subenvironments');
+}
+
+if(!empty($sub_environment) and !REQUIRE_SUBENVIRONMENTS){
+    throw new bException('Source subenvironment specified, but this project does not use subenvironments');
+}
+
+
+/*
+ * Get configuration for specified environment
+ */
+include(ROOT.'config/sync.php');
+
+
+/*
+ * Get configuration for specified environment
+ */
+$source_config = array_merge_complete(s_get_environment_configuration('production'), s_get_environment_configuration($environment, isset_get($sub_environment)));
+$deploy_config = $source_config['deploy'][$environment];
+$local_config  = s_get_environment_configuration(ENVIRONMENT, isset_get($sub_environment));
+$project       = strtolower(PROJECT);
+
+
+/*
+ * Environment exists?
+ */
+if(empty($deploy_config)){
+    throw new bException(tr('The specified environment "%environment%" does not exist', array('%environment%' => $environment)), 'not_exist');
+}
+
+
+/*
+ * Create SQL dump of source DB
+ */
+if($nodump){
+    log_console('NOT creating SQL dump file on remote server due to "nodump" command line parameters', 'sync', 'yellow');
+
+}else{
+    log_console('Creating SQL dump file on remote server...', 'sync', 'white');
+    passthru($command = 'ssh -p '.$deploy_config['target_port'].' -t '.$deploy_config['target_user'].'@'.$deploy_config['target_server'].' \'rm /tmp/'.$project.'_'.$source_config['db']['db'].'.sql.gz -f; mysqldump -n -e -R --dump-date --no-autocommit --add-drop-database -u '.$source_config['db']['user'].' -p'.escapeshellcmd($source_config['db']['pass']).' -B '.$source_config['db']['db'].' > >(gzip > /tmp/'.$project.'_'.$source_config['db']['db'].'.sql.gz)\'', $exitcode);
+
+    if($exitcode){
+        throw new bException('Remote mysqldump failed with exit code "'.str_log($exitcode).'"', 'rsync');
+    }
+}
+
+
+/*
+ * SCP SQL dump to local server
+ */
+if($nocopy){
+    log_console('NOT copying remote SQL file locally due to "nocopy" command line parameters', 'sync', 'yellow');
+
+}else{
+    log_console('Copying remote SQL file locally...', 'sync', 'white');
+    passthru('rm /tmp/'.$project.'_'.$source_config['db']['db'].'.sql /tmp/'.$project.'_'.$source_config['db']['db'].'.sql.gz -f');
+    passthru($command = 'scp -P '.$deploy_config['target_port'].' '.$deploy_config['target_user'].'@'.$deploy_config['target_server'].':/tmp/'.$project.'_'.$source_config['db']['db'].'.sql.gz /tmp/'.$project.'_'.$source_config['db']['db'].'.sql.gz', $exitcode);
+
+    if($exitcode){
+        throw new bException('Copy of remote mysqldump file to local server failed with exit code "'.str_log($exitcode).'"', 'rsync');
+    }
+}
+
+
+/*
+ * Import SQL file to local database
+ */
+if($noimport){
+    log_console('NOT importing remote SQL dump file in local MySQL server due to "noimport" command line parameters', 'sync', 'yellow');
+
+}else{
     /*
-     * Check command line parameters
+     * mysqldump always adds a "USE databasename" which is horrifyingly anoying, because the dump will be imported in the wrong database!
+     * Remove it first!
      */
-    $nodump          = argument('nodump');
-    $nocopy          = argument('nocopy');
-    $noimport        = argument('noimport');
-    $nodelete        = argument('nodelete');
-    $nosync          = argument('nosync');
-    $noinit          = argument('noinit');
-    $deletesync      = (argument('deletesync') or argument('syncdelete'));
-    $environment     = argument('environment'    , true);
-    $sub_environment = argument('sub_environment', true);
+    log_console('Importing remote SQL dump file in local MySQL server...', 'sync', 'white');
+    passthru($command = 'cd /tmp/; rm /tmp/'.$project.'_'.$source_config['db']['db'].'.sql -f; gunzip /tmp/'.$project.'_'.$source_config['db']['db'].'.sql.gz', $exitcode);
 
-
-    if(empty($environment)){
-        throw new bException('No source environment specified, please use "environment ENVIRONMENT"');
+    if($exitcode){
+        throw new bException('Gunzip of mysqldump file failed with exit code "'.str_log($exitcode).'"', 'rsync');
     }
 
-    if(empty($environment)){
-        throw new bException('No source environment specified, please use "environment ENVIRONMENT"');
+    passthru($command = 'cd /tmp/; sed -i -e"s/USE \`'.$source_config['db']['db'].'\`;/USE \`'.$_CONFIG['db']['db'].'\`;/" /tmp/'.$project.'_'.$source_config['db']['db'].'.sql', $exitcode);
+
+    if($exitcode){
+        throw new bException('Rewrite of "USE DATABASENAME" in mysqldump file failed with exit code "'.str_log($exitcode).'"', 'rsync');
     }
 
-    if($environment == ENVIRONMENT){
-        throw new bException('Cannot sync from own environment "'.ENVIRONMENT.'"');
+    passthru($command = 'cat /tmp/'.$project.'_'.$source_config['db']['db'].'.sql | mysql -u '.$_CONFIG['db']['user'].' -p"'.$_CONFIG['db']['pass'].'" -B '.$_CONFIG['db']['db'], $exitcode);
+
+    if($exitcode){
+        throw new bException('MySQL import of mysqldump file failed with exit code "'.str_log($exitcode).'"', 'rsync');
+    }
+}
+
+
+/*
+ * Remove temporary SQL dump file on source
+ */
+if($nodelete){
+    log_console('NOT removing temporary remote SQL dump file from local and remote server due to "nodelete" command line parameters', 'sync', 'yellow');
+
+}else{
+    log_console('Removing temporary remote SQL dump file from local and remote server...', 'sync', 'white');
+
+    passthru($command = 'ssh -p '.$deploy_config['target_port'].' -t '.$deploy_config['target_user'].'@'.$deploy_config['target_server'].' \'rm -f /tmp/'.$project.'_'.$source_config['db']['db'].'.sql.gz\'', $exitcode);
+
+    if($exitcode){
+        throw new bException('Removal of temporary mysqldump file on remote server failed with exit code "'.str_log($exitcode).'"', 'rsync');
     }
 
-    if(empty($sub_environment) and REQUIRE_SUBENVIRONMENTS){
-        throw new bException('No source subenvironment specified, this project specifically requires subenvironments');
+    passthru($command = 'rm -f /tmp/'.$project.'_'.$source_config['db']['db'].'.sql.gz', $exitcode);
+
+    if($exitcode){
+        throw new bException('Removal of temporary mysqldump file on local server failed with exit code "'.str_log($exitcode).'"', 'rsync');
     }
-
-    if(!empty($sub_environment) and !REQUIRE_SUBENVIRONMENTS){
-        throw new bException('Source subenvironment specified, but this project does not use subenvironments');
-    }
+}
 
 
-    /*
-     * Get configuration for specified environment
-     */
-    include(ROOT.'config/sync.php');
+/*
+ * Sync all
+ */
+if($nosync){
+    log_console('NOT syncing remote paths with local server due to "nosync" command line parameters', 'sync', 'yellow');
 
+}else{
+    log_console('Syncing remote paths with local server...', 'sync', 'white');
 
-    /*
-     * Get configuration for specified environment
-     */
-    $source_config = array_merge_complete(s_get_environment_configuration('production'), s_get_environment_configuration($environment, isset_get($sub_environment)));
-    $deploy_config = $source_config['deploy'][$environment];
-    $local_config  = s_get_environment_configuration(ENVIRONMENT, isset_get($sub_environment));
-    $project       = strtolower(PROJECT);
+    foreach($_CONFIG['sync'] as $path){
+        log_console('Syncing path "'.$path.'"...', 'sync', 'white');
 
-
-    /*
-     * Environment exists?
-     */
-    if(empty($deploy_config)){
-        throw new bException(tr('The specified environment "%environment%" does not exist', array('%environment%' => $environment)), 'not_exist');
-    }
-
-
-    /*
-     * Create SQL dump of source DB
-     */
-    if($nodump){
-        log_console('NOT creating SQL dump file on remote server due to "nodump" command line parameters', 'sync', 'yellow');
-
-    }else{
-        log_console('Creating SQL dump file on remote server...', 'sync', 'white');
-        passthru($command = 'ssh -p '.$deploy_config['target_port'].' -t '.$deploy_config['target_user'].'@'.$deploy_config['target_server'].' \'rm /tmp/'.$project.'_'.$source_config['db']['db'].'.sql.gz -f; mysqldump -n -e -R --dump-date --no-autocommit --add-drop-database -u '.$source_config['db']['user'].' -p'.escapeshellcmd($source_config['db']['pass']).' -B '.$source_config['db']['db'].' > >(gzip > /tmp/'.$project.'_'.$source_config['db']['db'].'.sql.gz)\'', $exitcode);
-
-        if($exitcode){
-            throw new bException('Remote mysqldump failed with exit code "'.str_log($exitcode).'"', 'rsync');
-        }
-    }
-
-
-    /*
-     * SCP SQL dump to local server
-     */
-    if($nocopy){
-        log_console('NOT copying remote SQL file locally due to "nocopy" command line parameters', 'sync', 'yellow');
-
-    }else{
-        log_console('Copying remote SQL file locally...', 'sync', 'white');
-        passthru('rm /tmp/'.$project.'_'.$source_config['db']['db'].'.sql /tmp/'.$project.'_'.$source_config['db']['db'].'.sql.gz -f');
-        passthru($command = 'scp -P '.$deploy_config['target_port'].' '.$deploy_config['target_user'].'@'.$deploy_config['target_server'].':/tmp/'.$project.'_'.$source_config['db']['db'].'.sql.gz /tmp/'.$project.'_'.$source_config['db']['db'].'.sql.gz', $exitcode);
-
-        if($exitcode){
-            throw new bException('Copy of remote mysqldump file to local server failed with exit code "'.str_log($exitcode).'"', 'rsync');
-        }
-    }
-
-
-    /*
-     * Import SQL file to local database
-     */
-    if($noimport){
-        log_console('NOT importing remote SQL dump file in local MySQL server due to "noimport" command line parameters', 'sync', 'yellow');
-
-    }else{
-        /*
-         * mysqldump always adds a "USE databasename" which is horrifyingly anoying, because the dump will be imported in the wrong database!
-         * Remove it first!
-         */
-        log_console('Importing remote SQL dump file in local MySQL server...', 'sync', 'white');
-        passthru($command = 'cd /tmp/; rm /tmp/'.$project.'_'.$source_config['db']['db'].'.sql -f; gunzip /tmp/'.$project.'_'.$source_config['db']['db'].'.sql.gz', $exitcode);
-
-        if($exitcode){
-            throw new bException('Gunzip of mysqldump file failed with exit code "'.str_log($exitcode).'"', 'rsync');
-        }
-
-        passthru($command = 'cd /tmp/; sed -i -e"s/USE \`'.$source_config['db']['db'].'\`;/USE \`'.$_CONFIG['db']['db'].'\`;/" /tmp/'.$project.'_'.$source_config['db']['db'].'.sql', $exitcode);
-
-        if($exitcode){
-            throw new bException('Rewrite of "USE DATABASENAME" in mysqldump file failed with exit code "'.str_log($exitcode).'"', 'rsync');
-        }
-
-        passthru($command = 'cat /tmp/'.$project.'_'.$source_config['db']['db'].'.sql | mysql -u '.$_CONFIG['db']['user'].' -p"'.$_CONFIG['db']['pass'].'" -B '.$_CONFIG['db']['db'], $exitcode);
-
-        if($exitcode){
-            throw new bException('MySQL import of mysqldump file failed with exit code "'.str_log($exitcode).'"', 'rsync');
-        }
-    }
-
-
-    /*
-     * Remove temporary SQL dump file on source
-     */
-    if($nodelete){
-        log_console('NOT removing temporary remote SQL dump file from local and remote server due to "nodelete" command line parameters', 'sync', 'yellow');
-
-    }else{
-        log_console('Removing temporary remote SQL dump file from local and remote server...', 'sync', 'white');
-
-        passthru($command = 'ssh -p '.$deploy_config['target_port'].' -t '.$deploy_config['target_user'].'@'.$deploy_config['target_server'].' \'rm -f /tmp/'.$project.'_'.$source_config['db']['db'].'.sql.gz\'', $exitcode);
-
-        if($exitcode){
-            throw new bException('Removal of temporary mysqldump file on remote server failed with exit code "'.str_log($exitcode).'"', 'rsync');
-        }
-
-        passthru($command = 'rm -f /tmp/'.$project.'_'.$source_config['db']['db'].'.sql.gz', $exitcode);
-
-        if($exitcode){
-            throw new bException('Removal of temporary mysqldump file on local server failed with exit code "'.str_log($exitcode).'"', 'rsync');
-        }
-    }
-
-
-    /*
-     * Sync all
-     */
-    if($nosync){
-        log_console('NOT syncing remote paths with local server due to "nosync" command line parameters', 'sync', 'yellow');
-
-    }else{
-        log_console('Syncing remote paths with local server...', 'sync', 'white');
-
-        foreach($_CONFIG['sync'] as $path){
-            log_console('Syncing path "'.$path.'"...', 'sync', 'white');
-
-            if($deletesync){
-                log_console('Deleting local path "'.$path.'"...', 'sync', 'white');
-                passthru($command = 'rm '.ROOT.$path.' -rf', $exitcode);
-
-                if($exitcode){
-                    throw new bException('Deleting of local path failed with exit code "'.str_log($exitcode).'"', 'rsync');
-                }
-            }
-
-            passthru($command = 'rsync -acz --progress -p '.($deploy_config['sudo'] ? '--rsync-path="sudo rsync" ' : '').'-e "ssh -p '.$deploy_config['target_port'].'" '.$deploy_config['target_user'].'@'.$deploy_config['target_server'].':'.slash($deploy_config['target_dir']).$path.'/ '.ROOT.$path.' --exclude="*.php" --exclude="*.css" --exclude="*.js" --exclude="/scripts/*" --exclude="/data/doc" --exclude="/data/system" --exclude="/data/mock*" --exclude="/data/sources" --exclude=".htaccess" --exclude=".git*"', $exitcode);
-
-            /*
-             * Ensure write permissions to all files to avoid syn crashes on write protected files
-             */
-            safe_exec('chmod ug+w '.ROOT.' -R');
+        if($deletesync){
+            log_console('Deleting local path "'.$path.'"...', 'sync', 'white');
+            passthru($command = 'rm '.ROOT.$path.' -rf', $exitcode);
 
             if($exitcode){
-                throw new bException('Rsync of remote files with local server failed with exit code "'.str_log($exitcode).'"', 'rsync');
+                throw new bException('Deleting of local path failed with exit code "'.str_log($exitcode).'"', 'rsync');
             }
         }
-    }
 
-    if($noinit){
-        log_console('NOT running init due to "nonoinit" command line parameters', 'sync', 'yellow');
+        passthru($command = 'rsync -acz --progress -p '.($deploy_config['sudo'] ? '--rsync-path="sudo rsync" ' : '').'-e "ssh -p '.$deploy_config['target_port'].'" '.$deploy_config['target_user'].'@'.$deploy_config['target_server'].':'.slash($deploy_config['target_dir']).$path.'/ '.ROOT.$path.' --exclude="*.php" --exclude="*.css" --exclude="*.js" --exclude="/scripts/*" --exclude="/data/doc" --exclude="/data/system" --exclude="/data/mock*" --exclude="/data/sources" --exclude=".htaccess" --exclude=".git*"', $exitcode);
 
-    }else{
         /*
-         * The init script wll check the database version, but that is very likely already read by now into a constant.
-         * After a sync, the REAL current database version is very likely different and will have to be re-read. This can
-         * only be done in a separate process, so dont execute the init with script_exec() but passthru() so that its
-         * executed in a completely separate PHP process, while still dumping output on command line
+         * Ensure write permissions to all files to avoid syn crashes on write protected files
          */
-        log_console('Executing init script to ensure that database will be up to date', 'sync', 'white');
-        passthru(ROOT.'scripts/base/init');
+        safe_exec('chmod ug+w '.ROOT.' -R');
 
         if($exitcode){
-            throw new bException('Local init failed with exit code "'.str_log($exitcode).'"', 'rsync');
+            throw new bException('Rsync of remote files with local server failed with exit code "'.str_log($exitcode).'"', 'rsync');
         }
     }
-
-    log_console('Finished!', 'sync', 'green');
-
-}catch(Exception $e){
-    cli_error($e);
 }
+
+if($noinit){
+    log_console('NOT running init due to "nonoinit" command line parameters', 'sync', 'yellow');
+
+}else{
+    /*
+     * The init script wll check the database version, but that is very likely already read by now into a constant.
+     * After a sync, the REAL current database version is very likely different and will have to be re-read. This can
+     * only be done in a separate process, so dont execute the init with script_exec() but passthru() so that its
+     * executed in a completely separate PHP process, while still dumping output on command line
+     */
+    log_console('Executing init script to ensure that database will be up to date', 'sync', 'white');
+    passthru(ROOT.'scripts/base/init');
+
+    if($exitcode){
+        throw new bException('Local init failed with exit code "'.str_log($exitcode).'"', 'rsync');
+    }
+}
+
+log_console('Finished!', 'sync', 'green');
 
 
 

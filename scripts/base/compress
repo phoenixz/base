@@ -3,8 +3,6 @@
 /*
  * This script can compress CSS and JS files
  */
-$quiet = true;
-
 $usage = "./scripts/base/compress OPTIONS\n".
          "./scripts/base/compress [all|js|css|test /path/to/test/tree]\n";
          "./scripts/base/compress\n";
@@ -13,55 +11,50 @@ $help  = "This script can compress both CSS and JS files using the uglify-css an
 
 require_once(dirname(__FILE__).'/../../libs/startup.php');
 
-try{
-	cli_only();
-	load_libs('uglify');
+cli_only();
+load_libs('uglify');
 
-    if(TEST){
-        if(!argument(0)){
-            throw new bException('No test path specified.', 'not_specified');
-        }
-
-        log_console('Running compression test', 'compress', 'white');
-        uglify_js(argument(0));
-        log_console('Finished compression test', 'compress', 'green');
-
-    }else{
-        switch(strtolower(argument(0))){
-            case 'css':
-                log_console('Compressing only CSS files', 'compress', 'white');
-                uglify_css();
-                log_console('Finished compressing CSS files', 'compress', 'green');
-                break;
-
-            case 'js':
-                log_console('Compressing only javascript files', 'compress', 'white');
-                uglify_js();
-                log_console('Finished compressing javascript files', 'compress', 'green');
-                break;
-
-            case '':
-                // FALLTHROUGH
-            case 'all':
-                log_console('Compressing javascript and CSS files', 'compress', 'white');
-
-                log_console('Compressing javascript files', 'compress', 'white');
-                uglify_js();
-                log_console('Finished compressing javascript files', 'compress', 'green');
-
-                log_console('Compressing CSS files', 'compress', 'white');
-                uglify_css();
-                log_console('Finished compressing CSS files', 'compress', 'green');
-                break;
-
-            default:
-                throw new bException('Unknown argument "'.str_log(argument(0)).'" specified. Please specify either "js", "css", "all" or nothing at all (defaults to all)', 'unknownargument');
-        }
+if(TEST){
+    if(!argument(0)){
+        throw new bException('No test path specified.', 'not_specified');
     }
 
-    log_console('Done!', 'compress', 'green');
+    log_console('Running compression test', 'compress', 'white');
+    uglify_js(argument(0));
+    log_console('Finished compression test', 'compress', 'green');
 
-}catch(Exception $e){
-    throw new bException('scripts/tests/compress: Failed', $e);
+}else{
+    switch(strtolower(argument(0))){
+        case 'css':
+            log_console('Compressing only CSS files', 'compress', 'white');
+            uglify_css();
+            log_console('Finished compressing CSS files', 'compress', 'green');
+            break;
+
+        case 'js':
+            log_console('Compressing only javascript files', 'compress', 'white');
+            uglify_js();
+            log_console('Finished compressing javascript files', 'compress', 'green');
+            break;
+
+        case '':
+            // FALLTHROUGH
+        case 'all':
+            log_console('Compressing javascript and CSS files', 'compress', 'white');
+
+            log_console('Compressing javascript files', 'compress', 'white');
+            uglify_js();
+            log_console('Finished compressing javascript files', 'compress', 'green');
+
+            log_console('Compressing CSS files', 'compress', 'white');
+            uglify_css();
+            log_console('Finished compressing CSS files', 'compress', 'green');
+            break;
+
+        default:
+            throw new bException('Unknown argument "'.str_log(argument(0)).'" specified. Please specify either "js", "css", "all" or nothing at all (defaults to all)', 'unknownargument');
+    }
 }
+
+log_console('Done!', 'compress', 'green');
 ?>

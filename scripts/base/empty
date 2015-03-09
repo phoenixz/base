@@ -8,7 +8,8 @@ $usage = "./scripts/base/empty\n".
 
 $help  = "No help available";
 
-$quiet = true;
+//$quiet = false;
+
 require_once(dirname(__FILE__).'/../../libs/startup.php');
 
 try{

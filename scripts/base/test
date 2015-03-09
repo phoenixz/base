@@ -1,7 +1,7 @@
 #!/usr/bin/php
 <?php
 /*
- * This is a test interface that lets the admin do some diagnostics
+ *
  */
 require_once(dirname(__FILE__).'/../../libs/startup.php');
 

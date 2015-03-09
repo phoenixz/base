@@ -9,71 +9,66 @@ $help  = "This script will initialize the global data path where data that can b
 
 require_once(dirname(__FILE__).'/../../libs/startup.php');
 
-try{
-    log_console('Initializing global data path', '', 'white');
+log_console('Initializing global data path', '', 'white');
 
-    if(empty($_CONFIG['data']['global'])){
-        if(!$path = argument(0)){
-            log_console('Please type the absolute path of the data directory [<enter> for '.$_CONFIG['data']['global'].']:', '', '', false);
-            $path = readline('');
-        }
+if(empty($_CONFIG['data']['global'])){
+    if(!$path = argument(0)){
+        log_console('Please type the absolute path of the data directory [<enter> for '.$_CONFIG['data']['global'].']:', '', '', false);
+        $path = readline('');
+    }
 
-    }elseif($_CONFIG['data']['global'] === true){
+}elseif($_CONFIG['data']['global'] === true){
+    /*
+     * Auto detect best location.
+     *
+     * For root user: /var/lib/data
+     * For other users: USER_HOME_DIR/data
+     */
+    if(cli_is_root()){
+        $path = '/var/lib/data/';
+
+    }elseif(!empty($_SERVER['HOME'])){
+        $path = slash($_SERVER['HOME']).'data/';
+
+    }else{
         /*
-         * Auto detect best location.
-         *
-         * For root user: /var/lib/data
-         * For other users: USER_HOME_DIR/data
+         * Umm, we don't have a user data directory
          */
-        if(cli_is_root()){
-            $path = '/var/lib/data/';
-
-        }elseif(!empty($_SERVER['HOME'])){
-            $path = slash($_SERVER['HOME']).'data/';
-
-        }else{
-            /*
-             * Umm, we don't have a user data directory
-             */
-            throw new bException('No user home directory found for non root user', 'nohomedir');
-        }
+        throw new bException('No user home directory found for non root user', 'nohomedir');
     }
+}
 
-    if(substr($path, 0, 1) != '/'){
-        throw new bException('The specified path "'.str_log($path).'" is invalid. An absolute path (starting with a forward slash /) is required', 'invalid');
+if(substr($path, 0, 1) != '/'){
+    throw new bException('The specified path "'.str_log($path).'" is invalid. An absolute path (starting with a forward slash /) is required', 'invalid');
+}
+
+$path = slash($path);
+
+log_console('Trying to use location "'.str_log($path).'" for global data directory', 'tryingpath', 'white');
+
+load_libs('file');
+
+try{
+    if(file_exists($path)){
+        /*
+         * Wut? Requested path already exists, we're done here!
+         */
+        log_console(tr('Warning: The specified global data path "%path%" already exists', array('%path%' => $path)), 'pathalreadyexists', 'yellow');
+
+    }else{
+        mkdir($path, $_CONFIG['fs']['dir_mode'], true);
     }
-
-    $path = slash($path);
-
-    log_console('Trying to use location "'.str_log($path).'" for global data directory', 'tryingpath', 'white');
-
-    load_libs('file');
-
-    try{
-        if(file_exists($path)){
-            /*
-             * Wut? Requested path already exists, we're done here!
-             */
-            log_console(tr('Warning: The specified global data path "%path%" already exists', array('%path%' => $path)), 'pathalreadyexists', 'yellow');
-
-        }else{
-            mkdir($path, $_CONFIG['fs']['dir_mode'], true);
-        }
-
-    }catch(Exception $e){
-        throw new bException('The specified path "'.str_log($path).'" could not be created', $e);
-    }
-
-// :GARBAGE: The global data directory should be supplied by automatically downloading required files from their respectitive URL's
-    ///*
-    // * Install geoname script
-    // */
-    //mkdir($path.'geonames', $_CONFIG['fs']['dir_mode'], true);
-    //file_copy_tree(ROOT.'data/sources/geonames', $path.'geonames');
-
-    $return = $path;
 
 }catch(Exception $e){
-    cli_error('scripts/base/init_global_data_path: Failed', $e);
+    throw new bException('The specified path "'.str_log($path).'" could not be created', $e);
 }
+
+// :GARBAGE: The global data directory should be supplied by automatically downloading required files from their respectitive URL's
+///*
+// * Install geoname script
+// */
+//mkdir($path.'geonames', $_CONFIG['fs']['dir_mode'], true);
+//file_copy_tree(ROOT.'data/sources/geonames', $path.'geonames');
+
+$return = $path;
 ?>

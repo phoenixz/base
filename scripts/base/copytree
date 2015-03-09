@@ -5,73 +5,72 @@
  *
  * @copyright Sven Oostenbrink <support@svenoostenbrink.com>
  */
-try{
-    $quiet = true;
-    require_once(dirname(__FILE__).'/../../libs/startup.php');
+$usage = "./scripts/base/copytree source target\n".
+         "./scripts/base/copytree source target search replace\n";
 
-    foreach($argv as $id => $arg){
-        switch($id){
-            case 0:
-                $source = $arg;
-                break;
+$help  = "The copytree command can recursively copy an entire tree while performing a search / replace on all files in that tree";
 
-            case 1:
-                $destination = $arg;
-                break;
+require_once(dirname(__FILE__).'/../../libs/startup.php');
 
-            case 2:
-                $search = $arg;
-                break;
+foreach($argv as $id => $arg){
+    switch($id){
+        case 0:
+            $source = $arg;
+            break;
 
-            case 3:
-                $replace = $arg;
-                break;
+        case 1:
+            $destination = $arg;
+            break;
 
-            case 4:
-                $extensions = $arg;
-                break;
+        case 2:
+            $search = $arg;
+            break;
 
-            case 5:
-                $filemode = $arg;
-                break;
-        }
+        case 3:
+            $replace = $arg;
+            break;
+
+        case 4:
+            $extensions = $arg;
+            break;
+
+        case 5:
+            $filemode = $arg;
+            break;
     }
-
-    if(empty($source)){
-        log_error('No source specified', 'copytree');
-        $error = 2;
-    }
-
-    if(empty($destination)){
-        log_error('No destination specified', 'copytree');
-        $error = 3;
-    }
-
-    if(empty($search)){
-        $search = '';
-    }
-
-    if(empty($replace)){
-        $replace = '';
-    }
-
-    if(empty($extensions)){
-        $extensions = '';
-    }
-
-    if(empty($filemode)){
-        $filemode = false;
-    }
-
-    if(isset($error)){
-        cli_die('Example: copytree /etc/apache2 apache2 192.167 192.168', $error);
-    }
-
-    load_libs('file');
-
-    file_copy_tree($source, $destination, $search, $replace, $extensions, $filemode);
-
-}catch(Exception $e){
-    throw new bException('scripts/copytree: Failed', $e);
 }
+
+if(empty($source)){
+    log_error('No source specified', 'copytree');
+    $error = 2;
+}
+
+if(empty($destination)){
+    log_error('No destination specified', 'copytree');
+    $error = 3;
+}
+
+if(empty($search)){
+    $search = '';
+}
+
+if(empty($replace)){
+    $replace = '';
+}
+
+if(empty($extensions)){
+    $extensions = '';
+}
+
+if(empty($filemode)){
+    $filemode = false;
+}
+
+if(isset($error)){
+    cli_die('Example: copytree /etc/apache2 apache2 192.167 192.168', $error);
+}
+
+load_libs('file');
+
+file_copy_tree($source, $destination, $search, $replace, $extensions, $filemode);
 ?>

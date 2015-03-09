@@ -7,7 +7,25 @@
  * @license http://opensource.org/licenses/GPL-2.0 GNU Public License, Version 2
  * @copyright Sven Oostenbrink <support@svenoostenbrink.com>
  */
+$usage = "./scripts/base/clearbom PATH\n";
+
+$help  = "The clearbom script will clear the BOM (Byte Order Mark) from all PHP files found in the specified tree";
+
 require_once(dirname(__FILE__).'/../../libs/startup.php');
+
+$path = argument('path', true, ROOT);
+
+log_console('Searching "'.str_log($path).'" for PHP files with BOM signatures', 'clearbom', 'white');
+
+if(!file_exists($path)){
+    throw new bException('The specified path "'.str_log($path).'" does not exist', 'notexist');
+}
+
+$count = clear_files($path);
+
+log_console('Processed all files, found "'.str_log($count).'" files wtih BOM', 'finished', 'white');
+
+
 
 if(!function_exists('clear_files')){
     function clear_files($path){
@@ -53,22 +71,5 @@ if(!function_exists('clear_files')){
             throw new bException('clearbom/clear_files(): Failed', $e);
         }
     }
-}
-
-try{
-    $path = argument('path', true, ROOT);
-
-    log_console('Searching "'.str_log($path).'" for PHP files with BOM signatures', 'clearbom', 'white');
-
-    if(!file_exists($path)){
-        throw new bException('The specified path "'.str_log($path).'" does not exist', 'notexist');
-    }
-
-    $count = clear_files($path);
-
-    log_console('Processed all files, found "'.str_log($count).'" files wtih BOM', 'finished', 'white');
-
-}catch(Exception $e){
-    throw new bException('scripts/clearbom: Failed', $e);
 }
 ?>
