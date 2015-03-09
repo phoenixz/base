@@ -48,9 +48,10 @@ try{
         }
     }
 
-    if((PLATFORM != 'shell') and (ENVIRONMENT == 'production')){
 // :TODO:SVEN:20130717: Add notifications!
+    if((PLATFORM != 'shell') and (ENVIRONMENT == 'production')){
         page_maintenance('Uncaught Exception "'.str_log($code).'" with message "'.$e->getMessage().'"', false, $e);
+        die();
 
     }else{
         log_screen('* '.tr('Uncaught exception').' *', $code);
