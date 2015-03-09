@@ -21,7 +21,14 @@
  *
  * @copyright Sven Oostenbrink <support@svenoostenbrink.com>
  */
+$usage = "./scripts/base/init\n".
+         "./scripts/base/init -f|--force\n".
+         "./scripts/base/init drop\n";
+
+$help  = "This script will initialize the database and system files to leave your data structures up to date with the current code version";
+
 $quiet = false;
+
 require_once(dirname(__FILE__).'/../../libs/startup.php');
 
 try{
