@@ -58,25 +58,27 @@ try{
         include($_script_exec_file);
 
     }catch(Exception $e){
-        if($e->getCode()){
-            if(!is_array($ok_exitcodes)){
-                if(!$ok_exitcodes){
-                    $ok_exitcodes = array();
+        if(!$e->getCode()){
+            throw $e;
+        }
 
-                }else{
-                    if(!is_string($ok_exitcodes) and !is_numeric($ok_exitcodes)){
-                        throw new bException('script_exec(): Invalid ok_exitcodes specified, should be either CSV string or array');
-                    }
+        if(!is_array($ok_exitcodes)){
+            if(!$ok_exitcodes){
+                $ok_exitcodes = array();
 
-                    $ok_exitcodes = explode(',', $ok_exitcodes);
+            }else{
+                if(!is_string($ok_exitcodes) and !is_numeric($ok_exitcodes)){
+                    throw new bException('script_exec(): Invalid ok_exitcodes specified, should be either CSV string or array');
                 }
-            }
 
-            if(!in_array($e->getCode(), $ok_exitcodes)){
+                $ok_exitcodes = explode(',', $ok_exitcodes);
+            }
+        }
+
+        if(!in_array($e->getCode(), $ok_exitcodes)){
 // :TODO: Remove following line, it was not sending error output from the preceding script
 //                    throw new bException('script_exec(): Script "'.str_log($script).'" failed with code "'.str_log($e->getCode()).'"', $e->getCode(), null);
-                throw new bException('script_exec(): Script "'.str_log($script).'" failed with code "'.str_log($e->getCode()).'"', $e);
-            }
+            throw new bException('script_exec(): Script "'.str_log($script).'" failed with code "'.str_log($e->getCode()).'"', $e);
         }
     }
 

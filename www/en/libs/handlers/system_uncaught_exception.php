@@ -81,6 +81,8 @@ try{
             }
         }
 
+        cli_error($e);
+
         if($die){
             die($die);
         }
