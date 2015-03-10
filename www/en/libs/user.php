@@ -199,6 +199,7 @@ function user_authenticate($username, $password) {
         }
 
         $user['authenticated'] = true;
+        unset($user['password']);
         return $user;
 
     }catch(Exception $e){
