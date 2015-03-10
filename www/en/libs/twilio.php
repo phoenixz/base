@@ -155,7 +155,15 @@ function twilio_get_conversation($phone_local, $phone_remote){
         /*
          * Find an existing conversation for the specified phones
          */
-        $conversation = sql_get('SELECT `id`, `last_messages` FROM `twilio_conversations` WHERE `phone_remote` = :phone_remote AND `phone_local` = :phone_local', array(':phone_local' => $phone_local, ':phone_remote' => $phone_remote));
+        $conversation = sql_get('SELECT `id`,
+                                        `last_messages`
+
+                                 FROM   `twilio_conversations`
+
+                                 WHERE  `phone_remote` = :phone_remote
+                                 AND    `phone_local` = :phone_local',
+
+                                 array(':phone_local' => $phone_local, ':phone_remote' => $phone_remote));
 
         if(!$conversation){
             /*
