@@ -117,7 +117,7 @@ switch(argument(0)){
 
             $conversation['last_messages'] = array();
 
-            foreach($list as $message){
+            foreach($list as $id => $message){
                 if(empty($modifiedon)){
                     $direction  = $message['direction'];
                     $modifiedon = $message['createdon'];
@@ -134,7 +134,8 @@ switch(argument(0)){
                     /*
                      * Build the conversations
                      */
-                    $conversation['last_messages'][] = array('direction' => $message['direction'],
+                    $conversation['last_messages'][] = array('id'        => $id,
+                                                             'direction' => $message['direction'],
                                                              'message'   => $message['body']);
                 }
             }
