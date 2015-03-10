@@ -224,7 +224,7 @@ function twilio_update_conversation($conversation, $direction, $message, $replie
 
                        SET    `last_messages` = :last_messages,
                               `modifiedon`    = NOW(),
-                              `replied`       = NOW()
+                              `repliedon`     = NOW()
 
                        WHERE  `id`            = :id',
 
@@ -236,7 +236,7 @@ function twilio_update_conversation($conversation, $direction, $message, $replie
 
                        SET    `last_messages` = :last_messages,
                               `modifiedon`    = NOW(),
-                              `replied`       = NULL
+                              `repliedon`     = NULL
 
                        WHERE  `id`            = :id',
 
