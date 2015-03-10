@@ -163,7 +163,8 @@ function twilio_get_conversation($phone_local, $phone_remote){
                                  WHERE  `phone_remote` = :phone_remote
                                  AND    `phone_local` = :phone_local',
 
-                                 array(':phone_local' => $phone_local, ':phone_remote' => $phone_remote));
+                                 array(':phone_local'  => $phone_local,
+                                       ':phone_remote' => $phone_remote));
 
         if(!$conversation){
             /*
