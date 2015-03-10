@@ -82,7 +82,9 @@ try{
             }
         }
 
-        cli_error($e);
+        if(PLATFORM == 'shell'){
+            cli_error($e);
+        }
 
         if($die){
             die($die);
