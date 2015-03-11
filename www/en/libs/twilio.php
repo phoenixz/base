@@ -163,8 +163,7 @@ function twilio_get_conversation($phone_local, $phone_remote){
                                  WHERE  `phone_remote` = :phone_remote
                                  AND    `phone_local` = :phone_local',
 
-                                 array(':phone_local'  => $phone_local,
-                                       ':phone_remote' => $phone_remote));
+                                 array(':phone_local' => $phone_local, ':phone_remote' => $phone_remote));
 
         if(!$conversation){
             /*
@@ -313,6 +312,32 @@ function twilio_verify_source_phone($phone){
 
     }catch(Exception $e){
         throw new bException('twilio_verify_source_phone(): Failed', $e);
+    }
+}
+
+
+
+/*
+ *
+ */
+function twilio_send_message($message, $to, $from = null){
+    global $_CONFIG;
+    static $twilio;
+
+    try{
+        if(empty($twilio)){
+            $twilio = twilio_load();
+        }
+
+        if(!$from){
+            reset($_CONFIG['twilio']['sources']);
+            $from = key($_CONFIG['twilio']['sources']);
+        }
+
+        return $twilio->account->messages->sendMessage($from, $to, $message);
+
+    }catch(Exception $e){
+        throw new bException(tr('twilio_send_message(): Failed'), $e);
     }
 }
 ?>
