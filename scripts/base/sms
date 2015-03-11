@@ -1,0 +1,34 @@
+#!/usr/bin/php
+<?php
+/*
+ * This is the SMS interface program
+ */
+$usage = "./scripts/base/sms PHONE MESSAGE\n".
+         "./scripts/base/sms to PHONE [from PHONE] message MESSAGE [provider twilio|crmtext]\n";
+
+         "./scripts/base/empty option [option]\n";
+
+$help  = "This SMS script allows you to send out SMS messages using either twilio or crmtext as a provider, depending on the configuration";
+
+require_once(dirname(__FILE__).'/../../libs/startup.php');
+
+cli_only();
+load_libs('sms');
+
+if(!$to = argument('to')){
+    /*
+     * Use sms phone message
+     */
+    $phone   = argument(0);
+    $message = str_force(argument($phone, 'all'), ' ');
+
+    if(!is_numeric(str_replace('+', '', $phone))){
+        throw new bException(tr('Invalid arguments supplied. Please check script usage'), 'invalid');
+    }
+
+}elseif(!$message = argument('message')){
+    throw new bException(tr('No message specified'), 'invalid');
+}
+
+sms_send_message($message, $phone);
+?>
