@@ -266,7 +266,7 @@ function argument($value, $next = null, $default = null){
     global $argv;
 
     try{
-        if(is_numeric($value)){
+        if(is_integer($value)){
             $count = count($argv) - 1;
 
             while($argument = isset_get($argv[$value++], $next)){
