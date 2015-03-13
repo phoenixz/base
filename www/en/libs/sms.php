@@ -18,7 +18,7 @@ function sms_send_message($message, $to, $from = null){
     global $_CONFIG;
 
     try{
-        switch($_CONFIG['sms']['prefer']){
+        switch($_CONFIG['sms']['preferred']['send']){
             case 'crmtext':
                 load_libs('crmtext');
                 crmtext_send_message($message, $to, $from);
