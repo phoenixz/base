@@ -233,6 +233,7 @@ function twilio_update_conversation($conversation, $messages_id, $direction, $me
             sql_query('UPDATE `twilio_conversations`
 
                        SET    `last_messages` = :last_messages,
+                              `direction`     = "send",
                               `modifiedon`    = NOW(),
                               `repliedon`     = NOW()
 
@@ -245,6 +246,7 @@ function twilio_update_conversation($conversation, $messages_id, $direction, $me
             sql_query('UPDATE `twilio_conversations`
 
                        SET    `last_messages` = :last_messages,
+                              `direction`     = "received",
                               `modifiedon`    = NOW(),
                               `repliedon`     = NULL
 
