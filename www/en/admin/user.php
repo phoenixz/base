@@ -99,7 +99,7 @@ try{
 
         $user['id'] = user_signup($user);
 
-        html_flash_set(log_database('Created user "'.str_log(isset_get($user['name'])).'"', 'user_create'), 'success');
+        html_flash_set(log_database(tr('Created user "%user%"', array('%user%' => '<a target="_blank" href="'.domain('/admin/user.php?user='.isset_get($user['username'])).'">'.str_log(user_name($user)).'</a>')), 'user_create'), 'success');
 
         /*
          * Now that the user has had a simple registration, contiue with updating the user
@@ -128,7 +128,6 @@ try{
 
                             SET    `modifiedby`              = :modifiedby,
                                    `modifiedon`              = NOW(),
-                                   `status`                  = :status,
                                    `username`                = :username,
                                    `name`                    = :name,
                                    `email`                   = :email,
@@ -169,7 +168,6 @@ try{
                                   ':roles_id'                => $user['roles_id'],
                                   ':role'                    => $user['role'],
                                   ':phones'                  => $user['phones'],
-                                  ':status'                  => $user['status'],
                                   ':avatar'                  => $user['avatar'],
                                   ':validated'               => ($user['validated'] ? str_random(32) : null),
                                   ':commentary'              => $user['commentary'],
