@@ -193,7 +193,13 @@ if($nosync){
 }else{
     log_console('Syncing remote paths with local server...', 'sync', 'white');
 
+    if(!in_array($_CONFIG['sync'], '/data/content') and !in_array($_CONFIG['sync'], '/data/content/')){
+        $_CONFIG['sync'][] = '/data/content/';
+    }
+
     foreach($_CONFIG['sync'] as $path){
+        if(!$path) continue;
+
         log_console('Syncing path "'.$path.'"...', 'sync', 'white');
 
         if($deletesync){
@@ -205,7 +211,7 @@ if($nosync){
             }
         }
 
-        passthru($command = 'rsync -acz --progress -p '.($deploy_config['sudo'] ? '--rsync-path="sudo rsync" ' : '').'-e "ssh -p '.$deploy_config['target_port'].'" '.$deploy_config['target_user'].'@'.$deploy_config['target_server'].':'.slash($deploy_config['target_dir']).$path.'/ '.ROOT.$path.' --exclude="*.php" --exclude="*.css" --exclude="*.js" --exclude="/scripts/*" --exclude="/data/doc" --exclude="/data/system" --exclude="/data/mock*" --exclude="/data/sources" --exclude=".htaccess" --exclude=".git*" --exclude="/pub/*"', $exitcode);
+        passthru($command = 'rsync -acz --progress -p '.($deploy_config['sudo'] ? '--rsync-path="sudo rsync" ' : '').'-e "ssh -p '.$deploy_config['target_port'].'" '.$deploy_config['target_user'].'@'.$deploy_config['target_server'].':'.slash($deploy_config['target_dir']).slash($path).' '.ROOT.slash($path).' --exclude="*.php" --exclude="*.css" --exclude="*.js" --exclude="/scripts/*" --exclude="/data/doc" --exclude="/data/system" --exclude="/data/mock*" --exclude="/data/sources" --exclude=".htaccess" --exclude=".git*" --exclude="/pub/*"', $exitcode);
 
         /*
          * Ensure write permissions to all files to avoid syn crashes on write protected files
