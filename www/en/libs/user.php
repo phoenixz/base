@@ -199,7 +199,6 @@ function user_authenticate($username, $password) {
         }
 
         $user['authenticated'] = true;
-        unset($user['password']);
         return $user;
 
     }catch(Exception $e){
@@ -409,7 +408,17 @@ function user_signup($params){
             throw new bException(tr('user_signup(): Please specify a password'), 'notspecified');
         }
 
-        if(user_get($params, 'id')){
+        $dbuser = sql_get('SELECT `id`
+
+                           FROM   `users`
+
+                           WHERE  `username` = :username
+                           OR     `email`    = :email',
+
+                           array(':username' => $params['username'],
+                                 ':email'    => $params['email']));
+
+        if($dbuser){
             throw new bException(tr('user_signup(): User with username "%name%" or email "%email%" already exists', array('%name%' => str_log(isset_get($params['username'])), '%email%' => str_log(isset_get($params['email'])))), 'exists');
         }
 
@@ -596,20 +605,32 @@ function user_get($user, $columns = 'id,name,username,email'){
         }
 
         if(!is_scalar($user)){
-            throw new bException(tr('user_get(): Specified user "%user%" is not scalar', array('%user%' => $user)), 'invalid');
+            throw new bException(tr('user_get(): Specified user data "%data%" is not scalar', array('%data%' => str_log($user))), 'invalid');
         }
 
-        $retval = sql_get('SELECT '.$columns.'
+        if(is_numeric($user)){
+            $retval = sql_get('SELECT '.$columns.'
 
-                           FROM   `users`
+                               FROM   `users`
 
-                           WHERE  `id`   = :user
-                           OR     `name` = :user', $columns,
+                               WHERE  `id`   = :user', $columns,
 
-                           array(':user' => $user));
+                               array(':user' => $user));
+
+        }else{
+            $retval = sql_get('SELECT '.$columns.'
+
+                               FROM   `users`
+
+                               WHERE  `email` = :user
+                               OR     `name`  = :user', $columns,
+
+                               array(':user'  => $user));
+
+        }
 
         if(!$retval){
-            throw new bException('user_get(): Specified user "'.str_log($user).'" does not exist', 'notexists');
+            throw new bException(tr('user_get(): Specified user "%user%" does not exist', array('%user%' => str_log($user))), 'notexists');
         }
 
         return $retval;
@@ -625,31 +646,46 @@ function user_get($user, $columns = 'id,name,username,email'){
  * Return either (in chronological order) name, username, or email for the user
  */
 function user_name($user = null, $guest = null, $key_prefix = ''){
-    if(!$user){
-        $user = $_SESSION['user'];
-    }
+    try{
+        if(!$user){
+            throw new bException(tr('user_name(): No user data specified'), 'notspecified');
+        }
 
-    /*
-     * Default to current session user name
-     */
-    if(empty($_SESSION['user']['name']) and empty($_SESSION['user']['email'])){
+        if(is_scalar($user)){
+            if(!is_numeric($user)){
+                /*
+                 * String, assume its a username
+                 */
+                return $user;
+            }
+
+            /*
+             * This is not a user assoc array, but a user ID.
+             * Fetch user data from DB, then treat it as an array
+             */
+            if(!$user = sql_get('SELECT `name` `username`, `email` FROM `users` WHERE `id` = :id', array(':id' => $user))){
+               throw new bException('user_name(): Specified user id "'.str_log($user).'" does not exist', 'notexist');
+            }
+        }
+
+        if(!is_array($user)){
+            throw new bException(tr('user_name(): Invalid data specified, please specify either user id, name, or an array containing username, email and or id'), 'invalid');
+        }
+
+        $user = not_empty(isset_get($user[$key_prefix.'name']), isset_get($user[$key_prefix.'username']), isset_get($user[$key_prefix.'email']), isset_get($user[$key_prefix.'id']));
+
+        if($user){
+            return $user;
+        }
+
         /*
-         * There is no session user logged in
+         * No user data found, assume guest user.
          */
         return not_empty($guest, tr('Guest'));
-    }
 
-    if(is_numeric($user)){
-        /*
-         * This is not a user assoc array, but a user ID.
-         * Fetch user data from DB
-         */
-        if(!$user = sql_get('SELECT `name` `username`, `email` FROM `users` WHERE `id` = :id', array(':id' => $user))){
-           throw new bException('user_name(): Specified user id "'.str_log($user).'" does not exist', 'notexist');
-        }
+    }catch(Exception $e){
+        throw new bException(tr('user_name(): Failed'), $e);
     }
-
-    return not_empty(isset_get($user[$key_prefix.'name']), isset_get($user[$key_prefix.'username']), isset_get($user[$key_prefix.'email']), isset_get($user[$key_prefix.'id']));
 }
 
 
