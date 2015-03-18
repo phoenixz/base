@@ -193,6 +193,8 @@ if($nosync){
 }else{
     log_console('Syncing remote paths with local server...', 'sync', 'white');
 
+    array_params($_CONFIG['sync']);
+
     if(!in_array($_CONFIG['sync'], '/data/content') and !in_array($_CONFIG['sync'], '/data/content/')){
         $_CONFIG['sync'][] = '/data/content/';
     }
