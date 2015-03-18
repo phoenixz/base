@@ -1192,7 +1192,7 @@ function page_404($force = false, $data = null) {
  * Show the maintenance page
  */
 function page_maintenance($reason, $force = false, $data = null) {
-    return include(dirname(__FILE__).'/handlers/system_page_maintenance.php');
+    return include(dirname(__FILE__).'/handlers/html_page_maintenance.php');
 }
 
 
