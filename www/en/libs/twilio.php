@@ -191,7 +191,7 @@ function twilio_get_conversation($phone_local, $phone_remote){
 /*
  * Update the specified conversation with the specified message
  */
-function twilio_update_conversation($conversation, $messages_id, $direction, $message, $replied){
+function twilio_update_conversation($conversation, $messages_id, $direction, $message, $datetime, $replied){
     global $_CONFIG;
 
     try{
@@ -221,6 +221,10 @@ function twilio_update_conversation($conversation, $messages_id, $direction, $me
 
         }else{
             $conversation['last_messages'] = array();
+        }
+
+        if($_CONFIG['twilio']['conversations']['message_dates']){
+            $message = str_replace('%datetime%', system_date_format($message['createdon']), $_CONFIG['twilio']['conversations']['message_dates']).$message;
         }
 
         array_unshift($conversation['last_messages'], array('id'        => $messages_id,
