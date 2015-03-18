@@ -647,35 +647,33 @@ function user_get($user, $columns = 'id,name,username,email'){
  */
 function user_name($user = null, $guest = null, $key_prefix = ''){
     try{
-        if(!$user){
-            throw new bException(tr('user_name(): No user data specified'), 'notspecified');
-        }
+        if($user){
+            if(is_scalar($user)){
+                if(!is_numeric($user)){
+                    /*
+                     * String, assume its a username
+                     */
+                    return $user;
+                }
 
-        if(is_scalar($user)){
-            if(!is_numeric($user)){
                 /*
-                 * String, assume its a username
+                 * This is not a user assoc array, but a user ID.
+                 * Fetch user data from DB, then treat it as an array
                  */
+                if(!$user = sql_get('SELECT `name` `username`, `email` FROM `users` WHERE `id` = :id', array(':id' => $user))){
+                   throw new bException('user_name(): Specified user id "'.str_log($user).'" does not exist', 'notexist');
+                }
+            }
+
+            if(!is_array($user)){
+                throw new bException(tr('user_name(): Invalid data specified, please specify either user id, name, or an array containing username, email and or id'), 'invalid');
+            }
+
+            $user = not_empty(isset_get($user[$key_prefix.'name']), isset_get($user[$key_prefix.'username']), isset_get($user[$key_prefix.'email']), isset_get($user[$key_prefix.'id']));
+
+            if($user){
                 return $user;
             }
-
-            /*
-             * This is not a user assoc array, but a user ID.
-             * Fetch user data from DB, then treat it as an array
-             */
-            if(!$user = sql_get('SELECT `name` `username`, `email` FROM `users` WHERE `id` = :id', array(':id' => $user))){
-               throw new bException('user_name(): Specified user id "'.str_log($user).'" does not exist', 'notexist');
-            }
-        }
-
-        if(!is_array($user)){
-            throw new bException(tr('user_name(): Invalid data specified, please specify either user id, name, or an array containing username, email and or id'), 'invalid');
-        }
-
-        $user = not_empty(isset_get($user[$key_prefix.'name']), isset_get($user[$key_prefix.'username']), isset_get($user[$key_prefix.'email']), isset_get($user[$key_prefix.'id']));
-
-        if($user){
-            return $user;
         }
 
         /*
