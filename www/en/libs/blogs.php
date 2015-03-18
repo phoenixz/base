@@ -347,7 +347,7 @@ function blogs_seo_keywords($keywords){
 function blogs_validate_post(&$post, $blog, $params = null, $seoname = null){
     try{
         array_params($params);
-//        array_default($params, 'use_id'     , false);
+        array_default($params, 'use_id'     , false);
         array_default($params, 'namemax'    , 64);
         array_default($params, 'bodymin'    , 100);
         array_default($params, 'object_name', 'blog posts');
