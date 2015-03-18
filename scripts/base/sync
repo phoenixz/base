@@ -195,7 +195,7 @@ if($nosync){
 
     array_params($_CONFIG['sync']);
 
-    if(!in_array($_CONFIG['sync'], '/data/content') and !in_array($_CONFIG['sync'], '/data/content/')){
+    if(!in_array('/data/content', $_CONFIG['sync']) and !in_array('/data/content/', $_CONFIG['sync'])){
         $_CONFIG['sync'][] = '/data/content/';
     }
 
