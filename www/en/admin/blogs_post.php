@@ -2,7 +2,7 @@
 require_once(dirname(__FILE__).'/../libs/startup.php');
 
 rights_or_redirect('admin');
-load_libs('admin,editors,blogs,validate,upload');
+load_libs('editors,blogs,validate,upload');
 
 
 
@@ -19,8 +19,8 @@ if(!$blog = sql_get('SELECT `id`, `name`, `createdby`, `seoname` FROM `blogs` WH
     redirect('/admin/blogs.php');
 }
 
-if(($blog['createdby'] != $_SESSION['user']['id']) and !has_rights('god')) {
-    html_flash_set(tr('You do not have access to the blog "'.$blog['name'].'"'), 'error');
+if(($blog['createdby'] != $_SESSION['user']['id']) and !has_rights($blog['seoname'])) {
+    html_flash_set(tr('You do not have access to the %object% "%blog%"', array('%object%' => $params['object'], '%blog%' => $blog['name'])), 'error');
     redirect('/admin/blogs_posts.php?blog='.$blog['seoname']);
 }
 
@@ -39,13 +39,18 @@ array_default($params, 'bodymin'                , 200);
 array_default($params, 'categories_none'        , tr('Select a category'));
 array_default($params, 'categories_parent'      , null);
 array_default($params, 'groups_none'            , tr('Select a group'));
+array_default($params, 'assigned_to_none'       , tr('Select to assign'));
+array_default($params, 'assigned_to_empty'      , tr('No users available'));
 array_default($params, 'groups_parent'          , null);
+array_default($params, 'default_priority'       , 3);
 array_default($params, 'priorities_none'        , '');
 array_default($params, 'flash_created'          , tr('The post "%post%" has been created'));
 array_default($params, 'flash_updated'          , tr('The post "%post%" has been updated'));
 // array_default for form_action is done below!
-array_default($params, 'label_group'            , tr('Group'));
+array_default($params, 'label_assigned_to'      , tr('Assigned to'));
 array_default($params, 'label_category'         , tr('Category'));
+array_default($params, 'label_createdon'        , tr('Created on'));
+array_default($params, 'label_group'            , tr('Group'));
 array_default($params, 'label_photos'           , tr('Save this blog to be able to add separate photos'));
 array_default($params, 'label_priority'         , tr('Priority'));
 array_default($params, 'label_title'            , tr('Title'));
@@ -62,6 +67,9 @@ array_default($params, 'status_default'         , 'unpublished');
 array_default($params, 'subtitle'               , (!empty($_GET['post']) ? tr('Edit post in blog "%blog%"', '%blog%', $blog['name']) : tr('Create a new post in blog "%blog%"', '%blog%', $blog['name'])));
 array_default($params, 'script'                 , 'blogs_posts.php?blog='.$blog['seoname']);
 array_default($params, 'title'                  , tr('Blog post'));
+array_default($params, 'use_assigned_to'        , false);
+array_default($params, 'use_createdon'          , false);
+array_default($params, 'use_category'           , true);
 array_default($params, 'use_description'        , true);
 array_default($params, 'use_groups'             , false);
 array_default($params, 'use_keywords'           , true);
@@ -70,7 +78,9 @@ array_default($params, 'use_priorities'         , false);
 array_default($params, 'use_status'             , false);
 array_default($params, 'use_key_value'          , false);
 array_default($params, 'use_url'                , false);
+array_default($params, 'use_append'             , false);
 array_default($params, 'key_value'              , null);
+array_default($params, 'use_history'            , false);
 
 array_default($params['errors'], 'name_required'       , tr('Please provide the name of your blog post'));
 array_default($params['errors'], 'blog_required'       , tr('Please select a blog for your post'));
@@ -102,72 +112,31 @@ if(empty($_GET['post'])){
              * Create the specified post
              */
             $post = $_POST;
-            $post = blogs_validate_post($post, $params);
-
-            if(sql_get('SELECT `id` FROM `blogs_posts` WHERE `blogs_id` = :blogs_id AND `name` = :name', array(':blogs_id' => $blog['id'],':name' => $post['name']), 'id')){
-                /*
-                 * A post with this name already exists
-                 */
-                throw new bException(tr('A post with the name "%name%" already exists', '%name%', str_log($post['name'])), 'exists');
-            }
-
-            $category = blogs_validate_category($post['seocategory'], $blog, $params['categories_parent']);
-
-            $post['categories_id'] = $category['id'];
-            $post['seocategory']   = $category['seoname'];
-            $post['category']      = $category['name'];
-
-            if($params['use_groups']){
-                $group = blogs_validate_category($post['group']   , $blog, $params['groups_parent']);
-
-                $post['groups_id']     = $group['id'];
-                $post['group']         = $group['seoname'];
-
-            }else{
-                $post['groups_id']     = null;
-                $post['group']         = '';
-            }
+            blogs_validate_post($post, $blog, $params);
 
 // :TODO: seo_generate_unique_name() only works on "seoname" column, but seoname is NOT unique, blogs_id, seoname is unique!
-            load_libs('seo');
 
-            if($params['use_keywords']){
-                $post['keywords']      = blogs_clean_keywords($post['keywords']);
-                $post['seokeywords']   = blogs_seo_keywords($post['keywords']);
+            $r = sql_query('INSERT INTO `blogs_posts` (`blogs_id`, `status`, `createdby`, `category`, `assigned_to_id`, `seocategory`, `priority`, `seogroup`, `group`, `keywords`, `seokeywords`, `description`, `url`, `urlref`, `language`, `name`, `seoname`, `body`)
+                            VALUES                    (:blogs_id , :status , :createdby , :category , :assigned_to_id , :seocategory , :priority , :seogroup , :group , :keywords , :seokeywords , :description , :url , :urlref , :language , :name , :seoname , :body )',
 
-            }else{
-                $post['keywords']      = '';
-                $post['seokeywords']   = '';
-            }
-
-            $post['seoname']       = seo_generate_unique_name($post['name'], 'blogs_posts', $post['id']);
-            $post['blogs_id']      = $blog['id'];
-            $post['blog']          = $blog['seoname'];
-            $post['priority']      = blogs_priority($post['priority']);
-            $post['url']           = blogs_post_url($post);
-            $post['status']        = $params['status_default'];
-
-            $r = sql_query('INSERT INTO `blogs_posts` (`blogs_id`, `status`, `createdby`, `categories_id`, `category`, `seocategory`, `priority`, `groups_id`, `group`, `keywords`, `seokeywords`, `description`, `url`, `urlref`, `language`, `name`, `seoname`, `body`)
-                            VALUES                    (:blogs_id , :status , :createdby , :categories_id , :category , :seocategory , :priority , :groups_id , :group , :keywords , :seokeywords , :description , :url , :urlref , :language , :name , :seoname , :body )',
-
-                            array(':blogs_id'      => $post['blogs_id'],
-                                  ':status'        => $post['status'],
-                                  ':createdby'     => $_SESSION['user']['id'],
-                                  ':categories_id' => $post['categories_id'],
-                                  ':category'      => $post['category'],
-                                  ':seocategory'   => $post['seocategory'],
-                                  ':priority'      => $post['priority'],
-                                  ':groups_id'     => $post['groups_id'],
-                                  ':group'         => $post['group'],
-                                  ':keywords'      => $post['keywords'],
-                                  ':seokeywords'   => $post['seokeywords'],
-                                  ':description'   => $post['description'],
-                                  ':url'           => $post['url'],
-                                  ':urlref'        => $post['urlref'],
-                                  ':language'      => $post['language'],
-                                  ':name'          => $post['name'],
-                                  ':seoname'       => $post['seoname'],
-                                  ':body'          => $post['body']));
+                            array(':blogs_id'       => $post['blogs_id'],
+                                  ':assigned_to_id' => $post['assigned_to_id'],
+                                  ':status'         => $post['status'],
+                                  ':createdby'      => $_SESSION['user']['id'],
+                                  ':category'       => $post['category'],
+                                  ':seocategory'    => $post['seocategory'],
+                                  ':priority'       => $post['priority'],
+                                  ':group'          => $post['group'],
+                                  ':seogroup'       => $post['seogroup'],
+                                  ':keywords'       => $post['keywords'],
+                                  ':seokeywords'    => $post['seokeywords'],
+                                  ':description'    => $post['description'],
+                                  ':url'            => $post['url'],
+                                  ':urlref'         => $post['urlref'],
+                                  ':language'       => $post['language'],
+                                  ':name'           => $post['name'],
+                                  ':seoname'        => $post['seoname'],
+                                  ':body'           => $post['body']));
 
             $post['id'] = sql_insert_id();
             blogs_update_keywords($post['blogs_id'], $post['id'], $post['keywords']);
@@ -180,14 +149,24 @@ if(empty($_GET['post'])){
             redirect($params['redirect'].'post='.$post['seoname']);
 
         }catch(Exception $e){
-            html_flash_set(tr('Failed to create blog post because "%message%"', array('%message%' => $e->getMessage())), 'error');
+            html_flash_set(tr('Failed to create blog post because: %message%', array('%message%' => $e->getMessage())), 'error');
         }
     }
 
 }else{
     $mode = 'modify';
+    $post = sql_get('SELECT    `blogs_posts`.*,
+                               `users`.`name` AS `assigned_to`
 
-    if(!$post = sql_get('SELECT * FROM `blogs_posts` WHERE `blogs_id` = :blogs_id AND `seoname` = :seoname', array(':blogs_id' => $blog['id'], ':seoname' => $_GET['post']))){
+                     FROM      `blogs_posts`
+
+                     LEFT JOIN `users`
+                     ON        `users`.`id` = `blogs_posts`.`assigned_to_id`
+
+                     WHERE     `blogs_posts`.`blogs_id` = :blogs_id
+                     AND       `blogs_posts`.`seoname`  = :seoname', array(':blogs_id' => $blog['id'], ':seoname' => $_GET['post']));
+
+    if(!$post){
         /*
          *
          */
@@ -204,99 +183,58 @@ if(empty($_GET['post'])){
          */
         try{
             $post = $_POST;
-            $post = blogs_validate_post($post, $params);
+            blogs_validate_post($post, $blog, $params, isset_get($_GET['post']));
 
-            if(!$dbpost = sql_get('SELECT * FROM `blogs_posts` WHERE `blogs_id` = :blogs_id AND `id` = :id', array(':blogs_id' => $blog['id'], ':id' => $post['id']))){
-                /*
-                 * This blog post does not exist
-                 */
-                throw new bException(tr('Can not update blog post "%name%", it does not exist', '%name%', str_log($post['name'])), 'notexists');
-            }
-
-            if(sql_get('SELECT `id` FROM `blogs_posts` WHERE `blogs_id` = :blogs_id AND `id` != :id AND `name` = :name', array(':blogs_id' => $blog['id'], ':id' => $post['id'], ':name' => $post['name']), 'id')){
-                /*
-                 * Another post with this name already exists
-                 */
-                throw new bException(tr('Another post with the name "%name%" already exists', '%name%', str_log($post['name'])), 'exists');
-            }
-
-            $category = blogs_validate_category($post['seocategory'], $blog, $params['categories_parent']);
-
-            $post['categories_id'] = $category['id'];
-            $post['seocategory']   = $category['seoname'];
-            $post['category']      = $category['name'];
-
-            if($params['use_groups']){
-                $group = blogs_validate_category($post['group']   , $blog, $params['groups_parent']);
-
-                $post['groups_id'] = $group['id'];
-                $post['group']     = $group['seoname'];
-
-            }else{
-                $post['groups_id']     = null;
-                $post['group']         = '';
-            }
-
-            load_libs('seo');
 
 // :TODO: seo_generate_unique_name() only works on "seoname" column, but seoname is NOT unique, blogs_id, seoname is unique!
-            if($params['use_keywords']){
-                $post['keywords']      = blogs_clean_keywords($post['keywords']);
-                $post['seokeywords']   = blogs_seo_keywords($post['keywords']);
+            $query = 'UPDATE  `blogs_posts`
 
-            }else{
-                $post['keywords']      = '';
-                $post['seokeywords']   = '';
+                      SET     `blogs_id`       = :blogs_id,
+                              `assigned_to_id` = :assigned_to_id,
+                              `status`         = :status,
+                              '.($params['use_createdon'] ? '`createdon`     = :createdon,' : '').'
+                              `modifiedby`     = :modifiedby,
+                              `modifiedon`     = NOW(),
+                              `category`       = :category,
+                              `seocategory`    = :seocategory,
+                              `group`          = :group,
+                              `seogroup`       = :seogroup,
+                              `priority`       = :priority,
+                              `language`       = :language,
+                              `keywords`       = :keywords,
+                              `seokeywords`    = :seokeywords,
+                              `description`    = :description,
+                              `url`            = :url,
+                              `name`           = :name,
+                              `seoname`        = :seoname,
+                              `body`           = :body
+
+                      WHERE   `id`             = :id';
+
+            $execute = array(':id'             => $post['id'],
+                             ':blogs_id'       => $post['blogs_id'],
+                             ':assigned_to_id' => $post['assigned_to_id'],
+                             ':status'         => $post['status'],
+                             ':modifiedby'     => $_SESSION['user']['id'],
+                             ':category'       => $post['category'],
+                             ':seocategory'    => $post['seocategory'],
+                             ':group'          => $post['group'],
+                             ':seogroup'       => $post['seogroup'],
+                             ':priority'       => $post['priority'],
+                             ':language'       => $post['language'],
+                             ':keywords'       => $post['keywords'],
+                             ':seokeywords'    => $post['seokeywords'],
+                             ':description'    => $post['description'],
+                             ':url'            => $post['url'],
+                             ':name'           => $post['name'],
+                             ':seoname'        => $post['seoname'],
+                             ':body'           => $post['body']);
+
+            if($params['use_createdon']){
+                $execute[':createdon'] = system_date_format($post['createdon'], 'mysql');
             }
 
-            $post['seoname']       = seo_generate_unique_name($post['name'], 'blogs_posts', $post['id']);
-            $post['blogs_id']      = $blog['id'];
-            $post['blog']          = $blog['seoname'];
-            $post['priority']      = blogs_priority($post['priority']);
-            $post                  = array_copy_clean($post, $dbpost);
-            $post['url']           = blogs_post_url($post);
-
-            $r = sql_query('UPDATE  `blogs_posts`
-
-                            SET     `blogs_id`      = :blogs_id,
-                                    `status`        = :status,
-                                    `modifiedby`    = :modifiedby,
-                                    `modifiedon`    = NOW(),
-                                    `categories_id` = :categories_id,
-                                    `category`      = :category,
-                                    `seocategory`   = :seocategory,
-                                    `groups_id`     = :groups_id,
-                                    `group`         = :group,
-                                    `priority`      = :priority,
-                                    `language`      = :language,
-                                    `keywords`      = :keywords,
-                                    `seokeywords`   = :seokeywords,
-                                    `description`   = :description,
-                                    `url`           = :url,
-                                    `name`          = :name,
-                                    `seoname`       = :seoname,
-                                    `body`          = :body
-
-                            WHERE   `id`            = :id',
-
-                            array(':id'            => $post['id'],
-                                  ':blogs_id'      => $post['blogs_id'],
-                                  ':status'        => $post['status'],
-                                  ':modifiedby'    => $_SESSION['user']['id'],
-                                  ':categories_id' => $post['categories_id'],
-                                  ':category'      => $post['category'],
-                                  ':seocategory'   => $post['seocategory'],
-                                  ':groups_id'     => $post['groups_id'],
-                                  ':group'         => $post['group'],
-                                  ':priority'      => $post['priority'],
-                                  ':language'      => $post['language'],
-                                  ':keywords'      => $post['keywords'],
-                                  ':seokeywords'   => $post['seokeywords'],
-                                  ':description'   => $post['description'],
-                                  ':url'           => $post['url'],
-                                  ':name'          => $post['name'],
-                                  ':seoname'       => $post['seoname'],
-                                  ':body'          => $post['body']));
+            $r = sql_query($query, $execute);
 
             blogs_update_keywords($post['blogs_id'], $post['id'], $post['keywords']);
 
@@ -310,44 +248,17 @@ if(empty($_GET['post'])){
         }catch(Exception $e){
             switch($e->getCode()){
                 case 'validation':
-                    html_flash_set(tr('Failed to update blog post because "%message%"', array('%message%' => $e->getMessage())), 'error', tr('Failed to update blog post because "%message%"', '%message%', $e->getMessages(', ')));
+                    html_flash_set(tr('Failed to update blog post because: %message%', array('%message%' => $e->getMessage())), 'error', tr('Failed to update blog post because "%message%"', '%message%', $e->getMessages(', ')));
                     break;
 
                 default:
-                    html_flash_set(tr('Failed to update blog post because "%message%"', array('%message%' => $e->getMessage())), 'error');
+                    html_flash_set(tr('Failed to update blog post because: %message%', array('%message%' => $e->getMessage())), 'error');
             }
         }
     }
 }
 
 array_default($params, 'form_action', '/admin/blogs_post.php?blog='.$blog['seoname'].(isset_get($post['seoname']) ? '&post='.$post['seoname'] : ''));
-
-$blogs      = array('selected' => isset_get($post['blog'], ''));
-
-$editor     = array('name'     => 'body',
-                    'value'    => isset_get($post['body']));
-
-$categories = array('blogs_id' => $blog['id'],
-                    'class'    => 'form-control',
-                    'parent'   => $params['categories_parent'],
-                    'selected' => isset_get($post['seocategory'], ''),
-                    'none'     => $params['categories_none']);
-
-$groups     = array('name'     => 'group',
-                    'class'    => 'form-control',
-                    'parent'   => $params['groups_parent'],
-                    'blogs_id' => $blog['id'],
-                    'selected' => isset_get($post['group'], ''),
-                    'none'     => $params['groups_none']);
-
-$priorities = array('blogs_id' => $blog['id'],
-                    'class'    => 'form-control',
-                    'selected' => isset_get($post['priority'], ''),
-                    'none'     => $params['priorities_none']);
-
-if($params['use_status']){
-    $params['status_select']['selected'] = isset_get($post['status'], '');
-}
 
 $html = '   <form id="blogpost" name="blogpost" action="'.domain($params['form_action']).'" method="post">
                 <div class="row">
@@ -357,107 +268,207 @@ $html = '   <form id="blogpost" name="blogpost" action="'.domain($params['form_a
                                 <h2 class="panel-title">'.$params['subtitle'].'</h2>
                                 <p>'.html_flash().'</p>
                             </header>
-                            <div class="panel-body">
-                                <div class="form-group">
+                            <div class="panel-body">';
+
+$controls = array('left'  => array(),
+                  'right' => array());
+
+if($params['use_category']){
+    $controls[blog_side()][] = '<div class="form-group">
                                     <label class="col-md-3 control-label" for="category">'.$params['label_category'].'</label>
                                     <div class="col-md-9">
-                                        '.blogs_categories_select($categories).'
+                                        '.blogs_categories_select(array('blogs_id' => $blog['id'],
+                                                                        'class'    => 'form-control',
+                                                                        'parent'   => $params['categories_parent'],
+                                                                        'selected' => isset_get($post['seocategory'], ''),
+                                                                        'none'     => $params['categories_none'])).'
                                     </div>
                                 </div>';
+}
+
+if($params['use_createdon']){
+    load_libs('jqueryui');
+
+    $createdon  = array('class'       => 'form-control',
+                        'placeholder' => '',
+                        'value'       => isset_get($post['createdon'], ''));
+
+    $controls[blog_side()][] = '<div class="form-group">
+                                    <label class="col-md-3 control-label" for="group">'.$params['label_createdon'].'</label>
+                                    <div class="col-md-9">
+                                        '.jqueryui_date('createdon', $createdon).'
+                                    </div>
+                                </div>';
+}
 
 if($params['use_groups']){
-    $html .= '  <div class="form-group">
-                    <label class="col-md-3 control-label" for="group">'.$params['label_group'].'</label>
-                    <div class="col-md-9">
-                        '.blogs_categories_select($groups).'
-                    </div>
-                </div>';
+    $controls[blog_side()][] = '<div class="form-group">
+                                    <label class="col-md-3 control-label" for="group">'.$params['label_group'].'</label>
+                                    <div class="col-md-9">
+                                        '.blogs_categories_select(array('name'     => 'seogroup',
+                                                                        'class'    => 'form-control',
+                                                                        'parent'   => $params['groups_parent'],
+                                                                        'blogs_id' => $blog['id'],
+                                                                        'selected' => isset_get($post['seogroup'], ''),
+                                                                        'none'     => $params['groups_none'])).'
+                                    </div>
+                                </div>';
+}
+
+if($params['use_assigned_to']){
+    $controls[blog_side()][] = '<div class="form-group">
+                                    <label class="col-md-3 control-label" for="group">'.$params['label_assigned_to'].'</label>
+                                    <div class="col-md-9">
+                                        '.html_select(array('name'     => 'assigned_to',
+                                                            'class'    => 'form-control',
+                                                            'selected' => isset_get($post['assigned_to'], ''),
+                                                            'none'     => $params['assigned_to_none'],
+                                                            'empty'    => $params['assigned_to_empty'],
+                                                            'resource' => sql_query('SELECT `name` AS `id`, `name` FROM `users` WHERE `type` IS NULL AND `status` IS NULL'))).'
+                                    </div>
+                                </div>';
 }
 
 if($params['use_priorities']){
-    $html .= '  <div class="form-group">
-                    <label class="col-md-3 control-label" for="priority">'.$params['label_priority'].'</label>
-                    <div class="col-md-9">
-                        '.blogs_priorities_select($priorities).'
-                    </div>
-                </div>';
+    $controls[blog_side()][] = '<div class="form-group">
+                                    <label class="col-md-3 control-label" for="priority">'.$params['label_priority'].'</label>
+                                    <div class="col-md-9">
+                                        '.html_select(array('name'     => 'priority',
+                                                            'class'    => 'form-control',
+                                                            'selected' => isset_get($post['priority'], $params['default_priority']),
+                                                            'none'     => $params['priorities_none'],
+                                                            'resource' => array(4 => tr('Low'),
+                                                                                3 => tr('Normal'),
+                                                                                2 => tr('High'),
+                                                                                1 => tr('Urgent'),
+                                                                                0 => tr('Immediate')))).'
+                                    </div>
+                                </div>';
 }
 
-$html .= '  <div class="form-group">
-                <label class="col-md-3 control-label" for="title">'.$params['label_title'].'</label>
-                <div class="col-md-9">
-                    <input type="text" class="form-control" name="name" id="name" value="'.htmlentities(isset_get($post['name'], '')).'" placeholder="'.tr('Specify a good title for your blog post').'" maxlength="'.$params['namemax'].'">
-                </div>
-            </div>';
+$controls[blog_side()][] = '<div class="form-group">
+                                <label class="col-md-3 control-label" for="title">'.$params['label_title'].'</label>
+                                <div class="col-md-9">
+                                    <input type="text" class="form-control" name="name" id="name" value="'.htmlentities(isset_get($post['name'], '')).'" placeholder="'.tr('Specify a good title for your blog post').'" maxlength="'.$params['namemax'].'">
+                                </div>
+                            </div>';
 
 if($params['use_keywords']){
-    $html .= '  <div class="form-group">
-                    <label class="col-md-3 control-label" for="keywords">'.$params['label_keywords'].'</label>
-                    <div class="col-md-9">
-                        <input type="text" class="form-control" name="keywords" id="keywords" value="'.htmlentities(isset_get($post['keywords'])).'" placeholder="'.$params['placeholder_keywords'].'" maxlength="255">
-                    </div>
-                </div>';
+    $controls[blog_side()][] = '<div class="form-group">
+                                    <label class="col-md-3 control-label" for="keywords">'.$params['label_keywords'].'</label>
+                                    <div class="col-md-9">
+                                        <input type="text" class="form-control" name="keywords" id="keywords" value="'.htmlentities(isset_get($post['keywords'])).'" placeholder="'.$params['placeholder_keywords'].'" maxlength="255">
+                                    </div>
+                                </div>';
 }
 
 if($params['use_description']){
-    $html .= '  <div class="form-group">
-                    <label class="col-md-3 control-label" for="description">'.$params['label_description'].'</label>
-                    <div class="col-md-9">
-                        <input type="text" class="form-control" name="description" id="description" value="'.htmlentities(isset_get($post['description'])).'" placeholder="'.$params['placeholder_description'].'" maxlength="160">
-                    </div>
-                </div>';
+    $controls[blog_side()][] = '<div class="form-group">
+                                    <label class="col-md-3 control-label" for="description">'.$params['label_description'].'</label>
+                                    <div class="col-md-9">
+                                        <input type="text" class="form-control" name="description" id="description" value="'.htmlentities(isset_get($post['description'])).'" placeholder="'.$params['placeholder_description'].'" maxlength="160">
+                                    </div>
+                                </div>';
 }
 
 if($params['use_url']){
-    $html .= '  <div class="form-group">
-                    <label class="col-md-3 control-label" for="urlref">'.tr('URL').'</label>
-                    <div class="col-md-9">
-                        <input type="text" class="form-control" name="urlref" id="urlref" value="'.htmlentities(isset_get($post['urlref'])).'" placeholder="'.$params['placeholder_url'].'" maxlength="255">
-                    </div>
-                </div>';
+    $controls[blog_side()][] = '<div class="form-group">
+                                    <label class="col-md-3 control-label" for="urlref">'.tr('URL').'</label>
+                                    <div class="col-md-9">
+                                        <input type="text" class="form-control" name="urlref" id="urlref" value="'.htmlentities(isset_get($post['urlref'])).'" placeholder="'.$params['placeholder_url'].'" maxlength="255">
+                                    </div>
+                                </div>';
 }
 
 if($params['use_status']){
-    $html .= '  <div class="form-group">
-                    <label class="col-md-3 control-label" for="status">'.tr('Status').'</label>
-                    <div class="col-md-9">
-                        '.html_status_select($params['status_select']).'
-                    </div>
-                </div>';
+    $params['status_select']['selected'] = isset_get($post['status'], '');
+
+    $controls[blog_side()][] = '<div class="form-group">
+                                    <label class="col-md-3 control-label" for="status">'.tr('Status').'</label>
+                                    <div class="col-md-9">
+                                        '.html_status_select($params['status_select']).'
+                                    </div>
+                                </div>';
 }
 
 if($params['use_key_value']){
+    $side = blog_side();
+
     foreach($params['key_value'] as $keyvalue){
         $keyvalue['class'] = 'form-control';
 
-        $html .= '  <div class="form-group">
-                        <label class="col-md-3 control-label" for="status">'.isset_get($keyvalue['label']).'</label>
-                        <div class="col-md-9">';
+        $keyvalue_html = '  <div class="form-group">
+                                <label class="col-md-3 control-label" for="status">'.isset_get($keyvalue['label']).'</label>
+                                <div class="col-md-9">';
 
         if(empty($keyvalue['resource'])){
-            $html .= '<input type="text" class="form-control" name="key_value['.isset_get($keyvalue['name']).']" id="key_value['.isset_get($keyvalue['name']).']" value="'.isset_get($post['key_values'][$keyvalue['name']]).'" placeholder="'.isset_get($keyvalue['placeholder_url']).'" maxlength="255">';
+            $keyvalue_html .= '<input type="text" class="form-control" name="key_value['.isset_get($keyvalue['name']).']" id="key_value['.isset_get($keyvalue['name']).']" value="'.isset_get($post['key_values'][$keyvalue['name']]).'" placeholder="'.isset_get($keyvalue['placeholder_url']).'" maxlength="255">';
 
         }else{
             $keyvalue['selected'] = isset_get($post['key_values'][$keyvalue['name']]);
             $keyvalue['name']     = 'key_value['.isset_get($keyvalue['name']).']';
-            $html                .= html_select($keyvalue);
+            $keyvalue_html       .= html_select($keyvalue);
         }
 
-        $html .= '     </div>
-                    </div>';
+        $keyvalue_html .= '     </div>
+                            </div>';
+
+        $controls[$side][] = $keyvalue_html;
     }
 }
 
-$html .= '                      <div class="form-group">
+foreach($controls['left'] as $id => $control){
+    $html .= '  <div class="row">
+                    <div class="col-md-6">
+                        '.$control.'
+                    </div>';
+
+    if(!empty($controls['right'][$id])){
+        $html .= '  <div class="col-md-6">
+                        '.$controls['right'][$id].'
+                    </div>';
+    }
+
+    $html .= '  </div>';
+}
+
+if($params['use_append']){
+    /*
+     * Show a readonly history, allow only add hisory, no edits
+     */
+    if(isset_get($post['body'])){
+        $html .= '                      <hr>
+                                        <div class="row">
+                                            <div class="col-md-12">
+                                                <h2>'.tr('Ticket history').'</h2>
+                                                <div class="form-group">
+                                                    <div class="col-md-12">
+                                                        '.$post['body'].'
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>';
+
+        $post['body']    = '';
+    }
+}
+
+$html .= '                      <hr>
+                                <div class="row">
                                     <div class="col-md-12">
-                                        '.editors_tinymce($editor).'
+                                        <div class="form-group">
+                                            <div class="col-md-12">
+                                                '.editors_tinymce(array('name'  => 'body',
+                                                                        'value' => isset_get($post['body']))).'
+                                            </div>
+                                        </div>
+                                        <input type="hidden" name="id" value="'.isset_get($post['id']).'">'.
+                                        (($mode == 'create') ? '<input type="submit" class="mb-xs mt-xs mr-xs btn btn-primary" name="docreate" id="docreate" value="'.tr('Create').'">'
+                                                             : '<input type="submit" class="mb-xs mt-xs mr-xs btn btn-primary" name="doupdate" id="doupdate" value="'.tr('Update').'">').
+                                         (empty($post['id']) ? '' : ' <button class="fileUpload mb-xs mt-xs mr-xs btn btn-primary">'.tr('Add more photos').'</button><input id="fileUpload" type="file" name="files[]" multiple> ').'
+                                        <a class="mb-xs mt-xs mr-xs btn btn-primary" href="'.domain($params['back']).'">'.tr('Back').'</a>
                                     </div>
                                 </div>
-                                <input type="hidden" name="id" value="'.isset_get($post['id']).'">'.
-                                (($mode == 'create') ? '<input type="submit" class="mb-xs mt-xs mr-xs btn btn-primary" name="docreate" id="docreate" value="'.tr('Create').'">'
-                                                     : '<input type="submit" class="mb-xs mt-xs mr-xs btn btn-primary" name="doupdate" id="doupdate" value="'.tr('Update').'">').
-                                 (empty($post['id']) ? '' : ' <button class="fileUpload mb-xs mt-xs mr-xs btn btn-primary">'.tr('Add more photos').'</button><input id="fileUpload" type="file" name="files[]" multiple> ').'
-                                <a class="mb-xs mt-xs mr-xs btn btn-primary" href="'.domain($params['back']).'">'.tr('Back').'</a>
                             </div>
                         </section>
                     </div>
@@ -468,25 +479,57 @@ if(empty($post['id'])){
     $html .= $params['label_photos'];
 
 }else{
-    $photos = sql_list('SELECT `id`, `file`, `description` FROM `blogs_photos` WHERE `blogs_posts_id` = :blogs_posts_id', array(':blogs_posts_id' => $post['id']));
+    $photos = sql_list('SELECT `id`, `file`, `description` FROM `blogs_photos` WHERE `blogs_posts_id` = :blogs_posts_id ORDER BY `priority`', array(':blogs_posts_id' => $post['id']));
 
     if(!count($photos)){
-        $html .= '  <div class="blogpost photos">
+        $html .= '  <div class="panel-body blogpost photos">
                         <div class="blogpost nophotos">'.tr('This post has no separate photos yet').'</div>
                     </div>';
 
     }else{
-        $html .= '<div class="blogpost photos">';
+        $html .= '  <div class="row">
+                        <div class="col-md-12">
+                            <section class="panel">
+                                <header class="panel-heading">
+                                    <h2 class="panel-title">'.tr('Manage photos').'</h2>
+                                </header>
+                                <div class="panel-body blogpost photos">';
 
         foreach($photos as $id => $photo){
-            $html .= '<div class="blogpost photo" id="photo'.$id.'">
-                        <img src="'.blogs_photo_url($photo['file'], true).'" />
-                        <textarea class="blogpost photo description" placeholder="'.tr('Description of this photo').'">'.$photo['description'].'</textarea>
-                        <a class="blogpost photo delete button">'.tr('Delete this photo').'</a>
-                    </div>';
+            /*
+             * Get photo dimensions
+             */
+            try{
+                $image = getimagesize(ROOT.'www/en/photos/'.$photo['file'].'_big.jpg');
+
+            }catch(Exception $e){
+                $image = false;
+            }
+
+            if(!$image){
+                $image = array(tr('Invalid image'), tr('Invalid image'));
+            }
+
+            $html .= '  <div class="form-group photo" id="photo'.$id.'">
+                            <a target="_blank" href="'.blogs_photo_url($photo['file']).'">
+                                <img class="col-md-1 control-label" src="'.blogs_photo_url($photo['file'], true).'" />
+                            </a>
+                            <div class="col-md-11 blogpost">
+                                <textarea class="blogpost photo description form-control" placeholder="'.tr('Description of this photo').'">'.$photo['description'].'</textarea>
+                                <p>
+                                    (Dimensions '.$image[0].' X '.$image[1].')
+                                    <a <a class="mb-xs mt-xs mr-xs btn btn-primary blogpost photo up button">'.tr('Up').'</a>
+                                    <a <a class="mb-xs mt-xs mr-xs btn btn-primary blogpost photo down button">'.tr('Down').'</a>
+                                    <a <a class="mb-xs mt-xs mr-xs btn btn-primary blogpost photo delete button">'.tr('Delete this photo').'</a>
+                                </p>
+                            </div>
+                        </div>';
         }
 
-        $html .= '</div>';
+        $html .= '          </div>
+                        </section>
+                    </div>
+                </div>';
     }
 }
 
@@ -505,13 +548,34 @@ html_script('
     $(document).on("click", ".blogpost.photo.delete", function(event){
         var id    = $(this).closest("div.photo").prop("id").from("photo");
         var jqxhr = $.post("/ajax/blog/photos/delete.php", {id:id})
-
             .done(function() {
                 $("#photo" + id).animate({opacity : 0}, 200, function(){
                     $("#photo" + id).animate({height : 0}, 200, function(){
                         $("#photo" + id).remove();
                     });
                 });
+            })
+
+            .fail(function() { alert("'.tr('Something went wrong, please try again later').'"); })
+    });
+
+    $(document).on("click", ".blogpost.photo.up", function(event){
+        var self  = $(this).closest("div.form-group");
+        var id    = $(this).closest("div.photo").prop("id").from("photo");
+        var jqxhr = $.post("/ajax/blog/photos/up.php", {id:id})
+            .done(function() {
+                self.prev().insertAfter(self);
+            })
+
+            .fail(function() { alert("'.tr('Something went wrong, please try again later').'"); })
+    });
+
+    $(document).on("click", ".blogpost.photo.down", function(event){
+        var self  = $(this).closest("div.form-group");
+        var id    = $(this).closest("div.photo").prop("id").from("photo");
+        var jqxhr = $.post("/ajax/blog/photos/down.php", {id:id})
+            .done(function() {
+                self.next().insertBefore(self);
             })
 
             .fail(function() { alert("'.tr('Something went wrong, please try again later').'"); })
@@ -546,10 +610,10 @@ upload_multi_js('#fileUpload','/ajax/blog/photos/upload.php', 'function(data){ad
  */
 $vj = new validate_jquery();
 
-$vj->validate('name'    , 'required' , 'true', '<span class="FcbErrorTail"></span>'.$params['errors']['name_required']);
-$vj->validate('blog'    , 'required' , 'true', '<span class="FcbErrorTail"></span>'.$params['errors']['blog_required']);
-$vj->validate('category', 'required' , 'true', '<span class="FcbErrorTail"></span>'.$params['errors']['category_required']);
-$vj->validate('body'    , 'required' , 'true', '<span class="FcbErrorTail"></span>'.$params['errors']['body_required']);
+$vj->validate('name'       , 'required' , 'true', '<span class="FcbErrorTail"></span>'.$params['errors']['name_required']);
+$vj->validate('blog'       , 'required' , 'true', '<span class="FcbErrorTail"></span>'.$params['errors']['blog_required']);
+$vj->validate('seocategory', 'required' , 'true', '<span class="FcbErrorTail"></span>'.$params['errors']['category_required']);
+$vj->validate('body'       , 'required' , 'true', '<span class="FcbErrorTail"></span>'.$params['errors']['body_required']);
 
 $vj->validate('name'    , 'minlength', '2'               , '<span class="FcbErrorTail"></span>'.$params['errors']['name_min']);
 $vj->validate('body'    , 'minlength', $params['bodymin'], '<span class="FcbErrorTail"></span>'.$params['errors']['body_min']);
@@ -559,7 +623,7 @@ if($params['use_status']){
 }
 
 if($params['use_groups']){
-    $vj->validate('group', 'required', 'true', '<span class="FcbErrorTail"></span>'.$params['errors']['group_required']);
+    $vj->validate('seogroup', 'required', 'true', '<span class="FcbErrorTail"></span>'.$params['errors']['group_required']);
 }
 
 if($params['use_priorities']){
@@ -586,4 +650,19 @@ $params = array('icon'        => 'fa-users',
                 'script'      => $params['script']);
 
 echo ca_page($html, $params);
+
+
+
+/*
+ *
+ */
+function blog_side(){
+    static $side;
+
+    if(!$side or ($side == 'right')){
+        return $side = 'left';
+    }
+
+    return $side = 'right';
+}
 ?>

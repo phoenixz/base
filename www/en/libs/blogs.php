@@ -347,6 +347,7 @@ function blogs_seo_keywords($keywords){
 function blogs_validate_post(&$post, $blog, $params = null, $seoname = null){
     try{
         array_params($params);
+//        array_default($params, 'use_id'     , false);
         array_default($params, 'namemax'    , 64);
         array_default($params, 'bodymin'    , 100);
         array_default($params, 'object_name', 'blog posts');
@@ -563,7 +564,7 @@ function blogs_validate_post(&$post, $blog, $params = null, $seoname = null){
 /*
  * Process uploaded club photo
  */
-function blogs_photos_upload($files, $post){
+function blogs_photos_upload($files, $post, $priority = null){
     global $_CONFIG;
 
     try{
@@ -629,14 +630,22 @@ function blogs_photos_upload($files, $post){
         }
 
         /*
-         *
+         * If no priority has been specified then get the highest one
          */
-        $res  = sql_query('INSERT INTO `blogs_photos` (`createdby`, `blogs_posts_id`, `file`)
-                           VALUES                     (:createdby , :blogs_posts_id , :file )',
+        if(!$priority){
+            $priority = sql_get('SELECT (COALESCE(MAX(`priority`), 0) + 1) AS `priority` FROM `blogs_photos` WHERE `blogs_posts_id` = :blogs_posts_id', 'priority', array(':blogs_posts_id' => $post['id']));
+        }
+
+        /*
+         * Store blog post photo in database
+         */
+        $res  = sql_query('INSERT INTO `blogs_photos` (`createdby`, `blogs_posts_id`, `file`, `priority`)
+                           VALUES                     (:createdby , :blogs_posts_id , :file , :priority )',
 
                           array(':createdby'      => $_SESSION['user']['id'],
-                                ':blogs_posts_id' => cfi($post['id']),
-                                ':file'           => $photo));
+                                ':blogs_posts_id' => $post['id'],
+                                ':file'           => $photo,
+                                ':priority'       => $priority));
 
         $id   = sql_insert_id($res);
 

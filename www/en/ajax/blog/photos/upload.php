@@ -4,13 +4,36 @@ include_once(dirname(__FILE__).'/../../../libs/startup.php');
 try{
     load_libs('admin,json,file,image,upload,blogs');
 
-    $user   = rights_or_redirect('admin', '/admin/signin.php', 'json');
-    $result = blogs_photos_upload($_FILES['files'], $_POST);
+    $user  = rights_or_redirect('admin', '/admin/signin.php', 'json');
+    $photo = blogs_photos_upload($_FILES['files'], $_POST);
 
-    json_reply(array('html' => '<div class="blogpost photo" id="photo'.$result['id'].'">
-                                    <img src="'.blogs_photo_url($result['photo'], true).'" />
-                                    <textarea class="blogpost photo description" placeholder="'.tr('Description of this photo').'"></textarea>
-                                    <a class="blogpost photo delete button">'.tr('Delete this photo').'</a><br />
+    /*
+     * Get image dimensions
+     */
+    try{
+        $image = getimagesize(ROOT.'www/en/photos/'.$photo['photo'].'_big.jpg');
+
+    }catch(Exception $e){
+        $image = false;
+    }
+
+    if(!$image){
+        $image = array(tr('Invalid image'), tr('Invalid image'));
+    }
+
+    json_reply(array('html' => '<div class="form-group photo" id="photo'.$photo['id'].'">
+                                    <a target="_blank" href="'.blogs_photo_url($photo['photo'], true).'">
+                                        <img class="col-md-1 control-label" src="'.blogs_photo_url($photo['photo'], true).'" />
+                                    </a>
+                                    <div class="col-md-11 blogpost">
+                                        <textarea class="blogpost photo description form-control" placeholder="'.tr('Description of this photo').'"></textarea>
+                                        <p>
+                                            (Dimensions '.$image[0].' X '.$image[1].')
+                                            <a <a class="mb-xs mt-xs mr-xs btn btn-primary blogpost photo up button">'.tr('Up').'</a>
+                                            <a <a class="mb-xs mt-xs mr-xs btn btn-primary blogpost photo down button">'.tr('Down').'</a>
+                                            <a <a class="mb-xs mt-xs mr-xs btn btn-primary blogpost photo delete button">'.tr('Delete this photo').'</a>
+                                        </p>
+                                    </div>
                                 </div>'));
 
 }catch(Exception $e){
