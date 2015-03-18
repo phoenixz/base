@@ -18,9 +18,9 @@ try{
                         FROM   `blogs_photos`
 
                         JOIN   `blogs_posts`
-                        ON     `blogs_posts`.`id`        = `blogs_photos`.`blogs_posts_id`
+                        ON     `blogs_posts`.`id`  = `blogs_photos`.`blogs_posts_id`
 
-                        WHERE  `blogs_photos`.`id`       = '.cfi($_POST['id']));
+                        WHERE  `blogs_photos`.`id` = '.cfi($_POST['id']));
 
     if(empty($photo['id'])){
         throw new bException('ajax/blog/photos/delete: Unknown photo_id "'.str_log($_POST['id']).'" specified', 'unknown');
@@ -34,15 +34,21 @@ try{
     /*
      * Switch priorities of this entry and the entry with prio -1
      */
-    if($photo['priority'] <= 0){
-        throw new bException('Can not move priority up, it is already at 0', 'invalid');
-    }
+    if($photo['priority'] > 0){
+        sql_query('START TRANSACTION');
+            sql_query('UPDATE `blogs_photos` SET `priority` = (`priority` + 1) WHERE `blogs_posts_id` = :blogs_posts_id AND `priority` = :priority', array(':blogs_posts_id' => $photo['blogs_posts_id'], ':priority' => $photo['priority'] - 1));
+            sql_query('UPDATE `blogs_photos` SET `priority` = (`priority` - 1) WHERE `id`             = :id'                                       , array(':id'             => $photo['id']));
+        sql_query('COMMIT');
 
-//    sql_query('UPDATE `blogs_photos` SET `priority` = NULL WHERE `id` = :id', array(':id' => $photo['id']));
-    sql_query('START TRANSACTION');
-        sql_query('UPDATE `blogs_photos` SET `priority` = (`priority` + 1) WHERE `blogs_posts_id` = :blogs_posts_id AND `priority` = :priority', array(':blogs_posts_id' => $photo['blogs_posts_id'], ':priority' => $photo['priority'] - 1));
-        sql_query('UPDATE `blogs_photos` SET `priority` = (`priority` - 1) WHERE `id` = :id', array(':id' => $photo['id']));
-    sql_query('COMMIT');
+    }else{
+        /*
+         * SPECIAL SITUATION!
+         *
+         * It appears that this photo has priority 0 or less, so we cannot make it lower. To fix this, make the priority other photos higher
+         */
+        sql_query('UPDATE `blogs_photos` SET `priority` = (`priority` + 1) WHERE `blogs_posts_id` = :blogs_posts_id'                , array(':blogs_posts_id' => $photo['blogs_posts_id']));
+        sql_query('UPDATE `blogs_photos` SET `priority` = (`priority` + 1) WHERE `blogs_posts_id` = :blogs_posts_id AND `id` != :id', array(':blogs_posts_id' => $photo['blogs_posts_id'], ':id' => $photo['id']));
+    }
 
 }catch(Exception $e){
     switch($e->getCode()){

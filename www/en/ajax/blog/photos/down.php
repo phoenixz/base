@@ -36,15 +36,12 @@ try{
      */
     $max = sql_get('SELECT COUNT(`id`) AS count FROM `blogs_photos` WHERE `blogs_posts_id` = :blogs_posts_id', array(':blogs_posts_id' => $photo['blogs_posts_id']), 'count') - 1;
 
-    if($photo['priority'] >= $max){
-        throw new bException('Can not move priority up, it is already at max priority "'.$max.'"', 'invalid');
+    if($photo['priority'] < $max){
+        sql_query('START TRANSACTION');
+            sql_query('UPDATE `blogs_photos` SET `priority` = (`priority` - 1) WHERE `blogs_posts_id` = :blogs_posts_id AND `priority` = :priority', array(':blogs_posts_id' => $photo['blogs_posts_id'], ':priority' => $photo['priority'] + 1));
+            sql_query('UPDATE `blogs_photos` SET `priority` = (`priority` + 1) WHERE `id`             = :id'                                       , array(':id'             => $photo['id']));
+        sql_query('COMMIT');
     }
-
-//    sql_query('UPDATE `blogs_photos` SET `priority` = NULL WHERE `id` = :id', array(':id' => $photo['id']));
-    sql_query('START TRANSACTION');
-        sql_query('UPDATE `blogs_photos` SET `priority` = (`priority` - 1) WHERE `blogs_posts_id` = :blogs_posts_id AND `priority` = :priority', array(':blogs_posts_id' => $photo['blogs_posts_id'], ':priority' => $photo['priority'] + 1));
-        sql_query('UPDATE `blogs_photos` SET `priority` = (`priority` + 1) WHERE `id` = :id', array(':id' => $photo['id']));
-    sql_query('COMMIT');
 
 }catch(Exception $e){
     switch($e->getCode()){

@@ -481,20 +481,18 @@ if(empty($post['id'])){
 }else{
     $photos = sql_list('SELECT `id`, `file`, `description` FROM `blogs_photos` WHERE `blogs_posts_id` = :blogs_posts_id ORDER BY `priority`', array(':blogs_posts_id' => $post['id']));
 
+    $html  .= ' <div class="row">
+                    <div class="col-md-12">
+                        <section class="panel">
+                            <header class="panel-heading">
+                                <h2 class="panel-title">'.tr('Manage photos').'</h2>
+                            </header>
+                            <div class="panel-body blogpost photos">';
+
     if(!count($photos)){
-        $html .= '  <div class="panel-body blogpost photos">
-                        <div class="blogpost nophotos">'.tr('This post has no separate photos yet').'</div>
-                    </div>';
+        $html .= '<div class="blogpost nophotos">'.tr('This post has no separate photos yet').'</div>';
 
     }else{
-        $html .= '  <div class="row">
-                        <div class="col-md-12">
-                            <section class="panel">
-                                <header class="panel-heading">
-                                    <h2 class="panel-title">'.tr('Manage photos').'</h2>
-                                </header>
-                                <div class="panel-body blogpost photos">';
-
         foreach($photos as $id => $photo){
             /*
              * Get photo dimensions
@@ -525,12 +523,12 @@ if(empty($post['id'])){
                             </div>
                         </div>';
         }
-
-        $html .= '          </div>
-                        </section>
-                    </div>
-                </div>';
     }
+
+    $html .= '          </div>
+                    </section>
+                </div>
+            </div>';
 }
 
 $html .= '      </fieldset>'.
@@ -542,7 +540,7 @@ html_script('
         var jqxhr = $.post("/ajax/blog/photos/description.php", {desc:desc, id:id}, function() {
             //ok, no need to do anything
         })
-        .fail(function() { alert("'.tr('Something went wrong, please try again later').'"); })
+        .fail(function() { $.flashMessage("'.tr('Something went wrong, please try again later').'", "error"); })
     });
 
     $(document).on("click", ".blogpost.photo.delete", function(event){
@@ -556,7 +554,7 @@ html_script('
                 });
             })
 
-            .fail(function() { alert("'.tr('Something went wrong, please try again later').'"); })
+            .fail(function() { $.flashMessage("'.tr('Something went wrong, please try again later').'", "error"); })
     });
 
     $(document).on("click", ".blogpost.photo.up", function(event){
@@ -567,7 +565,7 @@ html_script('
                 self.prev().insertAfter(self);
             })
 
-            .fail(function() { alert("'.tr('Something went wrong, please try again later').'"); })
+            .fail(function() { $.flashMessage("'.tr('Something went wrong, please try again later').'", "error"); })
     });
 
     $(document).on("click", ".blogpost.photo.down", function(event){
@@ -578,7 +576,7 @@ html_script('
                 self.next().insertBefore(self);
             })
 
-            .fail(function() { alert("'.tr('Something went wrong, please try again later').'"); })
+            .fail(function() { $.flashMessage("'.tr('Something went wrong, please try again later').'", "error"); })
     });
 
     $("#fileUploadCapture").click(function(){
@@ -596,7 +594,7 @@ html_script('
     function add_image(data){
         var $obj = $(data.html);
         $("div.blogpost.nophotos").remove();
-        $("div.blogpost.photos").prepend($obj);
+        $("div.blogpost.photos").append($obj);
         $obj.fadeIn("slow");
     }', false).
 
