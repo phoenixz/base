@@ -130,7 +130,7 @@ switch(argument(0)){
                     $replied = $message['createdon'];
                 }
 
-                if(++$msg_count < $_CONFIG['twilio']['conversations']['size']){
+                if(++$msg_count <= $_CONFIG['twilio']['conversations']['size']){
                     /*
                      * Build the conversations
                      */
