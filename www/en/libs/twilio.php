@@ -224,7 +224,7 @@ function twilio_update_conversation($conversation, $messages_id, $direction, $me
         }
 
         if($_CONFIG['twilio']['conversations']['message_dates']){
-            $message = str_replace('%datetime%', system_date_format($message['createdon']), $_CONFIG['twilio']['conversations']['message_dates']).$message;
+            $message = str_replace('%datetime%', system_date_format($datetime), $_CONFIG['twilio']['conversations']['message_dates']).$message;
         }
 
         array_unshift($conversation['last_messages'], array('id'        => $messages_id,
