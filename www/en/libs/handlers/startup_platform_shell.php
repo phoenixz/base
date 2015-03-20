@@ -19,9 +19,14 @@ define('PWD'     , slash(isset_get($_SERVER['PWD'])));
 define('FORCE'   , argument('-f', false, argument('--force')));
 define('NOCOLOR' , argument('-c', false, argument('--nocolor')));
 define('TEST'    , argument('-t', false, argument('--test')));
+define('VERBOSE' , argument('-V', false, argument('--verbose')));
 define('LIMIT'   , in_array('limit', $argv) ? array_next_value($argv, 'limit') : false);
 define('STARTDIR', slash(getcwd()));
 define('NOLOGIN' , argument('-l') or isset_get($nologin));
+
+if(VERBOSE){
+    $GLOBALS['quiet'] = false;
+}
 
 array_shift($argv);
 
