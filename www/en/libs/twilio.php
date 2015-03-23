@@ -209,8 +209,21 @@ function twilio_update_conversation($conversation, $messages_id, $direction, $me
             throw new bException('twilio_update_conversation(): No conversation message specified', 'notspecified');
         }
 
+        /*
+         * Decode the current last_messages
+         */
         if($conversation['last_messages']){
-            $conversation['last_messages'] = json_decode_custom($conversation['last_messages']);
+            try{
+                $conversation['last_messages'] = json_decode_custom($conversation['last_messages']);
+
+            }catch(Exception $e){
+                /*
+                 * Ups, JSON decode failed!
+                 */
+                $conversation['last_messages'] = array(array('id'        => null,
+                                                             'message'   => tr('Failed to decode messages'),
+                                                             'direction' => 'unknown'));
+            }
 
             /*
              * Ensure the conversation does not pass the max size
@@ -223,15 +236,31 @@ function twilio_update_conversation($conversation, $messages_id, $direction, $me
             $conversation['last_messages'] = array();
         }
 
+        /*
+         * Add message timestamp to each message?
+         */
         if($_CONFIG['twilio']['conversations']['message_dates']){
             $message = str_replace('%datetime%', system_date_format($datetime), $_CONFIG['twilio']['conversations']['message_dates']).$message;
         }
 
+        /*
+         * Add new message. Truncate each message by N% to ensure that the conversations last_message string does not surpass 1024 characters
+         */
         array_unshift($conversation['last_messages'], array('id'        => $messages_id,
                                                             'direction' => $direction,
-                                                            'message'   => $message));
+                                                            'message'   => str_truncate($message, strlen($message) * $size / 100)));
 
-        $conversation['last_messages'] = json_encode_custom($conversation['last_messages']);
+        $last_messages  = json_encode_custom($conversation['last_messages']);
+        $message_length = strlen($last_messages);
+
+        while($message_length > 1024){
+            /*
+             * The JSON string is too large to be stored, reduce its size and try again
+             */
+            array_pop($conversation['last_messages']);
+            $last_messages  = json_encode_custom($conversation['last_messages']);
+            $message_length = strlen($last_messages);
+        }
 
         if($replied){
             sql_query('UPDATE `twilio_conversations`
@@ -244,7 +273,7 @@ function twilio_update_conversation($conversation, $messages_id, $direction, $me
                        WHERE  `id`            = :id',
 
                        array(':id'            => $conversation['id'],
-                             ':last_messages' => $conversation['last_messages']));
+                             ':last_messages' => $last_messages));
 
         }else{
             sql_query('UPDATE `twilio_conversations`
@@ -257,7 +286,7 @@ function twilio_update_conversation($conversation, $messages_id, $direction, $me
                        WHERE  `id`            = :id',
 
                        array(':id'            => $conversation['id'],
-                             ':last_messages' => $conversation['last_messages']));
+                             ':last_messages' => $last_messages));
         }
 
     }catch(Exception $e){
