@@ -248,14 +248,14 @@ function twilio_update_conversation($conversation, $messages_id, $direction, $me
          */
         array_unshift($conversation['last_messages'], array('id'        => $messages_id,
                                                             'direction' => $direction,
-                                                            'message'   => str_truncate($message, strlen($message) * $size / 100)));
+                                                            'message'   => $message));
 
         $last_messages  = json_encode_custom($conversation['last_messages']);
         $message_length = strlen($last_messages);
 
         while($message_length > 1024){
             /*
-             * The JSON string is too large to be stored, reduce its size and try again
+             * The JSON string is too large to be stored, reduce the amount of messages and try again
              */
             array_pop($conversation['last_messages']);
             $last_messages  = json_encode_custom($conversation['last_messages']);
