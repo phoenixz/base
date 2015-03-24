@@ -22,7 +22,7 @@ switch(argument(0)){
         log_console(tr('Rebuilding twilio conversations'), '', 'white');
 
         sql_query('UPDATE `twilio_messages` SET `twilio_conversations_id` = NULL;');
-        sql_query('TRUNCATE `twilio_conversations`;');
+        sql_query('DELETE FROM `twilio_conversations`;');
 
         $count = 0;
         $r     = sql_query('SELECT `id`, `from_phone`, `to_phone` FROM `twilio_messages` WHERE `twilio_conversations_id` IS NULL GROUP BY `from_phone`, `to_phone` ORDER BY `createdon`');
