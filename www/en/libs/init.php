@@ -192,9 +192,21 @@ function init($projectfrom = null, $frameworkfrom = null){
                             /*
                              * This init file is higher than the DB version, but lower than the code version, so it must be executed
                              */
-                            log_console('Executing newer init file with version "'.$version.'"', 'init/'.$type,'green');
+                            try{
+                                if(file_exists($hook = $initpath.'hooks/pre_'.$file)){
+                                    log_console('Executing newer init "pre" hook file with version "'.$version.'"', 'init/'.$type,'green');
+                                    include_once($hook);
+                                }
+
+                            }catch(Exception $e){
+                                /*
+                                 * INIT FILE FAILED!
+                                 */
+                                throw new bException('init('.$type.'): Init "pre" hook file "'.$file.'" failed', $e);
+                            }
 
                             try{
+                                log_console('Executing newer init file with version "'.$version.'"', 'init/'.$type,'green');
                                 include_once($initpath.$file);
 
                             }catch(Exception $e){
@@ -202,6 +214,19 @@ function init($projectfrom = null, $frameworkfrom = null){
                                  * INIT FILE FAILED!
                                  */
                                 throw new bException('init('.$type.'): Init file "'.$file.'" failed', $e);
+                            }
+
+                            try{
+                                if(file_exists($hook = $initpath.'hooks/post_'.$file)){
+                                    log_console('Executing newer init "post" hook file with version "'.$version.'"', 'init/'.$type,'green');
+                                    include_once($hook);
+                                }
+
+                            }catch(Exception $e){
+                                /*
+                                 * INIT FILE FAILED!
+                                 */
+                                throw new bException('init('.$type.'): Init "post" hook file "'.$file.'" failed', $e);
                             }
 
                             $versions[$type] = $version;
