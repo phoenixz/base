@@ -158,7 +158,7 @@ function twilio_get_conversation($phone_local, $phone_remote){
         $conversation = sql_get('SELECT `id`,
                                         `last_messages`
 
-                                 FROM   `twilio_conversations`
+                                 FROM   `sms_conversations`
 
                                  WHERE  `phone_remote` = :phone_remote
                                  AND    `phone_local` = :phone_local',
@@ -169,7 +169,7 @@ function twilio_get_conversation($phone_local, $phone_remote){
             /*
              * This phone combo has no conversation yet, create it now.
              */
-            sql_query('INSERT INTO `twilio_conversations` (`phone_local`, `phone_remote`)
+            sql_query('INSERT INTO `sms_conversations` (`phone_local`, `phone_remote`)
                        VALUES                             (:phone_local , :phone_remote )',
 
                        array(':phone_local'  => $phone_local,
@@ -263,7 +263,7 @@ function twilio_update_conversation($conversation, $messages_id, $direction, $me
         }
 
         if($replied){
-            sql_query('UPDATE `twilio_conversations`
+            sql_query('UPDATE `sms_conversations`
 
                        SET    `last_messages` = :last_messages,
                               `direction`     = "send",
@@ -276,7 +276,7 @@ function twilio_update_conversation($conversation, $messages_id, $direction, $me
                              ':last_messages' => $last_messages));
 
         }else{
-            sql_query('UPDATE `twilio_conversations`
+            sql_query('UPDATE `sms_conversations`
 
                        SET    `last_messages` = :last_messages,
                               `direction`     = "received",
