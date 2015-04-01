@@ -349,6 +349,10 @@ function array_force($source, $separator = ','){
  */
 function array_params(&$params, $string_key = false, $numeric_key = false){
     try{
+        if(empty($params)){
+            $params = array();
+        }
+
         if(is_array($params)){
             return true;
         }
