@@ -1004,7 +1004,7 @@ function html_favicon($icon = null, $mobile_icon = null, $sizes = null, $precomp
                 return '<link rel="apple-touch-icon'.($params['precomposed'] ? '-precompsed' : '').'"'.($sizes ? ' sizes="'.$sizes.'"' : '').' href="'.$params['mobile_icon'].'" />';
 
             }else{
-                if(!$params['icon']){
+                if(empty($params['icon'])){
                     $params['icon'] = $_CONFIG['root'].'/pub/img'.(SUBENVIRONMENTNAME ? '/'.SUBENVIRONMENTNAME : '').'/favicon.png';
                 }
 
