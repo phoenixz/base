@@ -7,6 +7,7 @@
  * @license http://opensource.org/licenses/GPL-2.0 GNU Public License, Version 2
  * @copyright Sven Oostenbrink <support@svenoostenbrink.com>
  */
+load_libs('simple_dom');
 load_config('crmtext');
 
 
@@ -35,9 +36,10 @@ function crm_authenticate(){
         curl_setopt($ch, CURLOPT_USERPWD       , $authString);
         curl_setopt($ch, CURLOPT_POSTFIELDS    , $postFields );
 
-        $result = curl_exec($ch);
+        crmtext_execute($ch, 'setcallback');
 
-showdie($result);
+        return $userid;
+
     }catch(Exception $e){
         throw new bException('crm_authenticate(): Failed', $e);
     }
@@ -48,12 +50,12 @@ showdie($result);
 /*
  *
  */
-function crmtext_send_message($message, $phone){
+function crmtext_send_message($phone, $message){
     global $_CONFIG;
 
     try{
         $config     = $_CONFIG['crmtext'];
-        $postFields = 'method=sendsmsmsg&phone_number='.$phone.'&message='.$message;
+        $postFields = 'method=sendsmsmsg&phone_number='.$phone.'&message='.urlencode($message);
         $authString = $config['user'].':'.$config['password']. ':'.$config['keyword'];
 
         $ch = curl_init();
@@ -68,11 +70,10 @@ function crmtext_send_message($message, $phone){
         curl_setopt($ch, CURLOPT_USERPWD       , $authString);
         curl_setopt($ch, CURLOPT_POSTFIELDS    , $postFields);
 
-        $result = curl_exec($ch);
+        crmtext_execute($ch, 'setcallback');
 
-show($result);
-show(curl_error($ch));
-showdie($ch);
+        return $message;
+
     }catch(Exception $e){
         throw new bException('crmtext_send_message(): Failed', $e);
     }
@@ -83,15 +84,19 @@ showdie($ch);
 /*
  *
  */
-function crmtext_setcallback($url){
+function crmtext_set_callback($url = null){
     global $_CONFIG;
 
     try{
-        $config     = $_CONFIG['crmtext'];
-        $postFields = 'method=setcallback&callback='.$url;
-        $authString = $config['user'].':'.$config['password']. ':'.$config['keyword'];
+        $config = $_CONFIG['crmtext'];
 
-        $ch = curl_init();
+        if(!$url){
+            $url = $config['callback_url'];
+        }
+
+        $postFields = 'method=setcallback&callback='.urlencode($url);
+        $authString = $config['user'].':'.$config['password']. ':'.$config['keyword'];
+        $ch         = curl_init();
 
         curl_setopt($ch, CURLOPT_URL           , $config['central_url']);
         curl_setopt($ch, CURLOPT_FAILONERROR   , 1);
@@ -103,13 +108,12 @@ function crmtext_setcallback($url){
         curl_setopt($ch, CURLOPT_USERPWD       , $authString);
         curl_setopt($ch, CURLOPT_POSTFIELDS    , $postFields);
 
-        $result = curl_exec($ch);
-show($result);
-show(curl_error($ch));
-showdie($ch);
+        crmtext_execute($ch, 'setcallback');
+
+        return $url;
 
     }catch(Exception $e){
-        throw new bException('crmtext_setcallback(): Failed', $e);
+        throw new bException('crmtext_set_callback(): Failed', $e);
     }
 }
 
@@ -118,7 +122,7 @@ showdie($ch);
 /*
  *
  */
-function crmtext_optin_customer($phone, $lastname = '', $firstname = ''){
+function crmtext_optin($phone, $lastname = '', $firstname = ''){
     global $_CONFIG;
 
     try{
@@ -138,13 +142,40 @@ function crmtext_optin_customer($phone, $lastname = '', $firstname = ''){
         curl_setopt($ch, CURLOPT_USERPWD       , $authString);
         curl_setopt($ch, CURLOPT_POSTFIELDS    , $postFields);
 
-        $result = curl_exec($ch);
-show($result);
-show(curl_error($ch));
-showdie($ch);
+        $result = crmtext_execute($ch, 'setcallback');
+showdie($result);
+        return $phone;
 
     }catch(Exception $e){
         throw new bException('crmtext_optin_customer(): Failed', $e);
+    }
+}
+
+
+
+/*
+ * Execute the cURL request and check for initial errors, then return results
+ */
+function crmtext_execute($ch, $call){
+    try{
+        $xml = curl_exec($ch);
+
+        if($error = curl_error($ch)){
+            throw new bException(tr('crmtext_execute(): curl_exec() failed with "%error%"', array('%error%' => $error)), 'CURL'.curl_errno());
+        }
+
+        if(str_cut($xml, 'op="', '"') != $call){
+            throw new bException(tr('crmtext_execute(): Failed to find requested function call in crmtext results'), 'call_not_found');
+        }
+
+        if(($http_code = str_cut($xml, 'status="', '"')) != 200){
+            throw new bException(tr('crmtext_execute(): Got status "%status%" from crmtext', array('%status%' => $http_code)), 'HTTP'.$http_code);
+        }
+
+        return $xml;
+
+    }catch(Exception $e){
+        throw new bException('crmtext_execute(): Failed', $e);
     }
 }
 ?>
