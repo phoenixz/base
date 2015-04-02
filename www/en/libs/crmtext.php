@@ -70,7 +70,7 @@ function crmtext_send_message($phone, $message){
         curl_setopt($ch, CURLOPT_USERPWD       , $authString);
         curl_setopt($ch, CURLOPT_POSTFIELDS    , $postFields);
 
-        crmtext_execute($ch, 'setcallback');
+        crmtext_execute($ch, 'sendsmsmsg');
 
         return $message;
 
@@ -161,15 +161,15 @@ function crmtext_execute($ch, $call){
         $xml = curl_exec($ch);
 
         if($error = curl_error($ch)){
-            throw new bException(tr('crmtext_execute(): curl_exec() failed with "%error%"', array('%error%' => $error)), 'CURL'.curl_errno());
+            throw new bException(tr('crmtext_execute(): curl_exec() failed with "%error%"', array('%error%' => $error)), 'CURL'.curl_errno($ch));
         }
 
         if(str_cut($xml, 'op="', '"') != $call){
-            throw new bException(tr('crmtext_execute(): Failed to find requested function call in crmtext results'), 'call_not_found');
+            throw new bException(tr('crmtext_execute(): Failed to find requested function call in crmtext results "%results%"', array('%results%' => $xml)), 'call_not_found');
         }
 
         if(($http_code = str_cut($xml, 'status="', '"')) != 200){
-            throw new bException(tr('crmtext_execute(): Got status "%status%" from crmtext', array('%status%' => $http_code)), 'HTTP'.$http_code);
+            throw new bException(tr('crmtext_execute(): Got status "%status%" from crmtext with result "%results%"', array('%status%' => $http_code, '%results%' => $xml)), 'HTTP'.$http_code);
         }
 
         return $xml;

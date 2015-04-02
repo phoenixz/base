@@ -540,9 +540,10 @@ function array_from(&$source, $from_key, $delete = false){
                     }
 
                     $add = true;
-                }
 
-                continue;
+                }else{
+                    continue;
+                }
             }
 
             $retval[$key] = $value;
@@ -564,7 +565,7 @@ function array_from(&$source, $from_key, $delete = false){
 /*
  * Return all array parts until (but without) the specified key
  */
-function array_until($source, $until_key){
+function array_until($source, $until_key, $delete = false){
     try{
         if(!is_array($source)){
             throw new bException('array_until(): Specified source is an "'.gettype($source).'", but it should be an array', 'invalid');
@@ -578,6 +579,10 @@ function array_until($source, $until_key){
             }
 
             $retval[$key] = $value;
+
+            if($delete){
+                unset($source[$key]);
+            }
         }
 
         return $retval;

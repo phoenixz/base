@@ -269,6 +269,10 @@ function argument($value, $next = null, $default = null){
         if(is_integer($value)){
             $count = count($argv) - 1;
 
+            if($next === 'all'){
+                return array_from($argv, $value);
+            }
+
             while($argument = isset_get($argv[$value++], $next)){
                 switch($argument){
                     case 'force':
