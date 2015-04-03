@@ -55,7 +55,7 @@ function crmtext_send_message($message, $to){
 
     try{
         $config     = $_CONFIG['crmtext'];
-        $postFields = 'method=sendsmsmsg&phone_number='.$phone.'&message='.urlencode($to);
+        $postFields = 'method=sendsmsmsg&phone_number='.$to.'&message='.urlencode($to);
         $authString = $config['user'].':'.$config['password']. ':'.$config['keyword'];
 
         $ch = curl_init();

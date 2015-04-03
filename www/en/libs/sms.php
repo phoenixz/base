@@ -28,13 +28,11 @@ function sms_send_message($message, $to, $from = null){
         switch($provider){
             case 'crmtext':
                 load_libs('crmtext');
-                crmtext_send_message($message, $to);
-                break;
+                return crmtext_send_message($message, $to);
 
             case 'twilio':
                 load_libs('twilio');
-                twilio_send_message($message, $to, $from);
-                break;
+                return twilio_send_message($message, $to, $from);
 
             default:
                 throw new bException(tr('sms_send(): Unknown preferred SMS provider "%provider%" specified, check your configuration $_CONFIG[sms][prefer]', array('%provider%' => $_CONFIG['sms']['prefer'])), 'unknown');
