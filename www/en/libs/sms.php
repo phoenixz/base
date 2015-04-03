@@ -18,10 +18,17 @@ function sms_send_message($message, $to, $from = null){
     global $_CONFIG;
 
     try{
-        switch($_CONFIG['sms']['preferred']['send']){
+        if($from === 'crmtext'){
+            $provider = $from;
+
+        }else{
+            $provider = $_CONFIG['sms']['preferred']['send'];
+        }
+
+        switch($provider){
             case 'crmtext':
                 load_libs('crmtext');
-                crmtext_send_message($message, $to, $from);
+                crmtext_send_message($message, $to);
                 break;
 
             case 'twilio':

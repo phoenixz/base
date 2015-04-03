@@ -256,6 +256,10 @@ function twilio_send_message($message, $to, $from = null){
             $twilio = twilio_load();
         }
 
+        if(empty($_CONFIG['twilio']['sources'][$from])){
+            throw new bException('Specified source phone "'.str_log($from).'" is not known', 'unknown');
+        }
+
         if(!$from){
             reset($_CONFIG['twilio']['sources']);
             $from = key($_CONFIG['twilio']['sources']);

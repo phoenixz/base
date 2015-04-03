@@ -12,50 +12,50 @@ load_config('crmtext');
 
 
 
-/*
- * Authenticate with CRM text
- */
-function crm_authenticate(){
-    global $_CONFIG;
-
-    try{
-        $userid     = 'userid';
-        $passwd     = 'password';
-        $postFields = "method=optincustomer&phone_number=9995551212&firstname=&lastname=";
-        $authString = $userid . ':'. $password . ':'.$keyword ;
-
-        $ch = curl_init();
-
-        curl_setopt($ch, CURLOPT_URL           , $config['central_url']);
-        curl_setopt($ch, CURLOPT_FAILONERROR   , 1);
-        curl_setopt($ch, CURLOPT_FOLLOWLOCATION, 1);
-        curl_setopt($ch, CURLOPT_RETURNTRANSFER, 1);
-        curl_setopt($ch, CURLOPT_TIMEOUT       , 3 );
-        curl_setopt($ch, CURLOPT_POST          , true );
-        curl_setopt($ch, CURLOPT_HTTPAUTH      , CURLAUTH_BASIC);
-        curl_setopt($ch, CURLOPT_USERPWD       , $authString);
-        curl_setopt($ch, CURLOPT_POSTFIELDS    , $postFields );
-
-        crmtext_execute($ch, 'setcallback');
-
-        return $userid;
-
-    }catch(Exception $e){
-        throw new bException('crm_authenticate(): Failed', $e);
-    }
-}
+///*
+// * Authenticate with CRM text
+// */
+//function crm_authenticate(){
+//    global $_CONFIG;
+//
+//    try{
+//        $userid     = 'userid';
+//        $passwd     = 'password';
+//        $postFields = "method=optincustomer&phone_number=9995551212&firstname=&lastname=";
+//        $authString = $userid . ':'. $password . ':'.$keyword ;
+//
+//        $ch = curl_init();
+//
+//        curl_setopt($ch, CURLOPT_URL           , $config['central_url']);
+//        curl_setopt($ch, CURLOPT_FAILONERROR   , 1);
+//        curl_setopt($ch, CURLOPT_FOLLOWLOCATION, 1);
+//        curl_setopt($ch, CURLOPT_RETURNTRANSFER, 1);
+//        curl_setopt($ch, CURLOPT_TIMEOUT       , 3 );
+//        curl_setopt($ch, CURLOPT_POST          , true );
+//        curl_setopt($ch, CURLOPT_HTTPAUTH      , CURLAUTH_BASIC);
+//        curl_setopt($ch, CURLOPT_USERPWD       , $authString);
+//        curl_setopt($ch, CURLOPT_POSTFIELDS    , $postFields );
+//
+//        crmtext_execute($ch, 'setcallback');
+//
+//        return $userid;
+//
+//    }catch(Exception $e){
+//        throw new bException('crm_authenticate(): Failed', $e);
+//    }
+//}
 
 
 
 /*
  *
  */
-function crmtext_send_message($phone, $message){
+function crmtext_send_message($message, $to){
     global $_CONFIG;
 
     try{
         $config     = $_CONFIG['crmtext'];
-        $postFields = 'method=sendsmsmsg&phone_number='.$phone.'&message='.urlencode($message);
+        $postFields = 'method=sendsmsmsg&phone_number='.$phone.'&message='.urlencode($to);
         $authString = $config['user'].':'.$config['password']. ':'.$config['keyword'];
 
         $ch = curl_init();
@@ -142,8 +142,8 @@ function crmtext_optin($phone, $lastname = '', $firstname = ''){
         curl_setopt($ch, CURLOPT_USERPWD       , $authString);
         curl_setopt($ch, CURLOPT_POSTFIELDS    , $postFields);
 
-        $result = crmtext_execute($ch, 'setcallback');
-showdie($result);
+        $result = crmtext_execute($ch, 'optincustomer');
+
         return $phone;
 
     }catch(Exception $e){
