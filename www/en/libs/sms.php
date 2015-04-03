@@ -241,4 +241,41 @@ function sms_full_phones($phones){
         throw new bException('sms_full_phones(): Failed', $e);
     }
 }
+
+
+
+/*
+ * Return a phone number that guaranteed contains no country code
+ */
+// :TODO: Add support for other countries than the US
+function sms_no_country_phones($phones){
+    global $_CONFIG;
+
+    try{
+        $phones = array_force($phones);
+
+        foreach($phones as &$phone){
+            $phone = trim($phone);
+
+            if(substr($phone, 0, 1) != '+'){
+                /*
+                 * Phone has no country code
+                 */
+                continue;
+            }
+
+            /*
+             * Assume this is a US phone, return with +1
+             */
+            if(substr($phone, 1, 1) == '1'){
+                $phone = substr($phone, 2);
+            }
+        }
+
+        return str_force($phones, ',');
+
+    }catch(Exception $e){
+        throw new bException('sms_full_phones(): Failed', $e);
+    }
+}
 ?>

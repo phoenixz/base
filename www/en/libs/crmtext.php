@@ -7,7 +7,7 @@
  * @license http://opensource.org/licenses/GPL-2.0 GNU Public License, Version 2
  * @copyright Sven Oostenbrink <support@svenoostenbrink.com>
  */
-load_libs('simple_dom');
+load_libs('simple_dom,sms');
 load_config('crmtext');
 
 
@@ -50,12 +50,13 @@ load_config('crmtext');
 /*
  *
  */
-function crmtext_send_message($message, $to){
+function crmtext_send_message($message, $phone){
     global $_CONFIG;
 
     try{
+        $phone      = sms_no_country_phones($phone);
         $config     = $_CONFIG['crmtext'];
-        $postFields = 'method=sendsmsmsg&phone_number='.$to.'&message='.urlencode($to);
+        $postFields = 'method=sendsmsmsg&phone_number='.$phone.'&message='.urlencode($phone);
         $authString = $config['user'].':'.$config['password']. ':'.$config['keyword'];
 
         $ch = curl_init();
@@ -126,6 +127,7 @@ function crmtext_optin($phone, $lastname = '', $firstname = ''){
     global $_CONFIG;
 
     try{
+        $phone      = sms_no_country_phones($phone);
         $config     = $_CONFIG['crmtext'];
         $postFields = 'method=optincustomer&firstname='.$firstname.'&lastname='.$lastname.'&phone_number='.$phone;
         $authString = $config['user'].':'.$config['password']. ':'.$config['keyword'];
@@ -160,11 +162,12 @@ function crmtext_optout($phone, $lastname = '', $firstname = ''){
     global $_CONFIG;
 
     try{
+        $phone      = sms_no_country_phones($phone);
         $config     = $_CONFIG['crmtext'];
         $postFields = 'method=optoutcustomer&firstname='.$firstname.'&lastname='.$lastname.'&phone_number='.$phone;
         $authString = $config['user'].':'.$config['password']. ':'.$config['keyword'];
 
-        $ch = curl_outit();
+        $ch = curl_init();
 
         curl_setopt($ch, CURLOPT_URL           , $config['central_url']);
         curl_setopt($ch, CURLOPT_FAILONERROR   , 1);
