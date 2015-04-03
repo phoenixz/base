@@ -523,7 +523,7 @@ function array_remove($source, $keys){
 /*
  * Return all array parts from (but without) the specified key
  */
-function array_from(&$source, $from_key, $delete = false){
+function array_from(&$source, $from_key, $delete = false, $skip = false){
     try{
         if(!is_array($source)){
             throw new bException('array_from(): Specified source is an "'.gettype($source).'", but it should be an array', 'invalid');
@@ -540,6 +540,13 @@ function array_from(&$source, $from_key, $delete = false){
                     }
 
                     $add = true;
+
+                    if($skip){
+                        /*
+                         * Do not include the key itself, skip it
+                         */
+                        continue;
+                    }
 
                 }else{
                     continue;

@@ -316,7 +316,7 @@ function argument($value, $next = null, $default = null){
                 /*
                  * Return all following arguments, if available
                  */
-                return array_from($argv, array_search($value, $argv), true);
+                return array_from($argv, array_search($value, $argv), true, true);
             }
 
             /*
