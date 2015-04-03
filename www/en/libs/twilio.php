@@ -113,7 +113,7 @@ function twilio_name_phones($phones){
     global $_CONFIG;
 
     try{
-        $phones = twilio_full_phones($phones);
+        $phones = sms_full_phones($phones);
         $phones = array_force($phones);
 
         foreach($phones as &$phone){
@@ -132,104 +132,13 @@ function twilio_name_phones($phones){
 
 
 /*
- *
- */
-function twilio_get_conversation($phone_local, $phone_remote){
-    global $_CONFIG;
-
-    try{
-        $phone_local  = twilio_full_phones($phone_local);
-        $phone_remote = twilio_full_phones($phone_remote);
-
-        /*
-         * Determine the local and remote phones
-         */
-        if(empty($_CONFIG['twilio']['sources'][$phone_local])){
-            $tmp          = $phone_remote;
-            $phone_remote = $phone_local;
-            $phone_local  = $tmp;
-
-            unset($tmp);
-        }
-
-        /*
-         * Find an existing conversation for the specified phones
-         */
-        $conversation = sql_get('SELECT `id`,
-                                        `last_messages`
-
-                                 FROM   `sms_conversations`
-
-                                 WHERE  `phone_remote` = :phone_remote
-                                 AND    `phone_local` = :phone_local',
-
-                                 array(':phone_local' => $phone_local, ':phone_remote' => $phone_remote));
-
-        if(!$conversation){
-            /*
-             * This phone combo has no conversation yet, create it now.
-             */
-            sql_query('INSERT INTO `sms_conversations` (`phone_local`, `phone_remote`)
-                       VALUES                             (:phone_local , :phone_remote )',
-
-                       array(':phone_local'  => $phone_local,
-                             ':phone_remote' => $phone_remote));
-
-            $conversation = array('id'            => sql_insert_id(),
-                                  'last_messages' => '');
-        }
-
-        return $conversation;
-
-    }catch(Exception $e){
-        throw new bException('twilio_get_conversation(): Failed', $e);
-    }
-}
-
-
-
-/*
- * Return a phone number that always includes a country code
- */
-function twilio_full_phones($phones){
-    global $_CONFIG;
-
-    try{
-        $phones = array_force($phones);
-
-        foreach($phones as &$phone){
-            $phone = trim($phone);
-
-            if(substr($phone, 0, 1) == '+'){
-                /*
-                 * Phone has a country code
-                 */
-                continue;
-            }
-
-            /*
-             * Assume this is a US phone, return with +1
-             */
-            $phone = '+'.$_CONFIG['twilio']['defaults']['country_code'].$phone;
-        }
-
-        return str_force($phones, ',');
-
-    }catch(Exception $e){
-        throw new bException('twilio_full_phones(): Failed', $e);
-    }
-}
-
-
-
-/*
  * Verify that the specified phone number exists
  */
 function twilio_verify_source_phone($phone){
     global $_CONFIG;
 
     try{
-        $phone = twilio_full_phones($phone);
+        $phone = sms_full_phones($phone);
 
         if(isset($_CONFIG['twilio']['sources'][$phone])){
             return $phone;
