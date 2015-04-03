@@ -113,6 +113,7 @@ function twilio_name_phones($phones){
     global $_CONFIG;
 
     try{
+        load_libs('sms');
         $phones = sms_full_phones($phones);
         $phones = array_force($phones);
 
@@ -138,6 +139,7 @@ function twilio_verify_source_phone($phone){
     global $_CONFIG;
 
     try{
+        load_libs('sms');
         $phone = sms_full_phones($phone);
 
         if(isset($_CONFIG['twilio']['sources'][$phone])){

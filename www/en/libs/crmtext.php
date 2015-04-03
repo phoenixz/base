@@ -154,6 +154,40 @@ function crmtext_optin($phone, $lastname = '', $firstname = ''){
 
 
 /*
+ *
+ */
+function crmtext_optout($phone, $lastname = '', $firstname = ''){
+    global $_CONFIG;
+
+    try{
+        $config     = $_CONFIG['crmtext'];
+        $postFields = 'method=optoutcustomer&firstname='.$firstname.'&lastname='.$lastname.'&phone_number='.$phone;
+        $authString = $config['user'].':'.$config['password']. ':'.$config['keyword'];
+
+        $ch = curl_outit();
+
+        curl_setopt($ch, CURLOPT_URL           , $config['central_url']);
+        curl_setopt($ch, CURLOPT_FAILONERROR   , 1);
+        curl_setopt($ch, CURLOPT_FOLLOWLOCATION, 1);
+        curl_setopt($ch, CURLOPT_RETURNTRANSFER, 1);
+        curl_setopt($ch, CURLOPT_TIMEOUT       , 3);
+        curl_setopt($ch, CURLOPT_POST          , true);
+        curl_setopt($ch, CURLOPT_HTTPAUTH      , CURLAUTH_BASIC);
+        curl_setopt($ch, CURLOPT_USERPWD       , $authString);
+        curl_setopt($ch, CURLOPT_POSTFIELDS    , $postFields);
+
+        $result = crmtext_execute($ch, 'optoutcustomer');
+
+        return $phone;
+
+    }catch(Exception $e){
+        throw new bException('crmtext_optout_customer(): Failed', $e);
+    }
+}
+
+
+
+/*
  * Execute the cURL request and check for initial errors, then return results
  */
 function crmtext_execute($ch, $call){
