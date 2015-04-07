@@ -13,7 +13,7 @@
 /*
  * Execute specified query
  */
-function sql_query($query, $execute = false, $handle_exceptions = true, $sql = 'sql') {
+function sql_query($query, $execute = false, $handle_exceptions = true, $sql = 'sql', $debug = false){
     try{
         sql_init($sql);
 
@@ -67,7 +67,7 @@ function sql_query($query, $execute = false, $handle_exceptions = true, $sql = '
 
     }catch(Exception $e){
         if(!$handle_exceptions){
-            throw new bException('sql_query(): Failed', $e);
+            throw new bException(tr('sql_query(): Query "%query%" failed', array('%query%' => $query)), $e);
         }
 
         try{
@@ -75,7 +75,7 @@ function sql_query($query, $execute = false, $handle_exceptions = true, $sql = '
             pdo_error($e, $query, $execute, $GLOBALS[$sql]);
 
         }catch(Exception $e){
-            throw new bException('sql_query(): Failed', $e);
+            throw new bException(tr('sql_query(): Query "%query%" failed', array('%query%' => $query)), $e);
         }
     }
 }
@@ -99,17 +99,10 @@ function sql_prepare($query, $sql = 'sql'){
 /*
  * Fetch and return data from specified resource
  */
-function sql_fetch($r, $columns = false) {
+function sql_fetch($r, $columns = false, $debug = false) {
     try{
         if(!is_object($r)){
             throw new bException('sql_fetch(): Specified resource is not a PDO object', 'invalid');
-        }
-
-        if(!$columns){
-            /*
-             * Return everything
-             */
-            return $r->fetch(PDO::FETCH_ASSOC);
         }
 
         $result = $r->fetch(PDO::FETCH_ASSOC);
@@ -119,6 +112,13 @@ function sql_fetch($r, $columns = false) {
              * There are no entries
              */
             return null;
+        }
+
+        if(!$columns){
+            /*
+             * Return everything
+             */
+            return $result;
         }
 
         /*

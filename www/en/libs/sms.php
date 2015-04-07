@@ -278,4 +278,33 @@ function sms_no_country_phones($phones){
         throw new bException('sms_full_phones(): Failed', $e);
     }
 }
+
+
+
+/*
+ *
+ */
+function sms_select_source($name, $selected, $provider, $class){
+    global $_CONFIG;
+
+    try{
+        load_config('twilio');
+
+        $sources = array('name'     => $name,
+                         'class'    => $class,
+                         'none'     => tr('Select number'),
+                         'selected' => $selected,
+                         'resource' => $_CONFIG['twilio']['sources']);
+
+        if(isset_get($provider) == 'crmtext'){
+            $sources['resource']['crmtext']  = tr('Shortcode');
+            $sources['selected']             = 'crmtext';
+        }
+
+        return html_select($sources);
+
+    }catch(Exception $e){
+        throw new bException('sms_select_source(): Failed', $e);
+    }
+}
 ?>

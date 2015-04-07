@@ -109,7 +109,7 @@ function twilio_load($accountsid = null, $accountstoken = null, $auto_install = 
 /*
  * Return (if possible) a name for the phone
  */
-function twilio_name_phones($phones){
+function twilio_name_phones($phones, $non_numeric = null){
     global $_CONFIG;
 
     try{
@@ -118,8 +118,15 @@ function twilio_name_phones($phones){
         $phones = array_force($phones);
 
         foreach($phones as &$phone){
-            if(isset($_CONFIG['twilio']['sources'][$phone])){
-                $phone = $_CONFIG['twilio']['sources'][$phone];
+            if(!is_numeric($phone)){
+                if($non_numeric){
+                    $phone = $non_numeric;
+                }
+
+            }else{
+                if(isset($_CONFIG['twilio']['sources'][$phone])){
+                    $phone = $_CONFIG['twilio']['sources'][$phone];
+                }
             }
         }
 
