@@ -73,6 +73,8 @@ function crmtext_send_message($message, $phone){
 
         crmtext_execute($ch, 'sendsmsmsg');
 
+        log_database(tr('Send message "%message%" to "%phone%"', array('%phone%' => $phone, '%message%' => $message)), 'crmtext/message');
+
         return $message;
 
     }catch(Exception $e){
@@ -111,6 +113,8 @@ function crmtext_set_callback($url = null){
 
         crmtext_execute($ch, 'setcallback');
 
+        log_database(tr('Set callback to "%callback%"', array('%callback%' => $url)), 'crmtext/set_callback');
+
         return $url;
 
     }catch(Exception $e){
@@ -146,6 +150,8 @@ function crmtext_optin($phone, $lastname = '', $firstname = ''){
 
         $result = crmtext_execute($ch, 'optincustomer');
 
+        log_database(tr('Opt-in "%phone%"', array('%phone%' => $phone)), 'crmtext/optin');
+
         return $phone;
 
     }catch(Exception $e){
@@ -180,6 +186,8 @@ function crmtext_optout($phone, $lastname = '', $firstname = ''){
         curl_setopt($ch, CURLOPT_POSTFIELDS    , $postFields);
 
         $result = crmtext_execute($ch, 'optoutcustomer');
+
+        log_database(tr('Opt-out "%phone%"', array('%phone%' => $phone)), 'crmtext/optout');
 
         return $phone;
 
