@@ -75,16 +75,17 @@ function sms_get_conversation($phone_local, $phone_remote){
                                  FROM   `sms_conversations`
 
                                  WHERE  `phone_remote` = :phone_remote
-                                 AND    `phone_local` = :phone_local',
+                                 AND    `phone_local`  = :phone_local',
 
-                                 array(':phone_local' => $phone_local, ':phone_remote' => $phone_remote));
+                                 array(':phone_local'  => $phone_local,
+                                       ':phone_remote' => $phone_remote));
 
         if(!$conversation){
             /*
              * This phone combo has no conversation yet, create it now.
              */
             sql_query('INSERT INTO `sms_conversations` (`phone_local`, `phone_remote`)
-                       VALUES                             (:phone_local , :phone_remote )',
+                       VALUES                          (:phone_local , :phone_remote )',
 
                        array(':phone_local'  => $phone_local,
                              ':phone_remote' => $phone_remote));
@@ -232,7 +233,9 @@ function sms_full_phones($phones){
             /*
              * Assume this is a US phone, return with +1
              */
-            $phone = '+'.$_CONFIG['twilio']['defaults']['country_code'].$phone;
+            if(is_numeric($phone)){
+                $phone = '+'.$_CONFIG['twilio']['defaults']['country_code'].$phone;
+            }
         }
 
         return str_force($phones, ',');
