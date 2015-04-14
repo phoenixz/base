@@ -405,7 +405,7 @@ function blogs_validate_post(&$post, $blog, $params = null, $seoname = null){
 
         $v->isChecked  ($post['name']       , tr('Please provide the name of your %objectname%'     , '%objectname%', $params['object_name']));
         $v->isNotEmpty ($post['seocategory'], tr('Please provide a category for your %objectname%'  , '%objectname%', $params['object_name']));
-        $v->hasMinChars($post['name']       , 4, tr('Please ensure that the name has a minimum of 4 characters'));
+        $v->hasMinChars($post['name']       , 2, tr('Please ensure that the name has a minimum of 2 characters'));
 
         $category = blogs_validate_category($post['seocategory'], $blog, $params['categories_parent']);
 
