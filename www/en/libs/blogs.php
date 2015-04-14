@@ -403,9 +403,9 @@ function blogs_validate_post(&$post, $blog, $params = null, $seoname = null){
             $v->isNotEmpty ($post['body']                    , tr('Please provide the body text of your %objectname%', '%objectname%', $params['object_name']));
         }
 
-        $v->isChecked  ($post['name']       , tr('Please provide the name of your %objectname%'     , '%objectname%', $params['object_name']));
-        $v->isNotEmpty ($post['seocategory'], tr('Please provide a category for your %objectname%'  , '%objectname%', $params['object_name']));
-        $v->hasMinChars($post['name']       , 2, tr('Please ensure that the name has a minimum of 2 characters'));
+        $v->isChecked  ($post['name']          , tr('Please provide the name of your %objectname%'     , '%objectname%', $params['object_name']));
+        $v->isNotEmpty ($post['seocategory']   , tr('Please provide a category for your %objectname%'  , '%objectname%', $params['object_name']));
+        $v->hasMinChars($post['name']       , 1, tr('Please ensure that the name has a minimum of 1 character'));
 
         $category = blogs_validate_category($post['seocategory'], $blog, $params['categories_parent']);
 
@@ -429,7 +429,7 @@ function blogs_validate_post(&$post, $blog, $params = null, $seoname = null){
             $post['keywords']    = blogs_clean_keywords($post['keywords']);
             $post['seokeywords'] = blogs_seo_keywords($post['keywords']);
 
-            $v->hasMinChars($post['keywords'], 2, tr('Please ensure that the keywords have a minimum of 2 characters'));
+            $v->hasMinChars($post['keywords'], 1, tr('Please ensure that the keywords have a minimum of 1 character'));
             $v->isNotEmpty ($post['keywords'],    tr('Please provide keywords for your %objectname%', '%objectname%', $params['object_name']));
 
         }else{
