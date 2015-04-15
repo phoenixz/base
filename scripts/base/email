@@ -1,0 +1,104 @@
+#!/usr/bin/php
+<?php
+/*
+ * This is the email interface script
+ */
+$usage = "./scripts/base/email\n".
+         "./scripts/base/email option users USERS USERS ... [filter FILTER]\n";
+
+$help  = "This is the email interface script
+
+user | users            - The user email to scan. The user should either exist
+                          in the database, or be defined in the configuration
+                          file
+
+filter                  - Filter for certain email messages. Valid filters are:
+    ALL                 - return all messages matching the rest of the criteria
+    ANSWERED            - match messages with the \\ANSWERED flag set
+    BCC        [string] - match messages with [string] in the Bcc: field
+    BEFORE     [date]   - match messages with Date: before [date]
+    BODY       [string] - match messages with [string] in the body of the
+                          message
+    CC         [string] - match messages with [string] in the Cc: field
+    DELETED             - match deleted messages
+    FLAGGED             - match messages with the \\FLAGGED (sometimes referred
+                          to as Important or Urgent) flag set
+    FROM       [string] - match messages with [string] in the From: field
+    KEYWORD    [string] - match messages with [string] as a keyword
+    NEW                 - match new messages
+    OLD                 - match old messages
+    ON         [date]   - match messages with Date: matching [date]
+    RECENT              - match messages with the \\RECENT flag set
+    SEEN                - match messages that have been read (the \\SEEN flag
+                          is set)
+    SINCE      [date]   - match messages with Date: after [date]
+    SUBJECT    [string] - match messages with [string] in the Subject:
+    TEXT       [string] - match messages with text [string]
+    TO         [string] - match messages with [string] in the To:
+    UNANSWERED          - match messages that have not been answered
+    UNDELETED           - match messages that are not deleted
+    UNFLAGGED           - match messages that are not flagged
+    UNKEYWORD  [string] - match messages that do not have the keyword [string]
+    UNSEEN              - match messages which have not been read yet";
+
+require_once(dirname(__FILE__).'/../../libs/startup.php');
+
+cli_only();
+load_libs('email');
+
+$criteria = strtoupper(argument('filter', true, 'UNSEEN'));
+$users    = argument('users', true, argument('user', true));
+
+if(!$users){
+    throw new bException(tr('No users specified'), 'notspecified');
+}
+
+/*
+ * Validate filters
+ */
+if(!in_array($criteria, array('ALL', 'ANSWERED', 'DELETED', 'FLAGGED', 'NEW', 'OLD', 'RECENT', 'SEEN', 'UNANSWERED', 'UNDELETED', 'UNFLAGGED', 'UNSEEN'))){
+    if(!in_array(str_until($criteria, '='), array('BCC', 'BEFORE', 'BODY', 'CC', 'FROM', 'KEYWORD', 'ON', 'SINCE', 'SUBJECT', 'TEXT', 'TO', 'UNKEYWORD'))){
+        throw new bException(tr('Unknown filter "%filter%" specified', array('%filter%' => $criteria)), 'unknown');
+    }
+}
+
+switch(argument(0)){
+    case 'list':
+        $list = email_list($users, $criteria);
+        showdie($list);
+        break;
+
+    case 'poll':
+        if($criteria != 'UNSEEN'){
+//            throw new bException(tr('Invalid filter "%filter%" specified, polling can only happen on filter "UNSEEN"', array('%filter%' => $criteria)), 'invalid');
+        }
+
+        $count = 0;
+
+        foreach(email_list($users, $criteria) as $user){
+            foreach($user as $email){
+                $email = email_insert_message($email, 'received');
+                email_update_conversation($email, 'received');
+                $count++;
+            }
+        }
+
+        switch($count){
+            case 0:
+                log_console(tr('Added no new emails'), '', 'green');
+                break;
+
+            case 1:
+                log_console(tr('Added "1" new email'), '', 'green');
+                break;
+
+            default:
+                log_console(tr('Added "%count%" new emails', array('%count%' => $count)), '', 'green');
+        }
+
+        break;
+
+    default:
+        throw new bException(tr('Unknown argument "%argument%" specified', array('%argument%' => argument(0))), 'unknown');
+}
+?>

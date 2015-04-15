@@ -196,7 +196,7 @@ function array_from_object($object, $recurse = true){
                 $value = array_from_object($value, true);
             }
 
-            $retval['data'][$key] = $value;
+            $retval[$key] = $value;
         }
 
         return $retval;
