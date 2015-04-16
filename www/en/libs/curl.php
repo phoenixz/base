@@ -248,7 +248,7 @@ function curl_get($params, $referer = null, $post = false, $options = array()){
             if(isset_get($params['cookies'])){
                 if(!isset_get($params['cookie_file'])){
                     load_libs('file');
-                    $params['cookie_file'] = file_temp('cookies', '.txt', false);
+                    $params['cookie_file'] = file_temp();
                 }
 
                 $retval['cookie_file'] = $params['cookie_file'];

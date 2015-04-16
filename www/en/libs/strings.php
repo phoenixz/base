@@ -637,6 +637,15 @@ function str_is_version($source){
 
 
 /*
+ * Returns true if the specified source string contains HTML
+ */
+function str_is_html($source){
+  return !preg_match('/<[^<]+>/', $source);
+}
+
+
+
+/*
  * Return if specified source is a JSON string or not
  */
 function str_is_json($source){

@@ -383,16 +383,14 @@ function file_get_extension($filename){
 /*
  * Return a temporary filename for the specified file in the specified path
  */
-function file_temp($path = '', $filename = '', $usepid = true){
-    global $_CONFIG;
-
+function file_temp($filename = ''){
     try{
-        $base = str_until($filename, '.');
-        $ext  = str_from ($filename, '.');
+        if($filename){
+            file_ensure_path($path = TMP.($filename ? slash(getmypid().'_'.substr(uniqid(), 0, 8)) : ''));
+            return $path.$filename;
+        }
 
-        file_ensure_path($path = TMP.slash(($usepid ? getmypid().'_' : '').$path));
-
-        return tempnam($path, ($base ? $base.'_' : '')).($ext ? '.'.$ext : '');
+        return tempnam(TMP, PROJECT);
 
     }catch(Exception $e){
         throw new bException('file_temp(): Failed', $e);
@@ -1070,7 +1068,7 @@ function file_get_local($file){
          * First download the file to a temporary location
          */
         $orgfile = $file;
-        $file    = file_temp('', $file);
+        $file    = file_temp($file);
 
         file_ensure_path(dirname($file));
         file_put_contents($file, file_get_contents($orgfile));
