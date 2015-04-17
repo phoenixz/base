@@ -60,7 +60,7 @@ class bException extends Exception{
         }
 
         parent::__construct($orgmessage, null);
-        $this->code       = (string) $code;
+        $this->code       = str_log($code);
 
         /*
          * If there are any more messages left, then add them as well

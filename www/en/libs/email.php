@@ -46,20 +46,9 @@ function email_connect($username){
             return $connections[$username];
         }
 
-        if(empty($_CONFIG['email']['users'])){
-            /*
-             * Use database users
-             */
-//:TODO: Implement
+        $userdata = email_get_user($username, 'users');
 
-        }elseif(empty($_CONFIG['email']['users'][$username])){
-            /*
-             * Use configured users
-             */
-            throw new bException(tr('Specified username "%username%" does not exist', array('%username%' => str_log($username))), 'notexist');
-        }
-
-        $connections[$username] = imap_open($_CONFIG['email']['hostname'], $username, $_CONFIG['email']['users'][$username]['password'], null, 1, array('DISABLE_AUTHENTICATOR' => array('NTLM', 'GSSAPI')));
+        $connections[$username] = imap_open($_CONFIG['email']['imap'], $userdata['email'], $userdata['pass'], null, 1, array('DISABLE_AUTHENTICATOR' => array('NTLM', 'GSSAPI')));
 
         return $connections[$username];
 
@@ -395,22 +384,37 @@ function email_get_users_id($email){
  * Send a new email
  */
 function email_send($email){
+    global $_CONFIG;
+
     try{
         $mail = email_load_phpmailer();
+        $data = email_get_user($email['from']);
 
         $mail->IsSMTP(); // send via SMTP
-        $mail->SMTPAuth = true; // turn on SMTP authentication
-        $mail->Username = "username@gmail.com"; // SMTP username
-        $mail->Password = "password"; // SMTP password
+        $mail->SMTPAuth   = true; // turn on SMTP authentication
+        $mail->SMTPSecure = 'tls';
+show($email);
+showdie($data);
 
-        $email="username@domain.com"; // Recipients email ID
-        $name="name"; // Recipient's name
+        $mail->Host       = $_CONFIG['email']['smtp']['host'];
+        $mail->Port       = $_CONFIG['email']['smtp']['port'];
 
-        $mail->From     = $from;
-        $mail->FromName = "Webmaster";
-        $mail->AddReplyTo($webmaster_email,"Webmaster");
-        $mail->AddAddress($email,$name);
-        $mail->WordWrap = 50; // set word wrap
+        $mail->From       = $email['from'];
+        $mail->FromName   = $email['from_name'];
+        $mail->AddReplyTo($email['from'], $email['from_name']);
+
+        $mail->AddAddress($email['to'], isset_get($email['to_name']));
+
+//        $mail->WordWrap = 50; // set word wrap
+
+        if($data['is_alias']){
+            $mail->Username = $data['real']['email'];
+            $mail->Password = $data['real']['pass'];
+
+        }else{
+            $mail->Username = $data['email'];
+            $mail->Password = $data['pass'];
+        }
 
         if(empty($email['html'])){
             $mail->IsHTML(true);
@@ -421,8 +425,8 @@ function email_send($email){
             $mail->Body = $email['text'];
         }
 
-        $mail->Subject = "This is the subject";
-        $mail->AltBody = $email['html'];
+        $mail->Subject = $email['subject'];
+        $mail->AltBody = $email['text'];
 
         if(!empty($email['attachments'])){
             foreach(array_force($email['attachments']) as $attachment){
@@ -433,13 +437,8 @@ function email_send($email){
         }
 
         if(!$mail->Send()){
-            throw new bException();
+            throw new bException(tr('email_send(): Failed because "%error%"',  array('%error%' => $mail->ErrorInfo)), 'mailfail');
         }
-
-
-
-
-
 
     }catch(Exception $e){
         throw new bException('email_send(): Failed', $e);
@@ -451,7 +450,7 @@ function email_send($email){
 /*
  *
  */
-function email_from_list(){
+function email_from_list($subset = null){
     global $_CONFIG;
 
     try{
@@ -462,8 +461,24 @@ function email_from_list(){
 //:IMPLEMENT:
 
         }else{
-            $array = array_keys($_CONFIG['email']['users']);
-            return array_combine($array, $array);
+            switch($subset){
+                case 'aliases':
+                    $array = array_keys($_CONFIG['email']['aliases']);
+                    return array_combine($array, $array);
+
+                case 'users':
+                    $array = array_keys($_CONFIG['email']['users']);
+                    return array_combine($array, $array);
+
+                case '':
+                    $users   = array_keys($_CONFIG['email']['users']);
+                    $aliases = array_keys($_CONFIG['email']['aliases']);
+
+                    return array_merge(array_combine($aliases, $aliases), array_combine($users, $users));
+
+                default:
+                    throw new bException(tr('Unknown subset "%subset%" specified', array('%subset%' => $subset)), 'unknown');
+            }
         }
 
     }catch(Exception $e){
@@ -487,6 +502,10 @@ function email_from_exists($email){
 //:IMPLEMENT:
 
         }else{
+            if(!empty($_CONFIG['email']['aliases'][$email])){
+                return $_CONFIG['email']['aliases'][$email];
+            }
+
             return !empty($_CONFIG['email']['users'][$email]);
         }
 
@@ -502,7 +521,7 @@ function email_from_exists($email){
  */
 function email_load_phpmailer(){
     try{
-        if(!file_exists(ROOT.'/libs/ext/PHPMailer/class.phpmailer.php')){
+        if(!file_exists(ROOT.'/libs/ext/PHPMailer/PHPMailerAutoload.php')){
             log_console('email_load_phpmailer(): phpmailer not found, installing now', 'install');
 
             /*
@@ -518,7 +537,7 @@ function email_load_phpmailer(){
             safe_exec('rm '.$path.' -rf ');
         }
 
-        load_libs('ext/PHPMailer/class.phpmailer');
+        load_libs('ext/PHPMailer/PHPMailerAutoload');
 
         return new PHPMailer();
 
@@ -550,6 +569,22 @@ function email_validate($email){
 
         $email['date'] = date('Y-m-d H:i:s');
 
+        if(strpos($email['to'], '<') !== false){
+            $email['to_name'] = trim(str_until($email['to'], '<'));
+            $email['to']      = trim(str_cut($email['to'], '<', '>'));
+
+        }else{
+            $email['to_name'] = '';
+        }
+
+        if(strpos($email['from'], '<') !== false){
+            $email['from_name'] = trim(str_until($email['to'], '<'));
+            $email['from']      = trim(str_cut($email['to'], '<', '>'));
+
+        }else{
+            $email['from_name'] = '';
+        }
+
         if(str_is_html($email['body'])){
             $email['html'] = $email['body'];
             $email['text'] = strip_tags($email['body']);
@@ -562,6 +597,66 @@ function email_validate($email){
 
     }catch(Exception $e){
         throw new bException('email_validate(): Failed', $e);
+    }
+}
+
+
+
+/*
+ * Return userdata for the specified username
+ */
+function email_get_user($email, $subset = null){
+    global $_CONFIG;
+
+    try{
+        /*
+         * Ensure we have only email address
+         */
+        if(strpos($email, '<') !== false){
+            $email = str_cut($email, '<', '>');
+        }
+
+        if(empty($_CONFIG['email']['users'])){
+            /*
+             * Use database users
+             */
+//:TODO: Implement
+
+        }else{
+            /*
+             * Use configured users
+             */
+            if(!empty($_CONFIG['email']['users'][$email]) and (!$subset or ($subset === 'users'))){
+                $user             = $_CONFIG['email']['users'][$email];
+                $user['is_alias'] = false;
+
+            }elseif(!empty($_CONFIG['email']['aliases'][$email]) and (!$subset or ($subset === 'aliases'))){
+                $user = $_CONFIG['email']['aliases'][$email];
+
+                if(empty($_CONFIG['email']['users'][$user['realmail']])){
+                    /*
+                     * This alias has a realmail that does not exist
+                     */
+                    throw new bException(tr('email_get_user(): The email alias "%email%" has a realmail "%realmail%" that does not exist in subset "%subset%"', array('%email%' => $email, '%realmail%' => $user['realmail'], '%subset%' => $subset)), 'invalid');
+                }
+
+                $user['is_alias']      = true;
+                $user['real']          = $_CONFIG['email']['users'][$user['realmail']];
+                $user['real']['email'] = $user['realmail'];
+
+                unset($user['realmail']);
+
+            }else{
+                throw new bException(tr('email_get_user(): Specified username "%username%" does not exist in subset "%subset%"', array('%username%' => str_log($email), '%subset%' => $subset)), 'notexist');
+            }
+        }
+
+        $user['email'] = $email;
+
+        return $user;
+
+    }catch(Exception $e){
+        throw new bException(tr('email_get_user(): Failed'), $e);
     }
 }
 ?>
