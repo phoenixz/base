@@ -13,7 +13,19 @@
  *
  */
 function c_page($params, $meta, $html){
-    return c_html_header($params, $meta).$html.c_html_footer();
+    try{
+        if($page = cache_read()){
+            http_headers($params);
+            return $page;
+        }
+
+        $page = c_html_header($params, $meta).$html.c_html_footer();
+
+        return cache_write($page);
+
+    }catch(Exception $e){
+        throw new bException('c_page(): Failed', $e);
+    }
 }
 
 
