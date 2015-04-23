@@ -150,92 +150,93 @@ function http_get_to_post($keys, $overwrite = true){
 
 
 
-/*
- * Return status message for specified code
- */
-function http_status_message($code){
-    static $messages = array(  0 => 'Nothing',
-                             200 => 'OK',
-                             304 => 'Not Modified',
-                             400 => 'Bad Request',
-                             401 => 'Unauthorized',
-                             403 => 'Forbidden',
-                             404 => 'Not Found',
-                             406 => 'Not Acceptable',
-                             500 => 'Internal Server Error',
-                             502 => 'Bad Gateway',
-                             503 => 'Service Unavailable');
-
-    if(!is_numeric($code) or ($code < 0) or ($code > 1000)){
-        throw new bException('http_status_message(): Invalid code "'.str_log($code).'" specified');
-    }
-
-    if(!isset($messages[$code])){
-        throw new bException('http_status_message(): Specified code "'.str_log($code).'" is not supported');
-    }
-
-    return $messages[$code];
-}
+//:OBSOLETE: Use http_response_code() instead
+///*
+// * Return status message for specified code
+// */
+//function http_status_message($code){
+//    static $messages = array(  0 => 'Nothing',
+//                             200 => 'OK',
+//                             304 => 'Not Modified',
+//                             400 => 'Bad Request',
+//                             401 => 'Unauthorized',
+//                             403 => 'Forbidden',
+//                             404 => 'Not Found',
+//                             406 => 'Not Acceptable',
+//                             500 => 'Internal Server Error',
+//                             502 => 'Bad Gateway',
+//                             503 => 'Service Unavailable');
+//
+//    if(!is_numeric($code) or ($code < 0) or ($code > 1000)){
+//        throw new bException('http_status_message(): Invalid code "'.str_log($code).'" specified');
+//    }
+//
+//    if(!isset($messages[$code])){
+//        throw new bException('http_status_message(): Specified code "'.str_log($code).'" is not supported');
+//    }
+//
+//    return $messages[$code];
+//}
 
 
 
 /*
  * Send HTTP header for the specified code
  */
-function http_headers($params){
+function http_headers($params = null){
+    global $_CONFIG;
+
     try{
         array_params($params, 'http_code');
         array_default($params, 'http_code', 200);
+        array_default($params, 'cors'     , '');
 
         http_response_code($params['http_code']);
 
+        $headers = array();
+
         if($params['http_code'] == 200){
-            header('Last-Modified: '.gmdate('r', filemtime($_SERVER['SCRIPT_FILENAME'])));
-//            header('Last-Modified: '.gmdate('D, d M Y H:i:s', filemtime($_SERVER['SCRIPT_FILENAME'])).' GMT', true, 200);
+            $headers[] = 'Last-Modified: '.gmdate('D, d M Y H:i:s', filemtime($_SERVER['SCRIPT_FILENAME'])).' GMT';
+
+//            $headers[] = 'Last-Modified: '.gmdate('D, d M Y H:i:s', filemtime($_SERVER['SCRIPT_FILENAME'])).' GMT', true, 200;
         }
+
+        if($_CONFIG['cors'] or $params['cors']){
+            /*
+             * Add CORS / Access-Control-Allow-Origin header
+             */
+            $headers[] = 'Access-Control-Allow-Origin: '.($_CONFIG['cors'] ? str_ends($_CONFIG['cors'], ',') : '').$params['cors'];
+        }
+
+        $headers[] = 'Content-Type: text/html; charset='.$_CONFIG['charset'];
+        $headers   = http_cache($params, $headers);
+
+        /*
+         * Remove incorrect headers
+         */
+        header_remove('X-Powered-By');
+        header_remove('Expires');
+        header_remove('Pragma');
+
+        /*
+         * Set correct headers
+         */
+        foreach($headers as $header){
+            header($header);
+        }
+
+        if(strtoupper($_SERVER['REQUEST_METHOD']) == 'HEAD'){
+            /*
+             * HEAD request, do not return a body
+             */
+            die();
+        }
+
+        return true;
 
     }catch(Exception $e){
         throw new bException('http_headers(): Failed', $e);
     }
-}
-
-
-
-/*
- * Send all HTTP heaers for the required data
- */
-function http_start($params){
-    global $_CONFIG;
-
-    array_params($params, 'type');
-    array_default($params, 'type', 'html');
-    array_default($params, 'cors', '');
-
-    switch($params['type']){
-        case 'html':
-            header('Content-Type: text/html; charset='.$_CONFIG['charset']);
-
-            if($_CONFIG['cors'] or $params['cors']){
-                /*
-                 * Add CORS / Access-Control-Allow-Origin header
-                 */
-                header('Access-Control-Allow-Origin: '.($_CONFIG['cors'] ? str_ends($_CONFIG['cors'], ',') : '').$params['cors']);
-            }
-
-            break;
-
-        default:
-            throw new bException('http_start(): Unknown type "'.str_log($type).'" specified');
-    }
-}
-
-
-
-/*
- * Depreciated, HTTP codes are now sent by http_headers()
- */
-function http_header(){
-    throw new bException('http_header() is no longer supported, set the http_code in html_header($params) which will send it to http_headers()', 'depreciated');
 }
 
 
@@ -309,6 +310,82 @@ function http_build_url($url, $query){
 
     }catch(Exception $e){
         throw new bException('http_build_url(DEPRECIATED): Failed', $e);
+    }
+}
+
+
+
+/*
+ * Return HTTP caching headers
+ *
+ * Returns headers Cache-Control and ETag
+ *
+ * For more information, see https://developers.google.com/speed/docs/insights/LeverageBrowserCaching
+ * and https://developers.google.com/web/fundamentals/performance/optimizing-content-efficiency/http-caching
+ */
+function http_cache($params, $headers){
+    global $_CONFIG;
+
+    try{
+        if($_CONFIG['cache']['http']['enabled']){
+            $etag = sha1(PROJECT.$_SERVER['SCRIPT_FILENAME'].filemtime($_SERVER['SCRIPT_FILENAME']).isset_get($params['etag']));
+
+            if(!empty($GLOBALS['page_is_admin'])){
+                array_default($params, 'visibility', 'private');
+
+            }else{
+                array_default($params, 'visibility', 'public');
+            }
+
+            array_default($params, 'policy', $_CONFIG['cache']['http']['max_age']);
+
+            switch($params['policy']){
+                case 'no-store':
+                    // FALLTHROUGH
+                case 'no-cache':
+                    break;
+
+                default:
+                    if(!is_numeric($params['policy']) or !is_natural_number($params['policy'])){
+                        throw new bException(tr('http_cache(): Invalid policy "%policy%" specified. Use either "no-cache", "no-store", or a natural number', array('%policy%' => $params['policy'])), '');
+                    }
+
+                    $params['policy'] = 'max-age='.$params['policy'];
+            }
+
+            if((strtotime(isset_get($_SERVER['HTTP_IF_MODIFIED_SINCE'])) == filemtime($_SERVER['SCRIPT_FILENAME'])) or trim(isset_get($_SERVER['HTTP_IF_NONE_MATCH']), '') == $etag) {
+                if($params['policy'] == 'no-store'){
+                    /*
+                     * Client somehow sent matching etag, but yet this page has a
+                     * no-store policy and should never be cached. Ignore this etag
+                     * and send the page as normal.
+                     */
+
+                }else{
+                    /*
+                     * The client sent an etag which is still valid, no body (or anything else) necesary
+                     */
+// :TODO: Check if http_response_code(304) is good enough, or if header("HTTP/1.1 304 Not Modified") is required
+//                header("HTTP/1.1 304 Not Modified");
+
+// :TODO: Should the next lines be deleted or not? Investigate if 304 should again return the etag or not
+//                header('Cache-Control: '.$params['visibility'].', '.$params['policy']);
+//                header('ETag: "'.$etag.'"');
+                    http_response_code(304);
+                    die();
+                }
+            }
+
+            $headers[] = 'Cache-Control: '.$params['visibility'].', '.$params['policy'];
+            $headers[] = 'DTag: "'.$etag.'"';
+            $headers[] = 'ETag: "'.$etag.'"';
+            $headers[] = 'FTag: "'.$etag.'"';
+        }
+
+        return $headers;
+
+    }catch(Exception $e){
+        throw new bException('http_cache(): Failed', $e);
     }
 }
 ?>

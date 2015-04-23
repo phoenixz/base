@@ -1421,6 +1421,57 @@ function file_mode_readable($mode){
 
 
 /*
+ * Calculate either the total size of the tree under the specified path, or the amount of files (directories not included in count)
+ * @$method (string) either "size" or "count", the required value to return
+ */
+function file_tree($path, $method){
+    try{
+        if(!file_exists($path)){
+            throw new bException(tr('file_tree(): Specified path "%path%" does not exist', array('%path%' => str_log($path))), 'notexist');
+        }
+
+        switch($method){
+            case 'size':
+                // FALLTHROUGH
+            case 'count':
+                break;
+
+            default:
+                throw new bException(tr('file_tree(): Unknown method "%method%" specified', array('%method%' => str_log($method))), 'unknown');
+        }
+
+        $retval = 0;
+        $path   = slash($path);
+
+        foreach(scandir($path) as $file){
+            if(($file == '.') or ($file == '..')) continue;
+
+            if(is_dir($path.$file)){
+                $retval += file_tree($path.$file, $method);
+
+            }else{
+                switch($method){
+                    case 'size':
+                        $retval += filesize($path.$file);
+                        break;
+
+                    case 'count':
+                        $retval++;
+                        break;
+                }
+            }
+        }
+
+        return $retval;
+
+    }catch(Exception $e){
+        throw new bException('file_tree(): Failed', $e);
+    }
+}
+
+
+
+/*
  * Below are obsolete wrapper functions, that should no longer be used
  */
 function listdir($path = '.', $recursive = true) {

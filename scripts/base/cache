@@ -1,37 +1,87 @@
 #!/usr/bin/php
 <?php
 /*
- * This script can be used th access various cache functions
+ * This script can be used to access various cache functions
  */
+$usage = "./scripts/base/cache clear [key KEY] [namespace NAMESPACE]\n".
+         "./scripts/base/cache size (SOON!)\n".
+         "./scripts/base/cache files (SOON!)\n".
+         "./scripts/base/cache find (SOON!)\n";
+
+$help  = "The deploy script can deploy the project to target environments, like trial, production, etc.
+This is the project deploy script
+
+ARGUMENTS
+
+clear                       - Clear the complete cache
+
+clear [key KEY]             - Clear the specified key from the cache
+
+clear [namespace NAMESPACE] - Clear the specified namespace from the cache
+
+size                        - Returns the total size of cache in use
+
+count                       - Returns the total amount of objects cache
+
+files                       - Alias for count
+
+info                        - Return both size and count information
+";
+
 require_once(dirname(__FILE__).'/../../libs/startup.php');
 
+switch(argument(0)){
+    case 'clear':
+        /*
+         * Clear the cache
+         */
+        $key       = argument('key');
+        $namespace = argument('namespace');
 
-try{
-    foreach($argv as $arg){
-        switch($arg){
-            case 'clear':
-                /*
-                 * Clear the cache
-                 */
-                log_console('cache: Clearing cache', 'cache/clear');
-                cache_clear();
+        cache_clear($key, $namespace);
+        log_console('Cleared cache', '', 'green');
+        break;
+
+    case 'size':
+        $size = cache_size();
+        log_console(tr('The cache is "%size%" large', array('%size%' => bytes($size))), '', 'white');
+        break;
+
+    case 'count':
+        // FALLTHROUGH
+    case 'files':
+        $count = cache_count();
+        log_console(tr('The cache contains "%count%" objects', array('%count%' => $count)), '', 'white');
+        break;
+
+    case 'info':
+        $size   = cache_size();
+        $count  = cache_count();
+        $method = $_CONFIG['cache']['method'];
+
+        log_console(tr('The cache contains "%count%" objects, and is "%size%" large', array('%count%' => $count, '%size%' => bytes($size))), '', 'white');
+
+        switch($method){
+            case 'file':
+                log_console(tr('The cache is using the filesystem for storage'), '', 'white');
+                log_console(tr('The cache directory is "'.ROOT.'data/cache"')  , '', 'white');
                 break;
 
-            case 'size':
-// :TODO: Implement
+            case 'memcached':
+                log_console(tr('The cache is using memcached for storage'), '', 'white');
                 break;
 
-            case 'files':
-// :TODO: Implement
-                break;
-
-            case 'find':
-// :TODO: Implement
-                break;
+            default:
+                throw new bException('Unknown cache method "'.str_log($_CONFIG['cache']['method']).'" configured in $_CONFIG[cache][method]', 'unknown');
         }
-    }
 
-}catch(Exception $e){
-    throw new bException('scripts/cache: Failed', $e);
+        break;
+
+    case 'find':
+// :TODO: Implement
+        break;
+
+    default:
+        throw new bException(tr('Unknown argument "%argument%" specified', array('%argument%' => argument(0))), 'unknown');
 }
 ?>

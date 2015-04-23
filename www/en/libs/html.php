@@ -12,7 +12,7 @@
  * Only allow execution on shell scripts
  */
 function html_only(){
-    if(PLATFORM != 'apache'){
+    if(PLATFORM != 'http'){
         throw new bException('html_only(): This can only be done over HTML', 'htmlonly');
     }
 }
@@ -354,15 +354,17 @@ function html_header($params = null, $meta = array()){
 
     try{
         array_params($params, 'title');
-        array_default($params, 'http'     , 'html');
-        array_default($params, 'doctype'  , 'html');
-        array_default($params, 'html'     , 'html');
-        array_default($params, 'body'     , '<body>');
-        array_default($params, 'title'    , null);
-        array_default($params, 'meta'     , $meta);
-        array_default($params, 'link'     , array());
-        array_default($params, 'extra'    , '');
-        array_default($params, 'favicon'  , true);
+        array_default($params, 'http'          , 'html');
+        array_default($params, 'doctype'       , 'html');
+        array_default($params, 'html'          , 'html');
+        array_default($params, 'body'          , '<body>');
+        array_default($params, 'title'         , null);
+        array_default($params, 'meta'          , $meta);
+        array_default($params, 'link'          , array());
+        array_default($params, 'extra'         , '');
+        array_default($params, 'favicon'       , true);
+        array_default($params, 'prefetch_dns'  , $_CONFIG['prefetch']['dns']);
+        array_default($params, 'prefetch_files', $_CONFIG['prefetch']['files']);
 
         if(!empty($params['js'])){
             html_load_js($params['js']);
@@ -398,13 +400,30 @@ function html_header($params = null, $meta = array()){
 
         $params['title'] = html_title($params['title']);
 
-        $retval = http_headers($params).
-                  "<!DOCTYPE ".$params['doctype'].">\n".
+        if(!http_headers($params)){
+            /*
+             * Do not return a response body
+             */
+            return false;
+        }
+
+        $retval = "<!DOCTYPE ".$params['doctype'].">\n".
                   "<".$params['html'].">\n".
                   "<head>\n".
                   "<meta http-equiv=\"Content-Type\" content=\"text/html;charset=".$_CONFIG['charset']."\">\n".
-                  "<title>".$params['title']."</title>\n".
-                      html_generate_css().
+                  "<title>".$params['title']."</title>\n";
+
+        foreach($params['prefetch_dns'] as $prefetch){
+            $retval .= '<link rel="dns-prefetch" href="//'.$prefetch."\">\n";
+        }
+
+        foreach($params['prefetch_files'] as $prefetch){
+            $retval .= '<link rel="prefetch" href="'.$prefetch."\">\n";
+        }
+
+        unset($prefetch);
+
+        $retval .=    html_generate_css().
                       html_generate_js();
 
         /*
@@ -438,11 +457,6 @@ function html_header($params = null, $meta = array()){
             if(!empty($_CONFIG['mobile']['viewport'])){
                 $retval .= $_CONFIG['mobile']['viewport']."\n";
             }
-        }
-
-        if($params['http']){
-            load_libs('http');
-            http_start($params['http']);
         }
 
         return $retval."</head>\n".
@@ -525,7 +539,7 @@ function html_flash($messages = '', $type = 'info', $basicmessage = null){
     global $_CONFIG;
 
     try{
-        if(PLATFORM != 'apache'){
+        if(PLATFORM != 'http'){
             throw new bException('html_flash(): This function can only be executed on a webserver!');
         }
 
@@ -1008,7 +1022,7 @@ function html_favicon($icon = null, $mobile_icon = null, $sizes = null, $precomp
                     $params['icon'] = $_CONFIG['root'].'/pub/img'.(SUBENVIRONMENTNAME ? '/'.SUBENVIRONMENTNAME : '').'/favicon.png';
                 }
 
-                return '<link rel="shortcut icon" type="image/x-icon"'.($sizes ? ' sizes="'.$sizes.'"' : '').'  href="'.$params['icon'].'" />';
+                return '<link rel="icon" type="image/x-icon"'.($sizes ? ' sizes="'.$sizes.'"' : '').'  href="'.$params['icon'].'" />';
             }
         }
 

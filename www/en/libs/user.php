@@ -176,7 +176,7 @@ function user_authenticate($username, $password) {
         /*
          * Apply IP locking system
          */
-        if($_CONFIG['security']['signin']['ip_lock'] and (PLATFORM == 'apache')){
+        if($_CONFIG['security']['signin']['ip_lock'] and (PLATFORM == 'http')){
             include(dirname(__FILE__).'/handlers/user_ip_lock.php');
         }
 
@@ -235,7 +235,7 @@ function user_signin($user, $extended = false, $redirect = '/') {
          * HTTP signin requires cookie support and an already active session!
          * Shell signin requires neither
          */
-        if((PLATFORM == 'apache') and (empty($_COOKIE) or !session_id())){
+        if((PLATFORM == 'http') and (empty($_COOKIE) or !session_id())){
             throw new bException('user_signin(): This user has no active session or no session id, so probably has no cookies', 'cookiesrequired');
         }
 
@@ -260,7 +260,7 @@ function user_signin($user, $extended = false, $redirect = '/') {
             }
         }
 
-        if($redirect and (PLATFORM == 'apache')){
+        if($redirect and (PLATFORM == 'http')){
             session_redirect('http', $redirect);
         }
 

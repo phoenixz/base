@@ -35,8 +35,10 @@ $_CONFIG['bootstrap']           = array('enabled'         => false,
 
 //
 $_CONFIG['cache']              = array('method'           => 'file',                                        // "file", "memcached" or false.
-                                       'key_hash'         => 'md5',
-                                       'key_interlace'    => 4);
+                                       'key_hash'         => 'sha1',
+                                       'key_interlace'    => 3,
+                                       'http'             => array('enabled'        => true,                // Enable HTTP cache or not
+                                                                   'max_age'        => 604800));            // Default max-age is one week
 
 // CDN configuration
 $_CONFIG['cdn']                = array('min'              => true,                                          // If set to "true" all CSS and JS files loaded with html_load_js() and html_load_css() will be loaded as file.min.js instead of file.js. Use "true" in production environment, "false" in all other environments
@@ -156,7 +158,7 @@ $_CONFIG['imagemagic_convert'] = '/usr/bin/convert';                            
 
 // Init configuration
 $_CONFIG['init']               = array('shell'            => true,                                          // Sets if system init can be executed by shell
-                                       'apache'           => false);                                        // Sets if system init can be executed by www (IMPORTANT: This is not supported yet!)
+                                       'http'             => false);                                        // Sets if system init can be executed by http (IMPORTANT: This is not supported yet!)
 
 // jQuery UI configuration
 $_CONFIG['jquery-ui']          = array('theme'            => 'smoothness');                                 // Sets the default UI theme for jquery-ui
@@ -230,8 +232,14 @@ $_CONFIG['paypal']             = array('version'          => 'sandbox',         
                                                                    'api-password'  => '',
                                                                    'api-signature' => ''));
 
-$_CONFIG['plans']              = array('silver' => null,
-                                       'gold'   => null);
+$_CONFIG['plans']              = array('silver'           => null,
+                                       'gold'             => null);
+
+// Prefetch
+$_CONFIG['prefetch']           = array('dns'              => array('facebook.com',
+                                                                   'twitter.com'),
+
+                                       'files'            => array());
 
 //domain
 $_CONFIG['protocol']           = 'http://';                                                                 // The base protocol of this website. Basically either "http://",  or "https://".

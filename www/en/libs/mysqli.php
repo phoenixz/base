@@ -21,7 +21,7 @@ function sql_query($sql) {
 
     $body = "errno     : ".mysqli_errno($_CONFIG['dbconnection'])."
              errortext : ".mysqli_error($_CONFIG['dbconnection'])."
-             query     : ".(PLATFORM == 'apache' ? "<b>".$sql."</b>" : $sql)."
+             query     : ".(PLATFORM == 'http' ? "<b>".$sql."</b>" : $sql)."
              date      : ".date('d m y h:i:s')."\n";
 
     if(isset($_SESSION)) {

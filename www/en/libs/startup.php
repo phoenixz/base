@@ -16,7 +16,7 @@
 /*
  * Framework version
  */
-define('FRAMEWORKCODEVERSION', '0.21.0');
+define('FRAMEWORKCODEVERSION', '0.22.0');
 
 
 /*
@@ -44,7 +44,7 @@ include_once(ROOT.'config/project.php');
 /*
  * Check what platform we're in
  */
-define('PLATFORM', isset($_SERVER['SHELL']) ? 'shell' : 'apache');
+define('PLATFORM', isset($_SERVER['SHELL']) ? 'shell' : 'http');
 
 
 if((PLATFORM == 'shell') and (count($argv) > 1)){
@@ -284,9 +284,9 @@ try{
         }
 
         switch(PLATFORM){
-            case 'apache':
+            case 'http':
                 /*
-                 * Start for apache
+                 * Start for HTTP
                  *
                  * Set some base parameters
                  */
@@ -560,7 +560,7 @@ try{
     /*
      * http specific post processing
      */
-    if(PLATFORM == 'apache'){
+    if(PLATFORM == 'http'){
         /*
          * New session?
          */
@@ -573,7 +573,7 @@ try{
 
 
         /*
-         * Apache specific stuff
+         * HTTP specific stuff
          */
         // :TODO: Replace this with only one global variable.
         $GLOBALS['page_is_mobile'] = false;
@@ -598,8 +598,13 @@ try{
         if(substr($_SERVER['PHP_SELF'], 0, 7) == '/admin/'){
             /*
              * This is an admin page
+             * Disabled all caching (both server side, and HTTP) for admin pages
              */
-            $GLOBALS['page_is_admin'] = true;
+            $GLOBALS['page_is_admin']               = true;
+
+            $_CONFIG['cache']['method']             = false;
+            $_CONFIG['cache']['http']['enabled']    = false;
+
             load_config('admin');
             load_libs('custom_admin');
             restore_post();

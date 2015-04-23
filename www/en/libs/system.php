@@ -411,7 +411,7 @@ throw new bException('log_message(): DEVELOPMENT FIX! This exception is here to 
             }
         }
 
-        if(PLATFORM == 'apache'){
+        if(PLATFORM == 'http'){
             error_log($message);
         }
 
@@ -428,7 +428,7 @@ throw new bException('log_message(): DEVELOPMENT FIX! This exception is here to 
 
 
 /*
- * Log specified message to screen (console or apache)
+ * Log specified message to screen (console or http)
  */
 function log_screen($message, $type = 'info', $color = null){
     static $last;

@@ -2,7 +2,7 @@
 try{
     global $_CONFIG;
 
-    if(PLATFORM != 'apache'){
+    if(PLATFORM != 'http'){
         throw new bException('redirect(): This function can only be called on webservers');
     }
 

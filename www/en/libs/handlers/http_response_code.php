@@ -155,8 +155,6 @@ function http_response_code($code = 200){
             throw bException(tr('http_response_code(): Unknown http status code "%code%"', array('%code%' => htmlentities($code))));
     }
 
-    header((isset($_SERVER['SERVER_PROTOCOL']) ? $_SERVER['SERVER_PROTOCOL'] : 'HTTP/1.0'). ' ' . $code . ' ' . $text);
-
-    return $code;
+    return (isset($_SERVER['SERVER_PROTOCOL']) ? $_SERVER['SERVER_PROTOCOL'] : 'HTTP/1.0').' '.$code.' '.$text;
 }
 ?>

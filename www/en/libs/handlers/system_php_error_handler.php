@@ -1,7 +1,7 @@
 <?php
 notify('error', 'PHP ERROR ['.$errno.'] "'.$errstr.'" in "'.$errfile.'@'.$errline.'"');
 
-if(PLATFORM == 'apache'){
+if(PLATFORM == 'http'){
     error_log('PHP ERROR ['.$errno.'] "'.$errstr.'" in "'.$errfile.'@'.$errline.'"');
 }
 

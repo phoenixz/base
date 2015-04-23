@@ -249,6 +249,9 @@ if($noinit){
     }
 }
 
+load_libs('cache');
+cache_clear();
+
 log_console('Finished!', 'sync', 'green');
 
 

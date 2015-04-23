@@ -20,7 +20,7 @@ function mobile_detect(){
 // :DEBUG:SVEN:20121005: Uncomment next line to force recognize as mobile
 //$_SESSION['mobile'] = 'iphone';
 
-	if(PLATFORM != 'apache'){
+	if(PLATFORM != 'http'){
 		$_SESSION['mobile'] = false;
 		return false;
 	}

@@ -37,18 +37,26 @@ switch($_CONFIG['cache']['method']){
 /*
  * Read from cache
  */
-function cache_read($key){
+function cache_read($key = null, $group = null){
     global $_CONFIG;
 
     try{
+        if(!$key){
+            $key = $_SERVER['REQUEST_URI'];
+        }
+
         $key = cache_key_hash($key);
 
         switch($_CONFIG['cache']['method']){
             case 'file':
-                return cache_read_file($key);
+                return cache_read_file($key, $group);
 
             case 'memcached':
-                return mc_get($key);
+                if($group){
+                    $group = unslash($group);
+                }
+
+                return mc_get($key, $group);
 
             case false:
                 /*
@@ -70,9 +78,13 @@ function cache_read($key){
 /*
  * Read from cache file
  */
-function cache_read_file($key){
+function cache_read_file($key, $group = null){
     try{
-        if(!file_exists($file = ROOT.'data/cache/'.$key)){
+        if($group){
+            $group = slash($group);
+        }
+
+        if(!file_exists($file = ROOT.'data/cache/'.$group.$key)){
             return false;
         }
 
@@ -88,18 +100,22 @@ function cache_read_file($key){
 /*
  * Read to cache
  */
-function cache_write($key, $value, $expire = null){
+function cache_write($value, $key = null, $group = null, $expire = null){
     global $_CONFIG;
 
     try{
+        if(!$key){
+            $key = $_SERVER['REQUEST_URI'];
+        }
+
         $key = cache_key_hash($key);
 
         switch($_CONFIG['cache']['method']){
             case 'file':
-                return cache_write_file($key, $value);
+                return cache_write_file($value, $key, $group);
 
             case 'memcached':
-                return mc_put($key, $value, $expire);
+                return mc_put($value, $key, $group, $expire);
 
             case false:
                 /*
@@ -108,7 +124,7 @@ function cache_write($key, $value, $expire = null){
                 return $value;
 
             default:
-                throw new bException('cache_write(): Unknown cache method "'.str_log($_CONFIG['cache']['method']).'" specified', 'unknown');
+                throw new bException('cache_write(): Unknown cache method "'.str_log($_CONFIG['cache']['method']).'" configured in $_CONFIG[cache][method]', 'unknown');
         }
 
     }catch(Exception $e){
@@ -121,9 +137,13 @@ function cache_write($key, $value, $expire = null){
 /*
  * Write to cache file
  */
-function cache_write_file($key, $value){
+function cache_write_file($value, $key, $group = null){
     try{
-        $file = ROOT.'data/cache/'.$key;
+        if($group){
+            $group = slash($group);
+        }
+
+        $file = ROOT.'data/cache/'.$group.$key;
 
         file_ensure_path(dirname($file));
         file_put_contents($file, $value);
@@ -158,6 +178,9 @@ function cache_key_hash($key){
             case 'sha1':
                 $key = sha1($key);
                 break;
+
+            default:
+                throw new bException(tr('Unknown key hash "%hash%" configured in $_CONFIG[hash][key_hash]', array('%hash%' => $_CONFIG['cache']['key_hash'])), 'unknown');
         }
 
         if($_CONFIG['cache']['key_interlace']){
@@ -177,31 +200,52 @@ function cache_key_hash($key){
 
 
 /*
- * Clear the entire cache
+ *
  */
-function cache_clear(){
-    global $_CONFIG;
-
+function cache_showpage($key = null, $namespace = 'htmlpage', $die = true){
     try{
-        switch($_CONFIG['cache']['method']){
-            case 'file':
-                /*
-                 * Delete all cache files
-                 */
-                break;
+        if($key === null){
+            $key = $_SERVER['REQUEST_URI'];
+        }
 
-            case 'memcached':
-                /*
-                 * Clear all keys from memcached
-                 */
-                break;
+        if($page = cache_read($key, $namespace)){
+            http_headers();
+            echo $page;
 
-            default:
-                throw new bException('cache_clear(): Unknown cache method "'.str_log($_CONFIG['cache']['method']).'" specified', 'unknown');
+            if($die){
+                die();
+            }
         }
 
     }catch(Exception $e){
-        throw new bException('cache_clear(): Failed', $e);
+        throw new bException('cache_showpage(): Failed', $e);
     }
+}
+
+
+
+/*
+ * Clear the entire cache
+ */
+function cache_clear($key = null, $group = null){
+    include('handlers/cache_clear.php');
+}
+
+
+
+/*
+ * Return the total size of the cache
+ */
+function cache_size(){
+    return include('handlers/cache_size.php');
+}
+
+
+
+/*
+ * Return the total amount of files currently in cache
+ */
+function cache_count(){
+    return include('handlers/cache_count.php');
 }
 ?>

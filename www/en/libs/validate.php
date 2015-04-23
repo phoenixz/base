@@ -750,7 +750,7 @@ class validate_form {
 
         if($separator){
             if($separator === true){
-                if(PLATFORM == 'apache'){
+                if(PLATFORM == 'http'){
                     $separator = '<br />';
 
                 }else{

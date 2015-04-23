@@ -136,6 +136,13 @@ function init($projectfrom = null, $frameworkfrom = null){
                 log_console('Starting '.$init.' for "'.$_CONFIG['name'].'" using PHP "'.phpversion().'"', 'init', 'white');
             }
 
+            /*
+             * Clear all cache
+             */
+            load_libs('cache');
+            cache_clear();
+            log_console(tr('Cleared cache'), 'clear', 'green');
+
             define('INITPATH', slash(realpath(ROOT.'init')));
 
             $versions = array('framework' => $codeversions['FRAMEWORK'],
@@ -336,7 +343,7 @@ function init_process_version_diff(){
         }
     }
 
-    if((PLATFORM == 'apache') or !argument('noversioncheck')){
+    if((PLATFORM == 'http') or !argument('noversioncheck')){
         throw new bException(tr('init_process_version_diff(): Please run the init script because "'.str_log($versionerror).'"'), 'doinit');
     }
 }

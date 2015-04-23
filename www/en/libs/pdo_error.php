@@ -210,7 +210,7 @@ function pdo_error($e, $query, $execute, $sql = null){
                         $body = "SQL STATE ERROR : \"".$error[0]."\"\n".
                                 "DRIVER ERROR    : \"".$error[1]."\"\n".
                                 "ERROR MESSAGE   : \"".$error[2]."\"\n".
-                                "query           : \"".(PLATFORM == 'apache' ? "<b>".str_log($query, 4096)."</b>" : str_log($query, 4096))."\"\n".
+                                "query           : \"".(PLATFORM == 'http' ? "<b>".str_log($query, 4096)."</b>" : str_log($query, 4096))."\"\n".
                                 "date            : \"".date('d m y h:i:s')."\"\n";
 
                         if(isset($_SESSION)) {

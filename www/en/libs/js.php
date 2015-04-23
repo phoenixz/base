@@ -15,7 +15,7 @@
  */
 function js_flash($id = 'jsFlashMessage'){
 	try{
-		if(PLATFORM != 'apache'){
+		if(PLATFORM != 'http'){
 			throw new bException('js_flash(): This function can only be executed on a webserver!');
 		}
 
