@@ -10,18 +10,20 @@
 
 
 /*
- *
+ * Custom page loader. Will add header and footer to the given HTML, then send
+ * HTTP headers, and then HTML to client
  */
 function c_page($params, $meta, $html){
     try{
-        if($page = cache_read()){
-            http_headers($params);
-            return $page;
-        }
+        array_params($params);
+        array_default($params, 'cache_namespace', 'htmlpage');
+        array_default($params, 'cache_key'      , null);
 
         $page = c_html_header($params, $meta).$html.c_html_footer();
 
-        return cache_write($page);
+        http_headers($params, strlen($page));
+
+        return cache_write($page, $params['cache_key'], $params['cache_namespace']);
 
     }catch(Exception $e){
         throw new bException('c_page(): Failed', $e);

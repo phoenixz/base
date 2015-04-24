@@ -400,13 +400,6 @@ function html_header($params = null, $meta = array()){
 
         $params['title'] = html_title($params['title']);
 
-        if(!http_headers($params)){
-            /*
-             * Do not return a response body
-             */
-            return false;
-        }
-
         $retval = "<!DOCTYPE ".$params['doctype'].">\n".
                   "<".$params['html'].">\n".
                   "<head>\n".
@@ -1175,15 +1168,121 @@ function html_hidden($source, $key = 'id'){
 
 
 
-/*
- * Create the page using the custom library c_page function and add content-length header and send HTML to client
- */
-function html_send($params, $meta, $html){
-    $html = c_page($params, $meta, $html);
+// :OBSOLETE: This is now done in http_headers
+///*
+// * Create the page using the custom library c_page function and add content-length header and send HTML to client
+// */
+//function html_send($params, $meta, $html){
+//    $html = c_page($params, $meta, $html);
+//
+//    header('Content-Length: '.mb_strlen($html));
+//    echo $html;
+//    die();
+//}
 
-    header('Content-Length: '.mb_strlen($html));
-    echo $html;
-    die();
+
+
+/*
+ * Create and return an img tag that contains at the least src, alt, height and width
+ */
+function html_img($src, $alt, $more = '', $height = 0, $width = 0){
+    global $_CONFIG;
+    static $images;
+
+    try{
+        if(!$alt){
+            throw new bException(tr('html_img(): No image alt text specified'), 'notspecified');
+        }
+
+        if(!$src){
+            throw new bException(tr('html_img(): No image src specified'), 'notspecified');
+        }
+
+        /*
+         * Images can be either local or remote
+         * Local images either have http://thisdomain.com/image, https://thisdomain.com/image, or /image
+         * Remote images must have width and height specified
+         */
+        if(substr($src, 0, 7) == 'http://'){
+            $protocol = 'http';
+
+        }elseif($protocol = substr($src, 0, 8) == 'https://'){
+            $protocol = 'https';
+
+        }else{
+            $protocol = '';
+        }
+
+        if(!$protocol){
+            /*
+             * This is a local image
+             */
+            $file = ROOT.'www/en'.str_starts($src, '/');
+
+        }else{
+            if(preg_match('/^'.$protocol.':\/\/(?:www\.)?'.str_replace('.', '\.', $_CONFIG['domain']).'\/.+$/ius', $src)){
+                /*
+                 * This is a local image with domain specification
+                 */
+                $file = ROOT.'www/en'.str_starts(str_from($src, $_CONFIG['domain']), '/');
+
+            }else{
+                /*
+                 * This is a remote image
+                 * Remote images MUST have height and width specified!
+                 */
+                if(!$height){
+                    throw new bException(tr('html_img(): No height specified for remote image'), 'notspecified');
+                }
+
+                if(!$width){
+                    throw new bException(tr('html_img(): No width specified for remote image'), 'notspecified');
+                }
+            }
+        }
+
+        if(!$height or !$width){
+            if(empty($images[$file])){
+                if(!file_exists($file)){
+                    log_error(tr('html_img(): Specified image src "%src%" does not exist', array('%src%' => $src)), 'notspecified');
+
+                }elseif(!$img_size = getimagesize($file)){
+                    log_error('image_is_valid(): File "'.str_log($filename).'" is not an image');
+                }
+
+                if(empty($img_size)){
+                    $img_size = array(0, 0);
+                }
+
+                //unset($img_size[2]);
+                //unset($img_size[3]);
+                //unset($img_size['bits']);
+                //unset($img_size['channel']);
+                //unset($img_size['mime']);
+
+                $images[$file] = $img_size;
+
+            }else{
+                /*
+                 * Use cached data
+                 */
+                $img_size = $images[$file];
+            }
+
+            if(!$width){
+                $width  = $img_size[0];
+            }
+
+            if(!$height){
+                $height = $img_size[1];
+            }
+        }
+
+        return '<img src="'.$src.'" alt="'.$alt.'" height="'.$height.'" width="'.$width.'"'.($more ? ' '.$more : '').'>';
+
+    }catch(Exception $e){
+        throw new bException('html_img(): Failed', $e);
+    }
 }
 
 

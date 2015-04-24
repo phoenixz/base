@@ -208,8 +208,13 @@ function cache_showpage($key = null, $namespace = 'htmlpage', $die = true){
             $key = $_SERVER['REQUEST_URI'];
         }
 
+        /*
+         * First try to apply HTTP ETag cache test
+         */
+        http_cache_test();
+
         if($page = cache_read($key, $namespace)){
-            http_headers();
+            http_headers(null, strlen($page));
             echo $page;
 
             if($die){

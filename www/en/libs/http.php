@@ -183,7 +183,7 @@ function http_get_to_post($keys, $overwrite = true){
 /*
  * Send HTTP header for the specified code
  */
-function http_headers($params = null){
+function http_headers($params, $content_length){
     global $_CONFIG;
 
     try{
@@ -209,6 +209,7 @@ function http_headers($params = null){
         }
 
         $headers[] = 'Content-Type: text/html; charset='.$_CONFIG['charset'];
+        $headers[] = 'Content-Length: '.$content_length;
         $headers   = http_cache($params, $headers);
 
         /*
@@ -316,6 +317,47 @@ function http_build_url($url, $query){
 
 
 /*
+ * Test HTTP caching headers
+ *
+ * Sends out 304 - Not modified header if ETag matches
+ *
+ * For more information, see https://developers.google.com/speed/docs/insights/LeverageBrowserCaching
+ * and https://developers.google.com/web/fundamentals/performance/optimizing-content-efficiency/http-caching
+ */
+function http_cache_test(){
+    global $_CONFIG;
+
+    try{
+        $GLOBALS['etag'] = sha1(PROJECT.$_SERVER['SCRIPT_FILENAME'].filemtime($_SERVER['SCRIPT_FILENAME']).isset_get($params['etag']));
+
+        if(!$_CONFIG['cache']['http']['enabled']){
+            return false;
+        }
+
+        if((strtotime(isset_get($_SERVER['HTTP_IF_MODIFIED_SINCE'])) == filemtime($_SERVER['SCRIPT_FILENAME'])) or trim(isset_get($_SERVER['HTTP_IF_NONE_MATCH']), '') == $GLOBALS['etag']){
+            /*
+             * The client sent an etag which is still valid, no body (or anything else) necesary
+             */
+// :TODO: Check if http_response_code(304) is good enough, or if header("HTTP/1.1 304 Not Modified") is required
+//                header("HTTP/1.1 304 Not Modified");
+
+// :TODO: Should the next lines be deleted or not? Investigate if 304 should again return the etag or not
+//                header('Cache-Control: '.$params['visibility'].', '.$params['policy']);
+//                header('ETag: "'.$GLOBALS['etag'].'"');
+            http_response_code(304);
+            die();
+        }
+
+        return true;
+
+    }catch(Exception $e){
+        throw new bException('http_cache(): Failed', $e);
+    }
+}
+
+
+
+/*
  * Return HTTP caching headers
  *
  * Returns headers Cache-Control and ETag
@@ -327,60 +369,41 @@ function http_cache($params, $headers){
     global $_CONFIG;
 
     try{
-        if($_CONFIG['cache']['http']['enabled']){
-            $etag = sha1(PROJECT.$_SERVER['SCRIPT_FILENAME'].filemtime($_SERVER['SCRIPT_FILENAME']).isset_get($params['etag']));
-
-            if(!empty($GLOBALS['page_is_admin'])){
-                array_default($params, 'visibility', 'private');
-
-            }else{
-                array_default($params, 'visibility', 'public');
-            }
-
-            array_default($params, 'policy', $_CONFIG['cache']['http']['max_age']);
-
-            switch($params['policy']){
-                case 'no-store':
-                    // FALLTHROUGH
-                case 'no-cache':
-                    break;
-
-                default:
-                    if(!is_numeric($params['policy']) or !is_natural_number($params['policy'])){
-                        throw new bException(tr('http_cache(): Invalid policy "%policy%" specified. Use either "no-cache", "no-store", or a natural number', array('%policy%' => $params['policy'])), '');
-                    }
-
-                    $params['policy'] = 'max-age='.$params['policy'];
-            }
-
-            if((strtotime(isset_get($_SERVER['HTTP_IF_MODIFIED_SINCE'])) == filemtime($_SERVER['SCRIPT_FILENAME'])) or trim(isset_get($_SERVER['HTTP_IF_NONE_MATCH']), '') == $etag) {
-                if($params['policy'] == 'no-store'){
-                    /*
-                     * Client somehow sent matching etag, but yet this page has a
-                     * no-store policy and should never be cached. Ignore this etag
-                     * and send the page as normal.
-                     */
-
-                }else{
-                    /*
-                     * The client sent an etag which is still valid, no body (or anything else) necesary
-                     */
-// :TODO: Check if http_response_code(304) is good enough, or if header("HTTP/1.1 304 Not Modified") is required
-//                header("HTTP/1.1 304 Not Modified");
-
-// :TODO: Should the next lines be deleted or not? Investigate if 304 should again return the etag or not
-//                header('Cache-Control: '.$params['visibility'].', '.$params['policy']);
-//                header('ETag: "'.$etag.'"');
-                    http_response_code(304);
-                    die();
-                }
-            }
-
-            $headers[] = 'Cache-Control: '.$params['visibility'].', '.$params['policy'];
-            $headers[] = 'DTag: "'.$etag.'"';
-            $headers[] = 'ETag: "'.$etag.'"';
-            $headers[] = 'FTag: "'.$etag.'"';
+        if(!$_CONFIG['cache']['http']['enabled']){
+            return $headers;
         }
+
+        if(empty($GLOBALS['etag'])){
+            $GLOBALS['etag'] = sha1(PROJECT.$_SERVER['SCRIPT_FILENAME'].filemtime($_SERVER['SCRIPT_FILENAME']).isset_get($params['etag']));
+        }
+
+        if(!empty($GLOBALS['page_is_admin'])){
+            array_default($params, 'visibility', 'private');
+
+        }else{
+            array_default($params, 'visibility', 'public');
+        }
+
+        array_default($params, 'policy', $_CONFIG['cache']['http']['max_age']);
+
+        switch($params['policy']){
+            case 'no-store':
+                // FALLTHROUGH
+            case 'no-cache':
+                break;
+
+            default:
+                if(!is_numeric($params['policy']) or !is_natural_number($params['policy'])){
+                    throw new bException(tr('http_cache(): Invalid policy "%policy%" specified. Use either "no-cache", "no-store", or a natural number', array('%policy%' => $params['policy'])), '');
+                }
+
+                $params['policy'] = 'max-age='.$params['policy'];
+        }
+
+        $headers[] = 'Cache-Control: '.$params['visibility'].', '.$params['policy'];
+//            $headers[] = 'DTag: "'.$GLOBALS['etag'].'"';
+        $headers[] = 'ETag: "'.$GLOBALS['etag'].'"';
+//            $headers[] = 'FTag: "'.$GLOBALS['etag'].'"';
 
         return $headers;
 

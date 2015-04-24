@@ -188,15 +188,20 @@ function image_convert($source, $destination, $x, $y, $type, $params = array()) 
  * Is this an image?
  */
 function image_is_valid($filename, $minw = 0, $minh = 0) {
-    if(!$img_size = getimagesize($filename)){
-        throw new bException('image_is_valid(): File "'.str_log($filename).'" is not an image');
-    }
+    try{
+        if(!$img_size = getimagesize($filename)){
+            throw new bException('image_is_valid(): File "'.str_log($filename).'" is not an image');
+        }
 
-    if(($img_size[0] < $minw) or ($img_size[1] < $minh)) {
-        throw new bException('image_is_valid(): File "'.str_log($filename).'" has wxh "'.str_log($img_size[0].'x'.$img_size[1]).'" where a minimum wxh of "'.str_log($minw.'x'.$minh).'" is required');
-    }
+        if(($img_size[0] < $minw) or ($img_size[1] < $minh)) {
+            throw new bException('image_is_valid(): File "'.str_log($filename).'" has wxh "'.str_log($img_size[0].'x'.$img_size[1]).'" where a minimum wxh of "'.str_log($minw.'x'.$minh).'" is required');
+        }
 
-    return true;
+        return true;
+
+    }catch(Exception $e){
+        throw new bException('image_is_valid(): Failed', $e);
+    }
 }
 
 
@@ -239,7 +244,7 @@ function image_type($filename){
         return false;
 
     }catch(Exception $e){
-        throw new bException('image_is(): Failed', $e);
+        throw new bException('image_type(): Failed', $e);
     }
 }
 
@@ -356,7 +361,7 @@ function image_fix_extension($file){
  *
  * <a href="pub/img/test/image.jpg" rel="example_group" class="hover_image">
  *     <span class="mask"></span>
- *    <img src="/pub/img/test/montage/image.jpg" >
+ *    '.html_img('/pub/img/test/montage/image.jpg" >
  * </a>
  *
  * image_fancybox(array(options...);

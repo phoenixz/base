@@ -53,7 +53,7 @@ function admin_start($params = '', $flash = null, $flash_type = null) {
     <div class="top">
         <a href="/index.php" class="toplogo" target="_blank">
             <span class="center logo"></span>
-            <img class="logo" src="'.domain('/pub/img/logo.png').'" alt="Admin section logo" />
+            '.html_img(domain('/pub/img/logo.png'), tr('Admin section logo'), 'class="logo"').'
         </a>
         <h1 class="toptitle">'.$params['title'].'</h1>
         <span class="topuser">'.isset_get($_SESSION['user']['name'], '').'</span>
