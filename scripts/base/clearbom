@@ -79,5 +79,5 @@ if(!file_exists($path)){
 
 $count = clear_files($path);
 
-log_console('Processed all files, found "'.str_log($count).'" files wtih BOM', 'finished', 'white');
+log_console('Processed all files, found "'.str_log($count).'" files wtih BOM', 'finished', 'green');
 ?>
