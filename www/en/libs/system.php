@@ -402,7 +402,7 @@ function log_message($message, $type = 'info', $color = null){
                     log_error($key.': '.$realmessage, $message->code);
                 }
 
-                return;
+                return $message;
 
             }elseif($message instanceof Exception){
 // :TODO: This will very likely cause an endless loop!
@@ -416,11 +416,23 @@ throw new bException('log_message(): DEVELOPMENT FIX! This exception is here to 
         }
 
         log_database($message, $type);
+
+        if(ENVIRONMENT == 'production'){
+            /*
+             * In production NEVER log to screen!
+             */
+            return $message;
+        }
+
         return log_screen($message, $type, $color);
 
     }catch(Exception $e){
-        unset($_CONFIG['db']['pass']);
-        log_screen($message.' (NODB '.print_r($_CONFIG['db'], true).')', $type, $color);
+// :TODO: Add system notification!
+        if(ENVIRONMENT != 'production'){
+            unset($_CONFIG['db']['pass']);
+            log_screen($message.' (NODB '.print_r($_CONFIG['db'], true).')', $type, $color);
+        }
+
         return $message;
     }
 }
