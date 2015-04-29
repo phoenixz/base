@@ -34,7 +34,14 @@ if (! function_exists ('mb_init'))
        * Setting the Content-Type header with charset
        */
       setlocale(LC_CTYPE, $locale.'.UTF-8');
-      iconv_set_encoding("output_encoding", 'UTF-8');
+      
+      if(version_compare(phpversion(), '5.6.0') == -1){
+         /*
+          * New PHP 5.6.0 no longer supports iconv_set_encoding() "output_encoding", and by default uses UTF8 for its default_charset
+          */
+         iconv_set_encoding("output_encoding", 'UTF-8');         
+      }
+      
       mb_internal_encoding('UTF-8');
       mb_regex_encoding('UTF-8');
       //header('Content-Type: text/html; charset=utf-8');

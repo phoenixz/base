@@ -516,7 +516,7 @@ function log_console($message, $type = 'info', $color = null, $newline = true, $
             }
         }
 
-        if($color and !NOCOLOR){
+        if($color and defined('NOCOLOR') and !NOCOLOR){
             load_libs('cli');
             $c = cli_init_color();
 

@@ -91,19 +91,27 @@ try{
         }
     }
 
-}catch(Exception $e){
+}catch(Exception $f){
     if(function_exists('show')){
         show('uncaught_exception(): Failed');
+        show($f);
+        show('uncaught_exception(): Original exception');
         showdie($e);
 
     }else{
         try{
-            notify('error', "UNCAUGHT EXCEPTION HANDLING FAILED[".$e->getCode()."]\n".implode("\n", $e->getMessages()));
+            notify('error', "UNCAUGHT EXCEPTION HANDLING FAILED[".$f->getCode()."]\n".implode("\n", $f->getMessages()));
+            notify('error', "UNCAUGHT EXCEPTION [".$e->getCode()."]\n".implode("\n", $e->getMessages()));
 
-        }catch(Exception $e){
+        }catch(Exception $g){
             /*
              * Ahw fuck it.. Notifications failed as well
              */
+// :TODO: Only show on screen in non production mode!!!
+            echo "uncaught_exception() exception handler crashed as well while trying to send out notifications with [".$g->getCode()."]\n".implode("\n", $g->getMessages());
+            echo "uncaught_exception() exception handler crashed with [".$f->getCode()."]\n".implode("\n", $f->getMessages());
+            echo "uncaught_exception() called with [".$e->getCode()."]\n".implode("\n", $e->getMessages());
+            die();
         }
 
         if(ENVIRONMENT == 'production'){
