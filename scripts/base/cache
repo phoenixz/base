@@ -4,8 +4,9 @@
  * This script can be used to access various cache functions
  */
 $usage = "./scripts/base/cache clear [key KEY] [namespace NAMESPACE]\n".
-         "./scripts/base/cache size (SOON!)\n".
-         "./scripts/base/cache files (SOON!)\n".
+         "./scripts/base/cache size\n".
+         "./scripts/base/cache files\n".
+         "./scripts/base/cache info\n";
          "./scripts/base/cache find (SOON!)\n";
 
 $help  = "The deploy script can deploy the project to target environments, like trial, production, etc.
