@@ -31,7 +31,11 @@ nosync                     - Do not sync configured data directories
 nofunctions                - Do not sync mysql functions from the specified environment
 
 deletesync / syncdelete    - Delete data file paths before syncing (warning:
-                             This would cause rsync to redownload all files)";
+                             This would cause rsync to redownload all files)
+
+nocacheclear               - Do not clear cache after finishing the sync
+
+noblogupdateurl            - Do not update the blog page URL's";
 
 $nologin = true;
 
@@ -52,6 +56,8 @@ $noinit          = argument('noinit');
 $deletesync      = (argument('deletesync') or argument('syncdelete'));
 $environment     = argument('environment'    , true);
 $sub_environment = argument('sub_environment', true);
+$nocacheclear    = argument('nocacheclear'   , true);
+$noblogupdateurl = argument('noblogupdateurl', true);
 
 
 if(empty($environment)){
@@ -249,8 +255,15 @@ if($noinit){
     }
 }
 
-load_libs('cache');
-cache_clear();
+if(!$nocacheclear){
+    load_libs('cache');
+    cache_clear();    
+}
+
+if(!$noblogupdateurl){
+    load_libs('blogs');
+    blogs_update_urls();
+}
 
 log_console('Finished!', 'sync', 'green');
 
