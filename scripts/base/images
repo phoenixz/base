@@ -1,0 +1,77 @@
+#!/usr/bin/php
+<?php
+/*
+ * This is an empty test script template
+ */
+$usage = "./scripts/base/images\n".
+         "./scripts/base/images option [option]\n";
+
+$help  = "This script can perform various image actions
+
+retina [FILE | all]						- Will ensure retina files are at least
+                                          available by creating symlinks for
+										  all image files";
+
+//$quiet = false;
+
+require_once(dirname(__FILE__).'/../../libs/startup.php');
+
+cli_only();
+load_libs('test');
+	
+switch(argument(0)){
+	case 'retina':
+		$count = 0;
+		if(argument(1) == 'all'){
+			foreach(array('jpg', 'png') as $extension){
+				$files = safe_exec('find '.ROOT.' -iname "*.'.$extension.'"');
+				
+				foreach($files as $file){
+					$link = str_replace('.'.$extension, '@2x.'.$extension, $file);
+					
+					if(!file_exists($link)){
+						/*
+						 *
+						 */
+						if(VERBOSE){
+							log_console(tr('Creating symlink for file "%file%"', array('%file%' => $file)));	
+						}
+						
+						$count++;
+						symlink($file, $link);
+					}
+				}	
+			}
+			
+			log_console(tr('Created "%count%" symlinks for missing retina images', array('%count%' => $count)), '', 'green');
+			
+		}else{
+			/*
+			 * This must be a single file specification
+			 */
+			if(!file_exists($file)){
+				throw new bException(tr('Specified file "%file%" does not exist', array('%file%' => argument(1))), 'notexist');
+			}
+			
+			$link = str_replace('.'.$extension, '@2x.'.$extension, $file);
+
+			if(!file_exists($link)){
+				/*
+				 *
+				 */
+				if(VERBOSE){
+					log_console(tr('Creating symlink for file "%file%"', array('%file%' => $file)));	
+				}
+				
+				$count++;
+				symlink($file, $link);
+			}
+		}
+		
+		break;
+	
+	default:
+		throw new bException(tr('Unknown argument "%argument%" specified', array('%argument%' => argument(0))), 'unknown');
+}
+
+?>
