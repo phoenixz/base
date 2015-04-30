@@ -582,7 +582,8 @@ function blogs_photos_upload($files, $post, $priority = null){
                                 `blogs`.`images_x`,
                                 `blogs`.`images_y`,
                                 `blogs`.`thumbs_x`,
-                                `blogs`.`thumbs_y`
+                                `blogs`.`thumbs_y`,
+                                `blogs`.`retina`
 
                          FROM   `blogs_posts`
 
@@ -611,10 +612,10 @@ function blogs_photos_upload($files, $post, $priority = null){
         /*
          *
          */
-        $file  = $files;
-        $file  = file_get_local($file['tmp_name'][0]);
-        $photo = $post['blog_name'].'/'.file_assign_target_clean(ROOT.'www/photos/'.$post['blog_name'].'/', '_small.jpg', false, 4);
-
+        $file   = $files;
+        $file   = file_get_local($file['tmp_name'][0]);
+        $photo  = $post['blog_name'].'/'.file_assign_target_clean(ROOT.'www/photos/'.$post['blog_name'].'/', '_small.jpg', false, 4);
+        
         if(!empty($post['thumbs_x']) or !empty($post['thumbs_y'])){
             image_convert($file, ROOT.'www/photos/'.$photo.'_small.jpg', $post['thumbs_x'], $post['thumbs_y'], 'thumb');
 
@@ -627,6 +628,29 @@ function blogs_photos_upload($files, $post, $priority = null){
 
         }else{
             copy($file, ROOT.'www/photos/'.$photo.'_big.jpg');
+        }
+        
+        if($retina){
+            if(!empty($post['thumbs_x']) or !empty($post['thumbs_y'])){
+                image_convert($file, ROOT.'www/photos/'.$photo.'_small@2x.jpg', $post['thumbs_x'] * 2, $post['thumbs_y'] * 2, 'thumb');
+            
+            }else{
+                copy($file, ROOT.'www/photos/'.$photo.'_small@2x.jpg');
+            }
+            
+            if(!empty($post['images_x']) or !empty($post['images_y'])){
+                image_convert($file, ROOT.'www/photos/'.$photo.'_big@2x.jpg'  , $post['images_x'] * 2, $post['images_y'] * 2, 'resize');
+            
+            }else{
+                copy($file, ROOT.'www/photos/'.$photo.'_big@2x.jpg');
+            }
+            
+        }else{
+            /*
+             * If retina images are not supported, then just symlink them so that they at least are available
+             */
+            symlink(ROOT.'www/photos/'.$photo.'_small.jpg', ROOT.'www/photos/'.$photo.'_small@2x.jpg');
+            symlink(ROOT.'www/photos/'.$photo.'_big.jpg'  , ROOT.'www/photos/'.$photo.'_big@2x.jpg'  );
         }
 
         /*

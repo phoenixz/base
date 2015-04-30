@@ -27,19 +27,40 @@ switch(argument(0)){
 				$files = safe_exec('find '.ROOT.' -iname "*.'.$extension.'"');
 				
 				foreach($files as $file){
-					$link = str_replace('.'.$extension, '@2x.'.$extension, $file);
-					
-					if(!file_exists($link)){
+					if(strtolower(substr($file, -7, 7)) == '@2x.'.$extension){
 						/*
-						 *
+						 * This is a retina file, skip
 						 */
-						if(VERBOSE){
-							log_console(tr('Creating symlink for file "%file%"', array('%file%' => $file)));	
+						continue;
+					}
+					
+					$link = str_replace('.'.$extension, '@2x.'.$extension, $file);
+
+					if(file_exists($link)){
+						if(!is_link($link)){
+							/*
+							 * Existing file is a real file, so probably has
+							 * unique contents. Leave it alone
+							 */
+							continue;
 						}
 						
-						$count++;
-						symlink($file, $link);
+						/*
+						 * Existing file is a symlink. Remove it so we can
+						 * update it and be sure it links to the correct file
+						 */
+						unlink($link);
 					}
+
+					/*
+					 * Create the target link
+					 */
+					if(VERBOSE){
+						log_console(tr('Creating symlink for file "%file%"', array('%file%' => $file)));	
+					}
+					
+					$count++;
+					symlink(basename($file), $link);
 				}	
 			}
 			
