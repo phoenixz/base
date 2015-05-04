@@ -203,24 +203,30 @@ function cache_key_hash($key){
  *
  */
 function cache_showpage($key = null, $namespace = 'htmlpage', $die = true){
+    global $_CONFIG;
+
     try{
-        if($key === null){
-            $key = $_SERVER['REQUEST_URI'];
-        }
+        if($_CONFIG['cache']['method']){
+            if($key === null){
+                $key = $_SERVER['REQUEST_URI'];
+            }
 
-        /*
-         * First try to apply HTTP ETag cache test
-         */
-        http_cache_test();
+            /*
+             * First try to apply HTTP ETag cache test
+             */
+            http_cache_test();
 
-        if($page = cache_read($key, $namespace)){
-            http_headers(null, strlen($page));
-            echo $page;
+            if($page = cache_read($key, $namespace)){
+                http_headers(null, strlen($page));
+                echo $page;
 
-            if($die){
-                die();
+                if($die){
+                    die();
+                }
             }
         }
+
+        return false;
 
     }catch(Exception $e){
         throw new bException('cache_showpage(): Failed', $e);
