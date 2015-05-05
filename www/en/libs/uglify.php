@@ -110,6 +110,7 @@ function uglify_css($path = null){
         if(is_dir($path)){
             $path = slash($path);
             log_console('uglify_css(): Compressing all CSS files in directory "'.str_log($path).'"', 'uglify');
+            load_libs('file');
             file_check_dir($path);
 
         }elseif(is_file($path)){
@@ -358,6 +359,7 @@ function uglify_js($path = null){
         if(is_dir($path)){
             $path = slash($path);
             log_console('uglify_js(): Compressing all javascript files in directory "'.str_log($path).'"', 'uglify');
+            load_libs('file');
             file_check_dir($path);
 
         }elseif(is_file($path)){
