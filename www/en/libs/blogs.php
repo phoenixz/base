@@ -801,7 +801,7 @@ function blogs_priority($priority){
                 return $list[$priority];
             }
 
-            throw new bException('blogs_priority(): Unknown priority "'.str_log($priority).'" specified', 'unknown');
+            return $list[3];
         }
 
         if($priority === null){
@@ -821,7 +821,7 @@ function blogs_priority($priority){
             return $rlist[$priority];
         }
 
-        throw new bException('blogs_priority(): Unknown priority "'.str_log($priority).'" specified', 'unknown');
+        3;
 
     }catch(Exception $e){
         throw new bException('blogs_priority(): Failed', $e);
