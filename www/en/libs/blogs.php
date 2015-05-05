@@ -630,7 +630,7 @@ function blogs_photos_upload($files, $post, $priority = null){
             copy($file, ROOT.'www/photos/'.$photo.'_big.jpg');
         }
 
-        if($retina){
+        if($post['retina']){
             if(!empty($post['thumbs_x']) or !empty($post['thumbs_y'])){
                 image_convert($file, ROOT.'www/photos/'.$photo.'_small@2x.jpg', $post['thumbs_x'] * 2, $post['thumbs_y'] * 2, 'thumb');
 
