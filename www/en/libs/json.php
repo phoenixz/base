@@ -102,15 +102,17 @@ function json_reply($reply = null, $result = 'OK', $httpcode = null){
         $reply['result'] = strtoupper($reply['result']);
     }
 
+    $reply = json_encode_custom($reply);
+
     if($httpcode){
         load_libs('http');
-        http_headers($httpcode);
+        http_headers($httpcode, strlen($reply));
     }
 
     header('Content-Type: application/json');
     header('Content-Type: text/html; charset=utf-8');
 
-    echo json_encode_custom($reply);
+    echo $reply;
     die();
 }
 
@@ -120,7 +122,44 @@ function json_reply($reply = null, $result = 'OK', $httpcode = null){
  * Send correct JSON reply
  */
 function json_error($message, $default_message = null){
-    if(is_object($message)){
+    if(is_array($message)){
+        if(empty($message['default'])){
+            if(empty($default_message)){
+                $default_message = tr('Something went wrong, please try again later');
+            }
+
+            $message['default'] = $default_message;
+        }
+
+        if(empty($message['e'])){
+            if(ENVIRONMENT == 'production'){
+                $message = $message['default'];
+                log_error('json_error(): No exception object specified for following error');
+                log_error($e);
+
+            }else{
+                $message = tr('json_error(): No exception specified in json_error() array');
+            }
+
+        }else{
+            if(ENVIRONMENT == 'production'){
+                log_error($e);
+
+                $code = $message['e']->getCode();
+
+                if(empty($message[$code])){
+                    $message = $message['default'];
+
+                }else{
+                    $message = $message[$code];
+                }
+
+            }else{
+                $message = $message['e']->getMessages("\n<br>");
+            }
+        }
+
+    }elseif(is_object($message)){
         /*
          * Assume this is an bException object
          */
