@@ -17,6 +17,8 @@ noinit                     - Do not do execute a system init after the sync
 nodump                     - Do not do the temporary mysql dump on the
                              target environment
 
+noclear                    - Do not clear local data content
+
 nocopy                     - Do not copy the temporary mysql dump on the
                              target environment
 
@@ -53,6 +55,7 @@ $noimport        = argument('noimport');
 $nodelete        = argument('nodelete');
 $nosync          = argument('nosync');
 $noinit          = argument('noinit');
+$noclear         = argument('noclear');
 $deletesync      = (argument('deletesync') or argument('syncdelete'));
 $environment     = argument('environment'    , true);
 $sub_environment = argument('sub_environment', true);
@@ -195,6 +198,23 @@ if($nodelete){
 }
 
 
+
+/*
+ * Clear local content data to avoid broken links and other possible problems,
+ * just work with clean data from the target environment
+ */
+if($noclear){
+    log_console('NOT clearing local content data due to "noclear" command line parameters', 'sync', 'yellow');
+
+}else{
+    log_console('Clearing local content data ...', 'sync', 'white');
+
+    load_libs('file');
+    file_delete_tree(ROOT.'data/content');
+}
+
+
+
 /*
  * Sync all
  */
@@ -237,6 +257,11 @@ if($nosync){
     }
 }
 
+
+
+/*
+ *
+ */
 if($noinit){
     log_console('NOT running init due to "nonoinit" command line parameters', 'sync', 'yellow');
 
@@ -255,11 +280,22 @@ if($noinit){
     }
 }
 
+
+
+/*
+ * Clear cache to avoid working with cache instead of newly synced data
+ */
 if(!$nocacheclear){
     load_libs('cache');
-    cache_clear();    
+    cache_clear();
 }
 
+
+
+/*
+ * Blog URL's will contain links that work for the specified environment,
+ * but not the local environment, update them
+ */
 if(!$noblogupdateurl){
     load_libs('blogs');
     blogs_update_urls();
