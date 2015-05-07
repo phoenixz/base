@@ -452,7 +452,7 @@ function blogs_validate_post(&$post, $blog, $params = null, $seoname = null){
         $post['url']      = blogs_post_url($post);
 
         if(!isset($params['status_list'][$post['status']])){
-            $v->setError('The specified status "'.str_log($post['status']).'" is invalid, it must be either one of "'.str_log(str_force($params['status_list'])).'"');
+            $v->setError('The specified status "'.str_log($post['status']).'" is invalid, it must be either one of "'.str_log(str_force(isset_get($params['status_list']))).'"');
         }
 
         if(!empty($params['use_language'])){
@@ -821,7 +821,7 @@ function blogs_priority($priority){
             return $rlist[$priority];
         }
 
-        3;
+        return 3;
 
     }catch(Exception $e){
         throw new bException('blogs_priority(): Failed', $e);
