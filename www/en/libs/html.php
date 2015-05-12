@@ -230,6 +230,7 @@ function html_generate_js(){
 
         $libs   = array();
         $retval = '';
+        $footer = '';
 
         /*
          * Set to load default JS libraries
@@ -249,6 +250,7 @@ function html_generate_js(){
             if(!$file) continue;
 
             $check = str_rfrom(str_starts($file, '/'), '/');
+            $file  = str_replace(array('<', '>'), '', $check);
 
             if($check == 'jquery')    continue; // jQuery js is always loaded in the header
             if($check == 'bootstrap') continue; // bootstrap js is always loaded in the header
@@ -308,10 +310,23 @@ function html_generate_js(){
              * Add the scripts with IE only filters?
              */
             if(isset_get($data['ie'])){
-                $retval .= html_iefilter($html, $data['ie']);
+                $html = html_iefilter($html, $data['ie']);
 
             }else{
-                $retval .= $html."\n";
+                $html = $html."\n";
+            }
+
+            if($check[0] == '>' or (!empty($js['load_delayed']) and ($check[0] != '<'))){
+                /*
+                 * Add this script in the footer
+                 */
+                $footer .= $html;
+
+            }else{
+                /*
+                 * Add this script in the header
+                 */
+                $retval .= $html;
             }
         }
 
@@ -319,9 +334,8 @@ function html_generate_js(){
          * Should all JS scripts be loaded at the end (right before the </body> tag)?
          * This may be useful for site startup speedups
          */
-        if(!empty($js['load_delayed'])){
-            $GLOBALS['footer'] = $retval.isset_get($GLOBALS['footer'], '').isset_get($GLOBALS['script_delayed'], '');
-            $retval            = '';
+        if(!empty($footer)){
+            $GLOBALS['footer'] = $footer.isset_get($GLOBALS['footer'], '').isset_get($GLOBALS['script_delayed'], '');
         }
 
         /*
