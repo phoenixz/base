@@ -35,6 +35,7 @@ $_CONFIG['bootstrap']           = array('enabled'         => false,
 
 //
 $_CONFIG['cache']              = array('method'           => 'file',                                        // "file", "memcached" or false.
+                                       'max_age'          => 86400,                                         // Max local cache age is one day
                                        'key_hash'         => 'sha1',
                                        'key_interlace'    => 3,
                                        'http'             => array('enabled'        => true,                // Enable HTTP cache or not

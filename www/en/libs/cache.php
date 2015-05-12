@@ -76,15 +76,24 @@ function cache_read($key = null, $group = null){
 
 
 /*
- * Read from cache file
+ * Read from cache file.
+ * File must exist and not have filemtime + max_age > now
  */
 function cache_read_file($key, $group = null){
+    global $_CONFIG;
+
     try{
         if($group){
             $group = slash($group);
         }
 
         if(!file_exists($file = ROOT.'data/cache/'.$group.$key)){
+            return false;
+        }
+
+show((filemtime($file) + $_CONFIG['cache']['max_age']));
+showdie(date('u'));
+        if((filemtime($file) + $_CONFIG['cache']['max_age']) < date('u')){
             return false;
         }
 
@@ -100,7 +109,7 @@ function cache_read_file($key, $group = null){
 /*
  * Read to cache
  */
-function cache_write($value, $key = null, $group = null, $expire = null){
+function cache_write($value, $key = null, $group = null){
     global $_CONFIG;
 
     try{
@@ -115,7 +124,7 @@ function cache_write($value, $key = null, $group = null, $expire = null){
                 return cache_write_file($value, $key, $group);
 
             case 'memcached':
-                return mc_put($value, $key, $group, $expire);
+                return mc_put($value, $key, $group, $_CONFIG['cache']['max_age']);
 
             case false:
                 /*
