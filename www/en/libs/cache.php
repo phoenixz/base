@@ -42,7 +42,7 @@ function cache_read($key = null, $group = null){
 
     try{
         if(!$key){
-            $key = $_SERVER['REQUEST_URI'];
+            $key = $_SERVER['REQUEST_URI'].(empty($_SESSION['mobile']['device']) ? '' : '_m');
         }
 
         $key = cache_key_hash($key);
@@ -114,7 +114,7 @@ function cache_write($value, $key = null, $group = null){
 
     try{
         if(!$key){
-            $key = $_SERVER['REQUEST_URI'];
+            $key = $_SERVER['REQUEST_URI'].(empty($_SESSION['mobile']['device']) ? '' : '_m');
         }
 
         $key = cache_key_hash($key);
@@ -215,9 +215,9 @@ function cache_showpage($key = null, $namespace = 'htmlpage', $die = true){
     global $_CONFIG;
 
     try{
-        if($_CONFIG['cache']['method']){
-            if($key === null){
-                $key = $_SERVER['REQUEST_URI'].($_SESSION['mobile']['device'] ? '_m' : '');
+        if(true or $_CONFIG['cache']['method']){
+            if(!$key){
+                $key = $_SERVER['REQUEST_URI'].(empty($_SESSION['mobile']['device']) ? '' : '_m');
             }
 
             /*
