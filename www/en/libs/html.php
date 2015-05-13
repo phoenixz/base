@@ -250,7 +250,7 @@ function html_generate_js(){
             if(!$file) continue;
 
             $check = str_rfrom(str_starts($file, '/'), '/');
-            $file  = str_replace(array('<', '>'), '', $check);
+            $file  = str_replace(array('<', '>'), '', $file);
 
             if($check == 'jquery')    continue; // jQuery js is always loaded in the header
             if($check == 'bootstrap') continue; // bootstrap js is always loaded in the header
