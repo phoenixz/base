@@ -91,8 +91,8 @@ function cache_read_file($key, $group = null){
             return false;
         }
 
-show((filemtime($file) + $_CONFIG['cache']['max_age']));
-showdie(date('u'));
+//show((filemtime($file) + $_CONFIG['cache']['max_age']));
+//showdie(date('u'));
         if((filemtime($file) + $_CONFIG['cache']['max_age']) < date('u')){
             return false;
         }
@@ -217,7 +217,7 @@ function cache_showpage($key = null, $namespace = 'htmlpage', $die = true){
     try{
         if($_CONFIG['cache']['method']){
             if($key === null){
-                $key = $_SERVER['REQUEST_URI'];
+                $key = $_SERVER['REQUEST_URI'].($_SESSION['mobile']['device'] ? '_m' : '');
             }
 
             /*
