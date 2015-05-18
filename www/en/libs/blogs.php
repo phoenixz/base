@@ -451,8 +451,10 @@ function blogs_validate_post(&$post, $blog, $params = null, $seoname = null){
         $post['blog']     = $blog['seoname'];
         $post['url']      = blogs_post_url($post);
 
-        if(!isset($params['status_list'][$post['status']])){
-            $v->setError('The specified status "'.str_log($post['status']).'" is invalid, it must be either one of "'.str_log(str_force(isset_get($params['status_list']))).'"');
+        if(!empty($params['use_status'])){
+            if(!isset($params['status_list'][$post['status']])){
+                $v->setError('The specified status "'.str_log($post['status']).'" is invalid, it must be either one of "'.str_log(str_force($params['status_list'])).'"');
+            }
         }
 
         if(!empty($params['use_language'])){
