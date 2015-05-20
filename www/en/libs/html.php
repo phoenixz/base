@@ -747,7 +747,15 @@ function html_select($params, $selected = null, $name = '', $none = '', $class =
                 $params['disabled'] = true;
 
             }else{
-                $params['disabled'] = (($params['resource']->rowCount() + ($params['name'] ? 1 : 0)) <= $params['disabled']);
+                if(is_array($params['resource'])){
+                    $params['disabled'] = ((count($params['resource']) + ($params['name'] ? 1 : 0)) <= $params['disabled']);
+
+                }elseif(is_object($params['resource'])){
+                    $params['disabled'] = (($params['resource']->rowCount() + ($params['name'] ? 1 : 0)) <= $params['disabled']);
+
+                }else{
+                    throw new bException(tr('html_select(): Invalid resource of type "%type%" specified, should be either null, an array, or a PDOStatement object', array('%type%' => gettype($params['resource']))), 'invalid');
+                }
             }
         }
 
@@ -894,9 +902,6 @@ function html_select_body($params, $selected = null, $none = '', $class = '', $a
             }else{
                 throw new bException(tr('html_select_body(): Specified resource "'.str_log($params['resource']).'" is neither an array or resource'), 'invalidresource');
             }
-
-        }elseif($params['resource'] !== false){
-            throw new bException('html_select_body(): No valid resource specified');
         }
 
 
