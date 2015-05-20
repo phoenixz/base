@@ -101,7 +101,7 @@ function email_poll($usernames, $criteria = 'ALL'){
                     $retval[$username][] = $data;
                 }
 
-                log_console(tr('Got "%count%" new mails for account "%account%"', array('%emails%' => count($emails), '%account%' => $username)), '', 'purple');
+                log_console(tr('Got "%count%" new mails for account "%account%"', array('%count%' => count($emails), '%account%' => $username)), '', 'purple');
             }
         }
 
