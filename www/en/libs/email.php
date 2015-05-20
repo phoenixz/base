@@ -287,66 +287,97 @@ function email_update_conversation($email, $direction){
 /*
  *
  */
-function email_insert_message($email, $direction){
+function email_update_message($email, $direction){
     try{
         $email['conversation'] = email_get_conversation($email);
         $email['reply_to_id']  = email_get_reply_to_id($email);
         $email['users_id']     = email_get_users_id($email);
 
-        switch($direction){
-            case 'sent':
-                sql_query('INSERT INTO `email_messages` (`direction`, `conversations_id`, `reply_to_id`, `from`, `to`, `users_id`, `date`, `subject`, `text`, `html`)
-                           VALUES                       (:direction , :conversations_id , :reply_to_id , :from , :to , :users_id , :date , :subject , :text , :html )',
+        if(!empty($email['id'])){
+            sql_query('UPDATE `email_messages`
 
-                           array(':direction'        => $direction,
-                                 ':conversations_id' => $email['conversation']['id'],
-                                 ':reply_to_id'      => $email['reply_to_id'],
-                                 ':from'             => $email['from'],
-                                 ':to'               => $email['to'],
-                                 ':users_id'         => $email['users_id'],
-                                 ':date'             => $email['date'],
-                                 ':subject'          => $email['subject'],
-                                 ':text'             => $email['text'],
-                                 ':html'             => $email['html']));
-                break;
+                       SET    `direction`        = :direction,
+                              `conversations_id` = :conversations_id,
+                              `reply_to_id`      = :reply_to_id,
+                              `from`             = :from,
+                              `to`               = :to,
+                              `users_id`         = :users_id,
+                              `date`             = :date,
+                              `subject`          = :subject,
+                              `text`             = :text,
+                              `html`             = :html,
+                              `sent`             = :sent
 
-            case 'received':
-                sql_query('INSERT INTO `email_messages` (`direction`, `conversations_id`, `reply_to_id`, `from`, `to`, `users_id`, `date`, `message_id`, `size`, `uid`, `msgno`, `recent`, `flagged`, `answered`, `deleted`, `seen`, `draft`, `udate`, `subject`, `text`, `html`)
-                           VALUES                       (:direction , :conversations_id , :reply_to_id , :from , :to , :users_id , :date , :message_id , :size , :uid , :msgno , :recent , :flagged , :answered , :deleted , :seen , :draft , :udate , :subject , :text , :html )',
+                       WHERE  `id`               = :id',
 
-                           array(':direction'        => $direction,
-                                 ':conversations_id' => $email['conversation']['id'],
-                                 ':reply_to_id'      => $email['reply_to_id'],
-                                 ':from'             => $email['from'],
-                                 ':to'               => $email['to'],
-                                 ':users_id'         => $email['users_id'],
-                                 ':date'             => $email['date'],
-                                 ':message_id'       => $email['message_id'],
-                                 ':size'             => $email['size'],
-                                 ':uid'              => $email['uid'],
-                                 ':msgno'            => $email['msgno'],
-                                 ':recent'           => $email['recent'],
-                                 ':flagged'          => $email['flagged'],
-                                 ':answered'         => $email['answered'],
-                                 ':deleted'          => $email['deleted'],
-                                 ':seen'             => $email['seen'],
-                                 ':draft'            => $email['draft'],
-                                 ':udate'            => $email['udate'],
-                                 ':subject'          => $email['subject'],
-                                 ':text'             => $email['text'],
-                                 ':html'             => $email['html']));
-                break;
+                       array(':id'               => $email['id'],
+                             ':direction'        => $direction,
+                             ':conversations_id' => $email['conversation']['id'],
+                             ':reply_to_id'      => $email['reply_to_id'],
+                             ':from'             => $email['from'],
+                             ':to'               => $email['to'],
+                             ':users_id'         => $email['users_id'],
+                             ':date'             => $email['date'],
+                             ':subject'          => $email['subject'],
+                             ':text'             => $email['text'],
+                             ':sent'             => system_date_format($email['sent'], 'mysql')));
 
-            default:
-                throw new bException(tr('email_insert_message(): Unknown direction "%direction%" specified', array('%direction%' => $direction)), 'unknown');
+        }else{
+            switch($direction){
+                case 'sent':
+                    sql_query('INSERT INTO `email_messages` (`direction`, `conversations_id`, `reply_to_id`, `from`, `to`, `users_id`, `date`, `subject`, `text`, `html`, `sent`)
+                               VALUES                       (:direction , :conversations_id , :reply_to_id , :from , :to , :users_id , :date , :subject , :text , :html , '.($email['sent'] ? 'NOW()' : ''),
+
+                               array(':direction'        => $direction,
+                                     ':conversations_id' => $email['conversation']['id'],
+                                     ':reply_to_id'      => $email['reply_to_id'],
+                                     ':from'             => $email['from'],
+                                     ':to'               => $email['to'],
+                                     ':users_id'         => $email['users_id'],
+                                     ':date'             => $email['date'],
+                                     ':subject'          => $email['subject'],
+                                     ':text'             => $email['text'],
+                                     ':html'             => $email['html']));
+                    break;
+
+                case 'received':
+                    sql_query('INSERT INTO `email_messages` (`direction`, `conversations_id`, `reply_to_id`, `from`, `to`, `users_id`, `date`, `message_id`, `size`, `uid`, `msgno`, `recent`, `flagged`, `answered`, `deleted`, `seen`, `draft`, `udate`, `subject`, `text`, `html`)
+                               VALUES                       (:direction , :conversations_id , :reply_to_id , :from , :to , :users_id , :date , :message_id , :size , :uid , :msgno , :recent , :flagged , :answered , :deleted , :seen , :draft , :udate , :subject , :text , :html )',
+
+                               array(':direction'        => $direction,
+                                     ':conversations_id' => $email['conversation']['id'],
+                                     ':reply_to_id'      => $email['reply_to_id'],
+                                     ':from'             => $email['from'],
+                                     ':to'               => $email['to'],
+                                     ':users_id'         => $email['users_id'],
+                                     ':date'             => $email['date'],
+                                     ':message_id'       => $email['message_id'],
+                                     ':size'             => $email['size'],
+                                     ':uid'              => $email['uid'],
+                                     ':msgno'            => $email['msgno'],
+                                     ':recent'           => $email['recent'],
+                                     ':flagged'          => $email['flagged'],
+                                     ':answered'         => $email['answered'],
+                                     ':deleted'          => $email['deleted'],
+                                     ':seen'             => $email['seen'],
+                                     ':draft'            => $email['draft'],
+                                     ':udate'            => $email['udate'],
+                                     ':subject'          => $email['subject'],
+                                     ':text'             => $email['text'],
+                                     ':html'             => $email['html']));
+                    break;
+
+                default:
+                    throw new bException(tr('email_update_message(): Unknown direction "%direction%" specified', array('%direction%' => $direction)), 'unknown');
+            }
+
+            $email['id'] = sql_insert_id();
         }
-
-        $email['id'] = sql_insert_id();
 
         return $email;
 
     }catch(Exception $e){
-        throw new bException('email_insert_message(): Failed', $e);
+        throw new bException('email_update_message(): Failed', $e);
     }
 }
 
@@ -383,62 +414,127 @@ function email_get_users_id($email){
 /*
  * Send a new email
  */
-function email_send($email){
+function email_send($email, $delayed = null){
     global $_CONFIG;
 
     try{
-        $mail = email_load_phpmailer();
-        $data = email_get_user($email['from']);
-
-        $mail->IsSMTP(); // send via SMTP
-        $mail->SMTPAuth   = true; // turn on SMTP authentication
-        $mail->SMTPSecure = 'tls';
-show($email);
-showdie($data);
-
-        $mail->Host       = $_CONFIG['email']['smtp']['host'];
-        $mail->Port       = $_CONFIG['email']['smtp']['port'];
-
-        $mail->From       = $email['from'];
-        $mail->FromName   = $email['from_name'];
-        $mail->AddReplyTo($email['from'], $email['from_name']);
-
-        $mail->AddAddress($email['to'], isset_get($email['to_name']));
-
-//        $mail->WordWrap = 50; // set word wrap
-
-        if($data['is_alias']){
-            $mail->Username = $data['real']['email'];
-            $mail->Password = $data['real']['pass'];
-
-        }else{
-            $mail->Username = $data['email'];
-            $mail->Password = $data['pass'];
+        if($delayed === null){
+            /*
+             *
+             */
         }
 
-        if(empty($email['html'])){
-            $mail->IsHTML(true);
-            $mail->Body = $email['html'];
+        if($delayed){
+            /*
+             * Don't send the email right now
+             */
+            $email['sent'] = null;
 
         }else{
-            $mail->IsHTML(false);
-            $mail->Body = $email['text'];
-        }
+            /*
+             * Send the email right now
+             */
+            $mail    = email_load_phpmailer();
+            $account = email_get_user($email['from']);
 
-        $mail->Subject = $email['subject'];
-        $mail->AltBody = $email['text'];
+            $mail->IsSMTP();        // send via SMTP
 
-        if(!empty($email['attachments'])){
-            foreach(array_force($email['attachments']) as $attachment){
-// :IMPLEMENT:
-            //$mail->AddAttachment("/var/tmp/file.tar.gz"); // attachment
-            //$mail->AddAttachment("/tmp/image.jpg", "new.jpg"); // attachment
+            if(empty($email['smtp_host'])){
+                /*
+                 * Use the default SMTP configuration
+                 */
+                $mail->Host     = $_CONFIG['email']['smtp']['host'];
+                $mail->Port     = $_CONFIG['email']['smtp']['port'];
+                $mail->SMTPAuth = $_CONFIG['email']['smtp']['auth'];
+
+                switch(isset_get($_CONFIG['email']['smtp']['secure'])){
+                    case '':
+                        /*
+                         * Don't use secure connection
+                         */
+                        break;
+
+                    case 'ssl':
+                        //FALLTHROUGH
+                    case 'tls':
+                        $mail->SMTPSecure = $_CONFIG['email']['smtp']['secure'];
+                        break;
+
+                    default:
+                        throw new bException(tr('email_send(): Unknown global SMTP secure setting "%value%" for host "%host%". Use either false, "tls", or "ssl"', array('%value%' => $_CONFIG['email']['smtp']['secure'], '%host%' => $_CONFIG['email']['smtp']['host'])), 'unknow');
+                }
+
+            }else{
+                /*
+                 * Use user specific SMTP configuration
+                 */
+                $mail->Host     = $email['smtp_host'];
+                $mail->Port     = isset_get($email['smtp_port']);
+                $mail->SMTPAuth = $email['smtp_auth'];
+
+                switch(isset_get($email['smtp_secure'])){
+                    case '':
+                        /*
+                         * Don't use secure connection
+                         */
+                        break;
+
+                    case 'ssl':
+                        //FALLTHROUGH
+                    case 'tls':
+                        $mail->SMTPSecure = $email['smtp_secure'];
+                        break;
+
+                    default:
+                        throw new bException(tr('email_send(): Unknown user specific SMTP secure setting "%value%" for host "%host%". Use either false, "tls", or "ssl"', array('%value%' => $email['smtp_secure'], '%host%' => $_CONFIG['email']['smtp']['host'])), 'unknow');
+                }
             }
+
+            $mail->From       = $email['from'];
+            $mail->FromName   = $email['from_name'];
+            $mail->AddReplyTo($email['from'], $email['from_name']);
+
+            $mail->AddAddress($email['to'], isset_get($email['to_name']));
+
+    //        $mail->WordWrap = 50; // set word wrap
+
+            if($account['is_alias']){
+                $mail->Username = $account['real']['email'];
+                $mail->Password = $account['real']['pass'];
+
+            }else{
+                $mail->Username = $account['email'];
+                $mail->Password = $account['pass'];
+            }
+
+            if(empty($email['html'])){
+                $mail->IsHTML(true);
+                $mail->Body = $email['html'];
+
+            }else{
+                $mail->IsHTML(false);
+                $mail->Body = $email['text'];
+            }
+
+            $mail->Subject = $email['subject'];
+            $mail->AltBody = $email['text'];
+
+            if(!empty($email['attachments'])){
+                foreach(array_force($email['attachments']) as $attachment){
+    // :IMPLEMENT:
+                //$mail->AddAttachment("/var/tmp/file.tar.gz"); // attachment
+                //$mail->AddAttachment("/tmp/image.jpg", "new.jpg"); // attachment
+                }
+            }
+
+            if(!$mail->Send()){
+                throw new bException(tr('email_send(): Failed because "%error%"',  array('%error%' => $mail->ErrorInfo)), 'mailfail');
+            }
+
+            $email['sent'] = system_date_format(null, 'mysql');
         }
 
-        if(!$mail->Send()){
-            throw new bException(tr('email_send(): Failed because "%error%"',  array('%error%' => $mail->ErrorInfo)), 'mailfail');
-        }
+        email_update_message($email, 'sent');
 
     }catch(Exception $e){
         throw new bException('email_send(): Failed', $e);
@@ -658,5 +754,16 @@ function email_get_user($email, $subset = null){
     }catch(Exception $e){
         throw new bException(tr('email_get_user(): Failed'), $e);
     }
+}
+
+
+
+/*
+ * OBSOLETE
+ *
+ * These function wrappers only exist for compatibility, and may disappear at any time
+ */
+function email_insert_message($email, $direction){
+    return email_update_message($email, $direction);
 }
 ?>

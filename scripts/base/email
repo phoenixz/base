@@ -63,6 +63,11 @@ if(!in_array($criteria, array('ALL', 'ANSWERED', 'DELETED', 'FLAGGED', 'NEW', 'O
 }
 
 switch(argument(0)){
+    case 'send':
+        $count =
+        console_log(tr('Sent "%count%" unsent emails', array('%count%' => $count)), '', 'green');
+        break;
+
     case 'list':
         $list = email_list($users, $criteria);
         showdie($list);
