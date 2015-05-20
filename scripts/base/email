@@ -50,7 +50,11 @@ $criteria = strtoupper(argument('filter', true, 'UNSEEN'));
 $users    = argument('users', true, argument('user', true));
 
 if(!$users){
-    throw new bException(tr('No users specified'), 'notspecified');
+    if(!argument('all')){
+        throw new bException(tr('No users specified'), 'notspecified');
+    }
+
+    $users = array_keys($_CONFIG['email']['users']);
 }
 
 /*
