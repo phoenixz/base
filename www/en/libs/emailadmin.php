@@ -317,7 +317,7 @@ function emailadmin_add_user($email, $password){
         }
 
         emailadmin_query('INSERT INTO `virtual_users` (`domains_id`, `email`, `password`)
-                          VALUES                      (:domains_id , :email , :password )',
+                          VALUES                      (:domains_id , :email , ENCRYPT(:password , CONCAT("$6$", SUBSTRING(SHA(RAND()), -16))))',
 
                           array(':email'      => $email,
                                 ':domains_id' => $domains_id,
