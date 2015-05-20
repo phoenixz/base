@@ -62,11 +62,13 @@ function email_connect($username){
 /*
  * Poll for new emails
  */
-function email_list($usernames, $criteria = 'ALL'){
+function email_poll($usernames, $criteria = 'ALL'){
     try{
         $retval = array();
 
         foreach(array_force($usernames) as $username){
+            log_console(tr('Polling email account "%account%"', array('%account%' => $username)), '');
+
             $inbox  = email_connect($username);
             $emails = imap_search($inbox, $criteria);
 

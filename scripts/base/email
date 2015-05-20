@@ -69,7 +69,7 @@ if(!in_array($criteria, array('ALL', 'ANSWERED', 'DELETED', 'FLAGGED', 'NEW', 'O
 switch(argument(0)){
     case 'send':
         $count =
-        console_log(tr('Sent "%count%" unsent emails', array('%count%' => $count)), '', 'green');
+        log_console(tr('Sent "%count%" unsent emails', array('%count%' => $count)), '', 'green');
         break;
 
     case 'list':
@@ -82,9 +82,11 @@ switch(argument(0)){
 //            throw new bException(tr('Invalid filter "%filter%" specified, polling can only happen on filter "UNSEEN"', array('%filter%' => $criteria)), 'invalid');
         }
 
+        log_console(tr('Polling "%count%" email accounts', array('%count%' => count($users))), '', 'white');
+
         $count = 0;
 
-        foreach(email_list($users, $criteria) as $user){
+        foreach(email_poll($users, $criteria) as $user){
             foreach($user as $email){
                 $email = email_insert_message($email, 'received');
                 email_update_conversation($email, 'received');
