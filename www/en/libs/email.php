@@ -82,9 +82,9 @@ function email_poll($usernames, $criteria = 'ALL'){
                     /*
                      * get information specific to this email
                      */
-                    $data         = imap_fetch_overview($inbox, $email, 0);
-                    $data         = array_shift($data);
-                    $data         = array_from_object($data);
+                    $data = imap_fetch_overview($inbox, $email, 0);
+                    $data = array_shift($data);
+                    $data = array_from_object($data);
 
                     $data['text'] = imap_fetchbody($inbox, $email, 1.1);
                     $data['html'] = imap_fetchbody($inbox, $email, 1.2);
@@ -100,6 +100,8 @@ function email_poll($usernames, $criteria = 'ALL'){
 
                     $retval[$username][] = $data;
                 }
+
+                log_console(tr('Got "%count%" new mails for account "%account%"', array('%emails%' => count($emails), '%account%' => $username)), '', 'purple');
             }
         }
 
