@@ -329,8 +329,8 @@ function email_update_message($email, $direction){
         }else{
             switch($direction){
                 case 'sent':
-                    sql_query('INSERT INTO `email_messages` (`direction`, `conversations_id`, `reply_to_id`, `from`, `to`, `users_id`, `date`, `subject`, `text`, `html`, `sent`)
-                               VALUES                       (:direction , :conversations_id , :reply_to_id , :from , :to , :users_id , :date , :subject , :text , :html , '.($email['sent'] ? 'NOW()' : ''),
+                    sql_query('INSERT INTO `email_messages` (`direction`, `conversations_id`, `reply_to_id`, `from`, `to`, `users_id`, `date`, `subject`, `text`, `html`, `sent`                             )
+                               VALUES                       (:direction , :conversations_id , :reply_to_id , :from , :to , :users_id , :date , :subject , :text , :html , '.($email['sent'] ? 'NOW()' : '').')',
 
                                array(':direction'        => $direction,
                                      ':conversations_id' => $email['conversation']['id'],
