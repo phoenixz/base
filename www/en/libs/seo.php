@@ -16,7 +16,7 @@
 function seo_generate_unique_name($string, $table, $ownid = null, $field = 'seoname', $replace = '-', $first_suffix = null) {
     try{
         //prepare string
-        $string = trim(seo_create_string($string, $replace));
+        $string = trim(seo_string($string, $replace));
         $id     = 0;
 
         if($ownid and !is_numeric($ownid)){
@@ -35,7 +35,7 @@ function seo_generate_unique_name($string, $table, $ownid = null, $field = 'seon
 
             } else {
                 if($first_suffix){
-                    $string       = $string.trim(seo_create_string($first_suffix, $replace));
+                    $string       = $string.trim(seo_string($first_suffix, $replace));
                     $first_suffix = null;
                     $id--;
 
@@ -63,7 +63,7 @@ function seo_generate_unique_name($string, $table, $ownid = null, $field = 'seon
 /*
  * Return a seo appropriate string for given source string
  */
-function seo_create_string($source, $replace = '-') {
+function seo_string($source, $replace = '-') {
     try{
         if(str_is_utf8($source)){
             load_libs('mb');
@@ -110,7 +110,7 @@ function seo_create_string($source, $replace = '-') {
         }
 
     }catch(Exception $e){
-        throw new bException('seo_create_string(): Failed', $e);
+        throw new bException('seo_string(): Failed', $e);
     }
 }
 
@@ -121,10 +121,19 @@ function seo_create_string($source, $replace = '-') {
  * DO NOT USE THESE, THESE FUNCTIONS ARE DEPRECATED AND WILL BE DROPPED IN THE NEAR FUTURE!!
  */
 function str_create_seoname($source, $replace = '-'){
-    return seo_create_string($string, $replace);
+    return seo_string($string, $replace);
 }
 
 function generate_unique_seoname($string, $table, $field = 'seoname'){
     return seo_generate_unique_name($string, $table, $field);
+}
+
+
+
+/*
+ * Deprecated wrapper functions
+ */
+function seo_create_string($source, $replace = '-') {
+    return seo_string($source, $replace = '-');
 }
 ?>
