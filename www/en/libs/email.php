@@ -67,41 +67,48 @@ function email_poll($usernames, $criteria = 'ALL'){
         $retval = array();
 
         foreach(array_force($usernames) as $username){
-            log_console(tr('Polling email account "%account%"', array('%account%' => $username)), '');
+            try{
+                log_console(tr('Polling email account "%account%"', array('%account%' => $username)), '');
 
-            $inbox  = email_connect($username);
-            $emails = imap_search($inbox, $criteria);
+                $inbox  = email_connect($username);
+                $emails = imap_search($inbox, $criteria);
 
-            $retval[$username] = array();
+                $retval[$username] = array();
 
-            if($emails){
-                rsort($emails);
+                if($emails){
+                    rsort($emails);
 
-                /* for every email... */
-                foreach($emails as $email) {
                     /*
-                     * get information specific to this email
+                     * Process every email
                      */
-                    $data = imap_fetch_overview($inbox, $email, 0);
-                    $data = array_shift($data);
-                    $data = array_from_object($data);
+                    foreach($emails as $email) {
+                        /*
+                         * Get information specific to this email
+                         */
+                        $data = imap_fetch_overview($inbox, $email, 0);
+                        $data = array_shift($data);
+                        $data = array_from_object($data);
 
-                    $data['text'] = imap_fetchbody($inbox, $email, 1.1);
-                    $data['html'] = imap_fetchbody($inbox, $email, 1.2);
+                        $data['text'] = imap_fetchbody($inbox, $email, 1.1);
+                        $data['html'] = imap_fetchbody($inbox, $email, 1.2);
 
-                    if(!$data['text']){
-                        $data['text'] = imap_fetchbody($inbox, $email, 1);
+                        if(!$data['text']){
+                            $data['text'] = imap_fetchbody($inbox, $email, 1);
+                        }
+
+                        $data['text'] = trim(imap_qprint($data['text']));
+                        $data['text'] = str_replace("\r", '', $data['text']);
+                        $data['html'] = trim(imap_qprint($data['html']));
+                        $data['html'] = str_replace("\r", '', $data['html']);
+
+                        $retval[$username][] = $data;
                     }
 
-                    $data['text'] = trim(imap_qprint($data['text']));
-                    $data['text'] = str_replace("\r", '', $data['text']);
-                    $data['html'] = trim(imap_qprint($data['html']));
-                    $data['html'] = str_replace("\r", '', $data['html']);
-
-                    $retval[$username][] = $data;
+                    log_console(tr('Got "%count%" new mails for account "%account%"', array('%count%' => count($emails), '%account%' => $username)), '', 'purple');
                 }
 
-                log_console(tr('Got "%count%" new mails for account "%account%"', array('%count%' => count($emails), '%account%' => $username)), '', 'purple');
+            }catch(bException $e){
+                log_error(tr('Failed to poll email data for user "%user%"', array('%user%' => $username)));
             }
         }
 
@@ -165,6 +172,8 @@ function email_update_conversation($email, $direction){
 
     try{
         load_libs('json');
+
+        $email = email_update_message($email, $direction);
 
         if(empty($direction)){
             throw new bException('email_update_conversation(): No conversation direction specified', 'notspecified');
@@ -335,8 +344,8 @@ function email_update_message($email, $direction){
                                array(':direction'        => $direction,
                                      ':conversations_id' => $email['conversation']['id'],
                                      ':reply_to_id'      => $email['reply_to_id'],
-                                     ':from'             => $email['from'],
-                                     ':to'               => $email['to'],
+                                     ':from'             => $email['to'],
+                                     ':to'               => $email['from'],
                                      ':users_id'         => $email['users_id'],
                                      ':date'             => $email['date'],
                                      ':subject'          => $email['subject'],
@@ -538,7 +547,7 @@ function email_send($email, $delayed = null){
             $email['sent'] = system_date_format(null, 'mysql');
         }
 
-        email_update_message($email, 'sent');
+        email_update_conversation($email, 'sent');
 
     }catch(Exception $e){
         throw new bException('email_send(): Failed', $e);

@@ -68,7 +68,7 @@ if(!in_array($criteria, array('ALL', 'ANSWERED', 'DELETED', 'FLAGGED', 'NEW', 'O
 
 switch(argument(0)){
     case 'send':
-        $count =
+//        $count =
         log_console(tr('Sent "%count%" unsent emails', array('%count%' => $count)), '', 'green');
         break;
 
@@ -82,15 +82,23 @@ switch(argument(0)){
 //            throw new bException(tr('Invalid filter "%filter%" specified, polling can only happen on filter "UNSEEN"', array('%filter%' => $criteria)), 'invalid');
         }
 
-        log_console(tr('Polling "%count%" email accounts', array('%count%' => count($users))), '', 'white');
+        log_message(tr('Polling "%count%" email accounts', array('%count%' => count($users))), '', 'white');
 
         $count = 0;
 
-        foreach(email_poll($users, $criteria) as $user){
-            foreach($user as $email){
-                $email = email_insert_message($email, 'received');
-                email_update_conversation($email, 'received');
-                $count++;
+        foreach(email_poll($users, $criteria) as $user_emails){
+            try{
+                foreach($user_emails as $email){
+                    email_update_conversation($email, 'received');
+                    $count++;
+                }
+
+            }catch(bException $e){
+                /*
+                 * Continue working on the next
+                 */
+//:TODO: Add more exception data here
+                log_error(tr('Failed polling process'));
             }
         }
 
@@ -100,11 +108,11 @@ switch(argument(0)){
                 break;
 
             case 1:
-                log_console(tr('Added "1" new email'), '', 'green');
+                log_message(tr('Added "1" new email'), '', 'green');
                 break;
 
             default:
-                log_console(tr('Added "%count%" new emails', array('%count%' => $count)), '', 'green');
+                log_message(tr('Added "%count%" new emails', array('%count%' => $count)), '', 'green');
         }
 
         break;
