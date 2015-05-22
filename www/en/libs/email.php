@@ -131,11 +131,11 @@ function email_get_conversation($email){
         /*
          *
          */
-        $conversation = sql_get('SELECT `id`, `last_messages` FROM `email_conversations` WHERE ((`to` = :to AND `from` = :from) OR (`to` = :from AND `from` = :to) AND (`subject` = :subject OR `subject` = :resubject))',
+        $conversation = sql_get('SELECT `id`, `last_messages` FROM `email_conversations` WHERE ((`to` LIKE :to AND `from` LIKE :from) OR (`to` LIKE :from AND `from` LIKE :to) AND (`subject` = :subject OR `subject` = :resubject))',
 
-                                 array(':to'        => $email['to'],
-                                       ':from'      => $email['from'],
-                                       ':subject'   => $email['subject'],
+                                 array(':to'        => '%'.$email['to'].'%',
+                                       ':from'      => '%'.$email['from'].'%',
+                                       ':subject'   => str_from($email['subject'], 'RE: '),
                                        ':resubject' => 'RE: '.$email['subject']));
 
         if(!$conversation){
