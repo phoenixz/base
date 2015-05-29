@@ -1,4 +1,6 @@
 <?php
+sql_foreignkey_exists('geo_countries', 'fk_geo_countries_continents_id'    , 'ALTER TABLE `geo_countries` DROP FOREIGN KEY `fk_geo_countries_continents_id`');
+
 sql_query('DROP TABLE IF EXISTS `geo_continents`;');
 
 sql_query('CREATE TABLE `geo_continents` (`id`             INT(11)        NOT NULL AUTO_INCREMENT PRIMARY KEY,
@@ -149,12 +151,15 @@ sql_query('ALTER TABLE `geo_states` DROP INDEX `name`; ALTER TABLE `geo_states` 
 
 
 /*
- * Now work the counties table
+ * Now work the counties table. Drop all "provences" referernces since this table no longer exists
  */
-sql_foreignkey_exists('geo_counties', 'fk_geo_counties_regions_id'     , 'ALTER TABLE geo_counties DROP FOREIGN KEY `fk_geo_counties_regions_id`');
-sql_foreignkey_exists('geo_counties', 'fk_geo_counties_subregions_id'  , 'ALTER TABLE geo_counties DROP FOREIGN KEY `fk_geo_counties_subregions_id`');
-sql_foreignkey_exists('geo_counties', 'fk_geo_provences_regions_id'    , 'ALTER TABLE geo_counties DROP FOREIGN KEY `fk_geo_provences_regions_id`');
-sql_foreignkey_exists('geo_counties', 'fk_geo_provences_subregions_id' , 'ALTER TABLE geo_counties DROP FOREIGN KEY `fk_geo_provences_subregions_id`');
+sql_foreignkey_exists('geo_counties', 'fk_geo_counties_states_id'     , 'ALTER TABLE geo_counties DROP FOREIGN KEY `fk_geo_counties_states_id`');
+sql_foreignkey_exists('geo_counties', 'fk_geo_counties_regions_id'    , 'ALTER TABLE geo_counties DROP FOREIGN KEY `fk_geo_counties_regions_id`');
+sql_foreignkey_exists('geo_counties', 'fk_geo_counties_subregions_id' , 'ALTER TABLE geo_counties DROP FOREIGN KEY `fk_geo_counties_subregions_id`');
+
+sql_foreignkey_exists('geo_counties', 'fk_geo_provences_states_id'    , 'ALTER TABLE geo_counties DROP FOREIGN KEY `fk_geo_provences_states_id`');
+sql_foreignkey_exists('geo_counties', 'fk_geo_provences_regions_id'   , 'ALTER TABLE geo_counties DROP FOREIGN KEY `fk_geo_provences_regions_id`');
+sql_foreignkey_exists('geo_counties', 'fk_geo_provences_subregions_id', 'ALTER TABLE geo_counties DROP FOREIGN KEY `fk_geo_provences_subregions_id`');
 
 sql_index_exists ('geo_counties', 'regions_id'   ,  'ALTER TABLE `geo_counties` DROP INDEX `regions_id`');
 sql_index_exists ('geo_counties', 'subregions_id',  'ALTER TABLE `geo_counties` DROP INDEX `subregions_id`');
@@ -176,13 +181,14 @@ sql_index_exists ('geo_counties', 'admin1'       , '!ALTER TABLE `geo_counties` 
 sql_index_exists ('geo_counties', 'admin2'       , '!ALTER TABLE `geo_counties` ADD INDEX (`admin2`)');
 sql_index_exists ('geo_counties', 'moddate'      , '!ALTER TABLE `geo_counties` ADD INDEX (`moddate`)');
 
-sql_foreignkey_exists('geo_counties', 'fk_geo_counties_timezones_id'  , '!ALTER TABLE `geo_counties` ADD CONSTRAINT `fk_geo_counties_timezones_id` FOREIGN KEY (`timezones_id`) REFERENCES `geo_timezones` (`id`) ON DELETE CASCADE;');
-
 sql_query('ALTER TABLE `geo_counties` CHANGE COLUMN `countries_id` `countries_id` INT(11) NOT NULL');
 sql_query('ALTER TABLE `geo_counties` CHANGE COLUMN `states_id`    `states_id`    INT(11) NOT NULL');
 
 sql_query('ALTER TABLE `geo_counties` CHANGE COLUMN `latitude`  `latitude`  DECIMAL(10,7);');
 sql_query('ALTER TABLE `geo_counties` CHANGE COLUMN `longitude` `longitude` DECIMAL(10,7);');
+
+sql_foreignkey_exists('geo_counties', 'fk_geo_counties_timezones_id', '!ALTER TABLE `geo_counties` ADD CONSTRAINT `fk_geo_counties_timezones_id` FOREIGN KEY (`timezones_id`) REFERENCES `geo_timezones` (`id`) ON DELETE CASCADE;');
+sql_foreignkey_exists('geo_counties', 'fk_geo_counties_states_id'   , '!ALTER TABLE `geo_counties` ADD CONSTRAINT `fk_geo_counties_states_id`    FOREIGN KEY (`states_id`)    REFERENCES `geo_states`    (`id`) ON DELETE CASCADE;');
 
 
 
@@ -196,8 +202,10 @@ sql_query('ALTER TABLE `geo_counties` DROP INDEX `name`; ALTER TABLE `geo_counti
 /*
  * Now work the cities table
  */
-sql_foreignkey_exists('geo_cities', 'fk_geo_cities_regions_id'    , 'ALTER TABLE geo_cities DROP FOREIGN KEY `fk_geo_cities_regions_id`');
-sql_foreignkey_exists('geo_cities', 'fk_geo_cities_subregions_id' , 'ALTER TABLE geo_cities DROP FOREIGN KEY `fk_geo_cities_subregions_id`');
+sql_foreignkey_exists('geo_cities', 'fk_geo_cities_regions_id'    , 'ALTER TABLE `geo_cities` DROP FOREIGN KEY `fk_geo_cities_regions_id`');
+sql_foreignkey_exists('geo_cities', 'fk_geo_cities_subregions_id' , 'ALTER TABLE `geo_cities` DROP FOREIGN KEY `fk_geo_cities_subregions_id`');
+sql_foreignkey_exists('geo_cities', 'fk_geo_cities_countries_id'  , 'ALTER TABLE `geo_cities` DROP FOREIGN KEY `fk_geo_cities_countries_id`');
+sql_foreignkey_exists('geo_cities', 'fk_geo_cities_states_id'     , 'ALTER TABLE `geo_cities` DROP FOREIGN KEY `fk_geo_cities_states_id`');
 
 sql_index_exists ('geo_cities', 'regions_id'       ,  'ALTER TABLE `geo_cities` DROP INDEX `regions_id`');
 sql_index_exists ('geo_cities', 'subregions_id'    ,  'ALTER TABLE `geo_cities` DROP INDEX `subregions_id`');
@@ -232,12 +240,17 @@ sql_query('ALTER TABLE `geo_cities` CHANGE COLUMN `states_id`    `states_id`    
 sql_query('ALTER TABLE `geo_cities` CHANGE COLUMN `latitude`  `latitude`  DECIMAL(10,7);');
 sql_query('ALTER TABLE `geo_cities` CHANGE COLUMN `longitude` `longitude` DECIMAL(10,7);');
 
+sql_foreignkey_exists('geo_cities', 'fk_geo_cities_countries_id', '!ALTER TABLE `geo_cities` ADD CONSTRAINT `fk_geo_cities_countries_id` FOREIGN KEY (`countries_id`) REFERENCES `geo_countries` (`id`) ON DELETE CASCADE;');
+sql_foreignkey_exists('geo_cities', 'fk_geo_cities_states_id'   , '!ALTER TABLE `geo_cities` ADD CONSTRAINT `fk_geo_cities_states_id`    FOREIGN KEY (`states_id`)    REFERENCES `geo_states`    (`id`) ON DELETE CASCADE;');
+
 
 
 /*
  * States are unique by name, latitude and longitude
  */
-sql_query('ALTER TABLE `geo_cities` DROP INDEX `name`; ALTER TABLE `geo_cities` ADD INDEX (`name`); ALTER TABLE `geo_cities` ADD UNIQUE (`name`, `latitude`, `longitude`, `countries_id`); ');
+sql_query('ALTER TABLE `geo_cities` DROP INDEX `name`');
+sql_query('ALTER TABLE `geo_cities` ADD INDEX (`name`)');
+sql_query('ALTER TABLE `geo_cities` ADD UNIQUE (`name`, `latitude`, `longitude`, `countries_id`);');
 
 
 

@@ -2,9 +2,8 @@
 /*
  * Add blogs_id to blogs_keywords
  */
+sql_foreignkey_exists('blogs_keywords', 'fk_blogs_keywords_blogs_id',  'ALTER TABLE `blogs_keywords` DROP FOREIGN KEY `fk_blogs_keywords_blogs_id`');
 sql_column_exists    ('blogs_keywords', 'blogs_id'                  , '!ALTER TABLE `blogs_keywords` ADD COLUMN `blogs_id` INT(11) NULL AFTER `createdby`');
-sql_index_exists     ('blogs_keywords', 'blogs_id'                  , '!ALTER TABLE `blogs_keywords` ADD INDEX(`blogs_id`)');
-sql_foreignkey_exists('blogs_keywords', 'fk_blogs_keywords_blogs_id', '!ALTER TABLE `blogs_keywords` ADD CONSTRAINT `fk_blogs_keywords_blogs_id` FOREIGN KEY (`blogs_id`) REFERENCES `blogs` (`id`) ON DELETE CASCADE;');
 
 
 
@@ -52,7 +51,9 @@ while($keyword = sql_fetch($r)){
     }
 }
 
-sql_query('ALTER TABLE `blogs_keywords` MODIFY COLUMN `blogs_id` INT(11) NOT NULL');
+sql_query            ('ALTER TABLE `blogs_keywords` MODIFY COLUMN `blogs_id` INT(11) NOT NULL');
+sql_index_exists     ('blogs_keywords', 'blogs_id'                  , '!ALTER TABLE `blogs_keywords` ADD INDEX(`blogs_id`)');
+sql_foreignkey_exists('blogs_keywords', 'fk_blogs_keywords_blogs_id', '!ALTER TABLE `blogs_keywords` ADD CONSTRAINT `fk_blogs_keywords_blogs_id` FOREIGN KEY (`blogs_id`) REFERENCES `blogs` (`id`) ON DELETE CASCADE;');
 
 log_console('Done', '');
 ?>
