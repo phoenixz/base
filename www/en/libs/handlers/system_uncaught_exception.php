@@ -93,10 +93,13 @@ try{
 
 }catch(Exception $f){
     if(function_exists('show')){
-        show('uncaught_exception(): Failed');
-        show($f);
-        show('uncaught_exception(): Original exception');
-        showdie($e);
+        echo 'uncaught_exception(): Failed';
+
+        if(ENVIRONMENT != "production"){
+            show($f);
+            show('uncaught_exception(): Original exception');
+            showdie($e);
+        }
 
     }else{
         try{
