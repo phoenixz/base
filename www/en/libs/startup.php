@@ -346,12 +346,18 @@ try{
                      * Language might have been set by GET or POST
                      */
                     if(!empty($_REQUEST['language'])){
-                        $language             = $_REQUEST['language'];
-                        $_SESSION['language'] = $language;
+                        $language = $_REQUEST['language'];
 
-                        unset($_GET['language']);
-                        unset($_POST['language']);
-                        unset($_REQUEST['language']);
+                        /*
+                         * Ensure that the requested language exists
+                         */
+                        if(is_scalar(isset_get($language))){
+                            if(!empty($_CONFIG['language']['supported'][$language])){
+                                $_SESSION['language'] = $language;
+                            }
+                        }
+
+                        unset($language);
 
                     }elseif(!empty($_SESSION['language'])){
                         /*
