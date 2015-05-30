@@ -26,7 +26,14 @@ if(!isset($GLOBALS['quiet'])){
     $GLOBALS['quiet'] = true;
 }
 
-define('ROOT', realpath(dirname(__FILE__).'/../../..').'/');
+
+
+/*
+ * Allow for ROOT to be predefined. This may be useful when using www/404.php with www/en, www/es, etc
+ */
+if(!defined('ROOT')){
+    define('ROOT', realpath(dirname(__FILE__).'/../../..').'/');
+}
 
 
 /*
