@@ -699,7 +699,7 @@ function sql_where($query, $required){
  */
 function sql_get_cached($key, $query, $column = false, $execute = false, $expiration_time = 86400, $sql = 'sql'){
     try{
-        if(($value = mc_get($key)) === false){
+        if(($value = mc_get($key, 'sql_')) === false){
             /*
              * Keyword data not found in cache, get it from MySQL with
              * specified query and store it in cache for next read
@@ -726,7 +726,7 @@ function sql_get_cached($key, $query, $column = false, $execute = false, $expira
 
             $value = sql_get($query, $column, $execute, $sql);
 
-            mc_put($key, $value, $expiration_time);
+            mc_put($value, $key, 'sql_', $expiration_time);
         }
 
         return $value;
@@ -744,7 +744,7 @@ function sql_get_cached($key, $query, $column = false, $execute = false, $expira
  */
 function sql_list_cached($key, $query, $column = false, $execute = false, $expiration_time = 86400, $sql = 'sql'){
     try{
-        if(($list = mc_get($key)) === false){
+        if(($list = mc_get($key, 'sql_')) === false){
             /*
              * Keyword data not found in cache, get it from MySQL with
              * specified query and store it in cache for next read
@@ -771,7 +771,7 @@ function sql_list_cached($key, $query, $column = false, $execute = false, $expir
 
             $list = sql_list($query, $column, $execute, $sql);
 
-            mc_put($key, $list, $expiration_time);
+            mc_put($list, $key, 'sql_', $expiration_time);
         }
 
         return $list;

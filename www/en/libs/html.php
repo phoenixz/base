@@ -367,12 +367,14 @@ function html_header($params = null, $meta = array()){
     global $_CONFIG;
 
     try{
+        array_params($meta);
         array_params($params, 'title');
+
         array_default($params, 'http'          , 'html');
         array_default($params, 'doctype'       , 'html');
         array_default($params, 'html'          , 'html');
         array_default($params, 'body'          , '<body>');
-        array_default($params, 'title'         , null);
+        array_default($params, 'title'         , isset_get($meta['title']));
         array_default($params, 'meta'          , $meta);
         array_default($params, 'link'          , array());
         array_default($params, 'extra'         , '');
@@ -412,7 +414,7 @@ function html_header($params = null, $meta = array()){
             array_ensure($params['meta'], 'viewport', $_CONFIG['bootstrap']['viewport']);
         }
 
-        $params['title'] = html_title($params['title']);
+        $meta['title'] = html_title($meta['title']);
 
         $retval = "<!DOCTYPE ".$params['doctype'].">\n".
                   "<".$params['html'].">\n".
