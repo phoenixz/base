@@ -13,6 +13,7 @@
 //$environment = 'production_debug';
 
 
+
 /*
  * Framework version
  */
@@ -25,7 +26,6 @@ define('FRAMEWORKCODEVERSION', '0.22.3');
 if(!isset($GLOBALS['quiet'])){
     $GLOBALS['quiet'] = true;
 }
-
 
 
 /*
@@ -352,8 +352,12 @@ try{
                     /*
                      * Language might have been set by GET or POST
                      */
-                    if(!empty($_REQUEST['language'])){
-                        $language = $_REQUEST['language'];
+                    if(!empty($_REQUEST['l'])){
+                        $_REQUEST['l'] = substr(__DIR__, -7, 2);
+                    }
+
+                    if(!empty($_REQUEST['l'])){
+                        $language = $_REQUEST['l'];
 
                         /*
                          * Ensure that the requested language exists
