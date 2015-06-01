@@ -352,7 +352,7 @@ try{
                     /*
                      * Language might have been set by GET or POST
                      */
-                    if(!empty($_REQUEST['l'])){
+                    if(empty($_REQUEST['l'])){
                         $_REQUEST['l'] = substr(__DIR__, -7, 2);
                     }
 
@@ -367,8 +367,6 @@ try{
                                 $_SESSION['language'] = $language;
                             }
                         }
-
-                        unset($language);
 
                     }elseif(!empty($_SESSION['language'])){
                         /*
