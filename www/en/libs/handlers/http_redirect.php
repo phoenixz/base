@@ -15,11 +15,24 @@ try{
          */
         $target = $_SERVER['REQUEST_URI'];
 
+    }elseif($target === 'prev'){
+        /*
+         * Special redirect. Redirect to this very page. Usefull for right after POST requests to avoid "confirm post submissions"
+         */
+        $target = isset_get($_SERVER['HTTP_REFERER']);
+
+        if(!$target or ($target == $_SERVER['REQUEST_URI'])){
+            /*
+             * Don't redirect to the same page! If the referrer was this page, then drop back to the index page
+             */
+            $target = $_CONFIG['redirects']['index'];
+        }
+
     }elseif($target === false){
         /*
          * Special redirect. Redirect to this very page, but without query
          */
-        $target = $_SERVER['PHP_SELF'];
+        $target = str_until($_SERVER['REQUEST_URI'], '?');
 
     }elseif(!$target){
         /*
