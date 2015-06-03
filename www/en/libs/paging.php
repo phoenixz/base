@@ -264,22 +264,14 @@ function paging_generate($params){
  *
  * Default to $default which by default is 1
  */
-function paging_check_page($page, $page_max, $default = 1){
+function paging_check_page($page, $page_max){
     global $_CONFIG;
 
     try{
-        $checked_page = force_natural_number($page, $default);
+        $checked_page = force_natural_number($page, 1);
 
-        if($page and ($checked_page != $page)){
-            html_flash_set(tr('The specified page "%page%" does not exist, showing page "%default%" instead', array('%page%' => $page, '%default%' => $default)), 'warning');
-            redirect(domain(true, 'page=1'));
-//            return $checked_page;
-        }
-
-        if($page > $page_max){
-            html_flash_set(tr('The specified page "%page%" does not exist, showing page "%default%" instead', array('%page%' => $page, '%default%' => $default)), 'warning');
-            redirect(domain(true, 'page=1'));
-//            return $default;
+        if(($page and ($checked_page != $page)) or ($page > $page_max)){
+            page_404();
         }
 
         return $page;
@@ -294,7 +286,7 @@ function paging_check_page($page, $page_max, $default = 1){
 /*
  *
  */
-function paging_data($page, $limit, $rows, $default_page = 1){
+function paging_data($page, $limit, $rows){
     global $_CONFIG;
 
     try{
@@ -302,7 +294,7 @@ function paging_data($page, $limit, $rows, $default_page = 1){
         $retval['limit']         = paging_limit($limit, $retval['default_limit']);
         $retval['display_limit'] = (($_CONFIG['paging']['limit'] == $retval['limit']) ? '' : $retval['limit']);
         $retval['pages']         = ceil($rows / $retval['limit']);
-        $retval['page']          = paging_check_page($page, $retval['pages'], $default_page);
+        $retval['page']          = paging_check_page($page, $retval['pages']);
         $retval['count']         = $rows;
         $retval['start']         = (force_natural_number($retval['page']) - 1) * $retval['limit'] + 1;
         $retval['stop']          = $retval['start'] + $retval['limit'] - 1;
