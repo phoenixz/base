@@ -1271,27 +1271,43 @@ function in_source($source, $key, $return){
 /*
  *
  */
-function system_date_format($date = null, $format = 'human_datetime'){
+function system_date_format($date = null, $requested_format = 'human_datetime'){
     global $_CONFIG;
 
     try{
+        /*
+         * Ensure we have some valid date string
+         */
         if(!$date){
             $date = date('Y-m-d H:i:s');
+
+        }elseif(is_numeric($date)){
+            $date = date('Y-m-d H:i:s', $date);
         }
 
-        if($format == 'mysql'){
+        /*
+         * Ensure we have a valid format
+         */
+        if($requested_format == 'mysql'){
             $format = 'Y-m-d H:i:s';
 
         }else{
-            $format = $_CONFIG['formats'][$format];
+            $format = $_CONFIG['formats'][$requested_format];
         }
 
+        /*
+         * Format
+         */
         $date   = new DateTime($date);
         return $date->format($format);
 
     }catch(Exception $e){
-        if(empty($_CONFIG['formats'][$format]) and ($format != 'mysql')){
-            throw new bException('system_date_format(): Specified format "'.str_log($format).'" does not exist', $e);
+        if(!isset($_CONFIG['formats'][$requested_format]) and ($format != 'mysql')){
+            throw new bException('system_date_format(): Specified format "'.str_log($requested_format).'" does not exist', $e);
+        }
+
+        if(isset($format)){
+            throw new bException(tr('system_date_format(): Failed to parse format "%format%"', array('%format%' => str_log($format))), $e);
         }
 
         throw new bException('system_date_format(): Failed', $e);

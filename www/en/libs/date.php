@@ -275,4 +275,35 @@ function date_time_format($time, $format = 24, $separator = ':'){
             throw bException('date_time_format(): Unknown format "'.str_log($format).'" specified', 'unknown');
     }
 }
+
+
+
+/*
+ *
+ */
+function date_relative($timestamp, $now = null, $periods = null){
+    try{
+        if(!$now){
+            $now = time();
+        }
+
+        if(!$periods){
+            $periods = array(10       => tr('Right now'),
+                             86400    => tr('Today'),
+                             604800   => tr('Last week'),
+                             31536000 => tr('This year'));
+        }
+
+        usort($periods);
+
+        foreach($periods as $time => $label){
+            if($timestamp < $time){
+                return $label;
+            }
+        }
+
+    }catch(Exception $e){
+        throw new bException(tr('date_relative(): Failed'), $e);
+    }
+}
 ?>
