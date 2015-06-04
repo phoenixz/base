@@ -413,7 +413,7 @@ function user_signup($params){
                            WHERE  `username` = :username
                            OR     `email`    = :email',
 
-                           array(':username' => $params['username'],
+                           array(':username' => isset_get($params['username']),
                                  ':email'    => $params['email']));
 
         if($dbuser){
