@@ -41,6 +41,7 @@ try{
         /*
          * Drop the core database
          */
+        sql_init();
         if(is_object($GLOBALS['sql']) and $GLOBALS['sql'] instanceof PDO){
             $GLOBALS['sql']->query('DROP DATABASE '.$_CONFIG['db']['db']);
 
