@@ -552,6 +552,10 @@ function html_flash($class = null){
             throw new bException('html_flash(): This function can only be executed on a webserver!');
         }
 
+        if($class == null){
+            $class = $_CONFIG['flash']['default_name'];
+        }
+
         if(!isset($_SESSION['flash'])){
             /*
              * Auto create
@@ -571,11 +575,11 @@ function html_flash($class = null){
         $retval = '';
 
         foreach($_SESSION['flash'] as $id => $message){
-            if(is_object($message) and $message instanceof Exception){
-                $message = array('type'    => 'error',
-                                 'message' => $message->getMessage(),
-                                 'class'   => $class);
-            }
+            //if(is_object($message) and $message instanceof Exception){
+            //    $message = array('type'    => 'error',
+            //                     'message' => $message->getMessage(),
+            //                     'class'   => $class);
+            //}
 
             if(($class != $message['class']) and ($class != 'all')){
                 continue;
@@ -588,7 +592,7 @@ function html_flash($class = null){
             $class    = $message['class'];
             $message  = $message['message'];
 
-            if(($type == 'error') and (ENVIRONMENT === 'production')){
+            if(($type == 'error') and (ENVIRONMENT == 'production')){
                 $message = tr('Something went wrong, please try again later');
             }
 
@@ -651,12 +655,18 @@ function html_flash($class = null){
  * Show a flash message with the specified message
  */
 function html_flash_set($messages, $type = 'info', $class = null){
+    global $_CONFIG;
+
     try{
         if(!$messages){
             /*
              * Wut? no message?
              */
             return false;
+        }
+
+        if($class == null){
+            $class = $_CONFIG['flash']['default_name'];
         }
 
         /*
@@ -671,7 +681,7 @@ function html_flash_set($messages, $type = 'info', $class = null){
 
         if(!is_array($messages)){
             if(is_object($messages) and $messages instanceof Exception){
-                $type     = 'error';
+                $type     = (($type == 'warning') ? 'warning' : 'error');
                 $messages = $messages->getMessage();
                 $messages = (strstr($messages, '():') ? trim(str_from($messages, '():')) : $messages);
             }
@@ -695,6 +705,31 @@ function html_flash_set($messages, $type = 'info', $class = null){
     }
 }
 
+
+
+/*
+ * Returns true if there is an HTML message with the specified class
+ */
+function html_flash_class($class = null){
+    try{
+        if($class == null){
+            $class = $_CONFIG['flash']['default_name'];
+        }
+
+        if(isset($_SESSION['flash'])){
+            foreach($_SESSION['flash'] as $message){
+                if($message['class'] == $class){
+                    return true;
+                }
+            }
+        }
+
+        return false;
+
+    }catch(Exception $e){
+        throw new bException('html_flash_class(): Failed', $e);
+    }
+}
 
 
 

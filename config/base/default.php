@@ -134,7 +134,8 @@ $_CONFIG['editors']            = array('imageupload'      => 'session',         
 $_CONFIG['feedback']           = array('emails'           => array('Sven Oostenbrink Support' => 'support@svenoostenbrink.com'));
 
 // Flash alert configuration
-$_CONFIG['flash']              = array('css_name'         => 'flash',
+$_CONFIG['flash']              = array('default_class'    => '',
+                                       'css_name'         => 'flash',
                                        'button'           => '',
                                        'prefix'           => '');
 
