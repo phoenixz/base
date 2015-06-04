@@ -191,8 +191,6 @@ function http_headers($params, $content_length){
         array_default($params, 'http_code', 200);
         array_default($params, 'cors'     , '');
 
-        http_response_code($params['http_code']);
-
         $headers = array();
 
         if($params['http_code'] == 200){
@@ -222,6 +220,8 @@ function http_headers($params, $content_length){
         /*
          * Set correct headers
          */
+        http_response_code($params['http_code']);
+
         foreach($headers as $header){
             header($header);
         }
@@ -335,17 +335,19 @@ function http_cache_test(){
         }
 
         if((strtotime(isset_get($_SERVER['HTTP_IF_MODIFIED_SINCE'])) == filemtime($_SERVER['SCRIPT_FILENAME'])) or trim(isset_get($_SERVER['HTTP_IF_NONE_MATCH']), '') == $GLOBALS['etag']){
-            /*
-             * The client sent an etag which is still valid, no body (or anything else) necesary
-             */
+            if(empty($GLOBALS['flash'])){
+                /*
+                 * The client sent an etag which is still valid, no body (or anything else) necesary
+                 */
 // :TODO: Check if http_response_code(304) is good enough, or if header("HTTP/1.1 304 Not Modified") is required
 //                header("HTTP/1.1 304 Not Modified");
 
 // :TODO: Should the next lines be deleted or not? Investigate if 304 should again return the etag or not
 //                header('Cache-Control: '.$params['visibility'].', '.$params['policy']);
 //                header('ETag: "'.$GLOBALS['etag'].'"');
-            http_response_code(304);
-            die();
+                http_response_code(304);
+                die();
+            }
         }
 
         return true;
@@ -374,7 +376,13 @@ function http_cache($params, $headers){
         }
 
         if(empty($GLOBALS['etag'])){
-            $GLOBALS['etag'] = sha1(PROJECT.$_SERVER['SCRIPT_FILENAME'].filemtime($_SERVER['SCRIPT_FILENAME']).isset_get($params['etag']));
+            if(!empty($GLOBALS['flash'])){
+                $GLOBALS['etag']  = null;
+                $params['policy'] = 'no-store';
+
+            }else{
+                $GLOBALS['etag'] = sha1(PROJECT.$_SERVER['SCRIPT_FILENAME'].filemtime($_SERVER['SCRIPT_FILENAME']).isset_get($params['etag']));
+            }
         }
 
         if(!empty($GLOBALS['page_is_admin'])){

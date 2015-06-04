@@ -552,82 +552,93 @@ function html_flash($class = null){
             throw new bException('html_flash(): This function can only be executed on a webserver!');
         }
 
-        if(empty($_SESSION['flash'])){
+        if(!isset($_SESSION['flash'])){
             /*
-             * Empty message will only add a hidden empty flash box which can be used later by $.flashMessage()!
+             * Auto create
              */
-            return '<div id="jsFlashMessage" class="'.$_CONFIG['flash']['css_name'].' '.$_CONFIG['flash']['prefix'].($class ? ' '.$class : '').'" style="display:none;"></div>';
+            $_SESSION['flash'] = array();
         }
 
         if(!is_array($_SESSION['flash'])){
             /*
-             * $_SESSION['flash'] should always be an array
+             * $_SESSION['flash'] should always be an array. Don't crash on minor detail, just correct and continue
              */
-            throw bException(tr('html_flash(): Invalid flash structure in $_SESSION array, it should always be an array but it is a "%type%". Be sure to always use html_flash_set() to add new flash messages', array('%type%' => gettype($_SESSION['flash']))), 'invalid');
+// :TODO: Should this be an exception?
+            log_error(tr('html_flash(): Invalid flash structure in $_SESSION array, it should always be an array but it is a "%type%". Be sure to always use html_flash_set() to add new flash messages', array('%type%' => gettype($_SESSION['flash']))), 'invalid');
+            $_SESSION['flash'] = array();
         }
-
-        $messages = $_SESSION['flash'];
-        unset($_SESSION['flash']);
 
         $retval = '';
 
-        foreach($messages as $message){
+        foreach($_SESSION['flash'] as $id => $message){
             if(is_object($message) and $message instanceof Exception){
                 $message = array('type'    => 'error',
                                  'message' => $message->getMessage(),
                                  'class'   => $class);
             }
 
-            if($class and ($class == $message['class'])){
-                /*
-                 * The message contains what type and basic (usually this comes from $_SESSION[flash]
-                 */
-                $type     = $message['type'];
-                $class    = $message['class'];
-                $message  = $message['message'];
-
-                if(($type == 'error') and (ENVIRONMENT === 'production')){
-                    $message = tr('Something went wrong, please try again later');
-                }
-
-                switch(strtolower($type)){
-                    case 'info':
-                        $type = 'information';
-                        // FALLTHROUGH
-
-                    case 'information':
-                        break;
-
-                    case 'success':
-                        break;
-
-                    case 'error':
-                        break;
-
-                    case 'warning':
-                        $type = 'attention';
-                        // FALLTHROUGH
-
-                    case 'attention':
-                        break;
-
-                    default:
-                        throw new bException(tr('html_flash(): Unknown flash type "%type%" specified. Please specify one of "info" or "success" or "attention" or "error"', array('%type%' => str_log($type))), 'flash/unknown');
-                }
-
-                if(!debug()){
-                    /*
-                     * Don't show "function_name(): " part of message
-                     */
-                    $message = trim(str_from($message, '():'));
-                }
-
-        //        $retval .= '<div class="sys_bg sys_'.$type.'"></div><div class="'.$_CONFIG['flash']['css_name'].' sys_'.$type.'">'.$message.'</div>';
-                $retval .= '<div class="'.$_CONFIG['flash']['css_name'].' '.$_CONFIG['flash']['prefix'].$type.($class ? ' '.$class : '').'">'.$_CONFIG['flash']['button'].$message.'</div>';
+            if(($class != $message['class']) and ($class != 'all')){
+                continue;
             }
+
+            /*
+             * The message contains what type and basic (usually this comes from $_SESSION[flash]
+             */
+            $type     = $message['type'];
+            $class    = $message['class'];
+            $message  = $message['message'];
+
+            if(($type == 'error') and (ENVIRONMENT === 'production')){
+                $message = tr('Something went wrong, please try again later');
+            }
+
+            switch(strtolower($type)){
+                case 'info':
+                    $type = 'information';
+                    // FALLTHROUGH
+
+                case 'information':
+                    break;
+
+                case 'success':
+                    break;
+
+                case 'error':
+                    break;
+
+                case 'warning':
+                    $type = 'attention';
+                    // FALLTHROUGH
+
+                case 'attention':
+                    break;
+
+                default:
+                    throw new bException(tr('html_flash(): Unknown flash type "%type%" specified. Please specify one of "info" or "success" or "attention" or "error"', array('%type%' => str_log($type))), 'flash/unknown');
+            }
+
+            if(!debug()){
+                /*
+                 * Don't show "function_name(): " part of message
+                 */
+                $message = trim(str_from($message, '():'));
+            }
+
+            /*
+             * Set the indicator that we have added flash messages
+             */
+            $GLOBALS['flash'] = true;
+
+    //        $retval .= '<div class="sys_bg sys_'.$type.'"></div><div class="'.$_CONFIG['flash']['css_name'].' sys_'.$type.'">'.$message.'</div>';
+            $retval .= '<div class="'.$_CONFIG['flash']['css_name'].' '.$_CONFIG['flash']['prefix'].$type.($class ? ' '.$class : '').'">'.$_CONFIG['flash']['button'].$message.'</div>';
+
+            unset($_SESSION['flash'][$id]);
         }
 
-        return $retval;
+        /*
+         * Add an extra hidden flash message box that can respond for jsFlashMessages
+         */
+        return $retval.'<div id="jsFlashMessage" class="'.$_CONFIG['flash']['css_name'].' '.$_CONFIG['flash']['prefix'].($class ? ' '.$class : '').'" style="display:none;"></div>';
 
     }catch(Exception $e){
         throw new bException('html_flash(): Failed', $e);

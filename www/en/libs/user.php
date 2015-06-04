@@ -396,10 +396,6 @@ function user_check_blacklisted($name){
  */
 function user_signup($params){
     try{
-        if(!is_array($params)){
-            throw new bException(tr('user_signup(): Invalid params specified'), 'invalid');
-        }
-
         if(empty($params['email'])){
             throw new bException(tr('user_signup(): Please specify an email address'), 'notspecified');
         }
@@ -408,7 +404,9 @@ function user_signup($params){
             throw new bException(tr('user_signup(): Please specify a password'), 'notspecified');
         }
 
-        $dbuser = sql_get('SELECT `id`
+        $dbuser = sql_get('SELECT `id`,
+                                  `username`,
+                                  `email`
 
                            FROM   `users`
 
@@ -419,7 +417,15 @@ function user_signup($params){
                                  ':email'    => $params['email']));
 
         if($dbuser){
-            throw new bException(tr('user_signup(): User with username "%name%" or email "%email%" already exists', array('%name%' => str_log(isset_get($params['username'])), '%email%' => str_log(isset_get($params['email'])))), 'exists');
+            if(!empty($dbuser['email']) and !empty($dbuser['username'])){
+                throw new bException(tr('user_signup(): User with username "%name%" or email "%email%" already exists', array('%name%' => str_log(isset_get($params['username'])), '%email%' => str_log(isset_get($params['email'])))), 'exists');
+
+            }elseif(!empty($dbuser['email'])){
+                throw new bException(tr('user_signup(): User with email "%email%" already exists', array('%email%' => str_log(isset_get($params['email'])))), 'exists');
+
+            }else{
+                throw new bException(tr('user_signup(): User with username "%name%" already exists', array('%name%' => str_log(isset_get($params['username'])))), 'exists');
+            }
         }
 
         sql_query('INSERT INTO `users` (`status`, `createdby`, `username`, `password`, `name`, `email`)
