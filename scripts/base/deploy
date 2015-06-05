@@ -121,7 +121,7 @@ log_screen('Starting deploy of project "'.PROJECT.'"', 'deploy', 'white');
  * Deployment is always done to targets, and production is always a target, we cannot deploy from a target to a target
  */
 if(ENVIRONMENT == 'production') {
-    throw new bException('You are running the deply script on production environment? Are you high?', 'production');
+    throw new bException('You are running the deploy script on production environment? Are you high?', 'production');
 }
 
 /*
