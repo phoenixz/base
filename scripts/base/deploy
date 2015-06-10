@@ -27,7 +27,7 @@ subenv SUBENVIRONMENTNAME  - Deploy another sub environment than the
 
 all                        - Deploy all sub environments
 
-docontentcheck             - Check content files
+docontent / docontentcheck - Check content files
 
 dosyntax / doparse         - Do PHP syntax check parse
 
@@ -41,14 +41,6 @@ nonotify                   - Do not send notifications
 
 nopush                     - Do not automatically git push all changes and
                              tags
-
-nocontent                  - Do not deploy the content directory contents
-                             even if the deployment configuration for the
-                             specified environments say it should be.
-
-docontent                  - Do deploy the content directory contents even
-                             if the development configuration for the specified
-                             environments say it should not be
 
 noparrallel                - Do not use parrallel rsync deploy, even if the
                              website is configured to do so anyway
@@ -127,27 +119,25 @@ if(ENVIRONMENT == 'production') {
 /*
  * Check command line parameters
  */
-$noinit         =   argument('noinit');
-$nositemap      =   argument('nositemap');
-$nohooks        =  (argument('nohook')     or argument('nohooks'));
-$nosyntax       = !(argument('dosyntax')   or argument('doparse'));
-$nodeploy       =  (argument('nodeploy')   or argument('test'));
-$noversion      = !(argument('upversion')  or argument('upversions'));
-$nofixperms     =  (argument('nofixperms') or argument('nofixpermissions'));
+$noinit        =   argument('noinit');
+$nositemap     =   argument('nositemap');
+$nohooks       =  (argument('nohook')     or argument('nohooks'));
+$nosyntax      = !(argument('dosyntax')   or argument('doparse'));
+$nodeploy      =  (argument('nodeploy')   or argument('test'));
+$noversion     = !(argument('upversion')  or argument('upversions'));
+$nocontent     = !(argument('docontent')  or argument('docontentcheck'));
+$nofixperms    =  (argument('nofixperms') or argument('nofixpermissions'));
 
-$notag          =  (argument('notag')      or argument('notags') or $noversion);
-$nopush         =  (argument('nopush')     or ($noversion and $notag));
-$stash          =   argument('stash');
-$notouch        =   argument('notouch');
-$nocontent      =   argument('nocontent');
-$docontent      =   argument('docontent');
-$nocontentcheck =  !argument('docontentcheck');
+$notag         =  (argument('notag')      or argument('notags') or $noversion);
+$nopush        =  (argument('nopush')     or ($noversion and $notag));
+$stash         =   argument('stash');
+$notouch       =   argument('notouch');
 
-$message        =   argument('message'      , true);
-$continuersync  =   argument('continuersync', true);
-$targets        =   argument('target'       , 'all', argument('targets', 'all'));
+$message       =   argument('message'      , true);
+$continuersync =   argument('continuersync', true);
+$targets       =   argument('target'       , 'all', argument('targets', 'all'));
 
-$tilde          = '~'.date('Ymd-His');
+$tilde         = '~'.date('Ymd-His');
 
 if(!$message and !$notag){
     throw new bException('No tag message specified! please use ./scripts/base/deploy ..... message "commit message"', 'notspecified');
@@ -484,7 +474,7 @@ foreach($targets as $target_environment){
         /*
          * Do a content file check on the entire project
          */
-        if($nocontentcheck){
+        if($nocontent){
             log_screen('Skipping content file check due to "nocontent" command line parameter', 'deploy', 'yellow');
 
         }else{
@@ -679,14 +669,8 @@ foreach($targets as $target_environment){
 
             if(count($deploy_config['exclude_dirs'])) {
                 foreach($deploy_config['exclude_dirs'] as $key => $dir) {
-                    if($docontent) continue;
-
                     $exclude .= ' --exclude="'.$dir.'" ';
                 }
-            }
-
-            if($nocontent) {
-                $exclude .= ' --exclude="data/content" ';
             }
 
             log_screen($display_subenvironment.'Deploying project to target server "'.$deploy_config['target_server'].'" on path "'.$deploy_config['target_dir'].'"...', 'deploy', 'white');
