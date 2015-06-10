@@ -553,7 +553,10 @@ function html_flash($class = null){
         }
 
         if($class == null){
-            $class = $_CONFIG['flash']['default_name'];
+            /*
+             *
+             */
+            $class = $_CONFIG['flash']['default_class'];
         }
 
         if(!isset($_SESSION['flash'])){
@@ -666,7 +669,7 @@ function html_flash_set($messages, $type = 'info', $class = null){
         }
 
         if($class == null){
-            $class = $_CONFIG['flash']['default_name'];
+            $class = $_CONFIG['flash']['default_class'];
         }
 
         /*
@@ -713,7 +716,7 @@ function html_flash_set($messages, $type = 'info', $class = null){
 function html_flash_class($class = null){
     try{
         if($class == null){
-            $class = $_CONFIG['flash']['default_name'];
+            $class = $_CONFIG['flash']['default_class'];
         }
 
         if(isset($_SESSION['flash'])){
