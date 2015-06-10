@@ -142,7 +142,8 @@ function user_authenticate($username, $password) {
         }
 
         if(!$user = sql_get('SELECT * FROM `users` WHERE `email` = :email OR `username` = :username', array(':email' => $username, ':username' => $username))){
-            throw new bException('user_authenticate(): Specified user "'.str_log($username).'" not found', 'notfound');
+            log_database(tr('user_authenticate(): Specified user "%username%" not found', array('%username%' => str_log($username))), 'authentication/notfound');
+            throw new bException(tr('user_authenticate(): Specified user "%username%" not found', array('%username%' => str_log($username))), 'notfound');
         }
 
         if(substr($user['password'], 0, 1) != '*'){
@@ -152,7 +153,7 @@ function user_authenticate($username, $password) {
             $encryption = 'sha1';
 
         }else{
-            $encryption = str_until(str_from($user['password'], '*'), '*');
+            $encryption = str_cut($user['password'], '*', '*');
         }
 
         switch($encryption){
@@ -165,11 +166,12 @@ function user_authenticate($username, $password) {
                 break;
 
             default:
-                throw new bException('user_authenticate(): Unknown encryption type "'.str_log($encryption).'" in user password specification', 'unknown');
+                throw new bException(tr('user_authenticate(): Unknown encryption type "%type%" in user password specification', array('%type%' => str_log($encryption))), 'unknown');
         }
 
         if($encryption != str_rfrom($user['password'], '*')){
-            throw new bException('user_authenticate(): Specified password does not match stored password', 'password');
+            log_database(tr('user_authenticate(): Specified password does not match stored password for user "%username%"', array('%username%' => $username)), 'authentication/failed');
+            throw new bException(tr('user_authenticate(): Specified password does not match stored password'), 'password');
         }
 
 
@@ -197,6 +199,8 @@ function user_authenticate($username, $password) {
 
             return $user;
         }
+
+        log_database(tr('user_authenticate(): Authenticated user "%username%"', array('%username%' => $username)), 'authentication/success');
 
         $user['authenticated'] = true;
         return $user;
@@ -264,7 +268,10 @@ function user_signin($user, $extended = false, $redirect = '/') {
             session_redirect('http', $redirect);
         }
 
+        log_database(tr('user_signin(): Signed in user "%user%"', array('%user%' => user_name($user))), 'signin/success');
+
     }catch(Exception $e){
+        log_database(tr('user_signin(): User sign in failed for user "%user%" because "%message%"', array('%user%' => user_name($user), '%message%' => $e->getMessage())), 'signin/failed');
         throw new bException('user_signin(): Failed', $e);
     }
 }

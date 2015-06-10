@@ -759,7 +759,7 @@ function password($password, $algorithm = 'sha1'){
             return '*sha1*'.sha1(SEED.$password);
 
         case 'sha256':
-            return '*sha256*'.sha1(SEED.$password);
+            return '*sha256*'.sha256(SEED.$password);
 
         default:
             throw new bException('password(): Unknown algorithm "'.str_log($algorithm).'" specified', 'unknown');
