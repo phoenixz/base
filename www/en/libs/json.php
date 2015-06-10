@@ -135,7 +135,7 @@ function json_error($message, $default_message = null){
             if(ENVIRONMENT == 'production'){
                 $message = $message['default'];
                 log_error('json_error(): No exception object specified for following error');
-                log_error($e);
+                log_error($message);
 
             }else{
                 $message = tr('json_error(): No exception specified in json_error() array');
@@ -143,7 +143,7 @@ function json_error($message, $default_message = null){
 
         }else{
             if(ENVIRONMENT == 'production'){
-                log_error($e);
+                log_error($message['e']);
 
                 $code = $message['e']->getCode();
 
