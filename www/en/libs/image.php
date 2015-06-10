@@ -55,6 +55,14 @@ function image_convert($source, $destination, $x, $y, $type, $params = array()) 
         }
 
         /*
+         * Remove the log file so we surely have data from only this session
+         *
+         * Yeah, bullshit, with parrallel sessions, others sessions might
+         * delete it while this is in process, etc.
+         */
+        unlink(TMP.'imagemagic_convert.log');
+
+        /*
          * Ensure we have a local copy of the file to work with
          */
         $source = file_get_local($source);
@@ -178,7 +186,20 @@ function image_convert($source, $destination, $x, $y, $type, $params = array()) 
         return $destination;
 
     }catch(Exception $e){
-        throw new bException('image_convert(): Failed', $e);
+        try{
+            if(file_exists(TMP.'imagemagic_convert.log')){
+                $contents = file_get_contents(TMP.'imagemagic_convert.log');
+            }
+
+        }catch(Exception $e){
+            $contents = tr('image_convert(): Failed to get contents of imagemagick log file "%file%"', array('%file%' => TMP.'imagemagic_convert.log'));
+        }
+
+        if(empty($contents)){
+            throw new bException(tr('image_convert(): Failed'), $e);
+        }
+
+        throw new bException(tr('image_convert(): Failed, with *possible* log data "%contents%"', array('%contents%' => $contents)), $e);
     }
 }
 
