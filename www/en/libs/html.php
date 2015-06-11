@@ -748,8 +748,8 @@ function html_select($params, $selected = null, $name = '', $none = '', $class =
         array_default($params, 'disabled'    , $disabled);
         array_default($params, 'name'        , $name);
         array_default($params, 'id'          , $params['name']);
-        array_default($params, 'none'        , not_empty($none, tr('None selected')));
-        array_default($params, 'empty'       , not_empty($none, tr('None available')));
+        array_default($params, 'none'        , tr('None selected'));
+        array_default($params, 'empty'       , tr('None available'));
         array_default($params, 'option_class', $option_class);
         array_default($params, 'selected'    , $selected);
         array_default($params, 'bodyonly'    , false);
@@ -780,6 +780,9 @@ function html_select($params, $selected = null, $name = '', $none = '', $class =
                 }elseif(is_object($params['resource'])){
                     $params['disabled'] = (($params['resource']->rowCount() + ($params['name'] ? 1 : 0)) <= $params['disabled']);
 
+                }elseif($params['resource'] === null){
+                    $params['disabled'] = true;
+
                 }else{
                     throw new bException(tr('html_select(): Invalid resource of type "%type%" specified, should be either null, an array, or a PDOStatement object', array('%type%' => gettype($params['resource']))), 'invalid');
                 }
@@ -790,27 +793,13 @@ function html_select($params, $selected = null, $name = '', $none = '', $class =
             return html_select_body($params);
         }
 
-        if($params['empty']){
-            $empty           = $params['empty'];
-            $params['empty'] = true;
-        }
-
         /*
          * <select> class should not be applied to <option>
          */
         $class = $params['class'];
         unset($params['class']);
 
-        if(!$body = html_select_body($params)){
-            /*
-             * Select body is empty, contains no entries.
-             * Add the empty entry, and disable the select
-             */
-            //if(!empty($empty)){
-            //    $body  = '<option'.($class ? ' class="'.$class.'"' : '').' value="">'.$empty.'</option>';
-            //    $params['readonly'] = true;
-            //}
-        }
+        $body = html_select_body($params);
 
         if(substr($params['id'], -2, 2) == '[]'){
             $params['id'] = substr($params['id'], 0, -2).$count++;
@@ -867,8 +856,8 @@ function html_select_body($params, $selected = null, $none = '', $class = '', $a
     try{
         array_params ($params, 'resource');
         array_default($params, 'class'      , $class);
-        array_default($params, 'none'       , not_empty($none, tr('None selected')));
-        array_default($params, 'empty'      , not_empty($none, tr('None available')));
+        array_default($params, 'none'       , tr('None selected'));
+        array_default($params, 'empty'      , tr('None available'));
         array_default($params, 'selected'   , $selected);
         array_default($params, 'auto_select', $auto_select);
         array_default($params, 'id_column'  , 'id');
@@ -895,7 +884,7 @@ function html_select_body($params, $selected = null, $none = '', $class = '', $a
                  */
                 foreach($params['resource'] as $key => $value){
                     $notempty = true;
-                    $retval  .= '<option'.($params['class'] ? ' class="'.$params['class'].'"' : '').''.((($params['selected'] !== null) and ($key == $params['selected'])) ? ' selected' : '').' value="'.$key.'">'.$value.'</option>';
+                    $retval  .= '<option'.($params['class'] ? ' class="'.$params['class'].'"' : '').''.((($params['selected'] !== null) and ($key === $params['selected'])) ? ' selected' : '').' value="'.$key.'">'.$value.'</option>';
                 }
 
             }elseif(is_object($params['resource'])){
@@ -913,17 +902,26 @@ function html_select_body($params, $selected = null, $none = '', $class = '', $a
                 /*
                  * Process SQL resource
                  */
-                while($row = sql_fetch($params['resource'])){
-                    $notempty = true;
+                try{
+                    while($row = sql_fetch($params['resource'])){
+                        $notempty = true;
 
-                    /*
-                     * To avoid select problems with "none" entries, empty id column values are not allowed
-                     */
-                    if(!$row[$params['id_column']]){
-                        $row[$params['id_column']] = str_random(8);
+                        /*
+                         * To avoid select problems with "none" entries, empty id column values are not allowed
+                         */
+                        if(!$row[$params['id_column']]){
+                            $row[$params['id_column']] = str_random(8);
+                        }
+
+                        $retval  .= '<option'.($params['class'] ? ' class="'.$params['class'].'"' : '').''.(($row[$params['id_column']] === $params['selected']) ? ' selected' : '').' value="'.$row[$params['id_column']].'">'.$row['name'].'</option>';
                     }
 
-                    $retval  .= '<option'.($params['class'] ? ' class="'.$params['class'].'"' : '').''.(($row[$params['id_column']] === $params['selected']) ? ' selected' : '').' value="'.$row[$params['id_column']].'">'.$row['name'].'</option>';
+                }catch(Exception $e){
+                    if(!isset($row[$params['id_column']])){
+                        throw new bException(tr('html_select_body(): Specified id_column "%id_column%" does not exist in the given resource', array('%id_column%' => $params['id_column'])), 'invalidresource');
+                    }
+
+                    throw $e;
                 }
 
             }else{
@@ -936,15 +934,14 @@ function html_select_body($params, $selected = null, $none = '', $class = '', $a
             /*
              * No conent (other than maybe the "none available" entry) was added
              */
-            if($params['empty'] === true){
-                /*
-                 * Return empty body so that the html_select() function can ensure the select box will be disabled
-                 */
-                return '';
+            if($params['empty']){
+                $retval = '<option'.($params['class'] ? ' class="'.$params['class'].'"' : '').' selected value="">'.$params['empty'].'</option>';
             }
 
-            if($params['empty']){
-            }
+            /*
+             * Return empty body (though possibly with "none" element) so that the html_select() function can ensure the select box will be disabled
+             */
+            return $retval;
         }
 
         return $retval;
