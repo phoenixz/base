@@ -415,6 +415,7 @@ function html_header($params = null, $meta = array()){
         }
 
         $meta['title'] = html_title($meta['title']);
+        unset($meta['title']);
 
         $retval = "<!DOCTYPE ".$params['doctype'].">\n".
                   "<".$params['html'].">\n".
