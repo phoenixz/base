@@ -394,6 +394,13 @@ function debug_value($format, $size = null){
         case 'password':
             return 'aaaaaaaa';
 
+        case 'money':
+            if(!$size){
+                $size = 5000;
+            }
+
+            return mt_rand(1, $size) / 100;
+
         case 'checked':
             if($size){
                 return ' checked ';

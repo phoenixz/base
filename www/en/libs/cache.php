@@ -45,7 +45,7 @@ function cache_read($key = null, $group = null){
             $key = $_SERVER['REQUEST_URI'].(empty($_SESSION['mobile']['device']) ? '' : '_m');
         }
 
-        $key = cache_key_hash($key);
+        $key = LANGUAGE.cache_key_hash($key);
 
         switch($_CONFIG['cache']['method']){
             case 'file':
@@ -117,7 +117,7 @@ function cache_write($value, $key = null, $group = null){
             $key = $_SERVER['REQUEST_URI'].(empty($_SESSION['mobile']['device']) ? '' : '_m');
         }
 
-        $key = cache_key_hash($key);
+        $key = LANGUAGE.cache_key_hash($key);
 
         switch($_CONFIG['cache']['method']){
             case 'file':
