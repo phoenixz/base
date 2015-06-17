@@ -20,8 +20,8 @@ cli_only();
 /*
  * Get some optional data required for loaddata
  */
-$username = argument('user'    , true, argument('username'  , true, 'geonames'));
-$password = argument('pass'    , true, argument('password'  , true, 'geonames'));
+$username = argument('user'    , true, argument('username'  , true, 'toolkit'));
+$password = argument('pass'    , true, argument('password'  , true, 'toolkit'));
 $database = argument('database', true, 'geonames');
 
 /*
@@ -136,8 +136,17 @@ switch(argument(0)){
         }
 
         try{
-            passthru('cd '.$geoimport_path.' ; ./geonames_importer.sh -a create-db -u '.$username.' -p "'.$password.'" -n "'.$database.'"');
-            passthru('cd '.$geoimport_path.' ; ./geonames_importer.sh -a import-dumps -u '.$username.' -p "'.$password.'" -n "'.$database.'"');
+            passthru('cd '.$geoimport_path.' ; ./geonames_importer.sh -a create-db -u '.$username.' -p "'.$password.'" -n "'.$database.'"', $exitcode);
+
+            if($exitcode){
+                throw new bException(tr('Creating geonames database failed'), 'failed');
+            }
+
+            passthru('cd '.$geoimport_path.' ; ./geonames_importer.sh -a import-dumps -u '.$username.' -p "'.$password.'" -n "'.$database.'"', $exitcode);
+
+            if($exitcode){
+                throw new bException(tr('Importing data dumps to geonames database failed'), 'failed');
+            }
 
         }catch(Exception $e){
             throw new bException('Import failed. In case of "The used command is not allowed with this MySQL version" error, please try the "notlocal" command line option, see geo.txt documentation for more information', $e);
