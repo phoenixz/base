@@ -544,7 +544,7 @@ try{
         /*
          * Exception might already be set by language error
          */
-        if(!isset($e)){
+        if(isset($e)){
             $e->addMessage('startup: Additional exception while loading custom library');
             $e->addMessage($f->getMessage());
 
