@@ -689,6 +689,13 @@ function user_name($user = null, $guest = null, $key_prefix = ''){
             }
         }
 
+        if($guest === false){
+            /*
+             * No user data found, no guest user allowed.
+             */
+            return '';
+        }
+
         /*
          * No user data found, assume guest user.
          */
