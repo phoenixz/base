@@ -39,7 +39,7 @@ function uglify_css_install(){
 
     try{
         log_console('uglify_css_install(): Installing uglifycss', 'uglify', 'white');
-        passthru($npm.' install uglifycss@0');
+        passthru($npm.' install uglifycss');
         log_console('uglify_css_install(): Finished installing uglifycss', 'uglify', 'green');
 
     }catch(Exception $e){
@@ -60,10 +60,10 @@ function uglify_css_check(){
 
         log_console('uglify_css_check(): Checking uglifycss availability', 'uglify', 'white');
 
-        $result = safe_exec($npm.' list uglifycss@0');
+        $result = safe_exec($npm.' list uglifycss', 1);
 
         if(empty($result[1])){
-            throw new bException('uglify_js_check(): npm list uglifycss@0 returned invalid results', 'invalid_result');
+            throw new bException('uglify_js_check(): npm list uglifycss returned invalid results', 'invalid_result');
         }
 
         if(substr($result[1], -7, 7) == '(empty)'){
@@ -290,7 +290,7 @@ function uglify_js_install(){
 
     try{
         log_console('uglify_js_install(): Installing uglify-js', 'uglify', 'white');
-        passthru($npm.' install uglify-js@2');
+        passthru($npm.' install uglify-js');
         log_console('uglify_js_install(): Finished installing uglify-js', 'uglify', 'green');
 
     }catch(Exception $e){
@@ -311,10 +311,10 @@ function uglify_js_check(){
 
         log_console('uglify_js_check(): Checking uglify-js availability', 'uglify', 'white');
 
-        $result = safe_exec($npm.' list uglify-js@2');
+        $result = safe_exec($npm.' list uglify-js', 1);
 
         if(empty($result[1])){
-            throw new bException('uglify_js_check(): npm list uglify-js@2 returned invalid results', 'invalid_result');
+            throw new bException('uglify_js_check(): npm list uglify-js returned invalid results', 'invalid_result');
         }
 
         if(substr($result[1], -7, 7) == '(empty)'){
