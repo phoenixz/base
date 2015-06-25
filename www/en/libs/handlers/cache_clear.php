@@ -37,7 +37,7 @@ try{
                 /*
                  * Delete all cache
                  */
-                file_delete_tree(ROOT.'data/cache');
+                safe_exec('sudo rm '.ROOT.'/data/cache/* -rf');
             }
 
             file_ensure_path(ROOT.'data/cache');
