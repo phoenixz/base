@@ -413,6 +413,13 @@ function html_header($params = null, $meta = array()){
         if(!empty($_CONFIG['bootstrap']['enabled'])){
             array_ensure($params['meta'], 'viewport', $_CONFIG['bootstrap']['viewport']);
         }
+        
+        /*
+         * Add meta tag no-index for non production environments and admin pages
+         */
+        if((ENVIRONMENT != 'production') || $GLOBALS['page_is_admin']){
+           $params['meta']['robots'] = 'noindex';      
+        }
 
         $meta['title'] = html_title($meta['title']);
         unset($meta['title']);
