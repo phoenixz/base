@@ -32,7 +32,7 @@ function node_check(){
 
     }catch(Exception $e){
         if($e->getCode() == 1){
-            throw new bException('node_check(): Failed to find a node installation on this computer for this user', 'node_not_installed');
+            throw new bException('node_check(): Failed to find a node installation on this computer for this user. On Ubuntu, install node with "sudo apt-get install node"', 'node_not_installed');
         }
 
         if($e->getCode() == 'node_modules_path_not_found'){
@@ -107,7 +107,7 @@ function node_check_npm(){
 
     }catch(Exception $e){
         if($e->getCode() == 1){
-            throw new bException('node_check_npm(): Failed to find an npm installation on this computer for this user', 'npm_not_installed');
+            throw new bException('node_check_npm(): Failed to find an npm installation on this computer for this user. On Ubuntu, install with "sudo apt-get install npm"', 'npm_not_installed');
         }
 
         throw new bException('node_check_npm(): Failed', $e);
