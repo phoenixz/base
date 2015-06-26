@@ -148,8 +148,14 @@ function file_move_to_target($file, $path, $extension = false, $singledir = fals
             $extension = file_get_extension($filename);
         }
 
-        $targetpath = slash(file_create_target_path($path, $singledir, $length));
-        $target     = $targetpath.strtolower(str_convert_accents(str_runtil($filename, '.'), '-').($extension ? $extension : ''));
+        if($length){
+            $targetpath = slash(file_create_target_path($path, $singledir, $length));
+
+        }else{
+            $targetpath = slash($path);
+        }
+
+        $target = $targetpath.strtolower(str_convert_accents(str_runtil($filename, '.'), '-').($extension ? $extension : ''));
 
         /*
          * Only move file is target does not yet exist

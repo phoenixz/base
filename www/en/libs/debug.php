@@ -49,7 +49,7 @@ function show($data = null, $return = false, $quiet = false, $trace_offset = 1){
 // :TODO:SVEN:20130430: This should NEVER happen, send notification!
     }
 
-    if(PLATFORM == 'http'){
+    if((PLATFORM == 'http') and empty($GLOBALS['debug_plain'])){
         echo debug_html($data, tr('Unknown'), $trace_offset);
 
 /*

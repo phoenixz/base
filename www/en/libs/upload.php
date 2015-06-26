@@ -24,6 +24,34 @@ function upload_process(){
 
 
 /*
+ *
+ */
+function upload_dropzone($selector = null, $url = '/ajax/upload.php', $params = array()){
+    try{
+        if(!file_exists(ROOT.'pub/js/dropzone.js')){
+            load_libs('file');
+            file_copy_to_target('https://raw.github.com/enyo/dropzone/master/dist/dropzone.js', ROOT.'pub/js/', '.js', true, false);
+        }
+
+        html_load_js('dropzone');
+
+        if(!$selector){
+            /*
+             * Do dropzone from all elements that have the "dropzone" class
+             */
+            return '';
+        }
+
+        return html_script('$("'.$selector.'").dropzone({ url: "'.$url.'" })');
+
+    }catch(Exception $e){
+        throw new bException('upload_dropzone(): Failed', $e);
+    }
+}
+
+
+
+/*
  * Single file upload using ocupload
  */
 function upload_ocupload($selector = "input[name=upload]", $url = '/ajax/upload.php', $params = array()){
