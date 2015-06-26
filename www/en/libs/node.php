@@ -15,7 +15,9 @@
  */
 function node_check(){
     try{
-        log_console('node_check(): Checking NodeJS availability', 'node', 'white');
+        if(VERBOSE){
+            log_console('node_check_npm(): Checking NodeJS availability', 'node', 'white');
+        }
 
         try{
             $result = safe_exec('which nodejs');
@@ -26,13 +28,15 @@ function node_check(){
             $result = array_shift($result);
         }
 
-        log_console('node_check(): Using NodeJS "'.str_log($result).'"', 'node', 'green');
+        if(VERBOSE){
+            log_console('node_check_npm(): Using NodeJS "'.str_log($result).'"', 'node', 'green');
+        }
 
         return $result;
 
     }catch(Exception $e){
         if($e->getCode() == 1){
-            throw new bException('node_check(): Failed to find a node installation on this computer for this user. On Ubuntu, install node with "sudo apt-get install node"', 'node_not_installed');
+            throw new bException('node_check(): Failed to find a node installation on this computer for this user', 'node_not_installed');
         }
 
         if($e->getCode() == 'node_modules_path_not_found'){
@@ -50,7 +54,9 @@ function node_check(){
  */
 function node_check_modules(){
     try{
-        log_console('node_check_modules(): Checking node_modules availability', 'node', 'white');
+        if(VERBOSE){
+            log_console('node_check_npm(): Checking node_modules availability', 'node', 'white');
+        }
 
         /*
          * Find node_modules path
@@ -72,7 +78,9 @@ function node_check_modules(){
 
         $home .= 'node_modules/';
 
-        log_console('node_check_modules(): Using node_modules "'.str_log($home).'"', 'node', 'green');
+        if(VERBOSE){
+            log_console('node_check_npm(): Using node_modules "'.str_log($home).'"', 'node', 'green');
+        }
 
         return $home;
 
@@ -96,18 +104,22 @@ function node_check_modules(){
  */
 function node_check_npm(){
     try{
-        log_console('node_check_npm(): Checking NodeJS npm availability', 'node', 'white');
+        if(VERBOSE){
+            log_console('node_check_npm(): Checking NodeJS npm availability', 'node', 'white');
+        }
 
         $result = safe_exec('which npm');
         $result = array_shift($result);
 
-        log_console('node_check_npm(): Using npm "'.str_log($result).'"', 'node', 'green');
+        if(VERBOSE){
+            log_console('node_check_npm(): Using npm "'.str_log($result).'"', 'node', 'green');
+        }
 
         return $result;
 
     }catch(Exception $e){
         if($e->getCode() == 1){
-            throw new bException('node_check_npm(): Failed to find an npm installation on this computer for this user. On Ubuntu, install with "sudo apt-get install npm"', 'npm_not_installed');
+            throw new bException('node_check_npm(): Failed to find an npm installation on this computer for this user', 'npm_not_installed');
         }
 
         throw new bException('node_check_npm(): Failed', $e);
