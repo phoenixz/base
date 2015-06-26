@@ -53,6 +53,8 @@ function image_convert($source, $destination, $x, $y, $type, $params = array()) 
     global $_CONFIG;
 
     try{
+        load_libs('file');
+
         /*
          * Validations
          */
@@ -66,7 +68,8 @@ function image_convert($source, $destination, $x, $y, $type, $params = array()) 
          * Yeah, bullshit, with parrallel sessions, others sessions might
          * delete it while this is in process, etc.
          */
-        unlink(TMP.'imagemagic_convert.log');
+        file_ensure_path(TMP);
+        file_delete(TMP.'imagemagic_convert.log');
 
         /*
          * Ensure we have a local copy of the file to work with
@@ -203,6 +206,17 @@ function image_convert($source, $destination, $x, $y, $type, $params = array()) 
 
         if(empty($contents)){
             throw new bException(tr('image_convert(): Failed'), $e);
+
+        }else{
+            foreach(array_force($contents) as $line){
+                if(strstr($line, '/usr/bin/convert: not found')){
+                    /*
+                     * Dumbo! You don't have imagemagick installed!
+                     */
+                    throw new bException(tr('image_convert(): /usr/bin/convert could not be found, which means you probably do not have imagemagick installed. To resolve this, try on Ubuntu-alikes, try "sudo apt-get install imagemagick", or on RedHat-alikes, try "yum install imagemagick"'), 'notinstalled');
+                }
+            }
+
         }
 
         throw new bException(tr('image_convert(): Failed, with *possible* log data "%contents%"', array('%contents%' => $contents)), $e);
