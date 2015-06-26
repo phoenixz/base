@@ -431,6 +431,18 @@ function debug_sql($query, $column = null, $execute = null, $return_only = false
         }
 
         if(is_array($execute)){
+            /*
+             * Reverse key sort to ensure that there are keys that contain at least parts of other keys will not be used incorrectly
+             *
+             * example:
+             *
+             * array(category    => test,
+             *       category_id => 5)
+             *
+             * Would cause the query to look like `category` = "test", `category_id` = "test"_id
+             */
+            krsort($execute);
+
             foreach($execute as $key => $value){
                 if(is_numeric($value)){
                     $query = str_replace($key, $value, $query);
