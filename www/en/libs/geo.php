@@ -97,8 +97,7 @@ function geo_countries_select($params) {
          * If only one country is available, then select it automatically
          */
         $params['resource'] = sql_query('SELECT `'.$params['id_column'].'`, `name` FROM `geo_countries` ORDER BY `name` ASC');
-
-        return cache_write($cache_key, html_select($params));
+        return cache_write(html_select($params), $cache_key);
 
     }catch(Exception $e){
         throw new bException('geo_countries_select(): Failed', $e);
