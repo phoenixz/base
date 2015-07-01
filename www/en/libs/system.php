@@ -809,7 +809,7 @@ function domain($current_url = false, $query = null){
 /*
  * Either a user is logged in or the person will be redirected to the specified URL
  */
-function user_or_redirect($url = false, $method = 'http'){
+function user_or_redirect($url = null, $method = 'http'){
     global $_CONFIG;
 
     try{
@@ -966,7 +966,7 @@ function rights_or_redirect($rights, $url = null, $method = 'http'){
                  * Hey, we're not in a browser!
                  */
                 if(!$url){
-                    $url = 'rights_or_redirect(): The "'.str_log($rights).'" rights are required for this';
+                    $url = tr('rights_or_redirect(): The "%rights%" rights are required for this', array('%rights%' => str_log($rights)));
                 }
 
                 throw new bException($url, 'noright');
@@ -1302,12 +1302,12 @@ function system_date_format($date = null, $requested_format = 'human_datetime'){
         return $date->format($format);
 
     }catch(Exception $e){
-        if(!isset($_CONFIG['formats'][$requested_format]) and ($format != 'mysql')){
-            throw new bException('system_date_format(): Specified format "'.str_log($requested_format).'" does not exist', $e);
+        if(!isset($_CONFIG['formats'][$requested_format]) and ($requested_format != 'mysql')){
+            throw new bException('system_date_format(): Unknown format "'.str_log($requested_format).'" specified', 'unknown');
         }
 
         if(isset($format)){
-            throw new bException(tr('system_date_format(): Failed to parse format "%format%"', array('%format%' => str_log($format))), $e);
+            throw new bException(tr('system_date_format(): Invalid format "%format%" specified', array('%format%' => str_log($format))), 'invalid');
         }
 
         throw new bException('system_date_format(): Failed', $e);
