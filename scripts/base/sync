@@ -115,7 +115,7 @@ if($nodump){
 
 }else{
     log_console('Creating SQL dump file on remote server...', 'sync', 'white');
-    passthru($command = 'ssh -p '.$deploy_config['target_port'].' -t '.$deploy_config['target_user'].'@'.$deploy_config['target_server'].' \'rm /tmp/'.$project.'_'.$source_config['db']['db'].'.sql.gz -f; mysqldump -n -e '.(argument('nofunctions') ? '' : '-R ').'--dump-date --no-autocommit --add-drop-database -u '.$source_config['db']['user'].' -p'.escapeshellcmd($source_config['db']['pass']).' -B '.$source_config['db']['db'].' > >(gzip > /tmp/'.$project.'_'.$source_config['db']['db'].'.sql.gz)\'', $exitcode);
+    passthru($command = 'ssh -p '.$deploy_config['target_port'].' -t '.$deploy_config['target_user'].'@'.$deploy_config['target_server'].' \'rm /tmp/'.$project.'_'.$source_config['db']['db'].'.sql* -f; mysqldump -n -e '.(argument('nofunctions') ? '' : '-R ').'--dump-date --no-autocommit --add-drop-database -u '.$source_config['db']['user'].' -p'.escapeshellcmd($source_config['db']['pass']).' -B '.$source_config['db']['db'].' > /tmp/'.$project.'_'.$source_config['db']['db'].'.sql; gzip -q /tmp/'.$project.'_'.$source_config['db']['db'].'.sql \'', $exitcode);
 
     if($exitcode){
         throw new bException('Remote mysqldump failed with exit code "'.str_log($exitcode).'"', 'rsync');
@@ -184,13 +184,13 @@ if($nodelete){
 }else{
     log_console('Removing temporary remote SQL dump file from local and remote server...', 'sync', 'white');
 
-    passthru($command = 'ssh -p '.$deploy_config['target_port'].' -t '.$deploy_config['target_user'].'@'.$deploy_config['target_server'].' \'rm -f /tmp/'.$project.'_'.$source_config['db']['db'].'.sql.gz\'', $exitcode);
+    passthru($command = 'ssh -p '.$deploy_config['target_port'].' -t '.$deploy_config['target_user'].'@'.$deploy_config['target_server'].' \'rm -f /tmp/'.$project.'_'.$source_config['db']['db'].'.sql*\'', $exitcode);
 
     if($exitcode){
         throw new bException('Removal of temporary mysqldump file on remote server failed with exit code "'.str_log($exitcode).'"', 'rsync');
     }
 
-    passthru($command = 'rm -f /tmp/'.$project.'_'.$source_config['db']['db'].'.sql.gz', $exitcode);
+    passthru($command = 'rm -f /tmp/'.$project.'_'.$source_config['db']['db'].'.sql*', $exitcode);
 
     if($exitcode){
         throw new bException('Removal of temporary mysqldump file on local server failed with exit code "'.str_log($exitcode).'"', 'rsync');
