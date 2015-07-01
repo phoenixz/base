@@ -84,6 +84,7 @@ class validate_jquery {
             $params['id'] = str_starts($params['id'], '#');
 
             $html = 'validator = $("'.$params['id'].'").validate({
+                ignore: ".ignore",
                 rules: {';
                 $kom = '';
 
