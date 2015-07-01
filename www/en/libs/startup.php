@@ -233,6 +233,10 @@ try{
         throw new bException('startup: Failed to load the debug '.str_log($type).' file "'.str_log($file).'"', $e);
     }
 
+    /*
+     * Set security umask
+     */
+    umask($_CONFIG['security']['umask']);
 
     /*
      * Autoload the cache and memcached library if configuration is setup for it
