@@ -840,4 +840,26 @@ function sql_fetch_column($r, $column) {
         throw new bException('sql_fetch_column(): Failed', $e);
     }
 }
+
+
+
+/*
+ *
+ */
+function sql_entry_merge($db, $post, $filter = null){
+    try{
+        if($filter){
+            $filter = str_force('id,'.$filter);
+
+        }else{
+            $filter = 'id';
+        }
+
+        $post = array_remove($post, $filter);
+        return array_merge($db, $post);
+
+    }catch(Exception $e){
+        throw new bException('sql_entry_merge(): Failed', $e);
+    }
+}
 ?>

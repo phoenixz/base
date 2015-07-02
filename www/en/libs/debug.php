@@ -451,6 +451,7 @@ function debug_sql($query, $column = null, $execute = null, $return_only = false
                     $query = str_replace($key, ' '.tr('NULL').' ', $query);
 
                 }else{
+                    $value = addslashes($value);
                     $query = str_replace($key, '"'.(!is_scalar($value) ? ' ['.tr('NOT SCALAR').'] ' : '').str_log($value).'"', $query);
                 }
             }

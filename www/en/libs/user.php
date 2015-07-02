@@ -658,8 +658,15 @@ function user_get($user, $columns = 'id,name,username,email'){
 /*
  * Return either (in chronological order) name, username, or email for the user
  */
-function user_name($user = null, $guest = null, $key_prefix = ''){
+function user_name($user = null, $key_prefix = ''){
     try{
+        /*
+         * Compatibility
+         */
+        if($key_prefix === null){
+            throw new bException('user_name(): WARNING! user_name() ARGUMENTS HAVE CHANGED, $guest is no longer supported, and has been removed. Adjust your function call accordingly');
+        }
+
         if($user){
             if(is_scalar($user)){
                 if(!is_numeric($user)){
@@ -689,17 +696,10 @@ function user_name($user = null, $guest = null, $key_prefix = ''){
             }
         }
 
-        if($guest === false){
-            /*
-             * No user data found, no guest user allowed.
-             */
-            return '';
-        }
-
         /*
          * No user data found, assume guest user.
          */
-        return not_empty($guest, tr('Guest'));
+        return tr('Guest');
 
     }catch(Exception $e){
         throw new bException(tr('user_name(): Failed'), $e);
