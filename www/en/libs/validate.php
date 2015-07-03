@@ -328,9 +328,7 @@ class validate_form {
      *
      */
     function isNumeric($value, $msg = null){
-        if(!$value) return '';
-
-        if($value != cfi($value)){
+        if(!is_numeric($value)){
             $this->setError($msg);
             return false;
 
