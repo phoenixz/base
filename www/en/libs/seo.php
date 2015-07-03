@@ -15,21 +15,40 @@
  */
 function seo_unique_string($string, $table, $ownid = null, $field = 'seoname', $replace = '-', $first_suffix = null) {
     try{
-        //prepare string
+        /*
+         * Prepare string
+         */
         $string = trim(seo_string($string, $replace));
         $id     = 0;
 
-// :DELETE: Parameter shuffling should be avoided where possible
-        //if($ownid and !is_scalar($ownid)){
-        //    /*
-        //     * ??
-        //     */
-        //    $first_suffix = $replace;
-        //    $replace      = $field;
-        //    $field        = $ownid;
-        //}
+        /*
+         * Filter out the id of the record itself
+         */
+        if($ownid){
+            if(is_scalar($ownid)){
+                $ownid = ' AND `id` != '.$ownid;
 
-        //If the seostring exists, add an identifier to it.
+            }elseif(is_array($ownid)){
+                $key   = key($ownid);
+
+                if(!is_numeric($ownid[$key])){
+                    if(!is_scalar($ownid[$key])){
+                        throw new bException(tr('seo_unique_string(): Invalid $ownid array value datatype specified, should be scalar, but is "%type%"', array('%type%' => gettype($ownid[$key]))), 'invalid');
+                    }
+
+                    $ownid[$key] = '"'.$ownid[$key].'"';
+                }
+
+                $ownid = ' AND `'.$key.'` != '.$ownid[$key];
+
+            }else{
+                throw new bException(tr('seo_unique_string(): Invalid $ownid datatype specified, should be either scalar, or array, but is "%type%"', array('%type%' => gettype($ownid))), 'invalid');
+            }
+        }
+
+        /*
+         * If the seostring exists, add an identifier to it.
+         */
         while(true) {
             if(!$id) {
                 $str = $string;
@@ -42,28 +61,6 @@ function seo_unique_string($string, $table, $ownid = null, $field = 'seoname', $
 
                 }else{
                     $str = $string.$id;
-                }
-            }
-
-            if($ownid){
-                if(is_scalar($ownid)){
-                    $ownid = ' AND `id` != '.$ownid;
-
-                }elseif(is_array($ownid)){
-                    $key   = key($ownid);
-
-                    if(!is_numeric($ownid[$key])){
-                        if(!is_scalar($ownid[$key])){
-                            throw new bException(tr('seo_unique_string(): Invalid $ownid array value datatype specified, should be scalar, but is "%type%"', array('%type%' => gettype($ownid[$key]))), 'invalid');
-                        }
-
-                        $ownid[$key] = '"'.$ownid[$key].'"';
-                    }
-
-                    $ownid = ' AND `'.$key.'` != '.$ownid[$key];
-
-                }else{
-                    throw new bException(tr('seo_unique_string(): Invalid $ownid datatype specified, should be either scalar, or array, but is "%type%"', array('%type%' => gettype($ownid))), 'invalid');
                 }
             }
 
