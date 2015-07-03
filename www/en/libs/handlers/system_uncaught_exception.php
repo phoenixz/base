@@ -50,7 +50,7 @@ try{
 
 // :TODO:SVEN:20130717: Add notifications!
     if((PLATFORM != 'shell') and (ENVIRONMENT == 'production')){
-        page_maintenance('Uncaught Exception "'.str_log($code).'" with message "'.$e->getMessage().'"', false, $e);
+        page_show(500);
         die();
 
     }else{

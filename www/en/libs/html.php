@@ -1339,54 +1339,27 @@ function html_img($src, $alt, $more = '', $height = 0, $width = 0){
 
 
 /*
- * Show the 404 page
- */
-function page_404($force = false, $data = null) {
-    if($GLOBALS['page_is_admin']){
-        page_show('admin/404', true, $force, $data);
-
-    }else{
-        page_show('404', true, $force, $data);
-    }
-}
-
-
-
-/*
- * Show the maintenance page
- */
-function page_maintenance($reason, $force = false, $data = null) {
-    return include(dirname(__FILE__).'/handlers/html_page_maintenance.php');
-}
-
-
-
-/*
  * Show the specified page
  */
-function page_show($pagename, $die = false, $force = false, $data = null) {
+function page_show($pagename, $die = true, $force = false, $data = null) {
     global $_CONFIG;
 
     try{
-        if(!defined('LANGUAGE')){
-            define('LANGUAGE', 'en');
-        }
-
-        if(($force != 'html') and (substr($_SERVER['PHP_SELF'], 0, 6) == '/ajax/')){
+        if($GLOBALS['page_is_ajax']){
             // Execute ajax page
             return include(ROOT.'www/'.LANGUAGE.'/ajax/'.$pagename.'.php');
 
-        }else{
-            if($GLOBALS['page_is_mobile']){
+        }elseif($GLOBALS['page_is_ajax']){
+                $prefix = 'ajax/';
+
+        }elseif($GLOBALS['page_is_mobile']){
                 $prefix = 'mobile/';
 
-            }else{
-                $prefix = '';
-            }
-
-            // Execute HTML page
-            return include(ROOT.'www/'.LANGUAGE.'/'.$prefix.$pagename.'.php');
+        }else{
+            $prefix = '';
         }
+
+        return include(ROOT.'www/'.LANGUAGE.'/'.$prefix.$pagename.'.php');
 
         if($die){
             die();

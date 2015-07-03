@@ -300,7 +300,7 @@ function image_send($file, $cache_maxage = 86400){
             /*
              * Requested image does not exist
              */
-            page_404();
+            page_show(404);
         }
 
         /*

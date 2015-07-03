@@ -271,7 +271,7 @@ function paging_check_page($page, $page_max){
         $checked_page = force_natural_number($page, 1);
 
         if(($page and ($checked_page != $page)) or ($page > $page_max)){
-            page_404();
+            page_show(404);
         }
 
         return $page;

@@ -336,7 +336,7 @@ function sso_fail($message, $redirect = null){
         redirect($referrer);
 
     }catch(Exception $e){
-        page_maintenance();
+        page_show(500);
     }
 }
 ?>

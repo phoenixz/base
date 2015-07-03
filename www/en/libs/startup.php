@@ -308,7 +308,7 @@ try{
                     $GLOBALS['page_force'] = true;
 // :TODO: The following line should not be necessary
 //                    define('SCRIPT', 'maintenance');
-                    page_maintenance('By configuration');
+                    page_show(500);
 
                 }else{
                     define('SCRIPT', str_runtil(str_rfrom($_SERVER['PHP_SELF'], '/'), '.php'));
@@ -593,6 +593,7 @@ try{
         // :TODO: Replace this with only one global variable.
         $GLOBALS['page_is_mobile'] = false;
         $GLOBALS['page_is_admin']  = false;
+        $GLOBALS['page_is_ajax']   = false;
         $GLOBALS['page_is_404']    = false;
 
 
@@ -634,6 +635,9 @@ try{
             load_libs('mobile');
             restore_post();
             page_show(SCRIPT, true);
+
+        }elseif(substr($_SERVER['PHP_SELF'], 0, 7) == '/ajax/'){
+            $GLOBALS['page_is_ajax'] = true;
 
         }elseif(!empty($GLOBALS['page_force'])){
             /*
