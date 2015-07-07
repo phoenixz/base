@@ -154,8 +154,9 @@ function cache_write_file($value, $key, $group = null){
 
         $file = ROOT.'data/cache/'.$group.$key;
 
-        file_ensure_path(dirname($file));
+        file_ensure_path(dirname($file), 0770);
         file_put_contents($file, $value);
+        chmod($file, 0660);
 
         return $value;
 

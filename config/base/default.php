@@ -261,7 +261,8 @@ $_CONFIG['security']           = array('signin'           => array('save_passwor
                                                                    'two_factor'    => false),               // Either "false" or a valid twilio "from" phone number
 
                                        'user'             => 'apache',                                      //
-                                       'group'            => 'apache');                                     //
+                                       'group'            => 'apache',                                      //
+                                       'umask'            =>  0007);                                         //
 
 // Sessions
 $_CONFIG['sessions']           = array('shared_memory'    => false,                                         // Store session data in shared memory, very useful for security on shared servers!

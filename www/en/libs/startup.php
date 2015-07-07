@@ -235,6 +235,12 @@ try{
 
 
     /*
+     * Set security umask
+     */
+    umask($_CONFIG['security']['umask']);
+
+
+    /*
      * Autoload the cache and memcached library if configuration is setup for it
      */
     $libraries[] = 'cache';
