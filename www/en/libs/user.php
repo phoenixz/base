@@ -550,6 +550,10 @@ function user_update_password($params){
         if(empty($params['id'])){
             throw new bException(tr('user_update_password(): No users id specified'), 'not_specified');
         }
+        
+        if(empty($params['cpassword'])){
+            throw new bException(tr('user_update_password(): Please specify the current password'), 'not_specified');
+        }
 
         if(empty($params['password'])){
             throw new bException(tr('user_update_password(): Please specify a password'), 'not_specified');
@@ -562,6 +566,12 @@ function user_update_password($params){
         if($params['password'] != $params['password2']){
             throw new bException(tr('user_update_password(): Specified password does not match the validation password'), 'mismatch');
         }
+        
+        /*
+         * Check if current password is equal to cpassword
+         */
+        $username = user_name($_SESSION['user']);
+        user_authenticate($username,$params['cpassword']);        
 
         $password = password($params['password']);
 
