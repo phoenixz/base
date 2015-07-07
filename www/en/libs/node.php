@@ -63,11 +63,32 @@ function node_check_modules(){
 
         if(!file_exists($home.'node_modules')){
             if(!file_exists($home.'.node_modules')){
-                throw new bException('node_check_modules(): node_modules path not found', 'node_modules_path_not_found');
+                if(!file_exists(ROOT.'node_modules')){
+                    if(!file_exists(ROOT.'.node_modules')){
+                        if(!file_exists(getcwd().'node_modules')){
+                            if(!file_exists(getcwd().'.node_modules')){
+                                throw new bException('node_check_modules(): node_modules path not found', 'node_modules_path_not_found');
+                            }
+                            return getcwd().'.node_modules/';
+                        }
+
+                        $home = getcwd().'node_modules/';
+
+                        log_console('node_check_modules(): Using node_modules "'.str_log($home).'"', 'node', 'green');
+
+                        return $home;
+                    }
+                    return ROOT.'.node_modules/';
+                }
+
+                $home = ROOT.'node_modules/';
+
+                log_console('node_check_modules(): Using node_modules "'.str_log($home).'"', 'node', 'green');
+
+                return $home;
             }
 
             return $home.'.node_modules/';
-
         }
 
         $home .= 'node_modules/';

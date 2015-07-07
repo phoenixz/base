@@ -264,11 +264,38 @@ function uglify_css($path = null){
             }
 
             try{
+                /*
+                 * If file exists and FORCE option wasn't given then proceed
+                 */
+                if(file_exists($file) and !FORCE){
+                    /*
+                     * Get mtime files
+                     */
+                    $minfile = str_runtil($file, '.').'.min.css';
+
+                    if(file_exists($minfile) and (filemtime($minfile) == filemtime($file))){
+                        /*
+                         * Do not compress, just continue with next file
+                         */
+                        log_console('uglify_css(): NOT Compressing CSS file "'.str_log($file).'", file has not changed', 'uglify', 'yellow');
+                        continue;
+                    }
+                }
+
+                /*
+                 * Compress file
+                 */
                 log_console('uglify_css(): Compressing CSS file "'.str_log($file).'"', 'uglify');
                 file_delete(substr($file, 0, -4).'.min.css');
                 safe_exec($node.' '.$node_modules.'uglifycss/uglifycss '.$file.' >  '.substr($file, 0, -4).'.min.css');
-
                 $processed[str_rfrom($file, '/')] = true;
+
+                /*
+                 * Make mtime equal
+                 */
+                $time = time();
+                touch(str_runtil($file, '.').'.css'    , $time, $time);
+                touch(str_runtil($file, '.').'.min.css', $time, $time);
 
             }catch(Exception $e){
                 log_error('Failed to compress CSS file "'.str_log($file).'"', 'error/uglify');
@@ -515,11 +542,38 @@ function uglify_js($path = null){
             }
 
             try{
+                 /*
+                 * If file exists and FORCE option wasn't given then proceed
+                 */
+                if(file_exists($file) and !FORCE){
+                    /*
+                     * Get mtime files
+                     */
+                    $minfile = str_runtil($file, '.').'.min.js';
+
+                    if(file_exists($minfile) and (filemtime($minfile) == filemtime($file))){
+                        /*
+                         * Do not compress, just continue with next file
+                         */
+                        log_console('uglify_js(): NOT Compressing javascript file "'.str_log($file).'", file has not changed', 'uglify', 'yellow');
+                        continue;
+                    }
+                }
+
+                /*
+                 * Compress file
+                 */
                 log_console('uglify_js(): Compressing javascript file "'.str_log($file).'"', 'uglify');
                 file_delete(substr($file, 0, -3).'.min.js');
                 safe_exec($node.' '.$node_modules.'uglify-js/bin/uglifyjs --output '.substr($file, 0, -3).'.min.js '.$file);
-
                 $processed[str_rfrom($file, '/')] = true;
+
+                /*
+                 * Make mtime equal
+                 */
+                $time = time();
+                touch(str_runtil($file, '.').'.js'    , $time, $time);
+                touch(str_runtil($file, '.').'.min.js', $time, $time);
 
             }catch(Exception $e){
                 log_error('Failed to compress javascript file "'.str_log($file).'"', 'error/uglify');
