@@ -427,10 +427,27 @@ function email_get_users_id($email){
 /*
  * Send a new email
  */
-function email_send($email, $delayed = null){
+function email_send($email, $delayed = null, $replace = null){
     global $_CONFIG;
 
     try{
+        /*
+         * Add custom email header and footer
+         */
+        load_libs('user');
+
+        if($replace === null){
+            $replace = array('%user%'   => user_name($_SESSION['user']),
+                             '%email%'  => isset_get($_SESSION['user']['email']),
+                             '%domain%' => domain());
+        }
+
+        $header        = str_replace(array_keys($replace), array_values($replace), $_CONFIG['email']['header']);
+        $footer        = str_replace(array_keys($replace), array_values($replace), $_CONFIG['email']['footer']);
+
+        $email['text'] = $header.$email['text'].$footer;
+
+
         if($delayed === null){
             /*
              *
