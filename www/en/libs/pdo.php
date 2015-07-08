@@ -165,7 +165,7 @@ function sql_get($query, $column = null, $execute = null, $sql = 'sql') {
             $column  = $tmp;
             unset($tmp);
         }
-
+// :TODO: Exception on multiple results
         return sql_fetch(sql_query($query, $execute, true, $sql), $column);
 
     }catch(Exception $e){
