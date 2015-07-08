@@ -179,6 +179,11 @@ function s_validate_password(&$user, $id = null){
         $v->hasMinChars ($user['password'] ,                  8, tr('Please ensure that the password has at least 8 characters'));
         $v->isEqual     ($user['password'] , $user['password2'], tr('Please ensure that the password and validation password match'));
 
+        /*
+         * Verify his current password
+         */
+        user_authenticate($_SESSION['user']['name'], $params['cpassword']);
+
     }catch(Exception $e){
         throw new bException('s_validate_password(): Failed', $e);
     }

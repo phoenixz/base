@@ -536,7 +536,8 @@ function user_signup($params){
 
 
 /*
- * Update user password
+ * Update user password. This can be used either by the current user, or by an
+ * admin user updating the users password
  */
 function user_update_password($params){
     try{
@@ -550,7 +551,7 @@ function user_update_password($params){
         if(empty($params['id'])){
             throw new bException(tr('user_update_password(): No users id specified'), 'not_specified');
         }
-        
+
         if(empty($params['cpassword'])){
             throw new bException(tr('user_update_password(): Please specify the current password'), 'not_specified');
         }
@@ -563,15 +564,12 @@ function user_update_password($params){
             throw new bException(tr('user_update_password(): No validation password specified'), 'not_specified');
         }
 
-        if($params['password'] != $params['password2']){
-            throw new bException(tr('user_update_password(): Specified password does not match the validation password'), 'mismatch');
-        }
-        
         /*
          * Check if current password is equal to cpassword
          */
-        $username = user_name($_SESSION['user']);
-        user_authenticate($username,$params['cpassword']);        
+        if($params['password'] != $params['password2']){
+            throw new bException(tr('user_update_password(): Specified password does not match the validation password'), 'mismatch');
+        }
 
         $password = password($params['password']);
 
@@ -597,7 +595,6 @@ function user_update_password($params){
              * Password remains the same, no problem
              */
         }
-
 
         /*
          * Add the new password to the password storage
