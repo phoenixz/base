@@ -59,50 +59,38 @@ function node_check_modules(){
             throw new bException('node_check_modules(): Environment variable "HOME" not found, failed to locate users home directory', 'environment_variable_not_found');
         }
 
-        $home = slash($home);
+        $home  = slash($home);
+        $found = false;
 
-        if(!file_exists($home.'node_modules')){
-            if(!file_exists($home.'.node_modules')){
-                if(!file_exists(ROOT.'node_modules')){
-                    if(!file_exists(ROOT.'.node_modules')){
-                        if(!file_exists(getcwd().'node_modules')){
-                            if(!file_exists(getcwd().'.node_modules')){
-                                throw new bException('node_check_modules(): node_modules path not found', 'node_modules_path_not_found');
-                            }
-                            return getcwd().'.node_modules/';
-                        }
-
-                        $home = getcwd().'node_modules/';
-
-                        log_console('node_check_modules(): Using node_modules "'.str_log($home).'"', 'node', 'green');
-
-                        return $home;
-                    }
-                    return ROOT.'.node_modules/';
-                }
-
-                $home = ROOT.'node_modules/';
-
-                log_console('node_check_modules(): Using node_modules "'.str_log($home).'"', 'node', 'green');
-
-                return $home;
+        /*
+         * Search for node_modules path
+         */
+        foreach(array($home, ROOT, getcwd()) as $path){
+            if($found){
+                break;
             }
 
-            return $home.'.node_modules/';
+            foreach(array('node_modules', '.node_modules') as $subpath){
+                if(file_exists(slash($path).$subpath)){
+                    $found = slash($path).$subpath;
+                    break;
+                }
+            }
         }
 
-        $home .= 'node_modules/';
+        if(!$found){
+            throw new bException('node_check_modules(): node_modules path not found', 'path_not_found');
+        }
 
-        log_console('node_check_modules(): Using node_modules "'.str_log($home).'"', 'node', 'green');
-
-        return $home;
+        log_console('node_check_modules(): Using node_modules "%path%"', array('%path' => str_log($home)), 'node', 'green');
+        return slash($path).$subpath;
 
     }catch(Exception $e){
         if($e->getCode() == 1){
-            throw new bException('node_check_modules(): Failed to find a node installation on this computer for this user', 'node_not_installed');
+            throw new bException('node_check_modules(): Failed to find a node installation on this computer for this user', 'not_installed');
         }
 
-        if($e->getCode() == 'node_modules_path_not_found'){
+        if($e->getCode() == 'path_not_found'){
             throw $e;
         }
 
