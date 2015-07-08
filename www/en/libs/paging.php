@@ -271,7 +271,13 @@ function paging_check_page($page, $page_max){
         $checked_page = force_natural_number($page, 1);
 
         if(($page and ($checked_page != $page)) or ($page > $page_max)){
-            page_show(404);
+            if($page_max){
+                throw new bException(tr('paging_check_page(): Specified page "%page%" appears out of range with page_max "%max%"', array('%page%' => $page, '%max%' => $page_max)), 'range');
+            }
+
+            /*
+             * Pagemax is 0, meaning there are no results
+             */
         }
 
         return $page;
@@ -316,6 +322,13 @@ function paging_data($page, $limit, $rows){
         return $retval;
 
     }catch(Exception $e){
+        if($e->getCode() == 'range'){
+            /*
+             * Specified page is out of range
+             */
+            page_show(404);
+        }
+
         throw new bException('paging_data(): Failed', $e);
     }
 }
