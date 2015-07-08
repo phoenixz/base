@@ -165,6 +165,7 @@ function sql_get($query, $column = null, $execute = null, $sql = 'sql') {
             $column  = $tmp;
             unset($tmp);
         }
+
 // :TODO: Exception on multiple results
         return sql_fetch(sql_query($query, $execute, true, $sql), $column);
 
@@ -239,10 +240,16 @@ function sql_init($sql = 'sql', $db = null){
     try{
         if(!empty($GLOBALS[$sql])) {
             /*
-             * Already connected to DB
+             * Already connected to core DB
              */
             return null;
         }
+
+        /*
+         * Set the MySQL rand() seed for this session
+         */
+// :TODO: On PHP7, update to random_int() for better cryptographic numbers
+        $_SESSION['sql_random_seed'] = mt_rand();
 
         if(empty($db)){
             $db = $_CONFIG['db'];

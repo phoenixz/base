@@ -83,7 +83,7 @@ function paging_generate($params){
                 $disabled = $params['disabled'];
             }
 
-            $line_url = str_replace('%page%', ($params['hide_ends'] ? '' : 1), $url);
+            $line_url = str_replace('%page%', ($params['hide_ends'] ? '' : 1), paging_get_url($url, 1, $disabled));
             $list    .= str_replace('%disabled%', $disabled, str_replace('%page%', 1, str_replace('%url%', $line_url, $params['first'])));
         }
 
@@ -98,7 +98,7 @@ function paging_generate($params){
                 $disabled = $params['disabled'];
             }
 
-            $line_url = str_replace('%page%', ((($current == 2) and $params['hide_ends']) ? '' : (($current - $params['show_pages'] < 1) ? 1 : $current - $params['show_pages'])), $url);
+            $line_url = str_replace('%page%', ((($current == 2) and $params['hide_ends']) ? '' : (($current - $params['show_pages'] < 1) ? 1 : $current - $params['show_pages'])), paging_get_url($url, $current - $params['show_pages'], $disabled));
             $list    .= str_replace('%disabled%', $disabled, str_replace('%page%', 1, str_replace('%url%', $line_url, $params['prev'])));
         }
 
@@ -128,7 +128,7 @@ function paging_generate($params){
         $display_count = $current + $params['show_pages'];
 
         for($current; $current < $display_count; $current++){
-            $line_url = str_replace('%page%', ((($current == 1) and $params['hide_ends']) ? '' : $current), $url);
+            $line_url = str_replace('%page%', ((($current == 1) and $params['hide_ends']) ? '' : $current), paging_get_url($url, $current));
             $line     = str_replace('%page%', $current, str_replace('%url%', $line_url, $params['page']));
 
             if($current == $params['current']){
@@ -153,7 +153,7 @@ function paging_generate($params){
                 $disabled = $params['disabled'];
             }
 
-            $list .= str_replace('%disabled%', $disabled, str_replace('%page%', $params['current'] + 1, str_replace('%url%', $url, $params['next'])));
+            $list .= str_replace('%disabled%', $disabled, str_replace('%page%', $params['current'] + 1, str_replace('%url%', paging_get_url($url, $params['current'] + 1, $disabled), $params['next'])));
         }
 
         /*
@@ -167,7 +167,7 @@ function paging_generate($params){
                 $disabled = $params['disabled'];
             }
 
-            $list .= str_replace('%disabled%', $disabled, str_replace('%page%', $page_count, str_replace('%url%', $url, $params['last'])));
+            $list .= str_replace('%disabled%', $disabled, str_replace('%page%', $page_count, str_replace('%url%', paging_get_url($url, $page_count, $disabled), $params['last'])));
         }
 
         $html = str_replace('%list%', $list, $html);
@@ -333,6 +333,40 @@ function paging_limit($limit, $default_limit = null){
 
     }catch(Exception $e){
         throw new bException('paging_limit(): Failed', $e);
+    }
+}
+
+
+
+/*
+ * Return the correct URL for the specified page
+ */
+function paging_get_url($url, $page = null, $disabled = false){
+    try{
+        if($disabled){
+            return '#';
+        }
+
+        if(is_string($url)){
+            return $url;
+        }
+
+        if(!is_array($url)){
+            throw new bException(tr('paging_get_url(): Invalid url specified, should be either string, or array, but is "%type%"', array('%type%' => gettype($url))), 'invalid');
+        }
+
+        if(isset($url[$page])){
+            return $url[$page];
+        }
+
+        if(!isset($url['default'])){
+            throw new bException(tr('paging_get_url(): URL was specified as array, but no "default" key was specified'), 'invalid');
+        }
+
+        return $url['default'];
+
+    }catch(Exception $e){
+        throw new bException('paging_get_url(): Failed', $e);
     }
 }
 ?>
