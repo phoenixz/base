@@ -773,6 +773,15 @@ function html_select($params, $selected = null, $name = '', $none = '', $class =
             throw new bException('html_select(): No name specified');
         }
 
+        if($params['autosubmit']){
+            if($params['class']){
+                $params['class'] .= ' autosubmit';
+
+            }else{
+                $params['class']  = 'autosubmit';
+            }
+        }
+
         if(!$params['resource']){
             if($params['hide_empty']){
                 return '';
@@ -1305,6 +1314,7 @@ function html_img($src, $alt, $more = '', $height = 0, $width = 0){
                     $img_size = array(0, 0);
                 }
 
+// :DELETE: Its not needed to unset the image data
                 //unset($img_size[2]);
                 //unset($img_size[3]);
                 //unset($img_size['bits']);
@@ -1366,7 +1376,7 @@ function page_show($pagename, $die = true, $force = false, $data = null) {
         }
 
     }catch(Exception $e){
-        throw new bException('page_show(): Failed to show page "'.str_log($pagename).'"', $e);
+        throw new bException(tr('page_show(): Failed to show page "%page%"', array('%page%' => str_log($pagename))), $e);
     }
 }
 ?>
