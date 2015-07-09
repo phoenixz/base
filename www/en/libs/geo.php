@@ -96,7 +96,8 @@ function geo_countries_select($params) {
         /*
          * If only one country is available, then select it automatically
          */
-        $params['resource'] = sql_query('SELECT `'.$params['id_column'].'`, `name` FROM `geo_countries` ORDER BY `name` ASC');
+        $params['resource'] = sql_query('SELECT `'.$params['id_column'].'` AS `id`, `name` FROM `geo_countries` ORDER BY `name` ASC');
+
         return cache_write(html_select($params), $cache_key);
 
     }catch(Exception $e){
@@ -109,17 +110,16 @@ function geo_countries_select($params) {
 /*
  * Get HTML states select list
  */
-function geo_states_select($params, $bodyonly = false, $selected= 0, $name = '', $none = '', $class = '', $option_class = '', $disabled = false) {
+function geo_states_select($params) {
     try{
         array_params ($params);
-        array_default($params, 'selected'        , $selected);
-        array_default($params, 'class'           , $class);
-        array_default($params, 'disabled'        , $disabled);
+        array_default($params, 'selected'        , '');
+        array_default($params, 'class'           , '');
+        array_default($params, 'disabled'        , false);
         array_default($params, 'id_column'       , 'id');
-        array_default($params, 'name'            , $name);
-        array_default($params, 'none'            , not_empty($none, tr('Select a state')));
-        array_default($params, 'option_class'    , $option_class);
-//        array_default($params, 'column'          , 'states_id');
+        array_default($params, 'name'            , 'states_id');
+        array_default($params, 'none'            , tr('Select a state'));
+        array_default($params, 'option_class'    , '');
         array_default($params, 'countries_column', 'countries_id');
 
         $cache_key = serialize($params);
@@ -135,17 +135,16 @@ function geo_states_select($params, $bodyonly = false, $selected= 0, $name = '',
             /*
              * Don't show any cities at all
              */
-            $params['resource'] = false;
+            $params['resource'] = null;
 
         }else{
             /*
              * If only one state is available, then select it automatically
              */
-            $params['resource'] = sql_query('SELECT `'.$params['id_column'].'`, `name` FROM `geo_states` WHERE countries_id = :countries_id  ORDER BY `name` ASC', array(':countries_id' => $params['countries_id']));
+            $params['resource'] = sql_query('SELECT `'.$params['id_column'].'` AS `id`, `name` FROM `geo_states` WHERE countries_id = :countries_id  ORDER BY `name` ASC', array(':countries_id' => $params['countries_id']));
         }
 
-        load_libs('html');
-        return cache_write($cache_key, html_select($params));
+        return cache_write(html_select($params), $cache_key);
 
     }catch(Exception $e){
         throw new bException('geo_states_select(): Failed', $e);
@@ -157,17 +156,17 @@ function geo_states_select($params, $bodyonly = false, $selected= 0, $name = '',
 /*
  * Get HTML cities select list
  */
-function geo_cities_select($params, $selected = 0, $name = '', $none = '', $class = '', $option_class = '', $disabled = false) {
+function geo_cities_select($params) {
     try{
         array_params ($params);
-        array_default($params, 'selected'     , $selected);
-        array_default($params, 'class'        , $class);
-        array_default($params, 'disabled'     , $disabled);
+        array_default($params, 'selected'     , '');
+        array_default($params, 'class'        , '');
+        array_default($params, 'disabled'     , '');
         array_default($params, 'id_column'    , 'id');
-        array_default($params, 'name'         , $name);
-        array_default($params, 'none'         , not_empty($none, tr('Select a city')));
-        array_default($params, 'option_class' , $option_class);
-//        array_default($params, 'column'       , 'cities_id');
+        array_default($params, 'value_column' , 'name');
+        array_default($params, 'name'         , '');
+        array_default($params, 'none'         , tr('Select a city'));
+        array_default($params, 'option_class' , '');
         array_default($params, 'states_column', 'states_id');
 
         $cache_key = serialize($params);
@@ -183,13 +182,13 @@ function geo_cities_select($params, $selected = 0, $name = '', $none = '', $clas
             /*
              * Don't show any cities at all
              */
-            $params['resource'] = false;
+            $params['resource'] = null;
 
         }else{
-            $params['resource'] = sql_query('SELECT `'.$params['id_column'].'`, `name` FROM `geo_cities` WHERE `states_id` = :states_id ORDER BY `name` ASC', array(':states_id' => $params['states_id']));
+            $params['resource'] = sql_query('SELECT `'.$params['id_column'].'` AS `id`, `'.$params['value_column'].'` FROM `geo_cities` WHERE `states_id` = :states_id ORDER BY `name` ASC', array(':states_id' => $params['states_id']));
         }
 
-        return cache_write($cache_key, html_select($params));
+        return cache_write(html_select($params), $cache_key);
 
     }catch(Exception $e){
         throw new bException('geo_cities_select(): Failed', $e);

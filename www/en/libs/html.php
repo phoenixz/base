@@ -763,14 +763,20 @@ function html_select($params, $selected = null, $name = '', $none = '', $class =
         array_default($params, 'bodyonly'    , false);
         array_default($params, 'autosubmit'  , false);
         array_default($params, 'onchange'    , '');
-        array_default($params, 'id_column'   , 'id');
         array_default($params, 'hide_empty'  , false);
         array_default($params, 'autofocus'   , false);
 
-        array_default($params, $params['id_column'], $params['name']);
-
         if(!$params['name']){
             throw new bException('html_select(): No name specified');
+        }
+
+        if($params['autosubmit']){
+            if($params['class']){
+                $params['class'] .= ' autosubmit';
+
+            }else{
+                $params['class']  = 'autosubmit';
+            }
         }
 
         if(!$params['resource']){
@@ -817,10 +823,10 @@ function html_select($params, $selected = null, $name = '', $none = '', $class =
             /*
              * Add a hidden element with the name to ensure that multiple selects with [] will not show holes
              */
-            return '<select'.($params[$params['id_column']] ? ' id="'.$params['id'].'_disabled"' : '').' name="'.$params['name'].'" '.($class ? ' class="'.$class.'"' : '').' readonly disabled>'.
+            return '<select'.($params['id'] ? ' id="'.$params['id'].'_disabled"' : '').' name="'.$params['name'].'" '.($class ? ' class="'.$class.'"' : '').' readonly disabled>'.
                     $body.'</select><input type="hidden" name="'.$params['name'].'" >';
         }else{
-            $retval = '<select'.($params[$params['id_column']] ? ' id="'.$params['id'].'"' : '').' name="'.$params['name'].'" '.($class ? ' class="'.$class.'"' : '').($params['disabled'] ? ' disabled' : '').($params['autofocus'] ? ' autofocus' : '').'>'.
+            $retval = '<select'.($params['id'] ? ' id="'.$params['id'].'"' : '').' name="'.$params['name'].'" '.($class ? ' class="'.$class.'"' : '').($params['disabled'] ? ' disabled' : '').($params['autofocus'] ? ' autofocus' : '').'>'.
                       $body.'</select>';
         }
 
@@ -868,7 +874,6 @@ function html_select_body($params, $selected = null, $none = '', $class = '', $a
         array_default($params, 'empty'      , tr('None available'));
         array_default($params, 'selected'   , $selected);
         array_default($params, 'auto_select', $auto_select);
-        array_default($params, 'id_column'  , 'id');
 
         if($params['none']){
             $retval = '<option'.($params['class'] ? ' class="'.$params['class'].'"' : '').''.(($params['selected'] === null) ? ' selected' : '').' value="">'.$params['none'].'</option>';
@@ -917,17 +922,14 @@ function html_select_body($params, $selected = null, $none = '', $class = '', $a
                         /*
                          * To avoid select problems with "none" entries, empty id column values are not allowed
                          */
-                        if(!$row[$params['id_column']]){
-                            $row[$params['id_column']] = str_random(8);
+                        if(!$row['id']){
+                            $row['id'] = str_random(8);
                         }
 
-                        $retval  .= '<option'.($params['class'] ? ' class="'.$params['class'].'"' : '').''.(($row[$params['id_column']] === $params['selected']) ? ' selected' : '').' value="'.$row[$params['id_column']].'">'.$row['name'].'</option>';
+                        $retval  .= '<option'.($params['class'] ? ' class="'.$params['class'].'"' : '').''.(($row['id'] === $params['selected']) ? ' selected' : '').' value="'.$row['id'].'">'.$row['name'].'</option>';
                     }
 
                 }catch(Exception $e){
-                    if(!isset($row[$params['id_column']])){
-                        throw new bException(tr('html_select_body(): Specified id_column "%id_column%" does not exist in the given resource', array('%id_column%' => $params['id_column'])), 'invalidresource');
-                    }
 
                     throw $e;
                 }
@@ -1305,6 +1307,7 @@ function html_img($src, $alt, $more = '', $height = 0, $width = 0){
                     $img_size = array(0, 0);
                 }
 
+// :DELETE: Its not needed to unset the image data
                 //unset($img_size[2]);
                 //unset($img_size[3]);
                 //unset($img_size['bits']);
@@ -1366,7 +1369,7 @@ function page_show($pagename, $die = true, $force = false, $data = null) {
         }
 
     }catch(Exception $e){
-        throw new bException('page_show(): Failed to show page "'.str_log($pagename).'"', $e);
+        throw new bException(tr('page_show(): Failed to show page "%page%"', array('%page%' => str_log($pagename))), $e);
     }
 }
 ?>
