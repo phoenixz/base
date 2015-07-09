@@ -134,6 +134,9 @@ $nopush        =  (argument('nopush')     or ($noversion and $notag));
 $stash         =   argument('stash');
 $notouch       =   argument('notouch');
 
+$nocompress    =   argument('nocompress');
+$forcecompress =   argument('forcecompress');
+
 $message       =   argument('message'      , true);
 $continuersync =   argument('continuersync', true);
 $targets       =   argument('target'       , 'all', argument('targets', 'all'));
@@ -354,6 +357,43 @@ if($noversion or $notag or $nopush){
     init_hook('deploy_post_push', $nohooks);
 }
 
+/*
+ * Run compress script
+ */
+if($nocompress){
+    log_console('Skipping file compress due to "nocompress" command line parameter', 'deploy', 'yellow');
+
+}else{
+    log_console('Executing file compress script', 'deploy', 'white');
+
+    $option = '';
+
+    if($forcecompress){
+        /*
+         * Compress script should be run with -f option
+         */
+        log_console('Executing file compress script with force mode', 'deploy', 'white');
+        $option = ' -f';
+    }
+
+    try{
+        script_exec('base/compress', $option);
+
+    }catch(Exception $e){
+        throw new bException('script_exec(): Failed to execute "'.str_log('base/compress').'"', $e);
+    }
+
+    /*
+     * Compress script generates files that aren't commited
+     * so we must do a commmit for those files.
+     */
+    if(!trim(shell_exec('git status | grep "nothing to commit" | wc -l'))){
+        log_console('Changes detected, because of the compress script... making a commit', 'commit', 'white');
+        safe_exec('git add www/en/pub/');
+        safe_exec('git commit -m "Deploy commit: compress files changed"');
+    }
+
+}
 
 
 /*
