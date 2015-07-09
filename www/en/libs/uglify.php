@@ -138,9 +138,9 @@ function uglify_css($path = null){
         }
 
          /*
-         * Copy file from symlink depending if it's min file
-         * or normal file, so now we dont have
-         * problems with deleted files.
+         * Replace all symlinks with copies of the target file. This way, later
+         * on we dont have to worry about if source or target is min file or
+         * not, etc.
          */
         foreach(file_list_tree($path) as $file){
             if(is_link($file)){
@@ -493,9 +493,9 @@ function uglify_js($path = null){
         }
 
         /*
-         * Copy file from symlink depending if it's min file
-         * or normal file, so now we dont have
-         * problems with deleted files.
+         * Replace all symlinks with copies of the target file. This way, later
+         * on we dont have to worry about if source or target is min file or
+         * not, etc.
          */
         foreach(file_list_tree($path) as $file){
             if(is_link($file)){
