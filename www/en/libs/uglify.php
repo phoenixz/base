@@ -137,6 +137,11 @@ function uglify_css($path = null){
             throw new bException('uglify_css(): Specified file "'.str_log($path).'" is neither a file or a directory', 'unknow_file_type');
         }
 
+         /*
+         * Copy file from symlink depending if it's min file
+         * or normal file, so now we dont have
+         * problems with deleted files.
+         */
         foreach(file_list_tree($path) as $file){
             if(is_link($file)){
                 if(substr($file, -7, 7) == '.min.js'){
@@ -487,6 +492,11 @@ function uglify_js($path = null){
             throw new bException('uglify_js(): Specified file "'.str_log($path).'" is neither a file or a directory', 'unknow_file_type');
         }
 
+        /*
+         * Copy file from symlink depending if it's min file
+         * or normal file, so now we dont have
+         * problems with deleted files.
+         */
         foreach(file_list_tree($path) as $file){
             if(is_link($file)){
                 if(substr($file, -7, 7) == '.min.js'){
