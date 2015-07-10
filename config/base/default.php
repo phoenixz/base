@@ -12,6 +12,10 @@
 //Debug or not?
 $_CONFIG['debug']              = false;                                                                     // If set to true, the system will run in debug mode, the debug.php library will be loaded, and debug functions will be available.
 
+// AJAX configuration
+$_CONFIG['ajax']               = array('results'          => array('default'        => 5,
+                                                                   'max'            => 15));
+
 // Avatar configuration, default avatar image, type will be added after this string, e.g.  _48x48.jpg
 $_CONFIG['avatars']            = array('default'          => '/pub/img/img_avatar',
 
