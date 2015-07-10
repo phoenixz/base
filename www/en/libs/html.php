@@ -1372,4 +1372,47 @@ function page_show($pagename, $die = true, $force = false, $data = null) {
         throw new bException(tr('page_show(): Failed to show page "%page%"', array('%page%' => str_log($pagename))), $e);
     }
 }
+
+
+
+/*
+ *
+ */
+function html_autosuggest($params){
+    static $sent = array();
+
+    try{
+        array_params($params);
+        array_default($params, 'class'      , '');
+        array_default($params, 'name'       , '');
+        array_default($params, 'id'         , $params['name']);
+        array_default($params, 'placeholder', '');
+        array_default($params, 'required'   , false);
+        array_default($params, 'value'      , '');
+        array_default($params, 'source'     , '');
+        array_default($params, 'maxlength'  , '');
+        array_default($params, 'selector'   , 'form.autosuggest');
+
+        $retval = ' <div class="autosuggest">
+                        <input class="'.str_ends($params['class'], ' ').'" type="text" name="'.$params['name'].'" name="'.$params['id'].'" placeholder="'.$params['name'].'" data-source="'.$params['source'].'" value="'.$params['value'].'"'.($params['maxlength'] ? ' maxlength="'.$params['maxlength'].'"' : '').''.($params['required'] ? ' required' : '').'>
+                        <ul>
+                        </ul>
+                    </div>';
+
+        if(empty($sent[$params['selector']])){
+            /*
+             * Add only one autosuggest start per selector
+             */
+            $sent[$params['selector']] = true;
+            $retval                   .= html_script('$("'.$params['selector'].'").autosuggest();');
+        }
+
+        html_load_js('base/autosuggest');
+
+        return $retval;
+
+    }catch(Exception $e){
+        throw new bException(tr('html_autosuggest(): Failed'), $e);
+    }
+}
 ?>
