@@ -38,7 +38,7 @@ $.fn.autosuggest = function(options) {
 		$(this).removeClass(options.returnClass + '_hover');
 	});
 
-	$(this).on("keydown", "div.autosuggest input", function(e){
+	$(this).on("keyup", "div.autosuggest input", function(e){
 		switch (e.keyCode) {
 			case 38:
 				goUp();
@@ -57,6 +57,7 @@ $.fn.autosuggest = function(options) {
 		    url    = $this.data("source"),
 		    value  = $this.val(),
 		    target = $this.siblings("ul");
+console.log(value.length);
 
 		if(value.length >= options.minLength) {
 			if(loading == false) {
@@ -72,7 +73,6 @@ $.fn.autosuggest = function(options) {
 						loading = false;
 
 						if(data.result == "OK" && data.html) {
-console.log("aaaaaaaaaaaaaa");
 							target
 								.html(data.html)
 								.addClass("active");
@@ -82,6 +82,9 @@ console.log("aaaaaaaaaaaaaa");
 						}
 					});
 			}
+
+		} else {
+			target.removeClass("active");
 		}
 	});
 
