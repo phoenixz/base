@@ -30,8 +30,9 @@ $_CONFIG['blogs']               = array('enabled'         => false,
 // Use bootstrap?
 $_CONFIG['bootstrap']           = array('enabled'         => false,
                                         'css'             => 'bootstrap',
-                                        'js'              => 'bootstrap',
-                                        'viewport'        => 'width=device-width, initial-scale=1.0');
+                                        'js'              => 'bootstrap');
+//:DELETE: viewport is used from $CONFIG_['mobile]['viewport']
+                                        //'viewport'        => 'width=device-width, initial-scale=1.0');
 
 //
 $_CONFIG['cache']              = array('method'           => 'file',                                        // "file", "memcached" or false.
@@ -202,7 +203,7 @@ $_CONFIG['mobile']             = array('enabled'          => true,              
                                        'force'            => false,                                         // Treat every device as if it is a mobile device
                                        'auto_redirect'    => true,                                          // If set to true, the first session page load will automatically redirect to the mobile version of the site
                                        'tablets'          => false,                                         // Treat tablets as mobile devices
-                                       'viewport'         => '<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">');  // The <meta> viewport tag used for this site
+                                       'viewport'         => 'width=device-width, initial-scale=1, maximum-scale=1');  // The <meta> viewport tag used for this site
 
 // Name of the website
 $_CONFIG['name']               = 'base';

@@ -410,9 +410,24 @@ function html_header($params = null, $meta = array()){
             $params['meta'] = array_merge($_CONFIG['meta'], $params['meta']);
         }
 
-        if(!empty($_CONFIG['bootstrap']['enabled'])){
-            array_ensure($params['meta'], 'viewport', $_CONFIG['bootstrap']['viewport']);
+        /*
+         * Add viewport meta tag for mobile devices
+         */
+        if(!empty($_SESSION['mobile'])){
+            if(empty($params['meta']['viewport'])){
+                $params['meta']['viewport'] = isset_get($_CONFIG['mobile']['viewport']);
+            }
+
+            if(!$params['meta']['viewport']){
+                throw new bException(tr('html_header(): Meta viewport tag is empty'));
+            }
         }
+
+
+//:DELETE: Above is already a meta-viewport
+        //if(!empty($_CONFIG['bootstrap']['enabled'])){
+        //    array_ensure($params['meta'], 'viewport', $_CONFIG['bootstrap']['viewport']);
+        //}
 
         /*
          * Add meta tag no-index for non production environments and admin pages
@@ -467,14 +482,6 @@ function html_header($params = null, $meta = array()){
 
         $retval .= html_favicon($params['favicon']).$params['extra'];
 
-        /*
-         * Add viewport meta tag for mobile devices
-         */
-        if(!empty($_SESSION['mobile'])){
-            if(!empty($_CONFIG['mobile']['viewport'])){
-                $retval .= $_CONFIG['mobile']['viewport']."\n";
-            }
-        }
 
         return $retval."</head>\n".
                        $params['body']."\n";
