@@ -1395,7 +1395,7 @@ function html_autosuggest($params){
         array_default($params, 'selector'         , 'form.autosuggest');
 
         $retval = ' <div class="autosuggest">
-                        <input class="'.str_ends($params['class'], ' ').'" type="text" autocomplete="false" name="'.$params['name'].'" id="'.$params['id'].'" placeholder="'.$params['placeholder'].'" data-source="'.$params['source'].'" value="'.$params['value'].'"'.($params['filter_selector'] ? ' data-filter-selector="'.$params['filter_selector'].'"' : '').($params['maxlength'] ? ' maxlength="'.$params['maxlength'].'"' : '').($params['required'] ? ' required' : '').'>
+                        <input autocomplete="off" class="'.str_ends($params['class'], ' ').'" type="text" name="'.$params['name'].'" id="'.$params['id'].'" placeholder="'.$params['placeholder'].'" data-source="'.$params['source'].'" value="'.$params['value'].'"'.($params['filter_selector'] ? ' data-filter-selector="'.$params['filter_selector'].'"' : '').($params['maxlength'] ? ' maxlength="'.$params['maxlength'].'"' : '').($params['required'] ? ' required' : '').'>
                         <ul>
                         </ul>
                     </div>';
