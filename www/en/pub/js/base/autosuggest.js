@@ -43,6 +43,12 @@
 			$this.closest("div").find("input").val($this.text());
 		});
 
+		$(this).on("hover", "div.autosuggest li", function(e){
+console.log('hover');
+			$(this).parent().children().removeClass('hover');
+			$(this).addClass('hover');
+		});
+
 		$(this).on("focus", "div.autosuggest input", function(e){
 			$ul = $(this).siblings("ul");
 
@@ -65,7 +71,7 @@
 
 					$ul       = $this.siblings("ul")
 					$list     = $ul.find("li");
-					$selected = $ul.find("li.hover");
+					$selected = $ul.find("li.hover,li:hover");
 
 					$list.removeClass("hover");
 
@@ -84,7 +90,7 @@
 
 					$ul       = $this.siblings("ul")
 					$list     = $ul.find("li");
-					$selected = $ul.find("li.hover");
+					$selected = $ul.find("li.hover,li:hover");
 
 					$list.removeClass("hover");
 
@@ -98,6 +104,13 @@
 					return false;
 
 				case 13:
+					if(!$this.siblings("ul").hasClass("active")) {
+						/*
+						 * Autosuggest dropdown is not visible, treat enter like normal
+						 */
+						return true;
+					}
+
 					e.stopPropagation();
 					e.preventDefault();
 
