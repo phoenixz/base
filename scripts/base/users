@@ -3,14 +3,14 @@
 /*
  * This script can create new users
  */
-$usage = "./scripts/base/users/users list\n".
-         "./scripts/base/users/users list with right RIGHT\n".
-         "./scripts/base/users/users create username USERNAME name REALNAME email EMAIL password PASSWORD\n".
-         "./scripts/base/users/users modify ID|USERNAME [username USERNAME]|[name NAME]|[email EMAIL]\n".
-         "./scripts/base/users/users password ID|USERNAME PASSWORD\n".
-         "./scripts/base/users/users delete|undelete|erase ID|USERNAME ID|USERNAME ...\n".
-         "./scripts/base/users/users whoami\n".
-         "./scripts/base/users/users setrole user USERID|USERNAME role ROLEID|ROLENAME\n";
+$usage = "./scripts/base/users list\n".
+         "./scripts/base/users list with right RIGHT\n".
+         "./scripts/base/users create username USERNAME name REALNAME email EMAIL password PASSWORD\n".
+         "./scripts/base/users modify ID|USERNAME [username USERNAME]|[name NAME]|[email EMAIL]\n".
+         "./scripts/base/users password ID|USERNAME PASSWORD\n".
+         "./scripts/base/users delete|undelete|erase ID|USERNAME ID|USERNAME ...\n".
+         "./scripts/base/users whoami\n".
+         "./scripts/base/users setrole user USERID|USERNAME role ROLEID|ROLENAME\n";
 
 $help  = "This is the users management script";
 

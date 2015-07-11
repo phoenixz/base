@@ -4,12 +4,12 @@
  * This is the roles management script
  * Copyright (C) 2015 Sven Oostenbrink
  */
-$usage = "./scripts/base/users/roles list\n".
-         "./scripts/base/users/roles list rights\n".
-         "./scripts/base/users/roles create username USERNAME name REALNAME email EMAIL password PASSWORD\n".
-         "./scripts/base/users/roles modify ID|USERNAME [username USERNAME]|[name NAME]|[email EMAIL]\n".
-         "./scripts/base/users/roles delete|undelete|erase ID|USERNAME ID|USERNAME ...\n".
-         "./scripts/base/users/roles add|remove role ROLEID|ROLENAME right RIGHTID|RIGHTNAME \n";
+$usage = "./scripts/base/roles list\n".
+         "./scripts/base/roles list rights\n".
+         "./scripts/base/roles create username USERNAME name REALNAME email EMAIL password PASSWORD\n".
+         "./scripts/base/roles modify ID|USERNAME [username USERNAME]|[name NAME]|[email EMAIL]\n".
+         "./scripts/base/roles delete|undelete|erase ID|USERNAME ID|USERNAME ...\n".
+         "./scripts/base/roles add|remove role ROLEID|ROLENAME right RIGHTID|RIGHTNAME \n";
 
 $help  = "This is the roles management script";
 

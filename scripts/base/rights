@@ -3,11 +3,11 @@
 /*
  * This script manages the available rights
  */
-$usage = "./scripts/base/users/rights list\n".
-         "./scripts/base/users/rights create name NAME description DESCRIPTION\n".
-         "./scripts/base/users/rights modify ID|NAME name NAME description DESCRIPTION\n".
-         "./scripts/base/users/rights delete|undelete|erase ID|RIGHT ID|RIGHT ...\n".
-         "./scripts/base/users/rights for USER\n";
+$usage = "./scripts/base/rights list\n".
+         "./scripts/base/rights create name NAME description DESCRIPTION\n".
+         "./scripts/base/rights modify ID|NAME name NAME description DESCRIPTION\n".
+         "./scripts/base/rights delete|undelete|erase ID|RIGHT ID|RIGHT ...\n".
+         "./scripts/base/rights for USER\n";
 
 $help  = "This is the rights management script";
 
