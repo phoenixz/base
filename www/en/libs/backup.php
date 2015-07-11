@@ -168,7 +168,7 @@ showdie($e);
         file_ensure_path($params['target']);
 
         $target    = $params['target'].$params['table'].'.sql';
-        $command   = 'mysqldump -p"'.$params['pass'].'" -u '.$params['user'];
+        $command   = 'mysqldump -p"'.$params['pass'].'" -u '.$params['user'].' --single-transaction';
 
         if($params['create_options']){
             $command .=  ' --create-options';
