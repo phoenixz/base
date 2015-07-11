@@ -1383,18 +1383,19 @@ function html_autosuggest($params){
 
     try{
         array_params($params);
-        array_default($params, 'class'      , '');
-        array_default($params, 'name'       , '');
-        array_default($params, 'id'         , $params['name']);
-        array_default($params, 'placeholder', '');
-        array_default($params, 'required'   , false);
-        array_default($params, 'value'      , '');
-        array_default($params, 'source'     , '');
-        array_default($params, 'maxlength'  , '');
-        array_default($params, 'selector'   , 'form.autosuggest');
+        array_default($params, 'class'            , '');
+        array_default($params, 'name'             , '');
+        array_default($params, 'id'               , $params['name']);
+        array_default($params, 'placeholder'      , '');
+        array_default($params, 'required'         , false);
+        array_default($params, 'value'            , '');
+        array_default($params, 'source'           , '');
+        array_default($params, 'maxlength'        , '');
+        array_default($params, 'filter_selector'  , '');
+        array_default($params, 'selector'         , 'form.autosuggest');
 
         $retval = ' <div class="autosuggest">
-                        <input class="'.str_ends($params['class'], ' ').'" type="text" autocomplete="false" name="'.$params['name'].'" id="'.$params['id'].'" placeholder="'.$params['placeholder'].'" data-source="'.$params['source'].'" value="'.$params['value'].'"'.($params['maxlength'] ? ' maxlength="'.$params['maxlength'].'"' : '').''.($params['required'] ? ' required' : '').'>
+                        <input class="'.str_ends($params['class'], ' ').'" type="text" autocomplete="false" name="'.$params['name'].'" id="'.$params['id'].'" placeholder="'.$params['placeholder'].'" data-source="'.$params['source'].'" value="'.$params['value'].'"'.($params['filter_selector'] ? ' data-filter-selector="'.$params['filter_selector'].'"' : '').($params['maxlength'] ? ' maxlength="'.$params['maxlength'].'"' : '').($params['required'] ? ' required' : '').'>
                         <ul>
                         </ul>
                     </div>';

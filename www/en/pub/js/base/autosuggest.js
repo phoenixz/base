@@ -56,7 +56,6 @@
 		});
 
 		$(this).on("keydown", "div.autosuggest input", function(e){
-console.log("keydown");
 			var $this  = $(this);
 
 			switch (e.keyCode) {
@@ -123,18 +122,27 @@ console.log("keydown");
 					break;
 
 				default:
-console.log("keyup");
 					var $this  = $(this),
 						url    = $this.data("source"),
+						filter = $this.data("filter-selector"),
 						value  = $this.val(),
 						target = $this.siblings("ul");
 
 					if(value.length >= options.minLength) {
 						if(loading == false) {
 							loading = true;
+							$this.siblings("img").addClass("active");
 
-							$.post(url, { value: value, count: options.count })
+							var data = { value: value, count: options.count };
+
+							if (filter) {
+								data.filter = $(filter).val();
+							}
+
+							$.post(url, data)
 								.success(function(data){
+									$this.siblings("img").removeClass("active");
+
 									if(typeof data == "string"){
 										// Auto parse json
 										data = $.parseJSON(data);
@@ -142,7 +150,7 @@ console.log("keyup");
 
 									loading = false;
 
-									if(data.result == "OK" && data.html) {
+									if((data.result) == "OK" && data.html) {
 										target
 											.html(data.html)
 											.addClass("active");
@@ -152,6 +160,7 @@ console.log("keyup");
 									}
 								})
 								.fail(function(){
+									$this.siblings("img").removeClass("active");
 									$.flashMessage("Autosuggest failed", "error", 0);
 								});
 						}
