@@ -1,158 +1,165 @@
 (function($) {
-$.fn.autosuggest = function(options) {
-	var self     = this;
-	var loading  = false;
+	$.fn.autosuggest = function(options) {
+		var self     = this;
+		var loading  = false;
 
-	if (typeof options == "string") {
-		selector = options;
-		options  = {}
-	}
-
-	var defaults = {
-		count       : 10,
-		minLength   : 2,
-		autoSubmit  : true
-	};
-
-	// Overwrite default options
-	// with user provided ones
-	// and merge them into "options".
-	var options = $.extend({}, defaults, options);
-	var lists   = this.find("div.autosuggest input").siblings("ul");
-
-	$(lists).on("click", "li", function(e){
-		self.val($(this).prop('title'));
-		lists.hide();
-
-		if(options.autoSubmit) {
-			self.closest('form').submit();
+		if (typeof options == "string") {
+			selector = options;
+			options  = {}
 		}
-	 });
 
-	//add onhovers
-	$(lists).on("mouseenter", "li", function(e){
-		$(this).addClass(options.returnClass + '_hover');
-	});
-
-	$(lists).on("mouseleave", "li", function(e){
-		$(this).removeClass(options.returnClass + '_hover');
-	});
-
-	$(this).on("keyup", "div.autosuggest input", function(e){
-		switch (e.keyCode) {
-			case 38:
-				goUp();
-				break;
-
-			case 40:
-				goDown();
-				break;
-
-			case 13:
-				goEnter();
-				break;
+		var defaults = {
+			count       : 10,
+			minLength   : 2,
+			autoSubmit  : true
 		};
 
-		var $this  = $(this),
-		    url    = $this.data("source"),
-		    value  = $this.val(),
-		    target = $this.siblings("ul");
-console.log(value.length);
+		// Overwrite default options
+		// with user provided ones
+		// and merge them into "options".
+		var options = $.extend({}, defaults, options);
+		var lists   = this.find("div.autosuggest input").siblings("ul");
 
-		if(value.length >= options.minLength) {
-			if(loading == false) {
-				loading = true;
+		//$(lists).on("click", "li", function(e){
+		//	self.val($(this).prop('title'));
+		//	lists.hide();
+		//
+		//	if(options.autoSubmit) {
+		//		self.closest('form').submit();
+		//	}
+		// });
 
-				$.post(url, { value: value, count: options.count })
-					.success(function(data){
-						if(typeof data == "string"){
-							// Auto parse json
-							data = $.parseJSON(data);
-						}
+// :DELETE:
+		////add onhovers
+		//$(lists).on("mouseenter", "li", function(e){
+		//	$(this).addClass(options.returnClass + '_hover');
+		//});
+		//
+		//$(lists).on("mouseleave", "li", function(e){
+		//	$(this).removeClass(options.returnClass + '_hover');
+		//});
+		$(this).on("mousedown", "div.autosuggest li", function(e){
+			$this = $(this);
+			$this.closest("div").find("input").val($this.text());
+		});
 
-						loading = false;
+		$(this).on("focus", "div.autosuggest input", function(e){
+			$ul = $(this).siblings("ul");
 
-						if(data.result == "OK" && data.html) {
-							target
-								.html(data.html)
-								.addClass("active");
-
-						} else {
-							target.removeClass("active");
-						}
-					});
+			if($(this).siblings("ul").children().length){
+				$ul.addClass("active");
 			}
+		});
 
-		} else {
-			target.removeClass("active");
-		}
-	});
+		$(this).on("blur", "div.autosuggest input", function(e){
+			$(this).siblings("ul").removeClass("active");
+		});
 
-	return;
+		$(this).on("keydown", "div.autosuggest input", function(e){
+console.log("keydown");
+			var $this  = $(this);
 
-	//// Overwrite default options
-	//// with user provided ones
-	//// and merge them into "options".
-	//var options = $.extend({}, defaults, options);
-	//var lists  = $("." + options.returnClass);
-	//
-	//if (!options.url) {
-	//	throw 'No autosuggest source URL specified';
-	//}
+			switch (e.keyCode) {
+				case 38:
+					e.stopPropagation();
+					e.preventDefault();
 
-	return this.keyup(function(e) {
-        onChange(e);
-	});
+					$ul       = $this.siblings("ul")
+					$list     = $ul.find("li");
+					$selected = $ul.find("li.hover");
 
-	function goEnter() {
-		var obj=lists.find('.' + options.returnClass + '_hover');
+					$list.removeClass("hover");
 
-		if(obj.length) {
-			self.val(obj.prop('title'));
-		}
+					if (!$selected.length || $selected.is(":first-child")){
+						$list.last().addClass("hover");
 
-		if(options.autoSubmit==true) {
-			$.flashMessage(self.clostest('form').html(), "error");
-			self.closest('form').submit();
-		}
+					}else{
+						$selected.prev().addClass("hover");
+					}
+
+					return false;
+
+				case 40:
+					e.stopPropagation();
+					e.preventDefault();
+
+					$ul       = $this.siblings("ul")
+					$list     = $ul.find("li");
+					$selected = $ul.find("li.hover");
+
+					$list.removeClass("hover");
+
+					if (!$selected.length || $selected.is(":last-child")){
+						$list.first().addClass("hover");
+
+					}else{
+						$selected.next().addClass("hover");
+					}
+
+					return false;
+
+				case 13:
+					e.stopPropagation();
+					e.preventDefault();
+
+ 					$li = $this.closest("div").find("li.hover");
+
+					if ($li.length) {
+						$this.val($li.text());
+						$li.parent().removeClass("active");
+					}
+
+					return false;
+			}
+		});
+
+		$(this).on("keyup", "div.autosuggest input", function(e){
+			switch (e.keyCode) {
+				case 38:
+					// FALLTHROUGH
+				case 40:
+					// FALLTHROUGH
+				case 13:
+					break;
+
+				default:
+console.log("keyup");
+					var $this  = $(this),
+						url    = $this.data("source"),
+						value  = $this.val(),
+						target = $this.siblings("ul");
+
+					if(value.length >= options.minLength) {
+						if(loading == false) {
+							loading = true;
+
+							$.post(url, { value: value, count: options.count })
+								.success(function(data){
+									if(typeof data == "string"){
+										// Auto parse json
+										data = $.parseJSON(data);
+									}
+
+									loading = false;
+
+									if(data.result == "OK" && data.html) {
+										target
+											.html(data.html)
+											.addClass("active");
+
+									} else {
+										target.removeClass("active");
+									}
+								})
+								.fail(function(){
+									$.flashMessage("Autosuggest failed", "error", 0);
+								});
+						}
+
+					} else {
+						target.removeClass("active");
+					}
+			}
+		});
 	}
-
-	function goDown() {
-		var obj=lists.find('.' + options.returnClass + '_hover');
-
-		if(!obj.length) {
-			var next=lists.find('li:first');
-
-		} else {
-			var next = obj.next();
-		}
-
-		if(next.length) {
-			obj.removeClass(options.returnClass + '_hover');
-			next.addClass(options.returnClass + '_hover');
-
-		} else {
-			next.addClass(options.returnClass + '_hover');
-		}
-	}
-
-	function goUp() {
-		var obj=lists.find('.' + options.returnClass + '_hover');
-
-		if(!obj.length) {
-			var obj = lists.find('li:first');
-		}
-
-		var next = obj.prev();
-
-		if(next.length) {
-			obj.removeClass(options.returnClass + '_hover');
-			next.addClass(options.returnClass + '_hover');
-
-		} else {
-			obj.addClass(options.returnClass + '_hover');
-		}
-	}
-}
-
 }(jQuery));
