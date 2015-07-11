@@ -243,6 +243,14 @@ function user_signin($user, $extended = false, $redirect = '/') {
             throw new bException('user_signin(): This user has no active session or no session id, so probably has no cookies', 'cookiesrequired');
         }
 
+        if(session_status() == PHP_SESSION_ACTIVE){
+            /*
+             * Reset session data
+             */
+            session_destroy();
+            session_start();
+        }
+
         $_SESSION['user'] = $user;
 
         /*
