@@ -298,7 +298,9 @@ if(!$nocacheclear){
  */
 if(!$noblogupdateurl){
     load_libs('blogs');
-    blogs_update_urls();
+// :DELETE: Sync script removes original DB, so theres a problem with PDO using that DB.
+//    blogs_update_urls();
+    passthru(ROOT.'scripts/base/init');
 }
 
 log_console('Finished!', 'sync', 'green');
