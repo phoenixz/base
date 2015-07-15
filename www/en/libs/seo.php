@@ -13,13 +13,41 @@
 /*
  * Generate an unique seo name
  */
-function seo_unique_string($string, $table, $ownid = null, $field = 'seoname', $replace = '-', $first_suffix = null) {
+function seo_unique_string($source, $table, $ownid = null, $field = 'seoname', $replace = '-', $first_suffix = null) {
     try{
         /*
          * Prepare string
          */
-        $string = trim(seo_string($string, $replace));
-        $id     = 0;
+        $id = 0;
+
+        if(empty($source)){
+            throw new bException(tr('seo_unique_string(): Empty source spefified'), 'empty');
+        }
+
+        if(is_array($source)){
+            /*
+             * The specified source is a key => value array which can be used
+             * for unique entries spanning multiple columns
+             *
+             * Example: geo_cities has unique states_id with seoname
+             * $source = array('seoname'   => 'cityname',
+             *                 'states_id' => 3);
+             *
+             * NOTE: The first column will have the identifier added
+             */
+            foreach($source as $column => &$value){
+                if(empty($first)){
+                    $first = array($column => $value);
+                }
+
+                $value = trim(seo_string($value, $replace));
+            }
+
+            unset($value);
+
+        }else{
+            $source = trim(seo_string($source, $replace));
+        }
 
         /*
          * Filter out the id of the record itself
@@ -50,24 +78,47 @@ function seo_unique_string($string, $table, $ownid = null, $field = 'seoname', $
          * If the seostring exists, add an identifier to it.
          */
         while(true) {
-            if(!$id) {
-                $str = $string;
+            if(is_array($source)){
+                /*
+                 * Check on multiple columns, add identifier on first column value
+                 */
+                if($id) {
+                    if($first_suffix){
+                        $source[key($first)] = reset($first).trim(seo_string($first_suffix, $replace));
+                        $first_suffix        = null;
+                        $id--;
 
-            } else {
-                if($first_suffix){
-                    $string       = $string.trim(seo_string($first_suffix, $replace));
-                    $first_suffix = null;
-                    $id--;
-
-                }else{
-                    $str = $string.$id;
+                    }else{
+                        $source[key($first)] = reset($first).$id;
+                    }
                 }
-            }
 
-            $result = sql_get('SELECT COUNT(*) AS count FROM `'.$table.'` WHERE `'.$field.'` = "'.$str.'"'.$ownid.';');
+                $result = sql_get('SELECT COUNT(*) AS `count` FROM `'.$table.'` WHERE '.array_implode_with_keys($source, ' AND ', ' = ', true).$ownid.';');
 
-            if(!$result['count']){
-                return $str;
+                if(!$result['count']){
+                    return $source[key($first)];
+                }
+
+            }else{
+                if(!$id) {
+                    $str = $source;
+
+                } else {
+                    if($first_suffix){
+                        $source       = $source.trim(seo_string($first_suffix, $replace));
+                        $first_suffix = null;
+                        $id--;
+
+                    }else{
+                        $str = $source.$id;
+                    }
+                }
+
+                $result = sql_get('SELECT COUNT(*) AS `count` FROM `'.$table.'` WHERE `'.$field.'` = "'.$str.'"'.$ownid.';');
+
+                if(!$result['count']){
+                    return $str;
+                }
             }
 
             $id++;
@@ -144,7 +195,7 @@ function seo_create_string($source, $replace = '-') {
     return seo_string($source, $replace = '-');
 }
 
-function seo_generate_unique_name($string, $table, $ownid = null, $field = 'seoname', $replace = '-', $first_suffix = null){
-    return seo_unique_string($string, $table, $ownid, $field, $replace, $first_suffix);
+function seo_generate_unique_name($source, $table, $ownid = null, $field = 'seoname', $replace = '-', $first_suffix = null){
+    return seo_unique_string($source, $table, $ownid, $field, $replace, $first_suffix);
 }
 ?>

@@ -1348,14 +1348,14 @@ function page_show($pagename, $die = true, $force = false, $data = null) {
     global $_CONFIG;
 
     try{
-        if($GLOBALS['page_is_ajax']){
+        if(!empty($GLOBALS['page_is_ajax'])){
             // Execute ajax page
             return include(ROOT.'www/'.LANGUAGE.'/ajax/'.$pagename.'.php');
 
-        }elseif($GLOBALS['page_is_ajax']){
+        }elseif(!empty($GLOBALS['page_is_ajax'])){
                 $prefix = 'ajax/';
 
-        }elseif($GLOBALS['page_is_mobile']){
+        }elseif(!empty($GLOBALS['page_is_mobile'])){
                 $prefix = 'mobile/';
 
         }else{

@@ -73,7 +73,7 @@ switch(argument(0)){
 
         log_console('Downloading data, this may take a while...');
         $result = passthru('cd '.$geoimport_path.'; '.$geoimport_path.'geonames_importer.sh -a download-data', $exitcode);
-        
+
         if($exitcode){
             throw new bException(tr('Data download failed'), 'failed');
         }
@@ -240,13 +240,13 @@ switch(argument(0)){
 
         load_libs('seo');
 
-        $types = array('all'        => argument('all'),
-                       'continents' => argument('continents') || argument('all'),
-                       'regions'    => argument('regions')    || argument('all'),
-                       'countries'  => argument('countries')  || argument('all'),
-                       'states'     => argument('states')     || argument('all'),
-                       'counties'   => argument('counties')   || argument('all'),
-                       'cities'     => argument('cities')     || argument('all'));
+        $types['all']        =  argument('all');
+        $types['continents'] = (argument('continents') or $types['all']);
+        $types['regions']    = (argument('regions')    or $types['all']);
+        $types['countries']  = (argument('countries')  or $types['all']);
+        $types['states']     = (argument('states')     or $types['all']);
+        $types['counties']   = (argument('counties')   or $types['all']);
+        $types['cities']     = (argument('cities')     or $types['all']);
 
         log_console('Caching timezone data...', '', '');
         $timezones = sql_list('SELECT `code`, `id` FROM geo_timezones;');
@@ -277,7 +277,7 @@ switch(argument(0)){
                                  ':timezones_id'         => isset_get($timezones[$geonamedata['timezone']]),
                                  ':code'                 => $row['code'],
                                  ':name'                 => $row['name'],
-                                 ':seoname'              => seo_generate_unique_name($row['name'], 'geo_continents'),
+                                 ':seoname'              => seo_unique_string($row['name'], 'geo_continents'),
                                  ':alternate_names'      => $geonamedata['alternatenames'],
                                  ':latitude'             => $geonamedata['latitude'],
                                  ':longitude'            => $geonamedata['longitude'],
@@ -332,7 +332,7 @@ switch(argument(0)){
                                  ':fips_code'            => $row['fips_code'],
                                  ':tld'                  => $row['tld'],
                                  ':name'                 => $row['name'],
-                                 ':seoname'              => seo_generate_unique_name($row['name'], 'geo_countries'),
+                                 ':seoname'              => seo_unique_string($row['name'], 'geo_countries'),
                                  ':equivalent_fips_code' => $row['equivalentFipsCode'],
                                  ':neighbours'           => $row['neighbours'],
                                  ':languages'            => $row['languages'],
@@ -387,11 +387,22 @@ switch(argument(0)){
             /*
              * Import states?
              */
-            if($types['states']){
+            if(!$types['states']){
+                log_console('Not importing states...', '', 'yellow');
+
+            }else{
                 log_console('Importing states...', '', '');
                 log_console('Buffering countries...', '', '');
 
-                $countries      = sql_list('SELECT `id`, `geonames_id`, `name`, `seoname`, `code` FROM `geo_countries`'.($country ? ' WHERE `id` = '.$country : ''));
+                $countries      = sql_list('SELECT `id`,
+                                                   `geonames_id`,
+                                                   `name`,
+                                                   `seoname`,
+                                                   `code`
+
+                                            FROM   `geo_countries`'.($country ? '
+
+                                            WHERE  `id` = '.$country : ''));
                 $country_idlist = array();
 
                 foreach($countries as $id => $country){
@@ -405,7 +416,7 @@ switch(argument(0)){
                                                         FROM    `geo_states`
                                                         WHERE   `geonames_id`  = :geonames_id
                                                         OR     (`countries_id` = :countries_id
-                                                            AND `name`         = :name)');
+                                                        AND     `name`         = :name)');
 
 
                 foreach($countries as $id => $country_data){
@@ -429,7 +440,7 @@ switch(argument(0)){
                                          ':timezones_id'    => isset_get($timezones[$row['timezone']]),
                                          ':code'            => $row['cc2'],
                                          ':name'            => $row['name'],
-                                         ':seoname'         => seo_generate_unique_name($row['name'], 'geo_states'),
+                                         ':seoname'         => seo_unique_string($row['name'], 'geo_states'),
                                          ':alternate_names' => $row['alternatenames'],
                                          ':latitude'        => $row['latitude'],
                                          ':longitude'       => $row['longitude'],
@@ -447,7 +458,10 @@ switch(argument(0)){
             /*
              * Import counties?
              */
-            if($types['counties']){
+            if(!$types['counties']){
+                log_console('Not importing counties...', '', 'yellow');
+
+            }else{
 // :DELETE: Delete following 2 lines. Counties will no longer be deleted. Before insert, a check will be done if the county already exists, and if so, it will be skipped
                 //log_console('Clearing old counties...', '', '');
                 //sql_query('DELETE FROM `geo_counties`');
@@ -462,19 +476,41 @@ switch(argument(0)){
 
                 if(empty($countries)){
                     log_console('Buffering countries...', '', '');
-                    $countries = sql_list('SELECT `id`, `geonames_id`, `name`, `seoname`, `code`, `admin1`, `admin2` FROM `geo_countries`'.($country ? ' WHERE `id` = '.$country : ''));
+                    $countries = sql_list('SELECT `id`,
+                                                  `geonames_id`,
+                                                  `name`,
+                                                  `seoname`,
+                                                  `code`,
+                                                  `admin1`,
+                                                  `admin2`
+
+                                           FROM   `geo_countries`'.($country ? '
+
+                                           WHERE  `id` = '.$country : ''));
                 }
 
                 foreach($countries as $countries_id => $country_data){
                     if(empty($states[$country_data['seoname']])){
-                        $states[$country_data['seoname']] = sql_list('SELECT `id`, `geonames_id`, `name`, `seoname`, `code`, `admin1`, `admin2` FROM `geo_states` WHERE `countries_id` = '.$countries_id);
+                        $states[$country_data['seoname']] = sql_list('SELECT `id`,
+                                                                             `geonames_id`,
+                                                                             `name`,
+                                                                             `seoname`,
+                                                                             `code`,
+                                                                             `admin1`,
+                                                                             `admin2`
+
+                                                                      FROM `geo_states`
+
+                                                                      WHERE `countries_id` = '.$countries_id);
                     }
 
                     foreach($states[$country_data['seoname']] as $states_id => $state_data){
                         log_console('Importing counties for state "'.str_log($state_data['name']).'" for country "'.$country_data['name'].'"...', '', '');
 
-                        $r = $geosql->query($q='SELECT *
+                        $r = $geosql->query('SELECT *
+
                                              FROM   `geonames`
+
                                              WHERE  `parents_id` = '.cfi($state_data['geonames_id']).'
                                              AND    `fclass`     = "A"');
 
@@ -503,7 +539,7 @@ switch(argument(0)){
                                              ':timezones_id'    => isset_get($timezones[$row['timezone']]),
                                              ':code'            => $row['cc2'],
                                              ':name'            => $row['name'],
-                                             ':seoname'         => seo_generate_unique_name($row['name'], 'geo_counties'),
+                                             ':seoname'         => seo_unique_string($row['name'], 'geo_counties'),
                                              ':alternate_names' => $row['alternatenames'],
                                              ':latitude'        => $row['latitude'],
                                              ':longitude'       => $row['longitude'],
@@ -522,7 +558,10 @@ switch(argument(0)){
             /*
              * Import cities?
              */
-            if($types['cities']){
+            if(!$types['cities']){
+                log_console('Not importing cities...', '', 'yellow');
+
+            }else{
 // :DELETE: Delete following 2 lines. Cities will no longer be deleted. Before insert, a check will be done if the city already exists, and if so, it will be skipped
                 //log_console('Clearing old cities...', '', '');
                 //sql_query('DELETE FROM `geo_cities`');
@@ -531,11 +570,23 @@ switch(argument(0)){
 
                 if(empty($countries)){
                     log_console('Buffering countries...', '', '');
-                    $countries = sql_list('SELECT `id`, `geonames_id`, `name`, `seoname`, `code` FROM `geo_countries`'.($country ? ' WHERE `id` = '.$country : ''));
+                    $countries = sql_list('SELECT `id`,
+                                                  `geonames_id`,
+                                                  `name`,
+                                                  `seoname`,
+                                                  `code`
+
+                                           FROM   `geo_countries`'.($country ? '
+
+                                           WHERE `id` = '.$country : ''));
                 }
 
-                $city_exists_statement = sql_prepare('SELECT `geonames_id`, `name`, `moddate`
+                $city_exists_statement = sql_prepare('SELECT `geonames_id`,
+                                                             `name`,
+                                                             `moddate`
+
                                                       FROM   `geo_cities`
+
                                                       WHERE  `name`         = :name
                                                       AND    `country_code` = :country
                                                       AND    `latitude`     = :latitude
@@ -546,7 +597,17 @@ switch(argument(0)){
                  */
                 foreach($countries as $countries_id => $country_data){
                     log_console('Buffering states for country "'.$country_data['name'].'"...', '', '');
-                    $states[$country_data['seoname']] = sql_list('SELECT `id`, `geonames_id`, `name`, `seoname`, `code`, `admin1`, `admin2` FROM `geo_states` WHERE `countries_id` = '.$countries_id);
+                    $states[$country_data['seoname']] = sql_list('SELECT `id`,
+                                                                         `geonames_id`,
+                                                                         `name`,
+                                                                         `seoname`,
+                                                                         `code`,
+                                                                         `admin1`,
+                                                                         `admin2`
+
+                                                                  FROM   `geo_states`
+
+                                                                  WHERE   `countries_id` = '.$countries_id);
 
                     unset($usecounties);
 
@@ -568,8 +629,10 @@ switch(argument(0)){
                             }else{
                                 log_console('Counting cities in state and counties (Some geonames countries have missing counties - cities links)', 'searching', 'white');
 
-                                $state_cities_count  = $geosql->query('SELECT COUNT(*) AS count
+                                $state_cities_count  = $geosql->query('SELECT COUNT(*) AS `count`
+
                                                                        FROM   `geonames`
+
                                                                        WHERE  `country`     = "'.$country_data['code'].'"
                                                                        AND    `fcode`       IN ("PPL", "PPLA", "PPLA2", "PPLA3", "PPLA4")
                                                                        AND    `admin1`      = "'.$state_data['admin1'].'"
@@ -580,8 +643,10 @@ switch(argument(0)){
 
                                 $county_cities_count = 0;
 
-                                $r_search = $geosql->prepare('SELECT COUNT(*) AS count
+                                $r_search = $geosql->prepare('SELECT COUNT(*) AS `count`
+
                                                               FROM   `geonames`
+
                                                               WHERE  `country`     = :country
                                                               AND    `fcode`       IN ("PPL", "PPLA", "PPLA2", "PPLA3", "PPLA4")
                                                               AND    `admin1`      = :admin1
@@ -622,7 +687,9 @@ switch(argument(0)){
                              * This state has no counties
                              */
                             $r = $geosql->query('SELECT *
+
                                                  FROM   `geonames`
+
                                                  WHERE  `country`     = "'.$country_data['code'].'"
                                                  AND    `fcode`       IN ("PPL", "PPLA", "PPLA2", "PPLA3", "PPLA4")
                                                  AND    `admin1`      = "'.$state_data['admin1'].'"
@@ -651,8 +718,8 @@ switch(argument(0)){
                                     }
 
                                 }else{
-                                    sql_query('INSERT INTO `geo_cities`(`is_city`, `geonames_id`, `countries_id`, `country_code`, `states_id`, `timezones_id`, `timezone`, `name`, `seoname`, `alternate_names`, `latitude`, `longitude`, `population`, `elevation`, `admin1`, `admin2`, `feature_code`, `moddate`)
-                                               VALUES                  (true     , :geonames_id , :countries_id , :country_code , :states_id , :timezones_id , :timezone , :name , :seoname , :alternate_names , :latitude , :longitude , :population , :elevation , :admin1 , :admin2 , :feature_code , :moddate )',
+                                    sql_query('INSERT INTO `geo_cities` (`is_city`, `geonames_id`, `countries_id`, `country_code`, `states_id`, `timezones_id`, `timezone`, `name`, `seoname`, `alternate_names`, `latitude`, `longitude`, `population`, `elevation`, `admin1`, `admin2`, `feature_code`, `moddate`)
+                                               VALUES                   (true     , :geonames_id , :countries_id , :country_code , :states_id , :timezones_id , :timezone , :name , :seoname , :alternate_names , :latitude , :longitude , :population , :elevation , :admin1 , :admin2 , :feature_code , :moddate )',
 
                                                array(':geonames_id'     => $row['geonameid'],
                                                      ':countries_id'    => $countries_id,
@@ -661,7 +728,8 @@ switch(argument(0)){
                                                      ':timezone'        => $row['timezone'],
                                                      ':timezones_id'    => isset_get($timezones[$row['timezone']]),
                                                      ':name'            => $row['name'],
-                                                     ':seoname'         => seo_generate_unique_name($row['name'], 'geo_cities'),
+                                                     ':seoname'         => seo_unique_string(array('seoname'   => $row['name'],
+                                                                                                   'states_id' => $states_id), 'geo_cities'),
                                                      ':alternate_names' => $row['alternatenames'],
                                                      ':latitude'        => $row['latitude'],
                                                      ':longitude'       => $row['longitude'],
@@ -689,7 +757,9 @@ switch(argument(0)){
                                  * Search for all cities
                                  */
                                 $r = $geosql->query('SELECT *
+
                                                      FROM   `geonames`
+
                                                      WHERE  `country`     = "'.$country_data['code'].'"
                                                      AND    `fcode`       IN ("PPL", "PPLA", "PPLA2", "PPLA3", "PPLA4")
                                                      AND    `admin1`      = "'.$county_data['admin1'].'"
@@ -718,8 +788,8 @@ switch(argument(0)){
                                         }
 
                                     }else{
-                                        sql_query('INSERT INTO `geo_cities`(`is_city`, `geonames_id`, `countries_id`, `country_code`, `states_id`, `counties_id`, `timezones_id`, `timezone`, `name`, `seoname`, `alternate_names`, `latitude`, `longitude`, `population`, `elevation`, `admin1`, `admin2`, `feature_code`, `moddate`)
-                                                   VALUES                  (true     , :geonames_id , :countries_id , :country_code , :states_id , :counties_id , :timezones_id , :timezone , :name , :seoname , :alternate_names , :latitude , :longitude , :population , :elevation , :admin1 , :admin2 , :feature_code , :moddate )',
+                                        sql_query('INSERT INTO `geo_cities` (`is_city`, `geonames_id`, `countries_id`, `country_code`, `states_id`, `counties_id`, `timezones_id`, `timezone`, `name`, `seoname`, `alternate_names`, `latitude`, `longitude`, `population`, `elevation`, `admin1`, `admin2`, `feature_code`, `moddate`)
+                                                   VALUES                   (true     , :geonames_id , :countries_id , :country_code , :states_id , :counties_id , :timezones_id , :timezone , :name , :seoname , :alternate_names , :latitude , :longitude , :population , :elevation , :admin1 , :admin2 , :feature_code , :moddate )',
 
                                                    array(':geonames_id'     => $row['geonameid'],
                                                          ':countries_id'    => $countries_id,
@@ -729,7 +799,8 @@ switch(argument(0)){
                                                          ':timezone'        => $row['timezone'],
                                                          ':timezones_id'    => isset_get($timezones[$row['timezone']]),
                                                          ':name'            => $row['name'],
-                                                         ':seoname'         => seo_generate_unique_name($row['name'], 'geo_cities'),
+                                                         ':seoname'         => seo_unique_string(array('seoname'   => $row['name'],
+                                                                                                       'states_id' => $states_id), 'geo_cities'),
                                                          ':alternate_names' => $row['alternatenames'],
                                                          ':latitude'        => $row['latitude'],
                                                          ':longitude'       => $row['longitude'],
