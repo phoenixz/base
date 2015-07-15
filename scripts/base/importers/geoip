@@ -3,6 +3,47 @@
 /*
  * This script will download and import the latest version of the geoip data
  */
+$usage = "./scripts/base/importers/geoip\n".
+         "./scripts/base/importers/geoip [OPTIONS]\n";
+
+$help  = "The geoip importer script imports geoip data which can be used to identify location data for IP's
+
+ARGUMENTS
+
+nodownload                 - Don't download the new source file, try to import
+                             it from the global data path
+
+nounzip                    - Don't download the new source file, try to use the
+                             already existing data files in the temp directy.
+                             NOTE: The files TMP/geoip_blocks.csv and
+                             TMP/geoip_location.csv must exist in order for
+                             this to work
+
+noencoding                 - Do not try to fix file encoding
+
+noimport                   - Do not import data from data files into database
+
+notlocal                   - Due to a fucked up MySQL \"security feature\" that
+                             does not allow LOAD DATA LOCAL INFILE but MAY
+                             allow LOAD DATA INFILE (which requires the file to
+                             be in /var/lib/mysql), we need to modify the
+                             ./geonames_import_data.sql file a little.
+
+                             IF this is the situation, the import would fail
+                             with the rather cryptic message \"ERROR 1148
+                             (42000) at line 1: The used command is not allowed
+                             with this MySQL version\"
+
+                             Use the \"notlocal\" command line option to overcome
+                             this problem, but DO NOTE! Root rights are
+                             required for this since a symlink in
+                             /var/lib/mysql is required.
+
+                             See data/doc/geo.txt for more information
+
+nostructures               - Do not fix the data structures for correct use
+                             with the PHP base framework";
+
 require_once(dirname(__FILE__).'/../../../libs/startup.php');
 
 try{
@@ -11,23 +52,42 @@ try{
     load_libs('file');
     $tmpdir = file_temp_dir();
 
-    log_console('Downloading geoip', 'downloading');
-    passthru('wget http://geolite.maxmind.com/download/geoip/database/GeoLiteCity_CSV/GeoLiteCity-latest.zip -O '.$tmpdir.'GeoLiteCity-latest.zip');
+    if(argument('nodownload')){
+        log_console('Trying to use the global data path file because of "nodownload" argument', 'downloading', 'yellow');
+        $path = get_global_data_path('geoip');
+
+        if(!file_exists($path.'GeoLiteCity-latest.zip')){
+            throw new bException('The global data path "'.$path.'" does not contain the required geoip file "GeoLiteCity-latest.zip"', 'notexist');
+        }
+
+        copy($path.'GeoLiteCity-latest.zip', $tmpdir.'GeoLiteCity-latest.zip');
+
+    }else{
+        log_console('Downloading geoip', 'downloading');
+        passthru('wget http://geolite.maxmind.com/download/geoip/database/GeoLiteCity_CSV/GeoLiteCity-latest.zip -O '.$tmpdir.'GeoLiteCity-latest.zip');
+    }
 
     if(!file_exists($tmpdir.'GeoLiteCity-latest.zip')){
-        throw new bException('The geoip file "'.$tmpdir.'GeoLiteCity-latest.zip" was downloaded but not found at its location', 'notexist');
+        throw new bException('The geoip file "'.$tmpdir.'GeoLiteCity-latest.zip" was not found at its location', 'notexist');
     }
 
-    log_console('Unzipping geoip', 'unzipping');
-    safe_exec('cd '.$tmpdir.'; unzip '.$tmpdir.'GeoLiteCity-latest.zip');
+    if(argument('nounzip')){
+        log_console('Skipping unzip because of "nounzip" argument', 'unzipping', 'yellow');
 
-    log_console('Converting encoding of GEOIP', 'converting');
-    safe_exec('cd '.$tmpdir.'GeoLiteCity_*/;iconv -t UTF-8 -f "ISO-8859-1" GeoLiteCity-Blocks.csv -o ../geoip_blocks.csv >>/tmp/mysqlimport.log 2>&1');
-    safe_exec('cd '.$tmpdir.'GeoLiteCity_*/;iconv -t UTF-8 -f "ISO-8859-1" GeoLiteCity-Location.csv -o ../geoip_location.csv >>/tmp/mysqlimport.log 2>&1');
-
-    if(!file_exists($tmpdir.'geoip_blocks.csv')){
-        throw new bException('The required file "'.$tmpdir.'geoip_blocks.csv" is missing');
+    }else{
+        log_console('Unzipping geoip', 'unzipping');
+        safe_exec('cd '.$tmpdir.'; unzip '.$tmpdir.'GeoLiteCity-latest.zip');
     }
+
+    if(argument('noencoding')){
+        log_console('Not converting encoding of GEOIP data because of "noencoding" argument', 'converting', 'yellow');
+
+    }else{
+        log_console('Converting encoding of GEOIP', 'converting');
+        safe_exec('cd '.$tmpdir.'GeoLiteCity_*/;iconv -t UTF-8 -f "ISO-8859-1" GeoLiteCity-Blocks.csv -o ../geoip_blocks.csv >>/tmp/mysqlimport.log 2>&1');
+        safe_exec('cd '.$tmpdir.'GeoLiteCity_*/;iconv -t UTF-8 -f "ISO-8859-1" GeoLiteCity-Location.csv -o ../geoip_location.csv >>/tmp/mysqlimport.log 2>&1');
+    }
+
 
     /*
      * Due to a fucked up MySQL "security feature" that does not allow LOAD DATA LOCAL INFILE
@@ -47,13 +107,30 @@ try{
         symlink($tmpdir, '/var/lib/mysql/'.uniqid());
     }
 
-    log_console('Importing GEOIP blogs', 'importing');
-    sql_query('TRUNCATE `geoip_blocks`');
-    safe_exec('mysqlimport --fields-terminated-by="," --fields-optionally-enclosed-by="\"" --lines-terminated-by="\n" --local --user='.$_CONFIG['db']['user'].' --password='.$_CONFIG['db']['pass'].' '.$_CONFIG['db']['db'].' '.$tmpdir.'geoip_blocks.csv>>/tmp/mysqlimport.log 2>&1');
+    if(argument('noimport')){
+        log_console('Not importing data files due to "noimport" option', '', 'yellow');
 
-    log_console('Importing GEOIP locations', 'importing');
-    sql_query('TRUNCATE `geoip_location`');
-    safe_exec('mysqlimport --fields-terminated-by="," --fields-optionally-enclosed-by="\"" --lines-terminated-by="\n" --local --user='.$_CONFIG['db']['user'].' --password='.$_CONFIG['db']['pass'].' '.$_CONFIG['db']['db'].' '.$tmpdir.'geoip_location.csv >>/tmp/mysqlimport.log 2>&1');
+    }else{
+        load_libs('pdo_exists');
+
+        if(!file_exists($tmpdir.'geoip_blocks.csv')){
+            throw new bException('The required file "'.$tmpdir.'geoip_blocks.csv" is missing');
+        }
+
+        if(!file_exists($tmpdir.'geoip_location.csv')){
+            throw new bException('The required file "'.$tmpdir.'geoip_location.csv" is missing');
+        }
+
+        sql_table_exists('geoip_location', '!RENAME TABLE `geoip_locations` TO `geoip_location`');
+
+        log_console('Importing GEOIP blocks', '');
+        sql_query('TRUNCATE `geoip_blocks`');
+        safe_exec('mysqlimport --fields-terminated-by="," --fields-optionally-enclosed-by="\"" --lines-terminated-by="\n" --local --user='.$_CONFIG['db']['user'].' --password='.$_CONFIG['db']['pass'].' '.$_CONFIG['db']['db'].' '.$tmpdir.'geoip_blocks.csv>>/tmp/mysqlimport.log 2>&1');
+
+        log_console('Importing GEOIP locations', '');
+        sql_query('TRUNCATE `geoip_location`');
+        safe_exec('mysqlimport --fields-terminated-by="," --fields-optionally-enclosed-by="\"" --lines-terminated-by="\n" --local --user='.$_CONFIG['db']['user'].' --password='.$_CONFIG['db']['pass'].' '.$_CONFIG['db']['db'].' '.$tmpdir.'geoip_location.csv >>/tmp/mysqlimport.log 2>&1');
+    }
 
     if(argument('notlocal')){
         /*
@@ -63,7 +140,49 @@ try{
         unlink('/var/lib/mysql/'.$uniqid);
     }
 
-    log_console('Done', 'done', 'white');
+    if(argument('nostructures')){
+        log_console('Not fixing data structures due to "nostructures" argument', '', 'yellow');
+
+    }else{
+        log_console('Fixing data structures geoip_locations', '', '');
+        load_libs('pdo_exists');
+
+        /*
+         * Location table
+         */
+        sql_table_exists('geoip_locations', '!RENAME TABLE `geoip_location` TO `geoip_locations`');
+
+        sql_index_exists('geoip_locations', 'locId'     , 'ALTER TABLE `geoip_locations` DROP INDEX `locId`');
+        sql_index_exists('geoip_locations', 'postalCode', 'ALTER TABLE `geoip_locations` DROP INDEX `postalCode`');
+
+        sql_column_exists('geoip_locations', 'locId'     , 'ALTER TABLE `geoip_locations` CHANGE COLUMN `locId`      `id`        INT(11)');
+        sql_column_exists('geoip_locations', 'postalCode', 'ALTER TABLE `geoip_locations` CHANGE COLUMN `postalCode` `zipcode`   VARCHAR(6)');
+        sql_column_exists('geoip_locations', 'latitude'  , 'ALTER TABLE `geoip_locations` CHANGE COLUMN `latitude`   `latitude`  DECIMAL(10,7) ');
+        sql_column_exists('geoip_locations', 'longitude' , 'ALTER TABLE `geoip_locations` CHANGE COLUMN `longitude`  `longitude` DECIMAL(10,7) ');
+        sql_column_exists('geoip_locations', 'dmaCode'   , 'ALTER TABLE `geoip_locations` CHANGE COLUMN `dmaCode`    `dma_code`  INT(11)');
+        sql_column_exists('geoip_locations', 'areaCode'  , 'ALTER TABLE `geoip_locations` CHANGE COLUMN `areaCode`   `area_code` INT(11)');
+
+        sql_index_exists('geoip_locations', 'id'     , '!ALTER TABLE `geoip_locations` ADD INDEX (`id`)');
+        sql_index_exists('geoip_locations', 'zipcode', '!ALTER TABLE `geoip_locations` ADD INDEX (`zipcode`)');
+
+        /*
+         * Block table
+         */
+        log_console('Fixing data structures geoip_blocks', '', '');
+
+        sql_index_exists('geoip_blocks', 'startIpNum', 'ALTER TABLE `geoip_blocks` DROP INDEX       `startIpNum`');
+        sql_index_exists('geoip_blocks', 'endIpNum'  , 'ALTER TABLE `geoip_blocks` DROP PRIMARY KEY `endIpNum`');
+        sql_index_exists('geoip_blocks', 'locId'     , 'ALTER TABLE `geoip_blocks` DROP INDEX       `locId`');
+
+        sql_column_exists('geoip_blocks', 'startIpNum', 'ALTER TABLE `geoip_blocks` CHANGE COLUMN `startIpNum` `start_ip` INT(11) UNSIGNED');
+        sql_column_exists('geoip_blocks', 'endIpNum'  , 'ALTER TABLE `geoip_blocks` CHANGE COLUMN `endIpNum`   `end_ip`   INT(11) UNSIGNED');
+        sql_column_exists('geoip_blocks', 'locId'     , 'ALTER TABLE `geoip_blocks` CHANGE COLUMN `locId`      `id`       INT(11) UNSIGNED');
+
+        sql_index_exists('geoip_blocks', 'start_ip', '!ALTER TABLE `geoip_blocks` ADD INDEX       `start_ip` (`start_ip`)');
+        sql_index_exists('geoip_blocks', 'id'      , '!ALTER TABLE `geoip_blocks` ADD INDEX       `id`       (`id`)');
+    }
+
+    log_console('Done', 'done', 'green');
 
 }catch(Exception $e){
     throw new bException('scripts/importers/geoip: Failed', $e);

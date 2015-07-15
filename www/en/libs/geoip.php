@@ -13,13 +13,20 @@
 /*
  * Get the requested data for the specified IP address
  */
-function geoip_get($ip, $column = '*'){
+function geoip_get($ip = null, $column = '*'){
     try{
-        $data = sql_get('SELECT `geoip_location`.'.$column.'
+        if(!$ip){
+            $ip = $_SERVER['REMOTE_ADDR'];
+        }
+
+        $data = sql_get('SELECT `geoip_locations`.'.$column.'
+
                          FROM   `geoip_blocks`,
-                                `geoip_location`
-                         WHERE  INET_ATON(:ip) BETWEEN `geoip_blocks`.`startIpNum` AND `geoip_blocks`.`endIpNum`
-                         AND    `geoip_blocks`.`locId` = `geoip_location`.`locId`
+                                `geoip_locations`
+
+                         WHERE  INET_ATON(:ip) BETWEEN `geoip_blocks`.`start_ip` AND `geoip_blocks`.`end_ip`
+                         AND    `geoip_blocks`.`id` = `geoip_locations`.`id`
+
                          LIMIT  1',
 
                          array(':ip' => $ip), (($column == '*' ? null : $column)));
