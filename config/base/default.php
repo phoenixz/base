@@ -94,7 +94,9 @@ $_CONFIG['cookie']             = array('lifetime'         => 0,
                                        'httponly'         => false);
 
 // Access-Control-Allow-Origin configuration. comma delimeted list of sites to allow with CORS
-$_CONFIG['cors']               = '';
+$_CONFIG['cors']               = array('origin'           => '*.',
+                                       'methods'          => 'GET, POST',
+                                       'headers'          => '');
 
 // Curl library configuration
 $_CONFIG['curl']               = array('proxy'            => 'http://proxy.localhost/file_get_contents_proxy.php?url=',

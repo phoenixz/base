@@ -189,21 +189,65 @@ function http_headers($params, $content_length){
     try{
         array_params($params, 'http_code');
         array_default($params, 'http_code', 200);
-        array_default($params, 'cors'     , '');
+        array_default($params, 'cors'     , false);
+        array_default($params, 'headers'  , array());
 
-        $headers = array();
+        $headers = $params['headers'];
 
         if($params['http_code'] == 200){
             $headers[] = 'Last-Modified: '.gmdate('D, d M Y H:i:s', filemtime($_SERVER['SCRIPT_FILENAME'])).' GMT';
 
 //            $headers[] = 'Last-Modified: '.gmdate('D, d M Y H:i:s', filemtime($_SERVER['SCRIPT_FILENAME'])).' GMT', true, 200;
         }
-
-        if($_CONFIG['cors'] or $params['cors']){
+        if($GLOBALS['page_is_ajax'] and ($_CONFIG['cors'] or $params['cors'])){
             /*
-             * Add CORS / Access-Control-Allow-Origin header
+             * Add CORS / Access-Control-Allow-.... headers
              */
-            $headers[] = 'Access-Control-Allow-Origin: '.($_CONFIG['cors'] ? str_ends($_CONFIG['cors'], ',') : '').$params['cors'];
+            $params['cors'] = array_merge($_CONFIG['cors'], array_force($params['cors']));
+
+            foreach($params['cors'] as $key => $value){
+                switch($key){
+                    case 'origin':
+                        if($value == '*.'){
+                            /*
+                             * Origin is allowed from all sub domains
+                             */
+                            $origin = str_from($_SERVER['HTTP_ORIGIN'], '://');
+                            $length = strlen($_CONFIG['domain']);
+
+                            if(substr($origin, -$length, $length) === $_CONFIG['domain']){
+                                /*
+                                 * Sub domain matches. Since CORS does
+                                 * not support sub domains, just show
+                                 * the current sub domain.
+                                 */
+                                $value = $_SERVER['HTTP_ORIGIN'];
+
+                            }else{
+                                /*
+                                 * Sub domain does not match. Since CORS does
+                                 * not support sub domains, just show no
+                                 * allowed origin domain at all
+                                 */
+                                $value = '';
+                            }
+                        }
+
+                        // FALLTHROUGH
+
+                    case 'methods':
+                        // FALLTHROUGH
+                    case 'headers':
+                        if($value){
+                            $headers[] = 'Access-Control-Allow-'.str_capitalize($key).': '.$value;
+                        }
+
+                        break;
+
+                    default:
+                        throw new bException(tr('http_headers(: Unknown CORS header "%header%" specified', array('%header%' => $key)), 'unknown');
+                }
+            }
         }
 
         $headers[] = 'Content-Type: text/html; charset='.$_CONFIG['charset'];
