@@ -615,7 +615,7 @@ try{
             restore_post();
             page_show(SCRIPT, true);
 
-        }elseif(substr($_SERVER['PHP_SELF'], 0, 7) == '/ajax/'){
+        }elseif(substr($_SERVER['PHP_SELF'], 0, 6) == '/ajax/'){
             $GLOBALS['page_is_ajax'] = true;
 
         }elseif(!empty($GLOBALS['page_force'])){
