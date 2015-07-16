@@ -222,7 +222,7 @@ if(in_array('production', $targets)){
 
     if($branch != 'production'){
         if(!FORCE){
-            throw new bException(tr('Cannot deploy the current GIT branch "'.str_log($branch).'" to production environment. For safety, deployment to production environment is restricted to either "production" or "master" branches'), 'productioninvalidbranch');
+            throw new bException(tr('Cannot deploy the current GIT branch "'.str_log($branch).'" to production environment. For safety, deployment to production environment is restricted to git "production" branch only'), 'productioninvalidbranch');
         }
     }
 }
@@ -810,7 +810,7 @@ foreach($targets as $target_environment){
             notify('deploy', 'Deployed project "'.PROJECT.'" subenvironment "'.str_log($subenvironment).'" and languages "'.str_log(implode(', ', $deploy_config['languages'])).'"', null, $subenvironment);
             init_hook('deploy_post_notify', $nohooks);
         }
-        
+
         /*
          * Cache clear
          */
@@ -821,7 +821,7 @@ foreach($targets as $target_environment){
             log_screen($display_subenvironment.'Executing cache clear', 'deploy', 'white');
 
             passthru('ssh -t -p '.$target_port.' '.$deploy_config['target_user'].'@'.$deploy_config['target_server'].' \''.$sudo.$deploy_config['target_dir'].'/scripts/base/cache clear env '.$target_environment.$subenv_subenvironment.'\'', $exitcode);
-            
+
             if($exitcode){
                 throw new bException('Cache clear failed with exit code "'.str_log($exitcode).'"', 'cache clear');
             }
@@ -831,7 +831,7 @@ foreach($targets as $target_environment){
             log_console('Git stashed changes detected, unstashing', 'stash', 'yellow');
             safe_exec('git stash pop');
         }
-        
+
 
         /*
          * Done!
