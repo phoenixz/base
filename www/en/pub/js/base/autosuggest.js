@@ -40,11 +40,12 @@
 		//});
 		$(this).on("mousedown", "div.autosuggest li", function(e){
 			$this = $(this);
-			$this.closest("div").find("input").val($this.text());
+			$this.closest("div").find("input")
+				.val($this.text())
+				.trigger("change");
 		});
 
 		$(this).on("hover", "div.autosuggest li", function(e){
-console.log('hover');
 			$(this).parent().children().removeClass('hover');
 			$(this).addClass('hover');
 		});
@@ -117,8 +118,10 @@ console.log('hover');
  					$li = $this.closest("div").find("li.hover");
 
 					if ($li.length) {
-						$this.val($li.text());
 						$li.parent().removeClass("active");
+						$this
+							.val($li.text())
+							.trigger("change");
 					}
 
 					return false;
