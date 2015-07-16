@@ -138,7 +138,7 @@ function pdo_error($e, $query, $execute, $sql = null){
                             $retry = true;
                             log_screen('Database "'.$query['db'].'" does not exist, attempting to create it automatically', 'warning/database', 'yellow');
 
-                            $sql->query('CREATE DATABASE '.$query['db']);
+                            $sql->query('CREATE DATABASE `'.$query['db'].'` DEFAULT CHARSET="'.$connector['charset'].'" COLLATE="'.$connector['collate'].'";');
                             return sql_connect($query);
                         }
 
@@ -245,9 +245,9 @@ function pdo_error_init($e, $connector){
     global $_CONFIG;
 
     try{
-        $GLOBALS['sql']->query('DROP DATABASE IF EXISTS '.$connector['db'].';');
-        $GLOBALS['sql']->query('CREATE DATABASE '.$connector['db'].' DEFAULT CHARSET="'.$connector['charset'].'" COLLATE="'.$connector['collate'].'";');
-        $GLOBALS['sql']->query('USE '.$connector['db']);
+        $GLOBALS['sql']->query('DROP DATABASE IF EXISTS `'.$connector['db'].'`;');
+        $GLOBALS['sql']->query('CREATE DATABASE         `'.$connector['db'].'` DEFAULT CHARSET="'.$connector['charset'].'" COLLATE="'.$connector['collate'].'";');
+        $GLOBALS['sql']->query('USE                     `'.$connector['db'].'`');
         return true;
 
 
