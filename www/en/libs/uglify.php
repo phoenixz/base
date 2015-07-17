@@ -412,7 +412,7 @@ function uglify_js_install(){
  * Check availability of uglify-js installation, and install if needed
  */
 function uglify_js_check(){
-    global $npm;
+    global $npm, $node_modules;
 
     try{
         uglify_check();
