@@ -263,4 +263,28 @@ function geo_cities_get($city, $column = false){
         throw new bException('geo_cities_get() Failed', $e);
     }
 }
+
+
+
+/*
+ * Return the closest city to the specified latitude / longitude
+ */
+function geo_get_nearest_city($latitude, $longitude, $columns = '`id`, `name`, `seoname`, `states_id`'){
+    try{
+        return sql_get('SELECT   '.$columns.',
+                                 DISTANCE(`latitude`, `longitude`, :latitude, :longitude) AS distance
+
+                        FROM     `geo_cities`
+
+                        ORDER BY `distance`
+
+                        LIMIT 1',
+
+                        array(':latitude'  => $latitude,
+                              ':longitude' => $longitude));
+
+    }catch(bException $e){
+        throw new bException('geo_get_nearest_city() Failed', $e);
+    }
+}
 ?>

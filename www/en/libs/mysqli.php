@@ -4,7 +4,8 @@
  *
  * DO NOT USE!
  */
-showdie('The mysqli library is no longer supported! If you wish to use this library, remove this line!');
+die('The mysqli library is no longer supported! If you wish to use this library, remove this line!');
+
 /*
  * Execute specified query
  */

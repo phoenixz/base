@@ -372,7 +372,7 @@ function html_header($params = null, $meta = array()){
 
         array_default($params, 'http'          , 'html');
         array_default($params, 'doctype'       , 'html');
-        array_default($params, 'html'          , 'html');
+        array_default($params, 'html'          , 'html lang="'.LANGUAGE.'"');
         array_default($params, 'body'          , '<body>');
         array_default($params, 'title'         , isset_get($meta['title']));
         array_default($params, 'meta'          , $meta);
@@ -1355,14 +1355,14 @@ function page_show($pagename, $die = true, $force = false, $data = null) {
     global $_CONFIG;
 
     try{
-        if($GLOBALS['page_is_ajax']){
+        if(!empty($GLOBALS['page_is_ajax'])){
             // Execute ajax page
             return include(ROOT.'www/'.LANGUAGE.'/ajax/'.$pagename.'.php');
 
-        }elseif($GLOBALS['page_is_ajax']){
+        }elseif(!empty($GLOBALS['page_is_ajax'])){
                 $prefix = 'ajax/';
 
-        }elseif($GLOBALS['page_is_mobile']){
+        }elseif(!empty($GLOBALS['page_is_mobile'])){
                 $prefix = 'mobile/';
 
         }else{
@@ -1377,6 +1377,50 @@ function page_show($pagename, $die = true, $force = false, $data = null) {
 
     }catch(Exception $e){
         throw new bException(tr('page_show(): Failed to show page "%page%"', array('%page%' => str_log($pagename))), $e);
+    }
+}
+
+
+
+/*
+ *
+ */
+function html_autosuggest($params){
+    static $sent = array();
+
+    try{
+        array_params($params);
+        array_default($params, 'class'            , '');
+        array_default($params, 'name'             , '');
+        array_default($params, 'id'               , $params['name']);
+        array_default($params, 'placeholder'      , '');
+        array_default($params, 'required'         , false);
+        array_default($params, 'value'            , '');
+        array_default($params, 'source'           , '');
+        array_default($params, 'maxlength'        , '');
+        array_default($params, 'filter_selector'  , '');
+        array_default($params, 'selector'         , 'form.autosuggest');
+
+        $retval = ' <div class="autosuggest">
+                        <input autocomplete="off" class="'.str_ends($params['class'], ' ').'" type="text" name="'.$params['name'].'" id="'.$params['id'].'" placeholder="'.$params['placeholder'].'" data-source="'.$params['source'].'" value="'.$params['value'].'"'.($params['filter_selector'] ? ' data-filter-selector="'.$params['filter_selector'].'"' : '').($params['maxlength'] ? ' maxlength="'.$params['maxlength'].'"' : '').($params['required'] ? ' required' : '').'>
+                        <ul>
+                        </ul>
+                    </div>';
+
+        if(empty($sent[$params['selector']])){
+            /*
+             * Add only one autosuggest start per selector
+             */
+            $sent[$params['selector']] = true;
+            $retval                   .= html_script('$("'.$params['selector'].'").autosuggest();');
+        }
+
+        html_load_js('base/autosuggest');
+
+        return $retval;
+
+    }catch(Exception $e){
+        throw new bException(tr('html_autosuggest(): Failed'), $e);
     }
 }
 ?>
