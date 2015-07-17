@@ -269,19 +269,39 @@ function geo_cities_get($city, $column = false){
 /*
  * Return the closest city to the specified latitude / longitude
  */
-function geo_get_nearest_city($latitude, $longitude, $columns = '`id`, `name`, `seoname`, `states_id`'){
+function geo_get_nearest_city($latitude, $longitude, $min_population = null, $columns = '`id`, `name`, `seoname`, `states_id`'){
+    global $_CONFIG;
+
     try{
+        load_config('geo');
+
+        $execute = array(':latitude'  => $latitude,
+                         ':longitude' => $longitude);
+
+        if(!$min_population){
+            $min_population = $_CONFIG['geo']['cities']['min_size'];
+        }
+
+        if($min_population){
+            $execute[':min'] = $min_population;
+            $min_population  = ' WHERE `population` > :min ';
+
+        }else{
+            $min_population = '';
+        }
+
         return sql_get('SELECT   '.$columns.',
                                  DISTANCE(`latitude`, `longitude`, :latitude, :longitude) AS distance
 
                         FROM     `geo_cities`
 
+                        '.$min_population.'
+
                         ORDER BY `distance`
 
                         LIMIT 1',
 
-                        array(':latitude'  => $latitude,
-                              ':longitude' => $longitude));
+                        $execute);
 
     }catch(bException $e){
         throw new bException('geo_get_nearest_city() Failed', $e);
