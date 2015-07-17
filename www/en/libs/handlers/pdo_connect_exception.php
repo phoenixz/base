@@ -39,7 +39,7 @@
 
         log_console(tr('Successfully connected to database server. Attempting to create database "%db%"', array('%db%' => $db)), '', 'yellow');
 
-        $pdo->query('CREATE DATABASE '.$db);
+        $pdo->query('CREATE DATABASE `'.$db.'`');
 
         log_console(tr('Reconnecting to database server with database "%db%"', array('%db%' => $db)), '', 'yellow');
 

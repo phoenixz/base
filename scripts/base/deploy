@@ -225,7 +225,7 @@ if(in_array('production', $targets)){
 
     if($branch != 'production'){
         if(!FORCE){
-            throw new bException(tr('Cannot deploy the current GIT branch "'.str_log($branch).'" to production environment. For safety, deployment to production environment is restricted to either "production" or "master" branches'), 'productioninvalidbranch');
+            throw new bException(tr('Cannot deploy the current GIT branch "'.str_log($branch).'" to production environment. For safety, deployment to production environment is restricted to git "production" branch only'), 'productioninvalidbranch');
         }
     }
 }

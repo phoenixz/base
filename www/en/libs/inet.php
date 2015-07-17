@@ -40,15 +40,42 @@ function is_valid_domain_name($domain_name) {
 /*
  * Return a stripped domain name, no bullshit around it.
  */
-function get_domain(){
-    if(in_array(substr($_SERVER['SERVER_NAME'], 0, 4), array('www.', 'dev.'))){
-        return cfm(substr($_SERVER['SERVER_NAME'], 4));
+function inet_get_domain($strip = array('www', 'dev', 'm')){
+    try{
+        if(in_array(str_until($_SERVER['SERVER_NAME'], '.'), array_force($strip))){
+            return str_from($_SERVER['SERVER_NAME']);
+        }
 
-    }elseif(substr($_SERVER['SERVER_NAME'], 0, 2) == 'm.'){
-        return cfm(substr($_SERVER['SERVER_NAME'], 2));
+        return $_SERVER['SERVER_NAME'];
 
-    }else{
-        return cfm($_SERVER['SERVER_NAME']);
+    }catch(Exception $e){
+        throw new bException(tr('inet_get_domain(): Failed'), $e);
+    }
+}
+
+
+
+/*
+ * Get subdomain from domain (when knowing what the domain is)
+ */
+function inet_get_subdomain($domain = null, $strip = array('www', 'dev', 'm')) {
+    global $_CONFIG;
+
+    try{
+        if(!$domain){
+            $domain = $_SERVER['SERVER_NAME'];
+        }
+
+        $subdomain = str_until($domain, '.');
+
+        if(in_array(str_until($_SERVER['SERVER_NAME'], '.'), array_force($strip))){
+            return false;
+        }
+
+        return $subdomain;
+
+    }catch(Exception $e){
+        throw new bException(tr('inet_get_subdomain(): Failed'), $e);
     }
 }
 
@@ -116,23 +143,6 @@ function url_add_query($url, $query){
      * Append the query to the URL
      */
     return str_ends($url, '&').$query;
-}
-
-
-
-/*
- * Get subdomain from domain (when knowing what the domain is)
- */
-function inet_get_subdomain($domain) {
-    global $_CONFIG;
-
-    $subdomain = str_until(str_replace($_CONFIG['domain'],'',$domain),'.');
-
-    if($subdomain == 'www'){
-        return '';
-    }
-
-    return $subdomain;
 }
 
 
@@ -226,5 +236,14 @@ function inet_dig($domain, $section = false){
     }catch(Exception $e){
         throw new bException('inet_dig(): Failed', $e);
     }
+}
+
+
+
+/*
+ * Here be wrapper monsters for obsolete functions
+ */
+function get_domain($strip = array('www', 'dev', 'm')){
+    return inet_get_domain($strip);
 }
 ?>

@@ -17,7 +17,7 @@
 /*
  * Framework version
  */
-define('FRAMEWORKCODEVERSION', '0.22.4');
+define('FRAMEWORKCODEVERSION', '0.22.5');
 
 
 /*
@@ -437,7 +437,7 @@ try{
                 /*
                  * Add HTTP support library
                  */
-                load_libs('http,html'.(empty($_CONFIG['memcached']) ? '' : ',memcached'));
+                load_libs('http,html,inet'.(empty($_CONFIG['memcached']) ? '' : ',memcached'));
                 break;
 
             case 'shell':
@@ -536,33 +536,6 @@ try{
 
 
     /*
-     * Set library directory, and if a standard custom
-     * library file exists, load it
-     */
-    define('LIBS', ROOT.'www/'.LANGUAGE.'/libs/');
-
-    try{
-       if(file_exists(LIBS.'/custom.php')){
-           include_once(LIBS.'/custom.php');
-       }
-
-    }catch(Exception $f){
-        /*
-         * Exception might already be set by language error
-         */
-        if(isset($e)){
-            $e->addMessage('startup: Additional exception while loading custom library');
-            $e->addMessage($f->getMessage());
-
-        }else{
-            $e = new bException('startup: Failed to load custom library', $f);
-        }
-
-        unset($f);
-    }
-
-
-    /*
      * Delayed exception throwing for
      */
     if(isset($e)){
@@ -596,7 +569,7 @@ try{
         /*
          * HTTP specific stuff
          */
-        // :TODO: Replace this with only one global variable.
+// :TODO: Replace this with only one global variable.
         $GLOBALS['page_is_mobile'] = false;
         $GLOBALS['page_is_admin']  = false;
         $GLOBALS['page_is_ajax']   = false;
@@ -642,7 +615,7 @@ try{
             restore_post();
             page_show(SCRIPT, true);
 
-        }elseif(substr($_SERVER['PHP_SELF'], 0, 7) == '/ajax/'){
+        }elseif(substr($_SERVER['PHP_SELF'], 0, 6) == '/ajax/'){
             $GLOBALS['page_is_ajax'] = true;
 
         }elseif(!empty($GLOBALS['page_force'])){
@@ -670,6 +643,22 @@ try{
         if(TEST){
             log_console('Warning: Running in TEST mode', 'test', 'yellow');
         }
+    }
+
+
+    /*
+     * Set library directory, and if a standard custom
+     * library file exists, load it
+     */
+    define('LIBS', ROOT.'www/'.LANGUAGE.'/libs/');
+
+    try{
+       if(file_exists(LIBS.'/custom.php')){
+           include_once(LIBS.'/custom.php');
+       }
+
+    }catch(Exception $e){
+        throw new bException('startup: Failed to load custom library', $e);
     }
 
 }catch(Exception $e){

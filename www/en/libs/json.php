@@ -78,7 +78,7 @@ function json_encode_custom($source = false){
 /*
  * Send correct JSON reply
  */
-function json_reply($reply = null, $result = 'OK', $httpcode = null){
+function json_reply($reply = null, $result = 'OK', $http_code = null){
     if(!$reply){
         $reply = array('result' => $result);
     }
@@ -102,15 +102,14 @@ function json_reply($reply = null, $result = 'OK', $httpcode = null){
         $reply['result'] = strtoupper($reply['result']);
     }
 
-    $reply = json_encode_custom($reply);
+    $reply  = json_encode_custom($reply);
 
-    if($httpcode){
-        load_libs('http');
-        http_headers($httpcode, strlen($reply));
-    }
+    $params = array('http_code' => $http_code,
+                    'headers'   => array('Content-Type: application/json',
+                                         'Content-Type: text/html; charset=utf-8'));
 
-    header('Content-Type: application/json');
-    header('Content-Type: text/html; charset=utf-8');
+    load_libs('http');
+    http_headers($params, strlen($reply));
 
     echo $reply;
     die();
