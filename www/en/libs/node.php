@@ -82,7 +82,7 @@ function node_check_modules(){
             throw new bException('node_check_modules(): node_modules path not found', 'path_not_found');
         }
 
-        log_console('node_check_modules(): Using node_modules "%path%"', array('%path' => str_log($home)), 'node', 'green');
+        log_console(tr('node_check_modules(): Using node_modules "%path%"', array('%path%' => $home)), 'node', 'green');
         return slash($path).$subpath;
 
     }catch(Exception $e){
