@@ -83,7 +83,7 @@ function node_check_modules(){
         }
 
         log_console(tr('node_check_modules(): Using node_modules "%path%"', array('%path%' => $home)), 'node', 'green');
-        return slash($path).$subpath;
+        return slash($found);
 
     }catch(Exception $e){
         if($e->getCode() == 1){
