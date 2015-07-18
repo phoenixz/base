@@ -288,6 +288,7 @@ if($noinit){
 if(!$nocacheclear){
     load_libs('cache');
     cache_clear();
+    log_console('Cleared cache', '', 'green');
 }
 
 
