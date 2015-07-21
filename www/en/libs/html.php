@@ -70,13 +70,11 @@ function html_load_css($files = '', $media = null){
         }
 
         foreach($files as $file){
-            if($file == 'style') continue;
-
             $GLOBALS['css'][$file] = array('min'   => $min,
                                            'media' => $media);
         }
 
-    }catch(Exception $e){
+}catch(Exception $e){
         throw new bException('html_load_css(): Failed', $e);
     }
 }
