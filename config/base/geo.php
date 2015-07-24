@@ -9,5 +9,5 @@
  * @license http://opensource.org/licenses/GPL-2.0 GNU Public License, Version 2
  * @copyright Sven Oostenbrink <support@svenoostenbrink.com>, Johan Geuze
  */
-$_CONFIG['geo']['cities']['min_size'] = 5000;
+$_CONFIG['geo']['cities']['min_size'] = 10000;
 ?>
