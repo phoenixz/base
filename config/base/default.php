@@ -106,22 +106,24 @@ $_CONFIG['curl']               = array('proxy'            => 'http://proxy.local
 // Global data location configuration
 $_CONFIG['data']               = array('global'           => true); // Set to TRUE to enable auto detect
 
-// Database configuration
-$_CONFIG['db']                 = array('driver'           => 'mysql',                                       // PDO Driver used to communicate with the database server. For now, only MySQL has been tested, no others have been used yet, use at your own discretion
-                                       'host'             => 'localhost',                                   // Hostname for SQL server
-                                       'user'             => 'base',                                        // Username to login to SQL server
-                                       'pass'             => 'base',                                        // Password to login to SQL server
-                                       'db'               => 'base',                                        // Name of core database on SQL server
-                                       'autoincrement'    => 1,                                             // Default autoincrement for all database tables (MySQL only)
-                                       'buffered'         => true,                                          // Use buffered queries or not. See PHP documentation for more information
-                                       'charset'          => 'utf8',                                        // Default character set for all database tables
-                                       'collate'          => 'utf8_general_ci',                             // Default collate set for all database tables
-                                       'limit_max'        => 10000,                                         // Standard SQL allowed LIMIT specified in table displays, for example, to avoid displaying a table with a milion entries, for example
-                                       'mode'             => 'PIPES_AS_CONCAT,IGNORE_SPACE,NO_KEY_OPTIONS,NO_TABLE_OPTIONS,NO_FIELD_OPTIONS',   // Special mode options for MySQL server
-                                       'pdo_attributes'   => array(),                                       // Special PDO otions. By default, try to use MySQLND with PDO::ATTR_EMULATE_PREPARES to avoid internal data type changes from int > string!
-                                       //'pdo_attributes'   => array(PDO::ATTR_EMULATE_PREPARES  => false,    // Special PDO otions. By default, try to use MySQLND with PDO::ATTR_EMULATE_PREPARES to avoid internal data type changes from int > string!
-                                       //                            PDO::ATTR_STRINGIFY_FETCHES => false, ),
-                                       'timezone'         => 'America/Mexico_City');                        // Default timezone to use
+// Database connectors configuration
+$_CONFIG['db']                 = array('default'          => 'core',
+
+                                       'core'             => array('driver'           => 'mysql',                                       // PDO Driver used to communicate with the database server. For now, only MySQL has been tested, no others have been used yet, use at your own discretion
+                                                                   'host'             => 'localhost',                                   // Hostname for SQL server
+                                                                   'user'             => 'base',                                        // Username to login to SQL server
+                                                                   'pass'             => 'base',                                        // Password to login to SQL server
+                                                                   'db'               => 'base',                                        // Name of core database on SQL server
+                                                                   'autoincrement'    => 1,                                             // Default autoincrement for all database tables (MySQL only)
+                                                                   'buffered'         => true,                                          // Use buffered queries or not. See PHP documentation for more information
+                                                                   'charset'          => 'utf8',                                        // Default character set for all database tables
+                                                                   'collate'          => 'utf8_general_ci',                             // Default collate set for all database tables
+                                                                   'limit_max'        => 10000,                                         // Standard SQL allowed LIMIT specified in table displays, for example, to avoid displaying a table with a milion entries, for example
+                                                                   'mode'             => 'PIPES_AS_CONCAT,IGNORE_SPACE,NO_KEY_OPTIONS,NO_TABLE_OPTIONS,NO_FIELD_OPTIONS',   // Special mode options for MySQL server
+                                                                   'pdo_attributes'   => array(),                                       // Special PDO otions. By default, try to use MySQLND with PDO::ATTR_EMULATE_PREPARES to avoid internal data type changes from int > string!
+                                                                   //'pdo_attributes'   => array(PDO::ATTR_EMULATE_PREPARES  => false,    // Special PDO otions. By default, try to use MySQLND with PDO::ATTR_EMULATE_PREPARES to avoid internal data type changes from int > string!
+                                                                   //                            PDO::ATTR_STRINGIFY_FETCHES => false, ),
+                                                                   'timezone'         => 'America/Mexico_City'));                       // Default timezone to use
 
 //domain
 $_CONFIG['domain']             = 'auto';                                                                    // The base domain of this website. for example, "mywebsite.com",  "thisismine.com.mx", etc. If set to "auto" it will use $_SERVER[SERVER_NAME]
