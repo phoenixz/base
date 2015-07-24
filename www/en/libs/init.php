@@ -238,7 +238,7 @@ function init($projectfrom = null, $frameworkfrom = null){
 
                             $versions[$type] = $version;
 
-                            $GLOBALS['sql']->query('INSERT INTO `versions` (`framework`, `project`) VALUES ("'.cfm((string) $versions['framework']).'", "'.cfm((string) $versions['project']).'")');
+                            $GLOBALS['sql_core']->query('INSERT INTO `versions` (`framework`, `project`) VALUES ("'.cfm((string) $versions['framework']).'", "'.cfm((string) $versions['project']).'")');
 
                             log_console('Finished init version "'.$version.'"', 'init/'.$type);
 
@@ -264,7 +264,7 @@ function init($projectfrom = null, $frameworkfrom = null){
 
                     $versions[$type] = constant($utype.'CODEVERSION');
 
-                    $GLOBALS['sql']->query('INSERT INTO `versions` (`framework`, `project`) VALUES ("'.cfm((string) $versions['framework']).'", "'.cfm((string) $versions['project']).'")');
+                    $GLOBALS['sql_core']->query('INSERT INTO `versions` (`framework`, `project`) VALUES ("'.cfm((string) $versions['framework']).'", "'.cfm((string) $versions['project']).'")');
                 }
 
                 /*
@@ -332,14 +332,14 @@ function init_process_version_diff(){
             $versionerror = 'Framework database version is older than code version, please update database first';
 
         }elseif($compare_framework < 0){
-            $versionerror = 'Framework database version is newer than code version, the core database "'.str_log($_CONFIG['db']['db']).'" is running with old code!';
+            $versionerror = 'Framework database version is newer than code version, the core database "'.str_log($_CONFIG['db']['core']['db']).'" is running with old code!';
         }
 
         if($compare_project > 0){
-            $versionerror = (empty($versionerror) ? "" : "\n").'Project core database "'.str_log($_CONFIG['db']['db']).'" version is older than code version, please update database first';
+            $versionerror = (empty($versionerror) ? "" : "\n").'Project core database "'.str_log($_CONFIG['db']['core']['db']).'" version is older than code version, please update database first';
 
         }elseif($compare_project < 0){
-            $versionerror = (empty($versionerror) ? "" : "\n").'Project core database "'.str_log($_CONFIG['db']['db']).'" version is newer than code version, the database is running with old code!';
+            $versionerror = (empty($versionerror) ? "" : "\n").'Project core database "'.str_log($_CONFIG['db']['core']['db']).'" version is newer than code version, the database is running with old code!';
         }
     }
 
@@ -361,7 +361,7 @@ function init_process_version_diff(){
 function init_process_version_fail($e){
     global $_CONFIG;
 
-    $r = $GLOBALS['sql']->query('SHOW TABLES WHERE `Tables_in_'.$_CONFIG['db']['db'].'` = "versions";');
+    $r = $GLOBALS['sql_core']->query('SHOW TABLES WHERE `Tables_in_'.$_CONFIG['db']['core']['db'].'` = "versions";');
 
     if(!$r->rowCount($r)){
         define('FRAMEWORKDBVERSION', 0);
