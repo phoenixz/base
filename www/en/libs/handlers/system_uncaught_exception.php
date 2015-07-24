@@ -55,6 +55,7 @@ try{
 
     }else{
         log_screen('* '.tr('Uncaught exception').' *', $code);
+        audio_play('exception');
 
         if($e instanceof bException){
             foreach($messages as $key => $message){
