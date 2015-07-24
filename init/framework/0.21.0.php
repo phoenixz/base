@@ -24,7 +24,7 @@ sql_query('CREATE TABLE `email_users` (`id`             INT(11)       NOT NULL A
                                        CONSTRAINT `fk_email_users_users_id`  FOREIGN KEY (`users_id`)  REFERENCES `users` (`id`) ON DELETE CASCADE,
                                        CONSTRAINT `fk_email_users_createdby` FOREIGN KEY (`createdby`) REFERENCES `users` (`id`) ON DELETE RESTRICT
 
-                                      ) ENGINE=InnoDB AUTO_INCREMENT='.$_CONFIG['db']['autoincrement'].' DEFAULT CHARSET="'.$_CONFIG['db']['charset'].'" COLLATE="'.$_CONFIG['db']['collate'].'";');
+                                      ) ENGINE=InnoDB AUTO_INCREMENT='.$_CONFIG['db']['core']['autoincrement'].' DEFAULT CHARSET="'.$_CONFIG['db']['core']['charset'].'" COLLATE="'.$_CONFIG['db']['core']['collate'].'";');
 
 
 
@@ -56,7 +56,7 @@ sql_query('CREATE TABLE `email_conversations` (`id`             INT(11)       NO
 
                                                CONSTRAINT `fk_email_conversations_users_id` FOREIGN KEY (`users_id`) REFERENCES `users` (`id`) ON DELETE CASCADE
 
-                                              ) ENGINE=InnoDB AUTO_INCREMENT='.$_CONFIG['db']['autoincrement'].' DEFAULT CHARSET="'.$_CONFIG['db']['charset'].'" COLLATE="'.$_CONFIG['db']['collate'].'";');
+                                              ) ENGINE=InnoDB AUTO_INCREMENT='.$_CONFIG['db']['core']['autoincrement'].' DEFAULT CHARSET="'.$_CONFIG['db']['core']['charset'].'" COLLATE="'.$_CONFIG['db']['core']['collate'].'";');
 
 
 
@@ -102,5 +102,5 @@ sql_query('CREATE TABLE `email_messages` (`id`               INT(11)      NOT NU
                                            CONSTRAINT `fk_email_messages_reply_to_id`      FOREIGN KEY (`reply_to_id`)      REFERENCES `email_messages`      (`id`) ON DELETE CASCADE,
                                            CONSTRAINT `fk_email_messages_conversations_id` FOREIGN KEY (`conversations_id`) REFERENCES `email_conversations` (`id`) ON DELETE CASCADE
 
-                                         ) ENGINE=InnoDB AUTO_INCREMENT='.$_CONFIG['db']['autoincrement'].' DEFAULT CHARSET="'.$_CONFIG['db']['charset'].'" COLLATE="'.$_CONFIG['db']['collate'].'";');
+                                         ) ENGINE=InnoDB AUTO_INCREMENT='.$_CONFIG['db']['core']['autoincrement'].' DEFAULT CHARSET="'.$_CONFIG['db']['core']['charset'].'" COLLATE="'.$_CONFIG['db']['core']['collate'].'";');
 ?>

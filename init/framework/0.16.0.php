@@ -20,7 +20,7 @@ sql_query('CREATE TABLE `passwords` (`id`          INT(11)      NOT NULL AUTO_IN
                                      CONSTRAINT `fk_passwords_createdby` FOREIGN KEY (`createdby`) REFERENCES `users` (`id`) ON DELETE RESTRICT,
                                      CONSTRAINT `fk_passwords_users_id`  FOREIGN KEY (`users_id`)  REFERENCES `users` (`id`) ON DELETE CASCADE
 
-                                    ) ENGINE=InnoDB AUTO_INCREMENT='.$_CONFIG['db']['autoincrement'].' DEFAULT CHARSET="'.$_CONFIG['db']['charset'].'" COLLATE="'.$_CONFIG['db']['collate'].'";');
+                                    ) ENGINE=InnoDB AUTO_INCREMENT='.$_CONFIG['db']['core']['autoincrement'].' DEFAULT CHARSET="'.$_CONFIG['db']['core']['charset'].'" COLLATE="'.$_CONFIG['db']['core']['collate'].'";');
 
 
 
@@ -35,7 +35,7 @@ sql_query('CREATE TABLE `ip_locks` (`id`          INT(11) NOT NULL AUTO_INCREMEN
 
                                      CONSTRAINT `fk_iplocks_createdby` FOREIGN KEY (`createdby`) REFERENCES `users` (`id`) ON DELETE RESTRICT
 
-                                    ) ENGINE=InnoDB AUTO_INCREMENT='.$_CONFIG['db']['autoincrement'].' DEFAULT CHARSET="'.$_CONFIG['db']['charset'].'" COLLATE="'.$_CONFIG['db']['collate'].'";');
+                                    ) ENGINE=InnoDB AUTO_INCREMENT='.$_CONFIG['db']['core']['autoincrement'].' DEFAULT CHARSET="'.$_CONFIG['db']['core']['charset'].'" COLLATE="'.$_CONFIG['db']['core']['collate'].'";');
 
 
 
