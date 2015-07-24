@@ -13,33 +13,36 @@
 /*
  * Execute specified query
  */
-function sql_query($query, $execute = false, $handle_exceptions = true, $sql = 'sql', $debug = false){
+function sql_query($query, $execute = false, $handle_exceptions = true, $connector = 'core'){
     try{
-        sql_init($sql);
+        $connector = sql_connector_name($connector);
+
+        sql_init($connector);
 
         if(is_string($query)){
             if(substr($query, 0, 1) == ' '){
                 debug_sql($query, $execute);
-                $query - substr($query, 1);
+                $query = substr($query, 1);
             }
 
             if(!$execute){
                 /*
                  * Just execute plain SQL query string.
                  */
-                return $GLOBALS[$sql]->query($query);
+                return $GLOBALS['sql_'.$connector]->query($query);
             }
 
             /*
              * Query was specified as a SQL query.
              */
-            $p = $GLOBALS[$sql]->prepare($query);
+            $p = $GLOBALS['sql_'.$connector]->prepare($query);
 
         }else{
             /*
              * It's quietly assumed that a
              * PDOStatement object was specified
              */
+// :TODO: Don't quietly assume, test!
             $p = $query;
         }
 
@@ -67,15 +70,15 @@ function sql_query($query, $execute = false, $handle_exceptions = true, $sql = '
 
     }catch(Exception $e){
         if(!$handle_exceptions){
-            throw new bException(tr('sql_query(): Query "%query%" failed', array('%query%' => $query)), $e);
+            throw new bException(tr('sql_query(%connector%): Query "%query%" failed', array('%connector%' => $connector, '%query%' => $query)), $e);
         }
 
         try{
             load_libs('pdo_error');
-            pdo_error($e, $query, $execute, $GLOBALS[$sql]);
+            pdo_error($e, $query, $execute, isset_get($GLOBALS['sql_'.$connector]));
 
         }catch(Exception $e){
-            throw new bException(tr('sql_query(): Query "%query%" failed', array('%query%' => $query)), $e);
+            throw new bException(tr('sql_query(%connector%): Query "%query%" failed', array('%connector%' => $connector, '%query%' => $query)), $e);
         }
     }
 }
@@ -85,9 +88,9 @@ function sql_query($query, $execute = false, $handle_exceptions = true, $sql = '
 /*
  * Prepare specified query
  */
-function sql_prepare($query, $sql = 'sql'){
+function sql_prepare($query, $connector = 'core'){
     try{
-        return $GLOBALS[$sql]->prepare($query);
+        return $GLOBALS['sql_'.sql_connector_name($connector)]->prepare($query);
 
     }catch(Exception $e){
         throw new bException('sql_prepare(): Failed', $e);
@@ -99,7 +102,7 @@ function sql_prepare($query, $sql = 'sql'){
 /*
  * Fetch and return data from specified resource
  */
-function sql_fetch($r, $columns = false, $debug = false) {
+function sql_fetch($r, $columns = false){
     try{
         if(!is_object($r)){
             throw new bException('sql_fetch(): Specified resource is not a PDO object', 'invalid');
@@ -154,7 +157,7 @@ function sql_fetch($r, $columns = false, $debug = false) {
 /*
  * Execute query and return only the first row
  */
-function sql_get($query, $column = null, $execute = null, $sql = 'sql') {
+function sql_get($query, $column = null, $execute = null, $connector = 'core'){
     try{
         if(is_array($column)){
             /*
@@ -167,7 +170,7 @@ function sql_get($query, $column = null, $execute = null, $sql = 'sql') {
         }
 
 // :TODO: Exception on multiple results
-        return sql_fetch(sql_query($query, $execute, true, $sql), $column);
+        return sql_fetch(sql_query($query, $execute, true, $connector), $column);
 
     }catch(Exception $e){
         if(strtolower(substr(trim($query), 0, 6)) != 'select'){
@@ -183,7 +186,7 @@ function sql_get($query, $column = null, $execute = null, $sql = 'sql') {
 /*
  * Execute query and return only the first row
  */
-function sql_list($query, $column = null, $execute = null, $sql = 'sql') {
+function sql_list($query, $column = null, $execute = null, $connector = 'core'){
     try{
         if(is_array($column)){
             /*
@@ -195,7 +198,7 @@ function sql_list($query, $column = null, $execute = null, $sql = 'sql') {
             unset($tmp);
         }
 
-        $r      = sql_query($query, $execute, true, $sql);
+        $r      = sql_query($query, $execute, true, $connector);
         $retval = array();
 
         while($row = sql_fetch($r, $column)){
@@ -234,16 +237,28 @@ function sql_list($query, $column = null, $execute = null, $sql = 'sql') {
 /*
  * Connect with the main database
  */
-function sql_init($sql = 'sql', $db = null){
+function sql_init($connector = 'core'){
     global $_CONFIG;
 
     try{
-        if(!empty($GLOBALS[$sql])) {
+        $connector = sql_connector_name($connector);
+
+        if(!empty($GLOBALS['sql_'.$connector])){
             /*
              * Already connected to core DB
              */
             return null;
         }
+
+        if(empty($connector)){
+            $connector = 'core';
+        }
+
+        if(empty($_CONFIG['db'][$connector])){
+            throw new bException(tr('sql_init(): Specified database connector "%connector%" has not been configured', array('%connector%' => $connector)), 'notexist');
+        }
+
+        $db = $_CONFIG['db'][$connector];
 
         /*
          * Set the MySQL rand() seed for this session
@@ -251,16 +266,16 @@ function sql_init($sql = 'sql', $db = null){
 // :TODO: On PHP7, update to random_int() for better cryptographic numbers
         $_SESSION['sql_random_seed'] = mt_rand();
 
-        if(empty($db)){
-            $db = $_CONFIG['db'];
-        }
-
-        $GLOBALS[$sql] = sql_connect($db);
+        /*
+         * Connect to database
+         */
+        $GLOBALS['sql_'.$connector] = sql_connect($db);
 
         /*
          * This is only required for the system connection
          */
-        if((PLATFORM == 'shell') and (SCRIPT == 'init') and FORCE and ($sql == 'sql')){
+// :TODO: Make it so that other databases can also  be initialized, not only the core database
+        if((PLATFORM == 'shell') and (SCRIPT == 'init') and FORCE and ($connector == 'core')){
             include(dirname(__FILE__).'/handlers/pdo_init_force.php');
         }
 
@@ -270,9 +285,10 @@ function sql_init($sql = 'sql', $db = null){
          * In some VERY FEW cases, this check must be skipped. Skipping is done by setting the global variable
          * skipversioncheck to true. If you don't know why this should be done, then DONT USE IT!
          */
-        try{
-            if($sql == 'sql'){
-                $r = $GLOBALS[$sql]->query('SELECT `project`, `framework` FROM `versions` ORDER BY `id` DESC LIMIT 1;');
+// :TODO: Make it so that other databases can also  be initialized, not only the core database
+        if($connector == 'core'){
+            try{
+                $r = $GLOBALS['sql_'.$connector]->query('SELECT `project`, `framework` FROM `versions` ORDER BY `id` DESC LIMIT 1;');
 
                 if(!$r->rowCount()){
                     log_console('sql_init(): No versions in versions table found, assumed empty database', 'warning/versions', 'yellow');
@@ -286,16 +302,16 @@ function sql_init($sql = 'sql', $db = null){
                     define('FRAMEWORKDBVERSION', $versions['framework']);
                     define('PROJECTDBVERSION'  , $versions['project']);
                 }
-            }
 
-        }catch(Exception $e){
-            /*
-             * Database version lookup failed. Usually, this would be due to the database being empty,
-             * and versions table does not exist (yes, that makes a query fail). Just to be sure that
-             * it did not fail due to other reasons, check why the lookup failed.
-             */
-            load_libs('init');
-            init_process_version_fail($e);
+            }catch(Exception $e){
+                /*
+                 * Database version lookup failed. Usually, this would be due to the database being empty,
+                 * and versions table does not exist (yes, that makes a query fail). Just to be sure that
+                 * it did not fail due to other reasons, check why the lookup failed.
+                 */
+                load_libs('init');
+                init_process_version_fail($e);
+            }
         }
 
         /*
@@ -328,16 +344,16 @@ function sql_init($sql = 'sql', $db = null){
  * If the database was already connected, then just ignore and continue.
  * If the database version check fails, then exception
  */
-function sql_connect($connector) {
+function sql_connect($connector){
     global $_CONFIG;
 
     try{
-        array_params($connector, 'db');
-        array_default($connector, 'driver' , $_CONFIG['db']['driver']);
-        array_default($connector, 'host'   , $_CONFIG['db']['host']);
-        array_default($connector, 'user'   , $_CONFIG['db']['user']);
-        array_default($connector, 'pass'   , $_CONFIG['db']['pass']);
-        array_default($connector, 'charset', $_CONFIG['db']['charset']);
+        array_params($connector);
+        array_default($connector, 'driver' , null);
+        array_default($connector, 'host'   , null);
+        array_default($connector, 'user'   , null);
+        array_default($connector, 'pass'   , null);
+        array_default($connector, 'charset', null);
 
         if(!class_exists('PDO')){
             /*
@@ -392,8 +408,10 @@ function sql_connect($connector) {
 /*
  * Import data from specified file
  */
-function sql_import($file) {
+function sql_import($file, $connector = 'core'){
     try {
+        $connector = sql_connector_name($connector);
+
         if(!file_exists($file)){
             throw new bException('sql_import(): Specified file "'.str_log($file).'" does not exist', 'notexist');
         }
@@ -405,11 +423,11 @@ function sql_import($file) {
             throw new isException('sql_import(): Could not open file', 'notopen');
         }
 
-        while (($buffer = fgets($handle)) !== false) {
+        while (($buffer = fgets($handle)) !== false){
             $buffer = trim($buffer);
 
-            if(!empty($buffer)) {
-                $GLOBALS['sql']->query(trim($buffer));
+            if(!empty($buffer)){
+                $GLOBALS['sql_'.$connector]->query(trim($buffer));
 
                 $tel++;
 // :TODO:SVEN:20130717: Right now it updates the display for each record. This may actually slow down import. Make display update only every 10 records or so
@@ -465,44 +483,45 @@ function sql_columns($source, $columns){
 
 
 
-/*
- *
- */
-function sql_set($source, $columns, $filter = 'id'){
-    try{
-        if(!is_array($source)){
-            throw new bException('sql_set(): Specified source is not an array', 'invalid');
-        }
-
-        $columns = array_force($columns);
-        $filter  = array_force($filter);
-        $retval  = array();
-
-        foreach($source as $key => $value){
-            /*
-             * Add all in columns, but not in filter (usually to skip the id column)
-             */
-            if(in_array($key, $columns) and !in_array($key, $filter)){
-                $retval[] = '`'.$key.'` = :'.$key;
-            }
-        }
-
-        foreach($filter as $item){
-            if(!isset($source[$item])){
-                throw new bException('sql_set(): Specified filter item "'.str_log($item).'" was not found in source', 'notfound');
-            }
-        }
-
-        if(!count($retval)){
-            throw new bException('sql_set(): Specified source contains non of the specified columns "'.str_log(implode(',', $columns)).'"', 'empty');
-        }
-
-        return implode(', ', $retval);
-
-    }catch(Exception $e){
-        throw new bException('sql_set(): Failed', $e);
-    }
-}
+// :OBSOLETE: Remove this function soon
+///*
+// *
+// */
+//function sql_set($source, $columns, $filter = 'id'){
+//    try{
+//        if(!is_array($source)){
+//            throw new bException('sql_set(): Specified source is not an array', 'invalid');
+//        }
+//
+//        $columns = array_force($columns);
+//        $filter  = array_force($filter);
+//        $retval  = array();
+//
+//        foreach($source as $key => $value){
+//            /*
+//             * Add all in columns, but not in filter (usually to skip the id column)
+//             */
+//            if(in_array($key, $columns) and !in_array($key, $filter)){
+//                $retval[] = '`'.$key.'` = :'.$key;
+//            }
+//        }
+//
+//        foreach($filter as $item){
+//            if(!isset($source[$item])){
+//                throw new bException('sql_set(): Specified filter item "'.str_log($item).'" was not found in source', 'notfound');
+//            }
+//        }
+//
+//        if(!count($retval)){
+//            throw new bException('sql_set(): Specified source contains non of the specified columns "'.str_log(implode(',', $columns)).'"', 'empty');
+//        }
+//
+//        return implode(', ', $retval);
+//
+//    }catch(Exception $e){
+//        throw new bException('sql_set(): Failed', $e);
+//    }
+//}
 
 
 
@@ -536,8 +555,8 @@ function sql_values($source, $columns, $prefix = ':'){
 /*
  *
  */
-function sql_insert_id(){
-    return $GLOBALS['sql']->lastInsertId();
+function sql_insert_id($connector = 'core'){
+    return $GLOBALS['sql_'.sql_connector_name($connector)]->lastInsertId();
 }
 
 
@@ -611,7 +630,7 @@ function sql_get_id_or_name($entry, $seo = true, $code = false){
 /*
  * Return a unique, non existing ID for the specified table.column
  */
-function sql_unique_id($table, $column = 'id', $max = 10000000, $sql = 'sql'){
+function sql_unique_id($table, $column = 'id', $max = 10000000, $connector = 'core'){
     try{
         $retries    =  0;
         $maxretries = 50;
@@ -619,7 +638,7 @@ function sql_unique_id($table, $column = 'id', $max = 10000000, $sql = 'sql'){
         while(++$retries < $maxretries){
             $id = mt_rand(1, $max);
 
-            if(!sql_get('SELECT `'.$column.'` FROM `'.$table.'` WHERE `'.$column.'` = :id', array(':id' => $id), null, $sql)){
+            if(!sql_get('SELECT `'.$column.'` FROM `'.$table.'` WHERE `'.$column.'` = :id', array(':id' => $id), null, $connector)){
                 return $id;
             }
         }
@@ -681,7 +700,7 @@ function sql_in($source, $column = ':value'){
 /*
  *
  */
-function sql_where($query, $required){
+function sql_where($query, $required = true){
     try{
         if(!$query){
             if($required){
@@ -704,7 +723,7 @@ function sql_where($query, $required){
  * Try to get single data entry from memcached. If not available, get it from
  * MySQL and store results in memcached for future use
  */
-function sql_get_cached($key, $query, $column = false, $execute = false, $expiration_time = 86400, $sql = 'sql'){
+function sql_get_cached($key, $query, $column = false, $execute = false, $expiration_time = 86400, $connector = 'core'){
     try{
         if(($value = mc_get($key, 'sql_')) === false){
             /*
@@ -731,7 +750,7 @@ function sql_get_cached($key, $query, $column = false, $execute = false, $expira
                 unset($tmp);
             }
 
-            $value = sql_get($query, $column, $execute, $sql);
+            $value = sql_get($query, $column, $execute, $connector);
 
             mc_put($value, $key, 'sql_', $expiration_time);
         }
@@ -749,7 +768,7 @@ function sql_get_cached($key, $query, $column = false, $execute = false, $expira
  * Try to get data list from memcached. If not available, get it from
  * MySQL and store results in memcached for future use
  */
-function sql_list_cached($key, $query, $column = false, $execute = false, $expiration_time = 86400, $sql = 'sql'){
+function sql_list_cached($key, $query, $column = false, $execute = false, $expiration_time = 86400, $connector = 'core'){
     try{
         if(($list = mc_get($key, 'sql_')) === false){
             /*
@@ -776,7 +795,7 @@ function sql_list_cached($key, $query, $column = false, $execute = false, $expir
                 unset($tmp);
             }
 
-            $list = sql_list($query, $column, $execute, $sql);
+            $list = sql_list($query, $column, $execute, $connector);
 
             mc_put($list, $key, 'sql_', $expiration_time);
         }
@@ -793,14 +812,15 @@ function sql_list_cached($key, $query, $column = false, $execute = false, $expir
 /*
  *
  */
-function sql_valid_limit($limit){
+function sql_valid_limit($limit, $connector = null){
     global $_CONFIG;
 
     try{
-        $limit = force_natural_number($limit);
+        $limit     = force_natural_number($limit);
+        $connector = sql_connector_name($connector);
 
-        if($limit > $_CONFIG['db']['limit_max']){
-            return $_CONFIG['db']['limit_max'];
+        if($limit > $_CONFIG['db'][$connector]['limit_max']){
+            return $_CONFIG['db'][$connector]['limit_max'];
         }
 
         return $limit;
@@ -819,21 +839,21 @@ function sql_valid_limit($limit){
  *
  * Return affected rows
  */
-function sql_affected_rows($r) {
+function sql_affected_rows($r){
     return $r->rowCount();
 }
 
 /*
  * Return number of rows in the specified resource
  */
-function sql_num_rows(&$r) {
+function sql_num_rows(&$r){
     return $r->rowCount();
 }
 
 /*
  * Fetch and return data from specified resource
  */
-function sql_fetch_column($r, $column) {
+function sql_fetch_column($r, $column){
     try{
         $row = sql_fetch($r);
 
@@ -868,5 +888,19 @@ function sql_entry_merge($db, $post, $filter = null){
     }catch(Exception $e){
         throw new bException('sql_entry_merge(): Failed', $e);
     }
+}
+
+
+/*
+ *
+ */
+function sql_connector_name($connector){
+    global $_CONFIG;
+
+    if($connector === null){
+        return $_CONFIG['db']['default'];
+    }
+
+    return $connector;
 }
 ?>

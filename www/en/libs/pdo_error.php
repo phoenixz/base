@@ -30,11 +30,11 @@ function pdo_error($e, $query, $execute, $sql = null){
 
     try{
         if(!is_object($sql)){
-            if(empty($GLOBALS['sql'])){
+            if(empty($GLOBALS['sql_core'])){
                 throw new bException('pdo_error(): The $sql is not an object, cannot get more info from there', $e);
             }
 
-            $sql = $GLOBALS['sql'];
+            $sql = $GLOBALS['sql_core'];
         }
 
         if($execute){
@@ -227,7 +227,7 @@ function pdo_error($e, $query, $execute, $sql = null){
                             throw new bException(nl2br($body), $e);
                         }
 
-                        throw new bException(tr('An error has been detected, our staff has been notified about this problem.'), $e);
+                        throw new bException(tr('pdo_error(): An error has been detected, our staff has been notified about this problem.'), $e);
                 }
         }
 
@@ -241,15 +241,14 @@ function pdo_error($e, $query, $execute, $sql = null){
 /*
  * PDO USE failed
  */
-function pdo_error_init($e, $connector){
+function pdo_error_init($e, $connector, $sql){
     global $_CONFIG;
 
     try{
-        $GLOBALS['sql']->query('DROP DATABASE IF EXISTS `'.$connector['db'].'`;');
-        $GLOBALS['sql']->query('CREATE DATABASE         `'.$connector['db'].'` DEFAULT CHARSET="'.$connector['charset'].'" COLLATE="'.$connector['collate'].'";');
-        $GLOBALS['sql']->query('USE                     `'.$connector['db'].'`');
+        $GLOBALS['sql_'.$sql]->query('DROP DATABASE IF EXISTS `'.$connector['db'].'`;');
+        $GLOBALS['sql_'.$sql]->query('CREATE DATABASE         `'.$connector['db'].'` DEFAULT CHARSET="'.$connector['charset'].'" COLLATE="'.$connector['collate'].'";');
+        $GLOBALS['sql_'.$sql]->query('USE                     `'.$connector['db'].'`');
         return true;
-
 
     }catch(Exception $e){
         throw new bException('pdo_error_init(): Failed', $e);

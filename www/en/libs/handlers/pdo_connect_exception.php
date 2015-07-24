@@ -1,6 +1,6 @@
 <?php
     if($e->getMessage() == 'could not find driver'){
-        throw new bException('sql_connect(): Failed to connect with "'.str_log($connector['driver']).'" driver, it looks like its not available', $e);
+        throw new bException('sql_connect(): Failed to connect with "'.str_log($connector['driver']).'" driver, it looks like its not available', 'driverfail');
     }
 
     /*
