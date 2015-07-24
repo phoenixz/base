@@ -212,7 +212,7 @@ function http_headers($params, $content_length){
                             /*
                              * Origin is allowed from all sub domains
                              */
-                            $origin = str_from($_SERVER['HTTP_ORIGIN'], '://');
+                            $origin = str_from(isset_get($_SERVER['HTTP_ORIGIN']), '://');
                             $length = strlen($_CONFIG['domain']);
 
                             if(substr($origin, -$length, $length) === $_CONFIG['domain']){

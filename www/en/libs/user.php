@@ -133,7 +133,7 @@ function user_find_avatar($user) {
 /*
  * `cate the specified user with the specified password
  */
-function user_authenticate($username, $password) {
+function user_authenticate($username, $password, $columns = '*') {
     global $_CONFIG;
 
     try{
@@ -141,7 +141,7 @@ function user_authenticate($username, $password) {
             throw new bException('user_authenticate(): Specified username is not valid', 'invalid');
         }
 
-        if(!$user = sql_get('SELECT * FROM `users` WHERE `email` = :email OR `username` = :username', array(':email' => $username, ':username' => $username))){
+        if(!$user = sql_get('SELECT '.$columns.' FROM `users` WHERE `email` = :email OR `username` = :username', array(':email' => $username, ':username' => $username))){
             log_database(tr('user_authenticate(): Specified user "%username%" not found', array('%username%' => str_log($username))), 'authentication/notfound');
             throw new bException(tr('user_authenticate(): Specified user "%username%" not found', array('%username%' => str_log($username))), 'notfound');
         }
@@ -227,7 +227,7 @@ function user_authenticate($username, $password) {
 /*
  * Do a user signin
  */
-function user_signin($user, $extended = false, $redirect = '/') {
+function user_signin($user, $extended = false, $redirect = '/', $html_flash = null) {
     global $_CONFIG;
 
     try{
@@ -270,6 +270,10 @@ function user_signin($user, $extended = false, $redirect = '/') {
 // :TODO: Add notifications somewhere?
                 log_error($e, 'avatar');
             }
+        }
+
+        if($html_flash){
+            html_flash_set(isset_get($html_flash['text']), isset_get($html_flash['type']), isset_get($html_flash['class']));
         }
 
         if($redirect and (PLATFORM == 'http')){
