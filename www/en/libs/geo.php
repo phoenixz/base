@@ -279,7 +279,7 @@ function geo_get_nearest_city($latitude, $longitude, $filters = null, $columns =
                          ':longitude' => $longitude);
 
         if(!$filters){
-            $filters = $_CONFIG['geo']['cities']['filter'];
+            $filters = $_CONFIG['geo']['cities']['filters'];
         }
 
         if($filters){

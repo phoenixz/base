@@ -9,6 +9,6 @@
  * @license http://opensource.org/licenses/GPL-2.0 GNU Public License, Version 2
  * @copyright Sven Oostenbrink <support@svenoostenbrink.com>, Johan Geuze
  */
-$_CONFIG['geo']['cities']['filter'] = array('min_population' => 1000,
-                                            'feature_code'   => 'PPLA,PPLA2,ADM1,ADM2');
+$_CONFIG['geo']['cities']['filters'] = array('min_population' => 1000,
+                                             'feature_code'   => 'PPLA,PPLA2,ADM1,ADM2');
 ?>
