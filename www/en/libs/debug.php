@@ -50,6 +50,14 @@ function show($data = null, $return = false, $quiet = false, $trace_offset = 1){
     }
 
     if((PLATFORM == 'http') and empty($GLOBALS['debug_plain'])){
+        /*
+         * If JSON, CORS requests require correct headers!
+         */
+        if($GLOBALS['page_is_ajax']){
+            load_libs('http');
+            http_headers(null, 0);
+        }
+
         echo debug_html($data, tr('Unknown'), $trace_offset);
 
 /*
