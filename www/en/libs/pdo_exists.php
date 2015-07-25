@@ -174,7 +174,7 @@ function sql_foreignkey_exists($table, $foreign_key, $query = '', $database = ''
  * If query is specified, the query will be executed only if the specified function exists
  * If the query is prefixed with an exclamation mark ! then the query will only be executed if the function does NOT exist
  */
-function sql_function_exists($name, $query = '', $database = '', $connector = ''){
+function sql_function_exists($name, $query = '', $database = '', $connector = null){
     global $pdo, $_CONFIG;
 
     try{
