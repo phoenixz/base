@@ -11,5 +11,5 @@
  */
 $_CONFIG['geo'] = array('cities' => array('filter_type' => ' OR ',
                                           'filters'     => array('min_population' => 200000,
-                                                                 'feature_code'   => 'PPLA,PPLA2,ADM1,ADM2')));
+                                                                 'feature_code'   => 'PPLA,PPLA2')));
 ?>
