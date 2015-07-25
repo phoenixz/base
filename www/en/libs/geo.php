@@ -308,7 +308,7 @@ function geo_get_nearest_city($latitude, $longitude, $filters = null, $columns =
         }
 
         if(!empty($where)){
-            $where = ' WHERE '.implode(' AND ', $where);
+            $where = ' WHERE ('.implode($_CONFIG['geo']['cities']['filter_type'], $where).')';
 
         }else{
             $where = '';
