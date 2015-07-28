@@ -269,7 +269,7 @@ function geo_cities_get($city, $column = false){
 /*
  * Return the closest city to the specified latitude / longitude
  */
-function geo_get_nearest_city($latitude, $longitude, $filters = null, $columns = '`id`, `name`, `seoname`, `states_id`'){
+function geo_get_nearest_city($latitude, $longitude, $filters = null, $columns = '`id`, `name`, `seoname`, `states_id`, `latitude`, `longitude`'){
     global $_CONFIG;
 
     try{
