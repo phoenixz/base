@@ -31,7 +31,7 @@ sql_query('CREATE TABLE `blogs_images` (`id`             INT(11)     NOT NULL AU
                                         CONSTRAINT `fk_blogs_images_createdby`      FOREIGN KEY (`createdby`)      REFERENCES `users`       (`id`) ON DELETE RESTRICT,
                                         CONSTRAINT `fk_blogs_images_blogs_posts_id` FOREIGN KEY (`blogs_posts_id`) REFERENCES `blogs_posts` (`id`) ON DELETE CASCADE
 
-                                       ) ENGINE=InnoDB AUTO_INCREMENT='.$_CONFIG['db']['autoincrement'].' DEFAULT CHARSET="'.$_CONFIG['db']['charset'].'" COLLATE="'.$_CONFIG['db']['collate'].'";');
+                                       ) ENGINE=InnoDB AUTO_INCREMENT='.$_CONFIG['db']['core']['autoincrement'].' DEFAULT CHARSET="'.$_CONFIG['db']['core']['charset'].'" COLLATE="'.$_CONFIG['db']['core']['collate'].'";');
 
 
 
@@ -50,5 +50,5 @@ sql_query('CREATE TABLE `blogs_comments` (`id`             INT(11)     NOT NULL 
                                           CONSTRAINT `fk_blogs_comments_createdby`      FOREIGN KEY (`createdby`)      REFERENCES `users`       (`id`) ON DELETE RESTRICT,
                                           CONSTRAINT `fk_blogs_comments_blogs_posts_id` FOREIGN KEY (`blogs_posts_id`) REFERENCES `blogs_posts` (`id`) ON DELETE CASCADE
 
-                                         ) ENGINE=InnoDB AUTO_INCREMENT='.$_CONFIG['db']['autoincrement'].' DEFAULT CHARSET="'.$_CONFIG['db']['charset'].'" COLLATE="'.$_CONFIG['db']['collate'].'";');
+                                         ) ENGINE=InnoDB AUTO_INCREMENT='.$_CONFIG['db']['core']['autoincrement'].' DEFAULT CHARSET="'.$_CONFIG['db']['core']['charset'].'" COLLATE="'.$_CONFIG['db']['core']['collate'].'";');
 ?>

@@ -26,5 +26,5 @@ sql_query('CREATE TABLE `users_rights` (`id`          INT(11)     NOT NULL AUTO_
                                         CONSTRAINT `fk_users_rights_users_id`  FOREIGN KEY (`users_id`)  REFERENCES `users`  (`id`) ON DELETE CASCADE,
                                         CONSTRAINT `fk_users_rights_rights_id` FOREIGN KEY (`rights_id`) REFERENCES `rights` (`id`) ON DELETE CASCADE
 
-                                       ) ENGINE=InnoDB AUTO_INCREMENT='.$_CONFIG['db']['autoincrement'].' DEFAULT CHARSET="'.$_CONFIG['db']['charset'].'" COLLATE="'.$_CONFIG['db']['collate'].'";');
+                                       ) ENGINE=InnoDB AUTO_INCREMENT='.$_CONFIG['db']['core']['autoincrement'].' DEFAULT CHARSET="'.$_CONFIG['db']['core']['charset'].'" COLLATE="'.$_CONFIG['db']['core']['collate'].'";');
 ?>

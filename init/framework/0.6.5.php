@@ -26,7 +26,7 @@ sql_query('CREATE TABLE `mailer_mailings` (`id`            INT(11)      NOT NULL
                                            INDEX(`header`),
                                            INDEX(`title`)
 
-                                          ) ENGINE=InnoDB AUTO_INCREMENT='.$_CONFIG['db']['autoincrement'].' DEFAULT CHARSET="'.$_CONFIG['db']['charset'].'" COLLATE="'.$_CONFIG['db']['collate'].'";');
+                                          ) ENGINE=InnoDB AUTO_INCREMENT='.$_CONFIG['db']['core']['autoincrement'].' DEFAULT CHARSET="'.$_CONFIG['db']['core']['charset'].'" COLLATE="'.$_CONFIG['db']['core']['collate'].'";');
 
 
 
@@ -49,7 +49,7 @@ sql_query('CREATE TABLE `mailer_recipients` (`id`            INT(11)      NOT NU
                                              CONSTRAINT `fk_mailer_users_id`    FOREIGN KEY (`users_id`)    REFERENCES `users`           (`id`) ON DELETE CASCADE,
                                              CONSTRAINT `fk_mailer_mailings_id` FOREIGN KEY (`mailings_id`) REFERENCES `mailer_mailings` (`id`) ON DELETE CASCADE
 
-                                            ) ENGINE=InnoDB AUTO_INCREMENT='.$_CONFIG['db']['autoincrement'].' DEFAULT CHARSET="'.$_CONFIG['db']['charset'].'" COLLATE="'.$_CONFIG['db']['collate'].'";');
+                                            ) ENGINE=InnoDB AUTO_INCREMENT='.$_CONFIG['db']['core']['autoincrement'].' DEFAULT CHARSET="'.$_CONFIG['db']['core']['charset'].'" COLLATE="'.$_CONFIG['db']['core']['collate'].'";');
 
 
 
@@ -67,5 +67,5 @@ sql_query('CREATE TABLE `mailer_viewed` (`id`            INT(11)      NOT NULL A
 
                                          CONSTRAINT `fk_mailer_access_recipients_id` FOREIGN KEY (`recipients_id`) REFERENCES `mailer_recipients` (`id`) ON DELETE CASCADE
 
-                                        ) ENGINE=InnoDB AUTO_INCREMENT='.$_CONFIG['db']['autoincrement'].' DEFAULT CHARSET="'.$_CONFIG['db']['charset'].'" COLLATE="'.$_CONFIG['db']['collate'].'";');
+                                        ) ENGINE=InnoDB AUTO_INCREMENT='.$_CONFIG['db']['core']['autoincrement'].' DEFAULT CHARSET="'.$_CONFIG['db']['core']['charset'].'" COLLATE="'.$_CONFIG['db']['core']['collate'].'";');
 ?>

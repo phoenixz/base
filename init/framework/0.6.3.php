@@ -8,5 +8,5 @@ sql_query('CREATE TABLE `rip_settings` (`id`            INT(11)      NOT NULL AU
                                         `accept_timout` INT(11)      NOT NULL,
                                         `submit_timout` INT(11)      NOT NULL
 
-                                      ) ENGINE=InnoDB AUTO_INCREMENT='.$_CONFIG['db']['autoincrement'].' DEFAULT CHARSET="'.$_CONFIG['db']['charset'].'" COLLATE="'.$_CONFIG['db']['collate'].'";');
+                                      ) ENGINE=InnoDB AUTO_INCREMENT='.$_CONFIG['db']['core']['autoincrement'].' DEFAULT CHARSET="'.$_CONFIG['db']['core']['charset'].'" COLLATE="'.$_CONFIG['db']['core']['collate'].'";');
 ?>

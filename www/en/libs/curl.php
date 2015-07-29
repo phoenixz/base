@@ -8,6 +8,14 @@
  * @copyright Johan Geuze, Sven Oostenbrink <support@svenoostenbrink.com>
  */
 
+
+
+if(!function_exists('curl_init')){
+    throw new bException('PHP CURL module is not installed. Install PHP CURL on Ubuntu with "sudo apt-get install php5-curl", or on Redhat with "sudo yum install php-curl"');
+}
+
+
+
  /*
   * Get data using an sven HTTP proxy server
   */

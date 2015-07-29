@@ -27,7 +27,7 @@ sql_query('CREATE TABLE `versions` (`id`        INT(11)    NOT NULL AUTO_INCREME
                                     INDEX (`project`),
                                     UNIQUE(`framework`, `project`)
 
-                                   ) ENGINE=InnoDB AUTO_INCREMENT='.$_CONFIG['db']['autoincrement'].' DEFAULT CHARSET="'.$_CONFIG['db']['charset'].'" COLLATE="'.$_CONFIG['db']['collate'].'";');
+                                   ) ENGINE=InnoDB AUTO_INCREMENT='.$_CONFIG['db']['core']['autoincrement'].' DEFAULT CHARSET="'.$_CONFIG['db']['core']['charset'].'" COLLATE="'.$_CONFIG['db']['core']['collate'].'";');
 
 
 sql_query('CREATE TABLE `log` (`id`       INT(11)       NOT NULL AUTO_INCREMENT PRIMARY KEY,
@@ -40,7 +40,7 @@ sql_query('CREATE TABLE `log` (`id`       INT(11)       NOT NULL AUTO_INCREMENT 
                                INDEX(`type`),
                                INDEX(`users_id`)
 
-                              ) ENGINE=MyISAM AUTO_INCREMENT='.$_CONFIG['db']['autoincrement'].' DEFAULT CHARSET="'.$_CONFIG['db']['charset'].'" COLLATE="'.$_CONFIG['db']['collate'].'";');
+                              ) ENGINE=MyISAM AUTO_INCREMENT='.$_CONFIG['db']['core']['autoincrement'].' DEFAULT CHARSET="'.$_CONFIG['db']['core']['charset'].'" COLLATE="'.$_CONFIG['db']['core']['collate'].'";');
 
 
 log_database('Started system initialization', 'init', 0);
@@ -70,7 +70,7 @@ sql_query('CREATE TABLE `users` (`id`           INT(11)      NOT NULL AUTO_INCRE
                                  INDEX (`country`),
                                  UNIQUE(`fb_id`)
 
-                                ) ENGINE=InnoDB AUTO_INCREMENT='.$_CONFIG['db']['autoincrement'].' DEFAULT CHARSET="'.$_CONFIG['db']['charset'].'" COLLATE="'.$_CONFIG['db']['collate'].'";');
+                                ) ENGINE=InnoDB AUTO_INCREMENT='.$_CONFIG['db']['core']['autoincrement'].' DEFAULT CHARSET="'.$_CONFIG['db']['core']['charset'].'" COLLATE="'.$_CONFIG['db']['core']['collate'].'";');
 
 /*
  * Check MySQL timezone availability

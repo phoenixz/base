@@ -32,7 +32,7 @@ sql_query('CREATE TABLE `users_signins` (`id`        INT(11)     NOT NULL AUTO_I
 
                                          CONSTRAINT `fk_users_signins_users_id` FOREIGN KEY (`users_id`) REFERENCES `users` (`id`) ON DELETE CASCADE
 
-                                        ) ENGINE=InnoDB AUTO_INCREMENT='.$_CONFIG['db']['autoincrement'].' DEFAULT CHARSET="'.$_CONFIG['db']['charset'].'" COLLATE="'.$_CONFIG['db']['collate'].'";');
+                                        ) ENGINE=InnoDB AUTO_INCREMENT='.$_CONFIG['db']['core']['autoincrement'].' DEFAULT CHARSET="'.$_CONFIG['db']['core']['charset'].'" COLLATE="'.$_CONFIG['db']['core']['collate'].'";');
 
 
 
@@ -46,7 +46,7 @@ sql_query('CREATE TABLE `users_old_passwords` (`id`       INT(11)     NOT NULL A
 
                                                CONSTRAINT `fk_users_old_passwords_users_id` FOREIGN KEY (`users_id`) REFERENCES `users` (`id`) ON DELETE CASCADE
 
-                                              ) ENGINE=InnoDB AUTO_INCREMENT='.$_CONFIG['db']['autoincrement'].' DEFAULT CHARSET="'.$_CONFIG['db']['charset'].'" COLLATE="'.$_CONFIG['db']['collate'].'";');
+                                              ) ENGINE=InnoDB AUTO_INCREMENT='.$_CONFIG['db']['core']['autoincrement'].' DEFAULT CHARSET="'.$_CONFIG['db']['core']['charset'].'" COLLATE="'.$_CONFIG['db']['core']['collate'].'";');
 
 
 
@@ -60,7 +60,7 @@ sql_query('CREATE TABLE `geo_features` (`id`          INT(11)      NOT NULL AUTO
                                         UNIQUE(`code`),
                                         INDEX (`name`)
 
-                                       ) ENGINE=InnoDB AUTO_INCREMENT='.$_CONFIG['db']['autoincrement'].' DEFAULT CHARSET="'.$_CONFIG['db']['charset'].'" COLLATE="'.$_CONFIG['db']['collate'].'";');
+                                       ) ENGINE=InnoDB AUTO_INCREMENT='.$_CONFIG['db']['core']['autoincrement'].' DEFAULT CHARSET="'.$_CONFIG['db']['core']['charset'].'" COLLATE="'.$_CONFIG['db']['core']['collate'].'";');
 
 
 
@@ -82,7 +82,7 @@ sql_query('CREATE TABLE `geo_timezones` (`id`             INT(11)      NOT NULL 
                                          INDEX (`utc_offset`),
                                          INDEX (`utc_dst_offset`)
 
-                                        ) ENGINE=InnoDB AUTO_INCREMENT='.$_CONFIG['db']['autoincrement'].' DEFAULT CHARSET="'.$_CONFIG['db']['charset'].'" COLLATE="'.$_CONFIG['db']['collate'].'";');
+                                        ) ENGINE=InnoDB AUTO_INCREMENT='.$_CONFIG['db']['core']['autoincrement'].' DEFAULT CHARSET="'.$_CONFIG['db']['core']['charset'].'" COLLATE="'.$_CONFIG['db']['core']['collate'].'";');
 
 
 
@@ -95,7 +95,7 @@ sql_query('CREATE TABLE `geo_regions` (`id`      INT(11)     NOT NULL AUTO_INCRE
                                        UNIQUE(`name`),
                                        UNIQUE(`seoname`)
 
-                                      ) ENGINE=InnoDB AUTO_INCREMENT='.$_CONFIG['db']['autoincrement'].' DEFAULT CHARSET="'.$_CONFIG['db']['charset'].'" COLLATE="'.$_CONFIG['db']['collate'].'";');
+                                      ) ENGINE=InnoDB AUTO_INCREMENT='.$_CONFIG['db']['core']['autoincrement'].' DEFAULT CHARSET="'.$_CONFIG['db']['core']['charset'].'" COLLATE="'.$_CONFIG['db']['core']['collate'].'";');
 
 
 
@@ -112,7 +112,7 @@ sql_query('CREATE TABLE `geo_subregions` (`id`         INT(11)     NOT NULL AUTO
 
                                           CONSTRAINT `fk_geo_subregions_regions_id` FOREIGN KEY (`regions_id`) REFERENCES `geo_regions` (`id`) ON DELETE CASCADE
 
-                                         ) ENGINE=InnoDB AUTO_INCREMENT='.$_CONFIG['db']['autoincrement'].' DEFAULT CHARSET="'.$_CONFIG['db']['charset'].'" COLLATE="'.$_CONFIG['db']['collate'].'";');
+                                         ) ENGINE=InnoDB AUTO_INCREMENT='.$_CONFIG['db']['core']['autoincrement'].' DEFAULT CHARSET="'.$_CONFIG['db']['core']['charset'].'" COLLATE="'.$_CONFIG['db']['core']['collate'].'";');
 
 
 
@@ -136,7 +136,7 @@ sql_query('CREATE TABLE `geo_countries` (`id`            INT(11)     NOT NULL AU
                                          CONSTRAINT `fk_geo_countries_regions_id`    FOREIGN KEY (`regions_id`)    REFERENCES `geo_regions`    (`id`) ON DELETE CASCADE,
                                          CONSTRAINT `fk_geo_countries_subregions_id` FOREIGN KEY (`subregions_id`) REFERENCES `geo_subregions` (`id`) ON DELETE CASCADE
 
-                                        ) ENGINE=InnoDB AUTO_INCREMENT='.$_CONFIG['db']['autoincrement'].' DEFAULT CHARSET="'.$_CONFIG['db']['charset'].'" COLLATE="'.$_CONFIG['db']['collate'].'";');
+                                        ) ENGINE=InnoDB AUTO_INCREMENT='.$_CONFIG['db']['core']['autoincrement'].' DEFAULT CHARSET="'.$_CONFIG['db']['core']['charset'].'" COLLATE="'.$_CONFIG['db']['core']['collate'].'";');
 
 
 
@@ -159,7 +159,7 @@ sql_query('CREATE TABLE `geo_states` (`id`            INT(11)     NOT NULL AUTO_
                                        CONSTRAINT `fk_geo_states_subregions_id` FOREIGN KEY (`subregions_id`) REFERENCES `geo_subregions` (`id`) ON DELETE CASCADE,
                                        CONSTRAINT `fk_geo_states_countries_id`  FOREIGN KEY (`countries_id`)  REFERENCES `geo_countries`  (`id`) ON DELETE CASCADE
 
-                                      ) ENGINE=InnoDB AUTO_INCREMENT='.$_CONFIG['db']['autoincrement'].' DEFAULT CHARSET="'.$_CONFIG['db']['charset'].'" COLLATE="'.$_CONFIG['db']['collate'].'";');
+                                      ) ENGINE=InnoDB AUTO_INCREMENT='.$_CONFIG['db']['core']['autoincrement'].' DEFAULT CHARSET="'.$_CONFIG['db']['core']['charset'].'" COLLATE="'.$_CONFIG['db']['core']['collate'].'";');
 
 
 
@@ -185,7 +185,7 @@ sql_query('CREATE TABLE `geo_provences` (`id`            INT(11)     NOT NULL AU
                                           CONSTRAINT `fk_geo_provences_countries_id`  FOREIGN KEY (`countries_id`)  REFERENCES `geo_countries`  (`id`) ON DELETE CASCADE,
                                           CONSTRAINT `fk_geo_provences_states_id`     FOREIGN KEY (`states_id`)     REFERENCES `geo_states`     (`id`) ON DELETE CASCADE
 
-                                         ) ENGINE=InnoDB AUTO_INCREMENT='.$_CONFIG['db']['autoincrement'].' DEFAULT CHARSET="'.$_CONFIG['db']['charset'].'" COLLATE="'.$_CONFIG['db']['collate'].'";');
+                                         ) ENGINE=InnoDB AUTO_INCREMENT='.$_CONFIG['db']['core']['autoincrement'].' DEFAULT CHARSET="'.$_CONFIG['db']['core']['charset'].'" COLLATE="'.$_CONFIG['db']['core']['collate'].'";');
 
 
 
@@ -242,7 +242,7 @@ sql_query('CREATE TABLE `geo_cities` (`id`                      INT(11)      NOT
                                        CONSTRAINT `fk_geo_cities_timezones_id`  FOREIGN KEY (`timezones_id`)  REFERENCES `geo_timezones`  (`id`)   ON DELETE SET NULL,
                                        CONSTRAINT `fk_geo_cities_feature_code`  FOREIGN KEY (`feature_code`)  REFERENCES `geo_features`   (`code`) ON DELETE SET NULL
 
-                                      ) ENGINE=InnoDB AUTO_INCREMENT='.$_CONFIG['db']['autoincrement'].' DEFAULT CHARSET="'.$_CONFIG['db']['charset'].'" COLLATE="'.$_CONFIG['db']['collate'].'";');
+                                      ) ENGINE=InnoDB AUTO_INCREMENT='.$_CONFIG['db']['core']['autoincrement'].' DEFAULT CHARSET="'.$_CONFIG['db']['core']['charset'].'" COLLATE="'.$_CONFIG['db']['core']['collate'].'";');
 
 
 
