@@ -265,7 +265,9 @@ function googlemaps_reverse_geocoding($latitude, $longitude, $sensor = null) {
 
         load_libs('curl,json');
 
-        $raw  = curl_get('http://maps.googleapis.com/maps/api/geocode/json?latlng='.$latitude.','.$longitude.'&sensor='.($sensor ? 'true' : 'false'));
+        $raw  = curl_get(array('url'        => 'http://maps.googleapis.com/maps/api/geocode/json?latlng='.$latitude.','.$longitude.'&sensor='.($sensor ? 'true' : 'false'),
+                               'getheaders' => false));
+
         $data = json_decode_custom($raw['data'], true);
 
         if(!empty($data['results'])) {
@@ -275,7 +277,7 @@ function googlemaps_reverse_geocoding($latitude, $longitude, $sensor = null) {
         return false;
 
     }catch(Exception $e){
-        throw new bException('googlemaps_geocoding(): Failed', $e);
+        throw new bException('googlemaps_reverse_geocoding(): Failed', $e);
     }
 }
 ?>
