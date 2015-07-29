@@ -148,7 +148,7 @@ set_exception_handler('uncaught_exception');
  */
 try{
     include($file = ROOT.'config/base/default.php');
-    include(ROOT.'config/production.php');
+    include($file = ROOT.'config/production.php');
 
     /*
      * Also load environment specific configuration, overwriting some production settings
@@ -197,7 +197,7 @@ try{
             die("\033[0;31mstartup: Missing configuration file \"".str_log($file)."\" for environment \"".str_log(ENVIRONMENT)."\"\033[0m\n");
         }
 
-        die("\033[0;31mstartup: Failed to load $pathuration for environment \"".str_log(ENVIRONMENT)."\"\033[0m\n");
+        die("\033[0;31mstartup: Failed to load ".str_log($file)." for environment \"".str_log(ENVIRONMENT)."\"\033[0m\n");
     }
 }
 
