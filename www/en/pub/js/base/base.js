@@ -69,8 +69,8 @@ console.log(data);
 
                      case 'REDIRECT':
                         // Redirect to the specified page
-console.log(data.result + ' > ' + data.message);
-                        return $.redirect(data.message);
+console.log(data.result + ' > ' + data.redirect);
+                        return $.redirect(data.redirect);
 
                     case 'MAINTENANCE':
                         // Server is in maintenance mode

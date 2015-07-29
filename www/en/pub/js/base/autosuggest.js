@@ -38,11 +38,23 @@
 		//$(lists).on("mouseleave", "li", function(e){
 		//	$(this).removeClass(options.returnClass + '_hover');
 		//});
-		$(this).on("mousedown", "div.autosuggest li", function(e){
+		$(this).on("mousedown", "div.autosuggest li", function(){
+			var d = jQuery.Event("keydown");
+			d.which = 13; // trigger enter
+
+			var e = jQuery.Event("keyup");
+			e.which = 13; // trigger enter
+
 			$this = $(this);
+
+			$this.closest("div").find("ul")
+				.removeClass("active");
+
 			$this.closest("div").find("input")
 				.val($this.text())
-				.trigger("change");
+				.trigger(d)
+				.trigger("change")
+				.trigger(e);
 		});
 
 		$(this).on("hover", "div.autosuggest li", function(e){
@@ -65,7 +77,7 @@
 		$(this).on("keydown", "div.autosuggest input", function(e){
 			var $this  = $(this);
 
-			switch (e.keyCode) {
+			switch (e.which) {
 				case 38:
 					e.stopPropagation();
 					e.preventDefault();
@@ -109,7 +121,7 @@
 						/*
 						 * Autosuggest dropdown is not visible, treat enter like normal
 						 */
-						return true;
+						return;
 					}
 
 					e.stopPropagation();

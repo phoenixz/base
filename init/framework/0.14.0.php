@@ -27,5 +27,5 @@ sql_query('CREATE TABLE `blogs_key_values` (`id`             INT(11)      NOT NU
 
                                             CONSTRAINT `fk_blogs_key_values_blogs_posts_id` FOREIGN KEY (`blogs_posts_id`)  REFERENCES `blogs_posts` (`id`) ON DELETE CASCADE
 
-                                           ) ENGINE=InnoDB AUTO_INCREMENT='.$_CONFIG['db']['autoincrement'].' DEFAULT CHARSET="'.$_CONFIG['db']['charset'].'" COLLATE="'.$_CONFIG['db']['collate'].'";');
+                                           ) ENGINE=InnoDB AUTO_INCREMENT='.$_CONFIG['db']['core']['autoincrement'].' DEFAULT CHARSET="'.$_CONFIG['db']['core']['charset'].'" COLLATE="'.$_CONFIG['db']['core']['collate'].'";');
 ?>

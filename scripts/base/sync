@@ -5,6 +5,7 @@
  *
  * @copyright Sven Oostenbrink <support@svenoostenbrink.com>
  */
+// :TODO: Add support to indicate sync other databases than the core database
 $usage = "./scripts/base/sync environment ENVIRONMENT [subenvironment SUBENVIRONMENT] [OPTIONS]\n";
 
 $help  = "The sync script can sync the target environment (for example production) database, images, etc. locally so that bug testing can be done with real data.
@@ -115,7 +116,7 @@ if($nodump){
 
 }else{
     log_console('Creating SQL dump file on remote server...', 'sync', 'white');
-    passthru($command = 'ssh -p '.$deploy_config['target_port'].' -t '.$deploy_config['target_user'].'@'.$deploy_config['target_server'].' \'rm /tmp/'.$project.'_'.$source_config['db']['db'].'.sql* -f; mysqldump --single-transaction -n -e '.(argument('nofunctions') ? '' : '-R ').'--dump-date --no-autocommit --add-drop-database -u '.$source_config['db']['user'].' -p'.escapeshellcmd($source_config['db']['pass']).' -B '.$source_config['db']['db'].' > /tmp/'.$project.'_'.$source_config['db']['db'].'.sql; gzip -q /tmp/'.$project.'_'.$source_config['db']['db'].'.sql \'', $exitcode);
+    passthru($command = 'ssh -p '.$deploy_config['target_port'].' -t '.$deploy_config['target_user'].'@'.$deploy_config['target_server'].' \'rm /tmp/'.$project.'_'.$source_config['db']['core']['db'].'.sql* -f; mysqldump --single-transaction -n -e '.(argument('nofunctions') ? '' : '-R ').'--dump-date --no-autocommit --add-drop-database -u '.$source_config['db']['core']['user'].' -p'.escapeshellcmd($source_config['db']['core']['pass']).' -B '.$source_config['db']['core']['db'].' > /tmp/'.$project.'_'.$source_config['db']['core']['db'].'.sql; gzip -q /tmp/'.$project.'_'.$source_config['db']['core']['db'].'.sql \'', $exitcode);
 
     if($exitcode){
         throw new bException('Remote mysqldump failed with exit code "'.str_log($exitcode).'"', 'rsync');
@@ -131,8 +132,8 @@ if($nocopy){
 
 }else{
     log_console('Copying remote SQL file locally...', 'sync', 'white');
-    passthru('rm /tmp/'.$project.'_'.$source_config['db']['db'].'.sql /tmp/'.$project.'_'.$source_config['db']['db'].'.sql.gz -f');
-    passthru($command = 'scp -P '.$deploy_config['target_port'].' '.$deploy_config['target_user'].'@'.$deploy_config['target_server'].':/tmp/'.$project.'_'.$source_config['db']['db'].'.sql.gz /tmp/'.$project.'_'.$source_config['db']['db'].'.sql.gz', $exitcode);
+    passthru('rm /tmp/'.$project.'_'.$source_config['db']['core']['db'].'.sql /tmp/'.$project.'_'.$source_config['db']['core']['db'].'.sql.gz -f');
+    passthru($command = 'scp -P '.$deploy_config['target_port'].' '.$deploy_config['target_user'].'@'.$deploy_config['target_server'].':/tmp/'.$project.'_'.$source_config['db']['core']['db'].'.sql.gz /tmp/'.$project.'_'.$source_config['db']['core']['db'].'.sql.gz', $exitcode);
 
     if($exitcode){
         throw new bException('Copy of remote mysqldump file to local server failed with exit code "'.str_log($exitcode).'"', 'rsync');
@@ -152,22 +153,22 @@ if($noimport){
      * Remove it first!
      */
     log_console('Importing remote SQL dump file in local MySQL server...', 'sync', 'white');
-    passthru($command = 'cd /tmp/; rm /tmp/'.$project.'_'.$source_config['db']['db'].'.sql -f; gunzip /tmp/'.$project.'_'.$source_config['db']['db'].'.sql.gz', $exitcode);
+    passthru($command = 'cd /tmp/; rm /tmp/'.$project.'_'.$source_config['db']['core']['db'].'.sql -f; gunzip /tmp/'.$project.'_'.$source_config['db']['core']['db'].'.sql.gz', $exitcode);
 
     if($exitcode){
         throw new bException('Gunzip of mysqldump file failed with exit code "'.str_log($exitcode).'"', 'rsync');
     }
 
-    passthru($command = 'cd /tmp/; sed -i -e"s/USE \`'.$source_config['db']['db'].'\`;/USE \`'.$_CONFIG['db']['db'].'\`;/" /tmp/'.$project.'_'.$source_config['db']['db'].'.sql', $exitcode);
+    passthru($command = 'cd /tmp/; sed -i -e"s/USE \`'.$source_config['db']['core']['db'].'\`;/USE \`'.$_CONFIG['db']['core']['db'].'\`;/" /tmp/'.$project.'_'.$source_config['db']['core']['db'].'.sql', $exitcode);
 
     if($exitcode){
         throw new bException('Rewrite of "USE DATABASENAME" in mysqldump file failed with exit code "'.str_log($exitcode).'"', 'rsync');
     }
 
-    sql_query('DROP   DATABASE '.$_CONFIG['db']['db']);
-    sql_query('CREATE DATABASE '.$_CONFIG['db']['db']);
+    sql_query('DROP   DATABASE '.$_CONFIG['db']['core']['db']);
+    sql_query('CREATE DATABASE '.$_CONFIG['db']['core']['db']);
 
-    passthru($command = 'cat /tmp/'.$project.'_'.$source_config['db']['db'].'.sql | mysql -u '.$_CONFIG['db']['user'].' -p"'.$_CONFIG['db']['pass'].'" -B '.$_CONFIG['db']['db'], $exitcode);
+    passthru($command = 'cat /tmp/'.$project.'_'.$source_config['db']['core']['db'].'.sql | mysql -u '.$_CONFIG['db']['core']['user'].' -p"'.$_CONFIG['db']['core']['pass'].'" -B '.$_CONFIG['db']['core']['db'], $exitcode);
 
     if($exitcode){
         throw new bException('MySQL import of mysqldump file failed with exit code "'.str_log($exitcode).'"', 'rsync');
@@ -184,13 +185,13 @@ if($nodelete){
 }else{
     log_console('Removing temporary remote SQL dump file from local and remote server...', 'sync', 'white');
 
-    passthru($command = 'ssh -p '.$deploy_config['target_port'].' -t '.$deploy_config['target_user'].'@'.$deploy_config['target_server'].' \'rm -f /tmp/'.$project.'_'.$source_config['db']['db'].'.sql*\'', $exitcode);
+    passthru($command = 'ssh -p '.$deploy_config['target_port'].' -t '.$deploy_config['target_user'].'@'.$deploy_config['target_server'].' \'rm -f /tmp/'.$project.'_'.$source_config['db']['core']['db'].'.sql*\'', $exitcode);
 
     if($exitcode){
         throw new bException('Removal of temporary mysqldump file on remote server failed with exit code "'.str_log($exitcode).'"', 'rsync');
     }
 
-    passthru($command = 'rm -f /tmp/'.$project.'_'.$source_config['db']['db'].'.sql*', $exitcode);
+    passthru($command = 'rm -f /tmp/'.$project.'_'.$source_config['db']['core']['db'].'.sql*', $exitcode);
 
     if($exitcode){
         throw new bException('Removal of temporary mysqldump file on local server failed with exit code "'.str_log($exitcode).'"', 'rsync');

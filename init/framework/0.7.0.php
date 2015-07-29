@@ -34,7 +34,7 @@ sql_query('CREATE TABLE `notifications_classes` (`id`          INT(11)     NOT N
                                                  CONSTRAINT `fk_notifications_classes_addedby`   FOREIGN KEY (`addedby`)   REFERENCES `users` (`id`) ON DELETE CASCADE,
                                                  CONSTRAINT `fk_notifications_classes_updatedby` FOREIGN KEY (`updatedby`) REFERENCES `users` (`id`) ON DELETE SET NULL
 
-                                                ) ENGINE=InnoDB AUTO_INCREMENT='.$_CONFIG['db']['autoincrement'].' DEFAULT CHARSET="'.$_CONFIG['db']['charset'].'" COLLATE="'.$_CONFIG['db']['collate'].'";');
+                                                ) ENGINE=InnoDB AUTO_INCREMENT='.$_CONFIG['db']['core']['autoincrement'].' DEFAULT CHARSET="'.$_CONFIG['db']['core']['charset'].'" COLLATE="'.$_CONFIG['db']['core']['collate'].'";');
 
 
 
@@ -64,7 +64,7 @@ sql_query('CREATE TABLE `notifications_members` (`id`          INT(11)     NOT N
                                                   CONSTRAINT `fk_notifications_members_classes_id` FOREIGN KEY (`classes_id`) REFERENCES `notifications_classes` (`id`) ON DELETE CASCADE,
                                                   CONSTRAINT `fk_notifications_members_users_id`   FOREIGN KEY (`users_id`)   REFERENCES `users`                 (`id`) ON DELETE CASCADE
 
-                                                ) ENGINE=InnoDB AUTO_INCREMENT='.$_CONFIG['db']['autoincrement'].' DEFAULT CHARSET="'.$_CONFIG['db']['charset'].'" COLLATE="'.$_CONFIG['db']['collate'].'";');
+                                                ) ENGINE=InnoDB AUTO_INCREMENT='.$_CONFIG['db']['core']['autoincrement'].' DEFAULT CHARSET="'.$_CONFIG['db']['core']['charset'].'" COLLATE="'.$_CONFIG['db']['core']['collate'].'";');
 
 
 
@@ -92,5 +92,5 @@ sql_query('CREATE TABLE `notifications` (`id`          INT(11)     NOT NULL AUTO
                                          CONSTRAINT `fk_notifications_classes_id` FOREIGN KEY (`classes_id`) REFERENCES `notifications_classes` (`id`) ON DELETE CASCADE,
                                          CONSTRAINT `fk_notifications_users_id`   FOREIGN KEY (`users_id`)   REFERENCES `users`                 (`id`) ON DELETE CASCADE
 
-                                        ) ENGINE=InnoDB AUTO_INCREMENT='.$_CONFIG['db']['autoincrement'].' DEFAULT CHARSET="'.$_CONFIG['db']['charset'].'" COLLATE="'.$_CONFIG['db']['collate'].'";');
+                                        ) ENGINE=InnoDB AUTO_INCREMENT='.$_CONFIG['db']['core']['autoincrement'].' DEFAULT CHARSET="'.$_CONFIG['db']['core']['charset'].'" COLLATE="'.$_CONFIG['db']['core']['collate'].'";');
 ?>

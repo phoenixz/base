@@ -269,19 +269,63 @@ function geo_cities_get($city, $column = false){
 /*
  * Return the closest city to the specified latitude / longitude
  */
-function geo_get_nearest_city($latitude, $longitude, $columns = '`id`, `name`, `seoname`, `states_id`'){
+function geo_get_nearest_city($latitude, $longitude, $filters = null, $columns = '`id`, `name`, `seoname`, `states_id`, `latitude`, `longitude`'){
+    global $_CONFIG;
+
     try{
+        load_config('geo');
+
+        $execute = array(':latitude'  => $latitude,
+                         ':longitude' => $longitude);
+
+        if(!$filters){
+            $filters = $_CONFIG['geo']['cities']['filters'];
+        }
+
+        if($filters){
+            foreach($filters as $key => $value){
+                switch($key){
+                    case 'min_population':
+                        $execute[':min'] = $value;
+                        $where[]         = ' `population` > :min ';
+                        break;
+
+                    case 'max_population':
+                        $execute[':max'] = $value;
+                        $where[]         = ' `population` < :max ';
+                        break;
+
+                    case 'feature_code':
+                        $in              = sql_in(array_force($value), ':fc');
+                        $execute         = array_merge($execute, $in);
+                        $where[]         = ' `feature_code` IN ('.implode(',', array_keys($in)).') ';
+                        break;
+
+                    default:
+                        throw new bException(tr('geo_get_nearest_city(): Unknown filter "%filter%" specified', array('%filter%' => str_log($key))), 'unknown');
+                }
+            }
+        }
+
+        if(!empty($where)){
+            $where = ' WHERE ('.implode($_CONFIG['geo']['cities']['filter_type'], $where).')';
+
+        }else{
+            $where = '';
+        }
+
         return sql_get('SELECT   '.$columns.',
                                  DISTANCE(`latitude`, `longitude`, :latitude, :longitude) AS distance
 
                         FROM     `geo_cities`
 
+                        '.$where.'
+
                         ORDER BY `distance`
 
                         LIMIT 1',
 
-                        array(':latitude'  => $latitude,
-                              ':longitude' => $longitude));
+                        $execute);
 
     }catch(bException $e){
         throw new bException('geo_get_nearest_city() Failed', $e);

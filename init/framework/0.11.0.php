@@ -22,7 +22,7 @@ sql_query('CREATE TABLE `contactus` (`id`          INT(11)      NOT NULL AUTO_IN
 
                                      CONSTRAINT `fk_contactus_createdby`  FOREIGN KEY (`createdby`)  REFERENCES `users`  (`id`) ON DELETE CASCADE
 
-                                    ) ENGINE=InnoDB AUTO_INCREMENT='.$_CONFIG['db']['autoincrement'].' DEFAULT CHARSET="'.$_CONFIG['db']['charset'].'" COLLATE="'.$_CONFIG['db']['collate'].'";');
+                                    ) ENGINE=InnoDB AUTO_INCREMENT='.$_CONFIG['db']['core']['autoincrement'].' DEFAULT CHARSET="'.$_CONFIG['db']['core']['charset'].'" COLLATE="'.$_CONFIG['db']['core']['collate'].'";');
 
 
 

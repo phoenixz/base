@@ -24,7 +24,7 @@ sql_query('CREATE TABLE `twilio_conversations` (`id`            INT(11)       NO
                                                 INDEX (`status`),
                                                 UNIQUE(`phone_local`, `phone_remote`)
 
-                                               ) ENGINE=InnoDB AUTO_INCREMENT='.$_CONFIG['db']['autoincrement'].' DEFAULT CHARSET="'.$_CONFIG['db']['charset'].'" COLLATE="'.$_CONFIG['db']['collate'].'";');
+                                               ) ENGINE=InnoDB AUTO_INCREMENT='.$_CONFIG['db']['core']['autoincrement'].' DEFAULT CHARSET="'.$_CONFIG['db']['core']['charset'].'" COLLATE="'.$_CONFIG['db']['core']['collate'].'";');
 
 
 
@@ -70,5 +70,5 @@ sql_query('CREATE TABLE `twilio_messages` (`id`                      INT(11)    
                                            CONSTRAINT `fk_twilio_messages_reply_to_id`             FOREIGN KEY (`reply_to_id`)             REFERENCES `twilio_messages`      (`id`) ON DELETE CASCADE,
                                            CONSTRAINT `fk_twilio_messages_twilio_conversations_id` FOREIGN KEY (`twilio_conversations_id`) REFERENCES `twilio_conversations` (`id`) ON DELETE CASCADE
 
-                                       ) ENGINE=InnoDB AUTO_INCREMENT='.$_CONFIG['db']['autoincrement'].' DEFAULT CHARSET="'.$_CONFIG['db']['charset'].'" COLLATE="'.$_CONFIG['db']['collate'].'";');
+                                       ) ENGINE=InnoDB AUTO_INCREMENT='.$_CONFIG['db']['core']['autoincrement'].' DEFAULT CHARSET="'.$_CONFIG['db']['core']['charset'].'" COLLATE="'.$_CONFIG['db']['core']['collate'].'";');
 ?>
