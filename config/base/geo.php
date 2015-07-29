@@ -9,7 +9,8 @@
  * @license http://opensource.org/licenses/GPL-2.0 GNU Public License, Version 2
  * @copyright Sven Oostenbrink <support@svenoostenbrink.com>, Johan Geuze
  */
-$_CONFIG['geo'] = array('cities' => array('filter_type' => ' OR ',
+$_CONFIG['geo'] = array('lookup' => 'geonames',
+                        'cities' => array('filter_type' => ' OR ',
                                           'filters'     => array('min_population' => 200000,
                                                                  'feature_code'   => 'PPLA,PPLA2')));
 ?>
