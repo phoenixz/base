@@ -132,23 +132,27 @@ function uncaught_exception($e, $die = 1){
 
 
 /*
- * for translations
+ * For translations
  */
-function tr($text, $from = false, $to = false){
+function tr($text, $replace = null){
     try{
-        if($from){
-            if($to){
-                return str_replace($from, $to, $text);
+        if($replace){
+            $text = str_replace(array_keys($replace), array_values($replace), $text, $count);
+
+            /*
+             * Only on non production machines, crash when not all entries were replaced as an extra check.
+             */
+            if((ENVIRONMENT != 'production') and ($count != count($replace))){
+                throw new bException('tr(): No replacements found', $e);
             }
 
-            return str_replace(array_keys($from), array_values($from), $text);
-
+            return $text;
         }
 
         return $text;
 
     }catch(Exception $e){
-        throw new bException('tr(): Failed with text "'.str_log($text).'". Check the $from and $to configuration!', $e);
+        throw new bException('tr(): Failed with text "'.str_log($text).'". Very likely issue with $replace', $e);
     }
 }
 
