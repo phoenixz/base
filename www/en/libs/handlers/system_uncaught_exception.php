@@ -55,6 +55,7 @@ try{
 
     }else{
         log_screen('* '.tr('Uncaught exception').' *', $code);
+        load_libs('audio');
         audio_play('exception');
 
         if($e instanceof bException){
