@@ -90,10 +90,22 @@ function upload_ocupload($selector = "input[name=upload]", $url = '/ajax/upload.
 /*
  *
  */
-function upload_multi_js($element, $url, $done_script = '', $fail_script = '') {
+function upload_multi_js($element, $url, $done_script = '', $fail_script = '', $processall_script = '') {
     html_load_js('base/jquery-ui/jquery-ui');
     html_load_js('base/jfu/jquery.iframe-transport');
     html_load_js('base/jfu/jquery.fileupload');
+
+    if(!$processall_script){
+        $processall_script = '
+            var progress = parseInt(data.loaded / data.total * 100, 10);
+
+            $(".progress.bar").css(
+                "width",
+                progress + "%"
+            );
+
+            $("#progress_nr").html(progress + "%");';
+    }
 
     return html_script('$("'.$element.'").fileupload({
             url      : "'.$url.'",
@@ -104,14 +116,7 @@ function upload_multi_js($element, $url, $done_script = '', $fail_script = '') {
             ($fail_script ? "\n".'fail  : function (e, data) { $.handleFail(data, '.$fail_script.'); },' : '').'
 
             progressall: function (e, data) {
-                var progress = parseInt(data.loaded / data.total * 100, 10);
-
-                $(".progress.bar").css(
-                    "width",
-                    progress + "%"
-                );
-
-                $("#progress_nr").html(progress + "%");
+                '.$processall_script.'
             }
         });');
 }
