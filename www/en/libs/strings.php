@@ -513,7 +513,7 @@ function str_log($source, $truncate = 511, $separator = ', '){
             }
         }
 
-        return str_replace('  ', ' ', str_replace("\n", ' ', str_truncate($source, $truncate, ' ... ', 'center')));
+        return htmlentities(str_replace('  ', ' ', str_replace("\n", ' ', str_truncate($source, $truncate, ' ... ', 'center'))), ENT_COMPAT | ENT_HTML401, 'UTF-8', false);
 
     }catch(Exception $e){
         throw new bException('str_log(): Failed', $e);
