@@ -306,6 +306,7 @@ try{
                 define('PWD'   , realpath(dirname(__FILE__).'/..').'/');
                 define('TEST'  , (isset($_GET['test'])  ? $_GET['test']  : false));
                 define('FORCE' , (isset($_GET['force']) ? $_GET['force'] : false));
+                define('QUIET' , (PLATFORM == 'production'));
 
                 if($_CONFIG['maintenance']){
                     /*
