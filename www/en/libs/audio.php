@@ -15,6 +15,13 @@ function audio_play($class = null){
     global $_CONFIG;
 
     try{
+        if(QUIET){
+            /*
+             * We're running quiet mode, do not play any audio!
+             */
+            return false;
+        }
+
         /*
          * Check if there is no given class
          */
@@ -76,6 +83,7 @@ function audio_play($class = null){
 
         }
 
+        return true;
 
     }catch(Exception $e){
         throw new bException('audio_play(): Failed', $e);

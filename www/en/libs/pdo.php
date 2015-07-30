@@ -90,6 +90,7 @@ function sql_query($query, $execute = false, $handle_exceptions = true, $connect
  */
 function sql_prepare($query, $connector = 'core'){
     try{
+        sql_init($connector);
         return $GLOBALS['sql_'.sql_connector_name($connector)]->prepare($query);
 
     }catch(Exception $e){
