@@ -434,14 +434,16 @@ function html_header($params = null, $meta = array()){
            $params['meta']['robots'] = 'noindex';
         }
 
-        $meta['title'] = html_title($meta['title']);
-        unset($meta['title']);
+        $meta['title'] = html_title(isset_get($meta['title'], $params['title']));
+        unset($params['title']);
 
         $retval = "<!DOCTYPE ".$params['doctype'].">\n".
                   "<".$params['html'].">\n".
                   "<head>\n".
                   "<meta http-equiv=\"Content-Type\" content=\"text/html;charset=".$_CONFIG['charset']."\">\n".
-                  "<title>".$params['title']."</title>\n";
+                  "<title>".$meta['title']."</title>\n";
+
+        unset($meta['title']);
 
         foreach($params['prefetch_dns'] as $prefetch){
             $retval .= '<link rel="dns-prefetch" href="//'.$prefetch."\">\n";
