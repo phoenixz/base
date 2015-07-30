@@ -29,7 +29,7 @@ function audio_play($class = null){
             throw new bException(tr('audio_play(): This audio class does not exist "%class%"', array('%class%' => str_log($class))), 'audio');
         }
 
-        $file = ROOT.'/data/audio/'.$_CONFIG['audio']['classes'][$class];
+        $file = ROOT.'data/audio/'.$_CONFIG['audio']['classes'][$class];
 
         /*
          * Check if audio file exists
@@ -46,7 +46,7 @@ function audio_play($class = null){
              * Play the audio local
              */
             try{
-                safe_exec($_CONFIG['audio']['command'].' '.$file);
+                safe_exec($_CONFIG['audio']['command'].' '.$file.' &');
 
             }catch(Exception $e){
                 throw new bException(tr('audio_play(): Can not play audio file "%file%", commando "%command%" returned error: "%error%"', array('%file%' => str_log($file), '%command%' => str_log($_CONFIG['audio']['command']), '%error%' => str_log($e))), 'audio');
