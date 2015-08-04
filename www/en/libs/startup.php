@@ -321,12 +321,47 @@ try{
                     define('SCRIPT', str_runtil(str_rfrom($_SERVER['PHP_SELF'], '/'), '.php'));
                 }
 
+                /*
+                 * Set session and cookie parameters
+                 */
                 try{
-                    session_set_cookie_params($_CONFIG['cookie']['lifetime'], $_CONFIG['cookie']['path'], $_CONFIG['cookie']['domain'], $_CONFIG['cookie']['secure'], $_CONFIG['cookie']['httponly']);
+                    if($_CONFIG['sessions']['regenerate_id']){
+                        if(isset($_SESSION['created']) and (time() - $_SESSION['created'] > $_CONFIG['sessions']['regenerate_id'])){
+                            /*
+                             * Use "created" to monitor session id age and
+                             * refresh it periodically to mitigate attacks on
+                             * sessions like session fixation
+                             */
+                            session_regenerate_id(true);
+                            $_SESSION['created'] = time();
+                        }
+                    }
+
+                    if($_CONFIG['sessions']['lifetime']){
+                        if(ini_get('session.gc_maxlifetime') < $_CONFIG['sessions']['lifetime']){
+                            /*
+                             * Ensure that session data is not considdered
+                             * garbage within the configured session lifetime!
+                             */
+                            ini_set('session.gc_maxlifetime', $_CONFIG['sessions']['lifetime']);
+                        }
+
+                        if(isset($_SESSION['last_activity']) and (time() - $_SESSION['last_activity'] > $_CONFIG['sessions']['lifetime'])){
+                            /*
+                             * Session expired!
+                             */
+                            session_unset();
+                            session_destroy();
+                        }
+                    }
+
+                    $_SESSION['last_activity'] = time();
 
                     if(!empty($_CONFIG['sessions']['shared_memory'])){
                         /*
-                         * Store session data in share memory. This is very useful for security on shared servers if you do not want your session data available to other users
+                         * Store session data in share memory. This is very
+                         * useful for security on shared servers if you do not
+                         * want your session data available to other users
                          */
                         ini_set('session.save_handler', 'mm');
                     }

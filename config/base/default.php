@@ -272,10 +272,13 @@ $_CONFIG['security']           = array('signin'           => array('save_passwor
 
                                        'user'             => 'apache',                                      //
                                        'group'            => 'apache',                                      //
-                                       'umask'            =>  0007);                                         //
+                                       'umask'            =>  0007);                                        //
 
 // Sessions
-$_CONFIG['sessions']           = array('shared_memory'    => false,                                         // Store session data in shared memory, very useful for security on shared servers!
+$_CONFIG['sessions']           = array('lifetime'         => 3600,                                          // Session lifetime before the session will be closed and reset
+                                       'regenerate_id'    => 600,                                           // Time required to regenerate the session id, used to mitigate session fixation attacks. MUST BE LOWER THAN $_CONFIG[session][lifetime]!
+
+                                       'shared_memory'    => false,                                         // Store session data in shared memory, very useful for security on shared servers!
 
                                        'extended'         => array('age'           => 2592000,              //
                                                                    'clear'         => true),                //
