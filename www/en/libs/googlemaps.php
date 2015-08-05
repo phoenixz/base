@@ -93,124 +93,126 @@ function googlemaps_map_with_markers($markers = array(), $divid = 'map-canvas') 
 
         //google maps
         $html='<script>
-        var map;
-        var directionDisplay;
-        var directionsService = new google.maps.DirectionsService();
-        function gmap_initialize() {
-            var mapOptions = {
-                mapTypeId: google.maps.MapTypeId.ROADMAP
-            };
-            map = new google.maps.Map(document.getElementById(\''.$divid.'\'),
-            mapOptions);
+        $(document).on("ready", function(){
 
-            var locations = [';
+            var map;
+            var directionDisplay;
+            var directionsService = new google.maps.DirectionsService();
+            function gmap_initialize() {
+                var mapOptions = {
+                    mapTypeId: google.maps.MapTypeId.ROADMAP
+                };
+                map = new google.maps.Map(document.getElementById(\''.$divid.'\'),
+                mapOptions);
 
-        if(empty($markers)){
-            throw new bException('googlemaps_map_with_markers(): Failed to place any markers', isset_get($e, 'markerfailed'));
-        }
+                var locations = [';
 
-        foreach($markers as $key => $data) {
-            try{
-                if(empty($data['lat'])){
-                    throw new bException('googlemaps_map_with_markers(): No latitute specified for marker "'.$key.'"', isset_get($e, 'markerfailed'));
-                }
-
-                if(empty($data['lng'])){
-                    throw new bException('googlemaps_map_with_markers(): No longitude specified for marker "'.$key.'"', isset_get($e, 'markerfailed'));
-                }
-
-                if(!isset($first)) {
-                    $first=$data;
-                }
-
-                if(empty($data['icon'])) {
-                    $data['icon']='/pub/img/'.SUBENVIRONMENTNAME.'/googlemaps/a.png';
-                }
-
-                $list[] = '[\''.$data['html'].'\', '.$data['lat'].', '.$data['lng'].', \''.$data['icon'].'\']';
-
-            }catch(Exception $e){
-                /*
-                 * Marker failed. Ignore it and continue.
-                 */
-                unset($markers[$key]);
+            if(empty($markers)){
+                throw new bException('googlemaps_map_with_markers(): Failed to place any markers', isset_get($e, 'markerfailed'));
             }
-        }
+            foreach($markers as $key => $data) {
+                try{
+                    if(empty($data['lat'])){
+                        throw new bException('googlemaps_map_with_markers(): No latitute specified for marker "'.$key.'"', isset_get($e, 'markerfailed'));
+                    }
 
-        $html .= implode(',', $list).'];
+                    if(empty($data['lng'])){
+                        throw new bException('googlemaps_map_with_markers(): No longitude specified for marker "'.$key.'"', isset_get($e, 'markerfailed'));
+                    }
 
-            var infowindow = new google.maps.InfoWindow();
+                    if(!isset($first)) {
+                        $first=$data;
+                    }
 
-            var marker, i;
-            var markers = new Array();
-            var bounds = new google.maps.LatLngBounds ();
+                    if(empty($data['icon'])) {
+                        $data['icon']='/pub/img/'.SUBENVIRONMENTNAME.'/googlemaps/a.png';
+                    }
 
-            for (i = 0; i < locations.length; i++) {
-                marker = new google.maps.Marker({
-                position: new google.maps.LatLng(locations[i][1], locations[i][2]),
-                map: map,
-                icon: locations[i][3]
+                    $list[] = '[\''.$data['html'].'\', '.$data['lat'].', '.$data['lng'].', \''.$data['icon'].'\']';
+
+                }catch(Exception $e){
+                    /*
+                     * Marker failed. Ignore it and continue.
+                     */
+                    unset($markers[$key]);
+                }
+            }
+            $html .= implode(',', $list).'];
+                var infowindow = new google.maps.InfoWindow();
+
+                var marker, i;
+                var markers = new Array();
+                var bounds = new google.maps.LatLngBounds ();
+
+                for (i = 0; i < locations.length; i++) {
+                    marker = new google.maps.Marker({
+                    position: new google.maps.LatLng(locations[i][1], locations[i][2]),
+                    map: map,
+                    icon: locations[i][3]
+                    });
+
+                    bounds.extend (new google.maps.LatLng(locations[i][1], locations[i][2]));
+
+                    google.maps.event.addListener(marker, \'click\', (function(marker, i) {
+                        return function() {
+                            infowindow.setContent(locations[i][0]);
+                            infowindow.open(map, marker);
+                        }
+                    })(marker, i));
+                }
+
+                map.fitBounds (bounds);
+                //fix zoom if the zoomlevel is too high
+                var listener = google.maps.event.addListener(map, "idle", function() {
+                    if (map.getZoom() > 16) map.setZoom(16);
+                    google.maps.event.removeListener(listener);
                 });
 
-                bounds.extend (new google.maps.LatLng(locations[i][1], locations[i][2]));
+                //routeplanner options
+                var route_start = null;
 
-                google.maps.event.addListener(marker, \'click\', (function(marker, i) {
-                    return function() {
-                        infowindow.setContent(locations[i][0]);
-                        infowindow.open(map, marker);
-                    }
-                })(marker, i));
+                var latlng = new google.maps.LatLng(locations[0][1], locations[0][2]);
+                directionsDisplay = new google.maps.DirectionsRenderer();
+                var myOptions = {
+                    zoom: 14,
+                    center: latlng,
+                    mapTypeId: google.maps.MapTypeId.ROADMAP,
+                    mapTypeControl: false
+                };
+                directionsDisplay.setMap(map);
+                directionsDisplay.setPanel(document.getElementById("directionsPanel"));
             }
 
-            map.fitBounds (bounds);
-            //fix zoom if the zoomlevel is too high
-            var listener = google.maps.event.addListener(map, "idle", function() {
-                if (map.getZoom() > 16) map.setZoom(16);
-                google.maps.event.removeListener(listener);
+            google.maps.event.addDomListener(window, \'load\', gmap_initialize);
+
+            $(document).ready(function() {
+                $(document).on("click",".gmap_pan", function(event){
+                    var coords =$(this).prop(\'id\').split(\',\');
+                    map.panTo(new google.maps.LatLng(coords[0],coords[1]));
+                    map.setZoom(15);
+                });
             });
 
-            //routeplanner options
-            var route_start = null;
+            function calcRoute() {
+                var route_end = "'.$first['lat'].','.$first['lng'].'";
+                var request = {
+                    origin:route_start,
+                    destination:route_end,
+                    travelMode: google.maps.DirectionsTravelMode.DRIVING
+                };
+                directionsService.route(request, function(response, status) {
+                    if (status == google.maps.DirectionsStatus.OK) {
+                        directionsDisplay.setDirections(response);
+                        $("#directionsPanelWrap").show();
+                    } else {
+                        $.flashMessage("'.tr('Unable to calculate a route between your location and this company').'", "error");
+                    }
+                });
+            }
 
-            var latlng = new google.maps.LatLng(locations[0][1], locations[0][2]);
-            directionsDisplay = new google.maps.DirectionsRenderer();
-            var myOptions = {
-                zoom: 14,
-                center: latlng,
-                mapTypeId: google.maps.MapTypeId.ROADMAP,
-                mapTypeControl: false
-            };
-            directionsDisplay.setMap(map);
-            directionsDisplay.setPanel(document.getElementById("directionsPanel"));
-        }
-
-        google.maps.event.addDomListener(window, \'load\', gmap_initialize);
-
-        $(document).ready(function() {
-            $(document).on("click",".gmap_pan", function(event){
-                var coords =$(this).prop(\'id\').split(\',\');
-                map.panTo(new google.maps.LatLng(coords[0],coords[1]));
-                map.setZoom(15);
-            });
         });
-
-        function calcRoute() {
-            var route_end = "'.$first['lat'].','.$first['lng'].'";
-            var request = {
-                origin:route_start,
-                destination:route_end,
-                travelMode: google.maps.DirectionsTravelMode.DRIVING
-            };
-            directionsService.route(request, function(response, status) {
-                if (status == google.maps.DirectionsStatus.OK) {
-                    directionsDisplay.setDirections(response);
-                    $("#directionsPanelWrap").show();
-                } else {
-                    $.flashMessage("'.tr('Unable to calculate a route between your location and this company').'", "error");
-                }
-            });
-        }
         </script>';
+
         return $html;
 
     }catch(Exception $e){
