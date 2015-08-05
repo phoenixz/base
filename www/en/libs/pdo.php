@@ -187,27 +187,31 @@ function sql_get($query, $column = null, $execute = null, $connector = 'core'){
 /*
  * Execute query and return only the first row
  */
-function sql_list($query, $column = null, $execute = null, $connector = 'core'){
+function sql_list($query, $execute = null, $numerical_array = false, $connector = 'core'){
     try{
-        if(is_array($column)){
-            /*
-             * Argument shift, no columns were specified.
-             */
-            $tmp     = $execute;
-            $execute = $column;
-            $column  = $tmp;
-            unset($tmp);
+        if(is_object($query)){
+            $r     = $query;
+            $query = $r->queryString;
+
+        }else{
+            $r = sql_query($query, $execute, true, $connector);
         }
 
-        $r      = sql_query($query, $execute, true, $connector);
         $retval = array();
 
-        while($row = sql_fetch($r, $column)){
+        while($row = sql_fetch($r)){
             if(is_scalar($row)){
                 $retval[] = $row;
 
             }else{
-                switch(count($row)){
+                switch(count($row) and !$numerical_array){
+                    case 0:
+                        /*
+                         * Force numerical array
+                         */
+                        $retval[] = $row;
+                        break;
+
                     case 1:
                         $retval[] = array_shift($row);
                         break;
