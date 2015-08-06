@@ -204,7 +204,7 @@ function sql_list($query, $execute = null, $numerical_array = false, $connector 
                 $retval[] = $row;
 
             }else{
-                switch(count($row) and !$numerical_array){
+                switch($numerical_array ? 0 : count($row)){
                     case 0:
                         /*
                          * Force numerical array
