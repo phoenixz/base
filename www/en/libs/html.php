@@ -1391,6 +1391,7 @@ function html_autosuggest($params){
     try{
         array_params($params);
         array_default($params, 'class'            , '');
+        array_default($params, 'input_class'      , '');
         array_default($params, 'name'             , '');
         array_default($params, 'id'               , $params['name']);
         array_default($params, 'placeholder'      , '');
@@ -1401,8 +1402,8 @@ function html_autosuggest($params){
         array_default($params, 'filter_selector'  , '');
         array_default($params, 'selector'         , 'form.autosuggest');
 
-        $retval = ' <div class="autosuggest">
-                        <input autocomplete="off" spellcheck="false" role="combobox" dir="ltr" class="'.str_ends($params['class'], ' ').'" type="text" name="'.$params['name'].'" id="'.$params['id'].'" placeholder="'.$params['placeholder'].'" data-source="'.$params['source'].'" value="'.$params['value'].'"'.($params['filter_selector'] ? ' data-filter-selector="'.$params['filter_selector'].'"' : '').($params['maxlength'] ? ' maxlength="'.$params['maxlength'].'"' : '').($params['required'] ? ' required' : '').'>
+        $retval = ' <div class="autosuggest'.($params['class'] ? ' '.$params['class'] : '').'">
+                        <input autocomplete="off" spellcheck="false" role="combobox" dir="ltr" '.($params['input_class'] ? 'class="'.$params['input_class'].'" ' : '').'type="text" name="'.$params['name'].'" id="'.$params['id'].'" placeholder="'.$params['placeholder'].'" data-source="'.$params['source'].'" value="'.$params['value'].'"'.($params['filter_selector'] ? ' data-filter-selector="'.$params['filter_selector'].'"' : '').($params['maxlength'] ? ' maxlength="'.$params['maxlength'].'"' : '').($params['required'] ? ' required' : '').'>
                         <ul>
                         </ul>
                     </div>';
