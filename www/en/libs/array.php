@@ -117,7 +117,7 @@ function array_default(&$source, $key, $default){
 function array_key_check($source, $keys){
     try{
         foreach(array_force($keys) as $key){
-            if(!isset($source[$key]) or ($source[$key] == null)){
+            if(!isset($source[$key]) or ($source[$key] === null)){
                 throw new bException('array_key_check(): Key "'.str_log($key).'" was not specified in array', 'not_specified');
             }
         }
@@ -823,29 +823,6 @@ function array_filtered_merge(){
 
     }catch(Exception $e){
         throw new bException('array_filtered_merge(): Failed', $e);
-    }
-}
-
-
-
-/*
- * Return all elements from source1. If the value of one element is null, then try to return it from source2
- */
-function array_not_null(&$source1, $source2){
-    try{
-        $modified = false;
-
-        foreach($source1 as $key => $value){
-            if($value === null){
-                $source1[$key] = isset_get($source2[$key]);
-                $modified      = true;
-            }
-        }
-
-        return $modified;
-
-    }catch(Exception $e){
-        throw new bException('array_not_null(): Failed', $e);
     }
 }
 ?>
