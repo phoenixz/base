@@ -698,6 +698,21 @@ class validate_form {
 
 
     /*
+     * Ensure that the specified value is in the specified array values
+     * Basically this is an enum check
+     */
+    function inArray($value, $array, $msg = null){
+        if(!in_array($value, $array)){
+            $this->setError($msg);
+            return false;
+        }
+
+        return $value;
+    }
+
+
+
+    /*
      *
      */
     function sqlQuery($sql, $result, $msg = null){

@@ -390,10 +390,15 @@ function init_sort_files($a, $b){
 /*
  * Execute specified hook file
  */
-function init_hook($hook, $disabled = false){
+function init_hook($hook, $params = null, $disabled = false){
     try{
+        if(is_bool($params)){
+            $disabled = $params;
+            $params   = null;
+        }
+
         if(!$disabled and file_exists(ROOT.'scripts/hooks/'.$hook)){
-            return script_exec('hooks/'.$hook);
+            return script_exec('hooks/'.$hook, $params);
         }
 
     }catch(Exception $e){
