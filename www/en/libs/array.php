@@ -117,7 +117,7 @@ function array_default(&$source, $key, $default){
 function array_key_check($source, $keys){
     try{
         foreach(array_force($keys) as $key){
-            if(!isset($source[$key]) or ($source[$key] == null)){
+            if(!isset($source[$key]) or ($source[$key] === null)){
                 throw new bException('array_key_check(): Key "'.str_log($key).'" was not specified in array', 'not_specified');
             }
         }

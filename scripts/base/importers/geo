@@ -20,9 +20,10 @@ cli_only();
 /*
  * Get some optional data required for loaddata
  */
-$username = argument('user'    , true, argument('username'  , true, 'toolkit'));
-$password = argument('pass'    , true, argument('password'  , true, 'toolkit'));
-$database = argument('database', true, 'geonames');
+$username     = argument('user'    , true, argument('username'  , true, 'toolkit'));
+$password     = argument('pass'    , true, argument('password'  , true, 'toolkit'));
+$database     = argument('database', true, 'geonames');
+$skipcounties = argument('nocounties');
 
 /*
  * Import related data
@@ -167,8 +168,8 @@ switch(argument(0)){
         $geosql = new PDO('mysql:dbname='.$database.';host=localhost', $username, $password);
         $geosql->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
         $geosql->query('USE `'.$database.'`;');
-        $geosql->query('SET NAMES '.$_CONFIG['db']['charset']);
-        $geosql->query('SET CHARACTER SET '.$_CONFIG['db']['charset']);
+        $geosql->query('SET NAMES '.$_CONFIG['db']['core']['charset']);
+        $geosql->query('SET CHARACTER SET '.$_CONFIG['db']['core']['charset']);
 
         $r = $geosql->query('SHOW TABLES LIKE "geonames"');
 
@@ -202,19 +203,17 @@ switch(argument(0)){
                               ':childs_id'  => $row['childId']));
         }
 
-        $geosql->query('ALTER TABLE `geonames` ADD INDEX (`geonameid`);');
-        $geosql->query('ALTER TABLE `geonames` ADD INDEX (`parents_id`);');
-        $geosql->query('ALTER TABLE `geonames` ADD INDEX (`name`);');
-        $geosql->query('ALTER TABLE `geonames` ADD INDEX (`country`);');
-        $geosql->query('ALTER TABLE `geonames` ADD INDEX (`admin1`);');
-        $geosql->query('ALTER TABLE `geonames` ADD INDEX (`admin2`);');
-        $geosql->query('ALTER TABLE `geonames` ADD INDEX (`moddate`);');
-        $geosql->query('ALTER TABLE `geonames` ADD INDEX (`latitude`);');
-        $geosql->query('ALTER TABLE `geonames` ADD INDEX (`longitude`);');
+        log_console('Applying indices', '', 'white');
+
+        foreach(array('geonameid', 'parents_id', 'name', 'country', 'admin1', 'admin2', 'moddate', 'latitude', 'longitude') as $column){
+            $geosql->query('ALTER TABLE `geonames` ADD INDEX (`geonameid`);');
+            log_console(tr('Applied index for "%column%"', array('%column%', $column)), '', 'green');
+        }
 
         ///*
         // * Remove double entries
         // */
+// :TODO: Implement
         //$geosql->query('SELECT geonameid, name, country, latitude, longiture, moddate FROM geonames GROUPBY name, latitude, longitude HAVING COUNT(*) > 1');
 
         break;
@@ -235,8 +234,8 @@ switch(argument(0)){
         $geosql = new PDO('mysql:dbname='.$database.';host=localhost', $username, $password);
         $geosql->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
         $geosql->query('USE '.$database.';');
-        $geosql->query('SET NAMES '.$_CONFIG['db']['charset']);
-        $geosql->query('SET CHARACTER SET '.$_CONFIG['db']['charset']);
+        $geosql->query('SET NAMES '.$_CONFIG['db']['core']['charset']);
+        $geosql->query('SET CHARACTER SET '.$_CONFIG['db']['core']['charset']);
 
         load_libs('seo');
 
@@ -458,7 +457,7 @@ switch(argument(0)){
             /*
              * Import counties?
              */
-            if(!$types['counties']){
+            if(!$types['counties'] or $skipcounties){
                 log_console('Not importing counties...', '', 'yellow');
 
             }else{
@@ -578,7 +577,7 @@ switch(argument(0)){
 
                                            FROM   `geo_countries`'.($country ? '
 
-                                           WHERE `id` = '.$country : ''));
+                                           WHERE  `id` = '.$country : ''));
                 }
 
                 $city_exists_statement = sql_prepare('SELECT `geonames_id`,
@@ -607,7 +606,7 @@ switch(argument(0)){
 
                                                                   FROM   `geo_states`
 
-                                                                  WHERE   `countries_id` = '.$countries_id);
+                                                                  WHERE  `countries_id` = '.$countries_id);
 
                     unset($usecounties);
 
@@ -670,7 +669,7 @@ switch(argument(0)){
                                     /*
                                      * Okay, we found cities for a county, we can presume that all counties are then okay.
                                      */
-                                    $usecounties = true;
+                                    $usecounties = (true and $skipcounties);
                                     log_console('Cities per county match cities per state, using counties - cities links', 'match', 'white');
 
                                 }else{
@@ -681,7 +680,7 @@ switch(argument(0)){
                         }
 
                         if(!$usecounties){
-                            log_console('Adding citied without counties - cities links');
+                            log_console('Adding cities without counties - cities links', '');
 
                             /*
                              * This state has no counties
