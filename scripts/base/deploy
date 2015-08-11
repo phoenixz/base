@@ -282,7 +282,7 @@ if($nosyntax){
     }
 
     log_console('', '');
-    init_hook('deploy_post_content', $nohooks);
+    init_hook('deploy_post_content', $nohooks, array('exitcode' => $return));
 
 }
 
@@ -313,7 +313,8 @@ if($noversion){
 
     exec('cd '.ROOT.'; git add config/project.php; git commit -m "Upgraded project \"'.PROJECT.'\" version to \"'.$newversion.'\""');
 
-    init_hook('deploy_post_version', $nohooks);
+    init_hook('deploy_post_version', $nohooks, array('oldversion' => $oldversion,
+                                                     'newversion' => $newversion));
 
 }
 
@@ -334,7 +335,7 @@ if($noversion or $notag){
         throw new bException('Git tagging failed with exit code "'.str_log($exitcode).'"', 'git_tag');
     }
 
-    init_hook('deploy_post_tag', $nohooks);
+    init_hook('deploy_post_tag', $nohooks, array('exitcode' => $exitcode));
 }
 
 
@@ -354,7 +355,7 @@ if($noversion or $notag or $nopush){
         throw new bException('Git push failed with exit code "'.str_log($exitcode).'"', 'git_push');
     }
 
-    init_hook('deploy_post_push', $nohooks);
+    init_hook('deploy_post_push', $nohooks, array('exitcode' => $exitcode));
 }
 
 /*
@@ -410,7 +411,7 @@ if($notouch){
         throw new bException('Touch failed with exit code "'.str_log($exitcode).'"', 'git_push');
     }
 
-    init_hook('deploy_post_touch', $nohooks);
+    init_hook('deploy_post_touch', $nohooks, array('exitcode' => $exitcode));
 }
 
 
@@ -432,7 +433,10 @@ foreach($targets as $target_environment){
 
     log_console('Deploying to target environment "'.str_log($target_environment).'"', 'deploy', 'white');
 
-    init_hook('deploy_pre', $nohooks);
+    init_hook('deploy_pre', $nohooks, array('target_user'   => $deploy_config['target_user'],
+                                            'target_port'   => $deploy_config['target_port'],
+                                            'target_server' => $deploy_config['target_server'],
+                                            'target_dir'    => $deploy_config['target_dir']));
 
 
 
@@ -570,7 +574,7 @@ foreach($targets as $target_environment){
                 }
             }
 
-            init_hook('deploy_post_syntax', $nohooks);
+            init_hook('deploy_post_syntax', $nohooks, array('exitcode' => $return));
         }
 
 
@@ -582,7 +586,10 @@ foreach($targets as $target_environment){
 
         log_screen($display_subenvironment.'Starting deploy '.($subenvironment ? 'for subenvironment "'.$subenvironment.'" ' : '').'on "'.date('d M Y h:i').'"', 'deploy', 'white');
 
-        init_hook('deploy_pre_deploy', $nohooks);
+        init_hook('deploy_pre_deploy', $nohooks, array('target_user'    => $deploy_config['target_user'],
+                                                       'target_port'    => $deploy_config['target_port'],
+                                                       'target_server'  => $deploy_config['target_server'],
+                                                       'target_dir'     => $deploy_config['target_dir']));
 
 
 
@@ -614,7 +621,7 @@ foreach($targets as $target_environment){
                     log_screen($display_subenvironment.'Translating to '.$language, 'deploy', 'white');
                     script_exec('base/translate', array($language));
 
-                    init_hook('deploy_post_translation', $nohooks);
+                    init_hook('deploy_post_translation', $nohooks, array('languages' => $deploy_config['languages']));
                 }
             }
         }
@@ -721,7 +728,10 @@ foreach($targets as $target_environment){
                 throw new bException('Rsync failed with exit code "'.str_log($exitcode).'"', 'rsync');
             }
 
-            init_hook('deploy_post_deploy', $nohooks);
+            init_hook('deploy_post_deploy', $nohooks, array('target_user'    => $deploy_config['target_user'],
+                                                            'target_port'    => $deploy_config['target_port'],
+                                                            'target_server'  => $deploy_config['target_server'],
+                                                            'target_dir'     => $deploy_config['target_dir']));
         }
 
 
@@ -746,7 +756,10 @@ foreach($targets as $target_environment){
                 throw new bException('Fixpermissions failed with exit code "'.str_log($exitcode).'"', 'fixpermissions');
             }
 
-            init_hook('deploy_post_permission', $nohooks);
+            init_hook('deploy_post_permission', $nohooks, array('target_user'   => $deploy_config['target_user'],
+                                                                'target_port'   => $deploy_config['target_port'],
+                                                                'target_server' => $deploy_config['target_server'],
+                                                                'target_dir'    => $deploy_config['target_dir']));
         }
 
 
@@ -794,7 +807,10 @@ foreach($targets as $target_environment){
                 throw new bException('Target version init failed with exit code "'.str_log($exitcode).'"', 'target_init');
             }
 
-            init_hook('deploy_post_init', $nohooks);
+            init_hook('deploy_post_init', $nohooks, array('target_user'     => $deploy_config['target_user'],
+                                                          'target_port'     => $deploy_config['target_port'],
+                                                          'target_server'   => $deploy_config['target_server'],
+                                                          'target_dir'      => $deploy_config['target_dir']));
         }
 
 
@@ -834,7 +850,7 @@ foreach($targets as $target_environment){
                 }
             }
 
-            init_hook('deploy_post_sitemap', $nohooks);
+            init_hook('deploy_post_sitemap', $nohooks, array('exitcode' => $exitcode));
         }
 
         /*
@@ -847,7 +863,10 @@ foreach($targets as $target_environment){
             log_screen($display_subenvironment.'Executing deploy notifications', 'deploy', 'white');
 
             notify('deploy', 'Deployed project "'.PROJECT.'" subenvironment "'.str_log($subenvironment).'" and languages "'.str_log(implode(', ', $deploy_config['languages'])).'"', null, $subenvironment);
-            init_hook('deploy_post_notify', $nohooks);
+            init_hook('deploy_post_notify', $nohooks, array('target_user'   => $deploy_config['target_user'],
+                                                            'target_port'   => $deploy_config['target_port'],
+                                                            'target_server' => $deploy_config['target_server'],
+                                                            'target_dir'    => $deploy_config['target_dir']));
         }
 
         /*
@@ -882,17 +901,25 @@ foreach($targets as $target_environment){
             log_screen($display_subenvironment.'Finished deploy for project "'.strtolower(PROJECT).'" environment "'.$target_environment.'"', 'deploy', 'green');
         }
 
-        init_hook('deploy_post_deploy', $nohooks);
+        init_hook('deploy_post_deploy', $nohooks, array('target_user'   => $deploy_config['target_user'],
+                                                        'target_port'   => $deploy_config['target_port'],
+                                                        'target_server' => $deploy_config['target_server'],
+                                                        'target_dir'    => $deploy_config['target_dir']));
     }
 
-    init_hook('deploy_post', $nohooks);
+    init_hook('deploy_post', $nohooks, array('target_user'      => $deploy_config['target_user'],
+                                             'target_port'      => $deploy_config['target_port'],
+                                             'target_server'    => $deploy_config['target_server']));
 
     if(count($subenvironments) > 1){
         log_screen('Finished deploy for all environments in target "'.str_log($target_environment).'"', 'deploy', 'green');
     }
 }
 
-init_hook('deploy_finish', $nohooks);
+init_hook('deploy_finish', $nohooks, array('target_user'    => $deploy_config['target_user'],
+                                           'target_port'    => $deploy_config['target_port'],
+                                           'target_server'  => $deploy_config['target_server'],
+                                           'target_dir'     => $deploy_config['target_dir']));
 
 if(count($subenvironments) > 1){
     log_screen('Finished deploy for all targets', 'deploy', 'green');
