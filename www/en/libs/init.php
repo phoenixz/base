@@ -390,7 +390,7 @@ function init_sort_files($a, $b){
 /*
  * Execute specified hook file
  */
-function init_hook($hook, $params = null, $disabled = false){
+function init_hook($hook, $disabled = false, $params = null){
     try{
         /*
          * Reshuffle arguments, if needed
