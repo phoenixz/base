@@ -392,9 +392,17 @@ function init_sort_files($a, $b){
  */
 function init_hook($hook, $params = null, $disabled = false){
     try{
+        /*
+         * Reshuffle arguments, if needed
+         */
         if(is_bool($params)){
             $disabled = $params;
             $params   = null;
+        }
+
+        if(is_array($disabled)){
+            $params   = $disabled;
+            $disabled = $params;
         }
 
         if(!$disabled and file_exists(ROOT.'scripts/hooks/'.$hook)){
