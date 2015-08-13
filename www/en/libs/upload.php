@@ -113,7 +113,7 @@ function upload_multi_js($element, $url, $done_script = '', $fail_script = '', $
 
             ($done_script ?      'done  : function (e, data) { $.handleDone(data.result, '.$done_script.'); },' : '').
 
-            ($fail_script ? "\n".'fail  : function (e, data) { $.handleFail(data, '.$fail_script.'); },' : '').'
+            ($fail_script ? "\n".'fail  : function (e, data) { $.handleFail(data.jqXHR, '.$fail_script.'); },' : '').'
 
             progressall: function (e, data) {
                 '.$processall_script.'
