@@ -276,7 +276,7 @@ function image_create_avatars($file){
 /*
  * Returns image type name or false if file is valid image or not
  */
-function image_type($filename){
+function image_type($file){
     try{
         if(str_until(file_mimetype($file), '/') == 'image'){
             return str_from(file_mimetype($file), '/');
