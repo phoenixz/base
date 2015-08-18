@@ -429,7 +429,7 @@ function http_cache($params, $headers){
             }
         }
 
-        if(!empty($GLOBALS['page_is_admin'])){
+        if(!empty($GLOBALS['page_is_admin']) or !empty($_SESSION['user']['id'])){
             array_default($params, 'visibility', 'private');
 
         }else{
