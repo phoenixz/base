@@ -325,6 +325,40 @@ try{
                  * Set session and cookie parameters
                  */
                 try{
+                    if(!empty($_CONFIG['sessions']['shared_memory'])){
+                        /*
+                         * Store session data in share memory. This is very
+                         * useful for security on shared servers if you do not
+                         * want your session data available to other users
+                         */
+                        ini_set('session.save_handler', 'mm');
+                    }
+
+                    session_set_cookie_params($_CONFIG['cookie']['lifetime'], $_CONFIG['cookie']['path'], $_CONFIG['cookie']['domain'], $_CONFIG['cookie']['secure'], $_CONFIG['cookie']['httponly']);
+
+                    try{
+                        session_start();
+
+                    }catch(Exception $e){
+                        /*
+                         * Session startup failed. Clear session and try again
+                         */
+                        try{
+                            session_regenerate_id(true);
+
+                        }catch(Exception $e){
+                            /*
+                             * Woah, something really went wrong..
+                             *
+                             * This may be
+                             * headers already sent (the SCRIPT file has a space or BOM at the beginning maybe?)
+                             * permissions of PHP session directory?
+                             */
+// :TODO: Add check on SCRIPT file if it contains BOM!
+                            throw new bException('startup: session start and session regenerate both failed, check PHP session directory', $e);
+                        }
+                    }
+
                     if($_CONFIG['sessions']['regenerate_id']){
                         if(isset($_SESSION['created']) and (time() - $_SESSION['created'] > $_CONFIG['sessions']['regenerate_id'])){
                             /*
@@ -356,38 +390,6 @@ try{
                     }
 
                     $_SESSION['last_activity'] = time();
-
-                    if(!empty($_CONFIG['sessions']['shared_memory'])){
-                        /*
-                         * Store session data in share memory. This is very
-                         * useful for security on shared servers if you do not
-                         * want your session data available to other users
-                         */
-                        ini_set('session.save_handler', 'mm');
-                    }
-
-                    try{
-                        session_start();
-
-                    }catch(Exception $e){
-                        /*
-                         * Session startup failed. Clear session and try again
-                         */
-                        try{
-                            session_regenerate_id(true);
-
-                        }catch(Exception $e){
-                            /*
-                             * Woah, something really went wrong..
-                             *
-                             * This may be
-                             * headers already sent (the SCRIPT file has a space or BOM at the beginning maybe?)
-                             * permissions of PHP session directory?
-                             */
-// :TODO: Add check on SCRIPT file if it contains BOM!
-                            throw new bException('startup: session start and session regenerate both failed, check PHP session directory', $e);
-                        }
-                    }
 
                     check_extended_session();
 

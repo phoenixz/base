@@ -75,7 +75,7 @@
 		});
 
 		$(this).on("keydown", "div.autosuggest input", function(e){
-			var $this  = $(this);
+			var $this = $(this);
 
 			switch (e.which) {
 				case 38:
@@ -141,6 +141,11 @@
 		});
 
 		$(this).on("keyup", "div.autosuggest input", function(e){
+			if (typeof e.keyCode == "undefined") {
+				// Weird bug, no key pressed
+				return false;
+			}
+
 			switch (e.keyCode) {
 				case 38:
 					// FALLTHROUGH

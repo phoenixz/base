@@ -53,7 +53,7 @@ function show($data = null, $return = false, $quiet = false, $trace_offset = 1){
         /*
          * If JSON, CORS requests require correct headers!
          */
-        if($GLOBALS['page_is_ajax']){
+        if(!empty($GLOBALS['page_is_ajax'])){
             load_libs('http');
             http_headers(null, 0);
         }
