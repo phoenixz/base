@@ -251,8 +251,6 @@ function user_signin($user, $extended = false, $redirect = '/', $html_flash = nu
             session_start();
         }
 
-        $_SESSION['user'] = $user;
-
         /*
          * Store last login
          */
@@ -271,6 +269,8 @@ function user_signin($user, $extended = false, $redirect = '/', $html_flash = nu
                 log_error($e, 'avatar');
             }
         }
+
+        $_SESSION['user'] = $user;
 
         if($html_flash){
             html_flash_set(isset_get($html_flash['text']), isset_get($html_flash['type']), isset_get($html_flash['class']));
@@ -628,7 +628,7 @@ function user_update_password($params){
 /*
  * Return requested data for specified user
  */
-function user_get($user, $columns = 'id,name,username,email'){
+function user_get($user, $columns = '*'){
     global $_CONFIG;
 
     try{
