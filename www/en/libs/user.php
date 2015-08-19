@@ -645,7 +645,7 @@ function user_get($user, $columns = '*'){
 
                                FROM   `users`
 
-                               WHERE  `id`   = :user', $columns,
+                               WHERE  `id`   = :user',
 
                                array(':user' => $user));
 
@@ -655,7 +655,7 @@ function user_get($user, $columns = '*'){
                                FROM   `users`
 
                                WHERE  `email` = :user
-                               OR     `name`  = :user', $columns,
+                               OR     `name`  = :user',
 
                                array(':user'  => $user));
 
