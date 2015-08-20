@@ -15,7 +15,7 @@ $usage = "./scripts/base/users list\n".
 $help  = "This is the users management script";
 
 $quiet = true;
-require_once(dirname(__FILE__).'/../../../libs/startup.php');
+require_once(dirname(__FILE__).'/../../libs/startup.php');
 
 cli_rights('admin,users');
 load_libs('user');
