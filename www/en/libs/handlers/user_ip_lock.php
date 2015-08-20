@@ -8,7 +8,7 @@
              * If there is none, then it's not a problem, it will never match, and
              * require a user with iplock rights to set
              */
-            $ips = sql_list('SELECT `ip` FROM `ip_locks` ORDER BY `id` DESC LIMIT '.cfi($ips), 'ip');
+            $ips = sql_list('SELECT `ip` FROM `ip_locks` ORDER BY `id` DESC LIMIT '.cfi($ips), array('ip'));
 
         }elseif(is_string($ips)){
             $ips = array($ips);
