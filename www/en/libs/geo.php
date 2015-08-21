@@ -285,6 +285,10 @@ function geo_get_nearest_city($latitude, $longitude, $filters = null, $columns =
         if($filters){
             foreach($filters as $key => $value){
                 switch($key){
+                    case 'status':
+                        $where[]         = ' `status` IS NULL ';
+                        break;
+
                     case 'min_population':
                         $execute[':min'] = $value;
                         $where[]         = ' `population` > :min ';
