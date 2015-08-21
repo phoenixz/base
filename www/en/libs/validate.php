@@ -731,6 +731,10 @@ class validate_form {
      */
     //set error, useful if validation is done outside of this script.
     function setError($msg){
+        if(is_object($msg) and $msg instanceof bException){
+            $msg = str_from($msg->getMessage(), '():');
+        }
+
         if($msg){
             $this->errors[] = $msg;
             return false;
