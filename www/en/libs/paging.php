@@ -313,7 +313,7 @@ function paging_data($page, $limit, $rows){
         }
 
         if($retval['limit']){
-            $retval['query'] = ' LIMIT '.($retval['start'] - 1).', '.$retval['limit'];
+            $retval['query'] = ' LIMIT '.$retval['start'].', '.$retval['limit'];
 
         }else{
             $retval['query'] = '';

@@ -786,28 +786,31 @@ function html_select($params, $selected = null, $name = '', $none = '', $class =
             }
         }
 
-        if(!$params['resource']){
+        if(empty($params['resource'])){
             if($params['hide_empty']){
                 return '';
             }
 
-            if(is_numeric($params['disabled'])){
-                $params['disabled'] = true;
+            $params['resource'] = array();
 
-            }else{
-                if(is_array($params['resource'])){
-                    $params['disabled'] = ((count($params['resource']) + ($params['name'] ? 1 : 0)) <= $params['disabled']);
-
-                }elseif(is_object($params['resource'])){
-                    $params['disabled'] = (($params['resource']->rowCount() + ($params['name'] ? 1 : 0)) <= $params['disabled']);
-
-                }elseif($params['resource'] === null){
-                    $params['disabled'] = true;
-
-                }else{
-                    throw new bException(tr('html_select(): Invalid resource of type "%type%" specified, should be either null, an array, or a PDOStatement object', array('%type%' => gettype($params['resource']))), 'invalid');
-                }
-            }
+// :DELETE: Wut? What exactly was this supposed to do? doesn't make any sense at all..
+            //if(is_numeric($params['disabled'])){
+            //    $params['disabled'] = true;
+            //
+            //}else{
+            //    if(is_array($params['resource'])){
+            //        $params['disabled'] = ((count($params['resource']) + ($params['name'] ? 1 : 0)) <= $params['disabled']);
+            //
+            //    }elseif(is_object($params['resource'])){
+            //        $params['disabled'] = (($params['resource']->rowCount() + ($params['name'] ? 1 : 0)) <= $params['disabled']);
+            //
+            //    }elseif($params['resource'] === null){
+            //        $params['disabled'] = true;
+            //
+            //    }else{
+            //        throw new bException(tr('html_select(): Invalid resource of type "%type%" specified, should be either null, an array, or a PDOStatement object', array('%type%' => gettype($params['resource']))), 'invalid');
+            //    }
+            //}
         }
 
         if($params['bodyonly']){
