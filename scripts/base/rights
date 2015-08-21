@@ -12,7 +12,7 @@ $usage = "./scripts/base/rights list\n".
 $help  = "This is the rights management script";
 
 $quiet = true;
-require_once(dirname(__FILE__).'/../../../libs/startup.php');
+require_once(dirname(__FILE__).'/../../libs/startup.php');
 
 try{
     cli_rights('admin,users,rights');

@@ -14,7 +14,7 @@ $usage = "./scripts/base/roles list\n".
 $help  = "This is the roles management script";
 
 $quiet = true;
-require_once(dirname(__FILE__).'/../../../libs/startup.php');
+require_once(dirname(__FILE__).'/../../libs/startup.php');
 
 try{
     cli_rights('admin,users,roles');
