@@ -1248,7 +1248,7 @@ function html_hidden($source, $key = 'id'){
 /*
  * Create and return an img tag that contains at the least src, alt, height and width
  */
-function html_img($src, $alt, $more = '', $height = 0, $width = 0){
+function html_img($src, $alt, $height, $width, $more = ''){
     global $_CONFIG;
     static $images;
 
