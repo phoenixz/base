@@ -76,7 +76,7 @@ function chat_add_user($user){
                    VALUES              (:user_id , :user_name , :user_email , :user_password , :alt_name , NOW()      )',
 
                    array(':user_id'       => $user['id'],
-                         ':user_name'     => isset_get($user['username'], ''),
+                         ':user_name'     => (empty($user['username']) ? $user['email'] : $user['username']),
                          ':alt_name'      => isset_get($user['name']    , ''),
                          ':user_email'    => $user['email'],
                          ':user_password' => sha1(uniqid())),
@@ -106,7 +106,7 @@ function chat_update_user($user){
                         WHERE  `user_id`    = :user_id',
 
                         array(':user_id'    => $user['id'],
-                              ':user_name'  => isset_get($user['username'], ''),
+                              ':user_name'  => (empty($user['username']) ? $user['email'] : $user['username']),
                               ':alt_name'   => isset_get($user['name']    , ''),
                               ':user_email' => $user['email']), null, 'chat');
 
