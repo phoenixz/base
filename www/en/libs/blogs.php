@@ -400,11 +400,11 @@ function blogs_validate_post(&$post, $blog, $params = null, $seoname = null){
              * Only if we're editing in use_append mode we don't have to check body size
              */
             $v->hasMinChars($post['body'], $params['bodymin'], tr('Please ensure that the body text has a minimum of '.$params['bodymin'].' characters'));
-            $v->isNotEmpty ($post['body']                    , tr('Please provide the body text of your %objectname%', '%objectname%', $params['object_name']));
+            $v->isNotEmpty ($post['body']                    , tr('Please provide the body text of your %objectname%', array('%objectname%' => $params['object_name'])));
         }
 
-        $v->isChecked  ($post['name']          , tr('Please provide the name of your %objectname%'     , '%objectname%', $params['object_name']));
-        $v->isNotEmpty ($post['seocategory']   , tr('Please provide a category for your %objectname%'  , '%objectname%', $params['object_name']));
+        $v->isChecked  ($post['name']          , tr('Please provide the name of your %objectname%'     , array('%objectname%' => $params['object_name'])));
+        $v->isNotEmpty ($post['seocategory']   , tr('Please provide a category for your %objectname%'  , array('%objectname%' => $params['object_name'])));
         $v->hasMinChars($post['name']       , 1, tr('Please ensure that the name has a minimum of 1 character'));
 
         $category = blogs_validate_category($post['seocategory'], $blog, $params['categories_parent']);
@@ -418,7 +418,7 @@ function blogs_validate_post(&$post, $blog, $params = null, $seoname = null){
             $post['group']    = $group['name'];
             $post['seogroup'] = $group['seoname'];
 
-            $v->isNotEmpty ($post['group'], tr('Please provide a group for your %objectname%', '%objectname%', $params['object_name']));
+            $v->isNotEmpty ($post['group'], tr('Please provide a group for your %objectname%', array('%objectname%' => $params['object_name'])));
 
         }else{
             $post['group']    = '';
@@ -430,7 +430,7 @@ function blogs_validate_post(&$post, $blog, $params = null, $seoname = null){
             $post['seokeywords'] = blogs_seo_keywords($post['keywords']);
 
             $v->hasMinChars($post['keywords'], 1, tr('Please ensure that the keywords have a minimum of 1 character'));
-            $v->isNotEmpty ($post['keywords'],    tr('Please provide keywords for your %objectname%', '%objectname%', $params['object_name']));
+            $v->isNotEmpty ($post['keywords'],    tr('Please provide keywords for your %objectname%', array('%objectname%' => $params['object_name'])));
 
         }else{
             $post['keywords']    = '';
@@ -458,12 +458,12 @@ function blogs_validate_post(&$post, $blog, $params = null, $seoname = null){
         }
 
         if(!empty($params['use_language'])){
-            $v->isNotEmpty($post['language'],    tr('Please select a language for your %objectname%', '%objectname%', $params['object_name']));
+            $v->isNotEmpty($post['language'],    tr('Please select a language for your %objectname%', array('%objectname%' => $params['object_name'])));
             $v->hasChars($post['keywords']  , 2, tr('Please provide a valid language'));
         }
 
         if($params['use_priorities']){
-            $v->isNotEmpty ($post['priority'], tr('Please provide a priority for your %objectname%', '%objectname%', $params['object_name']));
+            $v->isNotEmpty ($post['priority'], tr('Please provide a priority for your %objectname%', array('%objectname%' => $params['object_name'])));
 
             if(!is_numeric($post['priority']) or ($post['priority'] < 1) or ($post['priority'] > 5) or (fmod($post['priority'], 1))){
                 $v->setError('The specified priority "'.str_log($post['priority']).'" is invalid, it must be one of 1, 2, 3, 4, or 5');
@@ -471,14 +471,14 @@ function blogs_validate_post(&$post, $blog, $params = null, $seoname = null){
         }
 
         if(!empty($params['use_description'])){
-            $v->isNotEmpty ($post['description'],       tr('Please provide a description for your %objectname%', '%objectname%', $params['object_name']));
+            $v->isNotEmpty ($post['description'],       tr('Please provide a description for your %objectname%', array('%objectname%' => $params['object_name'])));
             $v->hasMinChars($post['description'],   16, tr('Please ensure that the description has a minimum of 16 characters'));
             $v->hasMaxChars($post['description'],  160, tr('Please ensure that the description has a maximum of 160 characters'));
         }
 
         if(!empty($params['use_status'])){
             if(empty($params['status_select']['resource'][$post['status']])){
-                $v->setError(tr('Please provide a valid status for your %objectname%', '%objectname%', $params['object_name']));
+                $v->setError(tr('Please provide a valid status for your %objectname%', array('%objectname%' => $params['object_name'])));
             }
 
         }else{
