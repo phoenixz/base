@@ -1253,12 +1253,14 @@ function html_img($src, $alt, $height, $width, $more = ''){
     static $images;
 
     try{
-        if(!$alt){
-            throw new bException(tr('html_img(): No image alt text specified'), 'notspecified');
-        }
+        if(ENVIRONMENT !== 'production'){
+            if(!$alt){
+                throw new bException(tr('html_img(): No image alt text specified'), 'notspecified');
+            }
 
-        if(!$src){
-            throw new bException(tr('html_img(): No image src specified'), 'notspecified');
+            if(!$src){
+                throw new bException(tr('html_img(): No image src specified'), 'notspecified');
+            }
         }
 
         /*
@@ -1306,11 +1308,13 @@ function html_img($src, $alt, $height, $width, $more = ''){
 
         if(!$height or !$width){
             if(empty($images[$file])){
-                if(!file_exists($file)){
-                    log_error(tr('html_img(): Specified image src "%src%" does not exist', array('%src%' => $src)), 'notspecified');
+                if($src){
+                    if(!file_exists($file)){
+                        log_error(tr('html_img(): Specified image src "%src%" does not exist', array('%src%' => $src)), 'notspecified');
 
-                }elseif(!$img_size = getimagesize($file)){
-                    log_error('image_is_valid(): File "'.str_log($filename).'" is not an image');
+                    }elseif(!$img_size = getimagesize($file)){
+                        log_error('image_is_valid(): File "'.str_log($filename).'" is not an image');
+                    }
                 }
 
                 if(empty($img_size)){
