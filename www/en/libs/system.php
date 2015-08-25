@@ -134,8 +134,18 @@ function uncaught_exception($e, $die = 1){
 /*
  * For translations
  */
-function tr($text, $replace = null){
+function tr($text, $replace = null, $obsolete = null){
     try{
+        if($obsolete){
+            global $_CONFIG;
+
+            if((PLATFORM !== 'production') and !$_CONFIG['system']['obsolete_exception']){
+                throw new bException('tr() no longer support tr(text, from, to), please specify a replace array.', 'obsolete');
+            }
+
+            $replace = array($replace => $obsolete);
+        }
+
         if($replace){
             $text = str_replace(array_keys($replace), array_values($replace), $text, $count);
 
