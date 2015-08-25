@@ -183,7 +183,13 @@ $_CONFIG['language']           = array('default'          => 'auto',            
                                                                    'nl'                 => 'Nederlands'));
 
 // Locale configuration
-$_CONFIG['locale']             = 'es-MX';
+$_CONFIG['locale']             = array(LC_ALL      => 'en_US.UTF8',
+                                       LC_COLLATE  => null,
+                                       LC_CTYPE    => null,
+                                       LC_MONETARY => null,
+                                       LC_NUMERIC  => null,
+                                       LC_TIME     => null,
+                                       LC_MESSAGES => null);
 
 //Log configuration
 $_CONFIG['log']                = array('default'          => 'db',                                          // Where entries will be logged. Either "db", "file", or "both"

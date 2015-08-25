@@ -137,6 +137,7 @@ function googlemaps_map_with_markers($markers = array(), $divid = 'map-canvas') 
                     unset($markers[$key]);
                 }
             }
+
             $html .= implode(',', $list).'];
                 var infowindow = new google.maps.InfoWindow();
 
@@ -280,6 +281,38 @@ function googlemaps_reverse_geocoding($latitude, $longitude, $sensor = null) {
 
     }catch(Exception $e){
         throw new bException('googlemaps_reverse_geocoding(): Failed', $e);
+    }
+}
+
+
+
+/*
+ *
+ */
+function googlemaps_markers($locations, $longitude = null){
+    global $_CONFIG;
+
+    try{
+        load_config('googlemaps');
+
+        if(!is_array($locations)){
+            $locations = array(array('latitude'  => $locations,
+                                     'longitude' => $longitude));
+        }
+
+        $retval = array();
+
+         foreach($locations as $location){
+            $retval[] = array('lat'  => $location['latitude'],
+                              'lng'  => $location['longitude'],
+                              'html' => '',
+                              'icon' => $_CONFIG['googlemaps']['markers']['icon']);
+        }
+
+        return $retval;
+
+    }catch(Exception $e){
+        throw new bException('googlemaps_markers(): Failed', $e);
     }
 }
 ?>

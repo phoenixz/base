@@ -261,8 +261,14 @@ try{
      */
     ini_set('default_charset', $_CONFIG['charset']);
 
+    foreach($_CONFIG['locale'] as $key => $value){
+        if($value){
+            setlocale($key, $value);
+        }
+    }
+
     if($_CONFIG['charset'] = 'UTF-8'){
-        mb_init($_CONFIG['locale']);
+        mb_init(not_empty($_CONFIG['locale'][LC_CTYPE], $_CONFIG['locale'][LC_ALL]));
 
         if(function_exists('mb_internal_encoding')){
             mb_internal_encoding('UTF-8');
