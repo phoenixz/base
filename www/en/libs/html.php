@@ -1289,7 +1289,7 @@ function html_img($src, $alt, $height, $width, $more = ''){
                  */
                 $file = ROOT.'www/en'.str_starts(str_from($src, $_CONFIG['domain']), '/');
 
-            }else{
+            }elseif(ENVIRONMENT !== 'production'){
                 /*
                  * This is a remote image
                  * Remote images MUST have height and width specified!
