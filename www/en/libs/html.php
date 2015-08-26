@@ -1253,7 +1253,7 @@ function html_img($src, $alt, $height = 0, $width = 0, $more = ''){
     static $images;
 
     try{
-        if(!$width and !is_numeric($height)){
+        if(!$width and $height and !is_numeric($height)){
             if(ENVIRONMENT !== 'production' and $_CONFIG['system']['obsolete_exception']){
                 throw new bException(tr('html_img(): Update html_img() argument order'), 'obsolete');
             }
