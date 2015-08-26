@@ -1248,11 +1248,20 @@ function html_hidden($source, $key = 'id'){
 /*
  * Create and return an img tag that contains at the least src, alt, height and width
  */
-function html_img($src, $alt, $height, $width, $more = ''){
+function html_img($src, $alt, $height = 0, $width = 0, $more = ''){
     global $_CONFIG;
     static $images;
 
     try{
+        if(!$width and !is_numeric($height)){
+            if(ENVIRONMENT !== 'production' and $_CONFIG['system']['obsolete_exception']){
+                throw new bException(tr('html_img(): Update html_img() argument order'), 'obsolete');
+            }
+
+            $more   = $height;
+            $height = 0;
+        }
+
         if(ENVIRONMENT !== 'production'){
             if(!$alt){
                 throw new bException(tr('html_img(): No image alt text specified'), 'notspecified');
