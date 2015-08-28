@@ -480,6 +480,13 @@ function html_header($params = null, $meta = array()){
             }
         }
 
+        if(!empty($params['properties'])) {
+            foreach($params['properties'] as $property => $contents){
+                $retval .= "<meta property=\"".$property."\" content=\"".$contents."\">\n";
+            }
+        }
+
+
         $retval .= html_favicon($params['favicon']).$params['extra'];
 
 
