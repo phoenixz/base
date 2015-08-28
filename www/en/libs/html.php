@@ -474,15 +474,13 @@ function html_header($params = null, $meta = array()){
          * Only add keywords with contents, all that have none are considerred
          * as false, and do-not-add
          */
-        foreach($params['meta'] as $keyword => $contents){
-            if($contents){
-                $retval .= "<meta name=\"".$keyword."\" content=\"".$contents."\">\n";
-            }
+        foreach($params['meta'] as $keyword => $content){
+            $retval .= "<meta name=\"".$keyword."\" content=\"".$content."\">\n";
         }
 
-        if(!empty($params['properties'])) {
-            foreach($params['properties'] as $property => $contents){
-                $retval .= "<meta property=\"".$property."\" content=\"".$contents."\">\n";
+        if(!empty($params['properties'])){
+            foreach($params['properties'] as $property => $content){
+                $retval .= "<meta property=\"".$property."\" content=\"".$content."\">\n";
             }
         }
 
