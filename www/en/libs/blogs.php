@@ -673,7 +673,7 @@ function blogs_photos_upload($files, $post, $priority = null){
                                 ':file'           => $photo,
                                 ':priority'       => $priority));
 
-        $id   = sql_insert_id($res);
+        $id   = sql_insert_id();
 
 // :DELETE: This block is replaced by the code below. Only left here in case it contains something usefull still
 //	$html = '<li style="display:none;" id="photo'.$id.'" class="myclub photo">
@@ -686,6 +686,7 @@ function blogs_photos_upload($files, $post, $priority = null){
                      'photo' => $photo);
 
     }catch(Exception $e){
+
         throw new bException('blogs_photos_upload(): Failed', $e);
     }
 }
