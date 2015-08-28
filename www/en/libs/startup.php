@@ -17,7 +17,7 @@
 /*
  * Framework version
  */
-define('FRAMEWORKCODEVERSION', '0.22.7');
+define('FRAMEWORKCODEVERSION', '0.23.0');
 
 
 /*
@@ -558,6 +558,7 @@ try{
         }
 
         define('LANGUAGE', $language);
+        define('LOCALE'  , $language.(empty($_SESSION['location']['country']['code']) ? '' : '_'.$_SESSION['location']['country']['code']));
         unset($language);
 
         /*
