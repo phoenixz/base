@@ -97,18 +97,30 @@ function chat_add_user($user){
  */
 function chat_update_user($user){
     try{
+        if(has_rights('admin', $user)){
+            $rank = 5;
+
+        }elseif(has_rights('moderator', $user)){
+            $rank = 3;
+
+        }else{
+            $rank = 1;
+        }
+
         $r = sql_query('UPDATE `users`
 
                         SET    `user_name`  = :user_name,
                                `user_email` = :user_email,
                                `alt_name`   = :alt_name
+                               `user_rank`  = :user_rank
 
                         WHERE  `user_id`    = :user_id',
 
                         array(':user_id'    => $user['id'],
                               ':user_name'  => (empty($user['username']) ? $user['email'] : $user['username']),
                               ':alt_name'   => isset_get($user['name']    , ''),
-                              ':user_email' => $user['email']), null, 'chat');
+                              ':user_email' => $user['email'],
+                              ':user_rank'  => $rank), null, 'chat');
 
         if(!$r->rowCount()){
             /*
@@ -123,6 +135,48 @@ function chat_update_user($user){
 
     }catch(Exception $e){
         throw new bException(tr('chat_update_user(): Failed'), $e);
+    }
+}
+
+
+
+/*
+ *
+ */
+function chat_update_rank($user){
+    try{
+        if(has_rights('admin', $user)){
+            $rank = 5;
+
+        }elseif(has_rights('moderator', $user)){
+            $rank = 3;
+
+        }else{
+            $rank = 1;
+        }
+
+        $r = sql_query('UPDATE `users`
+
+                        SET    `user_rank` = :user_rank,
+
+                        WHERE  `user_id`   = :user_id',
+
+                        array(':user_id'   => $user['id'],
+                              ':user_rank' => $rank), null, 'chat');
+
+        if(!$r->rowCount()){
+            /*
+             * This means either no data has been changed, or the specified ID doesn't exist.
+             * The former is okay, the latter should never happen.
+             */
+            if(!sql_get('SELECT `user_id` FROM `users` WHERE `user_id` = :user_id', 'user_id', array(':user_id' => $user['id']))){
+                load_libs('user');
+                throw new bException(tr('chat_update_rank(): Specified user "%user%" does not exist', array('%user%' => user_name($user))), 'notexist');
+            }
+        }
+
+    }catch(Exception $e){
+        throw new bException(tr('chat_update_rank(): Failed'), $e);
     }
 }
 
