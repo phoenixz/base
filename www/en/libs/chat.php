@@ -145,7 +145,7 @@ function chat_update_user($user){
  */
 function chat_update_rank($user){
     try{
-        if(has_rights('admin', $user)){
+        if(has_rights('god', $user)){
             $rank = 5;
 
         }elseif(has_rights('moderator', $user)){
