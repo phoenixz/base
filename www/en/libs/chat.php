@@ -157,7 +157,7 @@ function chat_update_rank($user){
 
         $r = sql_query('UPDATE `users`
 
-                        SET    `user_rank` = :user_rank,
+                        SET    `user_rank` = :user_rank
 
                         WHERE  `user_id`   = :user_id',
 
