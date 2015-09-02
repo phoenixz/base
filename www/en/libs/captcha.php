@@ -2,37 +2,28 @@
 /*
  * Captcha Library
  *
+ * Currently only supports recaptcha, but can potentially support other captcha systems as well
+ *
  * @license http://opensource.org/licenses/GPL-2.0 GNU Public License, Version 2
  * @copyright Sven Oostenbrink <support@svenoostenbrink.com>
  */
 load_config('captcha');
 
-if(empty($_CONFIG['captcha']['type'])){
-   throw new bException('captcha(): No type of captcha specified');
-
-}
-
-
-/*
- * Check if the captcha type is valid
- */
-switch($_CONFIG['captcha']['type']){
-   case 'recaptcha':
-      break;
-   default:
-      throw new bException('captcha(): this type of captcha "%captcha%" is not a valid type', array('%captcha%' => $_CONFIG['captcha']['type']));
-}
 
 
 /*
  * Return captcha html
  */
-function get_captcha_html(){
+function captcha_html(){
     global $_CONFIG;
+
     try{
         switch($_CONFIG['captcha']['type']){
             case 'recaptcha':
                 return '<div class="g-recaptcha" data-sitekey="'.$_CONFIG['captcha']['recaptcha']['site-key'].'"></div>';
+
+            default:
+               throw new bException(tr('captcha_verify_response(): Unknown captcha type "%type%" configured', array('%type%' => $_CONFIG['captcha']['type'])), 'unknown');
         }
 
     }catch(Exception $e){
@@ -45,28 +36,31 @@ function get_captcha_html(){
 /*
  * Check captcha response
  */
-function verify_captcha_response($captcha){
+function captcha_verify_response($captcha){
     global $_CONFIG;
+
     try{
         if(empty($captcha)){
-            throw new bException('verify_captcha_response(): Captcha is empty', $e);
+            throw new bException('verify_captcha_response(): Captcha response is empty', 'not_specified');
         }
 
         switch($_CONFIG['captcha']['type']){
             case 'recaptcha':
                 $response = file_get_contents($_CONFIG['captcha']['recaptcha']['verify-api'].'?secret='.$_CONFIG['captcha']['recaptcha']['secret-key'].'&response='.$captcha.'&remoteip='.$_SERVER['REMOTE_ADDR']);
-
                 $response = json_decode($response, true);
 
                 if(!$response["success"]){
-                    throw new bException('Recaptcha is not valid', 'invalid-captcha');
+                    throw new bException('captcha_verify_response(): Recaptcha is not valid', 'invalid-captcha');
                 }
 
                 break;
+
+            default:
+               throw new bException(tr('captcha_verify_response(): Unknown captcha type "%type%" configured', array('%type%' => $_CONFIG['captcha']['type'])), 'unknown');
         }
 
     }catch(Exception $e){
-        throw new bException('verify_captcha_response(): Failed', $e);
+        throw new bException('captcha_verify_response(): Failed', $e);
     }
 }
 ?>
