@@ -76,7 +76,6 @@
 
 		$(this).on("keydown", "div.autosuggest input", function(e){
 			var $this = $(this);
-
 			switch (e.which) {
 				case 38:
 					e.stopPropagation();
@@ -116,6 +115,8 @@
 
 					return false;
 
+				case 39:
+					// FALLTHROUGH
 				case 13:
 					if(!$this.siblings("ul").hasClass("active")) {
 						/*
@@ -150,6 +151,8 @@
 				case 38:
 					// FALLTHROUGH
 				case 40:
+					// FALLTHROUGH
+				case 39:
 					// FALLTHROUGH
 				case 13:
 					break;
