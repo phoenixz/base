@@ -419,6 +419,14 @@ switch(argument(0)){
 
 
                 foreach($countries as $id => $country_data){
+                    /*
+                     * If United States of America, then fix "New England Region" crap
+                     */
+                    if(strtolower(trim($country_data['code'])) == 'us'){
+                        $parents_id = sql_fetch($geosql->query('SELECT `geonameid` FROM `geonames` WHERE `fcode` = "ZN" AND `name` = "New England Region"'), 'geonameid');
+                        $geosql->query('UPDATE `geonames` SET `parents_id` = '.$country_data['geonames_id'].' WHERE `parents_id` = '.$parents_id);
+                    }
+
                     log_console('Importing states for country "'.$country_data['name'].'"...', '', '');
                     $r = $geosql->query('SELECT * FROM `geonames` WHERE `parents_id` = '.cfi($country_data['geonames_id']));
 
@@ -633,7 +641,11 @@ switch(argument(0)){
                                                                        FROM   `geonames`
 
                                                                        WHERE  `country`     = "'.$country_data['code'].'"
-                                                                       AND    `fcode`       IN ("PPL", "PPLA", "PPLA2", "PPLA3", "PPLA4")
+
+                                                                       AND   (`fcode`       IN ("PPL", "PPLA", "PPLA2", "PPLA3", "PPLA4")
+                                                                       OR     `fcode`       = "ISL"
+                                                                       AND    `population` != 0)
+
                                                                        AND    `admin1`      = "'.$state_data['admin1'].'"
                                                                        AND    `population` != 0');
 
