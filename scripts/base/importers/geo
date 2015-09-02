@@ -641,7 +641,11 @@ switch(argument(0)){
                                                                        FROM   `geonames`
 
                                                                        WHERE  `country`     = "'.$country_data['code'].'"
-                                                                       AND    `fcode`       IN ("PPL", "PPLA", "PPLA2", "PPLA3", "PPLA4")
+
+                                                                       AND   (`fcode`       IN ("PPL", "PPLA", "PPLA2", "PPLA3", "PPLA4")
+                                                                       OR     `fcode`       = "ISL"
+                                                                       AND    `population` != 0)
+
                                                                        AND    `admin1`      = "'.$state_data['admin1'].'"
                                                                        AND    `population` != 0');
 
