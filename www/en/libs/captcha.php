@@ -9,7 +9,20 @@ load_config('captcha');
 
 if(empty($_CONFIG['captcha']['type'])){
    throw new bException('captcha(): No type of captcha specified');
+
 }
+
+
+/*
+ * Check if the captcha type is valid
+ */
+switch($_CONFIG['captcha']['type']){
+   case 'recaptcha':
+      break;
+   default:
+      throw new bException('captcha(): this type of captcha "%captcha%" is not a valid type', array('%captcha%' => $_CONFIG['captcha']['type']));
+}
+
 
 /*
  * Return captcha html
