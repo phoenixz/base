@@ -369,6 +369,7 @@ function html_header($params = null, $meta = array()){
         array_params($params, 'title');
 
         array_default($params, 'http'          , 'html');
+        array_default($params, 'captcha'       , false);
         array_default($params, 'doctype'       , 'html');
         array_default($params, 'html'          , 'html lang="'.LANGUAGE.'"');
         array_default($params, 'body'          , '<body>');
@@ -382,6 +383,17 @@ function html_header($params = null, $meta = array()){
 
         if(!empty($params['js'])){
             html_load_js($params['js']);
+        }
+
+        /*
+         * Load captcha javascript
+         */
+        if(!empty($_CONFIG['captcha']['type']) and $params['captcha']){
+            switch($_CONFIG['captcha']['type']){
+                case 'recaptcha':
+                    html_load_js($_CONFIG['captcha']['recaptcha']['js-api']);
+                    break;
+            }
         }
 
         if(!empty($params['css'])){
