@@ -340,7 +340,7 @@ function argument($value, $next = null, $default = null){
  */
 function arguments($arguments, $force = false){
     try{
-        $retval    = array();
+        $retval = array();
 
         foreach(array_force($arguments) as $argument){
             if(is_numeric($argument)){
