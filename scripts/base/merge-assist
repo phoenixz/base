@@ -98,8 +98,13 @@ script_exec('base/update', 'local');
  * are the changes made in that branch
  */
 foreach($argv as $branch){
+	log_console(tr('Processing branch "%branch%"', array('%branch%' => str_log($branch))), '');
 	safe_exec('git co '.$branch);
+
+	log_console(tr('Updating from base'), '');
 	script_exec('base/update', 'local');
+
+	log_console(tr('Merging from "%branch%"', array('%branch%' => str_log($branch))), '');
 	safe_exec('git merge '.$target);
 }
 
@@ -108,5 +113,6 @@ foreach($argv as $branch){
  * Return to the current branch
  */
 safe_exec('git co '.$current);
+log_console(tr('Returned to original branch "%branch%"', array('%branch%' => str_log($current))), '');
 log_console('Done...', '', 'green');
 ?>
