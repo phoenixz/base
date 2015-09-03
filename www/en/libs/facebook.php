@@ -14,7 +14,7 @@
  *
  */
 // :TEST: Are both ext/facebook,ext/fb needed? or only one?
-load_libs('ext/facebook,ext/fb');
+load_libs('ext/facebook');
 
 use Facebook\HttpClients\FacebookHttpable;
 use Facebook\HttpClients\FacebookCurl;
@@ -475,4 +475,57 @@ function facebook_get_avatar($user){
 //		throw new bException('facebook_queue_follow_collection_post(): Failed', $e);
 //	}
 //}
+
+function facebook_sdk_js() {
+    return '<div id="fb-root"></div>
+            <script>(function(d, s, id) {
+              var js, fjs = d.getElementsByTagName(s)[0];
+              if (d.getElementById(id)) return;
+              js = d.createElement(s); js.id = id;
+              js.src = "//connect.facebook.net/en_US/sdk.js#xfbml=1&version=v2.4";
+              fjs.parentNode.insertBefore(js, fjs);
+            }(document, \'script\', \'facebook-jssdk\'));</script>';
+}
+
+function facebook_button($params){
+    try{
+        /*
+         * See https://developers.facebook.com/docs/plugins/like-button
+         *     https://developers.facebook.com/docs/plugins/share-button
+         */
+        array_params($params);
+        array_default($params, 'type'      , 'like');    // possible values : 'like' or 'share'
+        array_default($params, 'width'     , 225);       // this is the minimal
+        array_default($params, 'layout'    , 'button');  // each button type has its own layouts
+        array_default($params, 'show-faces', 'false');
+
+
+
+        $html = '';
+
+        foreach(array_force($params['type']) as $type){
+            switch($type) {
+                case 'share':
+                    $html .= '<div class="fb-share-button" data-href="'.$params['url'].'"data-layout="'.$params['layout'].'">
+                               </div>';
+                    break;
+
+                case 'like':
+                    $html .= '<div class="fb-like" data-href="'.$params['url'].'"
+                                            data-width="'.$params['width'].'" data-layout="'.$params['layout'].'" data-action="like"
+                                            data-show-faces="'.$params['show-faces'].'" data-share="false">
+                              </div>';
+                    break;
+
+                default:
+                    throw new bException(tr('facebook_button(): Unknown type "%type%" specified', array('%type%' => $type)), 'unknown');
+            }
+        }
+
+        return $html;
+
+    }catch(Exception $e){
+        throw new bException('facebook_button(): Failed', $e);
+    }
+}
 ?>
