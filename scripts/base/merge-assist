@@ -1,0 +1,112 @@
+#!/usr/bin/php
+<?php
+/*
+ * This script assists in merging
+ */
+$usage = "./scripts/base/merge-assist BRANCH \n".
+         "./scripts/base/merge-assist BRANCH [BRANCH BRANCH ...] [target BRANCH]\n";
+
+$help  = "The merge-assist script will ";
+
+//$quiet = false;
+
+require_once(dirname(__FILE__).'/../../libs/startup.php');
+load_libs('git');
+
+
+/*
+ * Get options
+ */
+$do_merge = argument('do-merge');
+
+
+/*
+ * Can only work on clean WT
+ */
+if(git_has_changes()){
+	if(!FORCE){
+		throw new bException(tr('merge-prepare: GIT changes detected, cannot continue. Use -f for FORCE mode'), 'git-changes');
+	}
+
+	log_console(tr('WARNING: GIT Changes detected, continuing because of -f option'), '', 'yellow');
+}
+
+
+/*
+ * Detect the current branch
+ */
+foreach(safe_exec('git branch') as $branch){
+	if(substr(trim($branch), 0, 1) == '*'){
+		$current = trim(str_from($branch, '*'));
+		break;
+	}
+}
+
+
+/*
+ * Detect target branch, either current, or specified on command line
+ */
+if(!$target = argument('target', true)){
+	$target = $current;
+}
+
+
+/*
+ * Ensure that all requested branches exist
+ */
+log_console(tr('Verifying requestes branches "%branches%"', array('%branches%' => str_log(implode(' ', $argv)))), '');
+git_fetch();
+
+foreach(safe_exec('git branch') as $branch){
+	$branches[] = trim(str_from($branch, '*'));
+}
+
+foreach($argv as $branch){
+	if(!in_array($branch, $branches)){
+		$fail[] = $branch;
+	}
+}
+
+if(!empty($fail)){
+	throw new bException(tr('merge-prepare: Specified branches "%fail%" do not exist', array('%fail%' => str_log(implode(' ', $fail)))), 'not_exists');
+}
+
+log_console(tr('Requested branches verified'), '');
+
+
+/*
+ * Ensure that target branch exists
+ */
+log_console(tr('Preparing merging to target branch "%$target%"', array('%$target%' => str_log($target))), '', 'white');
+
+if(!in_array($target, $branches)){
+	throw new bException(tr('merge-prepare: Specified target branch "%target%" do not exist', array('%target%' => str_log($target))), 'not_exists');
+}
+
+
+/*
+ * Ensure that the target branch is updated
+ */
+safe_exec('git co '.$target);
+script_exec('base/update', 'local');
+
+
+/*
+ * Now update each requested branch from BASE (To ensure there won't be any
+ * merge errors later on), then merge it from TARGET to current branch so that
+ * the only differences between the requested branches and the TARGET branch
+ * are the changes made in that branch
+ */
+foreach($argv as $branch){
+	safe_exec('git co '.$branch);
+	script_exec('base/update', 'local');
+	safe_exec('git merge '.$target);
+}
+
+
+/*
+ * Return to the current branch
+ */
+safe_exec('git co '.$current);
+log_console('Done...', '', 'green');
+?>
