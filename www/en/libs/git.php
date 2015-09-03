@@ -58,10 +58,10 @@ function git_has_changes($path = ROOT){
          * Check if we dont have any changes that should be committed first
          */
         if(trim(shell_exec('cd '.$path.'; git status | grep "nothing to commit" | wc -l'))){
-            return true;
+            return false;
         }
 
-        return false;
+        return true;
 
     }catch(Exception $e){
         throw new bException('git_has_changes(): Failed', $e);
