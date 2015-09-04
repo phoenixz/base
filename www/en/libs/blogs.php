@@ -545,6 +545,11 @@ function blogs_validate_post(&$post, $blog, $params = null, $seoname = null){
             $post['body'] = '<h3>'.user_name($_SESSION['user']).' <small>['.system_date_format().']</small></h3><p><small>'.implode('<br>', $changes).'</small></p><p>'.$post['body'].'</p><hr>'.isset_get($oldpost['body'], '');
         }
 
+        /*
+         * Ensure there aren't any styles on <p> tags
+         */
+        $post['body'] = preg_replace('/(<[^>]+) style=".*?"/i', '<p', $post['body']);
+
     }catch(Exception $e){
         if(!empty($oldpost['body'])){
             $post['body'] = $oldpost['body'];
