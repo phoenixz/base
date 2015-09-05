@@ -57,18 +57,20 @@ if(!$target = argument('target', true)){
 log_console(tr('Verifying requested branches "%branches%"', array('%branches%' => str_log(implode(' ', $argv)))), '');
 git_fetch();
 
-foreach(safe_exec('git branch') as $branch){
+foreach(safe_exec('git branch -a') as $branch){
 	$branches[] = trim(str_from($branch, '*'));
 }
 
 foreach($argv as $branch){
 	if(!in_array($branch, $branches)){
-		$fail[] = $branch;
+		if(!in_array('remotes/origin/'.$branch, $branches)){
+			$fail[] = $branch;
+		}
 	}
 }
 
 if(!empty($fail)){
-	throw new bException(tr('merge-prepare: Specified branches "%fail%" do not exist', array('%fail%' => str_log(implode(' ', $fail)))), 'not_exists');
+	throw new bException(tr('merge-prepare: Specified branche(s) "%fail%" do not exist', array('%fail%' => str_log(implode(' ', $fail)))), 'not_exists');
 }
 
 if(empty($argv)){
