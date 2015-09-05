@@ -341,24 +341,24 @@ function sql_init($connector = 'core'){
                 load_libs('init');
                 init_process_version_fail($e);
             }
-        }
 
-        /*
-         * On console, show current versions
-         */
-        if((PLATFORM == 'shell') and empty($GLOBALS['quiet'])){
-            log_console('sql_init(): Found framework code version "'.str_log(FRAMEWORKCODEVERSION).'" and framework database version "'.str_log(FRAMEWORKDBVERSION).'"');
-            log_console('sql_init(): Found project code version "'.str_log(PROJECTCODEVERSION).'" and project database version "'.str_log(PROJECTDBVERSION).'"');
-        }
+            /*
+             * On console, show current versions
+             */
+            if((PLATFORM == 'shell') and empty($GLOBALS['quiet'])){
+                log_console('sql_init(): Found framework code version "'.str_log(FRAMEWORKCODEVERSION).'" and framework database version "'.str_log(FRAMEWORKDBVERSION).'"');
+                log_console('sql_init(): Found project code version "'.str_log(PROJECTCODEVERSION).'" and project database version "'.str_log(PROJECTDBVERSION).'"');
+            }
 
 
-        /*
-         * Validate code and database version. If both FRAMEWORK and PROJECT versions of the CODE and DATABASE do not match,
-         * then check exactly what is the version difference
-         */
-        if((FRAMEWORKCODEVERSION != FRAMEWORKDBVERSION) or (PROJECTCODEVERSION != PROJECTDBVERSION)){
-            load_libs('init');
-            init_process_version_diff();
+            /*
+             * Validate code and database version. If both FRAMEWORK and PROJECT versions of the CODE and DATABASE do not match,
+             * then check exactly what is the version difference
+             */
+            if((FRAMEWORKCODEVERSION != FRAMEWORKDBVERSION) or (PROJECTCODEVERSION != PROJECTDBVERSION)){
+                load_libs('init');
+                init_process_version_diff();
+            }
         }
 
     }catch(Exception $e){

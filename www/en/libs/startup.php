@@ -58,7 +58,7 @@ if((PLATFORM == 'shell') and (count($argv) > 1)){
     /*
      * Pre-process command line arguments
      */
-    require('handlers/system_shell_arguments.php');
+    require('handlers/startup_shell_arguments.php');
 }
 
 

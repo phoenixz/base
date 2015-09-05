@@ -70,6 +70,26 @@ function chat_start($user){
 
 
 
+function chat_end($userid){
+    try{
+        sql_query('UPDATE `users`
+
+                   SET    `user_status` = :user_status
+
+                   WHERE  `user_id`     = :userid',
+
+                   array(':user_status' => 3,
+                         ':userid'      => $userid),
+
+                   null, 'chat');
+
+    }catch(Exception $e){
+        throw new bException(tr('chat_end(): Failed'), $e);
+    }
+}
+
+
+
 function chat_add_user($user){
     try{
         sql_query('INSERT INTO `users` (`user_id`, `user_name`, `user_email`, `user_password`, `alt_name`, `user_join`)
