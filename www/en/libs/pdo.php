@@ -59,9 +59,33 @@ function sql_query($query, $execute = false, $handle_exceptions = true, $connect
                 throw new bException('sql_query(): Specified $execute is not an array!');
             }
 
-            foreach($execute as $key => $value){
-                if(!is_scalar($value) and !is_null($value)){
-                    throw new bException('sql_query(): Specified key "'.str_log($key).'" in the execute array for query "'.str_log($query, 4096).'" is NOT scalar!', 'invalid');
+            /*
+             * Check execute array
+             */
+            if(empty($execute['allow_html'])){
+                /*
+                 * Auto filter HTML
+                 */
+                foreach($execute as $key => &$value){
+                    if(!is_scalar($value) and !is_null($value)){
+                        throw new bException('sql_query(): Specified key "'.str_log($key).'" in the execute array for query "'.str_log($query, 4096).'" is NOT scalar!', 'invalid');
+                    }
+
+                    if($value and !is_numeric($value)){
+                        $value = cfm($value);
+                    }
+                }
+
+            }else{
+                /*
+                 * Only simple content check
+                 */
+                unset($execute['allow_html']);
+
+                foreach($execute as $key => $value){
+                    if(!is_scalar($value) and !is_null($value)){
+                        throw new bException('sql_query(): Specified key "'.str_log($key).'" in the execute array for query "'.str_log($query, 4096).'" is NOT scalar!', 'invalid');
+                    }
                 }
             }
 

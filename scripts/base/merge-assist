@@ -54,7 +54,7 @@ if(!$target = argument('target', true)){
 /*
  * Ensure that all requested branches exist
  */
-log_console(tr('Verifying requestes branches "%branches%"', array('%branches%' => str_log(implode(' ', $argv)))), '');
+log_console(tr('Verifying requested branches "%branches%"', array('%branches%' => str_log(implode(' ', $argv)))), '');
 git_fetch();
 
 foreach(safe_exec('git branch') as $branch){
@@ -71,6 +71,10 @@ if(!empty($fail)){
 	throw new bException(tr('merge-prepare: Specified branches "%fail%" do not exist', array('%fail%' => str_log(implode(' ', $fail)))), 'not_exists');
 }
 
+if(empty($argv)){
+	throw new bException(tr('merge-prepare: No source branches specified'), 'not-specified');
+}
+
 log_console(tr('Requested branches verified'), '');
 
 
@@ -82,6 +86,8 @@ log_console(tr('Preparing merging to target branch "%$target%"', array('%$target
 if(!in_array($target, $branches)){
 	throw new bException(tr('merge-prepare: Specified target branch "%target%" do not exist', array('%target%' => str_log($target))), 'not_exists');
 }
+
+$branches = $argv;
 
 
 /*
@@ -97,12 +103,13 @@ script_exec('base/update', 'local');
  * the only differences between the requested branches and the TARGET branch
  * are the changes made in that branch
  */
-foreach($argv as $branch){
+foreach($branches as $branch){
 	log_console(tr('Processing branch "%branch%"', array('%branch%' => str_log($branch))), '');
 	safe_exec('git co '.$branch);
+	safe_exec('git pull origin '.$branch);
 
 	log_console(tr('Updating from base'), '');
-	script_exec('base/update', 'local');
+	script_exec('base/update', 'local noinit');
 
 	log_console(tr('Merging from "%branch%"', array('%branch%' => str_log($branch))), '');
 	safe_exec('git merge '.$target);
