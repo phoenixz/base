@@ -239,12 +239,12 @@ function isset_get(&$variable, $return = null, $altreturn = null){
 /*
  * Load html templates from disk
  */
-function load_content($file, $from = false, $to = false, $language = null, $autocreate = null, $validate = true){
+function load_content($file, $replace = false, $language = null, $autocreate = null, $validate = true){
     global $_CONFIG;
 
-    load_libs('file');
-
     try{
+        load_libs('file');
+
         /*
          * Set default values
          */
@@ -252,29 +252,12 @@ function load_content($file, $from = false, $to = false, $language = null, $auto
             $language = LANGUAGE;
         }
 
-        if(!$from){
-            $from = array();
+        if(!isset($replace['###SITENAME###'])){
+            $replace['###SITENAME###'] = str_capitalize($_CONFIG['domain']);
         }
 
-        if(!$to){
-            $to   = array();
-        }
-
-        if(!isset($from['###SITENAME###'])){
-            $from[] = '###SITENAME###';
-            $to[]   = str_capitalize($_CONFIG['domain']);
-        }
-
-        if(!isset($from['###DOMAIN###'])){
-            $from[] = '###DOMAIN###';
-            $to[]   = $_CONFIG['domain'];
-        }
-
-        /*
-         * Simple validation of search / replace values
-         */
-        if($validate and (count($from) != count($to))){
-            throw new bException('load_content(): search count "'.count($from).'" is not equal to replace count "'.count($to).'"', 'searchreplacecounts');
+        if(!isset($replace['###DOMAIN###'])){
+            $replace['###DOMAIN###']   = $_CONFIG['domain'];
         }
 
         /*
@@ -284,7 +267,7 @@ function load_content($file, $from = false, $to = false, $language = null, $auto
             /*
              * File exists, we're okay, get and return contents.
              */
-            $retval = str_replace($from, $to, file_get_contents($realfile));
+            $retval = str_replace(array_keys($replace), array_values($replace), file_get_contents($realfile));
 
             /*
              * Make sure no replace markers are left
@@ -293,7 +276,9 @@ function load_content($file, $from = false, $to = false, $language = null, $auto
                 /*
                  * Oops, specified $from array does not contain all replace markers
                  */
-                throw new bException('load_content(): Missing markers "'.str_log($matches).'" for content file "'.str_log($realfile).'"', 'missingmarkers');
+                if(ENVIRONMENT != 'production'){
+                    throw new bException('load_content(): Missing markers "'.str_log($matches).'" for content file "'.str_log($realfile).'"', 'missingmarkers');
+                }
             }
 
             return $retval;
@@ -318,12 +303,15 @@ function load_content($file, $from = false, $to = false, $language = null, $auto
         file_ensure_path(dirname($realfile));
 
         $default  = 'File created '.$file.' by '.realpath(PWD.$_SERVER['PHP_SELF'])."\n";
-        $default .= print_r($from, true);
-        $default .= print_r($to  , true);
+        $default .= print_r($replace, true);
 
         file_put_contents($realfile, $default);
 
-        return str_replace($from, $to, $default);
+        if($replace){
+            return str_replace(array_keys($replace), array_values($replace), $default);
+        }
+
+        return $default;
 
     }catch(Exception $e){
         notify('error', "LOAD_CONTENT() FAILED [".$e->getCode()."]\n".implode("\n", $e->getMessages()));
