@@ -442,7 +442,7 @@ try{
                 if(empty($_SESSION['language'])){
                     switch($_CONFIG['cookie']['domain']){
                         case '':
-                            break;
+                            throw new bException(tr('startup: No cookie domain specified'), 'notspecified');
 
                         case 'auto':
                             $_CONFIG['domain'] = $_SERVER['SERVER_NAME'];
