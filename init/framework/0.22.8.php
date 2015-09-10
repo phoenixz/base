@@ -20,6 +20,9 @@ sql_query('CREATE TABLE `badges`     (`id`             INT(11)     NOT NULL AUTO
                                       `nl_seo`         VARCHAR(16)     NULL,
                                       `nl_description` TEXT            NULL,
 
+                                      UNIQUE(`user_id`, `en`),
+                                      UNIQUE(`user_id`, `es`),
+                                      UNIQUE(`user_id`, `nl`),
                                       INDEX (`createdon`),
                                       INDEX (`createdby`),
                                       INDEX (`status`),
