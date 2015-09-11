@@ -8,6 +8,8 @@
 load_config('badges');
 
 
+
+
 /*
  * Process one user
  */
@@ -17,8 +19,7 @@ function badge_process_user($user_id){
         /*
          * Get user info
          */
-        $user = sql_get('SELECT `users`.`id`,
-                                `users`.`createdon`
+        $user = sql_get('SELECT `users`.`createdon`
 
                          FROM   `users`
 
@@ -41,18 +42,49 @@ function badge_process_user($user_id){
 
                             array(':user_id' => $user_id));
 
-        if(empty($badges)){
-            /*
-             * This means user does not have any badges
-             */
-            badge_add($user_id, 'new');
+        /*
+         * Set dates
+         */
+        $user_date    = new DateTime(system_date_format($user['createdon'], 'date'));
+        $current_date = new DateTime();
+        $dtime        = $current_date->diff($user_date);
+        $dtime        = $dtime->d;
 
-        }else{
-            foreach($badges as $badge){
-// :TODO: According to the badges of a user and also the date createdon
-//        of a user, add or remove badges.
-            }
+        /*
+         * Look for which badges must the user have
+         * according to the number of days
+         */
+        $badge = '';
+
+        if($dtime >= 365){
+            /*
+             * User has more than a year
+             */
+           $badge = 'one_year';
         }
+
+        if($dtime >= 30){
+            /*
+             * User has more than a month
+             */
+            $badge = 'one_month';
+        }
+
+        if($dtime < 30){
+            /*
+             * User is new
+             */
+            $badge = 'new';
+        }
+
+        if(!empty($badge)){
+            badge_removes($user_id, $badge, $badges);
+// :TODO: implement a function like "badge_adds"
+// That can check if user has already that badge
+// if he already has then do nothing if not add badge
+// badge_add($user_id, $badge);
+        }
+
     }catch(Exception $e){
         throw new bException("badge_process_user(): Failed ", $e);
     }
@@ -60,6 +92,10 @@ function badge_process_user($user_id){
 
 
 
+
+/*
+ * Process all users
+ */
 function badge_process_users(){
     try{
 
@@ -67,6 +103,7 @@ function badge_process_users(){
         throw new bException('badge_process_users(): Failed', $e);
     }
 }
+
 
 
 
@@ -101,6 +138,7 @@ function badge_add($user_id, $badge){
 
 
 
+
 /*
  * Remove badge
  */
@@ -130,6 +168,35 @@ function badge_remove($user_id, $badge){
 
     }catch(Exception $e){
         throw new bException('badge_remove(): Failed', $e);
+    }
+}
+
+
+
+
+/*
+ * Remove unnecesary badges
+ */
+function badge_removes($user_id, $badge, $badges){
+    global $_CONFIG;
+    try{
+        /*
+         * Check if given type is in CONFIG[badges]
+         */
+        if(empty($_CONFIG['badges'][$badge])){
+            throw new bException(tr('badge_removes(): Unkown badge "%type%"', array('%type%' => str_log($badge))), 'unknown');
+        }
+
+        if(!empty($_CONFIG['badges'][$badge]['not_need']) and !empty($badges)){
+            foreach($_CONFIG['badges'][$badge]['not_need'] as $not_need){
+                if(in_array($not_need, $badges)){
+                    badge_remove($user_id, $not_need);
+                }
+            }
+        }
+
+    }catch(Exception $e){
+        throw new bException('badge_removes(): Failed', $e);
     }
 }
 
