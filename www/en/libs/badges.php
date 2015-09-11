@@ -56,30 +56,23 @@ function badge_process_user($user_id){
          */
         $badge = '';
 
-        if($dtime >= 365){
+        if($dtime >= 730){
             /*
              * User has more than a year
              */
-           $badge = 'one_year';
-        }
+           $badge = 'year2';
 
-        if($dtime >= 30){
+        }elseif($dtime >= 365){
             /*
              * User has more than a month
              */
-            $badge = 'one_month';
-        }
+            $badge = 'year1';
 
-        if($dtime < 30){
-            /*
-             * User is new
-             */
-            $badge = 'new';
         }
 
         if(!empty($badge)){
-            badge_removes($user_id, $badge, $badges);
-// :TODO: implement a function like "badge_adds"
+            badge_remove_not_needed($user_id, $badge, $badges);
+// :TODO: implement a function like "badge_add_check"
 // That can check if user has already that badge
 // if he already has then do nothing if not add badge
 // badge_add($user_id, $badge);
@@ -98,6 +91,16 @@ function badge_process_user($user_id){
  */
 function badge_process_users(){
     try{
+        $r = sql_query('SELECT `id` FROM `users` WHERE `status` IS NULL');
+
+        while($user = sql_fetch($r)){
+            try{
+                badge_process_user($user['id']);
+
+            }catch(Exception $e){
+// :TODO: Notify about error, then ignore and continue
+            }
+        }
 
     }catch(Exception $e){
         throw new bException('badge_process_users(): Failed', $e);
@@ -144,6 +147,7 @@ function badge_add($user_id, $badge){
  */
 function badge_remove($user_id, $badge){
     global $_CONFIG;
+
     try{
         /*
          * Check if given type is in CONFIG[badges]
@@ -155,15 +159,12 @@ function badge_remove($user_id, $badge){
         /*
          * Delete badge
          */
-        sql_query('UPDATE `badges`
+        sql_query('DELETE FROM `badges`
 
-                   SET    `badges`.`status`       = :status
+                   WHERE       `badges`.`user_id`      = :user_id
+                   AND         `badges`.`'.LANGUAGE.'` = :badge_name',
 
-                   WHERE  `badges`.`user_id`      = :user_id
-                   AND    `badges`.`'.LANGUAGE.'` = :badge_name',
-
-                   array(':status'     => "deleted",
-                         ':user_id'    => $user_id,
+                   array(':user_id'    => $user_id,
                          ':badge_name' => $badge));
 
     }catch(Exception $e){
@@ -175,20 +176,20 @@ function badge_remove($user_id, $badge){
 
 
 /*
- * Remove unnecesary badges
+ * Remove not needed badges
  */
-function badge_removes($user_id, $badge, $badges){
+function badge_remove_not_needed($user_id, $badge, $badges){
     global $_CONFIG;
     try{
         /*
          * Check if given type is in CONFIG[badges]
          */
         if(empty($_CONFIG['badges'][$badge])){
-            throw new bException(tr('badge_removes(): Unkown badge "%type%"', array('%type%' => str_log($badge))), 'unknown');
+            throw new bException(tr('badge_remove_not_needed(): Unkown badge "%type%"', array('%type%' => str_log($badge))), 'unknown');
         }
 
-        if(!empty($_CONFIG['badges'][$badge]['not_need']) and !empty($badges)){
-            foreach($_CONFIG['badges'][$badge]['not_need'] as $not_need){
+        if(!empty($_CONFIG['badges'][$badge]['not_needed']) and !empty($badges)){
+            foreach($_CONFIG['badges'][$badge]['not_needed'] as $not_need){
                 if(in_array($not_need, $badges)){
                     badge_remove($user_id, $not_need);
                 }
@@ -196,7 +197,7 @@ function badge_removes($user_id, $badge, $badges){
         }
 
     }catch(Exception $e){
-        throw new bException('badge_removes(): Failed', $e);
+        throw new bException('badge_remove_not_needed(): Failed', $e);
     }
 }
 
