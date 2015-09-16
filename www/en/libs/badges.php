@@ -53,15 +53,23 @@ function badge_process_user($user_id){
         $year  = 1;
         $days  = 365;
 
-        do{
-            if(($dtime >= $days*$year) and !in_array('year'.$year, $badges)){
-                badge_add($user_id, 'year'.$year);
+        while($dtime >= $days*$year){
+            $year++;
+        }
+
+        $year--;
+        badge_add($user_id, 'year'.$year);
+        $year--;
+
+        /*
+         * Remove unnecesary year badges
+         */
+        while($year > 0){
+            if(in_array('year'.$year, badges)){
+                badge_remove($user_id, 'year'.$year);
             }
-            $year += 1;
-// :TODO: use badge_remove to remove the unneeded badges
-// For example if a user has now year2 then remove year1
-        }while($year <= 3);
-// :INVESTIGATE: which will be STOP condition ?
+            $year--;
+        }
 
     }catch(Exception $e){
         throw new bException("badge_process_user(): Failed ", $e);
