@@ -1387,7 +1387,7 @@ function html_img($src, $alt, $height = 0, $width = 0, $more = ''){
  */
 function html_video($src, $type = null, $height = 0, $width = 0, $more = ''){
     global $_CONFIG;
-
+    $local = false;
     try{
         if(ENVIRONMENT !== 'production'){
             if(!$src){
@@ -1414,14 +1414,16 @@ function html_video($src, $type = null, $height = 0, $width = 0, $more = ''){
             /*
              * This is a local video
              */
-            $file = ROOT.'www/en'.str_starts($src, '/');
+            $file  = ROOT.'www/en'.str_starts($src, '/');
+            $local = true;
 
         }else{
             if(preg_match('/^'.$protocol.':\/\/(?:www\.)?'.str_replace('.', '\.', $_CONFIG['domain']).'\/.+$/ius', $src)){
                 /*
-                 * This is a local image with domain specification
+                 * This is a local video with domain specification
                  */
-                $file = ROOT.'www/en'.str_starts(str_from($src, $_CONFIG['domain']), '/');
+                $file  = ROOT.'www/en'.str_starts(str_from($src, $_CONFIG['domain']), '/');
+                $local = true;
 
             }elseif(ENVIRONMENT !== 'production'){
                 /*
@@ -1439,32 +1441,55 @@ function html_video($src, $type = null, $height = 0, $width = 0, $more = ''){
                 if(!$type){
                     throw new bException(tr('html_video(): No type specified for remote video'), 'notspecified');
                 }
-
-                $height = 1;
-                $width  = 1;
             }
         }
 
-        if(!$height or !$width){
+        /*
+         * Check if file exists only if it is a local file
+         */
+        if($local){
             if(!file_exists($file)){
                 log_error(tr('html_video(): Specified video "%video%" does not exist', array('%video%' => $src)), 'notspecified');
             }
         }
 
+// :INVESTIGATE: How to check if a remote file exists
+
+        if(!$height or !$width){
 // :INVESTIGATE: Is better getting default width and height dimensions like in html_img()
 // But in this case, we have to use a external "library" to get this done
 // Investigate the best option for this!
+        }
+
+// This is the temporarily solution for dimensions.
         /*
-         * If no dimensions are given, then
-         * display video with original dimensions
+         * If no height was given, let the browser display
+         * the video with the original height of it
          */
-        ($height) ? 'height="'.$height.'"' : $height = '' ;
-        ($width)  ? 'width="'.$width.'"' : $width = '' ;
+        if(!$height){
+            $height = '';
+
+        }else{
+            $height = 'height="'.$height.'"';
+        }
+
+        /*
+         * If no width was given, let the browser display
+         * the video with the original width of it
+         */
+        if(!$width){
+            $width = '';
+
+        }else{
+            $width = 'width="'.$width.'"';
+        }
 
         /*
          * Get the type
          */
-        $type = mime_content_type($file);
+        if(!$type){
+            $type = mime_content_type($file);
+        }
 
         return '<video '.$width.' '.$height.' controls '.($more ? ' '.$more : '').'>
                     <source src="'.$src.'" type="'.$type.'">
