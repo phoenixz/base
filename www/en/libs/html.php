@@ -1464,24 +1464,30 @@ function html_video($src, $type = null, $height = 0, $width = 0, $more = ''){
 // This is the temporarily solution for dimensions.
         /*
          * If no height was given, let the browser display
-         * the video with the original height of it
+         * with the original height of the video
          */
         if(!$height){
             $height = '';
 
-        }else{
+        }elseif(is_numeric($height)){
             $height = 'height="'.$height.'"';
+
+        }else{
+            log_error(tr('html_video(): Specified height "%height%" is not numeric', array('%height%' => $height)), 'notnumeric');
         }
 
         /*
          * If no width was given, let the browser display
-         * the video with the original width of it
+         * with the original width of the video
          */
         if(!$width){
             $width = '';
 
-        }else{
+        }elseif(is_numeric($width)){
             $width = 'width="'.$width.'"';
+
+        }else{
+            log_error(tr('html_video(): Specified width "%width%" is not numeric', array('%width%' => $width)), 'notnumeric');
         }
 
         /*
