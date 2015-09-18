@@ -1416,24 +1416,12 @@ function html_video($src, $type = null, $height = 0, $width = 0, $more = ''){
              */
             $file = ROOT.'www/en'.str_starts($src, '/');
 
-            /*
-             * If no dimensions are given, then
-             * display video with original dimensions
-             */
-            ($height) ? 'height="'.$height.'"' : $height = '' ;
-            ($width)  ? 'width="'.$width.'"' : $width = '' ;
-            $type = mime_content_type($file);
-
         }else{
             if(preg_match('/^'.$protocol.':\/\/(?:www\.)?'.str_replace('.', '\.', $_CONFIG['domain']).'\/.+$/ius', $src)){
                 /*
                  * This is a local image with domain specification
                  */
                 $file = ROOT.'www/en'.str_starts(str_from($src, $_CONFIG['domain']), '/');
-
-                $type = mime_content_type($file);
-                ($height) ? 'height="'.$height.'"' : $height = '' ;
-                ($width)  ? 'width="'.$width.'"' : $width = '' ;
 
             }elseif(ENVIRONMENT !== 'production'){
                 /*
@@ -1452,18 +1440,31 @@ function html_video($src, $type = null, $height = 0, $width = 0, $more = ''){
                     throw new bException(tr('html_video(): No type specified for remote video'), 'notspecified');
                 }
 
-                $height = 'height="'.$height.'"';
-                $width  = 'width="'.$width.'"';
+                $height = 1;
+                $width  = 1;
             }
         }
 
-        if(!file_exists($file)){
-            log_error(tr('html_video(): Specified vide "%video%" does not exist', array('%video%' => $src)), 'notspecified');
+        if(!$height or !$width){
+            if(!file_exists($file)){
+                log_error(tr('html_video(): Specified video "%video%" does not exist', array('%video%' => $src)), 'notspecified');
+            }
         }
 
 // :INVESTIGATE: Is better getting default width and height dimensions like in html_img()
 // But in this case, we have to use a external "library" to get this done
 // Investigate the best option for this!
+        /*
+         * If no dimensions are given, then
+         * display video with original dimensions
+         */
+        ($height) ? 'height="'.$height.'"' : $height = '' ;
+        ($width)  ? 'width="'.$width.'"' : $width = '' ;
+
+        /*
+         * Get the type
+         */
+        $type = mime_content_type($file);
 
         return '<video '.$width.' '.$height.' controls '.($more ? ' '.$more : '').'>
                     <source src="'.$src.'" type="'.$type.'">
