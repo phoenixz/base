@@ -35,12 +35,12 @@ try{
                 /*
                  * Set current session user
                  */
-                $signin   = $arg;
-                $password = $argv[$argid + 1];
-                $password = $argv[$argid + 1];
+                $user     = $argv[$argid + 1];
+                $password = $argv[$argid + 2];
 
                 unset($argv[$argid]);
                 unset($argv[$argid + 1]);
+                unset($argv[$argid + 2]);
                 break;
 
             case 'language':
