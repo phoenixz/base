@@ -1382,6 +1382,120 @@ function html_img($src, $alt, $height = 0, $width = 0, $more = ''){
 
 
 /*
+ * Create and return a video container that has at the least src, alt, height and width
+ */
+function html_video($src, $type = null, $height = 0, $width = 0, $more = ''){
+    global $_CONFIG;
+
+    try{
+        if(ENVIRONMENT !== 'production'){
+            if(!$src){
+                throw new bException(tr('html_video(): No video src specified'), 'notspecified');
+            }
+        }
+
+        /*
+         * Videos can be either local or remote
+         * Local videos either have http://thisdomain.com/video, https://thisdomain.com/video, or /video
+         * Remote videos must have width and height specified
+         */
+        if(substr($src, 0, 7) == 'http://'){
+            $protocol = 'http';
+
+        }elseif($protocol = substr($src, 0, 8) == 'https://'){
+            $protocol = 'https';
+
+        }else{
+            $protocol = '';
+        }
+
+        if(!$protocol){
+            /*
+             * This is a local video
+             */
+            $file  = ROOT.'www/en'.str_starts($src, '/');
+
+        }else{
+            if(preg_match('/^'.$protocol.':\/\/(?:www\.)?'.str_replace('.', '\.', $_CONFIG['domain']).'\/.+$/ius', $src)){
+                /*
+                 * This is a local video with domain specification
+                 */
+                $file  = ROOT.'www/en'.str_starts(str_from($src, $_CONFIG['domain']), '/');
+
+            }elseif(ENVIRONMENT !== 'production'){
+                /*
+                 * This is a remote video
+                 * Remote videos MUST have height and width specified!
+                 */
+                if(!$height){
+                    throw new bException(tr('html_video(): No height specified for remote video'), 'notspecified');
+                }
+
+                if(!$width){
+                    throw new bException(tr('html_video(): No width specified for remote video'), 'notspecified');
+                }
+
+                if(!$type){
+                    throw new bException(tr('html_video(): No type specified for remote video'), 'notspecified');
+                }
+            }
+        }
+
+        if(!$height or !$width){
+// :INVESTIGATE: Is better getting default width and height dimensions like in html_img()
+// But in this case, we have to use a external "library" to get this done
+// Investigate the best option for this!
+        }
+
+// This is the temporarily solution for dimensions.
+        /*
+         * If no height was given, let the browser display
+         * with the original height of the video
+         */
+        if(!$height){
+            $height = '';
+
+        }elseif(is_numeric($height)){
+            $height = 'height="'.$height.'"';
+
+        }else{
+            log_error(tr('html_video(): Specified height "%height%" is not numeric', array('%height%' => $height)), 'not_numeric');
+        }
+
+        /*
+         * If no width was given, let the browser display
+         * with the original width of the video
+         */
+        if(!$width){
+            $width = '';
+
+        }elseif(is_numeric($width)){
+            $width = 'width="'.$width.'"';
+
+        }else{
+            log_error(tr('html_video(): Specified width "%width%" is not numeric', array('%width%' => $width)), 'not_numeric');
+        }
+
+        /*
+         * Get the file type
+         */
+        if(!$type){
+            $type = mime_content_type($file);
+        }
+
+        return '<video '.$width.' '.$height.' controls '.($more ? ' '.$more : '').'>
+                    <source src="'.$src.'" type="'.$type.'">
+                </video>';
+
+
+    }catch(Exception $e){
+        throw new bException('html_video(): Failed', $e);
+    }
+}
+
+
+
+/*
  * Show the specified page
  */
 function page_show($pagename, $die = true, $force = false, $data = null) {
