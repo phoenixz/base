@@ -1473,7 +1473,7 @@ function html_video($src, $type = null, $height = 0, $width = 0, $more = ''){
             $height = 'height="'.$height.'"';
 
         }else{
-            log_error(tr('html_video(): Specified height "%height%" is not numeric', array('%height%' => $height)), 'notnumeric');
+            log_error(tr('html_video(): Specified height "%height%" is not numeric', array('%height%' => $height)), 'not_numeric');
         }
 
         /*
@@ -1487,7 +1487,7 @@ function html_video($src, $type = null, $height = 0, $width = 0, $more = ''){
             $width = 'width="'.$width.'"';
 
         }else{
-            log_error(tr('html_video(): Specified width "%width%" is not numeric', array('%width%' => $width)), 'notnumeric');
+            log_error(tr('html_video(): Specified width "%width%" is not numeric', array('%width%' => $width)), 'not_numeric');
         }
 
         /*
