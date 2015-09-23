@@ -1381,13 +1381,12 @@ function html_img($src, $alt, $height = 0, $width = 0, $more = ''){
 
 
 
-
 /*
  * Create and return a video container that has at the least src, alt, height and width
  */
 function html_video($src, $type = null, $height = 0, $width = 0, $more = ''){
     global $_CONFIG;
-    $local = false;
+
     try{
         if(ENVIRONMENT !== 'production'){
             if(!$src){
@@ -1415,7 +1414,6 @@ function html_video($src, $type = null, $height = 0, $width = 0, $more = ''){
              * This is a local video
              */
             $file  = ROOT.'www/en'.str_starts($src, '/');
-            $local = true;
 
         }else{
             if(preg_match('/^'.$protocol.':\/\/(?:www\.)?'.str_replace('.', '\.', $_CONFIG['domain']).'\/.+$/ius', $src)){
@@ -1423,7 +1421,6 @@ function html_video($src, $type = null, $height = 0, $width = 0, $more = ''){
                  * This is a local video with domain specification
                  */
                 $file  = ROOT.'www/en'.str_starts(str_from($src, $_CONFIG['domain']), '/');
-                $local = true;
 
             }elseif(ENVIRONMENT !== 'production'){
                 /*
@@ -1443,17 +1440,6 @@ function html_video($src, $type = null, $height = 0, $width = 0, $more = ''){
                 }
             }
         }
-
-        /*
-         * Check if file exists only if it is a local file
-         */
-        if($local){
-            if(!file_exists($file)){
-                log_error(tr('html_video(): Specified video "%video%" does not exist', array('%video%' => $src)), 'notspecified');
-            }
-        }
-
-// :INVESTIGATE: How to check if a remote file exists
 
         if(!$height or !$width){
 // :INVESTIGATE: Is better getting default width and height dimensions like in html_img()
@@ -1491,7 +1477,7 @@ function html_video($src, $type = null, $height = 0, $width = 0, $more = ''){
         }
 
         /*
-         * Get the type
+         * Get the file type
          */
         if(!$type){
             $type = mime_content_type($file);
