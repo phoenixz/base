@@ -42,10 +42,10 @@ array_shift($argv);
 if(!empty($signin)){
     try{
         load_libs('user');
-        $_SESSION['user'] = user_authenticate($signin, $password);
+        $_SESSION['user'] = user_authenticate($user, $password);
         log_console('startup: Signed in as user "'.user_name($_SESSION['user']).'"', '', 'white');
 
-        unset($signin);
+        unset($user);
         unset($password);
 
     }catch(Exception $e){
