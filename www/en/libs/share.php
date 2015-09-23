@@ -107,7 +107,7 @@ function share_sharethis_buttons($buttons) {
                     break;
 
                 default:
-                    throw new bException(tr('share_sharethis_buttons(): Unknown type "%type%" specified', array('%type%' => $type)), 'unknown');
+                    throw new bException(tr('share_sharethis_buttons(): Unknown button "%button%" specified', array('%button%' => $button)), 'unknown');
             }
         }
 
@@ -172,6 +172,7 @@ function share_addtoany_buttons($buttons) {
 
                 case 'all':
                     return share_addtoany_buttons('facebook,twitter,googleplus,reddit,linkedin,email');
+
                 default:
                     throw new bException(tr('share_addtoany_buttons(): Unknown button "%button%" specified', array('%button%' => $button)), 'unknown');
             }
