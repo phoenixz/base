@@ -141,6 +141,10 @@ if(empty($test)){
     // Sources
     log_console('Data sources', 'copy', 'purple');
     echo shell_exec('rsync -e "ssh -p '.$base['port'].'" -av --no-perms '.$base['host'].':'.$base['path'].'/data/sources/* '.ROOT.'data/sources/');
+
+    // Audio files
+    log_console('Audio files', 'copy', 'purple');
+    echo shell_exec('rsync -e "ssh -p '.$base['port'].'" -av --no-perms '.$base['host'].':'.$base['path'].'/data/audio/* '.ROOT.'data/audio/');
 }
 
 /*
