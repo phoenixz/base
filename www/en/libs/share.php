@@ -40,13 +40,16 @@ function share_sharethis_buttons($buttons) {
                     $html .= '<span class="st_facebook_large" displayText="Facebook"></span>';
                     break;
 
-                case 'facebook_like':                           // FALLTHROUGH
-                case 'facebook_vlike':                          // FALLTHROUGH
+                case 'facebook_like':
+                    // FALLTHROUGH
+                case 'facebook_vlike':
+                    // FALLTHROUGH
                 case 'facebook_like_vertical':
                     $html .= '<span class="st_fblike_vcount" ></span>';
                     break;
 
-                case 'facebook_hlike':                          // FALLTHROUGH
+                case 'facebook_hlike':
+                    // FALLTHROUGH
                 case 'facebook_like_horizontal':
                     $html .= '<span class="st_fblike_hcount" ></span>';
                     break;
@@ -63,22 +66,26 @@ function share_sharethis_buttons($buttons) {
                     $html .= '<span class="st_plusone_button"></span>';
                     break;
 
-                case 'googleplus_s+1':                          // FALLTHROUGH
+                case 'googleplus_s+1':
+                    // FALLTHROUGH
                 case 'googleplus_+1_small':
                     $html .= '<span class="st_plusone"></span>';
                     break;
 
-                case 'googleplus_l+1':                          // FALLTHROUGH
+                case 'googleplus_l+1':
+                    // FALLTHROUGH
                 case 'googleplus_+1_large':
                     $html .= '<span class="st_plusone_large"></span>';
                     break;
 
-                case 'googleplus_h+1':                          // FALLTHROUGH
+                case 'googleplus_h+1':
+                    // FALLTHROUGH
                 case 'googleplus_+1_hcount':
                     $html .= '<span class="st_plusone_hcount"></span>';
                     break;
 
-                case 'googleplus_v+1':                          // FALLTHROUGH
+                case 'googleplus_v+1':
+                    // FALLTHROUGH
                 case 'googleplus_+1_vcount':
                     $html .= '<span class="st_plusone_vcount"></span>';
                     break;
