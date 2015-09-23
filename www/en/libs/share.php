@@ -40,12 +40,54 @@ function share_sharethis_buttons($buttons) {
                     $html .= '<span class="st_facebook_large" displayText="Facebook"></span>';
                     break;
 
+                case 'facebook_like':
+                    // FALLTHROUGH
+                case 'facebook_vlike':
+                    // FALLTHROUGH
+                case 'facebook_like_vertical':
+                    $html .= '<span class="st_fblike_vcount" ></span>';
+                    break;
+
+                case 'facebook_hlike':
+                    // FALLTHROUGH
+                case 'facebook_like_horizontal':
+                    $html .= '<span class="st_fblike_hcount" ></span>';
+                    break;
+
                 case 'twitter':
                     $html .= '<span class="st_twitter_large" displayText="Tweet"></span>';
                     break;
 
                 case 'googleplus':
                     $html .= '<span class="st_googleplus_large" displayText="Google +"></span>';
+                    break;
+
+                case 'googleplus_+1':
+                    $html .= '<span class="st_plusone_button"></span>';
+                    break;
+
+                case 'googleplus_s+1':
+                    // FALLTHROUGH
+                case 'googleplus_+1_small':
+                    $html .= '<span class="st_plusone"></span>';
+                    break;
+
+                case 'googleplus_l+1':
+                    // FALLTHROUGH
+                case 'googleplus_+1_large':
+                    $html .= '<span class="st_plusone_large"></span>';
+                    break;
+
+                case 'googleplus_h+1':
+                    // FALLTHROUGH
+                case 'googleplus_+1_hcount':
+                    $html .= '<span class="st_plusone_hcount"></span>';
+                    break;
+
+                case 'googleplus_v+1':
+                    // FALLTHROUGH
+                case 'googleplus_+1_vcount':
+                    $html .= '<span class="st_plusone_vcount"></span>';
                     break;
 
                 case 'reddit':
@@ -61,7 +103,8 @@ function share_sharethis_buttons($buttons) {
                     break;
 
                 case 'all':
-                    return share_sharethis_buttons('facebook,twitter,googleplus,reddit,linkedin,email');
+                    $html .= share_sharethis_buttons('facebook,twitter,googleplus,reddit,linkedin,email,facebook_like,googleplus_v+1');
+                    break;
 
                 default:
                     throw new bException(tr('share_sharethis_buttons(): Unknown button "%button%" specified', array('%button%' => $button)), 'unknown');
