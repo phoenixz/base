@@ -1,17 +1,31 @@
 <?php
 /*
+ *
+ *
+ *
+ *
+ */
+
+
+
+/*
  * It must be customized in www.addthis.com/dashboard
  */
 function share_addthis_buttons() {
     try{
         html_load_js('//s7.addthis.com/js/300/addthis_widget.js#pubid=ra-55e77d50dd5d574b');
         return '<div class="addthis_sharing_toolbox"></div>';
+
     } catch(Exception $e) {
         throw new bException('share_addthis_buttons(): Failed', $e);
     }
-
 }
 
+
+
+/*
+ *
+ */
 function share_sharethis_buttons($buttons) {
     try{
         $html = '';
@@ -52,24 +66,35 @@ function share_sharethis_buttons($buttons) {
                 default:
                     throw new bException(tr('share_sharethis_buttons(): Unknown type "%type%" specified', array('%type%' => $type)), 'unknown');
             }
-
         }
 
         return $html;
+
     } catch(Exception $e) {
         throw new bException('share_sharethis_buttons(): Failed', $e);
     }
 }
 
+
+
+/*
+ *
+ */
 function share_sharethis_js() {
     return '<script type="text/javascript">var switchTo5x=true;</script>
             <script type="text/javascript" src="https://ws.sharethis.com/button/buttons.js"></script>
             <script type="text/javascript">stLight.options({publisher: "61be857e-d1f6-4684-9f41-155e6f3352a4", doNotHash: false, doNotCopy: false, hashAddressBar: false});</script>';
 }
 
+
+
+/*
+ *
+ */
 function share_addtoany_buttons($buttons) {
     try{
         html_load_js('//static.addtoany.com/menu/page.js');
+
         $html = '<div class="a2a_kit a2a_kit_size_32 a2a_default_style">';
 
         if(empty($buttons)) {
@@ -105,18 +130,16 @@ function share_addtoany_buttons($buttons) {
                 case 'all':
                     return share_addtoany_buttons('facebook,twitter,googleplus,reddit,linkedin,email');
                 default:
-                    throw new bException(tr('share_addtoany_buttons(): Unknown type "%type%" specified', array('%type%' => $type)), 'unknown');
+                    throw new bException(tr('share_addtoany_buttons(): Unknown button "%button%" specified', array('%button%' => $button)), 'unknown');
             }
-
         }
 
         $html .= '</div>';
 
         return $html;
+
     } catch(Exception $e) {
         throw new bException('share_addtoany_buttons(): Failed', $e);
     }
 }
-
-
 ?>
