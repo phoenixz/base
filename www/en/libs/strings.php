@@ -974,7 +974,7 @@ function str_caps_guess($string){
  */
 function str_force($source, $separator = ','){
     try{
-        if(!is_string($source)){
+        if(!is_scalar($source)){
             if(!is_array($source)){
                 if(!$source){
                     return '';
@@ -986,7 +986,7 @@ function str_force($source, $separator = ','){
             return implode($separator, $source);
         }
 
-        return $source;
+        return (string) $source;
 
     }catch(Exception $e){
         throw new bException('str_force(): Failed', $e);
