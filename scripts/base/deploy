@@ -431,6 +431,13 @@ foreach($targets as $target_environment){
     $deploy_config               = $_CONFIG['deploy'][$target_environment];
     $deploy_config['target_dir'] = unslash($deploy_config['target_dir']);
 
+    if(!$deploy_config['target_user']){
+        /*
+         * No target user specified, use the current process user
+         */
+        $deploy_config['target_user'] = get_current_user();
+    }
+
     log_console('Deploying to target environment "'.str_log($target_environment).'"', 'deploy', 'white');
 
     init_hook('deploy_pre', $nohooks, array('target_user'   => $deploy_config['target_user'],
