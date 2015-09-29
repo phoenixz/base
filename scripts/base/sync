@@ -29,6 +29,8 @@ noimport                   - Do not import the temporary mysql dump from
 nodelete                   - Do not delete the temporary mysql dump from
                              the target environment
 
+nohook / nohooks           - Do not execute hooks
+
 nosync                     - Do not sync configured data directories
 
 nofunctions                - Do not sync mysql functions from the specified environment
@@ -38,14 +40,24 @@ deletesync / syncdelete    - Delete data file paths before syncing (warning:
 
 nocacheclear               - Do not clear cache after finishing the sync
 
-noblogupdateurl            - Do not update the blog page URL's";
+noblogupdateurl            - Do not update the blog page URL's
+
+nobadgescached             - Do not clear badges_cached for badges
+
+
+
+HOOK SCRIPTS: Below are shown (in order) the hook scripts that will be
+              executed If the hook scripts exist (in ROOT/scripts/hooks)
+              they will be executed. If not, they will be ignored
+
+sync_badges_cached";
 
 $nologin = true;
 
 require_once(dirname(__FILE__).'/../../libs/startup.php');
 
 cli_only();
-load_libs('array');
+load_libs('init,array');
 
 
 
@@ -58,9 +70,11 @@ $nosync          =  argument('nosync');
 $noinit          =  argument('noinit');
 $noclear         =  argument('noclear');
 $noimport        =  argument('noimport');
+$nohooks         = (argument('nohook') or argument('nohooks'));
 $nodelete        =  argument('nodelete');
 $nodefinerfix    =  argument('nodefinerfix');
 $nocacheclear    =  argument('nocacheclear');
+$nobadgescached  =  argument('nobadgescached');
 $noblogupdateurl =  argument('noblogupdateurl');
 $deletesync      = (argument('deletesync') or argument('syncdelete'));
 $environment     =  argument('environment'    , true);
@@ -337,6 +351,15 @@ if(!$noblogupdateurl){
 // :DELETE: Sync script removes original DB, so theres a problem with PDO using that DB.
 //    blogs_update_urls();
     passthru(ROOT.'scripts/base/init');
+}
+
+
+
+/*
+ * Clear badges_cached on users table
+ */
+if(!$nobadgescached){
+    init_hook('sync_badges_cached', $nohooks);
 }
 
 log_console('Finished!', 'sync', 'green');
