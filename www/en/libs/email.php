@@ -102,6 +102,7 @@ function email_poll($usernames, $criteria = 'ALL'){
                         $data['html'] = str_replace("\r", '', $data['html']);
 
                         $retval[$username][] = $data;
+                        usleep(20000);
                     }
 
                     log_console(tr('Got "%count%" new mails for account "%account%"', array('%count%' => count($emails), '%account%' => $username)), '', 'purple');
