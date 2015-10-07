@@ -24,7 +24,7 @@ if(PLATFORM == 'shell'){
  */
 function csf_get_exec(){
     try{
-        return shell_exec('which csf 2> /dev/null');
+        return trim(shell_exec('which csf 2> /dev/null'));
 
     }catch(Exception $e){
         throw new bException('csf_get_exec(): Failed', $e);
