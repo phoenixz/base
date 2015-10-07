@@ -41,7 +41,7 @@ function cf_zone_list(){
         $response = $GLOBALS['cf_connector']->zone_load_multi();
 
         if($response->result != 'success'){
-            throw new bException('cf_zone_list(): Response from CloudFlare was unsuccessfull');
+            throw new bException('cf_zone_list(): Response from CloudFlare was unsuccessfull. Message : '.$response->msg);
         }
 
         $zones = array();
@@ -68,7 +68,7 @@ function cf_whitelist($ip, $domain=null){
         $response = $GLOBALS['cf_connector']->wl($ip);
 
         if($response->result != 'success'){
-            throw new bException('cf_whitelist(): Response from CloudFlare was unsuccessfull');
+            throw new bException('cf_whitelist(): Response from CloudFlare was unsuccessfull. Message : '.$response->msg);
         }
 
     } catch(Exception $e){
@@ -89,7 +89,8 @@ function cf_blacklist($ip, $domain=null){
         $response = $GLOBALS['cf_connector']->ban($ip);
 
         if($response->result != 'success'){
-            throw new bException('cf_blacklist(): Response from CloudFlare was unsuccessfull');
+            show($response);
+            throw new bException('cf_blacklist(): Response from CloudFlare was unsuccessfull. Message : '.$response->msg);
         }
 
     } catch(Exception $e){
@@ -109,7 +110,7 @@ function cf_unwhitelist($ip, $domain=null){
         $response = $GLOBALS['cf_connector']->nul($ip);
 
         if($response->result != 'success'){
-            throw new bException('cf_unwhitelist(): Response from CloudFlare was unsuccessfull');
+            throw new bException('cf_unwhitelist(): Response from CloudFlare was unsuccessfull. Message : '.$response->msg);
         }
 
     } catch(Exception $e){
@@ -129,7 +130,7 @@ function cf_unblacklist($ip, $domain=null){
         $response = $GLOBALS['cf_connector']->nul($ip);
 
         if($response->result != 'success'){
-            throw new bException('cf_unblacklist(): Response from CloudFlare was unsuccessfull');
+            throw new bException('cf_unblacklist(): Response from CloudFlare was unsuccessfull. Message : '.$response->msg);
         }
 
     } catch(Exception $e){
@@ -148,7 +149,7 @@ function cf_clear_cache($domain){
         $response = $GLOBALS['cf_connector']->fpurge_ts($domain);
 
         if($response->result != 'success'){
-            throw new bException('cf_clear_cache(): Response from CloudFlare was unsuccessfull');
+            throw new bException('cf_clear_cache(): Response from CloudFlare was unsuccessfull. Message : '.$response->msg);
         }
     } catch(Exception $e){
         throw new bException('cf_clear_cache(): Failed', $e);
