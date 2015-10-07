@@ -155,4 +155,44 @@ function cf_clear_cache($domain){
         throw new bException('cf_clear_cache(): Failed', $e);
     }
 }
+
+
+
+/*
+ *
+ */
+function cf_install_apache_module(){
+    try{
+        passthru('sudo apt-get install libtool apache2-dev', $return);
+        if($return == 0){
+            passthru('wget -O /tmp/mod_cloudflare.c https://www.cloudflare.com/static/misc/mod_cloudflare/mod_cloudflare.c', $return);
+            if($return == 0){
+                passthru('sudo apxs -a -i -c /tmp/mod_cloudflare.c', $return);
+                if($return == 0){
+                    passthru('sudo service apache2 restart');
+                    return true;
+                }
+            }
+        }
+
+        return false;
+    } catch(Exception $e){
+        throw new bException('cf_install_apache_module(): Failed', $e);
+    }
+
+}
+
+
+
+/*
+ *
+ */
+function cf_is_apache_module_installed(){
+    try{
+        return shell_exec('apachectl -M | grep cloudflare_module');
+
+    } catch(Exception $e){
+        throw new bException('cf_is_apache_module_installed(): Failed', $e);
+    }
+}
 ?>
