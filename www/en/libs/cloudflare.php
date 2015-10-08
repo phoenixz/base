@@ -163,7 +163,7 @@ function cf_clear_cache($domain){
  */
 function cf_install_apache_module(){
     try{
-        passthru('sudo apt-get install libtool apache2-dev', $return);
+        passthru('sudo apt-get update && sudo apt-get -y install libtool apache2-dev', $return);
         if($return == 0){
             passthru('wget -O /tmp/mod_cloudflare.c https://www.cloudflare.com/static/misc/mod_cloudflare/mod_cloudflare.c', $return);
             if($return == 0){
