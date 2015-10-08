@@ -89,7 +89,6 @@ function cf_blacklist($ip, $domain=null){
         $response = $GLOBALS['cf_connector']->ban($ip);
 
         if($response->result != 'success'){
-            show($response);
             throw new bException('cf_blacklist(): Response from CloudFlare was unsuccessfull. Message : '.$response->msg);
         }
 
