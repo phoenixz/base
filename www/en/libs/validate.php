@@ -29,6 +29,45 @@ $html .= $vj->output_validation($params);
 */
 
 
+/*
+*
+*/
+function verify_js($params){
+   try{
+       html_load_js('verify');
+
+       array_params($params);
+       array_default($params, 'rules'      , null);
+       array_default($params, 'group_rules', null);
+
+       $script = '';
+
+       $script .= '$.verify.debug = true;';
+
+       if($params['rules']){
+           foreach($params['rules'] as $name => $rule){
+               $script .= '$.verify.addRules({
+                              '.$name.' : '.$rule.'
+                           });';
+           }
+       }
+
+       if($params['group_rules']){
+           foreach($params['group_rules'] as $rule){
+               $script .= '$.verify.addGroupRules({
+                              '.$rule.'
+                           });';
+           }
+       }
+
+       return html_script($script, false);
+
+   }catch(Exception $e){
+       throw new bException('validate_js(): Failed', $e);
+   }
+}
+
+
 
 class validate_jquery {
     var $validations = array();
