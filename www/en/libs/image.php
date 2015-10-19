@@ -79,13 +79,15 @@ function image_convert($source, $destination, $x, $y, $type, $params = array()) 
         /*
          * Process params
          */
-        $command     = $_CONFIG['imagemagic']['convert'];
-        $quality     = $_CONFIG['imagemagic']['quality'];
-        $interlace   = $_CONFIG['imagemagic']['interlace'];
-        $strip       = $_CONFIG['imagemagic']['strip'];
-        $blur        = $_CONFIG['imagemagic']['blur'];
-        $memorylimit = $_CONFIG['imagemagic']['limit']['memory'];
-        $maplimit    = $_CONFIG['imagemagic']['limit']['map'];
+        $command         = $_CONFIG['imagemagic']['convert'];
+        $quality         = $_CONFIG['imagemagic']['quality'];
+        $interlace       = $_CONFIG['imagemagic']['interlace'];
+        $strip           = $_CONFIG['imagemagic']['strip'];
+        $blur            = $_CONFIG['imagemagic']['blur'];
+        $defines         = $_CONFIG['imagemagic']['defines'];
+        $sampling_factor = $_CONFIG['imagemagic']['sampling_factor'];
+        $memorylimit     = $_CONFIG['imagemagic']['limit']['memory'];
+        $maplimit        = $_CONFIG['imagemagic']['limit']['map'];
 
         foreach($params as $key => $value){
             switch($key){
@@ -103,6 +105,14 @@ function image_convert($source, $destination, $x, $y, $type, $params = array()) 
 
                 case 'blur':
                   $blur = $value;
+                     break;
+
+                case 'sampling_factor':
+                  $sampling_factor = $value;
+                     break;
+
+                case 'defines':
+                  $defines = $value;
                      break;
 
                 case 'strip':
@@ -144,6 +154,10 @@ function image_convert($source, $destination, $x, $y, $type, $params = array()) 
         /*
          * Build command
          */
+        if($sampling_factor){
+            $command .= ' -sampling-factor '.$sampling_factor;
+        }
+
         if($interlace){
             $command .= ' -interlace '.$interlace;
         }
@@ -162,6 +176,12 @@ function image_convert($source, $destination, $x, $y, $type, $params = array()) 
 
         if($maplimit){
             $command .= ' -limit map '.$maplimit;
+        }
+
+        if($defines){
+            foreach($defines as $define){
+                $command .= ' -define '.$define;
+            }
         }
 
         /*
