@@ -79,9 +79,13 @@ function image_convert($source, $destination, $x, $y, $type, $params = array()) 
         /*
          * Process params
          */
-        $quality     = 75;
-        $memorylimit = 16;
-        $maplimit    = 16;
+        $command     = $_CONFIG['imagemagic']['convert'];
+        $quality     = $_CONFIG['imagemagic']['quality'];
+        $interlace   = $_CONFIG['imagemagic']['interlace'];
+        $strip       = $_CONFIG['imagemagic']['strip'];
+        $blur        = $_CONFIG['imagemagic']['blur'];
+        $memorylimit = $_CONFIG['imagemagic']['limit']['memory'];
+        $maplimit    = $_CONFIG['imagemagic']['limit']['map'];
 
         foreach($params as $key => $value){
             switch($key){
@@ -94,7 +98,21 @@ function image_convert($source, $destination, $x, $y, $type, $params = array()) 
                     break;
 
                 case 'quality':
-                    $quality = $value;
+                  $quality = $value;
+                     break;
+
+                case 'blur':
+                  $blur = $value;
+                     break;
+
+                case 'strip':
+                    //FALLTHROUGH
+                case 'exif':
+                    $command .= ' -strip ';
+                    break;
+
+                case 'interlace':
+                    $interlace = image_interlace_valid($value);
                     break;
 
                 case 'updatemode':
@@ -126,10 +144,16 @@ function image_convert($source, $destination, $x, $y, $type, $params = array()) 
         /*
          * Build command
          */
-        $command = $_CONFIG['imagemagic_convert'];
+        if($interlace){
+            $command .= ' -interlace '.$interlace;
+        }
 
         if($quality){
-            $command .= ' -quality '.$quality;
+            $command .= ' -quality '.$quality.'%';
+        }
+
+        if($blur){
+            $command .= ' -gaussian-blur '.$blur;
         }
 
         if($memorylimit){
@@ -220,6 +244,54 @@ function image_convert($source, $destination, $x, $y, $type, $params = array()) 
         }
 
         throw new bException(tr('image_convert(): Failed, with *possible* log data "%contents%"', array('%contents%' => $contents)), $e);
+    }
+}
+
+
+
+/*
+ *
+ */
+function image_interlace_valid($value, $source = false){
+    if($source){
+        $check = str_until($value, '-');
+
+    }else{
+        $check = str_from($value, '-');
+    }
+
+    switch($check){
+        case 'jpeg':
+            // FALLTHROUGH
+        case 'gif':
+            // FALLTHROUGH
+        case 'png':
+            // FALLTHROUGH
+        case 'line':
+            // FALLTHROUGH
+        case 'partition':
+            // FALLTHROUGH
+        case 'plane':
+            return $check;
+
+        case 'none':
+            return '';
+
+        case 'auto':
+            if(file_size($source) > 10240){
+                /*
+                 * Use specified interlace
+                 */
+                return image_interlace_valid($value);
+            }
+
+            /*
+             * Don't use interlace
+             */
+            break;
+
+        default:
+            throw new bException(tr('image_interlace_valid(): Unknown interlace value "%value%" specified', array('%value%' => $value)), 'unknown');
     }
 }
 

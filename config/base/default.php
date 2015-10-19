@@ -165,8 +165,14 @@ $_CONFIG['fs']                 = array('system_tempdir'   => true,              
 // google api
 $_CONFIG['google-map-api-key'] = '';                                                                        // The google maps API key
 
-//imagemagic location
-$_CONFIG['imagemagic_convert'] = '/usr/bin/convert';                                                        // The location of the imagemagic "convert" command
+//imagemagic configuration
+$_CONFIG['imagemagic']         = array('convert'   => '/usr/bin/convert',                                   // The location of the imagemagic "convert" command
+                                       'strip'     => true,                                                 // Should exif information be stripped or not
+                                       'blur'      => 0.1,                                                  // gaussian blur of % of image size to reduce jpeg image size
+                                       'interlace' => 'auto-plane',                                         // Type of interlace to apply, use one of none, gif, png, jpeg, line, partition, plane, empty (default, plane), auto-*. auto will use the * (* must be one of none, gif, png, jpg, plane, partition, or empty) on files > 10KB, and no interleave on files < 10KB.
+                                       'quality'   => 70,                                                   // JPEG image quality to apply
+                                       'limit'     => array('memory' => 16,                                 // Memory limit (in MB)
+                                                            'map'    => 16));                               // Map limit (in MB)
 
 // Init configuration
 $_CONFIG['init']               = array('shell'            => true,                                          // Sets if system init can be executed by shell
