@@ -118,7 +118,7 @@ function image_convert($source, $destination, $x, $y, $type, $params = array()) 
                 case 'strip':
                     //FALLTHROUGH
                 case 'exif':
-                    $command .= ' -strip ';
+                    $strip = true;
                     break;
 
                 case 'interlace':
@@ -154,6 +154,10 @@ function image_convert($source, $destination, $x, $y, $type, $params = array()) 
         /*
          * Build command
          */
+        if($strip){
+            $command .= ' -strip ';
+        }
+
         if($sampling_factor){
             $command .= ' -sampling-factor '.$sampling_factor;
         }
@@ -167,7 +171,7 @@ function image_convert($source, $destination, $x, $y, $type, $params = array()) 
         }
 
         if($blur){
-            $command .= ' -gaussian-blur 0x'.$blur;
+            $command .= ' -gaussian-blur '.$blur;
         }
 
         if($memorylimit){
