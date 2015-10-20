@@ -171,7 +171,7 @@ function image_convert($source, $destination, $x, $y, $type, $params = array()) 
         }
 
         if($blur){
-            $command .= ' -gaussian-blur '.$blur;
+            $command .= ' -gaussian-blur 0x'.$blur;
         }
 
         if($memorylimit){
