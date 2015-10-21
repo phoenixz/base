@@ -1585,7 +1585,7 @@ function html_autosuggest($params){
  */
 function html_minify($html, $force = false){
     try{
-        if(!debug() and !$force){
+        if(debug() and !$force){
             /*
              * Don't do anything. This way, on non debug systems, where this is
              * used to minify HTML output, we can still see normal HTML that is
