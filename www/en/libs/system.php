@@ -39,6 +39,10 @@ class bException extends Exception{
                 $this->messages = $e->getMessages();
 
             }else{
+                if(!is_object($e) or !($e instanceof bException)){
+                    throw new bException(tr('bException: Specified exception object for exception "%message%" is not valid (either not object or not instance of bException)', array('%message%' => str_log($messages))), 'invalid');
+                }
+
                 $this->messages[] = $e->getMessage();
             }
 
