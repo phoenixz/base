@@ -583,6 +583,8 @@ function blogs_photos_upload($files, $post, $priority = null){
                                 `blogs`.`seoname` AS blog_name,
                                 `blogs`.`images_x`,
                                 `blogs`.`images_y`,
+                                `blogs`.`medium_x`,
+                                `blogs`.`medium_y`,
                                 `blogs`.`thumbs_x`,
                                 `blogs`.`thumbs_y`,
                                 `blogs`.`retina`
@@ -626,6 +628,13 @@ function blogs_photos_upload($files, $post, $priority = null){
             copy($file, $prefix.'_small.jpg');
         }
 
+        if(!empty($post['medium_x']) or !empty($post['medium_y'])){
+            image_convert($file, $prefix.'_medium.jpg', $post['medium_x'], $post['medium_y'], 'thumb');
+
+        }else{
+            copy($file, $prefix.'_medium.jpg');
+        }
+
         if(!empty($post['images_x']) or !empty($post['images_y'])){
             image_convert($file, $prefix.'_big.jpg'  , $post['images_x'], $post['images_y'], 'resize');
 
@@ -639,6 +648,13 @@ function blogs_photos_upload($files, $post, $priority = null){
 
             }else{
                 copy($prefix.'_small.jpg', $prefix.'_small@2x.jpg');
+            }
+
+            if(!empty($post['medium_x']) or !empty($post['medium_y'])){
+                image_convert($file, $prefix.'_medium@2x.jpg', $post['medium_x'] * 2, $post['medium_y'] * 2, 'thumb');
+
+            }else{
+                copy($prefix.'_medium.jpg', $prefix.'_medium@2x.jpg');
             }
 
             if(!empty($post['images_x']) or !empty($post['images_y'])){
@@ -774,9 +790,41 @@ function blogs_photo_description($user, $photo_id, $description){
 /*
  * Get a full URL of the photo
  */
-function blogs_photo_url($photo, $small = false){
+function blogs_photo_url($photo, $size = 'big'){
+    global $_CONFIG;
+
     try{
-        return current_domain('photos/'.$photo.($small ? '_small.jpg' : '_big.jpg'));
+        if(is_bool($size)){
+            //if(ENVIRONMENT !== 'production' and $_CONFIG['system']['obsolete_exception']){
+            //    throw new bException(tr('blogs_photo_url(): Update blogs_photo_url() argument type'), 'obsolete');
+            //}
+
+            if($size){
+                /*
+                 * Show small image
+                 */
+                $size = 'small';
+
+            }else{
+                $size = 'big';
+            }
+
+        }
+
+        switch($size){
+            case 'big':
+                // FALLTHROUGH
+            case 'medium':
+                // FALLTHROUGH
+            case 'small':
+                /*
+                 * Valid
+                 */
+                return current_domain('/photos/'.$photo.'_'.$size.'.jpg');
+
+            default:
+                throw new bException(tr('blogs_photo_url(): Unknown size "%size%" specified', array('%size%' => str_log($size))), 'unknown');
+        }
 
     }catch(Exception $e){
         throw new bException('blogs_photo_url(): Failed', $e);

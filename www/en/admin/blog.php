@@ -31,21 +31,23 @@ try{
                     $blog['keywords']    = blogs_clean_keywords($blog['keywords']);
                     $blog['seokeywords'] = blogs_seo_keywords($blog['keywords']);
 
-                    sql_query('INSERT INTO `blogs` (`createdby`, `name`, `seoname`, `slogan`, `url_template`, `thumbs_x`, `thumbs_y`, `images_x`, `images_y`, `keywords`, `seokeywords`, `description`)
-                               VALUES              (:createdby , :name , :seoname , :slogan , :url_template , :thumbs_x , :thumbs_y , :images_x , :images_y , :keywords , :seokeywords , :description )',
+                    sql_query('INSERT INTO `blogs` (`createdby`, `name`, `seoname`, `slogan`, `url_template`, `thumbs_x`, `thumbs_y`, `medium_x`, `medium_y`, `images_x`, `images_y`, `keywords`, `seokeywords`, `description`)
+                               VALUES              (:createdby , :name , :seoname , :slogan , :url_template , :thumbs_x , :thumbs_y , :medium_x , :medium_y , :images_x , :images_y , :keywords , :seokeywords , :description )',
 
-                               array(':createdby'    => $_SESSION['user']['id'],
-                                     ':name'         => $blog['name'],
-                                     ':seoname'      => $blog['seoname'],
-                                     ':url_template' => $blog['url_template'],
-                                     ':thumbs_x'     => not_empty($blog['thumbs_x']),
-                                     ':thumbs_y'     => not_empty($blog['thumbs_y']),
-                                     ':images_x'     => not_empty($blog['images_x']),
-                                     ':images_y'     => not_empty($blog['images_y']),
-                                     ':slogan'       => $blog['slogan'],
-                                     ':keywords'     => $blog['keywords'],
-                                     ':seokeywords'  => $blog['seokeywords'],
-                                     ':description'  => $blog['description']));
+                               array(':createdby'   => $_SESSION['user']['id'],
+                                     ':name'        => $blog['name'],
+                                     ':seoname'     => $blog['seoname'],
+                                     ':url_template'=> $blog['url_template'],
+                                     ':thumbs_x'    => not_empty($blog['thumbs_x']),
+                                     ':thumbs_y'    => not_empty($blog['thumbs_y']),
+                                     ':medium_x'    => not_empty($blog['medium_x']),
+                                     ':medium_y'    => not_empty($blog['medium_y']),
+                                     ':images_x'    => not_empty($blog['images_x']),
+                                     ':images_y'    => not_empty($blog['images_y']),
+                                     ':slogan'      => $blog['slogan'],
+                                     ':keywords'    => $blog['keywords'],
+                                     ':seokeywords' => $blog['seokeywords'],
+                                     ':description' => $blog['description']));
 
                     html_flash_set('The blog "'.str_log($blog['name']).'" has been created', 'success');
                     $blog      = array();
@@ -103,7 +105,7 @@ try{
                     $blog['seoname']     = seo_generate_unique_name($blog['name'], 'blogs', $dbblog['id']);
                     $blog['keywords']    = blogs_clean_keywords($blog['keywords']);
                     $blog['seokeywords'] = blogs_seo_keywords($blog['keywords']);
-                    $blog                = array_copy_clean($blog, $dbblog);
+                    $blog                = array_copy_clean($dbblog, $blog);
 
                     /*
                      * Update the blog
@@ -117,6 +119,8 @@ try{
                                       `url_template` = :url_template,
                                       `thumbs_x`     = :thumbs_x,
                                       `thumbs_y`     = :thumbs_y,
+                                      `medium_x`     = :medium_x,
+                                      `medium_y`     = :medium_y,
                                       `images_x`     = :images_x,
                                       `images_y`     = :images_y,
                                       `slogan`       = :slogan,
@@ -133,6 +137,8 @@ try{
                                      ':url_template' => $blog['url_template'],
                                      ':thumbs_x'     => not_empty($blog['thumbs_x']),
                                      ':thumbs_y'     => not_empty($blog['thumbs_y']),
+                                     ':medium_x'     => not_empty($blog['medium_x']),
+                                     ':medium_y'     => not_empty($blog['medium_y']),
                                      ':images_x'     => not_empty($blog['images_x']),
                                      ':images_y'     => not_empty($blog['images_y']),
                                      ':slogan'       => $blog['slogan'],
@@ -233,6 +239,18 @@ $html .= '                      <div class="form-group">
                                     </div>
                                 </div>
                                 <div class="form-group">
+                                    <label class="col-md-3 control-label" for="medium_x">'.tr('Medium X').'</label>
+                                    <div class="col-md-9">
+                                        <input type="text" name="medium_x" id="medium_x" class="form-control" value="'.isset_get($blog['medium_x']).'" maxlength="5">
+                                    </div>
+                                </div>
+                                <div class="form-group">
+                                    <label class="col-md-3 control-label" for="medium_y">'.tr('Medium Y').'</label>
+                                    <div class="col-md-9">
+                                        <input type="text" name="medium_y" id="medium_y" class="form-control" value="'.isset_get($blog['medium_y']).'" maxlength="5">
+                                    </div>
+                                </div>
+                                <div class="form-group">
                                     <label class="col-md-3 control-label" for="images_x">'.tr('Images X').'</label>
                                     <div class="col-md-9">
                                         <input type="text" name="images_x" id="images_x" class="form-control" value="'.isset_get($blog['images_x']).'" maxlength="5">
@@ -281,6 +299,8 @@ $vj->validate('description', 'maxlength',               '160', '<span class="Fcb
 
 $vj->validate('thumbs_x'   , 'regex'    , '^[0-9]{0,3}(px)?$', '<span class="FcbErrorTail"></span>'.tr('Please specify a valid thumbs X value between 10 - 500'));
 $vj->validate('thumbs_y'   , 'regex'    , '^[0-9]{0,3}(px)?$', '<span class="FcbErrorTail"></span>'.tr('Please specify a valid thumbs Y value between 10 - 500'));
+$vj->validate('medium_x'   , 'regex'    , '^[0-9]{0,4}(px)?$', '<span class="FcbErrorTail"></span>'.tr('Please specify a valid thumbs X value between 50 - 5000'));
+$vj->validate('medium_y'   , 'regex'    , '^[0-9]{0,4}(px)?$', '<span class="FcbErrorTail"></span>'.tr('Please specify a valid thumbs Y value between 50 - 5000'));
 $vj->validate('images_x'   , 'regex'    , '^[0-9]{0,4}(px)?$', '<span class="FcbErrorTail"></span>'.tr('Please specify a valid thumbs X value between 50 - 5000'));
 $vj->validate('images_y'   , 'regex'    , '^[0-9]{0,4}(px)?$', '<span class="FcbErrorTail"></span>'.tr('Please specify a valid thumbs Y value between 50 - 5000'));
 
@@ -300,10 +320,12 @@ echo ca_page($html, $params);
 function s_validate_blog($blog){
     try{
         // Validate input
-        $v = new validate_form($blog, 'name,url_template,slogan,keywords,description,thumbs_x,thumbs_y,images_x,images_y');
+        $v = new validate_form($blog, 'name,url_template,slogan,keywords,description,thumbs_x,thumbs_y,medium_x,medium_y,images_x,images_y');
 
         $blog['thumbs_x'] = str_replace('px', '', str_force($blog['thumbs_x']));
         $blog['thumbs_y'] = str_replace('px', '', str_force($blog['thumbs_y']));
+        $blog['medium_x'] = str_replace('px', '', str_force($blog['medium_x']));
+        $blog['medium_y'] = str_replace('px', '', str_force($blog['medium_y']));
         $blog['images_x'] = str_replace('px', '', str_force($blog['images_x']));
         $blog['images_y'] = str_replace('px', '', str_force($blog['images_y']));
 
@@ -313,6 +335,10 @@ function s_validate_blog($blog){
         $v->isNotEmpty ($blog['description']     , tr('Please provide a description of your blog'));
         $v->isNumeric  ($blog['thumbs_x']        , tr('Please ensure that the thumbs x size is numeric'));
         $v->isNumeric  ($blog['thumbs_y']        , tr('Please ensure that the thumbs y size is numeric'));
+        $v->isNumeric  ($blog['thumbs_x']        , tr('Please ensure that the thumbs x size is numeric'));
+        $v->isNumeric  ($blog['thumbs_y']        , tr('Please ensure that the thumbs y size is numeric'));
+        $v->isNumeric  ($blog['medium_x']        , tr('Please ensure that the medium x size is numeric'));
+        $v->isNumeric  ($blog['medium_y']        , tr('Please ensure that the medium y size is numeric'));
         $v->isNumeric  ($blog['images_x']        , tr('Please ensure that the images x size is numeric'));
         $v->isNumeric  ($blog['images_y']        , tr('Please ensure that the images y size is numeric'));
 
@@ -337,6 +363,24 @@ function s_validate_blog($blog){
         }else{
             if(($blog['thumbs_y'] < 10) or ($blog['thumbs_y'] > 500)){
                 $v->setError(tr('Please ensure that the thumbs y value is between 10 and 500'));
+            }
+        }
+
+        if(!$blog['medium_x']){
+            $blog['medium_x'] = null;
+
+        }else{
+            if(($blog['medium_x'] < 25) or ($blog['medium_x'] > 2500)){
+                $v->setError(tr('Please ensure that the medium x value is between 25 and 2500'));
+            }
+        }
+
+        if(!$blog['medium_y']){
+            $blog['medium_y'] = null;
+
+        }else{
+            if(($blog['medium_y'] < 25) or ($blog['medium_y'] > 2500)){
+                $v->setError(tr('Please ensure that the medium y value is between 25 and 2500'));
             }
         }
 
