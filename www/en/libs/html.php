@@ -329,16 +329,8 @@ function html_generate_js(){
         }
 
         /*
-         * Should all JS scripts be loaded at the end (right before the </body> tag)?
-         * This may be useful for site startup speedups
-         */
-        if(!empty($footer)){
-            $GLOBALS['footer'] = $footer.isset_get($GLOBALS['footer'], '').isset_get($GLOBALS['script_delayed'], '');
-        }
-
-        /*
          * Always load jQuery!
-         * Always load jQuery in the HEAD so that in site <script> that use jQuery will work
+         * Always load jQuery in the FOOTER at the top of others <script> tags
          */
         if($js['jquery_version']){
             $jquery = '<script'.(!empty($data['option']) ? ' '.$data['option'] : '').' type="text/javascript" src="'.$_CONFIG['root'].'/pub/js/base/jquery'.$min.".js\"></script>\n";
@@ -354,7 +346,15 @@ function html_generate_js(){
             $jquery .= '<script'.(!empty($data['option']) ? ' '.$data['option'] : '').' type="text/javascript" src="'.$_CONFIG['root'].'/pub/js/'.$_CONFIG['bootstrap']['js'].$min.".js\"></script>\n";
         }
 
-        return $jquery.$retval;
+        /*
+         * Should all JS scripts be loaded at the end (right before the </body> tag)?
+         * This may be useful for site startup speedups
+         */
+        if(!empty($footer)){
+            $GLOBALS['footer'] = $jquery.$footer.isset_get($GLOBALS['footer'], '').isset_get($GLOBALS['script_delayed'], '');
+        }
+
+        return $retval;
 
     }catch(Exception $e){
         throw new bException('html_generate_js(): Failed', $e);
