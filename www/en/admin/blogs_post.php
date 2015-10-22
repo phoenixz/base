@@ -510,7 +510,7 @@ if(empty($post['id'])){
 
             $html .= '  <div class="form-group photo" id="photo'.$id.'">
                             <a target="_blank" href="'.blogs_photo_url($photo['file']).'">
-                                <img class="col-md-1 control-label" src="'.blogs_photo_url($photo['file'], true).'" />
+                                <img class="col-md-1 control-label" src="'.blogs_photo_url($photo['file'], 'small').'" />
                             </a>
                             <div class="col-md-11 blogpost">
                                 <textarea class="blogpost photo description form-control" placeholder="'.tr('Description of this photo').'">'.$photo['description'].'</textarea>

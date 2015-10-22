@@ -791,26 +791,7 @@ function blogs_photo_description($user, $photo_id, $description){
  * Get a full URL of the photo
  */
 function blogs_photo_url($photo, $size = 'big'){
-    global $_CONFIG;
-
     try{
-        if(is_bool($size)){
-            //if(ENVIRONMENT !== 'production' and $_CONFIG['system']['obsolete_exception']){
-            //    throw new bException(tr('blogs_photo_url(): Update blogs_photo_url() argument type'), 'obsolete');
-            //}
-
-            if($size){
-                /*
-                 * Show small image
-                 */
-                $size = 'small';
-
-            }else{
-                $size = 'big';
-            }
-
-        }
-
         switch($size){
             case 'big':
                 // FALLTHROUGH
