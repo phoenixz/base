@@ -1309,7 +1309,7 @@ function system_date_format($date = null, $requested_format = 'human_datetime'){
         }
 
         if(isset($format)){
-            throw new bException(tr('system_date_format(): Invalid format "%format%" specified', array('%format%' => str_log($format))), 'invalid');
+            throw new bException(tr('system_date_format(): Either %error%, or Invalid format "%format%" specified', array('%error%' => $e->getMessage(), '%format%' => str_log($format))), 'invalid');
         }
 
         throw new bException('system_date_format(): Failed', $e);

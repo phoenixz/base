@@ -340,7 +340,12 @@ function html_generate_js(){
          * Always load jQuery!
          * Always load jQuery in the HEAD so that in site <script> that use jQuery will work
          */
-        $jquery = '<script'.(!empty($data['option']) ? ' '.$data['option'] : '').' type="text/javascript" src="'.$_CONFIG['root'].'/pub/js/base/jquery'.$min.".js\"></script>\n";
+        if($js['jquery_version']){
+            $jquery = '<script'.(!empty($data['option']) ? ' '.$data['option'] : '').' type="text/javascript" src="'.$_CONFIG['root'].'/pub/js/base/jquery'.$min.".js\"></script>\n";
+
+        }else{
+            $jquery = '';
+        }
 
         if(!$GLOBALS['page_is_mobile'] and !empty($_CONFIG['bootstrap']['enabled'])){
             /*
@@ -1569,6 +1574,42 @@ function html_autosuggest($params){
 
     }catch(Exception $e){
         throw new bException(tr('html_autosuggest(): Failed'), $e);
+    }
+}
+
+
+
+/*
+ * This function will minify the given HTML by removing double spaces, and strip white spaces before and after tags (except space)
+ * Found on http://stackoverflow.com/questions/6225351/how-to-minify-php-page-html-output, rewritten for use in base project
+ */
+function html_minify($html, $force = false){
+    try{
+        if(!debug() and !$force){
+            /*
+             * Don't do anything. This way, on non debug systems, where this is
+             * used to minify HTML output, we can still see normal HTML that is
+             * a bit more readable.
+             */
+            return $html;
+        }
+
+        $search = array(
+            '/\>[^\S ]+/s',  // strip whitespaces after tags, except space
+            '/[^\S ]+\</s',  // strip whitespaces before tags, except space
+            '/(\s)+/s'       // shorten multiple whitespace sequences
+        );
+
+        $replace = array(
+            '>',
+            '<',
+            '\\1'
+        );
+
+        return preg_replace($search, $replace, $html);
+
+    }catch(Exception $e){
+        throw new bException(tr('html_minify(): Failed'), $e);
     }
 }
 ?>

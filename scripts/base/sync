@@ -138,7 +138,7 @@ if($nodump){
 
 }else{
     log_console('Creating SQL dump file on remote server...', 'sync', 'white');
-    passthru($command = 'ssh -p '.$deploy_config['target_port'].' -t '.$deploy_config['target_user'].'@'.$deploy_config['target_server'].' \'rm /tmp/'.$project.'_'.$source_config['db']['core']['db'].'.sql* -f; mysqldump --single-transaction -n -e '.(argument('nofunctions') ? '' : '-R ').'--dump-date --no-autocommit --add-drop-database -u '.$source_config['db']['core']['user'].' -p'.escapeshellcmd($source_config['db']['core']['pass']).' -B '.$source_config['db']['core']['db'].' > /tmp/'.$project.'_'.$source_config['db']['core']['db'].'.sql; gzip -q /tmp/'.$project.'_'.$source_config['db']['core']['db'].'.sql \'', $exitcode);
+    passthru($command = 'ssh -p '.$deploy_config['target_port'].' -t '.($deploy_config['target_user'] ? $deploy_config['target_user'].'@' : '').$deploy_config['target_server'].' \'rm /tmp/'.$project.'_'.$source_config['db']['core']['db'].'.sql* -f; mysqldump --single-transaction -n -e '.(argument('nofunctions') ? '' : '-R ').'--dump-date --no-autocommit --add-drop-database -u '.$source_config['db']['core']['user'].' -p'.escapeshellcmd($source_config['db']['core']['pass']).' -B '.$source_config['db']['core']['db'].' > /tmp/'.$project.'_'.$source_config['db']['core']['db'].'.sql; gzip -q /tmp/'.$project.'_'.$source_config['db']['core']['db'].'.sql \'', $exitcode);
 
     if($exitcode){
         throw new bException('Remote mysqldump failed with exit code "'.str_log($exitcode).'"', 'rsync');
@@ -156,7 +156,7 @@ if($nocopy){
 }else{
     log_console('Copying remote SQL file locally...', 'sync', 'white');
     passthru('rm /tmp/'.$project.'_'.$source_config['db']['core']['db'].'.sql /tmp/'.$project.'_'.$source_config['db']['core']['db'].'.sql.gz -f');
-    passthru($command = 'scp -P '.$deploy_config['target_port'].' '.$deploy_config['target_user'].'@'.$deploy_config['target_server'].':/tmp/'.$project.'_'.$source_config['db']['core']['db'].'.sql.gz /tmp/'.$project.'_'.$source_config['db']['core']['db'].'.sql.gz', $exitcode);
+    passthru($command = 'scp -P '.$deploy_config['target_port'].' '.($deploy_config['target_user'] ? $deploy_config['target_user'].'@' : '').$deploy_config['target_server'].':/tmp/'.$project.'_'.$source_config['db']['core']['db'].'.sql.gz /tmp/'.$project.'_'.$source_config['db']['core']['db'].'.sql.gz', $exitcode);
 
     if($exitcode){
         throw new bException('Copy of remote mysqldump file to local server failed with exit code "'.str_log($exitcode).'"', 'rsync');
@@ -210,7 +210,7 @@ if($nodelete){
 }else{
     log_console('Removing temporary remote SQL dump file from local and remote server...', 'sync', 'white');
 
-    passthru($command = 'ssh -p '.$deploy_config['target_port'].' -t '.$deploy_config['target_user'].'@'.$deploy_config['target_server'].' \'rm -f /tmp/'.$project.'_'.$source_config['db']['core']['db'].'.sql*\'', $exitcode);
+    passthru($command = 'ssh -p '.$deploy_config['target_port'].' -t '.($deploy_config['target_user'] ? $deploy_config['target_user'].'@' : '').$deploy_config['target_server'].' \'rm -f /tmp/'.$project.'_'.$source_config['db']['core']['db'].'.sql*\'', $exitcode);
 
     if($exitcode){
         throw new bException('Removal of temporary mysqldump file on remote server failed with exit code "'.str_log($exitcode).'"', 'rsync');
@@ -270,7 +270,7 @@ if($nosync){
             }
         }
 
-        passthru($command = 'rsync -acz --progress -p '.($deploy_config['sudo'] ? '--rsync-path="sudo rsync" ' : '').'-e "ssh -p '.$deploy_config['target_port'].'" '.$deploy_config['target_user'].'@'.$deploy_config['target_server'].':'.slash($deploy_config['target_dir']).slash($path).' '.ROOT.slash($path).' --exclude="*.php" --exclude="*.css" --exclude="*.js" --exclude="/scripts/*" --exclude="/data/doc" --exclude="/data/system" --exclude="/data/mock*" --exclude="/data/sources" --exclude=".htaccess" --exclude=".git*" --exclude="/pub/*"', $exitcode);
+        passthru($command = 'rsync -acz --progress -p '.($deploy_config['sudo'] ? '--rsync-path="sudo rsync" ' : '').'-e "ssh -p '.$deploy_config['target_port'].'" '.($deploy_config['target_user'] ? $deploy_config['target_user'].'@' : '').$deploy_config['target_server'].':'.slash($deploy_config['target_dir']).slash($path).' '.ROOT.slash($path).' --exclude="*.php" --exclude="*.css" --exclude="*.js" --exclude="/scripts/*" --exclude="/data/doc" --exclude="/data/system" --exclude="/data/mock*" --exclude="/data/sources" --exclude=".htaccess" --exclude=".git*" --exclude="/pub/*"', $exitcode);
 
         /*
          * Ensure write permissions to all files to avoid syn crashes on write protected files

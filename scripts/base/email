@@ -86,20 +86,27 @@ switch(argument(0)){
 
         $count = 0;
 
-        foreach(email_poll($users, $criteria) as $user_emails){
-            try{
-                foreach($user_emails as $email){
-                    email_update_conversation($email, 'received');
-                    $count++;
-                }
+        proc_nice(5);
 
-            }catch(bException $e){
-                /*
-                 * Continue working on the next
-                 */
-//:TODO: Add more exception data here
-                log_error(tr('Failed polling process'));
+        foreach($users as $user){
+            foreach(email_poll($user, $criteria) as $user_emails){
+                try{
+                    foreach($user_emails as $email){
+                        email_update_conversation($email, 'received');
+                        usleep(1000000);
+                        $count++;
+                    }
+
+                }catch(bException $e){
+                    /*
+                     * Continue working on the next
+                     */
+    //:TODO: Add more exception data here
+                    log_error(tr('Failed polling process'));
+                }
             }
+
+            usleep(1000000);
         }
 
         switch($count){
