@@ -49,7 +49,7 @@ function image_get_text($image) {
 /*
  * Standard image conversion function
  */
-function image_convert($source, $destination, $x, $y, $type, $params = array()) {
+function image_convert($source, $destination, $x, $y, $method, $params = array()) {
     global $_CONFIG;
 
     try{
@@ -58,7 +58,7 @@ function image_convert($source, $destination, $x, $y, $type, $params = array()) 
         /*
          * Validations
          */
-        if(file_exists($destination)){
+        if(file_exists($destination) and $destination != $source){
             throw new bException('image_convert(): Destination file "'.str_log($destination).'" already exists');
         }
 
@@ -71,30 +71,70 @@ function image_convert($source, $destination, $x, $y, $type, $params = array()) 
         file_ensure_path(TMP);
         file_delete(TMP.'imagemagic_convert.log');
 
+
         /*
          * Ensure we have a local copy of the file to work with
          */
         $source = file_get_local($source);
 
+
         /*
-         * Process params
+         * Build command
          */
-        $quality     = 75;
-        $memorylimit = 16;
-        $maplimit    = 16;
+        $command = $_CONFIG['imagemagic']['convert'];
+
+        array_params($params);
+        array_default($params, 'quality'         , $_CONFIG['imagemagic']['quality']);
+        array_default($params, 'interlace'       , $_CONFIG['imagemagic']['interlace']);
+        array_default($params, 'strip'           , $_CONFIG['imagemagic']['strip']);
+        array_default($params, 'blur'            , $_CONFIG['imagemagic']['blur']);
+        array_default($params, 'defines'         , $_CONFIG['imagemagic']['defines']);
+        array_default($params, 'sampling_factor' , $_CONFIG['imagemagic']['sampling_factor']);
+        array_default($params, 'keep_aspectratio', $_CONFIG['imagemagic']['keep_aspectratio']);
+        array_default($params, 'limit-memory'    , $_CONFIG['imagemagic']['limit']['memory']);
+        array_default($params, 'limit-map'       , $_CONFIG['imagemagic']['limit']['map']);
 
         foreach($params as $key => $value){
             switch($key){
-                case 'memorylimit':
-                    $memorylimit = $value;
+                case 'limit-memory':
+                    $command .= ' -limit memory '.$value;
                     break;
 
-                case 'maplimit':
-                    $maplimit = $value;
+                case 'limit-map':
+                    $command .= ' -limit map '.$value;
                     break;
 
                 case 'quality':
-                    $quality = $value;
+                    $command .= ' -quality '.$value.'%';
+                    break;
+
+                case 'blur':
+                    $command .= ' -gaussian-blur 0x'.$value;
+                    break;
+
+                case 'keep_aspectratio':
+                    break;
+
+                case 'sampling_factor':
+                    $command .= ' -sampling-factor '.$value;
+                    break;
+
+                case 'defines':
+                    foreach($value as $define){
+                        $command .= ' -define '.$define;
+                    }
+
+                    break;
+
+                case 'strip':
+                    //FALLTHROUGH
+                case 'exif':
+                    $command .= ' -strip ';
+                    break;
+
+                case 'interlace':
+                    $value    = image_interlace_valid(strtolower($value));
+                    $command .= ' -interlace '.$value;
                     break;
 
                 case 'updatemode':
@@ -123,37 +163,46 @@ function image_convert($source, $destination, $x, $y, $type, $params = array()) 
             }
         }
 
+
         /*
-         * Build command
+         * Check width / height
+         *
+         * If either width or height is not specified then
          */
-        $command = $_CONFIG['imagemagic_convert'];
+        if(!$x or !$y){
+            $size = getimagesize($source);
 
-        if($quality){
-            $command .= ' -quality '.$quality;
+            if($params['keep_aspectratio']){
+                $ar = $size[1] / $size[0];
+
+            }else{
+                $ar = 1;
+            }
+
+            if(!$x){
+                $x = not_empty($y, $size[1]) * (1 / $ar);
+            }
+
+            if(!$y){
+                $y = not_empty($y, $size[0]) * $ar;
+            }
         }
 
-        if($memorylimit){
-            $command .= ' -limit memory '.$memorylimit;
-        }
-
-        if($maplimit){
-            $command .= ' -limit map '.$maplimit;
-        }
 
         /*
          * Execute command to convert image
          */
-        switch ($type) {
+        switch($method) {
             case 'thumb':
-                safe_exec($command.' -thumbnail '.$x.'x'.$y.'^ -gravity center -extent '.$x.'x'.$y.' -background white -flatten "'.$source.'" "'.$destination.'" >> '.TMP.'imagemagic_convert.log 2>&1',0);
+                safe_exec($command.' -thumbnail '.$x.'x'.$y.'^ -gravity center -extent '.$x.'x'.$y.' -background white -flatten "'.$source.'" "'.$destination.'" >> '.TMP.'imagemagic_convert.log 2>&1', 0);
                 break;
 
             case 'resize-w':
-                safe_exec($command.' -resize '.$x.'x\> -background white -flatten "'.$source.'" "'.$destination.'" >>'.TMP.'imagemagic_convert.log 2>&1',0);
+                safe_exec($command.' -resize '.$x.'x\> -background white -flatten "'.$source.'" "'.$destination.'" >>'.TMP.'imagemagic_convert.log 2>&1', 0);
                 break;
 
             case 'resize':
-                safe_exec($command.' -resize '.$x.'x'.$y.'^ -background white -flatten "'.$source.'" "'.$destination.'" >>'.TMP.'imagemagic_convert.log 2>&1',0);
+                safe_exec($command.' -resize '.$x.'x'.$y.'^ -background white -flatten "'.$source.'" "'.$destination.'" >>'.TMP.'imagemagic_convert.log 2>&1', 0);
                 break;
 
             case 'thumb-circle':
@@ -178,7 +227,7 @@ function image_convert($source, $destination, $x, $y, $type, $params = array()) 
                 break;
 
             default:
-                throw new bException('image_convert(): Unknown type "'.str_log($type).'" specified', 'unknown');
+                throw new bException(tr('image_convert(): Unknown method "%method%" specified. Ensure method is one of thumb, resize-w, resize, thumb-circle, crop-resize, custom', array('%method%' => str_log($method))), 'unknown');
         }
 
         /*
@@ -220,6 +269,54 @@ function image_convert($source, $destination, $x, $y, $type, $params = array()) 
         }
 
         throw new bException(tr('image_convert(): Failed, with *possible* log data "%contents%"', array('%contents%' => $contents)), $e);
+    }
+}
+
+
+
+/*
+ *
+ */
+function image_interlace_valid($value, $source = false){
+    if($source){
+        $check = str_until($value, '-');
+
+    }else{
+        $check = str_from($value, '-');
+    }
+
+    switch($check){
+        case 'jpeg':
+            // FALLTHROUGH
+        case 'gif':
+            // FALLTHROUGH
+        case 'png':
+            // FALLTHROUGH
+        case 'line':
+            // FALLTHROUGH
+        case 'partition':
+            // FALLTHROUGH
+        case 'plane':
+            return $check;
+
+        case 'none':
+            return '';
+
+        case 'auto':
+            if(file_size($source) > 10240){
+                /*
+                 * Use specified interlace
+                 */
+                return image_interlace_valid($value);
+            }
+
+            /*
+             * Don't use interlace
+             */
+            break;
+
+        default:
+            throw new bException(tr('image_interlace_valid(): Unknown interlace value "%value%" specified', array('%value%' => $value)), 'unknown');
     }
 }
 

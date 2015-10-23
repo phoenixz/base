@@ -583,6 +583,8 @@ function blogs_photos_upload($files, $post, $priority = null){
                                 `blogs`.`seoname` AS blog_name,
                                 `blogs`.`images_x`,
                                 `blogs`.`images_y`,
+                                `blogs`.`medium_x`,
+                                `blogs`.`medium_y`,
                                 `blogs`.`thumbs_x`,
                                 `blogs`.`thumbs_y`,
                                 `blogs`.`retina`
@@ -616,43 +618,58 @@ function blogs_photos_upload($files, $post, $priority = null){
          */
         $file   = $files;
         $file   = file_get_local($file['tmp_name'][0]);
-        $photo  = $post['blog_name'].'/'.file_assign_target_clean(ROOT.'www/photos/'.$post['blog_name'].'/', '_small.jpg', false, 4);
+        $photo  = $post['blog_name'].'/'.file_assign_target_clean(ROOT.'data/content/photos/'.$post['blog_name'].'/', '_small.jpg', false, 4);
+        $prefix = ROOT.'data/content/photos/'.$photo;
 
         if(!empty($post['thumbs_x']) or !empty($post['thumbs_y'])){
-            image_convert($file, ROOT.'www/photos/'.$photo.'_small.jpg', $post['thumbs_x'], $post['thumbs_y'], 'thumb');
+            image_convert($file, $prefix.'_small.jpg', $post['thumbs_x'], $post['thumbs_y'], 'thumb');
 
         }else{
-            copy($file, ROOT.'www/photos/'.$photo.'_small.jpg');
+            copy($file, $prefix.'_small.jpg');
+        }
+
+        if(!empty($post['medium_x']) or !empty($post['medium_y'])){
+            image_convert($file, $prefix.'_medium.jpg', $post['medium_x'], $post['medium_y'], 'thumb');
+
+        }else{
+            copy($file, $prefix.'_medium.jpg');
         }
 
         if(!empty($post['images_x']) or !empty($post['images_y'])){
-            image_convert($file, ROOT.'www/photos/'.$photo.'_big.jpg'  , $post['images_x'], $post['images_y'], 'resize');
+            image_convert($file, $prefix.'_big.jpg'  , $post['images_x'], $post['images_y'], 'resize');
 
         }else{
-            copy($file, ROOT.'www/photos/'.$photo.'_big.jpg');
+            copy($file, $prefix.'_big.jpg');
         }
 
         if($post['retina']){
             if(!empty($post['thumbs_x']) or !empty($post['thumbs_y'])){
-                image_convert($file, ROOT.'www/photos/'.$photo.'_small@2x.jpg', $post['thumbs_x'] * 2, $post['thumbs_y'] * 2, 'thumb');
+                image_convert($file, $prefix.'_small@2x.jpg', $post['thumbs_x'] * 2, $post['thumbs_y'] * 2, 'thumb');
 
             }else{
-                copy($file, ROOT.'www/photos/'.$photo.'_small@2x.jpg');
+                copy($prefix.'_small.jpg', $prefix.'_small@2x.jpg');
+            }
+
+            if(!empty($post['medium_x']) or !empty($post['medium_y'])){
+                image_convert($file, $prefix.'_medium@2x.jpg', $post['medium_x'] * 2, $post['medium_y'] * 2, 'thumb');
+
+            }else{
+                copy($prefix.'_medium.jpg', $prefix.'_medium@2x.jpg');
             }
 
             if(!empty($post['images_x']) or !empty($post['images_y'])){
-                image_convert($file, ROOT.'www/photos/'.$photo.'_big@2x.jpg'  , $post['images_x'] * 2, $post['images_y'] * 2, 'resize');
+                image_convert($file, $prefix.'_big@2x.jpg'  , $post['images_x'] * 2, $post['images_y'] * 2, 'resize');
 
             }else{
-                copy($file, ROOT.'www/photos/'.$photo.'_big@2x.jpg');
+                copy($prefix.'_big.jpg', $prefix.'_big@2x.jpg');
             }
 
         }else{
             /*
              * If retina images are not supported, then just symlink them so that they at least are available
              */
-            symlink(basename(ROOT.'www/photos/'.$photo.'_small.jpg'), ROOT.'www/photos/'.$photo.'_small@2x.jpg');
-            symlink(basename(ROOT.'www/photos/'.$photo.'_big.jpg')  , ROOT.'www/photos/'.$photo.'_big@2x.jpg'  );
+            symlink(basename($prefix.'_small.jpg'), $prefix.'_small@2x.jpg');
+            symlink(basename($prefix.'_big.jpg')  , $prefix.'_big@2x.jpg'  );
         }
 
         /*
@@ -773,9 +790,22 @@ function blogs_photo_description($user, $photo_id, $description){
 /*
  * Get a full URL of the photo
  */
-function blogs_photo_url($photo, $small = false){
+function blogs_photo_url($photo, $size = 'big'){
     try{
-        return current_domain('photos/'.$photo.($small ? '_small.jpg' : '_big.jpg'));
+        switch($size){
+            case 'big':
+                // FALLTHROUGH
+            case 'medium':
+                // FALLTHROUGH
+            case 'small':
+                /*
+                 * Valid
+                 */
+                return current_domain('/photos/'.$photo.'_'.$size.'.jpg');
+
+            default:
+                throw new bException(tr('blogs_photo_url(): Unknown size "%size%" specified', array('%size%' => str_log($size))), 'unknown');
+        }
 
     }catch(Exception $e){
         throw new bException('blogs_photo_url(): Failed', $e);

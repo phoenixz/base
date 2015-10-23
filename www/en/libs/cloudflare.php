@@ -11,13 +11,15 @@
 load_config('cloudflare');
 load_libs('ext/cloudflare');
 
-/*
-*
-*/
-function cf_init(){
-    try{
-        global $_CONFIG;
 
+
+/*
+ *
+ */
+function cf_init(){
+    global $_CONFIG;
+
+    try{
         if(!empty($GLOBALS['cf_connector'])){
             return null;
         }
@@ -41,7 +43,7 @@ function cf_zone_list(){
         $response = $GLOBALS['cf_connector']->zone_load_multi();
 
         if($response->result != 'success'){
-            throw new bException('cf_zone_list(): Response from CloudFlare was unsuccessfull. Message : '.$response->msg);
+            throw new bException('cf_zone_list(): Response from CloudFlare was unsuccessfull. MessaMessage : "'.$response->msg.'"');
         }
 
         $zones = array();
@@ -52,10 +54,12 @@ function cf_zone_list(){
 
         return $zones;
 
-    } catch(Exception $e){
+    }catch(Exception $e){
         throw new bException('cf_zone_list(): Failed', $e);
     }
 }
+
+
 
 /*
  *   Adds an IP to the whitelist
@@ -68,10 +72,10 @@ function cf_whitelist($ip, $domain=null){
         $response = $GLOBALS['cf_connector']->wl($ip);
 
         if($response->result != 'success'){
-            throw new bException('cf_whitelist(): Response from CloudFlare was unsuccessfull. Message : '.$response->msg);
+            throw new bException('cf_whitelist(): Response from CloudFlare was unsuccessfull. MessaMessage : "'.$response->msg.'"');
         }
 
-    } catch(Exception $e){
+    }catch(Exception $e){
         throw new bException('cf_whitelist(): Failed', $e);
     }
 }
@@ -92,7 +96,7 @@ function cf_blacklist($ip, $domain=null){
             throw new bException('cf_blacklist(): Response from CloudFlare was unsuccessfull. Message : '.$response->msg);
         }
 
-    } catch(Exception $e){
+    }catch(Exception $e){
         throw new bException('cf_blacklist(): Failed', $e);
     }
 }
@@ -109,10 +113,10 @@ function cf_unwhitelist($ip, $domain=null){
         $response = $GLOBALS['cf_connector']->nul($ip);
 
         if($response->result != 'success'){
-            throw new bException('cf_unwhitelist(): Response from CloudFlare was unsuccessfull. Message : '.$response->msg);
+            throw new bException('cf_unwhitelist(): Response from CloudFlare was unsuccessfull. MessaMessage : "'.$response->msg.'"');
         }
 
-    } catch(Exception $e){
+    }catch(Exception $e){
         throw new bException('cf_unwhitelist(): Failed', $e);
     }
 }
@@ -129,10 +133,10 @@ function cf_unblacklist($ip, $domain=null){
         $response = $GLOBALS['cf_connector']->nul($ip);
 
         if($response->result != 'success'){
-            throw new bException('cf_unblacklist(): Response from CloudFlare was unsuccessfull. Message : '.$response->msg);
+            throw new bException('cf_unblacklist(): Response from CloudFlare was unsuccessfull. Message : "'.$response->msg.'"');
         }
 
-    } catch(Exception $e){
+    }catch(Exception $e){
         throw new bException('cf_unblacklist(): Failed', $e);
     }
 }
@@ -148,9 +152,10 @@ function cf_clear_cache($domain){
         $response = $GLOBALS['cf_connector']->fpurge_ts($domain);
 
         if($response->result != 'success'){
-            throw new bException('cf_clear_cache(): Response from CloudFlare was unsuccessfull. Message : '.$response->msg);
+            throw new bException('cf_clear_cache(): Response from CloudFlare was unsuccessfull. Message : "'.$response->msg.'"');
         }
-    } catch(Exception $e){
+
+    }catch(Exception $e){
         throw new bException('cf_clear_cache(): Failed', $e);
     }
 }
@@ -163,10 +168,13 @@ function cf_clear_cache($domain){
 function cf_install_apache_module(){
     try{
         passthru('sudo apt-get update && sudo apt-get -y install libtool apache2-dev', $return);
+
         if($return == 0){
             passthru('wget -O /tmp/mod_cloudflare.c https://www.cloudflare.com/static/misc/mod_cloudflare/mod_cloudflare.c', $return);
+
             if($return == 0){
                 passthru('sudo apxs -a -i -c /tmp/mod_cloudflare.c', $return);
+
                 if($return == 0){
                     passthru('sudo service apache2 restart');
                     return true;
@@ -175,7 +183,8 @@ function cf_install_apache_module(){
         }
 
         return false;
-    } catch(Exception $e){
+
+    }catch(Exception $e){
         throw new bException('cf_install_apache_module(): Failed', $e);
     }
 
@@ -190,7 +199,7 @@ function cf_is_apache_module_installed(){
     try{
         return shell_exec('apachectl -M | grep cloudflare_module');
 
-    } catch(Exception $e){
+    }catch(Exception $e){
         throw new bException('cf_is_apache_module_installed(): Failed', $e);
     }
 }

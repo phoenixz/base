@@ -7,6 +7,16 @@ ErrorDocument 404 /404.php
 # Mobile pages are not directly accessible
 RewriteRule ^mobile/(.+)$ /404.php [NC,L]
 
+# All .html pages go straight to PHP
+RewriteRule ^([a-z0-9-_]+?).html$ /$1.php [NC,L]
+
+# Remove all double slashes
+RewriteCond %{THE_REQUEST} \ (.*)//+(.*)\  [NC]
+RewriteRule .* %1/%2 [R=301,L]
+
+# Redirect html pages to the root domain
+RewriteRule ^index\.html$ / [NC,R=301,L]
+
 # Mailer access images
 RewriteRule ^logoimgs/(.+).png/$ /ajax/base/mailer_viewed.php?code=$1 [NC,L]
 

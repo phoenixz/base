@@ -1,0 +1,140 @@
+#!/usr/bin/php
+<?php
+/*
+ * This is an empty test script template
+ */
+$usage = "./scripts/base/imageconvert\n".
+         "./scripts/base/imageconvert [options] file|files FILES\n";
+
+$help  = "This script con convert specified images with the specified parameters.";
+
+//$quiet = false;
+
+require_once(dirname(__FILE__).'/../../libs/startup.php');
+
+cli_only();
+load_libs('file,image');
+
+
+/*
+ * Check destination path
+ */
+$destination = argument('destination', true);
+
+if($destination){
+	$destination = slash($destination);
+	file_ensure_path($destination);
+}
+
+
+/*
+ * Check source path
+ */
+$source = argument('source', true);
+$path   = $source;
+
+if($source){
+	$source = slash(realpath($source));
+
+	if(!file_exists($source)){
+		throw new bException(tr('The specified source path "%path%" does not exist', array('%path%' => $path)), 'notexists');
+	}
+}
+
+
+/*
+ * Get file list to process
+ */
+$files = not_empty(argument('file', true), argument('files', 'all'));
+
+if(!$files){
+	throw new bException(tr('No files specified'), 'notspecified');
+}
+
+if((is_string($files) and $files == 'all') or (is_array($files) and (reset($files) == 'all'))){
+	/*
+	 * All files in the specified source path
+	 */
+	$files = scandir($source);
+}
+
+if(is_string($files)){
+	$files = array($files);
+}
+
+
+/*
+ * Check parameters
+ */
+if(argument('default') or argument('defaults')){
+	$params = array();
+
+}else{
+	$params['keep_aspectratio'] = argument('keep-aspectratio');
+	$params['quality']          = argument('quality'         , true);
+	$params['interlace']        = argument('interlace'       , true);
+	$params['strip']            = argument('strip'           , true);
+	$params['blur']             = argument('blur'            , true);
+	$params['defines']          = argument('defines'         , true);
+	$params['sampling_factor']  = argument('sampling-factor' , true);
+	$params['limit-memory']     = argument('limit-memory'    , true);
+	$params['limit-map']        = argument('limit-map'       , true);
+
+//	$params['type']            = not_empty(argument('jpg'), (argument('jpeg') ? 'jpg' : ''), argument('png'));
+
+	$method = argument('method', true);
+	$x      = not_empty(argument('width' , true), argument('x', true));
+	$y      = not_empty(argument('height', true), argument('y', true));
+}
+
+
+/*
+ * Ensure that all files exist
+ */
+log_console(tr('Checking source files'), '');
+
+foreach($files as $key => &$file){
+	$file = trim($file);
+
+	if(($file == '.') or ($file == '..')){
+		unset($files[$key]);
+		continue;
+	}
+
+	if(!file_exists($source.$file)){
+		throw new bException(tr('Specified file "%file%" does not exist', array('%file%' => $source.$file)));
+	}
+
+	if(file_exists($destination.$file) and ($destination.$file != $source.$file)){
+		throw new bException(tr('Specified file "%file%" already exists in the destination', array('%file%' => $destination.$file)));
+	}
+}
+
+unset($file);
+
+log_console(tr('Converting "%count%" images', array('%count%' => count($files))), '', 'white');
+
+
+/*
+ *
+ */
+foreach($files as &$file){
+	if(VERBOSE){
+		log_console($file);
+
+	}else{
+		log_console('.', '', 'green', false);
+	}
+
+	image_convert($source.$file, $destination.$file, $x, $y, $method, $params);
+	usleep(5000);
+}
+
+unset($file);
+
+if(!VERBOSE){
+	log_console('', '');
+}
+
+log_console(tr('Finished!'), '', 'green');
+?>

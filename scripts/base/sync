@@ -29,6 +29,8 @@ noimport                   - Do not import the temporary mysql dump from
 nodelete                   - Do not delete the temporary mysql dump from
                              the target environment
 
+nohook / nohooks           - Do not execute hooks
+
 nosync                     - Do not sync configured data directories
 
 nofunctions                - Do not sync mysql functions from the specified environment
@@ -38,14 +40,24 @@ deletesync / syncdelete    - Delete data file paths before syncing (warning:
 
 nocacheclear               - Do not clear cache after finishing the sync
 
-noblogupdateurl            - Do not update the blog page URL's";
+noblogupdateurl            - Do not update the blog page URL's
+
+nobadgescached             - Do not clear badges_cached for badges
+
+
+
+HOOK SCRIPTS: Below are shown (in order) the hook scripts that will be
+              executed If the hook scripts exist (in ROOT/scripts/hooks)
+              they will be executed. If not, they will be ignored
+
+sync_badges_cached";
 
 $nologin = true;
 
 require_once(dirname(__FILE__).'/../../libs/startup.php');
 
 cli_only();
-load_libs('array');
+load_libs('init,array');
 
 
 
@@ -58,9 +70,11 @@ $nosync          =  argument('nosync');
 $noinit          =  argument('noinit');
 $noclear         =  argument('noclear');
 $noimport        =  argument('noimport');
+$nohooks         = (argument('nohook') or argument('nohooks'));
 $nodelete        =  argument('nodelete');
 $nodefinerfix    =  argument('nodefinerfix');
 $nocacheclear    =  argument('nocacheclear');
+$nobadgescached  =  argument('nobadgescached');
 $noblogupdateurl =  argument('noblogupdateurl');
 $deletesync      = (argument('deletesync') or argument('syncdelete'));
 $environment     =  argument('environment'    , true);
@@ -124,7 +138,7 @@ if($nodump){
 
 }else{
     log_console('Creating SQL dump file on remote server...', 'sync', 'white');
-    passthru($command = 'ssh -p '.$deploy_config['target_port'].' -t '.$deploy_config['target_user'].'@'.$deploy_config['target_server'].' \'rm /tmp/'.$project.'_'.$source_config['db']['core']['db'].'.sql* -f; mysqldump --single-transaction -n -e '.(argument('nofunctions') ? '' : '-R ').'--dump-date --no-autocommit --add-drop-database -u '.$source_config['db']['core']['user'].' -p'.escapeshellcmd($source_config['db']['core']['pass']).' -B '.$source_config['db']['core']['db'].' > /tmp/'.$project.'_'.$source_config['db']['core']['db'].'.sql; gzip -q /tmp/'.$project.'_'.$source_config['db']['core']['db'].'.sql \'', $exitcode);
+    passthru($command = 'ssh -p '.$deploy_config['target_port'].' -t '.($deploy_config['target_user'] ? $deploy_config['target_user'].'@' : '').$deploy_config['target_server'].' \'rm /tmp/'.$project.'_'.$source_config['db']['core']['db'].'.sql* -f; mysqldump --single-transaction -n -e '.(argument('nofunctions') ? '' : '-R ').'--dump-date --no-autocommit --add-drop-database -u '.$source_config['db']['core']['user'].' -p'.escapeshellcmd($source_config['db']['core']['pass']).' -B '.$source_config['db']['core']['db'].' > /tmp/'.$project.'_'.$source_config['db']['core']['db'].'.sql; gzip -q /tmp/'.$project.'_'.$source_config['db']['core']['db'].'.sql \'', $exitcode);
 
     if($exitcode){
         throw new bException('Remote mysqldump failed with exit code "'.str_log($exitcode).'"', 'rsync');
@@ -142,7 +156,7 @@ if($nocopy){
 }else{
     log_console('Copying remote SQL file locally...', 'sync', 'white');
     passthru('rm /tmp/'.$project.'_'.$source_config['db']['core']['db'].'.sql /tmp/'.$project.'_'.$source_config['db']['core']['db'].'.sql.gz -f');
-    passthru($command = 'scp -P '.$deploy_config['target_port'].' '.$deploy_config['target_user'].'@'.$deploy_config['target_server'].':/tmp/'.$project.'_'.$source_config['db']['core']['db'].'.sql.gz /tmp/'.$project.'_'.$source_config['db']['core']['db'].'.sql.gz', $exitcode);
+    passthru($command = 'scp -P '.$deploy_config['target_port'].' '.($deploy_config['target_user'] ? $deploy_config['target_user'].'@' : '').$deploy_config['target_server'].':/tmp/'.$project.'_'.$source_config['db']['core']['db'].'.sql.gz /tmp/'.$project.'_'.$source_config['db']['core']['db'].'.sql.gz', $exitcode);
 
     if($exitcode){
         throw new bException('Copy of remote mysqldump file to local server failed with exit code "'.str_log($exitcode).'"', 'rsync');
@@ -196,7 +210,7 @@ if($nodelete){
 }else{
     log_console('Removing temporary remote SQL dump file from local and remote server...', 'sync', 'white');
 
-    passthru($command = 'ssh -p '.$deploy_config['target_port'].' -t '.$deploy_config['target_user'].'@'.$deploy_config['target_server'].' \'rm -f /tmp/'.$project.'_'.$source_config['db']['core']['db'].'.sql*\'', $exitcode);
+    passthru($command = 'ssh -p '.$deploy_config['target_port'].' -t '.($deploy_config['target_user'] ? $deploy_config['target_user'].'@' : '').$deploy_config['target_server'].' \'rm -f /tmp/'.$project.'_'.$source_config['db']['core']['db'].'.sql*\'', $exitcode);
 
     if($exitcode){
         throw new bException('Removal of temporary mysqldump file on remote server failed with exit code "'.str_log($exitcode).'"', 'rsync');
@@ -256,7 +270,7 @@ if($nosync){
             }
         }
 
-        passthru($command = 'rsync -acz --progress -p '.($deploy_config['sudo'] ? '--rsync-path="sudo rsync" ' : '').'-e "ssh -p '.$deploy_config['target_port'].'" '.$deploy_config['target_user'].'@'.$deploy_config['target_server'].':'.slash($deploy_config['target_dir']).slash($path).' '.ROOT.slash($path).' --exclude="*.php" --exclude="*.css" --exclude="*.js" --exclude="/scripts/*" --exclude="/data/doc" --exclude="/data/system" --exclude="/data/mock*" --exclude="/data/sources" --exclude=".htaccess" --exclude=".git*" --exclude="/pub/*"', $exitcode);
+        passthru($command = 'rsync -acz --progress -p '.($deploy_config['sudo'] ? '--rsync-path="sudo rsync" ' : '').'-e "ssh -p '.$deploy_config['target_port'].'" '.($deploy_config['target_user'] ? $deploy_config['target_user'].'@' : '').$deploy_config['target_server'].':'.slash($deploy_config['target_dir']).slash($path).' '.ROOT.slash($path).' --exclude="*.php" --exclude="*.css" --exclude="*.js" --exclude="/scripts/*" --exclude="/data/doc" --exclude="/data/system" --exclude="/data/mock*" --exclude="/data/sources" --exclude=".htaccess" --exclude=".git*" --exclude="/pub/*"', $exitcode);
 
         /*
          * Ensure write permissions to all files to avoid syn crashes on write protected files
@@ -337,6 +351,15 @@ if(!$noblogupdateurl){
 // :DELETE: Sync script removes original DB, so theres a problem with PDO using that DB.
 //    blogs_update_urls();
     passthru(ROOT.'scripts/base/init');
+}
+
+
+
+/*
+ * Clear badges_cached on users table
+ */
+if(!$nobadgescached){
+    init_hook('sync_badges_cached', $nohooks);
 }
 
 log_console('Finished!', 'sync', 'green');

@@ -22,8 +22,8 @@ try{
     }
 
     json_reply(array('html' => '<div class="form-group photo" id="photo'.$photo['id'].'">
-                                    <a target="_blank" href="'.blogs_photo_url($photo['photo'], true).'">
-                                        <img class="col-md-1 control-label" src="'.blogs_photo_url($photo['photo'], true).'" />
+                                    <a target="_blank" href="'.blogs_photo_url($photo['photo'], 'small').'">
+                                        <img class="col-md-1 control-label" src="'.blogs_photo_url($photo['photo'], 'small').'" />
                                     </a>
                                     <div class="col-md-11 blogpost">
                                         <textarea class="blogpost photo description form-control" placeholder="'.tr('Description of this photo').'"></textarea>
