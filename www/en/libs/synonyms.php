@@ -123,7 +123,7 @@ function synonym_random($count = 1, $nospaces = false){
             }
         }
 
-        if(!$data = sql_list('SELECT `word` FROM `synonyms` ORDER BY RAND() LIMIT '.cfi($count), 'word')){
+        if(!$data = sql_list('SELECT `word` FROM `synonyms` ORDER BY RAND() LIMIT '.cfi($count))){
             throw new bException('synonym_get(): Synonyms table is empty. Please run ./scripts/base/importers/synonyms', 'empty');
         }
 

@@ -340,7 +340,12 @@ function html_generate_js(){
          * Always load jQuery!
          * Always load jQuery in the HEAD so that in site <script> that use jQuery will work
          */
-        $jquery = '<script'.(!empty($data['option']) ? ' '.$data['option'] : '').' type="text/javascript" src="'.$_CONFIG['root'].'/pub/js/base/jquery'.$min.".js\"></script>\n";
+        if($js['jquery_version']){
+            $jquery = '<script'.(!empty($data['option']) ? ' '.$data['option'] : '').' type="text/javascript" src="'.$_CONFIG['root'].'/pub/js/base/jquery'.$min.".js\"></script>\n";
+
+        }else{
+            $jquery = '';
+        }
 
         if(!$GLOBALS['page_is_mobile'] and !empty($_CONFIG['bootstrap']['enabled'])){
             /*
