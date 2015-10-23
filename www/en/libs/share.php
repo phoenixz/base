@@ -136,7 +136,7 @@ function share_sharethis_js() {
  */
 function share_addtoany_buttons($buttons) {
     try{
-        html_load_js('//static.addtoany.com/menu/page.js');
+        html_load_js('https://static.addtoany.com/menu/page.js');
 
         $html = '<div class="a2a_kit a2a_kit_size_32 a2a_default_style">';
 
@@ -155,7 +155,7 @@ function share_addtoany_buttons($buttons) {
                     break;
 
                 case 'googleplus':
-                    $html_load_jsl .= '<a class="a2a_button_google_plus"></a>';
+                    $html .= '<a class="a2a_button_google_plus"></a>';
                     break;
 
                 case 'reddit':
