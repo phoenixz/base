@@ -415,7 +415,11 @@ function http_cache($params, $headers){
     global $_CONFIG;
 
     try{
-        if(!$_CONFIG['cache']['http']['enabled']){
+        if(!$_CONFIG['cache']['http']['enabled'] or ($params['http_code'] == 200) or ($params['http_code'] == 304)){
+            /*
+             * Non HTTP 200 / 304 pages should NOT have cache enabled!
+             * For example 404, 505, etc...
+             */
             return $headers;
         }
 
