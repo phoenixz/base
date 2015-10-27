@@ -748,6 +748,46 @@ function html_flash_set($messages, $type = 'info', $class = null){
 
 
 /*
+ * Show the correct HTML flash error message
+ */
+function html_flash_error($e, $messages, $class = null){
+    try{
+        $type = 'error';
+
+        /*
+         * Move arguments
+         * Its possible that messages has not been specified, but class was specified
+         */
+        if(!$class and is_string($messages)){
+            $class    = $messages;
+            $messages = array();
+        }
+
+        /*
+         * Set some default message codes
+         */
+        array_params($messages);
+        array_default($messages, 'validation', $e);
+        array_default($messages, 'captcha'   , $e);
+
+        if(debug()){
+            html_flash_set($e, 'error', $class);
+
+        }elseif(empty($messages[$e->getCode()])){
+            html_flash_set(tr('Something went wrong, please try again'), 'error', $class);
+
+        }else{
+            html_flash_set($messages[$e->getCode()], $type, $class);
+        }
+
+    }catch(Exception $e){
+        throw new bException('html_flash_error(): Failed', $e);
+    }
+}
+
+
+
+/*
  * Returns true if there is an HTML message with the specified class
  */
 function html_flash_class($class = null){
