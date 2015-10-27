@@ -114,7 +114,7 @@ function seo_unique($source, $table, $ownid = null, $field = 'seoname', $replace
                     }
                 }
 
-                $result = sql_get('SELECT COUNT(*) AS `count` FROM `'.$table.'` WHERE `'.$field.'` = "'.$str.'"'.$ownid.';');
+                $result = sql_get('SELECT COUNT(*) AS `count` FROM `'.$table.'` WHERE `'.$field.'` = "'.$str.'"'.($ownid ? ' AND `id` != '.$ownid : ''));
 
                 if(!$result['count']){
                     return $str;
