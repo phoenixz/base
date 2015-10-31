@@ -90,35 +90,59 @@ function upload_ocupload($selector = "input[name=upload]", $url = '/ajax/upload.
 /*
  *
  */
-function upload_multi_js($element, $url, $done_script = '', $fail_script = '', $processall_script = '') {
-    html_load_js('base/jquery-ui/jquery-ui');
-    html_load_js('base/jfu/jquery.iframe-transport');
-    html_load_js('base/jfu/jquery.fileupload');
+function upload_multi($params){
+    try{
+        array_params($params);
+        array_default($params, 'selector'  , '');
+        array_default($params, 'url'       , '');
+        array_default($params, 'done'      , '');
+        array_default($params, 'fail'      , '');
+        array_default($params, 'process'   , '');
+        array_default($params, 'processall', '');
 
-    if(!$processall_script){
-        $processall_script = '
-            var progress = parseInt(data.loaded / data.total * 100, 10);
+        if(empty($params['selector'])){
+            throw new bException(tr('upload_multi(): No "selector" specified'), 'notspecified');
+        }
 
-            $(".progress.bar").css(
-                "width",
-                progress + "%"
-            );
+        if(empty($params['url'])){
+            throw new bException(tr('upload_multi(): No "url" specified'), 'notspecified');
+        }
 
-            $("#progress_nr").html(progress + "%");';
+        html_load_js('base/jquery-ui/jquery-ui');
+        html_load_js('base/jfu/jquery.iframe-transport');
+        html_load_js('base/jfu/jquery.fileupload');
+
+        if(!$params['processall']){
+            $params['processall'] = '
+                var progress = parseInt(data.loaded / data.total * 100, 10);
+
+                $(".progress.bar").css(
+                    "width",
+                    progress + "%"
+                );
+
+                $("#progress_nr").html(progress + "%");';
+        }
+
+        return html_script('$("'.$params['selector'].'").fileupload({
+                url      : "'.$params['url'].'",
+                '.
+
+                ($params['done'] ?      'done  : function (e, data) { $.handleDone(data.result, '.$params['done'].'); },' : '').
+
+                ($params['fail'] ? "\n".'fail  : function (e, data) { $.handleFail(data.jqXHR, '.$params['fail'].'); },' : '').'
+
+                progress: function (e, data) {
+                    '.$params['process'].'
+                },
+                progressall: function (e, data) {
+                    '.$params['processall'].'
+                }
+            });');
+
+    }catch(Exception $e){
+        throw new bException('upload_multi(): Failed', $e);
     }
-
-    return html_script('$("'.$element.'").fileupload({
-            url      : "'.$url.'",
-            '.
-
-            ($done_script ?      'done  : function (e, data) { $.handleDone(data.result, '.$done_script.'); },' : '').
-
-            ($fail_script ? "\n".'fail  : function (e, data) { $.handleFail(data.jqXHR, '.$fail_script.'); },' : '').'
-
-            progressall: function (e, data) {
-                '.$processall_script.'
-            }
-        });');
 }
 
 
@@ -420,5 +444,19 @@ function upload_check_files($files = null){
     }
 
     return $failed;
+}
+
+
+/*
+ * Obsolete wrapper functions for compatibility, which should NOT be used!
+ */
+function upload_multi_js($selector, $url, $done_script = '', $fail_script = '', $processall_script = '') {
+    notify('obsolete', 'upload_multi_js() usage is obsolete, please use upload_multi()', 'developers');
+
+    return upload_multi(array('selector'    => $selector,
+                              'url'         => $url,
+                              'done'        => $done_script,
+                              'fail'        => $fail,
+                              '$processall' => $processall_script));
 }
 ?>
