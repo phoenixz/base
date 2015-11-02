@@ -456,7 +456,7 @@ function upload_multi_js($selector, $url, $done_script = '', $fail_script = '', 
     return upload_multi(array('selector'    => $selector,
                               'url'         => $url,
                               'done'        => $done_script,
-                              'fail'        => $fail,
+                              'fail'        => $fail_script,
                               '$processall' => $processall_script));
 }
 ?>
