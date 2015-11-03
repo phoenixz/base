@@ -112,7 +112,10 @@ function upload_multi($params){
         html_load_js('base/jfu/jquery.iframe-transport');
         html_load_js('base/jfu/jquery.fileupload');
 
-        if(!$params['processall']){
+        if(!$params['processall'] and !$params['process']){
+            /*
+             * No upload processing specified, default to basic "processall"
+             */
             $params['processall'] = '
                 var progress = parseInt(data.loaded / data.total * 100, 10);
 

@@ -9,9 +9,43 @@
 
 
 /*
+ * Add share buttons to the site
+ */
+function share_buttons($buttons){
+    global $_CONFIG;
+
+    try{
+        switch($_CONFIG['share']['provider']){
+            case 'addthis':
+                return share_addthis_buttons($buttons);
+
+            case 'sharethis':
+                return share_sharethis_buttons($buttons);
+
+            case 'addtoany':
+                return share_addtoany_buttons($buttons);
+
+            false:
+                /*
+                 * Share buttons are disabled
+                 */
+                return '';
+
+            default:
+                throw new bException(tr('share_buttons(): Unknown share button provider "%provider%" specified', array('%provider%' => $_CONFIG['share']['provider'])), 'unknown');
+        }
+
+    } catch(Exception $e) {
+        throw new bException('share_buttons(): Failed', $e);
+    }
+}
+
+
+
+/*
  * It must be customized in www.addthis.com/dashboard
  */
-function share_addthis_buttons() {
+function share_addthis_buttons($buttons) {
     try{
         html_load_js('//s7.addthis.com/js/300/addthis_widget.js#pubid=ra-55e77d50dd5d574b');
         return '<div class="addthis_sharing_toolbox"></div>';
@@ -136,7 +170,7 @@ function share_sharethis_js() {
  */
 function share_addtoany_buttons($buttons) {
     try{
-        html_load_js('https://static.addtoany.com/menu/page.js');
+        html_load_js('//static.addtoany.com/menu/page.js');
 
         $html = '<div class="a2a_kit a2a_kit_size_32 a2a_default_style">';
 
@@ -155,7 +189,7 @@ function share_addtoany_buttons($buttons) {
                     break;
 
                 case 'googleplus':
-                    $html .= '<a class="a2a_button_google_plus"></a>';
+                    $html_load_jsl .= '<a class="a2a_button_google_plus"></a>';
                     break;
 
                 case 'reddit':
