@@ -9,6 +9,41 @@
 
 
 /*
+ *
+ */
+function share_buttons($buttons) {
+    global $_CONFIG;
+
+    try{
+        switch($_CONFIG['share']['provider']){
+            case 'addthis':
+                return share_addthis_buttons($buttons);
+
+            case 'sharethis':
+                return share_sharethis_buttons($buttons);
+
+            case 'addtoany':
+                return share_addtoany_buttons($buttons);
+
+            case false:
+                /*
+                 * No social buttons
+                 */
+                return '';
+
+            default:
+                throw new bException(tr('share_buttons(): Unknown provider "%provider%" specified', array('%provider%' => $_CONFIG['share']['provider'])), 'unknown');
+        }
+
+
+    } catch(Exception $e) {
+        throw new bException('share_buttons(): Failed', $e);
+    }
+}
+
+
+
+/*
  * It must be customized in www.addthis.com/dashboard
  */
 function share_addthis_buttons() {

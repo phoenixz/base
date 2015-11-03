@@ -120,19 +120,19 @@ function json_reply($reply = null, $result = 'OK', $http_code = null){
 /*
  * Send correct JSON reply
  */
-function json_error($message, $default_message = null){
+function json_error($message, $data = array()){
     if(is_array($message)){
         if(empty($message['default'])){
-            if(empty($default_message)){
-                $default_message = tr('Something went wrong, please try again later');
-            }
+            $default = tr('Something went wrong, please try again later');
 
-            $message['default'] = $default_message;
+        }else{
+            $default = $message['default'];
+            unset($message['default']);
         }
 
         if(empty($message['e'])){
             if(ENVIRONMENT == 'production'){
-                $message = $message['default'];
+                $message = $default;
                 log_error('json_error(): No exception object specified for following error');
                 log_error($message);
 
@@ -147,7 +147,7 @@ function json_error($message, $default_message = null){
                 $code = $message['e']->getCode();
 
                 if(empty($message[$code])){
-                    $message = $message['default'];
+                    $message = $default;
 
                 }else{
                     $message = $message[$code];
@@ -166,10 +166,6 @@ function json_error($message, $default_message = null){
             throw new bException('json_error(): Specified message must either be a string or an bException ojbect, but is neither');
         }
 
-        if($default_message === null){
-            $default_message = tr('Something went wrong, please try again');
-        }
-
         $code = $message->code;
 
 //        if(debug('messages') and (substr($code, 0, 5) == 'user/') or ($code == 'user')){
@@ -179,12 +175,14 @@ function json_error($message, $default_message = null){
              */
             $message = $message->getMessages("\n");
 
-        }elseif($default_message){
-            $message = $default_message;
+        }elseif($default){
+            $message = $default;
         }
     }
 
-    json_reply($message, 'ERROR', 500);
+    $data['message'] = $message;
+
+    json_reply($data, 'ERROR', 500);
 }
 
 

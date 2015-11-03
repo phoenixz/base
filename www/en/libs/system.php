@@ -1361,4 +1361,33 @@ function force_natural_number($number, $default = 1){
 
     return $number;
 }
+
+
+
+/*
+ * Show the correct HTML flash error message
+ */
+function error_message($e, $messages){
+    try{
+        /*
+         * Set some default message codes
+         */
+        array_params($messages);
+        array_default($messages, 'validation', $e);
+        array_default($messages, 'captcha'   , $e);
+
+        if(debug()){
+            return $e->getMessages();
+
+        }elseif(empty($messages[$e->getCode()])){
+            return tr('Something went wrong, please try again');
+
+        }
+
+        return $messages[$e->getCode()];
+
+    }catch(Exception $e){
+        throw new bException('error_message(): Failed', $e);
+    }
+}
 ?>
