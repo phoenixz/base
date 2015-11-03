@@ -30,11 +30,13 @@ if (!empty($_POST['data'])) {
             throw new bException('Empty project name', 'TRANSLATE');
         }
 
-        $project = sql_get('SELECT `id`,`api_key`,`last_login`
+        $project = sql_get('SELECT `id`,
+                                   `api_key`,
+                                   `last_login`
 
-                            FROM `projects`
+                            FROM   `projects`
 
-                            WHERE `name` = :project_name',
+                            WHERE  `name` = :project_name',
 
                             array(':project_name' => cfm($project_name)));
 
@@ -43,8 +45,12 @@ if (!empty($_POST['data'])) {
             die();
         }
 
-        sql_query('UPDATE `projects` SET `last_login` = NOW()
+        sql_query('UPDATE `projects`
+
+                   SET    `last_login` = NOW()
+
                    WHERE  `id` = :id',
+
                    array(':id' => $project['id']));
 
 
@@ -65,22 +71,26 @@ if (!empty($_POST['data'])) {
         foreach($strings as $file  => $strings_list) {
             foreach($strings_list as $string => $void) {
                 $code = sha1($language.'|'.$string);
+
                 //check if there is a translation in the current project
-                $translation = sql_get('SELECT `id`, `translation`, `status`
+                $translation = sql_get('SELECT `id`,
+                                               `translation`,
+                                               `status`
 
-                                        FROM `dictionary`
+                                        FROM   `dictionary`
 
-                                        WHERE `code`        = :code
-                                        AND   `projects_id` = :project_id
-                                        AND   `file`        = :file',
+                                        WHERE  `code`        = :code
+                                        AND    `projects_id` = :project_id
+                                        AND    `file`        = :file',
 
-                                        array(':code'       => $code,
-                                              ':project_id' => cfi($project['id']),
-                                              ':file'       => $file));
+                                        array(':code'        => $code,
+                                              ':project_id'  => cfi($project['id']),
+                                              ':file'        => $file));
 
                 if(empty($translation)){
                     sql_query('INSERT INTO `dictionary` (`projects_id`, `language`, `string`, `file`, `code`)
                                VALUES                   (:projects_id , :language , :string , :file , :code )',
+
                                array(':projects_id' => cfi($project['id']),
                                      ':language'    => cfm($language),
                                      ':string'      => $string,
@@ -104,8 +114,8 @@ if (!empty($_POST['data'])) {
 
                                                   FROM   `dictionary`
 
-                                                  WHERE `code`   = :code
-                                                  AND   `status` = "translated"
+                                                  WHERE  `code`   = :code
+                                                  AND    `status` = "translated"
 
                                                   LIMIT 0,1',
 
@@ -114,10 +124,10 @@ if (!empty($_POST['data'])) {
                     if(!empty($alt_project_trans['translation'])) {
                         sql_query('UPDATE `dictionary`
 
-                                   SET `translation` = :translation,
-                                       `status`      = "translated"
+                                   SET    `translation` = :translation,
+                                          `status`      = "translated"
 
-                                   WHERE `id` = :id',
+                                   WHERE  `id`          = :id',
 
                                    array(':translation' => addslashes($alt_project_trans['translation']),
                                          ':id'          => $translation['id']));

@@ -349,14 +349,18 @@ $_CONFIG['users']              = array('type_filter'      => null);
 //Xapian search
 $_CONFIG['xapian']             = array('dir'              => ROOT.'data/xapian/');                          // Base path for Xapian databases
 
-$_CONFIG['translator']         = array('url'      => 'translator.localhost',
+$_CONFIG['translator']         = array('url'          => 'translator.localhost',
                                         /*
-                                         * Defines what to do when no translations are found
-                                         * Possible values : full
-                                                             almost (search for alternative traduction (fails if not found))
-                                                             almost-nontranslate (search for alternive, if not found non translate)
+                                         * mode defines what to do when no translations are found
+                                         * Possible values : full   (all strings must be translated, fails if thats not possible)
+                                                             almost (search for alternative translations on other projects
+                                                                     for non available (fails if not found))
+                                                             almost-nontranslate (same as above but doesnt fail,
+                                                                                  if not translations are found then non translate)
                                                              nontranslate
                                          */
-                                       'mode'     => 'full',
-                                       'api_key'  => 'something');
+                                       'mode'         => 'full',
+                                       'passphrase'   => 'translateplease',
+                                       'api_key'      => 'something',
+                                       'allowed_tags' => '<b><a><strong>');
 ?>
