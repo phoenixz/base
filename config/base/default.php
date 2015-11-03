@@ -109,6 +109,7 @@ $_CONFIG['db']                 = array('default'          => 'core',
 
                                        'core'             => array('driver'           => 'mysql',                                       // PDO Driver used to communicate with the database server. For now, only MySQL has been tested, no others have been used yet, use at your own discretion
                                                                    'host'             => 'localhost',                                   // Hostname for SQL server
+                                                                   'port'             => '',                                            // If set, don't use the default 3306 port
                                                                    'user'             => 'base',                                        // Username to login to SQL server
                                                                    'pass'             => 'base',                                        // Password to login to SQL server
                                                                    'db'               => 'base',                                        // Name of core database on SQL server
