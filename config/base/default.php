@@ -348,4 +348,14 @@ $_CONFIG['users']              = array('type_filter'      => null);
 //Xapian search
 $_CONFIG['xapian']             = array('dir'              => ROOT.'data/xapian/');                          // Base path for Xapian databases
 
+$_CONFIG['translator']         = array('url'      => 'translator.localhost',
+                                        /*
+                                         * Defines what to do when no translations are found
+                                         * Possible values : full
+                                                             almost (search for alternative traduction (fails if not found))
+                                                             almost-nontranslate (search for alternive, if not found non translate)
+                                                             nontranslate
+                                         */
+                                       'mode'     => 'full',
+                                       'api_key'  => 'something');
 ?>
