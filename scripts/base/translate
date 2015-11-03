@@ -69,8 +69,8 @@ try{
     $source_dir = ROOT.'www/en';
     $target_dir = ROOT.'www/'.$target_language;
 
-    log_console('scripts/translate: Starting '.$target_language, 'script/base/translate', 'white');
-    log_console('Searching for translateable strings : '       , 'script/base/translate', '', false);
+    log_console('translate: Starting '.$target_language, 'translate', 'white');
+    log_console('Searching for translateable strings : '       , 'translate', '', false);
 
     if($noutf8check){
         log_console('Skipping UTF8 check due to "noutf8check" command line parameter', 'translate', 'yellow');
@@ -142,7 +142,7 @@ try{
 
     if(count($failed_html) > 0) {
         foreach($failed_html as $string => $file) {
-            log_console('Contains HTML : "'.$string.'" in '.$file, 'script/base/translate', 'red', true);
+            log_console('Contains HTML : "'.$string.'" in '.$file, 'translate', 'red', true);
         }
 
        return;
@@ -150,13 +150,13 @@ try{
 
     if(count($failed_php) > 0) {
         foreach($failed_php as $string => $file) {
-            log_console('Contains PHP : "'.$string.'" in '.$file, 'script/base/translate', 'red', true);
+            log_console('Contains PHP : "'.$string.'" in '.$file, 'translate', 'red', true);
         }
 
        return;
     }
 
-    log_console('Requesting translations from server ', 'script/base/translate', '', false);
+    log_console('Requesting translations from server ', 'translate', '', false);
 
     $timestamp = time();
 
@@ -181,7 +181,6 @@ try{
                                    'timeout'         => 180,
                                    'connect_timeout' => 180));
     } catch(Exception $e){
-
         if(substr($e->getCode(), 0, 4) == 'HTTP'){
             throw new bException(tr('Server connection gave HTTP code : "%code%"', array('%code%' => $e->getCode())), 'connection_error');
         }
@@ -196,28 +195,30 @@ try{
     $returned_data = json_decode(str_decrypt(trim($response['data']), $_CONFIG['translator']['passphrase']), true);
 
     if(is_array($returned_data) and ($returned_data['status'] == 'success')) {
-        log_console('Received translations', 'script/base/translate', 'green', true);
+        log_console('Received translations', 'translate', 'green', true);
         $translations = $returned_data['translations'];
 
         //translations ready, start processing.
         //delete target dir
         try{
-            log_console('Deleting target dir '.$target_dir, 'script/base/translate', '', true);
+            log_console('Deleting target dir '.$target_dir, 'translate', '', true);
             shell_exec('rm -rf '.$target_dir);
 
             // Copy english to target dir
-            log_console('Copying '.$source_dir.' => '.$target_dir, 'script/base/translate', '', true);
+            log_console('Copying '.$source_dir.' => '.$target_dir, 'translate', '', true);
             shell_exec('cp -a '.$source_dir.' '.$target_dir);
 
-            // CSS should be symlink since it wont change between languages
-            file_delete_tree(slash($target_dir).'pub/css');
-            symlink('../../en/pub/css', slash($target_dir).'pub/css');
+            // :DELETE: Its not going to save too much space, and doesnt make sense
+            //          to only link css and forgot about js, images, etc
+            // // CSS should be symlink since it wont change between languages
+            // file_delete_tree(slash($target_dir).'pub/css');
+            // symlink('../../en/pub/css', slash($target_dir).'pub/css');
 
             //Apply translations
-            log_console('Applying translations', 'script/base/translate', '', true);
+            log_console('Applying translations', 'translate', '', true);
 
             foreach($translations as $short_file => $data) {
-                log_console($short_file.' : ', 'script/base/translate', '', false);
+                log_console($short_file.' : ', 'translate', '', false);
 
                 if(!empty($forcedutf8[$short_file])){
                     log_console('*FORCED-UTF8* ', '', 'yellow', false);
@@ -245,13 +246,13 @@ try{
                 }
             }
 
-            log_console('Translation completed', 'script/base/translate','purple',true);
+            log_console('Translation completed', 'translate','purple',true);
 
             if($returned_data['stats']['translations_missing'] > 0) {
-                log_console('Translations missing : '.number_format($returned_data['stats']['translations_missing']),'script/base/translate','yellow',true);
+                log_console('Translations missing : '.number_format($returned_data['stats']['translations_missing']),'translate','yellow',true);
             }
 
-            log_console('Translations successful : '.number_format($returned_data['stats']['translations_done']),'script/base/translate','',true);
+            log_console('Translations successful : '.number_format($returned_data['stats']['translations_done']),'translate','',true);
 
         }catch(Exception $e){
             throw new bException(tr('translate: Unable to delete target dir "%dir"', array('%dir' => $target_dir)), $e);

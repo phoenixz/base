@@ -349,16 +349,19 @@ $_CONFIG['users']              = array('type_filter'      => null);
 //Xapian search
 $_CONFIG['xapian']             = array('dir'              => ROOT.'data/xapian/');                          // Base path for Xapian databases
 
+/*
+ * Translation system configuration
+ *
+ * mode defines what to do when no translations are found
+ * possible values : full                   (all strings must be translated, fails if thats not possible)
+                     almost                 (search for alternative translations on other projects
+                                             if they are not available on the current one (fails if not found))
+                     almost-nontranslate    (same as above but doesnt fail,
+                                             if not translations are found then non translate)
+                     nontranslate
+ */
+
 $_CONFIG['translator']         = array('url'          => 'translator.localhost',
-                                        /*
-                                         * mode defines what to do when no translations are found
-                                         * Possible values : full   (all strings must be translated, fails if thats not possible)
-                                                             almost (search for alternative translations on other projects
-                                                                     for non available (fails if not found))
-                                                             almost-nontranslate (same as above but doesnt fail,
-                                                                                  if not translations are found then non translate)
-                                                             nontranslate
-                                         */
                                        'mode'         => 'full',
                                        'passphrase'   => 'translateplease',
                                        'api_key'      => 'something',
