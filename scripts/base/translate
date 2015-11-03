@@ -182,7 +182,7 @@ try{
                                    'connect_timeout' => 180));
     } catch(Exception $e){
 
-        if(substr($e->getCode(), 'HTTP')){
+        if(substr($e->getCode(), 0, 4) == 'HTTP'){
             throw new bException('Server respond with HTTP code : '$e->getCode(), 'connection_error');
         }
 
