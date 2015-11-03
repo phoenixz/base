@@ -183,10 +183,10 @@ try{
     } catch(Exception $e){
 
         if(substr($e->getCode(), 0, 4) == 'HTTP'){
-            throw new bException('Server respond with HTTP code : '$e->getCode(), 'connection_error');
+            throw new bException('Server connection gave HTTP code : '$e->getCode(), 'connection_error');
         }
 
-        throw new bException('Error trying to connect with server', 'connection_error');
+        throw new bException('Error trying to connect with server : '.$e->getMessage(), 'connection_error');
     }
 
     if(empty($response['status'])){
