@@ -163,8 +163,8 @@ try{
 	//construct data for sending
     $data = array('project'         => PROJECT,
                   'auth_key'        => sha1(PROJECT.$_CONFIG['translator']['api_key'].$timestamp),
-				  'translations'    => $translations,
-				  'target_language' => $target_language,
+                  'translations'    => $translations,
+                  'target_language' => $target_language,
                   'timestamp'       => $timestamp,
                   'options'         => array('mode' => $mode));
 
@@ -173,7 +173,7 @@ try{
 	//send translations to server and wait for response
 
     try {
-    	$response = curl_get(array('url'             => 'http://'.$_CONFIG['translator']['url'].'/translate.php',
+        $response = curl_get(array('url'             => 'http://'.$_CONFIG['translator']['url'].'/translate.php',
                                    'getdata'         => true,
                                    'getheaders'      => false,
                                    'post'            => array('data' => $encrypted_data),
