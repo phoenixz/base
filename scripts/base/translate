@@ -181,8 +181,13 @@ try{
                                    'timeout'         => 180,
                                    'connect_timeout' => 180));
     } catch(Exception $e){
+
         if(substr($e->getCode(), 0, 4) == 'HTTP'){
-            throw new bException(tr('Server connection gave HTTP code : "%code%"', array('%code%' => $e->getCode())), 'connection_error');
+            $server_message = $e->getData()['data'];
+            $code           = $e->getCode();
+
+            throw new bException(tr('Server connection gave HTTP code : "%code%" Server message : "%message%"',
+                                    array('%code%' => $code, '%message%' => $server_message)), 'connection_error');
         }
 
         throw new bException(tr('Error trying to connect with server : "%error%"', array('%error' => $e->getMessage())), 'connection_error');
