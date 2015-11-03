@@ -16,7 +16,7 @@ try{
         case 'submit':
                 foreach($_POST as $key => $value) {
                     if((substr($key,0,3) == 'tr-')) {
-                        $id    = str_replace('tr-', '', $key);
+                        $id = str_replace('tr-', '', $key);
 
                         if(empty($value) and empty($_POST['alttrans-'.$id])){
                             continue;
@@ -25,18 +25,21 @@ try{
                         if(empty($value))
                             $value = $_POST['alttrans-'.$id];
 
-                        $entry = sql_get('SELECT * FROM `dictionary`
-                                          WHERE id = :id',
+                        $entry = sql_get('SELECT *
+                                          FROM  `dictionary`
+                                          WHERE `id`  = :id',
                                           array(':id' => $id));
                         if(!$entry){
                             throw new bException('Error getting entry from dictionary', 'data_not_found');
                         }
+
                         if($entry['translation'] != $value){
                             sql_query('UPDATE `dictionary`
-                                       SET `translation` = :translation,
-                                                `status` = "translated"
 
-                                       WHERE id = :id',
+                                       SET    `translation` = :translation,
+                                              `status`      = "translated"
+
+                                       WHERE  `id`          = :id',
                                        array(':id'          => $id,
                                              ':translation' => $value));
                         }
@@ -47,87 +50,108 @@ try{
         case 'mark_as_translated':
 
             if(empty($_POST['id'])){
-                throw new bException('Cannot erase users, no users selected', 'notspecified');
+                throw new bException('Cannot mark translations, no translations selected', 'notspecified');
             }
 
             if(!is_array($_POST['id'])){
-                throw new bException('Cannot erase users, invalid data specified', 'invalid');
+                throw new bException('Cannot mark translations, invalid data specified', 'invalid');
             }
 
             foreach ($_POST['id'] as $id) {
+
                 sql_query('UPDATE `dictionary`
-                           SET `status` = "translated"
-                           WHERE   `id` = :id',
-                           array(':id' => $id));
+
+                           SET    `status` = "translated"
+
+                           WHERE  `id`     = :id',
+
+                           array(':id'     => $id));
             }
             break;
 
         case 'mark_as_untranslated':
             if(empty($_POST['id'])){
-                throw new bException('Cannot erase users, no users selected', 'notspecified');
+                throw new bException('Cannot mark translations, no translations selected', 'notspecified');
             }
 
             if(!is_array($_POST['id'])){
-                throw new bException('Cannot erase users, invalid data specified', 'invalid');
+                throw new bException('Cannot mark translations, invalid data specified', 'invalid');
             }
 
             foreach ($_POST['id'] as $id) {
+
                 sql_query('UPDATE `dictionary`
-                           SET `status` = NULL
-                           WHERE   `id` = :id',
-                           array(':id' => $id));
+
+                           SET    `status` = NULL
+
+                           WHERE  `id`     = :id',
+
+                           array(':id'     => $id));
             }
             break;
 
         case 'delete':
             if(empty($_POST['id'])){
-                throw new bException('Cannot erase users, no users selected', 'notspecified');
+                throw new bException('Cannot delete translations, no translations selected', 'notspecified');
             }
 
             if(!is_array($_POST['id'])){
-                throw new bException('Cannot erase users, invalid data specified', 'invalid');
+                throw new bException('Cannot delete translations, invalid data specified', 'invalid');
             }
 
             foreach ($_POST['id'] as $id) {
+
                 sql_query('UPDATE `dictionary`
-                           SET `status` = "deleted"
-                           WHERE   `id` = :id',
-                           array(':id' => $id));
+
+                           SET    `status` = "deleted"
+
+                           WHERE  `id`     = :id',
+
+                           array(':id'     => $id));
             }
             break;
 
         case 'undelete':
             if(empty($_POST['id'])){
-                throw new bException('Cannot erase users, no users selected', 'notspecified');
+                throw new bException('Cannot undelete translations, no translations selected', 'notspecified');
             }
 
             if(!is_array($_POST['id'])){
-                throw new bException('Cannot erase users, invalid data specified', 'invalid');
+                throw new bException('Cannot undelete translations, invalid data specified', 'invalid');
             }
 
             foreach ($_POST['id'] as $id) {
+
                 sql_query('UPDATE `dictionary`
-                           SET `status` = NULL
-                           WHERE   `id` = :id',
-                           array(':id' => $id));
+
+                           SET    `status` = NULL
+
+                           WHERE  `id`     = :id',
+
+                           array(':id'     => $id));
             }
             break;
 
         case 'erase':
 
             if(empty($_POST['id'])){
-                throw new bException('Cannot erase users, no users selected', 'notspecified');
+                throw new bException('Cannot erase translations, no translations selected', 'notspecified');
             }
 
             if(!is_array($_POST['id'])){
-                throw new bException('Cannot erase users, invalid data specified', 'invalid');
+                throw new bException('Cannot erase translations, invalid data specified', 'invalid');
             }
 
             foreach ($_POST['id'] as $id) {
-                sql_query('DELETE FROM `dictionary`
-                           WHERE   `id` = :id',
+
+                sql_query('DELETE
+                           FROM  `dictionary`
+
+                           WHERE `id` = :id',
+
                            array(':id' => $id));
             }
+
             break;
 
         default:
@@ -145,26 +169,26 @@ try{
 /*
  * Setup filters
  */
-$projects   = array('name'       => 'project',
-                    'class'      => 'filter form-control mb-xs mt-xs mr-xs btn btn-default dropdown-toggle',
-                    'none'       => tr('All projects'),
-                    'autosubmit' => true,
-                    'selected'   => isset_get($_GET['project']),
-                    'resource'   => sql_list('SELECT `name` AS `id`, `name` FROM `projects` ORDER BY `name`'));
+$projects  = array('name'       => 'project',
+                   'class'      => 'filter form-control mb-xs mt-xs mr-xs btn btn-default dropdown-toggle',
+                   'none'       => tr('All projects'),
+                   'autosubmit' => true,
+                   'selected'   => isset_get($_GET['project']),
+                   'resource'   => sql_list('SELECT `name` AS `id`, `name` FROM `projects` ORDER BY `name`'));
 
-$status   = array('name'        => 'status',
-                  'class'       => 'filter form-control mb-xs mt-xs mr-xs btn btn-default dropdown-toggle',
-                  'none'        => tr('Active'),
-                  'autosubmit'  => true,
-                  'selected'    => isset_get($_GET['status']),
-                  'resource'    => array('translated' => 'Translated', 'deleted' => 'Deleted', 'all' => 'All'));
+$status    = array('name'       => 'status',
+                   'class'      => 'filter form-control mb-xs mt-xs mr-xs btn btn-default dropdown-toggle',
+                   'none'       => tr('Active'),
+                   'autosubmit' => true,
+                   'selected'   => isset_get($_GET['status']),
+                   'resource'   => array('translated' => 'Translated', 'deleted' => 'Deleted', 'all' => 'All'));
 
-$languages   = array('name'       => 'language',
-                     'class'      => 'filter form-control mb-xs mt-xs mr-xs btn btn-default dropdown-toggle',
-                     'none'       => tr('All languages'),
-                     'autosubmit' => true,
-                     'selected'   => isset_get($_GET['language']),
-                     'resource'   => sql_list('SELECT `language` AS `id`, `language` FROM `dictionary` GROUP BY `language`'));
+$languages = array('name'       => 'language',
+                   'class'      => 'filter form-control mb-xs mt-xs mr-xs btn btn-default dropdown-toggle',
+                   'none'       => tr('All languages'),
+                   'autosubmit' => true,
+                   'selected'   => isset_get($_GET['language']),
+                   'resource'   => sql_list('SELECT `language` AS `id`, `language` FROM `dictionary` GROUP BY `language`'));
 
 
 /*
@@ -172,30 +196,31 @@ $languages   = array('name'       => 'language',
  */
 $execute = array();
 
-$query   = 'SELECT `dictionary`.`id`,
-                   `dictionary`.`code`,
-                   `dictionary`.`string`,
-                   `dictionary`.`translation`,
-                   `dictionary`.`language`,
-                   `dictionary`.`status`,
-                   `dictionary`.`file`,
-                   `projects`.`name`,
-                   `projects`.`id` AS `projects_id`
+$query   = 'SELECT    `dictionary`.`id`,
+                      `dictionary`.`code`,
+                      `dictionary`.`string`,
+                      `dictionary`.`translation`,
+                      `dictionary`.`language`,
+                      `dictionary`.`status`,
+                      `dictionary`.`file`,
+                      `projects`.`name`,
+                      `projects`.`id` AS `projects_id`
 
-            FROM `dictionary`
-
-            LEFT JOIN `projects`
-            ON `projects_id` = `projects`.`id`';
-
-$paging  = 'SELECT COUNT(`dictionary`.`id`) AS `count`,
-                   `dictionary`.`string`,
-                   `dictionary`.`translation`,
-                   `projects`.`name`
-
-            FROM   `dictionary`
+            FROM      `dictionary`
 
             LEFT JOIN `projects`
-            ON `projects_id` = `projects`.`id`';
+            ON        `projects_id` = `projects`.`id`';
+
+$paging  = 'SELECT    `dictionary`.`string`,
+                      `dictionary`.`translation`,
+                      COUNT(`dictionary`.`id`) AS `count`,
+
+                      `projects`.`name`
+
+            FROM      `dictionary`
+
+            LEFT JOIN `projects`
+            ON        `projects_id` = `projects`.`id`';
 
 
 /*
@@ -213,15 +238,16 @@ if(isset_get($_GET['project'])){
 /*
  * Apply status filter
  */
-$default_actions = array('submit'                    => tr('Submit translations'),
-                         'mark_as_translated'        => tr('Mark translations as translated'),
-                         'mark_as_untranslated'      => tr('Mark translations as untranslated'),
-                         'delete'                    => tr('Delete selected translations'),
-                         'undelete'                  => tr('Undelete selected translations'),
-                         'erase'                     => tr('Permantly delete translations'));
+$default_actions = array('submit'               => tr('Submit translations'),
+                         'mark_as_translated'   => tr('Mark translations as translated'),
+                         'mark_as_untranslated' => tr('Mark translations as untranslated'),
+                         'delete'               => tr('Delete selected translations'),
+                         'undelete'             => tr('Undelete selected translations'),
+                         'erase'                => tr('Permantly delete translations'));
 
 switch(isset_get($_GET['status'])){
     case '':
+        // FALLTHROUGH
 
     case 'active':
         $where[] = '`dictionary`.`status` IS NULL';
@@ -264,9 +290,9 @@ switch(isset_get($_GET['status'])){
                          'class'      => 'form-action input-sm',
                          'none'       => tr('Action'),
                          'autosubmit' => true,
-                         'resource'   => array('submit'               => tr('Submit translations'),
-                                               'mark_as_translated'   => tr('Mark translations as translated'),
-                                               'delete'               => tr('Delete selected translations')));
+                         'resource'   => array('submit'             => tr('Submit translations'),
+                                               'mark_as_translated' => tr('Mark translations as translated'),
+                                               'delete'             => tr('Delete selected translations')));
         break;
 
     case 'deleted':
@@ -275,9 +301,9 @@ switch(isset_get($_GET['status'])){
                          'class'      => 'form-action input-sm',
                          'none'       => tr('Action'),
                          'autosubmit' => true,
-                         'resource'   => array('submit'               => tr('Submit translations'),
-                                               'undelete'             => tr('Undelete selected translations'),
-                                               'erase'                => tr('Permantly delete translations')));
+                         'resource'   => array('submit'   => tr('Submit translations'),
+                                               'undelete' => tr('Undelete selected translations'),
+                                               'erase'    => tr('Permantly delete translations')));
         break;
 
     default:
@@ -300,8 +326,8 @@ if(isset_get($_GET['language'])){
  * Apply generic filter
  */
 if(!empty($_GET['filter'])){
-    $where[]                 = ' (`dictionary`.`string` LIKE :filter OR `dictionary`.`language` LIKE :filter OR `dictionary`.`translation` LIKE :filter OR `dictionary`.`file` LIKE :filter OR `projects`.`name` LIKE :filter)';
-    $execute[':filter']      = '%'.$_GET['filter'].'%';
+    $where[]            = ' (`dictionary`.`string` LIKE :filter OR `dictionary`.`language` LIKE :filter OR `dictionary`.`translation` LIKE :filter OR `dictionary`.`file` LIKE :filter OR `projects`.`name` LIKE :filter)';
+    $execute[':filter'] = '%'.$_GET['filter'].'%';
 }
 
 
@@ -390,12 +416,12 @@ if(!$r->rowCount()){
     while($entry = sql_fetch($r)){
 
         $alt_trans = sql_query('SELECT DISTINCT `translation`
-                                FROM   `dictionary`
+                                FROM  `dictionary`
 
-                                WHERE        `code` = :code
-                                AND        `status` = "translated"
-                                AND           `id` != :id
-                                AND  `translation` != :translation',
+                                WHERE `code`         = :code
+                                AND   `status`       = "translated"
+                                AND   `id`          != :id
+                                AND   `translation` != :translation',
 
                                 array(':code'        => cfm($entry['code']),
                                       ':id'          => $entry['id'],

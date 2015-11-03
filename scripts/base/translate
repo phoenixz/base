@@ -161,7 +161,7 @@ try{
     $timestamp = time();
 
 	//construct data for sending
-	$data = array('project'         => PROJECT,
+    $data = array('project'         => PROJECT,
                   'auth_key'        => sha1(PROJECT.$_CONFIG['translator']['api_key'].$timestamp),
 				  'translations'    => $translations,
 				  'target_language' => $target_language,
@@ -169,48 +169,31 @@ try{
                   'options'         => array('mode' => $mode));
 
 	//encrypt the data
-	$encrypted_data = str_encrypt(json_encode($data),'translateplease');
+	$encrypted_data = str_encrypt(json_encode($data), $_CONFIG['translator']['passphrase']);
 	//send translations to server and wait for response
 
     try {
-    	$response       = curl_get(array('url'             => 'http://'.$_CONFIG['translator']['url'].'/translate.php',
-                                         'getdata'         => true,
-                                         'getheaders'      => false,
-                                         'post'            => array('data' => $encrypted_data),
-                                         'httpheaders'     => false,
-                                         'timeout'         => 180,
-                                         'connect_timeout' => 180));
+    	$response = curl_get(array('url'             => 'http://'.$_CONFIG['translator']['url'].'/translate.php',
+                                   'getdata'         => true,
+                                   'getheaders'      => false,
+                                   'post'            => array('data' => $encrypted_data),
+                                   'httpheaders'     => false,
+                                   'timeout'         => 180,
+                                   'connect_timeout' => 180));
     } catch(Exception $e){
-        switch($e->getCode()){
-            case 'HTTP400':
-                log_console('Server didnt accept the request', '', 'yellow');
-                throw new bException('Server didnt accept the request', 'connection_error');
-                break;
 
-            case 'HTTP401':
-                log_console('Authentication error with server', '', 'yellow');
-                throw new bException('Authentication error with server', 'connection_error');
-                break;
-
-            case 'HTTP404':
-                log_console('Server couldnt satisfy the request', '', 'yellow');
-                throw new bException('Server couldnt satisfy the request', 'connection_error');
-                break;
-
-            case 'HTTP500':
-                log_console('Error on translation server', '', 'yellow');
-                throw new bException('Error on translation server', 'connection_error');
-                break;
+        if(substr($e->getCode(), 'HTTP')){
+            throw new bException('Server respond with HTTP code : '$e->getCode(), 'connection_error');
         }
+
+        throw new bException('Error trying to connect with server', 'connection_error');
     }
 
     if(empty($response['status'])){
-        throw new bException('Error connecting to server', 'connection_error');
+        throw new bException('Error trying to connect with server', 'connection_error');
     }
 
-
-
-    $returned_data  = json_decode(str_decrypt(trim($response['data']),'translateplease'), true);
+    $returned_data = json_decode(str_decrypt(trim($response['data']), $_CONFIG['translator']['passphrase']), true);
 
 	if(is_array($returned_data) and ($returned_data['status'] == 'success')) {
 		log_console('Received translations', 'script/base/translate', 'green', true);
