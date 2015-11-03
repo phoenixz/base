@@ -10,6 +10,18 @@
  * noupdate / nodb               : Do not send updated translations back to the translation server (NOT YET IMPLEMENTED)
  *
  * @copyright Sven Oostenbrink <support@svenoostenbrink.com>, Johan Geuze
+ *
+ * INFO:
+ * If curl causes an exception due to an HTTP100 response
+ * it is probably caused by Apache having issues with Expect headers
+ * as it's explained in
+ * http://stackoverflow.com/questions/3889574/apache-and-mod-proxy-not-handling-http-100-continue-from-client-http-417
+ *
+ * The solution is to add
+ * <IfModule mod_headers.c>
+ *    RequestHeader unset Expect early
+ * </IfModule>
+ * in the translation server apache configuration
  */
 require_once(dirname(__FILE__).'/../../libs/startup.php');
 
@@ -45,8 +57,9 @@ if(!in_array($argv[0], $allowable_languages)) {
 /*
  * Check command line parameters
  */
-$onlyscan        = (argument('scan')  or argument('onlyscan') or argument('scanonly'));
-$noutf8check     = (argument('noutf') or argument('noutf8')   or argument('noutf8check'));
+$onlyscan     = (argument('scan')  or argument('onlyscan') or argument('scanonly'));
+$noutf8check  = (argument('noutf') or argument('noutf8')   or argument('noutf8check'));
+$mode         = argument('mode', true, $_CONFIG['translator']['mode']);
 
 $target_language = $argv[0];
 
@@ -96,7 +109,7 @@ try{
 
 		if(!empty($matches[1])) {
 			foreach($matches[1] as $key => $value) {
-				if(strip_tags($value) != $value) {
+				if(strip_tags($value, isset_get($_CONFIG['translator']['allowed_tags'])) != $value) {
 					/*
 					 * Translation string contains HTML!
 					 */
@@ -132,7 +145,7 @@ try{
 			log_console('Contains HTML : "'.$string.'" in '.$file, 'script/base/translate', 'red', true);
 		}
 
-		return;
+	   return;
 	}
 
 	if(count($failed_php) > 0) {
@@ -140,22 +153,64 @@ try{
 			log_console('Contains PHP : "'.$string.'" in '.$file, 'script/base/translate', 'red', true);
 		}
 
-		return;
+	   return;
 	}
 
 	log_console('Requesting translations from server ', 'script/base/translate', '', false);
 
+    $timestamp = time();
+
 	//construct data for sending
 	$data = array('project'         => PROJECT,
+                  'auth_key'        => sha1(PROJECT.$_CONFIG['translator']['api_key'].$timestamp),
 				  'translations'    => $translations,
-				  'target_language' => $target_language);
+				  'target_language' => $target_language,
+                  'timestamp'       => $timestamp,
+                  'options'         => array('mode' => $mode));
 
 	//encrypt the data
-	$encrypted_data = str_encrypt(serialize($data),'translateplease');
-
+	$encrypted_data = str_encrypt(json_encode($data),'translateplease');
 	//send translations to server and wait for response
-	$response       = curl_get('http://'.$_CONFIG['system']['translator'].'/translate.php', '', array('data' => $encrypted_data));
-	$returned_data  = unserialize(str_decrypt(trim($response['data']),'translateplease'));
+
+    try {
+    	$response       = curl_get(array('url'             => 'http://'.$_CONFIG['translator']['url'].'/translate.php',
+                                         'getdata'         => true,
+                                         'getheaders'      => false,
+                                         'post'            => array('data' => $encrypted_data),
+                                         'httpheaders'     => false,
+                                         'timeout'         => 180,
+                                         'connect_timeout' => 180));
+    } catch(Exception $e){
+        switch($e->getCode()){
+            case 'HTTP400':
+                log_console('Server didnt accept the request', '', 'yellow');
+                throw new bException('Server didnt accept the request', 'connection_error');
+                break;
+
+            case 'HTTP401':
+                log_console('Authentication error with server', '', 'yellow');
+                throw new bException('Authentication error with server', 'connection_error');
+                break;
+
+            case 'HTTP404':
+                log_console('Server couldnt satisfy the request', '', 'yellow');
+                throw new bException('Server couldnt satisfy the request', 'connection_error');
+                break;
+
+            case 'HTTP500':
+                log_console('Error on translation server', '', 'yellow');
+                throw new bException('Error on translation server', 'connection_error');
+                break;
+        }
+    }
+
+    if(empty($response['status'])){
+        throw new bException('Error connecting to server', 'connection_error');
+    }
+
+
+
+    $returned_data  = json_decode(str_decrypt(trim($response['data']),'translateplease'), true);
 
 	if(is_array($returned_data) and ($returned_data['status'] == 'success')) {
 		log_console('Received translations', 'script/base/translate', 'green', true);
