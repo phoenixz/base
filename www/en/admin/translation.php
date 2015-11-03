@@ -30,7 +30,7 @@ try{
                                           WHERE `id`  = :id',
                                           array(':id' => $id));
                         if(!$entry){
-                            throw new bException('Error getting entry from dictionary', 'data_not_found');
+                            throw new bException(tr('Error getting entry from dictionary'), 'data_not_found');
                         }
 
                         if($entry['translation'] != $value){
@@ -48,13 +48,12 @@ try{
             break;
 
         case 'mark_as_translated':
-
             if(empty($_POST['id'])){
-                throw new bException('Cannot mark translations, no translations selected', 'notspecified');
+                throw new bException(tr('Cannot mark translations, no translations selected'), 'notspecified');
             }
 
             if(!is_array($_POST['id'])){
-                throw new bException('Cannot mark translations, invalid data specified', 'invalid');
+                throw new bException(tr('Cannot mark translations, invalid data specified'), 'invalid');
             }
 
             foreach ($_POST['id'] as $id) {
@@ -71,11 +70,11 @@ try{
 
         case 'mark_as_untranslated':
             if(empty($_POST['id'])){
-                throw new bException('Cannot mark translations, no translations selected', 'notspecified');
+                throw new bException(tr('Cannot mark translations, no translations selected'), 'notspecified');
             }
 
             if(!is_array($_POST['id'])){
-                throw new bException('Cannot mark translations, invalid data specified', 'invalid');
+                throw new bException(tr('Cannot mark translations, invalid data specified'), 'invalid');
             }
 
             foreach ($_POST['id'] as $id) {
@@ -92,11 +91,11 @@ try{
 
         case 'delete':
             if(empty($_POST['id'])){
-                throw new bException('Cannot delete translations, no translations selected', 'notspecified');
+                throw new bException(tr('Cannot delete translations, no translations selected'), 'notspecified');
             }
 
             if(!is_array($_POST['id'])){
-                throw new bException('Cannot delete translations, invalid data specified', 'invalid');
+                throw new bException(tr('Cannot delete translations, invalid data specified'), 'invalid');
             }
 
             foreach ($_POST['id'] as $id) {
@@ -113,11 +112,11 @@ try{
 
         case 'undelete':
             if(empty($_POST['id'])){
-                throw new bException('Cannot undelete translations, no translations selected', 'notspecified');
+                throw new bException(tr('Cannot undelete translations, no translations selected'), 'notspecified');
             }
 
             if(!is_array($_POST['id'])){
-                throw new bException('Cannot undelete translations, invalid data specified', 'invalid');
+                throw new bException(tr('Cannot undelete translations, invalid data specified'), 'invalid');
             }
 
             foreach ($_POST['id'] as $id) {
@@ -133,13 +132,12 @@ try{
             break;
 
         case 'erase':
-
             if(empty($_POST['id'])){
-                throw new bException('Cannot erase translations, no translations selected', 'notspecified');
+                throw new bException(tr('Cannot erase translations, no translations selected'), 'notspecified');
             }
 
             if(!is_array($_POST['id'])){
-                throw new bException('Cannot erase translations, invalid data specified', 'invalid');
+                throw new bException(tr('Cannot erase translations, invalid data specified'), 'invalid');
             }
 
             foreach ($_POST['id'] as $id) {

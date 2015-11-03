@@ -138,7 +138,7 @@ try{
         }
     }
 
-    echo " Found ".number_format($count)." strings\n";
+    log_console(tr('Found ').number_format($count).tr(' strings')."\n", '', 'white');
 
     if(count($failed_html) > 0) {
         foreach($failed_html as $string => $file) {
@@ -183,14 +183,14 @@ try{
     } catch(Exception $e){
 
         if(substr($e->getCode(), 0, 4) == 'HTTP'){
-            throw new bException('Server connection gave HTTP code : '$e->getCode(), 'connection_error');
+            throw new bException(tr('Server connection gave HTTP code : "%code%"', array('%code%' => $e->getCode())), 'connection_error');
         }
 
-        throw new bException('Error trying to connect with server : '.$e->getMessage(), 'connection_error');
+        throw new bException(tr('Error trying to connect with server : "%error%"', array('%error' => $e->getMessage())), 'connection_error');
     }
 
     if(empty($response['status'])){
-        throw new bException('Error trying to connect with server', 'connection_error');
+        throw new bException(tr('Error trying to connect with server'), 'connection_error');
     }
 
     $returned_data = json_decode(str_decrypt(trim($response['data']), $_CONFIG['translator']['passphrase']), true);
@@ -254,7 +254,7 @@ try{
             log_console('Translations successful : '.number_format($returned_data['stats']['translations_done']),'script/base/translate','',true);
 
         }catch(Exception $e){
-            throw new bException('translate: Unable to delete target dir '.$target_dir, $e);
+            throw new bException(tr('translate: Unable to delete target dir "%dir"', array('%dir' => $target_dir)), $e);
         }
 
     } else {
@@ -262,6 +262,6 @@ try{
     }
 
 }catch(Exception $e){
-    throw new bException('translate: Failed', $e);
+    throw new bException(tr('translate: Failed'), $e);
 }
 ?>

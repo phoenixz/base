@@ -22,12 +22,12 @@ if (!empty($_POST['data'])) {
 
         if(!in_array($options['mode'], $available_modes)){
             header('HTTP/1.0 400 Bad Request', true, 400);
-            die();
+            die(tr('Unknown mode %mode%', array('%mode%' => $options['mode'])));
         }
 
-
         if (empty($project_name)) {
-            throw new bException('Empty project name', 'TRANSLATE');
+            header('HTTP/1.0 400 Bad Request', true, 400);
+            die(tr('Missing project name'));
         }
 
         $project = sql_get('SELECT `id`,
@@ -42,7 +42,7 @@ if (!empty($_POST['data'])) {
 
         if (empty($project['id']) or sha1($project_name.$project['api_key'].$timestamp) != $auth_key or $timestamp < $project['last_login']) {
             header('HTTP/1.0 401 Unauthorized', true, 401);
-            die();
+            die(tr('Cant access to server with the given credentials'));
         }
 
         sql_query('UPDATE `projects`
@@ -64,8 +64,8 @@ if (!empty($_POST['data'])) {
         //            array(':project_id' => cfi($project['id']), ':language' => $language));
 
         $translations = array();
-        $stats = array('translations_missing' => 0,
-                       'translations_done'    => 0);
+        $stats        = array('translations_missing' => 0,
+                              'translations_done'    => 0);
 
         //get and store translations from the database
         foreach($strings as $file  => $strings_list) {
@@ -141,7 +141,7 @@ if (!empty($_POST['data'])) {
                          */
                         if($options['mode'] == 'almost'){
                             header('HTTP/1.0 404 Not Found', true, 404);
-                            die();
+                            die(tr('Missing translations'));
                         }
 
                         $translations[$file][$string] = $string;
@@ -154,7 +154,7 @@ if (!empty($_POST['data'])) {
 
                 }else if($options['mode'] == 'strict'){
                     header('HTTP/1.0 404 Not Found', true, 404);
-                    die();
+                    die(tr('Missing translations'));
                 }
 
             }
@@ -174,5 +174,5 @@ if (!empty($_POST['data'])) {
     $ret = array('status' => 'failed');
 }
 
-echo str_encrypt(json_encode($ret), 'translateplease');
+echo str_encrypt(json_encode($ret), $_CONFIG['translator']['passphrase']);
 ?>
