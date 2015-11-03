@@ -139,12 +139,13 @@ $forcecompress =   argument('forcecompress');
 
 $message       =   argument('message'      , true);
 $continuersync =   argument('continuersync', true);
-$targets       =   argument('target'       , 'all', argument('targets', 'all'));
+$targets       =   argument('target'       , 'all', argument('targets'   , 'all'));
+$categories    =   argument('category'     , 'all', argument('categories', 'all'));
 
 $tilde         = '~'.date('Ymd-His');
 
 if(!$message and !$notag){
-    throw new bException('No tag message specified! please use ./scripts/base/deploy ..... message "commit message"', 'notspecified');
+    throw new bException(tr('No tag message specified! please use ./scripts/base/deploy ..... message "commit message"'), 'notspecified');
 }
 
 /*
@@ -153,14 +154,31 @@ if(!$message and !$notag){
 include(ROOT.'config/deploy.php');
 
 if(empty($_CONFIG['deploy'])){
-    throw new bException('No deploy configuration found', 'config');
+    throw new bException(tr('No deploy configuration found'), 'config');
 }
 
 /*
  * Check target configuration availability
  */
 if(!$targets){
-    throw new bException('No target environment specified!', 'notspecified');
+    if(!$categories){
+        throw new bException(tr('No target environment or environment categories specified!'), 'notspecified');
+    }
+
+    /*
+     * Get the targets from the specified categories
+     */
+    foreach(array_force($categories) as $category){
+        foreach($_CONFIG['deploy'] as $target => $deploy){
+            if(isset_get($deploy['categories']) == $category){
+                $targets[] = $target;
+            }
+        }
+    }
+
+    if(empty($targets)){
+        throw new bException(tr('The specified category/ies "%categories%" contain no deploy targets', array('%categories%' => str_force($categories, ', '))), 'empty');
+    }
 }
 
 if(count($targets) == 1){
@@ -623,8 +641,8 @@ foreach($targets as $target_environment){
         }else{
             log_screen($display_subenvironment.'Executing translations', 'deploy', 'white');
 
-            if(count($deploy_config['languages'])) {
-                foreach($deploy_config['languages'] as $language) {
+            if($deploy_config['languages']){
+                foreach($deploy_config['languages'] as $language){
                     log_screen($display_subenvironment.'Translating to '.$language, 'deploy', 'white');
                     script_exec('base/translate', array($language));
 
