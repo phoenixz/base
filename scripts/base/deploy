@@ -139,12 +139,13 @@ $forcecompress =   argument('forcecompress');
 
 $message       =   argument('message'      , true);
 $continuersync =   argument('continuersync', true);
-$targets       =   argument('target'       , 'all', argument('targets', 'all'));
+$targets       =   argument('target'       , 'all', argument('targets'   , 'all'));
+$categories    =   argument('category'     , 'all', argument('categories', 'all'));
 
 $tilde         = '~'.date('Ymd-His');
 
 if(!$message and !$notag){
-    throw new bException('No tag message specified! please use ./scripts/base/deploy ..... message "commit message"', 'notspecified');
+    throw new bException(tr('No tag message specified! please use ./scripts/base/deploy ..... message "commit message"'), 'notspecified');
 }
 
 /*
@@ -153,14 +154,31 @@ if(!$message and !$notag){
 include(ROOT.'config/deploy.php');
 
 if(empty($_CONFIG['deploy'])){
-    throw new bException('No deploy configuration found', 'config');
+    throw new bException(tr('No deploy configuration found'), 'config');
 }
 
 /*
  * Check target configuration availability
  */
 if(!$targets){
-    throw new bException('No target environment specified!', 'notspecified');
+    if(!$categories){
+        throw new bException(tr('No target environment or environment categories specified!'), 'notspecified');
+    }
+
+    /*
+     * Get the targets from the specified categories
+     */
+    foreach(array_force($categories) as $category){
+        foreach($_CONFIG['deploy'] as $target => $deploy){
+            if(isset_get($deploy['categories']) == $category){
+                $targets[] = $target;
+            }
+        }
+    }
+
+    if(empty($targets)){
+        throw new bException(tr('The specified category/ies "%categories%" contain no deploy targets', array('%categories%' => str_force($categories, ', '))), 'empty');
+    }
 }
 
 if(count($targets) == 1){
@@ -481,14 +499,14 @@ foreach($targets as $target_environment){
              * Deploy ALL sub projects!
              */
             $subenvironments = $_CONFIG['subenvironments'];
-            log_screen('You are about to deploy '.PROJECT.' with ALL SUBENVIRONMENTS in languages ('.implode(',', $deploy_config['languages']).', en), Do you want to proceed? (yes/no)', 'deploy', 'purple', true);
+            log_screen('You are about to deploy '.PROJECT.' with ALL SUBENVIRONMENTS in languages ('.implode(',', array_force($deploy_config['languages'])).', en), Do you want to proceed? (yes/no)', 'deploy', 'purple', true);
 
         }else{
             /*
              * Deploy the project of the current subenvironment
              */
             $subenvironments = array(SUBENVIRONMENTNAME);
-            log_screen('You are about to deploy '.PROJECT.' with subenvironment '.SUBENVIRONMENT.' in languages ('.implode(',', $deploy_config['languages']).', en), Do you want to proceed? (yes/no)', 'deploy', 'yellow', true);
+            log_screen('You are about to deploy '.PROJECT.' with subenvironment '.SUBENVIRONMENT.' in languages ('.implode(',', array_force($deploy_config['languages'])).', en), Do you want to proceed? (yes/no)', 'deploy', 'yellow', true);
         }
 
         if(!$nodeploy){
@@ -570,13 +588,15 @@ foreach($targets as $target_environment){
                     continue;
                 }
 
-                foreach($deploy_config['languages'] as $language){
-                    log_console('Searching for file "'.$file.'" on "'.$deploy_config['target_server'].'"', 'deploy');
+                if($deploy_config['languages']){
+                    foreach($deploy_config['languages'] as $language){
+                        log_console('Searching for file "'.$file.'" on "'.$deploy_config['target_server'].'"', 'deploy');
 
-                    exec('ssh -t -p '.$target_port.' '.$deploy_config['target_user'].'@'.$deploy_config['target_server'].' \''.$sudo.'ls '.($file = $deploy_config['target_dir'].'data/content/'.$language.'/'.$file.'.html').' 2>&1 /dev/null\'', $contentoutput, $return);
+                        exec('ssh -t -p '.$target_port.' '.$deploy_config['target_user'].'@'.$deploy_config['target_server'].' \''.$sudo.'ls '.($file = $deploy_config['target_dir'].'data/content/'.$language.'/'.$file.'.html').' 2>&1 /dev/null\'', $contentoutput, $return);
 
-                    if($return){
-                        throw new bException('Missing content file "'.str_log($file).'" for language "'.str_log($language).'", defined in "'.$definedin.'"', 'production');
+                        if($return){
+                            throw new bException('Missing content file "'.str_log($file).'" for language "'.str_log($language).'", defined in "'.$definedin.'"', 'production');
+                        }
                     }
                 }
             }
@@ -623,8 +643,8 @@ foreach($targets as $target_environment){
         }else{
             log_screen($display_subenvironment.'Executing translations', 'deploy', 'white');
 
-            if(count($deploy_config['languages'])) {
-                foreach($deploy_config['languages'] as $language) {
+            if($deploy_config['languages']){
+                foreach($deploy_config['languages'] as $language){
                     log_screen($display_subenvironment.'Translating to '.$language, 'deploy', 'white');
                     script_exec('base/translate', array($language));
 
@@ -837,23 +857,25 @@ foreach($targets as $target_environment){
                 throw new bException('Target sitemap scan failed with exit code "'.str_log($exitcode).'"', 'target_sitemap_scan');
             }
 
-            foreach($deploy_config['languages'] as $language){
-                passthru($command = 'ssh -t -p '.$target_port.' '.$deploy_config['target_user'].'@'.$deploy_config['target_server'].' \''.$sudo_user.$deploy_config['target_dir'].'/scripts/base/sitemap deploy   html '.$language.' env '.$target_environment.$subenv_subenvironment.' \'', $exitcode);
+            if($deploy_config['languages']){
+                foreach($deploy_config['languages'] as $language){
+                    passthru($command = 'ssh -t -p '.$target_port.' '.$deploy_config['target_user'].'@'.$deploy_config['target_server'].' \''.$sudo_user.$deploy_config['target_dir'].'/scripts/base/sitemap deploy   html '.$language.' env '.$target_environment.$subenv_subenvironment.' \'', $exitcode);
 
-                if($exitcode){
-                    throw new bException('Target sitemap HTML build failed with exit code "'.str_log($exitcode).'"', 'target_sitemap_html');
-                }
+                    if($exitcode){
+                        throw new bException('Target sitemap HTML build failed with exit code "'.str_log($exitcode).'"', 'target_sitemap_html');
+                    }
 
-                passthru($command = 'ssh -t -p '.$target_port.' '.$deploy_config['target_user'].'@'.$deploy_config['target_server'].' \''.$sudo_user.$deploy_config['target_dir'].'/scripts/base/sitemap deploy    xml '.$language.' env '.$target_environment.$subenv_subenvironment.' \'', $exitcode);
+                    passthru($command = 'ssh -t -p '.$target_port.' '.$deploy_config['target_user'].'@'.$deploy_config['target_server'].' \''.$sudo_user.$deploy_config['target_dir'].'/scripts/base/sitemap deploy    xml '.$language.' env '.$target_environment.$subenv_subenvironment.' \'', $exitcode);
 
-                if($exitcode){
-                    throw new bException('Target sitemap XML build failed with exit code "'.str_log($exitcode).'"', 'target_sitemap_xml');
-                }
+                    if($exitcode){
+                        throw new bException('Target sitemap XML build failed with exit code "'.str_log($exitcode).'"', 'target_sitemap_xml');
+                    }
 
-                passthru($command = 'ssh -t -p '.$target_port.' '.$deploy_config['target_user'].'@'.$deploy_config['target_server'].' \''.$sudo_user.$deploy_config['target_dir'].'/scripts/base/sitemap deploy robots '.$language.' env '.$target_environment.$subenv_subenvironment.' \'', $exitcode);
+                    passthru($command = 'ssh -t -p '.$target_port.' '.$deploy_config['target_user'].'@'.$deploy_config['target_server'].' \''.$sudo_user.$deploy_config['target_dir'].'/scripts/base/sitemap deploy robots '.$language.' env '.$target_environment.$subenv_subenvironment.' \'', $exitcode);
 
-                if($exitcode){
-                    throw new bException('Target sitemap robots build failed with exit code "'.str_log($exitcode).'"', 'target_sitemap_robots');
+                    if($exitcode){
+                        throw new bException('Target sitemap robots build failed with exit code "'.str_log($exitcode).'"', 'target_sitemap_robots');
+                    }
                 }
             }
 
@@ -869,7 +891,8 @@ foreach($targets as $target_environment){
         }else{
             log_screen($display_subenvironment.'Executing deploy notifications', 'deploy', 'white');
 
-            notify('deploy', 'Deployed project "'.PROJECT.'" subenvironment "'.str_log($subenvironment).'" and languages "'.str_log(implode(', ', $deploy_config['languages'])).'"', null, $subenvironment);
+            notify('deploy', 'Deployed project "'.PROJECT.'" subenvironment "'.str_log($subenvironment).'" and languages "'.str_log(implode(', ', array_force($deploy_config['languages']))).'"', null, $subenvironment);
+
             init_hook('deploy_post_notify', $nohooks, array('target_user'   => $deploy_config['target_user'],
                                                             'target_port'   => $deploy_config['target_port'],
                                                             'target_server' => $deploy_config['target_server'],
