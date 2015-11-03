@@ -83,6 +83,7 @@ if(argument('default') or argument('defaults')){
 //	$params['type']            = not_empty(argument('jpg'), (argument('jpeg') ? 'jpg' : ''), argument('png'));
 
 	$method = argument('method', true);
+	$format = argument('format', true);
 	$x      = not_empty(argument('width' , true), argument('x', true));
 	$y      = not_empty(argument('height', true), argument('y', true));
 }
@@ -126,7 +127,7 @@ foreach($files as &$file){
 		log_console('.', '', 'green', false);
 	}
 
-	image_convert($source.$file, $destination.$file, $x, $y, $method, $params);
+	image_convert($source.$file, $destination.$file, $x, $y, $method, $params, $format);
 	usleep(5000);
 }
 

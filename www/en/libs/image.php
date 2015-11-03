@@ -49,7 +49,7 @@ function image_get_text($image) {
 /*
  * Standard image conversion function
  */
-function image_convert($source, $destination, $x, $y, $method, $params = array()) {
+function image_convert($source, $destination, $x, $y, $method, $params = array(), $format = '') {
     global $_CONFIG;
 
     try{
@@ -59,7 +59,19 @@ function image_convert($source, $destination, $x, $y, $method, $params = array()
          * Validations
          */
         if(file_exists($destination) and $destination != $source){
-            throw new bException('image_convert(): Destination file "'.str_log($destination).'" already exists');
+            throw new bException(tr('image_convert(): Destination file "%file%" already exists', array('%file%' => str_log($destination))));
+        }
+
+        /*
+         * Validate format
+         */
+        if(empty($format) and !empty($destination)){
+            $format = substr($destination, -3, 3);
+
+        }elseif(!empty($format) and !empty($destination)){
+            if($format != substr($destination, -3, 3)){
+                throw new bException(tr('image_convert(): Specified formats "%format1%" and "%format2%" mismatch', array('%format1%' => str_log(substr($destination, -3, 3)), '%format2%' => str_log($format))));
+            }
         }
 
         /*
@@ -159,7 +171,7 @@ function image_convert($source, $destination, $x, $y, $method, $params = array()
                     break;
 
                 default:
-                    throw new bException('image_convert(): Unknown parameter key "'.str_log($key).'" specified', 'unknown');
+                    throw new bException(tr('image_convert(): Unknown parameter key "%key%" specified', array('%key%' => str_log($key))), 'unknown');
             }
         }
 
@@ -188,21 +200,40 @@ function image_convert($source, $destination, $x, $y, $method, $params = array()
             }
         }
 
+        /*
+         * Check format
+         */
+        switch($format){
+            case 'gif':
+                //FALLTHROUGH
+            case 'png':
+                /*
+                 * Preserve transparent background
+                 */
+                $command .= ' -background none';
+                break;
+            case 'jpg':
+                $command .= ' -background white';
+                break;
+
+            default:
+                throw new bException(tr('image_convert(): Unknown format "%format%" specified.', array('%format%' => str_log($format))), 'unknown');
+        }
 
         /*
          * Execute command to convert image
          */
         switch($method) {
             case 'thumb':
-                safe_exec($command.' -thumbnail '.$x.'x'.$y.'^ -gravity center -extent '.$x.'x'.$y.' -background white -flatten "'.$source.'" "'.$destination.'" >> '.TMP.'imagemagic_convert.log 2>&1', 0);
+                safe_exec($command.' -thumbnail '.$x.'x'.$y.'^ -gravity center -extent '.$x.'x'.$y.' -flatten "'.$source.'" "'.$destination.'" >> '.TMP.'imagemagic_convert.log 2>&1', 0);
                 break;
 
             case 'resize-w':
-                safe_exec($command.' -resize '.$x.'x\> -background white -flatten "'.$source.'" "'.$destination.'" >>'.TMP.'imagemagic_convert.log 2>&1', 0);
+                safe_exec($command.' -resize '.$x.'x\> -flatten "'.$source.'" "'.$destination.'" >>'.TMP.'imagemagic_convert.log 2>&1', 0);
                 break;
 
             case 'resize':
-                safe_exec($command.' -resize '.$x.'x'.$y.'^ -background white -flatten "'.$source.'" "'.$destination.'" >>'.TMP.'imagemagic_convert.log 2>&1', 0);
+                safe_exec($command.' -resize '.$x.'x'.$y.'^ -flatten "'.$source.'" "'.$destination.'" >>'.TMP.'imagemagic_convert.log 2>&1', 0);
                 break;
 
             case 'thumb-circle':
@@ -234,7 +265,7 @@ function image_convert($source, $destination, $x, $y, $method, $params = array()
          * Verify results
          */
         if(!file_exists($destination)) {
-            throw new bException('image_convert(): Destination file "'.str_log($destination).'" not found after conversion', 'notfound');
+            throw new bException(tr('image_convert(): Destination file "%file%" not found after conversion', array('%file%' => str_log($destination))), 'notfound');
         }
 
         if(!empty($params['updatemode'])){
