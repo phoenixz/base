@@ -157,7 +157,7 @@ function tr($text, $replace = null, $obsolete = null){
              * Only on non production machines, crash when not all entries were replaced as an extra check.
              */
             if((ENVIRONMENT != 'production') and ($count != count($replace))){
-                throw new bException('tr(): No replacements found', $e);
+                throw new bException('tr(): No replacements found', 'not_found');
             }
 
             return $text;
