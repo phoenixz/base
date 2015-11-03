@@ -278,6 +278,9 @@ $_CONFIG['redirects']          = array('index'            => 'index.php',       
                                        'aftersignin'      => 'index.php',                                   // Where will the site redirect to by default after a signin?
                                        'aftersignout'     => 'index.php');                                  //Where will the site redirect to by default after a signout?
 
+// Share buttons
+$_CONFIG['share']              = array('provider'         => false);                                        // Share button provider
+
 // Security configuration
 $_CONFIG['security']           = array('signin'           => array('save_password' => true,                 // Allow the browser client to save the passwords. If set to false, different form names will be used to stop browsers from saving passwords
                                                                    'ip_lock'       => false,                // Either "false", "true" or number n (which makes it lock to users with the right ip_lock), or "ip address" or array("ip address", "ip address", ...). If specified as true, only 1 IP will be allowed. If specified as number N, up to N IP addresses will be allowed. If specified as "ip address", only that IP address will be allowed. If specified as array("ip address", ...) all IP addresses in that array will be allowed
