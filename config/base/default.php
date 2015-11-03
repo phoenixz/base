@@ -56,9 +56,7 @@ $_CONFIG['cdn']                = array('min'              => true,              
 
                                        'production_fonts' => false,                                         // Load font files only for production?
 
-                                       'js'               => array('jquery_version'     => 1,               // Major version of jQuery to use, either 1 or 2 for jQuery 1.X or 2.X
-
-                                                                   'default_libs'       => array('base/jquery', 'base/strings', 'base/base'),   // Default JS libraries to be loaded
+                                       'js'               => array('default_libs'       => array('jquery', 'base/strings', 'base/base'),   // Default JS libraries to be loaded
 
                                                                    'load_delayed'       => false,           // If set to true, the JS files will NOT be loaded in the <head> tag but at the end of the HTML <body> code so that the site will load faster. This may require some special site design to avoid problems though!
 

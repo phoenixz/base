@@ -128,7 +128,7 @@ function synonym_random($count = 1, $nospaces = false){
         }
 
         if($count == 1){
-            if($nospaces){
+            if($nospaces !== false){
                 return str_replace(' ', $nospaces, array_pop($data));
             }
 
@@ -137,7 +137,7 @@ function synonym_random($count = 1, $nospaces = false){
 
         if($nospaces){
             foreach($data as $key => &$value){
-                $value = str_replace(' ', $nospaces, array_pop($value));
+                $value = str_replace(' ', $nospaces, $value);
             }
 
             unset($value);

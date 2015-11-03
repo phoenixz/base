@@ -234,10 +234,6 @@ function html_generate_js(){
          * Set to load default JS libraries
          */
         foreach($js['default_libs'] as $lib){
-            if($lib == 'base/jquery'){
-                $lib .= $js['jquery_version'];
-            }
-
             $libs[$lib] = array();
         }
 
@@ -250,8 +246,9 @@ function html_generate_js(){
             $check = str_rfrom(str_starts($file, '/'), '/');
             $file  = str_replace(array('<', '>'), '', $file);
 
-            if($check == 'jquery')    continue; // jQuery js is always loaded in the header
-            if($check == 'bootstrap') continue; // bootstrap js is always loaded in the header
+// :TODO: jquery must also be able to be loaded from the footer
+            //if($check == 'jquery')    continue; // jQuery js is always loaded in the header
+            //if($check == 'bootstrap') continue; // bootstrap js is always loaded in the header
 
             if(substr($file, 0, 4) == 'http') {
                 /*
@@ -328,30 +325,31 @@ function html_generate_js(){
             }
         }
 
-        /*
-         * Always load jQuery!
-         * Always load jQuery in the FOOTER at the top of others <script> tags
-         */
-        if($js['jquery_version']){
-            $jquery = '<script'.(!empty($data['option']) ? ' '.$data['option'] : '').' type="text/javascript" src="'.$_CONFIG['root'].'/pub/js/base/jquery'.$min.".js\"></script>\n";
+// :TODO: jquery and bootstrap can be specified in default_libs
+        ///*
+        // * Always load jQuery!
+        // * Always load jQuery in the FOOTER at the top of others <script> tags
+        // */
+        //if($js['jquery_version']){
+        //    $jquery = '<script'.(!empty($data['option']) ? ' '.$data['option'] : '').' type="text/javascript" src="'.$_CONFIG['root'].'/pub/js/base/jquery'.$min.".js\"></script>\n";
+        //
+        //}else{
+        //    $jquery = '';
+        //}
 
-        }else{
-            $jquery = '';
-        }
-
-        if(!$GLOBALS['page_is_mobile'] and !empty($_CONFIG['bootstrap']['enabled'])){
-            /*
-             * Use bootstrap JS
-             */
-            $jquery .= '<script'.(!empty($data['option']) ? ' '.$data['option'] : '').' type="text/javascript" src="'.$_CONFIG['root'].'/pub/js/'.$_CONFIG['bootstrap']['js'].$min.".js\"></script>\n";
-        }
+        //if(!$GLOBALS['page_is_mobile'] and !empty($_CONFIG['bootstrap']['enabled'])){
+        //    /*
+        //     * Use bootstrap JS
+        //     */
+        //    $jquery .= '<script'.(!empty($data['option']) ? ' '.$data['option'] : '').' type="text/javascript" src="'.$_CONFIG['root'].'/pub/js/'.$_CONFIG['bootstrap']['js'].$min.".js\"></script>\n";
+        //}
 
         /*
          * Should all JS scripts be loaded at the end (right before the </body> tag)?
          * This may be useful for site startup speedups
          */
         if(!empty($footer)){
-            $GLOBALS['footer'] = $jquery.$footer.isset_get($GLOBALS['footer'], '').isset_get($GLOBALS['script_delayed'], '');
+            $GLOBALS['footer'] = $footer.isset_get($GLOBALS['footer'], '').isset_get($GLOBALS['script_delayed'], '');
         }
 
         return $retval;
@@ -742,6 +740,46 @@ function html_flash_set($messages, $type = 'info', $class = null){
 
     }catch(Exception $e){
         throw new bException('html_flash_set(): Failed', $e);
+    }
+}
+
+
+
+/*
+ * Show the correct HTML flash error message
+ */
+function html_flash_error($e, $messages, $class = null){
+    try{
+        $type = 'error';
+
+        /*
+         * Move arguments
+         * Its possible that messages has not been specified, but class was specified
+         */
+        if(!$class and is_string($messages)){
+            $class    = $messages;
+            $messages = array();
+        }
+
+        /*
+         * Set some default message codes
+         */
+        array_params($messages);
+        array_default($messages, 'validation', $e);
+        array_default($messages, 'captcha'   , $e);
+
+        if(debug()){
+            html_flash_set($e, 'error', $class);
+
+        }elseif(empty($messages[$e->getCode()])){
+            html_flash_set(tr('Something went wrong, please try again'), 'error', $class);
+
+        }else{
+            html_flash_set($messages[$e->getCode()], $type, $class);
+        }
+
+    }catch(Exception $e){
+        throw new bException('html_flash_error(): Failed', $e);
     }
 }
 

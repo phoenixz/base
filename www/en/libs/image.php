@@ -210,20 +210,20 @@ function image_convert($source, $destination, $x, $y, $method, $params = array()
 
                 $tmpfname = tempnam("/tmp", "CVRT_");
 
-                safe_exec($_CONFIG['imagemagic_convert'].' -limit memory 16 -limit map 16 -quality 100 -thumbnail '.$x.'x'.$y.'^ -gravity center -extent '.$x.'x'.$y.' -background white -flatten "'.$source.'" "'.$tmpfname.'"                >> '.TMP.'imagemagic_convert.log 2>&1', 0);
-                safe_exec($_CONFIG['imagemagic_convert'].' -limit memory 16 -limit map 16 -quality 75 -size '.$x.'x'.$y.' xc:none -fill "'.$tmpfname.'" -draw "circle '.(floor($x/2)-1).','.(floor($y/2)-1).' '.($x/2).',0" "'.$destination.'" >> '.TMP.'imagemagic_convert.log 2>&1', 0);
+                safe_exec($_CONFIG['imagemagic']['convert'].' -limit memory 16 -limit map 16 -quality 100 -thumbnail '.$x.'x'.$y.'^ -gravity center -extent '.$x.'x'.$y.' -background white -flatten "'.$source.'" "'.$tmpfname.'"                >> '.TMP.'imagemagic_convert.log 2>&1', 0);
+                safe_exec($_CONFIG['imagemagic']['convert'].' -limit memory 16 -limit map 16 -quality 75 -size '.$x.'x'.$y.' xc:none -fill "'.$tmpfname.'" -draw "circle '.(floor($x/2)-1).','.(floor($y/2)-1).' '.($x/2).',0" "'.$destination.'" >> '.TMP.'imagemagic_convert.log 2>&1', 0);
 
                 file_delete($tmpfname);
                 break;
 
             case 'crop-resize':
                 load_libs('file');
-                safe_exec($_CONFIG['imagemagic_convert'].' -limit memory 16 -limit map 16 -quality 75 "'.$source.'" -crop '.cfi($params['w']).'x'.cfi($params['h']).'+'.cfi($params['x']).'+'.cfi($params['y']).' -resize '.cfi($x).'x'.cfi($y).' "'.$destination.'" >> '.TMP.'imagemagic_convert.log 2>&1', 0);
+                safe_exec($_CONFIG['imagemagic']['convert'].' -limit memory 16 -limit map 16 -quality 75 "'.$source.'" -crop '.cfi($params['w']).'x'.cfi($params['h']).'+'.cfi($params['x']).'+'.cfi($params['y']).' -resize '.cfi($x).'x'.cfi($y).' "'.$destination.'" >> '.TMP.'imagemagic_convert.log 2>&1', 0);
                 break;
 
             case 'custom':
                 load_libs('file');
-                safe_exec($_CONFIG['imagemagic_convert'].' -limit memory 16 -limit map 16 -quality 75 "'.$source.'" '.isset_get($params['custom']).' "'.$destination.'" >> '.TMP.'imagemagic_convert.log 2>&1', 0);
+                safe_exec($_CONFIG['imagemagic']['convert'].' -limit memory 16 -limit map 16 -quality 75 "'.$source.'" '.isset_get($params['custom']).' "'.$destination.'" >> '.TMP.'imagemagic_convert.log 2>&1', 0);
                 break;
 
             default:

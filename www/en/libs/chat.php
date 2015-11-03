@@ -90,6 +90,9 @@ function chat_end($userid){
 
 
 
+/*
+ *
+ */
 function chat_add_user($user){
     try{
         sql_query('INSERT INTO `users` (`user_id`, `user_name`, `user_email`, `user_password`, `alt_name`, `user_join`)
@@ -131,23 +134,25 @@ function chat_update_user($user){
 
                         SET    `user_name`  = :user_name,
                                `user_email` = :user_email,
-                               `alt_name`   = :alt_name
+                               `alt_name`   = :alt_name,
                                `user_rank`  = :user_rank
 
                         WHERE  `user_id`    = :user_id',
 
                         array(':user_id'    => $user['id'],
                               ':user_name'  => (empty($user['username']) ? $user['email'] : $user['username']),
-                              ':alt_name'   => isset_get($user['name']    , ''),
+                              ':alt_name'   => isset_get($user['name'], ''),
                               ':user_email' => $user['email'],
-                              ':user_rank'  => $rank), null, 'chat');
+                              ':user_rank'  => $rank),
+
+                        null, 'chat');
 
         if(!$r->rowCount()){
             /*
              * This means either no data has been changed, or the specified ID doesn't exist.
              * The former is okay, the latter should never happen.
              */
-            if(!sql_get('SELECT `user_id` FROM `users` WHERE `user_id` = :user_id', 'user_id', array(':user_id' => $user['id']))){
+            if(!sql_get('SELECT `user_id` FROM `users` WHERE `user_id` = :user_id', 'user_id', array(':user_id' => $user['id']), 'chat')){
                 load_libs('user');
                 throw new bException(tr('chat_update_user(): Specified user "%user%" does not exist', array('%user%' => user_name($user))), 'notexist');
             }

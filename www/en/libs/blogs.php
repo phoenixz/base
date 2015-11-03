@@ -669,7 +669,8 @@ function blogs_photos_upload($files, $post, $priority = null){
              * If retina images are not supported, then just symlink them so that they at least are available
              */
             symlink(basename($prefix.'_small.jpg'), $prefix.'_small@2x.jpg');
-            symlink(basename($prefix.'_big.jpg')  , $prefix.'_big@2x.jpg'  );
+            symlink(basename($prefix.'_small.jpg'), $prefix.'_medium@2x.jpg');
+            symlink(basename($prefix.'_big.jpg')  , $prefix.'_big@2x.jpg');
         }
 
         /*

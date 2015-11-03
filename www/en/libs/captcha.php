@@ -19,6 +19,12 @@ function captcha_html(){
 
     try{
         switch($_CONFIG['captcha']['type']){
+            case false:
+                /*
+                 * Use no captcha
+                 */
+                return '';
+
             case 'recaptcha':
                 return '<div class="g-recaptcha" data-sitekey="'.$_CONFIG['captcha']['recaptcha']['site-key'].'"></div>';
 
@@ -40,6 +46,13 @@ function captcha_verify_response($captcha){
     global $_CONFIG;
 
     try{
+        if(!$_CONFIG['captcha']['type']){
+            /*
+             * Use no captcha
+             */
+            return true;
+        }
+
         if(empty($captcha)){
             throw new bException('verify_captcha_response(): Captcha response is empty', 'not_specified');
         }
@@ -50,7 +63,7 @@ function captcha_verify_response($captcha){
                 $response = json_decode($response, true);
 
                 if(!$response["success"]){
-                    throw new bException('captcha_verify_response(): Recaptcha is not valid', 'invalid-captcha');
+                    throw new bException('captcha_verify_response(): Recaptcha is not valid', 'captcha');
                 }
 
                 break;

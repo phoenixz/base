@@ -55,8 +55,15 @@ try{
 
     }else{
         log_screen('* '.tr('Uncaught exception').' *', $code);
-        load_libs('audio');
-        audio_play('exception');
+
+                try{
+            load_libs('audio');
+            audio_play('exception');
+
+        }catch(Exception $e){
+            log_error(tr('Failed to play "exception" audio file'), 'error', 'red');
+            log_error($e);
+        }
 
         if($e instanceof bException){
             foreach($messages as $key => $message){

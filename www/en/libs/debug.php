@@ -369,7 +369,7 @@ function debug_value($format, $size = null){
         case 'username':
             // FALLTHROUGH
         case 'word':
-            return synonym_random(1);
+            return synonym_random(1, true);
 
         case 'name':
             return not_empty(str_force(synonym_random(not_empty($size, mt_rand(1, 4))), ' '), str_random(not_empty($size, 32), false, '0123456789abcdefghijklmnopqrstuvwxyz     '));

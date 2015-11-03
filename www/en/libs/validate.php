@@ -34,33 +34,40 @@ $html .= $vj->output_validation($params);
 */
 function verify_js($params){
    try{
-       html_load_js('verify');
+      html_load_js('verify');
 
-       array_params($params);
-       array_default($params, 'rules'      , null);
-       array_default($params, 'group_rules', null);
+      array_params($params);
+      array_default($params, 'rules'      , null);
+      array_default($params, 'group_rules', null);
+      array_default($params, 'submit'     , null);
 
-       $script = '';
+      $script = '';
 
-       $script .= '$.verify.debug = true;';
+     if(debug()){
+         $script .= "$.verify.debug = true;\n";
+      }
 
-       if($params['rules']){
-           foreach($params['rules'] as $name => $rule){
-               $script .= '$.verify.addRules({
-                              '.$name.' : '.$rule.'
-                           });';
-           }
-       }
+      if($params['submit']){
+         $script .= '$.verify.beforeSubmit = '.$params['submit'].";\n";
+      }
 
-       if($params['group_rules']){
-           foreach($params['group_rules'] as $rule){
-               $script .= '$.verify.addGroupRules({
-                              '.$rule.'
-                           });';
-           }
-       }
+      if($params['rules']){
+         foreach($params['rules'] as $name => $rule){
+            $script .= '$.verify.addRules({
+                            '.$name.' : '.$rule.'
+                        });';
+         }
+      }
 
-       return html_script($script, false);
+      if($params['group_rules']){
+         foreach($params['group_rules'] as $rule){
+            $script .= '$.verify.addGroupRules({
+                           '.$rule.'
+                        });';
+         }
+      }
+
+      return html_script($script, false);
 
    }catch(Exception $e){
        throw new bException('validate_js(): Failed', $e);

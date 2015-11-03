@@ -72,6 +72,9 @@ function seo_unique($source, $table, $ownid = null, $field = 'seoname', $replace
             }else{
                 throw new bException(tr('seo_unique(): Invalid $ownid datatype specified, should be either scalar, or array, but is "%type%"', array('%type%' => gettype($ownid))), 'invalid');
             }
+
+        }else{
+            $ownid = '';
         }
 
         /*
