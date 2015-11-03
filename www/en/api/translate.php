@@ -127,7 +127,7 @@ if (!empty($_POST['data'])) {
                                    SET    `translation` = :translation,
                                           `status`      = "translated"
 
-                                   WHERE  `id` = :id',
+                                   WHERE  `id`          = :id',
 
                                    array(':translation' => addslashes($alt_project_trans['translation']),
                                          ':id'          => $translation['id']));
