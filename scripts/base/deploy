@@ -499,14 +499,14 @@ foreach($targets as $target_environment){
              * Deploy ALL sub projects!
              */
             $subenvironments = $_CONFIG['subenvironments'];
-            log_screen('You are about to deploy '.PROJECT.' with ALL SUBENVIRONMENTS in languages ('.implode(',', $deploy_config['languages']).', en), Do you want to proceed? (yes/no)', 'deploy', 'purple', true);
+            log_screen('You are about to deploy '.PROJECT.' with ALL SUBENVIRONMENTS in languages ('.implode(',', array_force($deploy_config['languages'])).', en), Do you want to proceed? (yes/no)', 'deploy', 'purple', true);
 
         }else{
             /*
              * Deploy the project of the current subenvironment
              */
             $subenvironments = array(SUBENVIRONMENTNAME);
-            log_screen('You are about to deploy '.PROJECT.' with subenvironment '.SUBENVIRONMENT.' in languages ('.implode(',', $deploy_config['languages']).', en), Do you want to proceed? (yes/no)', 'deploy', 'yellow', true);
+            log_screen('You are about to deploy '.PROJECT.' with subenvironment '.SUBENVIRONMENT.' in languages ('.implode(',', array_force($deploy_config['languages'])).', en), Do you want to proceed? (yes/no)', 'deploy', 'yellow', true);
         }
 
         if(!$nodeploy){
@@ -588,13 +588,15 @@ foreach($targets as $target_environment){
                     continue;
                 }
 
-                foreach($deploy_config['languages'] as $language){
-                    log_console('Searching for file "'.$file.'" on "'.$deploy_config['target_server'].'"', 'deploy');
+                if($deploy_config['languages']){
+                    foreach($deploy_config['languages'] as $language){
+                        log_console('Searching for file "'.$file.'" on "'.$deploy_config['target_server'].'"', 'deploy');
 
-                    exec('ssh -t -p '.$target_port.' '.$deploy_config['target_user'].'@'.$deploy_config['target_server'].' \''.$sudo.'ls '.($file = $deploy_config['target_dir'].'data/content/'.$language.'/'.$file.'.html').' 2>&1 /dev/null\'', $contentoutput, $return);
+                        exec('ssh -t -p '.$target_port.' '.$deploy_config['target_user'].'@'.$deploy_config['target_server'].' \''.$sudo.'ls '.($file = $deploy_config['target_dir'].'data/content/'.$language.'/'.$file.'.html').' 2>&1 /dev/null\'', $contentoutput, $return);
 
-                    if($return){
-                        throw new bException('Missing content file "'.str_log($file).'" for language "'.str_log($language).'", defined in "'.$definedin.'"', 'production');
+                        if($return){
+                            throw new bException('Missing content file "'.str_log($file).'" for language "'.str_log($language).'", defined in "'.$definedin.'"', 'production');
+                        }
                     }
                 }
             }
@@ -889,7 +891,8 @@ foreach($targets as $target_environment){
         }else{
             log_screen($display_subenvironment.'Executing deploy notifications', 'deploy', 'white');
 
-            notify('deploy', 'Deployed project "'.PROJECT.'" subenvironment "'.str_log($subenvironment).'" and languages "'.str_log(implode(', ', $deploy_config['languages'])).'"', null, $subenvironment);
+            notify('deploy', 'Deployed project "'.PROJECT.'" subenvironment "'.str_log($subenvironment).'" and languages "'.str_log(implode(', ', array_force($deploy_config['languages']))).'"', null, $subenvironment);
+
             init_hook('deploy_post_notify', $nohooks, array('target_user'   => $deploy_config['target_user'],
                                                             'target_port'   => $deploy_config['target_port'],
                                                             'target_server' => $deploy_config['target_server'],
