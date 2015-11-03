@@ -46,7 +46,7 @@ function notifications_do($event, $message, $classes = null, $alternate_subenvir
          */
         array_unique($classes);
 
-        if(!isset_get($GLOBALS['sql'])){
+        if(!isset_get($GLOBALS['sql_core'])){
             /*
              * WHOOPS! No database available, we're effed in the A here...
              *
@@ -81,7 +81,7 @@ function notifications_do($event, $message, $classes = null, $alternate_subenvir
         foreach($list as $id => $methods){
             $methods = explode(',', $methods);
 
-            if(!isset_get($GLOBALS['sql'])){
+            if(!isset_get($GLOBALS['sql_core'])){
                 /*
                  * WHOOPS! No database available, we're effed in the A here...
                  *
