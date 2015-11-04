@@ -22,8 +22,9 @@ try{
                             continue;
                         }
 
-                        if(empty($value))
+                        if(empty($value)){
                             $value = $_POST['alttrans-'.$id];
+                        }
 
                         $entry = sql_get('SELECT *
                                           FROM  `dictionary`
@@ -57,7 +58,6 @@ try{
             }
 
             foreach ($_POST['id'] as $id) {
-
                 sql_query('UPDATE `dictionary`
 
                            SET    `status` = "translated"
@@ -78,7 +78,6 @@ try{
             }
 
             foreach ($_POST['id'] as $id) {
-
                 sql_query('UPDATE `dictionary`
 
                            SET    `status` = NULL
@@ -99,7 +98,6 @@ try{
             }
 
             foreach ($_POST['id'] as $id) {
-
                 sql_query('UPDATE `dictionary`
 
                            SET    `status` = "deleted"
@@ -120,7 +118,6 @@ try{
             }
 
             foreach ($_POST['id'] as $id) {
-
                 sql_query('UPDATE `dictionary`
 
                            SET    `status` = NULL
@@ -141,7 +138,6 @@ try{
             }
 
             foreach ($_POST['id'] as $id) {
-
                 sql_query('DELETE
                            FROM  `dictionary`
 
