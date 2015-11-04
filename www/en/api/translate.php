@@ -5,7 +5,7 @@
 */
 include_once (dirname(__FILE__) . '/../libs/startup.php');
 
-$available_modes = array('strict', 'almost', 'almost-nontranslate', 'nontranslate');
+$available_modes = array('strict', 'full', 'most', 'none');
 
 if (!empty($_POST['data'])) {
     try {
@@ -107,7 +107,7 @@ if (!empty($_POST['data'])) {
                     $translations[$file][$string] = $translation['translation'];
                     $stats['translations_done']++;
 
-                }else if ($options['mode'] == 'almost' or $options['mode'] == 'almost-nontranslate'){
+                }else if ($options['mode'] == 'full' or $options['mode'] == 'most'){
                     //no translation found
                     //check for translation on another site
                     $alt_project_trans = sql_get('SELECT `translation`
@@ -139,7 +139,7 @@ if (!empty($_POST['data'])) {
                         /*
                          * No translation available
                          */
-                        if($options['mode'] == 'almost'){
+                        if($options['mode'] == 'full'){
                             header('HTTP/1.0 404 Not Found', true, 404);
                             die(tr('Missing translations'));
                         }
@@ -148,7 +148,7 @@ if (!empty($_POST['data'])) {
                         $stats['translations_missing']++;
                     }
 
-                }else if($options['mode'] == 'nontranslate') {
+                }else if($options['mode'] == 'none') {
                     $translations[$file][$string] = $string;
                     $stats['translations_missing']++;
 

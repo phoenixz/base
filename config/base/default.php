@@ -353,12 +353,11 @@ $_CONFIG['xapian']             = array('dir'              => ROOT.'data/xapian/'
  * Translation system configuration
  *
  * mode defines what to do when no translations are found
- * possible values : full                   (all strings must be translated, fails if thats not possible)
-                     almost                 (search for alternative translations on other projects
-                                             if they are not available on the current one (fails if not found))
-                     almost-nontranslate    (same as above but doesnt fail,
-                                             if not translations are found then non translate)
-                     nontranslate
+ * possible values : strict               (all strings must be translated, fails if thats not possible)
+                     full                 (search for alternative translations on other projects
+                                           if they are not available on the current one (fails if not found))
+                     most                 (same as above but doesnt fail if not translations are found)
+                     none                 (leave original strings if not translations are found)
  */
 
 $_CONFIG['translator']         = array('url'          => 'translator.localhost',

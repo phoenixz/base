@@ -33,7 +33,10 @@ $allowable_languages = array('es',
                              'nl',
                              'de');
 
-
+$available_modes     = array('strict',
+                             'full',
+                             'most',
+                             'none');
 /*
  * Validate command line parameters
  */
@@ -60,6 +63,10 @@ if(!in_array($argv[0], $allowable_languages)) {
 $onlyscan     = (argument('scan')  or argument('onlyscan') or argument('scanonly'));
 $noutf8check  = (argument('noutf') or argument('noutf8')   or argument('noutf8check'));
 $mode         = argument('mode', true, $_CONFIG['translator']['mode']);
+
+if(!in_array($mode, $available_modes)){
+    throw new bException(tr('Unknown mode "%mode%"', array('%mode%' => $mode)), 'unknown');
+}
 
 $target_language = $argv[0];
 
