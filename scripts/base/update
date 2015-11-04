@@ -85,10 +85,15 @@ if(!$base['port']){
  * Update libraries from base
  */
 if(argument('local')){
-    log_console('Skipping base branch update due to local mode', 'update', 'yellow');
+    if(!trim(shell_exec('cd '.$base['path'].'; git status | grep "nothing to commit" | wc -l')) AND !FORCE) {
+        throw new bException('Git commit pending on your local base project', 'COMMITFIRST');
+    }
+
+    log_console('Updating base project, branch "'.$branch.'"', 'update', 'white');
+    echo shell_exec('cd '.$base['path'].'; git checkout '.$branch.'; git pull origin '.$branch.'');
 
 }else{
-    log_console('Updating from base branch "'.$branch.'"', 'update', 'white');
+    log_console('Updating base project, branch "'.$branch.'"', 'update', 'white');
     echo shell_exec('ssh -t '.$base['host'].' -p '.$base['port'].' "cd '.$base['path'].'; git reset --hard; git checkout '.$branch.'; git pull origin '.$branch.'"');
 }
 
