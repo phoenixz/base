@@ -71,7 +71,10 @@ $_CONFIG['cdn']                = array('min'              => true,              
 
                                        'mobile'           => array('js'                 => 'pub/mobile/js', // Location of js, CSS and image files for mobile pages
                                                                    'css'                => 'pub/mobile/css',
-                                                                   'img'                => 'pub/mobile/img'));
+                                                                   'img'                => 'pub/mobile/img'),
+
+                                       'prefix'           => '');                                           // Prefix for all CDN objects, may be CDN server domain, for example
+
 
 // Characterset
 $_CONFIG['charset']            = 'UTF-8';                                                                   // The default character set for this website (Will be used in meta charset tag)
@@ -270,9 +273,6 @@ $_CONFIG['prefetch']           = array('dns'              => array('facebook.com
 //domain
 $_CONFIG['protocol']           = 'http://';                                                                 // The base protocol of this website. Basically either "http://",  or "https://".
 
-// The URL root of the website
-$_CONFIG['root']               = '';
-
 // Redirects configuration (This ususally would not require changes unless you want to have other file names for certain actions like signin, etc)
 $_CONFIG['redirects']          = array('index'            => 'index.php',                                   // What is the default index page for this site
                                        'signin'           => 'signin.php',                                  // What is the default signin page for this site
@@ -329,6 +329,9 @@ $_CONFIG['sso']                = array('facebook'         => false,             
 
 // Sync configuration.
 $_CONFIG['sync']               = array();                                                                   //
+
+// Root URL of the website
+$_CONFIG['root']               = '';                                                                        //
 
 // Timezone configuration. See http://www.php.net/manual/en/timezones.php for more info
 $_CONFIG['timezone']           = 'America/Mexico_City';                                                     //
