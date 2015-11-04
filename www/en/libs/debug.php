@@ -40,7 +40,10 @@ function showdie($data = null, $return = false, $quiet = false, $trace_offset = 
  */
 function show($data = null, $return = false, $quiet = false, $trace_offset = 1){
     $retval = '';
-    http_headers(200, 0);
+
+    if(PLATFORM == 'http'){
+        http_headers(200, 0);
+    }
 
     if(ENVIRONMENT== 'production'){
         if(!debug()){
