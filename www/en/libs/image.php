@@ -70,7 +70,7 @@ function image_convert($source, $destination, $x, $y, $method, $params = array()
 
         }elseif(!empty($format) and !empty($destination)){
             if($format != substr($destination, -3, 3)){
-                throw new bException(tr('image_convert(): Specified formats "%format1%" and "%format2%" mismatch', array('%format1%' => str_log(substr($destination, -3, 3)), '%format2%' => str_log($format))));
+                throw new bException(tr('image_convert(): Specified format "%format1%" differ from the given destination format "%format2%"', array('%format1%' => str_log(substr($destination, -3, 3)), '%format2%' => str_log($format))));
             }
         }
 
