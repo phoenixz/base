@@ -22,7 +22,7 @@ if (!empty($_POST['data'])) {
 
         if(!in_array($options['mode'], $available_modes)){
             header('HTTP/1.0 400 Bad Request', true, 400);
-            die(tr('Unknown mode %mode%', array('%mode%' => $options['mode'])));
+            die(tr('Unknown mode "%mode%"', array('%mode%' => $options['mode'])));
         }
 
         if (empty($project_name)) {
@@ -166,12 +166,12 @@ if (!empty($_POST['data'])) {
 
     } catch(Exception $e) {
         header('HTTP/1.0 500 Internal Server Error', true, 500);
-        $ret = array('status' => 'fatal error');
+        die(tr('Server Error'));
     }
 
 }else{
     header('HTTP/1.0 400 Bad Request', true, 400);
-    $ret = array('status' => 'failed');
+    die(tr('Missing data'));
 }
 
 echo str_encrypt(json_encode($ret), $_CONFIG['translator']['passphrase']);
