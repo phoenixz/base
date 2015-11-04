@@ -212,6 +212,7 @@ function image_convert($source, $destination, $x, $y, $method, $params = array()
                  */
                 $command .= ' -background none';
                 break;
+
             case 'jpg':
                 $command .= ' -background white';
                 break;
