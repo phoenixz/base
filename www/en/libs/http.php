@@ -185,6 +185,9 @@ function http_get_to_post($keys, $overwrite = true){
  */
 function http_headers($params, $content_length){
     global $_CONFIG;
+    static $sent = false;
+
+    if($sent) return false;
 
     try{
         array_params($params, 'http_code');
@@ -199,7 +202,8 @@ function http_headers($params, $content_length){
 
 //            $headers[] = 'Last-Modified: '.gmdate('D, d M Y H:i:s', filemtime($_SERVER['SCRIPT_FILENAME'])).' GMT', true, 200;
         }
-        if($GLOBALS['page_is_ajax'] and ($_CONFIG['cors'] or $params['cors'])){
+
+        if($_CONFIG['cors'] or $params['cors']){
             /*
              * Add CORS / Access-Control-Allow-.... headers
              */
@@ -277,6 +281,7 @@ function http_headers($params, $content_length){
             die();
         }
 
+        $sent = true;
         return true;
 
     }catch(Exception $e){
