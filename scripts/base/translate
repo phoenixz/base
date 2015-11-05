@@ -169,7 +169,7 @@ try{
                     log_console('Contains HTML : "'.$string.'" in '.$file, 'translate', 'red', true);
                 }
 
-               // return;
+               return;
             }
 
             if(count($failed_php) > 0) {
@@ -177,7 +177,7 @@ try{
                     log_console('Contains PHP : "'.$string.'" in '.$file, 'translate', 'red', true);
                 }
 
-               // return;
+               return;
             }
 
             if(VERBOSE){
