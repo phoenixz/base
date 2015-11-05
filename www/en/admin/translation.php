@@ -460,7 +460,17 @@ if(!$r->rowCount()){
                                 array(':code'        => cfm($entry['code']),
                                       ':id'          => $entry['id'],
                                       ':translation' => isset_get($entry['translation'], "")));
-        $html .= '      <tr>
+
+        $class = 'class=';
+
+        if($entry['status'] == 'bad'){
+            $class .= '"error"';
+
+        }else{
+            $class = '';
+        }
+
+        $html .= '      <tr '.$class.'>
                             <td class="select"><input type="checkbox" name="id[]" value="'.$entry['id'].'"'.(in_array($entry['id'], (array) isset_get($_POST['id'])) ? ' checked' : '').'></td>
                             <input type="hidden" name="lang-'.$entry['id'].'" value="'.$entry['language'].'">
                             '.((isset_get($_GET['project']) == '')   ? '<td>'.$entry['name'].'</td>'           : '').'
@@ -473,7 +483,7 @@ if(!$r->rowCount()){
 
         if(sql_num_rows($alt_trans)){
             $html .= '          <select style="width:200px;" class="alttrans" name="alttrans-'.$entry['id'].'">
-                                    <option value="0">'.tr('Select alternative translation').'</option>';
+                                    <option value="0">'.tr('Select suggested translation').'</option>';
 
             while($alt = sql_fetch($alt_trans)) {
                 $html .= '          <option value="'.addslashes($alt['translation']).'">'.addslashes($alt['translation']).'</option>';
