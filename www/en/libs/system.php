@@ -486,7 +486,7 @@ function log_screen($message, $type = 'info', $color = null){
 /*
  * Log specified message to console, but only if we are in console mode!
  */
-function log_console($message, $type = 'info', $color = null, $newline = true, $filter_double = false){
+function log_console($message, $type = '', $color = null, $newline = true, $filter_double = false){
     static $c, $fh, $last;
 
     try{
