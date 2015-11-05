@@ -601,25 +601,39 @@ function log_database($message, $type){
 /*
  * Log specified message to file.
  */
-function log_file($message, $type, $class = 'messages'){
+function log_file($messages, $type = 'unknown', $class = 'messages'){
     global $_CONFIG;
 
     static $h = array();
+
+    if(is_object($messages)){
+        if($messages instanceof bException){
+            $messages = $messages->getMessages();
+            $type     = 'exception';
+        }
+
+        if($messages instanceof Exception){
+            $messages = $messages->getMessage();
+            $type     = 'exception';
+        }
+    }
 
     if(!is_scalar($class)){
         load_libs('json');
         throw new bException('log_file(): Specified class "'.str_truncate(json_encode_custom($class), 20).'" is not scalar');
     }
 
-    if(!$h[$class]){
-        if(!$_CONFIG['log']['path'] = str_slash(realpath($_CONFIG['log']['path']))){
-            $_CONFIG['log']['path'] = ROOT;
+    if(empty($h[$class])){
+        if(!file_exists($_CONFIG['log']['path'])){
+            mkdir($_CONFIG['log']['path']);
         }
 
-        $h[$class] = fopen($_CONFIG['log']['path'].'log/', 'a+');
+        $h[$class] = fopen(slash($_CONFIG['log']['path']).$class, 'a+');
     }
 
-    fputs($h[$class], '['.$type.'] '.$message, "\n");
+    foreach(array_force($messages, "\n") as $message){
+        fwrite($h[$class], '['.$type.'] '.$message."\n");
+    }
 }
 
 
