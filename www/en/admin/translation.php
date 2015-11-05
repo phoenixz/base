@@ -443,7 +443,7 @@ if(!$r->rowCount()){
                             '.((isset_get($_GET['status'])   == 'all') ? '<th>'.tr('Status').'</th>'   : '').'
                             '.((isset_get($_GET['language']) == '')    ? '<th>'.tr('Language').'</th>' : '').'
                             <th>'.tr('File').'</th>
-                            <th>'.tr('String').'</th>
+                            <th class="wrapped_td">'.tr('String').'</th>
                             <th>'.tr('Translation').'</th>
                         </thead>';
 
@@ -467,7 +467,7 @@ if(!$r->rowCount()){
                             '.((isset_get($_GET['status']) == 'all') ? '<td>'.status($entry['status']).'</td>' : '').'
                             '.((isset_get($_GET['language']) == '')  ? '<td>'.$entry['language'].'</td>'       : '').'
                             <td>'.$entry['file'].'</td>
-                            <td>'.$entry['string'].'</td>
+                            <td class="wrapped_td">'.$entry['string'].'</td>
                             <td>
                                 <textarea name="tr-'.$entry['id'].'">'.$entry['translation'].'</textarea>';
 
@@ -519,7 +519,7 @@ $html .= '                  <div class="row datatables-footer">
                             </div>
                         </div>
                         '.html_select($actions).'
-                        <input type="submit" id="submit_translations" name="submit_translations" value="Submit Translations">
+                        <input type="submit" id="submit_translations" name="submit_translations" value="Submit">
                     </div>
                 </form>
             </section>

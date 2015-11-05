@@ -106,7 +106,7 @@ try {
 
             }
 
-            if(!empty($translation['translation'])){
+            if(!empty($translation['translation']) and $options['mode'] != 'none'){
                 $translations[$file][$string] = $translation['translation'];
                 $stats['translations_done']++;
 
