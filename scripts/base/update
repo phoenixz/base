@@ -25,10 +25,11 @@ require_once(dirname(__FILE__).'/../../libs/startup.php');
 $branch   = argument('branch', true, 'production');
 $noinit   = argument('noinit');
 $nocommit = argument('nocommit');
+$local    = argument('local');
 
 load_config('update');
 
-if(argument('local')){
+if($local){
     /*
      * Get the data from the local base repository instead of the centralized one
      */
@@ -67,7 +68,7 @@ if(trim(shell_exec('grep "/git/base.git" '.ROOT.'.git/config'))) {
  * Check if we dont have any commits
  */
 if(!trim(shell_exec('git status | grep "nothing to commit" | wc -l')) AND !FORCE) {
-    throw new bException('Git commit pending', 'COMMITFIRST');
+//    throw new bException('Git commit pending', 'COMMITFIRST');
 }
 
 /*
@@ -84,7 +85,7 @@ if(!$base['port']){
 /*
  * Update libraries from base
  */
-if(argument('local')){
+if($local){
     if(!trim(shell_exec('cd '.$base['path'].'; git status | grep "nothing to commit" | wc -l')) AND !FORCE) {
         throw new bException('Git commit pending on your local base project', 'COMMITFIRST');
     }
