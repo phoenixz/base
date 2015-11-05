@@ -392,19 +392,19 @@ $html = '   <div class="row">
                                 '.html_flash().'
                                 <form action="'.domain(true).'" method="get">
                                     <div class="row">
-                                        <div class="col-sm-3">
+                                        <div class="col-sm-4">
                                             '.html_select($projects).'
                                         </div>
                                         <div class="visible-xs mb-md"></div>
-                                        <div class="col-sm-2">
+                                        <div class="col-sm-3">
                                             '.html_select($status).'
                                         </div>
                                         <div class="visible-xs mb-md"></div>
-                                        <div class="col-sm-2">
+                                        <div class="col-sm-4">
                                             '.html_select($languages).'
                                         </div>
                                         <div class="visible-xs mb-md"></div>
-                                        <div class="col-sm-2">
+                                        <div class="col-sm-4">
                                             <div class="input-group input-group-icon">
                                                 <input type="text" class="form-control col-md-3" name="filter" id="filter" value="'.str_log(isset_get($_GET['filter'], '')).'" placeholder="General filter">
                                                 <span class="input-group-addon">
@@ -413,12 +413,13 @@ $html = '   <div class="row">
                                             </div>
                                         </div>
                                         <div class="visible-xs mb-md"></div>
-                                        <div class="col-sm-2">
+                                        <div class="col-sm-3">
                                             <input type="text" class="form-control col-md-3" name="limit" id="limit" value="'.str_log(isset_get($paging['display_limit'], '')).'" placeholder="'.tr('Row limit (default %entries% entries)', array('%entries%' => str_log($paging['default_limit']))).'">
                                         </div>
                                         <div class="visible-xs mb-md"></div>
-                                        <div class="col-sm-2">
+                                        <div class="col-sm-5">
                                             <input type="submit" class="mb-xs mr-xs btn btn-sm btn-primary" name="reload" id="reload" value="'.tr('Reload').'">
+                                            <input type="submit" class="mb-xs mr-xs btn btn-sm btn-primary" name="submit_translations" id="submit_translations_top" value="'.tr('Submit').'">
                                         </div>
                                         <div class="visible-xs mb-md"></div>
                                     </div>
