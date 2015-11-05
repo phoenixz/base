@@ -106,7 +106,7 @@ try {
 
             }
 
-            if($translation['status'] == 'translated' and !empty($translation['translation'])){
+            if(!empty($translation['translation'])){
                 $translations[$file][$string] = $translation['translation'];
                 $stats['translations_done']++;
 
@@ -118,7 +118,6 @@ try {
                                               FROM   `dictionary`
 
                                               WHERE  `code`   = :code
-                                              AND    `status` = "translated"
 
                                               LIMIT 0,1',
 
@@ -143,24 +142,37 @@ try {
                      * No translation available
                      */
                     if($options['mode'] == 'full'){
-                        header('HTTP/1.0 406 Not Acceptable', true, 406);
-                        die(tr('Missing translations'));
+                        $error = 406;
                     }
 
                     $translations[$file][$string] = $string;
                     $stats['translations_missing']++;
                 }
 
-            }else if($options['mode'] == 'none') {
-                $translations[$file][$string] = $string;
-                $stats['translations_missing']++;
-
             }else if($options['mode'] == 'strict'){
-                header('HTTP/1.0 406 Not Acceptable', true, 406);
-                die(tr('Missing translations'));
+                $error = 406;
             }
 
         }
+    }
+
+    switch(isset_get($error)){
+        case '':
+            // No error
+            break;
+
+        case 406:
+            header('HTTP/1.0 406 Not Acceptable', true, 406);
+            die(tr('Missing translations'));
+
+        default:
+            //  Unknow error
+            //  Fallthrough to 500
+
+        case 500:
+            header('HTTP/1.0 500 Internal Server Error', true, 500);
+            die('Server error');
+            break;
     }
 
     $ret = array('status'       => 'success',
@@ -170,7 +182,7 @@ try {
 } catch(Exception $e) {
     log_database($e->getMessage(), 'server_error');
     header('HTTP/1.0 500 Internal Server Error', true, 500);
-    die(tr('Server Error'));
+    die('Server error');
 }
 
 
