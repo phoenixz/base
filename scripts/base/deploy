@@ -245,6 +245,11 @@ if(in_array('production', $targets)){
         if(!FORCE){
             throw new bException(tr('Cannot deploy the current GIT branch "'.str_log($branch).'" to production environment. For safety, deployment to production environment is restricted to git "production" branch only'), 'productioninvalidbranch');
         }
+
+        /*
+         * Notify about forced deploy!
+         */
+        notify('deploy', tr('DEPLOY WARNING! NON PRODUCTION BRANCH DEPLOYED TO PRODUCTION: Deployed branch "%branch%" to production environment for project "%project%" subenvironment "%subenv%"', array('%branch%' => $branch, '%project%' => PROJECT, '%subenv%' => str_log($subenvironment))), null, $subenvironment);
     }
 }
 
