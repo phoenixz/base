@@ -33,6 +33,7 @@ try{
                                                       FROM  `dictionary`
                                                       WHERE `id`  = :id',
                                                       array(':id' => $id));
+
                                     if(!$entry){
                                         throw new bException(tr('Error getting entry from dictionary'), 'data_not_found');
                                     }
@@ -190,11 +191,7 @@ try{
                 }
             }
         }
-
-
     }
-
-
 }catch(Exception $e){
     html_flash_set($e);
 }
@@ -461,16 +458,7 @@ if(!$r->rowCount()){
                                       ':id'          => $entry['id'],
                                       ':translation' => isset_get($entry['translation'], "")));
 
-        $class = 'class=';
-
-        if($entry['status'] == 'bad'){
-            $class .= '"error"';
-
-        }else{
-            $class = '';
-        }
-
-        $html .= '      <tr '.$class.'>
+        $html .= '      <tr '.($entry['status'] == 'bad' ? 'class="error"' : '').'>
                             <td class="select"><input type="checkbox" name="id[]" value="'.$entry['id'].'"'.(in_array($entry['id'], (array) isset_get($_POST['id'])) ? ' checked' : '').'></td>
                             <input type="hidden" name="lang-'.$entry['id'].'" value="'.$entry['language'].'">
                             '.((isset_get($_GET['project']) == '')   ? '<td>'.$entry['name'].'</td>'           : '').'
