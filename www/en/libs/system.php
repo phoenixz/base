@@ -616,7 +616,7 @@ log_database($e);
 /*
  * Log specified message to file.
  */
-function log_file($messages, $type = 'unknown', $class = 'messages'){
+function log_file($messages, $class = 'messages', $type = 'unknown'){
     global $_CONFIG;
     static $h = array(), $last;
 
@@ -633,12 +633,18 @@ function log_file($messages, $type = 'unknown', $class = 'messages'){
         if(is_object($messages)){
             if($messages instanceof bException){
                 $messages = $messages->getMessages();
-                $type     = 'exception';
+
+                if($type == 'unknown'){
+                    $type = 'exception';
+                }
             }
 
             if($messages instanceof Exception){
                 $messages = $messages->getMessage();
-                $type     = 'exception';
+
+                if($type == 'unknown'){
+                    $type = 'exception';
+                }
             }
         }
 
@@ -1431,6 +1437,77 @@ function error_message($e, $messages){
 
     }catch(Exception $e){
         throw new bException('error_message(): Failed', $e);
+    }
+}
+
+
+
+/*
+ *
+ */
+function process_runs($process_name){
+    try{
+        exec('pgrep '.$process_name, $output, $return);
+        return !$return;
+
+    }catch(Exception $e){
+        throw new bException('process_runs(): Failed', $e);
+    }
+}
+
+
+
+/*
+ *
+ */
+function run_background($cmd, $single = true, $log = false){
+    try{
+        $path = dirname($cmd);
+        $args = str_from (basename($cmd), ' ');
+        $cmd  = str_until(basename($cmd), ' ');
+
+        if($path == '.'){
+            $path = ROOT.'scripts/';
+
+        }elseif(str_starts_not($path, '/') == 'base'){
+            $path = ROOT.'scripts/base/';
+        }
+
+        if($single and process_runs($cmd)){
+            return false;
+        }
+
+        $path = slash($path);
+
+        if(!file_exists($path.$cmd)){
+            throw new bException(tr('run_background(): Specified command "%cmd%" does not exists', array('%cmd%' => $path.$cmd)), 'notexist');
+        }
+
+        if(!is_file($path.$cmd)){
+            throw new bException(tr('run_background(): Specified command "%cmd%" is not a file', array('%cmd%' => $path.$cmd)), 'notfile');
+        }
+
+        if(!is_executable($path.$cmd)){
+            throw new bException(tr('run_background(): Specified command "%cmd%" is not executable', array('%cmd%' => $path.$cmd)), 'notexecutable');
+        }
+
+        load_libs('file');
+        file_ensure_path(ROOT.'data/run');
+        file_ensure_path(ROOT.'data/log');
+
+//show(sprintf('nohup %s >> '.ROOT.'data/log/%s 2>&1 & echo $! > %s', $path.$cmd.' '.$args, $cmd, ROOT.'data/run/'.$cmd));
+
+        if($log){
+            exec(sprintf('nohup %s >> '.ROOT.'data/log/%s 2>&1 & echo $! > %s', $path.$cmd.' '.$args, $cmd, ROOT.'data/run/'.$cmd));
+
+        }else{
+            exec(sprintf('nohup %s > /dev/null 2>&1 & echo $! > %s', $path.$cmd.' '.$args, ROOT.'data/run/'.$cmd));
+        }
+
+        return exec(sprintf('cat %s', ROOT.'data/run/'.$cmd));
+
+    }catch(Exception $e){
+        throw new bException('run_background(): Failed', $e);
     }
 }
 ?>
