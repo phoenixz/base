@@ -44,8 +44,8 @@ $available_modes     = array('strict',
  */
 $onlyscan     = (argument('scan')  or argument('onlyscan') or argument('scanonly'));
 $noutf8check  = (argument('noutf') or argument('noutf8')   or argument('noutf8check'));
-$mode         = argument('mode', true, $_CONFIG['translator']['mode']);
-$languages    = argument('languages', true, implode(",",array_keys($_CONFIG['language']['supported'])));
+$mode         = argument('mode'     , true, $_CONFIG['translator']['mode']);
+$languages    = argument('languages', true, implode(",", array_keys($_CONFIG['language']['supported'])));
 $languages    = explode(',', $languages);
 
 /*
@@ -76,14 +76,14 @@ try{
         $source_dir = ROOT.'www/en';
         $target_dir = ROOT.'www/'.$target_language;
 
-        log_console('translate: Starting '.$target_language, 'translate', 'white');
+        log_console(tr('translate: Starting ').$target_language, 'translate', 'white');
 
         if(VERBOSE){
-            log_console('Searching for translateable strings : '       , 'translate', '', false);
+            log_console(tr('Searching for translateable strings : '), 'translate', '', false);
         }
 
         if($noutf8check){
-            log_console('Skipping UTF8 check due to "noutf8check" command line parameter', 'translate', 'yellow');
+            log_console(tr('Skipping UTF8 check due to "noutf8check" command line parameter'), 'translate', 'yellow');
         }
 
         $translations = array();
@@ -260,7 +260,7 @@ try{
 
             //Apply translations
             if(VERBOSE){
-                log_console('Applying translations', 'translate', '', true);
+                log_console(tr('Applying translations'), 'translate', '', true);
             }
 
             foreach($translations as $short_file => $data) {
@@ -275,7 +275,7 @@ try{
                 }
 
                 if(!file_exists(ROOT.$short_file)) {
-                    log_console(' File not found', '', 'red', true);
+                    log_console(tr(' File not found'), '', 'red', true);
 
                 }else{
                     //store new file
