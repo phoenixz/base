@@ -9,11 +9,155 @@ load_libs('paging');
  * Process requested actions
  */
 try{
-    switch(isset_get($_POST['action'])){
-        case '':
-            break;
+    if($_POST){
+        foreach($_POST as $key => $value){
+            if($key == 'action'){
+                switch($value){
+                    case '':
+                       break;
 
-        case 'submit':
+                    case 'submit':
+                            foreach($_POST as $key => $value) {
+                                if((substr($key,0,3) == 'tr-')) {
+                                    $id = str_replace('tr-', '', $key);
+
+                                    if(empty($value) and empty($_POST['alttrans-'.$id])){
+                                        continue;
+                                    }
+
+                                    if(empty($value)){
+                                        $value = $_POST['alttrans-'.$id];
+                                    }
+
+                                    $entry = sql_get('SELECT *
+                                                      FROM  `dictionary`
+                                                      WHERE `id`  = :id',
+                                                      array(':id' => $id));
+
+                                    if(!$entry){
+                                        throw new bException(tr('Error getting entry from dictionary'), 'data_not_found');
+                                    }
+
+                                    if($entry['translation'] != $value){
+                                        sql_query('UPDATE `dictionary`
+
+                                                   SET    `translation` = :translation
+
+                                                   WHERE  `id`          = :id',
+                                                   array(':id'          => $id,
+                                                         ':translation' => $value));
+                                    }
+                                }
+                            }
+                        break;
+
+                    case 'mark_as_good':
+                        if(empty($_POST['id'])){
+                            throw new bException(tr('Cannot mark translations, no translations selected'), 'notspecified');
+                        }
+
+                        if(!is_array($_POST['id'])){
+                            throw new bException(tr('Cannot mark translations, invalid data specified'), 'invalid');
+                        }
+
+                        foreach ($_POST['id'] as $id) {
+                            sql_query('UPDATE `dictionary`
+
+                                       SET    `status` = NULL
+
+                                       WHERE  `id`     = :id',
+
+                                       array(':id'     => $id));
+                        }
+                        break;
+
+                    case 'mark_as_bad':
+                        if(empty($_POST['id'])){
+                            throw new bException(tr('Cannot mark translations, no translations selected'), 'notspecified');
+                        }
+
+                        if(!is_array($_POST['id'])){
+                            throw new bException(tr('Cannot mark translations, invalid data specified'), 'invalid');
+                        }
+
+                        foreach ($_POST['id'] as $id) {
+                            sql_query('UPDATE `dictionary`
+
+                                       SET    `status` = "bad"
+
+                                       WHERE  `id`     = :id',
+
+                                       array(':id'     => $id));
+                        }
+                        break;
+
+                    case 'delete':
+                        if(empty($_POST['id'])){
+                            throw new bException(tr('Cannot delete translations, no translations selected'), 'notspecified');
+                        }
+
+                        if(!is_array($_POST['id'])){
+                            throw new bException(tr('Cannot delete translations, invalid data specified'), 'invalid');
+                        }
+
+                        foreach ($_POST['id'] as $id) {
+                            sql_query('UPDATE `dictionary`
+
+                                       SET    `status` = "deleted"
+
+                                       WHERE  `id`     = :id',
+
+                                       array(':id'     => $id));
+                        }
+                        break;
+
+                    case 'undelete':
+                        if(empty($_POST['id'])){
+                            throw new bException(tr('Cannot undelete translations, no translations selected'), 'notspecified');
+                        }
+
+                        if(!is_array($_POST['id'])){
+                            throw new bException(tr('Cannot undelete translations, invalid data specified'), 'invalid');
+                        }
+
+                        foreach ($_POST['id'] as $id) {
+                            sql_query('UPDATE `dictionary`
+
+                                       SET    `status` = NULL
+
+                                       WHERE  `id`     = :id',
+
+                                       array(':id'     => $id));
+                        }
+                        break;
+
+                    case 'erase':
+                        if(empty($_POST['id'])){
+                            throw new bException(tr('Cannot erase translations, no translations selected'), 'notspecified');
+                        }
+
+                        if(!is_array($_POST['id'])){
+                            throw new bException(tr('Cannot erase translations, invalid data specified'), 'invalid');
+                        }
+
+                        foreach ($_POST['id'] as $id) {
+                            sql_query('DELETE
+                                       FROM  `dictionary`
+
+                                       WHERE `id` = :id',
+
+                                       array(':id' => $id));
+                        }
+
+                        break;
+
+                    default:
+                        /*
+                         * Unknown action specified
+                         */
+                        html_flash_set(tr('Unknown action "%action%" specified', '%action%', str_log($_POST['action'])), 'error');
+                }
+            }else if($key == 'submit_translations'){
                 foreach($_POST as $key => $value) {
                     if((substr($key,0,3) == 'tr-')) {
                         $id = str_replace('tr-', '', $key);
@@ -37,8 +181,7 @@ try{
                         if($entry['translation'] != $value){
                             sql_query('UPDATE `dictionary`
 
-                                       SET    `translation` = :translation,
-                                              `status`      = "translated"
+                                       SET    `translation` = :translation
 
                                        WHERE  `id`          = :id',
                                        array(':id'          => $id,
@@ -46,115 +189,9 @@ try{
                         }
                     }
                 }
-            break;
-
-        case 'mark_as_translated':
-            if(empty($_POST['id'])){
-                throw new bException(tr('Cannot mark translations, no translations selected'), 'notspecified');
             }
-
-            if(!is_array($_POST['id'])){
-                throw new bException(tr('Cannot mark translations, invalid data specified'), 'invalid');
-            }
-
-            foreach ($_POST['id'] as $id) {
-                sql_query('UPDATE `dictionary`
-
-                           SET    `status` = "translated"
-
-                           WHERE  `id`     = :id',
-
-                           array(':id'     => $id));
-            }
-            break;
-
-        case 'mark_as_untranslated':
-            if(empty($_POST['id'])){
-                throw new bException(tr('Cannot mark translations, no translations selected'), 'notspecified');
-            }
-
-            if(!is_array($_POST['id'])){
-                throw new bException(tr('Cannot mark translations, invalid data specified'), 'invalid');
-            }
-
-            foreach ($_POST['id'] as $id) {
-                sql_query('UPDATE `dictionary`
-
-                           SET    `status` = NULL
-
-                           WHERE  `id`     = :id',
-
-                           array(':id'     => $id));
-            }
-            break;
-
-        case 'delete':
-            if(empty($_POST['id'])){
-                throw new bException(tr('Cannot delete translations, no translations selected'), 'notspecified');
-            }
-
-            if(!is_array($_POST['id'])){
-                throw new bException(tr('Cannot delete translations, invalid data specified'), 'invalid');
-            }
-
-            foreach ($_POST['id'] as $id) {
-                sql_query('UPDATE `dictionary`
-
-                           SET    `status` = "deleted"
-
-                           WHERE  `id`     = :id',
-
-                           array(':id'     => $id));
-            }
-            break;
-
-        case 'undelete':
-            if(empty($_POST['id'])){
-                throw new bException(tr('Cannot undelete translations, no translations selected'), 'notspecified');
-            }
-
-            if(!is_array($_POST['id'])){
-                throw new bException(tr('Cannot undelete translations, invalid data specified'), 'invalid');
-            }
-
-            foreach ($_POST['id'] as $id) {
-                sql_query('UPDATE `dictionary`
-
-                           SET    `status` = NULL
-
-                           WHERE  `id`     = :id',
-
-                           array(':id'     => $id));
-            }
-            break;
-
-        case 'erase':
-            if(empty($_POST['id'])){
-                throw new bException(tr('Cannot erase translations, no translations selected'), 'notspecified');
-            }
-
-            if(!is_array($_POST['id'])){
-                throw new bException(tr('Cannot erase translations, invalid data specified'), 'invalid');
-            }
-
-            foreach ($_POST['id'] as $id) {
-                sql_query('DELETE
-                           FROM  `dictionary`
-
-                           WHERE `id` = :id',
-
-                           array(':id' => $id));
-            }
-
-            break;
-
-        default:
-            /*
-             * Unknown action specified
-             */
-            html_flash_set(tr('Unknown action "%action%" specified', '%action%', str_log($_POST['action'])), 'error');
+        }
     }
-
 }catch(Exception $e){
     html_flash_set($e);
 }
@@ -175,7 +212,10 @@ $status    = array('name'       => 'status',
                    'none'       => tr('Active'),
                    'autosubmit' => true,
                    'selected'   => isset_get($_GET['status']),
-                   'resource'   => array('translated' => 'Translated', 'deleted' => 'Deleted', 'all' => 'All'));
+                   'resource'   => array('translated' => 'Translated',
+                                         'deleted'    => 'Deleted',
+                                         'bad'        => 'Bad',
+                                         'all'        => 'All'));
 
 $languages = array('name'       => 'language',
                    'class'      => 'filter form-control mb-xs mt-xs mr-xs btn btn-default dropdown-toggle',
@@ -233,8 +273,8 @@ if(isset_get($_GET['project'])){
  * Apply status filter
  */
 $default_actions = array('submit'               => tr('Submit translations'),
-                         'mark_as_translated'   => tr('Mark translations as translated'),
-                         'mark_as_untranslated' => tr('Mark translations as untranslated'),
+                         'mark_as_good'         => tr('Remove bad status from translations'),
+                         'mark_as_bad'          => tr('Mark translations as bad'),
                          'delete'               => tr('Delete selected translations'),
                          'undelete'             => tr('Undelete selected translations'),
                          'erase'                => tr('Permantly delete translations'));
@@ -244,13 +284,12 @@ switch(isset_get($_GET['status'])){
         // FALLTHROUGH
 
     case 'active':
-        $where[] = '`dictionary`.`status` IS NULL';
+        $where[] = '(`dictionary`.`translation` IS NULL OR `dictionary`.`status` IS NOT NULL)';
         $actions = array('name'       => 'action',
                          'class'      => 'form-action input-sm',
                          'none'       => tr('Action'),
                          'autosubmit' => true,
                          'resource'   => array('submit'             => tr('Submit translations'),
-                                               'mark_as_translated' => tr('Mark translations as translated'),
                                                'delete'             => tr('Delete selected translations'),));
         break;
 
@@ -260,33 +299,31 @@ switch(isset_get($_GET['status'])){
                          'none'       => tr('Action'),
                          'autosubmit' => true,
                          'resource'   => array('submit'               => tr('Submit translations'),
-                                               'mark_as_translated'   => tr('Mark translations as translated'),
-                                               'mark_as_untranslated' => tr('Mark translations as untranslated'),
+                                               'mark_as_bad'          => tr('Mark translations as bad'),
                                                'delete'               => tr('Delete selected translations'),
                                                'undelete'             => tr('Undelete selected translations')));
         break;
 
     case 'translated':
-        $where[] = '`dictionary`.`status` = "translated"';
+        $where[] = '(`dictionary`.`translation` IS NOT NULL AND `dictionary`.`status` IS NULL)';
         $actions = array('name'       => 'action',
                          'class'      => 'form-action input-sm',
                          'none'       => tr('Action'),
                          'autosubmit' => true,
                          'resource'   => array('submit'               => tr('Submit translations'),
-                                               'mark_as_untranslated' => tr('Mark translations as untranslated'),
+                                               'mark_as_bad'          => tr('Mark translations as bad'),
                                                'delete'               => tr('Delete selected translations')));
-        $where[] = '`dictionary`.`status` = "translated"';
         break;
 
-    case 'untranslated':
-        $where[] = '`dictionary`.`status` = "untranslated"';
+    case 'bad':
+        $where[] = '`dictionary`.`status` = "bad"';
         $actions = array('name'       => 'action',
                          'class'      => 'form-action input-sm',
                          'none'       => tr('Action'),
                          'autosubmit' => true,
-                         'resource'   => array('submit'             => tr('Submit translations'),
-                                               'mark_as_translated' => tr('Mark translations as translated'),
-                                               'delete'             => tr('Delete selected translations')));
+                         'resource'   => array('submit'       => tr('Submit translations'),
+                                               'mark_as_good' => tr('Remove bad status from translation'),
+                                               'erase'        => tr('Permantly delete translations')));
         break;
 
     case 'deleted':
@@ -352,19 +389,19 @@ $html = '   <div class="row">
                                 '.html_flash().'
                                 <form action="'.domain(true).'" method="get">
                                     <div class="row">
-                                        <div class="col-sm-2">
+                                        <div class="col-sm-4">
                                             '.html_select($projects).'
                                         </div>
                                         <div class="visible-xs mb-md"></div>
-                                        <div class="col-sm-2">
+                                        <div class="col-sm-3">
                                             '.html_select($status).'
                                         </div>
                                         <div class="visible-xs mb-md"></div>
-                                        <div class="col-sm-2">
+                                        <div class="col-sm-4">
                                             '.html_select($languages).'
                                         </div>
                                         <div class="visible-xs mb-md"></div>
-                                        <div class="col-sm-2">
+                                        <div class="col-sm-4">
                                             <div class="input-group input-group-icon">
                                                 <input type="text" class="form-control col-md-3" name="filter" id="filter" value="'.str_log(isset_get($_GET['filter'], '')).'" placeholder="General filter">
                                                 <span class="input-group-addon">
@@ -373,12 +410,13 @@ $html = '   <div class="row">
                                             </div>
                                         </div>
                                         <div class="visible-xs mb-md"></div>
-                                        <div class="col-sm-2">
+                                        <div class="col-sm-3">
                                             <input type="text" class="form-control col-md-3" name="limit" id="limit" value="'.str_log(isset_get($paging['display_limit'], '')).'" placeholder="'.tr('Row limit (default %entries% entries)', array('%entries%' => str_log($paging['default_limit']))).'">
                                         </div>
                                         <div class="visible-xs mb-md"></div>
-                                        <div class="col-sm-2">
+                                        <div class="col-sm-5">
                                             <input type="submit" class="mb-xs mr-xs btn btn-sm btn-primary" name="reload" id="reload" value="'.tr('Reload').'">
+                                            <input type="submit" class="mb-xs mr-xs btn btn-sm btn-primary" name="submit_translations" id="submit_translations_top" value="'.tr('Submit').'">
                                         </div>
                                         <div class="visible-xs mb-md"></div>
                                     </div>
@@ -402,9 +440,8 @@ if(!$r->rowCount()){
                             '.((isset_get($_GET['status'])   == 'all') ? '<th>'.tr('Status').'</th>'   : '').'
                             '.((isset_get($_GET['language']) == '')    ? '<th>'.tr('Language').'</th>' : '').'
                             <th>'.tr('File').'</th>
-                            <th>'.tr('String').'</th>
+                            <th class="wrapped_td">'.tr('String').'</th>
                             <th>'.tr('Translation').'</th>
-                            <th>'.tr('Alternative translation').'</th>
                         </thead>';
 
     while($entry = sql_fetch($r)){
@@ -413,38 +450,38 @@ if(!$r->rowCount()){
                                 FROM  `dictionary`
 
                                 WHERE `code`         = :code
-                                AND   `status`       = "translated"
                                 AND   `id`          != :id
-                                AND   `translation` != :translation',
+                                AND   `translation` != :translation
+                                AND   `status`       IS NULL',
 
                                 array(':code'        => cfm($entry['code']),
                                       ':id'          => $entry['id'],
                                       ':translation' => isset_get($entry['translation'], "")));
-        $html .= '  <tr>
-                        <td class="select"><input type="checkbox" name="id[]" value="'.$entry['id'].'"'.(in_array($entry['id'], (array) isset_get($_POST['id'])) ? ' checked' : '').'></td>
-                        <input type="hidden" name="lang-'.$entry['id'].'" value="'.$entry['language'].'">
-                        '.((isset_get($_GET['project']) == '')   ? '<td>'.$entry['name'].'</td>'           : '').'
-                        '.((isset_get($_GET['status']) == 'all') ? '<td>'.status($entry['status']).'</td>' : '').'
-                        '.((isset_get($_GET['language']) == '')  ? '<td>'.$entry['language'].'</td>'       : '').'
-                        <td>'.$entry['file'].'</td>
-                        <td>'.$entry['string'].'</td>
-                        <td>
-                            <textarea name="tr-'.$entry['id'].'">'.$entry['translation'].'</textarea>
-                        </td>
-                        <td>';
+
+        $html .= '      <tr '.($entry['status'] == 'bad' ? 'class="error"' : '').'>
+                            <td class="select"><input type="checkbox" name="id[]" value="'.$entry['id'].'"'.(in_array($entry['id'], (array) isset_get($_POST['id'])) ? ' checked' : '').'></td>
+                            <input type="hidden" name="lang-'.$entry['id'].'" value="'.$entry['language'].'">
+                            '.((isset_get($_GET['project']) == '')   ? '<td>'.$entry['name'].'</td>'           : '').'
+                            '.((isset_get($_GET['status']) == 'all') ? '<td>'.status($entry['status']).'</td>' : '').'
+                            '.((isset_get($_GET['language']) == '')  ? '<td>'.$entry['language'].'</td>'       : '').'
+                            <td>'.$entry['file'].'</td>
+                            <td class="wrapped_td">'.$entry['string'].'</td>
+                            <td>
+                                <textarea name="tr-'.$entry['id'].'">'.$entry['translation'].'</textarea>';
 
         if(sql_num_rows($alt_trans)){
-            $html .= '      <select style="width:200px;" class="alttrans" name="alttrans-'.$entry['id'].'">
-                                 <option value="0">'.tr('Select alternative translation').'</option>';
+            $html .= '          <select style="width:200px;" class="alttrans" name="alttrans-'.$entry['id'].'">
+                                    <option value="0">'.tr('Select suggested translation').'</option>';
 
             while($alt = sql_fetch($alt_trans)) {
-                $html .= '       <option value="'.addslashes($alt['translation']).'">'.addslashes($alt['translation']).'</option>';
+                $html .= '          <option value="'.addslashes($alt['translation']).'">'.addslashes($alt['translation']).'</option>';
             }
 
-            $html .= '      </select>';
+            $html .= '          </select>';
         }
 
-        $html .= '</tr>';
+        $html .= '          </td>
+                  </tr>';
     }
 
     $html .= '      </table>
@@ -480,6 +517,7 @@ $html .= '                  <div class="row datatables-footer">
                             </div>
                         </div>
                         '.html_select($actions).'
+                        <input type="submit" id="submit_translations" name="submit_translations" value="Submit">
                     </div>
                 </form>
             </section>
