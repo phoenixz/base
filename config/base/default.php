@@ -204,7 +204,7 @@ $_CONFIG['locale']             = array(LC_ALL      => 'en_US.UTF8',
 
 //Log configuration
 $_CONFIG['log']                = array('default'          => 'db',                                          // Where entries will be logged. Either "db", "file", or "both"
-                                       'path'             => 'log/');                                       // In case log is "file" or "both", sets the path for the log file
+                                       'path'             => 'data/log/');                                  // In case log is "file" or "both", sets the path for the log file
 
 // Mailer configuration
 $_CONFIG['mailer']             = array('sender'           => array('wait'               => 5,

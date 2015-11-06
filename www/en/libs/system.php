@@ -559,41 +559,56 @@ function log_console($message, $type = '', $color = null, $newline = true, $filt
 /*
  * Log specified message to database, but only if we are in console mode!
  */
-function log_database($message, $type){
+function log_database($messages, $type = 'unknown'){
     static $q, $last;
 
     try{
-        if($message == $last){
+        if(is_object($messages)){
+            if($messages instanceof bException){
+                $messages = $messages->getMessages();
+                $type     = 'exception';
+            }
+
+            if($messages instanceof Exception){
+                $messages = $messages->getMessage();
+                $type     = 'exception';
+            }
+        }
+
+        if($messages == $last){
             /*
             * We already displayed this message, skip!
             */
             return;
         }
 
-        $last = $message;
+        $last = $messages;
 
         if(is_numeric($type)){
             throw new bException('log_database(): Type cannot be numeric');
         }
 
-        sql_query('INSERT DELAYED INTO `log` (`createdby`, `ip`, `type`, `message`)
-                   VALUES                    (:createdby , :ip , :type , :message )',
+        foreach(array_force($messages, "\n") as $message){
+            sql_query('INSERT DELAYED INTO `log` (`createdby`, `ip`, `type`, `message`)
+                       VALUES                    (:createdby , :ip , :type , :message )',
 
-                   array(':createdby' => isset_get($_SESSION['user']['id']),
-                         ':ip'        => isset_get($_SERVER['REMOTE_ADDR']),
-                         ':type'      => cfm($type),
-                         ':message'   => $message));
+                       array(':createdby' => isset_get($_SESSION['user']['id']),
+                             ':ip'        => isset_get($_SERVER['REMOTE_ADDR']),
+                             ':type'      => cfm($type),
+                             ':message'   => $message));
+        }
+
+        return $messages;
 
     }catch(Exception $e){
+log_database($e);
 // :TODO: Add Notifications!
-        log_console('log_database(): Failed to log message "'.str_log($message).'" to database', 'error');
+        log_console('log_database(): Failed to log message "'.str_log($messages).'" to database', 'error');
 
         /*
          * Don't exception here because the exception may cause another log_database() call and loop endlessly
          */
     }
-
-    return $message;
 }
 
 
@@ -603,36 +618,50 @@ function log_database($message, $type){
  */
 function log_file($messages, $type = 'unknown', $class = 'messages'){
     global $_CONFIG;
+    static $h = array(), $last;
 
-    static $h = array();
-
-    if(is_object($messages)){
-        if($messages instanceof bException){
-            $messages = $messages->getMessages();
-            $type     = 'exception';
+    try{
+        if($messages == $last){
+            /*
+            * We already displayed this message, skip!
+            */
+            return;
         }
 
-        if($messages instanceof Exception){
-            $messages = $messages->getMessage();
-            $type     = 'exception';
-        }
-    }
+        $last = $messages;
 
-    if(!is_scalar($class)){
-        load_libs('json');
-        throw new bException('log_file(): Specified class "'.str_truncate(json_encode_custom($class), 20).'" is not scalar');
-    }
+        if(is_object($messages)){
+            if($messages instanceof bException){
+                $messages = $messages->getMessages();
+                $type     = 'exception';
+            }
 
-    if(empty($h[$class])){
-        if(!file_exists($_CONFIG['log']['path'])){
-            mkdir($_CONFIG['log']['path']);
+            if($messages instanceof Exception){
+                $messages = $messages->getMessage();
+                $type     = 'exception';
+            }
         }
 
-        $h[$class] = fopen(slash($_CONFIG['log']['path']).$class, 'a+');
-    }
+        if(!is_scalar($class)){
+            load_libs('json');
+            throw new bException('log_file(): Specified class "'.str_truncate(json_encode_custom($class), 20).'" is not scalar');
+        }
 
-    foreach(array_force($messages, "\n") as $message){
-        fwrite($h[$class], '['.$type.'] '.$message."\n");
+        if(empty($h[$class])){
+            load_libs('file');
+            file_ensure_path(ROOT.$_CONFIG['log']['path']);
+
+            $h[$class] = fopen(slash(ROOT.$_CONFIG['log']['path']).$class, 'a+');
+        }
+
+        foreach(array_force($messages, "\n") as $message){
+            fwrite($h[$class], '['.$type.'] '.$message."\n");
+        }
+
+        return $messages;
+
+    }catch(Exception $e){
+        throw new bException('log_file: Failed', $e, array('message' => $messages));
     }
 }
 
