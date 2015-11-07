@@ -458,16 +458,16 @@ if(!$r->rowCount()){
                                       ':id'          => $entry['id'],
                                       ':translation' => isset_get($entry['translation'], "")));
 
-        $html .= '      <tr '.($entry['status'] == 'bad' ? 'class="error"' : '').'>
+        $html .= '      <tr '.($entry['status'] ? 'class="error"' : '').'>
                             <td class="select"><input type="checkbox" name="id[]" value="'.$entry['id'].'"'.(in_array($entry['id'], (array) isset_get($_POST['id'])) ? ' checked' : '').'></td>
                             <input type="hidden" name="lang-'.$entry['id'].'" value="'.$entry['language'].'">
                             '.((isset_get($_GET['project']) == '')   ? '<td>'.$entry['name'].'</td>'           : '').'
                             '.((isset_get($_GET['status']) == 'all') ? '<td>'.status($entry['status']).'</td>' : '').'
                             '.((isset_get($_GET['language']) == '')  ? '<td>'.$entry['language'].'</td>'       : '').'
                             <td>'.$entry['file'].'</td>
-                            <td class="wrapped_td">'.$entry['string'].'</td>
+                            <td class="wrapped_td">'.htmlentities($entry['string']).'</td>
                             <td>
-                                <textarea name="tr-'.$entry['id'].'">'.$entry['translation'].'</textarea>';
+                                <textarea name="tr-'.$entry['id'].'">'.htmlentities($entry['translation']).'</textarea>';
 
         if(sql_num_rows($alt_trans)){
             $html .= '          <select style="width:200px;" class="alttrans" name="alttrans-'.$entry['id'].'">
@@ -517,7 +517,7 @@ $html .= '                  <div class="row datatables-footer">
                             </div>
                         </div>
                         '.html_select($actions).'
-                        <input type="submit" id="submit_translations" name="submit_translations" value="Submit">
+                        <input type="submit" id="submit_translations_bottom" name="submit_translations" value="Submit">
                     </div>
                 </form>
             </section>
