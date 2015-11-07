@@ -68,12 +68,18 @@ console.log(type);
 
             $selector.animate({opacity : opacity}, 300, function(){
                 var close = function(){
-                    $selector.animate({opacity : 0}, 500, function(){
+                    $selector.animate({opacity : 0, height : 0}, 500, function(){
                         $(this).hide();
                     });
                 }
 
-                $(".clickClose").click(function(){ $(this).hide().empty(); });
+                $(".clickClose").click(function(){
+                    var $self = $(this);
+
+                    $self.animate({opacity : 0, height : 0}, 500, function(){
+                        $self.hide();
+                    });
+                });
 
                 if (autoClose) {
                     // Negative autoclose will never close
