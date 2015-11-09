@@ -374,7 +374,7 @@ function html_header($params = null, $meta = array()){
         array_default($params, 'http'          , 'html');
         array_default($params, 'captcha'       , false);
         array_default($params, 'doctype'       , 'html');
-        array_default($params, 'html'          , 'html lang="'.LANGUAGE.'"');
+        array_default($params, 'html'          , '<html lang="'.LANGUAGE.'">');
         array_default($params, 'body'          , '<body>');
         array_default($params, 'title'         , isset_get($meta['title']));
         array_default($params, 'meta'          , $meta);
@@ -453,7 +453,7 @@ function html_header($params = null, $meta = array()){
         unset($params['title']);
 
         $retval = "<!DOCTYPE ".$params['doctype'].">\n".
-                  "<".$params['html'].">\n".
+                  $params['html']."\n".
                   "<head>\n".
                   "<meta http-equiv=\"Content-Type\" content=\"text/html;charset=".$_CONFIG['charset']."\">\n".
                   "<title>".$meta['title']."</title>\n";
