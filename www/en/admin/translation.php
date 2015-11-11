@@ -416,14 +416,14 @@ $html = '   <div class="row">
                                         <div class="visible-xs mb-md"></div>
                                         <div class="col-sm-5">
                                             <input type="submit" class="mb-xs mr-xs btn btn-sm btn-primary" name="reload" id="reload" value="'.tr('Reload').'">
-                                            <input type="submit" class="mb-xs mr-xs btn btn-sm btn-primary" name="submit_translations" id="submit_translations_top" value="'.tr('Submit').'">
+                                            <input type="submit" class="mb-xs mr-xs btn btn-sm btn-primary" name="submit_translations" form="translations_form" id="submit_translations_top" value="'.tr('Submit').'">
                                         </div>
                                         <div class="visible-xs mb-md"></div>
                                     </div>
                                 </form>
                             </p>
                         </header>
-                        <form action="'.domain(true).'" method="post">
+                        <form action="'.domain(true).'" method="post" id="translations_form">
                             <div class="panel-body">
                                 <div class="dataTables_wrapper no-footer">';
 
