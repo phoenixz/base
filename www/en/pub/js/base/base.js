@@ -1,4 +1,21 @@
 (function($){
+    jQuery.fn.extend({
+        // Report if selected image is okay
+        imageOk : function () {
+            var $this = this.get(0);
+
+            if (!$this.complete) {
+                return false;
+            }
+
+            if (typeof $this.naturalWidth !== "undefined" && $this.naturalWidth === 0) {
+                return false;
+            }
+
+            return true;
+        }
+    });
+
     /*
      * $.extensions
      */
