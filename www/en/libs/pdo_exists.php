@@ -214,4 +214,29 @@ function sql_function_exists($name, $query = '', $database = '', $connector = nu
         throw new bException('sql_function_exists(): Failed', $e);
     }
 }
+
+
+
+/*
+ * Returns the tables that have foreign keys to the specified table / column
+ */
+function sql_list_fk($table, $column = null){
+    try{
+        $list = sql_query('SELECT TABLE_NAME,
+                                  COLUMN_NAME,
+                                  CONSTRAINT_NAME,
+                                  REFERENCED_TABLE_NAME,
+                                  REFERENCED_COLUMN_NAME
+
+                           FROM   INFORMATION_SCHEMA.KEY_COLUMN_USAGE
+
+                           WHERE  REFERENCED_TABLE_NAME = "'.$table.'"
+             '.($column ? 'AND    REFERENCED_COLUMN_NAME = "'.$column.'"' : '' ).';');
+
+        return $list;
+
+    }catch(Exception $e){
+        throw new bException('sql_list_fk(): Failed', $e);
+    }
+}
 ?>
