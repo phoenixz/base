@@ -15,5 +15,13 @@ $_CONFIG['email'] = array('imap'            => '{imap.gmail.com:993/imap/ssl}INB
 
                           'display'         => array('auto_reload'      => 60),
 
-                          'polling'         => array('interval'         => 60));
+                          'polling'         => array('interval'         => 60),
+
+                          'from'            => 'support@email.com',
+
+                          'subject'         => 'Default subject',
+
+                          'templates'       => array('default' => array('name' => 'Default template',
+                                                                        'file' => 'emails/template')));
+
 ?>
