@@ -68,7 +68,7 @@ function sql_query($query, $execute = false, $handle_exceptions = true, $connect
                  */
                 foreach($execute as $key => &$value){
                     if(!is_scalar($value) and !is_null($value)){
-                        throw new bException('sql_query(): Specified key "'.str_log($key).'" in the execute array for query "'.str_log($query, 4096).'" is NOT scalar!', 'invalid');
+                        throw new bException(tr('sql_query(): Specified key "%value%" in the execute array for query "%query%" is NOT scalar! Value is "%value%"', array('%key%' => str_log($key), '%query%' => str_log($query, 4096), '%value%' => str_log($value))), 'invalid');
                     }
 
                     if($value and !is_numeric($value)){

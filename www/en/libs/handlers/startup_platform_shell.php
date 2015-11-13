@@ -65,8 +65,8 @@ if(!empty($signin)){
                              WHERE  `username` = :name
                              OR     `email`    = :email',
 
-                             array(':name'  => isset_get($_SERVER['USER'], $_SERVER['LOGNAME']),
-                                   ':email' => isset_get($_SERVER['USER'], $_SERVER['LOGNAME'])));
+                             array(':name'  => isset_get($_SERVER['USER'], isset_get($_SERVER['LOGNAME'])),
+                                   ':email' => isset_get($_SERVER['USER'], isset_get($_SERVER['LOGNAME']))));
 
             if($user){
                 load_libs('user');

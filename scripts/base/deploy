@@ -130,7 +130,7 @@ $nofixperms    =  (argument('nofixperms') or argument('nofixpermissions'));
 $nocacheclear  =  argument('nocacheclear');
 
 $notag         =  (argument('notag')      or argument('notags') or $noversion);
-$nopush        =  (argument('nopush')     or ($noversion and $notag));
+$nopush        =   argument('nopush');
 $stash         =   argument('stash');
 $notouch       =   argument('notouch');
 
@@ -366,13 +366,13 @@ if($noversion or $notag){
 /*
  * Do git push all changes and tags
  */
-if($noversion or $notag or $nopush){
+if($nopush){
     log_console('Skipping git push for changes and tags due to no "doversion" or no "dotag" or no "dopush" command line parameters', 'deploy', 'yellow');
 
 }else{
     log_console('Executing git push', 'deploy', 'white');
 
-    passthru('cd '.ROOT.'; git push; git push --tags', $exitcode);
+    passthru('cd '.ROOT.'; git push && git push --tags', $exitcode);
 
     if($exitcode){
         throw new bException('Git push failed with exit code "'.str_log($exitcode).'"', 'git_push');

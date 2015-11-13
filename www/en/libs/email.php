@@ -428,49 +428,53 @@ function email_get_users_id($email){
 /*
  * Send a new email
  */
-function email_send($email, $delayed = null, $replace = null){
+function email_send($params){
     global $_CONFIG;
 
     try{
+        array_params($params);
+        array_default($params, 'delayed'     , null);
+        array_default($params, 'replace'     , true);
+        array_default($params, 'conversation', true);
+
         /*
          * Add custom email header and footer
          */
         load_libs('user');
 
-        if($replace === null){
-            $replace = array('%user%'   => user_name($_SESSION['user']),
-                             '%email%'  => isset_get($_SESSION['user']['email']),
-                             '%domain%' => domain());
+        if($params['replace']){
+            $params['replace'] = array('%user%'   => user_name($_SESSION['user']),
+                                       '%email%'  => isset_get($_SESSION['user']['email']),
+                                       '%domain%' => domain());
+
+            $header            = str_replace(array_keys($params['replace']), array_values($params['replace']), $_CONFIG['email']['header']);
+            $footer            = str_replace(array_keys($params['replace']), array_values($params['replace']), $_CONFIG['email']['footer']);
+
+            $params['text']    = $header.$params['text'].$footer;
         }
 
-        $header        = str_replace(array_keys($replace), array_values($replace), $_CONFIG['email']['header']);
-        $footer        = str_replace(array_keys($replace), array_values($replace), $_CONFIG['email']['footer']);
-
-        $email['text'] = $header.$email['text'].$footer;
-
-
-        if($delayed === null){
+        if($params['delayed'] === null){
             /*
              *
              */
         }
 
-        if($delayed){
+        if($params['delayed']){
             /*
              * Don't send the email right now
              */
-            $email['sent'] = null;
+            $params['sent'] = null;
 
         }else{
             /*
              * Send the email right now
              */
             $mail    = email_load_phpmailer();
-            $account = email_get_user($email['from']);
+            $account = email_get_user($params['from']);
 
             $mail->IsSMTP();        // send via SMTP
 
-            if(empty($email['smtp_host'])){
+            if(empty($params['smtp_host'])){
                 /*
                  * Use the default SMTP configuration
                  */
@@ -499,11 +503,11 @@ function email_send($email, $delayed = null, $replace = null){
                 /*
                  * Use user specific SMTP configuration
                  */
-                $mail->Host     = $email['smtp_host'];
-                $mail->Port     = isset_get($email['smtp_port']);
-                $mail->SMTPAuth = $email['smtp_auth'];
+                $mail->Host     = $params['smtp_host'];
+                $mail->Port     = isset_get($params['smtp_port']);
+                $mail->SMTPAuth = $params['smtp_auth'];
 
-                switch(isset_get($email['smtp_secure'])){
+                switch(isset_get($params['smtp_secure'])){
                     case '':
                         /*
                          * Don't use secure connection
@@ -513,19 +517,19 @@ function email_send($email, $delayed = null, $replace = null){
                     case 'ssl':
                         //FALLTHROUGH
                     case 'tls':
-                        $mail->SMTPSecure = $email['smtp_secure'];
+                        $mail->SMTPSecure = $params['smtp_secure'];
                         break;
 
                     default:
-                        throw new bException(tr('email_send(): Unknown user specific SMTP secure setting "%value%" for host "%host%". Use either false, "tls", or "ssl"', array('%value%' => $email['smtp_secure'], '%host%' => $_CONFIG['email']['smtp']['host'])), 'unknow');
+                        throw new bException(tr('email_send(): Unknown user specific SMTP secure setting "%value%" for host "%host%". Use either false, "tls", or "ssl"', array('%value%' => $params['smtp_secure'], '%host%' => $_CONFIG['email']['smtp']['host'])), 'unknow');
                 }
             }
 
-            $mail->From       = $email['from'];
-            $mail->FromName   = $email['from_name'];
-            $mail->AddReplyTo($email['from'], $email['from_name']);
+            $mail->From       = $params['from'];
+            $mail->FromName   = $params['from_name'];
+            $mail->AddReplyTo($params['from'], $params['from_name']);
 
-            $mail->AddAddress($email['to'], isset_get($email['to_name']));
+            $mail->AddAddress($params['to'], isset_get($params['to_name']));
 
     //        $mail->WordWrap = 50; // set word wrap
 
@@ -538,20 +542,20 @@ function email_send($email, $delayed = null, $replace = null){
                 $mail->Password = $account['pass'];
             }
 
-            if(empty($email['html'])){
-                $mail->IsHTML(true);
-                $mail->Body = $email['html'];
+            if(empty($params['html'])){
+                $mail->IsHTML(false);
+                $mail->Body = $params['text'];
 
             }else{
-                $mail->IsHTML(false);
-                $mail->Body = $email['text'];
+                $mail->IsHTML(true);
+                $mail->Body = $params['html'];
             }
 
-            $mail->Subject = $email['subject'];
-            $mail->AltBody = $email['text'];
+            $mail->Subject = $params['subject'];
+            $mail->AltBody = $params['text'];
 
-            if(!empty($email['attachments'])){
-                foreach(array_force($email['attachments']) as $attachment){
+            if(!empty($params['attachments'])){
+                foreach(array_force($params['attachments']) as $attachment){
     // :IMPLEMENT:
                 //$mail->AddAttachment("/var/tmp/file.tar.gz"); // attachment
                 //$mail->AddAttachment("/tmp/image.jpg", "new.jpg"); // attachment
@@ -562,10 +566,12 @@ function email_send($email, $delayed = null, $replace = null){
                 throw new bException(tr('email_send(): Failed because "%error%"',  array('%error%' => $mail->ErrorInfo)), 'mailfail');
             }
 
-            $email['sent'] = system_date_format(null, 'mysql');
+            $params['sent'] = system_date_format(null, 'mysql');
         }
 
-        email_update_conversation($email, 'sent');
+        if($params['conversation']){
+            email_update_conversation($params, 'sent');
+        }
 
     }catch(Exception $e){
         throw new bException('email_send(): Failed', $e);
@@ -694,6 +700,22 @@ function email_validate($email){
 
         $v->isValid();
 
+        $email = email_prepare($email);
+
+        return $email;
+
+    }catch(Exception $e){
+        throw new bException('email_validate(): Failed', $e);
+    }
+}
+
+
+
+/*
+ * Prepare the email with "date","from" and "to"
+ */
+function email_prepare($email){
+    try{
         $email['date'] = date('Y-m-d H:i:s');
 
         if(strpos($email['to'], '<') !== false){
@@ -723,7 +745,7 @@ function email_validate($email){
         return $email;
 
     }catch(Exception $e){
-        throw new bException('email_validate(): Failed', $e);
+        throw new bException(tr('email_prepare(): Failed'), $e);
     }
 }
 
@@ -796,5 +818,196 @@ function email_get_user($email, $subset = null){
  */
 function email_insert_message($email, $direction){
     return email_update_message($email, $direction);
+}
+
+
+
+/*
+ * This function inserts new emails on DB
+ */
+function email_insert($params){
+    global $_CONFIG;
+
+    try{
+        array_params($params);
+        array_default($params, 'template', $_CONFIG['email']['templates']['default']);
+        array_default($params, 'subject' , $_CONFIG['email']['subject']);
+        array_default($params, 'from'    , $_CONFIG['email']['from']);
+        array_default($params, 'to'      , '');
+        array_default($params, 'body'    , '');
+        array_default($params, 'format'  , 'text');
+
+        /*
+         * Validations
+         */
+        if(empty($params['to'])){
+            throw new bException(tr('email_insert(): No email receiver specified'));
+        }
+
+        if(empty($_CONFIG['email']['users'][$params['from']])){
+            throw new bException(tr('email_insert(): Unkown sender "%sender%" specified', array('%sender%' => $params['from'])), 'unkown');
+        }
+
+        /*
+         * Which format are we using?
+         */
+        if($params['format'] == 'html'){
+            /*
+             * Ensure that the specified type exists on configuration
+             */
+            if(empty($_CONFIG['email']['templates'][$params['template']])){
+                throw new bException(tr('email_insert(): Unkown template "%template%"', array('%template%' => str_log($params['template']))), 'unkown');
+            }
+
+        }else{
+            $params['template'] = '';
+        }
+
+        /*
+         * Get user info
+         */
+        $user = sql_get('SELECT `id`,
+                                `name`,
+                                `username`,
+                                `email`
+
+                         FROM   `users`
+
+                         WHERE  `email` = :email',
+
+                         array(':email' => $params['to']));
+
+        if(!$user){
+            throw new bException(tr('email_insert(): Specified user "%user%" does not exist', array('%user%' => $params['to'])), 'notexist');
+        }
+
+        /*
+         * Store the email on DB with the `status` = "new"
+         */
+        sql_query('INSERT INTO `emails` (`createdby`, `users_id`, `status`, `template`, `subject`, `from`, `to`, `body`, `format`)
+                   VALUES               (:createdby , :users_id , "new"   , :template , :subject , :from , :to , :body , :format )',
+
+                   array(':createdby' => $user['id'],
+                         ':users_id'  => $user['id'],
+                         ':template'  => $params['template'],
+                         ':subject'   => $params['subject'],
+                         ':from'      => $params['from'],
+                         ':to'        => $params['to'],
+                         ':body'      => $params['body'],
+                         ':format'    => $params['format']));
+
+        /*
+         * Run the script to send the "new" emails
+         */
+        run_background('base/email -e '.ENVIRONMENT.' method send all', true, true);
+
+    }catch(Exception $e){
+        throw new bException(tr('email_insert(): Failed'), $e);
+    }
+}
+
+
+
+/*
+ * This function send the emails stored in DB with `status` = "new"
+ */
+function email_send_unsent(){
+    global $_CONFIG;
+
+    try{
+        /*
+         * Load the emails where status is "new"
+         */
+        $r = sql_query('SELECT    `emails`.`id`,
+                                  `emails`.`status`,
+                                  `emails`.`template`,
+                                  `emails`.`subject`,
+                                  `emails`.`from`,
+                                  `emails`.`to`,
+                                  `emails`.`body`,
+                                  `emails`.`format`,
+                                  `emails`.`users_id`,
+                                  `users`.`name`     AS `user_name`,
+                                  `users`.`username` AS `user_username`
+
+                        FROM      `emails`
+                        LEFT JOIN `users`
+                        ON        `emails`.`users_id` = `users`.`id`
+
+                        WHERE     `emails`.`status`   = "new"
+
+                        LIMIT     20');
+
+        /*
+         * Prepare to send each email and then
+         * update the `status` to "sent" and also update the `senton` date
+         */
+        while($email = sql_fetch($r)){
+            /*
+             * Build the body according to the format
+             */
+            if($email['format'] == 'html'){
+                /*
+                 * For html format, load the specified template
+                 */
+                $from           = array('###TONAME###' => (empty($email['user_name']) ? $email['user_username'] : $email['user_name']),
+                                        '###BODY###'   => $email['body'],
+                                        '###EMAIL###'  => $email['to'],
+                                        '###DOMAIN###' => $_CONFIG['domain']);
+
+                $email['body']  = load_content($_CONFIG['email']['templates'][$email['template']]['file'], $from, LANGUAGE);
+            }
+
+            /*
+             * Prepare the email and return it on params variable
+             */
+            $params = email_prepare($email);
+
+            /*
+             * Set options
+             */
+            $params['conversation'] = false;
+
+            if($email['format'] == 'html'){
+                $params['replace'] = false;
+            }
+
+            try{
+                /*
+                 * Send the email
+                 */
+                email_send($params);
+
+            }catch(Exception $e){
+                /*
+                 * Error ocurred ! ... Notify and continue sending emails
+                 */
+                log_database(tr('Failed to send email to user %user%', array('%user%' => $params['to'])), 'error');
+                continue;
+
+            }
+
+            /*
+             * The mail was sent, update the `status` and `senton`
+             */
+            sql_query('UPDATE `emails`
+
+                       SET    `status` = "sent",
+                              `senton` = NOW()
+
+                       WHERE  `id`     = :id',
+
+                       array(':id' => $email['id']));
+
+
+            /*
+             * Delay the process by 0.5 seconds
+             */
+            usleep(500);
+        }
+
+    }catch(Exception $e){
+        throw new bException(tr('email_send_unsent(): Failed'), $e);
+    }
 }
 ?>

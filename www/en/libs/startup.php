@@ -17,7 +17,7 @@
 /*
  * Framework version
  */
-define('FRAMEWORKCODEVERSION', '0.23.2');
+define('FRAMEWORKCODEVERSION', '0.23.3');
 
 
 /*
@@ -51,7 +51,8 @@ include_once(ROOT.'config/project.php');
 /*
  * Check what platform we're in
  */
-define('PLATFORM', isset($_SERVER['SHELL']) ? 'shell' : 'http');
+define('PLATFORM', isset($_SERVER['argc']) ? 'shell' : 'http');
+//define('PLATFORM', isset($_SERVER['SHELL']) ? 'shell' : 'http');
 
 
 if((PLATFORM == 'shell') and (count($argv) > 1)){
@@ -94,7 +95,7 @@ try{
         /*/
          * No environment specified in project configuration
          */
-        die("\033[0;31mstartup: No required environment name specified for project \"".PROJECT."\" in ".ROOT."config/project.php\033[0m\n");
+        die("\033[0;31mstartup: No required environment name specified for project \"".PROJECT."\"\033[0m\n");
 
     }else{
         /*/
