@@ -256,6 +256,7 @@ function http_headers($params, $content_length){
 
         $headers[] = 'Content-Type: text/html; charset='.$_CONFIG['charset'];
         $headers[] = 'Content-Length: '.$content_length;
+        $headers[] = 'Content-Language: '.LANGUAGE;
         $headers   = http_cache($params, $headers);
 
         /*
