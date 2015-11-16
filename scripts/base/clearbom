@@ -7,11 +7,62 @@
  * @license http://opensource.org/licenses/GPL-2.0 GNU Public License, Version 2
  * @copyright Sven Oostenbrink <support@svenoostenbrink.com>
  */
-$usage = "./scripts/base/clearbom PATH\n";
+$usage = "./scripts/base/clearbom PATH\n".
+         "./scripts/base/clearbom --nomtime | -n PATH\n";
+         "./scripts/base/clearbom (--cachemtime DATE | -c DATE) PATH\n";
 
-$help  = "The clearbom script will clear the BOM (Byte Order Mark) from all PHP files found in the specified tree";
+$help  = "The clearbom script will clear the BOM (Byte Order Mark) from all PHP files found in the specified tree.
+
+The clearbom script uses the cache file ROOT/data/cache/system/clearbom to store the minimum file mtime for files to be checked. If files have an mtime older than the mtime of that cache file, they will not be scanned to speed up the BOM check. Use -n or --nomtime to skip this check. Use -c or --cachemtime to set the mtime of the cache file
+
+-n --nomtime                           Do not perform file minimum mtime check
+                                       to speed up BOM scan
+
+-m --mtime                             Use the specified mtime, instead of the
+                                       cache file mtime
+
+-c --cachemtime                        Set the mtime of the cache for
+                                       subsequent scans";
 
 require_once(dirname(__FILE__).'/../../libs/startup.php');
+
+
+
+/*
+ * If set, don't use the cache file to determine the minimum date to clearbom files
+ */
+$nomtime   = argument('--nomtime', false, argument('-n'));
+
+/*
+ * If set, don't create / update the cache file mtime
+ */
+$mtime     = argument('--mtime', true, argument('-m', true));
+
+/*
+ * If set, don't create / update the cache file mtime
+ */
+$setdate = argument('--cachemtime', true, argument('-c', true));
+
+if($setdate){
+    $setdate = new DateTime($setdate);
+    $setdate = $setdate->getTimestamp();
+}
+
+
+/*
+ *
+ */
+$cachefile  = ROOT.'data/cache/system/clearbom';
+$cachemtime = null;
+
+if($nomtime){
+    $mtime = null;
+
+}else{
+    if(!$mtime and file_exists($cachefile)){
+        $mtime = filemtime($cachefile);
+    }
+}
 
 
 
@@ -20,6 +71,8 @@ require_once(dirname(__FILE__).'/../../libs/startup.php');
  */
 if(!function_exists('clear_files')){
     function clear_files($path){
+        global $mtime;
+
         try{
             if(VERBOSE){
                 log_console('Checking path "'.str_log($path).'"');
@@ -41,6 +94,12 @@ if(!function_exists('clear_files')){
                      */
                     if(substr($file, -4, 4) != '.php') continue;
 
+                    /*
+                     * Only newer files
+                     */
+                    if($mtime and (filemtime($file) <= $mtime)) continue;
+
+// :TODO: Why the hell are we reading the entire file contents? Just read the first 4 bytes and we're done!
                     $data = file_get_contents($file);
 
                     if(substr($data, 0, 3) == chr(0xEF).chr(0xBB).chr(0xBF)){
@@ -78,6 +137,15 @@ if(!file_exists($path)){
 }
 
 $count = clear_files($path);
+
+if($setdate){
+    /*
+     * Set the cache file
+     */
+    load_libs('file');
+    file_ensure_path(dirname($cachefile));
+    touch($cachefile, $setdate);
+}
 
 log_console('Processed all files, found "'.str_log($count).'" files wtih BOM', 'finished', 'green');
 ?>

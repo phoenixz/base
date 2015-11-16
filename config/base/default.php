@@ -73,7 +73,7 @@ $_CONFIG['cdn']                = array('min'              => true,              
                                                                    'css'                => 'pub/mobile/css',
                                                                    'img'                => 'pub/mobile/img'),
 
-                                       'prefix'           => '');                                           // Prefix for all CDN objects, may be CDN server domain, for example
+                                       'prefix'           => '/pub/');                                      // Prefix for all CDN objects, may be CDN server domain, for example
 
 
 // Characterset
