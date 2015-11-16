@@ -76,6 +76,8 @@ function image_convert($source, $destination, $x, $y, $method, $params = array()
             }
         }
 
+        $imagick = $_CONFIG['images']['imagemagic'];
+
         /*
          * Remove the log file so we surely have data from only this session
          *
@@ -95,22 +97,22 @@ function image_convert($source, $destination, $x, $y, $method, $params = array()
         /*
          * Build command
          */
-        $command = $_CONFIG['images']['imagemagic']['convert'];
+        $command = $imagick['convert'];
 
-        if($_CONFIG['images']['imagemagic']['nice']){
-            $command = 'nice -n '.$_CONFIG['images']['imagemagic']['nice'].' '.$command;
+        if($imagick['nice']){
+            $command = 'nice -n '.$imagick['nice'].' '.$command;
         }
 
         array_params($params);
-        array_default($params, 'quality'         , $_CONFIG['images']['imagemagic']['quality']);
-        array_default($params, 'interlace'       , $_CONFIG['images']['imagemagic']['interlace']);
-        array_default($params, 'strip'           , $_CONFIG['images']['imagemagic']['strip']);
-        array_default($params, 'blur'            , $_CONFIG['images']['imagemagic']['blur']);
-        array_default($params, 'defines'         , $_CONFIG['images']['imagemagic']['defines']);
-        array_default($params, 'sampling_factor' , $_CONFIG['images']['imagemagic']['sampling_factor']);
-        array_default($params, 'keep_aspectratio', $_CONFIG['images']['imagemagic']['keep_aspectratio']);
-        array_default($params, 'limit-memory'    , $_CONFIG['images']['imagemagic']['limit']['memory']);
-        array_default($params, 'limit-map'       , $_CONFIG['images']['imagemagic']['limit']['map']);
+        array_default($params, 'quality'         , $imagick['quality']);
+        array_default($params, 'interlace'       , $imagick['interlace']);
+        array_default($params, 'strip'           , $imagick['strip']);
+        array_default($params, 'blur'            , $imagick['blur']);
+        array_default($params, 'defines'         , $imagick['defines']);
+        array_default($params, 'sampling_factor' , $imagick['sampling_factor']);
+        array_default($params, 'keep_aspectratio', $imagick['keep_aspectratio']);
+        array_default($params, 'limit-memory'    , $imagick['limit']['memory']);
+        array_default($params, 'limit-map'       , $imagick['limit']['map']);
 
         foreach($params as $key => $value){
             switch($key){
@@ -248,20 +250,20 @@ function image_convert($source, $destination, $x, $y, $method, $params = array()
 
                 $tmpfname = tempnam("/tmp", "CVRT_");
 
-                safe_exec($_CONFIG['images']['imagemagic']['convert'].' -limit memory 16 -limit map 16 -quality 100 -thumbnail '.$x.'x'.$y.'^ -gravity center -extent '.$x.'x'.$y.' -background white -flatten "'.$source.'" "'.$tmpfname.'"                >> '.TMP.'imagemagic_convert.log 2>&1', 0);
-                safe_exec($_CONFIG['images']['imagemagic']['convert'].' -limit memory 16 -limit map 16 -quality 75 -size '.$x.'x'.$y.' xc:none -fill "'.$tmpfname.'" -draw "circle '.(floor($x/2)-1).','.(floor($y/2)-1).' '.($x/2).',0" "'.$destination.'" >> '.TMP.'imagemagic_convert.log 2>&1', 0);
+                safe_exec($imagick['convert'].' -limit memory 16 -limit map 16 -quality 100 -thumbnail '.$x.'x'.$y.'^ -gravity center -extent '.$x.'x'.$y.' -background white -flatten "'.$source.'" "'.$tmpfname.'"                >> '.TMP.'imagemagic_convert.log 2>&1', 0);
+                safe_exec($imagick['convert'].' -limit memory 16 -limit map 16 -quality 75 -size '.$x.'x'.$y.' xc:none -fill "'.$tmpfname.'" -draw "circle '.(floor($x/2)-1).','.(floor($y/2)-1).' '.($x/2).',0" "'.$destination.'" >> '.TMP.'imagemagic_convert.log 2>&1', 0);
 
                 file_delete($tmpfname);
                 break;
 
             case 'crop-resize':
                 load_libs('file');
-                safe_exec($_CONFIG['images']['imagemagic']['convert'].' -limit memory 16 -limit map 16 -quality 75 "'.$source.'" -crop '.cfi($params['w']).'x'.cfi($params['h']).'+'.cfi($params['x']).'+'.cfi($params['y']).' -resize '.cfi($x).'x'.cfi($y).' "'.$destination.'" >> '.TMP.'imagemagic_convert.log 2>&1', 0);
+                safe_exec($imagick['convert'].' -limit memory 16 -limit map 16 -quality 75 "'.$source.'" -crop '.cfi($params['w']).'x'.cfi($params['h']).'+'.cfi($params['x']).'+'.cfi($params['y']).' -resize '.cfi($x).'x'.cfi($y).' "'.$destination.'" >> '.TMP.'imagemagic_convert.log 2>&1', 0);
                 break;
 
             case 'custom':
                 load_libs('file');
-                safe_exec($_CONFIG['images']['imagemagic']['convert'].' -limit memory 16 -limit map 16 -quality 75 "'.$source.'" '.isset_get($params['custom']).' "'.$destination.'" >> '.TMP.'imagemagic_convert.log 2>&1', 0);
+                safe_exec($imagick['convert'].' -limit memory 16 -limit map 16 -quality 75 "'.$source.'" '.isset_get($params['custom']).' "'.$destination.'" >> '.TMP.'imagemagic_convert.log 2>&1', 0);
                 break;
 
             default:
