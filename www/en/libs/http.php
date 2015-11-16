@@ -477,4 +477,18 @@ function http_cache($params, $headers){
         throw new bException('http_cache(): Failed', $e);
     }
 }
+
+
+
+/*
+ * Return the URL the client requested
+ */
+function requested_url(){
+    try{
+        return $_SERVER['REQUEST_SCHEME'].'://'.$_SERVER['HTTP_HOST'].$_SERVER['REQUEST_URI'];
+
+    }catch(Exception $e){
+        throw new bException('requested_url(): Failed', $e);
+    }
+}
 ?>
