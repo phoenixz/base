@@ -188,6 +188,7 @@ function http_headers($params, $content_length){
     static $sent = false;
 
     if($sent) return false;
+    $sent = true;
 
     try{
         array_params($params, 'http_code');
@@ -196,6 +197,12 @@ function http_headers($params, $content_length){
         array_default($params, 'headers'  , array());
 
         $headers = $params['headers'];
+
+        $headers[] = 'Content-Type: text/html; charset='.$_CONFIG['charset'];
+
+        if($content_length){
+            $headers[] = 'Content-Length: '.$content_length;
+        }
 
         if($params['http_code'] == 200){
             $headers[] = 'Last-Modified: '.gmdate('D, d M Y H:i:s', filemtime($_SERVER['SCRIPT_FILENAME'])).' GMT';
@@ -254,9 +261,7 @@ function http_headers($params, $content_length){
             }
         }
 
-        $headers[] = 'Content-Type: text/html; charset='.$_CONFIG['charset'];
-        $headers[] = 'Content-Length: '.$content_length;
-        $headers   = http_cache($params, $headers);
+        $headers = http_cache($params, $headers);
 
         /*
          * Remove incorrect headers
@@ -281,7 +286,6 @@ function http_headers($params, $content_length){
             die();
         }
 
-        $sent = true;
         return true;
 
     }catch(Exception $e){
