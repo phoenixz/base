@@ -1416,7 +1416,7 @@ function force_natural_number($number, $default = 1){
 /*
  * Show the correct HTML flash error message
  */
-function error_message($e, $messages){
+function error_message($e, $messages = array(), $default = null){
     try{
         /*
          * Set some default message codes
@@ -1429,8 +1429,11 @@ function error_message($e, $messages){
             return $e->getMessages();
 
         }elseif(empty($messages[$e->getCode()])){
-            return tr('Something went wrong, please try again');
+            if(!$default){
+                return tr('Something went wrong, please try again');
+            }
 
+            return $default;
         }
 
         return $messages[$e->getCode()];
