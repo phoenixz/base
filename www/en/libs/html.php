@@ -1022,14 +1022,6 @@ function html_script($script, $jquery_ready = true, $option = null, $type = null
             $retval = html_iefilter($retval, $ie);
         }
 
-        if(!empty($_CONFIG['cdn']['js']['load_delayed'])){
-            /*
-             * Add all <script> at the end of the page
-             */
-            $GLOBALS['footer'] = isset_get($GLOBALS['footer'], '')."\n".$retval;
-            $retval = '';
-        }
-
         if(empty($_CONFIG['cdn']['js']['load_delayed'])){
             return $retval;
         }
@@ -1038,7 +1030,6 @@ function html_script($script, $jquery_ready = true, $option = null, $type = null
          * SCRIPT tags are added all at the end of the page for faster loading
          * (and to avoid problems with jQuery not yet being available)
          */
-
         $GLOBALS['script_delayed'] = $retval;
         return '';
 
