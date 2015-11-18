@@ -280,7 +280,18 @@ function file_ensure_path($path, $mode = null) {
         }
 
         if(!file_exists($path)){
-            mkdir($path, $mode, true);
+            try{
+                mkdir($path, $mode, true);
+
+            }catch(Exception $e){
+                /*
+                 * It sometimes happens that the specified path was created
+                 * just in between the file_exists and mkdir
+                 */
+                if(!file_exists($path)){
+                    throw $e;
+                }
+            }
 
         }elseif(!is_dir($path)){
             throw new bException('file_ensure_path(): Specified "'.$path.'" is not a directory');
