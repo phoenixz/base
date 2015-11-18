@@ -165,7 +165,7 @@ function cdn_commands_process($limit = null, $sleep = 5000){
  */
 function cdn_trash_listing($listing){
     try{
-        cdn_send_command('trash-listing', $listing);
+        cdn_commands_send('trash-listing', $listing);
 
     }catch(Exception $e){
         throw new bException('cdn_trash_listing(): Failed', $e);
