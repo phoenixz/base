@@ -1417,30 +1417,7 @@ function force_natural_number($number, $default = 1){
  * Show the correct HTML flash error message
  */
 function error_message($e, $messages = array(), $default = null){
-    try{
-        /*
-         * Set some default message codes
-         */
-        array_params($messages);
-        array_default($messages, 'validation', $e);
-        array_default($messages, 'captcha'   , $e);
-
-        if(debug()){
-            return $e->getMessages();
-
-        }elseif(empty($messages[$e->getCode()])){
-            if(!$default){
-                return tr('Something went wrong, please try again');
-            }
-
-            return $default;
-        }
-
-        return $messages[$e->getCode()];
-
-    }catch(Exception $e){
-        throw new bException('error_message(): Failed', $e);
-    }
+    return include(dirname(__FILE__).'/handlers/system_error_message.php');
 }
 
 

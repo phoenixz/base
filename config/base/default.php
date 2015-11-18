@@ -73,7 +73,11 @@ $_CONFIG['cdn']                = array('min'              => true,              
                                                                    'css'                => 'pub/mobile/css',
                                                                    'img'                => 'pub/mobile/img'),
 
-                                       'prefix'           => '/pub/');                                      // Prefix for all CDN objects, may be CDN server domain, for example
+                                       'prefix'           => '/pub/',                                       // Prefix for all CDN objects, may be CDN server domain, for example
+
+                                       'servers'          => array(),                                       // List of available CDN servers
+
+                                       'shared_key'       => '');                                           // Shared encryption key between site servers and CDN servers to send and receive encrypted messages
 
 
 // Characterset

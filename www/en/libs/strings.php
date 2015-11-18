@@ -324,41 +324,6 @@ function str_strip_function($string){
 
 
 /*
- *
- */
-function str_encrypt($string,$key) {
-    //Encrypt
-    $td = mcrypt_module_open('tripledes', '', 'ecb', '');
-    $iv = mcrypt_create_iv (mcrypt_enc_get_iv_size($td), MCRYPT_RAND);
-
-    mcrypt_generic_init($td, mb_substr($key,0,mcrypt_enc_get_key_size($td)), $iv);
-
-    $encrypted_data = mcrypt_generic($td, $string);
-
-    //make save for transport
-    return base64_encode($encrypted_data);
-}
-
-
-
-/*
- *
- */
-function str_decrypt($data,$key) {
-    $encrypted_data = base64_decode($data);
-    $td             = mcrypt_module_open('tripledes', '', 'ecb', '');
-    $iv             = mcrypt_create_iv (mcrypt_enc_get_iv_size($td), MCRYPT_RAND);
-
-    mcrypt_generic_init($td, mb_substr($key, 0, mcrypt_enc_get_key_size($td)), $iv);
-
-    $string = mdecrypt_generic($td, $encrypted_data);
-
-    return trim($string);
-}
-
-
-
-/*
  * Ensure that specified string starts with specified character
  */
 function str_starts($string, $char){
@@ -513,7 +478,11 @@ function str_log($source, $truncate = 511, $separator = ', '){
             }
         }
 
-        return htmlentities(str_replace('  ', ' ', str_replace("\n", ' ', str_truncate($source, $truncate, ' ... ', 'center'))), ENT_COMPAT | ENT_HTML401, 'UTF-8', false);
+        if(PLATFORM == 'http'){
+            return htmlentities(str_replace('  ', ' ', str_replace("\n", ' ', str_truncate($source, $truncate, ' ... ', 'center'))), ENT_DISALLOWED | ENT_SUBSTITUTE | ENT_NOQUOTES | ENT_HTML5, 'UTF-8', false);
+        }
+
+        return str_replace('  ', ' ', str_replace("\n", ' ', str_truncate($source, $truncate, ' ... ', 'center')));
 
     }catch(Exception $e){
         throw new bException('str_log(): Failed', $e);
@@ -1143,4 +1112,18 @@ $string3 = implode("",$string3);
 $string4 = implode("",$string4);
 
 echo "$string3". "<br />". $string4;*/
+
+/*
+ * Obsolete functions
+ * These functions only exist as wrappers for compatibility purposes
+ */
+function str_decrypt($data, $key){
+    load('crypt');
+    return decrypt($data, $key);
+}
+
+function str_encrypt($data, $key){
+    load('crypt');
+    return encrypt($data, $key);
+}
 ?>

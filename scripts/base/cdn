@@ -1,0 +1,28 @@
+#!/usr/bin/php
+<?php
+/*
+ * This is an empty test script template
+ */
+$usage = "./scripts/cdn\n".
+         "./scripts/cdn option [option]\n";
+
+$help  = "cdn management script";
+
+require_once(dirname(__FILE__).'/../../libs/startup.php');
+load_libs('cdn');
+
+if(TEST){
+	cdn_test();
+	log_console(tr('Test succeeded'), '', 'green');
+
+}else{
+	switch(argument(0)){
+		case 'command':
+			cdn_commands_send(argument(1), argument(2));
+			break;
+
+		case 'process':
+			cdn_commands_process();
+	}
+}
+?>
