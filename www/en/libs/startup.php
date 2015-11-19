@@ -17,7 +17,7 @@
 /*
  * Framework version
  */
-define('FRAMEWORKCODEVERSION', '0.24.0');
+define('FRAMEWORKCODEVERSION', '0.24.1');
 
 
 /*
@@ -306,6 +306,11 @@ try{
         switch(PLATFORM){
             case 'http':
                 /*
+                 * Add HTTP support library
+                 */
+                load_libs('http,html,inet'.(empty($_CONFIG['memcached']) ? '' : ',memcached'));
+
+                /*
                  * Start for HTTP
                  *
                  * Set some base parameters
@@ -478,11 +483,6 @@ try{
                     }
                 }
 
-
-                /*
-                 * Add HTTP support library
-                 */
-                load_libs('http,html,inet'.(empty($_CONFIG['memcached']) ? '' : ',memcached'));
                 break;
 
             case 'shell':
@@ -611,6 +611,15 @@ try{
             client_detect();
         }
 
+        /*
+         * Check OPTIONS request.
+         * If options was requested, just return basic HTTP headers
+         */
+// :TODO: Should pages themselves not check for this and perhaps send other headers?
+        if($_SERVER['REQUEST_METHOD'] == 'OPTIONS'){
+            http_headers(200, 0);
+            die();
+        }
 
         /*
          * HTTP specific stuff
@@ -621,12 +630,17 @@ try{
         $GLOBALS['page_is_ajax']   = false;
         $GLOBALS['page_is_404']    = false;
 
-
         if(substr($_SERVER['PHP_SELF'], -7, 7) == '404.php'){
             /*
              * This is a 404 page
              */
             $GLOBALS['page_is_404'] = true;
+        }
+
+        $_CONFIG['cdn']['prefix'] = slash($_CONFIG['cdn']['prefix']);
+
+        if($_CONFIG['cdn']['prefix'] != '/pub/'){
+            $GLOBALS['header'] = html_script('var cdnprefix="'.$_CONFIG['cdn']['prefix'].'";', false);
         }
 
         /*

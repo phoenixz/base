@@ -10,16 +10,7 @@
 
 
 
-/*
- * Process uploaded files
- */
-function upload_process(){
-    try{
-
-    }catch(Exception $e){
-        throw new bException('upload_process(): Failed', $e);
-    }
-}
+load_config('upload');
 
 
 
@@ -53,6 +44,8 @@ function upload_dropzone($selector = null, $url = '/ajax/upload.php', $params = 
 
 /*
  * Single file upload using ocupload
+ *
+ * WARNING: OCUPLOAD CANNOT UPLOAD ACROSS DOMAINS!
  */
 function upload_ocupload($selector = "input[name=upload]", $url = '/ajax/upload.php', $params = array()){
     try{
@@ -62,12 +55,20 @@ function upload_ocupload($selector = "input[name=upload]", $url = '/ajax/upload.
         load_libs('html');
         html_load_js('base/ocupload/jquery.ocupload');
 
+        if($params['params']){
+            load_libs('json');
+
+            if(!is_array($params['params'])){
+                throw new bException(tr('upload_ocupload(): Specified $params[params] is not an array'), 'invalid');
+            }
+        }
+
         return html_script('$("'.$selector.'").upload({
                     name: "file",
                     method: "post",
                     action: "'.$url.'",
                     enctype: "multipart/form-data",
-                    '.(!empty($params['params']) ? 'params: '.$params['params'].',.' : '').'
+                    '.(!empty($params['params']) ? 'params: '.json_encode_custom($params['params']).',' : '').'
                     autoSubmit: true,
                     onSubmit: function() {
                         '.isset_get($params['onSubmit']).'
@@ -88,7 +89,9 @@ function upload_ocupload($selector = "input[name=upload]", $url = '/ajax/upload.
 
 
 /*
+ * Jquery File Upload, supports multiple files at once
  *
+ * WARNING! With iframe option, cross domain uploads will NOT work!
  */
 function upload_multi($params){
     try{
@@ -99,6 +102,7 @@ function upload_multi($params){
         array_default($params, 'fail'      , '');
         array_default($params, 'process'   , '');
         array_default($params, 'processall', '');
+        array_default($params, 'iframe'    , false);
 
         if(empty($params['selector'])){
             throw new bException(tr('upload_multi(): No "selector" specified'), 'notspecified');
@@ -109,10 +113,14 @@ function upload_multi($params){
         }
 
         html_load_js('base/jquery-ui/jquery-ui');
-        html_load_js('base/jfu/jquery.iframe-transport');
+
+        if($params['iframe']){
+            html_load_js('base/jfu/jquery.iframe-transport');
+        }
+
         html_load_js('base/jfu/jquery.fileupload');
 
-        if(!$params['processall'] and !$params['process']){
+        if($params['processall'] === '' and $params['process'] === ''){
             /*
              * No upload processing specified, default to basic "processall"
              */
@@ -364,102 +372,124 @@ Array
 
 )
  */
-function upload_check_files($files = null){
-    if(debug()){
-        $errors = array(UPLOAD_ERR_OK         => tr('ok'),
-                        UPLOAD_ERR_INI_SIZE   => tr('The uploaded file is too large'),
-                        UPLOAD_ERR_FORM_SIZE  => tr('The uploaded file is too large'),
-                        UPLOAD_ERR_PARTIAL    => tr('The file upload failed, please try again'),
-                        UPLOAD_ERR_NO_FILE    => tr('The file upload failed, please try again'),
-                        UPLOAD_ERR_NO_TMP_DIR => tr('The server cannot accepts file uploads right now. Please try again later'),  // 6 This will give a notification to us!
-                        UPLOAD_ERR_CANT_WRITE => tr('The server cannot accepts file uploads right now. Please try again later'),  // 7 This will give a notification to us!
-                        UPLOAD_ERR_EXTENSION  => tr('The server cannot accepts file uploads right now. Please try again later')); // 8 This will give a notification to us!
+function upload_check_files($max_uploads, $min_uploads = null){
+    try{
+        if(debug()){
+            $errors = array(UPLOAD_ERR_OK         => tr('ok'),
+                            UPLOAD_ERR_INI_SIZE   => tr('The uploaded file is too large'),
+                            UPLOAD_ERR_FORM_SIZE  => tr('The uploaded file is too large'),
+                            UPLOAD_ERR_PARTIAL    => tr('The file upload failed, please try again'),
+                            UPLOAD_ERR_NO_FILE    => tr('The file upload failed, please try again'),
+                            UPLOAD_ERR_NO_TMP_DIR => tr('The server cannot accepts file uploads right now. Please try again later'),  // 6 This will give a notification to us!
+                            UPLOAD_ERR_CANT_WRITE => tr('The server cannot accepts file uploads right now. Please try again later'),  // 7 This will give a notification to us!
+                            UPLOAD_ERR_EXTENSION  => tr('The server cannot accepts file uploads right now. Please try again later')); // 8 This will give a notification to us!
 
-    }else{
-        $errors = array(UPLOAD_ERR_OK         => tr('ok'),
-                        UPLOAD_ERR_INI_SIZE   => tr('The uploaded file exceeds the upload_max_filesize directive in php.ini'),
-                        UPLOAD_ERR_FORM_SIZE  => tr('The uploaded file exceeds the MAX_FILE_SIZE directive that was specified in the HTML form'),
-                        UPLOAD_ERR_PARTIAL    => tr('The uploaded file was only partially uploaded'),
-                        UPLOAD_ERR_NO_FILE    => tr('No file was uploaded'),
-                        UPLOAD_ERR_NO_TMP_DIR => tr('Missing a temporary folder'),               // 6 This will give a notification to us!
-                        UPLOAD_ERR_CANT_WRITE => tr('Failed to write file to disk'),             // 7 This will give a notification to us!
-                        UPLOAD_ERR_EXTENSION  => tr('A PHP extension stopped the file upload')); // 8 This will give a notification to us!
-    }
+        }else{
+            $errors = array(UPLOAD_ERR_OK         => tr('ok'),
+                            UPLOAD_ERR_INI_SIZE   => tr('The uploaded file exceeds the upload_max_filesize directive in php.ini'),
+                            UPLOAD_ERR_FORM_SIZE  => tr('The uploaded file exceeds the MAX_FILE_SIZE directive that was specified in the HTML form'),
+                            UPLOAD_ERR_PARTIAL    => tr('The uploaded file was only partially uploaded'),
+                            UPLOAD_ERR_NO_FILE    => tr('No file was uploaded'),
+                            UPLOAD_ERR_NO_TMP_DIR => tr('Missing a temporary folder'),               // 6 This will give a notification to us!
+                            UPLOAD_ERR_CANT_WRITE => tr('Failed to write file to disk'),             // 7 This will give a notification to us!
+                            UPLOAD_ERR_EXTENSION  => tr('A PHP extension stopped the file upload')); // 8 This will give a notification to us!
+        }
 
-    if($files === null){
-        $files = $_FILES;
-    }
+        /*
+         * Rearrange $_FILES to make a bit more sense
+         */
+        $files = array();
 
-    foreach($files as $key => $value){
-        if((is_array($value) and !empty($value['error'])) or (($key == 'error') and $value)){
-            if(is_scalar($value)){
-                /*
-                 * This comes from a form input named "foobar"
-                 */
-                if($value){
-                    $failed[] = array('code'    => $value,
-                                      'message' => $errors[$value]);
-                }
+        if(empty($_FILES['files'])){
+            /*
+             * Apparently no files were uploaded?
+             */
+            $_FILES = array();
+            return false;
+        }
 
-            }elseif(is_scalar(isset_get($value[0]))){
-                /*
-                 * This comes from a form input named "foobar"
-                 */
-                if($value[0]){
-                    $failed[] = array('code'    => $value[0],
-                                      'message' => $errors[$value[0]]);
-                }
-
-            }elseif(is_scalar(isset_get($value['error']))){
-                /*
-                 * This comes from a form input named "foobar"
-                 */
-                if($value['error']){
-                    $failed[$key] = array('code'    => $value['error'],
-                                          'message' => $errors[$value['error']]);
-                }
-
-            }else{
-                /*
-                 * This comes from a form input named "foobar[]"
-                 */
-                foreach($value['error'] as $subkey => $errorcode){
-                    if($errorcode){
-                        $failed[$key] = array('code'    => $errorcode,
-                                              'message' => $errors[$errorcode]);
+        if(is_array($_FILES['files']['name'])){
+            foreach($_FILES['files'] as $section => $data){
+                foreach($data as $key => $value){
+                    if(empty($files[$key])){
+                        $files[$key] = array();
                     }
+
+                    $files[$key][$section] = $value;
                 }
             }
+
+        }else{
+            $files[0] = $_FILES['files'];
         }
-    }
 
-    if(empty($failed)){
-        return false;
-    }
+        $_FILES = $files;
+        $count  = count($_FILES);
+        unset($files);
 
-    /*
-     * Check if errors should cause notifications or not
-     */
-    foreach($failed as $key => $error){
-        if($error['code'] >= 6){
-// :TODO:SVEN:20130717: Add site admin notification here!
+        if($count > $max_uploads){
+            if($max_uploads == 1){
+                throw new bException(tr('upload_check_files(): Multiple file uploads are not allowed'), 'multiple');
+            }
+
+            throw new bException(tr('upload_check_files(): $_FILES contains "%count%" which is more than the maximum of "%max%"', array('%count%' => $count, '%max%' => str_log($max_uploads))), 'toomany');
         }
-    }
 
-    return $failed;
+        if($count < $min_uploads){
+            if($min_uploads == 1){
+                throw new bException(tr('upload_check_files(): No files were uploaded'), 'none');
+            }
+
+            throw new bException(tr('upload_check_files(): $_FILES contains "%count%" which less more than the minimum of "%min%"', array('%count%' => $count, '%min%' => str_log($min_uploads))), 'toofew');
+        }
+
+        /*
+         * Check for errors and add error messages where needed
+         */
+        foreach($_FILES as $key => &$value){
+            switch(!empty($value['error'])){
+                case 0:
+                    continue;
+
+                case 6: // UPLOAD_ERR_NO_TMP_DIR
+                    // FALLTHROUGH
+                case 7: // UPLOAD_ERR_CANT_WRITE
+                    // FALLTHROUGH
+                case 8: // UPLOAD_ERR_EXTENSION
+                    if(!debug()){
+                        notify('upload_check_files()', tr('Encountered file upload error "%error%" which indicates a server or configuration error', array('%error%' => $value['error'])), 'log,developers');
+                        break;
+                    }
+                    // FALLTHROUGH
+                default:
+                    $value['error'] = $errors[$value['error']];
+            }
+        }
+
+        unset($value);
+
+    }catch(Exception $e){
+        throw new bException('upload_check_files(): Failed', $e);
+    }
 }
+
 
 
 /*
  * Obsolete wrapper functions for compatibility, which should NOT be used!
  */
 function upload_multi_js($selector, $url, $done_script = '', $fail_script = '', $processall_script = '') {
-    notify('obsolete', 'upload_multi_js() usage is obsolete, please use upload_multi()', 'developers');
+    try{
+        notify('obsolete', 'upload_multi_js() usage is obsolete, please use upload_multi()', 'developers');
 
-    return upload_multi(array('selector'    => $selector,
-                              'url'         => $url,
-                              'done'        => $done_script,
-                              'fail'        => $fail_script,
-                              '$processall' => $processall_script));
+        return upload_multi(array('selector'    => $selector,
+                                  'url'         => $url,
+                                  'done'        => $done_script,
+                                  'fail'        => $fail_script,
+                                  '$processall' => $processall_script));
+
+    }catch(Exception $e){
+        throw new bException('upload_multi_js(): Failed', $e);
+    }
 }
 ?>

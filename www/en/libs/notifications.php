@@ -125,6 +125,10 @@ throw new bException('notifications_do(): SMS notifications are not yet supporte
                         notifications_email($event, $message, $members);
                         break;
 
+                    case 'log':
+                        log_database($message, $event);
+                        break;
+
                     case 'prowl':
                         notifications_prowl($event, $message, $members);
                         break;

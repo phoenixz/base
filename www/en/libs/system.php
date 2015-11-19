@@ -70,8 +70,9 @@ class bException extends Exception{
          * If there are any more messages left, then add them as well
          */
         if($messages){
-            foreach($messages as $message){
+            foreach($messages as $id => $message){
                 $this->messages[] = $message;
+                error_log('Exception ['.$id.']: '.$message);
             }
         }
     }
@@ -895,7 +896,7 @@ function user_or_redirect($url = null, $method = 'http'){
 
             switch($method){
                 case 'json':
-                    $_SESSION['redirect'] = $_SERVER['HTTP_REFERER'];
+                    $_SESSION['redirect'] = isset_get($_SERVER['HTTP_REFERER']);
 
                     if(!function_exists('json_reply')){
                         load_libs('json');

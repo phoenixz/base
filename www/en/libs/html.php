@@ -369,8 +369,6 @@ function html_header($params = null, $meta = array()){
             html_load_js($params['js']);
         }
 
-        $_CONFIG['cdn']['prefix'] = slash($_CONFIG['cdn']['prefix']);
-
         /*
          * Load captcha javascript
          */
@@ -453,8 +451,12 @@ function html_header($params = null, $meta = array()){
 
         unset($prefetch);
 
-        $retval .=    html_generate_css().
-                      html_generate_js();
+        if(!empty($GLOBALS['header'])){
+            $retval .= $GLOBALS['header'];
+        }
+
+        $retval .= html_generate_css().
+                   html_generate_js();
 
         /*
          * Add required fonts

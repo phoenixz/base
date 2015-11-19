@@ -196,6 +196,8 @@ function http_headers($params, $content_length){
         array_default($params, 'cors'     , false);
         array_default($params, 'headers'  , array());
 
+//header("HTTP/1.0 404 Not Found");
+//die('TEST');
         $headers = $params['headers'];
 
         $headers[] = 'Content-Type: text/html; charset='.$_CONFIG['charset'];
@@ -207,8 +209,7 @@ function http_headers($params, $content_length){
 
         if($params['http_code'] == 200){
             $headers[] = 'Last-Modified: '.gmdate('D, d M Y H:i:s', filemtime($_SERVER['SCRIPT_FILENAME'])).' GMT';
-
-//            $headers[] = 'Last-Modified: '.gmdate('D, d M Y H:i:s', filemtime($_SERVER['SCRIPT_FILENAME'])).' GMT', true, 200;
+            //$headers[] = 'Last-Modified: Mon, 1 Jan 2000 00:00:00 GMT';
         }
 
         if($_CONFIG['cors'] or $params['cors']){

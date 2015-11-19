@@ -1050,4 +1050,126 @@ function users_validate($user, $old_user = null){
         throw new bException(tr('users_validate(): Failed'), $e);
     }
 }
+
+
+
+/*
+ * Get user unique key. If none exist, create one on the fly
+ */
+function user_get_key($user = null, $force = false){
+    try{
+        if(!$user){
+            $user = $_SESSION['user']['username'];
+        }
+
+        if(is_numeric($user)){
+            $dbuser = sql_get('SELECT `id`, `username`, `key` FROM `users` WHERE `id`       = :id       AND `status` IS NULL', array(':id' => $user));
+
+        }else{
+            $dbuser = sql_get('SELECT `id`, `username`, `key` FROM `users` WHERE `username` = :username AND `status` IS NULL', array(':username' => $user));
+        }
+
+        if(!$dbuser){
+            throw new bException(tr('user_get_key(): Specified user "%user%" does not exist', array('%user%' => str_log($user))), 'notexist');
+        }
+
+        if(!$dbuser['key'] or $force){
+            $dbuser['key'] = hash('sha256', uniqid('', true).microtime(true));
+
+            sql_query('UPDATE `users`
+
+                       SET    `key` = :key
+
+                       WHERE  `id`  = :id',
+
+                       array(':id'  => $dbuser['id'],
+                             ':key' => $dbuser['key']));
+        }
+
+        $timestamp = microtime(true);
+
+        return array('user'      => $dbuser['username'],
+                     'timestamp' => $timestamp,
+                     'key'       => hash('sha256', $dbuser['key'].SEED.$timestamp));
+
+    }catch(Exception $e){
+        throw new bException(tr('user_get_key(): Failed'), $e);
+    }
+}
+
+
+
+/*
+ * Check if the key supplied for the specified users id matches
+ */
+function user_check_key($user, $key, $timestamp){
+    try{
+// :TODO: Make the future and past time differences configurable
+        $future = 2;
+        $past   = 1800;
+
+        if(is_numeric($user)){
+            $dbkey = sql_get('SELECT `key` FROM `users` WHERE `id`        = :id'      , 'key', array(':id' => $user));
+
+        }else{
+            $dbkey = sql_get('SELECT `key` FROM `users` WHERE `username` = :username', 'key', array(':username' => $user));
+        }
+
+        if(!$dbkey){
+            /*
+             * This user doesn't exist, or doesn't have a key yet!
+             */
+            return false;
+        }
+
+        $diff = microtime(true) - $timestamp;
+
+        if($diff > $past){
+            /*
+             * More then N seconds differece between timestamps is NOT allowed
+             */
+            notify('user_check_key()', tr('Received user key check request with timestamp of "%timestamp%" seconds which is larger than the maximum past time of "%max%" seconds', array('%max%' => $past, '%timestamp%' => $timestamp)), 'security');
+            return false;
+        }
+
+        if(-$diff > $future){
+            /*
+             * More then N seconds differece between timestamps is NOT allowed
+             */
+            notify('user_check_key()', tr('Received user key check request with timestamp of "%timestamp%" seconds which is larger than the maximum future time of "%max%" seconds', array('%max%' => $future, '%timestamp%' => $timestamp)), 'security');
+            return false;
+        }
+
+        $dbkey = hash('sha256', $dbkey.SEED.$timestamp);
+
+        return $dbkey === $key;
+
+    }catch(Exception $e){
+        throw new bException(tr('user_check_key(): Failed'), $e);
+    }
+}
+
+
+
+/*
+ * Return HTML hidden input form fields containing user key data
+ */
+function user_key_form_fields($user = null, $prefix = ''){
+    try{
+        if(!$user){
+            $user = $_SESSION['user']['username'];
+        }
+
+        $key    = user_get_key($user);
+
+        $retval = ' <input type="hidden" id="'.$prefix.'timestamp" name="'.$prefix.'timestamp" value="'.$key['timestamp'].'">
+                    <input type="hidden" id="'.$prefix.'user" name="'.$prefix.'user" value="'.$key['user'].'">
+                    <input type="hidden" id="'.$prefix.'key" name="'.$prefix.'key" value="'.$key['key'].'">';
+
+        return $retval;
+
+    }catch(Exception $e){
+        throw new bException(tr('user_key_form_fields(): Failed'), $e);
+    }
+}
 ?>
