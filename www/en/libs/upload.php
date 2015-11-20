@@ -412,9 +412,12 @@ function upload_check_files($max_uploads = null, $min_uploads = null){
         foreach($_FILES as $formname => $filedata){
             if(is_array($filedata['name'])){
                 foreach($filedata as $section => $data){
-                    $count++;
+                    if($section === 'name'){
+                        $count++;
+                    }
 
                     foreach($data as $key => $value){
+
                         if(empty($files[$formname][$key])){
                             $files[$formname][$key] = array();
                         }
@@ -472,6 +475,7 @@ function upload_check_files($max_uploads = null, $min_uploads = null){
         }
 
         unset($value);
+        return true;
 
     }catch(Exception $e){
         throw new bException('upload_check_files(): Failed', $e);
