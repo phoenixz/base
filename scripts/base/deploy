@@ -651,7 +651,7 @@ foreach($targets as $target_environment){
             if($_CONFIG['language']['supported']){
                 foreach($_CONFIG['language']['supported'] as $language){
                     log_screen($display_subenvironment.'Translating to '.$language, 'deploy', 'white');
-                    script_exec('base/translate', array($language));
+                    script_exec('base/translate', array('languages '.$language));
 
                     init_hook('deploy_post_translation', $nohooks, array('languages' => $_CONFIG['language']['supported']));
                 }
