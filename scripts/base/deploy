@@ -744,7 +744,11 @@ foreach($targets as $target_environment){
             log_screen($display_subenvironment.'NOT deploying, due to "nodeploy" or "test" command line parameter', 'deploy', 'yellow');
 
         }else{
-            $exclude = ' --exclude="www/en/sitemap.html*" --exclude="www/en/sitemap.xml*" --exclude="www/en/mock" --exclude="data/mocks" --exclude="data/mock*" --exclude="data/uploads" --exclude="data/packages" --exclude=".git*" --exclude="/data/system" ';
+            $exclude = ' --exclude=*~ --exclude="data/mocks" --exclude="data/mock*" --exclude="data/uploads" --exclude="data/packages" --exclude=".git*" --exclude="/data/system" ';
+
+            foreach($_CONFIG['language']['supported'] as $code => $language){
+                $exclude = ' --exclude="www'.$language.'sitemap.html*" --exclude="www'.$language.'sitemap.xml*" --exclude="www'.$language.'mock" ';
+            }
 
             if(count($deploy_config['exclude_dirs'])) {
                 foreach($deploy_config['exclude_dirs'] as $key => $dir) {

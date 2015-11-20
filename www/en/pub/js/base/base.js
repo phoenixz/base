@@ -139,7 +139,11 @@ console.log(data.result + ' > ' + data.redirect);
 
     $.flashMessage = function(message, type, autoClose, selector, opacity){
         // Auto loader for flahs message library
-        $.getScript("/pub/js/base/flash.js")
+        if (cdnprefix == undefined) {
+            cdnprefix = "/pub/";
+        }
+
+        $.getScript(cdnprefix+"js/base/flash.js")
             .done(function( ){ $.flashMessage(message, type, autoClose, selector, opacity); })
             .fail(function(e){ alert("The JS flash message system seems not to be working because of \"" + e + "\", sorry for the alerts!");
                                alert(message);});

@@ -462,7 +462,7 @@ function upload_check_files($max_uploads, $min_uploads = null){
                     }
                     // FALLTHROUGH
                 default:
-                    $value['error'] = $errors[$value['error']];
+                    $value['error_message'] = $errors[$value['error']];
             }
         }
 

@@ -1118,12 +1118,12 @@ echo "$string3". "<br />". $string4;*/
  * These functions only exist as wrappers for compatibility purposes
  */
 function str_decrypt($data, $key){
-    load('crypt');
+    load_libs('crypt');
     return decrypt($data, $key);
 }
 
 function str_encrypt($data, $key){
-    load('crypt');
+    load_libs('crypt');
     return encrypt($data, $key);
 }
 ?>
