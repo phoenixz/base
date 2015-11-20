@@ -301,7 +301,7 @@ try{
                 }
             }
 
-            log_console('Translation completed', 'translate', 'purple', true);
+            log_console('Translation completed', 'translate', 'green', true);
 
             if($returned_data['stats']['translations_missing'] > 0) {
                 log_console('Translations missing : '.number_format($returned_data['stats']['translations_missing']),'translate','yellow',true);
