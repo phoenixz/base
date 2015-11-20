@@ -13,7 +13,9 @@ if(empty($_POST['data'])){
 
 try {
     //unpack data
-    $data         = json_decode(str_decrypt($_POST['data'], $_CONFIG['translator']['passphrase']), true);
+    $data = json_decode(str_decrypt($_POST['data'], $_CONFIG['translator']['passphrase']), true);
+    $data = array_ensure($data, 'target_language,project,translations,auth_key,timestamp,options');
+
     $language     = $data['target_language'];
     $project_name = trim($data['project']);
     $strings      = $data['translations'];
@@ -21,6 +23,7 @@ try {
     $timestamp    = $data['timestamp'];
     $options      = $data['options'];
 
+    array_params($options, 'mode');
     array_default($options, 'mode', 'strict');
 
     if(!in_array($options['mode'], array('strict', 'full', 'most', 'none'))){
@@ -28,9 +31,9 @@ try {
         die(tr('Unknown mode "%mode%"', array('%mode%' => $options['mode'])));
     }
 
-    if (empty($project_name)) {
+    if(empty($project_name) or !is_string($project_name)){
         header('HTTP/1.0 400 Bad Request', true, 400);
-        die(tr('Missing project name'));
+        die(tr('Missing or invalid project name'));
     }
 
     $project = sql_get('SELECT `id`,
