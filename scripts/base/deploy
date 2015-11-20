@@ -648,8 +648,8 @@ foreach($targets as $target_environment){
         }else{
             log_screen($display_subenvironment.'Executing translations', 'deploy', 'white');
 
-            if($deploy_config['languages']){
-                foreach($deploy_config['languages'] as $language){
+            if($_CONFIG['languages']['supported']){
+                foreach($_CONFIG['languages']['supported'] as $language){
                     log_screen($display_subenvironment.'Translating to '.$language, 'deploy', 'white');
                     script_exec('base/translate', array($language));
 
