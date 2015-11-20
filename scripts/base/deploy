@@ -648,12 +648,12 @@ foreach($targets as $target_environment){
         }else{
             log_screen($display_subenvironment.'Executing translations', 'deploy', 'white');
 
-            if($_CONFIG['languages']['supported']){
-                foreach($_CONFIG['languages']['supported'] as $language){
+            if($_CONFIG['language']['supported']){
+                foreach($_CONFIG['language']['supported'] as $language){
                     log_screen($display_subenvironment.'Translating to '.$language, 'deploy', 'white');
                     script_exec('base/translate', array($language));
 
-                    init_hook('deploy_post_translation', $nohooks, array('languages' => $deploy_config['languages']));
+                    init_hook('deploy_post_translation', $nohooks, array('languages' => $_CONFIG['language']['supported']));
                 }
             }
         }
