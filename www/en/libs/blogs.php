@@ -399,7 +399,7 @@ function blogs_validate_post(&$post, $blog, $params = null, $seoname = null){
             /*
              * Only if we're editing in use_append mode we don't have to check body size
              */
-            $v->hasMinChars($post['body'], $params['bodymin'], tr('Please ensure that the body text has a minimum of "%min%" characters', array('%min%' => $params['bodymin'])));
+            $v->hasMinChars($post['body'], $params['bodymin'], tr('Please ensure that the body text has a minimum of %bodymin% characters', array('%bodymin%' => $params['bodymin'])));
             $v->isNotEmpty ($post['body']                    , tr('Please provide the body text of your %objectname%', array('%objectname%' => $params['object_name'])));
         }
 
