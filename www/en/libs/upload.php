@@ -372,7 +372,7 @@ Array
 
 )
  */
-function upload_check_files($max_uploads, $min_uploads = null){
+function upload_check_files($max_uploads = null, $min_uploads = null){
     try{
         if(debug()){
             $errors = array(UPLOAD_ERR_OK         => tr('ok'),
@@ -399,8 +399,9 @@ function upload_check_files($max_uploads, $min_uploads = null){
          * Rearrange $_FILES to make a bit more sense
          */
         $files = array();
+        $count = 0;
 
-        if(empty($_FILES['files'])){
+        if(empty($_FILES)){
             /*
              * Apparently no files were uploaded?
              */
@@ -408,26 +409,30 @@ function upload_check_files($max_uploads, $min_uploads = null){
             return false;
         }
 
-        if(is_array($_FILES['files']['name'])){
-            foreach($_FILES['files'] as $section => $data){
-                foreach($data as $key => $value){
-                    if(empty($files[$key])){
-                        $files[$key] = array();
+        foreach($_FILES as $formname => $filedata){
+            if(is_array($filedata['name'])){
+                foreach($filedata as $section => $data){
+                    $count++;
+
+                    foreach($data as $key => $value){
+                        if(empty($files[$formname][$key])){
+                            $files[$formname][$key] = array();
+                        }
+
+                        $files[$formname][$key][$section] = $value;
                     }
-
-                    $files[$key][$section] = $value;
                 }
-            }
 
-        }else{
-            $files[0] = $_FILES['files'];
+            }else{
+                $count++;
+                $files[0] = $_FILES[$formname];
+            }
         }
 
         $_FILES = $files;
-        $count  = count($_FILES);
         unset($files);
 
-        if($count > $max_uploads){
+        if($max_uploads and ($count > $max_uploads)){
             if($max_uploads == 1){
                 throw new bException(tr('upload_check_files(): Multiple file uploads are not allowed'), 'multiple');
             }
@@ -435,7 +440,7 @@ function upload_check_files($max_uploads, $min_uploads = null){
             throw new bException(tr('upload_check_files(): $_FILES contains "%count%" which is more than the maximum of "%max%"', array('%count%' => $count, '%max%' => str_log($max_uploads))), 'toomany');
         }
 
-        if($count < $min_uploads){
+        if($min_uploads and ($count < $min_uploads)){
             if($min_uploads == 1){
                 throw new bException(tr('upload_check_files(): No files were uploaded'), 'none');
             }

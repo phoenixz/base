@@ -1111,8 +1111,14 @@ function user_check_key($user, $key, $timestamp){
         if(is_numeric($user)){
             $dbkey = sql_get('SELECT `key` FROM `users` WHERE `id`        = :id'      , 'key', array(':id' => $user));
 
-        }else{
+        }elseif(is_string($user)){
             $dbkey = sql_get('SELECT `key` FROM `users` WHERE `username` = :username', 'key', array(':username' => $user));
+
+        }else{
+            /*
+             * Assume user is an array and contains at least the key
+             */
+            $dbkey = $user['key'];
         }
 
         if(!$dbkey){
@@ -1162,14 +1168,72 @@ function user_key_form_fields($user = null, $prefix = ''){
 
         $key    = user_get_key($user);
 
-        $retval = ' <input type="hidden" id="'.$prefix.'timestamp" name="'.$prefix.'timestamp" value="'.$key['timestamp'].'">
-                    <input type="hidden" id="'.$prefix.'user" name="'.$prefix.'user" value="'.$key['user'].'">
-                    <input type="hidden" id="'.$prefix.'key" name="'.$prefix.'key" value="'.$key['key'].'">';
+        $retval = ' <input type="hidden" class="'.$prefix.'timestamp" name="'.$prefix.'timestamp" value="'.$key['timestamp'].'">
+                    <input type="hidden" class="'.$prefix.'user" name="'.$prefix.'user" value="'.$key['user'].'">
+                    <input type="hidden" class="'.$prefix.'key" name="'.$prefix.'key" value="'.$key['key'].'">';
 
         return $retval;
 
     }catch(Exception $e){
         throw new bException(tr('user_key_form_fields(): Failed'), $e);
+    }
+}
+
+
+
+/*
+ *
+ */
+function user_get_from_key($user, $key, $timestamp){
+    try{
+        $user = user_get($user);
+
+        if(user_check_key($user, $key, $timestamp)){
+            return $user;
+        }
+
+        return false;
+
+    }catch(Exception $e){
+        throw new bException(tr('user_get_from_key(): Failed'), $e);
+    }
+}
+
+
+
+/*
+ *
+ */
+function user_key_or_redirect($user, $key = null, $timestamp = null, $redirect = null){
+    try{
+        if(is_array($user)){
+            /*
+             * Assume we got an array, like $_POST, and extract data from there
+             */
+            $redirect  = $key;
+            $key       = isset_get($user['key']);
+            $timestamp = isset_get($user['timestamp']);
+            $user      = isset_get($user['user']);
+        }
+
+        $user = user_get($user);
+
+        if(user_check_key($user, $key, $timestamp)){
+            return $user;
+        }
+
+        if(!$redirect){
+            $redirect = $_CONFIG['redirects']['signin'];
+        }
+
+        /*
+         * Send JSON redirect. json_reply() will end script, so no break needed
+         */
+        load_libs('json');
+        json_reply(isset_get($redirect, $_CONFIG['root']), 'signin');
+
+    }catch(Exception $e){
+        throw new bException(tr('user_get_from_key(): Failed'), $e);
     }
 }
 ?>

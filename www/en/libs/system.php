@@ -898,13 +898,10 @@ function user_or_redirect($url = null, $method = 'http'){
                 case 'json':
                     $_SESSION['redirect'] = isset_get($_SERVER['HTTP_REFERER']);
 
-                    if(!function_exists('json_reply')){
-                        load_libs('json');
-                    }
-
                     /*
                      * Send JSON redirect. json_reply() will end script, so no break needed
                      */
+                    load_libs('json');
                     json_reply(isset_get($url, $_CONFIG['root']), 'signin');
 
                 case 'http':
