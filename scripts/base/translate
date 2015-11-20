@@ -24,7 +24,7 @@
  * in the translation server apache configuration
  */
 require_once(dirname(__FILE__).'/../../libs/startup.php');
-load_libs('file,inet,curl');
+load_libs('file,inet,curl,crypt');
 
 /*
  * Only these languages are allowed
@@ -194,7 +194,7 @@ try{
                       'options'         => array('mode' => $mode));
 
         //encrypt the data
-        $encrypted_data = str_encrypt(json_encode($data), $_CONFIG['translator']['passphrase']);
+        $encrypted_data = encrypt(json_encode($data), $_CONFIG['translator']['passphrase']);
         //send translations to server and wait for response
 
         try {
@@ -223,7 +223,7 @@ try{
             throw new bException(tr('Error trying to connect with server'), 'connection_error');
         }
 
-        $returned_data = json_decode(str_decrypt(trim($response['data']), $_CONFIG['translator']['passphrase']), true);
+        $returned_data = json_decode(decrypt(trim($response['data']), $_CONFIG['translator']['passphrase']), true);
 
         if(!is_array($returned_data) or ($returned_data['status'] != 'success')){
             throw new bException(tr('Failed to receive translations', 'connection_error'));

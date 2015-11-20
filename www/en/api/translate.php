@@ -4,6 +4,7 @@
  *
 */
 include_once (dirname(__FILE__) . '/../libs/startup.php');
+load_libs('crypt');
 
 if(empty($_POST['data'])){
     header('HTTP/1.0 400 Bad Request', true, 400);
@@ -13,7 +14,7 @@ if(empty($_POST['data'])){
 
 try {
     //unpack data
-    $data = json_decode(str_decrypt($_POST['data'], $_CONFIG['translator']['passphrase']), true);
+    $data = json_decode(decrypt($_POST['data'], $_CONFIG['translator']['passphrase']), true);
     $data = array_ensure($data, 'target_language,project,translations,auth_key,timestamp,options');
 
     $language     = $data['target_language'];
@@ -26,15 +27,42 @@ try {
     array_params($options, 'mode');
     array_default($options, 'mode', 'strict');
 
-    if(!in_array($options['mode'], array('strict', 'full', 'most', 'none'))){
-        header('HTTP/1.0 400 Bad Request', true, 400);
-        die(tr('Unknown mode "%mode%"', array('%mode%' => $options['mode'])));
+
+    /*
+     * Data validation
+     */
+    if(empty($project_name) or !is_string($project_name)){
+        $error = tr('Missing or invalid project name');
     }
 
-    if(empty($project_name) or !is_string($project_name)){
-        header('HTTP/1.0 400 Bad Request', true, 400);
-        die(tr('Missing or invalid project name'));
+    if(empty($language) or !preg_match('/^[a-zA-Z]{2}$/', $language)){
+        $error = tr('No valid language specified');
     }
+
+    if(empty($strings) or !is_array($strings)){
+        $error = tr('No valid strings list to translate specified.');
+    }
+
+    if(empty($auth_key) or !is_string($auth_key)){
+        $error = tr('No valid auth key specified.');
+    }
+
+    if(empty($timestamp) or !is_numeric($timestamp) or ($timestamp > time())){
+        $error = tr('Time validation error.');
+    }
+
+    if(empty($options['mode'])){
+        $error = tr('Translation mode is misssing. %array% ', array('%array%' => print_r($options, TRUE)));
+
+    } else if(!in_array($options['mode'], array('strict', 'full', 'most', 'none'))){
+        $error = tr('Unknown mode "%mode%"', array('%mode%' => $options['mode']));
+    }
+
+    if(isset($error)){
+        header('HTTP/1.0 400 Bad Request', true, 400);
+        die($error);
+    }
+
 
     $project = sql_get('SELECT `id`,
                                `api_key`,
@@ -189,5 +217,5 @@ try {
 }
 
 
-echo str_encrypt(json_encode($ret), $_CONFIG['translator']['passphrase']);
+echo encrypt(json_encode($ret), $_CONFIG['translator']['passphrase']);
 ?>
