@@ -66,15 +66,10 @@ function mc_connect(){
                 if($failed >= count($_CONFIG['memcached']['servers'])){
                     /*
                      * All memcached servers failed to connect!
-                     * Disable memcached for this page load
-                     *
                      * Send error notification
                      */
                     notify('nomemcachedserver', 'Failed to connect to all ('.count($_CONFIG['memcached']['servers']).') configured memcached servers');
-                    log_error('Failed to connect to all ('.count($_CONFIG['memcached']['servers']).') configured memcached servers', 'memcachedconnectfail');
-
-                    unset($GLOBALS['memcached']);
-                    return $GLOBALS['memcached'] = false;
+                    throw new bException(tr('Failed to connect to all "%count%" configured memcached servers', array('%count%' => count($_CONFIG['memcached']['servers']))), 'memcachedconnectfail');
                 }
             }
         }
@@ -246,7 +241,7 @@ function mc_get($key, $namespace = null){
 /*
  * Delete the specified key
  */
-function mc_delete($key, $namespace){
+function mc_delete($key, $namespace = null){
     global $_CONFIG;
 
     try {

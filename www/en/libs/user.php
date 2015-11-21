@@ -1205,7 +1205,7 @@ function user_get_from_key($user, $key, $timestamp){
 /*
  *
  */
-function user_key_or_redirect($user, $key = null, $timestamp = null, $redirect = null){
+function user_key_or_redirect($user, $key = null, $timestamp = null, $redirect = null, $columns = '*'){
     try{
         if(is_array($user)){
             /*
@@ -1217,7 +1217,7 @@ function user_key_or_redirect($user, $key = null, $timestamp = null, $redirect =
             $user      = isset_get($user['user']);
         }
 
-        $user = user_get($user);
+        $user = user_get($user, $columns);
 
         if(user_check_key($user, $key, $timestamp)){
             return $user;
