@@ -419,25 +419,6 @@ if($nocompress){
 }
 
 
-/*
- * Update the mtime of the entire project tree to ensure caching wont happen and the webserver will send out the new files
- */
-if($notouch){
-    log_console('Skipping touch mtime update due to no "notouch" command line parameters', 'deploy', 'yellow');
-
-}else{
-    log_console('Executing touch on entire project tree updating all mtimes', 'deploy', 'white');
-
-    passthru('cd '.ROOT.'; find . -exec touch {} \;', $exitcode);
-
-    if($exitcode){
-        throw new bException('Touch failed with exit code "'.str_log($exitcode).'"', 'git_push');
-    }
-
-    init_hook('deploy_post_touch', $nohooks, array('exitcode' => $exitcode));
-}
-
-
 
 foreach($targets as $target_environment){
     if(empty($_CONFIG['deploy'][$target_environment])){
@@ -953,6 +934,24 @@ foreach($targets as $target_environment){
     if(count($subenvironments) > 1){
         log_screen('Finished deploy for all environments in target "'.str_log($target_environment).'"', 'deploy', 'green');
     }
+}
+
+/*
+ * Update the mtime of the entire project tree to ensure caching wont happen and the webserver will send out the new files
+ */
+if($notouch){
+    log_console('Skipping touch mtime update due to no "notouch" command line parameters', 'deploy', 'yellow');
+
+}else{
+    log_console('Executing touch on entire project tree updating all mtimes', 'deploy', 'white');
+
+    passthru('cd '.ROOT.'; find . -exec touch {} \;', $exitcode);
+
+    if($exitcode){
+        throw new bException('Touch failed with exit code "'.str_log($exitcode).'"', 'git_push');
+    }
+
+    init_hook('deploy_post_touch', $nohooks, array('exitcode' => $exitcode));
 }
 
 init_hook('deploy_finish', $nohooks, array('target_user'    => $deploy_config['target_user'],
