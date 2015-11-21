@@ -365,7 +365,7 @@ function file_clear_path($path) {
                  * in this directory, so it's no longer empty. Just register
                  * the event and leave it be.
                  */
-                log_error('file_clear_path(): Failed to remove empty path "'.$path.'", probably a parrallel process added new content here?', 'failed');
+                log_error(tr('file_clear_path(): Failed to remove empty path "%path%", probably a parrallel process added new content here?', array('%path%' => $path)), 'failed');
                 return true;
             }
         }

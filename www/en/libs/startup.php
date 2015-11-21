@@ -303,6 +303,8 @@ try{
                 throw new bException('startup: Unknown $_CONFIG[tmp] "'.str_log($_CONFIG['tmp']).'" specified. Please use only "local" or "global"', 'unknown');
         }
 
+        define('PUBTMP', ROOT.'data/content/tmp/');
+
         switch(PLATFORM){
             case 'http':
                 /*
