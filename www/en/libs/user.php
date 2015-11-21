@@ -1074,7 +1074,8 @@ function user_get_key($user = null, $force = false){
         }
 
         if(!$dbuser['key'] or $force){
-            $dbuser['key'] = hash('sha256', uniqid('', true).SEED.microtime(true));
+            $dbuser['key']           = hash('sha256', uniqid('', true).SEED.microtime(true));
+            $_SESSION['user']['key'] = $dbuser['key'];
 
             sql_query('UPDATE `users`
 
