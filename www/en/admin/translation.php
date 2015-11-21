@@ -41,7 +41,8 @@ try{
                                     if($entry['translation'] != $value){
                                         sql_query('UPDATE `dictionary`
 
-                                                   SET    `translation` = :translation
+                                                   SET    `translation` = :translation,
+                                                          `modifiedon`  = NOW()
 
                                                    WHERE  `id`          = :id',
                                                    array(':id'          => $id,
@@ -507,10 +508,10 @@ $html .= '                  <div class="row datatables-footer">
                                                                   'disabled' => 'disabled',
                                                                   'url'      => domain(true, 'page=%page%'),
                                                                   'page'     => '<li class="%active%"><a href="%url%">%page%</a></li>',
-                                                                  'prev'     => '<li class="%disabled%"><a href="%url%">'.tr('<').'</a></li>',
-                                                                  'next'     => '<li class="%disabled%"><a href="%url%">'.tr('>').'</a></li>',
-                                                                  'first'    => '<li class="prev %disabled%"><a href="%url%">'.tr('<<').'</a></li>',
-                                                                  'last'     => '<li class="next %disabled%"><a href="%url%">'.tr('>>').'</a></li>')).'
+                                                                  'prev'     => '<li class="%disabled%"><a href="%url%"> < </a></li>',
+                                                                  'next'     => '<li class="%disabled%"><a href="%url%"> > </a></li>',
+                                                                  'first'    => '<li class="prev %disabled%"><a href="%url%"> << </a></li>',
+                                                                  'last'     => '<li class="next %disabled%"><a href="%url%"> >> </a></li>')).'
                                         </div>
                                     </div>
                                 </div>

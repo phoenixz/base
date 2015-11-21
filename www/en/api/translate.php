@@ -79,6 +79,8 @@ try {
         die(tr('Cant access to server with the given credentials'));
     }
 
+    $last_login = $project['last_login'];
+
     sql_query('UPDATE `projects`
 
                SET    `last_login` = NOW()
@@ -185,6 +187,28 @@ try {
             }
 
         }
+    }
+
+    /*
+    * We also return the translations that were made
+    * since last login
+    */
+    $new_translations = sql_list('SELECT `id`,
+                                         `file`,
+                                         `string`,
+                                         `translation`
+
+                                  FROM   `dictionary`
+
+                                  WHERE  `projects_id` = :project_id
+                                  AND    `translation` IS NOT NULL
+                                  AND    `modifiedon`  > :last_login',
+
+                                  array(':project_id'  => cfi($project['id']),
+                                        ':last_login'  => $last_login));
+
+    foreach($new_translations as $new_translation){
+        $translations[$new_translation['file']][$new_translation['string']] = $new_translation['translation'];
     }
 
     switch(isset_get($error)){
