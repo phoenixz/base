@@ -381,6 +381,22 @@ if($nopush){
     init_hook('deploy_post_push', $nohooks, array('exitcode' => $exitcode));
 }
 
+
+
+/*
+ * If version was upgraded, execute an init to avoid leaving the dev site inoperable
+ */
+if(!$noversion){
+    log_console('Project version revision was updated, executing init to update project database', 'deploy', 'white');
+    passthru(ROOT.'script/base/init env '.$target_environment.$subenv_subenvironment, $exitcode);
+
+    if($exitcode){
+        throw new bException('System init failed with exit code "'.str_log($exitcode).'"', 'local_init');
+    }
+}
+
+
+
 /*
  * Run compress script
  */
@@ -416,6 +432,47 @@ if($nocompress){
         safe_exec('git add www/en/pub/');
         safe_exec('git commit -m "Deploy commit: compressed files changed"');
     }
+}
+
+
+
+/*
+ * Do code translation
+ */
+if(argument('notranslate')){
+    log_screen('Skipping translations due to "notranslate" option', 'deploy', 'yellow');
+
+}else{
+    log_screen('Executing translations', 'deploy', 'white');
+
+    if($_CONFIG['language']['supported']){
+        foreach($_CONFIG['language']['supported'] as $language){
+            log_screen('Translating to '.$language, 'deploy', 'white');
+            script_exec('base/translate', array('languages '.$language));
+
+            init_hook('deploy_post_translation', $nohooks, array('languages' => $_CONFIG['language']['supported']));
+        }
+    }
+}
+
+
+
+/*
+ * Update the mtime of the entire project tree to ensure caching wont happen and the webserver will send out the new files
+ */
+if($notouch){
+    log_console('Skipping touch mtime update due to no "notouch" command line parameters', 'deploy', 'yellow');
+
+}else{
+    log_console('Executing touch on entire project tree updating all mtimes', 'deploy', 'white');
+
+    passthru('cd '.ROOT.'; find . -exec touch {} \;', $exitcode);
+
+    if($exitcode){
+        throw new bException('Touch failed with exit code "'.str_log($exitcode).'"', 'git_push');
+    }
+
+    init_hook('deploy_post_touch', $nohooks, array('exitcode' => $exitcode));
 }
 
 
@@ -603,41 +660,6 @@ foreach($targets as $target_environment){
                                                        'target_port'    => $deploy_config['target_port'],
                                                        'target_server'  => $deploy_config['target_server'],
                                                        'target_dir'     => $deploy_config['target_dir']));
-
-
-
-        /*
-         * If version was upgraded, execute an init to avoid leaving the dev site inoperable
-         */
-        if(!$noversion){
-            log_console('Project version revision was updated, executing init to update project database', 'deploy', 'white');
-            passthru(ROOT.'script/base/init env '.$target_environment.$subenv_subenvironment, $exitcode);
-
-            if($exitcode){
-                throw new bException('System init failed with exit code "'.str_log($exitcode).'"', 'local_init');
-            }
-        }
-
-
-
-        /*
-         * Do code translation
-         */
-        if(argument('notranslate')){
-            log_screen($display_subenvironment.'Skipping translations due to "notranslate" option', 'deploy', 'yellow');
-
-        }else{
-            log_screen($display_subenvironment.'Executing translations', 'deploy', 'white');
-
-            if($_CONFIG['language']['supported']){
-                foreach($_CONFIG['language']['supported'] as $language){
-                    log_screen($display_subenvironment.'Translating to '.$language, 'deploy', 'white');
-                    script_exec('base/translate', array('languages '.$language));
-
-                    init_hook('deploy_post_translation', $nohooks, array('languages' => $_CONFIG['language']['supported']));
-                }
-            }
-        }
 
 
 
@@ -936,23 +958,7 @@ foreach($targets as $target_environment){
     }
 }
 
-/*
- * Update the mtime of the entire project tree to ensure caching wont happen and the webserver will send out the new files
- */
-if($notouch){
-    log_console('Skipping touch mtime update due to no "notouch" command line parameters', 'deploy', 'yellow');
 
-}else{
-    log_console('Executing touch on entire project tree updating all mtimes', 'deploy', 'white');
-
-    passthru('cd '.ROOT.'; find . -exec touch {} \;', $exitcode);
-
-    if($exitcode){
-        throw new bException('Touch failed with exit code "'.str_log($exitcode).'"', 'git_push');
-    }
-
-    init_hook('deploy_post_touch', $nohooks, array('exitcode' => $exitcode));
-}
 
 init_hook('deploy_finish', $nohooks, array('target_user'    => $deploy_config['target_user'],
                                            'target_port'    => $deploy_config['target_port'],
