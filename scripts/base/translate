@@ -96,6 +96,21 @@ try{
                 continue;
             }
 
+            $target_file = $target_dir.str_replace($source_dir,'',$file);
+
+            /*
+             * Timestamp check, we skip files that were not modified since last scan
+             * Instead of an == comparation we check that the difference is less than 10 seconds
+             * Since a  touch on the entire project wont be made on all files at exactly the same second
+             */
+            if(file_exists($target_file) and (abs(filemtime($file) - filemtime($target_file)) < 10)){
+                if(VERBOSE){
+                    log_console(tr('Skipping file %file% because it hasn\'t changed since last string scan', array('%file%' => $file)), '', 'yellow');
+                    continue;
+                }
+            }
+
+
             $content = file_get_contents($file);
 
             /*
@@ -239,9 +254,9 @@ try{
         //translations ready, start processing.
         //delete target dir
         try{
-            if(VERBOSE){
-                log_console('Deleting target dir '.$target_dir, 'translate', '', true);
-            }
+            // if(VERBOSE){
+            //     log_console('Deleting target dir '.$target_dir, 'translate', '', true);
+            // }
 
             shell_exec('rm -rf '.$target_dir);
 
@@ -301,7 +316,7 @@ try{
                 }
             }
 
-            log_console('Translation completed', 'translate', 'purple', true);
+            log_console('Translation completed', 'translate', 'green', true);
 
             if($returned_data['stats']['translations_missing'] > 0) {
                 log_console('Translations missing : '.number_format($returned_data['stats']['translations_missing']),'translate','yellow',true);
