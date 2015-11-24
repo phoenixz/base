@@ -424,9 +424,9 @@ throw new bException('log_message(): DEVELOPMENT FIX! This exception is here to 
 
         log_database($message, $type);
 
-        if(ENVIRONMENT == 'production'){
+        if(!debug()){
             /*
-             * In production NEVER log to screen!
+             * In non debug environments, NEVER log to screen!
              */
             return $message;
         }

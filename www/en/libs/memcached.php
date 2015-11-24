@@ -2,7 +2,9 @@
 /*
  * Memcached library
  *
- * This library file contains functions to access memcached
+ * This library file contains functions to access memcached. It supports namespaces by keeping track of all variables
+ * with namespaces in a separate array that contains the name of that namespace. This is VERY far from ideal, but the
+ * best it can do. If this behaviour is not desired, then simply ensure that all keys have no namespace specified
  *
  * @license http://opensource.org/licenses/GPL-2.0 GNU Public License, Version 2
  * @copyright Johan Geuze, Sven Oostenbrink <support@svenoostenbrink.com>
@@ -93,17 +95,8 @@ function mc_put($value, $key, $namespace = null, $expiration_time = null){
         mc_connect();
 
         if($namespace){
-            $namespace = mc_namespace($namespace).'_';
+            $namespace = mc_add_to_namespace($namespace).'_';
         }
-
-// :DELETE: memcached accepts objects directly
-        //if(is_scalar($value)){
-        //    $value = $value;
-        //
-        //} else {
-        //    load_libs('json');
-        //    $value = json_encode_custom($value);
-        //}
 
         if($expiration_time === null){
             /*
@@ -112,7 +105,7 @@ function mc_put($value, $key, $namespace = null, $expiration_time = null){
             $expiration_time = $_CONFIG['memcached']['expire_time'];
         }
 
-        $GLOBALS['memcached']->set($_CONFIG['memcached']['prefix'].$namespace.$key, $value, $expiration_time);
+        $GLOBALS['memcached']->set($_CONFIG['memcached']['prefix'].mc_namespace($namespace).$key, $value, $expiration_time);
 
         return $value;
 
@@ -133,17 +126,8 @@ function mc_add($value, $key, $namespace = null, $expiration_time = null){
         mc_connect();
 
         if($namespace){
-            $namespace = mc_namespace($namespace).'_';
+            $namespace = mc_add_to_namespace($namespace).'_';
         }
-
-// :DELETE: memcached accepts objects directly
-        //if(is_scalar($value)){
-        //    $value = $value;
-        //
-        //} else {
-        //    load_libs('json');
-        //    $value = json_encode_custom($value);
-        //}
 
         if($expiration_time === null){
             /*
@@ -152,8 +136,7 @@ function mc_add($value, $key, $namespace = null, $expiration_time = null){
             $expiration_time = $_CONFIG['memcached']['expire_time'];
         }
 
-        if(!$GLOBALS['memcached']->add($_CONFIG['memcached']['prefix'].$namespace.$key, $value, $expiration_time)){
-
+        if(!$GLOBALS['memcached']->add($_CONFIG['memcached']['prefix'].mc_namespace($namespace).$key, $value, $expiration_time)){
         }
 
         return $value;
@@ -175,17 +158,8 @@ function mc_replace($value, $key, $namespace = null, $expiration_time = null){
         mc_connect();
 
         if($namespace){
-            $namespace = mc_namespace($namespace).'_';
+            $namespace = mc_add_to_namespace($namespace).'_';
         }
-
-// :DELETE: memcached accepts objects directly
-        //if(is_scalar($value)){
-        //    $value = $value;
-        //
-        //} else {
-        //    load_libs('json');
-        //    $value = json_encode_custom($value);
-        //}
 
         if($expiration_time === null){
             /*
@@ -194,7 +168,7 @@ function mc_replace($value, $key, $namespace = null, $expiration_time = null){
             $expiration_time = $_CONFIG['memcached']['expire_time'];
         }
 
-        if(!$GLOBALS['memcached']->replace($_CONFIG['memcached']['prefix'].$namespace.$key, $value, $expiration_time)){
+        if(!$GLOBALS['memcached']->replace($_CONFIG['memcached']['prefix'].mc_namespace($namespace).$key, $value, $expiration_time)){
 
         }
 
@@ -215,21 +189,7 @@ function mc_get($key, $namespace = null){
 
     try {
         mc_connect();
-
-        if($namespace){
-            $namespace = mc_namespace($namespace).'_';
-        }
-
-        //get data from memcached, and json_decode if needed
-        $value = $GLOBALS['memcached']->get($_CONFIG['memcached']['prefix'].$namespace.$key);
-
-// :DELETE: memcached accepts objects directly
-        //if(str_is_json($value)){
-        //    load_libs('json');
-        //    $value = json_decode_custom($value, true);
-        //}
-
-        return $value;
+        return $GLOBALS['memcached']->get($_CONFIG['memcached']['prefix'].mc_namespace($namespace).$key);
 
     }catch(Exception $e){
         throw new bException('mc_get(): Failed', $e);
@@ -239,7 +199,7 @@ function mc_get($key, $namespace = null){
 
 
 /*
- * Delete the specified key
+ * Delete the specified key or namespace
  */
 function mc_delete($key, $namespace = null){
     global $_CONFIG;
@@ -249,19 +209,16 @@ function mc_delete($key, $namespace = null){
 
         if(!$key){
             if(!$namespace){
-                throw new bException('mc_delete(): No key or namespace specified', $e);
+
             }
 
-            $namespace = str_ends_not($namespace, '_');
-            mc_namespace($namespace, true);
-
-        }else{
-            if($namespace = mc_get('namespace: '.$key)){
-                return $namespace;
-            }
-
-            $GLOBALS['memcached']->delete($_CONFIG['memcached']['prefix'].$namespace.$key);
+            /*
+             * Delete the entire namespace
+             */
+            return mc_namespace($namespace, true);
         }
+
+        return $GLOBALS['memcached']->delete($_CONFIG['memcached']['prefix'].mc_namespace($namespace).$key);
 
     }catch(Exception $e){
         throw new bException('mc_delete(): Failed', $e);
@@ -281,48 +238,75 @@ function mc_clear($delay = 0){
         $GLOBALS['memcached']->flush($delay);
 
     }catch(Exception $e){
-        throw new bException('mc_delete(): Failed', $e);
+        throw new bException('mc_clear(): Failed', $e);
     }
 }
 
 
 
 /*
- * Set or get the namespace for the specified key
+ * Increment the value of the specified key
  */
-function mc_namespace($key, $reset = false){
+function mc_increment($key, $namespace = null){
     global $_CONFIG;
-    static $keys = array();
 
+    try {
+        mc_connect();
+        $GLOBALS['memcached']->increment($_CONFIG['memcached']['prefix'].mc_namespace($namespace).$key);
+
+    }catch(Exception $e){
+        throw new bException('mc_increment(): Failed', $e);
+    }
+}
+
+
+
+/*
+ * Return a key for the namespace. We don't use the namespace itself as part of the key because
+ * with an alternate key, its very easy to invalidate namespace keys by simply assigning a new
+ * value to the namespace key
+ */
+function mc_namespace($namespace, $delete = false){
     try{
-        if(!$reset){
-            if(!empty($keys[$key])){
-                return $keys[$key];
-            }
+        if(!$namespace){
+            return '';
+        }
 
-            if($namespace = mc_get('namespace: '.$key)){
-                $keys[$key] = $namespace;
-                return $namespace;
+        $key = mc_get('ns:'.$namespace);
+
+        if(!$key){
+            $key = (string) microtime(true);
+            mc_add($key, 'ns:'.$namespace);
+
+        }elseif($delete){
+            /*
+             * "Delete" the key by incrementing (and so, changing) the value of the namespace key.
+             * Since this will change the name of all keys using this namespace, they are no longer
+             * accessible and with time will be dumped automatically by memcached to make space for
+             * newer keys.
+             */
+            try{
+                mc_increment($namespace);
+                $key = mc_get('ns:'.$namespace);
+
+            }catch(Exception $e){
+                /*
+                 * Increment failed, so in all probability the key did not exist. It could have been
+                 * deleted by a parrallel process, for example
+                 */
+                switch($e->getCode()){
+                    case '':
+// :TODO: Implement correctly. For now, just notify
+                    default:
+                        notify($e);
+                }
             }
         }
 
-        $namespace  = $key.'.'.time();
-        $keys[$key] = $namespace;
-
-        return mc_add($key, $namespace);
+        return $key;
 
     }catch(Exception $e){
         throw new bException('mc_namespace(): Failed', $e);
     }
-}
-
-
-
-/*
- * Wrapper
- */
-//:OBSOLETE: Remove this function about a month after 20150430
-function mc_del($key, $namespace){
-    return mc_delete($key, $namespace);
 }
 ?>
