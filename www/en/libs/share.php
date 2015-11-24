@@ -194,7 +194,7 @@ function share_addtoany_buttons($buttons) {
                     break;
 
                 case 'reddit':
-                    $html .= '<a class="a2a_button_linkedin"></a>';
+                    $html .= '<a class="a2a_button_reddit"></a>';
                     break;
 
                 case 'linkedin':
