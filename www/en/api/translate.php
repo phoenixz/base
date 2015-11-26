@@ -39,7 +39,7 @@ try {
         $error = tr('No valid language specified');
     }
 
-    if(empty($strings) or !is_array($strings)){
+    if(!is_array($strings)){
         $error = tr('No valid strings list to translate specified.');
     }
 
