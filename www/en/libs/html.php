@@ -1563,9 +1563,9 @@ function html_autosuggest($params){
  * This function will minify the given HTML by removing double spaces, and strip white spaces before and after tags (except space)
  * Found on http://stackoverflow.com/questions/6225351/how-to-minify-php-page-html-output, rewritten for use in base project
  */
-function html_minify($html, $force = false){
+function html_minify($html, $full = false){
     try{
-        if(debug() and !$force){
+        if(debug()){
             /*
              * Don't do anything. This way, on non debug systems, where this is
              * used to minify HTML output, we can still see normal HTML that is
@@ -1574,18 +1574,25 @@ function html_minify($html, $force = false){
             return $html;
         }
 
-        $replace = array(
-            /*
-             * Remove tabs before and after HTML tags
-             */
-            '/\>[^\S ]+/s'                                                    => '>',
-            '/[^\S ]+\</s'                                                    => '<',
+        /*
+         * Shorten multiple whitespace sequences; keep new-line
+         * characters because they matter in JS!!!
+         */
+        $search [] = '/([\t ])+/s';
 
-            /*
-             * Shorten multiple whitespace sequences; keep new-line
-             * characters because they matter in JS!!!
-             */
-            '/([\t ])+/s'                                                     => ' ',
+        /*
+         * Remove leading and trailing spaces
+         */
+        $search [] = '/^([\t ])+/m';
+        $search [] = '/([\t ])+$/m';
+
+        /*
+         * Replace array for the above searches
+         */
+        $replace[] = ' ';
+        $replace[] = '';
+        $replace[] = '';
+
 
             /*
              * Remove leading and trailing spaces
@@ -1638,6 +1645,17 @@ function html_minify($html, $force = false){
              */
             '~([\r\n\t ])?([a-zA-Z0-9]+)="([a-zA-Z0-9_/\\-]+)"([\r\n\t ])?~s' => '$1$2=$3$4'
         );
+
+        if($full){
+            /*
+             * Remove tabs before and after HTML tags
+             */
+            $search[]  = '/\>[^\S ]+/s';
+            $search[]  = '/[^\S ]+\</s';
+
+            $replace[] = '>';
+            $replace[] = '<';
+        }
 
 // :DELETE: This search replace won't work for <script> tags or inline commentaries //
         //$search = array(
