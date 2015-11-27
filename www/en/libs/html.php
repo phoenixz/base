@@ -1593,12 +1593,20 @@ function html_minify($html, $full = false){
         $search [] = '~//[a-zA-Z0-9 ]+$~m';
 
         /*
+         * Remove quotes from HTML attributes that does not contain spaces;
+         * keep quotes around URLs!
+         * $1 and $4 insert first white-space character found before/after attribute
+         */
+        $search [] = '~([\r\n\t ])?([a-zA-Z0-9]+)="([a-zA-Z0-9_/\\-]+)"([\r\n\t ])?~s';
+
+        /*
          * Replace array for the above searches
          */
         $replace[] = ' ';
         $replace[] = '';
         $replace[] = '';
         $replace[] = '';
+        $replace[] = '$1$2=$3$4';
 
         if($full){
             /*
@@ -1626,14 +1634,6 @@ function html_minify($html, $full = false){
              */
             $replace[] = '>';
             $replace[] = '<';
-
-            /*
-             * Remove quotes from HTML attributes that does not contain spaces;
-             * keep quotes around URLs!
-             * $1 and $4 insert first white-space character found before/after attribute
-             */
-            $search [] = '~([\r\n\t ])?([a-zA-Z0-9]+)="([a-zA-Z0-9_/\\-]+)"([\r\n\t ])?~s';
-            $replace[] = '$1$2=$3$4';
 
             /*
              * Remove new-line after JS's line end (only most obvious and safe cases)
