@@ -53,7 +53,7 @@ function email_connect($username){
         return $connections[$username];
 
     }catch(Exception $e){
-        throw new bException('email_connect(): Failed', $e);
+        throw new bException(tr('email_connect(): Failed'), $e);
     }
 }
 
@@ -116,7 +116,7 @@ function email_poll($usernames, $criteria = 'ALL'){
         return $retval;
 
     }catch(Exception $e){
-        throw new bException('email_poll(): Failed', $e);
+        throw new bException(tr('email_poll(): Failed'), $e);
     }
 }
 
@@ -157,7 +157,7 @@ function email_get_conversation($email){
         return $conversation;
 
     }catch(Exception $e){
-        throw new bException('email_get_conversation(): Failed', $e);
+        throw new bException(tr('email_get_conversation(): Failed'), $e);
     }
 }
 
@@ -177,7 +177,7 @@ function email_update_conversation($email, $direction){
         $email = email_update_message($email, $direction);
 
         if(empty($direction)){
-            throw new bException('email_update_conversation(): No conversation direction specified', 'notspecified');
+            throw new bException(tr('email_update_conversation(): No conversation direction specified'), 'notspecified');
         }
 
         if(($direction != 'sent') and ($direction != 'received')){
@@ -292,7 +292,7 @@ function email_update_conversation($email, $direction){
         }
 
     }catch(Exception $e){
-        throw new bException('email_update_conversation(): Failed', $e);
+        throw new bException(tr('email_update_conversation(): Failed'), $e);
     }
 }
 
@@ -391,7 +391,7 @@ function email_update_message($email, $direction){
         return $email;
 
     }catch(Exception $e){
-        throw new bException('email_update_message(): Failed', $e);
+        throw new bException(tr('email_update_message(): Failed'), $e);
     }
 }
 
@@ -405,7 +405,7 @@ function email_get_reply_to_id($email){
         return null;
 
     }catch(Exception $e){
-        throw new bException('email_get_reply_to_id(): Failed', $e);
+        throw new bException(tr('email_get_reply_to_id(): Failed'), $e);
     }
 }
 
@@ -419,7 +419,7 @@ function email_get_users_id($email){
         return null;
 
     }catch(Exception $e){
-        throw new bException('email_get_users_id(): Failed', $e);
+        throw new bException(tr('email_get_users_id(): Failed'), $e);
     }
 }
 
@@ -574,7 +574,7 @@ function email_send($params){
         }
 
     }catch(Exception $e){
-        throw new bException('email_send(): Failed', $e);
+        throw new bException(tr('email_send(): Failed'), $e);
     }
 }
 
@@ -615,7 +615,7 @@ function email_from_list($subset = null){
         }
 
     }catch(Exception $e){
-        throw new bException('email_from_list(): Failed', $e);
+        throw new bException(tr('email_from_list(): Failed'), $e);
     }
 }
 
@@ -643,7 +643,7 @@ function email_from_exists($email){
         }
 
     }catch(Exception $e){
-        throw new bException('email_from_exists(): Failed', $e);
+        throw new bException(tr('email_from_exists(): Failed'), $e);
     }
 }
 
@@ -675,7 +675,7 @@ function email_load_phpmailer(){
         return new PHPMailer();
 
     }catch(Exception $e){
-        throw new bException('email_from_exists(): Failed', $e);
+        throw new bException(tr('email_from_exists(): Failed'), $e);
     }
 }
 
@@ -705,7 +705,7 @@ function email_validate($email){
         return $email;
 
     }catch(Exception $e){
-        throw new bException('email_validate(): Failed', $e);
+        throw new bException(tr('email_validate(): Failed'), $e);
     }
 }
 
