@@ -215,8 +215,12 @@ function cfm($string, $utf8 = true){
 /*
  * Force integer
  */
-function cfi($str){
-    return (integer) $str;
+function cfi($source, $allow_null = true){
+    if(!$source and $allow_null){
+        return null;
+    }
+
+    return (integer) $source;
 }
 
 
