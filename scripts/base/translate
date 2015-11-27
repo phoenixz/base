@@ -110,6 +110,9 @@ try{
                 }
             }
 
+            if(VERBOSE){
+                log_console(tr('Scanning file %file%', array('%file%' => $file)), '', 'white');
+            }
 
             $content = file_get_contents($file);
 

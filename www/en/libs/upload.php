@@ -55,7 +55,7 @@ function upload_ocupload($selector = "input[name=upload]", $url = '/ajax/upload.
         load_libs('html');
         html_load_js('base/ocupload/jquery.ocupload');
 
-        if($params['params']){
+        if(!empty($params['params'])){
             load_libs('json');
 
             if(!is_array($params['params'])){
