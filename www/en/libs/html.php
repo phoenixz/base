@@ -1587,74 +1587,86 @@ function html_minify($html, $full = false){
         $search [] = '/([\t ])+$/m';
 
         /*
+         * Remove JS line comments (simple only);
+         * do NOT remove lines containing URL (e.g. 'src="http://server.com/"')!!!
+         */
+        $search [] = '~//[a-zA-Z0-9 ]+$~m';
+
+        /*
          * Replace array for the above searches
          */
         $replace[] = ' ';
         $replace[] = '';
         $replace[] = '';
+        $replace[] = '';
 
-
-            /*
-             * Remove leading and trailing spaces
-             */
-            '/^([\t ])+/m'                                                    => '',
-            '/([\t ])+$/m'                                                    => '',
-
-            /*
-             * Remove JS line comments (simple only);
-             * do NOT remove lines containing URL (e.g. 'src="http://server.com/"')!!!
-             */
-            '~//[a-zA-Z0-9 ]+$~m'                                             => '',
-
+        if($full){
             /*
              * Remove empty lines (sequence of line-end and white-space characters)
              */
-            '/[\r\n]+([\t ]?[\r\n]+)+/s'                                      => "\n",
+            $search [] = '/[\r\n]+([\t ]?[\r\n]+)+/s';
+            $replace[] = '\n';
 
             /*
              * Remove empty lines (between HTML tags);
              * cannot remove just any line-end characters
              * because in inline JS they can matter!
              */
-            '/\>[\r\n\t ]+\</s'                                               => '><',
+            $search [] = '/\>[\r\n\t ]+\</s';
+            $replace[] = '><';
 
-            /*
-             * Remove "empty" lines containing only JS's
-             * block end character;
-             * join with next line (e.g. "}\n}\n</script>" --> "}}</script>"
-             */
-            '/}[\r\n\t ]+/s'                                                  => '}',
-            '/}[\r\n\t ]+,[\r\n\t ]+/s'                                       => '},',
-
-            /*
-             * Remove new-line after JS's function or condition start;
-             * join with next line
-             */
-            '/\)[\r\n\t ]?{[\r\n\t ]+/s'                                      => '){',
-            '/,[\r\n\t ]?{[\r\n\t ]+/s'                                       => ',{',
-
-            /*
-             * Remove new-line after JS's line end (only most obvious and safe cases)
-             */
-            '/\),[\r\n\t ]+/s'                                                => '),',
-
-            /*
-             * Remove quotes from HTML attributes that does not contain spaces;
-             * keep quotes around URLs!
-             * $1 and $4 insert first white-space character found before/after attribute
-             */
-            '~([\r\n\t ])?([a-zA-Z0-9]+)="([a-zA-Z0-9_/\\-]+)"([\r\n\t ])?~s' => '$1$2=$3$4'
-        );
-
-        if($full){
             /*
              * Remove tabs before and after HTML tags
              */
             $search[]  = '/\>[^\S ]+/s';
             $search[]  = '/[^\S ]+\</s';
 
+            /*
+             * Replace array for the above searches
+             */
             $replace[] = '>';
             $replace[] = '<';
+
+            /*
+             * Remove quotes from HTML attributes that does not contain spaces;
+             * keep quotes around URLs!
+             * $1 and $4 insert first white-space character found before/after attribute
+             */
+            $search [] = '~([\r\n\t ])?([a-zA-Z0-9]+)="([a-zA-Z0-9_/\\-]+)"([\r\n\t ])?~s';
+            $replace[] = '$1$2=$3$4';
+
+            /*
+             * Remove new-line after JS's line end (only most obvious and safe cases)
+             */
+            $search [] = '/\),[\r\n\t ]+/s';
+            $replace[] = '),';
+
+            /*
+             * Remove "empty" lines containing only JS's
+             * block end character;
+             * join with next line (e.g. "}\n}\n</script>" --> "}}</script>"
+             */
+            $search [] = '/}[\r\n\t ]+/s';
+            $search [] = '/}[\r\n\t ]+,[\r\n\t ]+/s';
+
+            /*
+             * Replace array for the above searches
+             */
+            $replace[] = '}';
+            $replace[] = '}';
+
+            /*
+             * Remove new-line after JS's function or condition start;
+             * join with next line
+             */
+            $search [] = '/\)[\r\n\t ]?{[\r\n\t ]+/s';
+            $search [] = '/,[\r\n\t ]?{[\r\n\t ]+/s';
+
+            /*
+             * Replace array for the above searches
+             */
+            $replace[] = '){';
+            $replace[] = ',{';
         }
 
 // :DELETE: This search replace won't work for <script> tags or inline commentaries //
@@ -1670,7 +1682,7 @@ function html_minify($html, $full = false){
         //    '\\1'
         //);
 
-        return preg_replace(array_keys($replace), array_values($replace), $html);
+        return preg_replace($search, $replace, $html);
 
     }catch(Exception $e){
         throw new bException(tr('html_minify(): Failed'), $e);
