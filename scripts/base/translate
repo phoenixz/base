@@ -52,13 +52,11 @@ $languages    = explode(',', $languages);
  * Validate command line parameters
  */
 if(empty($languages)) {
-    log_error('No languages specified', 'translate');
-    return;
+    throw new bException('No languages specified', 'translation-error');
 }
 
 if(!in_array($mode, $available_modes)){
-    log_error(tr('Unknown mode "%mode%"', array('%mode%' => $mode)), 'unknown');
-    return;
+    throw new bException(tr('Unknown mode "%mode%"', array('%mode%' => $mode)), 'translation-error');
 }
 
 try{
