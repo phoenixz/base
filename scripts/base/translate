@@ -52,11 +52,11 @@ $languages    = explode(',', $languages);
  * Validate command line parameters
  */
 if(empty($languages)) {
-    throw new bException('No languages specified', 'translation-error');
+    throw new bException('No languages specified', 'translation_error');
 }
 
 if(!in_array($mode, $available_modes)){
-    throw new bException(tr('Unknown mode "%mode%"', array('%mode%' => $mode)), 'translation-error');
+    throw new bException(tr('Unknown mode "%mode%"', array('%mode%' => $mode)), 'translation_error');
 }
 
 try{
@@ -184,7 +184,7 @@ try{
                 log_console('Contains HTML : "'.$string.'" in '.$file, 'translate', 'red', true);
             }
 
-           throw new bException('Translatable strings with disallowed HTML tags on them were found', 'translation-error');
+           throw new bException('Translatable strings with disallowed HTML tags were found', 'translation_error');
         }
 
         if(count($failed_php) > 0) {
@@ -192,7 +192,7 @@ try{
                 log_console('Contains PHP : "'.$string.'" in '.$file, 'translate', 'red', true);
             }
 
-           throw new bException('Translatable strings with PHP code on them were found', 'translation-error');
+           throw new bException('Translatable strings with PHP code were found', 'translation_error');
         }
 
         if(VERBOSE){
@@ -228,21 +228,21 @@ try{
                 $code           = $e->getCode();
 
                 throw new bException(tr('Server connection gave HTTP code : "%code%" Server message : "%message%"',
-                                        array('%code%' => $code, '%message%' => $server_message)), 'translation-error');
+                                        array('%code%' => $code, '%message%' => $server_message)), 'translation_error');
             }
 
-            throw new bException(tr('Error trying to connect with server : "%error%"', array('%error' => $e->getMessage())), 'translation-error');
+            throw new bException(tr('Error trying to connect with server : "%error%"', array('%error' => $e->getMessage())), 'translation_error');
 
         }
 
         if(empty($response['status'])){
-            throw new bException(tr('Error trying to connect with server'), 'translation-error');
+            throw new bException(tr('Error trying to connect with server'), 'translation_error');
         }
 
         $returned_data = json_decode(decrypt(trim($response['data']), $_CONFIG['translator']['passphrase']), true);
 
         if(!is_array($returned_data) or ($returned_data['status'] != 'success')){
-            throw new bException(tr('Failed to receive translations', 'translation-error'));
+            throw new bException(tr('Failed to receive translations', 'translation_error'));
         }
 
 
