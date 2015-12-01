@@ -186,7 +186,7 @@ try{
                 log_console('Contains HTML : "'.$string.'" in '.$file, 'translate', 'red', true);
             }
 
-           return;
+           throw new bException('Translatable strings with disallowed HTML tags on them were found', 'translation-error');
         }
 
         if(count($failed_php) > 0) {
@@ -194,7 +194,7 @@ try{
                 log_console('Contains PHP : "'.$string.'" in '.$file, 'translate', 'red', true);
             }
 
-           return;
+           throw new bException('Translatable strings with PHP code on them were found', 'translation-error');
         }
 
         if(VERBOSE){
@@ -230,21 +230,21 @@ try{
                 $code           = $e->getCode();
 
                 throw new bException(tr('Server connection gave HTTP code : "%code%" Server message : "%message%"',
-                                        array('%code%' => $code, '%message%' => $server_message)), 'connection_error');
+                                        array('%code%' => $code, '%message%' => $server_message)), 'translation-error');
             }
 
-            throw new bException(tr('Error trying to connect with server : "%error%"', array('%error' => $e->getMessage())), 'connection_error');
+            throw new bException(tr('Error trying to connect with server : "%error%"', array('%error' => $e->getMessage())), 'translation-error');
 
         }
 
         if(empty($response['status'])){
-            throw new bException(tr('Error trying to connect with server'), 'connection_error');
+            throw new bException(tr('Error trying to connect with server'), 'translation-error');
         }
 
         $returned_data = json_decode(decrypt(trim($response['data']), $_CONFIG['translator']['passphrase']), true);
 
         if(!is_array($returned_data) or ($returned_data['status'] != 'success')){
-            throw new bException(tr('Failed to receive translations', 'connection_error'));
+            throw new bException(tr('Failed to receive translations', 'translation-error'));
         }
 
 
