@@ -184,7 +184,7 @@ try{
                 log_console('Contains HTML : "'.$string.'" in '.$file, 'translate', 'red', true);
             }
 
-           throw new bException('Translatable strings with disallowed HTML tags were found', 'translation_error');
+           throw new bException('Translatable strings with disallowed HTML tags found', 'translation_error');
         }
 
         if(count($failed_php) > 0) {
@@ -192,7 +192,7 @@ try{
                 log_console('Contains PHP : "'.$string.'" in '.$file, 'translate', 'red', true);
             }
 
-           throw new bException('Translatable strings with PHP code were found', 'translation_error');
+           throw new bException('Translatable strings with PHP code found', 'translation_error');
         }
 
         if(VERBOSE){
