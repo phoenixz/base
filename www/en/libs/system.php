@@ -215,8 +215,12 @@ function cfm($string, $utf8 = true){
 /*
  * Force integer
  */
-function cfi($str){
-    return (integer) $str;
+function cfi($source, $allow_null = true){
+    if(!$source and $allow_null){
+        return null;
+    }
+
+    return (integer) $source;
 }
 
 
@@ -424,9 +428,9 @@ throw new bException('log_message(): DEVELOPMENT FIX! This exception is here to 
 
         log_database($message, $type);
 
-        if(ENVIRONMENT == 'production'){
+        if(!debug()){
             /*
-             * In production NEVER log to screen!
+             * In non debug environments, NEVER log to screen!
              */
             return $message;
         }

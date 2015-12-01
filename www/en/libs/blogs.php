@@ -607,10 +607,13 @@ function blogs_photos_upload($files, $post, $priority = null){
         /*
          * Check for upload errors
          */
-        $failed = upload_check_files($files);
+        upload_check_files(1);
 
-        if(!empty($failed)){
-            throw new bException($failed[0]['message'], 'failed');
+        /*
+         * Check for errors
+         */
+        if(!empty($_FILES['files'][0]['error'])) {
+            throw new bException($_FILES['files'][0]['error_message'], 'uploaderror');
         }
 
         /*

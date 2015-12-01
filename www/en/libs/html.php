@@ -1563,9 +1563,9 @@ function html_autosuggest($params){
  * This function will minify the given HTML by removing double spaces, and strip white spaces before and after tags (except space)
  * Found on http://stackoverflow.com/questions/6225351/how-to-minify-php-page-html-output, rewritten for use in base project
  */
-function html_minify($html, $force = false){
+function html_minify($html, $full = false){
     try{
-        if(debug() and !$force){
+        if(debug()){
             /*
              * Don't do anything. This way, on non debug systems, where this is
              * used to minify HTML output, we can still see normal HTML that is
@@ -1574,17 +1574,113 @@ function html_minify($html, $force = false){
             return $html;
         }
 
-        $search = array(
-            '/\>[^\S ]+/s',  // strip whitespaces after tags, except space
-            '/[^\S ]+\</s',  // strip whitespaces before tags, except space
-            '/(\s)+/s'       // shorten multiple whitespace sequences
-        );
+        /*
+         * Shorten multiple whitespace sequences; keep new-line
+         * characters because they matter in JS!!!
+         */
+        $search [] = '/([\t ])+/s';
 
-        $replace = array(
-            '>',
-            '<',
-            '\\1'
-        );
+        /*
+         * Remove leading and trailing spaces
+         */
+        $search [] = '/^([\t ])+/m';
+        $search [] = '/([\t ])+$/m';
+
+        /*
+         * Remove JS line comments (simple only);
+         * do NOT remove lines containing URL (e.g. 'src="http://server.com/"')!!!
+         */
+        $search [] = '~//[a-zA-Z0-9 ]+$~m';
+
+        /*
+         * Remove quotes from HTML attributes that does not contain spaces;
+         * keep quotes around URLs!
+         * $1 and $4 insert first white-space character found before/after attribute
+         */
+        $search [] = '~([\r\n\t ])?([a-zA-Z0-9]+)="([a-zA-Z0-9_/\\-]+)"([\r\n\t ])?~s';
+
+        /*
+         * Replace array for the above searches
+         */
+        $replace[] = ' ';
+        $replace[] = '';
+        $replace[] = '';
+        $replace[] = '';
+        $replace[] = '$1$2=$3$4';
+
+        if($full){
+            /*
+             * Remove empty lines (sequence of line-end and white-space characters)
+             */
+            $search [] = '/[\r\n]+([\t ]?[\r\n]+)+/s';
+            $replace[] = '\n';
+
+            /*
+             * Remove empty lines (between HTML tags);
+             * cannot remove just any line-end characters
+             * because in inline JS they can matter!
+             */
+            $search [] = '/\>[\r\n\t ]+\</s';
+            $replace[] = '><';
+
+            /*
+             * Remove tabs before and after HTML tags
+             */
+            $search[]  = '/\>[^\S ]+/s';
+            $search[]  = '/[^\S ]+\</s';
+
+            /*
+             * Replace array for the above searches
+             */
+            $replace[] = '>';
+            $replace[] = '<';
+
+            /*
+             * Remove new-line after JS's line end (only most obvious and safe cases)
+             */
+            $search [] = '/\),[\r\n\t ]+/s';
+            $replace[] = '),';
+
+            /*
+             * Remove "empty" lines containing only JS's
+             * block end character;
+             * join with next line (e.g. "}\n}\n</script>" --> "}}</script>"
+             */
+            $search [] = '/}[\r\n\t ]+/s';
+            $search [] = '/}[\r\n\t ]+,[\r\n\t ]+/s';
+
+            /*
+             * Replace array for the above searches
+             */
+            $replace[] = '}';
+            $replace[] = '}';
+
+            /*
+             * Remove new-line after JS's function or condition start;
+             * join with next line
+             */
+            $search [] = '/\)[\r\n\t ]?{[\r\n\t ]+/s';
+            $search [] = '/,[\r\n\t ]?{[\r\n\t ]+/s';
+
+            /*
+             * Replace array for the above searches
+             */
+            $replace[] = '){';
+            $replace[] = ',{';
+        }
+
+// :DELETE: This search replace won't work for <script> tags or inline commentaries //
+        //$search = array(
+        //    '/\>[^\S ]+/s',  // strip whitespaces after tags, except space
+        //    '/[^\S ]+\</s',  // strip whitespaces before tags, except space
+        //    '/(\s)+/s'       // shorten multiple whitespace sequences
+        //);
+        //
+        //$replace = array(
+        //    '>',
+        //    '<',
+        //    '\\1'
+        //);
 
         return preg_replace($search, $replace, $html);
 

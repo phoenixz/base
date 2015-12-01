@@ -932,4 +932,17 @@ function sql_connector_name($connector){
 
     return $connector;
 }
+
+
+
+/*
+ * Use correct SQL in case NULL is used in queries
+ */
+function sql_isnull($parameter, $value){
+    if($value === null){
+        return ' IS '.$parameter;
+    }
+
+    return ' = '.$parameter;
+}
 ?>
