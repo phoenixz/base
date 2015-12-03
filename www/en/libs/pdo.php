@@ -942,4 +942,25 @@ function sql_isnull($parameter, $value){
 
     return ' = '.$parameter;
 }
+
+
+
+/*
+ * Enable / Disable all query logging on mysql server
+ */
+function sql_log($enable){
+    try{
+        if($enable){
+            sql_query('SET global log_output = "FILE";');
+            sql_query('SET global general_log_file="/var/log/mysql/queries.log";');
+            sql_query('SET global general_log = 1;');
+
+        }else{
+            sql_query('SET global log_output = "OFF";');
+        }
+
+    }catch(Exception $e){
+        throw new bException('sql_log(): Failed', $e);
+    }
+}
 ?>

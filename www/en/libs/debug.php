@@ -456,15 +456,15 @@ function debug_sql($query, $column = null, $execute = null, $return_only = false
             krsort($execute);
 
             foreach($execute as $key => $value){
-                if(is_numeric($value)){
-                    $query = str_replace($key, $value, $query);
+                if(is_string($value)){
+                    $value = addslashes($value);
+                    $query = str_replace($key, '"'.(!is_scalar($value) ? ' ['.tr('NOT SCALAR').'] ' : '').str_log($value).'"', $query);
 
                 }elseif(is_null($value)){
                     $query = str_replace($key, ' '.tr('NULL').' ', $query);
 
                 }else{
-                    $value = addslashes($value);
-                    $query = str_replace($key, '"'.(!is_scalar($value) ? ' ['.tr('NOT SCALAR').'] ' : '').str_log($value).'"', $query);
+                    $query = str_replace($key, $value, $query);
                 }
             }
         }
