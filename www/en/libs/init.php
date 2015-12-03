@@ -38,6 +38,10 @@ function init($projectfrom = null, $frameworkfrom = null){
          */
         sql_init();
 
+        if(empty($_CONFIG['db']['core']['init'])){
+            throw new bException(tr('init(): Core database init system has been disabled in %init%', array('%init%' => '$_CONFIG[db][core][init]')), 'noinit');
+        }
+
         if(!empty($GLOBALS['time_zone_fail'])){
             /*
              * MySQL has no time_zone data, first initialize that, then reconnect
