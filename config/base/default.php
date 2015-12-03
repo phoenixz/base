@@ -120,6 +120,7 @@ $_CONFIG['db']                 = array('default'          => 'core',
                                                                    'user'             => 'base',                                        // Username to login to SQL server
                                                                    'pass'             => 'base',                                        // Password to login to SQL server
                                                                    'db'               => 'base',                                        // Name of core database on SQL server
+                                                                   'init'             => true,                                          // If set to true, upon first query of the pageload, the SQL library will check if the database requires initialization
                                                                    'autoincrement'    => 1,                                             // Default autoincrement for all database tables (MySQL only)
                                                                    'buffered'         => true,                                          // Use buffered queries or not. See PHP documentation for more information
                                                                    'charset'          => 'utf8',                                        // Default character set for all database tables

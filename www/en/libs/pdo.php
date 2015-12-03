@@ -303,19 +303,16 @@ function sql_init($connector = 'core'){
         /*
          * This is only required for the system connection
          */
-// :TODO: Make it so that other databases can also  be initialized, not only the core database
-        if((PLATFORM == 'shell') and (SCRIPT == 'init') and FORCE and ($connector == 'core')){
+        if((PLATFORM == 'shell') and (SCRIPT == 'init') and FORCE and !empty($_CONFIG['db'][$connector]['init'])){
             include(dirname(__FILE__).'/handlers/pdo_init_force.php');
         }
 
         /*
          * Get database version
          *
-         * In some VERY FEW cases, this check must be skipped. Skipping is done by setting the global variable
-         * skipversioncheck to true. If you don't know why this should be done, then DONT USE IT!
+         * This can be disabled by setting $_CONFIG[db][CONNECTORNAME][init] to false
          */
-// :TODO: Make it so that other databases can also  be initialized, not only the core database
-        if($connector == 'core'){
+        if(!empty($_CONFIG['db'][$connector]['init'])){
             try{
                 $r = $GLOBALS['sql_'.$connector]->query('SELECT `project`, `framework` FROM `versions` ORDER BY `id` DESC LIMIT 1;');
 
