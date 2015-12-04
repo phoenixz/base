@@ -1492,4 +1492,20 @@ function run_background($cmd, $single = true, $log = false){
         throw new bException('run_background(): Failed', $e);
     }
 }
+
+
+
+/*
+ * Return a code that is guaranteed unique
+ */
+function unique_code($hash = 'sha256'){
+    global $_CONFIG;
+
+    try{
+        return hash($hash, uniqid('', true).microtime(true).$_CONFIG['security']['seed']);
+
+    }catch(Exception $e){
+        throw new bException('unique_code(): Failed', $e);
+    }
+}
 ?>

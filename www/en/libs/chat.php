@@ -70,6 +70,9 @@ function chat_start($user){
 
 
 
+/*
+ *
+ */
 function chat_end($userid){
     try{
         sql_query('UPDATE `users`
@@ -100,9 +103,9 @@ function chat_add_user($user){
 
                    array(':user_id'       => $user['id'],
                          ':user_name'     => (empty($user['username']) ? $user['email'] : $user['username']),
-                         ':alt_name'      => isset_get($user['name']    , ''),
+                         ':alt_name'      => isset_get($user['name'], ''),
                          ':user_email'    => $user['email'],
-                         ':user_password' => sha1(uniqid())),
+                         ':user_password' => unique_code()),
 
                    null, 'chat');
 

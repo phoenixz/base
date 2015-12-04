@@ -448,7 +448,7 @@ function user_signup($params){
         }
 
         sql_query('INSERT INTO `users` (`status`, `createdby`, `username`, `password`, `name`, `email`)
-                   VALUES              ("empty" , :createdby , :username , :password , :name , :email )',
+                   VALUES              (NULL    , :createdby , :username , :password , :name , :email )',
 
                    array(':createdby' => isset_get($_SESSION['user']['id']),
                          ':username'  => isset_get($params['username']),
@@ -1066,7 +1066,7 @@ function user_get_key($user = null, $force = false){
             $dbuser = sql_get('SELECT `id`, `username`, `key` FROM `users` WHERE `id`       = :id       AND `status` IS NULL', array(':id' => $user));
 
         }else{
-            $dbuser = sql_get('SELECT `id`, `username`, `key` FROM `users` WHERE `username` = :username AND `status` IS NULL', array(':username' => $user));
+            $dbuser = sql_get('SELECT `id`, `username`, `key` FROM `users` WHERE (`username` = :username OR `email` = :email) AND `status` IS NULL', array(':username' => $user, ':email' => $user));
         }
 
         if(!$dbuser){
@@ -1074,7 +1074,7 @@ function user_get_key($user = null, $force = false){
         }
 
         if(!$dbuser['key'] or $force){
-            $dbuser['key']           = hash('sha256', uniqid('', true).SEED.microtime(true));
+            $dbuser['key']           = unique_code();
             $_SESSION['user']['key'] = $dbuser['key'];
 
             sql_query('UPDATE `users`
