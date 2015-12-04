@@ -655,9 +655,10 @@ function user_get($user, $columns = '*'){
                                FROM   `users`
 
                                WHERE  `email`    = :user
-                               OR     `username` = :user',
+                               OR     `username` = :user2',
 
-                               array(':user'  => $user));
+                               array(':user'  => $user,
+                                     ':user2' => $user));
 
         }
 
