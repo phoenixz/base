@@ -16,6 +16,10 @@
  * Short hand for show and then randomly die
  */
 function showrandomdie($data = '', $return = false, $quiet = false, $trace_offset = 2){
+    if(!debug()){
+        return $data;
+    }
+
     show($data, $return, $quiet, $trace_offset);
 
     if(mt_rand(0, 5) > 4){
@@ -29,6 +33,10 @@ function showrandomdie($data = '', $return = false, $quiet = false, $trace_offse
  * Short hand for show and then die
  */
 function showdie($data = null, $return = false, $quiet = false, $trace_offset = 2){
+    if(!debug()){
+        return $data;
+    }
+
     show($data, $return, $quiet, $trace_offset);
     die();
 }
@@ -39,6 +47,10 @@ function showdie($data = null, $return = false, $quiet = false, $trace_offset = 
  * Show debug data in a readable format
  */
 function show($data = null, $return = false, $quiet = false, $trace_offset = 1){
+    if(!debug()){
+        return $data;
+    }
+
     $retval = '';
 
     if(PLATFORM == 'http'){
@@ -369,6 +381,10 @@ function debug_value($format, $size = null){
      */
     load_libs('synonyms');
 
+    if(!debug()){
+        return '';
+    }
+
     switch($format){
         case 'username':
             // FALLTHROUGH
@@ -487,6 +503,10 @@ function debug_sql($query, $column = null, $execute = null, $return_only = false
  */
 function debug_trace($filters = 'args'){
     try{
+        if(!debug()){
+            return array();
+        }
+
         $filters = array_force($filters);
         $trace   = array();
 
