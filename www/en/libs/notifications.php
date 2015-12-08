@@ -58,20 +58,19 @@ function notifications_do($event, $message, $classes = null, $alternate_subenvir
             /*
              * Send notifications for each class
              */
-            $in_id   = sql_in($classes, ':id');
-            $in_name = sql_in($classes, ':name');
-            $in      = array_merge($in_name, $in_id);
+            $name_in = sql_in($classes);
+            $id_in   = sql_in($classes, ':id');
 
             $list    = sql_list('SELECT `id`,
                                         `methods`
 
                                  FROM   `notifications_classes`
 
-                                 WHERE (`name` IN ('.implode(',', array_keys($in_id)).')
-                                 OR     `id`   IN ('.implode(',', array_keys($in_name)).'))
+                                 WHERE (`name` IN ('.implode(',', array_keys($name_in)).')
+                                 OR     `id`   IN ('.implode(',', array_keys($id_in)).'))
                                  AND    `status` IS NULL',
 
-                                 $in);
+                                 array_merge($in, $id_in));
         }
 
         if(!$list){
