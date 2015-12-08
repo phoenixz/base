@@ -428,9 +428,10 @@ if($nocompress){
      * so we must do a git commit for those files.
      */
     if(!trim(shell_exec('git status | grep "nothing to commit" | wc -l'))){
-        log_console('Changes detected, because of the compress script... making a commit', 'commit', 'white');
-        safe_exec('git add www/en/pub/');
+        log_console('Changes detected from the compression script script, committing to git', 'commit', 'white');
+        safe_exec('cd '.ROOT.'; git add .');
         safe_exec('git commit -m "Deploy commit: compressed files changed"');
+        passthru('cd '.ROOT.'; git push && git push --tags', $exitcode);
     }
 }
 
