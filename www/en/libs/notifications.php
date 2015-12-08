@@ -70,7 +70,7 @@ function notifications_do($event, $message, $classes = null, $alternate_subenvir
                                  OR     `id`   IN ('.implode(',', array_keys($id_in)).'))
                                  AND    `status` IS NULL',
 
-                                 array_merge($in, $id_in));
+                                 array_merge($name_in, $id_in));
         }
 
         if(!$list){
