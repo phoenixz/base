@@ -392,11 +392,8 @@ function sql_connect($connector){
          * Connect!
          */
         try{
-            $connector['pdo_attributes'][PDO::ATTR_ERRMODE] = PDO::ERRMODE_EXCEPTION;
-
-            if(!empty($connector['buffered'])){
-                $connector['pdo_attributes'][PDO::MYSQL_ATTR_USE_BUFFERED_QUERY] = true;
-            }
+            $connector['pdo_attributes'][PDO::ATTR_ERRMODE]                  = PDO::ERRMODE_EXCEPTION;
+            $connector['pdo_attributes'][PDO::MYSQL_ATTR_USE_BUFFERED_QUERY] = !(boolean) $connector['buffered'];
 
             $pdo = new PDO($connector['driver'].':host='.$connector['host'].(empty($connector['port']) ? '' : ';port='.$connector['port']).(empty($connector['db']) ? '' : ';dbname='.$connector['db']), $connector['user'], $connector['pass'], $connector['pdo_attributes']);
 
