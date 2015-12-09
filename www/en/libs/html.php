@@ -615,9 +615,10 @@ function html_flash($class = null){
             $class    = $message['class'];
             $message  = $message['message'];
 
-            if(($type == 'error') and (ENVIRONMENT == 'production')){
-                $message = tr('Something went wrong, please try again later');
-            }
+// :DELETE: Error messages must not always be surpressed!!
+            //if(($type == 'error') and (ENVIRONMENT == 'production')){
+            //    $message = tr('Something went wrong, please try again later');
+            //}
 
             switch(strtolower($type)){
                 case 'info':

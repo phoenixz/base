@@ -480,6 +480,10 @@ function debug_sql($query, $column = null, $execute = null, $return_only = false
                     $query = str_replace($key, ' '.tr('NULL').' ', $query);
 
                 }else{
+                    if(!is_scalar($value)){
+                        throw new bException(tr('debug_sql(): Specified key "%key%" has non-scalar value "%value%"', array('%key%' => str_log($key), '%value%' => str_log($value))));
+                    }
+
                     $query = str_replace($key, $value, $query);
                 }
             }
