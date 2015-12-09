@@ -11,9 +11,9 @@ load_libs('ext/php-pushover/Pushover');
 
 
 /*
- * Send an SMS through the pushover service
+ * Send an message through the pushover service
  */
-function pushover_send_sms($user, $params){
+function pushover_send_msg($user, $params){
     global $_CONFIG;
 
     try{
@@ -22,6 +22,53 @@ function pushover_send_sms($user, $params){
         array_default($params, 'title'    , 'Empty title');
         array_default($params, 'url-title', 'Empty url-title');
 
+        /*
+         * Validations
+         */
+        if(empty($user)){
+            throw new bException(tr('pushover_send_msg(): not user specified'));
+        }
+
+        if($user = 'all'){
+            foreach($_CONFIG['pushover']['users'] as $user => $preferences){
+                /*
+                 * Prepare the message
+                 */
+                $push = pushover_prepare_msg($user, $params);
+
+                /*
+                 * Send the message
+                 */
+                $push->send();
+            }
+
+        }else{
+
+            /*
+             * Prepare the message
+             */
+            $push = pushover_prepare_msg($user, $params);
+
+            /*
+             * Send the message
+             */
+            $push->send();
+
+        }
+
+    }catch(Exception $e){
+        throw new bException(tr('pushover_send_msg(): Failed'), $e);
+    }
+}
+
+
+/*
+ *
+ */
+function pushover_prepare_msg($user, $params){
+    global $_CONFIG;
+
+    try{
         /*
          * User preferences
          */
@@ -39,7 +86,7 @@ function pushover_send_sms($user, $params){
         $push->setUser($user['key']);
 
         /*
-         * Set SMS content
+         * Set message content
          */
         $push->setTitle($params['title']);
         $push->setMessage($params['msg']);
@@ -48,7 +95,7 @@ function pushover_send_sms($user, $params){
         $push->setDevice($user['device']);
 
         /*
-         * Set SMS extra-settings
+         * Set message extra-settings
          *
          * setRetry: Used with Priority = 2; Pushover will resend the notification every 60 seconds until the user accepts.
          * setExpire: Used with Priority = 2; Pushover will resend the notification every 60 seconds for 3600 seconds. After that point, it stops sending notifications.
@@ -61,34 +108,10 @@ function pushover_send_sms($user, $params){
         $push->setDebug(true);
         $push->setSound($user['sound']);
 
-        /*
-         * Send the SMS
-         */
-        $push->send();
+        return $push;
 
     }catch(Exception $e){
-        throw new bException(tr('pushover_send_sms(): Failed'), $e);
-    }
-}
-
-
-
-/*
- *
- */
-function pushover_send_sms_all($params){
-    global $_CONFIG;
-
-    try{
-        foreach($_CONFIG['pushover']['users'] as $user => $values){
-            /*
-             * Send SMS
-             */
-            pushover_send_sms($user, $params);
-        }
-
-    }catch(Exception $e){
-        throw new bException(tr('pushover_send_sms_all(): Failed'), $user);
+        throw new bException(tr('pushover_prepare_msg(): Failed'), $e);
     }
 }
 ?>
