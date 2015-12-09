@@ -28,9 +28,10 @@ function roles_get($role, $columns = 'id,name,description'){
                            FROM   `roles`
 
                            WHERE  `id`   = :role
-                           OR     `name` = :role', $columns,
+                           OR     `name` = :role2', $columns,
 
-                           array(':role' => $role));
+                           array(':role'  => $role,
+                                 ':role2' => $role));
 
         if(!$retval){
             throw new bException('roles_get(): Specified role "'.str_log($role).'" does not exist', 'notexists');
