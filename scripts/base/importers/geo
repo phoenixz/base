@@ -643,12 +643,10 @@ show('bbbbbbbbbbbbbbb');
 
                                                                        WHERE  `country`     = "'.$country_data['code'].'"
 
-                                                                       AND   (`fcode`       IN ("PPL", "PPLA", "PPLA2", "PPLA3", "PPLA4")
-                                                                       OR    (`fcode`       = "ISL"
-                                                                       AND    `population` != 0))
+                                                                       AND   (`fcode`       IN ("PPL", "PPLA", "PPLA2", "PPLA3", "PPLA4", "ISL"))
 
                                                                        AND    `admin1`      = "'.$state_data['admin1'].'"
-                                                                       AND    `population` != 0');
+                                                                       AND    `population`  > 0');
 
                                 $state_cities_count  = $state_cities_count->fetch(PDO::FETCH_ASSOC);
                                 $state_cities_count  = $state_cities_count['count'];
@@ -660,10 +658,10 @@ show('bbbbbbbbbbbbbbb');
                                                               FROM   `geonames`
 
                                                               WHERE  `country`     = :country
-                                                              AND    `fcode`       IN ("PPL", "PPLA", "PPLA2", "PPLA3", "PPLA4")
+                                                              AND   (`fcode`       IN ("PPL", "PPLA", "PPLA2", "PPLA3", "PPLA4", "ISL"))
                                                               AND    `admin1`      = :admin1
                                                               AND    `admin2`      = :admin2
-                                                              AND    `population` != 0');
+                                                              AND    `population`  > 0');
 
                                 /*
                                  * Count the cities for all counties together, they should match the cities for the state
@@ -703,7 +701,7 @@ show('bbbbbbbbbbbbbbb');
                                                  FROM   `geonames`
 
                                                  WHERE  `country`     = "'.$country_data['code'].'"
-                                                 AND    `fcode`       IN ("PPL", "PPLA", "PPLA2", "PPLA3", "PPLA4")
+                                                 AND   (`fcode`       IN ("PPL", "PPLA", "PPLA2", "PPLA3", "PPLA4", "ISL"))
                                                  AND    `admin1`      = "'.$state_data['admin1'].'"
                                                  AND    `population`  > '.cfi($threshold, false));
 
@@ -773,7 +771,7 @@ show('bbbbbbbbbbbbbbb');
                                                      FROM   `geonames`
 
                                                      WHERE  `country`     = "'.$country_data['code'].'"
-                                                     AND    `fcode`       IN ("PPL", "PPLA", "PPLA2", "PPLA3", "PPLA4")
+                                                     AND   (`fcode`       IN ("PPL", "PPLA", "PPLA2", "PPLA3", "PPLA4", "ISL"))
                                                      AND    `admin1`      = "'.$county_data['admin1'].'"
                                                      AND    `admin2`      = "'.$county_data['admin2'].'"
                                                      AND    `population`  > '.cfi($threshold, false));
