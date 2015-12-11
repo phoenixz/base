@@ -1207,6 +1207,8 @@ function user_get_from_key($user, $key, $timestamp){
  *
  */
 function user_key_or_redirect($user, $key = null, $timestamp = null, $redirect = null, $columns = '*'){
+    global $_CONFIG;
+
     try{
         if(is_array($user)){
             /*
