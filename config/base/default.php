@@ -176,6 +176,9 @@ $_CONFIG['google-map-api-key'] = '';                                            
 $_CONFIG['init']               = array('shell'            => true,                                          // Sets if system init can be executed by shell
                                        'http'             => false);                                        // Sets if system init can be executed by http (IMPORTANT: This is not supported yet!)
 
+// JS configuration
+$_CONFIG['js']                 = array('animate'          => array('speed'              => 100));           // Sets default speed for javascript animations
+
 // jQuery UI configuration
 $_CONFIG['jquery-ui']          = array('theme'            => 'smoothness');                                 // Sets the default UI theme for jquery-ui
 
