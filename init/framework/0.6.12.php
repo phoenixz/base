@@ -146,7 +146,9 @@ sql_query('ALTER TABLE `geo_states` CHANGE COLUMN `longitude` `longitude` DECIMA
 /*
  * States are unique by name, latitude and longitude
  */
-sql_query('ALTER TABLE `geo_states` DROP INDEX `name`; ALTER TABLE `geo_states` ADD INDEX (`name`); ALTER TABLE `geo_states` ADD UNIQUE (`name`, `latitude`, `longitude`); ');
+sql_query('ALTER TABLE `geo_states` DROP INDEX `name`;');
+sql_query('ALTER TABLE `geo_states` ADD INDEX (`name`);');
+sql_query('ALTER TABLE `geo_states` ADD UNIQUE (`name`, `latitude`, `longitude`);');
 
 
 
@@ -195,7 +197,9 @@ sql_foreignkey_exists('geo_counties', 'fk_geo_counties_states_id'   , '!ALTER TA
 /*
  * States are unique by name, latitude and longitude
  */
-sql_query('ALTER TABLE `geo_counties` DROP INDEX `name`; ALTER TABLE `geo_counties` ADD INDEX (`name`); ALTER TABLE `geo_counties` ADD UNIQUE (`name`, `latitude`, `longitude`, `countries_id`); ');
+sql_query('ALTER TABLE `geo_counties` DROP INDEX `name`;');
+sql_query('ALTER TABLE `geo_counties` ADD INDEX (`name`);');
+sql_query('ALTER TABLE `geo_counties` ADD UNIQUE (`name`, `latitude`, `longitude`, `countries_id`); ');
 
 
 
