@@ -10,6 +10,8 @@
 
 
 
+load_config('curl');
+
 if(!function_exists('curl_init')){
     throw new bException('PHP CURL module is not installed. Install PHP CURL on Ubuntu with "sudo apt-get install php5-curl", or on Redhat with "sudo yum install php-curl"');
 }
@@ -25,6 +27,18 @@ function curl_get_proxy($url, $file = '', $serverurl = null) {
     try{
         if(!$serverurl){
             $serverurl = $_CONFIG['curl']['proxy'];
+        }
+
+        if(is_array($serverurl)){
+            $serverurl = array_random_value($serverurl);
+        }
+
+        if(is_array($url)){
+            throw new bException(tr('curl_get_proxy(): No URL specified'), 'notspecified');
+        }
+
+        if(!$serverurl){
+            throw new bException(tr('curl_get_proxy(): No proxy server URL(s) specified'), 'notspecified');
         }
 
         $data = file_get_contents($serverurl.urlencode($url));
@@ -186,11 +200,16 @@ function curl_get($params, $referer = null, $post = false, $options = array()){
         array_default($params, 'content-type'   , false);
         array_default($params, 'cache'          , false);
         array_default($params, 'verbose'        , null);
+        array_default($params, 'proxy'          , false);
         array_default($params, 'simulation'     , false); // false, partial, or full
         array_default($params, 'sleep'          , 15);    // Sleep howmany seconds between retries
         array_default($params, 'retries'        ,  5);    // Retry howmany time on HTTP0 failures
         array_default($params, 'timeout'        , 10);    // # of seconds for cURL functions to execute
         array_default($params, 'connect_timeout', 10);    // # of seconds before connection try will fail
+
+        if($params['proxy']){
+            return curl_get_proxy($params['url']);
+        }
 
         if($params['httpheaders'] === true){
             /*

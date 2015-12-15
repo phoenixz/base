@@ -104,10 +104,6 @@ $_CONFIG['cors']               = array('origin'           => '*.',
                                        'methods'          => 'GET, POST',
                                        'headers'          => '');
 
-// Curl library configuration
-$_CONFIG['curl']               = array('proxy'            => 'http://proxy.localhost/file_get_contents_proxy.php?url=',
-                                       'user_agent'       => 'Mozilla/5.0 (Windows NT 5.1; rv:10.0.2) Gecko/20100101 Firefox/10.0.2');
-
 // Global data location configuration
 $_CONFIG['data']               = array('global'           => true); // Set to TRUE to enable auto detect
 
