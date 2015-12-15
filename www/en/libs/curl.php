@@ -246,6 +246,10 @@ function curl_get($params, $referer = null, $post = false, $options = array()){
             $params['close']      = false;
         }
 
+        if(is_array($params['useragent'])){
+            $params['useragent'] = array_get_random($params['useragent']);
+        }
+
         /*
          * Use the already existing cURL connection?
          */
