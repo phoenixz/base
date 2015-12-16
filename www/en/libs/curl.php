@@ -41,15 +41,16 @@ function curl_get_proxy($url, $file = '', $serverurl = null) {
             throw new bException(tr('curl_get_proxy(): No proxy server URL(s) specified'), 'notspecified');
         }
 
-        $data = file_get_contents($serverurl.urlencode($url));
+        $data = curl_get(array('url'        => $serverurl.urlencode($url),
+                               'getheaders' => false));
 
-        if(trim($data) == 'FAIL' or !trim($data)) {
+        if(trim($data['data']) == 'FAIL' or !trim($data['data'])){
             return array('result' => 'ERROR',
                          'status' => 'ERROR', // Status is only supported for legacy support, do not rely on it, use "result" instead!
-                         'data'   => $data);
+                         'data'   => $data['data']);
         }
 
-        $data = base64_decode($data);
+        $data = base64_decode($data['data']);
 
         if($file){
             /*

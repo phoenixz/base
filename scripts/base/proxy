@@ -1,0 +1,17 @@
+#!/usr/bin/php
+<?php
+/*
+ * This is an empty test script template
+ */
+$usage = "./scripts/base/proxy\n".
+         "./scripts/base/proxy option [option]\n";
+
+$help  = "This is a test script for the curl proxy interface";
+
+require_once(dirname(__FILE__).'/../../libs/startup.php');
+
+load_libs('curl');
+//$data = curl_get_proxy('http://igotit.com/en/', null, 'http://b2.servers.briskadvertising.com/proxy.php?url=');
+$data = curl_get_proxy('http://igotit.com/en/', null, 'http://localhost/sven/toolkit/www/en/proxy.php?url=');
+showdie($data['data']);
+?>
