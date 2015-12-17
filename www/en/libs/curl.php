@@ -41,6 +41,10 @@ function curl_get_proxy($url, $file = '', $serverurl = null) {
             throw new bException(tr('curl_get_proxy(): No proxy server URL(s) specified'), 'notspecified');
         }
 
+        if(VERBOSE){
+            log_console(tr('Using proxy "%proxy%"', array('%proxy%' => str_cut(str_log($serverurl), '://', '/'))), 'curl_get_proxy()');
+        }
+
         $data = curl_get(array('url'        => $serverurl.urlencode($url),
                                'getheaders' => false));
 
