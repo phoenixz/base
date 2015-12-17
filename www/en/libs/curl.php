@@ -49,9 +49,10 @@ function curl_get_proxy($url, $file = '', $serverurl = null) {
                                'getheaders' => false,
                                'proxy'      => false));
 
-        if(trim($data['data']) == 'FAIL' or !trim($data['data'])){
+        if((substr(trim($data['data']), 0, 4) == 'FAIL') or !trim($data['data'])){
             return array('result' => 'ERROR',
                          'status' => 'ERROR', // Status is only supported for legacy support, do not rely on it, use "result" instead!
+                         'http'   => str_replace('FAIL', '', $data['data']),
                          'data'   => $data['data']);
         }
 
