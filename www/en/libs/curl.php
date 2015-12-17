@@ -49,25 +49,24 @@ function curl_get_proxy($url, $file = '', $serverurl = null) {
                                'getheaders' => false,
                                'proxy'      => false));
 
-        if((substr(trim($data['data']), 0, 4) == 'FAIL') or !trim($data['data'])){
-            return array('result' => 'ERROR',
-                         'status' => 'ERROR', // Status is only supported for legacy support, do not rely on it, use "result" instead!
-                         'http'   => str_replace('FAIL', '', $data['data']),
-                         'data'   => $data['data']);
+        if(!trim($data['data'])){
+            throw new bException(tr('curl_get_proxy(): Proxy returned no data. Is proxy correctly configured? Proxy domain resolves correctly?', array('%data%' => $data)), 'notspecified');
         }
 
-        $data = base64_decode($data['data']);
+        if(substr($data['data'], 0, 12) !== 'PROXY_RESULT'){
+            throw new bException(tr('curl_get_proxy(): Proxy returned invalid data "%data%" from proxy. Is proxy correctly configured? Proxy domain resolves correctly?', array('%data%' => $data)), 'notspecified');
+        }
+
+        $data = base64_decode(substr($data['data'], 12));
 
         if($file){
             /*
              * Write the data to the specified file
              */
-            file_put_contents($file, $data);
+            file_put_contents($file, $data['data']);
         }
 
-        return array('result' => 'OK',
-                     'status' => 'OK', // Status is only supported for legacy support, do not rely on it, use "result" instead!
-                     'data'   => $data);
+        return $data;
 
     }catch(Exception $e){
         throw new bException('curl_get_proxy(): Failed', $e);
