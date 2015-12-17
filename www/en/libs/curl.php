@@ -50,18 +50,16 @@ function curl_get_proxy($url, $file = '', $serverurl = null) {
                          'data'   => $data['data']);
         }
 
-        $data = base64_decode($data['data']);
+        $data['data'] = base64_decode($data['data']);
 
         if($file){
             /*
              * Write the data to the specified file
              */
-            file_put_contents($file, $data);
+            file_put_contents($file, $data['data']);
         }
 
-        return array('result' => 'OK',
-                     'status' => 'OK', // Status is only supported for legacy support, do not rely on it, use "result" instead!
-                     'data'   => $data);
+        return $data;
 
     }catch(Exception $e){
         throw new bException('curl_get_proxy(): Failed', $e);
