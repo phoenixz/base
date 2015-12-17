@@ -40,7 +40,7 @@ function curl_get_proxy($url, $file = '', $serverurl = null) {
         if(!$serverurl){
             throw new bException(tr('curl_get_proxy(): No proxy server URL(s) specified'), 'notspecified');
         }
-
+show($serverurl.urlencode($url));
         $data = curl_get(array('url'        => $serverurl.urlencode($url),
                                'getheaders' => false));
 
@@ -50,16 +50,18 @@ function curl_get_proxy($url, $file = '', $serverurl = null) {
                          'data'   => $data['data']);
         }
 
-        $data['data'] = base64_decode($data['data']);
+        $data = base64_decode($data['data']);
 
         if($file){
             /*
              * Write the data to the specified file
              */
-            file_put_contents($file, $data['data']);
+            file_put_contents($file, $data);
         }
 
-        return $data;
+        return array('result' => 'OK',
+                     'status' => 'OK', // Status is only supported for legacy support, do not rely on it, use "result" instead!
+                     'data'   => $data);
 
     }catch(Exception $e){
         throw new bException('curl_get_proxy(): Failed', $e);
@@ -192,6 +194,7 @@ function curl_get($params, $referer = null, $post = false, $options = array()){
         array_default($params, 'getdata'        , true);
         array_default($params, 'getstatus'      , true);
         array_default($params, 'cookies'        , true);
+        array_default($params, 'file'           , false);
         array_default($params, 'getcookies'     , false);
         array_default($params, 'getheaders'     , true);
         array_default($params, 'followlocation' , true);
@@ -229,8 +232,6 @@ function curl_get($params, $referer = null, $post = false, $options = array()){
         if(empty($params['url'])){
             throw new bException('curl_get(): No URL specified');
         }
-
-        load_libs('file');
 
         /*
          * Use the already existing cURL data array
@@ -276,8 +277,8 @@ function curl_get($params, $referer = null, $post = false, $options = array()){
              * Use cookies?
              */
             if(isset_get($params['cookies'])){
+                load_libs('file');
                 if(!isset_get($params['cookie_file'])){
-                    load_libs('file');
                     $params['cookie_file'] = file_temp();
                 }
 
@@ -286,7 +287,6 @@ function curl_get($params, $referer = null, $post = false, $options = array()){
                 /*
                  * Make sure the specified cookie path exists
                  */
-                load_libs('file');
                 file_ensure_path(dirname($params['cookie_file']));
 
                 /*
@@ -428,6 +428,10 @@ function curl_get($params, $referer = null, $post = false, $options = array()){
         if($retval['status']['http_code'] != 200){
             load_libs('http');
             throw new bException('curl_get(): URL "'.str_log($params['url']).'" gave HTTP "'.str_log($retval['status']['http_code']).'"', 'HTTP'.$retval['status']['http_code'], null, $retval);
+        }
+
+        if($params['file']){
+            file_put_contents($params['file'], $retval['data']);
         }
 
         $retry = 0;
