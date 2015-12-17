@@ -1,0 +1,27 @@
+#!/usr/bin/php
+<?php
+/*
+ * This script can be used to test curl_get(0)
+ */
+$usage = "./scripts/base/curl\n".
+         "./scripts/base/curl url URL [proxy] [useragent USERAGENT]\n";
+
+$help  = "curl_get() interface script";
+
+//$quiet = false;
+
+require_once(dirname(__FILE__).'/../../libs/startup.php');
+
+cli_only();
+load_libs('curl');
+
+$params['url']       = argument('url'      , true);
+$params['proxy']     = argument('proxy'    , false, $_CONFIG['curl']['proxy']);
+$params['useragent'] = argument('useragent', true , $_CONFIG['curl']['useragents']);
+
+if(!$params['url']){
+	throw new bException(tr('Please specify a URL'), 'notspecfied');
+}
+
+curl_get($params);
+?>

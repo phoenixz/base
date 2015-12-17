@@ -26,7 +26,7 @@ function curl_get_proxy($url, $file = '', $serverurl = null) {
 
     try{
         if(!$serverurl){
-            $serverurl = $_CONFIG['curl']['proxy'];
+            $serverurl = $_CONFIG['curl']['proxies'];
         }
 
         if(is_array($serverurl)){
@@ -183,13 +183,12 @@ function curl_get_random_ip($allowipv6 = false) {
  */
 function curl_get($params, $referer = null, $post = false, $options = array()){
     static $retry;
-
     global $_CONFIG;
 
     try{
         array_params($params, 'url');
         array_default($params, 'referer'        , $referer);
-        array_default($params, 'useragent'      , $_CONFIG['curl']['user_agent']);
+        array_default($params, 'useragent'      , $_CONFIG['curl']['user_agents']);
         array_default($params, 'post'           , $post);
         array_default($params, 'posturlencoded' , false);
         array_default($params, 'options'        , $options);
@@ -206,7 +205,7 @@ function curl_get($params, $referer = null, $post = false, $options = array()){
         array_default($params, 'content-type'   , false);
         array_default($params, 'cache'          , false);
         array_default($params, 'verbose'        , null);
-        array_default($params, 'proxy'          , false);
+        array_default($params, 'proxy'          , $_CONFIG['curl']['proxy']);
         array_default($params, 'simulation'     , false); // false, partial, or full
         array_default($params, 'sleep'          , 15);    // Sleep howmany seconds between retries
         array_default($params, 'retries'        ,  5);    // Retry howmany time on HTTP0 failures
