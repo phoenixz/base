@@ -45,7 +45,7 @@ function curl_get_proxy($url, $file = '', $serverurl = null) {
             log_console(tr('Using proxy "%proxy%"', array('%proxy%' => str_cut(str_log($serverurl), '://', '/'))), 'curl_get_proxy()');
         }
 
-        $data = curl_get(array('url'        => str_ends($serverurl, '?url=').urlencode($url),
+        $data = curl_get(array('url'        => str_ends($serverurl, '?apikey='.$_CONFIG['curl']['apikey'].'&url=').urlencode($url),
                                'getheaders' => false,
                                'proxy'      => false));
 
@@ -58,6 +58,7 @@ function curl_get_proxy($url, $file = '', $serverurl = null) {
         }
 
         $data = base64_decode(substr($data['data'], 12));
+        $data = json_decode_custom($data);
 
         if($file){
             /*
