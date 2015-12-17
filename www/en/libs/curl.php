@@ -40,7 +40,7 @@ function curl_get_proxy($url, $file = '', $serverurl = null) {
         if(!$serverurl){
             throw new bException(tr('curl_get_proxy(): No proxy server URL(s) specified'), 'notspecified');
         }
-show($serverurl.urlencode($url));
+
         $data = curl_get(array('url'        => $serverurl.urlencode($url),
                                'getheaders' => false));
 
@@ -210,7 +210,7 @@ function curl_get($params, $referer = null, $post = false, $options = array()){
         array_default($params, 'connect_timeout', 10);    // # of seconds before connection try will fail
 
         if($params['proxy']){
-            return curl_get_proxy($params['url']);
+            return curl_get_proxy($params['url'], $params['file']);
         }
 
         if($params['httpheaders'] === true){
