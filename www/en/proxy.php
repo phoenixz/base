@@ -9,7 +9,7 @@ $contains   = isset_get($_GET['contains']);
 $apikey     = isset_get($_GET['apikey']);
 $getheaders = isset_get($_GET['getheaders'], false);
 
-load_libs('curl');
+load_libs('curl,json');
 
 if(empty($_GET['apikey']) or ($_GET['apikey'] != $_CONFIG['curl']['apikey'])){
 	http_response_code('401');
@@ -41,8 +41,9 @@ try{
                                     'message' => $e->getMessage()));
 }
 
+$data['data']  = base64_encode($data['data']);
 $data['proxy'] = array('host' => $_SERVER['SERVER_NAME'],
 					   'time' => microtime(true) - $start);
 
-die('PROXY_RESULT'.base64_encode(json_encode_custom($data)));
+die('PROXY_RESULT'.json_encode_custom($data));
 ?>

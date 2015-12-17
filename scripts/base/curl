@@ -15,7 +15,7 @@ require_once(dirname(__FILE__).'/../../libs/startup.php');
 cli_only();
 load_libs('curl');
 
-$decodebase64         = argument('--nodecode'  , false, true);
+$decode               = argument('--nodecode'  , false, true);
 $params['url']        = argument('url'         , true);
 $params['getheaders'] = argument('--getheaders', false, false);
 $params['proxy']      = argument('proxy'       , false, $_CONFIG['curl']['proxy']);
@@ -38,8 +38,9 @@ if(!$params['url']){
 $data = curl_get($params);
 
 if(substr($data['data'], 0, 12) == 'PROXY_RESULT'){
-	if($decodebase64){
-		$data['data'] = base64_decode(substr($data['data'], 12));
+	if($decode){
+		$data         = json_decode(substr($data, 12));
+		$data['data'] = base64_decode($data['data']);
 	}
 }
 

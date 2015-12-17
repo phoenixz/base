@@ -57,8 +57,9 @@ function curl_get_proxy($url, $file = '', $serverurl = null) {
             throw new bException(tr('curl_get_proxy(): Proxy returned invalid data "%data%" from proxy "%proxy%". Is proxy correctly configured? Proxy domain resolves correctly?', array('%data%' => str_log($data), '%proxy%' => str_cut(str_log($serverurl), '://', '/'))), 'notspecified');
         }
 
-        $data = base64_decode(substr($data['data'], 12));
-        $data = json_decode_custom($data);
+        $data         = substr($data['data'], 12);
+        $data         = json_decode_custom($data);
+        $data['data'] = base64_decode($data['data']);
 
         if($file){
             /*
