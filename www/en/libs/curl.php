@@ -46,7 +46,8 @@ function curl_get_proxy($url, $file = '', $serverurl = null) {
         }
 
         $data = curl_get(array('url'        => $serverurl.urlencode($url),
-                               'getheaders' => false));
+                               'getheaders' => false,
+                               'proxy'      => false));
 
         if(trim($data['data']) == 'FAIL' or !trim($data['data'])){
             return array('result' => 'ERROR',

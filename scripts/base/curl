@@ -17,11 +17,11 @@ load_libs('curl');
 
 $params['url']       = argument('url'      , true);
 $params['proxy']     = argument('proxy'    , false, $_CONFIG['curl']['proxy']);
-$params['useragent'] = argument('useragent', true , $_CONFIG['curl']['useragents']);
+$params['useragent'] = argument('useragent', true , $_CONFIG['curl']['user_agents']);
 
 if(!$params['url']){
 	throw new bException(tr('Please specify a URL'), 'notspecfied');
 }
 
-curl_get($params);
+showdie(curl_get($params));
 ?>
