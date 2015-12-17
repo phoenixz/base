@@ -45,7 +45,7 @@ function curl_get_proxy($url, $file = '', $serverurl = null) {
             log_console(tr('Using proxy "%proxy%"', array('%proxy%' => str_cut(str_log($serverurl), '://', '/'))), 'curl_get_proxy()');
         }
 
-        $data = curl_get(array('url'        => $serverurl.urlencode($url),
+        $data = curl_get(array('url'        => str_ends($serverurl, '?url=').urlencode($url),
                                'getheaders' => false,
                                'proxy'      => false));
 
@@ -54,7 +54,7 @@ function curl_get_proxy($url, $file = '', $serverurl = null) {
         }
 
         if(substr($data['data'], 0, 12) !== 'PROXY_RESULT'){
-            throw new bException(tr('curl_get_proxy(): Proxy returned invalid data "%data%" from proxy. Is proxy correctly configured? Proxy domain resolves correctly?', array('%data%' => $data)), 'notspecified');
+            throw new bException(tr('curl_get_proxy(): Proxy returned invalid data "%data%" from proxy "%proxy%". Is proxy correctly configured? Proxy domain resolves correctly?', array('%data%' => str_log($data), '%proxy%' => str_cut(str_log($serverurl), '://', '/'))), 'notspecified');
         }
 
         $data = base64_decode(substr($data['data'], 12));
@@ -149,33 +149,6 @@ function curl_get_random_ip($allowipv6 = false) {
 //        throw new bException('curl_get_random_ip(): Failed', $e);
 //    }
 //}
-//
-//
-//
-///*
-//function curl_get($url) {
-//    try{
-//        if(!function_exists('curl_init')){
-//            throw new bException('curl_get(): PHP CURL is not installed, this function cannot work without this library');
-//        }
-//
-//        $ch = curl_init();
-//
-//        curl_setopt($ch, CURLOPT_URL, $url);
-//        curl_setopt($ch, CURLOPT_USERAGENT, curl_get_random_user_agent());
-//        curl_setopt($ch, CURLOPT_RETURNTRANSFER, 1);
-//        curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, FALSE);
-//        curl_setopt($ch, CURLOPT_INTERFACE, curl_get_random_ip());
-//        curl_setopt($ch, CURLOPT_FOLLOWLOCATION, true);
-//
-//        curl_close($ch);
-//
-//        return curl_exec($ch);
-//
-//    }catch(Exception $e){
-//        throw new bException('curl_get(): Failed', $e);
-//    }
-//}*/
 
 
 

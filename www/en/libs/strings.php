@@ -478,9 +478,10 @@ function str_log($source, $truncate = 511, $separator = ', '){
             }
         }
 
-        if(PLATFORM == 'http'){
-            return htmlentities(str_replace('  ', ' ', str_replace("\n", ' ', str_truncate($source, $truncate, ' ... ', 'center'))), ENT_DISALLOWED | ENT_SUBSTITUTE | ENT_NOQUOTES | ENT_HTML5, 'UTF-8', false);
-        }
+// :DELETE: str_log() should not modify data specially for HTML display, only should be a valid string, not too large, etc
+        //if(PLATFORM == 'http'){
+        //    return htmlentities(str_replace('  ', ' ', str_replace("\n", ' ', str_truncate($source, $truncate, ' ... ', 'center'))), ENT_DISALLOWED | ENT_SUBSTITUTE | ENT_NOQUOTES | ENT_HTML5, 'UTF-8', false);
+        //}
 
         return str_replace('  ', ' ', str_replace("\n", ' ', str_truncate($source, $truncate, ' ... ', 'center')));
 

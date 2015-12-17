@@ -4,39 +4,37 @@
  */
 require_once(dirname(__FILE__).'/libs/startup.php');
 
-$url        = isset_get($_GET['url']);
-$contains   = isset_get($_GET['contains']);
-$apikey     = isset_get($_GET['apikey']);
-$getheaders = isset_get($_GET['getheaders'], false);
+$apikey               = isset_get($_GET['apikey']);
+$params['url']        = isset_get($_GET['url']);
+$params['contains']   = isset_get($_GET['contains']);
+$params['getheaders'] = isset_get($_GET['getheaders'], false);
 
-load_libs('curl');
+load_libs('curl,json');
 
-if(empty($_GET['apikey']) or ($_GET['apikey'] != $_CONFIG['curl']['proxy']['apikey'])){
-	http_response_code('401');
-	die('Unauthorized');
+if(empty($apikey) or ($apikey != $_CONFIG['curl']['proxy']['apikey'])){
+	//http_response_code('401');
+	//die('Unauthorized');
 }
 
-if(empty($_GET['url'])){
+if(empty($params['url'])){
 	http_response_code('400');
 	die('Bad request');
 }
 
-$_GET['url'] = urldecode(trim($_GET['url']));
+$params['url'] = strtolower(urldecode(trim($params['url'])));
 
-if((strtolower(substr($_GET['url'], 0, 4)) !== 'http')) {
+if((substr($params['url'], 0, 7) !== 'http://') and (substr($params['url'], 0, 8) !== 'https://')) {
 	http_response_code('400');
 	die('Bad request');
 }
 
 try{
 	$start = microtime(true);
-	$data  = curl_get(array('url'        => $_GET['url'],
-							'getheaders' => $getheaders,
-							'contains'   => $contains));
+	$data  = curl_get($params);
 
 }catch(Exception $e){
 	$data = array('data'   => null,
-				  'status' => array('http'    => str_replace('HTTP', $e->getCode())),
+				  'status' => array('http'    => str_replace('HTTP', '', $e->getCode())),
 				  'error'  => array('code'    => $e->getCode(),
                                     'message' => $e->getMessage()));
 }
@@ -44,5 +42,5 @@ try{
 $data['proxy'] = array('host' => $_SERVER['SERVER_NAME'],
 					   'time' => microtime(true) - $start);
 
-die('PROXY_RESULT'.base64_encode($data));
+die('PROXY_RESULT'.base64_encode(json_encode_custom($data)));
 ?>

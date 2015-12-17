@@ -317,10 +317,10 @@ try{
                  *
                  * Set some base parameters
                  */
-                define('PWD'   , realpath(dirname(__FILE__).'/..').'/');
-                define('TEST'  , (isset($_GET['test'])  ? $_GET['test']  : false));
-                define('FORCE' , (isset($_GET['force']) ? $_GET['force'] : false));
-                define('QUIET' , (PLATFORM == 'production'));
+                define('PWD'    , realpath(dirname(__FILE__).'/..').'/');
+                define('TEST'   , (isset($_GET['test'])  ? $_GET['test']  : false));
+                define('FORCE'  , (isset($_GET['force']) ? $_GET['force'] : false));
+                define('VERBOSE', debug());
 
                 if($_CONFIG['maintenance']){
                     /*

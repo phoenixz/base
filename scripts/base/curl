@@ -15,13 +15,33 @@ require_once(dirname(__FILE__).'/../../libs/startup.php');
 cli_only();
 load_libs('curl');
 
-$params['url']       = argument('url'      , true);
-$params['proxy']     = argument('proxy'    , false, $_CONFIG['curl']['proxy']);
-$params['useragent'] = argument('useragent', true , $_CONFIG['curl']['user_agents']);
+$decodebase64         = argument('--nodecode'  , false, true);
+$params['url']        = argument('url'         , true);
+$params['getheaders'] = argument('--getheaders', false, false);
+$params['proxy']      = argument('proxy'       , false, $_CONFIG['curl']['proxy']);
+$params['noproxy']    = argument('proxy'       , false, $_CONFIG['curl']['proxy']);
+$params['proxies']    = argument('proxies'     , true , $_CONFIG['curl']['proxies']);
+$params['useragent']  = argument('useragent'   , true , $_CONFIG['curl']['user_agents']);
+
+if($params['proxies']){
+	$params['proxies'] = array_force($params['proxies']);
+}
+
+if($params['noproxy']){
+	$params['proxy'] = false;
+}
 
 if(!$params['url']){
 	throw new bException(tr('Please specify a URL'), 'notspecfied');
 }
 
-showdie(curl_get($params));
+$data = curl_get($params);
+
+if(substr($data['data'], 0, 12) == 'PROXY_RESULT'){
+	if($decodebase64){
+		$data['data'] = base64_decode(substr($data['data'], 12));
+	}
+}
+
+showdie($data);
 ?>

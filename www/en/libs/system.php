@@ -157,8 +157,14 @@ function tr($text, $replace = null, $obsolete = null){
             /*
              * Only on non production machines, crash when not all entries were replaced as an extra check.
              */
-            if((ENVIRONMENT != 'production') and ($count != count($replace))){
-                throw new bException('tr(): No replacements found', 'notfound');
+            if(ENVIRONMENT != 'production'){
+                if($count != count($replace)){
+                    throw new bException('tr(): Not all specified keywords were found in text', 'notfound');
+                }
+
+                if(preg_match('/%\w%/', $text)){
+                    throw new bException('tr(): Not all keywords were replaced', 'notfound');
+                }
             }
 
             return $text;
@@ -167,7 +173,7 @@ function tr($text, $replace = null, $obsolete = null){
         return $text;
 
     }catch(Exception $e){
-        throw new bException('tr(): Failed with text "'.str_log($text).'". Very likely issue with $replace', $e);
+        throw new bException('tr(): Failed with text "'.str_log($text).'". Very likely issue with $replace not containing all keywords, or one of the $replace values is non-scalar', $e);
     }
 }
 

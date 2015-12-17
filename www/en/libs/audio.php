@@ -15,7 +15,7 @@ function audio_play($class = null){
     global $_CONFIG;
 
     try{
-        if(QUIET){
+        if($_CONFIG['audio']['quiet']){
             /*
              * We're running quiet mode, do not play any audio!
              */
