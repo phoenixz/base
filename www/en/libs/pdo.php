@@ -303,19 +303,16 @@ function sql_init($connector = 'core'){
         /*
          * This is only required for the system connection
          */
-// :TODO: Make it so that other databases can also  be initialized, not only the core database
-        if((PLATFORM == 'shell') and (SCRIPT == 'init') and FORCE and ($connector == 'core')){
+        if((PLATFORM == 'shell') and (SCRIPT == 'init') and FORCE and !empty($_CONFIG['db'][$connector]['init'])){
             include(dirname(__FILE__).'/handlers/pdo_init_force.php');
         }
 
         /*
          * Get database version
          *
-         * In some VERY FEW cases, this check must be skipped. Skipping is done by setting the global variable
-         * skipversioncheck to true. If you don't know why this should be done, then DONT USE IT!
+         * This can be disabled by setting $_CONFIG[db][CONNECTORNAME][init] to false
          */
-// :TODO: Make it so that other databases can also  be initialized, not only the core database
-        if($connector == 'core'){
+        if(!empty($_CONFIG['db'][$connector]['init'])){
             try{
                 $r = $GLOBALS['sql_'.$connector]->query('SELECT `project`, `framework` FROM `versions` ORDER BY `id` DESC LIMIT 1;');
 
@@ -395,11 +392,8 @@ function sql_connect($connector){
          * Connect!
          */
         try{
-            $connector['pdo_attributes'][PDO::ATTR_ERRMODE] = PDO::ERRMODE_EXCEPTION;
-
-            if(!empty($connector['buffered'])){
-                $connector['pdo_attributes'][PDO::MYSQL_ATTR_USE_BUFFERED_QUERY] = true;
-            }
+            $connector['pdo_attributes'][PDO::ATTR_ERRMODE]                  = PDO::ERRMODE_EXCEPTION;
+            $connector['pdo_attributes'][PDO::MYSQL_ATTR_USE_BUFFERED_QUERY] = !(boolean) $connector['buffered'];
 
             $pdo = new PDO($connector['driver'].':host='.$connector['host'].(empty($connector['port']) ? '' : ';port='.$connector['port']).(empty($connector['db']) ? '' : ';dbname='.$connector['db']), $connector['user'], $connector['pass'], $connector['pdo_attributes']);
 
@@ -944,5 +938,26 @@ function sql_isnull($parameter, $value){
     }
 
     return ' = '.$parameter;
+}
+
+
+
+/*
+ * Enable / Disable all query logging on mysql server
+ */
+function sql_log($enable){
+    try{
+        if($enable){
+            sql_query('SET global log_output = "FILE";');
+            sql_query('SET global general_log_file="/var/log/mysql/queries.log";');
+            sql_query('SET global general_log = 1;');
+
+        }else{
+            sql_query('SET global log_output = "OFF";');
+        }
+
+    }catch(Exception $e){
+        throw new bException('sql_log(): Failed', $e);
+    }
 }
 ?>

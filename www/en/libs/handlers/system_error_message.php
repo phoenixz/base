@@ -7,8 +7,8 @@ try{
      * Set some default message codes
      */
     array_params($messages);
-    array_default($messages, 'validation', $e);
-    array_default($messages, 'captcha'   , $e);
+    array_default($messages, 'validation', $e->getMessages());
+    array_default($messages, 'captcha'   , $e->getMessages());
 
     if(debug()){
         if($e instanceof bException){

@@ -65,6 +65,10 @@ try{
     init($pfrom, $ffrom);
 
 }catch(Exception $e){
-    throw new bException('scripts/base/init: Failed', $e);
+    if($e->getCode() != 'noinit'){
+        throw new bException('scripts/base/init: Failed', $e);
+    }
+
+    log_console('Core database init system has been disabled in db configuration', '', 'yellow');
 }
 ?>

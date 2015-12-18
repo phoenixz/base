@@ -385,11 +385,11 @@ function html_header($params = null, $meta = array()){
         }
 
         if(empty($params['meta']['description'])){
-            throw new bException('html_header(): No header meta description specified (SEO!)');
+            throw new bException(tr('html_header(): No header meta description specified for script "%script%" (SEO!)', array('%script%' => SCRIPT)), '');
         }
 
         if(empty($params['meta']['keywords'])){
-            throw new bException('html_header(): No header meta keywords specified (SEO!)');
+            throw new bException(tr('html_header(): No header meta keywords specified for script "%script%" (SEO!)', array('%script%' => SCRIPT)), '');
         }
 
         if(!empty($params['meta']['noindex'])){
@@ -615,9 +615,10 @@ function html_flash($class = null){
             $class    = $message['class'];
             $message  = $message['message'];
 
-            if(($type == 'error') and (ENVIRONMENT == 'production')){
-                $message = tr('Something went wrong, please try again later');
-            }
+// :DELETE: Error messages must not always be surpressed!!
+            //if(($type == 'error') and (ENVIRONMENT == 'production')){
+            //    $message = tr('Something went wrong, please try again later');
+            //}
 
             switch(strtolower($type)){
                 case 'info':

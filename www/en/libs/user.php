@@ -448,7 +448,7 @@ function user_signup($params){
         }
 
         sql_query('INSERT INTO `users` (`status`, `createdby`, `username`, `password`, `name`, `email`)
-                   VALUES              ("empty" , :createdby , :username , :password , :name , :email )',
+                   VALUES              (NULL    , :createdby , :username , :password , :name , :email )',
 
                    array(':createdby' => isset_get($_SESSION['user']['id']),
                          ':username'  => isset_get($params['username']),
@@ -655,9 +655,10 @@ function user_get($user, $columns = '*'){
                                FROM   `users`
 
                                WHERE  `email`    = :user
-                               OR     `username` = :user',
+                               OR     `username` = :user2',
 
-                               array(':user'  => $user));
+                               array(':user'  => $user,
+                                     ':user2' => $user));
 
         }
 
@@ -1066,7 +1067,7 @@ function user_get_key($user = null, $force = false){
             $dbuser = sql_get('SELECT `id`, `username`, `key` FROM `users` WHERE `id`       = :id       AND `status` IS NULL', array(':id' => $user));
 
         }else{
-            $dbuser = sql_get('SELECT `id`, `username`, `key` FROM `users` WHERE `username` = :username AND `status` IS NULL', array(':username' => $user));
+            $dbuser = sql_get('SELECT `id`, `username`, `key` FROM `users` WHERE (`username` = :username OR `email` = :email) AND `status` IS NULL', array(':username' => $user, ':email' => $user));
         }
 
         if(!$dbuser){
@@ -1074,7 +1075,7 @@ function user_get_key($user = null, $force = false){
         }
 
         if(!$dbuser['key'] or $force){
-            $dbuser['key']           = hash('sha256', uniqid('', true).SEED.microtime(true));
+            $dbuser['key']           = unique_code();
             $_SESSION['user']['key'] = $dbuser['key'];
 
             sql_query('UPDATE `users`
@@ -1206,6 +1207,8 @@ function user_get_from_key($user, $key, $timestamp){
  *
  */
 function user_key_or_redirect($user, $key = null, $timestamp = null, $redirect = null, $columns = '*'){
+    global $_CONFIG;
+
     try{
         if(is_array($user)){
             /*

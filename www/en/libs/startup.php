@@ -17,7 +17,7 @@
 /*
  * Framework version
  */
-define('FRAMEWORKCODEVERSION', '0.24.1');
+define('FRAMEWORKCODEVERSION', '0.25.0');
 
 
 /*
@@ -677,7 +677,7 @@ try{
             restore_post();
             page_show(SCRIPT, true);
 
-        }elseif(substr($_SERVER['PHP_SELF'], 0, 6) == '/ajax/'){
+        }elseif(strstr($_SERVER['PHP_SELF'], '/ajax/')){
             $GLOBALS['page_is_ajax'] = true;
 
         }elseif(!empty($GLOBALS['page_force'])){

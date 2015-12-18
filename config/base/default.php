@@ -120,6 +120,7 @@ $_CONFIG['db']                 = array('default'          => 'core',
                                                                    'user'             => 'base',                                        // Username to login to SQL server
                                                                    'pass'             => 'base',                                        // Password to login to SQL server
                                                                    'db'               => 'base',                                        // Name of core database on SQL server
+                                                                   'init'             => true,                                          // If set to true, upon first query of the pageload, the SQL library will check if the database requires initialization
                                                                    'autoincrement'    => 1,                                             // Default autoincrement for all database tables (MySQL only)
                                                                    'buffered'         => true,                                          // Use buffered queries or not. See PHP documentation for more information
                                                                    'charset'          => 'utf8',                                        // Default character set for all database tables
@@ -174,6 +175,9 @@ $_CONFIG['google-map-api-key'] = '';                                            
 // Init configuration
 $_CONFIG['init']               = array('shell'            => true,                                          // Sets if system init can be executed by shell
                                        'http'             => false);                                        // Sets if system init can be executed by http (IMPORTANT: This is not supported yet!)
+
+// JS configuration
+$_CONFIG['js']                 = array('animate'          => array('speed'              => 100));           // Sets default speed for javascript animations
 
 // jQuery UI configuration
 $_CONFIG['jquery-ui']          = array('theme'            => 'smoothness');                                 // Sets the default UI theme for jquery-ui

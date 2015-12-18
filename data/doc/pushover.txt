@@ -1,0 +1,15 @@
+URL: https://pushover.net
+
+In short, Pushover is a service to receive instant push notifications on your phone or tablet from a variety of sources.
+
+To quickly get started:
+
+1) Install our client app on your iPhone/iPad/iPod Touch or Android device, or register your Desktop browser.
+2) Launch the client and it will walk you through creating a Pushover account and registering your device with our servers.
+3) You'll get a new User Key e-mailed to you (which you can always find on your dashboard or through the Settings menu of the Pushover client app on your device). Your User Key is a randomly generated identifier which allows other apps to send Pushover notifications to your devices.
+4) Copy and paste your User Key into any application that supports Pushover and it will instantly be able to start sending notifications to your devices.
+(Optional) Some applications require you register for your own API token and paste it into the application. That can be done here, or by following the link in the application to easily clone it.
+(Optional) Use your new Pushover e-mail address (found on your dashboard) in any application or website that does not support Pushover, and any e-mails sent to that address will get delivered to you as Pushover notifications.
+
+To use Pushover API, we downloaded a PHP library for this:
+https://github.com/cschalenborgh/php-pushover

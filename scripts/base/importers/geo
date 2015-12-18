@@ -8,7 +8,7 @@ $usage = "./scripts/base/importers/geo\n".
          "./scripts/base/importers/geo download\n".
          "./scripts/base/importers/geo loaddata [username USERNAME] [password PASSWORD] [database DATABASE] \n".
          "./scripts/base/importers/geo fixdata\n".
-         "./scripts/base/importers/geo import countries&|states&|counties&|cities | all country (COUNTRY,COUNTYCODE,etc...)";
+         "./scripts/base/importers/geo import countries&|states&|counties&|cities | all country (COUNTRY,COUNTRYCODE,etc...)";
 
 $help  = "The geo importer script can import geo data like countries, states, counties and cities from the geoname database repository";
 
@@ -266,7 +266,7 @@ switch(argument(0)){
             $r = $geosql->query('SELECT * FROM `continentCodes`');
 
             while($row = $r->fetch(PDO::FETCH_ASSOC)){
-                $geonamedata = $geosql->query('SELECT * FROM `geonames` WHERE `geonameid` = '.cfi($row['geonameid']));
+                $geonamedata = $geosql->query('SELECT * FROM `geonames` WHERE `geonameid` = '.cfi($row['geonameid'], false));
                 $geonamedata = $geonamedata->fetch(PDO::FETCH_ASSOC);
 
                 sql_query('INSERT INTO `geo_continents`(`geonames_id`, `timezones_id`, `code`, `name`, `seoname`, `alternate_names`, `latitude`, `longitude`, `moddate`)
@@ -302,13 +302,13 @@ switch(argument(0)){
             $r = $geosql->query('SELECT * FROM `countryinfo`');
 
             $country_exists_statement = sql_prepare('SELECT `id`
-                                                     FROM    `geo_countries`
-                                                     WHERE   `geonames_id` = :geonames_id
-                                                     OR      `code`        = :code
-                                                     OR      `name`        = :name');
+                                                     FROM   `geo_countries`
+                                                     WHERE  `geonames_id` = :geonames_id
+                                                     OR     `code`        = :code
+                                                     OR     `name`        = :name');
 
             while($row = $r->fetch(PDO::FETCH_ASSOC)){
-                $geonamedata = $geosql->query('SELECT * FROM `geonames` WHERE `geonameid` = '.cfi($row['geonameId']));
+                $geonamedata = $geosql->query('SELECT * FROM `geonames` WHERE `geonameid` = '.cfi($row['geonameId'], false));
                 $geonamedata = $geonamedata->fetch(PDO::FETCH_ASSOC);
 
                 $country_exists_statement->execute(array(':geonames_id' => $row['geonameId'], ':code' => $row['iso_alpha2'], 'name' => $row['name']));
@@ -348,8 +348,9 @@ switch(argument(0)){
                                  ':alternate_names'      => $geonamedata['alternatenames'],
                                  ':moddate'              => $geonamedata['moddate']));
             }
-
+show('aaaaaaaaaaaaaaa');
             sql_query('COMMIT;');
+show('bbbbbbbbbbbbbbb');
         }
 
         if(in_array('all', $country_list)){
@@ -428,7 +429,7 @@ switch(argument(0)){
                     }
 
                     log_console('Importing states for country "'.$country_data['name'].'"...', '', '');
-                    $r = $geosql->query('SELECT * FROM `geonames` WHERE `parents_id` = '.cfi($country_data['geonames_id']));
+                    $r = $geosql->query('SELECT * FROM `geonames` WHERE `parents_id` = '.cfi($country_data['geonames_id'], false));
 
                     while($row = $r->fetch(PDO::FETCH_ASSOC)){
                         $state_exists_statement->execute(array(':geonames_id' => $row['geonameid'], ':countries_id' => $id, 'name' => $row['name']));
@@ -518,7 +519,7 @@ switch(argument(0)){
 
                                              FROM   `geonames`
 
-                                             WHERE  `parents_id` = '.cfi($state_data['geonames_id']).'
+                                             WHERE  `parents_id` = '.cfi($state_data['geonames_id'], false).'
                                              AND    `fclass`     = "A"');
 
                         if(!$r->rowCount()){
@@ -642,12 +643,10 @@ switch(argument(0)){
 
                                                                        WHERE  `country`     = "'.$country_data['code'].'"
 
-                                                                       AND   (`fcode`       IN ("PPL", "PPLA", "PPLA2", "PPLA3", "PPLA4")
-                                                                       OR     `fcode`       = "ISL"
-                                                                       AND    `population` != 0)
+                                                                       AND   (`fcode`       IN ("PPL", "PPLA", "PPLA2", "PPLA3", "PPLA4", "ISL"))
 
                                                                        AND    `admin1`      = "'.$state_data['admin1'].'"
-                                                                       AND    `population` != 0');
+                                                                       AND    `population`  > 0');
 
                                 $state_cities_count  = $state_cities_count->fetch(PDO::FETCH_ASSOC);
                                 $state_cities_count  = $state_cities_count['count'];
@@ -659,10 +658,10 @@ switch(argument(0)){
                                                               FROM   `geonames`
 
                                                               WHERE  `country`     = :country
-                                                              AND    `fcode`       IN ("PPL", "PPLA", "PPLA2", "PPLA3", "PPLA4")
+                                                              AND   (`fcode`       IN ("PPL", "PPLA", "PPLA2", "PPLA3", "PPLA4", "ISL"))
                                                               AND    `admin1`      = :admin1
                                                               AND    `admin2`      = :admin2
-                                                              AND    `population` != 0');
+                                                              AND    `population`  > 0');
 
                                 /*
                                  * Count the cities for all counties together, they should match the cities for the state
@@ -702,9 +701,9 @@ switch(argument(0)){
                                                  FROM   `geonames`
 
                                                  WHERE  `country`     = "'.$country_data['code'].'"
-                                                 AND    `fcode`       IN ("PPL", "PPLA", "PPLA2", "PPLA3", "PPLA4")
+                                                 AND   (`fcode`       IN ("PPL", "PPLA", "PPLA2", "PPLA3", "PPLA4", "ISL"))
                                                  AND    `admin1`      = "'.$state_data['admin1'].'"
-                                                 AND    `population`  > '.cfi($threshold));
+                                                 AND    `population`  > '.cfi($threshold, false));
 
                             log_console('Importing cities for state "'.$state_data['name'].'" for country "'.$country_data['name'].'"...', '', '');
 
@@ -772,10 +771,10 @@ switch(argument(0)){
                                                      FROM   `geonames`
 
                                                      WHERE  `country`     = "'.$country_data['code'].'"
-                                                     AND    `fcode`       IN ("PPL", "PPLA", "PPLA2", "PPLA3", "PPLA4")
+                                                     AND   (`fcode`       IN ("PPL", "PPLA", "PPLA2", "PPLA3", "PPLA4", "ISL"))
                                                      AND    `admin1`      = "'.$county_data['admin1'].'"
                                                      AND    `admin2`      = "'.$county_data['admin2'].'"
-                                                     AND    `population`  > '.cfi($threshold));
+                                                     AND    `population`  > '.cfi($threshold, false));
 
                                 while($row = $r->fetch(PDO::FETCH_ASSOC)){
 
