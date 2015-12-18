@@ -216,6 +216,7 @@ try{
         try {
             $response = curl_get(array('url'             => 'http://'.$_CONFIG['translator']['url'].'/translate.php',
                                        'getdata'         => true,
+                                       'proxy'          =>  false,
                                        'getheaders'      => false,
                                        'post'            => array('data' => $encrypted_data),
                                        'httpheaders'     => false,
