@@ -749,4 +749,89 @@ function imagecopymerge_alpha($dst_im, $src_im, $dst_x, $dst_y, $src_x, $src_y, 
         throw new bException('imagecopymerge_alpha(): Failed for source image "'.str_log($src_im).'"', $e);
     }
 }
+
+
+
+/*
+ * Create an HTML / JQuery image picker that sets the selected images as form values
+ */
+function image_picker($params){
+    try{
+        html_load_js('image-picker/image-picker');
+        html_load_css('image-picker');
+
+        array_params($params);
+        array_default($params, 'resource', null);
+        array_default($params, 'name'    , 'image-picker');
+        array_default($params, 'path'    , null);
+        array_default($params, 'class'   , 'image-picker show-html');
+        array_default($params, 'masonry' , true);
+        array_default($params, 'loaded'  , true);
+
+        if($params['masonry']){
+            html_load_js('masonry.pkgd');
+            $params['class'] .= ' masonry';
+        }
+
+        /*
+         * Remove ., .., and hidden files
+         */
+        foreach($params['resource'] as $key => &$image){
+            if($image[0] == '.'){
+                unset($params['resource'][$key]);
+            }
+        }
+
+        /*
+         * Convert image file names into URL's
+         */
+        if($params['url']){
+            foreach($params['resource'] as $key => &$image){
+                $image = str_replace('%image%', $image, $params['url']);
+            }
+        }
+
+        unset($image);
+
+        /*
+         * Add required data info for html_select();
+         */
+        $params['data_resource'] = $params['resource'];
+        $params['data_key']      = 'img-src';
+
+        $retval = html_select($params).
+                  html_script('$("#'.$params['name'].'").imagepicker();');
+
+        if($params['masonry']){
+            if($params['loaded']){
+                html_load_js('imagesloaded');
+                $retval .= html_script('
+                    var $grid = $("#'.$params['name'].'").masonry({
+                        itemSelector: "li",
+                        columnWidth: 200
+                    });
+
+console.log($grid);
+                    // layout Masonry after each image loads
+                    $grid.imagesLoaded().progress( function() {
+console.log("imagesloaded");
+                        $grid.masonry("layout");
+                    });');
+
+            }else{
+                $retval .= html_script('
+                    $("'.$params['masonry'].'").masonry({
+                        // options
+                        itemSelector: "li",
+                        columnWidth: 200
+                    });');
+            }
+        }
+
+        return $retval;
+
+    }catch(Exception $e){
+        throw new bException('image_picker(): Failed', $e);
+    }
+}
 ?>

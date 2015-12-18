@@ -885,11 +885,13 @@ function html_select($params, $selected = null, $name = '', $none = '', $class =
 function html_select_body($params, $selected = null, $none = '', $class = '', $auto_select = true) {
     try{
         array_params ($params, 'resource');
-        array_default($params, 'class'      , $class);
-        array_default($params, 'none'       , tr('None selected'));
-        array_default($params, 'empty'      , tr('None available'));
-        array_default($params, 'selected'   , $selected);
-        array_default($params, 'auto_select', $auto_select);
+        array_default($params, 'class'        , $class);
+        array_default($params, 'none'         , tr('None selected'));
+        array_default($params, 'empty'        , tr('None available'));
+        array_default($params, 'selected'     , $selected);
+        array_default($params, 'auto_select'  , $auto_select);
+        array_default($params, 'data_resource', null);
+        array_default($params, 'data_key'     , null);
 
         if($params['none']){
             $retval = '<option'.($params['class'] ? ' class="'.$params['class'].'"' : '').''.(($params['selected'] === null) ? ' selected' : '').' value="">'.$params['none'].'</option>';
@@ -913,7 +915,15 @@ function html_select_body($params, $selected = null, $none = '', $class = '', $a
                  */
                 foreach($params['resource'] as $key => $value){
                     $notempty = true;
-                    $retval  .= '<option'.($params['class'] ? ' class="'.$params['class'].'"' : '').''.((($params['selected'] !== null) and ($key === $params['selected'])) ? ' selected' : '').' value="'.$key.'">'.$value.'</option>';
+
+                    if($params['data_key'] and (!empty($params['data_resource'][$key]))){
+                        $option_data = ' data-'.$params['data_key'].'="'.$params['data_resource'][$key].'"';
+
+                    }else{
+                        $option_data = '';
+                    }
+
+                    $retval  .= '<option'.($params['class'] ? ' class="'.$params['class'].'"' : '').''.((($params['selected'] !== null) and ($key === $params['selected'])) ? ' selected' : '').' value="'.$key.'"'.$option_data.'>'.$value.'</option>';
                 }
 
             }elseif(is_object($params['resource'])){
@@ -942,7 +952,17 @@ function html_select_body($params, $selected = null, $none = '', $class = '', $a
                             $row['id'] = str_random(8);
                         }
 
-                        $retval  .= '<option'.($params['class'] ? ' class="'.$params['class'].'"' : '').''.(($row['id'] === $params['selected']) ? ' selected' : '').' value="'.$row['id'].'">'.$row['name'].'</option>';
+                        /*
+                         * Add data- in this option?
+                         */
+                        if($params['data_key'] and (!empty($params['data_resource'][$key]))){
+                            $option_data = ' data-'.$params['data_key'].'="'.$params['data_resource'][$key].'"';
+
+                        }else{
+                            $option_data = '';
+                        }
+
+                        $retval  .= '<option'.($params['class'] ? ' class="'.$params['class'].'"' : '').''.(($row['id'] === $params['selected']) ? ' selected' : '').' value="'.$row['id'].'"'.$option_data.'>'.$row['name'].'</option>';
                     }
 
                 }catch(Exception $e){
