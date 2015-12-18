@@ -1,8 +1,8 @@
 <?php
 $p = sql_prepare('INSERT INTO `rights` (`name`, `description`)
-                  VALUES               (:name , :description)
+                  VALUES               (:name , :description )
 
-                  ON DUPLICATE KEY UPDATE `name` = :name;');
+                  ON DUPLICATE KEY UPDATE `name` = :update_name;');
 
 $rights = array('admin' => 'This right allows the user to view admin only pages',
                 'god'   => 'This right allows the user to view ALL rights managed pages',
@@ -11,6 +11,7 @@ $rights = array('admin' => 'This right allows the user to view admin only pages'
 
 foreach($rights as $name => $description){
     $p->execute(array(':name'        => $name,
+                      ':update_name' => $name,
                       ':description' => $description));
 }
 

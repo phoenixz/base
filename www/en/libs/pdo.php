@@ -317,7 +317,7 @@ function sql_init($connector = 'core'){
                 $r = $GLOBALS['sql_'.$connector]->query('SELECT `project`, `framework` FROM `versions` ORDER BY `id` DESC LIMIT 1;');
 
                 if(!$r->rowCount()){
-                    log_console('sql_init(): No versions in versions table found, assumed empty database', 'warning/versions', 'yellow');
+                    log_console(tr('sql_init(): No versions in versions table found, assumed empty database "%db%"', array('%db%' => $_CONFIG['db'][$connector]['db'])), 'warning/versions', 'yellow');
 
                     define('FRAMEWORKDBVERSION', 0);
                     define('PROJECTDBVERSION'  , 0);

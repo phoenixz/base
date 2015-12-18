@@ -128,6 +128,7 @@ $noversion     = !(argument('upversion')  or argument('upversions'));
 $nocontent     = !(argument('docontent')  or argument('docontentcheck'));
 $nofixperms    =  (argument('nofixperms') or argument('nofixpermissions'));
 $nocacheclear  =  argument('nocacheclear');
+$notranslate   =  argument('notranslate');
 
 $notag         =  (argument('notag')      or argument('notags') or $noversion);
 $nopush        =   argument('nopush');
@@ -440,7 +441,7 @@ if($nocompress){
 /*
  * Do code translation
  */
-if(argument('notranslate')){
+if($notranslate){
     log_screen('Skipping translations due to "notranslate" option', 'deploy', 'yellow');
 
 }else{

@@ -27,8 +27,6 @@ $usage = "./scripts/base/init\n".
 
 $help  = "This script will initialize the database and system files to leave your data structures up to date with the current code version";
 
-$quiet = false;
-
 require_once(dirname(__FILE__).'/../../libs/startup.php');
 
 try{
@@ -59,6 +57,19 @@ try{
     if($ffrom = argument('fromframeworkversion', true, null)){
         if(!str_is_version($ffrom)){
             throw new bException('The specified fromframeworkversion "'.str_log($ffrom).'" is not a valid version format. Please supply a version in format "n.n.n"', 'invalid');
+        }
+    }
+
+    /*
+     * During init, force EMULATE_PREPARES because loads of init stuff will NOT work without
+     * Thanks PHP, for giving us the option between a shitty driver, or half a driver!
+     */
+    foreach($_CONFIG['db'] as $name => &$connector){
+        if($name == 'default') continue;
+
+        if($connector['init']){
+            $connector['pdo_attributes'] = array(PDO::ATTR_EMULATE_PREPARES  => true,
+                                                 PDO::ATTR_STRINGIFY_FETCHES => true);
         }
     }
 

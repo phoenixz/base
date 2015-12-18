@@ -104,10 +104,6 @@ $_CONFIG['cors']               = array('origin'           => '*.',
                                        'methods'          => 'GET, POST',
                                        'headers'          => '');
 
-// Curl library configuration
-$_CONFIG['curl']               = array('proxy'            => 'http://proxy.localhost/file_get_contents_proxy.php?url=',
-                                       'user_agent'       => 'Mozilla/5.0 (Windows NT 5.1; rv:10.0.2) Gecko/20100101 Firefox/10.0.2');
-
 // Global data location configuration
 $_CONFIG['data']               = array('global'           => true); // Set to TRUE to enable auto detect
 
@@ -122,7 +118,7 @@ $_CONFIG['db']                 = array('default'          => 'core',
                                                                    'db'               => 'base',                                        // Name of core database on SQL server
                                                                    'init'             => true,                                          // If set to true, upon first query of the pageload, the SQL library will check if the database requires initialization
                                                                    'autoincrement'    => 1,                                             // Default autoincrement for all database tables (MySQL only)
-                                                                   'buffered'         => true,                                          // Use buffered queries or not. See PHP documentation for more information
+                                                                   'buffered'         => false,                                         // WARNING, READ ALL!! Use buffered queries or not. See PHP documentation for more information. WARNING: Currently buffered queries appear to completely wreck this sytem, do NOT use!
                                                                    'charset'          => 'utf8',                                        // Default character set for all database tables
                                                                    'collate'          => 'utf8_general_ci',                             // Default collate set for all database tables
                                                                    'limit_max'        => 10000,                                         // Standard SQL allowed LIMIT specified in table displays, for example, to avoid displaying a table with a milion entries, for example

@@ -1,0 +1,20 @@
+#!/usr/bin/php
+<?php
+/*
+ * This script will simply decode base64 strings
+ */
+$usage = "./scripts/base/base64decode\n".
+         "./scripts/base/base64decode BASE64CODE\n";
+
+$help  = "This script will decode base64 strings and show the contents.";
+
+//$quiet = false;
+
+require_once(dirname(__FILE__).'/../../libs/startup.php');
+
+if(!argument(0)){
+	throw new bException(tr('No base64 string specified'), 'notspecified');
+}
+
+showdie(str_safe_base64_decode(argument(0)));
+?>

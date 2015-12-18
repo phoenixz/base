@@ -10,6 +10,8 @@
 
 
 
+load_config('curl');
+
 if(!function_exists('curl_init')){
     throw new bException('PHP CURL module is not installed. Install PHP CURL on Ubuntu with "sudo apt-get install php5-curl", or on Redhat with "sudo yum install php-curl"');
 }
@@ -24,29 +26,49 @@ function curl_get_proxy($url, $file = '', $serverurl = null) {
 
     try{
         if(!$serverurl){
-            $serverurl = $_CONFIG['curl']['proxy'];
+            $serverurl = $_CONFIG['curl']['proxies'];
         }
 
-        $data = file_get_contents($serverurl.urlencode($url));
-
-        if(trim($data) == 'FAIL' or !trim($data)) {
-            return array('result' => 'ERROR',
-                         'status' => 'ERROR', // Status is only supported for legacy support, do not rely on it, use "result" instead!
-                         'data'   => $data);
+        if(is_array($serverurl)){
+            $serverurl = array_random_value($serverurl);
         }
 
-        $data = base64_decode($data);
+        if(is_array($url)){
+            throw new bException(tr('curl_get_proxy(): No URL specified'), 'notspecified');
+        }
+
+        if(!$serverurl){
+            throw new bException(tr('curl_get_proxy(): No proxy server URL(s) specified'), 'notspecified');
+        }
+
+        if(VERBOSE){
+            log_console(tr('Using proxy "%proxy%"', array('%proxy%' => str_cut(str_log($serverurl), '://', '/'))), 'curl_get_proxy()');
+        }
+
+        $data = curl_get(array('url'        => str_ends($serverurl, '?apikey='.$_CONFIG['curl']['apikey'].'&url=').urlencode($url),
+                               'getheaders' => false,
+                               'proxy'      => false));
+
+        if(!trim($data['data'])){
+            throw new bException(tr('curl_get_proxy(): Proxy returned no data. Is proxy correctly configured? Proxy domain resolves correctly?', array('%data%' => $data)), 'notspecified');
+        }
+
+        if(substr($data['data'], 0, 12) !== 'PROXY_RESULT'){
+            throw new bException(tr('curl_get_proxy(): Proxy returned invalid data "%data%" from proxy "%proxy%". Is proxy correctly configured? Proxy domain resolves correctly?', array('%data%' => str_log($data), '%proxy%' => str_cut(str_log($serverurl), '://', '/'))), 'notspecified');
+        }
+
+        $data         = substr($data['data'], 12);
+        $data         = json_decode_custom($data);
+        $data['data'] = base64_decode($data['data']);
 
         if($file){
             /*
              * Write the data to the specified file
              */
-            file_put_contents($file, $data);
+            file_put_contents($file, $data['data']);
         }
 
-        return array('result' => 'OK',
-                     'status' => 'OK', // Status is only supported for legacy support, do not rely on it, use "result" instead!
-                     'data'   => $data);
+        return $data;
 
     }catch(Exception $e){
         throw new bException('curl_get_proxy(): Failed', $e);
@@ -129,33 +151,6 @@ function curl_get_random_ip($allowipv6 = false) {
 //        throw new bException('curl_get_random_ip(): Failed', $e);
 //    }
 //}
-//
-//
-//
-///*
-//function curl_get($url) {
-//    try{
-//        if(!function_exists('curl_init')){
-//            throw new bException('curl_get(): PHP CURL is not installed, this function cannot work without this library');
-//        }
-//
-//        $ch = curl_init();
-//
-//        curl_setopt($ch, CURLOPT_URL, $url);
-//        curl_setopt($ch, CURLOPT_USERAGENT, curl_get_random_user_agent());
-//        curl_setopt($ch, CURLOPT_RETURNTRANSFER, 1);
-//        curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, FALSE);
-//        curl_setopt($ch, CURLOPT_INTERFACE, curl_get_random_ip());
-//        curl_setopt($ch, CURLOPT_FOLLOWLOCATION, true);
-//
-//        curl_close($ch);
-//
-//        return curl_exec($ch);
-//
-//    }catch(Exception $e){
-//        throw new bException('curl_get(): Failed', $e);
-//    }
-//}*/
 
 
 
@@ -164,13 +159,12 @@ function curl_get_random_ip($allowipv6 = false) {
  */
 function curl_get($params, $referer = null, $post = false, $options = array()){
     static $retry;
-
     global $_CONFIG;
 
     try{
         array_params($params, 'url');
         array_default($params, 'referer'        , $referer);
-        array_default($params, 'useragent'      , $_CONFIG['curl']['user_agent']);
+        array_default($params, 'useragent'      , $_CONFIG['curl']['user_agents']);
         array_default($params, 'post'           , $post);
         array_default($params, 'posturlencoded' , false);
         array_default($params, 'options'        , $options);
@@ -179,6 +173,7 @@ function curl_get($params, $referer = null, $post = false, $options = array()){
         array_default($params, 'getdata'        , true);
         array_default($params, 'getstatus'      , true);
         array_default($params, 'cookies'        , true);
+        array_default($params, 'file'           , false);
         array_default($params, 'getcookies'     , false);
         array_default($params, 'getheaders'     , true);
         array_default($params, 'followlocation' , true);
@@ -186,11 +181,16 @@ function curl_get($params, $referer = null, $post = false, $options = array()){
         array_default($params, 'content-type'   , false);
         array_default($params, 'cache'          , false);
         array_default($params, 'verbose'        , null);
+        array_default($params, 'proxy'          , $_CONFIG['curl']['proxy']);
         array_default($params, 'simulation'     , false); // false, partial, or full
         array_default($params, 'sleep'          , 15);    // Sleep howmany seconds between retries
         array_default($params, 'retries'        ,  5);    // Retry howmany time on HTTP0 failures
         array_default($params, 'timeout'        , 10);    // # of seconds for cURL functions to execute
         array_default($params, 'connect_timeout', 10);    // # of seconds before connection try will fail
+
+        if($params['proxy']){
+            return curl_get_proxy($params['url'], $params['file']);
+        }
 
         if($params['httpheaders'] === true){
             /*
@@ -212,8 +212,6 @@ function curl_get($params, $referer = null, $post = false, $options = array()){
             throw new bException('curl_get(): No URL specified');
         }
 
-        load_libs('file');
-
         /*
          * Use the already existing cURL data array
          */
@@ -225,6 +223,10 @@ function curl_get($params, $referer = null, $post = false, $options = array()){
             $params['ch']         = $params['curl']['ch'];
             $params['simulation'] = $params['curl']['simulation'];
             $params['close']      = false;
+        }
+
+        if(is_array($params['useragent'])){
+            $params['useragent'] = array_get_random($params['useragent']);
         }
 
         /*
@@ -254,8 +256,8 @@ function curl_get($params, $referer = null, $post = false, $options = array()){
              * Use cookies?
              */
             if(isset_get($params['cookies'])){
+                load_libs('file');
                 if(!isset_get($params['cookie_file'])){
-                    load_libs('file');
                     $params['cookie_file'] = file_temp();
                 }
 
@@ -264,7 +266,6 @@ function curl_get($params, $referer = null, $post = false, $options = array()){
                 /*
                  * Make sure the specified cookie path exists
                  */
-                load_libs('file');
                 file_ensure_path(dirname($params['cookie_file']));
 
                 /*
@@ -406,6 +407,10 @@ function curl_get($params, $referer = null, $post = false, $options = array()){
         if($retval['status']['http_code'] != 200){
             load_libs('http');
             throw new bException('curl_get(): URL "'.str_log($params['url']).'" gave HTTP "'.str_log($retval['status']['http_code']).'"', 'HTTP'.$retval['status']['http_code'], null, $retval);
+        }
+
+        if($params['file']){
+            file_put_contents($params['file'], $retval['data']);
         }
 
         $retry = 0;

@@ -124,24 +124,21 @@ function sql_column_exists($table, $column, $query = '', $connector = null){
  * If query is specified, the query will be executed only if the specified function exists
  * If the query is prefixed with an exclamation mark ! then the query will only be executed if the function does NOT exist
  */
-function sql_foreignkey_exists($table, $foreign_key, $query = '', $database = '', $connector = null){
+function sql_foreignkey_exists($table, $foreign_key, $query = '', $connector = null){
     global $pdo, $_CONFIG;
 
     try{
         $connector = sql_connector_name($connector);
+        $database  = $_CONFIG['db'][$connector]['db'];
 
-        if(!$database){
-            $database = $_CONFIG['db'][$connector]['db'];
-        }
+        $retval    = sql_get('SELECT *
 
-        $retval = sql_get('SELECT *
+                              FROM   `information_schema`.`TABLE_CONSTRAINTS`
 
-                           FROM   `information_schema`.`TABLE_CONSTRAINTS`
-
-                           WHERE  `CONSTRAINT_TYPE`   = "FOREIGN KEY"
-                           AND    `CONSTRAINT_SCHEMA` = "'.cfm($database).'"
-                           AND    `TABLE_NAME`        = "'.cfm($table).'"
-                           AND    `CONSTRAINT_NAME`   = "'.cfm($foreign_key).'"', null, null, $connector);
+                              WHERE  `CONSTRAINT_TYPE`   = "FOREIGN KEY"
+                              AND    `CONSTRAINT_SCHEMA` = "'.cfm($database).'"
+                              AND    `TABLE_NAME`        = "'.cfm($table).'"
+                              AND    `CONSTRAINT_NAME`   = "'.cfm($foreign_key).'"', null, null, $connector);
 
         if(substr($query, 0, 1) == '!'){
             $not   = true;
