@@ -148,7 +148,7 @@ function tr($text, $replace = null, $obsolete = null){
                 throw new bException('tr() no longer support tr(text, from, to), please specify a replace array.', 'obsolete');
             }
 
-            $replace = array($replace => $obsolete);
+            $replace = null;
         }
 
         if($replace){
