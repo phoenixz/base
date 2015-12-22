@@ -188,6 +188,10 @@ function curl_get($params, $referer = null, $post = false, $options = array()){
         array_default($params, 'timeout'        , 10);    // # of seconds for cURL functions to execute
         array_default($params, 'connect_timeout', 10);    // # of seconds before connection try will fail
 
+        if(VERBOSE){
+            log_console(tr('Connecting with "%url%"', array('%url%' => $params['url'])), 'curl_get');
+        }
+
         if($params['proxy']){
             return curl_get_proxy($params['url'], $params['file']);
         }
