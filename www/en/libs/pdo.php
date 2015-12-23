@@ -270,6 +270,10 @@ function sql_init($connector = 'core'){
     global $_CONFIG;
 
     try{
+        if(empty($connector)){
+            throw new bException(tr('sql_init(): No connector specified'), 'notspecified');
+        }
+
         $connector = sql_connector_name($connector);
 
         if(!empty($GLOBALS['sql_'.$connector])){
@@ -277,10 +281,6 @@ function sql_init($connector = 'core'){
              * Already connected to core DB
              */
             return null;
-        }
-
-        if(empty($connector)){
-            $connector = 'core';
         }
 
         if(empty($_CONFIG['db'][$connector])){

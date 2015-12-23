@@ -3,16 +3,22 @@
 /*
  * This script can be used to import geo data from the geodata project
  */
-$usage = "./scripts/base/importers/geo\n".
-         "./scripts/base/importers/geo clear\n".
-         "./scripts/base/importers/geo download\n".
-         "./scripts/base/importers/geo loaddata [username USERNAME] [password PASSWORD] [database DATABASE] \n".
-         "./scripts/base/importers/geo fixdata\n".
-         "./scripts/base/importers/geo import countries&|states&|counties&|cities | all country (COUNTRY,COUNTRYCODE,etc...)";
+$usage   = "./scripts/base/importers/geo\n".
+           "./scripts/base/importers/geo clear\n".
+           "./scripts/base/importers/geo download\n".
+           "./scripts/base/importers/geo loaddata [username USERNAME] [password PASSWORD] [database DATABASE] \n".
+           "./scripts/base/importers/geo fixdata\n".
+           "./scripts/base/importers/geo import countries&|states&|counties&|cities | all country (COUNTRY,COUNTRYCODE,etc...)";
 
-$help  = "The geo importer script can import geo data like countries, states, counties and cities from the geoname database repository";
+$help    = "The geo importer script can import geo data like countries, states, counties and cities from the geoname database repository";
+
+$nologin = true;
 
 require_once(dirname(__FILE__).'/../../../libs/startup.php');
+
+$_CONFIG['db']['core']['pdo_attributes'] = array(PDO::ATTR_EMULATE_PREPARES  => true,
+                                                 PDO::ATTR_STRINGIFY_FETCHES => true);
+
 
 this_script_already_runs();
 cli_only();
@@ -348,9 +354,8 @@ switch(argument(0)){
                                  ':alternate_names'      => $geonamedata['alternatenames'],
                                  ':moddate'              => $geonamedata['moddate']));
             }
-show('aaaaaaaaaaaaaaa');
+
             sql_query('COMMIT;');
-show('bbbbbbbbbbbbbbb');
         }
 
         if(in_array('all', $country_list)){
