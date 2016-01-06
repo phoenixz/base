@@ -199,7 +199,7 @@ try{
             log_console('Requesting translations from server ', 'translate', '', false);
         }
 
-        $timestamp = time();
+        $timestamp = date('U');
 
         //construct data for sending
         $data = array('project'         => PROJECT,
@@ -292,7 +292,7 @@ try{
                 }
 
                 if(!file_exists(ROOT.$short_file)) {
-                    log_console(tr(' File not found'), '', 'red', true);
+                    log_console(tr(' File "%file%" not found', array('%file%' => ROOT.$short_file)), '', 'red', true);
 
                 }else{
                     //store new file

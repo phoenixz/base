@@ -47,7 +47,7 @@ try {
         $error = tr('No valid auth key specified.');
     }
 
-    if(empty($timestamp) or !is_numeric($timestamp) or ($timestamp > time())){
+    if(empty($timestamp) or !is_numeric($timestamp) or ($timestamp > date('U'))){
         $error = tr('Time validation error.');
     }
 
@@ -83,7 +83,7 @@ try {
 
     sql_query('UPDATE `projects`
 
-               SET    `last_login` = NOW()
+               SET    `last_login` = UNIX_TIMESTAMP()
 
                WHERE  `id` = :id',
 
