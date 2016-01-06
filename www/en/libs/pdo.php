@@ -270,6 +270,10 @@ function sql_init($connector = 'core'){
     global $_CONFIG;
 
     try{
+        if(empty($connector)){
+            throw new bException(tr('sql_init(): No connector specified'), 'notspecified');
+        }
+
         $connector = sql_connector_name($connector);
 
         if(!empty($GLOBALS['sql_'.$connector])){
@@ -277,10 +281,6 @@ function sql_init($connector = 'core'){
              * Already connected to core DB
              */
             return null;
-        }
-
-        if(empty($connector)){
-            $connector = 'core';
         }
 
         if(empty($_CONFIG['db'][$connector])){
@@ -394,14 +394,16 @@ function sql_connect($connector){
         try{
             $connector['pdo_attributes'][PDO::ATTR_ERRMODE]                  = PDO::ERRMODE_EXCEPTION;
             $connector['pdo_attributes'][PDO::MYSQL_ATTR_USE_BUFFERED_QUERY] = !(boolean) $connector['buffered'];
+            $connector['pdo_attributes'][PDO::MYSQL_ATTR_INIT_COMMAND]       = 'SET NAMES '.strtoupper($connector['charset']);
 
             $pdo = new PDO($connector['driver'].':host='.$connector['host'].(empty($connector['port']) ? '' : ';port='.$connector['port']).(empty($connector['db']) ? '' : ';dbname='.$connector['db']), $connector['user'], $connector['pass'], $connector['pdo_attributes']);
 
-            /*
-             * Ensure correct character set and timezone usage
-             */
-            $pdo->query('SET NAMES '.$connector['charset']);
-            $pdo->query('SET CHARACTER SET '.$connector['charset']);
+// :DELETE: The characterset is now set in the mysql init command
+//            /*
+//             * Ensure correct character set and timezone usage
+//             */
+//            $pdo->query('SET NAMES '.$connector['charset']);
+//            $pdo->query('SET CHARACTER SET '.$connector['charset']);
 
             try{
                 $pdo->query('SET time_zone = "'.$connector['timezone'].'";');

@@ -57,6 +57,8 @@ function curl_get_proxy($url, $file = '', $serverurl = null) {
             throw new bException(tr('curl_get_proxy(): Proxy returned invalid data "%data%" from proxy "%proxy%". Is proxy correctly configured? Proxy domain resolves correctly?', array('%data%' => str_log($data), '%proxy%' => str_cut(str_log($serverurl), '://', '/'))), 'notspecified');
         }
 
+        load_libs('json');
+
         $data         = substr($data['data'], 12);
         $data         = json_decode_custom($data);
         $data['data'] = base64_decode($data['data']);
@@ -187,6 +189,10 @@ function curl_get($params, $referer = null, $post = false, $options = array()){
         array_default($params, 'retries'        ,  5);    // Retry howmany time on HTTP0 failures
         array_default($params, 'timeout'        , 10);    // # of seconds for cURL functions to execute
         array_default($params, 'connect_timeout', 10);    // # of seconds before connection try will fail
+
+        if(VERBOSE){
+            log_console(tr('Connecting with "%url%"', array('%url%' => $params['url'])), 'curl_get');
+        }
 
         if($params['proxy']){
             return curl_get_proxy($params['url'], $params['file']);

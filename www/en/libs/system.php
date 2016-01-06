@@ -148,7 +148,7 @@ function tr($text, $replace = null, $obsolete = null){
                 throw new bException('tr() no longer support tr(text, from, to), please specify a replace array.', 'obsolete');
             }
 
-            $replace = array($replace => $obsolete);
+            $replace = null;
         }
 
         if($replace){
@@ -600,8 +600,8 @@ function log_database($messages, $type = 'unknown'){
         }
 
         foreach(array_force($messages, "\n") as $message){
-            sql_query('INSERT DELAYED INTO `log` (`createdby`, `ip`, `type`, `message`)
-                       VALUES                    (:createdby , :ip , :type , :message )',
+            sql_query('INSERT INTO `log` (`createdby`, `ip`, `type`, `message`)
+                       VALUES            (:createdby , :ip , :type , :message )',
 
                        array(':createdby' => isset_get($_SESSION['user']['id']),
                              ':ip'        => isset_get($_SERVER['REMOTE_ADDR']),
@@ -612,7 +612,7 @@ function log_database($messages, $type = 'unknown'){
         return $messages;
 
     }catch(Exception $e){
-log_database($e);
+//log_database($e);
 // :TODO: Add Notifications!
         log_console('log_database(): Failed to log message "'.str_log($messages).'" to database', 'error');
 
