@@ -121,9 +121,9 @@ function notifications_do($event, $message, $classes = null, $alternate_subenvir
             foreach($methods as $method){
                 switch($method){
                     case 'sms':
-                        load_libs('twilio');
                         notifications_twilio($event, $message, $members);
                         break;
+
                     case 'email':
                         notifications_email($event, $message, $members);
                         break;
@@ -231,7 +231,7 @@ function notifications_twilio($event, $message, $users, $alternate_subenvironmen
     global $_CONFIG;
 
     try{
-        load_config('twilio');
+        load_libs('twilio');
 
         $c = $_CONFIG['notifications']['methods']['sms'];
 
@@ -259,6 +259,7 @@ function notifications_twilio($event, $message, $users, $alternate_subenvironmen
 
             if(!empty($user['phones'])){
                 twilio_send_message(substr($message, 0, 140), $user['phones'], '+18443385112');
+
             }else{
                 log_console(tr('User "%user%" has not configured phone', array('%user%' => $user['username'])));
             }
