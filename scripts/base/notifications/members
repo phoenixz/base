@@ -106,7 +106,7 @@ try{
                                    array(':classes_id' => $data['classes_id'],
                                          ':users_id'   => $data['users_id']));
 
-                log_console(tr('Removed notification member', array('%count%' => $count)), '', 'green');
+                log_console(tr('Removed "%count%" notification member', array('%count%' => isset_get($count, 0))), '', 'green');
 
             }catch(Exception $e){
                 throw new bException(tr('Failed to remove member from notifications class'), $e);

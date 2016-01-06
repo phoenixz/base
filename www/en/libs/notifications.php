@@ -97,7 +97,8 @@ function notifications_do($event, $message, $classes = null, $alternate_subenvir
                                                `users`.`name`,
                                                `users`.`username`,
                                                `users`.`status`,
-                                               `users`.`email`
+                                               `users`.`email`,
+                                               `users`.`phones`
 
                                      FROM      `notifications_members`
 
@@ -120,9 +121,9 @@ function notifications_do($event, $message, $classes = null, $alternate_subenvir
             foreach($methods as $method){
                 switch($method){
                     case 'sms':
-throw new bException('notifications_do(): SMS notifications are not yet supported');
                         load_libs('twilio');
-
+                        notifications_twilio($event, $message, $members);
+                        break;
                     case 'email':
                         notifications_email($event, $message, $members);
                         break;
@@ -218,6 +219,53 @@ function notifications_email($event, $message, $users, $alternate_subenvironment
 
     }catch(Exception $e){
         throw new bException('notifications_email(): Failed', $e);
+    }
+}
+
+
+
+/*
+ * Do twilio notifications
+ */
+function notifications_twilio($event, $message, $users, $alternate_subenvironment = null){
+    global $_CONFIG;
+
+    try{
+        load_config('twilio');
+
+        $c = $_CONFIG['notifications']['methods']['sms'];
+
+        if(empty($_CONFIG['notifications']['methods']['sms'])){
+            /*
+             * Don't do this notification, its disabled by configuration
+             */
+            return false;
+        }
+
+        /*
+         * Send notifications for each class
+         */
+        foreach($users as $user){
+            if(!$user) continue;
+
+            if(!is_array($user)){
+                /*
+                 * Users are specified from DB, or in emergencies, the $_CONFIG
+                 * array, which may contain invalid configuration (should be )
+                 */
+                log_error('notifications_twilio(): Invalid user "'.str_log($user).'" specified. Should have been an array');
+                continue;
+            }
+
+            if(!empty($user['phones'])){
+                twilio_send_message(substr($message, 0, 140), $user['phones'], '+18443385112');
+            }else{
+                log_console(tr('User "%user%" has not configured phone', array('%user%' => $user['username'])));
+            }
+        }
+
+    }catch(Exception $e){
+        throw new bException('notifications_twilio(): Failed', $e);
     }
 }
 
