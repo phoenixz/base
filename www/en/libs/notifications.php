@@ -258,7 +258,7 @@ function notifications_twilio($event, $message, $users, $alternate_subenvironmen
             }
 
             if(!empty($user['phones'])){
-                twilio_send_message($message, $user['phones'], '+18443385112');
+                twilio_send_message(substr($message, 0, 140), $user['phones'], '+18443385112');
             }else{
                 log_console(tr('User "%user%" has not configured phone', array('%user%' => $user['username'])));
             }
