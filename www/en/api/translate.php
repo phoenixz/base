@@ -83,11 +83,12 @@ try {
 
     sql_query('UPDATE `projects`
 
-               SET    `last_login` = UNIX_TIMESTAMP()
+               SET    `last_login` = UNIX_TIMESTAMP(:time)
 
                WHERE  `id` = :id',
 
-               array(':id' => $project['id']));
+               array(':id'   => $project['id'],
+                     ':time' => gmdate(date('U'))));
 
 
     // remove untranslated stuff for this project
