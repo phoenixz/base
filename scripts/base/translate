@@ -199,7 +199,7 @@ try{
             log_console('Requesting translations from server ', 'translate', '', false);
         }
 
-        $timestamp = date('U');
+        $timestamp = gmdate(date('U'));
 
         //construct data for sending
         $data = array('project'         => PROJECT,

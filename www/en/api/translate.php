@@ -47,7 +47,7 @@ try {
         $error = tr('No valid auth key specified.');
     }
 
-    if(empty($timestamp) or !is_numeric($timestamp) or ($timestamp > date('U'))){
+    if(empty($timestamp) or !is_numeric($timestamp) or ($timestamp > gmdate(date('U')))){
         $error = tr('Time validation error.');
     }
 
@@ -66,7 +66,7 @@ try {
 
     $project = sql_get('SELECT `id`,
                                `api_key`,
-                               `last_login`
+                               UNIX_TIMESTAMP(`last_login`) AS `last_login`
 
                         FROM   `projects`
 
