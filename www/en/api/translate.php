@@ -47,8 +47,12 @@ try {
         $error = tr('No valid auth key specified.');
     }
 
-    if(empty($timestamp) or !is_numeric($timestamp) or ($timestamp > gmdate(date('U')))){
-        $error = tr('Time validation error.');
+    $client_time = new DateTime($timestamp);
+    $server_time = new DateTime(date('c'));
+
+    if(empty($timestamp) or ($client_time > $server_time)) {
+        $error = tr('Time validation error. Server time : %time%. Client time : %time2%.',
+        array('%time%' => $server_time->format('U'), '%time2%' => $client_time->format('U')) );
     }
 
     if(empty($options['mode'])){
@@ -66,7 +70,7 @@ try {
 
     $project = sql_get('SELECT `id`,
                                `api_key`,
-                               UNIX_TIMESTAMP(`last_login`) AS `last_login`
+                               `last_login`
 
                         FROM   `projects`
 
@@ -74,7 +78,7 @@ try {
 
                         array(':project_name' => cfm($project_name)));
 
-    if (empty($project['id']) or sha1($project_name.$project['api_key'].$timestamp) != $auth_key or $timestamp < $project['last_login']) {
+    if (empty($project['id']) or sha1($project_name.$project['api_key'].$timestamp) != $auth_key or (!empty($project['last_login']) && $client_time < new Datetime($project['last_login']) )) {
         header('HTTP/1.0 401 Unauthorized', true, 401);
         die(tr('Cant access to server with the given credentials'));
     }
@@ -83,12 +87,12 @@ try {
 
     sql_query('UPDATE `projects`
 
-               SET    `last_login` = UNIX_TIMESTAMP(:time)
+               SET    `last_login` = :time
 
                WHERE  `id` = :id',
 
                array(':id'   => $project['id'],
-                     ':time' => gmdate(date('U'))));
+                     ':time' => $client_time->format('c')));
 
 
     // remove untranslated stuff for this project

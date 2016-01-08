@@ -199,14 +199,14 @@ try{
             log_console('Requesting translations from server ', 'translate', '', false);
         }
 
-        $timestamp = gmdate(date('U'));
+        $timestamp = date('c');
 
         //construct data for sending
         $data = array('project'         => PROJECT,
                       'auth_key'        => sha1(PROJECT.$_CONFIG['translator']['api_key'].$timestamp),
                       'translations'    => $translations,
                       'target_language' => $target_language,
-                      'timestamp'       => $timestamp,
+                      'timestamp'       => date('c'),
                       'options'         => array('mode' => $mode));
 
         //encrypt the data
