@@ -47,8 +47,8 @@ try {
         $error = tr('No valid auth key specified.');
     }
 
-    $client_time = new DateTime($timestamp);
-    $server_time = new DateTime(date('c'));
+    $client_time = new DateTime($timestamp, new DateTimeZone("UTC"));
+    $server_time = new DateTime(date('c') , new DateTimeZone("UTC"));
 
     if(empty($timestamp) or ($client_time > $server_time)) {
         $error = tr('Time validation error. Server time : %time%. Client time : %time2%.',
@@ -78,7 +78,7 @@ try {
 
                         array(':project_name' => cfm($project_name)));
 
-    if (empty($project['id']) or sha1($project_name.$project['api_key'].$timestamp) != $auth_key or (!empty($project['last_login']) && $client_time < new Datetime($project['last_login']) )) {
+    if (empty($project['id']) or sha1($project_name.$project['api_key'].$timestamp) != $auth_key or (!empty($project['last_login']) && $client_time < new Datetime($project['last_login'], new DateTimeZone("UTC")) )) {
         header('HTTP/1.0 401 Unauthorized', true, 401);
         die(tr('Cant access to server with the given credentials'));
     }

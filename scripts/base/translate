@@ -206,7 +206,7 @@ try{
                       'auth_key'        => sha1(PROJECT.$_CONFIG['translator']['api_key'].$timestamp),
                       'translations'    => $translations,
                       'target_language' => $target_language,
-                      'timestamp'       => date('c'),
+                      'timestamp'       => $timestamp,
                       'options'         => array('mode' => $mode));
 
         //encrypt the data
