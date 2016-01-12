@@ -24,8 +24,8 @@ if(!function_exists('s_get_user_class')){
             $retval['user']       = $user;
             $retval['class']      = $class;
 
-            $retval['users_id']   = sql_get('SELECT `id` FROM `users`                 WHERE `id` = :user  OR `username` = :user' , 'id', array(':user' => $user));
-            $retval['classes_id'] = sql_get('SELECT `id` FROM `notifications_classes` WHERE `id` = :class OR `name`     = :class', 'id', array(':class' => $class));
+            $retval['users_id']   = sql_get('SELECT `id` FROM `users`                 WHERE `id` = :id    OR `username` = :user' , 'id', array(':id' => $user , ':user'  => $user));
+            $retval['classes_id'] = sql_get('SELECT `id` FROM `notifications_classes` WHERE `id` = :id    OR `name`     = :class', 'id', array(':id' => $class, ':class' => $class));
 
             if(!$retval['classes_id']){
                 throw new bException(tr('s_get_user_class(): Specified class "%name%" does not exist', array('%name%' => $class)));
