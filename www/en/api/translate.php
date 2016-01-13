@@ -5,6 +5,7 @@
 */
 include_once (dirname(__FILE__) . '/../libs/startup.php');
 load_libs('crypt');
+load_config('translate');
 
 if(empty($_POST['data'])){
     header('HTTP/1.0 400 Bad Request', true, 400);
@@ -50,7 +51,7 @@ try {
     $client_time = new DateTime($timestamp, new DateTimeZone("UTC"));
     $server_time = new DateTime(date('c') , new DateTimeZone("UTC"));
 
-    if(empty($timestamp) or ($client_time > $server_time)) {
+    if(empty($timestamp) or (abs($client_time->getTimestamp() - $server_time->getTimestamp()) > $_CONFIG['translate']['max_difference_time'])){
         $error = tr('Time validation error. Server time : %time%. Client time : %time2%.',
         array('%time%' => $server_time->format('U'), '%time2%' => $client_time->format('U')) );
     }
