@@ -137,7 +137,13 @@ function cache_write($value, $key = null, $group = null){
         }
 
     }catch(Exception $e){
-        throw new bException('cache_write(): Failed', $e);
+        /*
+         * Cache failed to write. Lets not die on this!
+         *
+         * Notify and continue without the cache
+         */
+        notify('cache_write_fail', tr('Failed write ":method" for key ":kley"', array(':key' => $key, ':method' => $_CONFIG['cache']['method'])), 'development');
+        return $value;
     }
 }
 
