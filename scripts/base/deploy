@@ -178,7 +178,7 @@ if(!$targets){
     }
 
     if(empty($targets)){
-        throw new bException(tr('The specified category/ies "%categories%" contain no deploy targets', array('%categories%' => str_force($categories, ', '))), 'empty');
+        throw new bException(tr('The specified categories "%categories%" contain no deploy targets', array('%categories%' => str_force($categories, ', '))), 'empty');
     }
 }
 
@@ -480,6 +480,10 @@ if($notouch){
 
 
 foreach($targets as $target_environment){
+    if(!preg_match('/^[a-z0-9]+$/', $target_environment)){
+        throw new bException('Invalid target environment name "'.str_log($target_environment).'" specified, can only contain alphanumeric characters', 'unknown');
+    }
+
     if(empty($_CONFIG['deploy'][$target_environment])){
         throw new bException('Unknown target environment "'.str_log($target_environment).'" specified', 'unknown');
     }
