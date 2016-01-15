@@ -1337,6 +1337,9 @@ function html_img($src, $alt, $height = 0, $width = 0, $more = ''){
                 }
 
                 $file = null;
+
+            }else{
+                $file = null;
             }
         }
 
