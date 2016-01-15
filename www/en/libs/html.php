@@ -1335,11 +1335,13 @@ function html_img($src, $alt, $height = 0, $width = 0, $more = ''){
                 if(!$width){
                     throw new bException(tr('html_img(): No width specified for remote image'), 'notspecified');
                 }
+
+                $file = null;
             }
         }
 
         if(!$height or !$width){
-            if(empty($images[$file])){
+            if($file and empty($images[$file])){
                 if($src){
                     if(!file_exists($file)){
                         log_error(tr('html_img(): Specified image src "%src%" does not exist', array('%src%' => $src)), 'notspecified');
