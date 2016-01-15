@@ -4,8 +4,8 @@
  */
 static $count, $code, $messages;
 
-$session = "\n\nSESSION DATA\n".print_r($_SESSION, true);
-$server  = "\n\nSERVER DATA\n".print_r($_SERVER, true);
+$session = "\n\n\n<br><br>SESSION DATA<br><br>\n\n\n".print_r(isset_get($_SESSION), true);
+$server  = "\n\n\n<br><br>SERVER DATA<br><br>\n\n\n".print_r(isset_get($_SERVER), true);
 
 /*
  * Count the # of uncaught exceptions.
