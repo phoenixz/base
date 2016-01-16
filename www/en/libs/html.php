@@ -1522,7 +1522,7 @@ function page_show($pagename, $die = true, $force = false, $data = null) {
             $prefix = '';
         }
 
-        return include(ROOT.'www/'.LANGUAGE.'/'.$prefix.$pagename.'.php');
+        include(ROOT.'www/'.LANGUAGE.'/'.$prefix.$pagename.'.php');
 
         if($die){
             die();
