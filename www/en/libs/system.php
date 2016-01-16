@@ -742,7 +742,7 @@ function load_config($files){
              * production configuration file, if available, and then, if
              * available, the environment file
              */
-            foreach(array(ROOT.'config/base/'.$file.'.php', ROOT.'config/production_'.$file.'.php', ROOT.'config/'.ENVIRONMENT.'_'.$file.'.php') as $path){
+            foreach(array(ROOT.'config/base/'.$file.'.php', ROOT.'config/production_'.$file.'.php', (SUBENVIRONMENT ? ROOT.'config/production_'.SUBENVIRONMENT.'_'.$file.'.php' : null), ROOT.'config/'.ENVIRONMENT.'_'.$file.'.php', (SUBENVIRONMENT ? ROOT.'config/'.ENVIRONMENT.'_'.SUBENVIRONMENT.'_'.$file.'.php' : null)) as $path){
                 if(file_exists($path)){
                     include($path);
                     $loaded = true;
