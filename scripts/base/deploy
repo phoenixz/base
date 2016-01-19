@@ -450,7 +450,7 @@ if($notranslate){
     if($_CONFIG['language']['supported']){
         foreach($_CONFIG['language']['supported'] as $code => $language){
             log_screen('Translating to '.$language, 'deploy', 'white');
-            script_exec('base/translate', array('languages',$code));
+            script_exec('base/translate', array('translate', '--languages', $code));
 
             init_hook('deploy_post_translation', $nohooks, array('languages' => $_CONFIG['language']['supported']));
         }
