@@ -3,9 +3,12 @@
  * This is the uncaught exception handler
  */
 static $count, $code, $messages;
+debug(true);
 
-$session = "\n\n\n<br><br>SESSION DATA<br><br>\n\n\n".print_r(isset_get($_SESSION), true);
-$server  = "\n\n\n<br><br>SERVER DATA<br><br>\n\n\n".print_r(isset_get($_SERVER), true);
+$session   = "\n\n\n<br><br>SESSION DATA<br><br>\n\n\n".print_r(isset_get($_SESSION), true);
+$server    = "\n\n\n<br><br>SERVER DATA<br><br>\n\n\n".print_r(isset_get($_SERVER), true);
+$trace     = "\n\nFUNCTION TRACE\n".print_r(debug_trace(''), true);
+$exception = "\n\nEXCEPTION TRACE\n".print_r($e->getMessages(), true);
 
 /*
  * Count the # of uncaught exceptions.
@@ -47,7 +50,7 @@ try{
 
     if($count > 1){
         if(ENVIRONMENT == 'production'){
-            notify('error', "UNCAUGHT EXCEPTION [".$code."]\n".implode("\n", $messages).$server.$session);
+            notify('error', "UNCAUGHT EXCEPTION [".$code."]\n".implode("\n", $messages).$server.$session.$trace.$exception);
         }
     }
 
