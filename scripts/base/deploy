@@ -373,7 +373,12 @@ if($nopush){
 }else{
     log_console('Executing git push', 'deploy', 'white');
 
-    passthru('cd '.ROOT.'; git push && git push --tags', $exitcode);
+    /*
+     * Get current branch
+     */
+    $branch = trim(shell_exec('git rev-parse --abbrev-ref HEAD'));
+
+    passthru('cd '.ROOT.'; git push origin '.$branch.' && git push origin '.$branch.' --tags', $exitcode);
 
     if($exitcode){
         throw new bException('Git push failed with exit code "'.str_log($exitcode).'"', 'git_push');
