@@ -275,4 +275,40 @@ function cache_size(){
 function cache_count(){
     return include('handlers/cache_count.php');
 }
+
+
+
+/*
+ * Return true if the file exists in cache and has not expired
+ * Return false if the file does not exist, or was expired
+ * If the file does exsit, but is expired, delete it to auto cleanup cache
+ */
+function cache_has_file($file, $max_age = null){
+    global $_CONFIG;
+
+    try{
+        if(!$max_age){
+            $max_age = $_CONFIG['cache']['max_age'];
+        }
+
+        if(!file_exists($file)){
+            return false;
+        }
+
+        $mtime = filemtime($file);
+
+        if((time() - $mtime) > $max_age){
+            /*
+             *
+             */
+            file_delete($file);
+            return false;
+        }
+
+        return true;
+
+    }catch(Exception $e){
+        throw new bException(tr('cache_has_file(): Failed'), $e);
+    }
+}
 ?>

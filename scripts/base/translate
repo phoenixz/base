@@ -5,19 +5,19 @@
  *
  * noutf / noutf8 / noutf8check  : Do not perform file content UTF8 checks
  *
- * Methods : 
- * 
+ * Methods :
+ *
  * translate                     : Generate the directories for each configured language
  *
  * clear                         : Delete all supported translations
  *
  * Options :
  *
- * -l --languages                : Specify the supported languages, otherwise 
+ * -l --languages                : Specify the supported languages, otherwise
  *                                 $_CONFIG['language']['supported'] is used
  *
  * -m --mode                     : Specify the translation mode (strict, full, most or none)
- *                                  
+ *
  * scan / scanonly / onlyscan    : Only perform translation scan, do not actually translate the files (NOT YET IMPLEMENTED)
  *
  * noupdate / nodb               : Do not send updated translations back to the translation server (NOT YET IMPLEMENTED)
@@ -78,11 +78,12 @@ switch($method = argument(0)){
             if($language == 'en'){
                 continue;
             }
+
             log_console(tr('Deleting ":language"', array(':language' => $language)));
             file_delete_tree(ROOT.'www/'.$language);
         }
-        break;
 
+        break;
 
     case 'translate':
         foreach ($languages as $target_language) {
@@ -238,7 +239,7 @@ switch($method = argument(0)){
             $encrypted_data = encrypt(json_encode($data), $_CONFIG['translator']['passphrase']);
             //send translations to server and wait for response
 
-            try {
+            try{
                 $response = curl_get(array('url'             => 'http://'.$_CONFIG['translator']['url'].'/translate.php',
                                            'getdata'         => true,
                                            'proxy'          =>  false,
@@ -247,7 +248,7 @@ switch($method = argument(0)){
                                            'httpheaders'     => false,
                                            'timeout'         => 180,
                                            'connect_timeout' => 180));
-            } catch(Exception $e){
+            }catch(Exception $e){
 
                 if(substr($e->getCode(), 0, 4) == 'HTTP'){
                     $server_message = $e->getData()['data'];
@@ -355,8 +356,8 @@ switch($method = argument(0)){
                 throw new bException(tr('translate: Error applying "%lang" translations', array('%lang%' => $target_language)), $e);
             }
         }
+
         break;
-        
 
     case '':
         throw new bException(tr('No  method specified'));
@@ -364,5 +365,4 @@ switch($method = argument(0)){
     default:
         throw new bException(tr('Unknown method ":method" specified', array(':method' => $method)));
 }
-
 ?>

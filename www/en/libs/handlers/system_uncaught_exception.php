@@ -4,6 +4,9 @@
  */
 static $count, $code, $messages;
 
+$session = "\n\n\n<br><br>SESSION DATA<br><br>\n\n\n".print_r(isset_get($_SESSION), true);
+$server  = "\n\n\n<br><br>SERVER DATA<br><br>\n\n\n".print_r(isset_get($_SERVER), true);
+
 /*
  * Count the # of uncaught exceptions.
  * A second one would be caused by the handling of a previous uncaught exception
@@ -44,7 +47,7 @@ try{
 
     if($count > 1){
         if(ENVIRONMENT == 'production'){
-            notify('error', "UNCAUGHT EXCEPTION [".$code."]\n".implode("\n", $messages));
+            notify('error', "UNCAUGHT EXCEPTION [".$code."]\n".implode("\n", $messages).$server.$session);
         }
     }
 
@@ -112,8 +115,8 @@ try{
 
     }else{
         try{
-            notify('error', "UNCAUGHT EXCEPTION HANDLING FAILED[".$f->getCode()."]\n".implode("\n", $f->getMessages()));
-            notify('error', "UNCAUGHT EXCEPTION [".$e->getCode()."]\n".implode("\n", $e->getMessages()));
+            notify('error', "UNCAUGHT EXCEPTION HANDLING FAILED[".$f->getCode()."]\n".implode("\n", $f->getMessages()).$server.$session);
+            notify('error', "UNCAUGHT EXCEPTION [".$e->getCode()."]\n".implode("\n", $e->getMessages()).$server.$session);
 
         }catch(Exception $g){
             /*

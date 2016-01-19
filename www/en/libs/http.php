@@ -194,13 +194,14 @@ function http_headers($params, $content_length){
         array_params($params, 'http_code');
         array_default($params, 'http_code', 200);
         array_default($params, 'cors'     , false);
+        array_default($params, 'mimetype' , 'text/html');
         array_default($params, 'headers'  , array());
 
 //header("HTTP/1.0 404 Not Found");
 //die('TEST');
         $headers = $params['headers'];
 
-        $headers[] = 'Content-Type: text/html; charset='.$_CONFIG['charset'];
+        $headers[] = 'Content-Type: '.$params['mimetype'].'; charset='.$_CONFIG['charset'];
         $headers[] = 'Content-Language: '.LANGUAGE;
 
         if($content_length){

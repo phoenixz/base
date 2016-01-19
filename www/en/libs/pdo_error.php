@@ -214,7 +214,7 @@ function pdo_error($e, $query, $execute, $sql = null){
                                 "date            : \"".date('d m y h:i:s')."\"\n";
 
                         if(isset($_SESSION)) {
-                            $body .= "Session : ".print_r($_SESSION,true)."\n";
+                            $body .= "Session : ".print_r(isset_get($_SESSION), true)."\n";
                         }
 
                         $body .= "POST   : ".print_r($_POST,true)."
