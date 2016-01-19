@@ -92,7 +92,7 @@ switch($method = argument(0)){
                     continue;
                 }
 
-                log_error('Unknown language "'.$target_language.'" specified', 'translate');
+                throw new bException(tr('Unknown language :language specified', array(':language' => $target_language)));
                 return;
             }
 
