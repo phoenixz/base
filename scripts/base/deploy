@@ -178,7 +178,7 @@ if(!$targets){
     }
 
     if(empty($targets)){
-        throw new bException(tr('The specified category/ies "%categories%" contain no deploy targets', array('%categories%' => str_force($categories, ', '))), 'empty');
+        throw new bException(tr('The specified categories "%categories%" contain no deploy targets', array('%categories%' => str_force($categories, ', '))), 'empty');
     }
 }
 
@@ -450,7 +450,7 @@ if($notranslate){
     if($_CONFIG['language']['supported']){
         foreach($_CONFIG['language']['supported'] as $code => $language){
             log_screen('Translating to '.$language, 'deploy', 'white');
-            script_exec('base/translate', array('languages',$code));
+            script_exec('base/translate', array('translate', '--languages', $code));
 
             init_hook('deploy_post_translation', $nohooks, array('languages' => $_CONFIG['language']['supported']));
         }
@@ -480,6 +480,10 @@ if($notouch){
 
 
 foreach($targets as $target_environment){
+    if(!preg_match('/^[a-z0-9]+$/', $target_environment)){
+        throw new bException('Invalid target environment name "'.str_log($target_environment).'" specified, can only contain alphanumeric characters', 'unknown');
+    }
+
     if(empty($_CONFIG['deploy'][$target_environment])){
         throw new bException('Unknown target environment "'.str_log($target_environment).'" specified', 'unknown');
     }
