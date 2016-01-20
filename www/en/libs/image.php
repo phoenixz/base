@@ -258,7 +258,7 @@ function image_convert($source, $destination, $x, $y, $method, $params = array()
 
             case 'crop-resize':
                 load_libs('file');
-                safe_exec($imagick['convert'].' -limit memory 16 -limit map 16 -quality 75 "'.$source.'" -crop '.cfi($params['w']).'x'.cfi($params['h']).'+'.cfi($params['x']).'+'.cfi($params['y']).' -resize '.cfi($x).'x'.cfi($y).' "'.$destination.'" >> '.TMP.'imagemagic_convert.log 2>&1', 0);
+                safe_exec($imagick['convert'].' -limit memory 16 -limit map 16 -quality 75 "'.$source.'" -crop '.cfi($params['w'], false).'x'.cfi($params['h'], false).'+'.cfi($params['x'], false).'+'.cfi($params['y'], false).' -resize '.cfi($x, false).'x'.cfi($y, false).' "'.$destination.'" >> '.TMP.'imagemagic_convert.log 2>&1', 0);
                 break;
 
             case 'custom':
