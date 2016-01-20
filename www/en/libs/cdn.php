@@ -11,15 +11,28 @@
 
 /*
  * Send command to CDN servers that must be executed
+ *
+ * If $id is specified, the command will be sent to only that CDN server
+ * If $id is NULL, the command will be sent to all CDN servers
  */
-function cdn_commands_send($command, $data){
+function cdn_commands_send($command, $data, $id = null){
     global $_CONFIG;
 
     try{
-        load_libs('crypt,curl');
+        load_libs('crypt,curl,html');
         $message = encrypt(array('command' => $command, 'data' => $data), $_CONFIG['cdn']['shared_key']);
 
-        foreach($_CONFIG['cdn']['servers'] as $server){
+        if($id){
+            $from  = $id;
+            $until = $id;
+
+        }else{
+            $from  = 1;
+            $until = $_CONFIG['cdn']['servers'];
+        }
+
+        for($server = $from; $server <= $until; $server++){
+            $server = html_cdn_prefix($server);
             $result = curl_get(array('url'        => $server.'/command.php',
                                      'getheaders' => false,
                                      'post'       => array('message' => $message)));
