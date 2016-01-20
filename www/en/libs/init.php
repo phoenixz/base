@@ -348,8 +348,7 @@ function init_process_version_diff(){
     }
 
     if((PLATFORM == 'http') or !argument('noversioncheck')){
-        page_show(503);
-        //throw new bException(tr('init_process_version_diff(): Please run the init script because "'.str_log($versionerror).'"'), 'doinit');
+        throw new bException(tr('init_process_version_diff(): Please run the init script because "'.str_log($versionerror).'"'), 'doinit');
     }
 }
 
