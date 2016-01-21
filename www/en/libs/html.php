@@ -1725,7 +1725,14 @@ function html_cdn_prefix($id = null){
 
     try{
         if(!$id){
-            $id = mt_rand(1, $_CONFIG['cdn']['servers']);
+            if(empty($_SESSION['cdn'])){
+                /*
+                 * Assign CDN server to this session
+                 */
+                $_SESSION['cdn'] = mt_rand(1, $_CONFIG['cdn']['servers']);
+            }
+
+            $id = $_SESSION['cdn'];
         }
 
         return str_replace(':id', $id, $_CONFIG['cdn']['prefix']);
