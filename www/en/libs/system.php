@@ -1526,11 +1526,46 @@ function get_cdn_id(){
             $GLOBALS['cdn_id'] = str_until($_SERVER['SERVER_NAME'], '.');
 
             if(!is_numeric($GLOBALS['cdn_id'])){
-                throw new bException(tr('cdn_prefix(): This is not a numeric CDN server'), $e);
+                throw new bException(tr('get_cdn_id(): This is not a numeric CDN server'), $e);
             }
         }
 
         return $GLOBALS['cdn_id'];
+
+    }catch(Exception $e){
+        throw new bException(tr('get_cdn_id(): Failed'), $e);
+    }
+}
+
+
+
+/*
+ *
+ */
+function cdn_prefix($id = null, $force_environment = false){
+    global $_CONFIG;
+
+    try{
+        if($force_environment){
+            $config = get_config('production', $force_environment);
+            $cdn    = $config['cdn'];
+
+        }else{
+            $cdn    = $_CONFIG['cdn'];
+        }
+
+        if(!$id){
+            if(empty($_SESSION['cdn'])){
+                /*
+                 * Assign CDN server to this session
+                 */
+                $_SESSION['cdn'] = mt_rand(1, $cdn['servers']);
+            }
+
+            $id = $_SESSION['cdn'];
+        }
+
+        return str_replace(':id', $id, $cdn['prefix']);
 
     }catch(Exception $e){
         throw new bException(tr('cdn_prefix(): Failed'), $e);
@@ -1540,27 +1575,23 @@ function get_cdn_id(){
 
 
 /*
- *
+ * Return deploy configuration for the specified subenvironment
  */
-function cdn_prefix($id = null){
-    global $_CONFIG;
-
+function get_config($file, $environment = null){
     try{
-        if(!$id){
-            if(empty($_SESSION['cdn'])){
-                /*
-                 * Assign CDN server to this session
-                 */
-                $_SESSION['cdn'] = mt_rand(1, $_CONFIG['cdn']['servers']);
-            }
+		$_CONFIG = array('deploy' => array());
 
-            $id = $_SESSION['cdn'];
+        if($environment and ($environment != 'production')){
+            include(ROOT.'config/'.$file.'_'.$environment.'.php');
+
+        }else{
+            include(ROOT.'config/'.$file.'.php');
         }
 
-        return str_replace(':id', $id, $_CONFIG['cdn']['prefix']);
+		return $_CONFIG;
 
     }catch(Exception $e){
-        throw new bException(tr('cdn_prefix(): Failed'), $e);
+        throw new bException('get_config(): Failed', $e);
     }
 }
 ?>
