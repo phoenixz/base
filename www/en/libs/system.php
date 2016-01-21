@@ -1520,20 +1520,57 @@ function unique_code($hash = 'sha256'){
 /*
  *
  */
-function get_cdn_id(){
+function get_this_cdn_id(){
     try{
         if(empty($GLOBALS['cdn_id'])){
             $GLOBALS['cdn_id'] = str_until($_SERVER['SERVER_NAME'], '.');
 
             if(!is_numeric($GLOBALS['cdn_id'])){
-                throw new bException(tr('get_cdn_id(): This is not a numeric CDN server'), $e);
+                throw new bException(tr('get_this_cdn_id(): This is not a numeric CDN server'), $e);
             }
         }
 
         return $GLOBALS['cdn_id'];
 
     }catch(Exception $e){
-        throw new bException(tr('get_cdn_id(): Failed'), $e);
+        throw new bException(tr('get_this_cdn_id(): Failed'), $e);
+    }
+}
+
+
+
+/*
+ * Use this function to get resources from multiple CDN servers if resources
+ * are not limited to only one CDN server
+ *
+ * At first call, it will return the first CDN server from the
+ * $_CONFIG['cdn']['servers'] list. At subsequent calls, it will return the
+ * next CDN server in the $_CONFIG['cdn']['servers'] list. Once at the end of
+ * the list, it will start from the beginning again
+ *
+ * This way, a single page will request data from multiple CDN servers, and so
+ * increase page load speed. Since for each page, the order of CDN servers is
+ * the same for each load, for each CDN server, most file requests will be the
+ * same as well, so the server will be able to use its file cache more
+ * efficient as well.
+ */
+function get_next_cdn_id(){
+    global $_CONFIG;
+    static $current_id;
+
+    try{
+        if(empty($current_id)){
+            reset($_CONFIG['cdn']['servers']);
+            $current_id = current($_CONFIG['cdn']['servers']);
+
+        }else{
+            $current_id = array_next_value($_CONFIG['cdn']['servers'], $current_id, false, true);
+        }
+
+        return $current_id;
+
+    }catch(Exception $e){
+        throw new bException(tr('get_this_cdn_id(): Failed'), $e);
     }
 }
 
@@ -1555,14 +1592,7 @@ function cdn_prefix($id = null, $force_environment = false){
         }
 
         if(!$id){
-            if(empty($_SESSION['cdn'])){
-                /*
-                 * Assign CDN server to this session
-                 */
-                $_SESSION['cdn'] = mt_rand(1, $cdn['servers']);
-            }
-
-            $id = $_SESSION['cdn'];
+            $id = get_next_cdn_id();
         }
 
         return str_replace(':id', $id, $cdn['prefix']);

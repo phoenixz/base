@@ -53,7 +53,7 @@ function array_next_key(&$array, $currentkey, $delete = false){
  *
  * If the specified key is not found, $currentvalue will be returned.
  */
-function array_next_value(&$array, $currentvalue, $delete = false){
+function array_next_value(&$array, $currentvalue, $delete = false, $restart = false){
     try{
         foreach($array as $key => $value){
             if(isset($next)){
@@ -73,12 +73,15 @@ function array_next_value(&$array, $currentvalue, $delete = false){
             }
         }
 
-        if(!empty($next)){
+        if(!$restart){
             /*
              * The currentvalue was found, but it was at the end of the array
              */
             throw new bException('array_next_value(): Found currentvalue "'.str_log($currentvalue).'" but it was the last item in the array, there is no next', 'invalid');
         }
+
+        reset($array);
+        return current($array);
 
     }catch(Exception $e){
         throw new bException('array_next_value(): Failed', $e);
