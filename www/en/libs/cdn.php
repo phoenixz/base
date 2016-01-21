@@ -32,7 +32,7 @@ function cdn_commands_send($command, $data, $id = null){
         }
 
         for($server = $from; $server <= $until; $server++){
-            $server = html_cdn_prefix($server);
+            $server = cdn_prefix($server);
             $result = curl_get(array('url'        => $server.'/command.php',
                                      'getheaders' => false,
                                      'post'       => array('message' => $message)));

@@ -123,7 +123,7 @@ function html_generate_css(){
         foreach($GLOBALS['css'] as $file => $meta) {
             if(!$file) continue;
 
-            $html = '<link rel="stylesheet" type="text/css" href="'.html_cdn_prefix().'css/'.((SUBENVIRONMENT and (substr($file, 0, 5) != 'base/')) ? SUBENVIRONMENT.'/' : '').(!empty($GLOBALS['page_is_mobile']) ? 'mobile/' : '').$file.($min ? '.min.css' : '.css').'"'.($meta['media'] ? ' media="'.$meta['media'].'"' : '').'>';
+            $html = '<link rel="stylesheet" type="text/css" href="'.cdn_prefix().'css/'.((SUBENVIRONMENT and (substr($file, 0, 5) != 'base/')) ? SUBENVIRONMENT.'/' : '').(!empty($GLOBALS['page_is_mobile']) ? 'mobile/' : '').$file.($min ? '.min.css' : '.css').'"'.($meta['media'] ? ' media="'.$meta['media'].'"' : '').'>';
 
             if(substr($file, 0, 2) == 'ie'){
                 $retval .= html_iefilter($html, str_until(str_from($file, 'ie'), '.'));
@@ -298,7 +298,7 @@ function html_generate_js(){
                     if($skip) continue;
                 }
 
-                $html = '<script'.(!empty($data['option']) ? ' '.$data['option'] : '').' type="text/javascript" src="'.html_cdn_prefix().'js/'.$file.$min.'.js"></script>';
+                $html = '<script'.(!empty($data['option']) ? ' '.$data['option'] : '').' type="text/javascript" src="'.cdn_prefix().'js/'.$file.$min.'.js"></script>';
             }
 
             /*
@@ -1033,7 +1033,7 @@ function html_script($script, $jquery_ready = true, $option = null, $type = null
         }
 
         if(substr($script, 0, 1) == '>'){
-            $retval = '<script type="'.$type.'" src="'.html_cdn_prefix().'js/'.substr($script, 1).'"'.($option ? ' '.$option : '').'></script>';
+            $retval = '<script type="'.$type.'" src="'.cdn_prefix().'js/'.substr($script, 1).'"'.($option ? ' '.$option : '').'></script>';
 
         }else{
             $retval = '<script type="'.$type.'"'.($option ? ' '.$option : '').">\n".
@@ -1091,14 +1091,14 @@ function html_favicon($icon = null, $mobile_icon = null, $sizes = null, $precomp
         foreach($params['sizes'] as $sizes){
             if($GLOBALS['page_is_mobile']){
                 if(!$params['mobile_icon']){
-                    $params['mobile_icon'] = html_cdn_prefix().'img'.(SUBENVIRONMENTNAME ? '/'.SUBENVIRONMENTNAME : '').'/mobile/favicon.png';
+                    $params['mobile_icon'] = cdn_prefix().'img'.(SUBENVIRONMENTNAME ? '/'.SUBENVIRONMENTNAME : '').'/mobile/favicon.png';
                 }
 
                 return '<link rel="apple-touch-icon'.($params['precomposed'] ? '-precompsed' : '').'"'.($sizes ? ' sizes="'.$sizes.'"' : '').' href="'.$params['mobile_icon'].'" />';
 
             }else{
                 if(empty($params['icon'])){
-                    $params['icon'] = html_cdn_prefix().'img'.(SUBENVIRONMENTNAME ? '/'.SUBENVIRONMENTNAME : '').'/favicon.png';
+                    $params['icon'] = cdn_prefix().'img'.(SUBENVIRONMENTNAME ? '/'.SUBENVIRONMENTNAME : '').'/favicon.png';
                 }
 
                 return '<link rel="icon" type="image/x-icon"'.($sizes ? ' sizes="'.$sizes.'"' : '').'  href="'.$params['icon'].'" />';
@@ -1712,33 +1712,6 @@ function html_minify($html, $full = false){
 
     }catch(Exception $e){
         throw new bException(tr('html_minify(): Failed'), $e);
-    }
-}
-
-
-
-/*
- *
- */
-function html_cdn_prefix($id = null){
-    global $_CONFIG;
-
-    try{
-        if(!$id){
-            if(empty($_SESSION['cdn'])){
-                /*
-                 * Assign CDN server to this session
-                 */
-                $_SESSION['cdn'] = mt_rand(1, $_CONFIG['cdn']['servers']);
-            }
-
-            $id = $_SESSION['cdn'];
-        }
-
-        return str_replace(':id', $id, $_CONFIG['cdn']['prefix']);
-
-    }catch(Exception $e){
-        throw new bException(tr('html_cdn_prefix(): Failed'), $e);
     }
 }
 ?>

@@ -1514,4 +1514,55 @@ function unique_code($hash = 'sha256'){
         throw new bException('unique_code(): Failed', $e);
     }
 }
+
+
+
+/*
+ *
+ */
+function get_cdn_id(){
+    static $cdn_id;
+
+    try{
+        if(empty($cdn_id)){
+            $cdn_id = str_until($_SERVER['SERVER_NAME'], '.');
+
+            if(!is_numeric($cdn_id)){
+                throw new bException(tr('cdn_prefix(): This is not a numeric CDN server'), $e);
+            }
+        }
+
+        return $cdn_id;
+
+    }catch(Exception $e){
+        throw new bException(tr('cdn_prefix(): Failed'), $e);
+    }
+}
+
+
+
+/*
+ *
+ */
+function cdn_prefix($id = null){
+    global $_CONFIG;
+
+    try{
+        if(!$id){
+            if(empty($_SESSION['cdn'])){
+                /*
+                 * Assign CDN server to this session
+                 */
+                $_SESSION['cdn'] = mt_rand(1, $_CONFIG['cdn']['servers']);
+            }
+
+            $id = $_SESSION['cdn'];
+        }
+
+        return str_replace(':id', $id, $_CONFIG['cdn']['prefix']);
+
+    }catch(Exception $e){
+        throw new bException(tr('cdn_prefix(): Failed'), $e);
+    }
+}
 ?>
