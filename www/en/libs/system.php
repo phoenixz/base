@@ -1521,18 +1521,16 @@ function unique_code($hash = 'sha256'){
  *
  */
 function get_cdn_id(){
-    static $cdn_id;
-
     try{
-        if(empty($cdn_id)){
-            $cdn_id = str_until($_SERVER['SERVER_NAME'], '.');
+        if(empty($GLOBALS['cdn_id'])){
+            $GLOBALS['cdn_id'] = str_until($_SERVER['SERVER_NAME'], '.');
 
-            if(!is_numeric($cdn_id)){
+            if(!is_numeric($GLOBALS['cdn_id'])){
                 throw new bException(tr('cdn_prefix(): This is not a numeric CDN server'), $e);
             }
         }
 
-        return $cdn_id;
+        return $GLOBALS['cdn_id'];
 
     }catch(Exception $e){
         throw new bException(tr('cdn_prefix(): Failed'), $e);

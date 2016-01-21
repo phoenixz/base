@@ -58,7 +58,7 @@ function inet_get_domain($strip = array('www', 'dev', 'm')){
 /*
  * Get subdomain from domain (when knowing what the domain is)
  */
-function inet_get_subdomain($domain = null, $strip = array('www', 'dev', 'm'), $skip_numeric = true){
+function inet_get_subdomain($domain = null, $strip = array('www', 'dev', 'm')){
     global $_CONFIG;
 
     try{
@@ -67,10 +67,6 @@ function inet_get_subdomain($domain = null, $strip = array('www', 'dev', 'm'), $
         }
 
         $subdomain = str_until($domain, '.');
-
-        if(is_numeric($subdomain) and $skip_numeric){
-            $subdomain = str_until(str_from($domain, '.'), '.');
-        }
 
         if(in_array(str_until($_SERVER['SERVER_NAME'], '.'), array_force($strip))){
             return false;
