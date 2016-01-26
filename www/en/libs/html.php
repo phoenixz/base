@@ -430,16 +430,15 @@ function html_header($params = null, $meta = array()){
            $params['meta']['robots'] = 'noindex';
         }
 
-        $meta['title'] = html_title(isset_get($meta['title'], $params['title']));
+        $params['meta']['title'] = html_title(isset_get($meta['title'], $params['title']));
         unset($params['title']);
+        unset($meta['title']);
 
         $retval = "<!DOCTYPE ".$params['doctype'].">\n".
                   $params['html']."\n".
                   "<head>\n".
                   "<meta http-equiv=\"Content-Type\" content=\"text/html;charset=".$_CONFIG['charset']."\">\n".
-                  "<title>".$meta['title']."</title>\n";
-
-        unset($meta['title']);
+                  "<title>".$params['meta']['title']."</title>\n";
 
         foreach($params['prefetch_dns'] as $prefetch){
             $retval .= '<link rel="dns-prefetch" href="//'.$prefetch."\">\n";
@@ -1270,12 +1269,15 @@ function html_hidden($source, $key = 'id'){
 
 /*
  * Create and return an img tag that contains at the least src, alt, height and width
+ * If height / width are not specified, then html_img() will try to get the height / width
+ * data itself, and store that data in database for future reference
  */
 function html_img($src, $alt, $height = 0, $width = 0, $more = ''){
     global $_CONFIG;
     static $images;
 
     try{
+// :DELETE: All projects should be updated to conform with the new html_img() function and then this check should be dumped with the garbage
         if(!$width and $height and !is_numeric($height)){
             if(ENVIRONMENT !== 'production' and $_CONFIG['system']['obsolete_exception']){
                 throw new bException(tr('html_img(): Update html_img() argument order'), 'obsolete');
@@ -1286,12 +1288,21 @@ function html_img($src, $alt, $height = 0, $width = 0, $more = ''){
         }
 
         if(ENVIRONMENT !== 'production'){
-            if(!$alt){
-                throw new bException(tr('html_img(): No image alt text specified'), 'notspecified');
+            if(!$src){
+                notify('no_img_source', tr('html_img(): No image src specified'), 'developers');
             }
 
+            if(!$alt){
+                notify('no_img_alt', tr('html_img(): No image alt text specified for src ":src"', array(':src' => $src)), 'developers');
+            }
+
+        }else{
             if(!$src){
                 throw new bException(tr('html_img(): No image src specified'), 'notspecified');
+            }
+
+            if(!$alt){
+                throw new bException(tr('html_img(): No image alt text specified for src ":src"', array(':src' => $src)), 'notspecified');
             }
         }
 
