@@ -12,6 +12,12 @@
 
 
 
+if(!class_exists('Memcached')){
+    throw new bException(tr('php module "memcached" appears not to be installed. Please install the module first. On Ubuntu and alikes, use "sudo sudo apt-get -y install php5-memcached; sudo php5enmod memcached" to install and enable the module., on Redhat and alikes use ""sudo yum -y install php5-memcached" to install the module. After this, a restart of your webserver or php-fpm server might be needed'), 'not_available');
+}
+
+
+
 /*
  * Connect to the memcached server
  */

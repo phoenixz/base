@@ -11,7 +11,7 @@
 
 
 if(!function_exists('mcrypt_module_open')){
-    throw new bException(tr('crypt: php module "mcrypt" appears not to be installed. Please install the module first. On Ubuntu and alikes, use "sudo apt-get -y install php5-mcrypt; sudo php5enmod mcrypt" to install and enable the module., on Redhat and alikes use ""sudo yum -y install php5-mcrypt" to install the module. After this, a restart of your webserver might be needed'), 'not_available');
+    throw new bException(tr('crypt: php module "mcrypt" appears not to be installed. Please install the module first. On Ubuntu and alikes, use "sudo apt-get -y install php5-mcrypt; sudo php5enmod mcrypt" to install and enable the module., on Redhat and alikes use ""sudo yum -y install php5-mcrypt" to install the module. After this, a restart of your webserver or php-fpm server might be needed'), 'not_available');
 }
 
 
