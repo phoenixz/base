@@ -108,49 +108,49 @@ if(empty($test)){
      * Libraries
      */
     log_console('Libs', 'copy', 'purple');
-    echo shell_exec('rsync -e "ssh -p '.$base['port'].'" -av --no-perms '.$base['host'].':'.$base['path'].'/www/en/libs '.ROOT.'www/en/');
-    echo shell_exec('rsync -e "ssh -p '.$base['port'].'" -av --no-perms '.$base['host'].':'.$base['path'].'/www/en/tests '.ROOT.'www/en/');
+    echo shell_exec('rsync -e "ssh -p '.$base['port'].'" -aczvAXHS --no-perms '.$base['host'].':'.$base['path'].'/www/en/libs '.ROOT.'www/en/');
+    echo shell_exec('rsync -e "ssh -p '.$base['port'].'" -aczvAXHS --no-perms '.$base['host'].':'.$base['path'].'/www/en/tests '.ROOT.'www/en/');
 
     // Base AJAX files
     log_console('Ajax', 'copy', 'purple');
-    echo shell_exec('rsync -e "ssh -p '.$base['port'].'" -av --no-perms '.$base['host'].':'.$base['path'].'/www/en/ajax/base '.ROOT.'www/en/ajax/');
+    echo shell_exec('rsync -e "ssh -p '.$base['port'].'" -aczvAXHS --no-perms '.$base['host'].':'.$base['path'].'/www/en/ajax/base '.ROOT.'www/en/ajax/');
 
     // Scripts
     log_console('Scripts', 'copy', 'purple');
-    echo shell_exec('rsync -e "ssh -p '.$base['port'].'" -av --no-perms --delete '.$base['host'].':'.$base['path'].'/scripts/base/* '.ROOT.'scripts/base/');
-    echo shell_exec('rsync -e "ssh -p '.$base['port'].'" -av --no-perms --delete '.$base['host'].':'.$base['path'].'/scripts/tests/* '.ROOT.'scripts/tests/');
+    echo shell_exec('rsync -e "ssh -p '.$base['port'].'" -aczvAXHS --no-perms --delete '.$base['host'].':'.$base['path'].'/scripts/base/* '.ROOT.'scripts/base/');
+    echo shell_exec('rsync -e "ssh -p '.$base['port'].'" -aczvAXHS --no-perms --delete '.$base['host'].':'.$base['path'].'/scripts/tests/* '.ROOT.'scripts/tests/');
 
     // Framework init files
     log_console('Framework updates', 'copy', 'purple');
-    echo shell_exec('rsync -e "ssh -p '.$base['port'].'" -av --no-perms --delete '.$base['host'].':'.$base['path'].'/init/framework/* '.ROOT.'init/framework/');
+    echo shell_exec('rsync -e "ssh -p '.$base['port'].'" -aczvAXHS --no-perms --delete '.$base['host'].':'.$base['path'].'/init/framework/* '.ROOT.'init/framework/');
 
     // Base configuration
     log_console('Config', 'copy', 'purple');
-    echo shell_exec('rsync -e "ssh -p '.$base['port'].'" -av --no-perms --delete '.$base['host'].':'.$base['path'].'/config/base/* '.ROOT.'config/base/');
+    echo shell_exec('rsync -e "ssh -p '.$base['port'].'" -aczvAXHS --no-perms --delete '.$base['host'].':'.$base['path'].'/config/base/* '.ROOT.'config/base/');
 
     // Javascript
     log_console('Javascript', 'copy', 'purple');
-    echo shell_exec('rsync -e "ssh -p '.$base['port'].'" -av --no-perms --delete '.$base['host'].':'.$base['path'].'/www/en/pub/js/base/* '.ROOT.'www/en/pub/js/base/');
+    echo shell_exec('rsync -e "ssh -p '.$base['port'].'" -aczvAXHS --no-perms --delete '.$base['host'].':'.$base['path'].'/www/en/pub/js/base/* '.ROOT.'www/en/pub/js/base/');
 
     // CSS
     log_console('Stylesheets', 'copy', 'purple');
-    echo shell_exec('rsync -e "ssh -p '.$base['port'].'" -av --no-perms --delete '.$base['host'].':'.$base['path'].'/www/en/pub/css/base/* '.ROOT.'www/en/pub/css/base/');
+    echo shell_exec('rsync -e "ssh -p '.$base['port'].'" -aczvAXHS --no-perms --delete '.$base['host'].':'.$base['path'].'/www/en/pub/css/base/* '.ROOT.'www/en/pub/css/base/');
 
     // Images
     log_console('Images', 'copy', 'purple');
-    echo shell_exec('rsync -e "ssh -p '.$base['port'].'" -av --no-perms --delete '.$base['host'].':'.$base['path'].'/www/en/pub/img/base/* '.ROOT.'www/en/pub/img/base/');
+    echo shell_exec('rsync -e "ssh -p '.$base['port'].'" -aczvAXHS --no-perms --delete '.$base['host'].':'.$base['path'].'/www/en/pub/img/base/* '.ROOT.'www/en/pub/img/base/');
 
     // Documentation
     log_console('Documentation', 'copy', 'purple');
-    echo shell_exec('rsync -e "ssh -p '.$base['port'].'" -av --no-perms '.$base['host'].':'.$base['path'].'/data/doc/* '.ROOT.'data/doc/');
+    echo shell_exec('rsync -e "ssh -p '.$base['port'].'" -aczvAXHS --no-perms '.$base['host'].':'.$base['path'].'/data/doc/* '.ROOT.'data/doc/');
 
     // Sources
     log_console('Data sources', 'copy', 'purple');
-    echo shell_exec('rsync -e "ssh -p '.$base['port'].'" -av --no-perms '.$base['host'].':'.$base['path'].'/data/sources/* '.ROOT.'data/sources/');
+    echo shell_exec('rsync -e "ssh -p '.$base['port'].'" -aczvAXHS --no-perms '.$base['host'].':'.$base['path'].'/data/sources/* '.ROOT.'data/sources/');
 
     // Audio files
     log_console('Audio files', 'copy', 'purple');
-    echo shell_exec('rsync -e "ssh -p '.$base['port'].'" -av --no-perms '.$base['host'].':'.$base['path'].'/data/audio/* '.ROOT.'data/audio/');
+    echo shell_exec('rsync -e "ssh -p '.$base['port'].'" -aczvAXHS --no-perms '.$base['host'].':'.$base['path'].'/data/audio/* '.ROOT.'data/audio/');
 }
 
 /*
