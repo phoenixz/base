@@ -77,6 +77,8 @@ switch(argument(0)){
             }
         }
 
+        ksort($list);
+
         log_console(tr('CDN#      LISTING COUNT      IMAGE COUNT     VIDEOS COUNT'), '', 'cyan');
 
         foreach($list as $cdn => $count){
