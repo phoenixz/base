@@ -219,6 +219,7 @@ function cdn_commands_process($retries = null, $sleep = 5000){
             $retries = 10;
         }
 
+        $retry    = 0;
         $count    = 0;
         $commands = sql_query('SELECT `id`,
                                       `command`,
@@ -228,11 +229,9 @@ function cdn_commands_process($retries = null, $sleep = 5000){
                                FROM   `cdn_commands`
 
                                WHERE  `cdn`    = :cdn
-                               AND    `status` IS NULL
+                               AND    `status` IS NULL',
 
-                               LIMIT  :limit',
-
-                               array(':cdn'   => CDN));
+                               array(':cdn' => CDN));
 
         if(!$commands->rowCount()){
             /*
@@ -684,6 +683,8 @@ function cdn_clean(){
         log_console(tr('Cleaning image and video links where the linked files no longer exist for CDN ":cdn"', array(':cdn' => CDN)), '', 'white');
 
         foreach(array('images', 'videos') as $type){
+            log_console(tr('Cleaning ":type" type objects', array(':type' => $type)));
+
             $listings = sql_query  ('SELECT `id` FROM `listings` WHERE `cdn` = :cdn', array(':cdn' => CDN));
             $r        = sql_prepare('DELETE FROM `'.$type.'` WHERE `listings_id` = :listings_id');
 
