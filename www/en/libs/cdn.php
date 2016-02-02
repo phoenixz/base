@@ -209,14 +209,14 @@ function cdn_commands_insert($message, $files){
 /*
  * Execute all non processed CDN commands
  */
-function cdn_commands_process($limit = null, $sleep = 5000){
+function cdn_commands_process($retries = null, $sleep = 5000){
     try{
         log_console(tr('Executing commands for CDN server ":cdn"', array(':cdn' => CDN)), '', 'white');
 
         load_libs('file');
 
-        if($limit === null){
-            $limit = 10;
+        if($retries === null){
+            $retries = 10;
         }
 
         $count    = 0;
@@ -232,8 +232,20 @@ function cdn_commands_process($limit = null, $sleep = 5000){
 
                                LIMIT  :limit',
 
-                               array(':cdn'   => CDN,
-                                     ':limit' => $limit));
+                               array(':cdn'   => CDN));
+
+        if(!$commands->rowCount()){
+            /*
+             * No commands found, waiting..
+             */
+            if(++$retry <= $retries){
+                log_console(tr('No commands found after ":retries" retries, quitting successfully', array(':retries' => $retries)), '', 'green');
+                die(0);
+            }
+
+            usleep($sleep * 100);
+            log_console(tr('No commands found, retrying'));
+        }
 
         while($command = sql_fetch($commands)){
             try{
