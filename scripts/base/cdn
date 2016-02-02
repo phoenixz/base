@@ -67,6 +67,16 @@ switch(argument(0)){
         $total['images']   = array_sum($images);
         $total['videos']   = array_sum($videos);
 
+        /*
+         * Ensure that all CDN servers are displayed, also the ones that do not yet
+         * have any listings
+         */
+        foreach($_CONFIG['cdn']['servers'] as $server){
+            if(!isset($list[$server])){
+                $list[$server] = 0;
+            }
+        }
+
         log_console(tr('CDN#      LISTING COUNT      IMAGE COUNT     VIDEOS COUNT'), '', 'cyan');
 
         foreach($list as $cdn => $count){

@@ -184,6 +184,7 @@ function curl_get($params, $referer = null, $post = false, $options = array()){
         array_default($params, 'cache'          , false);
         array_default($params, 'verbose'        , null);
         array_default($params, 'method'         , null);
+        array_default($params, 'dns_cache'      , true);
         array_default($params, 'proxy'          , $_CONFIG['curl']['proxy']);
         array_default($params, 'simulation'     , false); // false, partial, or full
         array_default($params, 'sleep'          , 15);    // Sleep howmany seconds between retries
@@ -352,6 +353,13 @@ function curl_get($params, $referer = null, $post = false, $options = array()){
         if($params['httpheaders'] !== false){
 //show($params['httpheaders']);
             curl_setopt($ch, CURLOPT_HTTPHEADER, $params['httpheaders']);
+        }
+
+        /*
+         * Disable DNS cache?
+         */
+        if(!$params['dns_cache']){
+            $params['options'][CURLOPT_DNS_CACHE_TIMEOUT] = 0;
         }
 
         /*

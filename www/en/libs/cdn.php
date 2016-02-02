@@ -197,7 +197,10 @@ function cdn_commands_insert($message, $files){
         }
 
         log_database('Inserted CDN command "'.str_log($message['command']).'"', 'cdncommand/'.str_log(isset_get($message['command'])));
-        run_background('base/cdn process --verbose -e '.ENVIRONMENT, true, true);
+
+        if(!debug()){
+            run_background('base/cdn process --verbose -e '.ENVIRONMENT, true, true);
+        }
 
     }catch(Exception $e){
         throw new bException('cdn_commands_insert(): Failed', $e);
@@ -397,13 +400,11 @@ function cdn_balance(){
         /*
          * Check $from list, ensure that all CDN's are currently available
          */
-        $average = $from;
-        $to      = $from;
+        $to = $from;
 
         foreach($from as $cdn => $count){
             if($count and !in_array($cdn, $cdns)){
                 log_console(tr('Found CDN ":cdn" has assigned ":count" listings. Since this CDN is not configured (anymore?), all listings will be removed and redistributed over the other CDN servers.', array(':cdn' => $cdn, ':count' => $count)), '', 'yellow');
-                unset($average[$cdn]);
             }
         }
 
@@ -411,7 +412,7 @@ function cdn_balance(){
          * We'll try to average the files over all currently configured CDN servers
          * So calculate the average and copy from high amount servers to low amount servers
          */
-        $average  = ceil(array_average($average)) + 2;
+        $average  = ceil(array_average($from)) + 2;
         $sum      = array_sum($from);
         $results  = array('failures' => array());
 
@@ -428,24 +429,24 @@ function cdn_balance(){
                  * This CDN server has listings assigned, but is no longer configured.
                  * Move everything away from it
                  */
-                unset($to[$cdn]);
+                unset($from[$cdn]);
                 $from[$cdn] = $count;
 
-            }elseif($count >= $average){
+            }elseif($count < $average){
                 /*
                  * This CDN server has less than average listings assigned, move the
                  * difference in listings to it
                  */
-                unset($to[$cdn]);
-                $from[$cdn] = $count - $average;
+                unset($from[$cdn]);
+                $to[$cdn] = $average - $count;
 
             }else{
                 /*
                  * This CDN server has more than average listings assigned, move the
                  * difference in listings from it
                  */
-                unset($from[$cdn]);
-                $to[$cdn] = $average - $count;
+                unset($to[$cdn]);
+                $from[$cdn] = $count - $average;
             }
         }
 
@@ -502,6 +503,8 @@ function cdn_balance(){
                 }
             }
         }
+
+        cli_dot(false);
 
         return $results;
 
@@ -636,7 +639,13 @@ function cdn_move_listing_data($listings_id, $from_cdn, $to_cdn){
         }
 
         if(empty($sendfiles)){
-            log_console(tr('Not moving data for listing ":listing" because no images are linked', array(':listing' => $listings_id)), '', 'yellow');
+            if(VERBOSE){
+                log_console(tr('Not moving data for listing ":listing" because no images are linked', array(':listing' => $listings_id)), '', 'yellow');
+
+            }else{
+                cli_dot(10, '#', '');
+            }
+
             return false;
 
         }else{
