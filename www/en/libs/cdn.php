@@ -245,14 +245,14 @@ function cdn_commands_process($retries = null, $sleep = 5000){
                 die(0);
             }
 
-            usleep($sleep * 100);
+            usleep($sleep * 1000);
             log_console(tr('No commands found, retrying'));
         }
 
         while($command = sql_fetch($commands)){
             try{
                 if(VERBOSE){
-                    log_console(tr('Processing CDN ":cdn" command ":command" with id ":id" ', array(':id' => $command['id'], ':cdn' => CDN, ':command' => $command['command'])));
+                    log_console(tr('Processing CDN ":cdn" command ":command" with id ":id"', array(':id' => $command['id'], ':cdn' => CDN, ':command' => $command['command'])));
 
                 }else{
                     cli_dot();
@@ -265,6 +265,10 @@ function cdn_commands_process($retries = null, $sleep = 5000){
                         /*
                          * Move the listing files in place
                          */
+                        if(VERBOSE){
+                            log_console(tr('place-listing-data for listing ":listing"', array(':listing' => $command['data']['listings_id'])));
+                        }
+
                         foreach(scandir($command['path']) as $file){
                             if(($file == '.') or ($file == '..')) continue;
 
@@ -293,7 +297,7 @@ function cdn_commands_process($retries = null, $sleep = 5000){
                          * Get previous CDN and update the listings CDN id
                          */
                         $cdn = sql_get('SELECT `cdn` FROM `listings` WHERE `id` = :id', 'cdn', array(':id' => $command['data']['listings_id']));
-                        sql_query('UPDATE `listings` SET `cdn` = :cdn WHERE `id` = :id', array(':id' => $command['data']['listings_id'], CDN));
+                        sql_query('UPDATE `listings` SET `cdn` = :cdn WHERE `id` = :id', array(':id' => $command['data']['listings_id'], ':cdn' => CDN));
 
                         /*
                          * Remove the files from the previous CDN
@@ -659,6 +663,13 @@ function cdn_move_listing_data($listings_id, $from_cdn, $to_cdn){
             return false;
 
         }else{
+            if(VERBOSE){
+                log_console(tr('Moving data for listing ":listing"', array(':listing' => $listings_id)), '', 'green');
+
+            }else{
+                cli_dot(10, '#', 'green');
+            }
+
             return cdn_commands_send('place-listing-data', array('listings_id' => $listings_id, 'files' => $sendfiles), $to_cdn);
         }
 
