@@ -1,9 +1,10 @@
 #!/usr/bin/php
 <?php
 /*
- * This is an empty test script template
- */
+* This is an empty test script template
+*/
 $usage = "./scripts/cdn\n".
+
          "./scripts/cdn option [option]\n";
 
 $help  = "cdn management script";
@@ -11,18 +12,211 @@ $help  = "cdn management script";
 require_once(dirname(__FILE__).'/../../libs/startup.php');
 load_libs('cdn');
 
-if(TEST){
-	cdn_test();
-	log_console(tr('Test succeeded'), '', 'green');
+cli_only();
+this_script_already_runs();
 
-}else{
-	switch(argument(0)){
-		case 'command':
-			cdn_commands_send(argument(1), argument(2));
-			break;
+switch(argument(0)){
+    case 'command':
+        cdn_commands_send(argument(1), argument(2));
+        break;
 
-		case 'process':
-			cdn_commands_process();
-	}
+    case 'process':
+        cdn_commands_process(argument('--limit', true));
+        break;
+
+    case 'ping':
+        cdn_ping(argument('ping', 'all'));
+        break;
+
+    case 'info':
+        /*
+         * Show howmany listings and users are on each CDN server
+         */
+        log_console(tr('AVAILABE CDN SERVERS:'), '', 'white');
+
+        foreach($_CONFIG['cdn']['servers'] as $server){
+            log_console(cdn_prefix($server));
+        }
+
+        log_console('');
+        log_console('CDN SERVER LISTING INFORMATION:', '', 'white');
+
+        $list   = sql_list('SELECT `cdn`, COUNT(`id`) FROM `listings` GROUP BY `cdn`');
+
+        $images = sql_list('SELECT    `listings`.`cdn`,
+                                      COUNT(`images`.`id`)
+
+                            FROM      `images`
+
+                            LEFT JOIN `listings`
+                            ON        `listings`.`id` = `images`.`listings_id`
+
+                            GROUP BY  `cdn`');
+
+        $videos = sql_list('SELECT    `listings`.`cdn`,
+                                      COUNT(`videos`.`id`)
+
+                            FROM      `videos`
+
+                            LEFT JOIN `listings`
+                            ON        `listings`.`id` = `videos`.`listings_id`
+
+                            GROUP BY  `cdn`');
+
+        $total['listings'] = array_sum($list);
+        $total['images']   = array_sum($images);
+        $total['videos']   = array_sum($videos);
+
+        log_console(tr('CDN#      LISTING COUNT      IMAGE COUNT     VIDEOS COUNT'), '', 'cyan');
+
+        foreach($list as $cdn => $count){
+           if(!in_array($cdn, $_CONFIG['cdn']['servers'])){
+               log_console(str_size($cdn, 4).'   '.str_size($count, 16, ' ', true).' '.str_size(isset_get($images[$cdn], 0), 16, ' ', true).' '.str_size(isset_get($videos[$cdn], 0), 16, ' ', true).'     NOT CONFIGURED!', '', 'yellow');
+
+           }else{
+               log_console(str_size($cdn, 4).'   '.str_size($count, 16, ' ', true).' '.str_size(isset_get($images[$cdn], 0), 16, ' ', true).' '.str_size(isset_get($videos[$cdn], 0), 16, ' ', true));
+           }
+        }
+
+        log_console('Total  '.str_size($total['listings'], 16, ' ', true).' '.str_size(isset_get($total['images'], 0), 16, ' ', true).' '.str_size(isset_get($total['videos'], 0), 16, ' ', true), '', 'green');
+        break;
+
+    case 'remove':
+        /*
+         * Disable specified CDN server by moving all files away from it
+         */
+        cdn_remove(argument(1));
+        break;
+
+    case 'balance':
+        /*
+         * Ensure that all CDN servers support more or less the same amount of listings and users
+         */
+        cdn_balance();
+        break;
+
+    case 'validate':
+        /*
+         * Validate either one listing or all listings, ensure that all files are available
+         * on the specified CDN server
+         */
+        load_libs('curl');
+
+        if($listing = argument(1)){
+            if(!is_numeric($listing)){
+                throw new bException(tr('Invalid listing ":listing" specified', array(':listing' => $listing)), 'invalid');
+            }
+
+            $r = sql_query('SELECT `id`, `status`, `cdn` FROM `listings` WHERE `id` = :id', array(':id' => $listing));
+
+            if(!$r->rowCount()){
+                throw new bException(tr('Listing ":listing" does not exist', array(':listing' => $listing)), 'notexist');
+            }
+
+        }else{
+            $r = sql_query('SELECT `id`, `status`, `cdn` FROM `listings`');
+        }
+
+        log_console('Listings id Status           cdn Result', '', 'white');
+
+        $count = $r->rowCount();
+
+        while($listing = sql_fetch($r)){
+            $success = 0;
+            $fail    = 0;
+
+            unset($result);
+
+            if($listing['status'] !== null){
+                $color  = 'yellow';
+                $result = 'NOT TESTED';
+
+            }else{
+                $color  = 'green';
+                $images = sql_query('SELECT `file` FROM `images` WHERE `listings_id` = :listings_id', array(':listings_id' => $listing['id']));
+
+                while($image = sql_fetch($images)){
+                    try{
+                        $ch = curl_get(array('method' => 'head',
+                                             'proxy'  => false,
+                                             'sleep'  => 0,
+                                             'url'    => c_url_image($listing['id'], $image['file'], $listing['cdn'])));
+
+                        $success++;
+
+                    }catch(Exception $e){
+                        $color = 'red';
+                        $fail++;
+
+                        switch($e->getCode()){
+                            case 'http404':
+                                $result[] = 'NOT FOUND';
+                                break;
+
+                            default:
+                                $result[] = tr('ERROR ":error"', array(':error' => $e->getMessage()));
+
+                        }
+                    }
+                }
+
+                if(empty($result)){
+                    $result[] = '200 OK';
+                }
+
+                $result = '[ '.str_size($success, 2, ' ', true).' / '.str_size($fail, 2, ' ', true).' ] '.implode(', ', $result);
+            }
+
+            log_console(str_size($listing['id'], 11, ' ', true).' '.str_size($listing['status'], 17).str_size($listing['cdn'], 3, ' ', true).' '.$result, '', $color);
+        }
+
+        log_console(tr('Processed "::count" listings', array(':count' => $count)), '', 'green');
+        break;
+
+    case 'move':
+        /*
+         * Move the files from specified listing to the specified CDN server
+         */
+        $listings_id = argument('listing');
+        $cdn         = argument('cdn');
+
+        if(!$cdn){
+            throw new bException(tr('No CDN specified'), 'notspecified');
+        }
+
+        if(!is_numeric($cdn)){
+            throw new bException(tr('Invalid CDN ":cdn" specified, must be numeric', array(':cdn' => $cdn)), 'invalid');
+        }
+
+        if(!in_array($cdn, $_CONFIG['cdn']['servers'])){
+            throw new bException(tr('Non existing CDN ":cdn" specified, must be one of ":list"', array(':cdn' => $cdn, ':list' => implode(',', $_CONFIG['cdn']['servers']))), 'notexists');
+        }
+
+        if($cdn == $_CONFIG['cdn']['this']){
+            throw new bException(tr('Cannot move files to CDN ":cdn", because that is the current CDN server', array(':cdn' => $cdn)), 'notexists');
+        }
+
+        if(!$listings_id){
+            throw new bException(tr('No listing specified'), 'notspecified');
+        }
+
+        $listing = sql_get('SELECT `id`, `cdn` FROM `listings` WHERE `id` = :id', array(':id' => $listings_id));
+
+        if(!$listing){
+            throw new bException(tr('Non existing listing ":listing" specified', array(':listing' => $listings_id)), 'notexists');
+        }
+
+        if($listing['cdn'] == $cdn){
+            throw new bException(tr('Listing ":listing" already has its files on cdn ":cdn"', array(':listing' => $listings_id, ':cdn' => $cdn)), 'notexists');
+        }
+
+        break;
+
+    case '':
+        throw new bException(tr('No method specified'), 'notspecified');
+
+
+    default:
+        throw new bException(tr('Unknown method ":method" specified', array(':method' => argument(0))), 'unknown');
 }
 ?>

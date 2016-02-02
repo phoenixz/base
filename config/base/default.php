@@ -73,6 +73,8 @@ $_CONFIG['cdn']                = array('min'              => true,              
                                                                    'css'                => 'pub/mobile/css',
                                                                    'img'                => 'pub/mobile/img'),
 
+                                       'path'             => '',                                            // Path component for location of CDN files. Useful for debugging multiple CDN servers
+
                                        'prefix'           => '/pub/',                                       // Prefix for all CDN objects, may be CDN server domain, for example
 
                                        'servers'          => array(),                                       // List of available CDN servers
