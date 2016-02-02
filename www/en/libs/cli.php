@@ -567,6 +567,7 @@ function cli_dot($each = 10, $dot = '.', $color = 'green'){
         }
 
         if(++$count > $l_each){
+            $count = 0;
             log_console($dot, '', $color, false);
             return true;
         }

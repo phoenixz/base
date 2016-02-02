@@ -282,6 +282,11 @@ function cdn_commands_process($retries = null, $sleep = 5000){
                             }
                         }
 
+                        /*
+                         * First delete the endpoint path containing all the images.
+                         * Then try to clean up the upper tree
+                         */
+                        file_delete_tree($command['path']);
                         file_clear_path($command['path']);
 
                         /*
@@ -297,6 +302,11 @@ function cdn_commands_process($retries = null, $sleep = 5000){
                         break;
 
                     case 'trash-listing-data':
+                        /*
+                         * Delete the endpoint path that contains the file
+                         * Then cleanup above
+                         */
+                        file_delete_tree(ROOT.'data/content/images/'.c_listing_path($command['data']['listings_id'], ENVIRONMENT));
                         file_clear_path(ROOT.'data/content/images/'.c_listing_path($command['data']['listings_id'], ENVIRONMENT));
                         break;
 
