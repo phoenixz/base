@@ -1609,14 +1609,18 @@ function cdn_prefix($id = null, $force_environment = false){
  */
 function get_config($file, $environment = null){
     try{
+        if(!$environment){
+            $environment = ENVIRONMENT;
+        }
+
 		$_CONFIG = array('deploy' => array());
 
-        if($environment and ($environment != 'production')){
-            include(ROOT.'config/'.$file.'_'.$environment.'.php');
-
-        }else{
-            include(ROOT.'config/'.$file.'.php');
+        if($file){
+            $file = '_'.$file;
         }
+
+        include(ROOT.'config/production'.$file.'.php');
+        include(ROOT.'config/'.$environment.$file.'.php');
 
 		return $_CONFIG;
 

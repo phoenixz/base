@@ -106,6 +106,10 @@ class Colors {
     public function purple($string) {
         return $this->getColoredString($string, 'purple', 'black');
     }
+
+    public function cyan($string) {
+        return $this->getColoredString($string, 'cyan', 'black');
+    }
 }
 
 
@@ -535,6 +539,40 @@ function cli_not_root(){
 function cli_rights($rights){
     if(!has_rights($rights)){
         throw new bException('cli_rights(): You do not have the required rights to use this script', 'access_denied');
+    }
+}
+
+
+
+/*
+ * Show a dot on the console each $each call
+ * if $each is false, "DONE" will be printed, with next line
+ * Internal counter will reset if a different $each is received.
+ */
+function cli_dot($each = 10, $dot = '.', $color = 'green'){
+    static $count  = 0,
+           $l_each = 0;
+
+    try{
+        if($each === false){
+            log_console('Done', '', $color);
+            $l_each = 0;
+            $count  = 0;
+            return true;
+        }
+
+        if($l_each != $each){
+            $l_each = $each;
+            $count  = 0;
+        }
+
+        if(++$count > $l_each){
+            log_console($dot, '', $color, false);
+            return true;
+        }
+
+    }catch(Exception $e){
+        throw new bException('cli_dot(): Failed', $e);
     }
 }
 ?>

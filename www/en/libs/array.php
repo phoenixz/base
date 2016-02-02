@@ -851,4 +851,24 @@ function array_not_null(&$source1, $source2){
         throw new bException('array_not_null(): Failed', $e);
     }
 }
+
+
+
+/*
+ *
+ */
+function array_average($source){
+    try{
+        $total = 0;
+
+        foreach($source as $key => $value){
+            $total += $value;
+        }
+
+        return $total / count($source);
+
+    }catch(Exception $e){
+        throw new bException('array_average(): Failed', $e);
+    }
+}
 ?>

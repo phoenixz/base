@@ -183,6 +183,7 @@ function curl_get($params, $referer = null, $post = false, $options = array()){
         array_default($params, 'content-type'   , false);
         array_default($params, 'cache'          , false);
         array_default($params, 'verbose'        , null);
+        array_default($params, 'method'         , null);
         array_default($params, 'proxy'          , $_CONFIG['curl']['proxy']);
         array_default($params, 'simulation'     , false); // false, partial, or full
         array_default($params, 'sleep'          , 15);    // Sleep howmany seconds between retries
@@ -257,6 +258,34 @@ function curl_get($params, $referer = null, $post = false, $options = array()){
             curl_setopt($ch, CURLOPT_INTERFACE     , curl_get_random_ip());
             curl_setopt($ch, CURLOPT_TIMEOUT       , $params['timeout']);
             curl_setopt($ch, CURLOPT_CONNECTTIMEOUT, $params['connect_timeout']);
+
+            if($params['method']){
+                $params['method'] = strtoupper($params['method']);
+
+                switch($params['method']){
+                    case 'POST':
+                        // FALLTHROUGH
+                    case 'HEAD':
+                        // FALLTHROUGH
+                    case 'PUT':
+                        // FALLTHROUGH
+                    case 'DELETE':
+                        // FALLTHROUGH
+                    case 'OPTIONS':
+                        // FALLTHROUGH
+                    case 'TRACE':
+                        // FALLTHROUGH
+                    case 'CONNECT':
+                        /*
+                         * Use a different method than GET
+                         */
+                        curl_setopt($ch, CURLOPT_CUSTOMREQUEST , $params['method']);
+                        break;
+
+                    case 'GET':
+                        break;
+                }
+            }
 
             /*
              * Use cookies?
