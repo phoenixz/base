@@ -95,6 +95,13 @@ switch(argument(0)){
         cdn_balance();
         break;
 
+    case 'clean':
+        /*
+         * Remove image links in the database if the linked files no longer exist.
+         */
+        cdn_clean();
+        break;
+
     case 'validate':
         /*
          * Validate either one listing or all listings, ensure that all files are available
