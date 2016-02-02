@@ -1584,7 +1584,7 @@ function cdn_prefix($id = null, $force_environment = false){
 
     try{
         if($force_environment){
-            $config = get_config('production', $force_environment);
+            $config = get_config('', $force_environment);
             $cdn    = $config['cdn'];
 
         }else{

@@ -197,6 +197,7 @@ function cdn_commands_insert($message, $files){
         }
 
         log_database('Inserted CDN command "'.str_log($message['command']).'"', 'cdncommand/'.str_log(isset_get($message['command'])));
+        run_background('base/cdn process --verbose -e '.ENVIRONMENT, true, true);
 
     }catch(Exception $e){
         throw new bException('cdn_commands_insert(): Failed', $e);
@@ -210,6 +211,8 @@ function cdn_commands_insert($message, $files){
  */
 function cdn_commands_process($limit = null, $sleep = 5000){
     try{
+        log_console(tr('Executing commands for CDN server ":cdn"', array(':cdn' => CDN)), '', 'white');
+
         load_libs('file');
 
         if($limit === null){
@@ -225,8 +228,7 @@ function cdn_commands_process($limit = null, $sleep = 5000){
                                FROM   `cdn_commands`
 
                                WHERE  `cdn`    = :cdn
-                               AND   (`status` IS NULL
-                               OR     `status` = "failed")
+                               AND    `status` IS NULL
 
                                LIMIT  :limit',
 
@@ -281,7 +283,7 @@ function cdn_commands_process($limit = null, $sleep = 5000){
                         break;
 
                     case 'trash-listing-data':
-                        file_delete_tree(ROOT.'data/content/images/'.c_listing_path($command['data']['listings_id'], ENVIRONMENT));
+                        file_clear_path(ROOT.'data/content/images/'.c_listing_path($command['data']['listings_id'], ENVIRONMENT));
                         break;
 
                     case '':
@@ -666,17 +668,48 @@ function cdn_place_listing_data($listing, $files){
  */
 function cdn_clean(){
     try{
-        $listings = sql_query('SELECT `id` FROM `listings` WHERE `cdn` = :cdn', array(':cdn' => $cdn));
-        $p        = sql_prepare('SELECT `id`, `file` FROM `listings` WHERE `listings_id` = :listings_id');
-        $r        = sql_prepare('DELETE FROM `listings` WHERE `listings_id` = :listings_id');
+        load_libs('file');
+        log_console(tr('Cleaning image and video links where the linked files no longer exist for CDN ":cdn"', array(':cdn' => CDN)), '', 'white');
 
-        while($listing = sql_fetch($listings)){
-            $image = $p->execute(array(':listings_id' => $listing['id']));
+        foreach(array('images', 'videos') as $type){
+            $listings = sql_query  ('SELECT `id` FROM `listings` WHERE `cdn` = :cdn', array(':cdn' => CDN));
+            $r        = sql_prepare('DELETE FROM `'.$type.'` WHERE `listings_id` = :listings_id');
 
-            if(!file_exists(ROOT.'data/cdn/processing/'.c_listing_path($listing['listings_id'], ENVIRONMENT).$image['file'])){
-                $r->execute(array(':listings_id' => $listing['id']));
+            while($listing = sql_fetch($listings)){
+                $objects = sql_query('SELECT `id`, `file` FROM `'.$type.'` WHERE `listings_id` = :listings_id', array(':listings_id' => $listing['id']));
+
+                while($object = sql_fetch($objects)){
+                    $missing = !file_exists(ROOT.'data/content/images/'.c_listing_path($listing['id'], ENVIRONMENT).$object['file'].'-micro.jpg') or
+                               !file_exists(ROOT.'data/content/images/'.c_listing_path($listing['id'], ENVIRONMENT).$object['file'].'-small.jpg') or
+                               !file_exists(ROOT.'data/content/images/'.c_listing_path($listing['id'], ENVIRONMENT).$object['file'].'-large.jpg');
+
+                    if(!$missing){
+                        cli_dot();
+
+                    }else{
+                        if(VERBOSE){
+                            log_console(tr('Deleting link (and possible garbage) for ":type" object ":file" from listing ":listing"', array(':type' => $type, ':file' => $object['file'], ':listing' => $listing['id'])));
+
+                        }else{
+                            cli_dot(10, '!', 'yellow');
+                        }
+
+                        /*
+                         * Delete files to be sure
+                         */
+                        file_delete(ROOT.'data/content/images/'.c_listing_path($listing['id'], ENVIRONMENT).$object['file'].'-micro.jpg');
+                        file_delete(ROOT.'data/content/images/'.c_listing_path($listing['id'], ENVIRONMENT).$object['file'].'-small.jpg');
+                        file_delete(ROOT.'data/content/images/'.c_listing_path($listing['id'], ENVIRONMENT).$object['file'].'-large.jpg');
+
+                        $r->execute(array(':listings_id' => $listing['id']));
+                    }
+                }
             }
+
+            cli_dot(false);
         }
+
+        log_console('Finished', '', 'green');
 
     }catch(Exception $e){
         throw new bException('cdn_clean(): Failed', $e);
