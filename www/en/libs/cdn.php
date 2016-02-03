@@ -9,8 +9,6 @@
  */
 define('CDN', str_from(ENVIRONMENT, 'cdn'));
 
-
-
 /*
  * Send command to CDN servers that must be executed
  *
@@ -63,7 +61,8 @@ function cdn_commands_send($command, $data, $servers = null){
 
         foreach($servers as $server){
             if(!in_array($server, $_CONFIG['cdn']['servers'])){
-                throw new bException(tr('cdn_commands_send(): Specified CDN server ":cdn" does not exist', array(':cdn' => $server)), 'notexist');
+                log_console(tr('Specified CDN server ":cdn" does not exist. This is a problem unless this server recently was deactivated', array(':cdn' => $server)), '', 'yellow');
+                notify('cdn_server_notexist', tr('cdn_commands_send(): Specified CDN server ":cdn" does not exist. This is a problem unless this server recently was deactivated', array(':cdn' => $server)), 'developers');
             }
         }
 
@@ -76,7 +75,7 @@ function cdn_commands_send($command, $data, $servers = null){
 
             try{
                 if(VERBOSE){
-                    log_console(tr('Executing command ":command" on CDN server ":cdn"', array(':command' => $command, ':cdn' => $server)));
+                    log_console(tr('Sending command ":command" to CDN server ":cdn"', array(':command' => $command, ':cdn' => $server)));
                 }
 
                 $result = curl_get(array('url'        => $server.'/command.php',
@@ -103,6 +102,9 @@ function cdn_commands_send($command, $data, $servers = null){
                 }
 
             }catch(Exception $e){
+show($e);
+show($result['data']);
+showdie($server);
                 switch($e->getMessage()){
                     case 'json_decode_custom(): Syntax error, malformed JSON':
                         log_console(tr('Command ":command" to CDN server ":cdn" returned malformed data ":data"', array(':command' => $command, ':cdn' => $server, ':data' => $result['data'])), '', 'red');
@@ -269,28 +271,25 @@ function cdn_commands_process($retries = null, $sleep = 5000){
                             log_console(tr('place-listing-data for listing ":listing"', array(':listing' => $command['data']['listings_id'])));
                         }
 
+                        $command['path'] = slash($command['path']);
+                        $target_path     = ROOT.'data/content/images/'.c_listing_path($command['data']['listings_id'], ENVIRONMENT);
+
+                        file_ensure_path($target_path);
+
                         foreach(scandir($command['path']) as $file){
                             if(($file == '.') or ($file == '..')) continue;
-
-                            $command['path'] = slash($command['path']);
-                            $target_path     = ROOT.'data/content/images/'.c_listing_path($command['data']['listings_id'], ENVIRONMENT);
-
-                            file_ensure_path($target_path);
 
                             /*
                              * Only move files if exist. If not exist, assume they've been
                              * moved already in a previously partially executed process
                              */
-                            if(file_exists($command['path'].$file)){
-                                rename(slash($command['path']).$file, $target_path.$file);
-                            }
+                            rename(slash($command['path']).$file, $target_path.$file);
                         }
 
                         /*
                          * First delete the endpoint path containing all the images.
                          * Then try to clean up the upper tree
                          */
-                        file_delete_tree($command['path']);
                         file_clear_path($command['path']);
 
                         /*
@@ -414,8 +413,6 @@ function cdn_balance(){
         /*
          * Check $from list, ensure that all CDN's are currently available
          */
-        $to = $from;
-
         foreach($from as $cdn => $count){
             if($count and !in_array($cdn, $cdns)){
                 log_console(tr('Found CDN ":cdn" has assigned ":count" listings. Since this CDN is not configured (anymore?), all listings will be removed and redistributed over the other CDN servers.', array(':cdn' => $cdn, ':count' => $count)), '', 'yellow');
@@ -426,9 +423,10 @@ function cdn_balance(){
          * We'll try to average the files over all currently configured CDN servers
          * So calculate the average and copy from high amount servers to low amount servers
          */
-        $average  = ceil(array_average($from)) + 2;
         $sum      = array_sum($from);
+        $average  = ceil($sum / count($cdns)) + count($cdns);
         $results  = array('failures' => array());
+        $to       = $from;
 
         /*
          * Split the CDN servers into two lists, one where we will copy
@@ -443,7 +441,7 @@ function cdn_balance(){
                  * This CDN server has listings assigned, but is no longer configured.
                  * Move everything away from it
                  */
-                unset($from[$cdn]);
+                unset($to[$cdn]);
                 $from[$cdn] = $count;
 
             }elseif($count < $average){
@@ -472,49 +470,61 @@ function cdn_balance(){
          * server and move only that amount away to other servers.
          */
         foreach($from as $from_cdn => $limit){
-            $listings = sql_query('SELECT `id`
+            try{
+                $listings = sql_query('SELECT `id`
 
-                                   FROM   `listings`
+                                       FROM   `listings`
 
-                                   WHERE  `cdn` = :cdn
+                                       WHERE  `cdn` = :cdn
 
-                                   ORDER BY RAND()
+                                       ORDER BY RAND()
 
-                                   LIMIT  :limit',
+                                       LIMIT  :limit',
 
-                                   array(':cdn'   => $from_cdn,
-                                         ':limit' => $limit));
+                                       array(':cdn'   => $from_cdn,
+                                             ':limit' => $limit));
 
-            while($listing = sql_fetch($listings)){
-                /*
-                 * Pick a random new CDN server
-                 */
-                $to_cdn = array_rand($to);
-
-                if(--$to[$to_cdn] <= 0){
+                while($listing = sql_fetch($listings)){
                     /*
-                     * This CDN server is full, no longer send information here
+                     * Pick a random new CDN server
                      */
-                    unset($to[$to_cdn]);
-                }
+                    $to_cdn = array_rand($to);
 
-                try{
-                    $result = cdn_move_listing_data($listing['id'], $from_cdn, $to_cdn);
-
-                    if(!$result){
+                    if(--$to[$to_cdn] <= 0){
                         /*
-                         * This listing currently has no data, so its not moving anything.
-                         * Update the CDN number manually here.
+                         * This CDN server is full, no longer send information here
                          */
-                        sql_query('UPDATE `listings` SET `cdn` = :cdn WHERE `id` = :id', array(':id' => $listing['id'], ':cdn' => $to_cdn));
+                        unset($to[$to_cdn]);
                     }
 
-                }catch(Exception $e){
-                    /*
-                     * Oops, this one failed
-                     */
-                    $results['failures'][] = $listing['id'];
+                    try{
+                        if(VERBOSE){
+                            log_console(tr('Moving listing ":listing" to CDN ":cdn"', array(':listing' => $listing['id'], ':cdn' => $to_cdn)), '', '');
+                        }
+
+                        $result = cdn_move_listing_data($listing['id'], $from_cdn, $to_cdn);
+
+                        if(!$result){
+                            /*
+                             * This listing currently has no data, so its not moving anything.
+                             * Update the CDN number manually here.
+                             */
+                            sql_query('UPDATE `listings` SET `cdn` = :cdn WHERE `id` = :id', array(':id' => $listing['id'], ':cdn' => $to_cdn));
+                        }
+
+                    }catch(Exception $e){
+                        /*
+                         * Oops, this one failed
+                         */
+                        $results['failures'][] = $listing['id'];
+                    }
                 }
+
+            }catch(Exception $e){
+                $message = log_console(tr('Failed to move listing ":listing" to CDN ":cdn", exception ":exception"', array(':listing' => $listing['id'], ':cdn' => $to_cdn, ':exception' => str_log($e->getMessages()))), '', 'yellow');
+
+                log_console($message, '', 'yellow');
+                notify('listing_move_cdn_fail', $message, 'developers');
             }
         }
 
@@ -627,7 +637,7 @@ function cdn_move_listing_data($listings_id, $from_cdn, $to_cdn){
                            array(':listings_id' => $listings_id));
 
         foreach($files as $file){
-            foreach(array('micro', 'small', 'large') as $type){
+            foreach(array('micro', 'small', 'large', 'small@2x', 'large@2x') as $type){
                 $sendfile = ROOT.'data/content/images/'.c_listing_path($listings_id, ((substr(ENVIRONMENT, 0, 3) == 'cdn') ? '' : ENVIRONMENT.'_').'cdn'.$from_cdn).$file.'-'.$type.'.jpg';
 
                 if(!file_exists($sendfile)){
@@ -657,7 +667,7 @@ function cdn_move_listing_data($listings_id, $from_cdn, $to_cdn){
                 log_console(tr('Not moving data for listing ":listing" because no images are linked', array(':listing' => $listings_id)), '', 'yellow');
 
             }else{
-                cli_dot(10, '#', '');
+                cli_dot(10, '.', '');
             }
 
             return false;
@@ -667,7 +677,7 @@ function cdn_move_listing_data($listings_id, $from_cdn, $to_cdn){
                 log_console(tr('Moving data for listing ":listing"', array(':listing' => $listings_id)), '', 'green');
 
             }else{
-                cli_dot(10, '#', 'green');
+                cli_dot(10, '.', 'green');
             }
 
             return cdn_commands_send('place-listing-data', array('listings_id' => $listings_id, 'files' => $sendfiles), $to_cdn);
@@ -722,12 +732,14 @@ function cdn_clean(){
                 $objects = sql_query('SELECT `id`, `file` FROM `'.$type.'` WHERE `listings_id` = :listings_id', array(':listings_id' => $listing['id']));
 
                 while($object = sql_fetch($objects)){
-                    $missing = !file_exists(ROOT.'data/content/images/'.c_listing_path($listing['id'], ENVIRONMENT).$object['file'].'-micro.jpg') or
-                               !file_exists(ROOT.'data/content/images/'.c_listing_path($listing['id'], ENVIRONMENT).$object['file'].'-small.jpg') or
-                               !file_exists(ROOT.'data/content/images/'.c_listing_path($listing['id'], ENVIRONMENT).$object['file'].'-large.jpg');
+                    $missing = !file_exists(ROOT.'data/content/images/'.c_listing_path($listing['id'], ENVIRONMENT).$object['file'].'-micro.jpg')    or
+                               !file_exists(ROOT.'data/content/images/'.c_listing_path($listing['id'], ENVIRONMENT).$object['file'].'-small.jpg')    or
+                               !file_exists(ROOT.'data/content/images/'.c_listing_path($listing['id'], ENVIRONMENT).$object['file'].'-large.jpg')    or
+                               !file_exists(ROOT.'data/content/images/'.c_listing_path($listing['id'], ENVIRONMENT).$object['file'].'-small@2x.jpg') or
+                               !file_exists(ROOT.'data/content/images/'.c_listing_path($listing['id'], ENVIRONMENT).$object['file'].'-large@2x.jpg');
 
                     if(!$missing){
-                        cli_dot();
+                        cli_dot(10, '.', 'green');
 
                     }else{
                         if(VERBOSE){
@@ -743,6 +755,8 @@ function cdn_clean(){
                         file_delete(ROOT.'data/content/images/'.c_listing_path($listing['id'], ENVIRONMENT).$object['file'].'-micro.jpg');
                         file_delete(ROOT.'data/content/images/'.c_listing_path($listing['id'], ENVIRONMENT).$object['file'].'-small.jpg');
                         file_delete(ROOT.'data/content/images/'.c_listing_path($listing['id'], ENVIRONMENT).$object['file'].'-large.jpg');
+                        file_delete(ROOT.'data/content/images/'.c_listing_path($listing['id'], ENVIRONMENT).$object['file'].'-small@2x.jpg');
+                        file_delete(ROOT.'data/content/images/'.c_listing_path($listing['id'], ENVIRONMENT).$object['file'].'-large@2x.jpg');
 
                         $r->execute(array(':listings_id' => $listing['id']));
                     }

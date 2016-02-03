@@ -332,7 +332,7 @@ function file_clear_path($path) {
             $h        = opendir($path);
             $contents = false;
 
-            while($file = readdir($h)){
+            while(($file = readdir($h)) !== false){
                 /*
                  * Skip . and ..
                  */
