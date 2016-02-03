@@ -316,7 +316,10 @@ function file_ensure_path($path, $mode = null) {
 function file_clear_path($path) {
     try{
         if(!file_exists($path)){
-            return false;
+            /*
+             * This section does not exist, jump up to the next section
+             */
+            return file_clear_path(dirname($path));
         }
 
         if(!is_dir($path)){

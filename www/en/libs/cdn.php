@@ -309,8 +309,12 @@ function cdn_commands_process($retries = null, $sleep = 5000){
                          * Delete the endpoint path that contains the file
                          * Then cleanup above
                          */
+                        if(VERBOSE){
+                            log_console(tr('trash-listing-data for listing ":listing"', array(':listing' => $command['data']['listings_id'])));
+                        }
+
                         file_delete_tree(ROOT.'data/content/images/'.c_listing_path($command['data']['listings_id'], ENVIRONMENT));
-                        file_clear_path(ROOT.'data/content/images/'.c_listing_path($command['data']['listings_id'], ENVIRONMENT));
+                        file_clear_path (ROOT.'data/content/images/'.c_listing_path($command['data']['listings_id'], ENVIRONMENT));
                         break;
 
                     case '':
@@ -499,7 +503,7 @@ function cdn_balance(){
 
                     try{
                         if(VERBOSE){
-                            log_console(tr('Moving listing ":listing" to CDN ":cdn"', array(':listing' => $listing['id'], ':cdn' => $to_cdn)), '', '');
+                            log_console(tr('Moving listing ":listing" from CDN ":from" to CDN ":to"', array(':listing' => $listing['id'], ':from' => $from_cdn, ':to' => $to_cdn)), '', '');
                         }
 
                         $result = cdn_move_listing_data($listing['id'], $from_cdn, $to_cdn);
