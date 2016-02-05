@@ -171,6 +171,9 @@ function cdn_commands_insert($message, $files){
                 $status = 'processed';
                 // FALLTHROUGH
 
+            case 'move-listing':
+                // FALLTHROUGH
+
             case 'place-listing-data':
                 // FALLTHROUGH
 
@@ -217,132 +220,143 @@ function cdn_commands_insert($message, $files){
 function cdn_commands_process($retries = null, $sleep = 5000){
     try{
         log_console(tr('Executing commands for CDN server ":cdn"', array(':cdn' => CDN)), '', 'white');
-
         load_libs('file');
 
         if($retries === null){
             $retries = 10;
         }
 
-        $retry    = 0;
-        $count    = 0;
-        $commands = sql_query('SELECT `id`,
-                                      `command`,
-                                      `path`,
-                                      `data`
+        $retry = 0;
+        $count = 0;
 
-                               FROM   `cdn_commands`
+        while(true){
+            $commands = sql_query('SELECT `id`,
+                                          `command`,
+                                          `path`,
+                                          `data`
 
-                               WHERE  `cdn`    = :cdn
-                               AND    `status` IS NULL',
+                                   FROM   `cdn_commands`
 
-                               array(':cdn' => CDN));
+                                   WHERE  `cdn`    = :cdn
+                                   AND    `status` IS NULL',
 
-        if(!$commands->rowCount()){
-            /*
-             * No commands found, waiting..
-             */
-            if(++$retry <= $retries){
-                log_console(tr('No commands found after ":retries" retries, quitting successfully', array(':retries' => $retries)), '', 'green');
-                die(0);
+                                   array(':cdn' => CDN));
+
+            if(!$commands->rowCount()){
+                /*
+                 * No commands found, waiting..
+                 */
+                if(++$retry >= $retries){
+                    log_console(tr('No commands found after ":retries" retries, quitting successfully', array(':retries' => $retries)), '', 'green');
+                    break;
+                }
+
+                usleep($sleep * 100);
+                log_console(tr('No commands found, retrying'));
             }
 
-            usleep($sleep * 1000);
-            log_console(tr('No commands found, retrying'));
-        }
+            while($command = sql_fetch($commands)){
+                try{
+                    if(VERBOSE){
+                        log_console(tr('Processing CDN ":cdn" command ":command" with id ":id"', array(':id' => $command['id'], ':cdn' => CDN, ':command' => $command['command'])));
 
-        while($command = sql_fetch($commands)){
-            try{
-                if(VERBOSE){
-                    log_console(tr('Processing CDN ":cdn" command ":command" with id ":id"', array(':id' => $command['id'], ':cdn' => CDN, ':command' => $command['command'])));
+                    }else{
+                        cli_dot();
+                    }
 
-                }else{
-                    cli_dot();
-                }
+                    $command['data'] = json_decode_custom($command['data']);
 
-                $command['data'] = json_decode_custom($command['data']);
+                    switch(isset_get($command['command'])){
+                        case 'move-listing':
+                            $result = cdn_move_listing_data($command['data']['listings_id'], $command['data']['to_cdn_id']);
 
-                switch(isset_get($command['command'])){
-                    case 'move-listing-data':
-                        cdn_move_listing_data($command['data']['listings_id'], $command['data']['to_cdn_id']);
-                        break;
+                            if(!$result){
+                                /*
+                                 * This listing currently has no data, so its not moving anything.
+                                 * Update the CDN number manually here.
+                                 */
+                                sql_query('UPDATE `listings` SET `cdn` = :cdn WHERE `id` = :id', array(':id' => $command['data']['listings_id'], ':cdn' => $command['data']['to_cdn_id']));
+                            }
 
-                    case 'place-listing-data':
-                        /*
-                         * Move the listing files in place
-                         */
-                        if(VERBOSE){
-                            log_console(tr('place-listing-data for listing ":listing"', array(':listing' => $command['data']['listings_id'])));
-                        }
+                            break;
 
-                        $command['path'] = slash($command['path']);
-                        $target_path     = ROOT.'data/content/images/'.c_listing_path($command['data']['listings_id'], ENVIRONMENT);
+                        case 'place-listing-data':
+                            /*
+                             * Move the listing files in place
+                             */
+                            if(VERBOSE){
+                                log_console(tr('place-listing-data for listing ":listing"', array(':listing' => $command['data']['listings_id'])));
+                            }
 
-                        file_ensure_path($target_path);
+                            $command['path'] = slash($command['path']);
+                            $target_path     = ROOT.'data/content/images/'.c_listing_path($command['data']['listings_id'], ENVIRONMENT);
 
-                        foreach(scandir($command['path']) as $file){
-                            if(($file == '.') or ($file == '..')) continue;
+                            file_ensure_path($target_path);
+
+                            foreach(scandir($command['path']) as $file){
+                                if(($file == '.') or ($file == '..')) continue;
+
+                                /*
+                                 * Only move files if exist. If not exist, assume they've been
+                                 * moved already in a previously partially executed process
+                                 */
+                                rename(slash($command['path']).$file, $target_path.$file);
+                            }
 
                             /*
-                             * Only move files if exist. If not exist, assume they've been
-                             * moved already in a previously partially executed process
+                             * First delete the endpoint path containing all the images.
+                             * Then try to clean up the upper tree
                              */
-                            rename(slash($command['path']).$file, $target_path.$file);
-                        }
+                            file_clear_path($command['path']);
 
-                        /*
-                         * First delete the endpoint path containing all the images.
-                         * Then try to clean up the upper tree
-                         */
-                        file_clear_path($command['path']);
+                            /*
+                             * Get previous CDN and update the listings CDN id
+                             */
+                            $cdn = sql_get('SELECT `cdn` FROM `listings` WHERE `id` = :id', 'cdn', array(':id' => $command['data']['listings_id']));
+                            sql_query('UPDATE `listings` SET `cdn` = :cdn WHERE `id` = :id', array(':id' => $command['data']['listings_id'], ':cdn' => CDN));
 
-                        /*
-                         * Get previous CDN and update the listings CDN id
-                         */
-                        $cdn = sql_get('SELECT `cdn` FROM `listings` WHERE `id` = :id', 'cdn', array(':id' => $command['data']['listings_id']));
-                        sql_query('UPDATE `listings` SET `cdn` = :cdn WHERE `id` = :id', array(':id' => $command['data']['listings_id'], ':cdn' => CDN));
+                            /*
+                             * Remove the files from the previous CDN
+                             */
+                            cdn_trash_listing_data($command['data']['listings_id'], $cdn);
+                            break;
 
-                        /*
-                         * Remove the files from the previous CDN
-                         */
-                        cdn_trash_listing_data($command['data']['listings_id'], $cdn);
-                        break;
+                        case 'trash-listing-data':
+                            /*
+                             * Delete the endpoint path that contains the file
+                             * Then cleanup above
+                             */
+                            if(VERBOSE){
+                                log_console(tr('trash-listing-data for listing ":listing"', array(':listing' => $command['data']['listings_id'])));
+                            }
 
-                    case 'trash-listing-data':
-                        /*
-                         * Delete the endpoint path that contains the file
-                         * Then cleanup above
-                         */
-                        if(VERBOSE){
-                            log_console(tr('trash-listing-data for listing ":listing"', array(':listing' => $command['data']['listings_id'])));
-                        }
+                            file_delete_tree(ROOT.'data/content/images/'.c_listing_path($command['data']['listings_id'], ENVIRONMENT));
+                            file_clear_path (ROOT.'data/content/images/'.c_listing_path($command['data']['listings_id'], ENVIRONMENT));
+                            break;
 
-                        file_delete_tree(ROOT.'data/content/images/'.c_listing_path($command['data']['listings_id'], ENVIRONMENT));
-                        file_clear_path (ROOT.'data/content/images/'.c_listing_path($command['data']['listings_id'], ENVIRONMENT));
-                        break;
+                        case '':
+                            log_database('Received empty CDN command', 'cdnexecute/empty');
+                            throw new bException(tr('cdn_commands_process(): No command specified in message'), 'notspecified');
 
-                    case '':
-                        log_database('Received empty CDN command', 'cdnexecute/empty');
-                        throw new bException(tr('cdn_commands_process(): No command specified in message'), 'notspecified');
+                        default:
+                            log_database('Received invalid CDN command "'.str_log($command['command']).'"', 'cdnexecute/invalid');
+                            throw new bException(tr('cdn_commands_process(): Unknown command "%command%" specified in message', array('%command%' => str_log($command['command']))), 'unknown');
+                    }
 
-                    default:
-                        log_database('Received invalid CDN command "'.str_log($command['command']).'"', 'cdnexecute/invalid');
-                        throw new bException(tr('cdn_commands_process(): Unknown command "%command%" specified in message', array('%command%' => str_log($command['command']))), 'unknown');
+                    sql_query('UPDATE `cdn_commands` SET `status` = "processed" WHERE `id` = :id', array(':id' => $command['id']));
+                    log_database('Excuted CDN command "'.str_log($command['command']).'"', 'cdncommand/'.str_log(isset_get($command['command'])));
+
+                    usleep($sleep);
+                    $count++;
+
+                }catch(Exception $e){
+                    /*
+                     * The command failed to process
+                     */
+                    log_database('CDN command "'.str_log($command['command']).'" failed to execute', 'cdnexecute/failed');
+                    sql_query('UPDATE `cdn_commands` SET `status` = "failed" WHERE `id` = :id', array(':id' => $command['id']));
+                    usleep($sleep);
                 }
-
-                sql_query('UPDATE `cdn_commands` SET `status` = "processed" WHERE `id` = :id', array(':id' => $command['id']));
-                log_database('Excuted CDN command "'.str_log($command['command']).'"', 'cdncommand/'.str_log(isset_get($command['command'])));
-
-                usleep($sleep);
-                $count++;
-
-            }catch(Exception $e){
-                /*
-                 * The command failed to process
-                 */
-                log_database('CDN command "'.str_log($command['command']).'" failed to execute', 'cdnexecute/failed');
-                sql_query('UPDATE `cdn_commands` SET `status` = "failed" WHERE `id` = :id', array(':id' => $command['id']));
-                usleep($sleep);
             }
         }
 
@@ -507,15 +521,7 @@ function cdn_balance(){
                     }
 
                     try{
-                        cdn_commands_send('move-listing-data', array('listings_id' => $listing['id'], 'to_cdn_id' => $to_cdn), $listing['cdn']);
-
-                        if(!$result){
-                            /*
-                             * This listing currently has no data, so its not moving anything.
-                             * Update the CDN number manually here.
-                             */
-                            sql_query('UPDATE `listings` SET `cdn` = :cdn WHERE `id` = :id', array(':id' => $listing['id'], ':cdn' => $to_cdn));
-                        }
+                        cdn_commands_send('move-listing', array('listings_id' => $listing['id'], 'to_cdn_id' => $to_cdn), $listing['cdn']);
 
                     }catch(Exception $e){
                         /*

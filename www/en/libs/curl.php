@@ -189,7 +189,7 @@ function curl_get($params, $referer = null, $post = false, $options = array()){
         array_default($params, 'simulation'     , false); // false, partial, or full
         array_default($params, 'sleep'          , 15);    // Sleep howmany seconds between retries
         array_default($params, 'retries'        ,  5);    // Retry howmany time on HTTP0 failures
-        array_default($params, 'timeout'        , 10);    // # of seconds for cURL functions to execute
+        array_default($params, 'timeout'        , 30);    // # of seconds for cURL functions to execute
         array_default($params, 'connect_timeout', 10);    // # of seconds before connection try will fail
 
         if(VERBOSE){
