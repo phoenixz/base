@@ -640,21 +640,21 @@ function cdn_move_listing_data($listings_id, $from_cdn, $to_cdn){
 
                            array(':listings_id' => $listings_id));
 
+        $cdn = str_until(ENVIRONMENT, 'cdn');
+
+        if(($cdn == 'production') or substr($cdn, 0, 4) == 'core'){
+            $cdn = '';
+        }
+
+        if($cdn){
+            $from_cdn = $cdn.'_cdn'.$from_cdn;
+
+        }else{
+            $from_cdn = $cdn.'cdn'.$from_cdn;
+        }
+
         foreach($files as $file){
             foreach(array('micro', 'small', 'large', 'small@2x', 'large@2x') as $type){
-                $cdn = str_until(ENVIRONMENT, 'cdn');
-
-                if(($cdn == 'production') or substr($cdn, 0, 4) == 'core'){
-                    $cdn = '';
-                }
-
-                if($cdn){
-                    $from_cdn = $cdn.'_cdn'.$from_cdn;
-
-                }else{
-                    $from_cdn = $cdn.'cdn'.$from_cdn;
-                }
-
                 $sendfile = ROOT.'data/content/images/'.c_listing_path($listings_id, $from_cdn).$file.'-'.$type.'.jpg';
 
                 if(!file_exists($sendfile)){
