@@ -78,7 +78,7 @@ function cdn_commands_send($command, $data, $servers = null){
                     log_console(tr('Sending command ":command" to CDN server ":cdn"', array(':command' => $command, ':cdn' => $server)));
                 }
 
-                $result = curl_get(array('url'        => $server.'/command.php',
+                $result = curl_get(array('url'        => $server.'command.php',
                                          'proxy'      => false,
                                          'getheaders' => false,
                                          'post'       => $post));
