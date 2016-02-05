@@ -21,9 +21,10 @@ try{
      */
     include(dirname(__FILE__).'/../../config/deploy.php');
 
+    load_libs('file');
     log_console('Updating project file permissions...', 'deploy', 'white');
 
-    $target        = argument('target', true, ENVIRONMENT);
+    $target = argument('target', true, ENVIRONMENT);
 
     if(empty($_CONFIG['deploy'][$target])){
         throw new bException(tr('Selected environment "%env%" does not exist', array('%env%' => $target)), 'notexist');
@@ -132,6 +133,7 @@ try{
     /*
      * Update the file permissions of temp directory
      */
+    file_ensure_path(slash($target_dir).'tmp/');
     passthru((!empty($deploy_config['sudo']) ? ' sudo' : '').' chmod ug+rwx,g+s,o-rwx '.slash($target_dir).'tmp/ -R', $exitcode);
 
     if($exitcode){
