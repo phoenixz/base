@@ -655,27 +655,29 @@ function cdn_move_listing_data($listings_id, $from_cdn, $to_cdn){
 
         foreach($files as $file){
             foreach(array('micro', 'small', 'large', 'small@2x', 'large@2x') as $type){
-                $sendfile = ROOT.'data/content/images/'.c_listing_path($listings_id, $from_cdn).$file.'-'.$type.'.jpg';
+                $sendfile    = ROOT.'data/content/images/'.c_listing_path($listings_id, $from_cdn).$file.'-'.$type.'.jpg';
+                $sendfiles[] = $sendfile;
 
-                if(!file_exists($sendfile)){
-                    /*
-                     * This file does not exist, remove it from the database.
-                     */
-                    if(VERBOSE){
-                        log_console(tr('Removing non existing image ":image" from listing ":listing" from database', array(':listing' => $listings_id, ':image' => $file)), '', 'yellow');
-                    }
-
-                    sql_query('DELETE FROM `images`
-
-                               WHERE       `listings_id` = :listings_id
-                               AND         `file`        = :file',
-
-                               array(':listings_id' => $listings_id,
-                                     ':file'        => $file));
-
-                }else{
-                    $sendfiles[] = $sendfile;
-                }
+// :DELETE: This check can only be performed at the right CDN server!!
+                //if(!file_exists($sendfile)){
+                //    /*
+                //     * This file does not exist, remove it from the database.
+                //     */
+                //    if(VERBOSE){
+                //        log_console(tr('Removing non existing image ":image" from listing ":listing" from database', array(':listing' => $listings_id, ':image' => $file)), '', 'yellow');
+                //    }
+                //
+                //    sql_query('DELETE FROM `images`
+                //
+                //               WHERE       `listings_id` = :listings_id
+                //               AND         `file`        = :file',
+                //
+                //               array(':listings_id' => $listings_id,
+                //                     ':file'        => $file));
+                //
+                //}else{
+                //    $sendfiles[] = $sendfile;
+                //}
             }
         }
 
