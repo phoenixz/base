@@ -487,7 +487,7 @@ function http_cache($params, $headers){
  */
 function requested_url(){
     try{
-        return $_SERVER['REQUEST_SCHEME'].'://'.$_SERVER['HTTP_HOST'].$_SERVER['REQUEST_URI'];
+        return 'http'.($_SERVER['HTTPS'] ? 's' : '').'://'.$_SERVER['HTTP_HOST'].$_SERVER['REQUEST_URI'];
 
     }catch(Exception $e){
         throw new bException('requested_url(): Failed', $e);
