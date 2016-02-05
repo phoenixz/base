@@ -38,12 +38,13 @@ if(debug()){
 function twilio_install(){
     try{
         load_libs('file');
-
         log_console('twilio_install(): Installing Twilio library', 'install');
 
         /*
          * Make sure target exists and that we have no left over garbage from previous attempts
          */
+        $perms = file_ensure_writable(ROOT.'libs');
+
         file_ensure_path(ROOT.'libs/external');
         file_delete(TMP.'twilio_install.zip');
         file_delete_tree(ROOT.'libs/external/twilio-php-master');
@@ -56,6 +57,13 @@ function twilio_install(){
         safe_exec('unzip '.TMP.'twilio_install.zip -d '.ROOT.'libs/external');
         rename(ROOT.'libs/external/twilio-php-master', ROOT.'libs/external/twilio');
         unlink(TMP.'twilio_install.zip');
+
+        if($perms){
+            /*
+             * Return libs directory to original mode
+             */
+            chmod(ROOT.'libs', $perms);
+        }
 
     }catch(Exception $e){
         throw new bException('twilio_install(): Failed', $e);

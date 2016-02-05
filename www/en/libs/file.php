@@ -1492,6 +1492,38 @@ function file_tree($path, $method){
 
 
 /*
+ *
+ */
+function file_ensure_writable($path){
+    try{
+        if(is_writable($path)){
+            return false;
+        }
+
+        $perms = fileperms($path);
+
+        if(is_dir($path)){
+            chmod($path, 0770);
+
+        }else{
+            if(is_executable($path)){
+                chmod($path, 0770);
+
+            }else{
+                chmod($path, 0660);
+            }
+        }
+
+        return $perms;
+
+    }catch(Exception $e){
+        throw new bException('file_ensure_writable(): Failed', $e);
+    }
+}
+
+
+
+/*
  * Below are obsolete wrapper functions, that should no longer be used
  */
 function listdir($path = '.', $recursive = true) {
