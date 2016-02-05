@@ -796,14 +796,14 @@ foreach($targets as $target_environment){
             log_screen($display_subenvironment.'Executing file permission update', 'deploy', 'white');
 
             if(!empty($deploy_config['rsync_parrallel'])){
-                passthru($command = 'ssh -t -p '.$target_port.' '.$deploy_config['target_user'].'@'.$deploy_config['target_server'].' \''.$sudo.$deploy_config['target_dir'].'/scripts/base/fixpermissions env '.$target_environment.$subenv_subenvironment.' nologin target_dir '.$deploy_config['target_dir'].'\' ', $exitcode);
+                passthru($command = 'ssh -t -p '.$target_port.' '.$deploy_config['target_user'].'@'.$deploy_config['target_server'].' \''.$sudo.$deploy_config['target_dir'].'/scripts/base/fix-permissions env '.$target_environment.$subenv_subenvironment.' nologin target_dir '.$deploy_config['target_dir'].'\' ', $exitcode);
 
             }else{
-                passthru($command = 'ssh -t -p '.$target_port.' '.$deploy_config['target_user'].'@'.$deploy_config['target_server'].' \''.$sudo.$deploy_config['target_dir'].'/scripts/base/fixpermissions env '.$target_environment.$subenv_subenvironment.' nologin \'', $exitcode);
+                passthru($command = 'ssh -t -p '.$target_port.' '.$deploy_config['target_user'].'@'.$deploy_config['target_server'].' \''.$sudo.$deploy_config['target_dir'].'/scripts/base/fix-permissions env '.$target_environment.$subenv_subenvironment.' nologin \'', $exitcode);
             }
 
             if($exitcode){
-                throw new bException('Fixpermissions failed with exit code "'.str_log($exitcode).'"', 'fixpermissions');
+                throw new bException('fix-permissions failed with exit code "'.str_log($exitcode).'"', 'fix-permissions');
             }
 
             init_hook('deploy_post_permission', $nohooks, array('target_user'   => $deploy_config['target_user'],

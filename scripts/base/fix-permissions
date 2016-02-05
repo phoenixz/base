@@ -143,6 +143,6 @@ try{
     log_console('Finished updating www directories permissions...', 'filepermissions', 'green');
 
 }catch(Exception $e){
-    throw new bException('scripts/base/fixpermissions: Failed', $e);
+    throw new bException('scripts/base/fix-permissions: Failed', $e);
 }
 ?>
