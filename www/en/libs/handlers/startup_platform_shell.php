@@ -24,6 +24,11 @@ define('LIMIT'   , in_array('limit', $argv) ? array_next_value($argv, 'limit') :
 define('STARTDIR', slash(getcwd()));
 define('NOLOGIN' , argument('-l') or isset_get($nologin));
 
+if(argument('-d')){
+    log_console('WARNING: RUNNING IN DEBUG MODE!');
+    debug(true);
+}
+
 if(VERBOSE){
     $GLOBALS['quiet'] = false;
 }

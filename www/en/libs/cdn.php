@@ -78,7 +78,7 @@ function cdn_commands_send($command, $data, $servers = null){
                     log_console(tr('Sending command ":command" to CDN server ":cdn"', array(':command' => $command, ':cdn' => $server)));
                 }
 
-                $result = curl_get(array('url'        => $server.'command.php',
+                $result = curl_get(array('url'        => slash($server).'command.php',
                                          'proxy'      => false,
                                          'getheaders' => false,
                                          'post'       => $post));
@@ -263,6 +263,10 @@ function cdn_commands_process($retries = null, $sleep = 5000){
                 $command['data'] = json_decode_custom($command['data']);
 
                 switch(isset_get($command['command'])){
+                    case 'move-listing-data':
+                        cdn_move_listing_data($command['data']['listings_id'], $command['data']['to_cdn_id']);
+                        break;
+
                     case 'place-listing-data':
                         /*
                          * Move the listing files in place
@@ -475,7 +479,8 @@ function cdn_balance(){
          */
         foreach($from as $from_cdn => $limit){
             try{
-                $listings = sql_query('SELECT `id`
+                $listings = sql_query('SELECT `id`,
+                                              `cdn`
 
                                        FROM   `listings`
 
@@ -502,11 +507,7 @@ function cdn_balance(){
                     }
 
                     try{
-                        if(VERBOSE){
-                            log_console(tr('Moving listing ":listing" from CDN ":from" to CDN ":to"', array(':listing' => $listing['id'], ':from' => $from_cdn, ':to' => $to_cdn)), '', '');
-                        }
-
-                        $result = cdn_move_listing_data($listing['id'], $from_cdn, $to_cdn);
+                        cdn_commands_send('move-listing-data', array('listings_id' => $listing['id'], 'to_cdn_id' => $to_cdn), $listing['cdn']);
 
                         if(!$result){
                             /*
@@ -549,80 +550,81 @@ showdie($e);
  * so that the server can be removed
  */
 function cdn_remove($cdn){
-    try{
-		if(!$cdn){
-			throw new bException(tr('cdn_remove(): No CDN specified'), 'notspecified');
-		}
-
-		if(!is_numeric($cdn)){
-			throw new bException(tr('cdn_remove(): Invalid CDN ":cdn" specified, must be numeric', array(':cdn' => $cdn)), 'invalid');
-		}
-
-		if(!in_array($cdn, $_CONFIG['cdn']['servers'])){
-			throw new bException(tr('cdn_remove(): Specified CDN ":cdn" does not exist, check "$_CONFIG[cdn][servers]" configuration', array(':cdn' => $cdn)), 'invalid');
-		}
-
-        $counts   = sql_list('SELECT   `cdn`,
-                                       COUNT(`id`) AS `count`
-
-                              FROM     `listings`
-
-                              GROUP BY `cdn');
-
-        $cdns     = array_filter_values($_CONFIG['cdn']['servers'], $cdn);
-        $to_cdn   = current($cdns);
-        $average  = $count / $cdns;
-        $results  = array('failures' => array());
-
-        $listings = sql_query('SELECT `id`
-
-                               FROM   `listings`
-
-                               WHERE  `cdn` = :cdn',
-
-                               array(':cdn' => $cdn));
-
-        $results['results'] = $listings->rowCount();
-
-        while($listing = sql_fetch($listings)){
-            /*
-             * Search next available CDN server
-             */
-            $search = true;
-
-            while($search){
-                $to_cdn = array_next_value($cdns, $to_cdn);
-
-                if(++$counts[$to_cdn] > $average){
-                    /*
-                     * This one has already more than the average, fill up the
-                     * other CDN servers, unless this is the final one
-                     */
-                    if(count($cdns) > 1){
-                        unset($cdns[$to_cdn]);
-                        continue;
-                    }
-
-                    $search = false;
-                }
-            }
-
-            try{
-                cdn_move_listing_data($listing['id'], $cdn, $to_cdn);
-
-            }catch(Exception $e){
-                /*
-                 * Oops, this one failed
-                 */
-                $results['failures'][] = $listing['id'];
-            }
-        }
-
-        return $results;
-
-    }catch(Exception $e){
-        throw new bException('cdn_remove(): Failed', $e);
-    }
+throw new bException('cdn_remove(): This function is obsolete, and no longer supported. Disable the CDN you wish to remove in configuration, and run "cdn balance" instead');
+//    try{
+//		if(!$cdn){
+//			throw new bException(tr('cdn_remove(): No CDN specified'), 'notspecified');
+//		}
+//
+//		if(!is_numeric($cdn)){
+//			throw new bException(tr('cdn_remove(): Invalid CDN ":cdn" specified, must be numeric', array(':cdn' => $cdn)), 'invalid');
+//		}
+//
+//		if(!in_array($cdn, $_CONFIG['cdn']['servers'])){
+//			throw new bException(tr('cdn_remove(): Specified CDN ":cdn" does not exist, check "$_CONFIG[cdn][servers]" configuration', array(':cdn' => $cdn)), 'invalid');
+//		}
+//
+//        $counts   = sql_list('SELECT   `cdn`,
+//                                       COUNT(`id`) AS `count`
+//
+//                              FROM     `listings`
+//
+//                              GROUP BY `cdn');
+//
+//        $cdns     = array_filter_values($_CONFIG['cdn']['servers'], $cdn);
+//        $to_cdn   = current($cdns);
+//        $average  = $count / $cdns;
+//        $results  = array('failures' => array());
+//
+//        $listings = sql_query('SELECT `id`
+//
+//                               FROM   `listings`
+//
+//                               WHERE  `cdn` = :cdn',
+//
+//                               array(':cdn' => $cdn));
+//
+//        $results['results'] = $listings->rowCount();
+//
+//        while($listing = sql_fetch($listings)){
+//            /*
+//             * Search next available CDN server
+//             */
+//            $search = true;
+//
+//            while($search){
+//                $to_cdn = array_next_value($cdns, $to_cdn);
+//
+//                if(++$counts[$to_cdn] > $average){
+//                    /*
+//                     * This one has already more than the average, fill up the
+//                     * other CDN servers, unless this is the final one
+//                     */
+//                    if(count($cdns) > 1){
+//                        unset($cdns[$to_cdn]);
+//                        continue;
+//                    }
+//
+//                    $search = false;
+//                }
+//            }
+//
+//            try{
+//                cdn_move_listing_data($listing['id'], $cdn, $to_cdn);
+//
+//            }catch(Exception $e){
+//                /*
+//                 * Oops, this one failed
+//                 */
+//                $results['failures'][] = $listing['id'];
+//            }
+//        }
+//
+//        return $results;
+//
+//    }catch(Exception $e){
+//        throw new bException('cdn_remove(): Failed', $e);
+//    }
 }
 
 
@@ -630,7 +632,7 @@ function cdn_remove($cdn){
 /*
  * Move all listing data from its current CDN server to the specified CDN server
  */
-function cdn_move_listing_data($listings_id, $from_cdn, $to_cdn){
+function cdn_move_listing_data($listings_id, $to_cdn){
     try{
         $files = sql_list('SELECT `file`
 
@@ -642,16 +644,7 @@ function cdn_move_listing_data($listings_id, $from_cdn, $to_cdn){
 
         foreach($files as $file){
             foreach(array('micro', 'small', 'large', 'small@2x', 'large@2x') as $type){
-                $cdn = str_until(ENVIRONMENT, 'cdn');
-
-                if($cdn){
-                    $from_cdn = $cdn.'_cdn'.$from_cdn;
-
-                }else{
-                    $from_cdn = $cdn.'cdn'.$from_cdn;
-                }
-
-                $sendfile = ROOT.'data/content/images/'.c_listing_path($listings_id, $from_cdn).$file.'-'.$type.'.jpg';
+                $sendfile = ROOT.'data/content/images/'.c_listing_path($listings_id).$file.'-'.$type.'.jpg';
 
                 if(!file_exists($sendfile)){
                     /*

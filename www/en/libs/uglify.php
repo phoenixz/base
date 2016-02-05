@@ -41,7 +41,9 @@ function uglify_css_install(){
         if(VERBOSE){
             log_console('uglify_css_install(): Installing uglifycss', 'uglify', 'white');
         }
+
         passthru($npm.' install uglifycss');
+
         if(VERBOSE){
             log_console('uglify_css_install(): Finished installing uglifycss', 'uglify', 'green');
         }
