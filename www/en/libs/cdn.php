@@ -251,7 +251,7 @@ function cdn_commands_process($retries = null, $sleep = 5000){
                     break;
                 }
 
-                usleep($sleep * 100);
+                usleep($sleep * 1000);
                 log_console(tr('No commands found, retrying'));
 
             }else{
@@ -529,6 +529,10 @@ function cdn_balance(){
 
                     try{
                         cdn_commands_send('move-listing', array('listings_id' => $listing['id'], 'to_cdn_id' => $to_cdn), $listing['cdn']);
+
+                        if(!VERBOSE){
+                            cli_dot();
+                        }
 
                     }catch(Exception $e){
                         /*
