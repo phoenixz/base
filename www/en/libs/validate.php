@@ -399,7 +399,7 @@ class validate_form {
             return false;
 
         }else{
-            return $value;
+            return str_replace(array(' ', '.', '-', '(', ')'), '', $value);
         }
     }
 
