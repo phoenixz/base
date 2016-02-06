@@ -271,6 +271,10 @@ function cdn_commands_process($retries = null, $sleep = 5000){
 
                     switch(isset_get($command['command'])){
                         case 'move-listing':
+                            if(VERBOSE){
+                                log_console(tr('move-listing-data for listing ":listing"', array(':listing' => $command['data']['listings_id'])));
+                            }
+
                             $result = cdn_move_listing_data($command['data']['listings_id'], $command['data']['to_cdn_id']);
 
                             if(!$result){
@@ -689,7 +693,7 @@ function cdn_move_listing_data($listings_id, $to_cdn){
 
         }else{
             if(VERBOSE){
-                log_console(tr('Moving data for listing ":listing"', array(':listing' => $listings_id)), '', 'green');
+                log_console(tr('Moving ":count" data objects for listing ":listing"', array(':listing' => $listings_id, ':count' => count($sendfiles))), '', 'green');
 
             }else{
                 cli_dot(10, '.', 'green');
