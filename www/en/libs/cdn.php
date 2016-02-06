@@ -220,7 +220,7 @@ function cdn_commands_insert($message, $files){
 function cdn_commands_process($retries = null, $sleep = 5000){
     try{
         log_console(tr('Executing commands for CDN server ":cdn"', array(':cdn' => CDN)), '', 'white');
-        load_libs('file');
+        load_libs('file,json');
 
         if($retries === null){
             $retries = 10;
