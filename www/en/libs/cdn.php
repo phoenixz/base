@@ -253,6 +253,9 @@ function cdn_commands_process($retries = null, $sleep = 5000){
 
                 usleep($sleep * 100);
                 log_console(tr('No commands found, retrying'));
+
+            }else{
+                $retry = 0;
             }
 
             while($command = sql_fetch($commands)){
