@@ -1272,7 +1272,7 @@ function html_hidden($source, $key = 'id'){
  * If height / width are not specified, then html_img() will try to get the height / width
  * data itself, and store that data in database for future reference
  */
-function html_img($src, $alt, $height = 0, $width = 0, $more = ''){
+function html_img($src, $alt, $width = 0, $height = 0, $more = ''){
     global $_CONFIG;
     static $images;
 
@@ -1306,93 +1306,61 @@ function html_img($src, $alt, $height = 0, $width = 0, $more = ''){
             }
         }
 
-        /*
-         * Images can be either local or remote
-         * Local images either have http://thisdomain.com/image, https://thisdomain.com/image, or /image
-         * Remote images must have width and height specified
-         */
-        if(substr($src, 0, 7) == 'http://'){
-            $protocol = 'http';
-
-        }elseif($protocol = substr($src, 0, 8) == 'https://'){
-            $protocol = 'https';
-
-        }else{
-            $protocol = '';
-        }
-
-        if(!$protocol){
+        if(!$width and !$height){
             /*
-             * This is a local image
+             * Try to get width / height from image.
              */
-            $file = ROOT.'www/en'.str_starts($src, '/');
-
-        }else{
-            if(preg_match('/^'.$protocol.':\/\/(?:www\.)?'.str_replace('.', '\.', $_CONFIG['domain']).'\/.+$/ius', $src)){
+            if($image = sql_get('SELECT `width`, `height` FROM `html_img` WHERE `url` = :url AND `createdon` > NOW() - INTERVAL 1 DAY AND `status` IS NULL', array(':url' => $src))){
                 /*
-                 * This is a local image with domain specification
+                 * We have that information cached, yay!
                  */
-                $file = ROOT.'www/en'.str_starts(str_from($src, $_CONFIG['domain']), '/');
-
-            }elseif(ENVIRONMENT !== 'production'){
-                /*
-                 * This is a remote image
-                 * Remote images MUST have height and width specified!
-                 */
-                if(!$height){
-                    throw new bException(tr('html_img(): No height specified for remote image'), 'notspecified');
-                }
-
-                if(!$width){
-                    throw new bException(tr('html_img(): No width specified for remote image'), 'notspecified');
-                }
-
-                $file = null;
+                $width  = $image['width'];
+                $height = $image['height'];
 
             }else{
-                $file = null;
-            }
-        }
+                try{
+                    if(preg_match('/^ftp|https?/i', $src)){
+                        /*
+                         * Image comes from a domain, fetch to temp directory to analize
+                         */
+                        load_libs('file');
 
-        if(!$height or !$width){
-            if($file and empty($images[$file])){
-                if($src){
-                    if(!file_exists($file)){
-                        log_error(tr('html_img(): Specified image src "%src%" does not exist', array('%src%' => $src)), 'notspecified');
+                        $file  = file_copy_to_target($src, TMP);
+                        $image = getimagesize(TMP.$file);
 
-                    }elseif(!$img_size = getimagesize($file)){
-                        log_error('image_is_valid(): File "'.str_log($filename).'" is not an image');
+                        file_delete($file);
+
+                    }else{
+                        /*
+                         * Local image. Analize directly
+                         */
+                        $image  = getimagesize(ROOT.'www/en/'.$src);
                     }
+
+                    $width  = $image[1];
+                    $height = $image[0];
+                    $status = null;
+
+                }catch(Exception $e){
+                    notify('imgnotexist', tr('html_img(): The image with src ":src" does not exist', array(':src' => $src)), 'developers');
+
+                    $width  = 0;
+                    $height = 0;
+                    $status = $e->getCode();
                 }
 
-                if(empty($img_size)){
-                    $img_size = array(0, 0);
-                }
+                sql_query('INSERT INTO `html_img` (`status`, `url`, `width`, `height`)
+                           VALUES                 (:status , :url , :width , :height )
 
-// :DELETE: Its not needed to unset the image data
-                //unset($img_size[2]);
-                //unset($img_size[3]);
-                //unset($img_size['bits']);
-                //unset($img_size['channel']);
-                //unset($img_size['mime']);
+                           ON DUPLICATE KEY UPDATE `status` = NULL',
 
-                $images[$file] = $img_size;
-
-            }else{
-                /*
-                 * Use cached data
-                 */
-                $img_size = $images[$file];
-            }
-
-            if(!$width){
-                $width  = $img_size[0];
-            }
-
-            if(!$height){
-                $height = $img_size[1];
+                           array(':url'    => $src,
+                                 ':width'  => $width,
+                                 ':height' => $height,
+                                 ':status' => $status));
             }
         }
+
 
         return '<img src="'.$src.'" alt="'.$alt.'" height="'.$height.'" width="'.$width.'"'.($more ? ' '.$more : '').'>';
 
