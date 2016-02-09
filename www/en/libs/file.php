@@ -155,7 +155,19 @@ function file_move_to_target($file, $path, $extension = false, $singledir = fals
             $targetpath = slash($path);
         }
 
-        $target = $targetpath.strtolower(str_convert_accents(str_runtil($filename, '.'), '-').($extension ? $extension : ''));
+        $target = $targetpath.strtolower(str_convert_accents(str_runtil($filename, '.'), '-'));
+
+        /*
+         * Check if there is a "point" already in the extension
+         */
+        if($extension){
+            if(strpos($extension, '.') === false){
+                $target .= '.'.$extension;
+
+            }else{
+                $target .= $extension;
+            }
+        }
 
         /*
          * Only move file is target does not yet exist
