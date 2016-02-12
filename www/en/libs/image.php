@@ -785,7 +785,7 @@ function image_picker($params){
         /*
          * Convert image file names into URL's
          */
-        if($params['url']){
+        if(!empty($params['url'])){
             foreach($params['resource'] as $key => &$image){
                 $image = str_replace('%image%', $image, $params['url']);
             }
