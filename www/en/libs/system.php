@@ -1628,4 +1628,57 @@ function get_config($file, $environment = null){
         throw new bException('get_config(): Failed', $e);
     }
 }
+
+
+
+/*
+ *
+ */
+function get_next_api_id(){
+    global $_CONFIG;
+    static $current_id;
+
+    try{
+        if(empty($current_id)){
+            reset($_CONFIG['api']['servers']);
+            $current_id = current($_CONFIG['api']['servers']);
+
+        }else{
+            $current_id = array_next_value($_CONFIG['api']['servers'], $current_id, false, true);
+        }
+
+        return $current_id;
+
+    }catch(Exception $e){
+        throw new bException(tr('get_next_api_id(): Failed'), $e);
+    }
+}
+
+
+
+/*
+ *
+ */
+function api_prefix($id = null, $force_environment = false){
+    global $_CONFIG;
+
+    try{
+        if($force_environment){
+            $config = get_config('', $force_environment);
+            $api    = $config['api'];
+
+        }else{
+            $api    = $_CONFIG['api'];
+        }
+
+        if(!$id){
+            $id = get_next_api_id();
+        }
+
+        return str_replace(':id', $id, $api['prefix']);
+
+    }catch(Exception $e){
+        throw new bException(tr('api_prefix(): Failed'), $e);
+    }
+}
 ?>
