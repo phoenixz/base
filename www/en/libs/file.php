@@ -170,8 +170,6 @@ function file_move_to_target($file, $path, $extension = false, $singledir = fals
             }
         }
 
-
-
         /*
          * Only move file is target does not yet exist
          */
