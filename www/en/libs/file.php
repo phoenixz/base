@@ -159,9 +159,15 @@ function file_move_to_target($file, $path, $extension = false, $singledir = fals
 
         /*
          * Check if there is a "point" already in the extension
+         * not obligatory at the start of the string
          */
         if($extension){
-           $target .= str_starts($extension, '.');
+            if(strpos($extension, '.') === false){
+                $target .= '.'.$extension;
+
+            }else{
+               $target .= $extension;
+            }
         }
 
         /*
