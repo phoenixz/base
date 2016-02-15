@@ -440,6 +440,8 @@ function html_header($params = null, $meta = array()){
                   "<meta http-equiv=\"Content-Type\" content=\"text/html;charset=".$_CONFIG['charset']."\">\n".
                   "<title>".$params['meta']['title']."</title>\n";
 
+        unset($meta['title']);
+
         foreach($params['prefetch_dns'] as $prefetch){
             $retval .= '<link rel="dns-prefetch" href="//'.$prefetch."\">\n";
         }
@@ -1289,16 +1291,20 @@ function html_img($src, $alt, $width = 0, $height = 0, $more = ''){
 
         if(ENVIRONMENT !== 'production'){
             if(!$src){
+                throw new bException(tr('html_img(): No image src specified'), 'notspecified');
+            }
+
+            if(!$alt){
+                throw new bException(tr('html_img(): No image alt text specified for src ":src"', array(':src' => $src)), 'notspecified');
+            }
+
+        }else{
+            if(!$src){
                 notify('no_img_source', tr('html_img(): No image src specified'), 'developers');
             }
 
             if(!$alt){
                 notify('no_img_alt', tr('html_img(): No image alt text specified for src ":src"', array(':src' => $src)), 'developers');
-            }
-
-        }else{
-            if(!$src){
-                throw new bException(tr('html_img(): No image src specified'), 'notspecified');
             }
 
             if(!$alt){
