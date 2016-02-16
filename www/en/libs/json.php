@@ -185,7 +185,7 @@ function json_error($message, $data = array(), $result = 'ERROR', $http_code = 5
             $code = $message->code;
 
     //        if(debug('messages') and (substr($code, 0, 5) == 'user/') or ($code == 'user')){
-            if(debug('messages')){
+            if(debug()){
                 /*
                  * This is a user visible message
                  */
