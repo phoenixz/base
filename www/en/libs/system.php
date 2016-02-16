@@ -343,7 +343,7 @@ function load_content($file, $replace = false, $language = null, $autocreate = n
                 log_database('load_content(): Search count does not match replace count', 'warning');
         }
 
-        throw new bException('load_content(): Failed', $e);
+        throw new bException(tr('load_content(): Failed for file ":file"', array(':file' => $file)), $e);
     }
 }
 
@@ -1526,7 +1526,7 @@ function get_this_cdn_id(){
             $GLOBALS['cdn_id'] = str_until($_SERVER['SERVER_NAME'], '.');
 
             if(!is_numeric($GLOBALS['cdn_id'])){
-                throw new bException(tr('get_this_cdn_id(): This is not a numeric CDN server'));
+                throw new bException(tr('get_this_cdn_id(): This is not a numeric CDN server'), 'invalid');
             }
         }
 
