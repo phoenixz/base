@@ -238,7 +238,7 @@ if(!trim(shell_exec('git status | grep "nothing to commit" | wc -l'))) {
  * either are on master or production branch, since we won't deploy
  * from any other branch (for safety)
  */
-if(in_array('production', $targets)){
+if(in_array('production', $targets) or in_array('production', $categories)){
     load_libs('git');
     $branch = git_branch();
 
