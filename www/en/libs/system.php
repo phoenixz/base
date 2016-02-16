@@ -343,7 +343,7 @@ function load_content($file, $replace = false, $language = null, $autocreate = n
                 log_database('load_content(): Search count does not match replace count', 'warning');
         }
 
-        throw new bException('load_content(): Failed', $e);
+        throw new bException(tr('load_content(): Failed for file ":file"', array(':file' => $file)), $e);
     }
 }
 
