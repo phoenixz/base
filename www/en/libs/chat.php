@@ -242,4 +242,25 @@ function chat_sync_users($user, $log_console = false){
         throw new bException(tr('chat_sync_users(): Failed'), $e);
     }
 }
+
+
+
+/*
+ * Update user avatar
+ */
+function chat_update_avatar($user, $avatar){
+    try{
+        $r = sql_query('UPDATE `users`
+
+                        SET    `avatar`  = :avatar
+
+                        WHERE  `user_id` = :user_id',
+
+                        array(':user_id' => $user['id'],
+                              ':avatar'  => $avatar), null, 'chat');
+
+    }catch(Exception $e){
+        throw new bException(tr('chat_update_avatar(): Failed'), $e);
+    }
+}
 ?>
