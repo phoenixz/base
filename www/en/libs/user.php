@@ -1107,7 +1107,7 @@ function user_get_key($user = null, $force = false){
 function user_check_key($user, $key, $timestamp){
     try{
 // :TODO: Make the future and past time differences configurable
-        $future = 2;
+        $future = 10;
         $past   = 1800;
 
         if(is_numeric($user)){
