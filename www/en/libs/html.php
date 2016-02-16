@@ -1324,8 +1324,10 @@ function html_img($src, $alt, $width = null, $height = null, $more = ''){
                 $height = $image['height'];
 
             }else{
+
                 try{
                     if(preg_match('/^ftp|https?/i', $src)){
+
                         /*
                          * Image comes from a domain, fetch to temp directory to analize
                          */
@@ -1343,8 +1345,8 @@ function html_img($src, $alt, $width = null, $height = null, $more = ''){
                         $image  = getimagesize(ROOT.'www/en/'.$src);
                     }
 
-                    $width  = $image[1];
-                    $height = $image[0];
+                    $width  = $image[0];
+                    $height = $image[1];
                     $status = null;
 
                 }catch(Exception $e){
