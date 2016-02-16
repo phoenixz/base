@@ -1274,7 +1274,7 @@ function html_hidden($source, $key = 'id'){
  * If height / width are not specified, then html_img() will try to get the height / width
  * data itself, and store that data in database for future reference
  */
-function html_img($src, $alt, $width = 0, $height = 0, $more = ''){
+function html_img($src, $alt, $width = null, $height = null, $more = ''){
     global $_CONFIG;
     static $images;
 
@@ -1312,7 +1312,7 @@ function html_img($src, $alt, $width = 0, $height = 0, $more = ''){
             }
         }
 
-        if(!$width and !$height){
+        if(($width === null) and ($height === null)){
             /*
              * Try to get width / height from image.
              */
@@ -1367,8 +1367,21 @@ function html_img($src, $alt, $width = 0, $height = 0, $more = ''){
             }
         }
 
+        if($height){
+            $height = ' height="'.$height.'"';
 
-        return '<img src="'.$src.'" alt="'.$alt.'" height="'.$height.'" width="'.$width.'"'.($more ? ' '.$more : '').'>';
+        }else{
+            $height = '';
+        }
+
+        if($width){
+            $width = ' width="'.$width.'"';
+
+        }else{
+            $width = '';
+        }
+
+        return '<img src="'.$src.'" alt="'.$alt.'"'.$width.$height.($more ? ' '.$more : '').'>';
 
     }catch(Exception $e){
         throw new bException('html_img(): Failed', $e);
