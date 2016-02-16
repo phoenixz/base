@@ -1526,7 +1526,7 @@ function get_this_cdn_id(){
             $GLOBALS['cdn_id'] = str_until($_SERVER['SERVER_NAME'], '.');
 
             if(!is_numeric($GLOBALS['cdn_id'])){
-                throw new bException(tr('get_this_cdn_id(): This is not a numeric CDN server'), $e);
+                throw new bException(tr('get_this_cdn_id(): This is not a numeric CDN server'));
             }
         }
 
