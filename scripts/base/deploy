@@ -149,6 +149,8 @@ if(!$message and !$notag){
     throw new bException(tr('No tag message specified! please use ./scripts/base/deploy ..... message "commit message"'), 'notspecified');
 }
 
+
+
 /*
  * Load deployment configuration
  */
@@ -158,12 +160,35 @@ if(empty($_CONFIG['deploy'])){
     throw new bException(tr('No deploy configuration found'), 'config');
 }
 
+
+
 /*
  * Check target configuration availability
  */
 if(!$targets){
     if(!$categories){
         throw new bException(tr('No target environment or environment categories specified!'), 'notspecified');
+    }
+
+    /*
+     * If we're going to deploy to production categories, ensure that we
+     * either are on master or production branch, since we won't deploy
+     * from any other branch (for safety)
+     */
+    if(in_array('production', $categories)){
+        load_libs('git');
+        $branch = git_branch();
+
+        if($branch != 'production'){
+            if(!FORCE){
+                throw new bException(tr('Cannot deploy the current GIT branch ":branch" to production category. For safety, deployment to production environment is restricted to git "production" branch only', array(':branch' => str_log($branch))), 'productioninvalidbranch');
+            }
+
+            /*
+             * Notify about forced deploy!
+             */
+            notify('deploy', tr('DEPLOY WARNING! NON PRODUCTION BRANCH DEPLOYED TO PRODUCTION: Deployed branch "%branch%" to production category for project "%project%" subenvironment "%subenv%"', array('%branch%' => $branch, '%project%' => PROJECT, '%subenv%' => str_log($subenvironment))), null, $subenvironment);
+        }
     }
 
     /*
@@ -178,7 +203,7 @@ if(!$targets){
     }
 
     if(empty($targets)){
-        throw new bException(tr('The specified categories "%categories%" contain no deploy targets', array('%categories%' => str_force($categories, ', '))), 'empty');
+        throw new bException(tr('The specified categories ":categories" contain no deploy targets', array(':categories' => str_force($categories, ', '))), 'empty');
     }
 }
 
@@ -198,13 +223,13 @@ if($targets == 'all'){
      * Get all deployment targets
      */
     $targets = array_keys($_CONFIG['deploy']);
-    log_console(tr('Deploying to ALL target environments "%targets%"', array('%targets%' => str_log($targets))), 'warning', 'yellow');
+    log_console(tr('Deploying to ALL target environments ":targets"', array(':targets' => str_log($targets))), 'warning', 'yellow');
 
 }elseif(is_array($targets)){
-    log_console('Deploying to specified target environments "'.str_log(str_force($targets, ', ')).'"', 'warning', 'yellow');
+    log_console(tr('Deploying to specified target environments ":targets"', array(':targets' => str_force($targets, ', '))), 'warning', 'yellow');
 
 }else{
-    log_console('Deploying to specified target environment "'.str_log($targets).'"', 'warning', 'yellow');
+    log_console(tr('Deploying to specified target environment ":target"', array('' => str_force($targets))), 'warning', 'yellow');
     $targets = array($targets);
 }
 
@@ -231,26 +256,24 @@ if(!trim(shell_exec('git status | grep "nothing to commit" | wc -l'))) {
     $stash = false;
 }
 
-
-
 /*
  * If we're going to deploy to production environment, ensure that we
  * either are on master or production branch, since we won't deploy
  * from any other branch (for safety)
  */
-if(in_array('production', $targets) or in_array('production', $categories)){
+if(in_array('production', $targets)){
     load_libs('git');
     $branch = git_branch();
 
     if($branch != 'production'){
         if(!FORCE){
-            throw new bException(tr('Cannot deploy the current GIT branch "'.str_log($branch).'" to production environment. For safety, deployment to production environment is restricted to git "production" branch only'), 'productioninvalidbranch');
+            throw new bException(tr('Cannot deploy the current GIT branch ":branch" to production environment. For safety, deployment to production environment is restricted to git "production" branch only', array(':branch' => str_log($branch))), 'productioninvalidbranch');
         }
 
         /*
          * Notify about forced deploy!
          */
-        notify('deploy', tr('DEPLOY WARNING! NON PRODUCTION BRANCH DEPLOYED TO PRODUCTION: Deployed branch "%branch%" to production environment for project "%project%" subenvironment "%subenv%"', array('%branch%' => $branch, '%project%' => PROJECT, '%subenv%' => str_log($subenvironment))), null, $subenvironment);
+        notify('deploy', tr('DEPLOY WARNING! NON PRODUCTION BRANCH DEPLOYED TO PRODUCTION: Deployed branch ":branch" to production environment for project ":project" subenvironment ":subenv"', array(':branch' => $branch, ':project' => PROJECT, ':subenv' => str_log($subenvironment))), null, $subenvironment);
     }
 }
 
@@ -299,7 +322,7 @@ if($nosyntax){
         exec('php -l '.ROOT.$file.' > /dev/null', $syntaxoutput, $return);
 
         if($return){
-            throw new bException('Content scan failed on file "'.$file.'" with "'.str_log($syntaxoutput).'"', 'production');
+            throw new bException(tr('Content scan failed on file ":file" with ":error"', array(':file' => $file, ':error' => str_log($syntaxoutput))), 'production');
         }
 
         log_console('#', '', 'green', false);
