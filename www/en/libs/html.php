@@ -1324,7 +1324,6 @@ function html_img($src, $alt, $width = null, $height = null, $more = ''){
                 $height = $image['height'];
 
             }else{
-
                 try{
                     if(preg_match('/^ftp|https?/i', $src)){
 
@@ -1333,10 +1332,11 @@ function html_img($src, $alt, $width = null, $height = null, $more = ''){
                          */
                         load_libs('file');
 
-                        $file  = file_copy_to_target($src, TMP);
+                        $file  = file_move_to_target($src, TMP, false, true);
                         $image = getimagesize(TMP.$file);
 
-                        file_delete($file);
+                        file_delete(TMP.$file);
+                        file_delete(dirname(TMP.$file));
 
                     }else{
                         /*
@@ -1357,10 +1357,11 @@ function html_img($src, $alt, $width = null, $height = null, $more = ''){
                     $status = $e->getCode();
                 }
 
-                sql_query('INSERT INTO `html_img` (`status`, `url`, `width`, `height`)
+                sql_query(' INSERT INTO `html_img` (`status`, `url`, `width`, `height`)
                            VALUES                 (:status , :url , :width , :height )
 
-                           ON DUPLICATE KEY UPDATE `status` = NULL',
+                           ON DUPLICATE KEY UPDATE `status`    = NULL,
+                                                   `createdon` = NOW()',
 
                            array(':url'    => $src,
                                  ':width'  => $width,

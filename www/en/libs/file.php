@@ -93,7 +93,7 @@ function file_assign_target_clean($path, $extension = false, $singledir = false,
 function file_copy_to_target($file, $path, $extension = false, $singledir = false, $length = 4) {
     try{
         if(is_array($file)){
-            throw new bException('file_copy_to_target(): Specified file "'.str_log($file).'" is an uploaded file, and uploaded files cannot be copied, only moved');
+            throw new bException(tr('file_copy_to_target(): Specified file ":file" is an uploaded file, and uploaded files cannot be copied, only moved', array(':file' => str_log($file))));
         }
 
         return file_move_to_target($file, $path, $extension, $singledir, $length, true);
@@ -124,7 +124,7 @@ function file_move_to_target($file, $path, $extension = false, $singledir = fals
         }
 
         if(isset($upload) and $copy){
-            throw new bException('file_move_to_target(): Copy option has been set, but specified file "'.str_log($file).'" is an uploaded file, and uploaded files cannot be copied, only moved');
+            throw new bException(tr('file_move_to_target(): Copy option has been set, but specified file ":file" is an uploaded file, and uploaded files cannot be copied, only moved', array(':file' => str_log($file))));
         }
 
         $path     = file_ensure_path($path);
@@ -141,7 +141,7 @@ function file_move_to_target($file, $path, $extension = false, $singledir = fals
          * Ensure we have a local copy of the file to work with
          */
         if($file){
-            $file = file_get_local($file);
+            $file = file_get_local($file, $is_downloaded);
         }
 
         if(!$extension) {
@@ -178,10 +178,10 @@ function file_move_to_target($file, $path, $extension = false, $singledir = fals
                 /*
                  * File was specified as an upload array
                  */
-                return file_move_to_target($upload, $path, $extension, $singledir, $length);
+                return file_move_to_target($upload, $path, $extension, $singledir, $length, $copy);
             }
 
-            return file_move_to_target($file, $path, $extension, $singledir, $length);
+            return file_move_to_target($file, $path, $extension, $singledir, $length, $copy);
         }
 
         /*
@@ -198,11 +198,12 @@ function file_move_to_target($file, $path, $extension = false, $singledir = fals
                 /*
                  * This is a normal file
                  */
-                if($copy){
+                if($copy and !$is_downloaded){
                     copy($file, $target);
 
                 }else{
                     rename($file, $target);
+                    file_clear_path(dirname($file));
                 }
             }
         }
@@ -1081,7 +1082,7 @@ function file_extension($file){
 /*
  * If the specified file is an HTTP, HTTPS, or FTP URL, then get it locally as a temp file
  */
-function file_get_local($file){
+function file_get_local($file, &$is_downloaded = false){
     try{
         $file = trim($file);
 
@@ -1100,8 +1101,10 @@ function file_get_local($file){
         /*
          * First download the file to a temporary location
          */
-        $orgfile = $file;
-        $file    = file_temp($file);
+        $orgfile       = $file;
+        $file          = str_replace(array('://', '/'), '-', $file);
+        $file          = file_temp($file);
+        $is_downloaded = true;
 
         file_ensure_path(dirname($file));
         file_put_contents($file, file_get_contents($orgfile));
