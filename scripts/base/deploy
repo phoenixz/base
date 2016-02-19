@@ -229,7 +229,7 @@ if($targets == 'all'){
     log_console(tr('Deploying to specified target environments ":targets"', array(':targets' => str_force($targets, ', '))), 'warning', 'yellow');
 
 }else{
-    log_console(tr('Deploying to specified target environment ":target"', array('' => str_force($targets))), 'warning', 'yellow');
+    log_console(tr('Deploying to specified target environment ":target"', array(':target' => str_force($targets))), 'warning', 'yellow');
     $targets = array($targets);
 }
 
