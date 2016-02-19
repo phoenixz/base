@@ -1357,7 +1357,7 @@ function html_img($src, $alt, $width = null, $height = null, $more = ''){
                     $status = $e->getCode();
                 }
 
-                sql_query(' INSERT INTO `html_img` (`status`, `url`, `width`, `height`)
+                sql_query('INSERT INTO `html_img` (`status`, `url`, `width`, `height`)
                            VALUES                 (:status , :url , :width , :height )
 
                            ON DUPLICATE KEY UPDATE `status`    = NULL,
