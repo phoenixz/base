@@ -503,6 +503,10 @@ function http_redirect_query_url(){
     global $_CONFIG;
 
     try{
+        if(!empty($GLOBALS['page_is_ajax']) or !empty($GLOBALS['page_is_admin'])){
+            return true;
+        }
+
         if(!$_CONFIG['redirects']['query']){
             /*
              * No need to auto redirect URL's with queries
