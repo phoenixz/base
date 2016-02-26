@@ -73,7 +73,7 @@ function backup_mysql($params){
             /*
              * Backup the core database of this project
              */
-            $params['database'] = '-B '.$_CONFIG['db']['db'];
+            $params['database'] = '-B '.$_CONFIG['db']['core']['db'];
             log_console('Starting backup of core database "'.str_log($database).'"', 'complete', 'white');
 
             backup_mysql($params);

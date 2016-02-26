@@ -6,7 +6,7 @@
      * Forced init is NOT allowed on production (for obvious safety reasons, doh!)
      */
     if(ENVIRONMENT == 'production'){
-        throw new bException('sql_init(): For safety reasons, init force is NOT allowed on production environment! Please drop the database using "./scripts/base/init drop" or in the mysql console with "DROP DATABASE \''.str_log($_CONFIG['db']['db']).'\'"and continue with a standard init', 'forcedenied');
+        throw new bException('sql_init(): For safety reasons, init force is NOT allowed on production environment! Please drop the database using "./scripts/base/init drop" or in the mysql console with "DROP DATABASE \''.str_log($_CONFIG['db'][$connector]['db']).'\'"and continue with a standard init', 'forcedenied');
     }
 
     if(!str_is_version(FORCE)){
