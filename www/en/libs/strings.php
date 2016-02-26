@@ -308,8 +308,8 @@ function str_escape_for_jquery($source, $replace = ''){
 /*
  * Remove double "replace" chars
  */
-function str_nodouble($source, $replace = '-', $character = '.', $case_insensitive = true){
-    return preg_replace('/('.$character.')\1{2,}/u'.($case_insensitive ? 'i' : ''), $replace, $source);
+function str_nodouble($source, $replace = '\1', $character = '.', $case_insensitive = true){
+    return preg_replace('/('.$character.')\\1+/u'.($case_insensitive ? 'i' : ''), $replace, $source);
 }
 
 
