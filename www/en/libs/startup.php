@@ -604,6 +604,11 @@ try{
      */
     if(PLATFORM == 'http'){
         /*
+         * Check for URL's with queries. Depending on configuration, 301 direct to URL without query
+         */
+        http_redirect_query_url();
+
+        /*
          * New session?
          */
         if(!isset($_SESSION['client'])){

@@ -493,4 +493,34 @@ function requested_url(){
         throw new bException('requested_url(): Failed', $e);
     }
 }
+
+
+
+/*
+ * Check for URL's with queries. Depending on configuration, 301 direct to URL without query
+ */
+function http_redirect_query_url(){
+    global $_CONFIG;
+
+    try{
+        if(!$_CONFIG['redirects']['query']){
+            /*
+             * No need to auto redirect URL's with queries
+             */
+            return true;
+        }
+
+        if(($pos = strpos($_SERVER['REQUEST_URI'], '?')) === false){
+            /*
+             * URL contains no ? query mark
+             */
+            return true;
+        }
+
+        redirect(current_domain(substr($_SERVER['REQUEST_URI'], 0, $pos)));
+
+    }catch(Exception $e){
+        throw new bException('http_redirect_query_url(): Failed', $e);
+    }
+}
 ?>

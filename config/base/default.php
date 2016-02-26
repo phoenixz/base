@@ -268,7 +268,8 @@ $_CONFIG['prefetch']           = array('dns'              => array('facebook.com
 $_CONFIG['protocol']           = 'http://';                                                                 // The base protocol of this website. Basically either "http://",  or "https://".
 
 // Redirects configuration (This ususally would not require changes unless you want to have other file names for certain actions like signin, etc)
-$_CONFIG['redirects']          = array('index'            => 'index.php',                                   // What is the default index page for this site
+$_CONFIG['redirects']          = array('query'            => false,                                         // If URL contains a query ? redirect to URL without query, see http_redirect_query_url() and startup
+                                       'index'            => 'index.php',                                   // What is the default index page for this site
                                        'signin'           => 'signin.php',                                  // What is the default signin page for this site
                                        'aftersignin'      => 'index.php',                                   // Where will the site redirect to by default after a signin?
                                        'aftersignout'     => 'index.php');                                  //Where will the site redirect to by default after a signout?
