@@ -181,7 +181,7 @@ if($noimport){
      * mysqldump always adds a "USE databasename" which is horrifyingly anoying, because the dump will be imported in the wrong database!
      * Remove it first!
      */
-    log_console('Importing remote SQL dump file in local MySQL server...', 'sync', 'white');
+    log_console(tr('Importing remote SQL dump file ":file" in local MySQL server...', array(':file' => '/tmp/'.$project.'_'.$source_config['db']['core']['db'].'.sql')), 'sync', 'white');
     passthru($command = 'cd /tmp/; rm /tmp/'.$project.'_'.$source_config['db']['core']['db'].'.sql -f; gunzip /tmp/'.$project.'_'.$source_config['db']['core']['db'].'.sql.gz', $exitcode);
 
     if($exitcode){
