@@ -191,7 +191,7 @@ function json_error($message, $data = array(), $result = 'ERROR', $http_code = 5
                  */
                 $message = $message->getMessages("\n");
 
-            }elseif($default){
+            }elseif(!empty($default)){
                 $message = $default;
             }
         }
