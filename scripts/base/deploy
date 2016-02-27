@@ -477,6 +477,9 @@ if($notranslate){
 
     if($_CONFIG['language']['supported']){
         foreach($_CONFIG['language']['supported'] as $code => $language){
+            log_screen('Deleting translations '.$language, 'deploy', 'white');
+            script_exec('base/translate', array('clear'));
+
             log_screen('Translating to '.$language, 'deploy', 'white');
             script_exec('base/translate', array('translate', '--languages', $code));
 
