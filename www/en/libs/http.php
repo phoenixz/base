@@ -503,7 +503,7 @@ function http_redirect_query_url(){
     global $_CONFIG;
 
     try{
-        if(!empty($GLOBALS['page_is_ajax']) or !empty($GLOBALS['page_is_admin'])){
+        if(!empty($GLOBALS['page_is_ajax']) or !empty($GLOBALS['page_is_admin']) or !empty($GLOBALS['no_query_url_redirect'])){
             return true;
         }
 
