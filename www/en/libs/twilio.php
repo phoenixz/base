@@ -19,9 +19,11 @@ load_config('twilio');
  */
 if(debug()){
     try{
-        foreach($_CONFIG['twilio']['sources'] as $phone => $name){
-            if(!is_numeric($phone)){
-                throw new bException('twilio(): Specified phone number "'.str_log($phone).'" is invalid, it should contain no formatting, no spaces, only numbers');
+        foreach($_CONFIG['twilio']['accounts'] as $account => $data){
+            foreach($data['sources'] as $phone => $name){
+                if(!is_numeric($phone)){
+                    throw new bException(tr('twilio(): Specified phone number ":phone" from account ":account" is invalid, it should contain no formatting, no spaces, only numbers', array(':account' => str_log($account), ':phone' => str_log($phone))), 'invalid');
+                }
             }
         }
 
@@ -75,37 +77,55 @@ function twilio_install(){
 /*
  * Load twilio base library
  */
-function twilio_load($accountsid = null, $accountstoken = null, $auto_install = true){
+function twilio_load($account = null, $auto_install = true){
     global $_CONFIG;
 
     try{
+        if(!$account){
+            /*
+             * Use the first account as the default account
+             */
+            reset($_CONFIG['twilio']['accounts']);
+            $account = key($_CONFIG['twilio']['accounts']);
+
+        }elseif(is_numeric($account)){
+            foreach($_CONFIG['twilio']['accounts'] as $account_email => $data){
+                if(!empty($data['sources'][$account])){
+                    $account = $account_email;
+                }
+            }
+
+            if(is_numeric($account)){
+                /*
+                 * Specified number is not found in any account
+                 */
+                throw new bException(tr('twilio_load(): Specified phone number ":number" was not found in any Twilio account', array(':number' => str_log($account))), 'notexist');
+            }
+        }
+
         $file = ROOT.'libs/external/twilio/Services/Twilio.php';
 
         if(!file_exists($file)){
             log_console('twilio_load(): Twilio API library not found', 'notinstalled');
 
             if(!$auto_install){
-                throw new bException('twilio_load(): Twilio API library file "'.str_log($file).'" was not found', 'notinstalled');
+                throw new bException(tr('twilio_load(): Twilio API library file ":file" was not found', array(':file' => str_log($file))), 'notinstalled');
             }
 
             twilio_install();
 
             if(!file_exists($file)){
-                throw new bException('twilio_load(): Twilio API library file "'.str_log($file).'" was not found, and auto install seems to have failed', 'notinstalled');
+                throw new bException(tr('twilio_load(): Twilio API library file ":file" was not found, and auto install seems to have failed', array(':file' => str_log($file))), 'notinstalled');
             }
         }
 
         include($file);
 
-        if(!$accountstoken){
-            $accountstoken = $_CONFIG['twilio']['accounts_token'];
+        if(empty($_CONFIG['twilio']['accounts'][$account])){
+            throw new bException(tr('twilio_load(): Specified Twilio account ":account" does not exist', array(':account' => str_log($account))), 'notexist');
         }
 
-        if(!$accountsid){
-            $accountsid = $_CONFIG['twilio']['accounts_id'];
-        }
-
-        return new Services_Twilio($accountsid, $accountstoken);
+        return new Services_Twilio($_CONFIG['twilio']['accounts'][$account]['accounts_id'], $_CONFIG['twilio']['accounts'][$account]['accounts_token']);
 
     }catch(Exception $e){
         throw new bException('twilio_load(): Failed', $e);
@@ -132,8 +152,11 @@ function twilio_name_phones($phones, $non_numeric = null){
                 }
 
             }else{
-                if(isset($_CONFIG['twilio']['sources'][$phone])){
-                    $phone = $_CONFIG['twilio']['sources'][$phone];
+                foreach($_CONFIG['twilio']['accounts'] as $account => $data){
+                    if(isset($data['sources'][$phone])){
+                        $phone = $_CONFIG['twilio']['accounts'][$account]['sources'][$phone];
+                        break;
+                    }
                 }
             }
         }
@@ -157,8 +180,10 @@ function twilio_verify_source_phone($phone){
         load_libs('sms');
         $phone = sms_full_phones($phone);
 
-        if(isset($_CONFIG['twilio']['sources'][$phone])){
-            return $phone;
+        foreach($_CONFIG['twilio']['accounts'] as $account => $data){
+            if(isset($data['sources'][$phone])){
+                return $phone;
+            }
         }
 
         return null;
@@ -178,18 +203,24 @@ function twilio_send_message($message, $to, $from = null){
     static $twilio;
 
     try{
-        if(empty($twilio)){
-            $twilio = twilio_load();
+        foreach($_CONFIG['twilio']['accounts'] as $account => $data){
+            if(!empty($data['sources'][$from])){
+                if(empty($twilio)){
+show($account);
+                    $twilio = twilio_load($account);
+                }
+            }
         }
 
-        if(empty($_CONFIG['twilio']['sources'][$from])){
-            throw new bException('Specified source phone "'.str_log($from).'" is not known', 'unknown');
+        if(!$twilio){
+            throw new bException(tr('Specified source phone ":from" is not known', array(':from' => str_log($from))), 'unknown');
         }
 
-        if(!$from){
-            reset($_CONFIG['twilio']['sources']);
-            $from = key($_CONFIG['twilio']['sources']);
-        }
+// :DELETE: From now on, the "from" number is obligatory
+        //if(!$from){
+        //    reset($_CONFIG['twilio']['sources']);
+        //    $from = key($_CONFIG['twilio']['sources']);
+        //}
 
         return $twilio->account->messages->sendMessage($from, $to, $message);
 

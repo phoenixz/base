@@ -58,7 +58,14 @@ function sms_get_conversation($phone_local, $phone_remote){
         /*
          * Determine the local and remote phones
          */
-        if(empty($_CONFIG['twilio']['sources'][$phone_local])){
+        foreach($_CONFIG['twilio']['accounts'] as $account => $data){
+            if(!empty($data['sources'][$phone_local])){
+                $nochange = true;
+                break;
+            }
+        }
+
+        if(empty($nochange)){
             $tmp          = $phone_remote;
             $phone_remote = $phone_local;
             $phone_local  = $tmp;
@@ -293,11 +300,17 @@ function sms_select_source($name, $selected, $provider, $class){
     try{
         load_config('twilio');
 
+        $resource = array();
+
+        foreach($_CONFIG['twilio']['accounts'] as $account => $data){
+            $resource = array_merge($resource, $data['sources']);
+        }
+
         $sources = array('name'     => $name,
                          'class'    => $class,
                          'none'     => tr('Select number'),
                          'selected' => $selected,
-                         'resource' => $_CONFIG['twilio']['sources']);
+                         'resource' => $resource);
 
         if(isset_get($provider) == 'crmtext'){
             $sources['resource']['crmtext']  = tr('Shortcode');
