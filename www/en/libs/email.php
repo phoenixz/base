@@ -141,13 +141,25 @@ function email_get_conversation($email){
 
         if(!$conversation){
             /*
+             * Check if this is an email created from the admin section
+             */
+            if(!empty($email['invert'])){
+                $to   = $email['from'];
+                $from = $email['to'];
+                
+            }else{
+                $to   = $email['to'];
+                $from = $email['from'];
+            }
+            
+            /*
              * This is a new conversation
              */
             sql_query('INSERT INTO `email_conversations` (`subject`, `from`, `to`)
                        VALUES                            (:subject , :from , :to )',
 
-                       array(':to'      => $email['to'],
-                             ':from'    => $email['from'],
+                       array(':to'      => $to,
+                             ':from'    => $from,
                              ':subject' => $email['subject']));
 
             $conversation = array('id'            => sql_insert_id(),
