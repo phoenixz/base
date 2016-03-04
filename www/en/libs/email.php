@@ -128,38 +128,26 @@ function email_poll($usernames, $criteria = 'ALL'){
  * A conversation is a collection of email messages, in order of date, that share the same sender, receiver, and subject (subject may contain "RE: ")
  */
 function email_get_conversation($email){
-    try{
+    try{        
         /*
          *
          */
-        $conversation = sql_get('SELECT `id`, `last_messages` FROM `email_conversations` WHERE ((`to` LIKE :to AND `from` LIKE :from) OR (`to` LIKE :from AND `from` LIKE :to) AND (`subject` = :subject OR `subject` = :resubject))',
+        $conversation = sql_get('SELECT `id`, `last_messages` FROM `email_conversations` WHERE ((`us` LIKE :us AND `them` LIKE :them) OR (`us` LIKE :them AND `them` LIKE :us) AND (`subject` = :subject OR `subject` = :resubject))',
 
-                                 array(':to'        => '%'.$email['to'].'%',
-                                       ':from'      => '%'.$email['from'].'%',
+                                 array(':us'        => '%'.$email['to'].'%',
+                                       ':them'      => '%'.$email['from'].'%',
                                        ':subject'   => str_from($email['subject'], 'RE: '),
                                        ':resubject' => 'RE: '.$email['subject']));
 
         if(!$conversation){
             /*
-             * Check if this is an email created from the admin section
-             */
-            if(!empty($email['invert'])){
-                $to   = $email['from'];
-                $from = $email['to'];
-                
-            }else{
-                $to   = $email['to'];
-                $from = $email['from'];
-            }
-            
-            /*
              * This is a new conversation
              */
-            sql_query('INSERT INTO `email_conversations` (`subject`, `from`, `to`)
-                       VALUES                            (:subject , :from , :to )',
+            sql_query('INSERT INTO `email_conversations` (`subject`, `them`, `us`)
+                       VALUES                            (:subject , :them , :us )',
 
-                       array(':to'      => $to,
-                             ':from'    => $from,
+                       array(':us'      => $email['to'],
+                             ':them'    => $email['from'],
                              ':subject' => $email['subject']));
 
             $conversation = array('id'            => sql_insert_id(),
