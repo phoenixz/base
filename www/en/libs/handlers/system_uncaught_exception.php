@@ -8,7 +8,15 @@ debug(true);
 $session   = "\n\n\n<br><br>SESSION DATA<br><br>\n\n\n".htmlentities(print_r(isset_get($_SESSION), true));
 $server    = "\n\n\n<br><br>SERVER DATA<br><br>\n\n\n".htmlentities(print_r(isset_get($_SERVER), true));
 $trace     = "\n\nFUNCTION TRACE\n".htmlentities(print_r(debug_trace(''), true));
-$exception = "\n\nEXCEPTION TRACE\n".htmlentities(print_r($e->getMessages(), true));
+
+if(method_exists($e, 'getMessages')){
+    $exception = "\n\nEXCEPTION TRACE\n".htmlentities(print_r($e->getMessages(), true));
+
+}else{
+    $exception = "\n\nEXCEPTION TRACE\n".htmlentities(print_r($e->getMessage(), true));
+}
+
+
 
 /*
  * Count the # of uncaught exceptions.

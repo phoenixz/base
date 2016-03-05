@@ -858,24 +858,6 @@ function sql_valid_limit($limit, $connector = null){
 
 
 /*
- * COMPATIBILITY FUNCTIONS
- *
- * These functions below exist only for compatibility between pdo.php and mysqli.php
- *
- * Return affected rows
- */
-function sql_affected_rows($r){
-    return $r->rowCount();
-}
-
-/*
- * Return number of rows in the specified resource
- */
-function sql_num_rows(&$r){
-    return $r->rowCount();
-}
-
-/*
  * Fetch and return data from specified resource
  */
 function sql_fetch_column($r, $column){
@@ -896,24 +878,22 @@ function sql_fetch_column($r, $column){
 
 
 /*
- *
+ * Merge database entry with new posted entry, overwriting the old DB values, while skipping the values specified in $filter
  */
-function sql_entry_merge($db, $post, $filter = null){
+function sql_merge_entry($db, $post, $skip = null){
     try{
-        if($filter){
-            $filter = str_force('id,'.$filter);
-
-        }else{
-            $filter = 'id';
+        if($skip === null){
+            $skip = 'status';
         }
 
-        $post = array_remove($post, $filter);
+        $post = array_remove($post, 'id,'.str_force($skip));
         return array_merge($db, $post);
 
     }catch(Exception $e){
-        throw new bException('sql_entry_merge(): Failed', $e);
+        throw new bException('sql_merge_entry(): Failed', $e);
     }
 }
+
 
 
 /*
@@ -961,5 +941,25 @@ function sql_log($enable){
     }catch(Exception $e){
         throw new bException('sql_log(): Failed', $e);
     }
+}
+
+
+
+/*
+ * COMPATIBILITY FUNCTIONS
+ *
+ * These functions below exist only for compatibility between pdo.php and mysqli.php
+ *
+ * Return affected rows
+ */
+function sql_affected_rows($r){
+    return $r->rowCount();
+}
+
+/*
+ * Return number of rows in the specified resource
+ */
+function sql_num_rows(&$r){
+    return $r->rowCount();
 }
 ?>

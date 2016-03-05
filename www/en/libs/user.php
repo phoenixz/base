@@ -141,9 +141,22 @@ function user_authenticate($username, $password, $columns = '*') {
             throw new bException('user_authenticate(): Specified username is not valid', 'invalid');
         }
 
-        if(!$user = sql_get('SELECT '.$columns.' FROM `users` WHERE `email` = :email OR `username` = :username', array(':email' => $username, ':username' => $username))){
+        $user = sql_get('SELECT '.$columns.' FROM `users` WHERE `email` = :email OR `username` = :username', array(':email' => $username, ':username' => $username));
+
+        if(!$user){
             log_database(tr('user_authenticate(): Specified user "%username%" not found', array('%username%' => str_log($username))), 'authentication/notfound');
             throw new bException(tr('user_authenticate(): Specified user "%username%" not found', array('%username%' => str_log($username))), 'notfound');
+        }
+
+        if($user['status'] !== null){
+            throw new bException(tr('user_authenticate(): Specified user has status ":status" and cannot be authenticated', array(':status' => $user['status'])), 'inactive');
+        }
+
+        if(!empty($user['type'])){
+            /*
+             * This check will only do anything if the users table contains the "type" column. If it doesn't, nothing will ever happen here, really
+             */
+            throw new bException(tr('user_authenticate(): Specified user has status ":type" and cannot be authenticated', array(':type' => $user['type'])), 'type');
         }
 
         if(substr($user['password'], 0, 1) != '*'){
