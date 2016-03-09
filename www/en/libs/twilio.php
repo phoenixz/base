@@ -228,4 +228,50 @@ show($account);
         throw new bException(tr('twilio_send_message(): Failed'), $e);
     }
 }
+
+
+
+/*
+ *
+ */
+function twlio_add_image($message_id, $url){
+    try{
+        sql_query('INSERT INTO `sms_images` (`sms_messages_id`, `url`)
+                   VALUES                   (:sms_messages_id , :url )',
+
+                   array(':sms_messages_id' => $message_id,
+                         ':url'             => $url));
+
+        run_background('base/sms getimages');
+
+    }catch(Exception $e){
+        throw new bException(tr('twlio_add_image(): Failed'), $e);
+    }
+}
+
+
+
+/*
+ *
+ */
+function twlio_download_image($message_id, $url){
+    try{
+        $file = file_move_to_target($url, ROOT.'data/sms/images');
+
+        sql_query('UPDATE `sms_images`
+
+                   SET    `downloaded`      = NOW(),
+                          `file`            = :file,
+
+                   WHERE  `sms_messages_id` = :sms_messages_id,
+                          `url`             = :url',
+
+                   array(':sms_messages_id' => $message_id,
+                         ':url'             => $url,
+                         ':file'            => $file));
+
+    }catch(Exception $e){
+        throw new bException(tr('twlio_download_image(): Failed'), $e);
+    }
+}
 ?>
