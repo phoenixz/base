@@ -92,6 +92,11 @@ function email_poll($usernames, $criteria = 'ALL'){
                         $data['text'] = imap_fetchbody($inbox, $email, 1.1);
                         $data['html'] = imap_fetchbody($inbox, $email, 1.2);
 
+                        /*
+                         * Get the images of the email
+                         */
+                        $data = email_get_images($inbox, $email, $data);
+
                         if(!$data['text']){
                             $data['text'] = imap_fetchbody($inbox, $email, 1);
                         }
@@ -123,12 +128,100 @@ function email_poll($usernames, $criteria = 'ALL'){
 
 
 /*
+ *
+ */
+function email_get_images($inbox, $email, $data){
+    load_libs('file,image');
+
+    try{
+        /*
+         * Extract the images of the emails if there are
+         */
+        $decode  = imap_fetchbody($inbox, $email , '');
+        $num_img = substr_count($decode, "Content-Transfer-Encoding: base64");
+
+        if($num_img > 0){
+            $structure = imap_fetchstructure($inbox, $email);
+
+            /*
+             * Loop through each image
+             */
+            for($i = 0; $i < $num_img; $i++){
+                try{
+                    $section   = strval(2+$i);
+                    $decode    = imap_fetchbody($inbox, $email, $section);
+                    $img       = base64_decode($decode);
+
+                    /*
+                     * Get image type
+                     */
+                    $f         = finfo_open();
+                    $mime_type = finfo_buffer($f, $img, FILEINFO_MIME_TYPE);
+
+                    switch(str_from($mime_type, '/')){
+                        case 'jpeg':
+                            $extension = '.jpg';
+                            break;
+
+                        case 'png':
+                            $extension = '.png';
+                            break;
+
+                        case 'gif':
+                            $extension = '.gif';
+                            break;
+
+                        default:
+                            /*
+                             * This is not an image or not a valid format
+                             */
+                            throw new bException(tr('email_get_images(): Format ":format" not valid', array(':format' => str_from($mime_type, '/'))));
+                    }
+
+                    $file_name = time()."_".$i.$extension;
+
+                    if(!empty($structure->parts[$i+1]->id)){
+                        /*
+                         * This is an inline image
+                         */
+                        $data['img'.$i]['cid']  = rtrim(trim($structure->parts[$i+1]->id, '<'), ">");
+
+                    }else{
+                        /*
+                         * Attachment
+                         */
+                        $data['img'.$i]['cid']  = 'attachment';
+                    }
+
+                    $data['img'.$i]['file'] = $file_name;
+                    file_put_contents(ROOT.'tmp/'.$file_name, $img);
+
+                }catch(Exception $e){
+                    /*
+                     * An image failed, just continue
+                     */
+                    log_database(tr('Failed to process an image'), 'error');
+                    continue;
+                }
+            }
+        }
+
+        return $data;
+
+    }catch(Exception $e){
+        throw new bException(tr('email_get_images(): Failed'), $e);
+    }
+}
+
+
+
+/*
  * Get the specified email conversation
  *
  * A conversation is a collection of email messages, in order of date, that share the same sender, receiver, and subject (subject may contain "RE: ")
  */
 function email_get_conversation($email){
-    try{        
+    try{
         /*
          *
          */
@@ -181,15 +274,15 @@ function email_update_conversation($email, $direction){
         }
 
         if(($direction != 'sent') and ($direction != 'received')){
-            throw new bException(tr('email_update_conversation(): Invalid conversation direction "%direction%" specified', array('%direction%' => $direction)), 'notspecified');
+            throw new bException(tr('email_update_conversation(): Invalid conversation direction ":direction:" specified', array(':direction' => $direction)), 'notspecified');
         }
 
         if(empty($email['conversation'])){
-            throw new bException(tr('email_update_conversation(): Specified email "%subject%" does not contain a conversation', array('%subject%' => $email['subject'])), 'notspecified');
+            throw new bException(tr('email_update_conversation(): Specified email ":subject" does not contain a conversation', array(':subject' => $email['subject'])), 'notspecified');
         }
 
         if(empty($email['id'])){
-            throw new bException(tr('email_update_conversation(): Specified email "%subject%" has no database id', array('%subject%' => $email['subject'])), 'notspecified');
+            throw new bException(tr('email_update_conversation(): Specified email ":subject" has no database id', array(':subject' => $email['subject'])), 'notspecified');
         }
 
         /*
@@ -386,12 +479,52 @@ function email_update_message($email, $direction){
             }
 
             $email['id'] = sql_insert_id();
+            email_check_images($email);
         }
 
         return $email;
 
     }catch(Exception $e){
         throw new bException(tr('email_update_message(): Failed'), $e);
+    }
+}
+
+
+
+/*
+ * Check if there are images for an email, insert them in the database
+ * and move them to the correct location
+ */
+function email_check_images($email){
+    try{
+        /*
+         * If there are images insert them into `email_files` table
+         */
+        if(!empty($email['img0'])){
+            $i = 0;
+            file_ensure_path(ROOT.'data/email/images/'.$email['id'].'/');
+
+            while(!empty($email['img'.$i])){
+                /*
+                 * Insert the image in the database
+                 */
+                sql_query('INSERT INTO `email_files` (`email_messages_id`, `file_cid`, `file`)
+                           VALUES                    (:email_messages_id , :file_cid , :file )',
+
+                           array(':email_messages_id' => $email['id'],
+                                 ':file_cid'          => $email['img'.$i]['cid'],
+                                 ':file'              => $email['img'.$i]['file']));
+
+                /*
+                 * Move the image to the correct location
+                 */
+                rename(ROOT.'tmp/'.$email['img'.$i]['file'], ROOT.'data/email/images/'.$email['id'].'/'.$email['img'.$i]['file']);
+                $i++;
+            }
+        }
+
+    }catch(Exception $e){
+        throw new bException(tr('email_check_images(): Failed'), $e);
     }
 }
 

@@ -20,6 +20,7 @@
 define('FRAMEWORKCODEVERSION', '0.27.0');
 
 
+
 /*
  * By default run in quiet mode, and set the projects ROOT path
  */
