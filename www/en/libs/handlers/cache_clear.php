@@ -37,7 +37,7 @@ try{
                 /*
                  * Delete all cache
                  */
-                safe_exec('rm '.ROOT.'/data/cache/* -rf');
+                safe_exec('rm '.ROOT.'/data/cache/ -rf');
             }
 
             file_ensure_path(ROOT.'data/cache');

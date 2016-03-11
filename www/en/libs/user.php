@@ -598,16 +598,8 @@ function user_update_password($params, $current = true){
                 throw new bException(tr('user_update_password(): Please specify the current password'), 'not_specified');
             }
 
-            $cpassword = sql_get('SELECT `password`
-
-                                  FROM   `users`
-
-                                  WHERE  `id` = :id',
-
-                                  array(':id' => $params['id']));
-
-            if($cpassword['password'] != password($params['cpassword'])){
-                throw new bException(tr('user_update_password(): The current password does not match'));
+            if(!user_authenticate($_SESSION['user']['username'], $params['cpassword'])){
+                throw new bException(tr('user_update_password(): Current password does not match with stored password'), 'invalid_credentials');
             }
         }
 
