@@ -565,7 +565,7 @@ function user_signup($params){
  * Update user password. This can be used either by the current user, or by an
  * admin user updating the users password
  */
-function user_update_password($params){
+function user_update_password($params, $current = true){
     try{
         array_params($params);
         array_default($params, 'validated', false);
@@ -578,10 +578,6 @@ function user_update_password($params){
             throw new bException(tr('user_update_password(): No users id specified'), 'not_specified');
         }
 
-        if(empty($params['cpassword'])){
-            throw new bException(tr('user_update_password(): Please specify the current password'), 'not_specified');
-        }
-
         if(empty($params['password'])){
             throw new bException(tr('user_update_password(): Please specify a password'), 'not_specified');
         }
@@ -590,13 +586,34 @@ function user_update_password($params){
             throw new bException(tr('user_update_password(): No validation password specified'), 'not_specified');
         }
 
-        /*
-         * Check if current password is equal to cpassword
-         */
-        if($params['password'] != $params['password2']){
-            throw new bException(tr('user_update_password(): Specified password does not match the validation password'), 'mismatch');
+        if($current){
+            if(empty($params['cpassword'])){
+                throw new bException(tr('user_update_password(): Please specify the current password'), 'not_specified');
+            }
+
+            /*
+             * Check if password is equal to password2
+             */
+            if($params['password'] != $params['password2']){
+                throw new bException(tr('user_update_password(): Specified password does not match the validation password'), 'mismatch');
+            }
+
+            $cpassword = sql_get('SELECT `password`
+
+                                  FROM   `users`
+
+                                  WHERE  `id` = :id',
+
+                                  array(':id' => $params['id']));
+
+            if($cpassword['password'] != password($params['cpassword'])){
+                throw new bException(tr('user_update_password(): The current password does not match'));
+            }
         }
 
+        /*
+         * Prepare new password
+         */
         $password = password($params['password']);
 
         $r = sql_query('UPDATE `users`
