@@ -156,6 +156,7 @@ function user_authenticate($username, $password, $columns = '*') {
             /*
              * This check will only do anything if the users table contains the "type" column. If it doesn't, nothing will ever happen here, really
              */
+            log_database(tr('user_authenticate(): Specified user ":username" has status ":type" and cannot be authenticated', array(':username' => str_log($username), ':type' => str_log($user['type']))), 'authentication/notfound');
             throw new bException(tr('user_authenticate(): Specified user has status ":type" and cannot be authenticated', array(':type' => $user['type'])), 'type');
         }
 

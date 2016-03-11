@@ -3,8 +3,8 @@
 /*
  * This is the SMS interface program
  */
-$usage = "./scripts/base/sms PHONE MESSAGE\n".
-         "./scripts/base/sms to PHONE [from PHONE] message MESSAGE [provider twilio|crmtext]\n";
+$usage = "./scripts/base/sms send PHONE MESSAGE\n".
+         "./scripts/base/sms send to PHONE [from PHONE] message MESSAGE [provider twilio|crmtext]\n";
 
          "./scripts/base/empty option [option]\n";
 
@@ -15,20 +15,45 @@ require_once(dirname(__FILE__).'/../../libs/startup.php');
 cli_only();
 load_libs('sms');
 
-if(!$to = argument('to')){
-    /*
-     * Use sms phone message
-     */
-    $phone   = argument(0);
-    $message = str_force(argument($phone, 'all'), ' ');
+switch(argument(0)){
+    case 'send':
+        if(!$to = argument('to')){
+            /*
+             * Use sms phone message
+             */
+            $phone   = argument(0);
+            $message = str_force(argument($phone, 'all'), ' ');
 
-    if(!is_numeric(str_replace('+', '', $phone))){
-        throw new bException(tr('Invalid arguments supplied. Please check script usage'), 'invalid');
-    }
+            if(!is_numeric(str_replace('+', '', $phone))){
+                throw new bException(tr('Invalid arguments supplied. Please check script usage'), 'invalid');
+            }
 
-}elseif(!$message = argument('message')){
-    throw new bException(tr('No message specified'), 'invalid');
+        }elseif(!$message = argument('message')){
+            throw new bException(tr('No message specified'), 'invalid');
+        }
+
+        sms_send_message($message, $phone);
+        break;
+
+    case 'getimages':
+        log_console(tr('Downloading MMS images'), '', 'white');
+
+        $r = sql_query('SELECT `sms_messages_id`,
+                               `url`
+
+                        FROM   `sms_images`
+
+                        WHERE  `downloaded` IS NULL');
+
+        while($image = sql_fetch($r)){
+            twilio_download_image($image['sms_messages_id'], $image['url']);
+            log_console(tr('Downloaded image ":image" for MMS message ":message"', array(':message' => $image['sms_messages_id'], ':image' => $image['url'])), '', 'green');
+        }
+
+        log_console(tr('Finished downloading all pending MMS images'), '', 'green');
+        break;
+
+    default:
+        throw new bException(tr('Unknown method ":unknown" specified', array(':unknown' => argument(0))), 'unknown');
 }
-
-sms_send_message($message, $phone);
 ?>
