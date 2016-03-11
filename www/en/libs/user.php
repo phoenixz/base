@@ -586,16 +586,16 @@ function user_update_password($params, $current = true){
             throw new bException(tr('user_update_password(): No validation password specified'), 'not_specified');
         }
 
+        /*
+         * Check if password is equal to password2
+         */
+        if($params['password'] != $params['password2']){
+            throw new bException(tr('user_update_password(): Specified password does not match the validation password'), 'mismatch');
+        }
+
         if($current){
             if(empty($params['cpassword'])){
                 throw new bException(tr('user_update_password(): Please specify the current password'), 'not_specified');
-            }
-
-            /*
-             * Check if password is equal to password2
-             */
-            if($params['password'] != $params['password2']){
-                throw new bException(tr('user_update_password(): Specified password does not match the validation password'), 'mismatch');
             }
 
             $cpassword = sql_get('SELECT `password`
