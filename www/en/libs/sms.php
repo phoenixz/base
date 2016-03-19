@@ -48,7 +48,7 @@ function sms_send_message($message, $to, $from = null){
 /*
  *
  */
-function sms_get_conversation($phone_local, $phone_remote){
+function sms_get_conversation($phone_local, $phone_remote, $type){
     global $_CONFIG;
 
     try{
@@ -82,19 +82,22 @@ function sms_get_conversation($phone_local, $phone_remote){
                                  FROM   `sms_conversations`
 
                                  WHERE  `phone_remote` = :phone_remote
-                                 AND    `phone_local`  = :phone_local',
+                                 AND    `phone_local`  = :phone_local
+                                 AND    `type`         = :type',
 
-                                 array(':phone_local'  => $phone_local,
+                                 array(':type'         => $type,
+                                       ':phone_local'  => $phone_local,
                                        ':phone_remote' => $phone_remote));
 
         if(!$conversation){
             /*
              * This phone combo has no conversation yet, create it now.
              */
-            sql_query('INSERT INTO `sms_conversations` (`phone_local`, `phone_remote`)
-                       VALUES                          (:phone_local , :phone_remote )',
+            sql_query('INSERT INTO `sms_conversations` (`phone_local`, `phone_remote`, `type`)
+                       VALUES                          (:phone_local , :phone_remote , :type )',
 
-                       array(':phone_local'  => $phone_local,
+                       array(':type'         => $type,
+                             ':phone_local'  => $phone_local,
                              ':phone_remote' => $phone_remote));
 
             $conversation = array('id'            => sql_insert_id(),
