@@ -225,6 +225,8 @@ function email_get_conversation($email){
         /*
          *
          */
+        array_ensure($email, 'subject');
+
         $conversation = sql_get('SELECT `id`, `last_messages` FROM `email_conversations` WHERE ((`us` LIKE :us AND `them` LIKE :them) OR (`us` LIKE :them AND `them` LIKE :us) AND (`subject` = :subject OR `subject` = :resubject))',
 
                                  array(':us'        => '%'.$email['to'].'%',

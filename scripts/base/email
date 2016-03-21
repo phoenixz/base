@@ -104,9 +104,14 @@ switch($method){
             foreach(email_poll($user, $criteria) as $user_emails){
                 try{
                     foreach($user_emails as $email){
-                        email_update_conversation($email, 'received');
-                        usleep(1000000);
-                        $count++;
+                        try{
+                            email_update_conversation($email, 'received');
+                            usleep(1000000);
+                            $count++;
+
+                        }catch(Exception $e){
+                            log_error($e);
+                        }
                     }
 
                 }catch(bException $e){
