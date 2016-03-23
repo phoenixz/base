@@ -52,8 +52,8 @@ include_once(ROOT.'config/project.php');
 /*
  * Check what platform we're in
  */
-define('PLATFORM', isset($_SERVER['argc']) ? 'shell' : 'http');
-//define('PLATFORM', isset($_SERVER['SHELL']) ? 'shell' : 'http');
+define('PLATFORM', (php_sapi_name() === 'cli') ? 'shell' : 'http');
+
 
 
 if((PLATFORM == 'shell') and (count($argv) > 1)){
