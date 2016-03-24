@@ -196,6 +196,7 @@ function json_error($message, $data = array(), $result = 'ERROR', $http_code = 5
             }
         }
 
+        $data            = array_force($data);
         $data['message'] = $message;
 
         json_reply($data, $result, $http_code);
