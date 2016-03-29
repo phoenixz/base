@@ -63,11 +63,11 @@ sql_query('CREATE TABLE `users` (`id`           INT(11)      NOT NULL AUTO_INCRE
                                  `bd_year`      INT(11)          NULL,
                                  `country`      VARCHAR(64)      NULL,
 
-                                 UNIQUE(`name`),
-                                 UNIQUE(`email`),
+                                 UNIQUE(`name`(32)),
+                                 UNIQUE(`email`(32)),
                                  INDEX (`validated`),
                                  INDEX (`language`),
-                                 INDEX (`country`),
+                                 INDEX (`country`(32)),
                                  UNIQUE(`fb_id`)
 
                                 ) ENGINE=InnoDB AUTO_INCREMENT='.$_CONFIG['db']['core']['autoincrement'].' DEFAULT CHARSET="'.$_CONFIG['db']['core']['charset'].'" COLLATE="'.$_CONFIG['db']['core']['collate'].'";');

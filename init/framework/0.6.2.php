@@ -12,7 +12,7 @@ sql_query('CREATE TABLE `curl_cache` (`id`          INT(11)      NOT NULL AUTO_I
 
                                       INDEX (`addedon`),
                                       INDEX (`users_id`),
-                                      UNIQUE(`url`),
+                                      UNIQUE(`url`(32)),
 
                                       CONSTRAINT `fk_curl_cache_users_id` FOREIGN KEY (`users_id`) REFERENCES `users` (`id`) ON DELETE CASCADE
 

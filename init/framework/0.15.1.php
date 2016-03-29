@@ -30,7 +30,7 @@ sql_index_exists ('sitemap_data', 'builds_id'    ,  'ALTER TABLE `sitemap_data` 
 sql_index_exists ('sitemap_data', 'scans_id'     , '!ALTER TABLE `sitemap_data` ADD  INDEX (`scans_id`)');
 
 sql_index_exists ('sitemap_data', 'builds_id_2'  ,  'ALTER TABLE `sitemap_data` DROP INDEX `builds_id_2`');
-sql_index_exists ('sitemap_data', 'scans_id_2'   , '!ALTER TABLE `sitemap_data` ADD  UNIQUE(`scans_id`, `url`)');
+sql_index_exists ('sitemap_data', 'scans_id_2'   , '!ALTER TABLE `sitemap_data` ADD  UNIQUE(`scans_id`, `url`(32))');
 
 sql_foreignkey_exists('sitemap_data', 'fk_sitemap_data_scans_id', '!ALTER TABLE `sitemap_data` ADD CONSTRAINT `fk_sitemap_data_scans_id` FOREIGN KEY (`scans_id`) REFERENCES `sitemap_scans` (`id`) ON DELETE CASCADE;');
 

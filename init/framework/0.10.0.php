@@ -164,9 +164,9 @@ sql_query('CREATE TABLE `blogs_posts` (`id`            INT(11)     NOT NULL AUTO
                                        INDEX (`category`),
                                        INDEX (`keywords`),
                                        INDEX (`status`),
-                                       UNIQUE(`url`),
-                                       UNIQUE(`name`),
-                                       UNIQUE(`seoname`),
+                                       UNIQUE(`url`(32)),
+                                       UNIQUE(`name`(32)),
+                                       UNIQUE(`seoname`(32)),
 
                                        CONSTRAINT `fk_blogs_posts_createdby`     FOREIGN KEY (`createdby`)     REFERENCES `users`            (`id`) ON DELETE RESTRICT,
                                        CONSTRAINT `fk_blogs_posts_modifiedby`    FOREIGN KEY (`modifiedby`)    REFERENCES `users`            (`id`) ON DELETE RESTRICT,

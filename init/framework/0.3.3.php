@@ -9,7 +9,7 @@ sql_query('CREATE TABLE `extended_logins` (`users_id` INT(11)      NOT NULL AUTO
                                            INDEX (`users_id`),
                                            INDEX (`added`),
                                            INDEX (`ip`),
-                                           UNIQUE(`code`)
+                                           UNIQUE(`code`(32))
 
                                           ) ENGINE=InnoDB AUTO_INCREMENT='.$_CONFIG['db']['core']['autoincrement'].' DEFAULT CHARSET="'.$_CONFIG['db']['core']['charset'].'" COLLATE="'.$_CONFIG['db']['core']['collate'].'";');
 ?>
