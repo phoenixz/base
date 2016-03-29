@@ -333,22 +333,22 @@ function init_process_version_diff(){
 
     }else{
         if($compare_framework > 0){
-            $versionerror = 'Framework database version is older than code version, please update database first';
+            $versionerror = (empty($versionerror) ? "" : "\n").tr('Framework core database ":db" version ":dbversion" is older than code version ":codeversion"', array(':db' => str_log($_CONFIG['db']['core']['db']), ':dbversion' => FRAMEWORKDBVERSION, ':codeversion' => FRAMEWORKCODEVERSION));
 
         }elseif($compare_framework < 0){
-            $versionerror = 'Framework database version is newer than code version, the core database "'.str_log($_CONFIG['db']['core']['db']).'" is running with old code!';
+            $versionerror = (empty($versionerror) ? "" : "\n").tr('Framework core database ":db" version ":dbversion" is older than code version ":codeversion"', array(':db' => str_log($_CONFIG['db']['core']['db']), ':dbversion' => FRAMEWORKDBVERSION, ':codeversion' => FRAMEWORKCODEVERSION));
         }
 
         if($compare_project > 0){
-            $versionerror = (empty($versionerror) ? "" : "\n").'Project core database "'.str_log($_CONFIG['db']['core']['db']).'" version is older than code version, please update database first';
+            $versionerror = (empty($versionerror) ? "" : "\n").tr('Project core database ":db" version ":dbversion" is older than code version ":codeversion"', array(':db' => str_log($_CONFIG['db']['core']['db']), ':dbversion' => PROJECTDBVERSION, ':codeversion' => PROJECTCODEVERSION));
 
         }elseif($compare_project < 0){
-            $versionerror = (empty($versionerror) ? "" : "\n").'Project core database "'.str_log($_CONFIG['db']['core']['db']).'" version is newer than code version, the database is running with old code!';
+            $versionerror = (empty($versionerror) ? "" : "\n").tr('Project core database ":db" version ":dbversion" is newer than code version ":codeversion"!', array(':db' => str_log($_CONFIG['db']['core']['db']), ':dbversion' => PROJECTDBVERSION, ':codeversion' => PROJECTCODEVERSION));
         }
     }
 
     if((PLATFORM == 'http') or !argument('noversioncheck')){
-        throw new bException(tr('init_process_version_diff(): Please run the init script because "'.str_log($versionerror).'"'), 'doinit');
+        throw new bException(tr('init_process_version_diff(): Please run script ROOT/scripts/base/init because "'.str_log($versionerror).'"'), 'doinit');
     }
 }
 
@@ -367,16 +367,15 @@ function init_process_version_fail($e){
 
     $r = $GLOBALS['sql_core']->query('SHOW TABLES WHERE `Tables_in_'.$_CONFIG['db']['core']['db'].'` = "versions";');
 
-    if(!$r->rowCount($r)){
-        define('FRAMEWORKDBVERSION', 0);
-        define('PROJECTDBVERSION'  , 0);
-
-        if(PLATFORM == 'shell'){
-            log_console('init_process_version_fail(): No versions table found, assumed empty database', 'warning/versions', 'yellow');
-        }
-
-    }else{
+    if($r->rowCount($r)){
         throw new bException('init_process_version_fail(): Failed version detection', $e);
+    }
+
+    define('FRAMEWORKDBVERSION', 0);
+    define('PROJECTDBVERSION'  , 0);
+
+    if(PLATFORM == 'shell'){
+        log_console('init_process_version_fail(): No versions table found, assumed empty database', 'warning/versions', 'yellow');
     }
 }
 
@@ -444,7 +443,7 @@ function init_version_upgrade($version, $part){
             break;
 
         default:
-            throw new bException('init_version_upgrade(): Unknown version part type "" specified. Please specify one of "major", "minor", or "revision"');
+            throw new bException(tr('init_version_upgrade(): Unknown version part type ":part" specified. Please specify one of "major", "minor", or "revision"', array(':part' => $part)));
     }
 
     return implode('.', $version);
