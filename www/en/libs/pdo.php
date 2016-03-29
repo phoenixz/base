@@ -376,7 +376,7 @@ function sql_init($connector = 'core'){
  * If the database was already connected, then just ignore and continue.
  * If the database version check fails, then exception
  */
-function sql_connect($connector){
+function sql_connect($connector, $use_database = true){
     global $_CONFIG;
 
     try{
@@ -402,7 +402,7 @@ function sql_connect($connector){
             $connector['pdo_attributes'][PDO::MYSQL_ATTR_USE_BUFFERED_QUERY] = !(boolean) $connector['buffered'];
             $connector['pdo_attributes'][PDO::MYSQL_ATTR_INIT_COMMAND]       = 'SET NAMES '.strtoupper($connector['charset']);
 
-            $pdo = new PDO($connector['driver'].':host='.$connector['host'].(empty($connector['port']) ? '' : ';port='.$connector['port']).(empty($connector['db']) ? '' : ';dbname='.$connector['db']), $connector['user'], $connector['pass'], $connector['pdo_attributes']);
+            $pdo = new PDO($connector['driver'].':host='.$connector['host'].(empty($connector['port']) ? '' : ';port='.$connector['port']).((empty($connector['db']) or !$use_database) ? '' : ';dbname='.$connector['db']), $connector['user'], $connector['pass'], $connector['pdo_attributes']);
 
 // :DELETE: The characterset is now set in the mysql init command
 //            /*

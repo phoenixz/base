@@ -181,21 +181,24 @@ if($noimport){
      * mysqldump always adds a "USE databasename" which is horrifyingly anoying, because the dump will be imported in the wrong database!
      * Remove it first!
      */
-    log_console(tr('Importing remote SQL dump file ":file" in local MySQL server...', array(':file' => '/tmp/'.$project.'_'.$source_config['db']['core']['db'].'.sql')), 'sync', 'white');
+    log_console(tr('Preparing remote SQL dump file ":file"...', array(':file' => '/tmp/'.$project.'_'.$source_config['db']['core']['db'].'.sql')), 'sync', 'white');
     passthru($command = 'cd /tmp/; rm /tmp/'.$project.'_'.$source_config['db']['core']['db'].'.sql -f; gunzip /tmp/'.$project.'_'.$source_config['db']['core']['db'].'.sql.gz', $exitcode);
 
     if($exitcode){
         throw new bException('Gunzip of mysqldump file failed with exit code "'.str_log($exitcode).'"', 'rsync');
     }
 
+    log_console(tr('Importing remote SQL dump file ":file" in local MySQL server...', array(':file' => '/tmp/'.$project.'_'.$source_config['db']['core']['db'].'.sql')), 'sync', 'white');
     passthru($command = 'cd /tmp/; sed -i -e"s/USE \`'.$source_config['db']['core']['db'].'\`;/USE \`'.$_CONFIG['db']['core']['db'].'\`;/" /tmp/'.$project.'_'.$source_config['db']['core']['db'].'.sql', $exitcode);
 
     if($exitcode){
         throw new bException('Rewrite of "USE DATABASENAME" in mysqldump file failed with exit code "'.str_log($exitcode).'"', 'rsync');
     }
 
-    sql_query('DROP   DATABASE '.$_CONFIG['db']['core']['db']);
-    sql_query('CREATE DATABASE '.$_CONFIG['db']['core']['db']);
+    $GLOBALS['sql_core'] = sql_connect($_CONFIG['db']['core'], false);
+
+    sql_query('DROP   DATABASE IF EXISTS `'.$_CONFIG['db']['core']['db'].'`');
+    sql_query('CREATE DATABASE `'.$_CONFIG['db']['core']['db'].'`');
 
     passthru($command = 'cat /tmp/'.$project.'_'.$source_config['db']['core']['db'].'.sql | mysql -u '.$_CONFIG['db']['core']['user'].' -p"'.$_CONFIG['db']['core']['pass'].'" -B '.$_CONFIG['db']['core']['db'], $exitcode);
 
