@@ -54,8 +54,6 @@ include_once(ROOT.'config/project.php');
  */
 define('PLATFORM', (php_sapi_name() === 'cli') ? 'shell' : 'http');
 
-
-
 if((PLATFORM == 'shell') and (count($argv) > 1)){
     /*
      * Pre-process command line arguments
@@ -631,6 +629,7 @@ try{
         $GLOBALS['page_is_mobile'] = false;
         $GLOBALS['page_is_admin']  = false;
         $GLOBALS['page_is_ajax']   = false;
+        $GLOBALS['page_is_api']    = false;
         $GLOBALS['page_is_404']    = false;
 
         if(substr($_SERVER['PHP_SELF'], -7, 7) == '404.php'){
@@ -680,6 +679,9 @@ try{
 
         }elseif(strstr($_SERVER['PHP_SELF'], '/ajax/')){
             $GLOBALS['page_is_ajax'] = true;
+
+        }elseif(strstr($_SERVER['PHP_SELF'], '/api/')){
+            $GLOBALS['page_is_api'] = true;
 
         }elseif(!empty($GLOBALS['page_force'])){
             /*

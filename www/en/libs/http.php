@@ -390,6 +390,10 @@ function http_cache_test(){
             return false;
         }
 
+        if($GLOBALS['page_is_ajax'] or $GLOBALS['page_is_api']){
+            return false;
+        }
+
         if((strtotime(isset_get($_SERVER['HTTP_IF_MODIFIED_SINCE'])) == filemtime($_SERVER['SCRIPT_FILENAME'])) or trim(isset_get($_SERVER['HTTP_IF_NONE_MATCH']), '') == $GLOBALS['etag']){
             if(empty($GLOBALS['flash'])){
                 /*
@@ -423,7 +427,7 @@ function http_cache_test(){
  * For more information, see https://developers.google.com/speed/docs/insights/LeverageBrowserCaching
  * and https://developers.google.com/web/fundamentals/performance/optimizing-content-efficiency/http-caching
  */
-function http_cache($params, $headers){
+function http_cache($params, $headers = array()){
     global $_CONFIG;
 
     try{
@@ -432,45 +436,70 @@ function http_cache($params, $headers){
              * Non HTTP 200 / 304 pages should NOT have cache enabled!
              * For example 404, 505, etc...
              */
-            return $headers;
-        }
+            $params['policy']     = 'no-cache, no-store, must-revalidate';
+            $params['visibility'] = 'private';
+            $params['expires']    = '0';
 
-        if(empty($GLOBALS['etag'])){
-            if(!empty($GLOBALS['flash'])){
-                $GLOBALS['etag']  = null;
-                $params['policy'] = 'no-store';
+            $GLOBALS['etag']      = null;
 
-            }else{
-                $GLOBALS['etag'] = sha1(PROJECT.$_SERVER['SCRIPT_FILENAME'].filemtime($_SERVER['SCRIPT_FILENAME']).isset_get($params['etag']));
-            }
-        }
+            $expires   = 0;
 
-        if(!empty($GLOBALS['page_is_admin']) or !empty($_SESSION['user']['id'])){
-            array_default($params, 'visibility', 'private');
+            $headers[] = 'Pragma : no-cache';
 
         }else{
-            array_default($params, 'visibility', 'public');
-        }
+            if(empty($GLOBALS['etag'])){
+                if(!empty($GLOBALS['flash'])){
+                    $GLOBALS['etag']  = null;
+                    $params['policy'] = 'no-store';
 
-        array_default($params, 'policy', $_CONFIG['cache']['http']['max_age']);
+                }else{
+                    $GLOBALS['etag'] = sha1(PROJECT.$_SERVER['SCRIPT_FILENAME'].filemtime($_SERVER['SCRIPT_FILENAME']).isset_get($params['etag']));
+                }
+            }
 
-        switch($params['policy']){
-            case 'no-store':
-                // FALLTHROUGH
-            case 'no-cache':
-                break;
+            if($GLOBALS['page_is_ajax'] or $GLOBALS['page_is_api']){
+                $params['policy']     = 'no-cache, no-store, must-revalidate';
+                $params['visibility'] = 'private';
 
-            default:
-                if(!is_numeric($params['policy']) or !is_natural_number($params['policy'])){
-                    throw new bException(tr('http_cache(): Invalid policy "%policy%" specified. Use either "no-cache", "no-store", or a natural number', array('%policy%' => $params['policy'])), '');
+                $expires   = '0';
+
+                $headers[] = 'Pragma : no-cache';
+
+            }else{
+                if(!empty($GLOBALS['page_is_admin']) or !empty($_SESSION['user']['id'])){
+                    array_default($params, 'visibility', 'private');
+
+                }else{
+                    array_default($params, 'visibility', 'public');
                 }
 
-                $params['policy'] = 'max-age='.$params['policy'];
+                array_default($params, 'policy', $_CONFIG['cache']['http']['max_age']);
+
+                switch($params['policy']){
+                    case 'no-store':
+                        // FALLTHROUGH
+                    case 'no-cache':
+                        $expires = 0;
+                        break;
+
+                    default:
+                        if(!is_numeric($params['policy']) or !is_natural_number($params['policy'])){
+                            throw new bException(tr('http_cache(): Invalid policy "%policy%" specified. Use either "no-cache", "no-store", or a natural number', array('%policy%' => $params['policy'])), '');
+                        }
+
+                        $expires = new DateTime();
+                        $expires = $expires->add(new DateInterval($params['policy'].'s'));
+
+                        $params['policy'] = 'max-age='.$params['policy'];
+                }
+            }
         }
 
         $headers[] = 'Cache-Control: '.$params['visibility'].', '.$params['policy'];
 //            $headers[] = 'DTag: "'.$GLOBALS['etag'].'"';
         $headers[] = 'ETag: "'.$GLOBALS['etag'].'"';
+        $headers[] = 'Expires: '.$expires;
+
 //            $headers[] = 'FTag: "'.$GLOBALS['etag'].'"';
 
         return $headers;

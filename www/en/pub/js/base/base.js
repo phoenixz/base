@@ -139,7 +139,7 @@ console.log(data.result + ' > ' + data.redirect);
 
     $.flashMessage = function(message, type, autoClose, selector, opacity){
         // Auto loader for flahs message library
-        if (cdnprefix == undefined) {
+        if (typeof cdnprefix === 'undefined') {
             cdnprefix = "/pub/";
         }
 
