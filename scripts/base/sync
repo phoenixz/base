@@ -143,7 +143,7 @@ if($nodump){
 
 }else{
     log_console('Creating SQL dump file on remote server...', 'sync', 'white');
-    passthru($command = 'ssh -p '.($deploy_config['sudo'] ? '--rsync-path="sudo rsync" ' : '').$deploy_config['target_port'].' -t '.($deploy_config['target_user'] ? $deploy_config['target_user'].'@' : '').$deploy_config['target_server'].' \'rm /tmp/'.$project.'_'.$source_config['db']['core']['db'].'.sql* -f; mysqldump --single-transaction -n -e '.(argument('nofunctions') ? '' : '-R ').'--dump-date --no-autocommit --add-drop-database -u '.$source_config['db']['core']['user'].' -p'.escapeshellcmd($source_config['db']['core']['pass']).' -B '.$source_config['db']['core']['db'].' > /tmp/'.$project.'_'.$source_config['db']['core']['db'].'.sql; gzip -q /tmp/'.$project.'_'.$source_config['db']['core']['db'].'.sql \'', $exitcode);
+    passthru($command = 'ssh -p '.$deploy_config['target_port'].' -t '.($deploy_config['target_user'] ? $deploy_config['target_user'].'@' : '').$deploy_config['target_server'].' \''.($deploy_config['sudo'] ? ' sudo ' : '').'rm /tmp/'.$project.'_'.$source_config['db']['core']['db'].'.sql* -f; '.($deploy_config['sudo'] ? ' sudo ' : '').'mysqldump --single-transaction -n -e '.(argument('nofunctions') ? '' : '-R ').'--dump-date --no-autocommit --add-drop-database -u '.$source_config['db']['core']['user'].' -p'.escapeshellcmd($source_config['db']['core']['pass']).' -B '.$source_config['db']['core']['db'].' > /tmp/'.$project.'_'.$source_config['db']['core']['db'].'.sql; '.($deploy_config['sudo'] ? ' sudo ' : '').'gzip -q /tmp/'.$project.'_'.$source_config['db']['core']['db'].'.sql \'', $exitcode);
 
     if($exitcode){
         throw new bException('Remote mysqldump failed with exit code "'.str_log($exitcode).'"', 'rsync');
@@ -215,7 +215,7 @@ if($nodelete){
 }else{
     log_console('Removing temporary remote SQL dump file from local and remote server...', 'sync', 'white');
 
-    passthru($command = 'ssh -p '.($deploy_config['sudo'] ? '--rsync-path="sudo rsync" ' : '').$deploy_config['target_port'].' -t '.($deploy_config['target_user'] ? $deploy_config['target_user'].'@' : '').$deploy_config['target_server'].' \'rm -f /tmp/'.$project.'_'.$source_config['db']['core']['db'].'.sql*\'', $exitcode);
+    passthru($command = 'ssh -p '.$deploy_config['target_port'].' -t '.($deploy_config['target_user'] ? $deploy_config['target_user'].'@' : '').$deploy_config['target_server'].' \''.($deploy_config['sudo'] ? ' sudo ' : '').'rm -f /tmp/'.$project.'_'.$source_config['db']['core']['db'].'.sql*\'', $exitcode);
 
     if($exitcode){
         throw new bException('Removal of temporary mysqldump file on remote server failed with exit code "'.str_log($exitcode).'"', 'rsync');
