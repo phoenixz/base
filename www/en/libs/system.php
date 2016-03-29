@@ -574,6 +574,13 @@ function log_database($messages, $type = 'unknown'){
     static $q, $last;
 
     try{
+        if(!empty($GLOBALS['no-db'])){
+            /*
+             * Don't log to DB, there is no DB
+             */
+            return false;
+        }
+
         if(is_object($messages)){
             if($messages instanceof bException){
                 $messages = $messages->getMessages();
@@ -618,7 +625,9 @@ function log_database($messages, $type = 'unknown'){
 
         /*
          * Don't exception here because the exception may cause another log_database() call and loop endlessly
+         * Don't try to log again!
          */
+        $GLOBALS['no-db'] = true;
     }
 }
 

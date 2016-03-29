@@ -24,6 +24,8 @@
         /*
          * Database not found!
          */
+        $GLOBALS['no-db'] = true;
+
         if(!((PLATFORM == 'shell') and (SCRIPT == 'init'))){
             throw $e;
         }

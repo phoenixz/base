@@ -3,11 +3,8 @@
  * Fix group / category structures
  * Ass "assigned_to_id" column which allows the post to be assigned to users
  */
-sql_query('ALTER TABLE `blogs_posts` CHANGE COLUMN `seogroup`    `seogroup`    VARCHAR(64)');
-sql_query('ALTER TABLE `blogs_posts` CHANGE COLUMN `seocategory` `seocategory` VARCHAR(64)');
-
-sql_column_exists     ('blogs_posts', 'seogroup'                     , '!ALTER TABLE `blogs_posts` ADD COLUMN `seogroup`    VARCHAR(255) NUll AFTER `category`');
-sql_column_exists     ('blogs_posts', 'seocategory'                  , '!ALTER TABLE `blogs_posts` ADD COLUMN `seocategory` VARCHAR(255) NUll AFTER `blogs_id`');
+sql_column_exists     ('blogs_posts', 'seogroup'                     , '!ALTER TABLE `blogs_posts` ADD COLUMN `seogroup`    VARCHAR(64) NUll AFTER `category`');
+sql_column_exists     ('blogs_posts', 'seocategory'                  , '!ALTER TABLE `blogs_posts` ADD COLUMN `seocategory` VARCHAR(64) NUll AFTER `blogs_id`');
 
 sql_index_exists      ('blogs_posts', 'seogroup'                     , '!ALTER TABLE `blogs_posts` ADD  INDEX (`seogroup`)');
 sql_index_exists      ('blogs_posts', 'seocategory'                  , '!ALTER TABLE `blogs_posts` ADD  INDEX (`seocategory`)');

@@ -322,11 +322,17 @@ function sql_init($connector = 'core'){
                     define('FRAMEWORKDBVERSION', 0);
                     define('PROJECTDBVERSION'  , 0);
 
+                    $GLOBALS['no-db'] = true;
+
                 }else{
                     $versions = $r->fetch(PDO::FETCH_ASSOC);
 
                     define('FRAMEWORKDBVERSION', $versions['framework']);
                     define('PROJECTDBVERSION'  , $versions['project']);
+
+                    if(version_compare(FRAMEWORKDBVERSION, '0.1.0') === -1){
+                        $GLOBALS['no-db'] = true;
+                    }
                 }
 
             }catch(Exception $e){

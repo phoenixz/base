@@ -46,7 +46,6 @@ function init($projectfrom = null, $frameworkfrom = null){
             /*
              * MySQL has no time_zone data, first initialize that, then reconnect
              */
-
             sql_init();
         }
 
@@ -183,7 +182,7 @@ function init($projectfrom = null, $frameworkfrom = null){
                     $files[$key] = substr($file, 0, -4);
                 }
 
-                usort($files, 'init_sort_files');
+                usort($files, 'version_compare');
 
                 /*
                  * Go over each init file, see if it needs execution or not
@@ -329,7 +328,8 @@ function init_process_version_diff(){
     $compare_framework = version_compare(FRAMEWORKCODEVERSION, FRAMEWORKDBVERSION);
 
     if(PROJECTDBVERSION === 0){
-        $versionerror = 'Database is empty';
+        $versionerror     = 'Database is empty';
+        $GLOBALS['no-db'] = true;
 
     }else{
         if($compare_framework > 0){
@@ -374,18 +374,11 @@ function init_process_version_fail($e){
     define('FRAMEWORKDBVERSION', 0);
     define('PROJECTDBVERSION'  , 0);
 
+    $GLOBALS['no-db'] = true;
+
     if(PLATFORM == 'shell'){
         log_console('init_process_version_fail(): No versions table found, assumed empty database', 'warning/versions', 'yellow');
     }
-}
-
-
-
-/*
- * Sort the init files by version
- */
-function init_sort_files($a, $b){
-    return version_compare($a, $b);
 }
 
 
