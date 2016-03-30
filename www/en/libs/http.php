@@ -488,7 +488,8 @@ function http_cache($params, $headers = array()){
                         }
 
                         $expires = new DateTime();
-                        $expires = $expires->add(new DateInterval($params['policy'].'s'));
+                        $expires = $expires->add(new DateInterval('PT'.$params['policy'].'S'));
+                        $expires = $expires->format('D, d M Y H:i:s \G\M\T');
 
                         $params['policy'] = 'max-age='.$params['policy'];
                 }
