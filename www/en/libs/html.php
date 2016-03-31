@@ -442,6 +442,10 @@ function html_header($params = null, $meta = array()){
 
         unset($meta['title']);
 
+        if(!empty($params['canonical'])){
+            $retval .= '<link rel="canonical" href="'.$params['canonical']."\">\n";
+        }
+
         foreach($params['prefetch_dns'] as $prefetch){
             $retval .= '<link rel="dns-prefetch" href="//'.$prefetch."\">\n";
         }
