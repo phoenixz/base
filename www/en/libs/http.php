@@ -457,7 +457,7 @@ function http_cache($params, $headers = array()){
                 }
             }
 
-            if($GLOBALS['page_is_ajax'] or $GLOBALS['page_is_api']){
+            if(!empty($GLOBALS['page_is_ajax']) or !empty($GLOBALS['page_is_api'])){
                 $params['policy']     = 'no-cache, no-store, must-revalidate';
                 $params['visibility'] = 'private';
 

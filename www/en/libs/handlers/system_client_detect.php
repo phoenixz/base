@@ -66,6 +66,8 @@ try{
                                 'version'    => '0.0',
                                 'javascript' => true);
 
+                    array_ensure($ua, 'majorver,minorver');
+
                 }else{
                     $_SESSION['client']['brand'] = strtolower(isset_get($ua['browser'], ''));
 

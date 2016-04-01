@@ -34,6 +34,19 @@ class bException extends Exception{
             $messages = array($messages);
         }
 
+        try{
+            foreach($messages as $message){
+                log_database($message, 'exception');
+            }
+
+        }catch(Exception $e){
+            /*
+             * Exception database logging failed. Ignore, since from here on there is little to do
+             */
+
+// :TODO: Add notifications!
+        }
+
         if(!empty($e)){
             if($e instanceof bException){
                 $this->messages = $e->getMessages();
