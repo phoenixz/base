@@ -48,6 +48,7 @@ try{
                 if(isset($_SERVER['HTTP_USER_AGENT']) and function_exists('get_browser')){
                     try{
                         $ua = get_browser(null, true);
+                        array_ensure($ua, 'majorver,minorver');
 
                     }catch(Exception $e){
                         log_error($e);
@@ -65,8 +66,6 @@ try{
                                 'minorver'   => 0,
                                 'version'    => '0.0',
                                 'javascript' => true);
-
-                    array_ensure($ua, 'majorver,minorver');
 
                 }else{
                     $_SESSION['client']['brand'] = strtolower(isset_get($ua['browser'], ''));
