@@ -774,6 +774,14 @@ function image_picker($params){
         }
 
         /*
+         * If resource is a string, then assume its a path to an image directory
+         */
+        if(is_string($params['resource'])){
+            $params['resource'] = scandir($params['resource']);
+            $params['resource'] = array_merge_keys_values($params['resource'], $params['resource']);
+        }
+
+        /*
          * Remove ., .., and hidden files
          */
         foreach($params['resource'] as $key => &$image){
