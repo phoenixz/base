@@ -114,7 +114,7 @@ function upload_multi($params){
             throw new bException(tr('upload_multi(): No "url" specified'), 'notspecified');
         }
 
-        html_load_js('base/jquery-ui/jquery-ui');
+        html_load_js('base/jquery-ui/jquery-ui,base/base');
 
         if($params['iframe']){
             html_load_js('base/jfu/jquery.iframe-transport');
