@@ -359,11 +359,14 @@ function html_header($params = null, $meta = array()){
         array_default($params, 'body'          , '<body>');
         array_default($params, 'title'         , isset_get($meta['title']));
         array_default($params, 'meta'          , $meta);
-        array_default($params, 'link'          , array());
+        array_default($params, 'links'         , array());
         array_default($params, 'extra'         , '');
         array_default($params, 'favicon'       , true);
         array_default($params, 'prefetch_dns'  , $_CONFIG['prefetch']['dns']);
         array_default($params, 'prefetch_files', $_CONFIG['prefetch']['files']);
+
+// :DELETE: This has only been added temporarily for obsoleted $params[canonical] support
+if(!empty($params['canonical'])){ $params['links']['canonical'] = $params['canonical']; }
 
         if(!empty($params['js'])){
             html_load_js($params['js']);
@@ -413,7 +416,7 @@ function html_header($params = null, $meta = array()){
             }
 
             if(!$params['meta']['viewport']){
-                throw new bException(tr('html_header(): Meta viewport tag is empty'));
+                throw new bException(tr('html_header(): Meta viewport tag is not specified'), 'notspecified');
             }
         }
 
@@ -442,8 +445,23 @@ function html_header($params = null, $meta = array()){
 
         unset($meta['title']);
 
-        if(!empty($params['canonical'])){
-            $retval .= '<link rel="canonical" href="'.$params['canonical']."\">\n";
+        foreach($params['links'] as $rel => $href){
+            switch($rel){
+                case 'canonical':
+                    // FALLTHROUGH
+                case 'prev':
+                    // FALLTHROUGH
+                case 'next':
+                    // FALLTHROUGH
+                case 'android-app':
+                    // FALLTHROUGH
+                case 'ios-app':
+                    $retval .= '<link rel="'.$rel.'" href="'.$href."\">\n";
+                    break;
+
+                default:
+                    throw new bException(tr('html_header(): Unknown link rel ":rel" specified', array(':rel' => $rel)), 'unknown');
+            }
         }
 
         foreach($params['prefetch_dns'] as $prefetch){
