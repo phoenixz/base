@@ -763,10 +763,12 @@ function image_picker($params){
         array_params($params);
         array_default($params, 'resource', null);
         array_default($params, 'name'    , 'image-picker');
+        array_default($params, 'id'      , 'image-picker');
         array_default($params, 'path'    , null);
         array_default($params, 'class'   , 'image-picker show-html');
         array_default($params, 'masonry' , true);
         array_default($params, 'loaded'  , true);
+        array_default($params, 'none'    , false);
 
         if($params['masonry']){
             html_load_js('masonry.pkgd');
@@ -808,13 +810,13 @@ function image_picker($params){
         $params['data_key']      = 'img-src';
 
         $retval = html_select($params).
-                  html_script('$("#'.$params['name'].'").imagepicker();');
+                  html_script('$("#'.$params['id'].'").imagepicker();');
 
         if($params['masonry']){
             if($params['loaded']){
                 html_load_js('imagesloaded');
                 $retval .= html_script('
-                    var $grid = $("#'.$params['name'].'").masonry({
+                    var $grid = $("#'.$params['id'].'").masonry({
                         itemSelector: "li",
                         columnWidth: 200
                     });

@@ -783,6 +783,7 @@ function html_select($params, $selected = null, $name = '', $none = '', $class =
         array_default($params, 'onchange'    , '');
         array_default($params, 'hide_empty'  , false);
         array_default($params, 'autofocus'   , false);
+        array_default($params, 'multiple'    , false);
 
         if(!$params['name']){
             throw new bException('html_select(): No name specified');
@@ -840,14 +841,21 @@ function html_select($params, $selected = null, $name = '', $none = '', $class =
             $params['id'] = substr($params['id'], 0, -2).$count++;
         }
 
+        if($params['multiple']){
+            $params['multiple'] = ' multiple="multiple"';
+
+        }else{
+            $params['multiple'] = '';
+        }
+
         if($params['disabled']){
             /*
              * Add a hidden element with the name to ensure that multiple selects with [] will not show holes
              */
-            return '<select'.($params['id'] ? ' id="'.$params['id'].'_disabled"' : '').' name="'.$params['name'].'" '.($class ? ' class="'.$class.'"' : '').' readonly disabled>'.
+            return '<select'.$params['multiple'].($params['id'] ? ' id="'.$params['id'].'_disabled"' : '').' name="'.$params['name'].'" '.($class ? ' class="'.$class.'"' : '').' readonly disabled>'.
                     $body.'</select><input type="hidden" name="'.$params['name'].'" >';
         }else{
-            $retval = '<select'.($params['id'] ? ' id="'.$params['id'].'"' : '').' name="'.$params['name'].'" '.($class ? ' class="'.$class.'"' : '').($params['disabled'] ? ' disabled' : '').($params['autofocus'] ? ' autofocus' : '').'>'.
+            $retval = '<select'.$params['multiple'].($params['id'] ? ' id="'.$params['id'].'"' : '').' name="'.$params['name'].'" '.($class ? ' class="'.$class.'"' : '').($params['disabled'] ? ' disabled' : '').($params['autofocus'] ? ' autofocus' : '').'>'.
                       $body.'</select>';
         }
 
