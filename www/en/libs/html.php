@@ -216,10 +216,6 @@ function html_generate_js(){
     global $_CONFIG;
 
     try{
-        if(empty($GLOBALS['js'])){
-            return '';
-        }
-
         /*
          * Shortcut to JS configuration
          */
@@ -237,10 +233,19 @@ function html_generate_js(){
             $libs[$lib] = array();
         }
 
+        $libs = array_merge($libs, $GLOBALS['js']);
+
+        if(empty($libs)){
+            /*
+             * There are no libraries to load
+             */
+            return '';
+        }
+
         /*
          * Load JS libraries
          */
-        foreach($GLOBALS['js'] = array_merge($libs, $GLOBALS['js']) as $file => $data) {
+        foreach($GLOBALS['js'] = $libs as $file => $data) {
             if(!$file) continue;
 
             $check = str_rfrom(str_starts($file, '/'), '/');
