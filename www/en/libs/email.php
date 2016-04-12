@@ -494,6 +494,34 @@ function email_update_message($email, $direction){
 
 
 /*
+ *
+ */
+function email_cleanup($email){
+    try{
+        foreach($email as $key => &$value){
+            if(strstr($value, '?utf-8?B?')){
+                $value = base64_decode(str_from($value, '?utf-8?B?'));
+            }
+        }
+
+        if(strstr($email['to'], '<')){
+            $email['to'] = str_cut($email['to'], '<', '>');
+        }
+
+        if(strstr($email['from'], '<')){
+            $email['from'] = str_cut($email['from'], '<', '>');
+        }
+
+        return $email;
+
+    }catch(Exception $e){
+        throw new bException(tr('email_cleanup(): Failed'), $e);
+    }
+}
+
+
+
+/*
  * Check if there are images for an email, insert them in the database
  * and move them to the correct location
  */

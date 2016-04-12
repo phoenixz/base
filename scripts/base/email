@@ -105,6 +105,7 @@ switch($method){
                 try{
                     foreach($user_emails as $email){
                         try{
+                            $email = email_cleanup($email);
                             email_update_conversation($email, 'received');
                             usleep(1000000);
                             $count++;
