@@ -123,7 +123,7 @@ function html_generate_css(){
         foreach($GLOBALS['css'] as $file => $meta) {
             if(!$file) continue;
 
-            $html = '<link rel="stylesheet" type="text/css" href="'.cdn_prefix().'css/'.((SUBENVIRONMENT and (substr($file, 0, 5) != 'base/')) ? SUBENVIRONMENT.'/' : '').(!empty($GLOBALS['page_is_mobile']) ? 'mobile/' : '').$file.($min ? '.min.css' : '.css').'"'.($meta['media'] ? ' media="'.$meta['media'].'"' : '').'>';
+            $html = '<link rel="stylesheet" type="text/css" href="'.cdn_prefix().(!empty($GLOBALS['page_is_admin']) ? 'admin/' : '').'css/'.((SUBENVIRONMENT and (substr($file, 0, 5) != 'base/')) ? SUBENVIRONMENT.'/' : '').(!empty($GLOBALS['page_is_mobile']) ? 'mobile/' : '').$file.($min ? '.min.css' : '.css').'"'.($meta['media'] ? ' media="'.$meta['media'].'"' : '').'>';
 
             if(substr($file, 0, 2) == 'ie'){
                 $retval .= html_iefilter($html, str_until(str_from($file, 'ie'), '.'));
@@ -233,7 +233,8 @@ function html_generate_js(){
             $libs[$lib] = array();
         }
 
-        $libs = array_merge($libs, $GLOBALS['js']);
+        $libs          = array_merge($libs, $GLOBALS['js']);
+        $GLOBALS['js'] = $libs;
 
         if(empty($libs)){
             /*
@@ -245,7 +246,7 @@ function html_generate_js(){
         /*
          * Load JS libraries
          */
-        foreach($GLOBALS['js'] = $libs as $file => $data) {
+        foreach($libs as $file => $data) {
             if(!$file) continue;
 
             $check = str_rfrom(str_starts($file, '/'), '/');
@@ -261,7 +262,7 @@ function html_generate_js(){
                  */
                 $html = '<script'.(!empty($data['option']) ? ' '.$data['option'] : '').' type="text/javascript" src="'.$file.'"></script>';
 
-            } else {
+            }else{
                 /*
                  * These are local scripts
                  *
@@ -303,7 +304,7 @@ function html_generate_js(){
                     if($skip) continue;
                 }
 
-                $html = '<script'.(!empty($data['option']) ? ' '.$data['option'] : '').' type="text/javascript" src="'.cdn_prefix().'js/'.$file.$min.'.js"></script>';
+                $html = '<script'.(!empty($data['option']) ? ' '.$data['option'] : '').' type="text/javascript" src="'.cdn_prefix().(!empty($GLOBALS['page_is_admin']) ? 'admin/' : '').'js/'.$file.$min.'.js"></script>';
             }
 
             /*
