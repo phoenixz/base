@@ -462,6 +462,8 @@ if(!empty($params['canonical'])){ $params['links']['canonical'] = $params['canon
                 case 'android-app':
                     // FALLTHROUGH
                 case 'ios-app':
+                    // FALLTHROUGH
+                case 'icon':
                     $retval .= '<link rel="'.$rel.'" href="'.$href."\">\n";
                     break;
 
