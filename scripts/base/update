@@ -161,7 +161,7 @@ if($noinit){
 
 }else{
     log_console('Excuting system init', 'update', 'white');
-    echo shell_exec('cd '.ROOT.'scripts/base/;export '.PROJECT.'_ENVIRONMENT='.ENVIRONMENT.'; php init');
+    echo passthru('cd '.ROOT.'scripts/base/;export '.PROJECT.'_ENVIRONMENT='.ENVIRONMENT.'; php init');
 }
 
 /*
