@@ -185,7 +185,7 @@ function curl_get($params, $referer = null, $post = false, $options = array()){
         array_default($params, 'verbose'        , null);
         array_default($params, 'method'         , null);
         array_default($params, 'dns_cache'      , true);
-        array_default($params, 'proxy'          , $_CONFIG['curl']['proxy']);
+        array_default($params, 'proxies'        , $_CONFIG['curl']['proxies']);
         array_default($params, 'simulation'     , false); // false, partial, or full
         array_default($params, 'sleep'          , 15);    // Sleep howmany seconds between retries
         array_default($params, 'retries'        ,  5);    // Retry howmany time on HTTP0 failures
@@ -196,7 +196,7 @@ function curl_get($params, $referer = null, $post = false, $options = array()){
             log_console(tr('Connecting with "%url%"', array('%url%' => $params['url'])), 'curl_get');
         }
 
-        if($params['proxy']){
+        if($params['proxies']){
             return curl_get_proxy($params['url'], $params['file']);
         }
 

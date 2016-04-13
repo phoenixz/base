@@ -18,7 +18,8 @@ function notifications_do($event, $message, $classes = null, $alternate_subenvir
     global $_CONFIG;
 
     try{
-        $n = $_CONFIG['notifications'];
+        $message = str_force($message);
+        $n       = $_CONFIG['notifications'];
 
         if((ENVIRONMENT != 'production') and (strtolower($event) != 'deploy') and empty($n['force'])){
             /*
