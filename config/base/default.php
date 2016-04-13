@@ -86,7 +86,7 @@ $_CONFIG['cdn']                = array('min'              => true,              
 $_CONFIG['charset']            = 'UTF-8';                                                                   // The default character set for this website (Will be used in meta charset tag)
 
 // Detect client?
-$_CONFIG['client_detect']      = true;                                                                      // Should system try a client_detect() on first page of session? If yes, system will try to obtain client data (stored in $_SESSION[client]), is it mobile, is it spider, etc.
+$_CONFIG['client_detect']      = false;                                                                     // Should system try a client_detect() on first page of session? If yes, system will try to obtain client data (stored in $_SESSION[client]), is it mobile, is it spider, etc.
 
 // PHP composer configuration
 $_CONFIG['composer']           = array('global'           => false);
