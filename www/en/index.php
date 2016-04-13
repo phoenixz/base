@@ -11,5 +11,5 @@ $params = array('title'       => 'Welcome to base');
 $meta   = array('description' => 'base',
                 'keywords'    => 'base');
 
-echo c_page($html, $params, $meta);
+echo c_page($params, $meta, $html);
 ?>
