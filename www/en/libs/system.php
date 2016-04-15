@@ -1374,10 +1374,22 @@ function system_date_format($date = null, $requested_format = 'human_datetime'){
          * Ensure we have a valid format
          */
         if($requested_format == 'mysql'){
+            /*
+             * Use mysql format
+             */
             $format = 'Y-m-d H:i:s';
 
-        }else{
+        }elseif(isset($_CONFIG['formats'][$requested_format])){
+            /*
+             * Use predefined format
+             */
             $format = $_CONFIG['formats'][$requested_format];
+
+        }else{
+            /*
+             * Use custom format
+             */
+            $format = $requested_format;
         }
 
         /*
