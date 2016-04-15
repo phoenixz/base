@@ -14,7 +14,8 @@ if(!class_exists('Imagick')){
     throw new bException(tr('image: php module "imagick" appears not to be installed. Please install the module first. On Ubuntu and alikes, use "sudo apt-get -y install php5-imagick; sudo php5enmod imagick" to install and enable the module., on Redhat and alikes use ""sudo yum -y install php5-imagick" to install the module. After this, a restart of your webserver or php-fpm server might be needed'), 'not_available');
 }
 
-load_config('images');
+load_config('images,file');
+file_ensure_path(ROOT.'/data/log');
 
 
 
@@ -111,16 +112,19 @@ function image_convert($source, $destination, $x, $y, $method, $params = array()
         array_default($params, 'defines'         , $imagick['defines']);
         array_default($params, 'sampling_factor' , $imagick['sampling_factor']);
         array_default($params, 'keep_aspectratio', $imagick['keep_aspectratio']);
-        array_default($params, 'limit-memory'    , $imagick['limit']['memory']);
-        array_default($params, 'limit-map'       , $imagick['limit']['map']);
+        array_default($params, 'limit_memory'    , $imagick['limit']['memory']);
+        array_default($params, 'limit_map'       , $imagick['limit']['map']);
+        array_default($params, 'log'             , ROOT.'/data/log/imagemagic_convert.log');
+
+
 
         foreach($params as $key => $value){
             switch($key){
-                case 'limit-memory':
+                case 'limit_memory':
                     $command .= ' -limit memory '.$value;
                     break;
 
-                case 'limit-map':
+                case 'limit_map':
                     $command .= ' -limit map '.$value;
                     break;
 
@@ -129,7 +133,7 @@ function image_convert($source, $destination, $x, $y, $method, $params = array()
                     break;
 
                 case 'blur':
-                    $command .= ' -gaussian-blur 0x'.$value;
+                    $command .= ' -gaussian-blur '.$value;
                     break;
 
                 case 'keep_aspectratio':
@@ -234,15 +238,15 @@ function image_convert($source, $destination, $x, $y, $method, $params = array()
          */
         switch($method) {
             case 'thumb':
-                safe_exec($command.' -thumbnail '.$x.'x'.$y.'^ -gravity center -extent '.$x.'x'.$y.' -flatten "'.$source.'" "'.$destination.'" >> '.TMP.'imagemagic_convert.log 2>&1', 0);
+                safe_exec($command.' -thumbnail '.$x.'x'.$y.'^ -gravity center -extent '.$x.'x'.$y.' -flatten "'.$source.'" "'.$destination.'"'.($params['log'] ? '>> '.$params['log'].' 2>&1' : ''), 0);
                 break;
 
             case 'resize-w':
-                safe_exec($command.' -resize '.$x.'x\> -flatten "'.$source.'" "'.$destination.'" >>'.TMP.'imagemagic_convert.log 2>&1', 0);
+                safe_exec($command.' -resize '.$x.'x\> -flatten "'.$source.'" "'.$destination.'"'.($params['log'] ? '>> '.$params['log'].' 2>&1' : ''), 0);
                 break;
 
             case 'resize':
-                safe_exec($command.' -resize '.$x.'x'.$y.'^ -flatten "'.$source.'" "'.$destination.'" >>'.TMP.'imagemagic_convert.log 2>&1', 0);
+                safe_exec($command.' -resize '.$x.'x'.$y.'^ -flatten "'.$source.'" "'.$destination.'"'.($params['log'] ? '>> '.$params['log'].' 2>&1' : ''), 0);
                 break;
 
             case 'thumb-circle':
@@ -250,20 +254,20 @@ function image_convert($source, $destination, $x, $y, $method, $params = array()
 
                 $tmpfname = tempnam("/tmp", "CVRT_");
 
-                safe_exec($imagick['convert'].' -limit memory 16 -limit map 16 -quality 100 -thumbnail '.$x.'x'.$y.'^ -gravity center -extent '.$x.'x'.$y.' -background white -flatten "'.$source.'" "'.$tmpfname.'"                >> '.TMP.'imagemagic_convert.log 2>&1', 0);
-                safe_exec($imagick['convert'].' -limit memory 16 -limit map 16 -quality 75 -size '.$x.'x'.$y.' xc:none -fill "'.$tmpfname.'" -draw "circle '.(floor($x/2)-1).','.(floor($y/2)-1).' '.($x/2).',0" "'.$destination.'" >> '.TMP.'imagemagic_convert.log 2>&1', 0);
+                safe_exec($imagick['convert'].' -limit memory 16 -limit map 16 -quality 100 -thumbnail '.$x.'x'.$y.'^ -gravity center -extent '.$x.'x'.$y.' -background white -flatten "'.$source.'" "'.$tmpfname.'"               '.($params['log'] ? '>> '.$params['log'].' 2>&1' : ''), 0);
+                safe_exec($imagick['convert'].' -limit memory 16 -limit map 16 -quality 75 -size '.$x.'x'.$y.' xc:none -fill "'.$tmpfname.'" -draw "circle '.(floor($x/2)-1).','.(floor($y/2)-1).' '.($x/2).',0" "'.$destination.'"'.($params['log'] ? '>> '.$params['log'].' 2>&1' : ''), 0);
 
                 file_delete($tmpfname);
                 break;
 
             case 'crop-resize':
                 load_libs('file');
-                safe_exec($imagick['convert'].' -limit memory 16 -limit map 16 -quality 75 "'.$source.'" -crop '.cfi($params['w'], false).'x'.cfi($params['h'], false).'+'.cfi($params['x'], false).'+'.cfi($params['y'], false).' -resize '.cfi($x, false).'x'.cfi($y, false).' "'.$destination.'" >> '.TMP.'imagemagic_convert.log 2>&1', 0);
+                safe_exec($command.' "'.$source.'" -crop '.cfi($params['w'], false).'x'.cfi($params['h'], false).'+'.cfi($params['x'], false).'+'.cfi($params['y'], false).' -resize '.cfi($x, false).'x'.cfi($y, false).' "'.$destination.'"'.($params['log'] ? '>> '.$params['log'].' 2>&1' : ''), 0);
                 break;
 
             case 'custom':
                 load_libs('file');
-                safe_exec($imagick['convert'].' -limit memory 16 -limit map 16 -quality 75 "'.$source.'" '.isset_get($params['custom']).' "'.$destination.'" >> '.TMP.'imagemagic_convert.log 2>&1', 0);
+                safe_exec($command.' "'.$source.'" '.isset_get($params['custom']).' "'.$destination.'"'.($params['log'] ? '>> '.$params['log'].' 2>&1' : ''), 0, 0);
                 break;
 
             default:
