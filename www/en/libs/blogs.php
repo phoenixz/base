@@ -144,6 +144,7 @@ function blogs_categories_select($params) {
         array_default($params, 'name'        , 'seocategory');
         array_default($params, 'column'      , '`blogs_categories`.`seoname`');
         array_default($params, 'none'        , tr('Select a category'));
+        array_default($params, 'empty'       , tr('No categories available'));
         array_default($params, 'option_class', '');
         array_default($params, 'parent'      , null);
         array_default($params, 'filter'      , array());
@@ -186,6 +187,69 @@ function blogs_categories_select($params) {
 
     }catch(Exception $e){
         throw new bException('blogs_categories_select(): Failed', $e);
+    }
+}
+
+
+
+/*
+ * Return HTML select list containing all available parent posts
+ */
+function blogs_parents_select($params) {
+    try{
+        array_params ($params);
+        array_default($params, 'selected'    , null);
+        array_default($params, 'class'       , '');
+        array_default($params, 'disabled'    , false);
+        array_default($params, 'name'        , 'seoparent');
+        array_default($params, 'column'      , '`blogs_posts`.`seoname`');
+        array_default($params, 'none'        , tr('Select a parent'));
+        array_default($params, 'empty'       , tr('No parents available'));
+        array_default($params, 'blogs_id'    , null);
+        array_default($params, 'filter'      , array());
+
+        if(empty($params['blogs_id'])){
+            throw new bException('blogs_parents_select(): No blog specified', 'notspecified');
+        }
+
+        $execute = array(':blogs_id' => $params['blogs_id']);
+
+        $query   = 'SELECT   '.$params['column'].' AS id,
+                             `blogs_posts`.`name`
+
+                    FROM     `blogs_posts`';
+
+        $where[] = '`blogs_posts`.`status`   = "published"';
+
+        if($params['blogs_id']){
+            $where[]              = ' `blogs_posts`.`blogs_id` = :blogs_id ';
+            $execute[':blogs_id'] = $params['blogs_id'];
+        }
+
+        /*
+         * Filter specified values.
+         */
+        if(!empty($params['filter'])){
+            foreach($params['filter'] as $key => $value){
+                if(!$value) continue;
+
+                $query            .= ' AND `'.$key.'` != :'.$key.' ';
+                $execute[':'.$key] = $value;
+            }
+        }
+
+        if(!empty($where)){
+            $query .= ' WHERE '.implode(' AND ', $where);
+        }
+
+        $query  .= ' ORDER BY `name` ASC';
+
+        $params['resource'] = sql_query($query, $execute);
+
+        return html_select($params);
+
+    }catch(Exception $e){
+        throw new bException('blogs_parents_select(): Failed', $e);
     }
 }
 
