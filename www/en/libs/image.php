@@ -14,7 +14,8 @@ if(!class_exists('Imagick')){
     throw new bException(tr('image: php module "imagick" appears not to be installed. Please install the module first. On Ubuntu and alikes, use "sudo apt-get -y install php5-imagick; sudo php5enmod imagick" to install and enable the module., on Redhat and alikes use ""sudo yum -y install php5-imagick" to install the module. After this, a restart of your webserver or php-fpm server might be needed'), 'not_available');
 }
 
-load_config('images,file');
+load_libs('file');
+load_config('images');
 file_ensure_path(ROOT.'/data/log');
 
 
