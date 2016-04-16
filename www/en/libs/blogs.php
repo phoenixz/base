@@ -403,14 +403,26 @@ function blogs_validate_post(&$post, $blog, $params = null, $seoname = null){
             $v->isNotEmpty ($post['body']                    , tr('Please provide the body text of your %objectname%', array('%objectname%' => $params['object_name'])));
         }
 
-        $v->isChecked  ($post['name']          , tr('Please provide the name of your %objectname%'     , array('%objectname%' => $params['object_name'])));
-        $v->isNotEmpty ($post['seocategory']   , tr('Please provide a category for your %objectname%'  , array('%objectname%' => $params['object_name'])));
-        $v->hasMinChars($post['name']       , 1, tr('Please ensure that the name has a minimum of 1 character'));
+        $v->isChecked  ($post['name']   , tr('Please provide the name of your %objectname%'     , array('%objectname%' => $params['object_name'])));
+        $v->hasMinChars($post['name'], 1, tr('Please ensure that the name has a minimum of 1 character'));
 
-        $category = blogs_validate_category($post['seocategory'], $blog, $params['categories_parent']);
+        if($params['use_parent']){
+            $post['parents_id'] = blogs_validate_parent($post['seoparent'], $params['use_parent']);
 
-        $post['category']    = $category['name'];
-        $post['seocategory'] = $category['seoname'];
+        }else{
+            $post['parents_id'] = null;
+        }
+
+        if($params['use_categories']){
+            $category = blogs_validate_category($post['seocategory'], $blog, $params['categories_parent']);
+
+            $post['category']    = $category['name'];
+            $post['seocategory'] = $category['seoname'];
+
+        }else{
+            $post['category']    = '';
+            $post['seocategory'] = null;
+        }
 
         if($params['use_groups']){
             $group = blogs_validate_category($post['seogroup'], $blog, $params['groups_parent']);
@@ -897,6 +909,27 @@ function blogs_validate_category($category, $blog){
 
     }catch(Exception $e){
         throw new bException('blogs_validate_category(): Failed', $e);
+    }
+}
+
+
+
+/*
+ *
+ */
+function blogs_validate_parent($blog_post_seoname, $blogs_id){
+    try{
+        $id = sql_get('SELECT `id` FROM `blogs_posts` WHERE `seoname` = :seoname AND `blogs_id` = :blogs_id', 'id', array(':blogs_id' => $blogs_id,
+                                                                                                                          ':seoname'  => $blog_post_seoname));
+
+        if(!$id){
+            throw new bException(tr('blogs_validate_parent(): Blog ":blog" does not contain a blog post named ":post"', array(':blog' => $blogs_id, ':post' => $blog_post_seoname)), 'notmember');
+        }
+
+        return $id;
+
+    }catch(Exception $e){
+        throw new bException('blogs_validate_parent(): Failed', $e);
     }
 }
 
