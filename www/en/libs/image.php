@@ -117,8 +117,6 @@ function image_convert($source, $destination, $x, $y, $method, $params = array()
         array_default($params, 'limit_map'       , $imagick['limit']['map']);
         array_default($params, 'log'             , ROOT.'/data/log/imagemagic_convert.log');
 
-
-
         foreach($params as $key => $value){
             switch($key){
                 case 'limit_memory':
@@ -180,6 +178,8 @@ function image_convert($source, $destination, $x, $y, $method, $params = array()
                     //do nothing (width)
                     // FALLTHROUGH
                 case 'custom':
+                    //do nothing (custom imagemagick parameters)
+                case 'log':
                     //do nothing (custom imagemagick parameters)
                     break;
 
