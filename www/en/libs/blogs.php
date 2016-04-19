@@ -1057,6 +1057,7 @@ function blogs_post_url($post, $current_domain = true){
                           'createdon',
                           'blog',
                           'seoname',
+                          'seoparent',
                           'category',
                           'seocategory');
 
@@ -1066,6 +1067,10 @@ function blogs_post_url($post, $current_domain = true){
 
         foreach($sections as $section){
             switch($section){
+                case 'seoparent':
+                    $post[$section] = sql_get('SELECT `seoname` FROM `blogs_posts` WHERE `id` = :id', 'seoname', array(':id' => isset_get($post['parents_id'])));
+                    break;
+
                 case 'date':
                     $post[$section] = str_until(isset_get($post['createdon']), ' ');
                     break;
