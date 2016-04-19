@@ -21,7 +21,7 @@ function notifications_do($event, $message, $classes = null, $alternate_subenvir
         $message = str_force($message);
         $n       = $_CONFIG['notifications'];
 
-        if((ENVIRONMENT != 'production') and (strtolower($event) != 'deploy') and empty($n['force'])){
+        if(!$_CONFIG['production'] and (strtolower($event) != 'deploy') and empty($n['force'])){
             /*
              * Events are only sent on production, or during deploys, OR if forced
              */

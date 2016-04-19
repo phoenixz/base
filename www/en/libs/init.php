@@ -277,7 +277,7 @@ function init($projectfrom = null, $frameworkfrom = null){
             }
         }
 
-        if(ENVIRONMENT == 'production'){
+        if($_CONFIG['production']){
             log_console('Removing data symlink in all languages', 'init/cleanup');
 
             foreach($_CONFIG['language']['supported'] as $language => $name){

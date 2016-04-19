@@ -35,7 +35,7 @@ function sql_query($sql) {
 
     error_log('PHP SQL_ERROR: '.mysqli_error($_CONFIG['dbconnection']).' on '.$sql);
 
-    if (ENVIRONMENT != 'production') {
+    if(!$_CONFIG['production']){
         throw new bException(nl2br($body));
     }
 
@@ -167,7 +167,7 @@ function sql_connect() {
 			 *
 			 * Forced init is NOT allowed on production (for obvious safety reasons, doh!)
 			 */
-			if(ENVIRONMENT == 'production'){
+			if($_CONFIG['production']){
 				throw new bException('sql_connect(): For safety reasons, init force is NOT allowed on production environment! Please drop the database yourself manually and continue with a normal init', 'denied');
 			}
 

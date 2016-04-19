@@ -28,7 +28,7 @@ function mail_send_templated_email($params, $subject, $body, $language = false, 
         /*
          * On development servers do not send out mails to clients
          */
-        if(ENVIRONMENT != 'production') {
+        if(!$_CONFIG['production']){
             //if(!$_CONFIG['notifications']['force']){
             //    return false;
             //}

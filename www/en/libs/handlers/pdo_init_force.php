@@ -1,11 +1,13 @@
 <?php
+    global $_CONFIG;
+
     /*
      * We're doing a forced init from shell. Forced init will
      * basically set database version to 0 BY DROPPING THE FUCKER SO BE CAREFUL!
      *
      * Forced init is NOT allowed on production (for obvious safety reasons, doh!)
      */
-    if(ENVIRONMENT == 'production'){
+    if($_CONFIG['production']){
         throw new bException('sql_init(): For safety reasons, init force is NOT allowed on production environment! Please drop the database using "./scripts/base/init drop" or in the mysql console with "DROP DATABASE \''.str_log($_CONFIG['db'][$connector]['db']).'\'"and continue with a standard init', 'forcedenied');
     }
 

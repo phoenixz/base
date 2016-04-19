@@ -2,6 +2,7 @@
 /*
  * This is the uncaught exception handler
  */
+global $_CONFIG;
 static $count, $code, $messages;
 debug(true);
 
@@ -57,13 +58,13 @@ try{
     }
 
     if($count > 1){
-        if(ENVIRONMENT == 'production'){
+        if($_CONFIG['production']){
             notify('error', "UNCAUGHT EXCEPTION [".$code."]\n".implode("\n", $messages).$server.$session.$trace.$exception);
         }
     }
 
 // :TODO:SVEN:20130717: Add notifications!
-    if((PLATFORM != 'shell') and (ENVIRONMENT == 'production')){
+    if((PLATFORM != 'shell') and $_CONFIG['production']){
         page_show(500);
         die();
 
@@ -140,7 +141,7 @@ try{
             die();
         }
 
-        if(ENVIRONMENT == 'production'){
+        if($_CONFIG['production']){
             log_screen(tr('Maintenance, we will be right back!'), 'uncaughtexception', 'red');
 
         }else{

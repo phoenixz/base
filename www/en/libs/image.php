@@ -179,6 +179,7 @@ function image_convert($source, $destination, $x, $y, $method, $params = array()
                     // FALLTHROUGH
                 case 'custom':
                     //do nothing (custom imagemagick parameters)
+                    //FALLTHROUGH
                 case 'log':
                     //do nothing (custom imagemagick parameters)
                     break;
@@ -239,15 +240,15 @@ function image_convert($source, $destination, $x, $y, $method, $params = array()
          */
         switch($method) {
             case 'thumb':
-                safe_exec($command.' -thumbnail '.$x.'x'.$y.'^ -gravity center -extent '.$x.'x'.$y.' -flatten "'.$source.'" "'.$destination.'"'.($params['log'] ? '>> '.$params['log'].' 2>&1' : ''), 0);
+                safe_exec($command.' -thumbnail '.$x.'x'.$y.'^ -gravity center -extent '.$x.'x'.$y.' -flatten "'.$source.'" "'.$destination.'"'.($params['log'] ? ' >> '.$params['log'].' 2>&1' : ''), 0);
                 break;
 
             case 'resize-w':
-                safe_exec($command.' -resize '.$x.'x\> -flatten "'.$source.'" "'.$destination.'"'.($params['log'] ? '>> '.$params['log'].' 2>&1' : ''), 0);
+                safe_exec($command.' -resize '.$x.'x\> -flatten "'.$source.'" "'.$destination.'"'.($params['log'] ? ' >> '.$params['log'].' 2>&1' : ''), 0);
                 break;
 
             case 'resize':
-                safe_exec($command.' -resize '.$x.'x'.$y.'^ -flatten "'.$source.'" "'.$destination.'"'.($params['log'] ? '>> '.$params['log'].' 2>&1' : ''), 0);
+                safe_exec($command.' -resize '.$x.'x'.$y.'^ -flatten "'.$source.'" "'.$destination.'"'.($params['log'] ? ' >> '.$params['log'].' 2>&1' : ''), 0);
                 break;
 
             case 'thumb-circle':
@@ -255,20 +256,20 @@ function image_convert($source, $destination, $x, $y, $method, $params = array()
 
                 $tmpfname = tempnam("/tmp", "CVRT_");
 
-                safe_exec($imagick['convert'].' -limit memory 16 -limit map 16 -quality 100 -thumbnail '.$x.'x'.$y.'^ -gravity center -extent '.$x.'x'.$y.' -background white -flatten "'.$source.'" "'.$tmpfname.'"               '.($params['log'] ? '>> '.$params['log'].' 2>&1' : ''), 0);
-                safe_exec($imagick['convert'].' -limit memory 16 -limit map 16 -quality 75 -size '.$x.'x'.$y.' xc:none -fill "'.$tmpfname.'" -draw "circle '.(floor($x/2)-1).','.(floor($y/2)-1).' '.($x/2).',0" "'.$destination.'"'.($params['log'] ? '>> '.$params['log'].' 2>&1' : ''), 0);
+                safe_exec($command.' -thumbnail '.$x.'x'.$y.'^ -gravity center -extent '.$x.'x'.$y.' -background white -flatten "'.$source.'" "'.$tmpfname.'"'.($params['log'] ? ' >> '.$params['log'].' 2>&1' : ''), 0);
+                safe_exec($command.' -size '.$x.'x'.$y.' xc:none -fill "'.$tmpfname.'" -draw "circle '.(floor($x/2)-1).','.(floor($y/2)-1).' '.($x/2).',0" "'.$destination.'"'.($params['log'] ? ' >> '.$params['log'].' 2>&1' : ''), 0);
 
                 file_delete($tmpfname);
                 break;
 
             case 'crop-resize':
                 load_libs('file');
-                safe_exec($command.' "'.$source.'" -crop '.cfi($params['w'], false).'x'.cfi($params['h'], false).'+'.cfi($params['x'], false).'+'.cfi($params['y'], false).' -resize '.cfi($x, false).'x'.cfi($y, false).' "'.$destination.'"'.($params['log'] ? '>> '.$params['log'].' 2>&1' : ''), 0);
+                safe_exec($command.' "'.$source.'" -crop '.cfi($params['w'], false).'x'.cfi($params['h'], false).'+'.cfi($params['x'], false).'+'.cfi($params['y'], false).' -resize '.cfi($x, false).'x'.cfi($y, false).' "'.$destination.'"'.($params['log'] ? ' >> '.$params['log'].' 2>&1' : ''), 0);
                 break;
 
             case 'custom':
                 load_libs('file');
-                safe_exec($command.' "'.$source.'" '.isset_get($params['custom']).' "'.$destination.'"'.($params['log'] ? '>> '.$params['log'].' 2>&1' : ''), 0, 0);
+                safe_exec($command.' "'.$source.'" '.isset_get($params['custom']).' "'.$destination.'"'.($params['log'] ? ' >> '.$params['log'].' 2>&1' : ''), 0);
                 break;
 
             default:

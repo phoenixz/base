@@ -153,11 +153,11 @@ function uncaught_exception($e, $die = 1){
  * For translations
  */
 function tr($text, $replace = null, $obsolete = null){
+    global $_CONFIG;
+
     try{
         if($obsolete){
-            global $_CONFIG;
-
-            if((PLATFORM !== 'production') and !$_CONFIG['system']['obsolete_exception']){
+            if(!$_CONFIG['production'] and !$_CONFIG['system']['obsolete_exception']){
                 throw new bException('tr() no longer support tr(text, from, to), please specify a replace array.', 'obsolete');
             }
 
@@ -170,7 +170,7 @@ function tr($text, $replace = null, $obsolete = null){
             /*
              * Only on non production machines, crash when not all entries were replaced as an extra check.
              */
-            if(ENVIRONMENT != 'production'){
+            if(!$_CONFIG['production']){
                 if($count != count($replace)){
                     throw new bException('tr(): Not all specified keywords were found in text', 'notfound');
                 }
@@ -304,7 +304,7 @@ function load_content($file, $replace = false, $language = null, $autocreate = n
                 /*
                  * Oops, specified $from array does not contain all replace markers
                  */
-                if(ENVIRONMENT != 'production'){
+                if(!$_CONFIG['production']){
                     throw new bException('load_content(): Missing markers "'.str_log($matches).'" for content file "'.str_log($realfile).'"', 'missingmarkers');
                 }
             }
@@ -458,7 +458,7 @@ throw new bException('log_message(): DEVELOPMENT FIX! This exception is here to 
 
     }catch(Exception $e){
 // :TODO: Add system notification!
-        if(ENVIRONMENT != 'production'){
+        if(!$_CONFIG['production']){
             unset($_CONFIG['db']['pass']);
             log_screen($message.' (NODB '.print_r($_CONFIG['db'], true).')', $type, $color);
         }
@@ -473,6 +473,7 @@ throw new bException('log_message(): DEVELOPMENT FIX! This exception is here to 
  * Log specified message to screen (console or http)
  */
 function log_screen($message, $type = 'info', $color = null){
+    global $_CONFIG;
     static $last;
 
     if($message == $last){
@@ -487,7 +488,7 @@ function log_screen($message, $type = 'info', $color = null){
     if(PLATFORM == 'shell'){
         return log_console($message, $type, $color);
 
-    }elseif(ENVIRONMENT != 'production'){
+    }elseif(!$_CONFIG['production']){
         /*
          * Do NOT display log data to browser client on production!
          */

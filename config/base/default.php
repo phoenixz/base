@@ -264,6 +264,9 @@ $_CONFIG['prefetch']           = array('dns'              => array('facebook.com
 
                                        'files'            => array());
 
+// Is this a production environment?
+$_CONFIG['production']         = true;
+
 //domain
 $_CONFIG['protocol']           = 'http://';                                                                 // The base protocol of this website. Basically either "http://",  or "https://".
 

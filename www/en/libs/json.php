@@ -131,6 +131,8 @@ function json_reply($reply = null, $result = 'OK', $http_code = null){
  * Send correct JSON reply
  */
 function json_error($message, $data = array(), $result = 'ERROR', $http_code = 500){
+    global $_CONFIG;
+
     try{
         if(!$message){
             $message = tr('json_error(): No exception specified in json_error() array');
@@ -145,7 +147,7 @@ function json_error($message, $data = array(), $result = 'ERROR', $http_code = 5
             }
 
             if(empty($message['e'])){
-                if(ENVIRONMENT == 'production'){
+                if($_CONFIG['production']){
                     $message = $default;
                     log_error('json_error(): No exception object specified for following error');
                     log_error($message);
@@ -157,7 +159,7 @@ function json_error($message, $data = array(), $result = 'ERROR', $http_code = 5
                 }
 
             }else{
-                if(ENVIRONMENT == 'production'){
+                if($_CONFIG['production']){
                     log_error($message['e']);
 
                     $code = $message['e']->getCode();

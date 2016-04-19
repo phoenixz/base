@@ -15,6 +15,8 @@
  * Handle the PDO error
  */
 function pdo_error($e, $query, $execute, $sql = null){
+    global $_CONFIG;
+
     if(!$e instanceof PDOException){
         switch($e->getCode()){
             case 'forcedenied':
@@ -223,7 +225,7 @@ function pdo_error($e, $query, $execute, $sql = null){
 
                         error_log('PHP SQL_ERROR: '.str_log($error[2]).' on '.str_log($query, 4096));
 
-                        if (ENVIRONMENT != 'production') {
+                        if(!$_CONFIG['production']){
                             throw new bException(nl2br($body), $e);
                         }
 

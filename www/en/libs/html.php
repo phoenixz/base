@@ -435,7 +435,7 @@ if(!empty($params['canonical'])){ $params['links']['canonical'] = $params['canon
         /*
          * Add meta tag no-index for non production environments and admin pages
          */
-        if((ENVIRONMENT != 'production') || $GLOBALS['page_is_admin']){
+        if(!$_CONFIG['production'] || $GLOBALS['page_is_admin']){
            $params['meta']['robots'] = 'noindex';
         }
 
@@ -493,7 +493,7 @@ if(!empty($params['canonical'])){ $params['links']['canonical'] = $params['canon
          * Add required fonts
          */
         if(!empty($_CONFIG['cdn']['fonts'])){
-            if((ENVIRONMENT == 'production') or (empty($_CONFIG['cdn']['production_fonts']))){
+            if($_CONFIG['production'] or (empty($_CONFIG['cdn']['production_fonts']))){
                 foreach($_CONFIG['cdn']['fonts'] as $font){
                     $retval .= "<link href=\"".$font."\" rel=\"stylesheet\" type=\"text/css\">\n";
                 }
@@ -647,7 +647,7 @@ function html_flash($class = null){
             $message  = $message['message'];
 
 // :DELETE: Error messages must not always be surpressed!!
-            //if(($type == 'error') and (ENVIRONMENT == 'production')){
+            //if(($type == 'error') and $_CONFIG['production']){
             //    $message = tr('Something went wrong, please try again later');
             //}
 
@@ -1319,7 +1319,7 @@ function html_img($src, $alt, $width = null, $height = null, $more = ''){
     try{
 // :DELETE: All projects should be updated to conform with the new html_img() function and then this check should be dumped with the garbage
         if(!$width and $height and !is_numeric($height)){
-            if(ENVIRONMENT !== 'production' and $_CONFIG['system']['obsolete_exception']){
+            if(!$_CONFIG['production'] and $_CONFIG['system']['obsolete_exception']){
                 throw new bException(tr('html_img(): Update html_img() argument order'), 'obsolete');
             }
 
@@ -1327,7 +1327,7 @@ function html_img($src, $alt, $width = null, $height = null, $more = ''){
             $height = 0;
         }
 
-        if(ENVIRONMENT !== 'production'){
+        if(!$_CONFIG['production']){
             if(!$src){
                 throw new bException(tr('html_img(): No image src specified'), 'notspecified');
             }
@@ -1438,7 +1438,7 @@ function html_video($src, $type = null, $height = 0, $width = 0, $more = ''){
     global $_CONFIG;
 
     try{
-        if(ENVIRONMENT !== 'production'){
+        if(!$_CONFIG['production']){
             if(!$src){
                 throw new bException(tr('html_video(): No video src specified'), 'notspecified');
             }
@@ -1472,7 +1472,7 @@ function html_video($src, $type = null, $height = 0, $width = 0, $more = ''){
                  */
                 $file  = ROOT.'www/en'.str_starts(str_from($src, $_CONFIG['domain']), '/');
 
-            }elseif(ENVIRONMENT !== 'production'){
+            }elseif(!$_CONFIG['production']){
                 /*
                  * This is a remote video
                  * Remote videos MUST have height and width specified!

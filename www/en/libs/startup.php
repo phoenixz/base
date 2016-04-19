@@ -156,7 +156,7 @@ try{
     if(SUBENVIRONMENT){
         include($file = ROOT.'config/production_'.SUBENVIRONMENTNAME.'.php');
 
-        if(ENVIRONMENT != 'production'){
+        if(ENVIRONMENT !== 'production'){
             include($file = ROOT.'config/'.ENVIRONMENT.'_'.SUBENVIRONMENTNAME.'.php');
 
         }else{
@@ -167,7 +167,7 @@ try{
         }
 
     }else{
-        if(ENVIRONMENT != 'production'){
+        if(ENVIRONMENT !== 'production'){
             include($file = ROOT.'config/'.ENVIRONMENT.'.php');
         }
     }

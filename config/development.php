@@ -17,5 +17,8 @@ $_CONFIG['cookie']['domain']       = '.base.sven';
 //domain
 $_CONFIG['domain']                 = 'base.sven';
 
+// This is not a production environment!
+$_CONFIG['production']             = false;
+
 $_CONFIG['notifications']['force'] = true;
 ?>

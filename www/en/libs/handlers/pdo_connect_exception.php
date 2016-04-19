@@ -1,4 +1,6 @@
 <?php
+    global $_CONFIG;
+
     if($e->getMessage() == 'could not find driver'){
         throw new bException('sql_connect(): Failed to connect with "'.str_log($connector['driver']).'" driver, it looks like its not available', 'driverfail');
     }
@@ -8,7 +10,7 @@
      */
     foreach(array('driver', 'host', 'user', 'pass') as $key){
         if(empty($connector[$key])){
-            if(ENVIRONMENT == 'production'){
+            if($_CONFIG['production']){
                 throw new bException('sql_connect(): The database configuration has key "'.str_log($key).'" missing, check your database configuration in '.ROOT.'/config/production.php');
             }
 
