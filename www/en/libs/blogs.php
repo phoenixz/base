@@ -291,21 +291,41 @@ function blogs_parents_select($params) {
 /*
  * Update the key-value store for this blog post
  */
-function blogs_update_key_value_store($blogs_posts_id, $post, $data){
+function blogs_update_key_value_store($blogs_posts_id, $post, $key_values){
     try{
         load_libs('seo');
+        sql_query('DELETE FROM `blogs_key_values` WHERE `blogs_posts_id` = :blogs_posts_id', array(':blogs_posts_id' => $post['id']));
 
-        foreach($post['key_value'] as $key => $value){
-            sql_query('INSERT INTO `blogs_key_values` (`blogs_posts_id`, `key`, `value`, `seovalue`)
-                       VALUES                         (:blogs_posts_id , :key , :value , :seovalue )
+        foreach($key_values as $data){
+            foreach($post['key_value'] as $seokey => $seovalue){
+                if($data['name'] == $seokey){
+                    if(!empty($data['resource'])){
+                        /*
+                         * This key-value is from a list, get the real value.
+                         */
+                        if(empty($data['resource'][$seovalue])){
+                            throw new bException(tr('blogs_update_key_value_store(): Key ":key" has unknown value ":value"', array(':key' => $seokey, ':value' => $seovalue)),  'unknown');
+                        }
 
-                       ON DUPLICATE KEY UPDATE `value`    = :value,
-                                               `seovalue` = :seovalue',
+                        $value    = $data['resource'][$seovalue];
+
+                    }else{
+                        $value    = $seovalue;
+                        $seovalue = seo_create_string($seovalue);
+                    }
+
+                    break;
+                }
+            }
+
+            sql_query('INSERT INTO `blogs_key_values` (`blogs_posts_id`, `key`, `seokey`, `value`, `seovalue`)
+                       VALUES                         (:blogs_posts_id , :key , :seokey , :value , :seovalue )',
 
                        array(':blogs_posts_id' => $blogs_posts_id,
-                             ':key'            => $key,
+                             ':key'            => $data['label'],
+                             ':seokey'         => $data['name'],
                              ':value'          => $value,
-                             ':seovalue'       => seo_create_string($value)));
+                             ':seovalue'       => $seovalue));
         }
 
     }catch(Exception $e){
