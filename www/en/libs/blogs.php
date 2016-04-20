@@ -304,10 +304,16 @@ function blogs_update_key_value_store($blogs_posts_id, $post, $key_values){
                          * This key-value is from a list, get the real value.
                          */
                         if(empty($data['resource'][$seovalue])){
-                            throw new bException(tr('blogs_update_key_value_store(): Key ":key" has unknown value ":value"', array(':key' => $seokey, ':value' => $seovalue)),  'unknown');
-                        }
+                            if($seovalue){
+                                throw new bException(tr('blogs_update_key_value_store(): Key ":key" has unknown value ":value"', array(':key' => $seokey, ':value' => $seovalue)),  'unknown');
+                            }
 
-                        $value    = $data['resource'][$seovalue];
+                            $seovalue = null;
+                            $value    = null;
+
+                        }else{
+                            $value = $data['resource'][$seovalue];
+                        }
 
                     }else{
                         $value    = $seovalue;
@@ -685,8 +691,8 @@ function blogs_photos_upload($files, $post, $priority = null){
                                 `blogs`.`small_y`,
                                 `blogs`.`wide_x`,
                                 `blogs`.`wide_y`,
-                                `blogs`.`thumbs_x`,
-                                `blogs`.`thumbs_y`,
+                                `blogs`.`thumb_x`,
+                                `blogs`.`thumb_y`,
                                 `blogs`.`wide_x`,
                                 `blogs`.`wide_y`,
                                 `blogs`.`retina`
