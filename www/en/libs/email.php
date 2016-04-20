@@ -993,12 +993,13 @@ function email_insert($params){
 
     try{
         array_params($params);
-        array_default($params, 'template', $_CONFIG['email']['templates']['default']);
-        array_default($params, 'subject' , $_CONFIG['email']['subject']);
-        array_default($params, 'from'    , $_CONFIG['email']['from']);
-        array_default($params, 'to'      , '');
-        array_default($params, 'body'    , '');
-        array_default($params, 'format'  , 'text');
+        array_default($params, 'template'    , $_CONFIG['email']['templates']['default']);
+        array_default($params, 'subject'     , $_CONFIG['email']['subject']);
+        array_default($params, 'from'        , $_CONFIG['email']['from']);
+        array_default($params, 'to'          , '');
+        array_default($params, 'body'        , '');
+        array_default($params, 'format'      , 'text');
+        array_default($params, 'require_user', false);
 
         /*
          * Validations
@@ -1041,7 +1042,11 @@ function email_insert($params){
                          array(':email' => $params['to']));
 
         if(!$user){
-            throw new bException(tr('email_insert(): Specified user "%user%" does not exist', array('%user%' => $params['to'])), 'notexist');
+            if($params['require_user']){
+                throw new bException(tr('email_insert(): Specified user "%user%" does not exist', array('%user%' => $params['to'])), 'notexist');
+            }
+
+            $user = array('id' => null);
         }
 
         /*
