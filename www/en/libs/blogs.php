@@ -677,12 +677,18 @@ function blogs_photos_upload($files, $post, $priority = null){
                                 `blogs_posts`.`seoname`,
 
                                 `blogs`.`seoname` AS blog_name,
-                                `blogs`.`images_x`,
-                                `blogs`.`images_y`,
+                                `blogs`.`large_x`,
+                                `blogs`.`large_y`,
                                 `blogs`.`medium_x`,
                                 `blogs`.`medium_y`,
+                                `blogs`.`small_x`,
+                                `blogs`.`small_y`,
+                                `blogs`.`wide_x`,
+                                `blogs`.`wide_y`,
                                 `blogs`.`thumbs_x`,
                                 `blogs`.`thumbs_y`,
+                                `blogs`.`wide_x`,
+                                `blogs`.`wide_y`,
                                 `blogs`.`retina`
 
                          FROM   `blogs_posts`
@@ -719,57 +725,37 @@ function blogs_photos_upload($files, $post, $priority = null){
         $file   = file_get_local($file['tmp_name'][0]);
         $photo  = $post['blog_name'].'/'.file_assign_target_clean(ROOT.'data/content/photos/'.$post['blog_name'].'/', '_small.jpg', false, 4);
         $prefix = ROOT.'data/content/photos/'.$photo;
+        $types  = array('large'  => 'resize',
+                        'medium' => 'resize',
+                        'small'  => 'thumb',
+                        'wide'   => 'resize',
+                        'thumb'  => 'thumb');
 
-        if(!empty($post['thumbs_x']) or !empty($post['thumbs_y'])){
-            image_convert($file, $prefix.'_small.jpg', $post['thumbs_x'], $post['thumbs_y'], 'thumb');
-
-        }else{
-            copy($file, $prefix.'_small.jpg');
-        }
-
-        if(!empty($post['medium_x']) or !empty($post['medium_y'])){
-            image_convert($file, $prefix.'_medium.jpg', $post['medium_x'], $post['medium_y'], 'thumb');
-
-        }else{
-            copy($file, $prefix.'_medium.jpg');
-        }
-
-        if(!empty($post['images_x']) or !empty($post['images_y'])){
-            image_convert($file, $prefix.'_big.jpg'  , $post['images_x'], $post['images_y'], 'resize');
-
-        }else{
-            copy($file, $prefix.'_big.jpg');
-        }
-
-        if($post['retina']){
-            if(!empty($post['thumbs_x']) or !empty($post['thumbs_y'])){
-                image_convert($file, $prefix.'_small@2x.jpg', $post['thumbs_x'] * 2, $post['thumbs_y'] * 2, 'thumb');
+        /*
+         * Process all image types
+         */
+        foreach($types as $type => $method){
+            if(!empty($post[$type.'_x']) or !empty($post[$type.'_y'])){
+                image_convert($file, $prefix.'_'.$type.'.jpg', $post[$type.'_x'], $post[$type.'_y'], $method);
 
             }else{
-                copy($prefix.'_small.jpg', $prefix.'_small@2x.jpg');
+                copy($file, $prefix.'_'.$type.'.jpg');
             }
 
-            if(!empty($post['medium_x']) or !empty($post['medium_y'])){
-                image_convert($file, $prefix.'_medium@2x.jpg', $post['medium_x'] * 2, $post['medium_y'] * 2, 'thumb');
+            if($post['retina']){
+                if(!empty($post[$type.'_x']) or !empty($post[$type.'_y'])){
+                    image_convert($file, $prefix.'_'.$type.'@2x.jpg', $post[$type.'_x'] * 2, $post[$type.'_y'] * 2, $method);
+
+                }else{
+                    copy($prefix.'_'.$type.'.jpg', $prefix.'_'.$type.'@2x.jpg');
+                }
 
             }else{
-                copy($prefix.'_medium.jpg', $prefix.'_medium@2x.jpg');
+                /*
+                 * If retina images are not supported, then just symlink them so that they at least are available
+                 */
+                symlink(basename($prefix.'_'.$type.'.jpg')  , $prefix.'_'.$type.'@2x.jpg');
             }
-
-            if(!empty($post['images_x']) or !empty($post['images_y'])){
-                image_convert($file, $prefix.'_big@2x.jpg'  , $post['images_x'] * 2, $post['images_y'] * 2, 'resize');
-
-            }else{
-                copy($prefix.'_big.jpg', $prefix.'_big@2x.jpg');
-            }
-
-        }else{
-            /*
-             * If retina images are not supported, then just symlink them so that they at least are available
-             */
-            symlink(basename($prefix.'_small.jpg'), $prefix.'_small@2x.jpg');
-            symlink(basename($prefix.'_small.jpg'), $prefix.'_medium@2x.jpg');
-            symlink(basename($prefix.'_big.jpg')  , $prefix.'_big@2x.jpg');
         }
 
         /*
@@ -890,14 +876,18 @@ function blogs_photo_description($user, $photo_id, $description){
 /*
  * Get a full URL of the photo
  */
-function blogs_photo_url($photo, $size = 'big'){
+function blogs_photo_url($photo, $size = 'large'){
     try{
         switch($size){
-            case 'big':
+            case 'large':
                 // FALLTHROUGH
             case 'medium':
                 // FALLTHROUGH
             case 'small':
+                // FALLTHROUGH
+            case 'wide':
+                // FALLTHROUGH
+            case 'thumb':
                 /*
                  * Valid
                  */
