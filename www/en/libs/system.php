@@ -406,14 +406,42 @@ function microtime_float(){
 /*
  * Log specified error somewhere
  */
-function log_error($message, $type = 'unknown', $color = null){
-    if(is_object($message) and is_a($message, '')){
-        foreach($message->getMessages() as $key => $value){
-            log_error($key.': '.$value, $code);
+function log_error($message, $type = 'unknown', $notify = true){
+    global $_CONFIG;
+
+    try{
+        if(!$_CONFIG['production']){
+            /*
+             * Non production systems should fail immediately so that the issue can be resolved right away
+             */
+            debug(true);
+            showdie($message);
         }
 
-    }else{
-        log_message($message, 'error/'.$type, $color);
+        if(is_object($message) and is_a($message, '')){
+            foreach($message->getMessages() as $key => $value){
+                log_error($key.': '.$value, $code);
+            }
+
+        }else{
+            /*
+             * Your system should be error free, log everything everywhere!
+             */
+            error_log($message);
+            log_message($message, 'error/'.$type, 'red');
+            log_database($message, 'error/'.$type, 'red');
+
+            if($notify){
+                notify('error', $message, 'developers');
+            }
+        }
+
+    }catch(Exception $e){
+        /*
+         * Oops, error logging failed miserably, just try to log to system log and then we're done
+         */
+        error_log('log_error(): Failed to log error! See following line for more information');
+        error_log($e->getMessage());
     }
 }
 

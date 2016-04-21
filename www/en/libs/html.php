@@ -1369,7 +1369,7 @@ function html_img($src, $alt, $width = null, $height = null, $more = ''){
             }
         }
 
-        if(($width === null) and ($height === null)){
+        if(($width === null) or ($height === null)){
             /*
              * Try to get width / height from image.
              */
@@ -1407,23 +1407,28 @@ function html_img($src, $alt, $width = null, $height = null, $more = ''){
                     $status = null;
 
                 }catch(Exception $e){
-                    notify('imgnotexist', tr('html_img(): The image with src ":src" does not exist', array(':src' => $src)), 'developers');
+                    notify('imgnotexist', tr('html_img(): The image with src ":src" does not exist or is not an image', array(':src' => $src)), 'developers');
 
                     $width  = 0;
                     $height = 0;
                     $status = $e->getCode();
                 }
 
-                sql_query('INSERT INTO `html_img` (`status`, `url`, `width`, `height`)
-                           VALUES                 (:status , :url , :width , :height )
+                if(!$height or !$height){
+                    log_error(tr('html_img(): image ":src" has invalid dimensions with width ":width" and height ":height"', array(':src' => $src, ':width' => $width, ':height' => $height)), 'invalid');
 
-                           ON DUPLICATE KEY UPDATE `status`    = NULL,
-                                                   `createdon` = NOW()',
+                }else{
+                    sql_query('INSERT INTO `html_img` (`status`, `url`, `width`, `height`)
+                               VALUES                 (:status , :url , :width , :height )
 
-                           array(':url'    => $src,
-                                 ':width'  => $width,
-                                 ':height' => $height,
-                                 ':status' => $status));
+                               ON DUPLICATE KEY UPDATE `status`    = NULL,
+                                                       `createdon` = NOW()',
+
+                               array(':url'    => $src,
+                                     ':width'  => $width,
+                                     ':height' => $height,
+                                     ':status' => $status));
+                }
             }
         }
 
