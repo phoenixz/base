@@ -1064,6 +1064,8 @@ function str_trim_array($source, $recurse = true){
     }
 }
 
+
+
 /*
  *
  * Taken from https://github.com/paulgb/simplediff/blob/5bfe1d2a8f967c7901ace50f04ac2d9308ed3169/simplediff.php
@@ -1094,6 +1096,20 @@ function str_diff(){
         throw new bException('str_diff(): Failed', $e);
     }
 }
+
+
+
+/*
+ *
+ */
+function str_boolean($value){
+    if($value){
+        return 'true';
+    }
+
+    return 'false';
+}
+
 
 
 /* From http://stackoverflow.com/questions/11151250/how-to-compare-two-very-large-strings, implement?

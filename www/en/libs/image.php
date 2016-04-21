@@ -767,14 +767,15 @@ function image_picker($params){
         html_load_css('image-picker');
 
         array_params($params);
-        array_default($params, 'resource', null);
-        array_default($params, 'name'    , 'image-picker');
-        array_default($params, 'id'      , 'image-picker');
-        array_default($params, 'path'    , null);
-        array_default($params, 'class'   , 'image-picker show-html');
-        array_default($params, 'masonry' , true);
-        array_default($params, 'loaded'  , true);
-        array_default($params, 'none'    , false);
+        array_default($params, 'resource'  , null);
+        array_default($params, 'name'      , 'image-picker');
+        array_default($params, 'id'        , 'image-picker');
+        array_default($params, 'path'      , null);
+        array_default($params, 'class'     , 'image-picker show-html');
+        array_default($params, 'masonry'   , true);
+        array_default($params, 'loaded'    , true);
+        array_default($params, 'none'      , false);
+        array_default($params, 'show_label', false);
 
         if($params['masonry']){
             html_load_js('masonry.pkgd');
@@ -790,19 +791,17 @@ function image_picker($params){
         }
 
         /*
-         * Remove ., .., and hidden files
-         */
-        foreach($params['resource'] as $key => &$image){
-            if($image[0] == '.'){
-                unset($params['resource'][$key]);
-            }
-        }
-
-        /*
          * Convert image file names into URL's
+         * Remove ., .., and hidden files
          */
         if(!empty($params['url'])){
             foreach($params['resource'] as $key => &$image){
+                if(!$image) continue;
+
+                if($image[0] == '.'){
+                    unset($params['resource'][$key]);
+                }
+
                 $image = str_replace(':image', $image, $params['url']);
             }
         }
@@ -812,11 +811,16 @@ function image_picker($params){
         /*
          * Add required data info for html_select();
          */
-        $params['data_resource'] = $params['resource'];
-        $params['data_key']      = 'img-src';
+        if(empty($params['data_resources'])){
+            $params['data_resources'] = array();
+        }
+
+        $params['data_resources']['img-src'] = $params['resource'];
 
         $retval = html_select($params).
-                  html_script('$("#'.$params['id'].'").imagepicker();');
+                  html_script('$("#'.$params['id'].'").imagepicker(
+                    { show_label : '.str_boolean($params['show_label']).'}
+                  );');
 
         if($params['masonry']){
             if($params['loaded']){

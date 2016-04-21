@@ -731,26 +731,22 @@ function blogs_photos_upload($files, $post, $priority = null){
         $file   = file_get_local($file['tmp_name'][0]);
         $photo  = $post['blog_name'].'/'.file_assign_target_clean(ROOT.'data/content/photos/'.$post['blog_name'].'/', '_small.jpg', false, 4);
         $prefix = ROOT.'data/content/photos/'.$photo;
-        $types  = array('large'  => 'resize',
-                        'medium' => 'resize',
-                        'small'  => 'thumb',
-                        'wide'   => 'resize',
-                        'thumb'  => 'thumb');
+        $types  = $_CONFIG['blogs']['images'];
 
         /*
          * Process all image types
          */
-        foreach($types as $type => $method){
-            if(!empty($post[$type.'_x']) or !empty($post[$type.'_y'])){
-                image_convert($file, $prefix.'_'.$type.'.jpg', $post[$type.'_x'], $post[$type.'_y'], $method);
+        foreach($types as $type => $params){
+            if($params['method'] and (!empty($post[$type.'_x']) or !empty($post[$type.'_y']))){
+                image_convert($file, $prefix.'_'.$type.'.jpg', $post[$type.'_x'], $post[$type.'_y'], $params['method'], $params);
 
             }else{
                 copy($file, $prefix.'_'.$type.'.jpg');
             }
 
             if($post['retina']){
-                if(!empty($post[$type.'_x']) or !empty($post[$type.'_y'])){
-                    image_convert($file, $prefix.'_'.$type.'@2x.jpg', $post[$type.'_x'] * 2, $post[$type.'_y'] * 2, $method);
+                if($params['method'] and (!empty($post[$type.'_x']) or !empty($post[$type.'_y']))){
+                    image_convert($file, $prefix.'_'.$type.'@2x.jpg', $post[$type.'_x'] * 2, $post[$type.'_y'] * 2, $params['method'], $params);
 
                 }else{
                     copy($prefix.'_'.$type.'.jpg', $prefix.'_'.$type.'@2x.jpg');

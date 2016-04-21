@@ -922,17 +922,32 @@ function html_select($params, $selected = null, $name = '', $none = '', $class =
  * Return the body of an HTML <select> list
  */
 function html_select_body($params, $selected = null, $none = '', $class = '', $auto_select = true) {
+    global $_CONFIG;
+
     try{
         array_params ($params, 'resource');
-        array_default($params, 'class'        , $class);
-        array_default($params, 'none'         , tr('None selected'));
-        array_default($params, 'empty'        , tr('None available'));
-        array_default($params, 'selected'     , $selected);
-        array_default($params, 'auto_select'  , $auto_select);
-        array_default($params, 'data_resource', null);
-        array_default($params, 'data_key'     , null);
+        array_default($params, 'class'         , $class);
+        array_default($params, 'none'          , tr('None selected'));
+        array_default($params, 'empty'         , tr('None available'));
+        array_default($params, 'selected'      , $selected);
+        array_default($params, 'auto_select'   , $auto_select);
+        array_default($params, 'data_resources', null);
 
-        if($params['none']){
+        if(!$_CONFIG['production'] and (!empty($params['data_key']) or !empty($params['data_resource']))){
+            if(!empty($params['data_key'])){
+                throw new bException(tr('html_select_body(: data_key was specified, which is obsolete. Specify the data_key in data_resources[data_key => array(), data_key => array()]'), 'obsolete');
+            }
+
+            if(!empty($params['data_resource'])){
+                throw new bException(tr('html_select_body(: data_resource was specified, which is obsolete. Use data_resources instead'), 'obsolete');
+            }
+        }
+
+        if($params['data_resources'] and !is_array($params['data_resources'])){
+            throw new bException(tr('html_select_body(): Invalid data_resource specified, should be an array, but received a ":gettype"', array(':gettype' => gettype($params['data_resources']))), 'invalid');
+        }
+
+        if($params['none'] !== null){
             $retval = '<option'.($params['class'] ? ' class="'.$params['class'].'"' : '').''.(($params['selected'] === null) ? ' selected' : '').' value="">'.$params['none'].'</option>';
 
         }else{
@@ -953,13 +968,15 @@ function html_select_body($params, $selected = null, $none = '', $class = '', $a
                  * Process array resource
                  */
                 foreach($params['resource'] as $key => $value){
-                    $notempty = true;
+                    $notempty    = true;
+                    $option_data = '';
 
-                    if($params['data_key'] and (!empty($params['data_resource'][$key]))){
-                        $option_data = ' data-'.$params['data_key'].'="'.$params['data_resource'][$key].'"';
-
-                    }else{
-                        $option_data = '';
+                    if($params['data_resources']){
+                        foreach($params['data_resources'] as $data_key => $resource){
+                            if(!empty($resource[$key])){
+                                $option_data .= ' data-'.$data_key.'="'.$resource[$key].'"';
+                            }
+                        }
                     }
 
                     $retval  .= '<option'.($params['class'] ? ' class="'.$params['class'].'"' : '').''.((($params['selected'] !== null) and ($key === $params['selected'])) ? ' selected' : '').' value="'.$key.'"'.$option_data.'>'.$value.'</option>';
@@ -982,7 +999,8 @@ function html_select_body($params, $selected = null, $none = '', $class = '', $a
                  */
                 try{
                     while($row = sql_fetch($params['resource'])){
-                        $notempty = true;
+                        $notempty    = true;
+                        $option_data = '';
 
                         /*
                          * To avoid select problems with "none" entries, empty id column values are not allowed
@@ -994,11 +1012,12 @@ function html_select_body($params, $selected = null, $none = '', $class = '', $a
                         /*
                          * Add data- in this option?
                          */
-                        if($params['data_key'] and (!empty($params['data_resource'][$key]))){
-                            $option_data = ' data-'.$params['data_key'].'="'.$params['data_resource'][$key].'"';
-
-                        }else{
-                            $option_data = '';
+                        if($params['data_resources']){
+                            foreach($params['data_resources'] as $data_key => $resource){
+                                if(!empty($resource[$key])){
+                                    $option_data = ' data-'.$data_key.'="'.$resource[$key].'"';
+                                }
+                            }
                         }
 
                         $retval  .= '<option'.($params['class'] ? ' class="'.$params['class'].'"' : '').''.(($row['id'] === $params['selected']) ? ' selected' : '').' value="'.$row['id'].'"'.$option_data.'>'.$row['name'].'</option>';
