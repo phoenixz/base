@@ -261,6 +261,33 @@ function this_script_already_runs($action = 'exception', $force = false){
 
 
 /*
+ * Find the specified method, basically any argument without - or --
+ *
+ * The result will be removed from $argv, but will remain stored in a static
+ * variable which will return the same result every subsequent function call
+ */
+function method($default = null){
+    global $argv;
+    static $method;
+
+    if($method){
+        return $method;
+    }
+
+    foreach($argv as $key => $value){
+        if(substr($value, 0, 1) !== '-'){
+            unset($argv[$key]);
+            $method = $value;
+            return $method;
+        }
+    }
+
+    return $default;
+}
+
+
+
+/*
  * Safe and simple way to get arguments
  *
  * This function will REMOVE and then return the argument when its found
