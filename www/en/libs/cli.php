@@ -369,6 +369,18 @@ function arguments($arguments, $force = false){
 
 
 /*
+ * Ensures that no other command line arguments are left.
+ * If arguments were still found, an appropriate error will be thrown
+ */
+function arguments_none_left(){
+    if($argv){
+        throw new bException(tr('Unknown arguments ":arguments" encountered', array(':arguments', str_force($argv, ', '))), 'invalid_arguments');
+    }
+}
+
+
+
+/*
  * Mark the specified keywords in the specified string with the specified color
  */
 function cli_highlight($string, $keywords, $color){
