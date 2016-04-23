@@ -266,7 +266,7 @@ function this_script_already_runs($action = 'exception', $force = false){
  * This function will REMOVE and then return the argument when its found
  * If the argument is not found, $default will be returned
  */
-function argument($value, $next = null, $default = null){
+function argument($value = null, $next = null, $default = null){
     global $argv;
 
     try{
@@ -350,8 +350,16 @@ function argument($value, $next = null, $default = null){
 /*
  *
  */
-function arguments($arguments, $force = false){
+function arguments($arguments = null, $force = false){
+    global $argv;
+
     try{
+        if(!$arguments){
+            $retval = $argv;
+            $argv   = array();
+            return $retval;
+        }
+
         $retval = array();
 
         foreach(array_force($arguments) as $argument){
