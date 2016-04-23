@@ -406,7 +406,7 @@ function microtime_float(){
 /*
  * Log specified error somewhere
  */
-function log_error($message, $type = 'unknown', $notify = true){
+function log_error($message, $type = 'warning', $notify = true){
     global $_CONFIG;
 
     try{
@@ -414,8 +414,16 @@ function log_error($message, $type = 'unknown', $notify = true){
             /*
              * Non production systems should fail immediately so that the issue can be resolved right away
              */
-            debug(true);
-            showdie($message);
+            switch($type){
+                case 'fatal':
+                    // FALLTHROUGH
+                case 'error':
+                    log_screen($message, $type, 'red');
+                    die(1);
+
+                default:
+                    log_screen($message, $type, 'yellow');
+            }
         }
 
         if(is_object($message) and is_a($message, '')){
