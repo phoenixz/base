@@ -274,14 +274,21 @@ function argument($value, $next = null, $default = null){
             $count = count($argv) - 1;
 
             if($next === 'all'){
-                return array_from($argv, $value);
+                $retval = array_from($argv, $value);
+                $argv   = array_until($argv, $value);
+
+                return $retval;
             }
 
             while($argument = isset_get($argv[$value++], $next)){
                 switch($argument){
-                    case 'force':
+                    case '-f':
                         // FALLTHROUGH
-                    case 'test':
+                    case '-t':
+                        // FALLTHROUGH
+                    case '--force':
+                        // FALLTHROUGH
+                    case '--test':
                         /*
                          * Ignore test and force arguments
                          */
@@ -292,6 +299,7 @@ function argument($value, $next = null, $default = null){
                         break;
 
                     default:
+                        unset($argv[$value - 1]);
                         return $argument;
                 }
             }
@@ -373,8 +381,10 @@ function arguments($arguments, $force = false){
  * If arguments were still found, an appropriate error will be thrown
  */
 function arguments_none_left(){
+    global $argv;
+
     if($argv){
-        throw new bException(tr('Unknown arguments ":arguments" encountered', array(':arguments', str_force($argv, ', '))), 'invalid_arguments');
+        throw new bException(tr('Unknown arguments ":arguments" encountered', array(':arguments' => str_force($argv, ', '))), 'invalid_arguments');
     }
 }
 
