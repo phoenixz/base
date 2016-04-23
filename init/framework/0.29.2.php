@@ -20,17 +20,19 @@ sql_column_exists('blogs', 'small_y' , '!ALTER TABLE `blogs` ADD COLUMN `small_y
 /*
  * Rename all images from big > large!
  */
-$files = safe_exec('find '.ROOT.'data/content/photos -name "*_big.jpg"');
+if(file_exists(ROOT.'data/content/photos')){
+    $files = safe_exec('find '.ROOT.'data/content/photos -name "*_big.jpg"');
 
-foreach($files as $file){
-    rename($file, str_replace('_big.', '_large.', $file));
-}
+    foreach($files as $file){
+        rename($file, str_replace('_big.', '_large.', $file));
+    }
 
-$files = safe_exec('find '.ROOT.'data/content/photos -name "*_big@2x.jpg"');
+    $files = safe_exec('find '.ROOT.'data/content/photos -name "*_big@2x.jpg"');
 
-foreach($files as $file){
-    unlink($file);
-    symlink(str_replace('_big@2x', '_large', $file), str_replace('_big@2x.', '_large@2x.', $file));
+    foreach($files as $file){
+        unlink($file);
+        symlink(str_replace('_big@2x', '_large', $file), str_replace('_big@2x.', '_large@2x.', $file));
 
+    }
 }
 ?>
