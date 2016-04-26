@@ -1152,6 +1152,7 @@ function blogs_update_urls($blogs = null, $category = null){
              */
             $query   = 'SELECT `id`,
                                `blogs_id`,
+                               `parents_id`,
                                `url`,
                                `name`,
                                `seoname`,
