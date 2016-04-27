@@ -340,8 +340,14 @@ function str_starts($string, $char){
  * Ensure that specified string starts NOT with specified character
  */
 function str_starts_not($string, $char){
-    if(mb_substr($string, 0, 1) == $char){
-        return mb_substr($string, 1);
+    $pos = 0;
+
+    while(mb_substr($string, $pos, 1) == $char){
+        $pos++;
+    }
+
+    if($pos){
+        return mb_substr($string, $pos);
     }
 
     return $string;
