@@ -182,6 +182,9 @@ function image_convert($source, $destination, $x, $y, $method, $params = array()
                     //FALLTHROUGH
                 case 'log':
                     //do nothing (custom imagemagick parameters)
+                    //FALLTHROUGH
+                case 'method':
+                    //do nothing (function method)
                     break;
 
                 default:
