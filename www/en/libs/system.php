@@ -789,8 +789,28 @@ function load_libs($libraries){
  */
 function load_config($files){
     global $_CONFIG;
+    static $paths;
 
     try{
+        if(!$paths){
+
+            if(SUBENVIRONMENT){
+                /*
+                 * Also load sub environment files
+                 */
+                $paths = array(ROOT.'config/base/',
+                               ROOT.'config/production_',
+                               ROOT.'config/production_'.SUBENVIRONMENT.'_',
+                               ROOT.'config/'.ENVIRONMENT.'_',
+                               ROOT.'config/'.ENVIRONMENT.'_'.SUBENVIRONMENT.'_');
+
+            }else{
+                $paths = array(ROOT.'config/base/',
+                               ROOT.'config/production_',
+                               ROOT.'config/'.ENVIRONMENT.'_');
+            }
+        }
+
         $files = array_force($files);
 
         foreach($files as $file){
@@ -801,7 +821,9 @@ function load_config($files){
              * production configuration file, if available, and then, if
              * available, the environment file
              */
-            foreach(array(ROOT.'config/base/'.$file.'.php', ROOT.'config/production_'.$file.'.php', (SUBENVIRONMENT ? ROOT.'config/production_'.SUBENVIRONMENT.'_'.$file.'.php' : null), ROOT.'config/'.ENVIRONMENT.'_'.$file.'.php', (SUBENVIRONMENT ? ROOT.'config/'.ENVIRONMENT.'_'.SUBENVIRONMENT.'_'.$file.'.php' : null)) as $path){
+            foreach($paths as $path){
+                $path .= $file.'.php';
+
                 if(file_exists($path)){
                     include($path);
                     $loaded = true;
