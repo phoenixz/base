@@ -886,7 +886,7 @@ function sql_fetch_column($r, $column){
 /*
  * Merge database entry with new posted entry, overwriting the old DB values, while skipping the values specified in $filter
  */
-function sql_merge_entry($db, $post, $skip = null){
+function sql_merge($db, $post, $skip = null){
     try{
         if($skip === null){
             $skip = 'status';
@@ -896,7 +896,7 @@ function sql_merge_entry($db, $post, $skip = null){
         return array_merge($db, $post);
 
     }catch(Exception $e){
-        throw new bException('sql_merge_entry(): Failed', $e);
+        throw new bException('sql_merge(): Failed', $e);
     }
 }
 
@@ -967,5 +967,9 @@ function sql_affected_rows($r){
  */
 function sql_num_rows(&$r){
     return $r->rowCount();
+}
+
+function sql_merge_entry($db, $post, $skip = null){
+    return sql_merge($db, $post, $skip);
 }
 ?>

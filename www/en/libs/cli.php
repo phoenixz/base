@@ -307,28 +307,9 @@ function argument($value = null, $next = null, $default = null){
                 return $retval;
             }
 
-            while($argument = isset_get($argv[$value++], $next)){
-                switch($argument){
-                    case '-f':
-                        // FALLTHROUGH
-                    case '-t':
-                        // FALLTHROUGH
-                    case '--force':
-                        // FALLTHROUGH
-                    case '--test':
-                        /*
-                         * Ignore test and force arguments
-                         */
-                        if($value > $count){
-                            return $default;
-                        }
-
-                        break;
-
-                    default:
-                        unset($argv[$value - 1]);
-                        return $argument;
-                }
+            if($argument = isset_get($argv[$value++], $next)){
+                unset($argv[$value - 1]);
+                return $argument;
             }
 
             /*
@@ -338,8 +319,7 @@ function argument($value = null, $next = null, $default = null){
         }
 
         if($value === null){
-            $retval = $argv;
-            $argv   = array();
+            $retval = str_replace('-', '', array_shift($argv));
             return $retval;
         }
 
@@ -361,7 +341,13 @@ function argument($value = null, $next = null, $default = null){
             /*
              * Return next argument, if available
              */
-            return array_next_value($argv, $value, true);
+            $retval = array_next_value($argv, $value, true);
+
+            if(substr($retval, 0, 1) == '-'){
+                throw new bException(tr('argument(): Argument ":argument1" has no assigned value, it is immediately followed by argument ":argument2"', array(':argument1' => $value, ':argument2' => $retval)), 'invalid');
+            }
+
+            return $retval;
         }
 
         unset($argv[$key]);
@@ -377,7 +363,7 @@ function argument($value = null, $next = null, $default = null){
 /*
  *
  */
-function arguments($arguments = null, $force = false){
+function arguments($arguments = null){
     global $argv;
 
     try{
@@ -394,11 +380,11 @@ function arguments($arguments = null, $force = false){
                 /*
                  * If the key would be numeric, argument() would get into an endless loop
                  */
-                throw new bException(tr('arguments(): The specified argument "%argument%" is numeric, and as such, invalid. arguments() can only check for key-value pairs, where the keys can not be numeric', array('%argument%' => $argument)), 'invalid');
+                throw new bException(tr('arguments(): The specified argument ":argument" is numeric, and as such, invalid. arguments() can only check for key-value pairs, where the keys can not be numeric', array(':argument' => $argument)), 'invalid');
             }
 
-            if(($value = argument($argument, true)) or $force){
-                $retval[$argument] = $value;
+            if($value = argument($argument, true)){
+                $retval[str_replace('-', '', $argument)] = $value;
             }
         }
 
@@ -419,7 +405,11 @@ function arguments_none_left(){
     global $argv;
 
     if($argv){
-        throw new bException(tr('Unknown arguments ":arguments" encountered', array(':arguments' => str_force($argv, ', '))), 'invalid_arguments');
+        if(count($argv) > 1){
+            throw new bException(tr('Unknown arguments ":arguments" encountered', array(':arguments' => str_force($argv, ', '))), 'invalid_arguments');
+        }
+
+        throw new bException(tr('Unknown argument ":argument" encountered', array(':argument' => str_force($argv, ', '))), 'invalid_arguments');
     }
 }
 
