@@ -119,6 +119,10 @@ function array_default(&$source, $key, $default){
  */
 function array_key_check($source, $keys){
     try{
+        if(!is_array($source)){
+            throw new bException(tr('array_key_check(): Specified source should be an array, but is a ":type"', array(':type' => gettype($source))), 'invalid');
+        }
+
         foreach(array_force($keys) as $key){
             if(!array_key_exists($key, $source)){
                 throw new bException(tr('array_key_check(): Key ":key" was not specified in array', array(':key' => str_log($key))), 'not_specified');
@@ -169,7 +173,7 @@ function array_ensure(&$array, $keys, $value = null){
         }
 
         foreach($keys as $key){
-            if(!array_key_check($key, $array)){
+            if(!array_key_exists($key, $array)){
                 $array[$key] = $value;
             }
         }
