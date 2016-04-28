@@ -1336,6 +1336,21 @@ function html_img($src, $alt, $width = null, $height = null, $more = ''){
     static $images;
 
     try{
+        if(!$src){
+            /*
+             * No image at all?
+             */
+            if($_CONFIG['production']){
+                /*
+                 * On production, just notify and ignore
+                 */
+                notify('no-image', tr('No src for image with alt text ":alt"', array(':alt' => $alt)), 'development');
+                return '';
+            }
+
+            throw new bException(tr('html_img(): No src for image with alt text ":alt"', array(':alt' => $alt)), 'no-image');
+        }
+
 // :DELETE: All projects should be updated to conform with the new html_img() function and then this check should be dumped with the garbage
         if(!$width and $height and !is_numeric($height)){
             if(!$_CONFIG['production'] and $_CONFIG['system']['obsolete_exception']){
