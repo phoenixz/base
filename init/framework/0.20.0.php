@@ -16,7 +16,9 @@ sql_query('CREATE TABLE `timers` (`id`            INT(11)       NOT NULL AUTO_IN
                                   INDEX (`createdby`),
                                   INDEX (`start`),
                                   INDEX (`time`),
-                                  INDEX (`process`)
+                                  INDEX (`process`),
+
+                                  CONSTRAINT `fk_timers_createdby` FOREIGN KEY (`createdby`) REFERENCES `users` (`id`) ON DELETE CASCADE
 
                                  ) ENGINE=InnoDB AUTO_INCREMENT='.$_CONFIG['db']['core']['autoincrement'].' DEFAULT CHARSET="'.$_CONFIG['db']['core']['charset'].'" COLLATE="'.$_CONFIG['db']['core']['collate'].'";');
 ?>
