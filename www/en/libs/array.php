@@ -38,7 +38,7 @@ function array_next_key(&$array, $currentkey, $delete = false){
             /*
              * The currentvalue was found, but it was at the end of the array
              */
-            throw new bException('array_next_key(): Found currentkey "'.str_log($currentvalue).'" but it was the last item in the array, there is no next', '');
+            throw new bException(tr('array_next_key(): Found currentkey ":value" but it was the last item in the array, there is no next', array(':value' => str_log($currentvalue))), '');
         }
 
     }catch(Exception $e){
@@ -77,7 +77,7 @@ function array_next_value(&$array, $currentvalue, $delete = false, $restart = fa
             /*
              * The currentvalue was found, but it was at the end of the array
              */
-            throw new bException('array_next_value(): Found currentvalue "'.str_log($currentvalue).'" but it was the last item in the array, there is no next', 'invalid');
+            throw new bException(tr('array_next_value(): Found currentvalue ":value" but it was the last item in the array, there is no next', array(':value' => str_log($currentvalue))), 'invalid');
         }
 
         reset($array);
@@ -105,7 +105,7 @@ function array_default(&$source, $key, $default){
 
     }catch(Exception $e){
         if(!is_array($source)){
-            throw new bException('array_default(): Specified source is not an array', 'invalid');
+            throw new bException(tr('array_default(): Specified source is not an array'), 'invalid');
         }
 
         throw new bException('array_default(): Failed', $e);
@@ -120,8 +120,8 @@ function array_default(&$source, $key, $default){
 function array_key_check($source, $keys){
     try{
         foreach(array_force($keys) as $key){
-            if(!isset($source[$key]) or ($source[$key] === null)){
-                throw new bException('array_key_check(): Key "'.str_log($key).'" was not specified in array', 'not_specified');
+            if(!array_key_exists($key, $source)){
+                throw new bException(tr('array_key_check(): Key ":key" was not specified in array', array(':key' => str_log($key))), 'not_specified');
             }
         }
 
@@ -162,14 +162,14 @@ function array_ensure(&$array, $keys, $value = null){
 
         if(!is_array($keys)){
             if(!is_string($keys)){
-                throw new bException('array_ensure(): Invalid $keys specified. Should be either a numeric array or a CSV string');
+                throw new bException(tr('array_ensure(): Invalid $keys specified. Should be either a numeric array or a CSV string'));
             }
 
             $keys = explode(',', $keys);
         }
 
         foreach($keys as $key){
-            if(!isset($array[$key])){
+            if(!array_key_check($key, $array)){
                 $array[$key] = $value;
             }
         }
@@ -189,7 +189,7 @@ function array_ensure(&$array, $keys, $value = null){
 function array_from_object($object, $recurse = true){
     try{
         if(!is_object($object)){
-            throw new bException('array_from_object(): Specified variable is not an object');
+            throw new bException(tr('array_from_object(): Specified variable is not an object'));
         }
 
         $retval = array();
@@ -241,7 +241,7 @@ function array_get_random($array){
 function array_implode_with_keys($source, $row_separator, $key_separator = ':', $auto_quote = false, $recurse = true){
     try{
         if(!is_array($source)){
-            throw new bException('array_implode_with_keys(): Specified source is not an array but an "'.gettype($source).'"');
+            throw new bException(tr('array_implode_with_keys(): Specified source is not an array but an ":type"', array(':type' => gettype($source))));
         }
 
         $retval = array();
@@ -252,7 +252,7 @@ function array_implode_with_keys($source, $row_separator, $key_separator = ':', 
                  * Recurse?
                  */
                 if(!$recurse){
-                    throw new bException('array_implode_with_keys(): Specified source contains sub arrays and recurse is not enabled');
+                    throw new bException(tr('array_implode_with_keys(): Specified source contains sub arrays and recurse is not enabled'));
                 }
 
                 $retval[] .= $key.$key_separator.$row_separator.array_implode_with_keys($value, $row_separator, $key_separator, $auto_quote, $recurse);
@@ -294,11 +294,11 @@ function array_merge_complete(){
             $count++;
 
             if(!is_array($argv)){
-                throw new bException('array_merge_complete(): Specified argument #'.$count.' is not an array');
+                throw new bException(tr('array_merge_complete(): Specified argument ":count" is not an array', array(':count' => str_log($count))));
             }
 
             foreach($argv as $key => $value){
-                if(is_array($value) and isset($retval[$key]) and is_array($retval[$key])){
+                if(is_array($value) and array_key_exists($key, $retval) and is_array($retval[$key])){
                     $retval[$key] = array_merge_complete($retval[$key], $value);
 
                 }else{
@@ -328,7 +328,7 @@ function array_force($source, $separator = ','){
         if(!is_array($source)){
             if(!is_string($source)){
                 if(!is_numeric($source)){
-                    throw new bException('array_force(): Specified source is neither array or string or numeric');
+                    throw new bException(tr('array_force(): Specified source is neither array or string or numeric'));
                 }
 
                 return array($source);
@@ -385,11 +385,11 @@ function array_params(&$params, $string_key = false, $numeric_key = false){
 function array_limit($source, $count, $return_source = true){
     try{
         if(!is_array($source)){
-            throw new bException('array_limit(): Specified source is not an array');
+            throw new bException(tr('array_limit(): Specified source is not an array'));
         }
 
         if(!is_numeric($count) or ($count < 0)){
-            throw new bException('array_limit(): Specified count is not valid');
+            throw new bException(tr('array_limit(): Specified count is not valid'));
         }
 
         $retval = array();
@@ -417,7 +417,7 @@ function array_limit($source, $count, $return_source = true){
 function array_filter_values($source, $values){
     try{
         if(!is_array($source)){
-            throw new bException('array_filter_values(): Specified source is not an array', 'invalid');
+            throw new bException(tr('array_filter_values(): Specified source is not an array'), 'invalid');
         }
 
         foreach(array_force($values) as $value){
@@ -441,7 +441,7 @@ function array_filter_values($source, $values){
 function array_sequential_values($count, $base_valuename){
     try{
         if(!is_numeric($count) or ($count < 1)){
-            throw new bException('array_sequential_values(): Invalid count specified. Make sure count is numeric, and greater than 0', 'invalid');
+            throw new bException(tr('array_sequential_values(): Invalid count specified. Make sure count is numeric, and greater than 0'), 'invalid');
         }
 
         for($i = 0; $i < $count; $i++){
@@ -463,7 +463,7 @@ function array_sequential_values($count, $base_valuename){
 function array_sequential_keys($source, $base_keyname){
     try{
         if(!is_array($source)){
-            throw new bException('array_sequential_keys(): Specified source is an "'.gettype($source).'", but it should be an array', 'invalid');
+            throw new bException(tr('array_sequential_keys(): Specified source is an ":type", but it should be an array', array(':type' => gettype($source))), 'invalid');
         }
 
         $i      = 0;
@@ -491,7 +491,7 @@ function array_keep($source, $keys){
         $retval = array();
 
         foreach(array_force($keys) as $key){
-            if(isset($source[$key])){
+            if(array_key_exists($key, $source)){
                 $retval[$key] = $source[$key];
             }
         }
@@ -529,7 +529,7 @@ function array_remove($source, $keys){
 function array_from(&$source, $from_key, $delete = false, $skip = false){
     try{
         if(!is_array($source)){
-            throw new bException('array_from(): Specified source is an "'.gettype($source).'", but it should be an array', 'invalid');
+            throw new bException(tr('array_from(): Specified source is an ":type", but it should be an array', array(':type' => gettype($source))), 'invalid');
         }
 
         $retval = array();
@@ -578,7 +578,7 @@ function array_from(&$source, $from_key, $delete = false, $skip = false){
 function array_until($source, $until_key, $delete = false){
     try{
         if(!is_array($source)){
-            throw new bException('array_until(): Specified source is an "'.gettype($source).'", but it should be an array', 'invalid');
+            throw new bException(tr('array_until(): Specified source is an ":type", but it should be an array', array(':type' => gettype($source))), 'invalid');
         }
 
         $retval = array();
@@ -610,11 +610,11 @@ function array_until($source, $until_key, $delete = false){
 function array_merge_keys_values($keys, $values){
     try{
         if(!is_array($keys)){
-            throw new bException('array_merge_keys_values(): Specified keys variable is an "'.gettype($keys).'", but it should be an array', 'invalid');
+            throw new bException(tr('array_merge_keys_values(): Specified keys variable is an ":type", but it should be an array', array(':type' => gettype($keys))), 'invalid');
         }
 
         if(!is_array($values)){
-            throw new bException('array_merge_keys_values(): Specified values variable is an "'.gettype($values).'", but it should be an array', 'invalid');
+            throw new bException(tr('array_merge_keys_values(): Specified values variable is an ":type", but it should be an array', array(':type' => gettype($values))), 'invalid');
         }
 
         $retval = array();
@@ -644,7 +644,7 @@ function array_merge_keys_values($keys, $values){
 function array_prefix($source, $prefix, $auto = false){
     try{
         if(!is_array($source)){
-            throw new bException('array_prefix_keys(): Specified source is an "'.gettype($source).'", but it should be an array', 'invalid');
+            throw new bException(tr('array_prefix_keys(): Specified source is an ":type", but it should be an array', array(':type' => gettype($source))), 'invalid');
         }
 
         $count  = 0;
@@ -729,7 +729,7 @@ function array_get_column($source, $column){
         $retval = array();
 
         foreach($source as $id => $value){
-            if(isset($value[$column])){
+            if(array_key_exists($column, $value)){
                 $retval[] = $value[$column];
             }
         }
@@ -749,7 +749,7 @@ function array_get_column($source, $column){
 function array_extract_first($source, $keys){
     try{
         if(!is_array($source)){
-            throw new bException('array_extract(): Specified source is not an array');
+            throw new bException(tr('array_extract(): Specified source is not an array'));
         }
 
         foreach(array_force($keys) as $key){
@@ -770,7 +770,7 @@ function array_extract_first($source, $keys){
  */
 function array_max($source, $max = 20){
     if(count($source) > $max){
-        throw new bException('array_max(): Specified array has too many elements', 'arraytoolarge');
+        throw new bException(tr('array_max(): Specified array has too many elements'), 'arraytoolarge');
     }
 
     return $source;
@@ -784,14 +784,14 @@ function array_max($source, $max = 20){
 function array_value_to_keys($source){
     try{
         if(!is_array($source)){
-            throw new bException('array_value_to_keys(): Specified source is not an array');
+            throw new bException(tr('array_value_to_keys(): Specified source is not an array'));
         }
 
         $retval = array();
 
         foreach($source as $value){
             if(!is_scalar($value)){
-                throw new bException('array_value_to_keys(): Specified source array contains non scalar values, cannot use non scalar values for the keys');
+                throw new bException(tr('array_value_to_keys(): Specified source array contains non scalar values, cannot use non scalar values for the keys'));
             }
 
             $retval[$value] = $value;
@@ -814,7 +814,7 @@ function array_filtered_merge(){
         $args = func_get_args();
 
         if(count($args) < 3){
-            throw new bException('array_filtered_merge(): Function requires at least 3 arguments: filter, source, merge, .... ', 'missing_argument');
+            throw new bException(tr('array_filtered_merge(): Function requires at least 3 arguments: filter, source, merge, ...'), 'missing_argument');
         }
 
         $filter = array_shift($args);

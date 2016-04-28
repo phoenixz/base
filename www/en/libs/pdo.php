@@ -696,8 +696,13 @@ function sql_filters($params, $columns, $table = ''){
         foreach($filters as $key => $value){
             $safe_key = str_replace('`.`', '_', $key);
 
-            $retval['filters'][]              = ($table ? '`'.$table.'`.' : '').'`'.$key.'` = :'.$safe_key;
-            $retval['execute'][':'.$safe_key] = $value;
+            if($value === null){
+                $retval['filters'][] = ($table ? '`'.$table.'`.' : '').'`'.$key.'` IS NULL';
+
+            }else{
+                $retval['filters'][]              = ($table ? '`'.$table.'`.' : '').'`'.$key.'` = :'.$safe_key;
+                $retval['execute'][':'.$safe_key] = $value;
+            }
         }
 
         return $retval;
