@@ -1378,10 +1378,6 @@ function html_img($src, $alt, $width = null, $height = null, $more = ''){
             if(!$alt){
                 notify('no_img_alt', tr('html_img(): No image alt text specified for src ":src"', array(':src' => $src)), 'developers');
             }
-
-            if(!$alt){
-                throw new bException(tr('html_img(): No image alt text specified for src ":src"', array(':src' => $src)), 'notspecified');
-            }
         }
 
         if(($width === null) or ($height === null)){
