@@ -317,6 +317,11 @@ function load_content($file, $replace = false, $language = null, $autocreate = n
         /*
          * From here, the file does not exist.
          */
+        if(!$_CONFIG['production']){
+            notify('content-file-missing', tr('Content file ":file" is missing', array(':file' => $realfile)), 'developers');
+            return '';
+        }
+
         if($autocreate === null){
             $autocreate = $_CONFIG['content']['autocreate'];
         }
