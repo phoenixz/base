@@ -364,7 +364,6 @@ function html_header($params = null, $meta = array()){
         array_default($params, 'html'          , '<html lang="'.LANGUAGE.'">');
         array_default($params, 'body'          , '<body>');
         array_default($params, 'title'         , isset_get($meta['title']));
-        array_default($params, 'meta'          , $meta);
         array_default($params, 'links'         , array());
         array_default($params, 'extra'         , '');
         array_default($params, 'favicon'       , true);
@@ -393,35 +392,35 @@ if(!empty($params['canonical'])){ $params['links']['canonical'] = $params['canon
             html_load_css($params['css']);
         }
 
-        if(empty($params['meta']['description'])){
+        if(empty($meta['description'])){
             throw new bException(tr('html_header(): No header meta description specified for script "%script%" (SEO!)', array('%script%' => SCRIPT)), '');
         }
 
-        if(empty($params['meta']['keywords'])){
+        if(empty($meta['keywords'])){
             throw new bException(tr('html_header(): No header meta keywords specified for script "%script%" (SEO!)', array('%script%' => SCRIPT)), '');
         }
 
-        if(!empty($params['meta']['noindex'])){
-            $params['meta']['robots'] = 'noindex';
-            unset($params['meta']['noindex']);
+        if(!empty($meta['noindex'])){
+            $meta['robots'] = 'noindex';
+            unset($meta['noindex']);
         }
 
         if(!empty($_CONFIG['meta'])){
             /*
              * Add default configured meta tags
              */
-            $params['meta'] = array_merge($_CONFIG['meta'], $params['meta']);
+            $meta = array_merge($_CONFIG['meta'], $meta);
         }
 
         /*
          * Add viewport meta tag for mobile devices
          */
         if(!empty($_SESSION['mobile'])){
-            if(empty($params['meta']['viewport'])){
-                $params['meta']['viewport'] = isset_get($_CONFIG['mobile']['viewport']);
+            if(empty($meta['viewport'])){
+                $meta['viewport'] = isset_get($_CONFIG['mobile']['viewport']);
             }
 
-            if(!$params['meta']['viewport']){
+            if(!$meta['viewport']){
                 throw new bException(tr('html_header(): Meta viewport tag is not specified'), 'notspecified');
             }
         }
@@ -429,25 +428,24 @@ if(!empty($params['canonical'])){ $params['links']['canonical'] = $params['canon
 
 //:DELETE: Above is already a meta-viewport
         //if(!empty($_CONFIG['bootstrap']['enabled'])){
-        //    array_ensure($params['meta'], 'viewport', $_CONFIG['bootstrap']['viewport']);
+        //    array_ensure($meta, 'viewport', $_CONFIG['bootstrap']['viewport']);
         //}
 
         /*
          * Add meta tag no-index for non production environments and admin pages
          */
         if(!$_CONFIG['production'] || $GLOBALS['page_is_admin']){
-           $params['meta']['robots'] = 'noindex';
+           $meta['robots'] = 'noindex';
         }
 
-        $params['meta']['title'] = html_title(isset_get($meta['title'], $params['title']));
-        unset($params['title']);
+        $title = html_title($meta['title']);
         unset($meta['title']);
 
         $retval = "<!DOCTYPE ".$params['doctype'].">\n".
                   $params['html']."\n".
                   "<head>\n".
                   "<meta http-equiv=\"Content-Type\" content=\"text/html;charset=".$_CONFIG['charset']."\">\n".
-                  "<title>".$params['meta']['title']."</title>\n";
+                  "<title>".$title."</title>\n";
 
         unset($meta['title']);
 
@@ -505,7 +503,7 @@ if(!empty($params['canonical'])){ $params['links']['canonical'] = $params['canon
          * Only add keywords with contents, all that have none are considerred
          * as false, and do-not-add
          */
-        foreach($params['meta'] as $keyword => $content){
+        foreach($meta as $keyword => $content){
             $retval .= "<meta name=\"".$keyword."\" content=\"".$content."\">\n";
         }
 
