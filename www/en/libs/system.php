@@ -1825,4 +1825,18 @@ function name($user = null, $key_prefix = ''){
         throw new bException(tr('name(): Failed'), $e);
     }
 }
+
+
+
+/*
+ * Return NULL if specified variable is considered "empty", like 0, "", array(), etc.
+ * If not, return the specified variable unchanged
+ */
+function get_null($source){
+    if($source){
+        return $source;
+    }
+
+    return null;
+}
 ?>
