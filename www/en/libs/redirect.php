@@ -33,13 +33,19 @@ function redirect_from_code($code){
 /*
  * Add a code and the URL it should redirect to
  */
-function redirect_add_code($code, $url){
+function redirect_add_code($url, $code = null){
     try{
-        sql_query('INSERT INTO `redirects` (`code`, `url`)
-                   VALUES                  (:code , :url )',
+        if(!$code){
+            $code = uniqid('', true);
+        }
 
-                   array(':code' => $code,
-                         ':url'  => $url));
+        sql_query('INSERT INTO `redirects` (`createdby`, `ip`, `code`, `url`)
+                   VALUES                  (:createdby , :ip , :code , :url )',
+
+                   array(':createdby' => isset_get($_SESSION['user']['id']),
+                         ':ip'        => $_SERVER['REMOTE_ADDR'],
+                         ':code'      => $code,
+                         ':url'       => $url));
 
        return $code;
 
