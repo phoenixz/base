@@ -13,8 +13,17 @@ $trace     = "\n\nFUNCTION TRACE\n".htmlentities(print_r(debug_trace(''), true))
 if(method_exists($e, 'getMessages')){
     $exception = "\n\nEXCEPTION TRACE\n".htmlentities(print_r($e->getMessages(), true));
 
+    error_log(tr('Uncaught exception'));
+
+    foreach($e->getMessages() as $message){
+        error_log($message);
+    }
+
 }else{
     $exception = "\n\nEXCEPTION TRACE\n".htmlentities(print_r($e->getMessage(), true));
+
+    error_log(tr('Uncaught exception'));
+    error_log($e->getMessage());
 }
 
 
