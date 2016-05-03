@@ -206,7 +206,6 @@ function twilio_send_message($message, $to, $from = null){
         foreach($_CONFIG['twilio']['accounts'] as $account => $data){
             if(!empty($data['sources'][$from])){
                 if(empty($twilio)){
-show($account);
                     $twilio = twilio_load($account);
                 }
             }

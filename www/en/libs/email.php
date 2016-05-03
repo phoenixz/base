@@ -993,23 +993,26 @@ function email_insert($params){
 
     try{
         array_params($params);
-        array_default($params, 'template'    , $_CONFIG['email']['templates']['default']);
-        array_default($params, 'subject'     , $_CONFIG['email']['subject']);
-        array_default($params, 'from'        , $_CONFIG['email']['from']);
-        array_default($params, 'to'          , '');
-        array_default($params, 'body'        , '');
-        array_default($params, 'format'      , 'text');
-        array_default($params, 'require_user', false);
+        array_default($params, 'template'       , $_CONFIG['email']['templates']['default']);
+        array_default($params, 'subject'        , $_CONFIG['email']['subject']);
+        array_default($params, 'from'           , $_CONFIG['email']['from']);
+        array_default($params, 'to'             , '');
+        array_default($params, 'body'           , '');
+        array_default($params, 'format'         , 'text');
+        array_default($params, 'require_user'   , false);
+        array_default($params, 'validate_sender', false);
 
         /*
          * Validations
          */
         if(empty($params['to'])){
-            throw new bException(tr('email_insert(): No email receiver specified'));
+            throw new bException(tr('email_insert(): No "to" specified'));
         }
 
-        if(empty($_CONFIG['email']['users'][$params['from']])){
-            throw new bException(tr('email_insert(): Unkown sender "%sender%" specified', array('%sender%' => $params['from'])), 'unkown');
+        if($params['validate_sender']){
+            if(empty($_CONFIG['email']['users'][$params['from']])){
+                throw new bException(tr('email_insert(): Unkown sender "%sender%" specified', array('%sender%' => $params['from'])), 'unkown');
+            }
         }
 
         /*
