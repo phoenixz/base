@@ -336,4 +336,121 @@ function jqueryui_date_range($from_selector, $to_selector, $params = null){
         throw new bException('jqueryui_date_range(): Failed', $e);
     }
 }
+
+
+
+/*
+ * Returns HTML and Javascript for a complete fancybox system
+ * See http://fancyapps.com/fancybox/#docs for more information
+ *
+ * @$params['resource']         All images that should be displayed. Each image should contain at least 'url', 'src', 'alt', and 'title'
+ * @$params['item_template']    Template HTML for all images in $params['resource']. Each item will duplicate this template HTML. The HTML should at least contain :image
+ * @$params['gallery_template'] Template HTML that will contain all item_template data. If empty, will be ignored. If used, it should contain :item_template where the items will be inserted
+ */
+function jqueryui_fancybox($params){
+    try{
+        array_params($params);
+        array_default($params, 'gallery_id'      , 'fancybox');
+        array_default($params, 'gallery_template', '');
+        array_default($params, 'item_template'   , '');
+        array_default($params, 'selector'        , '.fancybox');
+        array_default($params, 'open_effect'     , 'none');
+        array_default($params, 'close_effect'    , 'none');
+        array_default($params, 'auto_size'       , true);
+        array_default($params, 'auto_resize'     , true);
+        array_default($params, 'auto_center'     , true);
+        array_default($params, 'fit_to_view'     , true);
+        array_default($params, 'aspect_ratio'    , true);
+        array_default($params, 'close_click'     , false);
+        array_default($params, 'next_click'      , true);
+        array_default($params, 'arrows'          , true);
+        array_default($params, 'close_button'    , true);
+        array_default($params, 'pre_load'        , 3);
+        array_default($params, 'scrolling'       , 'no'); // yes | no | auto | visible
+        array_default($params, 'load_css'        , 'jquery.fancybox');
+        array_default($params, 'resource'        , array());
+
+        html_load_js('fancybox/jquery.fancybox');
+
+        if($params['close_click'] and $params['next_click']){
+            throw new bException(tr('jqueryui_fancybox(): Both $params["close_click"] and $params["next_click"] have been set to true, but these options are mutually exclusive. Please set one (or both) to false.'), 'notspecified');
+        }
+
+        if($params['load_css']){
+            html_load_css($params['load_css']);
+        }
+
+        if(!strstr($params['item_template'], ':image')){
+            throw new bException(tr('jqueryui_fancybox(): Parameter $params["item_template"] does not contain :image to add the images in the template HTML'), 'notspecified');
+        }
+
+        $items = '';
+
+        foreach($params['resource']as $data){
+            $html   = $params['item_template'];
+            $image  = html_img($data['src'], $data['alt'], isset_get($data['width']), isset_get($data['height']));
+
+            $html   = str_replace(':image', $image        , $html);
+            $html   = str_replace(':url'  , $data['url']  , $html);
+            $html   = str_replace(':title', $data['title'], $html);
+
+            $items .= $html;
+        }
+
+        if($params['gallery_template']){
+            if(!strstr($params['gallery_template'], ':item_template')){
+                throw new bException(tr('jqueryui_fancybox(): Parameter $params["gallery_template"] contains a template, but does not contain :item_template to add the items in there'), 'notspecified');
+            }
+
+            $retval = str_replace(':item_template', $items, $params['gallery_template']);
+
+        }else{
+            $retval = $items;
+        }
+
+        unset($items);
+
+        $retval .= html_script('
+            $("'.$params['selector'].'").fancybox({
+                openEffect	: "'.$params['open_effect'].'",
+                closeEffect : "'.$params['close_effect'].'",
+                autoSize    : '.str_boolean($params['auto_size']).',
+                autoResize  : '.str_boolean($params['auto_resize']).',
+                autoCenter  : '.str_boolean($params['auto_center']).',
+                fitToView   : '.str_boolean($params['fit_to_view']).',
+                aspectRatio : '.str_boolean($params['aspect_ratio']).',
+                scrolling   : '.str_boolean($params['scrolling']).',
+                closeClick  : '.str_boolean($params['close_click']).',
+                nextClick   : '.str_boolean($params['next_click']).',
+                arrows      : '.str_boolean($params['arrows']).',
+                closeButton : '.str_boolean($params['close_button']).',
+                preLoad     : '.str_boolean($params['pre_load']).',
+            });
+        ');
+
+        array_default($params, 'close_click'     , false);
+        array_default($params, 'next_click'      , true);
+        array_default($params, 'arrows'          , true);
+        array_default($params, 'close_button'    , true);
+
+
+        return $retval;
+
+    }catch(Exception $e){
+        throw new bException('jqueryui_fancybox(): Failed', $e);
+    }
+}
+
+
+
+/*
+ * Install jquery fancybox automatically
+ */
+function jqueryui_fancybox_install(){
+    try{
+throw new bException(tr('jqueryui_fancybox_install(): This function has not yet been implemented'), 'not_implemented');
+    }catch(Exception $e){
+        throw new bException('jqueryui_fancybox_install(): Failed', $e);
+    }
+}
 ?>
