@@ -576,7 +576,7 @@ function blogs_validate_post(&$post, $blog, $params = null, $seoname = null){
 
         if(!empty($params['use_description'])){
             $v->isNotEmpty ($post['description'],       tr('Please provide a description for your %objectname%', array('%objectname%' => $params['object_name'])));
-            $v->hasMinChars($post['description'],   16, tr('Please ensure that the description has a minimum of 16 characters'));
+            $v->hasMinChars($post['description'],    4, tr('Please ensure that the description has a minimum of 4 characters'));
             $v->hasMaxChars($post['description'],  160, tr('Please ensure that the description has a maximum of 160 characters'));
         }
 
