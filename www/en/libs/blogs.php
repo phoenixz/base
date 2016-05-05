@@ -766,13 +766,13 @@ function blogs_photos_upload($files, $post, $priority = null){
          * If no priority has been specified then get the highest one
          */
         if(!$priority){
-            $priority = sql_get('SELECT (COALESCE(MAX(`priority`), 0) + 1) AS `priority` FROM `blogs_photos` WHERE `blogs_posts_id` = :blogs_posts_id', 'priority', array(':blogs_posts_id' => $post['id']));
+            $priority = sql_get('SELECT (COALESCE(MAX(`priority`), 0) + 1) AS `priority` FROM `blogs_media` WHERE `blogs_posts_id` = :blogs_posts_id', 'priority', array(':blogs_posts_id' => $post['id']));
         }
 
         /*
          * Store blog post photo in database
          */
-        $res  = sql_query('INSERT INTO `blogs_photos` (`createdby`, `blogs_posts_id`, `file`, `priority`)
+        $res  = sql_query('INSERT INTO `blogs_media` (`createdby`, `blogs_posts_id`, `file`, `priority`)
                            VALUES                     (:createdby , :blogs_posts_id , :file , :priority )',
 
                           array(':createdby'      => $_SESSION['user']['id'],
@@ -801,6 +801,139 @@ function blogs_photos_upload($files, $post, $priority = null){
 
 
 /*
+ * Process uploaded club photo
+ */
+function blogs_url_upload($files, $post, $priority = null){
+    global $_CONFIG;
+
+    try{
+        load_libs('file,image,upload');
+
+        if(empty($post['id'])) {
+            throw new bException('blogs_url_upload(): No blog post specified', 'notspecified');
+        }
+
+        $post = sql_get('SELECT `blogs_posts`.`id`,
+                                `blogs_posts`.`createdby`,
+                                `blogs_posts`.`seoname`,
+
+                                `blogs`.`seoname` AS blog_name,
+                                `blogs`.`large_x`,
+                                `blogs`.`large_y`,
+                                `blogs`.`medium_x`,
+                                `blogs`.`medium_y`,
+                                `blogs`.`small_x`,
+                                `blogs`.`small_y`,
+                                `blogs`.`wide_x`,
+                                `blogs`.`wide_y`,
+                                `blogs`.`thumb_x`,
+                                `blogs`.`thumb_y`,
+                                `blogs`.`wide_x`,
+                                `blogs`.`wide_y`,
+                                `blogs`.`retina`
+
+                         FROM   `blogs_posts`
+
+                         JOIN   `blogs`
+                         ON     `blogs_posts`.`blogs_id` = `blogs`.`id`
+
+                         WHERE  `blogs_posts`.`id`       = '.cfi($post['id']));
+
+        if(empty($post['id'])) {
+            throw new bException('blogs_url_upload(): Unknown blog post specified', 'unknown');
+        }
+
+        if(($post['createdby'] != $_SESSION['user']['id']) and !has_rights('god')){
+            throw new bException('blogs_url_upload(): Cannot upload url, this post is not yours', 'accessdenied');
+        }
+
+        /*
+         * Check for upload errors
+         */
+        upload_check_files(1);
+
+        /*
+         * Check for errors
+         */
+        if(!empty($_FILES['files'][0]['error'])) {
+            throw new bException($_FILES['files'][0]['error_message'], 'uploaderror');
+        }
+
+        /*
+         *
+         */
+        $file   = $files;
+        $file   = file_get_local($file['tmp_name'][0]);
+        $photo  = $post['blog_name'].'/'.file_assign_target_clean(ROOT.'data/content/url/'.$post['blog_name'].'/', '_small.jpg', false, 4);
+        $prefix = ROOT.'data/content/url/'.$photo;
+        $types  = $_CONFIG['blogs']['images'];
+
+        /*
+         * Process all image types
+         */
+        foreach($types as $type => $params){
+            if($params['method'] and (!empty($post[$type.'_x']) or !empty($post[$type.'_y']))){
+                image_convert($file, $prefix.'_'.$type.'.jpg', $post[$type.'_x'], $post[$type.'_y'], $params['method'], $params);
+
+            }else{
+                copy($file, $prefix.'_'.$type.'.jpg');
+            }
+
+            if($post['retina']){
+                if($params['method'] and (!empty($post[$type.'_x']) or !empty($post[$type.'_y']))){
+                    image_convert($file, $prefix.'_'.$type.'@2x.jpg', $post[$type.'_x'] * 2, $post[$type.'_y'] * 2, $params['method'], $params);
+
+                }else{
+                    copy($prefix.'_'.$type.'.jpg', $prefix.'_'.$type.'@2x.jpg');
+                }
+
+            }else{
+                /*
+                 * If retina images are not supported, then just symlink them so that they at least are available
+                 */
+                symlink(basename($prefix.'_'.$type.'.jpg')  , $prefix.'_'.$type.'@2x.jpg');
+            }
+        }
+
+        /*
+         * If no priority has been specified then get the highest one
+         */
+        if(!$priority){
+            $priority = sql_get('SELECT (COALESCE(MAX(`priority`), 0) + 1) AS `priority` FROM `blogs_url` WHERE `blogs_posts_id` = :blogs_posts_id', 'priority', array(':blogs_posts_id' => $post['id']));
+        }
+
+        /*
+         * Store blog post photo in database
+         */
+        $res  = sql_query('INSERT INTO `blogs_url` (`createdby`, `blogs_posts_id`, `file`, `priority`)
+                           VALUES                     (:createdby , :blogs_posts_id , :file , :priority )',
+
+                          array(':createdby'      => $_SESSION['user']['id'],
+                                ':blogs_posts_id' => $post['id'],
+                                ':file'           => $photo,
+                                ':priority'       => $priority));
+
+        $id   = sql_insert_id();
+
+// :DELETE: This block is replaced by the code below. Only left here in case it contains something usefull still
+//	$html = '<li style="display:none;" id="photo'.$id.'" class="myclub photo">
+//                <img style="width:219px;height:130px;" src="/url/'.$photo.'_small.jpg" />
+//                <a class="myclub photo delete">'.tr('Delete this photo').'</a>
+//                <textarea placeholder="'.tr('Description of this photo').'" class="myclub photo description"></textarea>
+//            </li>';
+
+        return array('id'    => $id,
+                     'photo' => $photo);
+
+    }catch(Exception $e){
+
+        throw new bException('blogs_url_upload(): Failed', $e);
+    }
+}
+
+
+
+/*
  * Find and return a free priority for blog photo
  */
 function blogs_photos_get_free_priority($blogs_posts_id, $insert = false){
@@ -811,7 +944,7 @@ function blogs_photos_get_free_priority($blogs_posts_id, $insert = false){
             /*
              * Insert mode, return the first possible priority, in case there is a gap (ideally should be highest though, if there are no gaps)
              */
-            $list = sql_list('SELECT `priority` FROM `blogs_photos` WHERE `blogs_posts_id` = :blogs_posts_id ORDER BY `priority` ASC', array(':blogs_posts_id' => $blogs_posts_id));
+            $list = sql_list('SELECT `priority` FROM `blogs_media` WHERE `blogs_posts_id` = :blogs_posts_id ORDER BY `priority` ASC', array(':blogs_posts_id' => $blogs_posts_id));
 
             for($current = 1; ; $current++){
                 if(!in_array($current, $list)){
@@ -825,7 +958,7 @@ function blogs_photos_get_free_priority($blogs_posts_id, $insert = false){
         /*
          * Highest mode, return the highest priority + 1
          */
-        return (integer) sql_get('SELECT MAX(`priority`) FROM `blogs_photos` WHERE `blogs_posts_id` = :blogs_posts_id', array(':blogs_posts_id' => $blogs_posts_id)) + 1;
+        return (integer) sql_get('SELECT MAX(`priority`) FROM `blogs_media` WHERE `blogs_posts_id` = :blogs_posts_id', array(':blogs_posts_id' => $blogs_posts_id)) + 1;
 
     }catch(Exception $e){
         throw new bException('blogs_photos_get_free_priority(): Failed', $e);
@@ -843,15 +976,15 @@ function blogs_photo_description($user, $photo_id, $description){
             $photo_id = str_from($photo_id, 'photo');
         }
 
-        $photo    = sql_get('SELECT `blogs_photos`.`id`,
-                                    `blogs_photos`.`createdby`
+        $photo    = sql_get('SELECT `blogs_media`.`id`,
+                                    `blogs_media`.`createdby`
 
-                             FROM   `blogs_photos`
+                             FROM   `blogs_media`
 
                              JOIN   `blogs_posts`
 
-                             WHERE  `blogs_photos`.`blogs_posts_id` = `blogs_posts`.`id`
-                             AND    `blogs_photos`.`id`             = '.cfi($photo_id));
+                             WHERE  `blogs_media`.`blogs_posts_id` = `blogs_posts`.`id`
+                             AND    `blogs_media`.`id`             = '.cfi($photo_id));
 
         if(empty($photo['id'])) {
             throw new bException('blogs_photo_description(): Unknown blog post photo specified', 'unknown');
@@ -861,7 +994,7 @@ function blogs_photo_description($user, $photo_id, $description){
             throw new bException('blogs_photo_description(): Cannot upload photos, this post is not yours', 'accessdenied');
         }
 
-        sql_query('UPDATE `blogs_photos`
+        sql_query('UPDATE `blogs_media`
 
                    SET    `description` = :description
 
