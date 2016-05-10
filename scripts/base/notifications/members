@@ -46,12 +46,12 @@ if(!function_exists('s_get_user_class')){
 
 
 try{
-	cli_only();
+    cli_only();
 
-    switch($method = argument(0)){
+    switch($method = cli_argument(0)){
         case 'add':
             try{
-                $data = s_get_user_class(argument(1), argument(2));
+                $data = s_get_user_class(cli_argument(1), cli_argument(2));
 
                 if(sql_get('SELECT `id` FROM `notifications_members` WHERE `users_id` = :users_id AND `classes_id` = :classes_id', 'id', array(':users_id' => $data['users_id'], ':classes_id' => $data['classes_id']))){
                     throw new bException(tr('User "%user%" is already a member of the notifications class "%class%"', array('%user%' => $data['user'], '%class%' => $data['class'])), 'alreadyexists');
@@ -73,7 +73,7 @@ try{
             break;
 
         case 'list':
-            $all = argument('all');
+            $all = cli_argument('all');
             $r   = sql_query('SELECT    `notifications_members`.`id`,
                                         `notifications_classes`.`name` AS `class_name`,
                                         `users`.`name`                 AS `user_name`
@@ -100,7 +100,7 @@ try{
 
         case 'remove':
             try{
-                $data = s_get_user_class(argument(1), argument(2));
+                $data = s_get_user_class(cli_argument(1), cli_argument(2));
                 $r    = sql_query('DELETE FROM `notifications_members` WHERE `classes_id` = :classes_id AND `users_id` = :users_id',
 
                                    array(':classes_id' => $data['classes_id'],

@@ -3,139 +3,173 @@
 /*
  * This is an empty test script template
  */
-$usage = "./scripts/base/imageconvert\n".
-         "./scripts/base/imageconvert [options] file|files FILES\n";
+$usage = "./scripts/base/imageconvert --source SOURCE --destination DESTINATION\n";
 
-$help  = "This script con convert specified images with the specified parameters.";
+$help  = "This script con convert specified images with the specified parameters.
 
-//$quiet = false;
+OPTIONS
+
+--method                       -
+
+--defaults                     -
+
+--keep-aspect-ratio            -
+
+--quality                      -
+
+--interlace                    -
+
+--strip                        -
+
+--blur                         -
+
+--defines                      -
+
+--sampling-factor              -
+
+--limit-memory                 -
+
+--limit-map                    -
+
+--format                       -
+
+--width -x                     -
+
+--height -y                    -
+";
 
 require_once(dirname(__FILE__).'/../../libs/startup.php');
-
+throw new bException('THIS SCRIPT IS OBSOLETE! PLEASE USE scripts/base/images INSTEAD!', 'OBSOLETE');
 cli_only();
 load_libs('file,image');
 
 
 /*
+ * Check parameters
+ */
+$files       = not_empty(cli_argument('--file', true), cli_argument('--files', 'all'));
+$source      = cli_argument('--source'     , true);
+$destination = cli_argument('--destination', true);
+
+if(cli_argument('--default') or cli_argument('--defaults')){
+    $params = array();
+
+}else{
+    $params['keep_aspectratio'] = cli_argument('--keep-aspectratio');
+    $params['quality']          = cli_argument('--quality'         , true);
+    $params['interlace']        = cli_argument('--interlace'       , true);
+    $params['strip']            = cli_argument('--strip'           , true);
+    $params['blur']             = cli_argument('--blur'            , true);
+    $params['defines']          = cli_argument('--defines'         , true);
+    $params['sampling_factor']  = cli_argument('--sampling-factor' , true);
+    $params['limit-memory']     = cli_argument('--limit-memory'    , true);
+    $params['limit-map']        = cli_argument('--limit-map'       , true);
+
+//    $params['type']            = not_empty(cli_argument('jpg'), (cli_argument('jpeg') ? 'jpg' : ''), cli_argument('png'));
+
+    $method = cli_argument('--method', true);
+    $format = cli_argument('--format', true);
+    $x      = not_empty(cli_argument('--width' , true), cli_argument('-x', true));
+    $y      = not_empty(cli_argument('--height', true), cli_argument('-y', true));
+}
+
+cli_no_arguments_left();
+
+
+
+/*
  * Check destination path
  */
-$destination = argument('destination', true);
 
 if($destination){
-	$destination = slash($destination);
-	file_ensure_path($destination);
+    $destination = slash($destination);
+    file_ensure_path($destination);
 }
+
 
 
 /*
  * Check source path
  */
-$source = argument('source', true);
-$path   = $source;
+$path = $source;
 
 if($source){
-	$source = slash(realpath($source));
+    $source = slash(realpath($source));
 
-	if(!file_exists($source)){
-		throw new bException(tr('The specified source path "%path%" does not exist', array('%path%' => $path)), 'notexists');
-	}
+    if(!file_exists($source)){
+        throw new bException(tr('The specified source path ":path" does not exist', array(':path' => $path)), 'not-exist');
+    }
 }
+
 
 
 /*
  * Get file list to process
  */
-$files = not_empty(argument('file', true), argument('files', 'all'));
-
 if(!$files){
-	throw new bException(tr('No files specified'), 'notspecified');
+    throw new bException(tr('No files specified'), 'not-specified');
 }
 
 if((is_string($files) and $files == 'all') or (is_array($files) and (reset($files) == 'all'))){
-	/*
-	 * All files in the specified source path
-	 */
-	$files = scandir($source);
+    /*
+     * All files in the specified source path
+     */
+    $files = scandir($source);
 }
 
 if(is_string($files)){
-	$files = array($files);
+    $files = array($files);
 }
 
-
-/*
- * Check parameters
- */
-if(argument('default') or argument('defaults')){
-	$params = array();
-
-}else{
-	$params['keep_aspectratio'] = argument('keep-aspectratio');
-	$params['quality']          = argument('quality'         , true);
-	$params['interlace']        = argument('interlace'       , true);
-	$params['strip']            = argument('strip'           , true);
-	$params['blur']             = argument('blur'            , true);
-	$params['defines']          = argument('defines'         , true);
-	$params['sampling_factor']  = argument('sampling-factor' , true);
-	$params['limit-memory']     = argument('limit-memory'    , true);
-	$params['limit-map']        = argument('limit-map'       , true);
-
-//	$params['type']            = not_empty(argument('jpg'), (argument('jpeg') ? 'jpg' : ''), argument('png'));
-
-	$method = argument('method', true);
-	$format = argument('format', true);
-	$x      = not_empty(argument('width' , true), argument('x', true));
-	$y      = not_empty(argument('height', true), argument('y', true));
-}
 
 
 /*
  * Ensure that all files exist
  */
-log_console(tr('Checking source files'), '');
+cli_log(tr('Checking source files'));
 
 foreach($files as $key => &$file){
-	$file = trim($file);
+    $file = trim($file);
 
-	if(($file == '.') or ($file == '..')){
-		unset($files[$key]);
-		continue;
-	}
+    if(($file == '.') or ($file == '..')){
+        unset($files[$key]);
+        continue;
+    }
 
-	if(!file_exists($source.$file)){
-		throw new bException(tr('Specified file "%file%" does not exist', array('%file%' => $source.$file)));
-	}
+    if(!file_exists($source.$file)){
+        throw new bException(tr('Specified file ":file" does not exist', array(':file' => $source.$file)));
+    }
 
-	if(file_exists($destination.$file) and ($destination.$file != $source.$file)){
-		throw new bException(tr('Specified file "%file%" already exists in the destination', array('%file%' => $destination.$file)));
-	}
+    if(file_exists($destination.$file) and ($destination.$file != $source.$file)){
+        throw new bException(tr('Specified file ":file" already exists in the destination', array(':file' => $destination.$file)));
+    }
 }
 
 unset($file);
 
-log_console(tr('Converting "%count%" images', array('%count%' => count($files))), '', 'white');
+cli_log(tr('Converting ":count" images', array(':count' => count($files))), 'white');
 
 
 /*
  *
  */
 foreach($files as &$file){
-	if(VERBOSE){
-		log_console($file);
+    if(VERBOSE){
+        log_dot($file);
 
-	}else{
-		log_console('.', '', 'green', false);
-	}
+    }else{
+        log_dot();
+    }
 
-	image_convert($source.$file, $destination.$file, $x, $y, $method, $params, $format);
-	usleep(5000);
+    image_convert($source.$file, $destination.$file, $x, $y, $method, $params, $format);
+    usleep(5000);
 }
 
 unset($file);
 
 if(!VERBOSE){
-	log_console('', '');
+    log_dot(false);
 }
 
-log_console(tr('Finished!'), '', 'green');
+cli_log(tr('Finished!'), 'green');
 ?>

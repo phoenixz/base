@@ -3,7 +3,7 @@ require_once(dirname(__FILE__).'/../libs/startup.php');
 
 page_404();
 
-right_or_redirect('admin');
+rights_or_redirect('admin');
 
 $selected = isset_get($_GET['id']);
 

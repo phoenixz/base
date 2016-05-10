@@ -7,8 +7,8 @@ $quiet = true;
 require_once(dirname(__FILE__).'/../../libs/startup.php');
 
 try{
-	cli_only();
-	load_libs('test');
+    cli_only();
+    load_libs('test');
 
     foreach($argv as $arg){
         switch($arg){
@@ -18,20 +18,20 @@ try{
         }
     }
 
-	test('notify()', 'Function call should send notification for class "developers"', function(){
-		try{
-			notify('test', 'this is a test notification', 'test');
+    test('notify()', 'Function call should send notification for class "developers"', function(){
+        try{
+            notify('test', 'this is a test notification', 'test');
 
-		}catch(Exception $e){
+        }catch(Exception $e){
 showdie($e);
-		}
-	});
+        }
+    });
 
-	test_completed('notify()');
+    test_completed('notify()');
 
 
-	// Completed system tests
-	test_completed('notify', 'library');
+    // Completed system tests
+    test_completed('notify', 'library');
 
 }catch(Exception $e){
     throw new bException('scripts/tests/notifications: Failed', $e);

@@ -7,8 +7,8 @@ $quiet = true;
 require_once(dirname(__FILE__).'/../../libs/startup.php');
 
 try{
-	cli_only();
-	load_libs('facebook,google,microsoft,file');
+    cli_only();
+    load_libs('facebook,google,microsoft,file');
 
     foreach($argv as $arg){
         switch($arg){
@@ -20,10 +20,10 @@ try{
 
 
 
-	test('facebook_get_avatar()', 'Function should obtain facebook avatar for specified facebook id (Sven Oostenbrink) and convert it into the configured number of sub avatars', function(){
+    test('facebook_get_avatar()', 'Function should obtain facebook avatar for specified facebook id (Sven Oostenbrink) and convert it into the configured number of sub avatars', function(){
         global $_CONFIG;
 
-		$avatar = facebook_get_avatar(array('fb_id' => 1368195482));
+        $avatar = facebook_get_avatar(array('fb_id' => 1368195482));
 
         foreach($_CONFIG['avatars']['types'] as $type => $data){
             if(!file_exists($file = ROOT.'www/avatars/'.$avatar.'_'.$type.'.jpg')){
@@ -36,14 +36,14 @@ try{
                 file_delete($file);
             }
         }
-	});
+    });
 
-	test_completed('facebook_get_avatar()');
+    test_completed('facebook_get_avatar()');
 
 
 
-	// Completed avatar tests
-	test_completed('avatars', 'library');
+    // Completed avatar tests
+    test_completed('avatars', 'library');
 
 }catch(Exception $e){
     throw new bException('scripts/tests/avatars: Failed', $e);

@@ -106,15 +106,15 @@ function init($projectfrom = null, $frameworkfrom = null){
                 throw new bException('init(): Cannot continue, the FRAMEWORK code version "'.str_log(FRAMEWORKCODEVERSION).'" (Defined at the top of '.ROOT.'/libs/system.php) is invalid', 'invalidframeworkcode');
             }
 
-            throw new bException('init(): Cannot continue, the FRAMEWORK code version is OLDER than the database version, the project is running with either old code or a too new database!', 'oldframeworkcode');
+            throw new bException(tr('init(): Cannot continue, the FRAMEWORK code version ":code" is OLDER (LOWER) than the database version ":db", the project is running with either old code or a too new database!', array(':code' => FRAMEWORKCODEVERSION, ':db' => FRAMEWORKDBVERSION)), 'oldframeworkcode');
         }
 
         if(version_compare(PROJECTCODEVERSION, $codeversions['PROJECT']) < 0){
             if(!str_is_version(PROJECTCODEVERSION)){
-                throw new bException('init(): Cannot continue, the PROJECT code version "'.str_log(PROJECTCODEVERSION).'" (Defined in '.ROOT.'/config/project.php) is invalid', 'invalidframeworkcode');
+                throw new bException(tr('init(): Cannot continue, the PROJECT code version ":version" (Defined in ":file") is invalid', array(':version' => PROJECTCODEVERSION, ':file' => ROOT.'/config/project.php')), 'invalidframeworkcode');
             }
 
-            throw new bException('init(): Cannot continue, the PROJECT code version is OLDER than the database version, the project is running with either old code or a too new database!', 'oldprojectcode');
+            throw new bException(tr('init(): Cannot continue, the PROJECT code version ":code" is OLDER (LOWER) than the database version ":db", the project is running with either old code or a too new database!', array(':code' => PROJECTCODEVERSION, ':db' => PROJECTDBVERSION)), 'oldprojectcode');
         }
 
         /*
@@ -320,7 +320,7 @@ function init($projectfrom = null, $frameworkfrom = null){
 function init_process_version_diff(){
     global $_CONFIG;
 
-    if((SCRIPT == 'init') or (SCRIPT == 'update-from-base')){
+    if((SCRIPT == 'init') or (SCRIPT == 'update') or (SCRIPT == 'sync')){
         return false;
     }
 
@@ -347,8 +347,8 @@ function init_process_version_diff(){
         }
     }
 
-    if((PLATFORM == 'http') or !argument('noversioncheck')){
-        throw new bException(tr('init_process_version_diff(): Please run script ROOT/scripts/base/init because "'.str_log($versionerror).'"'), 'doinit');
+    if((PLATFORM == 'http') or !argument('--no-version-check')){
+        throw new bException(tr('init_process_version_diff(): Please run script ROOT/scripts/base/init because ":error"', array(':error' => $versionerror)), 'doinit');
     }
 }
 

@@ -16,7 +16,7 @@
 function roles_get($role, $columns = 'id,name,description'){
     try{
         if(!$role){
-            throw new bException(tr('roles_get(): No role specified'), 'notspecified');
+            throw new bException(tr('roles_get(): No role specified'), 'not-specified');
         }
 
         if(!is_scalar($role)){
@@ -34,7 +34,7 @@ function roles_get($role, $columns = 'id,name,description'){
                                  ':role2' => $role));
 
         if(!$retval){
-            throw new bException('roles_get(): Specified role "'.str_log($role).'" does not exist', 'notexists');
+            throw new bException('roles_get(): Specified role "'.str_log($role).'" does not exist', 'not-exist');
         }
 
         return $retval;

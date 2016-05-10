@@ -107,11 +107,11 @@ function upload_multi($params){
         array_default($params, 'iframe'    , false);
 
         if(empty($params['selector'])){
-            throw new bException(tr('upload_multi(): No "selector" specified'), 'notspecified');
+            throw new bException(tr('upload_multi(): No "selector" specified'), 'not-specified');
         }
 
         if(empty($params['url'])){
-            throw new bException(tr('upload_multi(): No "url" specified'), 'notspecified');
+            throw new bException(tr('upload_multi(): No "url" specified'), 'not-specified');
         }
 
         html_load_js('base/jquery-ui/jquery-ui,base/base');
@@ -491,7 +491,7 @@ function upload_check_files($max_uploads = null, $min_uploads = null){
  */
 function upload_multi_js($selector, $url, $done_script = '', $fail_script = '', $processall_script = '') {
     try{
-        notify('obsolete', 'upload_multi_js() usage is obsolete, please use upload_multi()', 'developers');
+//        notify('obsolete', 'upload_multi_js() usage is obsolete, please use upload_multi()', 'developers');
 
         return upload_multi(array('selector'    => $selector,
                                   'url'         => $url,

@@ -6,7 +6,7 @@
 require_once(dirname(__FILE__).'/../../libs/startup.php');
 
 try{
-    if(this_script_already_runs()){
+    if(cli_exclusive()){
         echo "This script is already running and it cannot run twice!\n";
 
     }else{

@@ -1,0 +1,55 @@
+#!/usr/bin/php
+<?php
+/*
+ * This is the project structure fix script.
+ *
+ * This script will ensure that all required directories, and files are available
+ * If not, they will be either created or an error will be thrown
+ *
+ * @copyright Sven Oostenbrink <support@svenoostenbrink.com>
+ */
+$usage = "./scripts/base/ensure-structure\n";
+
+$help  = "The ensure-structure script will ensure that all required files and directories are available. If directories are missing they will be created; if files are missing, a clear error will be shown";
+
+require_once(dirname(__FILE__).'/../../libs/startup.php');
+
+/*
+ * Load deployment configuration
+ */
+include(ROOT.'config/deploy.php');
+
+$target = cli_argument('target', true, ENVIRONMENT);
+
+cli_no_arguments_left();
+
+load_libs('file');
+cli_log('Ensuring site structure', 'white');
+
+if(empty($_CONFIG['deploy'][$target])){
+    throw new bException(tr('Specified environment ":env" does not exist', array(':env' => $target)), 'not-exist');
+}
+
+$deploy_config = $_CONFIG['deploy'][$target];
+$target_dir    = cli_argument('target_dir', true, $deploy_config['target_dir']);
+
+$paths         = array('log'       => ROOT.'data/log',
+                       'temporary' => ROOT.'data/tmp');
+
+foreach($paths as $name => $path){
+    /*
+     * Create the reqired paths
+     */
+    passthru((!empty($deploy_config['sudo']) ? ' sudo' : '').' mkdir '.$path.' -p;', $exitcode);
+
+    if($exitcode){
+        throw new bException(tr('Failed to create ":name" path ":path"', array(':name' => $name, ':path' => $path)), 'create-path');
+    }
+
+    if(VERBOSE){
+        cli_log(tr('Ensured ":name" path ":path"', array(':name' => $name, ':path' => $path)), 'green');
+    }
+}
+
+cli_log('Fixed structure', 'green');
+?>

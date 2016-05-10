@@ -13,138 +13,138 @@
  *
  * @copyright Sven Oostenbrink <support@svenoostenbrink.com>
  */
+$usage = "./scripts/base/fix-permissions\n";
+
+$help  = "The fix-permissions script will ensure that all files and directories have the configured file permissions, ensuring a safe site installation";
+
 require_once(dirname(__FILE__).'/../../libs/startup.php');
 
+/*
+ * Load deployment configuration
+ */
+include(ROOT.'config/deploy.php');
+
+$target = cli_argument('target', true, ENVIRONMENT);
+
+cli_no_arguments_left();
+
+load_libs('file');
+cli_log(tr('Updating project file permissions'), 'white');
+
+if(empty($_CONFIG['deploy'][$target])){
+    throw new bException(tr('Selected environment ":env" does not exist', array(':env' => $target)), 'not-exist');
+}
+
+$deploy_config = $_CONFIG['deploy'][$target];
+$target_dir    = cli_argument('--target-dir', true, $deploy_config['target_dir']);
+
 try{
-    /*
-     * Load deployment configuration
-     */
-    include(dirname(__FILE__).'/../../config/deploy.php');
-
-    load_libs('file');
-    log_console('Updating project file permissions...', 'deploy', 'white');
-
-    $target = argument('target', true, ENVIRONMENT);
-
     if(empty($_CONFIG['deploy'][$target])){
-        throw new bException(tr('Selected environment "%env%" does not exist', array('%env%' => $target)), 'notexist');
+        throw new bException(tr('Specified target environment ":target" has no deploy configuration $_CONFIG[deploy][:target] in ":ROOTconfig/deploy.php"', array(':target' => $target, ':ROOT' => ROOT)), 'missing-configuration');
     }
 
-    $deploy_config = $_CONFIG['deploy'][$target];
-    $target_dir    = argument('target_dir', true, $deploy_config['target_dir']);
-
-    try{
-        if(empty($_CONFIG['deploy'][$target])){
-            throw new bException('Specified target environment "'.str_log($target).'" has no deploy configuration $_CONFIG[deploy]['.str_log($target).'] in "'.ROOT.'config/deploy.php"', 'missingconfiguration');
-        }
-
-        if(empty($deploy_config['user'])){
-            throw new bException('No $_CONFIG[deploy]['.str_log($target).'][user] specified', 'missingconfiguration');
-        }
-
-        if(empty($deploy_config['group'])){
-            throw new bException('No $_CONFIG[deploy]['.str_log($target).'][group] specified', 'missingconfiguration');
-        }
-
-        if(empty($deploy_config['dir_mode'])){
-            throw new bException('No $_CONFIG[deploy]['.str_log($target).'][dir_mode] specified', 'missingconfiguration');
-        }
-
-        if(empty($deploy_config['file_mode'])){
-            throw new bException('No $_CONFIG[deploy]['.str_log($target).'][file_mode] specified', 'missingconfiguration');
-        }
-
-        if(empty($deploy_config['www_mode'])){
-            throw new bException('No $_CONFIG[deploy]['.str_log($target).'][www_mode] specified', 'missingconfiguration');
-        }
-
-    }catch(Exception $e){
-        throw new bException('Check configuration in "'.ROOT.'config/deploy.php"', $e);
+    if(empty($deploy_config['user'])){
+        throw new bException(tr('No $_CONFIG[deploy][:target][user] specified', array(':target' => $target)), 'missing-configuration');
     }
 
-
-
-    /*
-     *
-     */
-    passthru((!empty($deploy_config['sudo']) ? ' sudo' : '').' chown '.$deploy_config['user'].':'.$deploy_config['group'].' '.$target_dir.' -R;', $exitcode);
-
-    if($exitcode){
-        throw new bException('Failed to update target directory tree user/group ownership', 'update_ownership');
+    if(empty($deploy_config['group'])){
+        throw new bException(tr('No $_CONFIG[deploy][:target][group] specified', array(':target' => $target)), 'missing-configuration');
     }
 
-    log_console('Updated owner:group permissions', '', 'green');
-
-
-
-    /*
-     *
-     */
-    passthru((!empty($deploy_config['sudo']) ? ' sudo' : '').' find '.$target_dir.' -type d -exec chmod '.$deploy_config['dir_mode'].' {} \;', $exitcode);
-
-    if($exitcode){
-        throw new bException('Failed to update target directories mode', 'update_dirmode');
+    if(empty($deploy_config['dir_mode'])){
+        throw new bException(tr('No $_CONFIG[deploy][:target][dir_mode] specified', array(':target' => $target)), 'missing-configuration');
     }
 
-    log_console('Updated directories mode...', '', 'green');
-
-
-
-    /*
-     *
-     */
-    passthru((!empty($deploy_config['sudo']) ? ' sudo' : '').' find '.$target_dir.' -type f -exec chmod '.$deploy_config['file_mode'].' {} \;', $exitcode);
-
-    if($exitcode){
-        throw new bException('Failed to update target files mode', 'update_dirmode');
+    if(empty($deploy_config['file_mode'])){
+        throw new bException(tr('No $_CONFIG[deploy][:target][file_mode] specified', array(':target' => $target)), 'missing-configuration');
     }
 
-    log_console('Updated files mode...', '', 'green');
-
-
-
-    /*
-     *
-     */
-    passthru((!empty($deploy_config['sudo']) ? ' sudo' : '').' find '.slash($target_dir).'scripts -type f -exec chmod 0750 {} \;', $exitcode);
-
-    if($exitcode){
-        throw new bException('Failed to update script files mode', 'update_dirmode');
+    if(empty($deploy_config['www_mode'])){
+        throw new bException(tr('No $_CONFIG[deploy][:target][www_mode] specified', array(':target' => $target)), 'missing-configuration');
     }
-
-    log_console('Updated script files mode...', '', 'green');
-
-
-
-    /*
-     * Update the file permissions of all paths in www
-     */
-    passthru((!empty($deploy_config['sudo']) ? ' sudo' : '').' chmod '.$deploy_config['www_mode'].' '.slash($target_dir).'www/ -R', $exitcode);
-
-    if($exitcode){
-        throw new bException('Failed to set www path mode', 'update_dirmode');
-    }
-
-    log_console('Updated www path mode...', '', 'green');
-
-
-
-
-    /*
-     * Update the file permissions of temp directory
-     */
-    file_ensure_path(slash($target_dir).'tmp/');
-    passthru((!empty($deploy_config['sudo']) ? ' sudo' : '').' chmod ug+rwx,g+s,o-rwx '.slash($target_dir).'tmp/ -R', $exitcode);
-
-    if($exitcode){
-        throw new bException('Failed to set tmp path mode', 'update_dirmode');
-    }
-
-    log_console('Updated tmp path mode...', '', 'green');
-
-    log_console('Finished updating www directories permissions...', 'filepermissions', 'green');
 
 }catch(Exception $e){
-    throw new bException('scripts/base/fix-permissions: Failed', $e);
+    throw new bException(tr('Check configuration in ":ROOTconfig/deploy.php"', array(':ROOT' => ROOT)), $e);
 }
+
+
+
+/*
+ *
+ */
+passthru((!empty($deploy_config['sudo']) ? ' sudo' : '').' chown '.$deploy_config['user'].':'.$deploy_config['group'].' '.$target_dir.' -R;', $exitcode);
+
+if($exitcode){
+    throw new bException('Failed to update target directory tree user/group ownership', 'update-ownership');
+}
+
+cli_log(tr('Updated owner:\group permissions to ":owner::group" for path ":path"', array(':owner' => $deploy_config['user'], ':group' => $deploy_config['group'], ':path' => $target_dir)), 'green');
+
+
+
+/*
+ *
+ */
+passthru((!empty($deploy_config['sudo']) ? ' sudo' : '').' find '.$target_dir.' -type d -exec chmod '.$deploy_config['dir_mode'].' {} \;', $exitcode);
+
+if($exitcode){
+    throw new bException('Failed to update target directories mode', 'failed-dirmode');
+}
+
+cli_log(tr('Updated directories mode'), 'green');
+
+
+
+/*
+ *
+ */
+passthru((!empty($deploy_config['sudo']) ? ' sudo' : '').' find '.$target_dir.' -type f -exec chmod '.$deploy_config['file_mode'].' {} \;', $exitcode);
+
+if($exitcode){
+    throw new bException(tr('Failed to update target files mode'), 'failed-dirmode');
+}
+
+cli_log(tr('Updated files mode'), 'green');
+
+
+
+/*
+ *
+ */
+passthru((!empty($deploy_config['sudo']) ? ' sudo' : '').' find '.slash($target_dir).'scripts -type f -exec chmod 0750 {} \;', $exitcode);
+
+if($exitcode){
+    throw new bException(tr('Failed to update script files mode'), 'failed-dirmode');
+}
+
+cli_log(tr('Updated script files mode'), 'green');
+
+
+
+/*
+ * Update the file permissions of all paths in www
+ */
+passthru((!empty($deploy_config['sudo']) ? ' sudo' : '').' chmod '.$deploy_config['www_mode'].' '.slash($target_dir).'www/ -R', $exitcode);
+
+if($exitcode){
+    throw new bException(tr('Failed to set www path mode'), 'failed-dirmode');
+}
+
+cli_log(tr('Updated www path mode'), 'green');
+
+
+
+
+/*
+ * Update the file permissions of temp directory
+ */
+file_ensure_path(slash($target_dir).'tmp/');
+passthru((!empty($deploy_config['sudo']) ? ' sudo' : '').' chmod ug+rwx,g+s,o-rwx '.slash($target_dir).'tmp/ -R', $exitcode);
+
+if($exitcode){
+    throw new bException(tr('Failed to set tmp path mode'), 'failed-dirmode');
+}
+
+cli_log(tr('Updated tmp path mode'), 'green');
+cli_log(tr('Finished updating www directories permissions'), 'green');
 ?>

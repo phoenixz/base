@@ -102,14 +102,14 @@ function html_generate_css(){
             /*
              * Use normal, default CSS
              */
-            $GLOBALS['css']['style'] = array('media' => null);
+//            $GLOBALS['css']['style'] = array('media' => null);
 
         }else{
             /*
              * Use bootstrap CSS
              */
-            $GLOBALS['css'][$_CONFIG['bootstrap']['css']] = array('media' => null);
-            $GLOBALS['css']['style']                      = array('media' => null);
+//            $GLOBALS['css'][$_CONFIG['bootstrap']['css']] = array('media' => null);
+//            $GLOBALS['css']['style']                      = array('media' => null);
 //            $GLOBALS['css'][''bootstrap-theme']           => array('media' => null),
         }
 
@@ -123,7 +123,7 @@ function html_generate_css(){
         foreach($GLOBALS['css'] as $file => $meta) {
             if(!$file) continue;
 
-            $html = '<link rel="stylesheet" type="text/css" href="'.cdn_prefix().(!empty($GLOBALS['page_is_admin']) ? 'admin/' : '').'css/'.((SUBENVIRONMENT and (substr($file, 0, 5) != 'base/')) ? SUBENVIRONMENT.'/' : '').(!empty($GLOBALS['page_is_mobile']) ? 'mobile/' : '').$file.($min ? '.min.css' : '.css').'"'.($meta['media'] ? ' media="'.$meta['media'].'"' : '').'>';
+            $html = '<link rel="stylesheet" type="text/css" href="'.cdn_prefix().(!empty($GLOBALS['page_is_admin']) ? 'admin/' : '').'css/'.(!empty($GLOBALS['page_is_mobile']) ? 'mobile/' : '').$file.($min ? '.min.css' : '.css').'"'.($meta['media'] ? ' media="'.$meta['media'].'"' : '').'>';
 
             if(substr($file, 0, 2) == 'ie'){
                 $retval .= html_iefilter($html, str_until(str_from($file, 'ie'), '.'));
@@ -233,7 +233,10 @@ function html_generate_js(){
             $libs[$lib] = array();
         }
 
-        $libs          = array_merge($libs, $GLOBALS['js']);
+        if(!empty($GLOBALS['js'])){
+            $libs = array_merge($libs, $GLOBALS['js']);
+        }
+
         $GLOBALS['js'] = $libs;
 
         if(empty($libs)){
@@ -421,7 +424,7 @@ if(!empty($params['canonical'])){ $params['links']['canonical'] = $params['canon
             }
 
             if(!$meta['viewport']){
-                throw new bException(tr('html_header(): Meta viewport tag is not specified'), 'notspecified');
+                throw new bException(tr('html_header(): Meta viewport tag is not specified'), 'not-specified');
             }
         }
 
@@ -449,25 +452,14 @@ if(!empty($params['canonical'])){ $params['links']['canonical'] = $params['canon
 
         unset($meta['title']);
 
-        foreach($params['links'] as $rel => $href){
-            switch($rel){
-                case 'canonical':
-                    // FALLTHROUGH
-                case 'prev':
-                    // FALLTHROUGH
-                case 'next':
-                    // FALLTHROUGH
-                case 'android-app':
-                    // FALLTHROUGH
-                case 'ios-app':
-                    // FALLTHROUGH
-                case 'icon':
-                    $retval .= '<link rel="'.$rel.'" href="'.$href."\">\n";
-                    break;
+        foreach($params['links'] as $data){
+            $sections = array();
 
-                default:
-                    throw new bException(tr('html_header(): Unknown link rel ":rel" specified', array(':rel' => $rel)), 'unknown');
+            foreach($data as $key => $value){
+                $sections[] = $key.'="'.$value.'"';
             }
+
+            $retval .= '<link '.implode(' ', $sections).">\n";
         }
 
         foreach($params['prefetch_dns'] as $prefetch){
@@ -601,13 +593,6 @@ function html_flash($class = null){
             throw new bException('html_flash(): This function can only be executed on a webserver!');
         }
 
-        if($class == null){
-            /*
-             *
-             */
-            $class = $_CONFIG['flash']['default_class'];
-        }
-
         if(!isset($_SESSION['flash'])){
             /*
              * Auto create
@@ -651,8 +636,7 @@ function html_flash($class = null){
 
             switch(strtolower($type)){
                 case 'info':
-                    $type = 'information';
-                    // FALLTHROUGH
+                    break;
 
                 case 'information':
                     break;
@@ -663,15 +647,17 @@ function html_flash($class = null){
                 case 'error':
                     break;
 
+                case 'danger':
+                    break;
+
                 case 'warning':
-                    $type = 'attention';
-                    // FALLTHROUGH
+                    break;
 
                 case 'attention':
                     break;
 
                 default:
-                    throw new bException(tr('html_flash(): Unknown flash type "%type%" specified. Please specify one of "info" or "success" or "attention" or "error"', array('%type%' => str_log($type))), 'flash/unknown');
+                    throw new bException(tr('html_flash(): Unknown flash type ":type" specified. Please specify one of "info" or "success" or "attention" or "warning" or "error" or "danger"', array(':type' => $type)), 'flash/unknown');
             }
 
             if(!debug()){
@@ -684,18 +670,16 @@ function html_flash($class = null){
             /*
              * Set the indicator that we have added flash messages
              */
+            $retval .= tr($_CONFIG['flash']['html'], array(':message' => $message, ':type' => $type, ':hidden' => ''), false);
+
             $GLOBALS['flash'] = true;
-
-    //        $retval .= '<div class="sys_bg sys_'.$type.'"></div><div class="'.$_CONFIG['flash']['css_name'].' sys_'.$type.'">'.$message.'</div>';
-            $retval .= '<div class="'.$_CONFIG['flash']['css_name'].' '.$_CONFIG['flash']['prefix'].$type.($class ? ' '.$class : '').'">'.$_CONFIG['flash']['button'].$message.'</div>';
-
             unset($_SESSION['flash'][$id]);
         }
 
         /*
          * Add an extra hidden flash message box that can respond for jsFlashMessages
          */
-        return $retval.'<div id="jsFlashMessage" class="'.$_CONFIG['flash']['css_name'].' '.$_CONFIG['flash']['prefix'].($class ? ' '.$class : '').'" style="display:none;"></div>';
+        return $retval.tr($_CONFIG['flash']['html'], array(':message' => '', ':type' => '', ':hidden' => ' hidden'), false);
 
     }catch(Exception $e){
         throw new bException('html_flash(): Failed', $e);
@@ -716,10 +700,6 @@ function html_flash_set($messages, $type = 'info', $class = null){
              * Wut? no message?
              */
             return false;
-        }
-
-        if($class == null){
-            $class = $_CONFIG['flash']['default_class'];
         }
 
         /*
@@ -765,10 +745,6 @@ function html_flash_set($messages, $type = 'info', $class = null){
  */
 function html_flash_class($class = null){
     try{
-        if($class == null){
-            $class = $_CONFIG['flash']['default_class'];
-        }
-
         if(isset($_SESSION['flash'])){
             foreach($_SESSION['flash'] as $message){
                 if($message['class'] == $class){
@@ -789,19 +765,19 @@ function html_flash_class($class = null){
 /*
  * Return an HTML <select> list
  */
-function html_select($params, $selected = null, $name = '', $none = '', $class = '', $option_class = '', $disabled = false) {
+function html_select($params){
     static $count = 0;
 
     try{
         array_params ($params, 'resource');
-        array_default($params, 'class'       , $class);
-        array_default($params, 'disabled'    , $disabled);
-        array_default($params, 'name'        , $name);
+        array_default($params, 'class'       , '');
+        array_default($params, 'disabled'    , false);
+        array_default($params, 'name'        , '');
         array_default($params, 'id'          , $params['name']);
         array_default($params, 'none'        , tr('None selected'));
         array_default($params, 'empty'       , tr('None available'));
-        array_default($params, 'option_class', $option_class);
-        array_default($params, 'selected'    , $selected);
+        array_default($params, 'option_class', '');
+        array_default($params, 'selected'    , null);
         array_default($params, 'bodyonly'    , false);
         array_default($params, 'autosubmit'  , false);
         array_default($params, 'onchange'    , '');
@@ -919,16 +895,16 @@ function html_select($params, $selected = null, $name = '', $none = '', $class =
 /*
  * Return the body of an HTML <select> list
  */
-function html_select_body($params, $selected = null, $none = '', $class = '', $auto_select = true) {
+function html_select_body($params) {
     global $_CONFIG;
 
     try{
         array_params ($params, 'resource');
-        array_default($params, 'class'         , $class);
+        array_default($params, 'class'         , '');
         array_default($params, 'none'          , tr('None selected'));
         array_default($params, 'empty'         , tr('None available'));
-        array_default($params, 'selected'      , $selected);
-        array_default($params, 'auto_select'   , $auto_select);
+        array_default($params, 'selected'      , null);
+        array_default($params, 'auto_select'   , true);
         array_default($params, 'data_resources', null);
 
         if(!$_CONFIG['production'] and (!empty($params['data_key']) or !empty($params['data_resource']))){
@@ -945,7 +921,7 @@ function html_select_body($params, $selected = null, $none = '', $class = '', $a
             throw new bException(tr('html_select_body(): Invalid data_resource specified, should be an array, but received a ":gettype"', array(':gettype' => gettype($params['data_resources']))), 'invalid');
         }
 
-        if($params['none'] !== null){
+        if($params['none']){
             $retval = '<option'.($params['class'] ? ' class="'.$params['class'].'"' : '').''.(($params['selected'] === null) ? ' selected' : '').' value="">'.$params['none'].'</option>';
 
         }else{
@@ -996,15 +972,15 @@ function html_select_body($params, $selected = null, $none = '', $class = '', $a
                  * Process SQL resource
                  */
                 try{
-                    while($row = sql_fetch($params['resource'])){
+                    while($row = sql_fetch($params['resource'], false, PDO::FETCH_NUM)){
                         $notempty    = true;
                         $option_data = '';
 
                         /*
                          * To avoid select problems with "none" entries, empty id column values are not allowed
                          */
-                        if(!$row['id']){
-                            $row['id'] = str_random(8);
+                        if(!$row[0]){
+                            $row[0] = str_random(8);
                         }
 
                         /*
@@ -1018,7 +994,7 @@ function html_select_body($params, $selected = null, $none = '', $class = '', $a
                             }
                         }
 
-                        $retval  .= '<option'.($params['class'] ? ' class="'.$params['class'].'"' : '').''.(($row['id'] === $params['selected']) ? ' selected' : '').' value="'.$row['id'].'"'.$option_data.'>'.$row['name'].'</option>';
+                        $retval  .= '<option'.($params['class'] ? ' class="'.$params['class'].'"' : '').''.(($row[0] === $params['selected']) ? ' selected' : '').' value="'.$row[0].'"'.$option_data.'>'.$row[1].'</option>';
                     }
 
                 }catch(Exception $e){
@@ -1147,14 +1123,14 @@ function html_favicon($icon = null, $mobile_icon = null, $sizes = null, $precomp
         foreach($params['sizes'] as $sizes){
             if($GLOBALS['page_is_mobile']){
                 if(!$params['mobile_icon']){
-                    $params['mobile_icon'] = cdn_prefix().'img'.(SUBENVIRONMENTNAME ? '/'.SUBENVIRONMENTNAME : '').'/mobile/favicon.png';
+                    $params['mobile_icon'] = cdn_prefix().'img/mobile/favicon.png';
                 }
 
                 return '<link rel="apple-touch-icon'.($params['precomposed'] ? '-precompsed' : '').'"'.($sizes ? ' sizes="'.$sizes.'"' : '').' href="'.$params['mobile_icon'].'" />';
 
             }else{
                 if(empty($params['icon'])){
-                    $params['icon'] = cdn_prefix().'img'.(SUBENVIRONMENTNAME ? '/'.SUBENVIRONMENTNAME : '').'/favicon.png';
+                    $params['icon'] = cdn_prefix().'img/favicon.png';
                 }
 
                 return '<link rel="icon" type="image/x-icon"'.($sizes ? ' sizes="'.$sizes.'"' : '').'  href="'.$params['icon'].'" />';
@@ -1361,11 +1337,11 @@ function html_img($src, $alt, $width = null, $height = null, $more = ''){
 
         if(!$_CONFIG['production']){
             if(!$src){
-                throw new bException(tr('html_img(): No image src specified'), 'notspecified');
+                throw new bException(tr('html_img(): No image src specified'), 'not-specified');
             }
 
             if(!$alt){
-                throw new bException(tr('html_img(): No image alt text specified for src ":src"', array(':src' => $src)), 'notspecified');
+                throw new bException(tr('html_img(): No image alt text specified for src ":src"', array(':src' => $src)), 'not-specified');
             }
 
         }else{
@@ -1473,7 +1449,7 @@ function html_video($src, $type = null, $height = 0, $width = 0, $more = ''){
     try{
         if(!$_CONFIG['production']){
             if(!$src){
-                throw new bException(tr('html_video(): No video src specified'), 'notspecified');
+                throw new bException(tr('html_video(): No video src specified'), 'not-specified');
             }
         }
 
@@ -1511,15 +1487,15 @@ function html_video($src, $type = null, $height = 0, $width = 0, $more = ''){
                  * Remote videos MUST have height and width specified!
                  */
                 if(!$height){
-                    throw new bException(tr('html_video(): No height specified for remote video'), 'notspecified');
+                    throw new bException(tr('html_video(): No height specified for remote video'), 'not-specified');
                 }
 
                 if(!$width){
-                    throw new bException(tr('html_video(): No width specified for remote video'), 'notspecified');
+                    throw new bException(tr('html_video(): No width specified for remote video'), 'not-specified');
                 }
 
                 if(!$type){
-                    throw new bException(tr('html_video(): No type specified for remote video'), 'notspecified');
+                    throw new bException(tr('html_video(): No type specified for remote video'), 'not-specified');
                 }
             }
         }
@@ -1591,9 +1567,6 @@ function page_show($pagename, $die = true, $force = false, $data = null) {
 
         }elseif(!empty($GLOBALS['page_is_ajax'])){
                 $prefix = 'ajax/';
-
-        }elseif(!empty($GLOBALS['page_is_mobile'])){
-                $prefix = 'mobile/';
 
         }else{
             $prefix = '';

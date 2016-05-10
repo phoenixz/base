@@ -68,7 +68,7 @@ function sql_query($query, $execute = false, $handle_exceptions = true, $connect
                  */
                 foreach($execute as $key => &$value){
                     if(!is_scalar($value) and !is_null($value)){
-                        throw new bException(tr('sql_query(): Specified key "%value%" in the execute array for query "%query%" is NOT scalar! Value is "%value%"', array('%key%' => str_log($key), '%query%' => str_log($query, 4096), '%value%' => str_log($value))), 'invalid');
+                        throw new bException(tr('sql_query(): Specified key ":value" in the execute array for query ":query" is NOT scalar! Value is ":value"', array(':key' => str_log($key), ':query' => str_log($query, 4096), ':value' => str_log($value))), 'invalid');
                     }
 
                     if($value and !is_numeric($value)){
@@ -94,7 +94,7 @@ function sql_query($query, $execute = false, $handle_exceptions = true, $connect
 
     }catch(Exception $e){
         if(!$handle_exceptions){
-            throw new bException(tr('sql_query(%connector%): Query "%query%" failed', array('%connector%' => $connector, '%query%' => $query)), $e);
+            throw new bException(tr('sql_query(:connector): Query ":query" failed', array(':connector' => $connector, ':query' => $query)), $e);
         }
 
         try{
@@ -102,7 +102,7 @@ function sql_query($query, $execute = false, $handle_exceptions = true, $connect
             pdo_error($e, $query, $execute, isset_get($GLOBALS['sql_'.$connector]));
 
         }catch(Exception $e){
-            throw new bException(tr('sql_query(%connector%): Query "%query%" failed', array('%connector%' => $connector, '%query%' => $query)), $e);
+            throw new bException(tr('sql_query(:connector): Query ":query" failed', array(':connector' => $connector, ':query' => $query)), $e);
         }
     }
 }
@@ -127,13 +127,13 @@ function sql_prepare($query, $connector = 'core'){
 /*
  * Fetch and return data from specified resource
  */
-function sql_fetch($r, $columns = false){
+function sql_fetch($r, $columns = false, $style = PDO::FETCH_ASSOC){
     try{
         if(!is_object($r)){
             throw new bException('sql_fetch(): Specified resource is not a PDO object', 'invalid');
         }
 
-        $result = $r->fetch(PDO::FETCH_ASSOC);
+        $result = $r->fetch($style);
 
         if($result === false){
             /*
@@ -184,20 +184,29 @@ function sql_fetch($r, $columns = false){
  */
 function sql_get($query, $column = null, $execute = null, $connector = 'core'){
     try{
-        if(is_array($column)){
-            /*
-             * Argument shift, no columns were specified.
-             */
-            $tmp     = $execute;
-            $execute = $column;
-            $column  = $tmp;
-            unset($tmp);
+        if(is_object($query)){
+            return sql_fetch($query, $column);
+
+        }else{
+            if(is_array($column)){
+                /*
+                 * Argument shift, no columns were specified.
+                 */
+                $tmp     = $execute;
+                $execute = $column;
+                $column  = $tmp;
+                unset($tmp);
+            }
+
+    // :TODO: Exception on multiple results
+            return sql_fetch(sql_query($query, $execute, true, $connector), $column);
         }
 
-// :TODO: Exception on multiple results
-        return sql_fetch(sql_query($query, $execute, true, $connector), $column);
-
     }catch(Exception $e){
+        if(is_object($query)){
+            $query = $query->queryString;
+        }
+
         if(strtolower(substr(trim($query), 0, 6)) != 'select'){
             throw new bException('sql_get(): Query "'.str_log($query, 4096).'" is not a select query and as such cannot return results', $e);
         }
@@ -271,7 +280,7 @@ function sql_init($connector = 'core'){
 
     try{
         if(empty($connector)){
-            throw new bException(tr('sql_init(): No connector specified'), 'notspecified');
+            throw new bException(tr('sql_init(): No connector specified'), 'not-specified');
         }
 
         $connector = sql_connector_name($connector);
@@ -284,7 +293,7 @@ function sql_init($connector = 'core'){
         }
 
         if(empty($_CONFIG['db'][$connector])){
-            throw new bException(tr('sql_init(): Specified database connector "%connector%" has not been configured', array('%connector%' => $connector)), 'notexist');
+            throw new bException(tr('sql_init(): Specified database connector ":connector" has not been configured', array(':connector' => $connector)), 'not-exist');
         }
 
         $db = $_CONFIG['db'][$connector];
@@ -317,7 +326,7 @@ function sql_init($connector = 'core'){
                 $r = $GLOBALS['sql_'.$connector]->query('SELECT `project`, `framework` FROM `versions` ORDER BY `id` DESC LIMIT 1;');
 
                 if(!$r->rowCount()){
-                    log_console(tr('sql_init(): No versions in versions table found, assumed empty database "%db%"', array('%db%' => $_CONFIG['db'][$connector]['db'])), 'warning/versions', 'yellow');
+                    log_console(tr('sql_init(): No versions in versions table found, assumed empty database ":db"', array(':db' => $_CONFIG['db'][$connector]['db'])), 'warning/versions', 'yellow');
 
                     define('FRAMEWORKDBVERSION', 0);
                     define('PROJECTDBVERSION'  , 0);
@@ -348,7 +357,7 @@ function sql_init($connector = 'core'){
             /*
              * On console, show current versions
              */
-            if((PLATFORM == 'shell') and empty($GLOBALS['quiet'])){
+            if((PLATFORM == 'shell') and VERBOSE){
                 log_console('sql_init(): Found framework code version "'.str_log(FRAMEWORKCODEVERSION).'" and framework database version "'.str_log(FRAMEWORKDBVERSION).'"');
                 log_console('sql_init(): Found project code version "'.str_log(PROJECTCODEVERSION).'" and project database version "'.str_log(PROJECTDBVERSION).'"');
             }
@@ -423,7 +432,7 @@ function sql_connect($connector, $use_database = true){
             }
 
         }catch(Exception $e){
-            log_console(tr('Encountered exception "%e%" while connecting to database server, attempting to resolve', array('%e%' => $e->getMessage())), '', 'yellow');
+            log_console(tr('Encountered exception ":e" while connecting to database server, attempting to resolve', array(':e' => $e->getMessage())), '', 'yellow');
             include(dirname(__FILE__).'/handlers/pdo_connect_exception.php');
         }
 
@@ -444,7 +453,7 @@ function sql_import($file, $connector = 'core'){
         $connector = sql_connector_name($connector);
 
         if(!file_exists($file)){
-            throw new bException('sql_import(): Specified file "'.str_log($file).'" does not exist', 'notexist');
+            throw new bException('sql_import(): Specified file "'.str_log($file).'" does not exist', 'not-exist');
         }
 
         $tel    = 0;

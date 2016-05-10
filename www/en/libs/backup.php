@@ -305,7 +305,7 @@ function backup_path($params){
          * Make sure source path exists and is a directory
          */
         if(!file_exists($params['path'])){
-            throw new bException('backup_path(): The specified path "'.str_log($params['path']).'" does not exist', 'notexists');
+            throw new bException('backup_path(): The specified path "'.str_log($params['path']).'" does not exist', 'not-exist');
         }
 
         if(!is_dir($params['path'])){
@@ -423,11 +423,11 @@ function backups_cleanup($params){
          * Check the backup target path, it should contain only date directories (anything else will be ignored)
          */
         if(!file_exists($params['target'])){
-            throw new bException('backups_cleanup(): Target path "'.$params['target'].'" does not exist', 'notexists');
+            throw new bException('backups_cleanup(): Target path "'.$params['target'].'" does not exist', 'not-exist');
         }
 
         if(!is_dir($params['target'])){
-            throw new bException('backups_cleanup(): Target path "'.$params['target'].'" is not a directory', 'notexists');
+            throw new bException('backups_cleanup(): Target path "'.$params['target'].'" is not a directory', 'not-exist');
         }
 
         /*

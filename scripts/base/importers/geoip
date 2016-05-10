@@ -52,12 +52,12 @@ try{
     load_libs('file');
     $tmpdir = file_temp_dir();
 
-    if(argument('nodownload')){
+    if(cli_argument('nodownload')){
         log_console('Trying to use the global data path file because of "nodownload" argument', 'downloading', 'yellow');
         $path = get_global_data_path('geoip');
 
         if(!file_exists($path.'GeoLiteCity-latest.zip')){
-            throw new bException('The global data path "'.$path.'" does not contain the required geoip file "GeoLiteCity-latest.zip"', 'notexist');
+            throw new bException('The global data path "'.$path.'" does not contain the required geoip file "GeoLiteCity-latest.zip"', 'not-exist');
         }
 
         copy($path.'GeoLiteCity-latest.zip', $tmpdir.'GeoLiteCity-latest.zip');
@@ -68,10 +68,10 @@ try{
     }
 
     if(!file_exists($tmpdir.'GeoLiteCity-latest.zip')){
-        throw new bException('The geoip file "'.$tmpdir.'GeoLiteCity-latest.zip" was not found at its location', 'notexist');
+        throw new bException('The geoip file "'.$tmpdir.'GeoLiteCity-latest.zip" was not found at its location', 'not-exist');
     }
 
-    if(argument('nounzip')){
+    if(cli_argument('nounzip')){
         log_console('Skipping unzip because of "nounzip" argument', 'unzipping', 'yellow');
 
     }else{
@@ -79,7 +79,7 @@ try{
         safe_exec('cd '.$tmpdir.'; unzip '.$tmpdir.'GeoLiteCity-latest.zip');
     }
 
-    if(argument('noencoding')){
+    if(cli_argument('noencoding')){
         log_console('Not converting encoding of GEOIP data because of "noencoding" argument', 'converting', 'yellow');
 
     }else{
@@ -102,12 +102,12 @@ try{
      *
      * See data/doc/geo.txt for more information
      */
-    if(argument('notlocal')){
+    if(cli_argument('notlocal')){
         log_console('Placing symlink for non local import', 'warning', 'yellow');
         symlink($tmpdir, '/var/lib/mysql/'.uniqid());
     }
 
-    if(argument('noimport')){
+    if(cli_argument('noimport')){
         log_console('Not importing data files due to "noimport" option', '', 'yellow');
 
     }else{
@@ -132,7 +132,7 @@ try{
         safe_exec('mysqlimport --fields-terminated-by="," --fields-optionally-enclosed-by="\"" --lines-terminated-by="\n" --local --user='.$_CONFIG['db']['user'].' --password='.$_CONFIG['db']['pass'].' '.$_CONFIG['db']['db'].' '.$tmpdir.'geoip_location.csv >>/tmp/mysqlimport.log 2>&1');
     }
 
-    if(argument('notlocal')){
+    if(cli_argument('notlocal')){
         /*
          * Remove dat symlink
          */
@@ -140,7 +140,7 @@ try{
         unlink('/var/lib/mysql/'.$uniqid);
     }
 
-    if(argument('nostructures')){
+    if(cli_argument('nostructures')){
         log_console('Not fixing data structures due to "nostructures" argument', '', 'yellow');
 
     }else{

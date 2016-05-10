@@ -8,11 +8,11 @@ require_once(dirname(__FILE__).'/../../../libs/startup.php');
 
 try{
     cli_only();
-    this_script_already_runs();
+    cli_exclusive();
 
-    $wait  = argument('wait' , true);
-    $count = argument('count', true);
-    $test  = not_empty(argument('test', true), argument('debug', true));
+    $wait  = cli_argument('wait' , true);
+    $count = cli_argument('count', true);
+    $test  = not_empty(cli_argument('test', true), cli_argument('debug', true));
 
     load_libs('mailer');
     if($count = mailer_send($count, $wait, $test)){

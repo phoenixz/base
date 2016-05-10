@@ -1,0 +1,93 @@
+#!/usr/bin/php
+<?php
+/*
+ * This is an empty test script template
+ */
+$usage = "./scripts/base/mysql method [options]\n";
+
+$help  = "This script contains various methods to assist with mysql";
+
+require_once(dirname(__FILE__).'/../../libs/startup.php');
+
+cli_only();
+
+$type = cli_argument('-T', true, cli_argument('--type', true));
+
+switch(cli_method()){
+    case 'list':
+        switch($type){
+            case 'fk':
+                // FALLTHROUGH
+            case 'foreign key':
+                $filter      = cli_argument('--filter'     , true);
+                $reference   = cli_argument('--reference'  , true);
+                $constraint  = cli_argument('--constraint' , true);
+                $database    = cli_argument('--database'   , true);
+                $foreign_key = cli_argument('--foreign-key', true, cli_argument('--fk', true));
+
+                cli_no_arguments_left();
+
+                $where       = ' WHERE `referenced_table_name` IS NOT NULL ';
+                $execute     = array();
+
+                if($foreign_key){
+                    $having[] = ' `foreign_key` LIKE :foreign_key ';
+                    $execute[':foreign_key'] = '%'.$foreign_key.'%';
+                }
+
+                if($database){
+                    $having[] = ' `database` LIKE :database ';
+                    $execute[':database'] = '%'.$database.'%';
+                }
+
+                if($constraint){
+                    $having[] = ' `constraint` LIKE :constraint ';
+                    $execute[':constraint'] = '%'.$constraint.'%';
+                }
+
+                if($reference){
+                    $having[] = ' `references` LIKE :reference ';
+                    $execute[':reference'] = '%'.$reference.'%';
+                }
+
+                $r = sql_query('SELECT `information_schema`.`key_column_usage`.`constraint_name`  AS `constraint`,
+                                       `information_schema`.`key_column_usage`.`constraint_schema` AS `database`,
+                                       CONCAT(`information_schema`.`key_column_usage`.`table_name`           , ".", `information_schema`.`key_column_usage`.`column_name`)            AS `foreign_key`,
+                                       CONCAT(`information_schema`.`key_column_usage`.`referenced_table_name`, ".", `information_schema`.`key_column_usage`.`referenced_column_name`) AS `references`
+
+                                FROM   `information_schema`.`key_column_usage` '.$where.(empty($having) ? '' : ' HAVING '.implode(' AND ', $having)), $execute);
+
+                if($r->rowCount()){
+                    cli_log(tr('Listing ":count" foreign key references', array(':count' => $r->rowCount())), 'white');
+                    cli_log(tr('Database           Constraint name                          Foreign key                              References'), 'cyan');
+
+                    while($row = sql_fetch($r)){
+                        $row = str_size($row['database'], 18, ' ').' '.str_size($row['constraint'], 40, ' ').' '.str_size($row['foreign_key'], 40, ' ').' '.$row['references'];
+
+                        if(!$filter or strstr($row, $filter)){
+                            cli_log($row);
+                        }
+                    }
+
+                }else{
+                    cli_log(tr('No foreign key references found'), 'white');
+                }
+
+                break;
+
+            case '':
+                throw new bException(tr('No type specified, please use -T or --type'), 'not-specified');
+
+            default:
+                throw new bException(tr('Unknown type ":type" specified', array(':type' => $type)), 'unknown');
+        }
+
+        break;
+
+    case '':
+        throw new bException(tr('No method specified'), 'not-specified');
+
+    default:
+        throw new bException(tr('Unknown method ":method" specified', array(':method' => cli_method())), 'unknown');
+}
+?>

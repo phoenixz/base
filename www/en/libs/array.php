@@ -77,7 +77,7 @@ function array_next_value(&$array, $currentvalue, $delete = false, $restart = fa
             /*
              * The currentvalue was found, but it was at the end of the array
              */
-            throw new bException(tr('array_next_value(): Found currentvalue ":value" but it was the last item in the array, there is no next', array(':value' => str_log($currentvalue))), 'invalid');
+            throw new bException(tr('array_next_value(): Option ":value" does not have a value specified', array(':value' => str_log($currentvalue))), 'invalid');
         }
 
         reset($array);
@@ -873,6 +873,38 @@ function array_average($source){
 
     }catch(Exception $e){
         throw new bException('array_average(): Failed', $e);
+    }
+}
+
+
+
+/*
+ * Return an array with values ranging from $min to $max
+ */
+function array_range($min, $max){
+    try{
+        if(!is_numeric($min)){
+            throw new bException(tr('array_range(): Specified $min not numeric'), 'invalid');
+        }
+
+        if(!is_numeric($max)){
+            throw new bException(tr('array_range(): Specified $max not numeric'), 'invalid');
+        }
+
+        if($min > $max){
+            throw new bException(tr('array_range(): Specified $min is equal or larger than $max. Please ensure that $min is smaller'), 'invalid');
+        }
+
+        $retval = array();
+
+        for($i = $min; $i <= $max; $i++){
+            $retval[$i] = $i;
+        }
+
+        return $retval;
+
+    }catch(Exception $e){
+        throw new bException('array_range(): Failed', $e);
     }
 }
 ?>

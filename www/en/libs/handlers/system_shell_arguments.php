@@ -85,29 +85,6 @@ try{
                 unset($argv[$argid + 1]);
                 break;
 
-            case '-s':
-                // FALLTHROUGH
-            case 'subenv':
-                // FALLTHROUGH
-            case '--subenv':
-                /*
-                 * Set environment and reset next
-                 */
-                if(isset($subenvironment)){
-                    throw new Exception('Subenvironment specified twice');
-                }
-
-                if(!isset($argv[$argid + 1])){
-                    throw new Exception('startup: The "subenvironment" argument requires an existing subenvironment name right after it');
-
-                }else{
-                    $subenvironment = $argv[$argid + 1];
-                }
-
-                unset($argv[$argid]);
-                unset($argv[$argid + 1]);
-                break;
-
             default:
                 /*
                  * We can ignore this parameter

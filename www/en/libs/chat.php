@@ -157,7 +157,7 @@ function chat_update_user($user){
              */
             if(!sql_get('SELECT `user_id` FROM `users` WHERE `user_id` = :user_id', 'user_id', array(':user_id' => $user['id']), 'chat')){
                 load_libs('user');
-                throw new bException(tr('chat_update_user(): Specified user "%user%" does not exist', array('%user%' => user_name($user))), 'notexist');
+                throw new bException(tr('chat_update_user(): Specified user "%user%" does not exist', array('%user%' => user_name($user))), 'not-exist');
             }
         }
 
@@ -199,7 +199,7 @@ function chat_update_rank($user){
              */
             if(!sql_get('SELECT `user_id` FROM `users` WHERE `user_id` = :user_id', 'user_id', array(':user_id' => $user['id']))){
                 load_libs('user');
-                throw new bException(tr('chat_update_rank(): Specified user "%user%" does not exist', array('%user%' => user_name($user))), 'notexist');
+                throw new bException(tr('chat_update_rank(): Specified user "%user%" does not exist', array('%user%' => user_name($user))), 'not-exist');
             }
         }
 

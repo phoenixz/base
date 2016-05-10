@@ -11,26 +11,26 @@ $quiet = true;
 require_once(dirname(__FILE__).'/../../../libs/startup.php');
 
 try{
-	cli_only();
+    cli_only();
 
-    $class   = argument(0);
-    $event   = argument(1);
+    $class   = cli_argument(0);
+    $event   = cli_argument(1);
 
     unset($argv[0]);
     unset($argv[1]);
 
-    $message = implode(' ', argument(null));
+    $message = implode(' ', cli_argument(null));
 
     if(empty($class)){
-        throw new bException(tr('No class name or id specified'), 'notspecified');
+        throw new bException(tr('No class name or id specified'), 'not-specified');
     }
 
     if(empty($class)){
-        throw new bException(tr('No event name specified'), 'notspecified');
+        throw new bException(tr('No event name specified'), 'not-specified');
     }
 
     if(empty($class)){
-        throw new bException(tr('No message specified'), 'notspecified');
+        throw new bException(tr('No message specified'), 'not-specified');
     }
 
     if(!notify($event, $message, $class)){

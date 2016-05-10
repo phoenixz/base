@@ -11,17 +11,17 @@
  * Execute $pdo query
  */
 function pdo_query($query,$data_array) {
-	global $pdo;
-	try{
-		$r = $pdo->prepare($query);
+    global $pdo;
+    try{
+        $r = $pdo->prepare($query);
 
-		$r->execute($data_array);
+        $r->execute($data_array);
 
-		if(!$r->rowCount()){
-			return false;
-		}
+        if(!$r->rowCount()){
+            return false;
+        }
 
-		return $r;
+        return $r;
 
     }catch(Exception $e){
         throw new bException('pdo_query(): Failed', $e);
@@ -32,15 +32,15 @@ function pdo_query($query,$data_array) {
  * Return one row
  */
 function pdo_fetch_assoc($r) {
-	global $pdo;
+    global $pdo;
 
-	try{
-	
-		return $r->fetch(PDO::FETCH_ASSOC);
+    try{
+    
+        return $r->fetch(PDO::FETCH_ASSOC);
 
-	}catch(Exception $e){
-		throw new bException('pdo_fetch_assoc(): Failed', $e);
-	}
+    }catch(Exception $e){
+        throw new bException('pdo_fetch_assoc(): Failed', $e);
+    }
 }
 
 /*

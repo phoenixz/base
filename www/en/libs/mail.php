@@ -35,18 +35,18 @@ function mail_send_templated_email($params, $subject, $body, $language = false, 
 
 // :DELETE: The following lines were for when notifications were still configured by means of config files.
             //foreach($_CONFIG['notifications']['users'] as $user){
-            //	if($params['to_email'] == $user['email']) {
-            //		$dev = true;
-            //		break;
-            //	}
+            //    if($params['to_email'] == $user['email']) {
+            //        $dev = true;
+            //        break;
+            //    }
             //}
             //
             //if(empty($dev)){
-            //	if(!$_CONFIG['mail']['developer']){
-            //		throw new bException('No developer email specified on environment "'.ENVIRONMENT.'"');
-            //	}
+            //    if(!$_CONFIG['mail']['developer']){
+            //        throw new bException('No developer email specified on environment "'.ENVIRONMENT.'"');
+            //    }
             //
-            //	$params['to_email'] = $_CONFIG['mail']['developer'];
+            //    $params['to_email'] = $_CONFIG['mail']['developer'];
             //}
         }
 
@@ -71,7 +71,7 @@ function mail_send_templated_email($params, $subject, $body, $language = false, 
                           '###UNSUBSCRIBE###',
                           '###DOMAIN###',
                           '###SITENAME###',
-                          '###SUBENVIRONMENT###',
+                          '###ENVIRONMENT###',
                           '###EMAIL###');
 
         $to       = array(isset_get($params['mailer_code']),
@@ -81,7 +81,7 @@ function mail_send_templated_email($params, $subject, $body, $language = false, 
                           '<a href="http://'.$_CONFIG['domain'].'/unsubscribe.php?email='.$params['to_email'].'">'.tr('Unsubscribe').'</a>',
                           $_CONFIG['domain'],
                           $_CONFIG['name'],
-                          SUBENVIRONMENTNAME,
+                          ENVIRONMENT,
                           $params['to_email']);
 
         $body     = load_content($template, $from, $to, $language);

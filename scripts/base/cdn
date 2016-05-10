@@ -4,31 +4,66 @@
 * This is an empty test script template
 */
 $usage = "./scripts/cdn\n".
-
+         "./scripts/cdn command \n";
          "./scripts/cdn option [option]\n";
 
-$help  = "cdn management script";
+$help  = "CDN management script
+
+METHODS
+
+command                        -
+
+process                        -
+
+ping                           -
+
+info                           -
+
+remove                         -
+
+balance                        -
+
+clean                          -
+
+validate                       -
+
+move                           -
+
+OPTIONS
+";
 
 require_once(dirname(__FILE__).'/../../libs/startup.php');
 load_libs('cdn');
 
 cli_only();
-this_script_already_runs();
+cli_exclusive();
 
-switch(argument(0)){
+switch(cli_method()){
     case 'command':
-        cdn_commands_send(argument(1), argument(2));
+        $command = cli_argument(1);
+        $data    = cli_argument(2);
+        $servers = cli_argument(3);
+
+        cli_no_arguments_left();
+
+        cdn_commands_send($command, $data, $servers);
         break;
 
     case 'process':
-        cdn_commands_process(argument('--limit', true));
+        $limit = cli_argument('--limit', true, cli_argument('-l', true));
+        cli_no_arguments_left();
+
+        cdn_commands_process($limit);
         break;
 
     case 'ping':
-        cdn_ping(argument('ping', 'all'));
+        $servers = arguments();
+        cdn_ping($servers);
         break;
 
     case 'info':
+        cli_no_arguments_left();
+
         /*
          * Show howmany listings and users are on each CDN server
          */
@@ -97,13 +132,17 @@ switch(argument(0)){
         /*
          * Disable specified CDN server by moving all files away from it
          */
-        cdn_remove(argument(1));
+        $server = cli_argument(1);
+        cli_no_arguments_left();
+
+        cdn_remove($server);
         break;
 
     case 'balance':
         /*
          * Ensure that all CDN servers support more or less the same amount of listings and users
          */
+        cli_no_arguments_left();
         cdn_balance();
         break;
 
@@ -111,6 +150,7 @@ switch(argument(0)){
         /*
          * Remove image links in the database if the linked files no longer exist.
          */
+        cli_no_arguments_left();
         cdn_clean();
         break;
 
@@ -121,7 +161,10 @@ switch(argument(0)){
          */
         load_libs('curl');
 
-        if($listing = argument(1)){
+        $listing = cli_argument(1);
+        cli_no_arguments_left();
+
+        if($listing){
             if(!is_numeric($listing)){
                 throw new bException(tr('Invalid listing ":listing" specified', array(':listing' => $listing)), 'invalid');
             }
@@ -129,14 +172,14 @@ switch(argument(0)){
             $r = sql_query('SELECT `id`, `status`, `cdn` FROM `listings` WHERE `id` = :id', array(':id' => $listing));
 
             if(!$r->rowCount()){
-                throw new bException(tr('Listing ":listing" does not exist', array(':listing' => $listing)), 'notexist');
+                throw new bException(tr('Listing ":listing" does not exist', array(':listing' => $listing)), 'not-exist');
             }
 
         }else{
             $r = sql_query('SELECT `id`, `status`, `cdn` FROM `listings`');
         }
 
-        log_console('Listings id Status           cdn Result', '', 'white');
+        cli_log(tr('Listings id Status           cdn Result'), 'cyan');
 
         $count = $r->rowCount();
 
@@ -186,21 +229,22 @@ switch(argument(0)){
                 $result = '[ '.str_size($success, 2, ' ', true).' / '.str_size($fail, 2, ' ', true).' ] '.implode(', ', $result);
             }
 
-            log_console(str_size($listing['id'], 11, ' ', true).' '.str_size($listing['status'], 17).str_size($listing['cdn'], 3, ' ', true).' '.$result, '', $color);
+            cli_log(str_size($listing['id'], 11, ' ', true).' '.str_size($listing['status'], 17).str_size($listing['cdn'], 3, ' ', true).' '.$result, $color);
         }
 
-        log_console(tr('Processed "::count" listings', array(':count' => $count)), '', 'green');
+        cli_log(tr('Processed ":count" listings', array(':count' => $count)), 'green');
         break;
 
     case 'move':
         /*
          * Move the files from specified listing to the specified CDN server
          */
-        $listings_id = argument('listing');
-        $cdn         = argument('cdn');
+        $listings_id = cli_argument('listing');
+        $cdn         = cli_argument('cdn');
+        cli_no_arguments_left();
 
         if(!$cdn){
-            throw new bException(tr('No CDN specified'), 'notspecified');
+            throw new bException(tr('No CDN specified'), 'not-specified');
         }
 
         if(!is_numeric($cdn)){
@@ -208,34 +252,33 @@ switch(argument(0)){
         }
 
         if(!in_array($cdn, $_CONFIG['cdn']['servers'])){
-            throw new bException(tr('Non existing CDN ":cdn" specified, must be one of ":list"', array(':cdn' => $cdn, ':list' => implode(',', $_CONFIG['cdn']['servers']))), 'notexists');
+            throw new bException(tr('Non existing CDN ":cdn" specified, must be one of ":list"', array(':cdn' => $cdn, ':list' => implode(',', $_CONFIG['cdn']['servers']))), 'not-exist');
         }
 
         if($cdn == $_CONFIG['cdn']['this']){
-            throw new bException(tr('Cannot move files to CDN ":cdn", because that is the current CDN server', array(':cdn' => $cdn)), 'notexists');
+            throw new bException(tr('Cannot move files to CDN ":cdn", because that is the current CDN server', array(':cdn' => $cdn)), 'not-exist');
         }
 
         if(!$listings_id){
-            throw new bException(tr('No listing specified'), 'notspecified');
+            throw new bException(tr('No listing specified'), 'not-specified');
         }
 
         $listing = sql_get('SELECT `id`, `cdn` FROM `listings` WHERE `id` = :id', array(':id' => $listings_id));
 
         if(!$listing){
-            throw new bException(tr('Non existing listing ":listing" specified', array(':listing' => $listings_id)), 'notexists');
+            throw new bException(tr('Non existing listing ":listing" specified', array(':listing' => $listings_id)), 'not-exist');
         }
 
         if($listing['cdn'] == $cdn){
-            throw new bException(tr('Listing ":listing" already has its files on cdn ":cdn"', array(':listing' => $listings_id, ':cdn' => $cdn)), 'notexists');
+            throw new bException(tr('Listing ":listing" already has its files on cdn ":cdn"', array(':listing' => $listings_id, ':cdn' => $cdn)), 'not-exist');
         }
 
         break;
 
     case '':
-        throw new bException(tr('No method specified'), 'notspecified');
-
+        throw new bException(tr('No method specified'), 'not-specified');
 
     default:
-        throw new bException(tr('Unknown method ":method" specified', array(':method' => argument(0))), 'unknown');
+        throw new bException(tr('Unknown method ":method" specified', array(':method' => cli_method())), 'unknown');
 }
 ?>

@@ -7,7 +7,7 @@
 require_once(dirname(__FILE__).'/../../../libs/startup.php');
 
 try{
-    if(!$language = argument(0)){
+    if(!$language = cli_argument(0)){
         throw new bException('No language specified, please specify one of "en"');
     }
 
@@ -25,7 +25,7 @@ try{
     }
 
     if($count = sql_get('SELECT COUNT(`id`) AS count FROM `synonyms`;', 'count')){
-        if(!argument('force')){
+        if(!cli_argument('force')){
             return cli_die(0, 'Synonyms table already contains data', 'yellow');
         }
 

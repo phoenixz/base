@@ -53,7 +53,7 @@ class bException extends Exception{
 
             }else{
                 if(!is_object($e) or !($e instanceof Exception)){
-                    throw new bException(tr('bException: Specified exception object for exception "%message%" is not valid (either not object or not an exception object)', array('%message%' => str_log($messages))), 'invalid');
+                    throw new bException(tr('bException: Specified exception object for exception ":message" is not valid (either not object or not an exception object)', array(':message' => str_log($messages))), 'invalid');
                 }
 
                 $this->messages[] = $e->getMessage();
@@ -85,7 +85,10 @@ class bException extends Exception{
         if($messages){
             foreach($messages as $id => $message){
                 $this->messages[] = $message;
-                error_log('Exception ['.$id.']: '.$message);
+
+                if(PLATFORM == 'http'){
+                    error_log('Exception ['.$id.']: '.$message);
+                }
             }
         }
     }
@@ -113,11 +116,11 @@ class bException extends Exception{
 /*
  * Send notifications of the specified class
  */
-function notify($event, $message, $classes = null, $alternate_subenvironment = null){
+function notify($event, $message, $classes = null){
     load_libs('notifications');
 
     try{
-        return notifications_do($event, $message, $classes, $alternate_subenvironment);
+        return notifications_do($event, $message, $classes);
 
     }catch(Exception $e){
         /*
@@ -150,34 +153,46 @@ function uncaught_exception($e, $die = 1){
 
 
 /*
- * For translations
+ * tr() is a translator marker function. It basic function is to tell the
+ * translation system that the text within should be translated.
+ *
+ * Since text may contain data from either variables or function output, and
+ * translators should not be burdened with copying variables or function calls,
+ * all variable data should be identified in the text by a :marker, and the
+ * :marker should be a key (with its value) in the $replace array.
+ *
+ * $replace values are always processed first by str_log() to ensure they are
+ * readable texts, so the texts sent to tr() do NOT require str_log().
+ *
+ * On non production systems, tr() will perform a check on both the $text and
+ * $replace data to ensure that all markers have been replaced, and non were
+ * forgotten. If results were found, an exception will be thrown. This
+ * behaviour does NOT apply to production systems
  */
-function tr($text, $replace = null, $obsolete = null){
+function tr($text, $replace = null, $verify = true){
     global $_CONFIG;
 
     try{
-        if($obsolete){
-            if(!$_CONFIG['production'] and !$_CONFIG['system']['obsolete_exception']){
-                throw new bException('tr() no longer support tr(text, from, to), please specify a replace array.', 'obsolete');
+        if($replace){
+            foreach($replace as &$value){
+                $value = str_log($value);
             }
 
-            $replace = null;
-        }
+            unset($value);
 
-        if($replace){
             $text = str_replace(array_keys($replace), array_values($replace), $text, $count);
 
             /*
              * Only on non production machines, crash when not all entries were replaced as an extra check.
              */
-            if(!$_CONFIG['production']){
+            if(!$_CONFIG['production'] and $verify){
                 if($count != count($replace)){
                     throw new bException('tr(): Not all specified keywords were found in text', 'notfound');
                 }
 
-                if(preg_match('/%\w%/', $text)){
-                    throw new bException('tr(): Not all keywords were replaced', 'notfound');
-                }
+                /*
+                 * Do NOT check for :value here since the given text itself may contain :value (ie, in prepared statements!)
+                 */
             }
 
             return $text;
@@ -226,7 +241,7 @@ function cfm($string, $utf8 = true){
     return addslashes(mb_trim(html_entity_decode(strip_tags($string))));
 
 // :TODO:SVEN:20130709: Check if we should be using mysqli_escape_string() or addslashes(), since the former requires SQL connection, but the latter does NOT have correct UTF8 support!!
-//	return mysqli_escape_string(trim(decode_entities(mb_strip_tags($str))));
+//    return mysqli_escape_string(trim(decode_entities(mb_strip_tags($str))));
 }
 
 
@@ -291,7 +306,7 @@ function load_content($file, $replace = false, $language = null, $autocreate = n
         /*
          * Check if content file exists
          */
-        if($realfile = realpath(ROOT.'data/content/'.(SUBENVIRONMENTNAME ? SUBENVIRONMENTNAME.'/' : '').LANGUAGE.'/'.cfm($file).'.html')){
+        if($realfile = realpath(ROOT.'data/content/'.LANGUAGE.'/'.cfm($file).'.html')){
             /*
              * File exists, we're okay, get and return contents.
              */
@@ -327,7 +342,7 @@ function load_content($file, $replace = false, $language = null, $autocreate = n
         }
 
         if(!$autocreate){
-            throw new bException('load_content(): Specified file "'.str_log($file).'" does not exist for language "'.str_log($language).'"', 'notexist');
+            throw new bException('load_content(): Specified file "'.str_log($file).'" does not exist for language "'.str_log($language).'"', 'not-exist');
         }
 
         /*
@@ -353,12 +368,15 @@ function load_content($file, $replace = false, $language = null, $autocreate = n
         switch($e->getCode()){
             case 'notexist':
                 log_database('load_content(): File "'.cfm($language).'/'.cfm($file).'" does not exist', 'warning');
+                break;
 
             case 'missingmarkers':
                 log_database('load_content(): File "'.cfm($language).'/'.cfm($file).'" still contains markers after replace', 'warning');
+                break;
 
             case 'searchreplacecounts':
                 log_database('load_content(): Search count does not match replace count', 'warning');
+                break;
         }
 
         throw new bException(tr('load_content(): Failed for file ":file"', array(':file' => $file)), $e);
@@ -424,6 +442,7 @@ function log_error($message, $type = 'warning', $notify = true){
                     // FALLTHROUGH
                 case 'error':
                     log_screen($message, $type, 'red');
+                    log_screen(tr('Stopping process due to logged error on non production machine'), $type, 'red');
                     die(1);
 
                 default:
@@ -527,7 +546,7 @@ function log_screen($message, $type = 'info', $color = null){
     $last = $message;
 
     if(PLATFORM == 'shell'){
-        return log_console($message, $type, $color);
+        return cli_log($message, $color);
 
     }elseif(!$_CONFIG['production']){
         /*
@@ -550,85 +569,18 @@ function log_screen($message, $type = 'info', $color = null){
 
 
 /*
- * Log specified message to console, but only if we are in console mode!
- */
-function log_console($message, $type = '', $color = null, $newline = true, $filter_double = false){
-    static $c, $fh, $last;
-
-    try{
-        if(($filter_double == true) and ($message == $last)){
-            /*
-            * We already displayed this message, skip!
-            */
-            return;
-        }
-
-        $last = $message;
-
-        if(PLATFORM != 'shell') return false;
-
-        if($type){
-            if((strpos($type, 'error') !== false) and ($color === null)){
-                $error   = true;
-                $color   = 'red';
-                $message = '['.$type.'] '.$message;
-
-            }elseif((strpos($type, 'warning') !== false) and ($color === null)){
-                $error   = true;
-                $color   = 'yellow';
-                $message = '['.$type.'] '.$message;
-
-            }else{
-                if(strpos($message, '():') !== false){
-                    $message = '['.$type.'] '.ltrim(str_from($message, '():'));
-
-                }else{
-                    $message = '['.$type.'] '.$message;
-                }
-            }
-        }
-
-        if($color and defined('NOCOLOR') and !NOCOLOR){
-            load_libs('cli');
-            $c = cli_init_color();
-
-            if($color == 'error'){
-                $color = 'red';
-            }
-
-            $message = $c->$color($message);
-        }
-
-        if(empty($error)){
-            echo stripslashes(br2nl($message)).($newline ? "\n" : "");
-
-        }else{
-            /*
-             * Log to STDERR instead of STDOUT
-             */
-            if(empty($fh)){
-                $fh = fopen('php://stderr','w');
-            }
-
-            fwrite($fh, stripslashes(br2nl($message)).($newline ? "\n" : ""));
-        }
-
-        return true;
-
-    }catch(Exception $e){
-        throw new bException('log_console: Failed', $e, array('message' => $message));
-    }
-}
-
-
-
-/*
  * Log specified message to database, but only if we are in console mode!
  */
 function log_database($messages, $type = 'unknown'){
-    static $q, $last;
+    static $q, $last, $busy;
 
     try{
+        /*
+         * Avoid endless looping if the database log fails
+         */
+        if($busy) return false;
+        $busy = true;
+
         if(!empty($GLOBALS['no-db'])){
             /*
              * Don't log to DB, there is no DB
@@ -671,12 +623,13 @@ function log_database($messages, $type = 'unknown'){
                              ':message'   => $message));
         }
 
+        $busy = false;
         return $messages;
 
     }catch(Exception $e){
 //log_database($e);
 // :TODO: Add Notifications!
-        log_console('log_database(): Failed to log message "'.str_log($messages).'" to database', 'error');
+        log_file(tr('log_database(): Failed to log message ":message" to database', array(':message' => $messages)), 'error');
 
         /*
          * Don't exception here because the exception may cause another log_database() call and loop endlessly
@@ -735,8 +688,8 @@ function log_file($messages, $class = 'messages', $type = 'unknown'){
             $h[$class] = fopen(slash(ROOT.$_CONFIG['log']['path']).$class, 'a+');
         }
 
-        foreach(array_force($messages, "\n") as $message){
-            fwrite($h[$class], '['.$type.'] '.$message."\n");
+        foreach(array_force($messages, "\n") as $key => $message){
+            fwrite($h[$class], '['.$type.'] '.$key.' => '.$message."\n");
         }
 
         return $messages;
@@ -799,21 +752,9 @@ function load_config($files){
     try{
         if(!$paths){
 
-            if(SUBENVIRONMENT){
-                /*
-                 * Also load sub environment files
-                 */
-                $paths = array(ROOT.'config/base/',
-                               ROOT.'config/production_',
-                               ROOT.'config/production_'.SUBENVIRONMENT.'_',
-                               ROOT.'config/'.ENVIRONMENT.'_',
-                               ROOT.'config/'.ENVIRONMENT.'_'.SUBENVIRONMENT.'_');
-
-            }else{
-                $paths = array(ROOT.'config/base/',
-                               ROOT.'config/production_',
-                               ROOT.'config/'.ENVIRONMENT.'_');
-            }
+            $paths = array(ROOT.'config/base/',
+                           ROOT.'config/production_',
+                           ROOT.'config/'.ENVIRONMENT.'_');
         }
 
         $files = array_force($files);
@@ -897,7 +838,28 @@ function script_exec($script, $argv = null, $ok_exitcodes = null){
  * Keep track of statistics
  */
 function add_stat($code, $count = 1, $details = '') {
-    return include(dirname(__FILE__).'/handlers/system_add_stat.php');
+    global $_CONFIG;
+
+    try{
+        if(empty($_CONFIG['statistics']['enabled'])){
+            /*
+             * Statistics has been disabled
+             */
+            return false;
+        }
+
+        if($count > 0) {
+            sql_query('INSERT INTO `statistics` (`code`          , `count`        , `statdate`)
+                       VALUES                   ("'.cfm($code).'", '.cfi($count).','.date('d', time()).')
+
+                       ON DUPLICATE KEY UPDATE `count` = `count` + '.cfi($count).';');
+        }
+
+        error_log($_CONFIG['domain'].'-'.str_log($code).($details ? ' "'.str_log($details).'"' : ''));
+
+    }catch(Exception $e){
+        throw new bException('add_stat(): Failed', $e);
+    }
 }
 
 
@@ -905,16 +867,27 @@ function add_stat($code, $count = 1, $details = '') {
 /*
  * Calculate the DB password hash
  */
-function password($password, $algorithm = 'sha1'){
-    switch($algorithm){
-        case 'sha1':
-            return '*sha1*'.sha1(SEED.$password);
+function password($password, $algorithm = null){
+    global $_CONFIG;
 
-        case 'sha256':
-            return '*sha256*'.sha256(SEED.$password);
+    try{
+        if(!$algorithm){
+            $algorithm = $_CONFIG['security']['passwords']['algorithm'];
+        }
 
-        default:
-            throw new bException('password(): Unknown algorithm "'.str_log($algorithm).'" specified', 'unknown');
+        switch($algorithm){
+            case 'sha1':
+                return '*sha1*'.sha1(SEED.$password);
+
+            case 'sha256':
+                return '*sha256*'.sha256(SEED.$password);
+
+            default:
+                throw new bException(tr('password(): Unknown algorithm ":algorithm" specified', array(':algorithm' => str_log($algorithm))), 'unknown');
+        }
+
+    }catch(Exception $e){
+        throw new bException('password(): Failed', $e);
     }
 }
 
@@ -927,7 +900,7 @@ function domain($current_url = false, $query = null){
 
     try{
         if(empty($_CONFIG['domain'])){
-            throw new bException(tr('domain(): $_CONFIG[domain] is not configured'), 'notspecified');
+            throw new bException(tr('domain(): $_CONFIG[domain] is not configured'), 'not-specified');
         }
 
         if($_CONFIG['domain'] == 'auto'){
@@ -959,88 +932,13 @@ function domain($current_url = false, $query = null){
 
 
 /*
- * Either a user is logged in or the person will be redirected to the specified URL
- */
-function user_or_redirect($url = null, $method = 'http'){
-    global $_CONFIG;
-
-    try{
-        if(empty($_SESSION['user']['id'])){
-            if($url === false){
-                /*
-                 * No redirect requested, just wanted to know if there is a logged in user.
-                 */
-                throw new bException('user_or_redirect(): No user for this session', 'redirect');
-            }
-
-            if((PLATFORM == 'shell')){
-                /*
-                 * Hey, we're not in a browser!
-                 */
-                if(!$url){
-                    $url = tr('A user sign in is required');
-                }
-
-                throw new bException($url, 'nouser');
-            }
-
-            if(!$url){
-                $url = str_replace('%page%', str_log(urlencode($_SERVER['SCRIPT_NAME'])), isset_get($_CONFIG['redirects']['signin'], 'signin.php'));
-            }
-
-            $url = $_CONFIG['root'].$url;
-
-            switch($method){
-                case 'json':
-                    $_SESSION['redirect'] = isset_get($_SERVER['HTTP_REFERER']);
-
-                    /*
-                     * Send JSON redirect. json_reply() will end script, so no break needed
-                     */
-                    load_libs('json');
-                    json_reply(isset_get($url, $_CONFIG['root']), 'signin');
-
-                case 'http':
-                    if(!$GLOBALS['page_is_404']){
-                        $_SESSION['redirect'] = current_domain(true);
-                    }
-
-                    /*
-                     * Are we doing a POST or GET request? GET can be simply redirected, POST will first have to store POST data in $_SESSION
-                     */
-                    if(!empty($_POST)){
-                        /*
-                         * POST request
-                         */
-                        store_post($url);
-                    }
-
-                    redirect($url, false);
-
-                default:
-                    throw new bException('user_or_redirect(): Unknown method "'.str_log($method).'" specified. Please speficy one of "json", or "http"', 'unknown');
-            }
-        }
-
-        return $_SESSION['user'];
-
-    }catch(Exception $e){
-        if($e->getCode() == 'redirect') {
-            throw $e;
-        }
-
-        throw new bException('user_or_redirect(): Failed', $e);
-    }
-}
-
-
-
-/*
  * Returns true if the current session user has the specified right
  * This function will automatically load the rights for this user if
  * they are not yet in the session variable
  */
 function has_rights($rights, &$user = null){
+    global $_CONFIG;
+
     try{
         if($user === null){
             if(empty($_SESSION['user'])){
@@ -1081,7 +979,39 @@ function has_rights($rights, &$user = null){
         }
 
         foreach(array_force($rights) as $right){
-            if(empty($user['rights'][$right]) or !empty($user['rights']['devil'])){
+            if($right === 'admin'){
+                /*
+                 * Admin right also requires that the current admin script is defined in production_admin menu
+                 */
+                $fail = true;
+
+                foreach($_CONFIG['admin']['pages'] as $data){
+                    if(!empty($data['subs'])){
+                        foreach($data['subs'] as $sub){
+                            if(isset_get($subs['script']) === SCRIPT){
+                                /*
+                                 * Script is defined, so just check the normal access rights
+                                 */
+                                unset($script);
+                                break;
+                            }
+                        }
+
+                        if(empty($script)){
+                            break;
+                        }
+
+                    }elseif(isset_get($data['script']) === SCRIPT){
+                        /*
+                         * Script is defined, so just check the normal access rights
+                         */
+                        unset($script);
+                        break;
+                    }
+                }
+            }
+
+            if(empty($user['rights'][$right]) or !empty($user['rights']['devil']) or !empty($fail)){
                 if(PLATFORM == 'shell'){
                     load_libs('user');
                     log_message('has_rights(): Access denied for user "'.str_log(user_name($_SESSION['user'])).'" in page "'.str_log($_SERVER['PHP_SELF']).'" for missing right "'.str_log($right).'"', 'accessdenied', 'yellow');
@@ -1101,56 +1031,66 @@ function has_rights($rights, &$user = null){
 
 
 /*
- * Either a right is logged in or the person will be redirected to the specified URL
+ * Either a user is logged in or the person will be redirected to the specified URL
  */
-function rights_or_redirect($rights, $url = null, $method = 'http'){
+function user_or_signin(){
     global $_CONFIG;
 
     try{
-        user_or_redirect($url, $method);
-
-        if(!has_rights($rights)){
-            if((PLATFORM == 'shell')){
+        if(PLATFORM_HTTP){
+            if(empty($_SESSION['user']['id'])){
                 /*
-                 * Hey, we're not in a browser!
+                 * No session
                  */
-                if(!$url){
-                    $url = tr('rights_or_redirect(): The "%rights%" rights are required for this', array('%rights%' => str_log($rights)));
+                redirect(str_replace('%page%', str_log(urlencode($_SERVER['SCRIPT_NAME'])), isset_get($_CONFIG['redirects']['signin'], 'signin.php')));
+            }
+
+            if(!empty($_SESSION['lock'])){
+                /*
+                 * Session is, but locked
+                 * Redirect all pages EXCEPT the lock page itself!
+                 */
+                if($_CONFIG['redirects']['lock'] !== str_cut($_SERVER['REQUEST_URI'], '/', '?')){
+                    redirect(str_replace('%page%', str_log(urlencode($_SERVER['SCRIPT_NAME'])), isset_get($_CONFIG['redirects']['lock'], 'lock.php')));
                 }
-
-                throw new bException($url, 'noright');
             }
 
-            if(!$url){
-                $url = str_replace('%page%', str_log(urlencode($_SERVER['SCRIPT_NAME'])), isset_get($_CONFIG['redirects']['forbidden'], 'signin.php'));
-            }
-
-            $url = $_CONFIG['root'].$url;
-
-            $_SESSION['redirect'] = current_domain(true);
-
-            switch($method){
-                case 'json':
-                    if(!function_exists('json_reply')){
-                        load_libs('json');
-                    }
-
-                    // Send JSON redirect. json_reply() will end script, so no break needed
-                    json_reply(isset_get($url, $_CONFIG['root']), 'signin');
-
-                case 'http':
-                    // Send HTTP redirect. redirect() will end script, so no break needed
-                    redirect($url, false);
-
-                default:
-                    throw new bException('rights_or_redirect(): Unknown method "'.str_log($method).'" specified. Please speficy one of "json", or "http"', 'unknown');
+            /*
+             * Is user restricted to a page? if so, keep him there
+             */
+            if(empty($_SESSION['lock']) and !empty($_SESSION['user']['redirect'])){
+                if(str_from($_SESSION['user']['redirect'], '://') != $_SERVER['SERVER_NAME'].$_SERVER['REQUEST_URI']){
+                    redirect($_SESSION['user']['redirect']);
+                }
             }
         }
 
         return $_SESSION['user'];
 
     }catch(Exception $e){
-        throw new bException('rights_or_redirect(): Failed', $e);
+        throw new bException('user_or_signin(): Failed', $e);
+    }
+}
+
+
+
+/*
+ * Either a right is logged in or the person will be redirected to the specified URL
+ */
+function rights_or_access_denied($rights){
+    global $_CONFIG;
+
+    try{
+        user_or_signin();
+
+        if(PLATFORM_SHELL or has_rights($rights)){
+            return $_SESSION['user'];
+        }
+
+        page_show($_CONFIG['redirects']['accessdenied']);
+
+    }catch(Exception $e){
+        throw new bException('rights_or_access_denied(): Failed', $e);
     }
 }
 
@@ -1183,7 +1123,7 @@ function check_extended_session() {
 
 // :TODO: Clean garbage
         //if($api === null){
-        //	$api = (strtolower(substr($_SERVER['SCRIPT_NAME'], 0, 5)) == '/api/');
+        //    $api = (strtolower(substr($_SERVER['SCRIPT_NAME'], 0, 5)) == '/api/');
         //}
 
         if(isset($_COOKIE['extsession']) and !isset($_SESSION['user'])) {
@@ -1203,7 +1143,7 @@ function check_extended_session() {
                     user_signin($user, true);
 
                     //if(!$api){
-                    //	redirect($_SERVER['REQUEST_URI']);
+                    //    redirect($_SERVER['REQUEST_URI']);
                     //}
 
                 } else {
@@ -1468,7 +1408,7 @@ function system_date_format($date = null, $requested_format = 'human_datetime'){
         }
 
         if(isset($format)){
-            throw new bException(tr('system_date_format(): Either %error%, or Invalid format "%format%" specified', array('%error%' => $e->getMessage(), '%format%' => str_log($format))), 'invalid');
+            throw new bException(tr('system_date_format(): Either :error, or Invalid format ":format" specified', array(':error' => $e->getMessage(), ':format' => str_log($format))), 'invalid');
         }
 
         throw new bException('system_date_format(): Failed', $e);
@@ -1480,12 +1420,12 @@ function system_date_format($date = null, $requested_format = 'human_datetime'){
 /*
  *
  */
-function is_natural_number($number){
+function is_natural($number, $start = 1){
     if(!is_numeric($number)){
         return false;
     }
 
-    if($number < 1){
+    if($number < $start){
         return false;
     }
 
@@ -1501,7 +1441,7 @@ function is_natural_number($number){
 /*
  *
  */
-function force_natural_number($number, $default = 1){
+function force_natural($number, $default = 1){
     if(!is_numeric($number)){
         return $default;
     }
@@ -1566,15 +1506,15 @@ function run_background($cmd, $single = true, $log = false){
         $path = slash($path);
 
         if(!file_exists($path.$cmd)){
-            throw new bException(tr('run_background(): Specified command "%cmd%" does not exists', array('%cmd%' => $path.$cmd)), 'notexist');
+            throw new bException(tr('run_background(): Specified command ":cmd" does not exists', array(':cmd' => $path.$cmd)), 'not-exist');
         }
 
         if(!is_file($path.$cmd)){
-            throw new bException(tr('run_background(): Specified command "%cmd%" is not a file', array('%cmd%' => $path.$cmd)), 'notfile');
+            throw new bException(tr('run_background(): Specified command ":cmd" is not a file', array(':cmd' => $path.$cmd)), 'notfile');
         }
 
         if(!is_executable($path.$cmd)){
-            throw new bException(tr('run_background(): Specified command "%cmd%" is not executable', array('%cmd%' => $path.$cmd)), 'notexecutable');
+            throw new bException(tr('run_background(): Specified command ":cmd" is not executable', array(':cmd' => $path.$cmd)), 'notexecutable');
         }
 
         load_libs('file');
@@ -1703,7 +1643,7 @@ function cdn_prefix($id = null, $force_environment = false){
 
 
 /*
- * Return deploy configuration for the specified subenvironment
+ * Return deploy configuration for the specified environment
  */
 function get_config($file, $environment = null){
     try{
@@ -1711,7 +1651,7 @@ function get_config($file, $environment = null){
             $environment = ENVIRONMENT;
         }
 
-		$_CONFIG = array('deploy' => array());
+        $_CONFIG = array('deploy' => array());
 
         if($file){
             $file = '_'.$file;
@@ -1720,7 +1660,7 @@ function get_config($file, $environment = null){
         include(ROOT.'config/production'.$file.'.php');
         include(ROOT.'config/'.$environment.$file.'.php');
 
-		return $_CONFIG;
+        return $_CONFIG;
 
     }catch(Exception $e){
         throw new bException('get_config(): Failed', $e);
@@ -1801,7 +1741,7 @@ function name($user = null, $key_prefix = ''){
                  * Fetch user data from DB, then treat it as an array
                  */
                 if(!$user = sql_get('SELECT `name` `username`, `email` FROM `users` WHERE `id` = :id', array(':id' => $user))){
-                   throw new bException('name(): Specified user id ":id" does not exist', array(':id' => str_log($user)), 'notexist');
+                   throw new bException('name(): Specified user id ":id" does not exist', array(':id' => str_log($user)), 'not-exist');
                 }
             }
 
@@ -1838,5 +1778,39 @@ function get_null($source){
     }
 
     return null;
+}
+
+
+
+/*
+ * OBSOLETE FUNCTIONS AND WRAPPERS BE HERE BELOW
+ */
+
+
+
+/*
+ * WRAPPER FOR cli_log()
+ */
+function log_console($message, $type = '', $color = null, $newline = true, $filter_double = false){
+    return cli_log($message, $color, $newline, $filter_double);
+}
+
+/*
+ * IN CASE ANY PROJECT STILL USES THE OLD ONE
+ */
+function is_natural_number($number){
+    return is_natural($number);
+}
+
+function rights_or_redirect($rights, $no_user_url = null, $no_rights_page = null, $method = 'http'){
+    return rights_or_access_denied($rights, $no_user_url, $no_rights_page, $method);
+}
+
+function user_or_redirect($url = null, $method = 'http'){
+    return user_or_signin($url, $method);
+}
+
+function force_natural_number($number, $default = 1){
+    return force_natural($number, $default);
 }
 ?>

@@ -10,8 +10,12 @@ $_CONFIG['email'] = array('imap'            => '{imap.gmail.com:993/imap/ssl}INB
 
                           'users'           => null,
 
+                          'encryption_key'  => '',
+
                           'conversations'   => array('size'             => 5,
                                                      'message_dates'    => '<span class="emaildate">%datetime%</span> - '),
+
+                          'delayed'         => array('auto_start'       => true),
 
                           'display'         => array('auto_reload'      => 60),
 

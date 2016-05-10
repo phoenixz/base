@@ -8,12 +8,12 @@ require_once(dirname(__FILE__).'/../../../libs/startup.php');
 
 try{
     cli_only();
-    this_script_already_runs();
+    cli_exclusive();
 
     load_libs('mailer');
 
     $count = 0;
-    $users = not_empty(argument('users', true), argument('user', true), $argv);
+    $users = not_empty(cli_argument('users', true), cli_argument('user', true), $argv);
 
     foreach(array_force($users) as $user){
         mailer_unsubscribe($user);

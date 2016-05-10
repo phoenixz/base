@@ -14,7 +14,7 @@ require_once(dirname(__FILE__).'/../../../libs/startup.php');
 
 load_libs('json,twilio,sms');
 
-switch(argument(0)){
+switch(cli_argument(0)){
     case 'rebuild':
         /*
          * Create conversations for all messages that do not have conversations yet
@@ -176,9 +176,9 @@ switch(argument(0)){
         break;
 
     case '':
-        throw new bException('No option specified', 'notspecified');
+        throw new bException('No option specified', 'not-specified');
 
     default:
-        throw new bException('Unknown option "'.str_log(argument(0)).'" specified', 'unknown');
+        throw new bException('Unknown option "'.str_log(cli_argument(0)).'" specified', 'unknown');
 }
 ?>

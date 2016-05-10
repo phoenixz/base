@@ -52,40 +52,43 @@ $available_modes     = array('strict',
                              'most',
                              'none');
 
-/*
- * Check command line parameters
- */
-$onlyscan     = (argument('scan')  or argument('onlyscan') or argument('scanonly'));
-$noutf8check  = (argument('noutf') or argument('noutf8')   or argument('noutf8check'));
-$mode         = argument('--mode'     , true, $_CONFIG['translator']['mode']);
-$languages    = argument('--languages', true, implode(",", array_keys($_CONFIG['language']['supported'])));
-$languages    = explode(',', $languages);
+
 
 /*
  * Validate command line parameters
  */
 if(empty($languages)) {
-    throw new bException('No languages specified', 'translation_error');
+    throw new bException(tr('No languages specified'), 'translation_error');
 }
 
 if(!in_array($mode, $available_modes)){
     throw new bException(tr('Unknown mode "%mode%"', array('%mode%' => $mode)), 'translation_error');
 }
 
-switch($method = argument(0)){
+switch(method()){
     case 'clear':
+        cli_no_arguments_left();
+
         foreach($languages as $language){
             if($language == 'en'){
                 continue;
             }
 
-            log_console(tr('Deleting ":language"', array(':language' => $language)));
+            cli_log(tr('Deleting ":language"', array(':language' => $language)));
             file_delete_tree(ROOT.'www/'.$language);
         }
 
         break;
 
     case 'translate':
+        $onlyscan    = (cli_argument('--scan')   or cli_argument('--only-scan') or cli_argument('--scanonly'));
+        $noutf8check = (cli_argument('--no-utf') or cli_argument('--no-utf8')   or cli_argument('--no-utf8-check'));
+        $mode        = cli_argument('--mode'     , true, $_CONFIG['translator']['mode']);
+        $languages   = cli_argument('--languages', true, implode(",", array_keys($_CONFIG['language']['supported'])));
+        $languages   = explode(',', $languages);
+
+        cli_no_arguments_left();
+
         foreach ($languages as $target_language) {
             if(!in_array($target_language, $allowable_languages)) {
                 if($target_language == 'en'){
@@ -100,14 +103,14 @@ switch($method = argument(0)){
             $source_dir = ROOT.'www/en';
             $target_dir = ROOT.'www/'.$target_language;
 
-            log_console(tr('translate: Starting ').$target_language, 'translate', 'white');
+            cli_log(tr('translate: Starting ').$target_language, 'translate', 'white');
 
             if(VERBOSE){
-                log_console(tr('Searching for translateable strings : '), 'translate', '', false);
+                cli_log(tr('Searching for translateable strings : '), 'translate', '', false);
             }
 
             if($noutf8check){
-                log_console(tr('Skipping UTF8 check due to "noutf8check" command line parameter'), 'translate', 'yellow');
+                cli_log(tr('Skipping UTF8 check due to "noutf8check" command line parameter'), 'translate', 'yellow');
             }
 
             $translations = array();
@@ -129,13 +132,13 @@ switch($method = argument(0)){
                  */
                 if(file_exists($target_file) and (abs(filemtime($file) - filemtime($target_file)) < 10)){
                     if(VERBOSE){
-                        log_console(tr('Skipping file %file% because it hasn\'t changed since last string scan', array('%file%' => $file)), '', 'yellow');
+                        cli_log(tr('Skipping file %file% because it hasn\'t changed since last string scan', array('%file%' => $file)), '', 'yellow');
                         continue;
                     }
                 }
 
                 if(VERBOSE){
-                    log_console(tr('Scanning file %file%', array('%file%' => $file)), '', 'white');
+                    cli_log(tr('Scanning file %file%', array('%file%' => $file)), '', 'white');
                 }
 
                 $content = file_get_contents($file);
@@ -154,7 +157,7 @@ switch($method = argument(0)){
                         $forcedutf8[str_replace(ROOT, '', $file)] = true;
 
                         if(VERBOSE){
-                            log_console('*', '', 'yellow', false);
+                            cli_dot();
                         }
                     }
                 }
@@ -168,7 +171,7 @@ switch($method = argument(0)){
                              * Translation string contains HTML!
                              */
                             if(VERBOSE){
-                                log_console('#', '', 'red', false);
+                                cli_dot(10, '.', 'red');
                             }
 
                             $failed_html[$value] = $file;
@@ -179,7 +182,7 @@ switch($method = argument(0)){
                              * Translation string contains PHP variables!
                              */
                             if(VERBOSE){
-                                log_console('#', '', 'red', false);
+                                cli_dot(10, '.', 'red');
                             }
 
                             $failed_php[$value] = $file;
@@ -190,7 +193,7 @@ switch($method = argument(0)){
                              * Translation string is ok
                              */
                             if(VERBOSE){
-                                log_console('#', '', 'green', false);
+                                cli_dot();
                             }
 
                             $short_file = str_replace(ROOT, '', $file);
@@ -202,27 +205,27 @@ switch($method = argument(0)){
             }
 
             if(VERBOSE){
-                log_console(tr('Found ').number_format($count).tr(' strings')."\n", '', 'white');
+                cli_log(tr('Found :count strings', array(':count' => number_format($count))), 'white');
             }
 
             if(count($failed_html) > 0) {
                 foreach($failed_html as $string => $file) {
-                    log_console('Contains HTML : "'.$string.'" in '.$file, 'translate', 'red', true);
+                    cli_log(tr('Contains HTML ":html" in ":file"', array(':html' => $string, ':file' => $file)), 'red', true);
                 }
 
-               throw new bException('Translatable strings with disallowed HTML tags found', 'translation_error');
+               throw new bException(tr('Translatable strings with disallowed HTML tags found'), 'translation-error');
             }
 
             if(count($failed_php) > 0) {
                 foreach($failed_php as $string => $file) {
-                    log_console('Contains PHP : "'.$string.'" in '.$file, 'translate', 'red', true);
+                    cli_log(tr('Contains PHP ":php" in ":file"', array(':php' => $string, ':file' => $file)), 'red', true);
                 }
 
-               throw new bException('Translatable strings with PHP code found', 'translation_error');
+               throw new bException(tr('Translatable strings with PHP code found'), 'translation-error');
             }
 
             if(VERBOSE){
-                log_console('Requesting translations from server ', 'translate', '', false);
+                cli_log('Requesting translations from server ', '', false);
             }
 
             $timestamp = date('c');
@@ -274,7 +277,7 @@ switch($method = argument(0)){
 
 
             if(VERBOSE){
-                log_console('Received translations', 'translate', 'green', true);
+                cli_log('Received translations', 'green');
             }
 
             $translations = $returned_data['translations'];
@@ -283,14 +286,14 @@ switch($method = argument(0)){
             //delete target dir
             try{
                 // if(VERBOSE){
-                //     log_console('Deleting target dir '.$target_dir, 'translate', '', true);
+                //     cli_log('Deleting target dir '.$target_dir, 'translate', '', true);
                 // }
 
                 shell_exec('rm -rf '.$target_dir);
 
                 // Copy english to target dir
                 if(VERBOSE){
-                    log_console('Copying '.$source_dir.' => '.$target_dir, 'translate', '', true);
+                    cli_log(tr('Copying ":source" to ":target"', array(':source' => $source_dir, ':target' => $target_dir)));
                 }
 
                 shell_exec('cp -a '.$source_dir.' '.$target_dir);
@@ -303,22 +306,22 @@ switch($method = argument(0)){
 
                 //Apply translations
                 if(VERBOSE){
-                    log_console(tr('Applying translations'), 'translate', '', true);
+                    cli_log(tr('Applying translations'), 'translate', '', true);
                 }
 
                 foreach($translations as $short_file => $data) {
                     if(VERBOSE){
-                        log_console($short_file.' : ', 'translate', '', false);
+                        cli_log('Translating ":file"', array(':file' => ($short_file)), '', false);
                     }
 
                     if(!empty($forcedutf8[$short_file])){
                         if(VERBOSE){
-                            log_console('*FORCED-UTF8* ', '', 'yellow', false);
+                            cli_log(tr('*FORCED-UTF8* '), 'yellow', false);
                         }
                     }
 
                     if(!file_exists(ROOT.$short_file)) {
-                        log_console(tr(' File "%file%" not found', array('%file%' => ROOT.$short_file)), '', 'red', true);
+                        cli_log(tr(' File ":file" not found', array(':file' => ROOT.$short_file)), 'red');
 
                     }else{
                         //store new file
@@ -328,7 +331,7 @@ switch($method = argument(0)){
                         //replace strings
                         foreach($data as $source => $translation) {
                             if(VERBOSE){
-                                log_console('#', '', '', false);
+                                cli_log('#', '', '', false);
                             }
 
                             $from     = array('tr("'.$source.'"'     , "tr('".$source."'");
@@ -339,30 +342,30 @@ switch($method = argument(0)){
                         file_put_contents($target_file, $filedata);
 
                         if(VERBOSE){
-                            log_console(' Saved', '', 'green', true);
+                            cli_log('Saved', 'green');
                         }
                     }
                 }
 
-                log_console('Translation completed', 'translate', 'green', true);
+                cli_log(tr('Translations completed'), 'green');
 
                 if($returned_data['stats']['translations_missing'] > 0) {
-                    log_console('Translations missing : '.number_format($returned_data['stats']['translations_missing']),'translate','yellow',true);
+                    cli_log('Missing ":count" translations', array(':count' => number_format($returned_data['stats']['translations_missing'])), 'yellow');
                 }
 
-                log_console('Translations successful : '.number_format($returned_data['stats']['translations_done']),'translate','',true);
+                cli_log('Successfully translated ":count" sections', array(':count' => number_format($returned_data['stats']['translations_done'])), 'green');
 
             }catch(Exception $e){
-                throw new bException(tr('translate: Error applying "%lang" translations', array('%lang%' => $target_language)), $e);
+                throw new bException(tr('Error applying ":lang" translations', array(':lang' => $target_language)), $e);
             }
         }
 
         break;
 
     case '':
-        throw new bException(tr('No  method specified'));
+        throw new bException(tr('No method specified'));
 
     default:
-        throw new bException(tr('Unknown method ":method" specified', array(':method' => $method)));
+        throw new bException(tr('Unknown method ":method" specified', array(':method' => method())));
 }
 ?>

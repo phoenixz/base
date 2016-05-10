@@ -1,6 +1,6 @@
 <?php
 // Imagemagic configuration
-$_CONFIG['images'] = array('imagemagic'         => array('convert'          => '/usr/bin/convert',                          // The location of the imagemagic "convert" command
+$_CONFIG['images'] = array('imagemagick'         => array('convert'          => '/usr/bin/convert',                          // The location of the imagemagic "convert" command
                                                          'nice'             => 11,                                          // imagemagick process "convert" nice level
                                                          'strip'            => true,                                        // Should exif information be stripped or not
                                                          'blur'             => 0.01,                                        // gaussian blur of % of image size to reduce jpeg image size

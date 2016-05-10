@@ -5,19 +5,15 @@
  */
 require_once(dirname(__FILE__).'/../../libs/startup.php');
 
+cli_no_arguments_left();
 
-try{
-    if(this_script_already_runs('kill')){
-        echo "This script is already running and it cannot run twice!\n";
+if(cli_exclusive('kill')){
+    echo "This script is already running and it cannot run twice!\n";
 
-    }else{
-        while(true){
-            echo "WHHEEE!! I got the world to my own!!\n";
-            sleep(1);
-        }
+}else{
+    while(true){
+        echo "WHHEEE!! I got the world to my own!!\n";
+        sleep(1);
     }
-
-}catch(Exception $e){
-    throw new bException('scripts/alreadyrunstest: Failed', $e);
 }
 ?>

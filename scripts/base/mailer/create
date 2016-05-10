@@ -8,20 +8,20 @@ require_once(dirname(__FILE__).'/../../../libs/startup.php');
 
 try{
     cli_only();
-    this_script_already_runs();
+    cli_exclusive();
 
-    $params['name']       = not_empty(argument('name'     , true), argument('title'        , true));
-    $params['content']    = not_empty(argument('content'  , true), argument('content_file' , true));
-    $params['from']       = not_empty(argument('from'     , true), argument('replace_from' , true));
-    $params['to']         = not_empty(argument('to'       , true), argument('replace_to'   , true));
-    $params['from_name']  = not_empty(argument('fromname' , true), argument('from_name'    , true));
-    $params['from_email'] = not_empty(argument('fromemail', true), argument('from_email'   , true));
+    $params['name']       = not_empty(cli_argument('name'     , true), cli_argument('title'        , true));
+    $params['content']    = not_empty(cli_argument('content'  , true), cli_argument('content_file' , true));
+    $params['from']       = not_empty(cli_argument('from'     , true), cli_argument('replace_from' , true));
+    $params['to']         = not_empty(cli_argument('to'       , true), cli_argument('replace_to'   , true));
+    $params['from_name']  = not_empty(cli_argument('fromname' , true), cli_argument('from_name'    , true));
+    $params['from_email'] = not_empty(cli_argument('fromemail', true), cli_argument('from_email'   , true));
 
-    $params['subject']    = argument('subject', true);
-    $params['starton']    = argument('starton', true, null);
-    $params['users']      = argument('users'  , true);
+    $params['subject']    = cli_argument('subject', true);
+    $params['starton']    = cli_argument('starton', true, null);
+    $params['users']      = cli_argument('users'  , true);
 
-    $params['status']     = (argument('start') ? 'started' : null);
+    $params['status']     = (cli_argument('start') ? 'started' : null);
 
     load_libs('mailer');
     mailer_insert($params);

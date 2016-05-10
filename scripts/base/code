@@ -1,0 +1,84 @@
+#!/usr/bin/php
+<?php
+/*
+ * This is an empty test script template
+ */
+$usage = "./scripts/base/code\n".
+         "./scripts/base/code option [option]\n";
+
+$help  = "This script can help with code cleanup
+
+METHODS
+
+tabs-to-spaces                 - Changes tabs into spaces on the specified path
+                                 If no path is specified, the root of the
+                                 project will be assumed
+
+
+
+ARGUMENTS
+
+--path                         -
+
+--filter                       -
+
+--follow-symlinks              -
+
+--follow-hidden                -";
+
+require_once(dirname(__FILE__).'/../../libs/startup.php');
+
+cli_only();
+
+$path            = cli_argument('--path'  , true, ROOT);
+$filter          = cli_argument('--filter', true, '/.+\.(php|html)/');
+$follow_symlinks = cli_argument('--follow-symlinks');
+$follow_hidden   = cli_argument('--follow-hidden');
+
+switch(cli_method()){
+    case 'tabs-to-spaces':
+        $spaces = cli_argument('--spaces', true, 4);
+        cli_no_arguments_left();
+        load_libs('file');
+
+        $function = function($file) use ($spaces){
+            /*
+             * Replace tabs with n spaces
+             */
+            $data = file_get_contents($file);
+            $data = str_replace("\t", str_repeat(' ', $spaces), $data);
+
+            return file_put_contents($file, $data);
+        };
+
+        if(!is_dir($path)){
+            /*
+             * This is a specific file, ignore filter, if specified
+             */
+            cli_log(tr('Specified path ":path" is a normal file, ignoring filter (if specified)', array(':path' => $path)), 'yellow');
+            $filter = '';
+        }
+
+        $count = file_tree_execute(array('path'            => $path,
+                                         'filter'          => $filter,
+                                         'follow_hidden'   => $follow_hidden,
+                                         'follow_symlinks' => $follow_symlinks,
+                                         'callback'        => $function));
+
+        if($count){
+            cli_dot(false);
+            cli_log(tr('Processed ":count" files', array(':count' => $count)), 'green');
+
+        }else{
+            cli_log(tr('No files processed'), 'yellow');
+        }
+
+        break;
+
+    case '':
+        throw new bException(tr('No method specified'), 'not-specified');
+
+    default:
+        throw new bException(tr('Unknown argument ":method" specified', array(':method' => cli_method())), 'unknown');
+}
+?>

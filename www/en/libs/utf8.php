@@ -581,9 +581,9 @@ class Zend_Utf8
 
 function utf8_url_slug( $str = '' , $maxl = -1 , $trns = false )
 {
-    $str	= utf8_clean( $str , true );	//True == $remove_bom
+    $str    = utf8_clean( $str , true );    //True == $remove_bom
 
-    $str	= utf8_strtolower( $str );
+    $str    = utf8_strtolower( $str );
 
     if( $trns && iconv_loaded( ) )
     {
@@ -592,25 +592,25 @@ function utf8_url_slug( $str = '' , $maxl = -1 , $trns = false )
 
     if( pcre_utf8_support( ) )
     {
-        $str	= preg_replace( '/[^\\p{L}\\p{Nd}\-_]+/u' , '-' , $str );
+        $str    = preg_replace( '/[^\\p{L}\\p{Nd}\-_]+/u' , '-' , $str );
     }
     else
     {
-        $str	= preg_replace( '/[\>\<\+\?\&\"\'\/\\\:\s\-\#\%\=]+/' , '-' , $str );
+        $str    = preg_replace( '/[\>\<\+\?\&\"\'\/\\\:\s\-\#\%\=]+/' , '-' , $str );
     }
 
     if( $maxl > 0 )
     {
-        $maxl	= ( int ) $maxl;
+        $maxl    = ( int ) $maxl;
 
-        $str	= utf8_substr( $str , 0 , $maxl );
+        $str    = utf8_substr( $str , 0 , $maxl );
     }
 
-    $str	= trim( $str , '_-' );
+    $str    = trim( $str , '_-' );
 
     if( !strlen( $str ) )
     {
-        $str	= substr( md5( microtime( true ) ) , 0 , ( $maxl == -1 ? 32 : $maxl ) );
+        $str    = substr( md5( microtime( true ) ) , 0 , ( $maxl == -1 ? 32 : $maxl ) );
     }
 
     return $str;
@@ -748,14 +748,14 @@ function utf8_strlen( $str )
 {
     if( mbstring_loaded( ) )
     {
-        $str	= utf8_clean( $str );
+        $str    = utf8_clean( $str );
 
         return mb_strlen( $str , 'UTF-8' );
     }
 
     if( iconv_loaded( ) )
     {
-        $str	= utf8_clean( $str );
+        $str    = utf8_clean( $str );
 
         return iconv_strlen( $str , 'UTF-8' );
     }
@@ -765,11 +765,11 @@ function utf8_strlen( $str )
 
     //if( pcre_utf8_support( ) )
     //{
-    //	$str	= utf8_clean( $str );
+    //    $str    = utf8_clean( $str );
     //
-    //	preg_match_all( '/\X/u' , $str , $matches  );
+    //    preg_match_all( '/\X/u' , $str , $matches  );
     //
-    //	return count( $matches[0] );
+    //    return count( $matches[0] );
     //}
 
     return count( utf8_split( $str ) );
@@ -804,9 +804,9 @@ function utf8_chr( $code_point )
 
     //if( extension_loaded( 'json' ) )
     //{
-    //	$hex	= dechex( $i );
+    //    $hex    = dechex( $i );
     //
-    //	return json_decode('"\u'. ( strlen( $hex ) < 4 ? substr( '000' . $hex , -4 ) : $hex ) .'"');
+    //    return json_decode('"\u'. ( strlen( $hex ) < 4 ? substr( '000' . $hex , -4 ) : $hex ) .'"');
     //}
     //else
 
@@ -823,27 +823,27 @@ function utf8_chr( $code_point )
 
     //Fallback
 
-    $bits	= ( int ) ( log( $i , 2 ) + 1 );
+    $bits    = ( int ) ( log( $i , 2 ) + 1 );
 
-    if( $bits <= 7 )				//Single Byte
+    if( $bits <= 7 )                //Single Byte
     {
         return chr( $i );
     }
-    else if( $bits <= 11 )			//Two Bytes
+    else if( $bits <= 11 )            //Two Bytes
     {
         return chr( ( ( $i >> 6 ) & 0x1F ) | 0xC0 ) . chr( ( $i & 0x3F ) | 0x80 );
     }
-    else if( $bits <= 16 )			//Three Bytes
+    else if( $bits <= 16 )            //Three Bytes
     {
         return chr( ( ( $i >> 12 ) & 0x0F ) | 0xE0 ) . chr( ( ( $i >> 6 ) & 0x3F ) | 0x80 ) . chr( ( $i & 0x3F ) | 0x80 );
     }
-    else if( $bits <=21 )			//Four Bytes
+    else if( $bits <=21 )            //Four Bytes
     {
         return chr( ( ( $i >> 18 ) & 0x07 ) | 0xF0 ) . chr( ( ( $i >> 12 ) & 0x3F ) | 0x80 ) . chr( ( ( $i >> 6 ) & 0x3F ) | 0x80 ) . chr( ( $i & 0x3F ) | 0x80 );
     }
     else
     {
-        return '';	//Cannot be encoded as Valid UTF-8
+        return '';    //Cannot be encoded as Valid UTF-8
     }
 }
 
@@ -889,11 +889,11 @@ function utf8_clean( $str , $remove_bom = false )
 
     $regx = '/([\x00-\x7F]|[\xC0-\xDF][\x80-\xBF]|[\xE0-\xEF][\x80-\xBF]{2}|[\xF0-\xF7][\x80-\xBF]{3})|./s';
 
-    $str	= preg_replace( $regx , '$1' , $str );
+    $str    = preg_replace( $regx , '$1' , $str );
 
     if( $remove_bom )
     {
-        $str	= utf8_str_replace( utf8_bom( ) , '' , $str );
+        $str    = utf8_str_replace( utf8_bom( ) , '' , $str );
     }
 
     return $str;
@@ -913,38 +913,38 @@ function utf8_clean( $str , $remove_bom = false )
 
 function utf8_split( $str , $split_length = 1 )
 {
-    $str	= ( string ) $str;
+    $str    = ( string ) $str;
 
-    $ret	= array( );
+    $ret    = array( );
 
     if( pcre_utf8_support( ) )
     {
-        $str	= utf8_clean( $str );
+        $str    = utf8_clean( $str );
 
-        //	http://stackoverflow.com/a/8780076/369005
-        $ret	= preg_split('/(?<!^)(?!$)/u', $str );
+        //    http://stackoverflow.com/a/8780076/369005
+        $ret    = preg_split('/(?<!^)(?!$)/u', $str );
 
         // \X is buggy in many recent versions of PHP
         //preg_match_all( '/\X/u' , $str , $ret );
-        //$ret	= $ret[0];
+        //$ret    = $ret[0];
     }
     else
     {
         //Fallback
 
-        $len	= strlen( $str );
+        $len    = strlen( $str );
 
         for( $i = 0 ; $i < $len ; $i++ )
         {
             if( ( $str[$i] & "\x80" ) === "\x00" )
             {
-                $ret[]	= $str[$i];
+                $ret[]    = $str[$i];
             }
             else if( ( ( $str[$i] & "\xE0" ) === "\xC0" ) && ( isset( $str[$i+1] ) ) )
             {
                 if( ( $str[$i+1] & "\xC0" ) === "\x80" )
                 {
-                    $ret[]	= $str[$i] . $str[$i+1];
+                    $ret[]    = $str[$i] . $str[$i+1];
 
                     $i++;
                 }
@@ -953,18 +953,18 @@ function utf8_split( $str , $split_length = 1 )
             {
                 if( ( ( $str[$i+1] & "\xC0" ) === "\x80" ) && ( ( $str[$i+2] & "\xC0" ) === "\x80" ) )
                 {
-                    $ret[]	= $str[$i] . $str[$i+1] . $str[$i+2];
+                    $ret[]    = $str[$i] . $str[$i+1] . $str[$i+2];
 
-                    $i	= $i + 2;
+                    $i    = $i + 2;
                 }
             }
             else if( ( ( $str[$i] & "\xF8" ) === "\xF0" ) && ( isset( $str[$i+3] ) ) )
             {
                 if( ( ( $str[$i+1] & "\xC0" ) === "\x80" ) && ( ( $str[$i+2] & "\xC0" ) === "\x80" ) && ( ( $str[$i+3] & "\xC0" ) === "\x80" ) )
                 {
-                    $ret[]	= $str[$i] . $str[$i+1] . $str[$i+2] . $str[$i+3];
+                    $ret[]    = $str[$i] . $str[$i+1] . $str[$i+2] . $str[$i+3];
 
-                    $i	= $i + 3;
+                    $i    = $i + 3;
                 }
             }
         }
@@ -975,7 +975,7 @@ function utf8_split( $str , $split_length = 1 )
     {
         $ret = array_chunk( $ret , $split_length );
 
-        $ret	= array_map( 'implode' , $ret );
+        $ret    = array_map( 'implode' , $ret );
     }
 
     if( $ret[0] === '' )
@@ -1111,7 +1111,7 @@ function utf8_substr( $str , $start = 0 , $length = NULL )
 
     if( iconv_loaded( ) )
     {
-        $str	= utf8_clean( $str );
+        $str    = utf8_clean( $str );
 
         if( $length === NULL )
         {
@@ -1123,7 +1123,7 @@ function utf8_substr( $str , $start = 0 , $length = NULL )
 
     if( mbstring_loaded( ) )
     {
-        $str	= utf8_clean( $str );
+        $str    = utf8_clean( $str );
 
         if( $length === NULL )
         {
@@ -1313,17 +1313,17 @@ function utf8_strpos( $haystack , $needle , $offset = 0 )
 
     if( ( ( int ) $needle ) === $needle && ( $needle >= 0 ) )
     {
-        $needle	= utf8_chr( $needle );
+        $needle    = utf8_chr( $needle );
     }
 
-    $needle	= utf8_clean( ( string ) $needle );
+    $needle    = utf8_clean( ( string ) $needle );
 
-    $offset	= ( int ) $offset;
+    $offset    = ( int ) $offset;
 
     //mb_strpos returns wrong position if invalid characters are found in $haystack before $needle
     //iconv_strpos is not tolerant to invalid characters
 
-    $haystack	= utf8_clean( $haystack );
+    $haystack    = utf8_clean( $haystack );
 
     if( mbstring_loaded( ) )
     {
@@ -1337,14 +1337,14 @@ function utf8_strpos( $haystack , $needle , $offset = 0 )
 
     if( $offset > 0 )
     {
-        $haystack	= utf8_substr( $haystack , $offset );
+        $haystack    = utf8_substr( $haystack , $offset );
     }
 
     //Negative Offset not supported in PHP strpos(), ignoring
 
     if( ( $pos = strpos( $haystack , $needle ) ) !== false )
     {
-        $left	= substr( $haystack , 0 , $pos );
+        $left    = substr( $haystack , 0 , $pos );
 
         return ( $offset > 0 ? $offset : 0 ) + utf8_strlen( $left );
     }
@@ -1439,9 +1439,9 @@ function utf8_int_to_hex( $int , $pfix = 'U+' )
 {
     if( ctype_digit( ( string ) $int ) )
     {
-        $hex	= dechex( ( int ) $int );
+        $hex    = dechex( ( int ) $int );
 
-        $hex	= ( strlen( $hex ) < 4 ? substr( '0000' . $hex , -4 ) : $hex );
+        $hex    = ( strlen( $hex ) < 4 ? substr( '0000' . $hex , -4 ) : $hex );
 
         return $pfix. $hex;
     }

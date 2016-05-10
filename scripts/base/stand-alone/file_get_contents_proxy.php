@@ -5,10 +5,10 @@ This file should be copied to any website that is on a server with multiple ips,
 $_GET['url'] = urldecode(trim($_GET['url']));
 
 if(isset($_GET['url']) and (strtolower(substr($_GET['url'], 0, 4)) == 'http')) {
-	echo base64_encode(curl_get($_GET['url']));
+    echo base64_encode(curl_get($_GET['url']));
 
 } else {
-	echo 'FAIL';
+    echo 'FAIL';
 }
 
 
@@ -17,17 +17,17 @@ if(isset($_GET['url']) and (strtolower(substr($_GET['url'], 0, 4)) == 'http')) {
  *
  */
 function get_random_ip() {
-	global $col;
+    global $col;
 
-	$ips = explode("\n",shell_exec('/sbin/ifconfig|grep "Mask:255.255.255.0"|sed "s/^.*addr://"|sed "s/ .*//"'));
+    $ips = explode("\n",shell_exec('/sbin/ifconfig|grep "Mask:255.255.255.0"|sed "s/^.*addr://"|sed "s/ .*//"'));
 
     shuffle($ips);
 
-	if(empty($ips)) {
-		return '';
-	}
+    if(empty($ips)) {
+        return '';
+    }
 
-	return $ips[0];
+    return $ips[0];
 }
 
 

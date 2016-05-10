@@ -4,46 +4,30 @@
  * This script can create new users
  */
 $usage = "./scripts/base/users list\n".
-         "./scripts/base/users list with right RIGHT\n".
-         "./scripts/base/users create username USERNAME name REALNAME email EMAIL password PASSWORD\n".
-         "./scripts/base/users modify ID|USERNAME [username USERNAME]|[name NAME]|[email EMAIL]\n".
+         "./scripts/base/users list [--with-right RIGHT] [-r RIGHT] \n".
+         "./scripts/base/users create --username USERNAME --name REALNAME --email EMAIL --password PASSWORD [--latitude LATITUDE] [--longitude LONGITUDE] [--status STATUS] [--type TYPE] [--redirect URL]\n".
+         "./scripts/base/users modify ID|USERNAME [--username USERNAME] [--name NAME] [--email EMAIL] [--latitude LATITUDE] [--longitude LONGITUDE] [--status STATUS] [--type TYPE] [--redirect URL] \n".
          "./scripts/base/users password ID|USERNAME PASSWORD\n".
          "./scripts/base/users delete|undelete|erase ID|USERNAME ID|USERNAME ...\n".
          "./scripts/base/users whoami\n".
-         "./scripts/base/users setrole user USERID|USERNAME role ROLEID|ROLENAME\n";
+         "./scripts/base/users setrole USERID|USERNAME ROLEID|ROLENAME\n".
+         "./scripts/base/users setrole --user USERID|USERNAME --role ROLEID|ROLENAME\n";
 
 $help  = "This is the users management script";
 
-$quiet = true;
 require_once(dirname(__FILE__).'/../../libs/startup.php');
 
-cli_rights('admin,users');
 load_libs('user');
 
-switch($method = argument(0)){
-    case 'add':
-        // FALLTHROUGH
+switch(cli_method()){
     case 'create':
-        cli_rights('create');
+        $user = cli_arguments('--name,--email,--username,--password,--latitude,--longitude,--status,--type,--role,--type,--redirect');
+        $user = users_validate($user, array('validation_password' => false));
 
-        try{
-            cli_rights('admin,users,modify');
+        cli_no_arguments_left();
 
-        }catch(Exception $e){
-            /*
-             * Are there any users at all? If not, then allow for creation of one user.
-             */
-            if(sql_get('SELECT COUNT(`id`) AS count FROM `users`', 'count')){
-                throw $e;
-            }
-        }
-
-        $user              = arguments('name,email,username,password,latitude,longitude,status,type');
-        $user['validated'] = true;
-        $user              = users_validate($user);
-
-        sql_query('INSERT INTO `users` (`createdby`, `name`, `email`, `username`, `password`, `latitude`, `longitude`, `status`, `type`, `validated`)
-                   VALUES              (:createdby , :name , :email , :username , :password , :latitude , :longitude , :status , :type , :validated )',
+        sql_query('INSERT INTO `users` (`createdby`, `name`, `email`, `username`, `password`, `latitude`, `longitude`, `status`, `type`, `validated`, `redirect`)
+                   VALUES              (:createdby , :name , :email , :username , :password , :latitude , :longitude , :status , :type , :validated , :redirect )',
 
                    array(':createdby' => isset_get($_SESSION['user']['id']),
                          ':name'      => $user['name'],
@@ -54,18 +38,22 @@ switch($method = argument(0)){
                          ':longitude' => $user['longitude'],
                          ':status'    => $user['status'],
                          ':type'      => $user['type'],
-                         ':validated' => $user['validated']));
+                         ':redirect'  => $user['redirect'],
+                         ':validated' => isset_get($user['validated'])));
 
 
-        log_console(tr('Created user "%user%" with email "%email%"', array('%user%' => str_log(user_name($user)), '%email%' => str_log($user['email']))), null, 'green');
+        cli_log(tr('Created user ":user" with email ":email"', array(':user' => user_name($user), ':email' => $user['email'])), 'green');
         break;
 
     case 'modify':
-        cli_rights('modify');
+        $users_id = cli_argument(1);
 
-        if(!argument(1)){
+        if(!$users_id){
             $v->setError(tr('No user specified'));
         }
+
+        $user = cli_arguments('--name,--email,--username,--latitude,--longitude,--redirect');
+        cli_no_arguments_left();
 
         /*
          * Consider only users with a specific type as real users?
@@ -74,7 +62,7 @@ switch($method = argument(0)){
 
         if($_CONFIG['users']['type_filter'] !== false){
             if($_CONFIG['users']['type_filter'] === null){
-                $where            = ' AND `users`.`type` IS NULL';
+                $where = ' AND `users`.`type` IS NULL';
 
             }else{
                 $where            = ' AND`users`.`type` = :type';
@@ -82,54 +70,57 @@ switch($method = argument(0)){
             }
         }
 
-        $old_user       = sql_get('SELECT `id`, `username`, `name`, `email`, `status`, `password` FROM `users` WHERE (`id` = :user OR `username` = :user OR `email` = :user)'.$where, array(':user' => argument(1)));
-        $where          = ' WHERE `id` = :id';
-        $execute[':id'] = $old_user['id'];
+        $db_user = sql_get('SELECT `id`,
+                                   `username`,
+                                   `name`,
+                                   `email`,
+                                   `status`,
+                                   `redirect`
 
-        if(!$old_user){
-            throw new bException(tr('Specified user "%user%" does not exist', array('%user%' => str_log(argument(1)))), 'notexist');
+                            FROM   `users`
+
+                            WHERE (`id`       = :user
+                            OR     `username` = :user
+                            OR     `email`    = :user)'.$where,
+
+                            array(':user' => $users_id));
+
+        if(!$db_user){
+            throw new bException(tr('Specified user ":user" does not exist', array(':user' => $users_id)), 'not-exist');
         }
 
-        $new_user = arguments('name,email,username,password,latitude,longitude,status,type');
-        $user     = users_validate($new_user, $old_user);
+        $user = sql_merge($db_user, $user);
+        $user = users_validate($user, array('password'            => false,
+                                            'validation_password' => false,
+                                            'role'                => false));
 
         /*
          * Modify what exactly?
          */
-        if($value = isset_get($new_user['name'])){
-            $execute[':name'] = trim($value);
-            $set[]             = '`name` = :name';
+        $r = sql_query('UPDATE `users`
 
-            log_console(tr('Updating name to "%name%"', array('%name%' => str_log($execute[':name']))));
-        }
+                        SET    `name`      = :name,
+                               `email`     = :email,
+                               `username`  = :username,
+                               `latitude`  = :latitude,
+                               `longitude` = :longitude,
+                               `redirect`  = :redirect
 
-        if($value = isset_get($new_user['username'])){
-            $execute[':username'] = $value;
-            $set[]                = '`username` = :username';
+                        WHERE  `id`        = :id',
 
-            log_console(tr('Updating username to "%name%"', array('%name%' => str_log($execute[':email']))));
-        }
+                        array(':name'      => $user['name'],
+                              ':email'     => $user['email'],
+                              ':username'  => $user['username'],
+                              ':latitude'  => $user['latitude'],
+                              ':longitude' => $user['longitude'],
+                              ':redirect'  => $user['redirect'],
+                              ':id'        => $db_user['id']));
 
-        if($value = isset_get($new_user['email'])){
-            $execute[':email'] = trim($value);
-            $set[]             = '`email` = :email';
-
-            log_console(tr('Updating email to "%email%"', array('%email%' => str_log($execute[':email']))));
-        }
-
-        if($value = isset_get($new_user['status'])){
-            $execute[':status'] = trim($value);
-            $set[]              = '`status` = :status';
-
-            log_console(tr('Updating user status to "%status%"', array('%status%' => str_log($execute[':status']))));
-        }
-
-        if(empty($set)){
-            log_console(tr('Not modified anything for user "%user%"', array('%user%' => user_name($user))), 'finished', 'yellow');
+        if(!$r->rowCount()){
+            cli_log(tr('Not modified anything for user ":user"', array(':user' => user_name($user))), 'yellow');
 
         }else{
-            sql_query('UPDATE `users` SET '.implode(',', $set).$where, $execute);
-            log_console(tr('Modified user "%user%"', array('%user%' => user_name($user))), 'finished', 'green');
+            cli_log(tr('Modified user ":user"', array(':user' => user_name($user))), 'green');
         }
 
         break;
@@ -139,269 +130,345 @@ switch($method = argument(0)){
     case 'setrole':
         load_libs('roles');
 
-        $role = argument('role', true);
-        $user = argument('user', true);
+        /*
+         * Get arguments by keyword
+         */
+        $role = cli_argument('--role', true);
+        $user = cli_argument('--user', true);
 
-        if(!$role){
-            throw new bException('No role specified');
+        if(!$role and !$user){
+            /*
+             * Get arguments by order
+             */
+            $role = cli_argument(1);
+            $user = cli_argument(2);
         }
 
+        cli_no_arguments_left();
+
         if(!$user){
-            throw new bException('No user specified');
+            throw new bException(tr('No user specified'), 'not-specified');
+        }
+
+        $user = user_get($user);
+
+        if(!$role){
+            throw new bException(tr('No role specified for user ":user"', array(':user' => $user)), 'not-specified');
         }
 
         $role             = roles_get($role, 'id,name');
-        $user             = user_get($user);
         $user['roles_id'] = $role['id'];
 
-        sql_query(debug_sql('UPDATE `users`
+        sql_query('UPDATE `users`
 
                    SET    `roles_id` = :roles_id
 
                    WHERE  `id`       = :users_id',
 
                    array(':users_id' => $user['id'],
-                         ':roles_id' => $role['id'])));
+                         ':roles_id' => $role['id']));
 
         user_update_rights($user);
-        log_console(tr('Gave role "%role%" to user "%user%"', array('%role%' => $role['name'], '%user%' => user_name($user))), '', 'green');
+        cli_log(tr('Gave role ":role" to user ":user"', array(':role' => $role['name'], ':user' => user_name($user))), 'green');
         break;
 
     case 'list':
-        switch($method = argument(1)){
-            case '':
-                $limit   = 200;
+        $show_rights = cli_argument('-r') or cli_argument('--show-rights');
 
-                $query   = 'SELECT    `users`.`id`,
-                                      `users`.`name`,
-                                      `users`.`username`,
-                                      `users`.`email`,
-                                      `users`.`status`,
-                                      `users`.`type`,
-                                      `users`.`role`,
-                                      `users_admin`.`name` IS NOT NULL AS `admin`,
-                                      `users_god`.`name`   IS NOT NULL AS `god`
+        cli_no_arguments_left();
 
-                            FROM      `users`
+        if($show_rights){
+            cli_log(tr('Showing rights for users'));
 
-                            LEFT JOIN `users_rights` AS `users_admin`
-                            ON        `users_admin`.`name`     = "admin"
-                            AND       `users_admin`.`users_id` = `users`.`id`
+            $limit   = 200;
 
-                            LEFT JOIN `users_rights` AS `users_god`
-                            ON        `users_god`.`name`       = "god"
-                            AND       `users_god`.`users_id`   = `users`.`id`';
+            $query   = 'SELECT    `users`.`id`,
+                                  `users`.`username`,
+                                  `users`.`email`,
+                                  `users`.`status`,
+                                  `users`.`roles_id`
 
-                $execute = array();
+                        FROM      `users`';
 
-                /*
-                 * Consider only users with a specific type as real users?
-                 */
-                if($_CONFIG['users']['type_filter'] !== false){
-                    if($_CONFIG['users']['type_filter'] === null){
-                        $query           .= ' WHERE `users`.`type` IS NULL';
+            $execute = array();
 
-                    }else{
-                        $query           .= ' WHERE `users`.`type` = :type';
-                        $execute[':type'] = $_CONFIG['users']['type_filter'];
-                    }
-                }
-
-                $r = sql_query($query.($limit ? ' LIMIT '.$limit : ''));
-
-                if(!$r->rowCount()){
-                    log_console(tr('There are currently no users registered'), '', 'yellow');
+            /*
+             * Consider only users with a specific type as real users?
+             */
+            if($_CONFIG['users']['type_filter'] !== false){
+                if($_CONFIG['users']['type_filter'] === null){
+                    $query           .= ' WHERE `users`.`type` IS NULL';
 
                 }else{
-                    log_console(tr('#id    Username     Status     Type       Role       Admin God Status     Real name                        Email                            '), '', 'white');
-
-                    while($user = sql_fetch($r)){
-                        log_console(str_size($user['id'], 6, ' ', true).' '.str_size($user['username'], 12).' '.str_size(status($user['status']), 10).' '.str_size($user['type'], 10).' '.str_size($user['role'], 10).' '.str_size(($user['admin'] ? 'Yes' : ''), 5).' '.str_size(($user['god'] ? 'Yes' : ''), 3).' '.str_size(status($user['status']), 10).' '.str_size($user['name'], 32).' '.str_size($user['email'], 32), '', '');
-                    }
+                    $query           .= ' WHERE `users`.`type` = :type';
+                    $execute[':type'] = $_CONFIG['users']['type_filter'];
                 }
+            }
 
-                break;
+            $r = sql_query($query.($limit ? ' LIMIT '.$limit : ''));
 
-            case 'rights':
-                log_console('Showing rights for users', '');
+            if(!$r->rowCount()){
+                cli_log(tr('There are currently no users registered'), 'yellow');
 
-                $limit   = 200;
+            }else{
+                cli_log(tr('#id    Username     Status     Rights'), 'cyan');
 
-                $query   = 'SELECT    `users`.`id`,
-                                      `users`.`username`,
-                                      `users`.`email`,
-                                      `users`.`status`,
-                                      `users`.`roles_id`
+                while($user = sql_fetch($r)){
+                    $rights = sql_list('SELECT    `rights`.`name`
 
-                            FROM      `users`';
+                                        FROM      `roles_rights`
 
-                $execute = array();
+                                        JOIN      `rights`
+                                        ON        `rights`.`id` = `roles_rights`.`rights_id`
 
-                /*
-                 * Consider only users with a specific type as real users?
-                 */
-                if($_CONFIG['users']['type_filter'] !== false){
-                    if($_CONFIG['users']['type_filter'] === null){
-                        $query           .= ' WHERE `users`.`type` IS NULL';
+                                        AND       `roles_id` = :roles_id',
 
-                    }else{
-                        $query           .= ' WHERE `users`.`type` = :type';
-                        $execute[':type'] = $_CONFIG['users']['type_filter'];
-                    }
+                                        array(':roles_id' => $user['roles_id']));
+
+                    cli_log(str_size($user['id'], 6, ' ', true).' '.str_size($user['username'], 12).' '.str_size(status($user['status']), 10).' '.str_force($rights, ', '));
                 }
+            }
 
-                $r = sql_query($query.($limit ? ' LIMIT '.$limit : ''));
+        }else{
+            $limit   = 200;
 
-                if(!$r->rowCount()){
-                    log_console(tr('There are currently no users registered'), '', 'yellow');
+            $query   = 'SELECT    `users`.`id`,
+                                  `users`.`name`,
+                                  `users`.`username`,
+                                  `users`.`email`,
+                                  `users`.`status`,
+                                  `users`.`type`,
+                                  `users`.`role`,
+                                  `users_admin`.`name` IS NOT NULL AS `admin`,
+                                  `users_god`.`name`   IS NOT NULL AS `god`
+
+                        FROM      `users`
+
+                        LEFT JOIN `users_rights` AS `users_admin`
+                        ON        `users_admin`.`name`     = "admin"
+                        AND       `users_admin`.`users_id` = `users`.`id`
+
+                        LEFT JOIN `users_rights` AS `users_god`
+                        ON        `users_god`.`name`       = "god"
+                        AND       `users_god`.`users_id`   = `users`.`id`';
+
+            $execute = array();
+
+            /*
+             * Consider only users with a specific type as real users?
+             */
+            if($_CONFIG['users']['type_filter'] !== false){
+                if($_CONFIG['users']['type_filter'] === null){
+                    $query           .= ' WHERE `users`.`type` IS NULL';
 
                 }else{
-                    log_console(tr('#id    Username     Status     Rights'), '', 'white');
-
-                    while($user = sql_fetch($r)){
-                        $rights = sql_list('SELECT    `rights`.`name`
-
-                                            FROM      `roles_rights`
-
-                                            JOIN      `rights`
-                                            ON        `rights`.`id` = `roles_rights`.`rights_id`
-
-                                            AND       `roles_id` = :roles_id',
-
-                                            array(':roles_id' => $user['roles_id']));
-
-                        log_console(str_size($user['id'], 6, ' ', true).' '.str_size($user['username'], 12).' '.str_size(status($user['status']), 10).' '.str_force($rights, ', '), '');
-                    }
+                    $query           .= ' WHERE `users`.`type` = :type';
+                    $execute[':type'] = $_CONFIG['users']['type_filter'];
                 }
+            }
 
-                break;
+            $r = sql_query($query.($limit ? ' LIMIT '.$limit : ''));
 
-            case 'with':
-                switch($method = argument(2)){
-                    case 'role':
-throw new bException('"LIST WITH ROLE" IS UNDER CONSTRUCTION');
-                        break;
+            if(!$r->rowCount()){
+                cli_log(tr('There are currently no users registered'), 'yellow');
 
-                    case 'right':
-throw new bException('"LIST WITH RIGHT" IS UNDER CONSTRUCTION');
+            }else{
+                cli_log(tr('#id    Username     Status     Type       Role       Admin God Status     Real name                        Email                            '), 'cyan');
 
-                        break;
-
-                    case '':
-                        throw new bException(tr('No sub method specified'), 'unknown');
-
-                    default:
-                        throw new bException(tr('Unknown sub method "%method%" specified, please specify either nothing or "with"', array('%method%' => $method)), 'unknown');
+                while($user = sql_fetch($r)){
+                    cli_log(str_size($user['id'], 6, ' ', true).' '.str_size($user['username'], 12).' '.str_size(status($user['status']), 10).' '.str_size($user['type'], 10).' '.str_size($user['role'], 10).' '.str_size(($user['admin'] ? 'Yes' : ''), 5).' '.str_size(($user['god'] ? 'Yes' : ''), 3).' '.str_size(status($user['status']), 10).' '.str_size($user['name'], 32).' '.str_size($user['email'], 32));
                 }
-
-                break;
-
-            case '':
-                throw new bException(tr('No sub method specified'), 'unknown');
-
-            default:
-                throw new bException(tr('Unknown sub method "%method%" specified, please specify either nothing or "with"', array('%method%' => $method)), 'unknown');
+            }
         }
 
         break;
 
     case 'delete':
-        cli_rights('modify');
-        array_shift($argv);
+        $users = cli_arguments();
 
-        if(!count($argv)){
-            throw new bException('No users specified');
+        if(empty($users)){
+            throw new bException(tr('No users specified'), 'not-specified');
         }
 
-        $in = sql_in($argv);
-        $r  = sql_query('UPDATE `users` SET `status` = "deleted" WHERE `username` IN ('.implode(',', array_keys($in)).') or `id` IN ('.implode(',', array_keys($in)).')', $in);
+        $in_name = sql_in($users, 'name');
+        $in_id   = sql_in($users, 'id');
 
-        if(!$r->rowCount()){
-            throw new bException(tr('Not deleted any users'), 'notfound');
+        if(FORCE){
+            $status = '';
+
+        }else{
+            $status = ' AND `status` IS NULL ';
         }
 
-        log_console(tr('Deleted "%count%" users', array('%count%' => $r->rowCount())), '', 'green');
+        $r  = sql_query('UPDATE `users`
+
+                         SET    `status` = "deleted"
+
+                         WHERE  `name` IN ('.implode(',', array_keys($in_name)).')
+                         OR     `id`   IN ('.implode(',', array_keys($in_id)).')'.$status,
+
+                         array_merge($in_name, $in_id));
+
+        switch(!$r->rowCount()){
+            case 0:
+                cli_log(tr('Not deleted any users'), 'error');
+                break;
+
+            case count($argv):
+                cli_log(tr('Deleted only ":deleted" users from the specified ":specified" users', array(':count' => $r->rowCount(), ':specified' => count($argv))), 'yellow');
+                break;
+
+            default:
+                cli_log(tr('Deleted ":count" users', array(':count' => $r->rowCount())), 'green');
+        }
+
         break;
 
     case 'undelete':
-        cli_rights('modify');
-        array_shift($argv);
+        $users = cli_arguments();
 
-        if(!count($argv)){
-            throw new bException('No users specified');
+        if(empty($users)){
+            throw new bException(tr('No users specified'), 'not-specified');
         }
 
-        $in = sql_in($argv);
-        $r  = sql_query('UPDATE `users` SET `status` = NULL WHERE `username` IN ('.implode(',', array_keys($in)).') or `id` IN ('.implode(',', array_keys($in)).')', $in);
+        $in_name = sql_in($users, 'name');
+        $in_id   = sql_in($users, 'id');
 
-        if(!$r->rowCount()){
-            throw new bException(tr('Not undeleted any users'), 'notfound');
+        if(FORCE){
+            $status = '';
+
+        }else{
+            $status = ' AND `status` = "deleted" ';
         }
 
-        log_console(tr('Undeleted "%count%" users', array('%count%' => $r->rowCount())), '', 'green');
+        $r  = sql_query('UPDATE `users`
+
+                         SET    `status` = NULL
+
+                         WHERE  `name` IN ('.implode(',', array_keys($in_name)).')
+                         OR     `id`   IN ('.implode(',', array_keys($in_id)).')'.$status,
+
+                         array_merge($in_name, $in_id));
+
+        switch(!$r->rowCount()){
+            case 0:
+                cli_log(tr('Not undeleted any users'), 'error');
+                break;
+
+            case count($argv):
+                cli_log(tr('Undeleted only ":deleted" users from the specified ":specified" users', array(':count' => $r->rowCount(), ':specified' => count($argv))), 'yellow');
+                break;
+
+            default:
+                cli_log(tr('Undeleted ":count" users', array(':count' => $r->rowCount())), 'green');
+        }
+
         break;
 
     case 'erase':
-        cli_rights('modify');
-        array_shift($argv);
+        $users = cli_arguments();
 
-        if(!count($argv)){
-            throw new bException('No users specified');
+        if(empty($users)){
+            throw new bException(tr('No users specified'), 'not-specified');
         }
 
-        $in = sql_in($argv);
-        $r  = sql_query('DELETE FROM `users` WHERE (`username` IN ('.implode(',', array_keys($in)).') or `id` IN ('.implode(',', array_keys($in)).')) AND `status` = "deleted"', $in);
+        $in_name = sql_in($users, 'name');
+        $in_id   = sql_in($users, 'id');
 
-        if(!$r->rowCount()){
-            throw new bException(tr('Not erased any users'), 'notfound');
+        if(FORCE){
+            $status = '';
+
+        }else{
+            $status = ' AND `status` = "deleted" ';
         }
 
-        log_console(tr('Erased "%count%" users', array('%count%' => $r->rowCount())), '', 'green');
+        $r  = sql_query('DELETE FROM `users`
+
+                         WHERE       `name` IN ('.implode(',', array_keys($in_name)).')
+                         OR          `id`   IN ('.implode(',', array_keys($in_id)).')'.$status,
+
+                         array_merge($in_name, $in_id));
+
+        switch(!$r->rowCount()){
+            case 0:
+                cli_log(tr('Not erased any users'), 'error');
+                break;
+
+            case count($argv):
+                cli_log(tr('Erased only ":deleted" users from the specified ":specified" users', array(':count' => $r->rowCount(), ':specified' => count($argv))), 'yellow');
+                break;
+
+            default:
+                cli_log(tr('Erased ":count" users', array(':count' => $r->rowCount())), 'green');
+        }
+
         break;
 
     case 'password':
-        cli_rights('modify');
+        /*
+         * Get arguments by keyword
+         */
+        $user = cli_argument('--user', true);
+        $pass = not_empty(cli_argument('--pass', true), cli_argument('--password', true));
 
-        if(count($argv) < 3){
-            switch(count($argv)){
-                case 0:
-                    throw new bException('No user and password specified');
+        if(!$user and !$pass){
+            /*
+             * Get arguments by order
+             */
+            $user = cli_argument(1);
+            $pass = cli_argument(2);
+        }
 
-                case 1:
-                    throw new bException('No password specified');
+        cli_no_arguments_left();
 
-                default:
-                    throw new bException('Too many arguments specified, please specify only username (or email) and password');
+        $pass = user_test_password($pass);
+        $pass = password($pass);
+
+        $r    = sql_query('UPDATE `users`
+
+                           SET    `password` = :password
+
+                           WHERE  `username` = :username
+                           OR     `email`    = :email',
+
+                           array(':password' => $pass,
+                                 ':username' => $user,
+                                 ':email'    => $user));
+
+        if($r->rowCount()){
+            cli_log(tr('Updated password for user ":user"', array(':user' => $user)), 'green');
+
+        }else{
+            $userdata = sql_get('SELECT `id`,
+                                        `name`,
+                                        `email`,
+                                        `username`
+
+                                 FROM    `users`
+
+                                 WHERE  `username` = :username
+                                 OR     `email`    = :email',
+
+                                 array(':username' => $user,
+                                       ':email'    => $user));
+
+            if(!$userdata){
+                throw new bException(tr('User ":user" does not exist', array(':user' => $user)), 'not-exist');
             }
+
+            cli_log(tr('User ":user" has the same password, so it is not updated', array(':user' => $user)), 'yellow');
         }
 
-        $username = argument(1);
-        $password = argument(2);
-
-        $r = sql_query('UPDATE `users`
-
-                        SET    `password` = :password
-
-                        WHERE  `username` = :username
-                        OR     `email`    = :email',
-
-                       array(':password' => password($password),
-                             ':username' => $username,
-                             ':email'    => $username));
-
-        if(!$r->rowCount()){
-            throw new bException(tr('User "%user%" not found, or password was the same, and so not updated', array('%user%' => str_log($username))));
-        }
-
-        log_console(tr('Updated password for user "%user%"', array('%user%' => str_log($username))), '', 'green');
         break;
 
     case 'whoami':
+        cli_no_arguments_left();
+
         if(empty($_SESSION['user']['id'])){
-            log_console(tr('0 Nobody'), '');
+            cli_log(tr('0 Nobody'));
 
         }else{
-            log_console($_SESSION['user']['id'].' '.$_SESSION['user']['email'].' '.$_SESSION['user']['username'].' '.$_SESSION['user']['name'], '');
+            cli_log($_SESSION['user']['id'].' '.$_SESSION['user']['email'].' '.$_SESSION['user']['username'].' '.$_SESSION['user']['name']);
         }
 
         break;
@@ -410,6 +477,6 @@ throw new bException('"LIST WITH RIGHT" IS UNDER CONSTRUCTION');
         throw new bException(tr('No method specified'), 'unknown');
 
     default:
-        throw new bException(tr('Unknown method "%method%" specified', array('%method%' => $method)), 'unknown');
+        throw new bException(tr('Unknown method ":method" specified', array(':method' => cli_method())), 'unknown');
 }
 ?>

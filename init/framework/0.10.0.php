@@ -50,16 +50,6 @@ log_console('Created admin user "'.$_SERVER['USER'].'" with god rights', 'create
 
 
 /*
- * Ensure that the user is signed in from here on out
- */
-if(empty($_SESSION['user']['id'])){
-    load_libs('user');
-    user_signin($user);
-}
-
-
-
-/*
  * Setup blogging tables
  */
 sql_query('DROP TABLE IF EXISTS `blogs_keywords`');

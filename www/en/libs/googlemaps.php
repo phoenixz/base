@@ -125,7 +125,7 @@ function googlemaps_map_with_markers($markers = array(), $divid = 'map-canvas') 
                     }
 
                     if(empty($data['icon'])) {
-                        $data['icon']='/pub/img/'.SUBENVIRONMENTNAME.'/googlemaps/a.png';
+                        $data['icon']='/pub/img/googlemaps/a.png';
                     }
 
                     $list[] = '[\''.$data['html'].'\', '.$data['lat'].', '.$data['lng'].', \''.$data['icon'].'\']';

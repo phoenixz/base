@@ -8,19 +8,19 @@ require_once(dirname(__FILE__).'/../../../libs/startup.php');
 
 try{
     cli_only();
-    this_script_already_runs();
+    cli_exclusive();
 
-    $mailing = argument('mailing', true, argument('mailer', true));
-    $users   = argument('users'  , true);
+    $mailing = cli_argument('mailing', true, cli_argument('mailer', true));
+    $users   = cli_argument('users'  , true);
 
     load_libs('mailer');
 
     if(!$mailings_id = mailer_get($mailing)){
-        throw new bException('Mailing "'.$mailing.'" does not exist', 'notexist');
+        throw new bException('Mailing "'.$mailing.'" does not exist', 'not-exist');
     }
 
     if(!$users){
-        throw new bException('No users specified', 'notspecified');
+        throw new bException('No users specified', 'not-specified');
     }
 
     $mailings_id = $mailings_id['id'];

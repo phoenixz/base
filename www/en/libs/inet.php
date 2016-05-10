@@ -120,9 +120,11 @@ function url_add_query($url, $query){
         return $url;
     }
 
-    if(!$key = str_until($query, '=')){
+    if(!preg_match('/.+?=.*?/', $query)){
         throw new bException('url_add_query(): Invalid query specified. Please ensure it has the "key=value" format');
     }
+
+    $key = str_until($query, '=');
 
     if(strpos($url, '?') === false){
         /*
@@ -135,7 +137,7 @@ function url_add_query($url, $query){
         /*
          * The query already exists in the specified URL, replace it.
          */
-        $replace = str_until(str_from($url, $key.'='), '&');
+        $replace = str_cut($url, $key.'=', '&');
         return str_replace($key.'='.$replace, $key.'='.str_from($query, '='), $url);
     }
 

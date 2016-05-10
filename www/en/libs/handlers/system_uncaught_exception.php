@@ -10,24 +10,6 @@ $session   = "\n\n\n<br><br>SESSION DATA<br><br>\n\n\n".htmlentities(print_r(iss
 $server    = "\n\n\n<br><br>SERVER DATA<br><br>\n\n\n".htmlentities(print_r(isset_get($_SERVER), true));
 $trace     = "\n\nFUNCTION TRACE\n".htmlentities(print_r(debug_trace(''), true));
 
-if(method_exists($e, 'getMessages')){
-    $exception = "\n\nEXCEPTION TRACE\n".htmlentities(print_r($e->getMessages(), true));
-
-    error_log(tr('Uncaught exception'));
-
-    foreach($e->getMessages() as $message){
-        error_log($message);
-    }
-
-}else{
-    $exception = "\n\nEXCEPTION TRACE\n".htmlentities(print_r($e->getMessage(), true));
-
-    error_log(tr('Uncaught exception'));
-    error_log($e->getMessage());
-}
-
-
-
 /*
  * Count the # of uncaught exceptions.
  * A second one would be caused by the handling of a previous uncaught exception
@@ -47,6 +29,26 @@ try{
 
         if($die){
             die($die);
+        }
+    }
+
+    if(PLATFORM == 'http'){
+        if(method_exists($e, 'getMessages')){
+            $exception = "\n\nEXCEPTION TRACE\n".htmlentities(print_r($e->getMessages(), true));
+
+            error_log(tr('Uncaught exception'));
+
+            foreach($e->getMessages() as $message){
+                error_log($message);
+            }
+
+            error_log(SCRIPT.': Failed');
+
+        }else{
+            $exception = "\n\nEXCEPTION TRACE\n".htmlentities(print_r($e->getMessage(), true));
+
+            error_log(tr('Uncaught exception'));
+            error_log($e->getMessage());
         }
     }
 
@@ -93,6 +95,8 @@ try{
             foreach($messages as $key => $message){
                 log_screen($key.': '.$message, $code);
             }
+
+            log_screen(SCRIPT.': FAILED', $code);
 
         }else{
             log_screen('0: '.$e->getMessage(), $code);

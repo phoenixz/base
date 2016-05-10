@@ -16,22 +16,22 @@ cli_only();
 load_libs('test');
 
 foreach($argv as $arg){
-	switch($arg){
-		case 'all':
+    switch($arg){
+        case 'all':
 // :TODO: Implement
-			break;
-	}
+            break;
+    }
 }
 
 test('emptyfunction()', 'Function call which should do blah blah', function(){
-	try{
-		if(emptyfunction('lkjerlkfwejf', 127)){
-			throw new bException('Did not do blah blah');
-		}
+    try{
+        if(emptyfunction('lkjerlkfwejf', 127)){
+            throw new bException('Did not do blah blah');
+        }
 
-	}catch(Exception $e){
+    }catch(Exception $e){
 showdie($e);
-	}
+    }
 });
 
 test_completed('empty()');

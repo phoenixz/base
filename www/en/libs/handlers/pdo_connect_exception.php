@@ -14,10 +14,6 @@
                 throw new bException('sql_connect(): The database configuration has key "'.str_log($key).'" missing, check your database configuration in '.ROOT.'/config/production.php');
             }
 
-            if(REQUIRE_SUBENVIRONMENTS){
-                throw new bException('sql_connect(): The database configuration has key "'.str_log($key).'" missing, check your database configuration in either '.ROOT.'/config/production.php and/or '.ROOT.'/config/'.ENVIRONMENT.'.php and/or '.ROOT.'/config/'.ENVIRONMENT.'_'.SUBENVIRONMENT.'.php');
-            }
-
             throw new bException('sql_connect(): The database configuration has key "'.str_log($key).'" missing, check your database configuration in either '.ROOT.'/config/production.php and/or '.ROOT.'/config/'.ENVIRONMENT.'.php');
         }
     }

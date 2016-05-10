@@ -34,15 +34,15 @@ function curl_get_proxy($url, $file = '', $serverurl = null) {
         }
 
         if(is_array($url)){
-            throw new bException(tr('curl_get_proxy(): No URL specified'), 'notspecified');
+            throw new bException(tr('curl_get_proxy(): No URL specified'), 'not-specified');
         }
 
         if(!$serverurl){
-            throw new bException(tr('curl_get_proxy(): No proxy server URL(s) specified'), 'notspecified');
+            throw new bException(tr('curl_get_proxy(): No proxy server URL(s) specified'), 'not-specified');
         }
 
-        if(VERBOSE){
-            log_console(tr('Using proxy "%proxy%"', array('%proxy%' => str_cut(str_log($serverurl), '://', '/'))), 'curl_get_proxy()');
+        if(VERBOSE and (PLATFORM == 'shell')){
+            cli_log(tr('Using proxy ":proxy"', array(':proxy' => str_cut(str_log($serverurl), '://', '/'))));
         }
 
         $data = curl_get(array('url'        => str_ends($serverurl, '?apikey='.$_CONFIG['curl']['apikey'].'&url=').urlencode($url),
@@ -50,11 +50,11 @@ function curl_get_proxy($url, $file = '', $serverurl = null) {
                                'proxy'      => false));
 
         if(!trim($data['data'])){
-            throw new bException(tr('curl_get_proxy(): Proxy returned no data. Is proxy correctly configured? Proxy domain resolves correctly?', array('%data%' => $data)), 'notspecified');
+            throw new bException(tr('curl_get_proxy(): Proxy returned no data. Is proxy correctly configured? Proxy domain resolves correctly?'), 'no-data');
         }
 
         if(substr($data['data'], 0, 12) !== 'PROXY_RESULT'){
-            throw new bException(tr('curl_get_proxy(): Proxy returned invalid data "%data%" from proxy "%proxy%". Is proxy correctly configured? Proxy domain resolves correctly?', array('%data%' => str_log($data), '%proxy%' => str_cut(str_log($serverurl), '://', '/'))), 'notspecified');
+            throw new bException(tr('curl_get_proxy(): Proxy returned invalid data ":data" from proxy ":proxy". Is proxy correctly configured? Proxy domain resolves correctly?', array(':data' => str_log($data), ':proxy' => str_cut(str_log($serverurl), '://', '/'))), 'not-specified');
         }
 
         load_libs('json');
@@ -136,7 +136,7 @@ function curl_get_random_ip($allowipv6 = false) {
 // *
 // */
 //function curl_get_random_ip() {
-//	global $col;
+//    global $col;
 //
 //    try{
 //        $ips = explode("\n", safe_exec('/sbin/ifconfig|grep "Mask:255.255.255.0"|sed "s/^.*addr://"|sed "s/ .*//"'));
@@ -192,8 +192,8 @@ function curl_get($params, $referer = null, $post = false, $options = array()){
         array_default($params, 'timeout'        , 30);    // # of seconds for cURL functions to execute
         array_default($params, 'connect_timeout', 10);    // # of seconds before connection try will fail
 
-        if(VERBOSE){
-            log_console(tr('Connecting with "%url%"', array('%url%' => $params['url'])), 'curl_get');
+        if(VERBOSE and (PLATFORM == 'shell')){
+            cli_log(tr('Connecting with ":url"', array(':url' => $params['url'])));
         }
 
         if($params['proxies']){

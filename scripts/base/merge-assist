@@ -6,7 +6,11 @@
 $usage = "./scripts/base/merge-assist BRANCH \n".
          "./scripts/base/merge-assist BRANCH [BRANCH BRANCH ...] [target BRANCH]\n";
 
-$help  = "The merge-assist script will ";
+$help  = "The merge-assist script will help you prepare for a merge to the target branch
+
+OPTIONS
+
+--do-merge                     - ";
 
 //$quiet = false;
 
@@ -17,18 +21,19 @@ load_libs('git');
 /*
  * Get options
  */
-$do_merge = argument('do-merge');
+$do_merge = cli_argument('--do-merge');
+cli_no_arguments_left();
 
 
 /*
  * Can only work on clean WT
  */
 if(git_has_changes()){
-	if(!FORCE){
-		throw new bException(tr('merge-prepare: GIT changes detected, cannot continue. Use -f for FORCE mode'), 'git-changes');
-	}
+    if(!FORCE){
+        throw new bException(tr('merge-prepare: GIT changes detected, cannot continue. Either git commit your changes, or use -f or --force to force merge prepare.'), 'git-changes');
+    }
 
-	log_console(tr('WARNING: GIT Changes detected, continuing because of -f option'), '', 'yellow');
+    cli_log(tr('WARNING: GIT Changes detected, continuing because of -f option'), 'yellow');
 }
 
 
@@ -36,57 +41,57 @@ if(git_has_changes()){
  * Detect the current branch
  */
 foreach(safe_exec('git branch') as $branch){
-	if(substr(trim($branch), 0, 1) == '*'){
-		$current = trim(str_from($branch, '*'));
-		break;
-	}
+    if(substr(trim($branch), 0, 1) == '*'){
+        $current = trim(str_from($branch, '*'));
+        break;
+    }
 }
 
 
 /*
  * Detect target branch, either current, or specified on command line
  */
-if(!$target = argument('target', true)){
-	$target = $current;
+if(!$target = cli_argument('target', true)){
+    $target = $current;
 }
 
 
 /*
  * Ensure that all requested branches exist
  */
-log_console(tr('Verifying requested branches "%branches%"', array('%branches%' => str_log(implode(' ', $argv)))), '');
+cli_log(tr('Verifying requested branches ":branches"', array(':branches' => implode(' ', $argv))));
 git_fetch();
 
 foreach(safe_exec('git branch -a') as $branch){
-	$branches[] = trim(str_from($branch, '*'));
+    $branches[] = trim(str_from($branch, '*'));
 }
 
 foreach($argv as $branch){
-	if(!in_array($branch, $branches)){
-		if(!in_array('remotes/origin/'.$branch, $branches)){
-			$fail[] = $branch;
-		}
-	}
+    if(!in_array($branch, $branches)){
+        if(!in_array('remotes/origin/'.$branch, $branches)){
+            $fail[] = $branch;
+        }
+    }
 }
 
 if(!empty($fail)){
-	throw new bException(tr('merge-prepare: Specified branche(s) "%fail%" do not exist', array('%fail%' => str_log(implode(' ', $fail)))), 'not_exists');
+    throw new bException(tr('merge-prepare: Specified branche(s) ":fail" do not exist', array(':fail' => implode(' ', $fail))), 'not_exists');
 }
 
 if(empty($argv)){
-	throw new bException(tr('merge-prepare: No source branches specified'), 'not-specified');
+    throw new bException(tr('merge-prepare: No source branches specified'), 'not-specified');
 }
 
-log_console(tr('Requested branches verified'), '');
+cli_log(tr('Requested branches verified'));
 
 
 /*
  * Ensure that target branch exists
  */
-log_console(tr('Preparing merging to target branch "%$target%"', array('%$target%' => str_log($target))), '', 'white');
+cli_log(tr('Preparing merging to target branch ":target"', array(':target' => $target)), 'white');
 
 if(!in_array($target, $branches)){
-	throw new bException(tr('merge-prepare: Specified target branch "%target%" do not exist', array('%target%' => str_log($target))), 'not_exists');
+    throw new bException(tr('merge-prepare: Specified target branch ":target" do not exist', array(':target' => $target)), 'not_exists');
 }
 
 $branches = $argv;
@@ -106,15 +111,15 @@ script_exec('base/update', 'local');
  * are the changes made in that branch
  */
 foreach($branches as $branch){
-	log_console(tr('Processing branch "%branch%"', array('%branch%' => str_log($branch))), '');
-	safe_exec('git co '.$branch);
-	safe_exec('git pull origin '.$branch);
+    cli_log(tr('Processing branch ":branch"', array(':branch' => $branch)));
+    safe_exec('git co '.$branch);
+    safe_exec('git pull origin '.$branch);
 
-	log_console(tr('Updating from base'), '');
-	script_exec('base/update', 'local noinit');
+    cli_log(tr('Updating from base'));
+    script_exec('base/update', 'local noinit');
 
-	log_console(tr('Merging from "%branch%"', array('%branch%' => str_log($branch))), '');
-	safe_exec('git merge '.$target);
+    cli_log(tr('Merging from ":branch"', array(':branch' => $branch)));
+    safe_exec('git merge '.$target);
 }
 
 
@@ -122,6 +127,6 @@ foreach($branches as $branch){
  * Return to the current branch
  */
 safe_exec('git co '.$current);
-log_console(tr('Returned to original branch "%branch%"', array('%branch%' => str_log($current))), '');
-log_console('Done...', '', 'green');
+cli_log(tr('Returned to original branch ":branch"', array(':branch' => $current)));
+cli_log('Done...', 'green');
 ?>

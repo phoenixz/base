@@ -123,15 +123,15 @@ function sms_update_conversation($conversation, $messages_id, $direction, $messa
         load_libs('json');
 
         if(empty($conversation['id'])){
-            throw new bException('sms_update_conversation(): No conversation id specified', 'notspecified');
+            throw new bException('sms_update_conversation(): No conversation id specified', 'not-specified');
         }
 
         if(empty($direction)){
-            throw new bException('sms_update_conversation(): No conversation direction specified', 'notspecified');
+            throw new bException('sms_update_conversation(): No conversation direction specified', 'not-specified');
         }
 
         if(empty($message)){
-            throw new bException('sms_update_conversation(): No conversation message specified', 'notspecified');
+            throw new bException('sms_update_conversation(): No conversation message specified', 'not-specified');
         }
 
         /*
@@ -169,6 +169,18 @@ function sms_update_conversation($conversation, $messages_id, $direction, $messa
         }
 
         /*
+         * Are there MMS images?
+         */
+        $images = sql_list('SELECT `id`, `file`, `url` FROM `sms_images` WHERE `sms_messages_id` = :sms_messages_id', array(':sms_messages_id' => $messages_id));
+
+        if($images){
+            foreach($images as $image){
+
+                $message = html_img(($image['file'] ? $image['file'] : $image['url']), tr('MMS image'), 28, 28, 'class="mms"').$message;
+            }
+        }
+
+        /*
          * Add new message. Truncate each message by N% to ensure that the conversations last_message string does not surpass 1024 characters
          */
         array_unshift($conversation['last_messages'], array('id'        => $messages_id,
@@ -178,7 +190,7 @@ function sms_update_conversation($conversation, $messages_id, $direction, $messa
         $last_messages  = json_encode_custom($conversation['last_messages']);
         $message_length = strlen($last_messages);
 
-        while($message_length > 1024){
+        while($message_length > 4000){
             /*
              * The JSON string is too large to be stored, reduce the amount of messages and try again
              */

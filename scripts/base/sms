@@ -13,22 +13,22 @@ $help  = "This SMS script allows you to send out SMS messages using either twili
 require_once(dirname(__FILE__).'/../../libs/startup.php');
 
 cli_only();
-load_libs('sms');
+load_libs('sms,twilio');
 
-switch(argument(0)){
+switch(cli_method()){
     case 'send':
-        if(!$to = argument('to')){
+        if(!$to = cli_argument('to')){
             /*
              * Use sms phone message
              */
-            $phone   = argument(0);
-            $message = str_force(argument($phone, 'all'), ' ');
+            $phone   = cli_argument(0);
+            $message = str_force(cli_argument($phone, 'all'), ' ');
 
             if(!is_numeric(str_replace('+', '', $phone))){
                 throw new bException(tr('Invalid arguments supplied. Please check script usage'), 'invalid');
             }
 
-        }elseif(!$message = argument('message')){
+        }elseif(!$message = cli_argument('message')){
             throw new bException(tr('No message specified'), 'invalid');
         }
 
@@ -53,7 +53,10 @@ switch(argument(0)){
         log_console(tr('Finished downloading all pending MMS images'), '', 'green');
         break;
 
+    case '':
+        throw new bException(tr('No method specified'), 'unknown');
+
     default:
-        throw new bException(tr('Unknown method ":unknown" specified', array(':unknown' => argument(0))), 'unknown');
+        throw new bException(tr('Unknown method ":method" specified', array(':method' => cli_method())), 'unknown');
 }
 ?>

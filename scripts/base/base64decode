@@ -8,13 +8,14 @@ $usage = "./scripts/base/base64decode\n".
 
 $help  = "This script will decode base64 strings and show the contents.";
 
-//$quiet = false;
-
 require_once(dirname(__FILE__).'/../../libs/startup.php');
 
-if(!argument(0)){
-	throw new bException(tr('No base64 string specified'), 'notspecified');
+$string = cli_argument(0);
+cli_no_arguments_left();
+
+if(!$string){
+    throw new bException(tr('No base64 string specified'), 'not-specified');
 }
 
-showdie(str_safe_base64_decode(argument(0)));
+showdie(str_safe_base64_decode($string));
 ?>

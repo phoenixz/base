@@ -1,7 +1,7 @@
 <?php
 require_once(dirname(__FILE__).'/../libs/startup.php');
 
-right_or_redirect('admin');
+rights_or_redirect('admin');
 load_libs('admin');
 
 /*

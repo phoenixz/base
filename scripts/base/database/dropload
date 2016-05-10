@@ -7,23 +7,23 @@
 require_once(dirname(__FILE__).'/../../../libs/startup.php');
 
 try{
-    $noclean  = argument('noclean', false, argument('nocleanup', false));
-    $backup   = argument('backup');
-    $database = argument('database', true, argument('db', true));
-    $table    = argument('table', true);
+    $noclean  = cli_argument('noclean', false, cli_argument('nocleanup', false));
+    $backup   = cli_argument('backup');
+    $database = cli_argument('database', true, cli_argument('db', true));
+    $table    = cli_argument('table', true);
     $time     = new DateTime();
     $time     = $time->format('YmdHis');
 
-    if(!$user = argument('username', true)){
-        throw new bException('No database username specified', 'notspecified');
+    if(!$user = cli_argument('username', true)){
+        throw new bException('No database username specified', 'not-specified');
     }
 
-    if(!$password = argument('password', true)){
-        throw new bException('No database password specified', 'notspecified');
+    if(!$password = cli_argument('password', true)){
+        throw new bException('No database password specified', 'not-specified');
     }
 
     if(!$database){
-        throw new bException('No database specified', 'notspecified');
+        throw new bException('No database specified', 'not-specified');
     }
 
     load_libs('file');

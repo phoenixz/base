@@ -373,7 +373,7 @@ function jqueryui_fancybox($params){
         html_load_js('fancybox/jquery.fancybox');
 
         if($params['close_click'] and $params['next_click']){
-            throw new bException(tr('jqueryui_fancybox(): Both $params["close_click"] and $params["next_click"] have been set to true, but these options are mutually exclusive. Please set one (or both) to false.'), 'notspecified');
+            throw new bException(tr('jqueryui_fancybox(): Both $params["close_click"] and $params["next_click"] have been set to true, but these options are mutually exclusive. Please set one (or both) to false.'), 'not-specified');
         }
 
         if($params['load_css']){
@@ -381,7 +381,7 @@ function jqueryui_fancybox($params){
         }
 
         if(!strstr($params['item_template'], ':image')){
-            throw new bException(tr('jqueryui_fancybox(): Parameter $params["item_template"] does not contain :image to add the images in the template HTML'), 'notspecified');
+            throw new bException(tr('jqueryui_fancybox(): Parameter $params["item_template"] does not contain :image to add the images in the template HTML'), 'not-specified');
         }
 
         $items = '';
@@ -399,7 +399,7 @@ function jqueryui_fancybox($params){
 
         if($params['gallery_template']){
             if(!strstr($params['gallery_template'], ':item_template')){
-                throw new bException(tr('jqueryui_fancybox(): Parameter $params["gallery_template"] contains a template, but does not contain :item_template to add the items in there'), 'notspecified');
+                throw new bException(tr('jqueryui_fancybox(): Parameter $params["gallery_template"] contains a template, but does not contain :item_template to add the items in there'), 'not-specified');
             }
 
             $retval = str_replace(':item_template', $items, $params['gallery_template']);
@@ -412,7 +412,7 @@ function jqueryui_fancybox($params){
 
         $retval .= html_script('
             $("'.$params['selector'].'").fancybox({
-                openEffect	: "'.$params['open_effect'].'",
+                openEffect    : "'.$params['open_effect'].'",
                 closeEffect : "'.$params['close_effect'].'",
                 autoSize    : '.str_boolean($params['auto_size']).',
                 autoResize  : '.str_boolean($params['auto_resize']).',

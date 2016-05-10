@@ -3,42 +3,39 @@
 /*
  * This is an empty test script template
  */
-$usage = "./scripts/base/images\n".
-         "./scripts/base/images option [option]\n";
+$usage = "./scripts/base/images option [option]\n";
+         "./scripts/base/images optimize --destination DESTINATION-PATH --source SOURCE-PATH --file | --files\n";
 
 $help  = "This script can perform various image actions
 
-retina [FILE | all]			 - Will ensure retina files are at least
+METHODS
+
+retina [FILE | all]          - Will ensure retina files are at least
                                available by creating symlinks for
-							   all image files
+                               all image files
 
 optimize                     - Optimize images using the specified parameters.
                                Optimization will try to improve (make smaller)
-							   image sizes by recompressing using higher
-							   compression settings, blurring and other
-							   techniques, while retaining image quality
+                               image sizes by recompressing using higher
+                               compression settings, blurring and other
+                               techniques, while retaining image quality
 
-[--source] (optimize)        - Source path containing all images that will be
-                               optimized. If not specified, ROOT will be
-							   assumed and all images in this project will be
-							   processed
 
-[--destination] (optimize)   - Destination path where all optimized images will
-                               be placed. If not specified, all images in the
-							   source path will be overwritten
 
---keep-aspectratio (optimize)- Ensure image aspect ratio
+OPTIONS
 
---quality (optimize)		 - JPEG Quality factor (0 - 100 [60])
+--keep-aspectratio (optional)- Ensure image aspect ratio
 
---interlace (optimize)       - Make image load interlaced (jpeg, gif, png,
+--quality (optional)         - JPEG Quality factor (0 - 100 [60])
+
+--interlace (optional)       - Make image load interlaced (jpeg, gif, png,
                                none, line, plane, partition, auto [Line])
 
---strip (optimize)           - Strip exif data (true - false [true])
+--strip (optional)           - Strip exif data (true - false [true])
 
---blur (optimize)            - Blur factor. The higher this factor, the lower
+--blur (optional)            - Blur factor. The higher this factor, the lower
                                the image size, though this may affect image
-							   quality (0x1 - 10x10 [1x3])
+                               quality (0x1 - 10x10 [1x3])
 
 --defines
 
@@ -56,222 +53,167 @@ optimize                     - Optimize images using the specified parameters.
 
 --height
 
---recursive			         - If specified, process the source path
+--recursive                     - If specified, process the source path
                                recursively, processing all images
-							   found under that path";
+                               found under that path";
 
 require_once(dirname(__FILE__).'/../../libs/startup.php');
 
 cli_only();
 load_libs('file,image');
 
-switch(argument(0)){
-	case 'retina':
-		$count = 0;
+switch(cli_method()){
+    case 'retina':
+        $count = 0;
+        $all   = cli_argument('--all') or cli_argument('-a');
 
-		if(argument(1) == 'all'){
-			foreach(array('jpg', 'png') as $extension){
-				$files = safe_exec('find '.ROOT.' -iname "*.'.$extension.'"');
+        cli_no_arguments_left();
 
-				foreach($files as $file){
-					if(strtolower(substr($file, -7, 7)) == '@2x.'.$extension){
-						/*
-						 * This is a retina file, skip
-						 */
-						continue;
-					}
+        if($all){
+            foreach(array('jpg', 'png') as $extension){
+                $files = safe_exec('find '.ROOT.' -iname "*.'.$extension.'"');
 
-					$link = str_replace('.'.$extension, '@2x.'.$extension, $file);
+                foreach($files as $file){
+                    if(strtolower(substr($file, -7, 7)) == '@2x.'.$extension){
+                        /*
+                         * This is a retina file, skip
+                         */
+                        continue;
+                    }
 
-					if(file_exists($link)){
-						if(!is_link($link)){
-							/*
-							 * Existing file is a real file, so probably has
-							 * unique contents. Leave it alone
-							 */
-							continue;
-						}
+                    $link = str_replace('.'.$extension, '@2x.'.$extension, $file);
 
-						/*
-						 * Existing file is a symlink. Remove it so we can
-						 * update it and be sure it links to the correct file
-						 */
-						unlink($link);
-					}
+                    if(file_exists($link)){
+                        if(!is_link($link)){
+                            /*
+                             * Existing file is a real file, so probably has
+                             * unique contents. Leave it alone
+                             */
+                            continue;
+                        }
 
-					/*
-					 * Create the target link
-					 */
-					if(VERBOSE){
-						log_console(tr('Creating symlink for file "%file%"', array('%file%' => $file)));
-					}
+                        /*
+                         * Existing file is a symlink. Remove it so we can
+                         * update it and be sure it links to the correct file
+                         */
+                        unlink($link);
+                    }
 
-					$count++;
-					symlink(basename($file), $link);
-				}
-			}
+                    /*
+                     * Create the target link
+                     */
+                    if(VERBOSE){
+                        cli_log(tr('Creating symlink for file ":file"', array(':file' => $file)));
+                    }
 
-			log_console(tr('Created "%count%" symlinks for missing retina images', array('%count%' => $count)), '', 'green');
+                    $count++;
+                    symlink(basename($file), $link);
+                }
+            }
 
-		}else{
-			/*
-			 * This must be a single file specification
-			 */
-			if(!file_exists($file)){
-				throw new bException(tr('Specified file "%file%" does not exist', array('%file%' => argument(1))), 'notexist');
-			}
+            cli_log(tr('Created ":count" symlinks for missing retina images', array(':count' => $count)), 'green');
 
-			$link = str_replace('.'.$extension, '@2x.'.$extension, $file);
+        }else{
+            /*
+             * This must be a single file specification
+             */
+            if(!file_exists($file)){
+                throw new bException(tr('Specified file ":file" does not exist', array(':file' => cli_argument(1))), 'not-exist');
+            }
 
-			if(!file_exists($link)){
-				/*
-				 *
-				 */
-				if(VERBOSE){
-					log_console(tr('Creating symlink for file "%file%"', array('%file%' => $file)));
-				}
+            $link = str_replace('.'.$extension, '@2x.'.$extension, $file);
 
-				$count++;
-				symlink($file, $link);
-			}
-		}
+            if(!file_exists($link)){
+                /*
+                 *
+                 */
+                if(VERBOSE){
+                    cli_log(tr('Creating symlink for file ":file"', array(':file' => $file)));
+                }
 
-		break;
+                $count++;
+                symlink($file, $link);
+            }
+        }
 
-	case 'optimize':
-		/*
-		 * Check destination path
-		 */
-		$destination = argument('--destination', true);
+        break;
 
-		if($destination){
-			$destination = slash($destination);
-			file_ensure_path($destination);
-		}
+    case 'optimize':
+        /*
+         * Check destination path
+         */
+        $source    = cli_argument(1);
+        $recursive = cli_argument('--recursive');
 
+        if(cli_argument('--default') or cli_argument('--defaults')){
+            $params = array();
 
-		/*
-		 * Check source path
-		 */
-		$source = argument('--source', true);
-		$path   = $source;
+        }else{
+            $params['keep_aspectratio'] = cli_argument('--keep-aspectratio');
+            $params['quality']          = cli_argument('--quality'        , true);
+            $params['interlace']        = cli_argument('--interlace'      , true , 'line');
+            $params['strip']            = cli_argument('--strip'          , false, true);
+            $params['blur']             = cli_argument('--blur'           , true , '1x3');
+            $params['defines']          = cli_argument('--defines'        , true);
+            $params['sampling_factor']  = cli_argument('--sampling-factor', true);
+            $params['limit_memory']     = cli_argument('--limit-memory'   , true);
+            $params['limit_map']        = cli_argument('--limit-map'      , true);
+            $params['method']           = cli_argument('--method', true, 'resize');
+            $params['format']           = cli_argument('--format', true);
+            $params['x']                = not_empty(cli_argument('--width' , true), cli_argument('-x', true));
+            $params['y']                = not_empty(cli_argument('--height', true), cli_argument('-y', true));
+        }
 
-		if(!$source){
-			$source = ROOT;
-		}
-
-		$source = slash(realpath($source));
-
-		if(!file_exists($source)){
-			throw new bException(tr('The specified source path ":path" does not exist', array(':path' => $path)), 'notexists');
-		}
-
-
-		/*
-		 * Get file list to process
-		 */
-		$files = not_empty(argument('file', true), argument('files', 'all'));
-
-		if(!$files){
-			throw new bException(tr('No files specified'), 'notspecified');
-		}
-
-		if((is_string($files) and $files == 'all') or (is_array($files) and (reset($files) == 'all'))){
-			/*
-			 * All files in the specified source path
-			 */
-			if(argument('--recursive')){
-				$files = file_get_tree($source);
-
-			}else{
-				$files = scandir($source);
-			}
-		}
-
-		if(is_string($files)){
-			$files = array($files);
-		}
+        cli_no_arguments_left();
 
 
-		/*
-		 * Check parameters
-		 */
-		if(argument('default') or argument('defaults')){
-			$params = array();
 
-		}else{
-			$params['keep_aspectratio'] = argument('--keep-aspectratio');
-			$params['quality']          = argument('--quality'         , true);
-			$params['interlace']        = argument('--interlace'       , true , 'line');
-			$params['strip']            = argument('--strip'           , false, true);
-			$params['blur']             = argument('--blur'            , true , '1x3');
-			$params['defines']          = argument('--defines'         , true);
-			$params['sampling_factor']  = argument('--sampling-factor' , true);
-			$params['limit-memory']     = argument('--limit-memory'    , true);
-			$params['limit-map']        = argument('--limit-map'       , true);
+        /*
+         * Check source path
+         */
+        if(!$source){
+            $source = ROOT;
+        }
 
-		//	$params['type']            = not_empty(argument('jpg'), (argument('jpeg') ? 'jpg' : ''), argument('png'));
-
-			$method = argument('--method', true);
-			$format = argument('--format', true);
-			$x      = not_empty(argument('--width' , true), argument('-x', true));
-			$y      = not_empty(argument('--height', true), argument('-y', true));
-		}
+        if(!file_exists($source)){
+            throw new bException(tr('The specified source path ":path" does not exist', array(':path' => $source)), 'not-exist');
+        }
 
 
-		/*
-		 * Ensure that all files exist
-		 */
-		log_console(tr('Checking source files'), '');
 
-		foreach($files as $key => &$file){
-			$file = trim($file);
+        /*
+         * Execute the conversion on the specified path
+         */
+        file_tree_execute(array('path'      => realpath($source),
+                                'recursive' => true,
+                                'callback'  =>  function($file) use ($params){
+                                                    global $_CONFI;
 
-			if(($file == '.') or ($file == '..')){
-				unset($files[$key]);
-				continue;
-			}
+                                                    if(is_image($file)){
+                                                        try{
+                                                            image_convert($file, $file, $params);
+                                                            usleep(5000);
 
-			if(!file_exists($source.$file)){
-				throw new bException(tr('Specified file "%file%" does not exist', array('%file%' => $source.$file)));
-			}
+                                                        }catch(Exception $e){
+                                                            cli_log(tr('Skipping file ":image", failed with ":error"', array(':image' => $file, ':error' => $e->getMessage())), 'yellow');
+                                                        }
 
-			if(file_exists($destination.$file) and ($destination.$file != $source.$file)){
-				throw new bException(tr('Specified file "%file%" already exists in the destination', array('%file%' => $destination.$file)));
-			}
-		}
+                                                    }else{
+                                                        cli_log(tr('Skipping file ":image", it is not an image', array(':image' => $file)), 'yellow');
+                                                    }
+                                                }));
 
-		unset($file);
+        if(!VERBOSE){
+            cli_dot(false);
+        }
 
-		log_console(tr('Converting "%count%" images', array('%count%' => count($files))), '', 'white');
+        cli_log(tr('Finished!'), 'green');
+        break;
 
+    case '':
+        throw new bException(tr('No method specified'), 'unknown');
 
-		/*
-		 *
-		 */
-		foreach($files as &$file){
-			if(VERBOSE){
-				log_console($file);
-
-			}else{
-				log_console('.', '', 'green', false);
-			}
-
-			image_convert($source.$file, $destination.$file, $x, $y, $method, $params, $format);
-			usleep(5000);
-		}
-
-		unset($file);
-
-		if(!VERBOSE){
-			log_console('', '');
-		}
-
-		log_console(tr('Finished!'), '', 'green');
-
-
-	default:
-		throw new bException(tr('Unknown argument "%argument%" specified', array('%argument%' => argument(0))), 'unknown');
+    default:
+        throw new bException(tr('Unknown method ":method" specified', array(':method' => cli_method())), 'unknown');
 }
-
 ?>

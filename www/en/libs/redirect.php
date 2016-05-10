@@ -18,7 +18,7 @@ function redirect_from_code($code){
         $url = sql_get('SELECT `url` FROM `redirects` WHERE `code` = :code', 'url', array(':code' => $code));
 
         if(!$url){
-            throw new bException(tr('redirect_from_code(): Specified code ":code" does not exist', array(':code' => $code)), 'notexists');
+            throw new bException(tr('redirect_from_code(): Specified code ":code" does not exist', array(':code' => $code)), 'not-exist');
         }
 
         redirect($url);

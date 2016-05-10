@@ -9,18 +9,18 @@ require_once(dirname(__FILE__).'/../../../libs/startup.php');
 
 try{
     cli_only();
-    this_script_already_runs();
+    cli_exclusive();
 
     load_libs('mailer');
 
-    if(argument('auto')){
+    if(cli_argument('auto')){
         $count = mailer_start('auto');
 
-    }elseif(argument('all')){
+    }elseif(cli_argument('all')){
         $count = mailer_start('all');
 
     }else{
-        $mailers = argument('mailers', true, argument('mailer', true, argument('mailings', true)));
+        $mailers = cli_argument('mailers', true, cli_argument('mailer', true, cli_argument('mailings', true)));
         $count   = mailer_start($mailers);
     }
 

@@ -16,37 +16,37 @@ require_once(dirname(__FILE__).'/../../libs/startup.php');
 cli_only();
 load_libs('chat');
 
-switch(argument(0)){
-	case 'sync':
-		log_console(tr('Syncing user accounts with chat database'), '', 'white');
+switch(cli_argument(0)){
+    case 'sync':
+        log_console(tr('Syncing user accounts with chat database'), '', 'white');
 
-		$users = sql_query('SELECT `id`, `name`, `username`, `email`, `status` FROM `users` WHERE `status` IS NULL');
-		$chat  = sql_prepare('INSERT INTO `users` (`user_id`, `user_name`, `user_password`, `user_email`)
-							  VALUES              (:user_id , :user_name , :user_password , :user_email )
+        $users = sql_query('SELECT `id`, `name`, `username`, `email`, `status` FROM `users` WHERE `status` IS NULL');
+        $chat  = sql_prepare('INSERT INTO `users` (`user_id`, `user_name`, `user_password`, `user_email`)
+                              VALUES              (:user_id , :user_name , :user_password , :user_email )
 
-							  ON DUPLICATE KEY UPDATE `user_name`  = :user_name,
-													  `user_email` = :user_email', 'chat');
-		$count = 0;
+                              ON DUPLICATE KEY UPDATE `user_name`  = :user_name,
+                                                      `user_email` = :user_email', 'chat');
+        $count = 0;
 
-		log_console(tr('Updating "%count%" user accounts', array('%count%' => $users->rowCount())));
+        log_console(tr('Updating "%count%" user accounts', array('%count%' => $users->rowCount())));
 
-		while($user = sql_fetch($users)){
-			if($count++ > 10){
-				$count = 0;
-				log_console('.', '', 'green', false);
-			}
+        while($user = sql_fetch($users)){
+            if($count++ > 10){
+                $count = 0;
+                log_console('.', '', 'green', false);
+            }
 
-			$chat->execute(array(':user_id'       => $user['id'],
-								 ':user_password' => sha1(uniqid()),
-								 ':user_name'     => not_empty($user['username'], str_until($user['email'], '@').'-'.uniqid()),
-								 ':user_email'    => not_empty($user['email'], 'noemail')));
-		}
+            $chat->execute(array(':user_id'       => $user['id'],
+                                 ':user_password' => sha1(uniqid()),
+                                 ':user_name'     => not_empty($user['username'], str_until($user['email'], '@').'-'.uniqid()),
+                                 ':user_email'    => not_empty($user['email'], 'noemail')));
+        }
 
-		log_console(tr('Done'), '', 'green');
-		break;
+        log_console(tr('Done'), '', 'green');
+        break;
 
-	default:
-		throw new bException(tr('Unknown action "%action%" specified', array('%action%' => argument(0))), 'unknown');
+    default:
+        throw new bException(tr('Unknown action "%action%" specified', array('%action%' => cli_argument(0))), 'unknown');
 }
 
 log_console(tr('Done'), '', 'green');

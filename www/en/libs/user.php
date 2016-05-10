@@ -114,9 +114,9 @@ function user_find_avatar($user) {
             return microsoft_get_avatar($user);
 
 // :TODO: Implement one day in the future
-//		}elseif($_CONFIG['gravatar']){
-//			load_libs('gravatar');
-//			return gravatar_get_avatar($user);
+//        }elseif($_CONFIG['gravatar']){
+//            load_libs('gravatar');
+//            return gravatar_get_avatar($user);
 
         }else{
             return '';
@@ -144,8 +144,8 @@ function user_authenticate($username, $password, $columns = '*') {
         $user = sql_get('SELECT '.$columns.' FROM `users` WHERE `email` = :email OR `username` = :username', array(':email' => $username, ':username' => $username));
 
         if(!$user){
-            log_database(tr('user_authenticate(): Specified user "%username%" not found', array('%username%' => str_log($username))), 'authentication/notfound');
-            throw new bException(tr('user_authenticate(): Specified user "%username%" not found', array('%username%' => str_log($username))), 'notfound');
+            log_database(tr('user_authenticate(): Specified user ":username" not found', array(':username' => str_log($username))), 'authentication/notfound');
+            throw new bException(tr('user_authenticate(): Specified user ":username" not found', array(':username' => str_log($username))), 'notfound');
         }
 
         if($user['status'] !== null){
@@ -180,11 +180,11 @@ function user_authenticate($username, $password, $columns = '*') {
                 break;
 
             default:
-                throw new bException(tr('user_authenticate(): Unknown encryption type "%type%" in user password specification', array('%type%' => str_log($encryption))), 'unknown');
+                throw new bException(tr('user_authenticate(): Unknown encryption type ":type" in user password specification', array(':type' => str_log($encryption))), 'unknown');
         }
 
         if($encryption != str_rfrom($user['password'], '*')){
-            log_database(tr('user_authenticate(): Specified password does not match stored password for user "%username%"', array('%username%' => $username)), 'authentication/failed');
+            log_database(tr('user_authenticate(): Specified password does not match stored password for user ":username"', array(':username' => $username)), 'authentication/failed');
             throw new bException(tr('user_authenticate(): Specified password does not match stored password'), 'password');
         }
 
@@ -214,7 +214,7 @@ function user_authenticate($username, $password, $columns = '*') {
             return $user;
         }
 
-        log_database(tr('user_authenticate(): Authenticated user "%username%"', array('%username%' => $username)), 'authentication/success');
+        log_database(tr('user_authenticate(): Authenticated user ":username"', array(':username' => $username)), 'authentication/success');
 
         $user['authenticated'] = true;
         return $user;
@@ -241,10 +241,19 @@ function user_authenticate($username, $password, $columns = '*') {
 /*
  * Do a user signin
  */
-function user_signin($user, $extended = false, $redirect = '/', $html_flash = null) {
+function user_signin($user, $extended = false, $redirect = null, $html_flash = null) {
     global $_CONFIG;
 
     try{
+        if($redirect === null){
+            if(isset_get($_GET['redirect'])){
+                $redirect = $_GET['redirect'];
+
+            }elseif(isset_get($_GET['redirect'])){
+                $redirect = $_SESSION['redirect'];
+            }
+        }
+
         if(!is_array($user)){
             throw new bException('user_signin(): Specified user variable is not an array', 'invalid');
         }
@@ -268,7 +277,7 @@ function user_signin($user, $extended = false, $redirect = '/', $html_flash = nu
         /*
          * Store last login
          */
-        sql_query('UPDATE `users` SET `last_login` = DATE(NOW()) WHERE `id` = '.cfi($user['id']).';');
+        sql_query('UPDATE `users` SET `last_signin` = DATE(NOW()), `signin_count` = `signin_count` + 1 WHERE `id` = '.cfi($user['id']).';');
 
         if($extended){
             user_create_extended_session($user['id']);
@@ -284,20 +293,28 @@ function user_signin($user, $extended = false, $redirect = '/', $html_flash = nu
             }
         }
 
-        $_SESSION['user'] = $user;
+        $_SESSION['user']         = $user;
+        $_SESSION['user']['role'] = sql_get('SELECT `roles`.`name` FROM `roles` WHERE `id` = :id', 'name', array(':id' => $_SESSION['user']['roles_id']));
 
         if($html_flash){
             html_flash_set(isset_get($html_flash['text']), isset_get($html_flash['type']), isset_get($html_flash['class']));
         }
 
         if($redirect and (PLATFORM == 'http')){
+            /*
+             * Do not redirect to signin page
+             */
+            if($redirect == $_CONFIG['redirects']['signin']){
+                $redirect = $_CONFIG['redirects']['index'];
+            }
+
             session_redirect('http', $redirect);
         }
 
-        log_database(tr('user_signin(): Signed in user "%user%"', array('%user%' => user_name($user))), 'signin/success');
+        log_database(tr('user_signin(): Signed in user ":user"', array(':user' => user_name($user))), 'signin/success');
 
     }catch(Exception $e){
-        log_database(tr('user_signin(): User sign in failed for user "%user%" because "%message%"', array('%user%' => user_name($user), '%message%' => $e->getMessage())), 'signin/failed');
+        log_database(tr('user_signin(): User sign in failed for user ":user" because ":message"', array(':user' => user_name($user), ':message' => $e->getMessage())), 'signin/failed');
         throw new bException('user_signin(): Failed', $e);
     }
 }
@@ -383,7 +400,8 @@ function user_set_verification_code($user){
         /*
          * Create a unique code.
          */
-        $code = uniqid(SUBENVIRONMENT, true);
+        $code = uniqid(ENVIRONMENT, true);
+
         /*
          * Update user validation with that code
          */
@@ -429,46 +447,45 @@ function user_check_blacklisted($name){
  */
 function user_signup($params){
     try{
-        if(empty($params['email'])){
-            throw new bException(tr('user_signup(): Please specify an email address'), 'notspecified');
-        }
-
         if(empty($params['password'])){
-            throw new bException(tr('user_signup(): Please specify a password'), 'notspecified');
+            throw new bException(tr('user_signup(): Please specify a password'), 'not-specified');
         }
 
-        $dbuser = sql_get('SELECT `id`,
-                                  `username`,
-                                  `email`
+// :DELETE: This validation is already done (better) in user_validate();
+        //$dbuser = sql_get('SELECT `id`,
+        //                          `username`,
+        //                          `email`
+        //
+        //                   FROM   `users`
+        //
+        //                   WHERE  `username` = :username
+        //                   OR     `email`    = :email',
+        //
+        //                   array(':username' => isset_get($params['username']),
+        //                         ':email'    => $params['email']));
+        //
+        //if($dbuser){
+        //    if(!empty($dbuser['email']) and !empty($dbuser['username'])){
+        //        throw new bException(tr('user_signup(): User with username ":name" or email ":email" already exists', array(':name' => str_log(isset_get($params['username'])), ':email' => str_log(isset_get($params['email'])))), 'exists');
+        //
+        //    }elseif(!empty($dbuser['email'])){
+        //        throw new bException(tr('user_signup(): User with email ":email" already exists', array(':email' => str_log(isset_get($params['email'])))), 'exists');
+        //
+        //    }else{
+        //        throw new bException(tr('user_signup(): User with username ":name" already exists', array(':name' => str_log(isset_get($params['username'])))), 'exists');
+        //    }
+        //}
 
-                           FROM   `users`
-
-                           WHERE  `username` = :username
-                           OR     `email`    = :email',
-
-                           array(':username' => isset_get($params['username']),
-                                 ':email'    => $params['email']));
-
-        if($dbuser){
-            if(!empty($dbuser['email']) and !empty($dbuser['username'])){
-                throw new bException(tr('user_signup(): User with username "%name%" or email "%email%" already exists', array('%name%' => str_log(isset_get($params['username'])), '%email%' => str_log(isset_get($params['email'])))), 'exists');
-
-            }elseif(!empty($dbuser['email'])){
-                throw new bException(tr('user_signup(): User with email "%email%" already exists', array('%email%' => str_log(isset_get($params['email'])))), 'exists');
-
-            }else{
-                throw new bException(tr('user_signup(): User with username "%name%" already exists', array('%name%' => str_log(isset_get($params['username'])))), 'exists');
-            }
-        }
-
-        sql_query('INSERT INTO `users` (`status`, `createdby`, `username`, `password`, `name`, `email`)
-                   VALUES              (NULL    , :createdby , :username , :password , :name , :email )',
+        sql_query('INSERT INTO `users` (`status`, `createdby`, `username`, `password`, `name`, `email`, `roles_id`, `role`)
+                   VALUES              (NULL    , :createdby , :username , :password , :name , :email , :roles_id , :role )',
 
                    array(':createdby' => isset_get($_SESSION['user']['id']),
-                         ':username'  => isset_get($params['username']),
+                         ':username'  => get_null(isset_get($params['username'])),
                          ':name'      => isset_get($params['name']),
                          ':password'  => password($params['password']),
-                         ':email'     => $params['email']));
+                         ':email'     => get_null($params['email']),
+                         ':role'      => get_null($params['role']),
+                         ':roles_id'  => get_null($params['roles_id'])));
 
         return sql_insert_id();
 
@@ -492,11 +509,11 @@ function user_signup($params){
 //        }
 //
 //        if(empty($params['email'])){
-//            throw new bException('user_update(): No email specified', 'notspecified');
+//            throw new bException('user_update(): No email specified', 'not-specified');
 //        }
 //
 //        if(empty($params['id'])){
-//            throw new bException('user_update(): No users id specified', 'notspecified');
+//            throw new bException('user_update(): No users id specified', 'not-specified');
 //        }
 //
 //        if(empty($params['name'])){
@@ -509,7 +526,7 @@ function user_signup($params){
 //        }
 //
 //        if(!$user = user_get($params['id'])){
-//            throw new bException('user_update(): User with id "'.str_log($params['id']).'" does not exists', 'notexists');
+//            throw new bException('user_update(): User with id "'.str_log($params['id']).'" does not exists', 'not-exist');
 //        }
 //
 //        $exists = sql_get('SELECT `id`, `email`, `username`
@@ -575,15 +592,15 @@ function user_update_password($params, $current = true){
         }
 
         if(empty($params['id'])){
-            throw new bException(tr('user_update_password(): No users id specified'), 'not_specified');
+            throw new bException(tr('user_update_password(): No users id specified'), 'not-specified');
         }
 
         if(empty($params['password'])){
-            throw new bException(tr('user_update_password(): Please specify a password'), 'not_specified');
+            throw new bException(tr('user_update_password(): Please specify a password'), 'not-specified');
         }
 
         if(empty($params['password2'])){
-            throw new bException(tr('user_update_password(): No validation password specified'), 'not_specified');
+            throw new bException(tr('user_update_password(): No validation password specified'), 'not-specified');
         }
 
         /*
@@ -593,13 +610,25 @@ function user_update_password($params, $current = true){
             throw new bException(tr('user_update_password(): Specified password does not match the validation password'), 'mismatch');
         }
 
+        /*
+         * Check if password is NOT equal to cpassword
+         */
+        if($params['password'] == $params['cpassword']){
+            throw new bException(tr('user_update_password(): Specified new password is the same as the current password'), 'same-as-current');
+        }
+
         if($current){
             if(empty($params['cpassword'])){
-                throw new bException(tr('user_update_password(): Please specify the current password'), 'not_specified');
+                throw new bException(tr('user_update_password(): Please specify the current password'), 'not-specified');
             }
 
-            user_authenticate($_SESSION['user']['username'], $params['cpassword']);
+            user_authenticate($_SESSION['user']['email'], $params['cpassword']);
         }
+
+        /*
+         * Check password strength
+         */
+        $strength = user_password_strength($params['password']);
 
         /*
          * Prepare new password
@@ -608,12 +637,15 @@ function user_update_password($params, $current = true){
 
         $r = sql_query('UPDATE `users`
 
-                        SET    `password` = :password
+                        SET    `modifiedon` = NOW(),
+                               `modifiedby` = :modifiedby,
+                               `password`   = :password
 
-                        WHERE  `id`       = :id',
+                        WHERE  `id`         = :id',
 
-                        array(':id'       => $params['id'],
-                              ':password' => $password));
+                        array(':id'         => $params['id'],
+                              ':modifiedby' => isset_get($_SESSION['user']['id']),
+                              ':password'   => $password));
 
         if(!$r->rowCount()){
             /*
@@ -621,7 +653,7 @@ function user_update_password($params, $current = true){
              * because the user does not exist. check for this!
              */
             if(!sql_get('SELECT `id` FROM `users` WHERE `id` = :id', 'id', array(':id' => $params['id']))){
-                throw new bException(tr('user_update_password(): The specified users_id "'.str_log($params['id']).'" does not exist'), 'notexist');
+                throw new bException(tr('user_update_password(): The specified users_id "'.str_log($params['id']).'" does not exist'), 'not-exist');
             }
 
             /*
@@ -639,6 +671,8 @@ function user_update_password($params, $current = true){
                          ':users_id'  => $params['id'],
                          ':password'  => $password));
 
+        return $strength;
+
     }catch(Exception $e){
         throw new bException('user_update_password(): Failed', $e);
     }
@@ -654,11 +688,11 @@ function user_get($user, $columns = '*'){
 
     try{
         if(!$user){
-            throw new bException(tr('user_get(): No user specified'), 'notspecified');
+            throw new bException(tr('user_get(): No user specified'), 'not-specified');
         }
 
         if(!is_scalar($user)){
-            throw new bException(tr('user_get(): Specified user data "%data%" is not scalar', array('%data%' => str_log($user))), 'invalid');
+            throw new bException(tr('user_get(): Specified user data ":data" is not scalar', array(':data' => str_log($user))), 'invalid');
         }
 
         if(is_numeric($user)){
@@ -666,25 +700,25 @@ function user_get($user, $columns = '*'){
 
                                FROM   `users`
 
-                               WHERE  `id` = :user',
+                               WHERE  `id` = :id',
 
-                               array(':user' => $user));
+                               array(':id' => $user));
 
         }else{
             $retval = sql_get('SELECT '.$columns.'
 
                                FROM   `users`
 
-                               WHERE  `email`    = :user
-                               OR     `username` = :user2',
+                               WHERE  `email`    = :email
+                               OR     `username` = :username',
 
-                               array(':user'  => $user,
-                                     ':user2' => $user));
+                               array(':email'    => $user,
+                                     ':username' => $user));
 
         }
 
         if(!$retval){
-            throw new bException(tr('user_get(): Specified user "%user%" does not exist', array('%user%' => str_log($user))), 'notexists');
+            throw new bException(tr('user_get(): Specified user ":user" does not exist', array(':user' => str_log($user))), 'not-exist');
         }
 
         return $retval;
@@ -722,7 +756,7 @@ function user_name($user = null, $key_prefix = ''){
                  * Fetch user data from DB, then treat it as an array
                  */
                 if(!$user = sql_get('SELECT `name` `username`, `email` FROM `users` WHERE `id` = :id', array(':id' => $user))){
-                   throw new bException('user_name(): Specified user id "'.str_log($user).'" does not exist', 'notexist');
+                   throw new bException('user_name(): Specified user id "'.str_log($user).'" does not exist', 'not-exist');
                 }
             }
 
@@ -799,7 +833,7 @@ function user_load_rights($user){
 /*
  * Make the current session the specified user
  */
-function user_switch($username){
+function user_switch($username, $redirect = '/'){
     try{
         /*
          * Does the specified user exist?
@@ -816,7 +850,11 @@ function user_switch($username){
         /*
          * Store last login
          */
-        sql_query('UPDATE `users` SET `last_login` = DATE(NOW()) WHERE `id` = '.cfi($user['id']).';');
+        sql_query('UPDATE `users` SET `last_signin` = DATE(NOW()) WHERE `id` = '.cfi($user['id']).';');
+
+        if($redirect){
+            redirect($redirect);
+        }
 
     }catch(Exception $e){
         throw new bException('user_switch(): Failed', $e);
@@ -881,11 +919,11 @@ function user_process_signin_fields($post){
 function user_update_rights($user){
     try{
         if(empty($user['id'])){
-            throw new bException('user_update_rights(): Cannot update rights, no user specified', 'not_specified');
+            throw new bException('user_update_rights(): Cannot update rights, no user specified', 'not-specified');
         }
 
         if(empty($user['roles_id'])){
-            throw new bException('user_update_rights(): Cannot update rights, no role specified', 'not_specified');
+            throw new bException('user_update_rights(): Cannot update rights, no role specified', 'not-specified');
         }
 
         /*
@@ -936,68 +974,88 @@ function user_password_strength($password){
         /*
          * Get the length of the password
          */
-        $strength = 0;
+        $strength = 10;
         $length   = strlen($password);
 
         if($length < 8){
             if(!$length){
-                throw new bException('user_password_strength(): Empty passw', 'password_to_short');
+                throw new bException(tr('user_password_strength(): No password specified'), 'no-password');
             }
 
-            throw new bException('user_password_strength(): Specified password is too short', 'password_to_short');
+            throw new bException(tr('user_password_strength(): Specified password is too short'), 'short-password');
         }
 
         /*
          * Check if password is not all lower case
          */
         if(strtolower($password) != $password){
-            $strength += 1;
+            $strength += 5;
         }
 
         /*
          * Check if password is not all upper case
          */
-        if(strtoupper($password) == $password){
-            $strength += 1;
+        if(strtoupper($password) != $password){
+            $strength += 5;
         }
 
         /*
-         * Check string length
+         * Bonus for long passwords
          */
-        if($length <= 15){
-            $strength += 1;
+        if($length >= 40){
+            $strength += 40;
 
-        }elseif($length <= 35){
-            $strength += 2;
+        }elseif($length >= 30){
+            $strength += 30;
 
-        }else{
-            $strength += 3;
+        }elseif($length >= 20){
+            $strength += 20;
+
+        }elseif($length >= 12){
+            $strength += 10;
         }
+
+        ///*
+        // * Get the upper case letters in the password
+        // */
+        //preg_match_all('/[A-Z]/', $password, $matches);
+        //$strength += (count($matches[0]) / 2);
+        //
+        ///*
+        // * Get the lower case letters in the password
+        // */
+        //preg_match_all('/[a-z]/', $password, $matches);
+        //$strength += (count($matches[0]) / 2);
 
         /*
          * Get the numbers in the password
          */
-        preg_match_all('/[0-9]/', $password, $numbers);
-        $strength += count($numbers[0]);
+        preg_match_all('/[0-9]/', $password, $matches);
+        $strength += (count($matches[0]) * 2);
 
         /*
          * Check for special chars
          */
-        preg_match_all('/[|!@#$%&*\/=?,;.:\-_+~^\\\]/', $password, $specialchars);
-        $strength += sizeof($specialchars[0]);
+        preg_match_all('/[|!@#$%&*\/=?,;.:\-_+~^\\\]/', $password, $matches);
+        $strength += (count($matches[0]) * 2);
 
         /*
          * Get the number of unique chars
          */
         $chars            = str_split($password);
-        $num_unique_chars = sizeof(array_unique($chars));
+        $num_unique_chars = count(array_unique($chars));
+
         $strength += $num_unique_chars * 2;
 
         /*
          * Strength is a number 1-10;
          */
-        $strength = $strength > 99 ? 99 : $strength;
-        $strength = floor($strength / 10 + 1);
+        $strength = (($strength > 99) ? 99 : $strength);
+        $strength = floor(($strength / 10) + 1);
+
+        if($strength < 4){
+            throw new bException(tr('user_password_strength(): The specified password is too weak, please use a better password. Use more characters, add numbers, special characters, caps characters, etc. On a scale of 1-10, current strength is ":strength"', array(':strength' => $strength)), 'weak-password');
+        }
 
         return $strength;
 
@@ -1011,56 +1069,195 @@ function user_password_strength($password){
 /*
  *
  */
-function users_validate($user, $old_user = null){
+function user_validate($user, $sections = array()){
     global $_CONFIG;
 
     try{
-        if($old_user){
-            $user = array_merge($old_user, $user);
-        }
+        array_default($sections, 'password'           , true);
+        array_default($sections, 'validation_password', true);
+        array_default($sections, 'role'               , true);
 
         load_libs('validate');
+        $v = new validate_form($user, 'name,username,email,password,password2,redirect,description,role,roles_id,commentary,gender,latitude,longitude,language,country,fb_id,fb_token,gp_id,gp_token,ms_id,ms_token_authentication,ms_token_access,tw_id,tw_token,yh_id,yh_token,status,validated,avatar,phones,type');
 
-        $v     = new validate_form($user, 'name,username,email,status,password,latitude,longitude,type');
-        $v->isNotEmpty ($user['name']     , tr('No name specified'), 'notspecified');
-        $v->hasMinChars($user['name'],   2, tr('Please ensure the name has at least 2 characters'));
-        $v->hasMaxChars($user['name'], 255, tr('Please ensure the name has less than 255 characters'));
+        $user['email2'] = $user['email'];
+        $user['terms']  = true;
 
-        $v->isNotEmpty ($user['username']    , tr('No username specified'), 'notspecified');
-        $v->hasMinChars($user['username'],  2, tr('Please ensure the username has at least 2 characters'));
-        $v->hasMaxChars($user['username'], 64, tr('Please ensure the username has less than 255 characters'));
-
-        if(is_numeric(substr($user['username'], 0, 1))){
-            $v->setError(tr('Please ensure that the users name does not start with a number'));
+        if(!$user['username'] and !$user['email']){
+            if($v->isNotEmpty  ($user['email'], tr('Please provide at least an email or username')));
         }
 
-        $v->isNotEmpty  ($user['email'], tr('No email specified'), 'notspecified');
-        $v->isValidEmail($user['email'], tr('Specified email "%email%" is not a valid email address', array('%email%' => $user['email'])));
-
-        if(strlen($user['status']) > 16){
-            $v->setError(tr('Specified status "%status%" is not valid, it should be less than 16 characters', array('%status%' => $user['status'])));
+        if($user['email']){
+            $v->isValidEmail($user['email'], tr('Please provide a valid email address'));
         }
 
-        if(!$user['password']){
-            $v->setError(tr('No password specified'), 'not_specified');
+
+        if($user['username']){
+            $v->isAlphaNumeric($user['username'] , tr('Please provide a valid username, it can only contain letters and numbers'));
+        }
+
+        if($user['name']){
+            $v->hasMinChars ($user['name'] , 2, tr('Please ensure that the real name has a minimum of 2 characters'));
+        }
+
+        if($sections['role']){
+            if(!empty($user['role'])){
+                /*
+                 * Role was specified by name
+                 */
+                $user['roles_id'] = sql_get('SELECT `id` FROM `roles` WHERE `name` = :name', 'id', array(':name' => $user['role']));
+
+                if(!$user['roles_id']){
+                    $v->setError(tr('Specified role ":role" does not exist', array(':role' => $user['role'])));
+                }
+
+            }else{
+                $v->isNotEmpty($user['roles_id'], tr('Please provide a role'));
+            }
+        }
+
+        if($user['roles_id']){
+            if(!$role = sql_get('SELECT `id`, `name` FROM `roles` WHERE `id` = :id AND `status` IS NULL', array(':id' => $user['roles_id']))){
+                $v->setError(tr('The specified role does not exist'));
+                $user['role'] = null;
+
+            }else{
+                $user['roles_id'] = $role['id'];
+                $user['role']     = $role['name'];
+
+                /*
+                 * God role? god role can only be managed by god users or
+                 * command line users!
+                 */
+                if($role['name'] === 'god'){
+                    if((PLATFORM == 'http') and !has_rights('god')){
+                        $v->setError(tr('The god role can only be assigned or changed by users with god role themselves'));
+                    }
+                }
+            }
+        }
+
+        if($sections['password']){
+            if(empty($user['password'])){
+                $v->setError(tr('Please specify a password'));
+
+            }else{
+                $v->hasMinChars($user['password'], 8, tr('Please ensure that the password has a minimum of 8 characters'));
+
+            }
+        }
+
+        if($sections['validation_password']){
+            $v->isEqual($user['password'], $user['password2'], tr('Please ensure that the password and validation password match'));
+        }
+
+        /*
+         * Ensure that the username and email are not in use
+         */
+        $query = 'SELECT `email`,
+                         `username`
+
+                  FROM   `users`';
+
+        $where   = array();
+        $execute = array();
+
+        if($user['username']){
+            $where[] = ' `username` = :username ';
+            $execute[':username'] = $user['username'];
+        }
+
+        if($user['email']){
+            $where[] = ' `email` = :email ';
+            $execute[':email'] = $user['email'];
         }
 
         if(empty($user['id'])){
-            if($test = sql_get('SELECT `id`, `username`, `name` FROM `users` WHERE (`name` = :name OR `email` = :email)', array(':name' => $user['name'], ':email' => $user['email']))){
-                if($user['username'] == $test['username']){
-                    throw new bException(tr('The username "%username%" is already in use', array('%username%' => $user['username'])), 'exists');
-                }
-
-                throw new bException(tr('The email "%email%" is already in use', array('%email%' => $user['email'])), 'exists');
-            }
+            $where   = ' WHERE ('.implode(' OR ', $where).')';
 
         }else{
-            if($test = sql_get('SELECT `id`, `username`, `name` FROM `users` WHERE (`name` = :name OR `email` = :email) AND `id` != :id', array(':name' => $user['name'], ':email' => $user['email'], ':id' => $user['id']))){
-                if($user['username'] == $test['username']){
-                    throw new bException(tr('The username "%username%" is already in use', array('%username%' => $user['username'])), 'exists');
-                }
+            $where   = ' WHERE  `id`      != :id
+                         AND   ('.implode(' OR ', $where).')';
 
-                throw new bException(tr('The email "%email%" is already in use', array('%email%' => $user['email'])), 'exists');
+            $execute[':id'] = $user['id'];
+        }
+
+        $exists = sql_get($query.$where, $execute);
+
+        if($exists){
+            if($user['username'] and ($exists['username'] == $user['username'])){
+                $v->setError(tr('The username ":username" is already in use by another user', array(':username' => str_log($user['username']))));
+
+            }else{
+                $v->setError(tr('The email ":email" is already in use by another user', array(':email' => str_log($user['email']))));
+            }
+        }
+
+        if(!$user['type']){
+            $user['type'] = null;
+        }
+
+        /*
+         * Ensure that the phones are not in use
+         */
+        if(!empty($user['phones'])){
+            $user['phones'] = explode(',', $user['phones']);
+
+            foreach($user['phones'] as &$phone){
+                $phone = trim($phone);
+            }
+
+            unset($phone);
+
+            $user['phones'] = implode(',', $user['phones']);
+            $execute        = sql_in($user['phones'], ':phone');
+
+            foreach($execute as &$phone){
+                if($v->isValidPhonenumber($phone, tr('The phone number ":phone" is not valid', array(':phone' => $phone)))){
+                    $phone = '%'.$phone.'%';
+                }
+            }
+
+            unset($phone);
+
+            $where   = array();
+
+            $query   = 'SELECT `id`,
+                               `phones`,
+                               `username`
+
+                        FROM   `users` WHERE';
+
+            foreach($execute as $key => $value){
+                $where[] = '`phones` LIKE '.$key;
+            }
+
+            $query .= ' ('.implode(' OR ', $where).')';
+
+            if(!empty($user['id'])){
+                $query         .= ' AND `users`.`id` != :id';
+                $execute[':id'] = $user['id'];
+            }
+
+            $exists = sql_list($query, $execute);
+
+            if($exists){
+                /*
+                 * One or more phone numbers already exist with one or multiple users. Cross check and
+                 * create a list of where the number was found
+                 */
+                foreach(array_force($user['phones']) as $value){
+                    foreach($exists as $exist){
+                        $key = array_search($value, array_force($exist['phones']));
+
+                        if($key !== false){
+                            /*
+                             * The current phone number is already in use by another user
+                             */
+                            $v->setError(tr('The phone ":phone" is already in use by user ":user"', array(':phone' => $value, ':user' => '<a target="_blank" href="'.domain('/admin/user.php?user='.$exist['username']).'">'.$exist['username'].'</a>')));
+                        }
+                    }
+                }
             }
         }
 
@@ -1069,7 +1266,7 @@ function users_validate($user, $old_user = null){
         return $user;
 
     }catch(Exception $e){
-        throw new bException(tr('users_validate(): Failed'), $e);
+        throw new bException(tr('user_validate(): Failed'), $e);
     }
 }
 
@@ -1092,7 +1289,7 @@ function user_get_key($user = null, $force = false){
         }
 
         if(!$dbuser){
-            throw new bException(tr('user_get_key(): Specified user "%user%" does not exist', array('%user%' => str_log($user))), 'notexist');
+            throw new bException(tr('user_get_key(): Specified user ":user" does not exist', array(':user' => str_log($user))), 'not-exist');
         }
 
         if(!$dbuser['key'] or $force){
@@ -1157,7 +1354,7 @@ function user_check_key($user, $key, $timestamp){
             /*
              * More then N seconds differece between timestamps is NOT allowed
              */
-            notify('user_check_key()', tr('Received user key check request with timestamp of "%timestamp%" seconds which is larger than the maximum past time of "%max%" seconds', array('%max%' => $past, '%timestamp%' => $timestamp)), 'security');
+            notify('user_check_key()', tr('Received user key check request with timestamp of ":timestamp" seconds which is larger than the maximum past time of ":max" seconds', array(':max' => $past, ':timestamp' => $timestamp)), 'security');
             return false;
         }
 
@@ -1165,7 +1362,7 @@ function user_check_key($user, $key, $timestamp){
             /*
              * More then N seconds differece between timestamps is NOT allowed
              */
-            notify('user_check_key()', tr('Received user key check request with timestamp of "%timestamp%" seconds which is larger than the maximum future time of "%max%" seconds', array('%max%' => $future, '%timestamp%' => $timestamp)), 'security');
+            notify('user_check_key()', tr('Received user key check request with timestamp of ":timestamp" seconds which is larger than the maximum future time of ":max" seconds', array(':max' => $future, ':timestamp' => $timestamp)), 'security');
             return false;
         }
 
@@ -1260,5 +1457,32 @@ function user_key_or_redirect($user, $key = null, $timestamp = null, $redirect =
     }catch(Exception $e){
         throw new bException(tr('user_get_from_key(): Failed'), $e);
     }
+}
+
+
+
+/*
+ * Test if the given password is strong enough
+ */
+function user_test_password($password){
+    global $_CONFIG;
+
+    try{
+// :TODO: Implement!!
+notify('not-implemented', 'user_test_password() has not yet been implemented!!');
+        return $password;
+
+    }catch(Exception $e){
+        throw new bException(tr('user_test_password(): Failed'), $e);
+    }
+}
+
+
+
+/*
+ * OBSOLETE WRAPPERS BELOW
+ */
+function users_validate($user, $sections = array()){
+    return user_validate($user, $sections);
 }
 ?>

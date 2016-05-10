@@ -17,7 +17,7 @@
 /*
  * Framework version
  */
-define('FRAMEWORKCODEVERSION', '0.30.3');
+define('FRAMEWORKCODEVERSION', '0.31.10');
 
 
 
@@ -56,9 +56,15 @@ define('PLATFORM', (php_sapi_name() === 'cli') ? 'shell' : 'http');
 
 if((PLATFORM == 'shell') and (count($argv) > 1)){
     /*
-     * Pre-process command line arguments
+     * Pre-process very basic command line arguments
      */
     require('handlers/startup_shell_arguments.php');
+    define('PLATFORM_HTTP' , false);
+    define('PLATFORM_SHELL', true);
+
+}else{
+    define('PLATFORM_HTTP' , true);
+    define('PLATFORM_SHELL', false);
 }
 
 
@@ -68,27 +74,6 @@ try{
      */
     if((isset($environment) and ($env = $environment)) or ($env = getenv(PROJECT.'_ENVIRONMENT'))){
         define('ENVIRONMENT', $env);
-
-        /*
-         * Check for sub environment settings
-         */
-        if(!defined('REQUIRE_SUBENVIRONMENTS')){
-            define('REQUIRE_SUBENVIRONMENTS', false);
-        }
-
-        if(!REQUIRE_SUBENVIRONMENTS){
-            define('SUBENVIRONMENT'    , false);
-            define('SUBENVIRONMENTNAME', '');
-
-        }else{
-            if((isset($subenvironment) and ($env = $subenvironment)) or ($env = getenv(PROJECT.'_SUBENVIRONMENT'))){
-                define('SUBENVIRONMENT'    , $env);
-                define('SUBENVIRONMENTNAME', strtolower($env));
-
-            }else{
-                die("\033[0;31mstartup: No required sub environment specified for project \"".PROJECT."\"\033[0m\n");
-            }
-        }
 
     }elseif(empty($env)){
         /*/
@@ -108,20 +93,12 @@ try{
      */
     unset($env);
     unset($environment);
-    unset($subenvironment);
 
     /*
      * Load basic required libraries
      */
     $path      = dirname(__FILE__).'/';
     $libraries = array('system', 'mb', 'strings', 'array', 'pdo');
-
-    /*
-     * Always (obligatory) load the custom subenvironment file
-     */
-    if(SUBENVIRONMENT){
-        $libraries[] = 'custom_'.SUBENVIRONMENTNAME;
-    }
 
     foreach($libraries as $library){
         include_once($path.$library.'.php');
@@ -132,8 +109,27 @@ try{
     unset($libraries);
 
 }catch(Exception $e){
-    throw new bException('startup: Failed to load system library "'.str_log($library).'"', $e);
+    throw new bException('startup(): Failed to load system library "'.str_log($library).'"', $e);
 }
+
+
+
+/*
+ * Load basic platform libraries
+ */
+if((PLATFORM == 'shell')){
+    /*
+     * Add CLI support library
+     */
+    load_libs('cli'.(empty($_CONFIG['memcached']) ? '' : ',memcached'));
+
+}else{
+    /*
+     * Add HTTP support library
+     */
+    load_libs('http,html,inet'.(empty($_CONFIG['memcached']) ? '' : ',memcached'));
+}
+
 
 
 /*
@@ -153,23 +149,8 @@ try{
     /*
      * Also load environment specific configuration, overwriting some production settings
      */
-    if(SUBENVIRONMENT){
-        include($file = ROOT.'config/production_'.SUBENVIRONMENTNAME.'.php');
-
-        if(ENVIRONMENT !== 'production'){
-            include($file = ROOT.'config/'.ENVIRONMENT.'_'.SUBENVIRONMENTNAME.'.php');
-
-        }else{
-            /*
-             * So we are on production configuration..!
-             */
-            ini_set('display_errors', 0);
-        }
-
-    }else{
-        if(ENVIRONMENT !== 'production'){
-            include($file = ROOT.'config/'.ENVIRONMENT.'.php');
-        }
+    if(ENVIRONMENT !== 'production'){
+        include($file = ROOT.'config/'.ENVIRONMENT.'.php');
     }
 
     /*
@@ -185,20 +166,11 @@ try{
     /*
      * Failed to load configuration!
      */
-    if(SUBENVIRONMENT){
-        if(!file_exists($file)){
-            die("\033[0;31mstartup: Missing configuration file \"".str_log($file)."\" for environment \"".str_log(ENVIRONMENT)."\" with subenvironment \"".str_log(SUBENVIRONMENT)."\"\033[0m\n");
-        }
-
-        die("\033[0;31mstartup: Failed to load configuration for environment \"".str_log(ENVIRONMENT)."\" with subenvironment \"".str_log(SUBENVIRONMENT)."\"\033[0m\n");
-
-    }else{
-        if(!file_exists($file)){
-            die("\033[0;31mstartup: Missing configuration file \"".str_log($file)."\" for environment \"".str_log(ENVIRONMENT)."\"\033[0m\n");
-        }
-
-        die("\033[0;31mstartup: Failed to load ".str_log($file)." for environment \"".str_log(ENVIRONMENT)."\"\033[0m\n");
+    if(!file_exists($file)){
+        die("\033[0;31mstartup: Missing configuration file \"".str_log($file)."\" for environment \"".str_log(ENVIRONMENT)."\"\033[0m\n");
     }
+
+    die("\033[0;31mstartup: Failed to load ".str_log($file)." for environment \"".str_log(ENVIRONMENT)."\"\033[0m\n");
 }
 
 
@@ -227,10 +199,10 @@ try{
         }
 
         if(!file_exists($file)){
-            throw new bException('startup: The debug '.str_log($type).' file "'.str_log($file).'" does not exist', $e);
+            throw new bException('startup(): The debug '.str_log($type).' file "'.str_log($file).'" does not exist', $e);
         }
 
-        throw new bException('startup: Failed to load the debug '.str_log($type).' file "'.str_log($file).'"', $e);
+        throw new bException('startup(): Failed to load the debug '.str_log($type).' file "'.str_log($file).'"', $e);
     }
 
 
@@ -291,26 +263,21 @@ try{
     try{
         switch($_CONFIG['tmp']){
             case 'local':
-                define('TMP', ROOT.'tmp/');
+                define('TMP', ROOT.'data/tmp/');
                 break;
 
             case 'global':
-                define('TMP', '/tmp/'.strtolower(PROJECT).'/'.(SUBENVIRONMENTNAME ? SUBENVIRONMENTNAME.'/' : ''));
+                define('TMP', '/tmp/'.strtolower(PROJECT).'/');
                 break;
 
             default:
-                throw new bException('startup: Unknown $_CONFIG[tmp] "'.str_log($_CONFIG['tmp']).'" specified. Please use only "local" or "global"', 'unknown');
+                throw new bException(tr('startup(): Unknown $_CONFIG[tmp] ":type" specified. Please use only "local" or "global"', array(':type' => $_CONFIG['tmp'])), 'unknown');
         }
 
         define('PUBTMP', ROOT.'data/content/tmp/');
 
         switch(PLATFORM){
             case 'http':
-                /*
-                 * Add HTTP support library
-                 */
-                load_libs('http,html,inet'.(empty($_CONFIG['memcached']) ? '' : ',memcached'));
-
                 /*
                  * Start for HTTP
                  *
@@ -368,7 +335,7 @@ try{
                              * permissions of PHP session directory?
                              */
 // :TODO: Add check on SCRIPT file if it contains BOM!
-                            throw new bException('startup: session start and session regenerate both failed, check PHP session directory', $e);
+                            throw new bException('startup(): session start and session regenerate both failed, check PHP session directory', $e);
                         }
                     }
 
@@ -434,7 +401,7 @@ try{
 
                 }catch(Exception $e){
                     if(!is_writable(session_save_path())){
-                        throw new bException('startup: Session startup failed because the session path "'.str_log(session_save_path()).'" is not writable for platform "'.PLATFORM.'"', $e);
+                        throw new bException('startup(): Session startup failed because the session path "'.str_log(session_save_path()).'" is not writable for platform "'.PLATFORM.'"', $e);
                     }
 
                     throw new bException('Session startup failed', $e);
@@ -449,7 +416,7 @@ try{
                 if(empty($_SESSION['language'])){
                     switch($_CONFIG['cookie']['domain']){
                         case '':
-                            throw new bException(tr('startup: No cookie domain specified'), 'notspecified');
+                            throw new bException(tr('startup(): No cookie domain specified'), 'not-specified');
 
                         case 'auto':
                             $_CONFIG['domain'] = $_SERVER['SERVER_NAME'];
@@ -476,7 +443,7 @@ try{
                             $length = strlen($test);
 
                             if(substr($_SERVER['SERVER_NAME'], -$length, $length) != $test){
-                                throw new bException('startup: Specified cookie domain "'.str_log($_CONFIG['cookie']['domain']).'" is invalid for current domain "'.str_log($_SERVER['SERVER_NAME']).'"', 'cookiedomain');
+                                throw new bException('startup(): Specified cookie domain "'.str_log($_CONFIG['cookie']['domain']).'" is invalid for current domain "'.str_log($_SERVER['SERVER_NAME']).'"', 'cookiedomain');
                             }
 
                             unset($test);
@@ -491,11 +458,11 @@ try{
                 break;
 
             default:
-                throw new bException('startup: Unknown platform "'.str_log(PLATFORM).'" detected', 'unknownplatform');
+                throw new bException('startup(): Unknown platform "'.str_log(PLATFORM).'" detected', 'unknownplatform');
         }
 
     }catch(Exception $e){
-        throw new bException('startup: Platform specific processing failed', $e);
+        throw new bException('startup(): Platform specific processing failed', $e);
     }
 
 
@@ -556,7 +523,7 @@ try{
         }
 
         if(empty($_CONFIG['language']['supported'][$language])){
-            throw new bException('startup: Specified language code "'.str_log($language).'" is not supported', 'invalidlanguage');
+            throw new bException('startup(): Specified language code "'.str_log($language).'" is not supported', 'invalidlanguage');
         }
 
         define('LANGUAGE', $language);
@@ -578,7 +545,7 @@ try{
             define('LANGUAGE', 'en');
         }
 
-        $e = new bException('startup: Language selection failed', $e);
+        $e = new bException('startup(): Language selection failed', $e);
     }
 
 
@@ -657,10 +624,10 @@ try{
              * This is an admin page
              * Disabled all caching (both server side, and HTTP) for admin pages
              */
-            $GLOBALS['page_is_admin']               = true;
+            $GLOBALS['page_is_admin']            = true;
 
-            $_CONFIG['cache']['method']             = false;
-            $_CONFIG['cache']['http']['enabled']    = false;
+            $_CONFIG['cache']['method']          = false;
+            $_CONFIG['cache']['http']['enabled'] = false;
 
             load_config('admin');
             load_libs('custom_admin');
@@ -728,10 +695,10 @@ try{
        }
 
     }catch(Exception $e){
-        throw new bException('startup: Failed to load custom library', $e);
+        throw new bException('startup(): Failed to load custom library', $e);
     }
 
 }catch(Exception $e){
-    throw new bException('startup: Failed', $e);
+    throw new bException('startup(): Failed', $e);
 }
 ?>

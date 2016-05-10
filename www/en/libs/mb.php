@@ -34,14 +34,14 @@ if (! function_exists ('mb_init'))
        * Setting the Content-Type header with charset
        */
       setlocale(LC_CTYPE, $locale.'.UTF-8');
-      
+
       if(version_compare(phpversion(), '5.6.0') == -1){
          /*
           * New PHP 5.6.0 no longer supports iconv_set_encoding() "output_encoding", and by default uses UTF8 for its default_charset
           */
-         iconv_set_encoding("output_encoding", 'UTF-8');         
+         iconv_set_encoding("output_encoding", 'UTF-8');
       }
-      
+
       mb_internal_encoding('UTF-8');
       mb_regex_encoding('UTF-8');
       //header('Content-Type: text/html; charset=utf-8');
@@ -229,4 +229,75 @@ if(!function_exists('mb_string_url'))
       $string = preg_replace('@\s+@','-',$string);
       return $string;
    }
+}
+
+
+/*
+ * Remove invalid UTF8 sequences, or if $replace is true, replace them with
+ * (hopefully) reasonably correct UTF8 charactres
+ *
+ * Taken from http://stackoverflow.com/questions/1401317/remove-non-utf8-characters-from-string
+ * Rewritten by Sven Oostenrink for use in BASE framework
+ */
+function mb_strip_invalid($string, $replace = false){
+    try{
+        $regex = <<<'END'
+/
+  (
+    (?: [\x00-\x7F]               # single-byte sequences   0xxxxxxx
+    |   [\xC0-\xDF][\x80-\xBF]    # double-byte sequences   110xxxxx 10xxxxxx
+    |   [\xE0-\xEF][\x80-\xBF]{2} # triple-byte sequences   1110xxxx 10xxxxxx * 2
+    |   [\xF0-\xF7][\x80-\xBF]{3} # quadruple-byte sequence 11110xxx 10xxxxxx * 3
+    ){1,100}                      # ...one or more times
+  )
+| ( [\x80-\xBF] )                 # invalid byte in range 10000000 - 10111111
+| ( [\xC0-\xFF] )                 # invalid byte in range 11000000 - 11111111
+/x
+END;
+        if($replace){
+            return preg_replace_callback($regex, 'mb_utf8replacer', $string);
+        }
+
+        return preg_replace($regex, '$1', $string);
+
+    }catch(Exception $e){
+        throw new bException(tr('mb_strip_invalid(): Failed'), $e);
+    }
+}
+
+
+
+/*
+ * Replace captured invalid UTF8 sequences with (hopefully) reasonably correct
+ * UTF8 charactres
+ *
+ * Taken from http://stackoverflow.com/questions/1401317/remove-non-utf8-characters-from-string
+ * Rewritten by Sven Oostenrink for use in BASE framework
+ */
+function mb_utf8replacer($captures){
+    try{
+        if ($captures[1] != "") {
+            /*
+             * Valid byte sequence. Return unmodified.
+             */
+            return $captures[1];
+        }
+
+        if ($captures[2] != "") {
+            /*
+             * Invalid byte of the form 10xxxxxx.
+             * Encode as 11000010 10xxxxxx.
+             */
+            return "\xC2".$captures[2];
+        }
+
+        /*
+         * Invalid byte of the form 11xxxxxx.
+         * Encode as 11000011 10xxxxxx.
+         */
+        return "\xC3".chr(ord($captures[3])-64);
+
+    }catch(Exception $e){
+        throw new bException(tr('mb_utf8replacer(): Failed'), $e);
+    }
 }

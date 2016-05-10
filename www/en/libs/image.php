@@ -53,7 +53,7 @@ function image_get_text($image) {
 /*
  * Standard image conversion function
  */
-function image_convert($source, $destination, $x, $y, $method, $params = array(), $format = '') {
+function image_convert($source, $destination, $params = null){
     global $_CONFIG;
 
     try{
@@ -63,22 +63,22 @@ function image_convert($source, $destination, $x, $y, $method, $params = array()
          * Validations
          */
         if(file_exists($destination) and $destination != $source){
-            throw new bException(tr('image_convert(): Destination file "%file%" already exists', array('%file%' => str_log($destination))));
+            throw new bException(tr('image_convert(): Destination file ":file" already exists', array(':file' => $destination)));
         }
 
-        /*
-         * Validate format
-         */
-        if(empty($format) and !empty($destination)){
-            $format = substr($destination, -3, 3);
+        ///*
+        // * Validate format
+        // */
+        //if(empty($format) and !empty($destination)){
+        //    $format = substr($destination, -3, 3);
+        //
+        //}elseif(!empty($format) and !empty($destination)){
+        //    if($format != substr($destination, -3, 3)){
+        //        throw new bException(tr('image_convert(): Specified format ":format1" differ from the given destination format ":format2"', array(':format1' => substr($destination, -3, 3), ':format2' => $format)));
+        //    }
+        //}
 
-        }elseif(!empty($format) and !empty($destination)){
-            if($format != substr($destination, -3, 3)){
-                throw new bException(tr('image_convert(): Specified format "%format1%" differ from the given destination format "%format2%"', array('%format1%' => str_log(substr($destination, -3, 3)), '%format2%' => str_log($format))));
-            }
-        }
-
-        $imagick = $_CONFIG['images']['imagemagic'];
+        $imagick = $_CONFIG['images']['imagemagick'];
 
         /*
          * Remove the log file so we surely have data from only this session
@@ -86,8 +86,8 @@ function image_convert($source, $destination, $x, $y, $method, $params = array()
          * Yeah, bullshit, with parrallel sessions, others sessions might
          * delete it while this is in process, etc.
          */
-        file_ensure_path(TMP);
-        file_delete(TMP.'imagemagic_convert.log');
+        file_ensure_path(ROOT.'data/log');
+        file_delete(ROOT.'data/log/imagemagick-convert');
 
 
         /*
@@ -106,6 +106,10 @@ function image_convert($source, $destination, $x, $y, $method, $params = array()
         }
 
         array_params($params);
+        array_default($params, 'x'               , null);
+        array_default($params, 'y'               , null);
+        array_default($params, 'method'          , null);
+        array_default($params, 'format'          , null);
         array_default($params, 'quality'         , $imagick['quality']);
         array_default($params, 'interlace'       , $imagick['interlace']);
         array_default($params, 'strip'           , $imagick['strip']);
@@ -115,7 +119,7 @@ function image_convert($source, $destination, $x, $y, $method, $params = array()
         array_default($params, 'keep_aspectratio', $imagick['keep_aspectratio']);
         array_default($params, 'limit_memory'    , $imagick['limit']['memory']);
         array_default($params, 'limit_map'       , $imagick['limit']['map']);
-        array_default($params, 'log'             , ROOT.'/data/log/imagemagic_convert.log');
+        array_default($params, 'log'             , ROOT.'data/log/imagemagic_convert.log');
 
         foreach($params as $key => $value){
             switch($key){
@@ -185,10 +189,12 @@ function image_convert($source, $destination, $x, $y, $method, $params = array()
                     //FALLTHROUGH
                 case 'method':
                     //do nothing (function method)
+                case 'format':
+                    //do nothing (forced format)
                     break;
 
                 default:
-                    throw new bException(tr('image_convert(): Unknown parameter key "%key%" specified', array('%key%' => str_log($key))), 'unknown');
+                    throw new bException(tr('image_convert(): Unknown parameter key ":key" specified', array(':key' => $key)), 'unknown');
             }
         }
 
@@ -198,7 +204,7 @@ function image_convert($source, $destination, $x, $y, $method, $params = array()
          *
          * If either width or height is not specified then
          */
-        if(!$x or !$y){
+        if(!$params['x'] or !$params['y']){
             $size = getimagesize($source);
 
             if($params['keep_aspectratio']){
@@ -208,19 +214,19 @@ function image_convert($source, $destination, $x, $y, $method, $params = array()
                 $ar = 1;
             }
 
-            if(!$x){
-                $x = not_empty($y, $size[1]) * (1 / $ar);
+            if(!$params['x']){
+                $params['x'] = not_empty($params['y'], $size[1]) * (1 / $ar);
             }
 
-            if(!$y){
-                $y = not_empty($y, $size[0]) * $ar;
+            if(!$params['y']){
+                $params['y'] = not_empty($params['y'], $size[0]) * $ar;
             }
         }
 
         /*
          * Check format
          */
-        switch($format){
+        switch($params['format']){
             case 'gif':
                 //FALLTHROUGH
             case 'png':
@@ -235,23 +241,23 @@ function image_convert($source, $destination, $x, $y, $method, $params = array()
                 break;
 
             default:
-                throw new bException(tr('image_convert(): Unknown format "%format%" specified.', array('%format%' => str_log($format))), 'unknown');
+                throw new bException(tr('image_convert(): Unknown format ":format" specified.', array(':format' => $params['format'])), 'unknown');
         }
 
         /*
          * Execute command to convert image
          */
-        switch($method) {
+        switch($params['method']){
             case 'thumb':
-                safe_exec($command.' -thumbnail '.$x.'x'.$y.'^ -gravity center -extent '.$x.'x'.$y.' -flatten "'.$source.'" "'.$destination.'"'.($params['log'] ? ' >> '.$params['log'].' 2>&1' : ''), 0);
+                safe_exec($command.' -thumbnail '.$params['x'].'x'.$params['y'].'^ -gravity center -extent '.$params['x'].'x'.$params['y'].' -flatten "'.$source.'" "'.$destination.'"'.($params['log'] ? ' >> '.$params['log'].' 2>&1' : ''), 0);
                 break;
 
             case 'resize-w':
-                safe_exec($command.' -resize '.$x.'x\> -flatten "'.$source.'" "'.$destination.'"'.($params['log'] ? ' >> '.$params['log'].' 2>&1' : ''), 0);
+                safe_exec($command.' -resize '.$params['x'].'x\> -flatten "'.$source.'" "'.$destination.'"'.($params['log'] ? ' >> '.$params['log'].' 2>&1' : ''), 0);
                 break;
 
             case 'resize':
-                safe_exec($command.' -resize '.$x.'x'.$y.'^ -flatten "'.$source.'" "'.$destination.'"'.($params['log'] ? ' >> '.$params['log'].' 2>&1' : ''), 0);
+                safe_exec($command.' -resize '.$params['x'].'x'.$params['y'].'^ -flatten "'.$source.'" "'.$destination.'"'.($params['log'] ? ' >> '.$params['log'].' 2>&1' : ''), 0);
                 break;
 
             case 'thumb-circle':
@@ -259,15 +265,15 @@ function image_convert($source, $destination, $x, $y, $method, $params = array()
 
                 $tmpfname = tempnam("/tmp", "CVRT_");
 
-                safe_exec($command.' -thumbnail '.$x.'x'.$y.'^ -gravity center -extent '.$x.'x'.$y.' -background white -flatten "'.$source.'" "'.$tmpfname.'"'.($params['log'] ? ' >> '.$params['log'].' 2>&1' : ''), 0);
-                safe_exec($command.' -size '.$x.'x'.$y.' xc:none -fill "'.$tmpfname.'" -draw "circle '.(floor($x/2)-1).','.(floor($y/2)-1).' '.($x/2).',0" "'.$destination.'"'.($params['log'] ? ' >> '.$params['log'].' 2>&1' : ''), 0);
+                safe_exec($command.' -thumbnail '.$params['x'].'x'.$params['y'].'^ -gravity center -extent '.$params['x'].'x'.$params['y'].' -background white -flatten "'.$source.'" "'.$tmpfname.'"'.($params['log'] ? ' >> '.$params['log'].' 2>&1' : ''), 0);
+                safe_exec($command.' -size '.$params['x'].'x'.$params['y'].' xc:none -fill "'.$tmpfname.'" -draw "circle '.(floor($params['x'] / 2) - 1).','.(floor($params['y'] / 2) - 1).' '.($params['x']/2).',0" "'.$destination.'"'.($params['log'] ? ' >> '.$params['log'].' 2>&1' : ''), 0);
 
                 file_delete($tmpfname);
                 break;
 
             case 'crop-resize':
                 load_libs('file');
-                safe_exec($command.' "'.$source.'" -crop '.cfi($params['w'], false).'x'.cfi($params['h'], false).'+'.cfi($params['x'], false).'+'.cfi($params['y'], false).' -resize '.cfi($x, false).'x'.cfi($y, false).' "'.$destination.'"'.($params['log'] ? ' >> '.$params['log'].' 2>&1' : ''), 0);
+                safe_exec($command.' "'.$source.'" -crop '.cfi($params['w'], false).'x'.cfi($params['h'], false).'+'.cfi($params['x'], false).'+'.cfi($params['y'], false).' -resize '.cfi($params['x'], false).'x'.cfi($params['y'], false).' "'.$destination.'"'.($params['log'] ? ' >> '.$params['log'].' 2>&1' : ''), 0);
                 break;
 
             case 'custom':
@@ -275,8 +281,11 @@ function image_convert($source, $destination, $x, $y, $method, $params = array()
                 safe_exec($command.' "'.$source.'" '.isset_get($params['custom']).' "'.$destination.'"'.($params['log'] ? ' >> '.$params['log'].' 2>&1' : ''), 0);
                 break;
 
+            case '':
+                throw new bException(tr('image_convert(): No method specified.'), 'not-specified');
+
             default:
-                throw new bException(tr('image_convert(): Unknown method "%method%" specified. Ensure method is one of thumb, resize-w, resize, thumb-circle, crop-resize, custom', array('%method%' => str_log($method))), 'unknown');
+                throw new bException(tr('image_convert(): Unknown method ":method" specified. Ensure method is one of thumb, resize-w, resize, thumb-circle, crop-resize, custom', array(':method' => $params['method'])), 'unknown');
         }
 
         /*
@@ -414,6 +423,27 @@ function image_create_avatars($file){
 
     }catch(Exception $e){
         throw new bException('image_create_avatar(): Failed to create avatars for image file "'.str_log($file).'"', $e);
+    }
+}
+
+
+
+/*
+ * Returns image type name or false if file is valid image or not
+ */
+function is_image($file){
+    try{
+        return (boolean) image_type($file);
+
+    }catch(Exception $e){
+        if($e->getCode() === 'not-file'){
+            /*
+             * Specified path is just not a file
+             */
+            return false;
+        }
+
+        throw new bException('is_image(): Failed', $e);
     }
 }
 
@@ -855,6 +885,66 @@ console.log("imagesloaded");
 
     }catch(Exception $e){
         throw new bException('image_picker(): Failed', $e);
+    }
+}
+
+
+
+/*
+ * Returns HTML and loads JS and CSS for sliders.
+ *
+ * Supported sliders are:
+ * A-Slider : http://varunnaik.github.io/A-Slider/
+ *            https://github.com/varunnaik/A-Slider
+ *
+ * Jssor    : http://www.jssor.com/support.html
+ *
+ */
+function image_slider($params = null){
+    try{
+        array_params($params);
+        array_default($params, 'library' , 'bxslider');
+        array_default($params, 'selector', '#slider');
+        array_default($params, 'options'  , array());
+
+        switch($params['library']){
+            case 'aslider':
+                ensure_installed(array('checks'    => 'aslider',
+                                       'checks'    => '',
+                                       'locations' => array('js'  => ROOT.'pub/js/aslider',
+                                                            'css' => ROOT.'pub/css/aslider'),
+                                       'install'   => 'http://varunnaik.github.io/A-Slider/a-slider.zip'));
+// :TODO: Implement
+                break;
+
+            case 'bxslider':
+                /*
+                 * http://bxslider.com/
+                 * https://github.com/stevenwanderski/bxslider-4
+                 * GIT REPO: https://github.com/stevenwanderski/bxslider-4.git
+                 */
+                ensure_installed(array('name'      => 'bxslider',
+                                       'checks'    => ROOT.'pub/js/bxslider',
+                                       'locations' => array('src/js'     => ROOT.'pub/js/bxslider',
+                                                            'src/css'    => ROOT.'pub/css/bxslider',
+                                                            'src/vendor' => ROOT.'pub/js'),
+                                       'url'       => 'https://github.com/stevenwanderski/bxslider-4.git'));
+
+                html_load_js('jquery,bxslider/bxslider');
+                html_load_css('bxslider/bxslider');
+
+                $html = html_script('$(document).ready(function(){
+                    $("'.$params['selector'].'").bxSlider({'.array_implode_with_keys($params['options'], ',', ':').'});
+                });');
+
+                return $html;
+
+            default:
+                throw new bException(tr('image_picker(): Unknown library ":library" specified', array(':library' => $params['library'])), 'unknown');
+        }
+
+    }catch(Exception $e){
+        throw new bException('image_slider(): Failed', $e);
     }
 }
 ?>

@@ -41,11 +41,11 @@ function mailer_insert($params){
         }
 
         if(empty($params['from_name'])){
-            throw new bException('mailer_insert(): No from_name specified', 'notspecified');
+            throw new bException('mailer_insert(): No from_name specified', 'not-specified');
         }
 
         if(empty($params['from_email'])){
-            throw new bException('mailer_insert(): No from_email specified', 'notspecified');
+            throw new bException('mailer_insert(): No from_email specified', 'not-specified');
         }
 
         load_libs('json,seo');
@@ -69,14 +69,14 @@ function mailer_insert($params){
         /*
          * Validate content file
          */
-        if(!file_exists(ROOT.'data/content/'.(SUBENVIRONMENTNAME ? SUBENVIRONMENTNAME.'/' : '').LANGUAGE.'/mailer/template.html')){
-            throw new bException('mailer_insert(): Template file "'.ROOT.'data/content/'.(SUBENVIRONMENTNAME ? SUBENVIRONMENTNAME.'/' : '').LANGUAGE.'/mailer/template.html" does not exist', 'notexist');
+        if(!file_exists(ROOT.'data/content/'.LANGUAGE.'/mailer/template.html')){
+            throw new bException('mailer_insert(): Template file "'.ROOT.'data/content/'.LANGUAGE.'/mailer/template.html" does not exist', 'not-exist');
         }
 
         $params['content'] = cfm($params['content']);
 
-        if(!file_exists($file = ROOT.'data/content/'.(SUBENVIRONMENTNAME ? SUBENVIRONMENTNAME.'/' : '').LANGUAGE.'/mailer/'.$params['content'].'.html')){
-            throw new bException('mailer_insert(): Specified content file "'.$params['content'].'.html'.'" does not exist in email content path "'.ROOT.'data/content/'.LANGUAGE.'/mailer/'.'"', 'notexist');
+        if(!file_exists($file = ROOT.'data/content/'.LANGUAGE.'/mailer/'.$params['content'].'.html')){
+            throw new bException('mailer_insert(): Specified content file "'.$params['content'].'.html'.'" does not exist in email content path "'.ROOT.'data/content/'.LANGUAGE.'/mailer/'.'"', 'not-exist');
         }
 
         /*
@@ -87,7 +87,7 @@ function mailer_insert($params){
             /*
              * Most codes are done automatically
              */
-            $matches = array_filter_values($matches[0], '###MAILERCODE###,###TRACE###,###TONAME###,###BODY###,###UNSUBSCRIBE###,###DOMAIN###,###SITENAME###,###SUBENVIRONMENT###,###CODE###,###NAME###,###USERNAME###,###EMAIL###');
+            $matches = array_filter_values($matches[0], '###MAILERCODE###,###TRACE###,###TONAME###,###BODY###,###UNSUBSCRIBE###,###DOMAIN###,###SITENAME###,###ENVIRONMENT###,###CODE###,###NAME###,###USERNAME###,###EMAIL###');
 
             $missing['arguments'] = array_diff($matches, $params['from']);
             $missing['content']   = array_diff($params['from'], $matches);
@@ -149,7 +149,7 @@ function mailer_add_users($users, $mailing, $validate_mailing = true){
         }
 
         if($mailings_id < 1){
-            throw new bException('mailer_add_users(): Specified mailing "'.str_log($mailing).'" does not exist', 'notexist');
+            throw new bException('mailer_add_users(): Specified mailing "'.str_log($mailing).'" does not exist', 'not-exist');
         }
 
         $count = 0;
@@ -265,7 +265,7 @@ function mailer_get($params, $columns = false){
         }
 
         if(empty($where)){
-            throw new bException('mailer_get() No valid mailer columns specified (either id, and or name)', 'notspecified');
+            throw new bException('mailer_get() No valid mailer columns specified (either id, and or name)', 'not-specified');
         }
 
         return sql_get('SELECT '.($columns ? $columns : '*').'
@@ -569,7 +569,7 @@ function mailer_viewed($code){
         $recipient = mailer_get_recipient($code, 'sent');
 
         if(!$recipient){
-            throw new bException('mailer_viewed(): Specified code "'.str_log($code).'" does not exist', 'notexist');
+            throw new bException('mailer_viewed(): Specified code "'.str_log($code).'" does not exist', 'not-exist');
         }
 
         sql_query('INSERT INTO `mailer_views` (`recipients_id`, `ip`, `host`, `referrer`)

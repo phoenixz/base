@@ -27,24 +27,24 @@ define('TESTPATH', ROOT.'data/tests/content/');
  */
 function test($name, $description, $function){
     try{
-		log_console($name.' [TEST] '.$description, '', '', false);
+        log_console($name.' [TEST] '.$description, '', '', false);
 
         if(!is_callable($function)){
             throw new bException('test(): Specified function is not a function but a "'.gettype($function).'"');
         }
 
-		$function();
+        $function();
 
-		log_console(' [ OK ]', '', 'green');
+        log_console(' [ OK ]', '', 'green');
 
     }catch(Exception $e){
-		log_console(' [ FAIL ]', '', 'red');
+        log_console(' [ FAIL ]', '', 'red');
 
-		$e = array('name'        => $name,
+        $e = array('name'        => $name,
                    'description' => $description,
                    'trace'       => (method_exists($e, 'getMessages') ? $e->getMessages() : ''));
 
-		$e['failure'] = isset_get($e['trace'][0]);
+        $e['failure'] = isset_get($e['trace'][0]);
 
         array_shift($e['trace']);
 
@@ -53,7 +53,7 @@ function test($name, $description, $function){
         $GLOBALS['tests']['errors']['library'][] = $e;
 
 //showdie($e);
-		return $e;
+        return $e;
     }
 }
 
@@ -63,35 +63,35 @@ function test($name, $description, $function){
  * Show if the specified test completed with errors or not
  */
 function test_completed($name, $type = 'test'){
-	log_console($name.' ['.$type.' COMPLETED] ', '', 'white', false);
+    log_console($name.' ['.$type.' COMPLETED] ', '', 'white', false);
 
     if(!isset($GLOBALS['tests']['errors'][$type])){
         throw new bException('test_completed(): Invalid type "" specified. Specify one of "test", "library" or "all"');
     }
 
-	$errors = $GLOBALS['tests']['errors'][$type];
+    $errors = $GLOBALS['tests']['errors'][$type];
 
-	if(!is_array($errors)){
-		throw new bException('test_completed(): The specified error list should have datatype array but has datatype "'.gettype($errors).'"');
-	}
+    if(!is_array($errors)){
+        throw new bException('test_completed(): The specified error list should have datatype array but has datatype "'.gettype($errors).'"');
+    }
 
-	if($errors){
-		/*
-		 * Cleanup empty entries which means "no error"
-		 */
-		foreach($errors as $key => $value){
-			if(!$value){
-				unset($errors[$key]);
-			}
-		}
-	}
+    if($errors){
+        /*
+         * Cleanup empty entries which means "no error"
+         */
+        foreach($errors as $key => $value){
+            if(!$value){
+                unset($errors[$key]);
+            }
+        }
+    }
 
-	if($errors){
-		log_console(' [ FAIL ]', '', 'red');
+    if($errors){
+        log_console(' [ FAIL ]', '', 'red');
 
-	}else{
-		log_console(' [ OK ]'  , '', 'green');
-	}
+    }else{
+        log_console(' [ OK ]'  , '', 'green');
+    }
 
     /*
      * Clear error lists

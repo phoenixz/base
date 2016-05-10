@@ -324,33 +324,27 @@ function str_strip_function($string){
 
 
 /*
- * Ensure that specified string starts with specified character
+ * Ensure that specified source string starts with specified string
  */
-function str_starts($string, $char){
-    if(mb_substr($string, 0, 1) == $char){
-        return $string;
+function str_starts($source, $string){
+    if(mb_substr($source, 0, mb_strlen($string)) == $string){
+        return $source;
     }
 
-    return $char.$string;
+    return $string.$source;
 }
 
 
 
 /*
- * Ensure that specified string starts NOT with specified character
+ * Ensure that specified source string starts NOT with specified string
  */
-function str_starts_not($string, $char){
-    $pos = 0;
-
-    while(mb_substr($string, $pos, 1) == $char){
-        $pos++;
+function str_starts_not($source, $string){
+    if(mb_substr($source, 0, mb_strlen($char)) == $string){
+        return mb_substr($source, mb_strlen($string));
     }
 
-    if($pos){
-        return mb_substr($string, $pos);
-    }
-
-    return $string;
+    return $source;
 }
 
 
@@ -358,13 +352,15 @@ function str_starts_not($string, $char){
 /*
  * Ensure that specified string ends with specified character
  */
-function str_ends($string, $char){
+function str_ends($source, $string){
     try{
-        if(mb_substr($string, -1, 1) == $char){
-            return $string;
+        $length = mb_strlen($string);
+
+        if(mb_substr($source, -$length, $length) == $string){
+            return $source;
         }
 
-        return $string.$char;
+        return $source.$string;
 
     }catch(Exception $e){
         throw new bException('str_ends(): Failed', $e);
@@ -376,9 +372,9 @@ function str_ends($string, $char){
 /*
  * Ensure that specified string ends NOT with specified character
  */
-function str_ends_not($string, $chars, $loop = true){
+function str_ends_not($source, $strings, $loop = true){
     try{
-        if(is_array($chars)){
+        if(is_array($strings)){
             /*
              * For array test, we always loop
              */
@@ -387,15 +383,15 @@ function str_ends_not($string, $chars, $loop = true){
             while($redo){
                 $redo = false;
 
-                foreach($chars as $char){
-                    $new = str_ends_not($string, $char, true);
+                foreach($strings as $string){
+                    $new = str_ends_not($source, $string, true);
 
-                    if($new != $string){
+                    if($new != $source){
                         // A change was made, we have to rerun over it.
                         $redo = true;
                     }
 
-                    $string = $new;
+                    $source = $new;
                 }
             }
 
@@ -403,13 +399,15 @@ function str_ends_not($string, $chars, $loop = true){
             /*
              * Check for only one character
              */
-            while(mb_substr($string, -1, 1) == $chars){
-                $string = mb_substr($string, 0, -1);
+            $length = mb_strlen($strings);
+
+            while(mb_substr($source, -$length, $length) == $strings){
+                $source = mb_substr($source, 0, -$length);
                 if(!$loop) break;
             }
         }
 
-        return $string;
+        return $source;
 
     }catch(Exception $e){
         throw new bException('str_ends_not(): Failed', $e);
@@ -465,6 +463,14 @@ function str_hex($source){
 function str_log($source, $truncate = 511, $separator = ', '){
     try{
         load_libs('json');
+
+        if(!$source){
+            if(is_numeric($source)){
+                return 0;
+            }
+
+            return '';
+        }
 
         if(!is_scalar($source)){
             if(is_array($source)){

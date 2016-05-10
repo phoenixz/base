@@ -25,23 +25,21 @@ try{
             case 'verbose':
                 // FALLTHROUGH
             case '--verbose':
-                // FALLTHROUGH
-                $GLOBALS['quiet'] = false;
                 break;
 
-            case '-l':
-                // FALLTHROUGH
-            case 'signin':
-                /*
-                 * Set current session user
-                 */
-                $user     = $argv[$argid + 1];
-                $password = $argv[$argid + 2];
-
-                unset($argv[$argid]);
-                unset($argv[$argid + 1]);
-                unset($argv[$argid + 2]);
-                break;
+            //case '-l':
+            //    // FALLTHROUGH
+            //case 'signin':
+            //    /*
+            //     * Set current session user
+            //     */
+            //    $user     = $argv[$argid + 1];
+            //    $password = $argv[$argid + 2];
+            //
+            //    unset($argv[$argid]);
+            //    unset($argv[$argid + 1]);
+            //    unset($argv[$argid + 2]);
+            //    break;
 
             case 'language':
                 /*
@@ -79,29 +77,6 @@ try{
 
                 }else{
                     $environment = $argv[$argid + 1];
-                }
-
-                unset($argv[$argid]);
-                unset($argv[$argid + 1]);
-                break;
-
-            case '-s':
-                // FALLTHROUGH
-            case 'subenv':
-                // FALLTHROUGH
-            case '--subenv':
-                /*
-                 * Set environment and reset next
-                 */
-                if(isset($subenvironment)){
-                    throw new Exception('Subenvironment specified twice');
-                }
-
-                if(!isset($argv[$argid + 1])){
-                    throw new Exception('startup: The "subenvironment" argument requires an existing subenvironment name right after it');
-
-                }else{
-                    $subenvironment = $argv[$argid + 1];
                 }
 
                 unset($argv[$argid]);

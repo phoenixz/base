@@ -33,45 +33,45 @@ $html .= $vj->output_validation($params);
 *
 */
 function verify_js($params){
-   try{
-      html_load_js('verify');
+    try{
+        html_load_js('verify');
 
-      array_params($params);
-      array_default($params, 'rules'      , null);
-      array_default($params, 'group_rules', null);
-      array_default($params, 'submit'     , null);
+        array_params($params);
+        array_default($params, 'rules'      , null);
+        array_default($params, 'group_rules', null);
+        array_default($params, 'submit'     , null);
 
-      $script = '';
+        $script = '';
 
-     if(debug()){
-         $script .= "$.verify.debug = true;\n";
-      }
+        if(debug()){
+            $script .= "$.verify.debug = true;\n";
+            }
 
-      if($params['submit']){
-         $script .= '$.verify.beforeSubmit = '.$params['submit'].";\n";
-      }
+        if($params['submit']){
+            $script .= '$.verify.beforeSubmit = '.$params['submit'].";\n";
+        }
 
-      if($params['rules']){
-         foreach($params['rules'] as $name => $rule){
-            $script .= '$.verify.addRules({
-                            '.$name.' : '.$rule.'
-                        });';
-         }
-      }
+        if($params['rules']){
+            foreach($params['rules'] as $name => $rule){
+                $script .= '$.verify.addRules({
+                                '.$name.' : '.$rule.'
+                            });';
+            }
+        }
 
-      if($params['group_rules']){
-         foreach($params['group_rules'] as $rule){
-            $script .= '$.verify.addGroupRules({
-                           '.$rule.'
-                        });';
-         }
-      }
+        if($params['group_rules']){
+            foreach($params['group_rules'] as $rule){
+                $script .= '$.verify.addGroupRules({
+                               '.$rule.'
+                            });';
+            }
+        }
 
-      return html_script($script, false);
+        return html_script($script, false);
 
-   }catch(Exception $e){
-       throw new bException('validate_js(): Failed', $e);
-   }
+    }catch(Exception $e){
+        throw new bException('validate_js(): Failed', $e);
+    }
 }
 
 
@@ -338,7 +338,7 @@ class validate_form {
     /*
      *
      */
-    function isAlphanum($value, $msg = null){
+    function isAlphaNumeric($value, $msg = null){
         if(!$value) return '';
 
         if(!ctype_alnum($value)){
@@ -375,6 +375,21 @@ class validate_form {
      */
     function isNumeric($value, $msg = null){
         if(!is_numeric($value)){
+            $this->setError($msg);
+            return false;
+
+        }else{
+            return $value;
+        }
+    }
+
+
+
+    /*
+     *
+     */
+    function isNatural($value, $msg = null){
+        if(!is_numeric($value) or ($value < 0) or fmod($value, 1.0)){
             $this->setError($msg);
             return false;
 
@@ -686,13 +701,18 @@ class validate_form {
      *
      */
     function isRegex($value, $regex, $msg = null){
-        if(preg_match($regex, $value)){
-            return $value;
+         try{
+            if(preg_match($regex, $value)){
+               return $value;
 
-        }else{
-            $this->setError($msg);
-            return false;
-        }
+            }else{
+               $this->setError($msg);
+               return false;
+            }
+
+         }catch(Exception $e){
+            throw new bException(tr('validate_form::isRegex(): failed (possibly invalid regex?)'), $e);
+         }
     }
 
 
@@ -834,5 +854,15 @@ class validate_form {
 
         return $this->errors;
     }
+
+
+
+    /*
+     * OBSOLETE WRAPPER METHODS
+     */
+    function isAlphanum($value, $msg = null){
+        return isAlphaNumeric($value, $msg);
+    }
+
 }
 ?>

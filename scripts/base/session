@@ -14,13 +14,13 @@ require_once(dirname(__FILE__).'/../../../libs/startup.php');
 try{
     load_libs('session');
 
-    switch(argument(0)){
+    switch(cli_argument(0)){
         case 'take':
-            if(!argument(1)){
+            if(!cli_argument(1)){
                 throw new bException('No session ID to take specified', 'nosessionid');
             }
 
-            session_take(argument(1));
+            session_take(cli_argument(1));
             break;
 
         case 'list':
@@ -33,7 +33,7 @@ try{
         case '':
             throw new bException('No command specified', 'nocommand');
         default:
-            throw new bException('Unknown command "'.argument(0).'" specified', 'unknowncommand');
+            throw new bException('Unknown command "'.cli_argument(0).'" specified', 'unknowncommand');
     }
 
 }catch(Exception $e){

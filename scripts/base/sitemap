@@ -23,38 +23,37 @@ require_once(dirname(__FILE__).'/../../libs/startup.php');
 
 try{
     if(empty($_CONFIG['sitemap']['enabled'])){
-        log_console('scripts/base/sitemap: Sitemap has been disabled in the configuration', 'disabled', 'yellow');
+        cli_log(tr('Sitemap has been disabled in the configuration'), 'yellow');
         cli_die(0);
     }
 
-    cli_basic_arguments();
-
     load_libs('sitemap');
-
     right_or_redirect('admin');
 
-    $option = argument(0);
-
-    switch($option){
+    switch(cli_method()){
         case 'clean':
             // FALLTHROUGH
         case 'clear':
             /*
              * Clear sitemap database.
              */
-            log_console('Clearing sitemap database tables...', 'clear', 'white');
+            cli_no_arguments_left();
+            cli_log(tr('Clearing sitemap database tables'), 'white');
             sql_query('DELETE FROM `sitemap_data`');
             sql_query('DELETE FROM `sitemap_scans`');
-            log_console('Sitemap database tables have been cleared', 'finished', 'green');
+            cli_log(tr('Sitemap database tables have been cleared'), 'green');
             break;
 
         case 'build':
-            log_console('The "build" option has been depreciated, please use "scan" instead');
+            cli_no_arguments_left();
+            cli_log(tr('The "build" option has been depreciated, please use "scan" instead'));
             // FALLTHROUGH
         case 'scan':
-            $params['show_skip'] = argument('show_skip', false);
-            $params['modified']  = argument('modified' , true);
-            $params['languages'] = not_empty(argument('languages' , true), argument('language' , true));
+            cli_no_arguments_left();
+
+            $params['show_skip'] = cli_argument('show_skip', false);
+            $params['modified']  = cli_argument('modified' , true);
+            $params['languages'] = not_empty(cli_argument('languages' , true), cli_argument('language' , true));
 
             log_error('Building sitemap', 'start', 'white');
             sitemap_scan($params);
@@ -62,7 +61,8 @@ try{
             break;
 
         case 'install':
-            log_console('The "install" option has been depreciated, please use "deploy" instead');
+            cli_no_arguments_left();
+            cli_log(tr('The "install" option has been depreciated, please use "deploy" instead'));
             $option = 'deploy';
             // FALLTHROUGH
         case 'deploy':
@@ -71,27 +71,27 @@ try{
             /*
              * Deploy or show sitemap file
              */
-            if(!argument(2)){
+            if(!cli_argument(2)){
                 /*
                  * No language code specified
                  */
-                throw new bException('No language code specified', 'notspecified');
+                throw new bException('No language code specified', 'not-specified');
             }
 
-            $languages = strtolower(argument(2));
+            $languages = strtolower(cli_argument(2));
 
             if((strlen($languages) != 2) and ($languages != 'all')){
                 /*
                  * Invalid language code specified
                  */
-                throw new bException('Invalid language code "'.str_log(argument(2)).'" specified. A valid language code has only 2 letters', 'invalid');
+                throw new bException('Invalid language code "'.str_log(cli_argument(2)).'" specified. A valid language code has only 2 letters', 'invalid');
             }
 
             if(!isset($_CONFIG['language']['supported'][$languages])){
                 /*
                  * Specified language not supported
                  */
-                throw new bException('The specified language code "'.str_log(argument(2)).'" does not exist', 'notexist');
+                throw new bException('The specified language code "'.str_log(cli_argument(2)).'" does not exist', 'not-exist');
             }
 
             if($languages == 'all'){
@@ -121,13 +121,13 @@ try{
                      * they have to return the data so that it can be placed in the file here
                      */
                     $return    = true;
-                    $extension = argument(1);
+                    $extension = cli_argument(1);
 
                 }else{
                     $return    = false;
                 }
 
-                switch(argument(1)){
+                switch(cli_argument(1)){
                     case 'html':
                         $data = sitemap_html($params, $return);
                         break;
@@ -145,17 +145,17 @@ try{
                         break;
 
                     default:
-                        throw new bException('Unknown file type "'.str_log(argument(1)).'" specified. Please specify one of "html|xml|txt|robots"', 'unknown');
+                        throw new bException('Unknown file type "'.str_log(cli_argument(1)).'" specified. Please specify one of "html|xml|txt|robots"', 'unknown');
                 }
 
                 if($option == 'deploy'){
-                    if(argument(1) == 'robots'){
+                    if(cli_argument(1) == 'robots'){
                         file_put_contents(ROOT.'www/'.$language.'/robots.txt', $data);
-                        log_console('Deployed sitemap robots.txt', 'deployed', 'green');
+                        cli_log(tr('Deployed sitemap robots.txt'), 'green');
 
                     }else{
                         file_put_contents(ROOT.'www/'.$language.'/sitemap.'.$extension, $data);
-                        log_console('Deployed sitemap type '.str_log(argument(1)).' for language "'.str_log($language).'"', 'deployed', 'green');
+                        cli_log(tr('Deployed sitemap type '.str_log(cli_argument(1)).' for language "'.str_log($language).'"'), 'green');
                     }
                 }
             }
@@ -163,23 +163,25 @@ try{
             break;
 
         case 'list':
-            log_console('Date                  Status     Createdby    Language', '', 'white');
+            cli_no_arguments_left();
+
+            cli_log(tr('Date                  Status     Createdby    Language'), 'cyan');
 
             $r = sql_query('SELECT `id`, `createdon`, `createdby`, `status`, `language` FROM `sitemap_builds`');
 
             while($build = sql_fetch($r)){
                 $date = new DateTime($build['createdon']);
 
-                log_console($date->format('Y-m-d H:i:s').'   '.str_size(status($build['status']), 9).'  '.str_size(user_name($build['createdby']), 9).'    '.str_size(isset_get($_CONFIG['language']['supported'][$build['language']], 'Unknown'), 15), '');
+                cli_log($date->format('Y-m-d H:i:s').'   '.str_size(status($build['status']), 9).'  '.str_size(user_name($build['createdby']), 9).'    '.str_size(isset_get($_CONFIG['language']['supported'][$build['language']], 'Unknown'), 15));
             }
 
             break;
 
         case '':
-            throw new bException('No argument specified', 'unknown');
+            throw new bException(tr('No argument specified'), 'unknown');
 
         default:
-            throw new bException('Unknown argument "'.str_log($option).'" specified', 'unknown');
+            throw new bException(tr('Unknown argument ":method" specified', array(':method' => cli_method())), 'unknown');
     }
 
 }catch(Exception $e){

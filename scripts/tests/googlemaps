@@ -7,32 +7,32 @@ $quiet = true;
 require_once(dirname(__FILE__).'/../../libs/startup.php');
 
 try{
-	cli_only();
-	load_libs('test,googlemaps,inet');
+    cli_only();
+    load_libs('test,googlemaps,inet');
 
-	test('googlemaps_get_streetview_image()', 'Function call should ......?', function(){
-		$img = googlemaps_get_streetview_image(40.452205,-3.692807);
-//		log_console('Image recieved "'.number_format(strlen($img)).'" Bytes');
+    test('googlemaps_get_streetview_image()', 'Function call should ......?', function(){
+        $img = googlemaps_get_streetview_image(40.452205,-3.692807);
+//        log_console('Image recieved "'.number_format(strlen($img)).'" Bytes');
 
-	});
+    });
 
-	test('googlemaps_get_streetview_image()', 'Function call should ......?', function(){
-		$img = googlemaps_get_streetview_image(40.452205,-23.892807);
-		log_console('Testing googlemaps_get_streetview_image (invalid location)', 'test');
+    test('googlemaps_get_streetview_image()', 'Function call should ......?', function(){
+        $img = googlemaps_get_streetview_image(40.452205,-23.892807);
+        log_console('Testing googlemaps_get_streetview_image (invalid location)', 'test');
 
-		if(!$img) {
-//			log_console("Image recieved was too small, that is ok");
+        if(!$img) {
+//            log_console("Image recieved was too small, that is ok");
 
-		} else {
-//			log_error('Image recieved "'.str_log(number_format(strlen($img))).'" Bytes, this should not happen');
-		}
-	});
+        } else {
+//            log_error('Image recieved "'.str_log(number_format(strlen($img))).'" Bytes, this should not happen');
+        }
+    });
 
-	test_completed('googlemaps_get_streetview_image()');
+    test_completed('googlemaps_get_streetview_image()');
 
 
-	// Completed system tests
-	test_completed('googlemaps', 'library');
+    // Completed system tests
+    test_completed('googlemaps', 'library');
 
 }catch(Exception $e){
     throw new bException('scripts/tests/googlemaps: Failed', $e);

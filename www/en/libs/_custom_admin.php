@@ -14,7 +14,6 @@
  * Always automatically load the admin library
  */
 global $_CONFIG;
-include(ROOT.'config/admin.php');
 
 
 
@@ -69,7 +68,7 @@ function admin_start($params = '', $flash = null, $flash_type = null) {
 //        return '<html>
 //            <head>
 //                <title>'.$_SERVER['SERVER_NAME'].' '.$title.'</title>
-//                <link rel="stylesheet" type="text/css" href="/pub/css/'.(SUBENVIRONMENT ? SUBENVIRONMENT.'/' : '').'admin.css"/>
+//                <link rel="stylesheet" type="text/css" href="/pub/css/admin.css"/>
 //                <script type="text/javascript" src="/pub/js/base/jquery1.js"></script>
 //                <script type="text/javascript" src="/pub/js/base/base.js"></script>
 //                <script type="text/javascript" src="/pub/js/base/flash.js"></script>

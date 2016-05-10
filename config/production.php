@@ -9,12 +9,28 @@ $_CONFIG['debug']                       = true;
 // Detect browser?
 $_CONFIG['browser_detect']	            = false;
 
+$_CONFIG['cdn']['fonts']                = array('https://fonts.googleapis.com/css?family=Lato:300,400,400italic,600,700|Raleway:300,400,500,600,700|Crete+Round:400italic');
+$_CONFIG['cdn']['js']['default_libs']   = array('jquery', 'base/strings', 'base/base', 'plugins', 'functions');
+$_CONFIG['cdn']['js']['load_delayed']   = true;
+
+// Cookie configuration
+$_CONFIG['cookie']['domain']            = 'base';
+
 //database
 $_CONFIG['db']['core']['db']            = '';
 $_CONFIG['db']['core']['user']          = 'base';
 $_CONFIG['db']['core']['pass']          = 'base';
 $_CONFIG['db']['core']['timezone']      = 'America/Los_Angeles';
 
+//domain
+$_CONFIG['domain']                      = 'base';
+
+//
+$_CONFIG['formats']                     = array('date'                 => 'Ymd',
+                                                'time'                 => 'YmdHis',
+                                                'human_date'           => 'F j, Y',
+                                                'human_time'           => 'H:i:s A',
+                                                'human_datetime'       => 'd/m/Y H:i:s A');
 // google api
 $_CONFIG['google-map-api-key']          = '';
 
@@ -23,7 +39,10 @@ $_CONFIG['language']['default']         = 'en';
 
 // Mail configuration
 $_CONFIG['mail']['developers']          = array(array('name'  => 'Sven Oostenbrink',
-                                              'email' => 'support@svenoostenbrink.com'));
+                                                      'email' => 'support@svenoostenbrink.com'));
+
+//
+$_CONFIG['mobile']['viewport']          = 'width=device-width, initial-scale=1';
 
 // Name of the website
 $_CONFIG['name']                        = 'base';

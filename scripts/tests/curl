@@ -7,8 +7,8 @@ $quiet = true;
 require_once(dirname(__FILE__).'/../../libs/startup.php');
 
 try{
-	cli_only();
-	load_libs('curl,test');
+    cli_only();
+    load_libs('curl,test');
 
     foreach($argv as $arg){
         switch($arg){
@@ -20,46 +20,46 @@ try{
 
 
 
-	test('curl_get_random_ip()', 'Function should return any random IP from the computer', function(){
-		$ip = curl_get_random_ip();
+    test('curl_get_random_ip()', 'Function should return any random IP from the computer', function(){
+        $ip = curl_get_random_ip();
 
-		if(!preg_match('/^\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}$/', $ip)){
-			throw new bException('Did not return a valid IP, but "'.str_log($ip).'"');
-		}
-	});
+        if(!preg_match('/^\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}$/', $ip)){
+            throw new bException('Did not return a valid IP, but "'.str_log($ip).'"');
+        }
+    });
 
-	test_completed('curl_get_random_ip()');
-
-
-
-
-	test('curl_get()', 'Function should return complete google.com page', function(){
-		$google = curl_get('google.com');
-	});
-
-	test('curl_get()', 'Function should return google.com 404 exception', function(){
-		try{
-			$google = curl_get('http://www.google.com/werkljw');
-			throw new bException('Function did not throw exception for HTTP code "'.str_log($google['status']['http_code']).'"');
-
-		}catch(Exception $e){
-			if($e->getCode() != 'HTTP404'){
-				throw new bException('Function returned invalid HTTP error code "'.$e->getCode().'"', $e);
-			}
-
-			/*
-			 * Yes! This is what we wanted!
-			 */
-		}
-	});
-
-	test_completed('curl_get()');
+    test_completed('curl_get_random_ip()');
 
 
 
 
-	// Completed avatar tests
-	test_completed('curl', 'library');
+    test('curl_get()', 'Function should return complete google.com page', function(){
+        $google = curl_get('google.com');
+    });
+
+    test('curl_get()', 'Function should return google.com 404 exception', function(){
+        try{
+            $google = curl_get('http://www.google.com/werkljw');
+            throw new bException('Function did not throw exception for HTTP code "'.str_log($google['status']['http_code']).'"');
+
+        }catch(Exception $e){
+            if($e->getCode() != 'HTTP404'){
+                throw new bException('Function returned invalid HTTP error code "'.$e->getCode().'"', $e);
+            }
+
+            /*
+             * Yes! This is what we wanted!
+             */
+        }
+    });
+
+    test_completed('curl_get()');
+
+
+
+
+    // Completed avatar tests
+    test_completed('curl', 'library');
 
 }catch(Exception $e){
     throw new bException('scripts/tests/curl: Failed', $e);

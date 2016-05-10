@@ -99,7 +99,7 @@ function twilio_load($account = null, $auto_install = true){
                 /*
                  * Specified number is not found in any account
                  */
-                throw new bException(tr('twilio_load(): Specified phone number ":number" was not found in any Twilio account', array(':number' => str_log($account))), 'notexist');
+                throw new bException(tr('twilio_load(): Specified phone number ":number" was not found in any Twilio account', array(':number' => str_log($account))), 'not-exist');
             }
         }
 
@@ -122,7 +122,7 @@ function twilio_load($account = null, $auto_install = true){
         include($file);
 
         if(empty($_CONFIG['twilio']['accounts'][$account])){
-            throw new bException(tr('twilio_load(): Specified Twilio account ":account" does not exist', array(':account' => str_log($account))), 'notexist');
+            throw new bException(tr('twilio_load(): Specified Twilio account ":account" does not exist', array(':account' => str_log($account))), 'not-exist');
         }
 
         return new Services_Twilio($_CONFIG['twilio']['accounts'][$account]['accounts_id'], $_CONFIG['twilio']['accounts'][$account]['accounts_token']);
@@ -233,18 +233,19 @@ function twilio_send_message($message, $to, $from = null){
 /*
  *
  */
-function twlio_add_image($message_id, $url){
+function twilio_add_image($message_id, $url, $mimetype){
     try{
-        sql_query('INSERT INTO `sms_images` (`sms_messages_id`, `url`)
-                   VALUES                   (:sms_messages_id , :url )',
+        sql_query('INSERT INTO `sms_images` (`sms_messages_id`, `url`, `mimetype`)
+                   VALUES                   (:sms_messages_id , :url , :mimetype )',
 
                    array(':sms_messages_id' => $message_id,
+                         ':mimetype'        => $mimetype,
                          ':url'             => $url));
 
         run_background('base/sms getimages');
 
     }catch(Exception $e){
-        throw new bException(tr('twlio_add_image(): Failed'), $e);
+        throw new bException(tr('twilio_add_image(): Failed'), $e);
     }
 }
 
@@ -253,24 +254,24 @@ function twlio_add_image($message_id, $url){
 /*
  *
  */
-function twlio_download_image($message_id, $url){
+function twilio_download_image($message_id, $url){
     try{
         $file = file_move_to_target($url, ROOT.'data/sms/images');
 
         sql_query('UPDATE `sms_images`
 
                    SET    `downloaded`      = NOW(),
-                          `file`            = :file,
+                          `file`            = :file
 
-                   WHERE  `sms_messages_id` = :sms_messages_id,
-                          `url`             = :url',
+                   WHERE  `sms_messages_id` = :sms_messages_id
+                   AND    `url`             = :url',
 
                    array(':sms_messages_id' => $message_id,
                          ':url'             => $url,
                          ':file'            => $file));
 
     }catch(Exception $e){
-        throw new bException(tr('twlio_download_image(): Failed'), $e);
+        throw new bException(tr('twilio_download_image(): Failed'), $e);
     }
 }
 ?>

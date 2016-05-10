@@ -4,23 +4,28 @@
  * This script will display version information
  */
 $usage = "./scripts/base/version\n".
-         "./scripts/base/version php|serialize|serialized\n";
+         "./scripts/base/version [php|serialize|serialized]\n";
 
 $help  = "The version script will supply you with version information about this copy of the base framework";
 
 require_once(dirname(__FILE__).'/../../libs/startup.php');
 
-foreach($argv as $arg){
-    switch(strtolower($arg)){
-        case 'php':
-            //FALLTHROUGH
-        case 'serialize':
-            //FALLTHROUGH
-        case 'serialized':
-            die(serialize(array('framework' => FRAMEWORKCODEVERSION,
-                                'project'   => PROJECTCODEVERSION)));
-    }
+switch(cli_method()){
+    case 'php':
+        //FALLTHROUGH
+    case 'serialize':
+        //FALLTHROUGH
+    case 'serialized':
+        die(serialize(array('name'      => PROJECT,
+                            'framework' => FRAMEWORKCODEVERSION,
+                            'project'   => PROJECTCODEVERSION)));
+
+    case '':
+        cli_log(tr('BASE project ":project" with framework version ":fversion" and project version ":pversion"', array(':project' => PROJECT, ':fversion' => FRAMEWORKCODEVERSION, ':pversion' => PROJECTCODEVERSION)), 'white');
+        break;
+
+    default:
+        throw new bException(tr('Unknown method ":method" specified', array(':method' => cli_method())), 'unknown');
 }
 
-die('framework: '.FRAMEWORKCODEVERSION.' project: '.PROJECTCODEVERSION."\n");
 ?>

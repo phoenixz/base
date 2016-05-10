@@ -83,7 +83,7 @@ try{
         $target = $_CONFIG['root'].$target;
     }
 
-    header("Location:".$target, true, $http_code);
+    header("Location:".redirect_url($target), true, $http_code);
     die();
 
 }catch(Exception $e){

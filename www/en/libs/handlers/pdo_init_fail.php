@@ -20,7 +20,7 @@
     $e = new bException('sql_init(): Failed', $e);
 
     if(empty($_CONFIG['db'][$connector])){
-        throw new bException(tr('sql_init(): Specified database connector "%connector%" has not been configured', array('%connector%' => $connector)), 'notexist');
+        throw new bException(tr('sql_init(): Specified database connector "%connector%" has not been configured', array('%connector%' => $connector)), 'not-exist');
     }
 
     try{

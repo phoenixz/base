@@ -319,7 +319,7 @@ function users_get($user, $columns = ''){
         }
 
         if(empty($user)){
-            throw new bException('users_get(): No user specified', 'notspecified');
+            throw new bException('users_get(): No user specified', 'not-specified');
 
         }elseif(is_numeric($user)){
             $query   = 'SELECT '.implode(',', $columns).' FROM `users` WHERE `users`.`id` = :user';
@@ -344,7 +344,7 @@ function users_get($user, $columns = ''){
                     break;
 
                 case 0:
-                    throw new bException('users_get(): Specified user "'.str_log($user).'" does not exist', 'notexist');
+                    throw new bException('users_get(): Specified user "'.str_log($user).'" does not exist', 'not-exist');
 
                 default:
                     throw new bException('users_get(): Found multiple results for user "'.str_log($user).'"', 'multiple');

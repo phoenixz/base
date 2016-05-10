@@ -40,7 +40,7 @@ function timer_start($process){
 function timer_stop($id){
     try{
         if(empty($GLOBALS['timers'][$id])){
-            throw new bException(tr('timer_stop(): Specified timers id %id%" is not registered as a timer', array('%id%' => $id)), 'notexist');
+            throw new bException(tr('timer_stop(): Specified timers id %id%" is not registered as a timer', array('%id%' => $id)), 'not-exist');
         }
 
         $time = (integer) round((microtime(true) - $GLOBALS['timers'][$id]) * 1000, 0);
@@ -56,7 +56,7 @@ function timer_stop($id){
                                  ':time' => $time));
 
         if(!$r->rowCount()){
-            throw new bException(tr('timer_stop(): Specified id %id%" exist in memory, but not in the database', array('%id%' => $id)), 'notexist');
+            throw new bException(tr('timer_stop(): Specified id %id%" exist in memory, but not in the database', array('%id%' => $id)), 'not-exist');
         }
 
         unset($GLOBALS['timers'][$id]);

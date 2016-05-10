@@ -43,7 +43,7 @@ function session_take($session_id){
         $path = ini_get( 'session.save_path');
 
         if(!file_exists(slash($path).'sess_'.$session_id)){
-            throw new bException('Specified session "'.str_log($session_id).'" does not exist', 'notexist');
+            throw new bException('Specified session "'.str_log($session_id).'" does not exist', 'not-exist');
         }
 
         session_id($session_id);

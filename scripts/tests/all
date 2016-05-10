@@ -7,8 +7,8 @@ $quiet = true;
 require_once(dirname(__FILE__).'/../../libs/startup.php');
 
 try{
-	cli_only();
-	load_libs('test,file');
+    cli_only();
+    load_libs('test,file');
 
     foreach($argv as $arg){
         switch($arg){
@@ -21,7 +21,7 @@ try{
     /*
      * Empty command line arguments so that
      */
-	$path     = ROOT.'scripts/tests/';
+    $path     = ROOT.'scripts/tests/';
     $argv     = array();
     $skiplist = array('.',
                       '..',
@@ -32,20 +32,20 @@ try{
     foreach(scandir($path) as $file){
         if(in_array($file, $skiplist)) continue;
 
-		/*
-		 * Create temporary test file that does not contain the shell hashbang header
-		 */
-		$test = file_delete($path.'.test');
-		$test = file_copy_tree($path.$file, $test, "#!/usr/bin/php\n", '', '.php');
+        /*
+         * Create temporary test file that does not contain the shell hashbang header
+         */
+        $test = file_delete($path.'.test');
+        $test = file_copy_tree($path.$file, $test, "#!/usr/bin/php\n", '', '.php');
 
         log_console('Executing test "'.$file.'"', '', 'white');
 
         include($test);
 
-		/*
-		 * Cleanup temporary test file
-		 */
-		file_delete($test);
+        /*
+         * Cleanup temporary test file
+         */
+        file_delete($test);
     }
 
 }catch(Exception $e){

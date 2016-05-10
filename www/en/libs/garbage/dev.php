@@ -21,7 +21,7 @@ function dev_sync_from($environment){
          * First check if specified environment exists.
          */
         if(empty($_CONFIG['dev']['environments'][$environment])){
-            throw new bException('dev_sync_from(): Specified environment "'.$environment.'" does not exist', 'notexist');
+            throw new bException('dev_sync_from(): Specified environment "'.$environment.'" does not exist', 'not-exist');
         }
 
         $environment = $_CONFIG['dev']['environments'][$environment];

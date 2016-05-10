@@ -226,7 +226,7 @@ function rights_get($right, $columns = null){
         }
 
         if(empty($right)){
-            throw new bException('rights_get(): No right specified', 'notspecified');
+            throw new bException('rights_get(): No right specified', 'not-specified');
 
         }elseif(is_numeric($right)){
             $query  = 'SELECT '.implode(',', $columns).' FROM `rights` WHERE `rights`.`id`   = :right';

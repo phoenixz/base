@@ -12,7 +12,7 @@ require_once(dirname(__FILE__).'/../../libs/startup.php');
 log_console('Initializing global data path', '', 'white');
 
 if(empty($_CONFIG['data']['global'])){
-    if(!$path = argument(0)){
+    if(!$path = cli_argument(0)){
         log_console('Please type the absolute path of the data directory [<enter> for '.$_CONFIG['data']['global'].']:', '', '', false);
         $path = readline('');
     }

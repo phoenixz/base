@@ -194,7 +194,7 @@ function cdn_commands_insert($message, $files){
 
             case '':
                 log_database('Received empty CDN command', 'cdncommand/empty');
-                throw new bException(tr('cdn_commands_insert(): No command specified in message'), 'notspecified');
+                throw new bException(tr('cdn_commands_insert(): No command specified in message'), 'not-specified');
 
             default:
                 log_database('Received unknown CDN command "'.str_log($message['command']).'"', 'cdncommand/unknown');
@@ -343,7 +343,7 @@ function cdn_commands_process($retries = null, $sleep = 5000){
 
                         case '':
                             log_database('Received empty CDN command', 'cdnexecute/empty');
-                            throw new bException(tr('cdn_commands_process(): No command specified in message'), 'notspecified');
+                            throw new bException(tr('cdn_commands_process(): No command specified in message'), 'not-specified');
 
                         default:
                             log_database('Received invalid CDN command "'.str_log($command['command']).'"', 'cdnexecute/invalid');
@@ -569,17 +569,17 @@ showdie($e);
 function cdn_remove($cdn){
 throw new bException('cdn_remove(): This function is obsolete, and no longer supported. Disable the CDN you wish to remove in configuration, and run "cdn balance" instead');
 //    try{
-//		if(!$cdn){
-//			throw new bException(tr('cdn_remove(): No CDN specified'), 'notspecified');
-//		}
+//        if(!$cdn){
+//            throw new bException(tr('cdn_remove(): No CDN specified'), 'not-specified');
+//        }
 //
-//		if(!is_numeric($cdn)){
-//			throw new bException(tr('cdn_remove(): Invalid CDN ":cdn" specified, must be numeric', array(':cdn' => $cdn)), 'invalid');
-//		}
+//        if(!is_numeric($cdn)){
+//            throw new bException(tr('cdn_remove(): Invalid CDN ":cdn" specified, must be numeric', array(':cdn' => $cdn)), 'invalid');
+//        }
 //
-//		if(!in_array($cdn, $_CONFIG['cdn']['servers'])){
-//			throw new bException(tr('cdn_remove(): Specified CDN ":cdn" does not exist, check "$_CONFIG[cdn][servers]" configuration', array(':cdn' => $cdn)), 'invalid');
-//		}
+//        if(!in_array($cdn, $_CONFIG['cdn']['servers'])){
+//            throw new bException(tr('cdn_remove(): Specified CDN ":cdn" does not exist, check "$_CONFIG[cdn][servers]" configuration', array(':cdn' => $cdn)), 'invalid');
+//        }
 //
 //        $counts   = sql_list('SELECT   `cdn`,
 //                                       COUNT(`id`) AS `count`

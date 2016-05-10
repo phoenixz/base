@@ -252,4 +252,38 @@ function bytes_convert($amount, $unit = 'auto', $precision = 2, $add_suffix = fa
             return $amount.strtoupper($unit[0]).strtolower($unit[1]).strtoupper($unit[2]);
     }
 }
+
+
+
+/*
+ *
+ */
+function human_readable($number, $thousand = 1000, $decimals = 0){
+    try{
+        if($number > pow($thousand, 5)){
+            return number_format($number / pow($thousand, 5), $decimals).'P';
+        }
+
+        if($number > pow($thousand, 4)){
+            return number_format($number / pow($thousand, 4), $decimals).'T';
+        }
+
+        if($number > pow($thousand, 3)){
+            return number_format($number / pow($thousand, 3), $decimals).'G';
+        }
+
+        if($number > pow($thousand, 2)){
+            return number_format($number / pow($thousand, 2), $decimals).'M';
+        }
+
+        if($number > pow($thousand, 1)){
+            return number_format($number / pow($thousand, 1), $decimals).'K';
+        }
+
+        return number_format($number, $decimals);
+
+    }catch(Exception $e){
+        throw new bException('human_readable(): Failed', $e);
+    }
+}
 ?>

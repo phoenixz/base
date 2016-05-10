@@ -24,11 +24,11 @@ function sessions_signin($credentials){
 
     try{
         if(empty($credentials['username'])){
-            throw new bException('sessions_signin(): No username specified', 'notspecified');
+            throw new bException('sessions_signin(): No username specified', 'not-specified');
         }
 
         if(empty($credentials['password'])){
-            throw new bException('sessions_signin(): No password specified', 'notspecified');
+            throw new bException('sessions_signin(): No password specified', 'not-specified');
         }
 
         //sessions_validate_username($credentials['username']);
@@ -37,7 +37,7 @@ function sessions_signin($credentials){
         load_libs('users');
 
         if(!$user = users_get($credentials['username'])){
-            throw new bException('sessions_signin(): Specified user "'.$credentials['username'].'" does not exist', 'notexist');
+            throw new bException('sessions_signin(): Specified user "'.$credentials['username'].'" does not exist', 'not-exist');
         }
 
         if(sessions_compare_passwords($credentials['password'], $user['password'])){

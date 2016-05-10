@@ -181,12 +181,12 @@ function emailadmin_list_domains(){
 function emailadmin_add_domain($domain){
     try{
         if(!$domain){
-            throw new bException(tr('emailadmin_add_domain(): No domain name specified'), 'notspecified');
+            throw new bException(tr('emailadmin_add_domain(): No domain name specified'), 'not-specified');
         }
 
 // :TODO: Add check for valid domain
         //if(!$domain){
-        //    throw new bException(tr('emailadmin_add_domain(): No domain name specified'), 'notspecified');
+        //    throw new bException(tr('emailadmin_add_domain(): No domain name specified'), 'not-specified');
         //}
 
         emailadmin_query('INSERT INTO `virtual_domains` (`name`)
@@ -304,12 +304,12 @@ function emailadmin_list_users($domain){
 function emailadmin_add_user($email, $password){
     try{
         if(!$email){
-            throw new bException(tr('emailadmin_add_user(): No email specified'), 'notspecified');
+            throw new bException(tr('emailadmin_add_user(): No email specified'), 'not-specified');
         }
 
 // :TODO: Add check for valid user
         //if(!$user){
-        //    throw new bException(tr('emailadmin_add_user(): No user name specified'), 'notspecified');
+        //    throw new bException(tr('emailadmin_add_user(): No user name specified'), 'not-specified');
         //}
 
         if(!$domains_id = emailadmin_get_domain(str_from($email, '@'))){
@@ -433,12 +433,12 @@ function emailadmin_list_aliases($domain){
 function emailadmin_add_alias($source, $destination){
     try{
         if(!$email){
-            throw new bException(tr('emailadmin_add_alias(): No email specified'), 'notspecified');
+            throw new bException(tr('emailadmin_add_alias(): No email specified'), 'not-specified');
         }
 
 // :TODO: Add check for valid alias
         //if(!$alias){
-        //    throw new bException(tr('emailadmin_add_alias(): No alias name specified'), 'notspecified');
+        //    throw new bException(tr('emailadmin_add_alias(): No alias name specified'), 'not-specified');
         //}
 
         if(!$domains_id = emailadmin_get_domain(str_from($email, '@'))){

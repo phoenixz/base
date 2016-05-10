@@ -30,7 +30,7 @@ function rights_give($users, $rights){
                     /*
                      * This user does not exist...
                      */
-                    throw new bException('rights_give(): The specified user "'.str_log($value).'" does not exist', 'notexist');
+                    throw new bException('rights_give(): The specified user "'.str_log($value).'" does not exist', 'not-exist');
                 }
 
             }else{
@@ -38,7 +38,7 @@ function rights_give($users, $rights){
                     /*
                      * This user does not exist...
                      */
-                    throw new bException('rights_give(): The specified users id "'.str_log($value).'" does not exist', 'notexist');
+                    throw new bException('rights_give(): The specified users id "'.str_log($value).'" does not exist', 'not-exist');
                 }
             }
         }
@@ -52,7 +52,7 @@ function rights_give($users, $rights){
                     /*
                      * This right does not exist...
                      */
-                    throw new bException('rights_give(): The specified right "'.str_log($value).'" does not exist', 'notexist');
+                    throw new bException('rights_give(): The specified right "'.str_log($value).'" does not exist', 'not-exist');
                 }
 
             }else{
@@ -60,7 +60,7 @@ function rights_give($users, $rights){
                     /*
                      * This right does not exist...
                      */
-                    throw new bException('rights_give(): The specified rights id "'.str_log($value).'" does not exist', 'notexist');
+                    throw new bException('rights_give(): The specified rights id "'.str_log($value).'" does not exist', 'not-exist');
                 }
             }
         }
@@ -129,7 +129,7 @@ function rights_take($users, $rights){
                     /*
                      * This user does not exist...
                      */
-                    throw new bException('rights_give(): The specified user "'.str_log($value).'" does not exist', 'notexist');
+                    throw new bException('rights_give(): The specified user "'.str_log($value).'" does not exist', 'not-exist');
                 }
 
             }else{
@@ -137,7 +137,7 @@ function rights_take($users, $rights){
                     /*
                      * This user does not exist...
                      */
-                    throw new bException('rights_give(): The specified users id "'.str_log($value).'" does not exist', 'notexist');
+                    throw new bException('rights_give(): The specified users id "'.str_log($value).'" does not exist', 'not-exist');
                 }
             }
         }
@@ -151,7 +151,7 @@ function rights_take($users, $rights){
                     /*
                      * This right does not exist...
                      */
-                    throw new bException('rights_give(): The specified right "'.str_log($value).'" does not exist', 'notexist');
+                    throw new bException('rights_give(): The specified right "'.str_log($value).'" does not exist', 'not-exist');
                 }
 
             }else{
@@ -159,7 +159,7 @@ function rights_take($users, $rights){
                     /*
                      * This right does not exist...
                      */
-                    throw new bException('rights_give(): The specified rights id "'.str_log($value).'" does not exist', 'notexist');
+                    throw new bException('rights_give(): The specified rights id "'.str_log($value).'" does not exist', 'not-exist');
                 }
             }
         }
@@ -194,7 +194,7 @@ function rights_take($users, $rights){
 function rights_get($right, $columns = 'id,name,description'){
     try{
         if(!$right){
-            throw new bException(tr('rights_get(): No right specified'), 'notspecified');
+            throw new bException(tr('rights_get(): No right specified'), 'not-specified');
         }
 
         if(!is_scalar($right)){
@@ -211,7 +211,7 @@ function rights_get($right, $columns = 'id,name,description'){
                            array(':right' => $right));
 
         if(!$retval){
-            throw new bException('roles_get(): Specified role "'.str_log($right).'" does not exist', 'notexists');
+            throw new bException('roles_get(): Specified role "'.str_log($right).'" does not exist', 'not-exist');
         }
 
         return $retval;
@@ -266,7 +266,7 @@ function rights_has($user, $right){
         }
 
         if(!$target = sql_get('SELECT `id` FROM `users` WHERE `id` = :id OR `name` = :name OR `email` = :email', array(':name' => $user, ':email' => $user, ':id' => $user), 'id')){
-            throw new bException('rights_has(): Specified user "'.str_log($user).'" does not exist', 'notexists');
+            throw new bException('rights_has(): Specified user "'.str_log($user).'" does not exist', 'not-exist');
         }
 
         $rights = sql_list('SELECT `users_id`,

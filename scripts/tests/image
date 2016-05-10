@@ -7,8 +7,8 @@ $quiet=true;
 require_once(dirname(__FILE__).'/../../libs/startup.php');
 
 try{
-	cli_only();
-	load_libs('test,image');
+    cli_only();
+    load_libs('test,image');
 
     foreach($argv as $arg){
         switch($arg){

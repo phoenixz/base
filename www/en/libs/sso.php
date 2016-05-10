@@ -56,7 +56,7 @@ function sso($provider, $redirect = true, $get_check = true){
          */
         foreach($_CONFIG['sso'][$provider] as $key => $value){
             if(($key != 'scope') and !$value){
-//				throw new bException('sso(): Key "'.$key.'" of SSO provider "'.$provider.'" has not been set', 'config');
+//                throw new bException('sso(): Key "'.$key.'" of SSO provider "'.$provider.'" has not been set', 'config');
             }
         }
 
@@ -96,7 +96,7 @@ function sso($provider, $redirect = true, $get_check = true){
                     break;
 
                 case 'google':
-//					$oauth->client_id .= '&access_type=offline';
+//                    $oauth->client_id .= '&access_type=offline';
                     // FALLTHROUGH
 
                 default:

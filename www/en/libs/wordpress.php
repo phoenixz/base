@@ -33,19 +33,19 @@ function wp_admin_signin($params){
         array_default($params, 'redirect'  , isset_get($params['url'])); //
 
         if(empty($params['url'])){
-            throw new bException('wp_signin_admin(): No URL specified', 'notspecified');
+            throw new bException('wp_signin_admin(): No URL specified', 'not-specified');
         }
 
         if(strpos($params['url'], 'wp-admin') !== false){
-            throw new bException('wp_signin_admin(): The specified URL contains "wp-admin" section. Please specify the URL without this part', 'notspecified');
+            throw new bException('wp_signin_admin(): The specified URL contains "wp-admin" section. Please specify the URL without this part', 'not-specified');
         }
 
         if(empty($params['username'])){
-            throw new bException('wp_signin_admin(): No username specified', 'notspecified');
+            throw new bException('wp_signin_admin(): No username specified', 'not-specified');
         }
 
         if(empty($params['password'])){
-            throw new bException('wp_signin_admin(): No password specified', 'notspecified');
+            throw new bException('wp_signin_admin(): No password specified', 'not-specified');
         }
 
         load_libs('curl');
@@ -124,16 +124,16 @@ function wp_admin_post($params, $force_new = false){
         array_default($params, 'retries',  5);    // Retry howmany time on postid failures
 
         if(empty($params['curl'])){
-            throw new bException('wp_admin_post(): No wordpress cURL connection ($params[curl]) specified', 'notspecified');
+            throw new bException('wp_admin_post(): No wordpress cURL connection ($params[curl]) specified', 'not-specified');
         }
 
         if(empty($params['title'])){
-            throw new bException('wp_admin_post(): No title specified', 'notspecified');
+            throw new bException('wp_admin_post(): No title specified', 'not-specified');
         }
 
         if(empty($params['type'])){
             if(empty($params['post_type'])){
-                throw new bException('wp_admin_post(): No type specified (typically one of page or post)', 'notspecified');
+                throw new bException('wp_admin_post(): No type specified (typically one of page or post)', 'not-specified');
             }
 
             $params['type'] = $params['post_type'];
@@ -141,7 +141,7 @@ function wp_admin_post($params, $force_new = false){
 
         if(empty($params['user_id'])){
             if(empty($params['curl']['user_id'])){
-                throw new bException('wp_admin_post(): No user_id specified', 'notspecified');
+                throw new bException('wp_admin_post(): No user_id specified', 'not-specified');
             }
 
             /*
@@ -305,19 +305,19 @@ function wp_admin_trash($params){
         array_params($params);
 
         if(empty($params['curl'])){
-            throw new bException('wp_admin_trash(): No wordpress cURL connection ($params[curl]) specified', 'notspecified');
+            throw new bException('wp_admin_trash(): No wordpress cURL connection ($params[curl]) specified', 'not-specified');
         }
 
         if(empty($params['type'])){
             if(empty($params['delete_type'])){
-                throw new bException('wp_admin_trash(): No type specified (typically one of page or delete)', 'notspecified');
+                throw new bException('wp_admin_trash(): No type specified (typically one of page or delete)', 'not-specified');
             }
 
             $params['type'] = $params['delete_type'];
         }
 
         if(empty($params['post_id'])){
-            throw new bException('wp_admin_trash(): No post_id specified', 'notspecified');
+            throw new bException('wp_admin_trash(): No post_id specified', 'not-specified');
         }
 
         /*
@@ -360,19 +360,19 @@ function wp_admin_restore($params){
         array_params($params);
 
         if(empty($params['curl'])){
-            throw new bException('wp_admin_restore(): No wordpress cURL connection ($params[curl]) specified', 'notspecified');
+            throw new bException('wp_admin_restore(): No wordpress cURL connection ($params[curl]) specified', 'not-specified');
         }
 
         if(empty($params['type'])){
             if(empty($params['delete_type'])){
-                throw new bException('wp_admin_restore(): No type specified (typically one of page or delete)', 'notspecified');
+                throw new bException('wp_admin_restore(): No type specified (typically one of page or delete)', 'not-specified');
             }
 
             $params['type'] = $params['delete_type'];
         }
 
         if(empty($params['post_id'])){
-            throw new bException('wp_admin_restore(): No post_id specified', 'notspecified');
+            throw new bException('wp_admin_restore(): No post_id specified', 'not-specified');
         }
 
         /*
@@ -413,19 +413,19 @@ function wp_admin_remove_permanently($params){
         array_params($params);
 
         if(empty($params['curl'])){
-            throw new bException('wp_admin_remove_permanently(): No wordpress cURL connection ($params[curl]) specified', 'notspecified');
+            throw new bException('wp_admin_remove_permanently(): No wordpress cURL connection ($params[curl]) specified', 'not-specified');
         }
 
         if(empty($params['type'])){
             if(empty($params['delete_type'])){
-                throw new bException('wp_admin_remove_permanently(): No type specified (typically one of page or delete)', 'notspecified');
+                throw new bException('wp_admin_remove_permanently(): No type specified (typically one of page or delete)', 'not-specified');
             }
 
             $params['type'] = $params['delete_type'];
         }
 
         if(empty($params['post_id'])){
-            throw new bException('wp_admin_remove_permanently(): No post_id specified', 'notspecified');
+            throw new bException('wp_admin_remove_permanently(): No post_id specified', 'not-specified');
         }
 
         /*
@@ -466,11 +466,11 @@ function wp_admin_get($post_id, $curl){
         array_params($params);
 
         if(!is_array($curl)){
-            throw new bException('wp_admin_get(): No wordpress cURL connection ($params[curl]) specified', 'notspecified');
+            throw new bException('wp_admin_get(): No wordpress cURL connection ($params[curl]) specified', 'not-specified');
         }
 
         if(empty($post_id)){
-            throw new bException('wp_admin_get(): No post_id specified', 'notspecified');
+            throw new bException('wp_admin_get(): No post_id specified', 'not-specified');
         }
 
         if(!is_numeric($post_id)){
@@ -538,39 +538,39 @@ function wp_xmlrpc_post($params){
         array_default($params, 'categories', '');
 
         if(empty($params['url'])){
-            throw new bException('wp_xmlrpc_post(): No URL specified', 'notspecified');
+            throw new bException('wp_xmlrpc_post(): No URL specified', 'not-specified');
         }
 
         if(strpos($params['url'], 'wp-admin') !== false){
-            throw new bException('wp_xmlrpc_post(): The specified URL contains "wp-admin" section. Please specify the URL without this part', 'notspecified');
+            throw new bException('wp_xmlrpc_post(): The specified URL contains "wp-admin" section. Please specify the URL without this part', 'not-specified');
         }
 
         if(empty($params['username'])){
-            throw new bException('wp_xmlrpc_post(): No username specified', 'notspecified');
+            throw new bException('wp_xmlrpc_post(): No username specified', 'not-specified');
         }
 
         if(empty($params['password'])){
-            throw new bException('wp_xmlrpc_post(): No password specified', 'notspecified');
+            throw new bException('wp_xmlrpc_post(): No password specified', 'not-specified');
         }
 
         if(empty($params['title'])){
-            throw new bException('wp_xmlrpc_post(): No title specified', 'notspecified');
+            throw new bException('wp_xmlrpc_post(): No title specified', 'not-specified');
         }
 
         if(empty($params['content'])){
-            throw new bException('wp_xmlrpc_post(): No content specified', 'notspecified');
+            throw new bException('wp_xmlrpc_post(): No content specified', 'not-specified');
         }
 
         if(empty($params['type'])){
-            throw new bException('wp_xmlrpc_post(): No type specified (typically one of page or post)', 'notspecified');
+            throw new bException('wp_xmlrpc_post(): No type specified (typically one of page or post)', 'not-specified');
         }
 
         if(empty($params['author'])){
-            throw new bException('wp_xmlrpc_post(): No author specified', 'notspecified');
+            throw new bException('wp_xmlrpc_post(): No author specified', 'not-specified');
         }
 
         if(empty($params['status'])){
-            throw new bException('wp_xmlrpc_post(): No status specified', 'notspecified');
+            throw new bException('wp_xmlrpc_post(): No status specified', 'not-specified');
         }
 
         load_libs('curl');

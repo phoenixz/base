@@ -9,9 +9,9 @@ require_once(dirname(__FILE__).'/../../../libs/startup.php');
 
 try{
     cli_only();
-    this_script_already_runs();
+    cli_exclusive();
 
-    $status = argument('status', true);
+    $status = cli_argument('status', true);
 
     load_libs('mailer');
 

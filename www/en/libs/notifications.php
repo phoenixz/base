@@ -14,8 +14,24 @@ load_config('notifications');
 /*
  * Do notifications
  */
-function notifications_do($event, $message, $classes = null, $alternate_subenvironment = null){
+function notifications_do($event, $message, $classes = null){
+    static $count = 0;
     global $_CONFIG;
+
+return false;
+    if(++$count > 15){
+        /*
+         * Endless loop protection
+         */
+        if(!debug()){
+            return false;
+        }
+
+        show($count);
+        show($event);
+        show($message);
+        showdie(debug_trace());
+    }
 
     try{
         $message = str_force($message);
@@ -138,7 +154,7 @@ function notifications_do($event, $message, $classes = null, $alternate_subenvir
                         break;
 
                     default:
-                        throw new bException('notifications_do(): Unknown method "'.str_log($method).'" specified');
+                        throw new bException(tr('notifications_do(): Unknown method ":method" specified', array(':method' => $method)));
                 }
             }
         }
@@ -146,15 +162,15 @@ function notifications_do($event, $message, $classes = null, $alternate_subenvir
         return true;
 
     }catch(Exception $e){
-        log_error('notifications_do(): Notification system failed with "'.str_log($e->getMessage()).'"');
+        log_error(tr('notifications_do(): Notification system failed with ":exception"', array(':exception' => $e->getMessage())), 'error', false);
 
         if(SCRIPT != 'init'){
             if(empty($_CONFIG['mail']['developer'])){
-                log_error('[notifications_do() FAILED : '.strtoupper($_CONFIG['domain']).' / '.strtoupper(php_uname('n')).' / '.strtoupper(ENVIRONMENT).(SUBENVIRONMENT ? ' / '.SUBENVIRONMENT : '').']', "notifications_do() failed with: ".implode("\n", $e->getMessages())."\n\nOriginal notification event was:\nEvent: \"".cfm($event)."\"\nMessage: \"".cfm($message)."\"");
+                log_error('[notifications_do() FAILED : '.strtoupper($_CONFIG['domain']).' / '.strtoupper(php_uname('n')).' / '.strtoupper(ENVIRONMENT).']', "notifications_do() failed with: ".implode("\n", $e->getMessages())."\n\nOriginal notification event was:\nEvent: \"".cfm($event)."\"\nMessage: \"".cfm($message)."\"");
                 log_error('WARNING! $_CONFIG[mail][developer] IS NOT SET, NOTIFICATIONS CANNOT BE SENT!');
 
             }else{
-                mail($_CONFIG['mail']['developer'], '[notifications_do() FAILED : '.strtoupper($_CONFIG['domain']).' / '.strtoupper(php_uname('n')).' / '.strtoupper(ENVIRONMENT).(SUBENVIRONMENT ? ' / '.SUBENVIRONMENT : '').']', "notifications_do() failed with: ".implode("\n", $e->getMessages())."\n\nOriginal notification event was:\nEvent: \"".cfm($event)."\"\nMessage: \"".cfm($message)."\"");
+                mail($_CONFIG['mail']['developer'], '[notifications_do() FAILED : '.strtoupper($_CONFIG['domain']).' / '.strtoupper(php_uname('n')).' / '.strtoupper(ENVIRONMENT).']', "notifications_do() failed with: ".implode("\n", $e->getMessages())."\n\nOriginal notification event was:\nEvent: \"".cfm($event)."\"\nMessage: \"".cfm($message)."\"");
             }
         }
 
@@ -167,7 +183,7 @@ function notifications_do($event, $message, $classes = null, $alternate_subenvir
 /*
  * Do email notifications
  */
-function notifications_email($event, $message, $users, $alternate_subenvironment = null){
+function notifications_email($event, $message, $users){
     global $_CONFIG;
 
     try{
@@ -203,7 +219,7 @@ function notifications_email($event, $message, $users, $alternate_subenvironment
                              'To'           => (empty($user['name']) ? $user : $user['name']).' <'.isset_get($user['email']).'>');
 
             $start = microtime(true);
-            mail($user['email'], '['.strtoupper(cfm($event)).' : '.strtoupper($_CONFIG['domain']).' / '.strtoupper(php_uname('n')).' / '.strtoupper(ENVIRONMENT).(REQUIRE_SUBENVIRONMENTS ? ' / '.($alternate_subenvironment ? $alternate_subenvironment : SUBENVIRONMENT ) : '').']', $message, mail_headers($headers));
+            mail($user['email'], '['.strtoupper(cfm($event)).' : '.strtoupper($_CONFIG['domain']).' / '.strtoupper(php_uname('n')).' / '.strtoupper(ENVIRONMENT).']', $message, mail_headers($headers));
 
             if((microtime(true) - $start) > 15){
                 /*
@@ -228,7 +244,7 @@ function notifications_email($event, $message, $users, $alternate_subenvironment
 /*
  * Do twilio notifications
  */
-function notifications_twilio($event, $message, $users, $alternate_subenvironment = null){
+function notifications_twilio($event, $message, $users){
     global $_CONFIG;
 
     try{
@@ -254,15 +270,15 @@ function notifications_twilio($event, $message, $users, $alternate_subenvironmen
                  * Users are specified from DB, or in emergencies, the $_CONFIG
                  * array, which may contain invalid configuration (should be )
                  */
-                log_error('notifications_twilio(): Invalid user "'.str_log($user).'" specified. Should have been an array');
+                log_error('notifications_twilio(): Invalid user ":user" specified. Should have been an array', array(':user' => $user));
                 continue;
             }
 
             if(!empty($user['phones'])){
-                twilio_send_message(substr($message, 0, 140), $user['phones'], '+18443385112');
+                twilio_send_message(substr($message, 0, 140), $user['phones'], '');
 
             }else{
-                log_console(tr('User "%user%" has not configured phone', array('%user%' => $user['username'])));
+                throw new bException(tr('User ":user" has not configured phone', array(':user' => $user['username'])));
             }
         }
 
@@ -276,7 +292,7 @@ function notifications_twilio($event, $message, $users, $alternate_subenvironmen
 /*
  * Do prowl notifications
  */
-function notifications_prowl($event, $message, $users, $alternate_subenvironment = null){
+function notifications_prowl($event, $message, $users){
     global $_CONFIG;
 
     try{
@@ -315,11 +331,11 @@ function notifications_classes_insert($params){
         user_or_redirect();
 
         if(empty($params['name'])){
-            throw new bException('notifications_classes_insert(): No name specified', 'notspecified');
+            throw new bException('notifications_classes_insert(): No name specified', 'not-specified');
         }
 
         if(empty($params['methods'])){
-            throw new bException('notifications_classes_insert(): No methods specified', 'notspecified');
+            throw new bException('notifications_classes_insert(): No methods specified', 'not-specified');
         }
 
         if(!is_array($params['methods'])){
@@ -361,7 +377,7 @@ function notifications_members_insert($params){
 
         if(empty($params['classes_id'])){
             if(empty($params['name'])){
-                throw new bException('notifications_members_insert(): No notification class specified', 'notspecified');
+                throw new bException('notifications_members_insert(): No notification class specified', 'not-specified');
             }
 
             $class = sql_get('SELECT `id`,
@@ -376,14 +392,14 @@ function notifications_members_insert($params){
                                     ':name' => $params['name']));
 
             if(!$class){
-                throw new bException('notifications_members_insert(): Specified notification class "'.str_log($params['classes_id']).'" does not exist', 'notexists');
+                throw new bException(tr('notifications_members_insert(): Specified notification class ":class" does not exist', array(':class' => $params['classes_id'])), 'yellow');
             }
 
             $params['classes_id'] = $class['id'];
         }
 
         if(empty($params['members'])){
-            throw new bException('notifications_members_insert(): No members specified', 'notspecified');
+            throw new bException('notifications_members_insert(): No members specified', 'not-specified');
         }
 
         load_libs('user');
@@ -392,7 +408,7 @@ function notifications_members_insert($params){
 
         foreach(array_force($params['members']) as $member){
             if(!$users_id = user_get($member, 'id')){
-                log_error('notifications_members_insert(): Specified member "'.str_log($member).'" does not exist', 'notexists');
+                log_error(tr('notifications_members_insert(): Specified member ":member" does not exist', array(':member' => $member)), 'yellow');
                 continue;
             }
 

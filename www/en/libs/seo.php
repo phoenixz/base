@@ -13,6 +13,7 @@
 /*
  * Generate an unique seo name
  */
+// :TODO: Update to use bound variable queries
 function seo_unique($source, $table, $ownid = null, $field = 'seoname', $replace = '-', $first_suffix = null) {
     try{
         /*
@@ -61,7 +62,7 @@ function seo_unique($source, $table, $ownid = null, $field = 'seoname', $replace
 
                 if(!is_numeric($ownid[$key])){
                     if(!is_scalar($ownid[$key])){
-                        throw new bException(tr('seo_unique(): Invalid $ownid array value datatype specified, should be scalar, but is "%type%"', array('%type%' => gettype($ownid[$key]))), 'invalid');
+                        throw new bException(tr('seo_unique(): Invalid $ownid array value datatype specified, should be scalar and numeric, but is "%type%"', array('%type%' => gettype($ownid[$key]))), 'invalid');
                     }
 
                     $ownid[$key] = '"'.$ownid[$key].'"';
@@ -195,14 +196,29 @@ function seo_string($source, $replace = '-') {
  * DO NOT USE THESE, THESE FUNCTIONS ARE DEPRECATED AND WILL BE DROPPED IN THE NEAR FUTURE!!
  */
 function seo_create_string($source, $replace = '-') {
-    return seo_string($source, $replace = '-');
+    try{
+        return seo_string($source, $replace = '-');
+
+    }catch(Exception $e){
+        throw new bException('seo_string(): Failed', $e);
+    }
 }
 
 function seo_generate_unique_name($source, $table, $ownid = null, $field = 'seoname', $replace = '-', $first_suffix = null){
-    return seo_unique_string($source, $table, $ownid, $field, $replace, $first_suffix);
+    try{
+        return seo_unique($source, $table, $ownid, $field, $replace, $first_suffix);
+
+    }catch(Exception $e){
+        throw new bException('seo_generate_unique_name(): Failed', $e);
+    }
 }
 
 function seo_unique_string($source, $table, $ownid = null, $field = 'seoname', $replace = '-', $first_suffix = null) {
-    return seo_unique($source, $table, $ownid, $field, $replace, $first_suffix);
+    try{
+        return seo_unique($source, $table, $ownid, $field, $replace, $first_suffix);
+
+    }catch(Exception $e){
+        throw new bException('seo_unique_string(): Failed', $e);
+    }
 }
 ?>

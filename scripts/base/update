@@ -3,29 +3,34 @@
 /*
  * This is the update script that will update your BASE installation with the latest software
  */
-$usage = "./scripts/base/update [local]\n".
-         "./scripts/base/update branch BRANCH_NAME\n";
+$usage = "./scripts/base/update [-l]\n".
+         "./scripts/base/update --branch BRANCH_NAME\n";
          "./scripts/base/update\n";
 
 $help  = "The deploy script can pull all the latest BASE updates from either a local BASE repository, or the central main BASE repository
 
 Possible arguments:
 
-noinit                     - Do not do execute a system init after the update
-                             process has finished
+--local                       - Update from a local version of the BASE project
+                                update script will search in /var/www/html/base
 
-nocommit                   - Do not automatically git commit after the update
-                             process has finished
+--no-init                     - Do not do execute a system init after the update
+                                process has finished
 
-branch BRANCH              - Get the BASE updates from branch BRANCH instead
-                             of the standard production branch";
+--no-commit                   - Do not automatically git commit after the update
+                                process has finished
+
+--branch BRANCH               - Get the BASE updates from branch BRANCH instead
+                                of the standard production branch";
 
 require_once(dirname(__FILE__).'/../../libs/startup.php');
 
-$branch   = argument('branch', true, 'production');
-$noinit   = argument('noinit');
-$nocommit = argument('nocommit');
-$local    = argument('local');
+$branch   = cli_argument('--branch', true, 'production');
+$noinit   = cli_argument('--no-init');
+$nocommit = cli_argument('--no-commit');
+$local    = cli_argument('--local') or cli_argument('-l');
+
+cli_no_arguments_left();
 
 load_config('update');
 
@@ -34,122 +39,136 @@ if($local){
      * Get the data from the local base repository instead of the centralized one
      */
     $base = $_CONFIG['update']['local'];
-    log_screen('scripts/update: Running in "local" mode, getting all base data from "'.$base['path'].'" for faster update', 'deploy/test', 'yellow');
+    cli_log(tr('Running in "local" mode, getting all base data from ":path" for faster update', array(':path' => $base['path'])), 'yellow');
 
 }else{
     $base = $_CONFIG['update']['local'];
 }
 
 if(!$branch){
-    throw new bException('No branch specified', 'nobranch');
+    throw new bException(tr('No branch specified'), 'nobranch');
 }
 
 if(TEST){
-    log_screen('scripts/update: Running update script in test mode, NOT REALLY UPDATING!', 'deploy/test', 'yellow');
+    cli_log(tr('scripts/update: Running update script in test mode, NOT REALLY UPDATING!'), 'yellow');
 }
 
 if(FORCE){
-    log_screen('scripts/update: Running update script in forced mode, WILL UPDATE EVEN IF GIT CHANGES AND / OR MINOR PROBLEMS ARE FOUND!', 'deploy/force', 'yellow');
+    cli_log(tr('scripts/update: Running update script in forced mode, WILL UPDATE EVEN IF GIT CHANGES AND / OR MINOR PROBLEMS ARE FOUND!'), 'yellow');
 }
+
+
 
 /*
  * Ensure we are at the root of the project within this context, or git will fail!
  */
 chdir(ROOT);
 
+
+
 /*
  * Check if we are not on main base repository
  */
 if(trim(shell_exec('grep "/git/base.git" '.ROOT.'.git/config'))) {
-    throw new bException('Cannot be run on main base repository', 'WRONGREPOS');
+    throw new bException(tr('Cannot be run on main base repository'), 'WRONGREPOS');
 }
 
 /*
  * Check if we dont have any commits
  */
-if(!trim(shell_exec('git status | grep "nothing to commit" | wc -l')) AND !FORCE) {
-//    throw new bException('Git commit pending', 'COMMITFIRST');
+if(!trim(shell_exec('git status | grep "nothing to commit" | wc -l'))){
+    if(!FORCE){
+        throw new bException(tr('Git commit pending'), 'COMMITFIRST');
+    }
+
+    shell_exec('git add .; git stash');
+    cli_log(tr('scripts/update: Stashed git changes because of -F or --force option specified'), 'yellow');
+    $stashed = true;
 }
+
+
 
 /*
  * Verify data
  */
 if(!$base['host']){
-    throw new bException(tr('No update host configured'), 'notspecified');
+    throw new bException(tr('No update host configured'), 'not-specified');
 }
 
 if(!$base['port']){
-    throw new bException(tr('No update host port configured'), 'notspecified');
+    throw new bException(tr('No update host port configured'), 'not-specified');
 }
+
+
 
 /*
  * Update libraries from base
  */
 if($local){
     if(!trim(shell_exec('cd '.$base['path'].'; git status | grep "nothing to commit" | wc -l')) AND !FORCE) {
-        throw new bException('Git commit pending on your local base project', 'COMMITFIRST');
+        throw new bException(tr('Git commit pending on your local base project'), 'COMMITFIRST');
     }
 
-    log_console('Updating base project, branch "'.$branch.'"', 'update', 'white');
+    cli_log(tr('Updating base project, branch ":branch"', array(':branch' => $branch)), 'white');
     echo shell_exec('cd '.$base['path'].'; git checkout '.$branch.'; git pull origin '.$branch.'');
 
 }else{
-    log_console('Updating base project, branch "'.$branch.'"', 'update', 'white');
+    cli_log(tr('Updating base project, branch ":branch"', array(':branch' => $branch)), 'white');
     echo shell_exec('ssh -t '.$base['host'].' -p '.$base['port'].' "cd '.$base['path'].'; git reset --hard; git checkout '.$branch.'; git pull origin '.$branch.'"');
 }
 
 /*
  * Copy from base
  */
-log_console('Copying from base', 'update', 'white');
+cli_log(tr('Copying from base'), 'white');
 
 if(empty($test)){
     /*
      * Libraries
      */
-    log_console('Libs', 'copy', 'purple');
+    cli_log(tr('Copying libraries'), 'purple');
     echo shell_exec('rsync -e "ssh -p '.$base['port'].'" -aczvAXHS --no-perms '.$base['host'].':'.$base['path'].'/www/en/libs '.ROOT.'www/en/');
     echo shell_exec('rsync -e "ssh -p '.$base['port'].'" -aczvAXHS --no-perms '.$base['host'].':'.$base['path'].'/www/en/tests '.ROOT.'www/en/');
 
     // Base AJAX files
-    log_console('Ajax', 'copy', 'purple');
+    cli_log(tr('Copying ajax files'), 'purple');
     echo shell_exec('rsync -e "ssh -p '.$base['port'].'" -aczvAXHS --no-perms '.$base['host'].':'.$base['path'].'/www/en/ajax/base '.ROOT.'www/en/ajax/');
 
     // Scripts
-    log_console('Scripts', 'copy', 'purple');
+    cli_log(tr('Copying base scripts'), 'purple');
     echo shell_exec('rsync -e "ssh -p '.$base['port'].'" -aczvAXHS --no-perms --delete '.$base['host'].':'.$base['path'].'/scripts/base/* '.ROOT.'scripts/base/');
     echo shell_exec('rsync -e "ssh -p '.$base['port'].'" -aczvAXHS --no-perms --delete '.$base['host'].':'.$base['path'].'/scripts/tests/* '.ROOT.'scripts/tests/');
 
     // Framework init files
-    log_console('Framework updates', 'copy', 'purple');
+    cli_log(tr('Copying framework init files'), 'purple');
     echo shell_exec('rsync -e "ssh -p '.$base['port'].'" -aczvAXHS --no-perms --delete '.$base['host'].':'.$base['path'].'/init/framework/* '.ROOT.'init/framework/');
 
     // Base configuration
-    log_console('Config', 'copy', 'purple');
+    cli_log(tr('Config base configuration'), 'purple');
     echo shell_exec('rsync -e "ssh -p '.$base['port'].'" -aczvAXHS --no-perms --delete '.$base['host'].':'.$base['path'].'/config/base/* '.ROOT.'config/base/');
 
     // Javascript
-    log_console('Javascript', 'copy', 'purple');
+    cli_log(tr('Copying javascript files'), 'purple');
     echo shell_exec('rsync -e "ssh -p '.$base['port'].'" -aczvAXHS --no-perms --delete '.$base['host'].':'.$base['path'].'/www/en/pub/js/base/* '.ROOT.'www/en/pub/js/base/');
 
     // CSS
-    log_console('Stylesheets', 'copy', 'purple');
+    cli_log(tr('Copying style sheets'), 'purple');
     echo shell_exec('rsync -e "ssh -p '.$base['port'].'" -aczvAXHS --no-perms --delete '.$base['host'].':'.$base['path'].'/www/en/pub/css/base/* '.ROOT.'www/en/pub/css/base/');
 
     // Images
-    log_console('Images', 'copy', 'purple');
+    cli_log(tr('Copying images'), 'purple');
     echo shell_exec('rsync -e "ssh -p '.$base['port'].'" -aczvAXHS --no-perms --delete '.$base['host'].':'.$base['path'].'/www/en/pub/img/base/* '.ROOT.'www/en/pub/img/base/');
 
     // Documentation
-    log_console('Documentation', 'copy', 'purple');
+    cli_log(tr('Copying documentation'), 'purple');
     echo shell_exec('rsync -e "ssh -p '.$base['port'].'" -aczvAXHS --no-perms '.$base['host'].':'.$base['path'].'/data/doc/* '.ROOT.'data/doc/');
 
     // Sources
-    log_console('Data sources', 'copy', 'purple');
+    cli_log(tr('Copying data sources'), 'purple');
     echo shell_exec('rsync -e "ssh -p '.$base['port'].'" -aczvAXHS --no-perms '.$base['host'].':'.$base['path'].'/data/sources/* '.ROOT.'data/sources/');
 
     // Audio files
-    log_console('Audio files', 'copy', 'purple');
+    cli_log(tr('Copying audio files'), 'purple');
     echo shell_exec('rsync -e "ssh -p '.$base['port'].'" -aczvAXHS --no-perms '.$base['host'].':'.$base['path'].'/data/audio/* '.ROOT.'data/audio/');
 }
 
@@ -157,10 +176,10 @@ if(empty($test)){
  * Execute init script
  */
 if($noinit){
-    log_console('Skipping system init due to "noinit" option', 'update', 'yellow');
+    cli_log(tr('Skipping system init due to "--no-init" option'), 'yellow');
 
 }else{
-    log_console('Excuting system init', 'update', 'white');
+    cli_log(tr('Excuting system init'), 'white');
     echo passthru('cd '.ROOT.'scripts/base/;export '.PROJECT.'_ENVIRONMENT='.ENVIRONMENT.'; php init');
 }
 
@@ -168,12 +187,20 @@ if($noinit){
  * Done
  */
 if($nocommit){
-    log_console('Skipping git commit due to "nocommit" option', 'update', 'yellow');
+    cli_log(tr('Skipping git commit due to "--no-commit" option'), 'yellow');
 
 }else{
-    log_console('Git commit updates', 'update', 'white');
+    cli_log(tr('Git commit updates'), 'white');
     echo shell_exec('cd '.ROOT.';git add .;git commit -am "Update from base"');
 }
 
-log_console('Finished', '', 'green');
+/*
+ * Did we stash anything? get it back now..
+ */
+if(!empty($stashed)){
+    shell_exec('git stash pop; git reset HEAD');
+    cli_log(tr('scripts/update: Found stashed git changes, popping them back'), 'yellow');
+}
+
+cli_log(tr('Finished'), 'green');
 ?>

@@ -16,12 +16,12 @@ $no_time_zone = true;
 require_once(dirname(__FILE__).'/../../../libs/startup.php');
 
 try{
-    switch(strtolower(argument(0))){
+    switch(strtolower(cli_argument(0))){
         case 'check':
             /*
              * Perform MySQL checks
              */
-            switch(strtolower(argument(1))){
+            switch(strtolower(cli_argument(1))){
                 case 'timezone':
                     // FALLTHROUGH
                 case 'timezones':
@@ -33,14 +33,14 @@ try{
                     break;
 
                 case '':
-                    throw new bException(tr('No "check" suboption specified. Please specify one of "timezones"'), 'notspecified');
+                    throw new bException(tr('No "check" suboption specified. Please specify one of "timezones"'), 'not-specified');
 
                 default:
-                    throw new bException(tr('Unknown "check" suboption "'.str_log(argument(1)).'" specified'), 'unknown');
+                    throw new bException(tr('Unknown "check" suboption "'.str_log(cli_argument(1)).'" specified'), 'unknown');
             }
 
         case 'import':
-            switch(argument(1)){
+            switch(cli_argument(1)){
                 case 'timezones':
                     try{
                         log_console('Importing timezone data files in MySQL', 'import', 'white');
@@ -68,19 +68,19 @@ try{
                     break;
 
                 case '':
-                    throw new bException(tr('No "import" suboption specified. Please specify one of "timezones"'), 'notspecified');
+                    throw new bException(tr('No "import" suboption specified. Please specify one of "timezones"'), 'not-specified');
 
                 default:
-                    throw new bException(tr('Unknown "import" suboption "'.str_log(argument(1)).'" specified'), 'unknown');
+                    throw new bException(tr('Unknown "import" suboption "'.str_log(cli_argument(1)).'" specified'), 'unknown');
             }
 
             break;
 
         case '':
-            throw new bException(tr('No option specified. Please specify one of "import", or "repair"'), 'notspecified');
+            throw new bException(tr('No option specified. Please specify one of "import", or "repair"'), 'not-specified');
 
         default:
-            throw new bException(tr('Unknown option "'.str_log(argument(0)).'" specified'), 'unknown');
+            throw new bException(tr('Unknown option "'.str_log(cli_argument(0)).'" specified'), 'unknown');
     }
 
 }catch(Exception $e){

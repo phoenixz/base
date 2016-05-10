@@ -62,7 +62,7 @@ function file_get_uploaded($source){
 /*
  * Create a target, but don't put anything in it
  */
-function file_assign_target($path, $extension = false, $singledir = false, $length = 4) {
+function file_assign_target($path, $extension = false, $singledir = false, $length = 4){
     try{
         return file_move_to_target('', $path, $extension, $singledir, $length);
 
@@ -76,7 +76,7 @@ function file_assign_target($path, $extension = false, $singledir = false, $leng
 /*
  * Create a target, but don't put anything in it, and return path+filename without extension
  */
-function file_assign_target_clean($path, $extension = false, $singledir = false, $length = 4) {
+function file_assign_target_clean($path, $extension = false, $singledir = false, $length = 4){
     try{
         return str_replace($extension, '', file_move_to_target('', $path, $extension, $singledir, $length));
 
@@ -90,7 +90,7 @@ function file_assign_target_clean($path, $extension = false, $singledir = false,
 /*
  * Copy specified file, see file_move_to_target for implementation
  */
-function file_copy_to_target($file, $path, $extension = false, $singledir = false, $length = 4) {
+function file_copy_to_target($file, $path, $extension = false, $singledir = false, $length = 4){
     try{
         if(is_array($file)){
             throw new bException(tr('file_copy_to_target(): Specified file ":file" is an uploaded file, and uploaded files cannot be copied, only moved', array(':file' => str_log($file))));
@@ -116,7 +116,7 @@ function file_copy_to_target($file, $path, $extension = false, $singledir = fals
  * If $singledir is set to false, the resulting file will be in a/b/c/d/e/, if its set to true, it will be in abcde
  * $length specifies howmany characters the subdir should have (4 will make a/b/c/d/ or abcd/)
  */
-function file_move_to_target($file, $path, $extension = false, $singledir = false, $length = 4, $copy = false) {
+function file_move_to_target($file, $path, $extension = false, $singledir = false, $length = 4, $copy = false){
     try{
         if(is_array($file)){
             $upload = $file;
@@ -130,7 +130,7 @@ function file_move_to_target($file, $path, $extension = false, $singledir = fals
         $path     = file_ensure_path($path);
         $filename = basename($file);
 
-        if(!$filename) {
+        if(!$filename){
             /*
              * We always MUST have a filename
              */
@@ -144,7 +144,7 @@ function file_move_to_target($file, $path, $extension = false, $singledir = fals
             $file = file_get_local($file, $is_downloaded);
         }
 
-        if(!$extension) {
+        if(!$extension){
             $extension = file_get_extension($filename);
         }
 
@@ -220,7 +220,7 @@ function file_move_to_target($file, $path, $extension = false, $singledir = fals
 /*
  * Creates a random path in specified base path (If it does not exist yet), and returns that path
  */
-function file_create_target_path($path, $singledir = false, $length = false) {
+function file_create_target_path($path, $singledir = false, $length = false){
     global $_CONFIG;
 
     try{
@@ -257,7 +257,7 @@ function file_create_target_path($path, $singledir = false, $length = false) {
 /*
  * Ensure that the specified file exists in the specified path
  */
-function file_ensure_file($file, $mode = null) {
+function file_ensure_file($file, $mode = null){
     try{
         file_ensure_path(dirname($file));
 
@@ -265,7 +265,10 @@ function file_ensure_file($file, $mode = null) {
             /*
              * Create the file
              */
-            log_console('file_ensure_file(): Warning: file "'.str_log($file).'" did not existed and was created empty to ensure system stability, but information may be missing', 'filenotexists', 'yellow');
+            if(VERBOSE and PLATFORM_SHELL){
+                cli_log('file_ensure_file(): Warning: file "'.str_log($file).'" did not existed and was created empty to ensure system stability, but information may be missing', 'yellow');
+            }
+
             touch($file);
 
             if($mode){
@@ -285,7 +288,7 @@ function file_ensure_file($file, $mode = null) {
 /*
  * Ensures existence of specified path
  */
-function file_ensure_path($path, $mode = null) {
+function file_ensure_path($path, $mode = null){
     global $_CONFIG;
 
     try{
@@ -327,7 +330,7 @@ function file_ensure_path($path, $mode = null) {
 /*
  * Delete the path until directory is no longer empty
  */
-function file_clear_path($path) {
+function file_clear_path($path){
     try{
         if(!file_exists($path)){
             /*
@@ -503,7 +506,9 @@ function file_mimetype($file){
         /*
          * Check the source file
          */
-        file_is($file);
+        if(!is_file($file)){
+            throw new bException(tr('file_mimetype(): Specified path ":path" is not a file', array(':path' => $file)), 'not-file');
+        }
 
         if(!$finfo){
             $finfo = finfo_open(FILEINFO_MIME_TYPE); // return mime type ala mimetype extension
@@ -538,13 +543,13 @@ function file_is_text($file){
 /*
  * Returns if the specified file exists and is a file
  */
-function file_is($file){
+function file_check($file){
     if(!file_exists($file)){
-        throw new bException('file_is(): Specified file "'.str_log($file).'" does not exist', 'notexist');
+        throw new bException('file_check(): Specified file "'.str_log($file).'" does not exist', 'not-exist');
     }
 
     if(!is_file($file)){
-        throw new bException('file_is(): Specified file "'.str_log($file).'" is not a file' , 'notafile');
+        throw new bException('file_check(): Specified file "'.str_log($file).'" is not a file' , 'notafile');
     }
 }
 
@@ -553,9 +558,9 @@ function file_is($file){
 /*
  * Return all files in a directory
  */
-function file_list_tree($path = '.', $recursive = true) {
+function file_list_tree($path = '.', $recursive = true){
     try{
-        if(!is_dir($path)) {
+        if(!is_dir($path)){
             if(!is_file($path)){
                 throw new bException('file_list_tree(): Specified path "'.str_log($path).'" is not a directory', 'path');
             }
@@ -566,7 +571,7 @@ function file_list_tree($path = '.', $recursive = true) {
         $files = array();
         $fh    = opendir($path);
 
-        while (($file = readdir($fh)) !== false) {
+        while (($file = readdir($fh)) !== false){
             # loop through the files, skipping . and .., and recursing if necessary
             if(($file == '.') or ($file == '..')){
                 continue;
@@ -577,7 +582,7 @@ function file_list_tree($path = '.', $recursive = true) {
             if( is_dir($filepath) and $recursive){
                 $files = array_merge($files, file_list_tree($filepath));
 
-            } else {
+            }else {
                 array_push($files, $filepath);
             }
         }
@@ -949,7 +954,7 @@ function file_rename($source, $destination, $search, $rename){
 /*
  * Create temporary directory (sister function from tempnam)
  */
-function file_temp_dir($prefix = '', $system = null, $mode = null) {
+function file_temp_dir($prefix = '', $system = null, $mode = null){
     global $_CONFIG;
 
     try{
@@ -1020,11 +1025,11 @@ function file_temp_dir($prefix = '', $system = null, $mode = null) {
  * chmod an entire directory, recursively
  * Copied from http://www.php.net/manual/en/function.chmod.php#84273
  */
-function file_chmod_directory($path, $filemode, $dirmode = 0770) {
+function file_chmod_directory($path, $filemode, $dirmode = 0770){
     file_chmod_tree($path, $filemode, $dirmode);
 }
 
-function file_chmod_tree($path, $filemode, $dirmode = 0770) {
+function file_chmod_tree($path, $filemode, $dirmode = 0770){
     try{
         if(!is_dir($path)){
             return chmod($path, $filemode);
@@ -1032,7 +1037,7 @@ function file_chmod_tree($path, $filemode, $dirmode = 0770) {
 
         $dh = opendir($path);
 
-        while (($file = readdir($dh)) !== false) {
+        while (($file = readdir($dh)) !== false){
             if(($file != '.') or ($file != '..')) continue;
 
             $fullpath = $path.'/'.$file;
@@ -1126,12 +1131,12 @@ function file_system_path($type, $path = ''){
         case 'img':
             // FALLTHROUGH
         case 'image':
-            return '/pub/img'.(SUBENVIRONMENT ? '/'.SUBENVIRONMENT : '').'/'.$path;
+            return '/pub/img/'.$path;
 
         case 'css':
             // FALLTHROUGH
         case 'style':
-            return '/pub/css'.(SUBENVIRONMENT ? '/'.SUBENVIRONMENT : '').'/'.$path;
+            return '/pub/css/'.$path;
 
         default:
             throw new bException('file_system_path(): Unknown type "'.str_log($type).'" specified', 'unknown');
@@ -1148,11 +1153,11 @@ function file_system_path($type, $path = ''){
 function file_random($path){
     try{
         if(!file_exists($path)){
-            throw new bException('file_random(): The specified path "'.str_log($path).'" does not exist', 'notexists');
+            throw new bException('file_random(): The specified path "'.str_log($path).'" does not exist', 'not-exist');
         }
 
         if(!file_exists($path)){
-            throw new bException('file_random(): The specified path "'.str_log($path).'" does not exist', 'notexists');
+            throw new bException('file_random(): The specified path "'.str_log($path).'" does not exist', 'not-exist');
         }
 
         $files = scandir($path);
@@ -1161,7 +1166,7 @@ function file_random($path){
         unset($files[array_search('..', $files)]);
 
         if(!$files){
-            throw new bException('file_random(): The specified path "'.str_log($path).'" contains no files', 'notexists');
+            throw new bException('file_random(): The specified path "'.str_log($path).'" contains no files', 'not-exist');
         }
 
         return slash($path).array_get_random($files);
@@ -1221,7 +1226,7 @@ function file_session_store($label, $file = null, $path = TMP){
 function file_check_dir($path, $writable = false){
     try{
         if(!file_exists($path)){
-            throw new bException('file_check_dir(): The specified path "'.str_log($path).'" does not exist', 'notexists');
+            throw new bException('file_check_dir(): The specified path "'.str_log($path).'" does not exist', 'not-exist');
         }
 
         if(!is_dir($path)){
@@ -1266,7 +1271,7 @@ function file_http_download($file, $stream = false){
         // make sure the file exists
         if(file_exists($file)){
             header('HTTP/1.0 404 Not Found');
-            throw new bException('file_http_download(): Specified file "'.str_log($file).'" does not exist or is not accessible', 'notexist');
+            throw new bException('file_http_download(): Specified file "'.str_log($file).'" does not exist or is not accessible', 'not-exist');
         }
 
         // make sure the file can be opened
@@ -1463,7 +1468,7 @@ function file_mode_readable($mode){
 function file_tree($path, $method){
     try{
         if(!file_exists($path)){
-            throw new bException(tr('file_tree(): Specified path "%path%" does not exist', array('%path%' => str_log($path))), 'notexist');
+            throw new bException(tr('file_tree(): Specified path "%path%" does not exist', array('%path%' => str_log($path))), 'not-exist');
         }
 
         switch($method){
@@ -1540,12 +1545,434 @@ function file_ensure_writable($path){
 
 
 /*
- * Below are obsolete wrapper functions, that should no longer be used
+ * Returns array with all permission information about the specified file.
+ *
+ * Idea taken from http://php.net/manual/en/function.fileperms.php
  */
-function listdir($path = '.', $recursive = true) {
-    return file_list_tree($path, $recursive);
+function file_type($file){
+    try{
+        $perms  = fileperms($file);
+
+        $socket    = (($perms & 0xC000) == 0xC000);
+        $symlink   = (($perms & 0xA000) == 0xA000);
+        $regular   = (($perms & 0x8000) == 0x8000);
+        $bdevice   = (($perms & 0x6000) == 0x6000);
+        $cdevice   = (($perms & 0x2000) == 0x2000);
+        $directory = (($perms & 0x4000) == 0x4000);
+        $fifopipe  = (($perms & 0x1000) == 0x1000);
+
+        if($socket){
+            /*
+             * This file is a socket
+             */
+            return 'socket';
+
+        }elseif($symlink){
+            /*
+             * This file is a symbolic link
+             */
+            return 'symbolic link';
+
+        }elseif($regular){
+            /*
+             * This file is a regular file
+             */
+            return 'regular file';
+
+        }elseif($bdevice){
+            /*
+             * This file is a block device
+             */
+            return 'block device';
+
+        }elseif($directory){
+            /*
+             * This file is a directory
+             */
+            return 'directory';
+
+        }elseif($cdevice){
+            /*
+             * This file is a character device
+             */
+            return 'character device';
+
+        }elseif($fifopipe){
+            /*
+             * This file is a FIFO pipe
+             */
+            return 'fifo pipe';
+        }
+
+        /*
+         * This file is an unknown type
+         */
+        return 'unknown';
+
+    }catch(Exception $e){
+        throw new bException(tr('file_type(): Failed for file ":file"', array(':file' => $file)), $e);
+    }
 }
-function tempdir($prefix = '', $system = null, $mode = null){
-    return file_temp_dir($prefix, $system, $mode);
+
+
+
+/*
+ * Returns array with all permission information about the specified file.
+ *
+ * Idea taken from http://php.net/manual/en/function.fileperms.php
+ */
+function file_get_permissions($file){
+    try{
+        $perms  = fileperms($file);
+        $retval = array();
+
+        $retval['socket']    = (($perms & 0xC000) == 0xC000);
+        $retval['symlink']   = (($perms & 0xA000) == 0xA000);
+        $retval['regular']   = (($perms & 0x8000) == 0x8000);
+        $retval['bdevice']   = (($perms & 0x6000) == 0x6000);
+        $retval['cdevice']   = (($perms & 0x2000) == 0x2000);
+        $retval['directory'] = (($perms & 0x4000) == 0x4000);
+        $retval['fifopipe']  = (($perms & 0x1000) == 0x1000);
+        $retval['perms']     = $perms;
+        $retval['unknown']   = false;
+
+        if($retval['socket']){
+            /*
+             * This file is a socket
+             */
+            $retval['mode'] = 's';
+            $retval['type'] = 'socket';
+
+        }elseif($retval['symlink']){
+            /*
+             * This file is a symbolic link
+             */
+            $retval['mode'] = 'l';
+            $retval['type'] = 'symbolic link';
+
+        }elseif($retval['regular']){
+            /*
+             * This file is a regular file
+             */
+            $retval['mode'] = '-';
+            $retval['type'] = 'regular file';
+
+        }elseif($retval['bdevice']){
+            /*
+             * This file is a block device
+             */
+            $retval['mode'] = 'b';
+            $retval['type'] = 'block device';
+
+        }elseif($retval['directory']){
+            /*
+             * This file is a directory
+             */
+            $retval['mode'] = 'd';
+            $retval['type'] = 'directory';
+
+        }elseif($retval['cdevice']){
+            /*
+             * This file is a character device
+             */
+            $retval['mode'] = 'c';
+            $retval['type'] = 'character device';
+
+        }elseif($retval['fifopipe']){
+            /*
+             * This file is a FIFO pipe
+             */
+            $retval['mode'] = 'p';
+            $retval['type'] = 'fifo pipe';
+
+        }else{
+            /*
+             * This file is an unknown type
+             */
+            $retval['mode']    = 'u';
+            $retval['type']    = 'unknown';
+            $retval['unknown'] = true;
+        }
+
+        $retval['owner'] = array('r' =>  ($perms & 0x0100),
+                                 'w' =>  ($perms & 0x0080),
+                                 'x' => (($perms & 0x0040) and !($perms & 0x0800)),
+                                 's' => (($perms & 0x0040) and  ($perms & 0x0800)),
+                                 'S' =>  ($perms & 0x0800));
+
+        $retval['group'] = array('r' =>  ($perms & 0x0020),
+                                 'w' =>  ($perms & 0x0010),
+                                 'x' => (($perms & 0x0008) and !($perms & 0x0400)),
+                                 's' => (($perms & 0x0008) and  ($perms & 0x0400)),
+                                 'S' =>  ($perms & 0x0400));
+
+        $retval['other'] = array('r' =>  ($perms & 0x0004),
+                                 'w' =>  ($perms & 0x0002),
+                                 'x' => (($perms & 0x0001) and !($perms & 0x0200)),
+                                 't' => (($perms & 0x0001) and  ($perms & 0x0200)),
+                                 'T' =>  ($perms & 0x0200));
+
+        /*
+         * Owner
+         */
+        $retval['mode'] .= (($perms & 0x0100) ? 'r' : '-');
+        $retval['mode'] .= (($perms & 0x0080) ? 'w' : '-');
+        $retval['mode'] .= (($perms & 0x0040) ?
+                           (($perms & 0x0800) ? 's' : 'x' ) :
+                           (($perms & 0x0800) ? 'S' : '-'));
+
+        /*
+         * Group
+         */
+        $retval['mode'] .= (($perms & 0x0020) ? 'r' : '-');
+        $retval['mode'] .= (($perms & 0x0010) ? 'w' : '-');
+        $retval['mode'] .= (($perms & 0x0008) ?
+                           (($perms & 0x0400) ? 's' : 'x' ) :
+                           (($perms & 0x0400) ? 'S' : '-'));
+
+        /*
+         * World
+         */
+        $retval['mode'] .= (($perms & 0x0004) ? 'r' : '-');
+        $retval['mode'] .= (($perms & 0x0002) ? 'w' : '-');
+        $retval['mode'] .= (($perms & 0x0001) ?
+                           (($perms & 0x0200) ? 't' : 'x' ) :
+                           (($perms & 0x0200) ? 'T' : '-'));
+
+        return $retval;
+
+    }catch(Exception $e){
+        throw new bException('file_get_permissions(): Failed', $e);
+    }
+}
+
+
+
+/*
+ * Execute the specified callback on all files in the specified tree
+ */
+function file_tree_execute($params){
+    try{
+        array_params($params);
+        array_default($params, 'ignore_exceptions', true);
+        array_default($params, 'path'             , null);
+        array_default($params, 'filter'           , null);
+        array_default($params, 'follow_symlinks'  , false);
+        array_default($params, 'follow_hidden'    , false);
+
+        if(empty($params['callback'])){
+            throw new bException(tr('file_tree_execute(): No callback function specified'), 'not-specified');
+        }
+
+        if(!is_callable($params['callback'])){
+            throw new bException(tr('file_tree_execute(): Specified callback is not a function'), 'invalid');
+        }
+
+        if(!file_exists($params['path'])){
+            throw new bException(tr('file_tree_execute(): Specified path ":path" does not exist', array(':path' => $params['path'])), 'file-not-exist');
+        }
+
+        if((substr(basename($params['path']), 0, 1) == '.') and !$params['follow_hidden']){
+            if(VERBOSE and PLATFORM_SHELL){
+                cli_log(tr('file_tree_execute(): Skipping file ":file" because its hidden', array(':file' => $params['path'])), 'yellow');
+            }
+
+            return 0;
+        }
+
+        $count = 0;
+        $type  = file_type($params['path']);
+
+        switch($type){
+            case 'regular file':
+                if($params['filter'] and !preg_match($params['filter'], $params['path'])){
+                    if(VERBOSE and PLATFORM_SHELL){
+                        cli_log(tr('file_tree_execute(): Skipping file ":file" because of filter ":filter"', array(':file' => $params['path'], ':filter' => $params['filter'])), 'yellow');
+                    }
+
+                    return 0;
+                }
+
+                $params['callback']($params['path']);
+                $count++;
+
+                if(PLATFORM_SHELL){
+                    if(VERBOSE){
+                        cli_log(tr('file_tree_execute(): Executed code for file ":file"', array(':file' => $params['path'])), 'green');
+
+                    }else{
+                        cli_dot();
+                    }
+                }
+
+                break;
+
+            case 'symlink':
+                if($params['follow_symlinks']){
+                    $params['path'] = readlink($params['path']);
+                    $count += file_tree_execute($params);
+                }
+
+                break;
+
+            case 'directory':
+                $h    = opendir($params['path']);
+                $path = slash($params['path']);
+
+                while(($file = readdir($h)) !== false){
+                    try{
+                        if(($file == '.') or ($file == '..')) continue;
+
+                        if((substr(basename($file), 0, 1) == '.') and !$params['follow_hidden']){
+                            if(VERBOSE and PLATFORM_SHELL){
+                                cli_log(tr('file_tree_execute(): Skipping file ":file" because its hidden', array(':file' => $file)), 'yellow');
+                            }
+
+                            continue;
+                        }
+
+                        $file = $path.$file;
+
+                        if(!file_exists($file)){
+                            throw new bException(tr('file_tree_execute(): Specified path ":path" does not exist', array(':path' => $file)), 'file-not-exist');
+                        }
+
+                        $type = file_type($file);
+
+                        switch($type){
+                            case 'link':
+                                if(!$params['follow_symlinks']){
+                                    continue;
+                                }
+
+                                $file = readlink($file);
+
+                                /*
+                                 * We got the target file, but we don't know what it is.
+                                 * Restart the process recursively to process this file
+                                 */
+
+                                // FALLTHROUGH
+
+                            case 'directory':
+                                $params['path'] = $file;
+                                $count += file_tree_execute($params);
+                                break;
+
+                            case 'regular file':
+                                if($params['filter'] and !preg_match($params['filter'], $file)){
+                                    if(VERBOSE and PLATFORM_SHELL){
+                                        cli_log(tr('file_tree_execute(): Skipping file ":file" because of filter ":filter"', array(':file' => $file, ':filter' => $params['filter'])), 'yellow');
+                                    }
+
+                                    continue;
+                                }
+
+                                $params['callback']($file);
+                                $count++;
+
+                                if(PLATFORM_SHELL){
+                                    if(VERBOSE){
+                                        cli_log(tr('file_tree_execute(): Executed code for file ":file"', array(':file' => $file)), 'green');
+
+                                    }else{
+                                        cli_dot();
+                                    }
+                                }
+
+                                break;
+
+                            default:
+                                /*
+                                 * Skip this unsupported file type
+                                 */
+                                if(VERBOSE and PLATFORM_SHELL){
+                                    cli_log(tr('file_tree_execute(): Skipping file ":file" with unsupported file type ":type"', array(':file' => $file, ':type' => $type)), 'yellow');
+                                }
+                        }
+
+                    }catch(Exception $e){
+                        if(!$params['ignore_exceptions']){
+                            throw $e;
+                        }
+
+                        if($e->getCode() === 'file-not-exist'){
+                            if(VERBOSE and PLATFORM_SHELL){
+                                cli_log(tr('file_tree_execute(): Skipping file ":file", it does not exist (in case of a symlink, it may be that the target does not exist)', array(':file' => $file)), 'yellow');
+                            }
+
+                        }else{
+                            log_error($e);
+                        }
+                    }
+                }
+
+                closedir($h);
+
+                break;
+
+            default:
+                /*
+                 * Skip this unsupported file type
+                 */
+                if(VERBOSE and PLATFORM_SHELL){
+                    cli_log(tr('file_tree_execute(): Skipping file ":file" with unsupported file type ":type"', array(':file' => $file, ':type' => $params['path'])), 'yellow');
+                }
+        }
+
+        return $count;
+
+    }catch(Exception $e){
+        throw new bException('file_tree_execute(): Failed', $e);
+    }
+}
+
+
+
+/*
+ * Execute the specified callback after setting the specified mode on the
+ * specified path. Once the callback has finished, return to the original file
+ * mode.
+ */
+function file_execute_mode($path, $mode, $callback){
+    try{
+        $original_mode = fileperms($path);
+        chmod($path, $mode);
+
+        $retval = $callback();
+        chmod($path, $original_mode);
+
+        return $retval;
+
+    }catch(Exception $e){
+        throw new bException('file_execute_mode(): Failed', $e);
+    }
+}
+
+
+
+/*
+ *
+ */
+function file_link_exists($file){
+    if(file_exists($file)){
+        return true;
+    }
+
+    if(is_link($file)){
+        throw new bException(tr('file_link_exists(): Symlink ":source" has non existing target ":target"', array(':source' => $file, ':target' => readlink($file))), 'no-target');
+    }
+
+    throw new bException(tr('file_link_exists(): Symlink ":source" has non existing target ":target"', array(':source' => $file, ':target' => readlink($file))), 'not-exist');
+}
+
+
+
+/*
+ * OBSOLETE
+ * WARNING: FROM HERE BE OBSOLETE FUNCTIONS
+ */
+function file_is($file){
+    return is_file($file);
 }
 ?>

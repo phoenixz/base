@@ -149,17 +149,14 @@ $_CONFIG['editors']            = array('imageupload'      => 'session',         
 $_CONFIG['feedback']           = array('emails'           => array('Sven Oostenbrink Support' => 'support@svenoostenbrink.com'));
 
 // Flash alert configuration
-$_CONFIG['flash']              = array('default_class'    => '',
-                                       'css_name'         => 'flash',
-                                       'button'           => '',
-                                       'prefix'           => '');
+$_CONFIG['flash']              = array('html'             => '<div class="flash:type">:message</div>');
 
 //
-$_CONFIG['formats']            = array('date'           => 'Ymd',
-                                       'time'           => 'YmdHis',
-                                       'human_date'     => 'd/m/Y',
-                                       'human_time'     => 'H:i:s A',
-                                       'human_datetime' => 'd/m/Y H:i:s A');
+$_CONFIG['formats']            = array('date'             => 'Ymd',
+                                       'time'             => 'YmdHis',
+                                       'human_date'       => 'd/m/Y',
+                                       'human_time'       => 'H:i:s A',
+                                       'human_datetime'   => 'd/m/Y H:i:s A');
 
 // Filesystem configuration
 $_CONFIG['fs']                 = array('system_tempdir'   => true,                                          // ?
@@ -271,11 +268,17 @@ $_CONFIG['production']         = true;
 $_CONFIG['protocol']           = 'http://';                                                                 // The base protocol of this website. Basically either "http://",  or "https://".
 
 // Redirects configuration (This ususally would not require changes unless you want to have other file names for certain actions like signin, etc)
-$_CONFIG['redirects']          = array('query'            => false,                                         // If URL contains a query ? redirect to URL without query, see http_redirect_query_url() and startup
+$_CONFIG['redirects']          = array('auto'             => 'get',                                         // Auto redirects (usually because of user or right required) done by "session" or "get"
+                                       'query'            => false,                                         // If URL contains a query ? redirect to URL without query, see http_redirect_query_url() and startup
                                        'index'            => 'index.php',                                   // What is the default index page for this site
+                                       'accessdenied'     => 'access-denied',                               // Usually won't redirect, but just show
                                        'signin'           => 'signin.php',                                  // What is the default signin page for this site
+                                       'lock'             => 'lock.php',                                    // What is the default lock page for this site
                                        'aftersignin'      => 'index.php',                                   // Where will the site redirect to by default after a signin?
                                        'aftersignout'     => 'index.php');                                  //Where will the site redirect to by default after a signout?
+
+// Root URL of the website
+$_CONFIG['root']               = '';                                                                        //
 
 // Share buttons
 $_CONFIG['share']              = array('provider'         => false);                                        // Share button provider
@@ -285,6 +288,8 @@ $_CONFIG['security']           = array('signin'           => array('save_passwor
                                                                    'ip_lock'       => false,                // Either "false", "true" or number n (which makes it lock to users with the right ip_lock), or "ip address" or array("ip address", "ip address", ...). If specified as true, only 1 IP will be allowed. If specified as number N, up to N IP addresses will be allowed. If specified as "ip address", only that IP address will be allowed. If specified as array("ip address", ...) all IP addresses in that array will be allowed
                                                                    'two_factor'    => false),               // Either "false" or a valid twilio "from" phone number
 
+                                       'passwords'        => array('algorithm'     => 'sha1',               // What algorithm will we use to store the passwords?
+                                                                   'test'          => false),               // Test new user password strength?
                                        'user'             => 'apache',                                      //
                                        'group'            => 'apache',                                      //
                                        'umask'            =>  0007,                                         //
@@ -329,18 +334,18 @@ $_CONFIG['sso']                = array('facebook'         => false,             
 // Sync configuration.
 $_CONFIG['sync']               = array();                                                                   //
 
-// Root URL of the website
-$_CONFIG['root']               = '';                                                                        //
+// Sync configuration.
+$_CONFIG['statistics']         = array('enabled'            => true);                                       //
+
+// System configuration
+$_CONFIG['system']             = array('translator'         => 'translator.localhost',
+                                       'obsolete_exception' => true);                                       //
 
 // Timezone configuration. See http://www.php.net/manual/en/timezones.php for more info
 $_CONFIG['timezone']           = 'America/Mexico_City';                                                     //
 
 // Default title configuration
 $_CONFIG['title']              = 'Base';                                                                    //
-
-// System configuration
-$_CONFIG['system']             = array('translator'         => 'translator.localhost',
-                                       'obsolete_exception' => true);                                       //
 
 // Temporary path location, either "local" (ROOT/tmp/) or "global" (/tmp/)
 $_CONFIG['tmp']                = 'local';                                                                   // Either "local" or "global". "local" will save all temporary files in ROOT/tmp, "global" will save all temporary files in /tmp/PROJECT/

@@ -20,23 +20,23 @@ $_CONFIG['db']['core']['pdo_attributes'] = array(PDO::ATTR_EMULATE_PREPARES  => 
                                                  PDO::ATTR_STRINGIFY_FETCHES => true);
 
 
-this_script_already_runs();
+cli_exclusive();
 cli_only();
 
 /*
  * Get some optional data required for loaddata
  */
-$username     = argument('user'    , true, argument('username'  , true, 'toolkit'));
-$password     = argument('pass'    , true, argument('password'  , true, 'toolkit'));
-$database     = argument('database', true, 'geonames');
-$skipcounties = argument('nocounties');
+$username     = cli_argument('user'    , true, cli_argument('username'  , true, 'toolkit'));
+$password     = cli_argument('pass'    , true, cli_argument('password'  , true, 'toolkit'));
+$database     = cli_argument('database', true, 'geonames');
+$skipcounties = cli_argument('nocounties');
 
 /*
  * Import related data
  */
-$threshold = argument('threshold', true, 100);
+$threshold = cli_argument('threshold', true, 100);
 
-switch(argument(0)){
+switch(cli_argument(0)){
     case 'clear':
         log_console('Clearing all GEO data', '', 'white');
 
@@ -53,7 +53,7 @@ switch(argument(0)){
         log_console('Clearing states', '', '');
         sql_query('DELETE FROM geo_states;');
 
-        if(argument('all')){
+        if(cli_argument('all')){
             log_console('Clearing countries', '', '');
             sql_query('DELETE FROM geo_countries;');
 
@@ -96,7 +96,7 @@ switch(argument(0)){
         $geoimport_path = get_global_data_path('geonames');
 
         if(!$username or !$password){
-            throw new bException('No user name and / or password specified', 'notspecified');
+            throw new bException('No user name and / or password specified', 'not-specified');
         }
 
         /*
@@ -127,7 +127,7 @@ switch(argument(0)){
          *
          * See data/doc/geo.txt for more information
          */
-        if(argument('notlocal')){
+        if(cli_argument('notlocal')){
             log_console('Updating geonames_import_data.sql for non local import', 'warning', 'yellow');
 
             $uniqid = uniqid();
@@ -159,7 +159,7 @@ switch(argument(0)){
             throw new bException('Import failed. In case of "The used command is not allowed with this MySQL version" error, please try the "notlocal" command line option, see geo.txt documentation for more information', $e);
         }
 
-        if(argument('notlocal')){
+        if(cli_argument('notlocal')){
             /*
              * Remove dat symlink
              */
@@ -225,8 +225,8 @@ switch(argument(0)){
         break;
 
     case 'import':
-        if(!$country_list = argument('country', true)){
-            throw new bException('No country list specified to import data from. Please specify "country COUNTRY,COUNTRY,COUNTRY"', 'notspecified');
+        if(!$country_list = cli_argument('country', true)){
+            throw new bException('No country list specified to import data from. Please specify "country COUNTRY,COUNTRY,COUNTRY"', 'not-specified');
         }
 
         $country_list = explode(',', $country_list);
@@ -245,13 +245,13 @@ switch(argument(0)){
 
         load_libs('seo');
 
-        $types['all']        =  argument('all');
-        $types['continents'] = (argument('continents') or $types['all']);
-        $types['regions']    = (argument('regions')    or $types['all']);
-        $types['countries']  = (argument('countries')  or $types['all']);
-        $types['states']     = (argument('states')     or $types['all']);
-        $types['counties']   = (argument('counties')   or $types['all']);
-        $types['cities']     = (argument('cities')     or $types['all']);
+        $types['all']        =  cli_argument('all');
+        $types['continents'] = (cli_argument('continents') or $types['all']);
+        $types['regions']    = (cli_argument('regions')    or $types['all']);
+        $types['countries']  = (cli_argument('countries')  or $types['all']);
+        $types['states']     = (cli_argument('states')     or $types['all']);
+        $types['counties']   = (cli_argument('counties')   or $types['all']);
+        $types['cities']     = (cli_argument('cities')     or $types['all']);
 
         log_console('Caching timezone data...', '', '');
         $timezones = sql_list('SELECT `code`, `id` FROM geo_timezones;');
@@ -839,10 +839,10 @@ switch(argument(0)){
         break;
 
     case '':
-        throw new bException('No command specified. Please specify one of "clear", "download", "loaddata", "fixdata", "import"', 'notspecified');
+        throw new bException('No command specified. Please specify one of "clear", "download", "loaddata", "fixdata", "import"', 'not-specified');
 
     default:
-        throw new bException('Unknown do "'.str_log(argument(0)).'" specified. Please specify one of "clear", "download", "loaddata", "fixdata", "import"', 'unknown');
+        throw new bException('Unknown do "'.str_log(cli_argument(0)).'" specified. Please specify one of "clear", "download", "loaddata", "fixdata", "import"', 'unknown');
 }
 
 sql_query('SET autocommit         = 1;');

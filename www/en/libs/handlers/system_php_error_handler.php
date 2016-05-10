@@ -2,7 +2,7 @@
 debug(true);
 $session   = "\n\n\n<br><br>SESSION DATA<br><br>\n\n\n".htmlentities(print_r(isset_get($_SESSION), true));
 $server    = "\n\n\n<br><br>SERVER DATA<br><br>\n\n\n".htmlentities(print_r(isset_get($_SERVER), true));
-$trace     = "\n\nFUNCTION TRACE\n".htmlentities(print_r(debug_trace(''), true));
+$trace     = "\n\nFUNCTION TRACE\n".htmlentities(print_r(debug_trace(), true));
 
 notify('error', '<pre> PHP ERROR ['.$errno.'] "'.$errstr.'" in "'.$errfile.'@'.$errline.'"'.$server.$session.$trace.'</pre>');
 

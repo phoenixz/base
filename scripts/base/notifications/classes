@@ -53,16 +53,16 @@ if(!function_exists('s_set_status')){
 
 
 try{
-	cli_only();
+    cli_only();
 
-    switch($method = argument(0)){
+    switch($method = cli_argument(0)){
         case 'add':
             // FALLTHROUGH
         case 'create':
             try{
-                $class = notifications_validate_class(array('name'        => argument('name'       , true),
-                                                            'methods'     => argument('methods'    , true),
-                                                            'description' => argument('description', true)));
+                $class = notifications_validate_class(array('name'        => cli_argument('name'       , true),
+                                                            'methods'     => cli_argument('methods'    , true),
+                                                            'description' => cli_argument('description', true)));
 
                 sql_query('INSERT INTO `notifications_classes` (`createdby`, `name`, `methods`, `description`)
                            VALUES                              (:createdby , :name , :methods , :description )',
@@ -84,14 +84,14 @@ try{
             // FALLTHROUGH
         case 'modify':
             try{
-                $class     = argument(1);
+                $class     = cli_argument(1);
                 $old_class = sql_get('SELECT `id`, `name`, `methods`, `description` FROM `notifications_classes` WHERE `id` = :class OR `name` = :class', array(':class' => $class));
 
                 if(!$old_class){
-                    throw new bException(tr('The specified class "%class%" does not exist', array('%class%' => $class)), 'notexist');
+                    throw new bException(tr('The specified class "%class%" does not exist', array('%class%' => $class)), 'not-exist');
                 }
 
-                $class = array_copy_clean($old_class, arguments('name,methods,description'));
+                $class = array_copy_clean($old_class, cli_arguments('name,methods,description'));
                 $class = notifications_validate_class($class);
 
                 sql_query('UPDATE `notifications_classes`
@@ -119,7 +119,7 @@ try{
             break;
 
         case 'list':
-            $all = argument('all');
+            $all = cli_argument('all');
             $r   = sql_query('SELECT    `notifications_classes`.`id`,
                                         `notifications_classes`.`name`,
                                         `notifications_classes`.`methods`,
@@ -149,7 +149,7 @@ try{
 
         case 'delete':
             try{
-                $count = s_set_status(argument(null), 'delete');
+                $count = s_set_status(cli_argument(null), 'delete');
                 log_console(tr('Deleted "%count%" notification classes', array('%count%' => $count)), '', 'green');
 
             }catch(Exception $e){
@@ -160,7 +160,7 @@ try{
 
         case 'undelete':
             try{
-                $count = s_set_status(argument(null), NULL);
+                $count = s_set_status(cli_argument(null), NULL);
                 log_console(tr('Undeleted "%count%" notification classes', array('%count%' => $count)), '', 'green');
 
             }catch(Exception $e){
@@ -171,7 +171,7 @@ try{
 
         case 'erase':
             try{
-                $count = s_set_status(argument(null), 'erase');
+                $count = s_set_status(cli_argument(null), 'erase');
                 log_console(tr('Erased "%count%" notification classes', array('%count%' => $count)), '', 'green');
 
             }catch(Exception $e){

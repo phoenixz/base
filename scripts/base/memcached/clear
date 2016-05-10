@@ -14,8 +14,8 @@ try{
         log_console('Could not clear any memcached servers, memcached has been disabled in the configuration', 'disabled', 'yellow');
     }
 
-    $GLOBALS['memcached']->flush(argument('delay', true, 0));
-    log_console('Finished clearing all objects in memcached with a delay of "'.argument('delay', true, 0).'" seconds', 'finished', 'white');
+    $GLOBALS['memcached']->flush(cli_argument('delay', true, 0));
+    log_console('Finished clearing all objects in memcached with a delay of "'.cli_argument('delay', true, 0).'" seconds', 'finished', 'white');
 
 }catch(Exception $e){
     throw new bException('scripts/memcached/clear: Failed', $e);

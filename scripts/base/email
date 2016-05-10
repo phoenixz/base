@@ -4,148 +4,401 @@
  * This is the email interface script
  */
 $usage = "./scripts/base/email\n".
-         "./scripts/base/email method METHOD option users USERS USERS ... [filter FILTER]\n";
+         "./scripts/base/email send \n";
+         "./scripts/base/email poll \n";
 
-$help  = "This is the email interface script
+$help  = "This is the email management script
 
-method | methods
-    SEND                - Send unsent emails that are stored on the database
-                          and still have `status` = new. Then update the
-                          status = sent.
+METHODS
 
-    POLL                - Poll for new emails
+send                           - Send unsent emails that are stored on the
+                                 database and still have `status` = new. Then
+                                 update the status = sent.
 
-user | users            - The user email to scan. The user should either exist
-                          in the database, or be defined in the configuration
-                          file
+list                            - List the available email accounts
 
-filter                  - Filter for certain email messages. Valid filters are:
-    ALL                 - return all messages matching the rest of the criteria
-    ANSWERED            - match messages with the \\ANSWERED flag set
-    BCC        [string] - match messages with [string] in the Bcc: field
-    BEFORE     [date]   - match messages with Date: before [date]
-    BODY       [string] - match messages with [string] in the body of the
-                          message
-    CC         [string] - match messages with [string] in the Cc: field
-    DELETED             - match deleted messages
-    FLAGGED             - match messages with the \\FLAGGED (sometimes referred
-                          to as Important or Urgent) flag set
-    FROM       [string] - match messages with [string] in the From: field
-    KEYWORD    [string] - match messages with [string] as a keyword
-    NEW                 - match new messages
-    OLD                 - match old messages
-    ON         [date]   - match messages with Date: matching [date]
-    RECENT              - match messages with the \\RECENT flag set
-    SEEN                - match messages that have been read (the \\SEEN flag
-                          is set)
-    SINCE      [date]   - match messages with Date: after [date]
-    SUBJECT    [string] - match messages with [string] in the Subject:
-    TEXT       [string] - match messages with text [string]
-    TO         [string] - match messages with [string] in the To:
-    UNANSWERED          - match messages that have not been answered
-    UNDELETED           - match messages that are not deleted
-    UNFLAGGED           - match messages that are not flagged
-    UNKEYWORD  [string] - match messages that do not have the keyword [string]
-    UNSEEN              - match messages which have not been read yet";
+poll                            - Poll for new emails
+
+imap                            - Execute imap commands
+
+        list                    - List the available mail boxes for the
+                                  specifed account
+
+
+
+OPTIONS
+
+--users                         - The user email to scan. The user should
+                                  either exist in the database, or be defined
+                                  in the configuration file
+
+--all | -a                      - [poll, imap] will poll all registered email
+                                  addresses
+
+--delete                        - [poll] Delete messages after they have been
+                                  received. Cannot be used in combination with
+                                  --peek
+
+--peek                          - [poll] Do not set the \"SEEN\" flag when
+                                  reading the email messages, leaving them as
+                                  \"unread\". Cannot be used in combination with
+                                  --delete
+
+--mail-boxes                    - [poll] Comma separated list of mail boxes that
+                                  should be polled
+
+--loop N                        - [poll, imap] will restart polling process
+                                  right after it finishes for N times. If N is
+                                  zero, then it will restart for ever. If N is
+                                  one, then it will only run once
+
+--usleep N                      - [poll, imap] Will make the process usleep
+                                  for N microseconds after each poll. Defaults
+                                  to 5000
+
+--loop-sleep N                  - [poll, imap] Will make the process sleep
+                                  for N seconds in between each poll loop. Only
+                                  applies when using --loop. Defaults to 5
+
+--filter                        - Filter for certain email messages. Valid
+                                  filters are:
+
+    ALL                          - Return all messages matching the rest of the
+                                   criteria
+    ANSWERED                     - Match messages with the \\ANSWERED flag set
+    BCC        [string]          - Match messages with [string] in the Bcc:
+                                   field
+    BEFORE     [date]            - Match messages with Date: before [date]
+    BODY       [string]          - Match messages with [string] in the body of
+                                   the message
+    CC         [string]          - Match messages with [string] in the Cc:
+                                   field
+    DELETED                      - Match deleted messages
+    FLAGGED                      - Match messages with the \\FLAGGED (sometimes
+                                   referred to as Important or Urgent) flag set
+    FROM       [string]          - Match messages with [string] in the From:
+                                   field
+    KEYWORD    [string]          - Match messages with [string] as a keyword
+    NEW                          - Match new messages
+    OLD                          - Match old messages
+    ON         [date]            - Match messages with Date: matching [date]
+    RECENT                       - Match messages with the \\RECENT flag set
+    SEEN                         - Match messages that have been read (the
+                                   \\SEEN flag is set)
+    SINCE      [date]            - Match messages with Date: after [date]
+    SUBJECT    [string]          - Match messages with [string] in the Subject:
+    TEXT       [string]          - Match messages with text [string]
+    TO         [string]          - Match messages with [string] in the To:
+    UNANSWERED                   - Match messages that have not been answered
+    UNDELETED                    - Match messages that are not deleted
+    UNFLAGGED                    - Match messages that are not flagged
+    UNKEYWORD  [string]          - Match messages that do not have the keyword
+                                   [string]
+    UNSEEN                       - Match messages which have not been read yet";
 
 require_once(dirname(__FILE__).'/../../libs/startup.php');
 
-cli_only();
+cli_only(true);
 load_libs('email');
 
-$criteria = strtoupper(argument('filter', true, 'UNSEEN'));
-$users    = argument('users'  , true, argument('user'  , true));
-$method   = argument('methods', true, argument('method', true));
+$criteria = strtoupper(cli_argument('--filter', true, 'UNSEEN'));
+$users    = cli_argument('--user', true);
+
+if($users){
+    /*
+     * Only poll the specified email addresses
+     */
+    $in = sql_in($users);
+
+    $r  = sql_query('SELECT     `email_accounts`.`email`,
+                                IFNULL(IFNULL(`users`.`name`, `users`.`email`), `users`.`username`) AS `user`
+
+                     FROM      `email_accounts`
+
+                     LEFT JOIN `users`
+                     ON        `users`.`id` = `email_accounts`.`users_id`
+
+                     WHERE     `email_accounts`.`email` IN ('.implode(',', array_keys($in)).')', $in);
+
+}else{
+    $in = null;
+    $r  = sql_query('SELECT    `email_accounts`.`email`,
+                               IFNULL(IFNULL(`users`.`name`, `users`.`email`), `users`.`username`) AS `user`
+
+                     FROM      `email_accounts`
+
+                     LEFT JOIN `users`
+                     ON        `users`.`id` = `email_accounts`.`users_id`
+
+                     WHERE     `email_accounts`.`status` IS NULL');
+}
 
 /*
  * Validate filters
  */
 if(!in_array($criteria, array('ALL', 'ANSWERED', 'DELETED', 'FLAGGED', 'NEW', 'OLD', 'RECENT', 'SEEN', 'UNANSWERED', 'UNDELETED', 'UNFLAGGED', 'UNSEEN'))){
     if(!in_array(str_until($criteria, '='), array('BCC', 'BEFORE', 'BODY', 'CC', 'FROM', 'KEYWORD', 'ON', 'SINCE', 'SUBJECT', 'TEXT', 'TO', 'UNKEYWORD'))){
-        throw new bException(tr('Unknown filter "%filter%" specified', array('%filter%' => $criteria)), 'unknown');
+        throw new bException(tr('Unknown filter ":filter" specified', array(':filter' => $criteria)), 'unknown');
     }
 }
 
-switch($method){
+switch(cli_method()){
+    case 'clear':
+        /*
+         * Requires FORCE because its effin dangerous!
+         */
+        $all = cli_argument('--all');
+        cli_no_arguments_left();
+
+        if($all){
+            if(!FORCE){
+                throw new bException(tr('The "clear" method requires the -F or --force option because its dangerous, it will wipe ALL your email tables!'), 'denied');
+            }
+// :TEST: Haven't tested this yet, no idea if and how it works
+
+            load_libs('file');
+
+            $r = sql_query('DELETE FROM `email_files`');
+
+            while($file = sql_fetch($r)){
+                file_delete($file);
+            }
+
+            sql_query('DELETE FROM `email_files`');
+            sql_query('DELETE FROM `email_messages`');
+            sql_query('DELETE FROM `email_conversations`');
+            sql_query('DELETE FROM `email_accounts`');
+
+            cli_log(tr('Finished wiping ALL email data, messages, conversations, accounts, etc...'), 'green');
+
+        }else{
+            if(!FORCE){
+                throw new bException(tr('The "clear" method requires the -F or --force option because its dangerous, it will wipe your email_messages and email_conversations tables'), 'denied');
+            }
+
+            sql_query('DELETE FROM `email_messages`');
+            sql_query('DELETE FROM `email_conversations`');
+
+            cli_log(tr('Finished wiping email messages and conversations'), 'green');
+        }
+
+        break;
+
     case 'send':
         /*
          * Send the emails that are still on DB with `status` = "new"
          */
-        log_message(tr('Sending unsent emails...'), '', 'white');
+        cli_no_arguments_left();
+        cli_log(tr('Sending unsent emails'), 'white');
+
         email_send_unsent();
-        log_message(tr('Sent emails'), '', 'green');
+        cli_log(tr('Sent emails'), 'green');
         break;
 
     case 'list':
-        if(!$users){
-            if(!argument('all')){
-                throw new bException(tr('No users specified'), 'notspecified');
-            }
+        $all = cli_argument('--all');
+        cli_no_arguments_left();
 
-            $users = array_keys($_CONFIG['email']['users']);
+        cli_log(str_size(tr('Email'), 32).str_size(tr('User'), 32), 'cyan');
+
+        while($email = sql_fetch($r)){
+            cli_log(str_size($email['email'], 32).str_size($email['user'], 32));
         }
 
-        $list = email_list($users, $criteria);
-        showdie($list);
+        break;
+
+    case 'imap':
+        $sub = cli_argument(1);
+
+        switch($sub){
+            case 'info':
+                /*
+                 * list the available mail boxes for the specified users
+                 */
+                $count = 0;
+
+                cli_no_arguments_left();
+                load_libs('numbers');
+
+                while($account = sql_fetch($r)){
+                    cli_log(tr('Fetching information for email ":email"', array(':email' => $account['email'])), 'white');
+                    $userdata = email_get_user($account['email']);
+
+                    $userdata['imap'] = str_until($userdata['imap'], '}').'}';
+                    $imap             = email_connect($userdata);
+                    $info             = imap_mailboxmsginfo($imap);
+
+                    cli_log(tr('Account: :account'       , array(':account' => $account['email'])), 'cyan');
+                    cli_log(tr('Linked user: :user'      , array(':user'    => $account['user'])));
+                    cli_log(tr('Mailbox: :mailbox'       , array(':mailbox' => $info->Mailbox)));
+                    cli_log(tr('Last change: :date'      , array(':date'    => $info->Date)));
+                    cli_log(tr('Total messages: :count'  , array(':count'   => (integer) $info->Nmsgs)));
+                    cli_log(tr('Recent messages: :count' , array(':count'   => (integer) $info->Recent)));
+                    cli_log(tr('Unread messages: :count' , array(':count'   => (integer) $info->Unread)));
+                    cli_log(tr('Deleted messages: :count', array(':count'   => (integer) $info->Deleted)));
+                    cli_log(tr('Mailbox size: :size'     , array(':size'    => bytes((integer) $info->Size))));
+
+                    $count++;
+                }
+
+                cli_log(tr('Finished listing all mail boxes for ":count" emails', array(':count' => $count)), 'green');
+
+                break;
+
+            case 'list':
+                /*
+                 * list the available mail boxes for the specified users
+                 */
+                cli_no_arguments_left();
+
+                $count = 0;
+
+                while($account = sql_fetch($r, 'email')){
+                    cli_log(tr('Fetching mail boxes for email ":email"', array(':email' => $account)), 'white');
+                    $userdata = email_get_user($account);
+
+                    $userdata['imap'] = str_until($userdata['imap'], '}').'}';
+                    $imap             = email_connect($userdata);
+                    $boxes            = imap_list($imap, $userdata['imap'], '*');
+
+                    cli_log(tr('Found ":count" boxes', array(':count' => count($boxes))), 'cyan');
+
+                    foreach($boxes as $box){
+                        cli_log($box);
+                    }
+
+                    $count++;
+                }
+
+                cli_log(tr('Finished listing all mail boxes for ":count" accounts', array(':count' => $count)), 'green');
+
+                break;
+
+            case 'delete':
+                /*
+                 * Delete a group of messages
+                 */
+                $seen       = cli_argument('--seen');
+                $old        = cli_argument('--old', true, 7);
+                $mail_boxes = cli_argument('--mail-boxes', true, 'inbox');
+
+                cli_no_arguments_left();
+
+                $mail_boxes = explode(',', $mail_boxes);
+                $total      = 0;
+
+                while($account = sql_fetch($r, 'email')){
+                    cli_log(tr('Deleting emails for account ":account"', array(':account' => $account)), 'white');
+
+                    foreach($mail_boxes as $mail_box){
+                        $count = email_delete(array('account'  => $account,
+                                                    'mail_box' => $mail_box,
+                                                    'criteria' => $criteria,
+                                                    'filters'  => array('seen' => $seen,
+                                                                        'old'  => $old)));
+                    }
+
+                    $total += $count;
+                    cli_log(tr('Deleted ":count" emails', array(':count' => $count)), 'green');
+                }
+
+                cli_log(tr('Finished deleting ":total" mails in ":count" accounts', array(':count' => $count, ':total' => $total)), 'green');
+                break;
+
+            case '':
+                throw new bException(tr('No sub method specified'), 'unknown');
+
+            default:
+                throw new bException(tr('Unknown sub method ":method" specified', array(':method' => cli_method())), 'unknown');
+        }
+
         break;
 
     case 'poll':
-        if(!$users){
-            if(!argument('all')){
-                throw new bException(tr('No users specified'), 'notspecified');
-            }
+        $loops      = cli_argument('--loop'      , true, 1);
+        $usleep     = cli_argument('--usleep'    , true, 50000);
+        $loop_sleep = cli_argument('--loop-sleep', true, 5);
+        $mail_boxes = cli_argument('--mail-boxes', true, 'inbox');
+        $delete     = cli_argument('--delete');
+        $peek       = cli_argument('--peek');
 
-            $users = array_keys($_CONFIG['email']['users']);
+        cli_no_arguments_left();
+
+        if($peek and $delete){
+            throw new bException(tr('Both --peek and --delete were specified, though they are mutually exclusive. Please specify one or the other'), 'conflict');
+        }
+
+        if(!is_natural($loops, 0)){
+            throw new bException(tr('Please specify a natural number for --loop (an integer number, 0 or higher)'), 'invalid');
         }
 
         if($criteria != 'UNSEEN'){
 //            throw new bException(tr('Invalid filter "%filter%" specified, polling can only happen on filter "UNSEEN"', array('%filter%' => $criteria)), 'invalid');
         }
 
-        log_message(tr('Polling "%count%" email accounts', array('%count%' => count($users))), '', 'white');
-
-        $count = 0;
+        $mail_boxes = explode(',', $mail_boxes);
+        $count      = 0;
+        $first      = true;
 
         proc_nice(5);
 
-        foreach($users as $user){
-            foreach(email_poll($user, $criteria) as $user_emails){
-                try{
-                    foreach($user_emails as $email){
-                        try{
-                            $email = email_cleanup($email);
-                            email_update_conversation($email, 'received');
-                            usleep(1000000);
-                            $count++;
+        while($loops-- or $first){
+            if($loops){
+                cli_log(tr('Executing poll loop ":loop"', array(':loop' => abs($loops))), 'white');
 
-                        }catch(Exception $e){
-                            log_error($e);
-                        }
+            }elseif(!$first){
+                cli_log(tr('Executing final poll loop'), 'white');
+            }
+
+            cli_log(tr('Polling ":count" email accounts', array(':count' => $r->rowCount())), 'white');
+
+            $first = false;
+
+            while($account = sql_fetch($r, 'email')){
+                if(VERBOSE){
+                    cli_log(tr('Processing account ":account"', array(':account' => $account)));
+                }
+
+                foreach($mail_boxes as $mail_box){
+                    if(VERBOSE){
+                        cli_log(tr('Processing mail box ":mailbox"', array(':mailbox' => $mail_box)));
                     }
 
-                }catch(bException $e){
-                    /*
-                     * Continue working on the next
-                     */
-    //:TODO: Add more exception data here
-                    log_error(tr('Failed polling process'));
+                    try{
+                        $results = email_poll(array('account'  => $account,
+                                                    'mail_box' => $mail_box,
+                                                    'criteria' => $criteria,
+                                                    'delete'   => $delete,
+                                                    'peek'     => $peek,
+                                                    'store'    => true));
+                    }catch(Exception $e){
+                        log_error($e);
+                    }
+
+                    usleep($usleep);
                 }
             }
 
-            usleep(1000000);
+            if($loops or $first){
+                /*
+                 * We need to loop again, so again get all users
+                 */
+                sleep($loop_sleep);
+                $r->execute($in);
+            }
         }
 
         switch($count){
             case 0:
-                log_console(tr('Added no new emails'), '', 'green');
+                cli_log(tr('Added no new emails'), 'green');
                 break;
 
             case 1:
-                log_message(tr('Added "1" new email'), '', 'green');
+                cli_log(tr('Added "1" new email'), 'green');
                 break;
 
             default:
-                log_message(tr('Added "%count%" new emails', array('%count%' => $count)), '', 'green');
+                cli_log(tr('Added "%count%" new emails', array('%count%' => $count)), 'green');
         }
 
         break;
@@ -154,7 +407,7 @@ switch($method){
         /*
          * Create conversations for all messages that do not have conversations yet
          */
-        log_console(tr('Rebuilding email conversations'), '', 'white');
+        cli_log(tr('Rebuilding email conversations'), 'white');
 
         sql_query('UPDATE `email_messages` SET `conversations_id` = NULL;');
         sql_query('DELETE FROM `email_conversations`;');
@@ -174,7 +427,7 @@ switch($method){
                             ORDER BY `createdon`');
 
         if($r->rowCount()){
-            log_console(tr('Creating conversations for "%count%" messages', array('%count%' => str_log($r->rowCount()))), '');
+            cli_log(tr('Creating conversations for ":count" messages', array(':count' => $r->rowCount())));
 
             $p = sql_prepare('UPDATE `email_messages`
 
@@ -187,10 +440,7 @@ switch($method){
                               OR     `from`             = :from)');
 
             while($message = sql_fetch($r)){
-                if($count++ > 10){
-                    $count = 0;
-                    log_console('.', '', 'green', false);
-                }
+                cli_dot();
 
                 $conversation = email_get_conversation($message);
 
@@ -199,7 +449,7 @@ switch($method){
                                   ':to'               => $message['to']));
             }
 
-            log_console('Done', '', 'green');
+            cli_dot(false);
         }
 
 
@@ -207,7 +457,7 @@ switch($method){
         /*
          * First clean all last_messages from conversations and rebuild them from scratch
          */
-        log_console('Rebuilding all email conversations', 'conversations', 'white');
+        cli_log(tr('Rebuilding all email conversations'), 'white');
 
         sql_query('UPDATE `email_conversations` SET `last_messages` = ""');
 
@@ -232,10 +482,7 @@ switch($method){
                               WHERE    `id` = :id');
 
         while($conversation = sql_fetch($r)){
-            if($count++ > 10){
-                $count = 0;
-                log_console('.', '', 'green', false);
-            }
+            cli_dot();
 
             $msg_count  = 0;
             $repliedon  = null;
@@ -299,11 +546,14 @@ switch($method){
                               ':last_messages' => $conversation['last_messages']));
         }
 
-        log_console('Done' , '', 'green');
-        log_console('Finished!', '', 'green');
+        cli_dot(false);
+        cli_log(tr('Finished!'), 'green');
         break;
 
+    case '':
+        throw new bException(tr('No method specified'), 'unknown');
+
     default:
-        throw new bException(tr('Unknown argument "%argument%" specified', array('%argument%' => argument(0))), 'unknown');
+        throw new bException(tr('Unknown method ":method" specified', array(':method' => cli_method())), 'unknown');
 }
 ?>

@@ -95,6 +95,10 @@ class Colors {
         return $this->getColoredString($string, 'red'   , 'black');
     }
 
+    public function error($string) {
+        return $this->red($string);
+    }
+
     public function yellow($string) {
         return $this->getColoredString($string, 'yellow', 'black');
     }
@@ -117,9 +121,13 @@ class Colors {
 /*
  * Only allow execution on shell scripts
  */
-function cli_only(){
+function cli_only($exclusive = false){
     if(PLATFORM != 'shell'){
         throw new bException('cli_only(): This can only be done from command line', 'clionly');
+    }
+
+    if($exclusive){
+        cli_exclusive();
     }
 }
 
@@ -131,7 +139,7 @@ function cli_only(){
  * ALWAYS USE return cli_die(); in case script_exec() was used!
  */
 function cli_die($exitcode, $message = '', $color = ''){
-    log_console($message, ($exitcode ? 'error' : 'exit'), ($exitcode ? 'red' : $color));
+    cli_log($message, ($exitcode ? 'red' : $color));
 
     /*
      * Make sure we're not in a script_exec(), where die should NOT happen!
@@ -142,7 +150,7 @@ function cli_die($exitcode, $message = '', $color = ''){
              * Do NOT die!!
              */
             if($exitcode){
-                throw new bException('cli_die(): Script failed with exit code "'.str_log($exitcode).'"', $exitcode);
+                throw new bException(tr('cli_die(): Script failed with exit code ":code"', array(':code' => str_log($exitcode))), $exitcode);
             }
 
             return $exitcode;
@@ -181,10 +189,10 @@ function cli_code_begin(){
 /*
  * Returns true if the startup script is already running
  */
-function this_script_already_runs($action = 'exception', $force = false){
+function cli_exclusive($action = 'exception', $force = false){
     try{
         if(PLATFORM != 'shell'){
-            throw new bException('this_script_already_runs(): This function does not work for platform "'.PLATFORM.'", it is only for "shell" usage');
+            throw new bException('cli_exclusive(): This function does not work for platform "'.PLATFORM.'", it is only for "shell" usage');
         }
 
         exec('ps -eF | grep php | grep -v grep', $output);
@@ -208,7 +216,7 @@ function this_script_already_runs($action = 'exception', $force = false){
                 if(++$count >= 2){
                     switch($action){
                         case 'exception':
-                            throw new bException('this_script_already_runs(): This script is already running', 'alreadyrunning');
+                            throw new bException('cli_exclusive(): This script is already running', 'alreadyrunning');
 
                         case 'kill':
                             $thispid = getmypid();
@@ -236,7 +244,7 @@ function this_script_already_runs($action = 'exception', $force = false){
                             return false;
 
                         default:
-                            throw new bException('this_script_already_runs(): Unknown action "'.str_log($action).'" specified', 'unknown');
+                            throw new bException('cli_exclusive(): Unknown action "'.str_log($action).'" specified', 'unknown');
                     }
 
                     return true;
@@ -254,7 +262,7 @@ function this_script_already_runs($action = 'exception', $force = false){
             throw($e);
         }
 
-        throw new bException('this_script_already_runs(): Failed', $e);
+        throw new bException('cli_exclusive(): Failed', $e);
     }
 }
 
@@ -266,23 +274,28 @@ function this_script_already_runs($action = 'exception', $force = false){
  * The result will be removed from $argv, but will remain stored in a static
  * variable which will return the same result every subsequent function call
  */
-function method($default = null){
+function cli_method($default = null){
     global $argv;
     static $method;
 
-    if($method){
-        return $method;
-    }
-
-    foreach($argv as $key => $value){
-        if(substr($value, 0, 1) !== '-'){
-            unset($argv[$key]);
-            $method = $value;
+    try{
+        if($method){
             return $method;
         }
-    }
 
-    return $default;
+        foreach($argv as $key => $value){
+            if(substr($value, 0, 1) !== '-'){
+                unset($argv[$key]);
+                $method = $value;
+                return $method;
+            }
+        }
+
+        return $default;
+
+    }catch(Exception $e){
+        throw new bException('cli_method(): Failed', $e);
+    }
 }
 
 
@@ -293,7 +306,7 @@ function method($default = null){
  * This function will REMOVE and then return the argument when its found
  * If the argument is not found, $default will be returned
  */
-function argument($value = null, $next = null, $default = null){
+function cli_argument($value = null, $next = null, $default = null){
     global $argv;
 
     try{
@@ -307,7 +320,8 @@ function argument($value = null, $next = null, $default = null){
                 return $retval;
             }
 
-            if($argument = isset_get($argv[$value++], $next)){
+            if(!empty($argv[$value++])){
+                $argument = $argv[$value - 1];
                 unset($argv[$value - 1]);
                 return $argument;
             }
@@ -344,7 +358,7 @@ function argument($value = null, $next = null, $default = null){
             $retval = array_next_value($argv, $value, true);
 
             if(substr($retval, 0, 1) == '-'){
-                throw new bException(tr('argument(): Argument ":argument1" has no assigned value, it is immediately followed by argument ":argument2"', array(':argument1' => $value, ':argument2' => $retval)), 'invalid');
+                throw new bException(tr('cli_argument(): Argument ":argument1" has no assigned value, it is immediately followed by argument ":argument2"', array(':argument1' => $value, ':argument2' => $retval)), 'invalid');
             }
 
             return $retval;
@@ -354,7 +368,7 @@ function argument($value = null, $next = null, $default = null){
         return true;
 
     }catch(Exception $e){
-        throw new bException(tr('argument(): Failed'), $e);
+        throw new bException(tr('cli_argument(): Failed'), $e);
     }
 }
 
@@ -363,7 +377,7 @@ function argument($value = null, $next = null, $default = null){
 /*
  *
  */
-function arguments($arguments = null){
+function cli_arguments($arguments = null){
     global $argv;
 
     try{
@@ -380,10 +394,10 @@ function arguments($arguments = null){
                 /*
                  * If the key would be numeric, argument() would get into an endless loop
                  */
-                throw new bException(tr('arguments(): The specified argument ":argument" is numeric, and as such, invalid. arguments() can only check for key-value pairs, where the keys can not be numeric', array(':argument' => $argument)), 'invalid');
+                throw new bException(tr('cli_arguments(): The specified argument ":argument" is numeric, and as such, invalid. cli_arguments() can only check for key-value pairs, where the keys can not be numeric', array(':argument' => $argument)), 'invalid');
             }
 
-            if($value = argument($argument, true)){
+            if($value = cli_argument($argument, true)){
                 $retval[str_replace('-', '', $argument)] = $value;
             }
         }
@@ -391,7 +405,7 @@ function arguments($arguments = null){
         return $retval;
 
     }catch(Exception $e){
-        throw new bException(tr('arguments(): Failed'), $e);
+        throw new bException(tr('cli_arguments(): Failed'), $e);
     }
 }
 
@@ -401,16 +415,33 @@ function arguments($arguments = null){
  * Ensures that no other command line arguments are left.
  * If arguments were still found, an appropriate error will be thrown
  */
-function arguments_none_left(){
+function cli_no_arguments_left(){
     global $argv;
 
-    if($argv){
-        if(count($argv) > 1){
-            throw new bException(tr('Unknown arguments ":arguments" encountered', array(':arguments' => str_force($argv, ', '))), 'invalid_arguments');
-        }
-
-        throw new bException(tr('Unknown argument ":argument" encountered', array(':argument' => str_force($argv, ', '))), 'invalid_arguments');
+    if(!$argv){
+        return true;
     }
+
+    $method = cli_method();
+
+    if($method){
+        switch(count($argv)){
+            case 0:
+                throw new bException(tr('cli_no_arguments_left(): Unknown method ":method" encountered', array(':method' => $method)), 'invalid_arguments');
+
+            case 1:
+                throw new bException(tr('cli_no_arguments_left(): Unknown method ":method" with unknown argument ":argument" encountered', array(':argument' => str_force($argv, ', '), ':method' => $method)), 'invalid_arguments');
+
+            default:
+                throw new bException(tr('cli_no_arguments_left(): Unknown method ":method" with unknown arguments ":arguments" encountered', array(':arguments' => str_force($argv, ', '), ':method' => $method)), 'invalid_arguments');
+        }
+    }
+
+    if(count($argv) > 1){
+        throw new bException(tr('cli_no_arguments_left(): Unknown arguments ":arguments" encountered', array(':arguments' => str_force($argv, ', '))), 'invalid_arguments');
+    }
+
+    throw new bException(tr('cli_no_arguments_left(): Unknown argument ":argument" encountered', array(':argument' => str_force($argv, ', '))), 'invalid_arguments');
 }
 
 
@@ -478,31 +509,36 @@ function cli_error($e = null){
 function cli_basic_arguments(){
     global $usage, $help;
 
-    if(argument('usage') or argument('-u') or argument('--usage')){
-        cli_show_usage($usage, 'white');
-        die(0);
-    }
-
-    if(argument('help') or argument('-h') or argument('--help')){
-        if(!$help){
-            log_console('Sorry, this script has no help text defined yet', '', 'yellow');
-
-        }else{
-            $help = array_force($help, "\n");
-
-            if(count($help) == 1){
-                log_console(array_shift($help), '', 'white');
-
-            }else{
-                foreach(array_force($help, "\n") as $line){
-                    log_console($line, '', 'white');
-                }
-
-                log_console('', '');
-            }
+    try{
+        if(cli_argument('usage') or cli_argument('-u') or cli_argument('--usage')){
+            cli_show_usage($usage, 'white');
+            die(0);
         }
 
-        die(0);
+        if(cli_argument('help') or cli_argument('-h') or cli_argument('--help')){
+            if(!$help){
+                cli_log(tr('Sorry, this script has no help text defined yet'), 'yellow');
+
+            }else{
+                $help = array_force($help, "\n");
+
+                if(count($help) == 1){
+                    cli_log(array_shift($help), 'white');
+
+                }else{
+                    foreach(array_force($help, "\n") as $line){
+                        cli_log($line, 'white');
+                    }
+
+                    cli_log();
+                }
+            }
+
+            die(0);
+        }
+
+    }catch(Exception $e){
+        throw new bException('cli_basic_arguments(): Failed', $e);
     }
 }
 
@@ -514,23 +550,23 @@ function cli_basic_arguments(){
 function cli_show_usage($usage, $color){
     try{
         if(!$usage){
-            log_console(tr('Sorry, this script has no usage description defined yet'), '', 'yellow');
+            cli_log(tr('Sorry, this script has no usage description defined yet'), 'yellow');
 
         }else{
             $usage = array_force(trim($usage), "\n");
 
             if(count($usage) == 1){
-                log_console(tr('Usage:')       , '', $color);
-                log_console(array_shift($usage), '', $color);
+                cli_log(tr('Usage:')       , $color);
+                cli_log(array_shift($usage), $color);
 
             }else{
-                log_console(tr('Usage:'), '', $color);
+                cli_log(tr('Usage:'), $color);
 
                 foreach(array_force($usage, "\n") as $line){
-                    log_console($line, '', $color);
+                    cli_log($line, $color);
                 }
 
-                log_console('', '');
+                cli_log();
             }
         }
 
@@ -581,17 +617,6 @@ function cli_not_root(){
 
 
 /*
- * Stop the script on insufficient rights
- */
-function cli_rights($rights){
-    if(!has_rights($rights)){
-        throw new bException('cli_rights(): You do not have the required rights to use this script', 'access_denied');
-    }
-}
-
-
-
-/*
  * Show a dot on the console each $each call
  * if $each is false, "DONE" will be printed, with next line
  * Internal counter will reset if a different $each is received.
@@ -602,7 +627,7 @@ function cli_dot($each = 10, $dot = '.', $color = 'green'){
 
     try{
         if($each === false){
-            log_console('Done', '', $color);
+            cli_log(tr('Done'), $color);
             $l_each = 0;
             $count  = 0;
             return true;
@@ -615,12 +640,78 @@ function cli_dot($each = 10, $dot = '.', $color = 'green'){
 
         if(++$count > $l_each){
             $count = 0;
-            log_console($dot, '', $color, false);
+            cli_log($dot, $color, false);
             return true;
         }
 
     }catch(Exception $e){
         throw new bException('cli_dot(): Failed', $e);
     }
+}
+
+
+
+/*
+ * Log specified message to console, but only if we are in console mode!
+ */
+function cli_log($message = '', $color = null, $newline = true, $filter_double = false){
+    static $c, $fh, $last;
+
+    try{
+        if(PLATFORM != 'shell') return false;
+
+        if(($filter_double == true) and ($message == $last)){
+            /*
+            * We already displayed this message, skip!
+            */
+            return;
+        }
+
+        $last = $message;
+
+        if($color and defined('NOCOLOR') and !NOCOLOR){
+            load_libs('cli');
+
+            $c       = cli_init_color();
+            $message = $c->$color($message);
+        }
+
+        $message = stripslashes(br2nl($message)).($newline ? "\n" : '');
+
+        if(empty($error)){
+            echo $message;
+
+        }else{
+            /*
+             * Log to STDERR instead of STDOUT
+             */
+            if(empty($fh)){
+                $fh = fopen('php://stderr','w');
+            }
+
+            fwrite($fh, $message);
+        }
+
+        return true;
+
+    }catch(Exception $e){
+        throw new bException('cli_log(): Failed', $e, array('message' => $message));
+    }
+}
+
+/*
+ *
+ */
+function cli_arguments_none_left(){
+    return cli_no_arguments_left();
+}
+
+
+
+/*
+ * WARNING! BELOW HERE BE OBSOLETE FUNCTIONS AND OBSOLETE-BUT-WE-WANT-TO-BE-BACKWARD-COMPATIBLE WRAPPERS
+ */
+function this_script_already_runs($action = 'exception', $force = false){
+    return cli_exclusive($action, $force);
 }
 ?>

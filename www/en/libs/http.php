@@ -58,31 +58,63 @@ function redirect($target = '', $clear_session_redirect = true){
 
 
 /*
+ * Give URL with redirect value, IF specified
+ */
+function redirect_url($url = null){
+    try{
+        if(!$url){
+            /*
+             * Default to this page
+             */
+            $url = domain(true);
+        }
+
+        if(empty($GLOBALS['redirect'])){
+            return $url;
+        }
+
+        return url_add_query($url, 'redirect='.urlencode($GLOBALS['redirect']));
+
+    }catch(Exception $e){
+        throw new bException('redirect_url(): Failed', $e);
+    }
+}
+
+
+
+/*
  * Redirect if the session redirector is set
  */
 function session_redirect($method = 'http', $force = false){
     try{
-        if(empty($_SESSION['redirect'])){
-            if(!$force){
-                return false;
-            }
-
+        if(!empty($force)){
             /*
-             * If there is no redirection, then forcibly redirect to this one
+             * Redirect by force value
              */
-            $_SESSION['redirect'] = $force;
-        }
+            $redirect = $force;
 
-        $redirect = $_SESSION['redirect'];
+        }elseif(!empty($_GET['redirect'])){
+            /*
+             * Redirect by _GET redirect
+             */
+            $redirect = $_GET['redirect'];
+            unset($_GET['redirect']);
+
+        }elseif(!empty($_SESSION['redirect'])){
+            /*
+             * Redirect by _SESSION redirect
+             */
+            $redirect = $_SESSION['redirect'];
+
+            unset($_SESSION['redirect']);
+            unset($_SESSION['sso_referrer']);
+        }
 
         switch($method){
             case 'json':
                 if(!function_exists('json_reply')){
                     load_libs('json');
                 }
-
-                unset($_SESSION['redirect']);
-                unset($_SESSION['sso_referrer']);
 
                 /*
                  * Send JSON redirect. json_reply() will end script, so no break needed
@@ -100,7 +132,7 @@ function session_redirect($method = 'http', $force = false){
                 redirect($redirect);
 
             default:
-                throw new bException('session_redirect(): Unknown method "'.str_log($method).'" specified. Please speficy one of "json", or "http"', 'unknown');
+                throw new bException(tr('session_redirect(): Unknown method ":method" specified. Please speficy one of "json", or "http"', array(':method' => $method)), 'unknown');
         }
 
     }catch(Exception $e){
@@ -483,7 +515,7 @@ function http_cache($params, $headers = array()){
                         break;
 
                     default:
-                        if(!is_numeric($params['policy']) or !is_natural_number($params['policy'])){
+                        if(!is_numeric($params['policy']) or !is_natural($params['policy'])){
                             throw new bException(tr('http_cache(): Invalid policy "%policy%" specified. Use either "no-cache", "no-store", or a natural number', array('%policy%' => $params['policy'])), '');
                         }
 

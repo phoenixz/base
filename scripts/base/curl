@@ -6,7 +6,18 @@
 $usage = "./scripts/base/curl\n".
          "./scripts/base/curl url URL [proxy] [useragent USERAGENT]\n";
 
-$help  = "curl_get() interface script";
+$help  = "curl_get() interface script
+
+OPTIONS
+
+--no-decode                    -
+--url                          -
+--get-headers                  -
+--proxy                        -
+--noproxy                      -
+--proxies                      -
+--user-agent                   -
+";
 
 //$quiet = false;
 
@@ -15,33 +26,37 @@ require_once(dirname(__FILE__).'/../../libs/startup.php');
 cli_only();
 load_libs('curl');
 
-$decode               = argument('--nodecode'  , false, true);
-$params['url']        = argument('url'         , true);
-$params['getheaders'] = argument('--getheaders', false, false);
-$params['proxy']      = argument('proxy'       , false, $_CONFIG['curl']['proxy']);
-$params['noproxy']    = argument('proxy'       , false, $_CONFIG['curl']['proxy']);
-$params['proxies']    = argument('proxies'     , true , $_CONFIG['curl']['proxies']);
-$params['useragent']  = argument('useragent'   , true , $_CONFIG['curl']['user_agents']);
+$decode               = cli_argument('--no-decode'  , false, true);
+$params['url']        = cli_argument('--url'        , true);
+$params['getheaders'] = cli_argument('--get-headers', false, false);
+$params['proxy']      = cli_argument('--proxy'      , false, $_CONFIG['curl']['proxy']);
+$params['noproxy']    = cli_argument('--noproxy');
+$params['proxies']    = cli_argument('--proxies'    , true , $_CONFIG['curl']['proxies']);
+$params['useragent']  = cli_argument('--user-agent' , true , $_CONFIG['curl']['user_agents']);
+
+cli_no_arguments_left();
+
+
 
 if($params['proxies']){
-	$params['proxies'] = array_force($params['proxies']);
+    $params['proxies'] = array_force($params['proxies']);
 }
 
 if($params['noproxy']){
-	$params['proxy'] = false;
+    $params['proxy'] = false;
 }
 
 if(!$params['url']){
-	throw new bException(tr('Please specify a URL'), 'notspecfied');
+    throw new bException(tr('Please specify a URL'), 'notspecfied');
 }
 
 $data = curl_get($params);
 
 if(substr($data['data'], 0, 12) == 'PROXY_RESULT'){
-	if($decode){
-		$data         = json_decode(substr($data, 12));
-		$data['data'] = base64_decode($data['data']);
-	}
+    if($decode){
+        $data         = json_decode(substr($data, 12));
+        $data['data'] = base64_decode($data['data']);
+    }
 }
 
 showdie($data);
