@@ -97,7 +97,6 @@ switch(cli_method()){
                                 'callback'  =>  function($file) use ($params, $formats){
                                                     global $_CONFIG;
 
-$file = ROOT.'data/content/photos/news/3/0/d/b/573d022863064_small.jpg';
                                                     if(is_image($file)){
                                                         try{
                                                             $image = sql_get('SELECT  `blogs_media`.`id`,
@@ -135,6 +134,14 @@ $file = ROOT.'data/content/photos/news/3/0/d/b/573d022863064_small.jpg';
                                                             $params['y'] = get_null($image[$format.'_y']);
 
                                                             image_convert($file, str_replace('_', '-', $file), $params);
+
+                                                            if(strstr($file, '_')){
+                                                                /*
+                                                                 * Delete the old style _ files, which have been replaced by - named files
+                                                                 */
+                                                                file_delete($file);
+                                                            }
+
                                                             usleep(5000);
 
                                                         }catch(Exception $e){
