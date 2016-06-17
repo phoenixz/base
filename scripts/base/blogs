@@ -1,0 +1,164 @@
+#!/usr/bin/php
+<?php
+/*
+ * Blog management script
+ */
+$usage = "./scripts/base/blogs\n".
+         "./scripts/base/blogs rebuild-post-urls [option]\n";
+         "./scripts/base/blogs recompress-images [option]\n";
+
+$help  = "This script can manage blog post information
+
+METHODS
+
+rebuild-post-urls              - Will update the URL's of all blog posts using
+                                 the URL format for each blog, and the current
+                                 configured domain name. This may be useful when
+                                 blog posts were transferred to another domain
+                                 name, for example.
+
+reprocess-images               - Will take all blog post images, and recompress
+                                 them and ensure they all have the configured
+                                 sizes
+
+
+
+ARGUMENTS
+
+";
+
+require_once(dirname(__FILE__).'/../../libs/startup.php');
+load_config('blogs');
+
+switch(cli_method()){
+    case 'rebuild-post-urls':
+        cli_log(tr('Updating all blog post URLs'), 'white');
+
+        load_libs('blogs');
+        blogs_update_urls(isset_get($argv));
+
+        cli_log(tr('Updated all blog posts with the URL configuration ":url"', array(':url' => $_CONFIG['blogs']['url'])), 'green');
+        break;
+
+    case 'reprocess-images':
+        /*
+         * Check destination path
+         */
+        $source    = cli_argument(1);
+        $recursive = cli_argument('--recursive');
+
+        if(cli_argument('--default') or cli_argument('--defaults')){
+            $params = array();
+
+        }else{
+            $params['keep_aspectratio'] = cli_argument('--keep-aspectratio');
+            $params['quality']          = cli_argument('--quality'        , true);
+            $params['interlace']        = cli_argument('--interlace'      , true , 'line');
+            $params['strip']            = cli_argument('--strip'          , false, true);
+            $params['blur']             = cli_argument('--blur'           , true , '1x3');
+            $params['defines']          = cli_argument('--defines'        , true);
+            $params['sampling_factor']  = cli_argument('--sampling-factor', true);
+            $params['limit_memory']     = cli_argument('--limit-memory'   , true);
+            $params['limit_map']        = cli_argument('--limit-map'      , true);
+
+        //    $params['type']            = not_empty(cli_argument('jpg'), (cli_argument('jpeg') ? 'jpg' : ''), cli_argument('png'));
+
+            $method = cli_argument('--method', true);
+            $format = cli_argument('--format', true);
+            $x      = not_empty(cli_argument('--width' , true), cli_argument('-x', true));
+            $y      = not_empty(cli_argument('--height', true), cli_argument('-y', true));
+        }
+
+        cli_no_arguments_left();
+        load_libs('file,image');
+
+
+
+        /*
+         * Check source path
+         */
+        if(!$source){
+            $source = ROOT.'data/content/photos';
+        }
+
+        if(!file_exists($source)){
+            throw new bException(tr('The specified source path ":path" does not exist', array(':path' => $source)), 'not-exist');
+        }
+
+        $formats = implode('|', array_keys($_CONFIG['blogs']['images']));
+
+
+
+        /*
+         * Execute the conversion on the specified path
+         */
+        file_tree_execute(array('path'      => realpath($source),
+                                'recursive' => true,
+                                'callback'  =>  function($file) use ($params, $formats){
+                                                    global $_CONFIG;
+
+$file = ROOT.'data/content/photos/news/3/0/d/b/573d022863064_small.jpg';
+                                                    if(is_image($file)){
+                                                        try{
+                                                            $image = sql_get('SELECT  `blogs_media`.`id`,
+                                                                                      `blogs_media`.`blogs_posts_id`,
+                                                                                      `blogs_media`.`blogs_id`,
+                                                                                      `blogs`.`thumb_x`,
+                                                                                      `blogs`.`thumb_y`,
+                                                                                      `blogs`.`wide_x`,
+                                                                                      `blogs`.`wide_y`,
+                                                                                      `blogs`.`large_x`,
+                                                                                      `blogs`.`large_y`,
+                                                                                      `blogs`.`medium_x`,
+                                                                                      `blogs`.`medium_y`,
+                                                                                      `blogs`.`small_x`,
+                                                                                      `blogs`.`small_y`
+
+                                                                              FROM    `blogs_media`
+
+                                                                              JOIN    `blogs`
+                                                                              ON      `blogs`.`id` = `blogs_media`.`blogs_id`
+
+                                                                              WHERE   `blogs_media`.`file` = :file AND `type` = "photo"', array(':file' => str_until(str_until(str_from($file, 'data/content/photos/'), '_'), '-')));
+
+                                                            if(!preg_match_all('/.+?[-_]('.$formats.')(?:@2x)?.(?:png|jpg)/', $file, $matches) or empty($matches[1][0])){
+                                                                /*
+                                                                 * Image file name format does not match, ignore
+                                                                 */
+                                                                cli_log(tr('Skipping file ":image", file name does not match required blog image filename pattern', array(':image' => $file)), 'yellow');
+                                                            }
+
+                                                            $format = $matches[1][0];
+                                                            $params = $_CONFIG['blogs']['images'][$format];
+
+                                                            $params['x'] = get_null($image[$format.'_x']);
+                                                            $params['y'] = get_null($image[$format.'_y']);
+
+                                                            image_convert($file, str_replace('_', '-', $file), $params);
+                                                            usleep(5000);
+
+                                                        }catch(Exception $e){
+                                                            cli_log(tr('Skipping file ":image", image_convert() failed with ":error"', array(':image' => $file, ':error' => $e->getMessage())), 'yellow');
+                                                        }
+
+                                                    }else{
+                                                        cli_log(tr('Skipping file ":image", it is not an image', array(':image' => $file)), 'yellow');
+                                                    }
+                                                }));
+
+        if(!VERBOSE){
+            cli_dot(false);
+        }
+
+        cli_log(tr('Finished!'), 'green');
+
+        break;
+
+    case '':
+        throw new bException(tr('No method specified'), 'not-specified');
+
+    default:
+        throw new bException(tr('Unknown argument ":method" specified', array(':method' => cli_method())), 'unknown');
+
+}
+?>
