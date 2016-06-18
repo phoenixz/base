@@ -347,7 +347,7 @@ function init_process_version_diff(){
         }
     }
 
-    if((PLATFORM == 'http') or !argument('--no-version-check')){
+    if(PLATFORM_HTTP or !cli_argument('--no-version-check')){
         throw new bException(tr('init_process_version_diff(): Please run script ROOT/scripts/base/init because ":error"', array(':error' => $versionerror)), 'doinit');
     }
 }

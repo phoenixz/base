@@ -741,7 +741,9 @@ function blogs_validate_post(&$post, $params = null){
             throw new bException(tr('Blog post name can not be numeric'), 'invalid');
         }
 
-        $v->isNotEmpty ($post['name'], tr('Please provide a name for your :objectname', array(':objectname' => $params['object_name'])));
+        $v->isNotEmpty($post['name']    , tr('Please provide a name for your :objectname', array(':objectname' => $params['object_name'])));
+        $v->isNotEmpty($post['blogs_id'], tr('Please provide a blog for your :objectname', array(':objectname' => $params['object_name'])));
+        $v->isNumeric ($post['blogs_id'], tr('Please provide a valid blog for your :objectname', array(':objectname' => $params['object_name'])));
 
         $id = sql_get('SELECT `id` FROM `blogs_posts` WHERE `blogs_id` = :blogs_id AND `id` = :id', 'id', array(':blogs_id' => $post['blogs_id'], ':id' => $post['id']));
 
@@ -1030,6 +1032,7 @@ function blogs_media_process($file, $post, $priority = null){
         }
 
         $post = sql_get('SELECT `blogs_posts`.`id`,
+                                `blogs_posts`.`blogs_id`,
                                 `blogs_posts`.`createdby`,
                                 `blogs_posts`.`seoname`,
 
@@ -1113,11 +1116,12 @@ function blogs_media_process($file, $post, $priority = null){
         /*
          * Store blog post photo in database
          */
-        $res  = sql_query('INSERT INTO `blogs_media` (`createdby`, `blogs_posts_id`, `file`, `priority`)
-                           VALUES                    (:createdby , :blogs_posts_id , :file , :priority )',
+        $res  = sql_query('INSERT INTO `blogs_media` (`createdby`, `blogs_posts_id`, `blogs_id`, `file`, `priority`)
+                           VALUES                    (:createdby , :blogs_posts_id , :blogs_id , :file , :priority )',
 
                           array(':createdby'      => isset_get($_SESSION['user']['id']),
                                 ':blogs_posts_id' => $post['id'],
+                                ':blogs_id'       => $post['blogs_id'],
                                 ':file'           => $photo,
                                 ':priority'       => $priority));
 
