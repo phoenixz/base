@@ -19,7 +19,7 @@ try{
              * Remember this one to avoid endless redirecting (Lookin at you there, google talk!)
              */
             $_SESSION['redirect'] = $redirect;
-            redirect($redirect, false);
+            redirect($redirect, 302, false);
         }
 
         /*
@@ -34,7 +34,7 @@ try{
              * Remember this one to avoid endless redirecting (Lookin at you there, google talk!)
              */
             $_SESSION['redirect'] = $_SERVER['HTTP_REFERER'];
-            redirect($_SERVER['HTTP_REFERER'], false);
+            redirect($_SERVER['HTTP_REFERER'], 302, false);
         }
 
         /*

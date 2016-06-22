@@ -51,7 +51,7 @@ function current_domain($current_url = false, $query = null){
 /*
  * Redirect
  */
-function redirect($target = '', $clear_session_redirect = true){
+function redirect($target = '', $http_code = null, $clear_session_redirect = true){
     return include(dirname(__FILE__).'/handlers/http_redirect.php');
 }
 
