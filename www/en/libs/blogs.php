@@ -1069,8 +1069,9 @@ function blogs_media_process($file, $post, $priority = null){
         /*
          *
          */
-        $photo  = $post['blog_name'].'/'.file_assign_target_clean(ROOT.'data/content/photos/'.$post['blog_name'].'/', '-large.jpg', false, 4);
-        $prefix = ROOT.'data/content/photos/'.$photo;
+        $prefix = ROOT.'data/content/photos/';
+        $file   = $post['blog_name'].'/'.file_move_to_target($file, $prefix.$post['blog_name'].'/', '-original.jpg', false, 4);
+        $photo  = str_runtil($file, '-');
         $types  = $_CONFIG['blogs']['images'];
 
         /*
@@ -1081,10 +1082,10 @@ function blogs_media_process($file, $post, $priority = null){
                 $params['x'] = $post[$type.'_x'];
                 $params['y'] = $post[$type.'_y'];
 
-                image_convert($file, $prefix.'-'.$type.'.jpg', $params);
+                image_convert($prefix.$file, $prefix.$photo.'-'.$type.'.jpg', $params);
 
             }else{
-                copy($file, $prefix.'-'.$type.'.jpg');
+                copy($prefix.$file, $prefix.$photo.'-'.$type.'.jpg');
             }
 
             if($post['retina']){
@@ -1092,17 +1093,17 @@ function blogs_media_process($file, $post, $priority = null){
                     $params['x'] = $post[$type.'_x'] * 2;
                     $params['y'] = $post[$type.'_y'] * 2;
 
-                    image_convert($file, $prefix.'-'.$type.'@2x.jpg', $params);
+                    image_convert($prefix.$file, $prefix.$photo.'-'.$type.'@2x.jpg', $params);
 
                 }else{
-                    symlink($prefix.'-'.$type.'.jpg', $prefix.'-'.$type.'@2x.jpg');
+                    symlink($prefix.$photo.'-'.$type.'.jpg', $prefix.$photo.'-'.$type.'@2x.jpg');
                 }
 
             }else{
                 /*
                  * If retina images are not supported, then just symlink them so that they at least are available
                  */
-                symlink(basename($prefix.'-'.$type.'.jpg')  , $prefix.'-'.$type.'@2x.jpg');
+                symlink(basename($prefix.$photo.'-'.$type.'.jpg')  , $prefix.$photo.'-'.$type.'@2x.jpg');
             }
         }
 
@@ -1152,45 +1153,7 @@ function blogs_url_upload($files, $post, $priority = null){
     global $_CONFIG;
 
     try{
-        load_libs('file,image,upload');
-
-        if(empty($post['id'])) {
-            throw new bException('blogs_url_upload(): No blog post specified', 'not-specified');
-        }
-
-        $post = sql_get('SELECT `blogs_posts`.`id`,
-                                `blogs_posts`.`createdby`,
-                                `blogs_posts`.`seoname`,
-
-                                `blogs`.`seoname` AS blog_name,
-                                `blogs`.`large_x`,
-                                `blogs`.`large_y`,
-                                `blogs`.`medium_x`,
-                                `blogs`.`medium_y`,
-                                `blogs`.`small_x`,
-                                `blogs`.`small_y`,
-                                `blogs`.`wide_x`,
-                                `blogs`.`wide_y`,
-                                `blogs`.`thumb_x`,
-                                `blogs`.`thumb_y`,
-                                `blogs`.`wide_x`,
-                                `blogs`.`wide_y`,
-                                `blogs`.`retina`
-
-                         FROM   `blogs_posts`
-
-                         JOIN   `blogs`
-                         ON     `blogs_posts`.`blogs_id` = `blogs`.`id`
-
-                         WHERE  `blogs_posts`.`id`       = '.cfi($post['id']));
-
-        if(empty($post['id'])) {
-            throw new bException('blogs_url_upload(): Unknown blog post specified', 'unknown');
-        }
-
-        if(($post['createdby'] != $_SESSION['user']['id']) and !has_rights('god')){
-            throw new bException('blogs_url_upload(): Cannot upload url, this post is not yours', 'accessdenied');
-        }
+        load_libs('upload');
 
         /*
          * Check for upload errors
@@ -1207,77 +1170,12 @@ function blogs_url_upload($files, $post, $priority = null){
         /*
          *
          */
-        $file   = $files;
-        $file   = file_get_local($file['tmp_name'][0]);
-        $photo  = $post['blog_name'].'/'.file_assign_target_clean(ROOT.'data/content/url/'.$post['blog_name'].'/', '_small.jpg', false, 4);
-        $prefix = ROOT.'data/content/url/'.$photo;
-        $types  = $_CONFIG['blogs']['images'];
+        $file = $files;
+        $file = file_get_local($file['tmp_name'][0]);
 
-        /*
-         * Process all image types
-         */
-        foreach($types as $type => $params){
-            if($params['method'] and (!empty($post[$type.'_x']) or !empty($post[$type.'_y']))){
-                $params['x'] = $post[$type.'_x'];
-                $params['y'] = $post[$type.'_y'];
-
-                image_convert($file, $prefix.'-'.$type.'.jpg', $params);
-
-            }else{
-                copy($file, $prefix.'-'.$type.'.jpg');
-            }
-
-            if($post['retina']){
-                if($params['method'] and (!empty($post[$type.'_x']) or !empty($post[$type.'_y']))){
-                    $params['x'] = $post[$type.'_x'] * 2;
-                    $params['y'] = $post[$type.'_y'] * 2;
-
-                    image_convert($file, $prefix.'-'.$type.'@2x.jpg', $params);
-
-                }else{
-                    copy($prefix.'-'.$type.'.jpg', $prefix.'-'.$type.'@2x.jpg');
-                }
-
-            }else{
-                /*
-                 * If retina images are not supported, then just symlink them so that they at least are available
-                 */
-                symlink(basename($prefix.'-'.$type.'.jpg')  , $prefix.'-'.$type.'@2x.jpg');
-            }
-        }
-
-        /*
-         * If no priority has been specified then get the highest one
-         */
-        if(!$priority){
-            $priority = sql_get('SELECT (COALESCE(MAX(`priority`), 0) + 1) AS `priority` FROM `blogs_url` WHERE `blogs_posts_id` = :blogs_posts_id', 'priority', array(':blogs_posts_id' => $post['id']));
-        }
-
-        /*
-         * Store blog post photo in database
-         */
-        $res  = sql_query('INSERT INTO `blogs_url` (`createdby`, `blogs_posts_id`, `file`, `priority`)
-                           VALUES                  (:createdby , :blogs_posts_id , :file , :priority )',
-
-                          array(':createdby'      => $_SESSION['user']['id'],
-                                ':blogs_posts_id' => $post['id'],
-                                ':file'           => $photo,
-                                ':priority'       => $priority));
-
-        $id   = sql_insert_id();
-
-// :DELETE: This block is replaced by the code below. Only left here in case it contains something usefull still
-//    $html = '<li style="display:none;" id="photo'.$id.'" class="myclub photo">
-//                <img style="width:219px;height:130px;" src="/url/'.$photo.'_small.jpg" />
-//                <a class="myclub photo delete">'.tr('Delete this photo').'</a>
-//                <textarea placeholder="'.tr('Description of this photo').'" class="myclub photo description"></textarea>
-//            </li>';
-
-        return array('id'    => $id,
-                     'photo' => $photo);
+        return blogs_media_process($file, $post, $priority);
 
     }catch(Exception $e){
-
         throw new bException('blogs_url_upload(): Failed', $e);
     }
 }
