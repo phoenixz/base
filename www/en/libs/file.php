@@ -1093,7 +1093,7 @@ function file_get_local($file, &$is_downloaded = false){
 
         if((stripos($file, 'http:') === false) and (stripos($file, 'https:') === false) and (stripos($file, 'ftp:') === false)){
             if(!file_exists($file)){
-                throw new bException('file_get_local(): Specified file "'.str_log($file).'" does not exist');
+                throw new bException(tr('file_get_local(): Specified file ":file" does not exist', array(':file' => $file)));
             }
 
             if(is_uploaded_file($file)){
@@ -1117,7 +1117,11 @@ function file_get_local($file, &$is_downloaded = false){
         return $file;
 
     }catch(Exception $e){
-        throw new bException('file_get_local(): Failed for file "'.str_log($file).'"', $e);
+        if(strstr($e->getMessage(), 'HTTP/1.1 404 Not Found')){
+            throw new bException(tr('file_get_local(): URL ":file" does not exist', array(':file' => $file)), 404);
+        }
+
+        throw new bException(tr('file_get_local(): Failed for file ":file"', array(':file' => $file)), $e);
     }
 }
 

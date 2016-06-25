@@ -979,7 +979,7 @@ function has_rights($rights, &$user = null){
         }
 
         foreach(array_force($rights) as $right){
-            if($right === 'admin'){
+            if(($right === 'admin') and (SCRIPT !== 'signin')){
                 /*
                  * Admin right also requires that the current admin script is defined in production_admin menu
                  */

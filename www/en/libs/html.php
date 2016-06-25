@@ -1374,17 +1374,49 @@ function html_img($src, $alt, $width = null, $height = null, $more = ''){
                          */
                         load_libs('file');
 
-                        $file  = file_move_to_target($src, TMP, false, true);
-                        $image = getimagesize(TMP.$file);
+                        try{
+                            $file  = file_move_to_target($src, TMP, false, true);
+                            $image = getimagesize(TMP.$file);
 
-                        file_delete(TMP.$file);
-                        file_delete(dirname(TMP.$file));
+                        }catch(Exception $e){
+                            switch($e->getCode()){
+                                case 404:
+                                    // FALLTHROUGH
+                                case 403:
+                                    break;
+
+                                default:
+                                    throw $e;
+                            }
+
+                            /*
+                             * Image doesnt exist
+                             */
+                            log_error(tr('html_img(): image ":src" does not exist', array(':src' => $src)), 'not-exist');
+                            $image[0] = -1;
+                            $image[1] = -1;
+                        }
+
+                        if(!empty($file)){
+                            file_delete(TMP.$file);
+                            file_delete(dirname(TMP.$file));
+                        }
 
                     }else{
                         /*
                          * Local image. Analize directly
                          */
-                        $image  = getimagesize(ROOT.'www/en/'.$src);
+                        if(file_exists(ROOT.'www/en/'.$src)){
+                            $image = getimagesize(ROOT.'www/en/'.$src);
+
+                        }else{
+                            /*
+                             * Image doesn't exist.
+                             */
+                            log_error(tr('html_img(): image ":src" does not exist', array(':src' => $src, ':width' => $width, ':height' => $height)), 'invalid');
+                            $image[0] = -1;
+                            $image[1] = -1;
+                        }
                     }
 
                     $width  = $image[0];
@@ -1399,7 +1431,7 @@ function html_img($src, $alt, $width = null, $height = null, $more = ''){
                     $status = $e->getCode();
                 }
 
-                if(!$height or !$height){
+                if(!$height or !$width){
                     log_error(tr('html_img(): image ":src" has invalid dimensions with width ":width" and height ":height"', array(':src' => $src, ':width' => $width, ':height' => $height)), 'invalid');
 
                 }else{
