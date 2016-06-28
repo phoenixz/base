@@ -979,37 +979,40 @@ function has_rights($rights, &$user = null){
         }
 
         foreach(array_force($rights) as $right){
-            if(($right === 'admin') and (SCRIPT !== 'signin')){
-                /*
-                 * Admin right also requires that the current admin script is defined in production_admin menu
-                 */
-                $fail = true;
-
-                foreach($_CONFIG['admin']['pages'] as $data){
-                    if(!empty($data['subs'])){
-                        foreach($data['subs'] as $sub){
-                            if(isset_get($subs['script']) === SCRIPT){
-                                /*
-                                 * Script is defined, so just check the normal access rights
-                                 */
-                                unset($script);
-                                break;
-                            }
-                        }
-
-                        if(empty($script)){
-                            break;
-                        }
-
-                    }elseif(isset_get($data['script']) === SCRIPT){
-                        /*
-                         * Script is defined, so just check the normal access rights
-                         */
-                        unset($script);
-                        break;
-                    }
-                }
-            }
+// :DELETE: This has caused shit tonnes of problems.
+            //if(($right === 'admin') and (SCRIPT !== 'signin')){
+            //    /*
+            //     * Admin right also requires that the current admin script is
+            //     * defined in production_admin menu to avoid that scripts that
+            //     * are not allowed to be executed (Are not in admin config) will be executed anyway
+            //     */
+            //    $fail = true;
+            //
+            //    foreach($_CONFIG['admin']['pages'] as $data){
+            //        if(!empty($data['subs'])){
+            //            foreach($data['subs'] as $sub){
+            //                if(isset_get($subs['script']) === SCRIPT){
+            //                    /*
+            //                     * Script is defined, so just check the normal access rights
+            //                     */
+            //                    unset($script);
+            //                    break;
+            //                }
+            //            }
+            //
+            //            if(empty($script)){
+            //                break;
+            //            }
+            //
+            //        }elseif(isset_get($data['script']) === SCRIPT){
+            //            /*
+            //             * Script is defined, so just check the normal access rights
+            //             */
+            //            unset($script);
+            //            break;
+            //        }
+            //    }
+            //}
 
             if(empty($user['rights'][$right]) or !empty($user['rights']['devil']) or !empty($fail)){
                 if(PLATFORM == 'shell'){
