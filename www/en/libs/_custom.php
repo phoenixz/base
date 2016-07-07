@@ -47,7 +47,7 @@ function c_html_header($params = null, $meta = null){
         return html_header($params, $meta).c_page_header($params);
 
     }catch(Exception $e){
-        throw new bException('c_page_header(): Failed', $e);
+        throw new bException('c_html_header(): Failed', $e);
     }
 }
 
