@@ -19,7 +19,7 @@ function c_page($params, $meta, $html){
         array_default($params, 'cache_namespace', 'htmlpage');
         array_default($params, 'cache_key'      , null);
 
-        $page = c_html_header($params, $meta).$html.c_html_footer();
+        $page = c_html_header($params, $meta).$html.c_html_footer($params);
 
         http_headers($params, strlen($page));
 
@@ -40,6 +40,7 @@ function c_html_header($params = null, $meta = null){
 
     try{
         array_params($params);
+        array_default($params, '', '');
 
         html_load_css('style');
         html_load_js('');
@@ -56,7 +57,7 @@ function c_html_header($params = null, $meta = null){
 /*
  * Create and return the page header
  */
-function c_page_header(){
+function c_page_header($params){
     global $_CONFIG;
 
     try{
@@ -74,7 +75,7 @@ function c_page_header(){
 /*
  * Create and return the page footer
  */
-function c_html_footer(){
+function c_html_footer($params){
     try{
         $html = '';
 
