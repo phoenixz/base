@@ -54,15 +54,6 @@ function c_html_header($params = null, $meta = null){
 
 
 /*
- * Create and return the page footer
- */
-function c_html_footer(){
-    return ''.html_footer();
-}
-
-
-
-/*
  * Create and return the page header
  */
 function c_page_header(){
@@ -75,6 +66,22 @@ function c_page_header(){
 
     }catch(Exception $e){
         throw new bException('c_page_header(): Failed', $e);
+    }
+}
+
+
+
+/*
+ * Create and return the page footer
+ */
+function c_html_footer(){
+    try{
+        $html = '';
+
+        return $html.html_footer();
+
+    }catch(Exception $e){
+        throw new bException('c_html_footer(): Failed', $e);
     }
 }
 ?>
