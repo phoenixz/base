@@ -5,7 +5,7 @@
  * This library can be used to manage emails
  *
  * @license http://opensource.org/licenses/GPL-2.0 GNU Public License, Version 2
- * @copyright Sven Oostenbrink <support@svenoostenbrink.com>
+ * @copyright Sven Oostenbrink <support@ingiga.com>
  *
  * Requires php-imap library
  * debian / ubuntu alikes : sudo apt-get -y install php5-imap openssl; sudo php5enmod imap

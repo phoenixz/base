@@ -9,7 +9,7 @@ $_CONFIG['content']['autocreate']  = true;
 $_CONFIG['cdn']['min']             = false;
 
 // Mail configuration
-$_CONFIG['mail']['developer']      = 'support@svenoostenbrink.com';
+$_CONFIG['mail']['developer']      = 'support@ingiga.com';
 
 // Cookie configuration
 $_CONFIG['cookie']['domain']       = '.base.sven';

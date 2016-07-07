@@ -6,7 +6,7 @@
  * ALL CONFIGURATION ENTRIES ARE ORDERED ALPHABETICALLY, ONLY "debug" IS ON TOP FOR CONVENIENCE
 
  * @license http://opensource.org/licenses/GPL-2.0 GNU Public License, Version 2
- * @copyright Sven Oostenbrink <support@svenoostenbrink.com>, Johan Geuze
+ * @copyright Sven Oostenbrink <support@ingiga.com>, Johan Geuze
  */
 
 //Debug or not?
@@ -146,7 +146,7 @@ $_CONFIG['editors']            = array('imageupload'      => 'session',         
                                                                    'encrypt_name'       => false));         // Should filenames retain their original name (false) or should jbimages give it a random character name (true)?
 
 // Feedback configuration
-$_CONFIG['feedback']           = array('emails'           => array('Sven Oostenbrink Support' => 'support@svenoostenbrink.com'));
+$_CONFIG['feedback']           = array('emails'           => array('Sven Oostenbrink Support' => 'support@ingiga.com'));
 
 // Flash alert configuration
 $_CONFIG['flash']              = array('html'             => '<div class="flash:type">:message</div>');

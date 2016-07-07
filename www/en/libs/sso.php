@@ -7,7 +7,7 @@
  * Requires the socialmedia-oauth-login library, with a "sol" symlink pointing to it (sol for ease of use)
  *
  * @license http://opensource.org/licenses/GPL-2.0 GNU Public License, Version 2
- * @copyright Sven Oostenbrink <support@svenoostenbrink.com>
+ * @copyright Sven Oostenbrink <support@ingiga.com>
  */
 
 

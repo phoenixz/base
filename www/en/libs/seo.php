@@ -5,7 +5,7 @@
  * This are functions only used for seo things
  *
  * @license http://opensource.org/licenses/GPL-2.0 GNU Public License, Version 2
- * @copyright Johan Geuze, Sven Oostenbrink <support@svenoostenbrink.com>
+ * @copyright Johan Geuze, Sven Oostenbrink <support@ingiga.com>
  */
 
 

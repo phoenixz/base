@@ -5,7 +5,7 @@
  * This library tries to handle the various SQL errors and tries to at least give useful error messages
  *
  * @license http://opensource.org/licenses/GPL-2.0 GNU Public License, Version 2
- * @copyright Sven Oostenbrink <support@svenoostenbrink.com>
+ * @copyright Sven Oostenbrink <support@ingiga.com>
  */
 
 // :TODO: Add SQLSTATE[HY000] [2002] No such file or directory

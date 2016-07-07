@@ -5,7 +5,7 @@
  * This library file contains easy access functions to use Xapian
  *
  * @license http://opensource.org/licenses/GPL-2.0 GNU Public License, Version 2
- * @copyright Johan Geuze, Sven Oostenbrink <support@svenoostenbrink.com>
+ * @copyright Johan Geuze, Sven Oostenbrink <support@ingiga.com>
  */
 
 /*
