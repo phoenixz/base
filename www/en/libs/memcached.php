@@ -101,7 +101,7 @@ function mc_put($value, $key, $namespace = null, $expiration_time = null){
         mc_connect();
 
         if($namespace){
-            $namespace = mc_add_to_namespace($namespace).'_';
+            $namespace = mc_namespace($namespace).'_';
         }
 
         if($expiration_time === null){
@@ -132,7 +132,7 @@ function mc_add($value, $key, $namespace = null, $expiration_time = null){
         mc_connect();
 
         if($namespace){
-            $namespace = mc_add_to_namespace($namespace).'_';
+            $namespace = mc_namespace($namespace).'_';
         }
 
         if($expiration_time === null){
@@ -164,7 +164,7 @@ function mc_replace($value, $key, $namespace = null, $expiration_time = null){
         mc_connect();
 
         if($namespace){
-            $namespace = mc_add_to_namespace($namespace).'_';
+            $namespace = mc_namespace($namespace).'_';
         }
 
         if($expiration_time === null){
