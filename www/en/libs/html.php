@@ -452,14 +452,20 @@ if(!empty($params['canonical'])){ $params['links']['canonical'] = $params['canon
 
         unset($meta['title']);
 
-        foreach($params['links'] as $data){
-            $sections = array();
+        if(is_string($params['links'])){
+            $retval .= $params['links'];
 
-            foreach($data as $key => $value){
-                $sections[] = $key.'="'.$value.'"';
+        }else{
+// :OBSOLETE: Links specified as an array only adds more complexity, we're going to send it as plain HTML, and be done with the crap. This is still here for backward compatibility
+            foreach($params['links'] as $data){
+                $sections = array();
+
+                foreach($data as $key => $value){
+                    $sections[] = $key.'="'.$value.'"';
+                }
+
+                $retval .= '<link '.implode(' ', $sections).">\n";
             }
-
-            $retval .= '<link '.implode(' ', $sections).">\n";
         }
 
         foreach($params['prefetch_dns'] as $prefetch){
