@@ -966,6 +966,19 @@ function sql_log($enable){
 
 
 /*
+ *
+ */
+function sql_null($value){
+    if($value === null){
+        return ' IS ';
+    }
+
+    return ' = ';
+}
+
+
+
+/*
  * COMPATIBILITY FUNCTIONS
  *
  * These functions below exist only for compatibility between pdo.php and mysqli.php
