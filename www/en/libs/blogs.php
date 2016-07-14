@@ -808,10 +808,25 @@ function blogs_validate_post(&$post, $params = null){
             $post['seocategory'] = null;
 
         }else{
-            $category = blogs_validate_category($post['seocategory'], $post['blogs_id'], isset_get($params['categories_parent']));
+            if(empty($post['seocategory'])){
+                if(!empty($params['errors']['category_required'])){
+                    /*
+                     * Category required
+                     */
+                    $v->setError($params['errors']['category_required']);
 
-            $post['category']    = $category['name'];
-            $post['seocategory'] = $category['seoname'];
+                }else{
+                    $post['category']    = '';
+                    $post['seocategory'] = null;
+                }
+
+            }else{
+
+                $category = blogs_validate_category($post['seocategory'], $post['blogs_id'], isset_get($params['categories_parent']));
+
+                $post['category']    = $category['name'];
+                $post['seocategory'] = $category['seoname'];
+            }
         }
 
         if(empty($params['use_groups'])){
@@ -819,12 +834,25 @@ function blogs_validate_post(&$post, $params = null){
             $post['seogroup'] = null;
 
         }else{
-            $group = blogs_validate_category($post['seogroup'], $post['blogs_id'], isset_get($params['groups_parent']));
+            if(empty($post['seogroup'])){
+                if(!empty($params['errors']['group_required'])){
+                    /*
+                     * Category required
+                     */
+                    $v->setError($params['errors']['group_required']);
 
-            $post['group']    = $group['name'];
-            $post['seogroup'] = $group['seoname'];
+                }else{
+                    $post['group']    = '';
+                    $post['seogroup'] = null;
+                }
 
-            $v->isNotEmpty ($post['group'], tr('Please provide a group for your :objectname', array(':objectname' => $params['object_name'])));
+            }else{
+
+                $group = blogs_validate_category($post['seogroup'], $post['blogs_id'], isset_get($params['groups_parent']));
+
+                $post['group']    = $group['name'];
+                $post['seogroup'] = $group['seoname'];
+            }
         }
 
         if(empty($params['use_keywords'])){
@@ -1359,22 +1387,23 @@ function blogs_validate_category($category, $blogs_id){
             throw new bException(tr('blogs_validate_category(): No category specified'), 'not-exist');
         }
 
-        if(!$retval = sql_get('SELECT `id`, `blogs_id`, `name`, `seoname` FROM `blogs_categories` WHERE `seoname` = :seoname', array(':seoname' => $category))){
+        if(!$retval = sql_get('SELECT `id`, `blogs_id`, `name`, `seoname` FROM `blogs_categories` WHERE `blogs_id` = :blogs_id AND `seoname` = :seoname', array(':blogs_id' => $blogs_id, ':seoname' => $category))){
 // :DELETE: Delete following 2 debug code lines
 //show(current_file(1).current_line(1));
 //showdie(tr('The specified category ":category" does not exists', ':category', str_log($category)));
             /*
              * The specified category does not exist
              */
-            throw new bException(tr('blogs_validate_category(): The specified category ":category" does not exists', array(':category' => str_log($category))), 'not-exist');
+            throw new bException(tr('blogs_validate_category(): The specified category ":category" does not exists in blog ":blogs_id"', array(':blogs_id' => $blogs_id, ':category' => str_log($category))), 'not-exist');
         }
 
-        if($retval['blogs_id'] != $blogs_id){
-            /*
-             * The specified category is not of this blog
-             */
-            throw new bException(tr('blogs_validate_category(): The specified category ":category" is not of another blog', array(':category' => str_log($category))), 'invalid');
-        }
+// :DELETE: This check is no longer needed since the query now filters on blogs_id
+        //if($retval['blogs_id'] != $blogs_id){
+        //    /*
+        //     * The specified category is not of this blog
+        //     */
+        //    throw new bException(tr('blogs_validate_category(): The specified category ":category" is not of this blog', array(':category' => str_log($category))), 'invalid');
+        //}
 
         return $retval;
 
