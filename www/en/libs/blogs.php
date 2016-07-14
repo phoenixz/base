@@ -328,8 +328,11 @@ function blogs_select($params, $selected = 0, $name = 'blog', $none = '', $class
 
         $params['resource'] = sql_query('SELECT   `seoname` AS id,
                                                   `name`
+
                                          FROM     `blogs`
+
                                          WHERE    `status` IS NULL
+
                                          ORDER BY `name` ASC');
 
         return html_select($params);
@@ -359,38 +362,46 @@ function blogs_categories_select($params) {
         array_default($params, 'filter'      , array());
 
         if(empty($params['blogs_id'])){
-            throw new bException('blogs_categories_select(): No blog specified', 'not-specified');
+            /*
+             * Categories work per blog, so without a blog we cannot show
+             * categories
+             */
+            $params['resource'] = null;
+
+        }else{
+            $execute = array(':blogs_id' => $params['blogs_id']);
+
+            $query   = 'SELECT  '.$params['column'].' AS id,
+                                `blogs_categories`.`name`
+
+                        FROM    `blogs_categories`';
+
+            $where   = ' WHERE  `blogs_categories`.`blogs_id` = :blogs_id
+                         AND    `blogs_categories`.`status`   IS NULL ';
+
+            if($params['parent']){
+                $parent = ' JOIN `blogs_categories` AS parents
+                            ON   `parents`.`seoname` = :parent
+                            AND  `parents`.`id`      = `blogs_categories`.`parents_id`';
+
+                $execute[':parent'] = $params['parent'];
+
+            }elseif($params['parent'] !== false){
+                $where .= ' AND `blogs_categories`.`parents_id` IS NULL ';
+            }
+
+            /*
+             * Filter specified values.
+             */
+            foreach($params['filter'] as $key => $value){
+                if(!$value) continue;
+
+                $where            .= ' AND `'.$key.'` != :'.$key.' ';
+                $execute[':'.$key] = $value;
+            }
+
+            $params['resource'] = sql_query($query.isset_get($parent).$where.' ORDER BY `name` ASC', $execute);
         }
-
-        $execute = array(':blogs_id' => $params['blogs_id']);
-
-        $query   = 'SELECT   '.$params['column'].' AS id,
-                             `blogs_categories`.`name`
-
-                    FROM     `blogs_categories`
-
-                    '.($params['parent'] ? ' JOIN `blogs_categories` AS parents ON `parents`.`seoname` = :parent AND `parents`.`id` = `blogs_categories`.`parents_id`' : '').'
-
-                    WHERE    `blogs_categories`.`blogs_id` = :blogs_id
-                    AND      `blogs_categories`.`status`   IS NULL';
-
-        /*
-         * Filter specified values.
-         */
-        foreach($params['filter'] as $key => $value){
-            if(!$value) continue;
-
-            $query            .= ' AND `'.$key.'` != :'.$key.' ';
-            $execute[':'.$key] = $value;
-        }
-
-        $query  .= ' ORDER BY `name` ASC';
-
-        if($params['parent']){
-            $execute[':parent'] = $params['parent'];
-        }
-
-        $params['resource'] = sql_query($query, $execute);
 
         return html_select($params);
 
