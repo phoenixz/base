@@ -1447,7 +1447,9 @@ function blogs_post_url($post, $current_domain = true){
                           'seoname',
                           'seoparent',
                           'category',
-                          'seocategory');
+                          'seocategory',
+                          'group',
+                          'seogroup');
 
         if(empty($post['blog'])){
             $post['blog'] = sql_get('SELECT `seoname` FROM `blogs` WHERE `id` = :id', array(':id' => $post['blogs_id']), 'seoname');
