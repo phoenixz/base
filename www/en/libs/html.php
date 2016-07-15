@@ -777,6 +777,7 @@ function html_select($params){
     try{
         array_params ($params, 'resource');
         array_default($params, 'class'       , '');
+        array_default($params, 'option_class', '');
         array_default($params, 'disabled'    , false);
         array_default($params, 'name'        , '');
         array_default($params, 'id'          , $params['name']);
@@ -839,7 +840,7 @@ function html_select($params){
          * <select> class should not be applied to <option>
          */
         $class = $params['class'];
-        unset($params['class']);
+        $params['class'] = $params['option_class'];
 
         $body = html_select_body($params);
 
