@@ -11,6 +11,23 @@
 
 
 /*
+ * Clone the specified git repository to the specified path
+ */
+function git_clone($repository, $path){
+    try{
+        /*
+         * Clone the repository
+         */
+        $retval = safe_exec('cd '.$path.'; git clone '.$repository);
+
+    }catch(Exception $e){
+        throw new bException('git_clone(): Failed', $e);
+    }
+}
+
+
+
+/*
  * Get or set the current GIT branch
  */
 function git_branch($branch = null){

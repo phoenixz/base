@@ -1786,6 +1786,44 @@ function get_null($source){
 
 
 /*
+ * Ensure that the specifed library is installed. If not, install it before
+ * continuing
+ */
+function ensure_installed($params){
+    try{
+        array_params($params);
+        array_default($params, 'checks', null);
+        array_default($params, 'name'  , null);
+
+        /*
+         * Check if specified library is installed
+         */
+        if(!$params['name']){
+            throw new bException(tr('ensure_installed(): No name specified for library'), 'not-specified');
+        }
+
+        if(!$params['checks']){
+            throw new bException(tr('ensure_installed(): No checks specified for library with checks":checks"', array(':checks' => $params['checks'])), 'not-specified');
+        }
+
+        foreach(array_force($params['checks']) as $path){
+            if(!file_exists($path)){
+                $fail = true;
+            }
+        }
+
+        if(!empty($fail)){
+            return include(__DIR__.'/handlers/system_ensure_installed.php');
+        }
+
+    }catch(Exception $e){
+        throw new bException(tr('ensure_installed(): Failed'), $e);
+    }
+}
+
+
+
+/*
  * OBSOLETE FUNCTIONS AND WRAPPERS BE HERE BELOW
  */
 
