@@ -771,6 +771,27 @@ function html_flash_class($class = null){
 /*
  * Return an HTML <select> list
  */
+function html_select_submit($params){
+    try{
+        array_params ($params);
+        array_default($params, 'name'      , 'dosubmit');
+        array_default($params, 'autosubmit', true);
+        array_default($params, 'buttons'   , array());
+
+        $params['resource'] = $params['buttons'];
+
+        return html_select($params);
+
+    }catch(Exception $e){
+        throw new bException('html_select_submit(): Failed', $e);
+    }
+}
+
+
+
+/*
+ * Return an HTML <select> list
+ */
 function html_select($params){
     static $count = 0;
 
