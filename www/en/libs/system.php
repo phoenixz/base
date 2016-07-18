@@ -14,20 +14,43 @@ class bException extends Exception{
     private $data     = null;
     public  $code     = null;
 
-    function __construct($messages, $code = null, $e = null, $data = null){
-        /*
-         *
-         */
-        if(!empty($code)){
-            if(is_object($code)){
-                $data = $e;
-                $e    = $code;
-                $code = null;
+    function __construct($messages, $code, $data = null){
+        $messages = array_force($messages);
+
+        if(is_object($code)){
+            /*
+             * Specified code is not a code but a previous exception. Get
+             * history from previous exception and add new exception message
+             */
+            $e    = $code;
+            $code = null;
+
+            if($e instanceof bException){
+                $this->messages = $e->getMessages();
+                $this->data     = $e->getData();
+
+            }else{
+                if(!($e instanceof Exception)){
+                    throw new bException(tr('bException: Specified exception object for exception ":message" is not valid (either not object or not an exception object)', array(':message' => $messages)), 'invalid');
+                }
+
+                $this->messages[] = $e->getMessage();
             }
+
+            $orgmessage = $e->getMessage();
+            $code       = $e->getCode();
+
+        }else{
+            if(!is_scalar($code)){
+                throw new bException(tr('bException: Specified exception code ":code" for exception ":message" is not valid (either scalar, or an exception object)', array(':code' => $code, ':message' => $messages)), 'invalid');
+            }
+
+            $orgmessage = reset($messages);
+            $this->data = $data;
         }
 
         if(!$messages){
-            throw new Exception('bException: No exception message specified in file "'.current_file(1).'" @ line "'.current_line(1).'"');
+            throw new Exception(tr('bException: No exception message specified in file ":file" @ line ":line"', array(':file' => current_file(1), ':line' => current_line(1))));
         }
 
         if(!is_array($messages)){
@@ -39,7 +62,7 @@ class bException extends Exception{
                 log_database($message, 'exception');
             }
 
-        }catch(Exception $e){
+        }catch(Exception $f){
             /*
              * Exception database logging failed. Ignore, since from here on there is little to do
              */
@@ -47,37 +70,8 @@ class bException extends Exception{
 // :TODO: Add notifications!
         }
 
-        if(!empty($e)){
-            if($e instanceof bException){
-                $this->messages = $e->getMessages();
-
-            }else{
-                if(!is_object($e) or !($e instanceof Exception)){
-                    throw new bException(tr('bException: Specified exception object for exception ":message" is not valid (either not object or not an exception object)', array(':message' => str_log($messages))), 'invalid');
-                }
-
-                $this->messages[] = $e->getMessage();
-            }
-
-            $orgmessage = $e->getMessage();
-
-            if(method_exists($e, 'getData')){
-                $this->data = $e->getData();
-            }
-
-        }else{
-            $orgmessage = reset($messages);
-            $this->data = $data;
-        }
-
-        if(!$code){
-            if(is_object($e) and ($e instanceof bException)){
-                $code = $e->getCode();
-            }
-        }
-
         parent::__construct($orgmessage, null);
-        $this->code       = str_log($code);
+        $this->code = str_log($code);
 
         /*
          * If there are any more messages left, then add them as well
@@ -1114,6 +1108,22 @@ function user_or_page($page){
 
 
 /*
+ *
+ */
+function return_with_rights($rights, $with_rights, $without_rights = null){
+    try{
+        if(has_rights($rights)){
+            return $with_rights;
+        }
+
+        return $without_rights;
+
+    }catch(Exception $e){
+        throw new bException('return_with_rights(): Failed', $e);
+    }
+}
+
+/*
  * Read extended signin
  */
 function check_extended_session() {
@@ -1818,6 +1828,24 @@ function ensure_installed($params){
 
     }catch(Exception $e){
         throw new bException(tr('ensure_installed(): Failed'), $e);
+    }
+}
+
+
+
+/*
+ *
+ */
+function ensure_value($value, $enum, $default){
+    try{
+        if(in_array($value, $enum)){
+           return $value;
+        }
+
+        return $default;
+
+    }catch(Exception $e){
+        throw new bException(tr('ensure_value(): Failed'), $e);
     }
 }
 
