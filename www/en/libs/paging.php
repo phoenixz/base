@@ -172,7 +172,7 @@ function paging_generate($params){
 
         $html = str_replace('%list%', $list, $html);
 
-        return $html.'<input type="hidden" name="page" id="page" value="'.$current.'">';
+        return $html.'<input type="hidden" name="page" id="page" value="'.$params['current'].'">';
 
 // :DELETE: This is the old paging code, which was crap and no longer supported. Delete ASAP
         //if($GLOBALS['page_is_mobile']){
