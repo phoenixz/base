@@ -47,7 +47,7 @@ function paging_generate($params){
         array_key_check($params, 'show_pages,count,html,page,url'.($params['prev_next'] ? ',prev,next' : '').($params['first_last'] ? ',first,last' : ''));
 
         $params['current'] = force_natural_number($params['current']);
-        $page_count        = ceil($params['count'] / $params['limit']);
+        $page_count        = ($params['limit'] ? ceil($params['count'] / $params['limit']) : 1);
         $html              = $params['html'];
         $url               = $params['url'];
         $current           = $params['current'];
@@ -299,7 +299,7 @@ function paging_data($page, $limit, $rows){
         $retval['default_limit'] = $_CONFIG['paging']['limit'];
         $retval['limit']         = paging_limit($limit, $retval['default_limit']);
         $retval['display_limit'] = (($_CONFIG['paging']['limit'] == $retval['limit']) ? '' : $retval['limit']);
-        $retval['pages']         = ceil($rows / $retval['limit']);
+        $retval['pages']         = ($retval['limit'] ? ceil($rows / $retval['limit']) : 1);
         $retval['page']          = paging_check_page($page, $retval['pages']);
         $retval['count']         = $rows;
         $retval['start']         = (force_natural_number($retval['page']) - 1) * $retval['limit'] + 1;
@@ -342,6 +342,7 @@ function paging_limit($limit, $default_limit = null){
     global $_CONFIG;
 
     try{
+        if(!$limit) return 0;
         return sql_valid_limit(not_empty($limit, $default_limit, $_CONFIG['paging']['limit']));
 
     }catch(Exception $e){
