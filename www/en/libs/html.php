@@ -777,6 +777,7 @@ function html_select_submit($params){
         array_default($params, 'name'      , 'dosubmit');
         array_default($params, 'autosubmit', true);
         array_default($params, 'buttons'   , array());
+        array_default($params, 'none'      , tr('Select action'));
 
         $params['resource'] = $params['buttons'];
 

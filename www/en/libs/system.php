@@ -1039,7 +1039,7 @@ function user_or_signin(){
                 /*
                  * No session
                  */
-                redirect(str_replace('%page%', str_log(urlencode($_SERVER['SCRIPT_NAME'])), isset_get($_CONFIG['redirects']['signin'], 'signin.php')));
+                redirect(isset_get($_CONFIG['redirects']['signin'], 'signin.php').'?redirect='.urlencode($_SERVER['SCRIPT_NAME']));
             }
 
             if(!empty($_SESSION['lock'])){
@@ -1048,7 +1048,7 @@ function user_or_signin(){
                  * Redirect all pages EXCEPT the lock page itself!
                  */
                 if($_CONFIG['redirects']['lock'] !== str_cut($_SERVER['REQUEST_URI'], '/', '?')){
-                    redirect(str_replace('%page%', str_log(urlencode($_SERVER['SCRIPT_NAME'])), isset_get($_CONFIG['redirects']['lock'], 'lock.php')));
+                    redirect(isset_get($_CONFIG['redirects']['lock'], 'lock.php').'?redirect='.urlencode($_SERVER['SCRIPT_NAME']));
                 }
             }
 
