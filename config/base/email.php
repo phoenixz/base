@@ -1,6 +1,8 @@
 <?php
 $_CONFIG['email'] = array('imap'            => '{imap.gmail.com:993/imap/ssl}INBOX',
 
+                          'imap_cache'      => 10,
+
                           'smtp'            => array('host'   => 'smtp.google.com',
                                                      'port'   => 587,
                                                      'auth'   => true,
