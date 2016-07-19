@@ -22,7 +22,7 @@ if(debug()){
         foreach($_CONFIG['twilio']['accounts'] as $account => $data){
             foreach($data['sources'] as $phone => $name){
                 if(!is_numeric($phone)){
-                    throw new bException(tr('twilio(): Specified phone number ":phone" from account ":account" is invalid, it should contain no formatting, no spaces, only numbers', array(':account' => str_log($account), ':phone' => str_log($phone))), 'invalid');
+                    throw new bException(tr('twilio(): Specified phone number ":phone" from account ":account" is invalid. It should contain no formatting and no spaces and only numbers', array(':account' => str_log($account), ':phone' => str_log($phone))), 'invalid');
                 }
             }
         }

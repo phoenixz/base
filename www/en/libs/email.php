@@ -349,12 +349,20 @@ function email_get_conversation($email){
             /*
              * This is a new conversation
              */
+            if(empty($email['email_accounts_id'])){
+                $email['email_accounts_id'] = sql_get('SELECT `id` FROM `email_accounts` WHERE `email` = :email', 'id', array(':email' => $email['from']));
+
+                if(!$email['email_accounts_id']){
+                    $email['email_accounts_id'] = sql_get('SELECT `id` FROM `email_accounts` WHERE `email` = :email', 'id', array(':email' => $email['to']));
+                }
+            }
+
             sql_query('INSERT INTO `email_conversations` (`subject`, `them`, `us`, `email_accounts_id`, `users_id`)
                        VALUES                            (:subject , :them , :us , :email_accounts_id , :users_id )',
 
                        array(':us'                => $email['to'],
                              ':them'              => $email['from'],
-                             ':users_id'          => $email['users_id'],
+                             ':users_id'          => isset_get($email['users_id']),
                              ':email_accounts_id' => $email['email_accounts_id'],
                              ':subject'           => (string) $email['subject']));
 
@@ -862,15 +870,8 @@ function email_send($email, $smtp = null){
         $mail->AddAddress($email['to']  , isset_get($email['to_name']));
 
 //        $mail->WordWrap = 50; // set word wrap
-
-        if(empty($account['is_alias'])){
-            $mail->Username = $account['email'];
-            $mail->Password = $account['pass'];
-
-        }else{
-            $mail->Username = $account['real']['email'];
-            $mail->Password = $account['real']['pass'];
-        }
+        $mail->Username = $account['email'];
+        $mail->Password = $account['password'];
 
         if(empty($email['html'])){
             $mail->IsHTML(false);
