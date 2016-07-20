@@ -447,7 +447,7 @@ function user_check_blacklisted($name){
  */
 function user_signup($params){
     try{
-        if(empty($params['password'])){
+        if(empty($params['password']) and (isset_get($params['status']) !== 'new')){
             throw new bException(tr('user_signup(): Please specify a password'), 'not-specified');
         }
 
@@ -477,15 +477,16 @@ function user_signup($params){
         //}
 
         sql_query('INSERT INTO `users` (`status`, `createdby`, `username`, `password`, `name`, `email`, `roles_id`, `role`)
-                   VALUES              (NULL    , :createdby , :username , :password , :name , :email , :roles_id , :role )',
+                   VALUES              (:status , :createdby , :username , :password , :name , :email , :roles_id , :role )',
 
                    array(':createdby' => isset_get($_SESSION['user']['id']),
                          ':username'  => get_null(isset_get($params['username'])),
+                         ':status'    => isset_get($params['status']),
                          ':name'      => isset_get($params['name']),
-                         ':password'  => password($params['password']),
-                         ':email'     => get_null($params['email']),
-                         ':role'      => get_null($params['role']),
-                         ':roles_id'  => get_null($params['roles_id'])));
+                         ':password'  => ((isset_get($params['status']) === 'new') ? '' : password($params['password'])),
+                         ':email'     => get_null(isset_get($params['email'])),
+                         ':role'      => get_null(isset_get($params['role'])),
+                         ':roles_id'  => get_null(isset_get($params['roles_id']))));
 
         return sql_insert_id();
 
@@ -683,42 +684,63 @@ function user_update_password($params, $current = true){
 /*
  * Return requested data for specified user
  */
-function user_get($user, $columns = '*'){
+function user_get($user = null, $columns = '*'){
     global $_CONFIG;
 
     try{
-        if(!$user){
-            throw new bException(tr('user_get(): No user specified'), 'not-specified');
-        }
+        if($user){
+            if(!is_scalar($user)){
+                throw new bException(tr('user_get(): Specified user data ":data" is not scalar', array(':data' => $user)), 'invalid');
+            }
 
-        if(!is_scalar($user)){
-            throw new bException(tr('user_get(): Specified user data ":data" is not scalar', array(':data' => str_log($user))), 'invalid');
-        }
+            if(is_numeric($user)){
+                $retval = sql_get('SELECT '.$columns.'
 
-        if(is_numeric($user)){
-            $retval = sql_get('SELECT '.$columns.'
+                                   FROM   `users`
 
-                               FROM   `users`
+                                   WHERE  `id` = :id',
 
-                               WHERE  `id` = :id',
+                                   array(':id' => $user));
 
-                               array(':id' => $user));
+            }else{
+                $retval = sql_get('SELECT '.$columns.'
+
+                                   FROM   `users`
+
+                                   WHERE  `email`    = :email
+                                   OR     `username` = :username',
+
+                                   array(':email'    => $user,
+                                         ':username' => $user));
+            }
+
+            if(!$retval){
+                if(!$auto_create){
+                    throw new bException(tr('user_get(): Specified user ":user" does not exist', array(':user' => $user)), 'not-exist');
+                }
+
+                $id = user_signup(array('status' => 'new'));
+                return user_get($id, $columns);
+            }
 
         }else{
+            /*
+             * Pre-create a new user
+             */
             $retval = sql_get('SELECT '.$columns.'
 
                                FROM   `users`
 
-                               WHERE  `email`    = :email
-                               OR     `username` = :username',
+                               WHERE  `createdby` = :createdby
 
-                               array(':email'    => $user,
-                                     ':username' => $user));
+                               AND    `status`    = "new"',
 
-        }
+                               array(':createdby' => $_SESSION['user']['id']));
 
-        if(!$retval){
-            throw new bException(tr('user_get(): Specified user ":user" does not exist', array(':user' => str_log($user))), 'not-exist');
+            if(!$retval){
+                $id = user_signup(array('status' => 'new'));
+                return user_get(null, $columns);
+            }
         }
 
         return $retval;
