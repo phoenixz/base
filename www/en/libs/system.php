@@ -579,7 +579,7 @@ function log_database($messages, $type = 'unknown'){
             /*
              * Don't log to DB, there is no DB
              */
-            return false;
+            return $messages;
         }
 
         if(is_object($messages)){
@@ -598,7 +598,7 @@ function log_database($messages, $type = 'unknown'){
             /*
             * We already displayed this message, skip!
             */
-            return;
+            return $messages;
         }
 
         $last = $messages;
