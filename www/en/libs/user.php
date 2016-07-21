@@ -874,6 +874,9 @@ function user_switch($username, $redirect = '/'){
          */
         sql_query('UPDATE `users` SET `last_signin` = DATE(NOW()) WHERE `id` = '.cfi($user['id']).';');
 
+        html_flash_set(tr('You are now the user ":user"', array(':user' => $user['name'])), 'success');
+        html_flash_set(tr('NOTICE: You will now be limited to the access level of user ":user"', array(':user' => $user['name'])), 'warning');
+
         if($redirect){
             redirect($redirect);
         }
