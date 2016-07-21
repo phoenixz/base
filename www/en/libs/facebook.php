@@ -528,4 +528,38 @@ function facebook_button($params){
         throw new bException('facebook_button(): Failed', $e);
     }
 }
+
+
+/*
+ *
+ */
+function facebook_load_sdk(){
+    try{
+        $html = '   <!-- Load Facebook SDK for JavaScript -->
+                    <div id="fb-root"></div>
+                    <script>(function(d, s, id) {
+                      var js, fjs = d.getElementsByTagName(s)[0];
+                      if (d.getElementById(id)) return;
+                      js = d.createElement(s); js.id = id;
+                      js.src = "//connect.facebook.net/en_US/sdk.js#xfbml=1&version=v2.5";
+                      fjs.parentNode.insertBefore(js, fjs);
+                    }(document, "script", "facebook-jssdk"));</script>';
+
+ // :DELETE: Official facebook code, fails with "Invalid version specified"
+        //$html = '   <!-- Load Facebook SDK for JavaScript -->
+        //            <div id="fb-root"></div>
+        //            <script>(function(d, s, id) {
+        //              var js, fjs = d.getElementsByTagName(s)[0];
+        //              if (d.getElementById(id)) return;
+        //              js = d.createElement(s); js.id = id;
+        //              js.src = "//connect.facebook.net/en_US/sdk.js#xfbml=1";
+        //              fjs.parentNode.insertBefore(js, fjs);
+        //            }(document, "script", "facebook-jssdk"));</script>';
+
+        return $html;
+
+    }catch(Exception $e){
+        throw new bException('facebook_load_sdk(): Failed', $e);
+    }
+}
 ?>
