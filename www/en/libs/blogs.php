@@ -1187,18 +1187,28 @@ function blogs_media_process($file, $post, $priority = null){
 /*
  *
  */
-function blog_media_delete($blogs_posts_id){
+function blogs_media_delete($blogs_posts_id){
     try{
         load_libs('file');
 
         $media = sql_query('SELECT `id`, `file` FROM `blogs_media` WHERE `blogs_posts_id` = :blogs_posts_id', array(':blogs_posts_id' => $blogs_posts_id));
 
-        while($file = sql_fetch($media)){
-            file_delete(ROOT.'data/content/');
+        if(!$media->rowCount()){
+            /*
+             * There are no files to delete
+             */
+            return false;
         }
 
+        while($file = sql_fetch($media)){
+            file_delete_tree(dirname(ROOT.'data/content/photos/'.$file['file']));
+            file_clear_path(dirname(ROOT.'data/content/photos/'.$file['file']));
+        }
+
+        sql_query('DELETE FROM `blogs_media` WHERE `blogs_posts_id` = :blogs_posts_id', array(':blogs_posts_id' => $blogs_posts_id));
+
     }catch(Exception $e){
-        throw new bException('blog_media_delete(): Failed', $e);
+        throw new bException('blogs_media_delete(): Failed', $e);
     }
 }
 
