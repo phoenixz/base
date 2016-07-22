@@ -586,7 +586,8 @@ function user_signup($params){
 function user_update_password($params, $current = true){
     try{
         array_params($params);
-        array_default($params, 'validated', false);
+        array_default($params, 'validated'             , false);
+        array_default($params, 'check_banned_passwords', true);
 
         if(!is_array($params)){
             throw new bException(tr('user_update_password(): Invalid params specified'), 'invalid');
@@ -614,7 +615,7 @@ function user_update_password($params, $current = true){
         /*
          * Check if password is NOT equal to cpassword
          */
-        if($params['password'] == $params['cpassword']){
+        if($current and ($params['password'] == $params['cpassword'])){
             throw new bException(tr('user_update_password(): Specified new password is the same as the current password'), 'same-as-current');
         }
 
@@ -629,7 +630,7 @@ function user_update_password($params, $current = true){
         /*
          * Check password strength
          */
-        $strength = user_password_strength($params['password']);
+        $strength = user_password_strength($params['password'], $params['check_banned_passwords']);
 
         /*
          * Prepare new password
@@ -994,7 +995,7 @@ function user_update_rights($user){
  * Rewritten for use in BASE project by Sven Oostenbrink
  */
 // :TODO: Improve. This function uses some bad algorithms that could cause false high ranking passwords
-function user_password_strength($password){
+function user_password_strength($password, $check_banned = true){
     try{
         /*
          * Get the length of the password
@@ -1008,6 +1009,13 @@ function user_password_strength($password){
             }
 
             throw new bException(tr('user_password_strength(): Specified password is too short'), 'short-password');
+        }
+
+        /*
+         * Check for banned passwords
+         */
+        if($check_banned){
+            user_password_banned($password);
         }
 
         /*
@@ -1086,6 +1094,26 @@ function user_password_strength($password){
 
     }catch(Exception $e){
         throw new bException('user_password_strength(): Failed', $e);
+    }
+}
+
+
+
+/*
+ *
+ */
+function user_password_banned($password){
+    global $_CONFIG;
+
+    try{
+        if(($password == $_CONFIG['domain']) or ($password == str_until($_CONFIG['domain'], '.'))){
+            throw new bException(tr('user_password_banned(): The default password is not allowed to be used'), 'short-password');
+        }
+
+// :TODO: Add more checks
+
+    }catch(Exception $e){
+        throw new bException('user_password_banned(): Failed', $e);
     }
 }
 
