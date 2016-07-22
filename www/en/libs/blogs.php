@@ -1178,8 +1178,27 @@ function blogs_media_process($file, $post, $priority = null){
                      'photo' => $photo);
 
     }catch(Exception $e){
-
         throw new bException('blogs_media_process(): Failed', $e);
+    }
+}
+
+
+
+/*
+ *
+ */
+function blog_media_delete($blogs_posts_id){
+    try{
+        load_libs('file');
+
+        $media = sql_query('SELECT `id`, `file` FROM `blogs_media` WHERE `blogs_posts_id` = :blogs_posts_id', array(':blogs_posts_id' => $blogs_posts_id));
+
+        while($file = sql_fetch($media)){
+            file_delete(ROOT.'data/content/');
+        }
+
+    }catch(Exception $e){
+        throw new bException('blog_media_delete(): Failed', $e);
     }
 }
 
