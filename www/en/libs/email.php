@@ -267,7 +267,8 @@ function email_get_attachments($imap, $email, $data, $flags){
                 /*
                  * Get file type
                  */
-                $mime_type = file_mimetype($file);
+                $f         = finfo_open();
+                $mime_type = finfo_buffer($f, $img, FILEINFO_MIME_TYPE);
                 $extension = '.'.str_from($mime_type, '/');
 
                 switch($extension){
@@ -308,7 +309,7 @@ function email_get_attachments($imap, $email, $data, $flags){
             }
         }
 
-        return $data;
+       return $data;
 
     }catch(Exception $e){
         throw new bException(tr('email_get_attachments(): Failed'), $e);
@@ -524,7 +525,7 @@ function email_update_message($email, $direction){
         $email['conversation']       = email_get_conversation($email);
         $email['reply_to_id']        = email_get_reply_to_id($email);
 
-        if(empty($email['id'])){
+        if(empty($email['id']) and !empty($email['message_id'])){
             /*
              * Perhaps we already have this email, check the messages_id
              */
@@ -633,8 +634,10 @@ function email_update_message($email, $direction){
 function email_cleanup($email){
     try{
         foreach($email as $key => &$value){
-            if(strstr($value, '?utf-8?B?')){
-                $value = base64_decode(str_from($value, '?utf-8?B?'));
+            if(is_scalar($value)){
+                if(strstr($value, '?utf-8?B?')){
+                    $value = base64_decode(str_from($value, '?utf-8?B?'));
+                }
             }
         }
 
@@ -666,9 +669,12 @@ function email_check_images($email){
          */
         $i = 0;
 
+        $name   = str_until($email['to'], '@');
+        $domain = str_from($email['to'], '@');
+
         while(!empty($email['img'.$i])){
             if(empty($path)){
-                $path = ROOT.'data/email/images/'.$email['domain'].'/'.$email['email'].'/'.$email['id'].'/';
+                $path = ROOT.'data/email/images/'.$domain.'/'.$name.'/'.$email['id'];
                 file_ensure_path($path);
             }
 
@@ -685,7 +691,8 @@ function email_check_images($email){
             /*
              * Move the image to the correct location
              */
-            rename(ROOT.'tmp/'.$email['img'.$i]['file'], ROOT.'data/email/images/'.$email['domain'].'/'.$email['email'].'/'.$email['id'].'/'.$email['img'.$i]['file']);
+            rename(ROOT.'tmp/'.$email['img'.$i]['file'], ROOT.'data/email/images/'.$domain.'/'.$name.'/'.$email['id'].'/'.$email['img'.$i]['file']);
+            $email['img'.$i]['file'] = ROOT.'data/email/images/'.$domain.'/'.$name.'/'.$email['id'].'/'.$email['img'.$i]['file'];
 
             $i++;
         }
