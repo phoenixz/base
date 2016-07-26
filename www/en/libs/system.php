@@ -1861,6 +1861,7 @@ function ensure_value($value, $enum, $default){
  * WRAPPER FOR cli_log()
  */
 function log_console($message, $type = '', $color = null, $newline = true, $filter_double = false){
+    load_libs('cli');
     return cli_log($message, $color, $newline, $filter_double);
 }
 
