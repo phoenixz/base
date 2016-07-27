@@ -822,7 +822,7 @@ function safe_exec($command, $ok_exitcodes = null, $route_errors = true){
 /*
  * Execute the specified script from the ROOT/scripts directory
  */
-function script_exec($script, $argv = null, $ok_exitcodes = null){
+function script_exec($script, $arguments = null, $ok_exitcodes = null){
     return include(dirname(__FILE__).'/handlers/system_script_exec.php');
 }
 

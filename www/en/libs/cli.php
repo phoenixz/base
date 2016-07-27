@@ -279,6 +279,10 @@ function cli_method($default = null){
     static $method;
 
     try{
+        if($default === false){
+            $method = null;
+        }
+
         if($method){
             return $method;
         }
