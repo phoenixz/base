@@ -23,7 +23,7 @@ require_once(dirname(__FILE__).'/../../../libs/startup.php');
 
 load_libs('json,twilio,sms');
 
-switch(cli_argument(0)){
+switch(cli_method()){
     case 'rebuild':
         /*
          * Create conversations for all messages that do not have conversations yet
@@ -72,7 +72,7 @@ switch(cli_argument(0)){
                     log_console('.', '', 'green', false);
                 }
 
-                $conversation = sms_get_conversation($message['from_phone'], $message['to_phone'], $message['type']);
+                $conversation = sms_get_conversation($message['from_phone'], $message['to_phone'], $message['type'], $repliedon_now);
 
                 $p->execute(array(':conversations_id' => $conversation['id'],
                                   ':from_phone'       => $message['from_phone'],
@@ -209,9 +209,9 @@ switch(cli_argument(0)){
         break;
 
     case '':
-        throw new bException('No option specified', 'not-specified');
+        throw new bException(tr('No option specified'), 'not-specified');
 
     default:
-        throw new bException('Unknown option "'.str_log(cli_argument(0)).'" specified', 'unknown');
+        throw new bException(tr('Unknown option ":method" specified', array(':method' => cli_method())), 'unknown');
 }
 ?>
