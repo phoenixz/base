@@ -200,7 +200,7 @@ function pdo_error($e, $query, $execute, $sql = null){
                     default:
                         if(!is_string($query)){
                             if(!is_object($query) or !($query instanceof PDOStatement)){
-                                throw new bException('pdo_error(): Specified query is neither a SQL string or a PDOStatement, it seems to be a "'.gettype($query).'"', 'invlaid');
+                                throw new bException('pdo_error(): Specified query is neither a SQL string or a PDOStatement it seems to be a "'.gettype($query).'"', 'invlaid');
                             }
 
                             $query = $query->queryString;
