@@ -222,6 +222,10 @@ function cache_showpage($key = null, $namespace = 'htmlpage', $die = true){
     global $_CONFIG;
 
     try{
+        if($key === 'index'){
+            $key = SCRIPT;
+        }
+
         if(true or $_CONFIG['cache']['method']){
             if(!$key){
                 $key = $_SERVER['REQUEST_URI'].(empty($_SESSION['mobile']['device']) ? '' : '_m');
