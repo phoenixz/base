@@ -982,9 +982,10 @@ function blogs_validate_post(&$post, $params = null){
                 throw new bException('blogs_validate_post(): No changes were made', 'nochanges');
             }
 
-            $post['body'] = str_replace('&nbsp;', ' ', $post['body']);
             $post['body'] = '<h3>'.user_name($_SESSION['user']).' <small>['.system_date_format().']</small></h3><p><small>'.implode('<br>', $changes).'</small></p><p>'.$post['body'].'</p><hr>'.isset_get($oldpost['body'], '');
         }
+
+        $post['body'] = str_replace('&nbsp;', ' ', $post['body']);
 
         return $post;
 
