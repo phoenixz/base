@@ -1764,6 +1764,7 @@ function file_tree_execute($params){
         array_default($params, 'follow_symlinks'  , false);
         array_default($params, 'follow_hidden'    , false);
         array_default($params, 'recursive'        , false);
+        array_default($params, 'execute_directory', false);
 
         if(empty($params['callback'])){
             throw new bException(tr('file_tree_execute(): No callback function specified'), 'not-specified');
@@ -1865,7 +1866,14 @@ function file_tree_execute($params){
                                     $count         += file_tree_execute($params);
                                 }
 
-                                break;
+                                if(!$params['execute_directory']){
+                                    break;
+                                }
+
+                                /*
+                                 * Process the directory file as well
+                                 */
+                                // FALLTHROUGH
 
                             case 'regular file':
                                 if($params['filter'] and !preg_match($params['filter'], $file)){
