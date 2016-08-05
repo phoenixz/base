@@ -1170,7 +1170,7 @@ function blogs_media_process($file, $post, $priority = null){
 
 // :DELETE: This block is replaced by the code below. Only left here in case it contains something usefull still
 //    $html = '<li style="display:none;" id="photo'.$id.'" class="myclub photo">
-//                <img style="width:219px;height:130px;" src="/photos/'.$photo.'_small.jpg" />
+//                <img style="width:219px;height:130px;" src="/photos/'.$photo.'-small.jpg" />
 //                <a class="myclub photo delete">'.tr('Delete this photo').'</a>
 //                <textarea placeholder="'.tr('Description of this photo').'" class="myclub photo description"></textarea>
 //            </li>';
@@ -1726,7 +1726,7 @@ function blogs_post_erase($post){
 
         while($media = sql_fetch($r)){
             foreach($_CONFIG['blogs']['images'] as $type => $config){
-                file_delete(ROOT.'data/content/photos/'.$media['file'].'_'.$type.'.jpg');
+                file_delete(ROOT.'data/content/photos/'.$media['file'].'-'.$type.'.jpg');
             }
         }
 
