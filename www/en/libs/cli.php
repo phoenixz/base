@@ -127,7 +127,7 @@ function cli_only($exclusive = false){
     }
 
     if($exclusive){
-        cli_exclusive();
+        cli_run_once();
     }
 }
 
@@ -189,10 +189,10 @@ function cli_code_begin(){
 /*
  * Returns true if the startup script is already running
  */
-function cli_exclusive($action = 'exception', $force = false){
+function cli_run_once($action = 'exception', $force = false){
     try{
         if(PLATFORM != 'shell'){
-            throw new bException('cli_exclusive(): This function does not work for platform "'.PLATFORM.'", it is only for "shell" usage');
+            throw new bException('cli_run_once(): This function does not work for platform "'.PLATFORM.'", it is only for "shell" usage');
         }
 
         exec('ps -eF | grep php | grep -v grep', $output);
@@ -216,7 +216,7 @@ function cli_exclusive($action = 'exception', $force = false){
                 if(++$count >= 2){
                     switch($action){
                         case 'exception':
-                            throw new bException('cli_exclusive(): This script is already running', 'alreadyrunning');
+                            throw new bException('cli_run_once(): This script is already running', 'alreadyrunning');
 
                         case 'kill':
                             $thispid = getmypid();
@@ -244,7 +244,7 @@ function cli_exclusive($action = 'exception', $force = false){
                             return false;
 
                         default:
-                            throw new bException('cli_exclusive(): Unknown action "'.str_log($action).'" specified', 'unknown');
+                            throw new bException('cli_run_once(): Unknown action "'.str_log($action).'" specified', 'unknown');
                     }
 
                     return true;
@@ -262,7 +262,7 @@ function cli_exclusive($action = 'exception', $force = false){
             throw($e);
         }
 
-        throw new bException('cli_exclusive(): Failed', $e);
+        throw new bException('cli_run_once(): Failed', $e);
     }
 }
 
@@ -716,6 +716,10 @@ function cli_arguments_none_left(){
  * WARNING! BELOW HERE BE OBSOLETE FUNCTIONS AND OBSOLETE-BUT-WE-WANT-TO-BE-BACKWARD-COMPATIBLE WRAPPERS
  */
 function this_script_already_runs($action = 'exception', $force = false){
-    return cli_exclusive($action, $force);
+    return cli_run_once($action, $force);
+}
+
+function cli_exclusive($action = 'exception', $force = false){
+    return cli_run_once($action, $force);
 }
 ?>
