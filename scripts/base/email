@@ -3,17 +3,20 @@
 /*
  * This is the email interface script
  */
-$usage = "./scripts/base/email\n".
-         "./scripts/base/email send \n";
-         "./scripts/base/email poll \n";
+$usage = './scripts/base/email
+./scripts/base/email send
+./scripts/base/email poll';
 
-$help  = "This is the email management script
+$help  = 'This is the email management script
 
 METHODS
 
-send                           - Send unsent emails that are stored on the
-                                 database and still have `status` = new. Then
-                                 update the status = sent.
+send                            - Send unsent emails that are stored on the
+                                  database and still have `status` = new. Then
+                                  update the status = sent.
+
+rebuild                         - Rebuild the email conversations table from the
+                                  email messages
 
 list                            - List the available email accounts
 
@@ -21,7 +24,7 @@ poll                            - Poll for new emails
 
 imap                            - Execute imap commands
 
-        list                    - List the available mail boxes for the
+list                            - List the available mail boxes for the
                                   specifed account
 
 
@@ -60,6 +63,9 @@ OPTIONS
                                   for N seconds in between each poll loop. Only
                                   applies when using --loop. Defaults to 5
 
+--repliedon-now                 - (Only for "rebuild" method) set the column
+                                  "repliedon" to NOW() instead of NULL
+
 --filter                        - Filter for certain email messages. Valid
                                   filters are:
 
@@ -94,7 +100,7 @@ OPTIONS
     UNFLAGGED                    - Match messages that are not flagged
     UNKEYWORD  [string]          - Match messages that do not have the keyword
                                    [string]
-    UNSEEN                       - Match messages which have not been read yet";
+    UNSEEN                       - Match messages which have not been read yet';
 
 require_once(dirname(__FILE__).'/../../libs/startup.php');
 
@@ -407,6 +413,10 @@ switch(cli_method()){
         /*
          * Create conversations for all messages that do not have conversations yet
          */
+        $repliedon_now = cli_argument('--repliedon-now');
+
+        cli_no_arguments_left();
+
         cli_log(tr('Rebuilding email conversations'), 'white');
 
         sql_query('UPDATE `email_messages` SET `conversations_id` = NULL;');
@@ -472,7 +482,18 @@ switch(cli_method()){
 
                               ORDER BY `createdon`');
 
-        $p     = sql_prepare('UPDATE   `email_conversations`
+        if($repliedon_now){
+            $p = sql_prepare('UPDATE   `email_conversations`
+
+                              SET      `last_messages` = :last_messages,
+                                       `direction`     = :direction,
+                                       `modifiedon`    = :modifiedon,
+                                       `repliedon`     = NOW()
+
+                              WHERE    `id` = :id');
+
+        }else{
+            $p = sql_prepare('UPDATE   `email_conversations`
 
                               SET      `last_messages` = :last_messages,
                                        `direction`     = :direction,
@@ -480,6 +501,7 @@ switch(cli_method()){
                                        `repliedon`     = :repliedon
 
                               WHERE    `id` = :id');
+        }
 
         while($conversation = sql_fetch($r)){
             cli_dot();
@@ -539,11 +561,19 @@ switch(cli_method()){
 
             $conversation['last_messages'] = json_encode_custom($conversation['last_messages']);
 
-            $p->execute(array(':id'            => $conversation['id'],
-                              ':modifiedon'    => $modifiedon,
-                              ':direction'     => $direction,
-                              ':repliedon'     => $repliedon,
-                              ':last_messages' => $conversation['last_messages']));
+            if($repliedon_now){
+                $p->execute(array(':id'            => $conversation['id'],
+                                  ':modifiedon'    => $modifiedon,
+                                  ':direction'     => $direction,
+                                  ':last_messages' => $conversation['last_messages']));
+
+            }else{
+                $p->execute(array(':id'            => $conversation['id'],
+                                  ':modifiedon'    => $modifiedon,
+                                  ':direction'     => $direction,
+                                  ':repliedon'     => $repliedon,
+                                  ':last_messages' => $conversation['last_messages']));
+            }
         }
 
         cli_dot(false);

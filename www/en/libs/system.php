@@ -822,7 +822,7 @@ function safe_exec($command, $ok_exitcodes = null, $route_errors = true){
 /*
  * Execute the specified script from the ROOT/scripts directory
  */
-function script_exec($script, $argv = null, $ok_exitcodes = null){
+function script_exec($script, $arguments = null, $ok_exitcodes = null){
     return include(dirname(__FILE__).'/handlers/system_script_exec.php');
 }
 
@@ -1861,6 +1861,7 @@ function ensure_value($value, $enum, $default){
  * WRAPPER FOR cli_log()
  */
 function log_console($message, $type = '', $color = null, $newline = true, $filter_double = false){
+    load_libs('cli');
     return cli_log($message, $color, $newline, $filter_double);
 }
 

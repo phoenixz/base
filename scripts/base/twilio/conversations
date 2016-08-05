@@ -3,22 +3,35 @@
 /*
  * This is an empty test script template
  */
-$usage = "./scripts/base/twilio/conversations SUBENVIRONMENT / all\n".
-         "./scripts/base/twilio/conversations [rebuild]\n";
+$usage = './scripts/base/twilio/conversations rebuild [--repliedon-now]';
 
-$help  = "This script is an interface to the twilio API and local twilio databse";
+$help  = 'This script is an interface to the twilio API and local twilio databse
 
-$quiet = true;
+METHODS
+
+rebuild                         - Rebuild the email conversations table from the
+                                  email messages
+
+
+
+OPTIONS
+
+--repliedon-now                 - (Only for "rebuild" method) set the column
+                                  "repliedon" to NOW() instead of NULL';
 
 require_once(dirname(__FILE__).'/../../../libs/startup.php');
 
 load_libs('json,twilio,sms');
 
-switch(cli_argument(0)){
+switch(cli_method()){
     case 'rebuild':
         /*
          * Create conversations for all messages that do not have conversations yet
          */
+        $repliedon_now = cli_argument('--repliedon-now');
+
+        cli_no_arguments_left();
+
         log_console(tr('Rebuilding twilio conversations'), '', 'white');
 
         sql_query('UPDATE `sms_messages` SET `conversations_id` = NULL;');
@@ -59,7 +72,7 @@ switch(cli_argument(0)){
                     log_console('.', '', 'green', false);
                 }
 
-                $conversation = sms_get_conversation($message['from_phone'], $message['to_phone'], $message['type']);
+                $conversation = sms_get_conversation($message['from_phone'], $message['to_phone'], $message['type'], $repliedon_now);
 
                 $p->execute(array(':conversations_id' => $conversation['id'],
                                   ':from_phone'       => $message['from_phone'],
@@ -91,7 +104,18 @@ switch(cli_argument(0)){
 
                               ORDER BY `createdon`');
 
-        $p     = sql_prepare('UPDATE   `sms_conversations`
+        if($repliedon_now){
+            $p = sql_prepare('UPDATE   `sms_conversations`
+
+                              SET      `last_messages` = :last_messages,
+                                       `direction`     = :direction,
+                                       `modifiedon`    = :modifiedon,
+                                       `repliedon`     = NOW()
+
+                              WHERE    `id` = :id');
+
+        }else{
+            $p = sql_prepare('UPDATE   `sms_conversations`
 
                               SET      `last_messages` = :last_messages,
                                        `direction`     = :direction,
@@ -99,6 +123,7 @@ switch(cli_argument(0)){
                                        `repliedon`     = :repliedon
 
                               WHERE    `id` = :id');
+        }
 
         while($conversation = sql_fetch($r)){
             if($count++ > 10){
@@ -164,21 +189,29 @@ switch(cli_argument(0)){
 
             $conversation['last_messages'] = json_encode_custom($conversation['last_messages']);
 
-            $p->execute(array(':id'            => $conversation['id'],
-                              ':modifiedon'    => $modifiedon,
-                              ':direction'     => $direction,
-                              ':repliedon'     => $repliedon,
-                              ':last_messages' => $conversation['last_messages']));
+            if($repliedon_now){
+                $p->execute(array(':id'            => $conversation['id'],
+                                  ':modifiedon'    => $modifiedon,
+                                  ':direction'     => $direction,
+                                  ':last_messages' => $conversation['last_messages']));
+
+            }else{
+                $p->execute(array(':id'            => $conversation['id'],
+                                  ':modifiedon'    => $modifiedon,
+                                  ':direction'     => $direction,
+                                  ':repliedon'     => $repliedon,
+                                  ':last_messages' => $conversation['last_messages']));
+            }
         }
 
-        log_console('Done' , '', 'green');
+        log_console('Done'     , '', 'green');
         log_console('Finished!', '', 'green');
         break;
 
     case '':
-        throw new bException('No option specified', 'not-specified');
+        throw new bException(tr('No option specified'), 'not-specified');
 
     default:
-        throw new bException('Unknown option "'.str_log(cli_argument(0)).'" specified', 'unknown');
+        throw new bException(tr('Unknown option ":method" specified', array(':method' => cli_method())), 'unknown');
 }
 ?>

@@ -4,29 +4,30 @@
  *
  *
  */
-// :TODO: This will fail for PLATFORM apache since $argv will not be defined! Implement fix for that
+// :TODO: This will fail for PLATFORM apache since $arguments will not be defined! Implement fix for that
 global $_CONFIG;
 
 try{
     load_libs('file');
     $quiet = true;
+    $argv  = $GLOBALS['argv'];
 
     /*
      * Process command line arguments
      */
-    if(!$argv){
-        $argv = array();
+    if(!$arguments){
+        $arguments = array();
 
-    }elseif(!is_array($argv)){
-        if(!is_string($argv)){
+    }elseif(!is_array($arguments)){
+        if(!is_string($arguments)){
             throw new bException('script_exec(): Invalid argv specified. Should either be an array or a space delimited string');
         }
 
-        $argv = explode(' ', $argv);
+        $arguments = explode(' ', $arguments);
     }
 
-    $GLOBALS['argv'] = $argv;
-    $GLOBALS['argc'] = count($argv);
+    $GLOBALS['argv'] = $arguments;
+    $GLOBALS['argc'] = count($arguments);
 
     /*
      * Detect the path depth for this script, since the copy
@@ -55,6 +56,9 @@ try{
         /*
          * Execute the script (by its tempfile)
          */
+        global $argv;
+        cli_method(false);
+
         include($_script_exec_file);
 
     }catch(Exception $e){
@@ -95,11 +99,14 @@ try{
         log_message('script_exec(): Failed to clean up executed temporary script copy path "'.$_script_exec_file.'", probably a parrallel process added new content there?', 'error/failed', 'yellow');
     }
 
+    $GLOBALS['argv'] = $argv;
+
     if(isset($return)){
         return $return;
     }
 
 }catch(Exception $e){
+    $GLOBALS['argv'] = $argv;
     throw new bException('script_exec(): Failed to execute "'.str_log($script).'"', $e);
 }
 ?>

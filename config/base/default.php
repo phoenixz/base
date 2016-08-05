@@ -156,7 +156,8 @@ $_CONFIG['formats']            = array('date'             => 'Ymd',
                                        'time'             => 'YmdHis',
                                        'human_date'       => 'd/m/Y',
                                        'human_time'       => 'H:i:s A',
-                                       'human_datetime'   => 'd/m/Y H:i:s A');
+                                       'human_datetime'   => 'd/m/Y H:i:s A',
+                                       'human_nice_date'  => 'l, F d Y');
 
 // Filesystem configuration
 $_CONFIG['fs']                 = array('system_tempdir'   => true,                                          // ?
