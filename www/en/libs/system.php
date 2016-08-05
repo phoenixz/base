@@ -1555,7 +1555,7 @@ function run_background($cmd, $single = true, $log = false){
 /*
  * Return a code that is guaranteed unique
  */
-function unique_code($hash = 'sha256'){
+function unique_code($hash = 'sha512'){
     global $_CONFIG;
 
     try{
