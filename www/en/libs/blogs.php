@@ -899,9 +899,10 @@ function blogs_validate_post(&$post, $params = null){
         if(!empty($params['use_priorities'])){
             $v->isNotEmpty ($post['priority'], tr('Please provide a priority for your :objectname', array(':objectname' => $params['object_name'])));
 
-            if(!is_numeric($post['priority']) or ($post['priority'] < 1) or ($post['priority'] > 5) or (fmod($post['priority'], 1))){
-                $v->setError('The specified priority "'.str_log($post['priority']).'" is invalid, it must be one of 1, 2, 3, 4, or 5');
-            }
+// :TODO: Check against priority list, or min-max
+            //if(!is_numeric($post['priority']) or ($post['priority'] < 1) or ($post['priority'] > 5) or (fmod($post['priority'], 1))){
+            //    $v->setError('The specified priority "'.str_log($post['priority']).'" is invalid, it must be one of 1, 2, 3, 4, or 5');
+            //}
         }
 
         if(!empty($params['use_description'])){
