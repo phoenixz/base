@@ -762,7 +762,7 @@ function blogs_validate_post(&$post, $params = null){
             /*
              * This blog post does not exist
              */
-            throw new bException(tr('Can not update blog ":blog" post ":name", it does not exist', array(':blog' => $post['blogs_id'], ':name' => str_log($post['name']))), 'not-exist');
+            throw new bException(tr('Can not update blog ":blog" post ":name", it does not exist', array(':blog' => $post['blogs_id'], ':name' => $post['name'])), 'not-exist');
         }
 
         if(empty($params['allow_duplicate_name'])){
@@ -770,7 +770,7 @@ function blogs_validate_post(&$post, $params = null){
                 /*
                  * Another post with this name already exists
                  */
-                $v->setError(tr('A post with the name ":name" already exists', array(':name' => str_log($post['name']))), $params['object_name']);
+                $v->setError(tr('A post with the name ":name" already exists', array(':name' => $post['name'])), $params['object_name']);
             }
         }
 
@@ -872,7 +872,7 @@ function blogs_validate_post(&$post, $params = null){
 
         }else{
             if(!$post['assigned_to_id'] = sql_get('SELECT `id` FROM `users` WHERE `name` = :name', 'id', array(':name' => $post['assigned_to']))){
-                $v->setError('The specified assigned-to-user "'.str_log($post['assigned_to']).'" does not exist');
+                $v->setError(tr('The specified assigned-to-user ":assigned_to" does not exist', array(':assigned_to' => $post['assigned_to'])));
             }
         }
 
@@ -887,7 +887,7 @@ function blogs_validate_post(&$post, $params = null){
 
         if(!empty($params['use_status'])){
             if(!isset($params['status_list'][$post['status']])){
-                $v->setError('The specified status "'.str_log($post['status']).'" is invalid, it must be either one of "'.str_log(str_force($params['status_list'])).'"');
+                $v->setError(tr('The specified status ":status" is invalid, it must be either one of ":status_list"', array(':status' => $post['status'], ':status_list' => str_force($params['status_list']))));
             }
         }
 
@@ -901,7 +901,7 @@ function blogs_validate_post(&$post, $params = null){
 
 // :TODO: Check against priority list, or min-max
             //if(!is_numeric($post['priority']) or ($post['priority'] < 1) or ($post['priority'] > 5) or (fmod($post['priority'], 1))){
-            //    $v->setError('The specified priority "'.str_log($post['priority']).'" is invalid, it must be one of 1, 2, 3, 4, or 5');
+            //    $v->setError('The specified priority "'.$post['priority']).'" is invalid, it must be one of 1, 2, 3, 4, or 5');
             //}
         }
 
@@ -1350,7 +1350,7 @@ function blogs_photo_url($photo, $size){
                 return current_domain('/photos/'.$photo.'-'.$size.'.jpg');
 
             default:
-                throw new bException(tr('blogs_photo_url(): Unknown size ":size" specified', array(':size' => str_log($size))), 'unknown');
+                throw new bException(tr('blogs_photo_url(): Unknown size ":size" specified', array(':size' => $size)), 'unknown');
         }
 
     }catch(Exception $e){
@@ -1421,11 +1421,11 @@ function blogs_validate_category($category, $blogs_id){
         if(!$retval = sql_get('SELECT `id`, `blogs_id`, `name`, `seoname` FROM `blogs_categories` WHERE `blogs_id` = :blogs_id AND `seoname` = :seoname', array(':blogs_id' => $blogs_id, ':seoname' => $category))){
 // :DELETE: Delete following 2 debug code lines
 //show(current_file(1).current_line(1));
-//showdie(tr('The specified category ":category" does not exists', ':category', str_log($category)));
+//showdie(tr('The specified category ":category" does not exists', ':category', $category)));
             /*
              * The specified category does not exist
              */
-            throw new bException(tr('blogs_validate_category(): The specified category ":category" does not exists in blog ":blogs_id"', array(':blogs_id' => $blogs_id, ':category' => str_log($category))), 'not-exist');
+            throw new bException(tr('blogs_validate_category(): The specified category ":category" does not exists in blog ":blogs_id"', array(':blogs_id' => $blogs_id, ':category' => $category)), 'not-exist');
         }
 
 // :DELETE: This check is no longer needed since the query now filters on blogs_id
@@ -1433,7 +1433,7 @@ function blogs_validate_category($category, $blogs_id){
         //    /*
         //     * The specified category is not of this blog
         //     */
-        //    throw new bException(tr('blogs_validate_category(): The specified category ":category" is not of this blog', array(':category' => str_log($category))), 'invalid');
+        //    throw new bException(tr('blogs_validate_category(): The specified category ":category" is not of this blog', array(':category' => $category)), 'invalid');
         //}
 
         return $retval;
@@ -1479,7 +1479,7 @@ function blogs_post_url($post, $current_domain = true){
          */
         if(empty($post['url_template'])){
             if(empty($post['blogs_id'])){
-                throw new bException('blogs_post_url(): No URL template or blogs_id specified for post "'.str_log($post).'"', 'not_specified');
+                throw new bException(tr('blogs_post_url(): No URL template or blogs_id specified for post ":post"', array(':post' => $post)), 'not_specified');
             }
 
             $post['url_template'] = sql_get('SELECT `url_template` FROM `blogs` WHERE `id` = :id', array(':id' => $post['blogs_id']), 'url_template');
