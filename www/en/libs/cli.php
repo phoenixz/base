@@ -625,7 +625,7 @@ function cli_not_root(){
  * if $each is false, "DONE" will be printed, with next line
  * Internal counter will reset if a different $each is received.
  */
-function cli_dot($each = 10, $dot = '.', $color = 'green'){
+function cli_dot($each = 10, $color = 'green', $dot = '.'){
     static $count  = 0,
            $l_each = 0;
 
