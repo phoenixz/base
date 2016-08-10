@@ -294,6 +294,7 @@ $_CONFIG['security']           = array('signin'           => array('save_passwor
                                        'user'             => 'apache',                                      //
                                        'group'            => 'apache',                                      //
                                        'umask'            =>  0007,                                         //
+                                       'expose_php'       => false,                                         // If false, will hide the X-Powered-By PHP header. If true, will leave the header as is. If set to any other value, will send that value as X-Powered-By value
                                        'seed'             => '%T"$#HET&UJHRT87');                           // SEED for generating codes
 
 // Sessions

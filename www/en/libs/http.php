@@ -233,6 +233,16 @@ function http_headers($params, $content_length){
 //die('TEST');
         $headers = $params['headers'];
 
+        if($_CONFIG['security']['expose_php'] === false){
+            header_remove('X-Powered-By');
+
+        }elseif($_CONFIG['security']['expose_php'] !== true){
+            /*
+             * Send custom expose header to fake X-Powered-By header
+             */
+            $headers[] = 'X-Powered-By: '.$_CONFIG['security']['expose_php'];
+        }
+
         $headers[] = 'Content-Type: '.$params['mimetype'].'; charset='.$_CONFIG['charset'];
         $headers[] = 'Content-Language: '.LANGUAGE;
 
