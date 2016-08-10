@@ -367,14 +367,11 @@ function html_header($params = null, $meta = array()){
         array_default($params, 'html'          , '<html lang="'.LANGUAGE.'">');
         array_default($params, 'body'          , '<body>');
         array_default($params, 'title'         , isset_get($meta['title']));
-        array_default($params, 'links'         , array());
+        array_default($params, 'links'         , '');
         array_default($params, 'extra'         , '');
         array_default($params, 'favicon'       , true);
         array_default($params, 'prefetch_dns'  , $_CONFIG['prefetch']['dns']);
         array_default($params, 'prefetch_files', $_CONFIG['prefetch']['files']);
-
-// :DELETE: This has only been added temporarily for obsoleted $params[canonical] support
-if(!empty($params['canonical'])){ $params['links']['canonical'] = $params['canonical']; }
 
         if(!empty($params['js'])){
             html_load_js($params['js']);
@@ -428,6 +425,9 @@ if(!empty($params['canonical'])){ $params['links']['canonical'] = $params['canon
             }
         }
 
+        if(!empty($params['canonical'])){
+            $params['links'] .= '<link rel="canonical" href="'.$params['canonical']."\">\n";
+        }
 
 //:DELETE: Above is already a meta-viewport
         //if(!empty($_CONFIG['bootstrap']['enabled'])){
