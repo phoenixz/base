@@ -54,6 +54,10 @@ function crmtext_send_message($message, $phone){
     global $_CONFIG;
 
     try{
+        if(is_array($message)){
+            throw new bException(tr('crmtext_send_message(): Specified message is an array which probably indicates an MMS message, which currently is not supported for crmtext SMS'), 'not-supported');
+        }
+
         $phone      = sms_no_country_phones($phone);
         $config     = $_CONFIG['crmtext'];
         $postFields = 'method=sendsmsmsg&phone_number='.$phone.'&message='.urlencode($phone);

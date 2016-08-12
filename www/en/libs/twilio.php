@@ -196,7 +196,7 @@ function twilio_verify_source_phone($phone){
 
 
 /*
- *
+ * Send an SMS or MMS message through twilio
  */
 function twilio_send_message($message, $to, $from = null){
     global $_CONFIG;
@@ -212,15 +212,27 @@ function twilio_send_message($message, $to, $from = null){
         }
 
         if(!$twilio){
-            throw new bException(tr('Specified source phone ":from" is not known', array(':from' => str_log($from))), 'unknown');
+            throw new bException(tr('twilio_send_message(): Specified source phone ":from" is not known', array(':from' => $from)), 'unknown');
         }
 
-// :DELETE: From now on, the "from" number is obligatory
-        //if(!$from){
-        //    reset($_CONFIG['twilio']['sources']);
-        //    $from = key($_CONFIG['twilio']['sources']);
-        //}
+        if(is_array($message)){
+            /*
+             * This is an MMS message
+             */
+            if(empty($message['message'])){
+                throw new bException(tr('twilio_send_message(): No message specified'), 'not-specified');
+            }
 
+            if(empty($message['media'])){
+                throw new bException(tr('twilio_send_message(): No media specified'), 'not-specified');
+            }
+
+            return $twilio->account->messages->sendMessage($from, $to, $message['message'], $message['media']);
+        }
+
+        /*
+         * Send a normal SMS message
+         */
         return $twilio->account->messages->sendMessage($from, $to, $message);
 
     }catch(Exception $e){
