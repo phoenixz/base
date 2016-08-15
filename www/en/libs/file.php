@@ -1985,6 +1985,56 @@ function file_link_exists($file){
 
 
 /*
+ * Open the specified source, read the contents, and replace $search with $replace. Write results in $target
+ * $replaces should be a $search => $replace key value array, where the $search values are regex expressions
+ */
+function file_search_replace($source, $target, $replaces){
+    try{
+        if(!file_exists($source)){
+            throw new bException(tr('file_search_replace(): Specified source file ":source" does not exist', array(':source' => $source)), 'not-exist');
+        }
+
+        if(!file_exists(dirname($target))){
+            throw new bException(tr('file_search_replace(): Specified target path ":targetg" does not exist', array(':target' => $target)), 'not-exist');
+        }
+
+        if(!is_array($replaces)){
+            throw new bException(tr('file_search_replace(): Specified $replaces ":replaces" should be a search => replace array', array(':replaces' => $replaces)), 'invalid');
+        }
+
+        $fs       = fopen($source, 'r');
+        $ft       = fopen($target, 'w');
+
+        $position = 0;
+        $length   = 8192;
+        $filesize = filesize($source);
+
+        while($position < $filesize){
+             $data      = fread($fs, $length);
+             $position += $length;
+             fseek($fs, $position);
+
+             /*
+              * Execute search / replaces
+              */
+             foreach($replaces as $search => $replace){
+                $data = preg_replace($search, $replace, $data);
+             }
+
+             fwrite($ft, $data, strlen($data));
+        }
+
+        fclose($fs);
+        fclose($ft);
+
+    }catch(Exception $e){
+        throw new bException('file_search_replace(): Failed', $e);
+    }
+}
+
+
+
+/*
  * OBSOLETE
  * WARNING: FROM HERE BE OBSOLETE FUNCTIONS
  */
