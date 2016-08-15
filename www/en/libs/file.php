@@ -1093,7 +1093,7 @@ function file_get_local($file, &$is_downloaded = false){
 
         if((stripos($file, 'http:') === false) and (stripos($file, 'https:') === false) and (stripos($file, 'ftp:') === false)){
             if(!file_exists($file)){
-                throw new bException(tr('file_get_local(): Specified file ":file" does not exist', array(':file' => $file)));
+                throw new bException(tr('file_get_local(): Specified file ":file" does not exist', array(':file' => $file)), 'not-exists');
             }
 
             if(is_uploaded_file($file)){
