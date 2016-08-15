@@ -15,7 +15,7 @@ class bException extends Exception{
     public  $code     = null;
 
     function __construct($messages, $code, $data = null){
-        $messages = array_force($messages);
+        $messages = array_force($messages, "\n");
 
         if(is_object($code)){
             /*
