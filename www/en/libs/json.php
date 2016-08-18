@@ -86,13 +86,18 @@ function json_encode_custom($source = false){
 function json_reply($reply = null, $result = 'OK', $http_code = null){
     try{
         if(!$reply){
-            $reply = array('result' => $result);
+            $reply = array_force($reply);
         }
 
         /*
          * Auto assume result = "OK" entry if not specified
          */
-        if(strtoupper($result) == 'REDIRECT'){
+        if($result === false){
+            /*
+             * Do NOT add result to the reply
+             */
+
+        }elseif(strtoupper($result) == 'REDIRECT'){
             $reply = array('redirect' => $reply,
                            'result'   => 'REDIRECT');
 
@@ -111,8 +116,7 @@ function json_reply($reply = null, $result = 'OK', $http_code = null){
         $reply  = json_encode_custom($reply);
 
         $params = array('http_code' => $http_code,
-                        'headers'   => array('Content-Type: application/json',
-                                             'Content-Type: text/html; charset=utf-8'));
+                        'mimetype'  => 'application/json');
 
         load_libs('http');
         http_headers($params, strlen($reply));
