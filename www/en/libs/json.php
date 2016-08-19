@@ -312,6 +312,7 @@ function json_authenticate($key){
          */
         session_destroy();
         session_start();
+        session_regenerate_id();
 
         $_SESSION['json_session_start'] = time();
 
@@ -361,6 +362,45 @@ function json_start_session($token){
 
     }catch(Exception $e){
         throw new bException('json_start_session(): Failed', $e);
+    }
+}
+
+
+
+/*
+ *
+ */
+function json_stop_session($token){
+    global $_CONFIG;
+
+    try{
+        /*
+         * Check session token
+         */
+        if(empty($token)){
+            throw new bException(tr('json_stop_session(): No auth key specified'), 'not-specified');
+        }
+
+        /*
+         * Yay, we have an actual token, create session!
+         */
+        session_write_close();
+        $_COOKIE['PHPSESSID'] = $token;
+        session_start();
+
+        if(empty($_SESSION['json_session_start'])){
+            /*
+             * Not a valid session!
+             */
+            session_destroy();
+            throw new bException(tr('json_stop_session(): Specified token has no session'), 'access-denied');
+        }
+
+        session_destroy();
+        return true;
+
+    }catch(Exception $e){
+        throw new bException('json_stop_session(): Failed', $e);
     }
 }
 ?>
