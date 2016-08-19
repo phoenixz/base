@@ -158,7 +158,8 @@ switch(cli_method()){
                  * Regenerate all formats according to the configured sizes for the current blog
                  */
                 foreach($formats as $format => $format_data){
-                    $file = $base_file.'-'.$format.'.jpg';
+                    $file   = $base_file.'-'.$format.'.jpg';
+                    $filex2 = $base_file.'-'.$format.'@2x.jpg';
 
                     if($file === $source_file){
                         /*
@@ -172,6 +173,14 @@ switch(cli_method()){
 
                     file_delete($file);
                     image_convert($source_file, $file, $format_data);
+
+                    $format_data['x'] = get_null($blog[$format.'_x']) * 2;
+                    $format_data['y'] = get_null($blog[$format.'_y']) * 2;
+
+                    file_delete($filex2);
+                    image_convert($source_file, $filex2, $format_data);
+
+
                     usleep(5000);
                 }
             }
