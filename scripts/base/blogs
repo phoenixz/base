@@ -5,7 +5,7 @@
  */
 $usage = './scripts/base/blogs
 ./scripts/base/blogs rebuild-post-urls [option]
-./scripts/base/blogs recompress-images [option]';
+./scripts/base/blogs reprocess-images [option]';
 
 $help  = "This script can manage blog post information
 
