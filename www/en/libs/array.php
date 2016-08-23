@@ -530,7 +530,7 @@ function array_remove($source, $keys){
 /*
  * Return all array parts from (but without) the specified key
  */
-function array_from(&$source, $from_key, $delete = false, $skip = false){
+function array_from(&$source, $from_key, $delete = false, $skip = true){
     try{
         if(!is_array($source)){
             throw new bException(tr('array_from(): Specified source is an ":type", but it should be an array', array(':type' => gettype($source))), 'invalid');

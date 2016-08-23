@@ -353,7 +353,7 @@ function cli_argument($value = null, $next = null, $default = null){
                 /*
                  * Return all following arguments, if available
                  */
-                return array_from($argv, array_search($value, $argv), true, true);
+                return array_from($argv, array_search($value, $argv), true);
             }
 
             /*
