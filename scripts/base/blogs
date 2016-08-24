@@ -32,6 +32,7 @@ load_config('blogs');
 
 switch(cli_method()){
     case 'rebuild-post-urls':
+        cli_no_arguments_left();
         cli_log(tr('Updating all blog post URLs'), 'white');
 
         load_libs('blogs');
