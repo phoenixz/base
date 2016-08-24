@@ -142,7 +142,7 @@ function cache_write($value, $key = null, $group = null){
          *
          * Notify and continue without the cache
          */
-        notify('cache_write_fail', tr('Failed write ":method" for key ":kley"', array(':key' => $key, ':method' => $_CONFIG['cache']['method'])), 'development');
+        notify('cache_write_fail', tr('Failed write ":method" for key ":key"', array(':key' => $key, ':method' => $_CONFIG['cache']['method'])), 'development');
         return $value;
     }
 }
