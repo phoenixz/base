@@ -866,7 +866,7 @@ function password($password, $algorithm = null){
 
     try{
         if(!$algorithm){
-            $algorithm = $_CONFIG['security']['passwords']['algorithm'];
+            $algorithm = $_CONFIG['security']['passwords']['hash'];
         }
 
         switch($algorithm){
@@ -874,13 +874,13 @@ function password($password, $algorithm = null){
                 return '*sha1*'.sha1(SEED.$password);
 
             case 'sha256':
-                return '*sha256*'.sha256(SEED.$password);
+                return '*sha256*'.hash('sha256', SEED.$password);
 
             case 'sha512':
                 return '*sha512*'.hash('sha512', SEED.$password);
 
             default:
-                throw new bException(tr('password(): Unknown algorithm ":algorithm" specified', array(':algorithm' => str_log($algorithm))), 'unknown');
+                throw new bException(tr('password(): Unknown hash algorithm ":algorithm" specified', array(':algorithm' => $algorithm)), 'unknown');
         }
 
     }catch(Exception $e){
