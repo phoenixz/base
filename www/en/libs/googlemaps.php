@@ -30,7 +30,7 @@ function googlemaps_get_streetview_image($lat, $long, $x = 640, $y = 480) {
 
         load_libs('curl');
 
-        $data = curl_get('http://maps.googleapis.com/maps/api/streetview?size='.$x.'x'.$y.'&location='.$lat.',%20'.$long.'&sensor=true&key='.$_CONFIG['google-map-api-key'],'http://'.$_CONFIG['domain']);
+        $data = curl_get('http://maps.googleapis.com/maps/api/streetview?size='.$x.'x'.$y.'&location='.$lat.',%20'.$long.'&sensor=true&key='.$_CONFIG['google-map-api-key'],'http://'.$_SESSION['domain']);
 
         if(isset($data['status']['http_code']) and ($data['status']['http_code'] == 200)) {
             if(strlen($data['data'])<10000) {
@@ -232,7 +232,7 @@ function googlemaps_geocoding($street, $city, $state, $country) {
     try{
         load_libs('curl,json');
 
-        $raw  = curl_get('http://maps.googleapis.com/maps/api/geocode/json?address='.urlencode($street).','.urlencode($city).','.urlencode($state).','.urlencode($country).'&sensor=false','http://'.$_CONFIG['domain']);
+        $raw  = curl_get('http://maps.googleapis.com/maps/api/geocode/json?address='.urlencode($street).','.urlencode($city).','.urlencode($state).','.urlencode($country).'&sensor=false','http://'.$_SESSION['domain']);
         $data = json_decode_custom($raw['data'], true);
 
         if(!empty($data['results'][0]['geometry']['location']['lat'])) {
