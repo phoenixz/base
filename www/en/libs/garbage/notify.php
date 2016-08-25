@@ -14,7 +14,7 @@ function notifyerror($message, $code = 'unknown'){
 return;
 
     try{
-        notify($_CONFIG['domain']['www']. ' ERROR', $message, -1, $_CONFIG['notifications']['error']);
+        notify($_SESSION['domain']['www']. ' ERROR', $message, -1, $_CONFIG['notifications']['error']);
 
     }catch(bException $e){
         /*
@@ -117,7 +117,7 @@ function notify_prowl($user, $subject, $message, $priority){
 
 
         $application = $_CONFIG['project'];
-        $url         = $_CONFIG['domain']['www'];
+        $url         = $_SESSION['domain']['www'];
 
         return $prowl->add($application, $subject, $priority, $description, $url);
 
