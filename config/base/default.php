@@ -285,12 +285,13 @@ $_CONFIG['root']               = '';                                            
 $_CONFIG['share']              = array('provider'         => false);                                        // Share button provider
 
 // Security configuration
-$_CONFIG['security']           = array('signin'           => array('save_password' => true,                 // Allow the browser client to save the passwords. If set to false, different form names will be used to stop browsers from saving passwords
-                                                                   'ip_lock'       => false,                // Either "false", "true" or number n (which makes it lock to users with the right ip_lock), or "ip address" or array("ip address", "ip address", ...). If specified as true, only 1 IP will be allowed. If specified as number N, up to N IP addresses will be allowed. If specified as "ip address", only that IP address will be allowed. If specified as array("ip address", ...) all IP addresses in that array will be allowed
-                                                                   'two_factor'    => false),               // Either "false" or a valid twilio "from" phone number
+$_CONFIG['security']           = array('signin'           => array('save_password'   => true,               // Allow the browser client to save the passwords. If set to false, different form names will be used to stop browsers from saving passwords
+                                                                   'ip_lock'         => false,              // Either "false", "true" or number n (which makes it lock to users with the right ip_lock), or "ip address" or array("ip address", "ip address", ...). If specified as true, only 1 IP will be allowed. If specified as number N, up to N IP addresses will be allowed. If specified as "ip address", only that IP address will be allowed. If specified as array("ip address", ...) all IP addresses in that array will be allowed
+                                                                   'destroy_session' => false,              // Either "false", "true" or number n (which makes it lock to users with the right ip_lock), or "ip address" or array("ip address", "ip address", ...). If specified as true, only 1 IP will be allowed. If specified as number N, up to N IP addresses will be allowed. If specified as "ip address", only that IP address will be allowed. If specified as array("ip address", ...) all IP addresses in that array will be allowed
+                                                                   'two_factor'      => false),             // Either "false" or a valid twilio "from" phone number
 
-                                       'passwords'        => array('algorithm'     => 'sha1',               // What algorithm will we use to store the passwords?
-                                                                   'test'          => false),               // Test new user password strength?
+                                       'passwords'        => array('algorithm'       => 'sha1',             // What algorithm will we use to store the passwords?
+                                                                   'test'            => false),             // Test new user password strength?
                                        'user'             => 'apache',                                      //
                                        'group'            => 'apache',                                      //
                                        'umask'            =>  0007,                                         //
@@ -375,4 +376,6 @@ $_CONFIG['translator']         = array('url'          => 'translator.localhost',
                                        'passphrase'   => 'translateplease',
                                        'api_key'      => 'something',
                                        'allowed_tags' => '<b><a><strong>');
+
+$_CONFIG['whitelabels']        = array('enabled'      => false);
 ?>
