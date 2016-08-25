@@ -283,6 +283,10 @@ function sql_init($connector = 'core'){
             throw new bException(tr('sql_init(): No connector specified'), 'not-specified');
         }
 
+        if(!is_string($connector)){
+            throw new bException(tr('sql_init(): Invalid connector ":connector" specified', array(':connector' => $connector)), 'invalid');
+        }
+
         $connector = sql_connector_name($connector);
 
         if(!empty($GLOBALS['sql_'.$connector])){
