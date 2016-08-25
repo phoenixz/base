@@ -137,6 +137,9 @@ function user_authenticate($username, $password, $columns = '*') {
     global $_CONFIG;
 
     try{
+        /*
+         * Data validation and get user data
+         */
         if(!is_scalar($username)){
             throw new bException('user_authenticate(): Specified username is not valid', 'invalid');
         }
@@ -152,6 +155,11 @@ function user_authenticate($username, $password, $columns = '*') {
             throw new bException(tr('user_authenticate(): Specified user has status ":status" and cannot be authenticated', array(':status' => $user['status'])), 'inactive');
         }
 
+
+
+        /*
+         * User with "type" not null are special users that are not allowed to sign in
+         */
         if(!empty($user['type'])){
             /*
              * This check will only do anything if the users table contains the "type" column. If it doesn't, nothing will ever happen here, really
@@ -160,6 +168,11 @@ function user_authenticate($username, $password, $columns = '*') {
             throw new bException(tr('user_authenticate(): Specified user has status ":type" and cannot be authenticated', array(':type' => $user['type'])), 'type');
         }
 
+
+
+        /*
+         * Compare user password
+         */
         if(substr($user['password'], 0, 1) != '*'){
             /*
              * No encryption method specified, user default SHA1
@@ -189,12 +202,26 @@ function user_authenticate($username, $password, $columns = '*') {
         }
 
 
+
         /*
          * Apply IP locking system
          */
         if($_CONFIG['security']['signin']['ip_lock'] and (PLATFORM == 'http')){
             include(dirname(__FILE__).'/handlers/user_ip_lock.php');
         }
+
+
+
+        /*
+         * Check if authentication for this user is limited to a specific domain
+         */
+        if($_CONFIG['whitelabels']['enabled'] and $user['domain']){
+            if($user['domain'] !== $_SERVER['HTTP_HOST']){
+                throw new bException(tr('user_autohenticate(): User ":name" is limited to authenticate only in domain ":domain"', array(':name' => name($user), ':domain' => $user['domain'])), 'domain-limit');
+            }
+        }
+
+
 
         /*
          * Use two factor authentication, the user has to authenticate by SMS as well
@@ -263,15 +290,17 @@ function user_signin($user, $extended = false, $redirect = null, $html_flash = n
          * Shell signin requires neither
          */
         if((PLATFORM == 'http') and (empty($_COOKIE) or !session_id())){
-            throw new bException('user_signin(): This user has no active session or no session id, so probably has no cookies', 'cookiesrequired');
+            throw new bException('user_signin(): This user has no active session or no session id, so probably has no cookies', 'cookies-required');
         }
 
         if(session_status() == PHP_SESSION_ACTIVE){
             /*
              * Reset session data
              */
-            session_destroy();
-            session_start();
+            if($_CONFIG['security']['signin']['destroy_session']){
+                session_destroy();
+                session_start();
+            }
         }
 
         /*
@@ -363,7 +392,7 @@ function user_create_extended_session($users_id) {
         /*
          * Create new code
          */
-        $code = sha1($users_id.'-'.uniqid($_CONFIG['domain'], true).'-'.time());
+        $code = sha1($users_id.'-'.uniqid($_SESSION['domain'], true).'-'.time());
 
         //remove old entries
         if($_CONFIG['sessions']['extended']['clear'] != false) {
@@ -1106,7 +1135,7 @@ function user_password_banned($password){
     global $_CONFIG;
 
     try{
-        if(($password == $_CONFIG['domain']) or ($password == str_until($_CONFIG['domain'], '.'))){
+        if(($password == $_SESSION['domain']) or ($password == str_until($_SESSION['domain'], '.'))){
             throw new bException(tr('user_password_banned(): The default password is not allowed to be used'), 'short-password');
         }
 
