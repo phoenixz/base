@@ -97,18 +97,18 @@ function paypal_subscription_button($params=array()) {
         array_default($params,'lc', 'ES');                                 //Country
         array_default($params,'item_name', 'unknown');                             //item name, displayed to user when paying
         array_default($params,'item_number', 'product-one');                         //key that describes name of product, dont add weird chars or spaces!
-        array_default($params,'return', 'http://'.$_CONFIG['domain'].'/this_is_the_paypal_success_page');     //return user to this url after a successful subscription has been created.
-        array_default($params,'cancel_return', 'http://'.$_CONFIG['domain'].'/this_is_the_paypal_fail_page');     //return user to this url after setting up the payment was unsuccessfull.
+        array_default($params,'return', 'http://'.$_SESSION['domain'].'/this_is_the_paypal_success_page');     //return user to this url after a successful subscription has been created.
+        array_default($params,'cancel_return', 'http://'.$_SESSION['domain'].'/this_is_the_paypal_fail_page');     //return user to this url after setting up the payment was unsuccessfull.
         array_default($params,'src', 1);                                     //if we should rebill yes/no (1/0)
         array_default($params,'a3', '0.99');                                 //price
         array_default($params,'p3', '1');                                 //repeat every [nr] months
         array_default($params,'t3', 'M');                                 //repeat every 1 [M/Y/D]
         array_default($params,'currency_code', 'USD');                             //Currency code (https://cms.paypal.com/mx/cgi-bin/?cmd=_render-content&content_ID=developer/e_howto_api_nvp_currency_codes)
         array_default($params,'custom', 'none');                                 //local id to identify the payment
-        array_default($params,'notify_url', 'http://'.$_CONFIG['domain'].'/this_is_the_paypal_notify_page');     //url where paypal reports payment
+        array_default($params,'notify_url', 'http://'.$_SESSION['domain'].'/this_is_the_paypal_notify_page');     //url where paypal reports payment
         array_default($params,'image', 'https://www.paypalobjects.com/en_US/i/btn/btn_subscribeCC_LG.gif');    //url of button image
         array_default($params,'image_alt', tr('PayPal - The safer, easier way to pay online!'));        //alt text of button
-        array_default($params,'cpp_header_image', 'http://'.$_CONFIG['domain'].'/pub/img/paypal_header.jpg');        //image top header paypal payments
+        array_default($params,'cpp_header_image', 'http://'.$_SESSION['domain'].'/pub/img/paypal_header.jpg');        //image top header paypal payments
 
 
         $html='<form action="'.(paypal_version()=='live'?'https://www.paypal.com/cgi-bin/webscr':'https://www.sandbox.paypal.com/cgi-bin/webscr').'" method="post" target="_top">
