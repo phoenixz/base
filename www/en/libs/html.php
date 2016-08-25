@@ -123,7 +123,7 @@ function html_generate_css(){
         foreach($GLOBALS['css'] as $file => $meta) {
             if(!$file) continue;
 
-            $html = '<link rel="stylesheet" type="text/css" href="'.cdn_prefix().(!empty($GLOBALS['page_is_admin']) ? 'admin/' : '').'css/'.(!empty($GLOBALS['page_is_mobile']) ? 'mobile/' : '').$file.($min ? '.min.css' : '.css').'"'.($meta['media'] ? ' media="'.$meta['media'].'"' : '').'>';
+            $html = '<link rel="stylesheet" type="text/css" href="'.cdn_prefix().(!empty($_SESSION['domain']) ? $_SESSION['domain']. '/': '').(!empty($GLOBALS['page_is_admin']) ? 'admin/' : '').'css/'.(!empty($GLOBALS['page_is_mobile']) ? 'mobile/' : '').$file.($min ? '.min.css' : '.css').'"'.($meta['media'] ? ' media="'.$meta['media'].'"' : '').'>';
 
             if(substr($file, 0, 2) == 'ie'){
                 $retval .= html_iefilter($html, str_until(str_from($file, 'ie'), '.'));
@@ -307,7 +307,7 @@ function html_generate_js(){
                     if($skip) continue;
                 }
 
-                $html = '<script'.(!empty($data['option']) ? ' '.$data['option'] : '').' type="text/javascript" src="'.cdn_prefix().(!empty($GLOBALS['page_is_admin']) ? 'admin/' : '').'js/'.$file.$min.'.js"></script>';
+                $html = '<script'.(!empty($data['option']) ? ' '.$data['option'] : '').' type="text/javascript" src="'.cdn_prefix().(!empty($_SESSION['domain']) ? $_SESSION['domain'].'/' : '').(!empty($GLOBALS['page_is_admin']) ? 'admin/' : '').'js/'.$file.$min.'.js"></script>';
             }
 
             /*
@@ -1540,7 +1540,7 @@ function html_video($src, $type = null, $height = 0, $width = 0, $more = ''){
                 /*
                  * This is a local video with domain specification
                  */
-                $file  = ROOT.'www/en'.str_starts(str_from($src, $_CONFIG['domain']), '/');
+                $file  = ROOT.'www/en'.str_starts(str_from($src, $_SESSION['domain']), '/');
 
             }elseif(!$_CONFIG['production']){
                 /*
