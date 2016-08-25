@@ -740,7 +740,8 @@ function user_get($user = null, $columns = '*'){
 
                                    FROM   `users`
 
-                                   WHERE  `id` = :id',
+                                   WHERE  `id` = :id
+                                   AND    `status` IS NULL',
 
                                    array(':id' => $user));
 
@@ -750,19 +751,15 @@ function user_get($user = null, $columns = '*'){
                                    FROM   `users`
 
                                    WHERE  `email`    = :email
-                                   OR     `username` = :username',
+                                   OR     `username` = :username
+                                   AND    `status` IS NULL',
 
                                    array(':email'    => $user,
                                          ':username' => $user));
             }
 
             if(!$retval){
-                if(!$auto_create){
-                    throw new bException(tr('user_get(): Specified user ":user" does not exist', array(':user' => $user)), 'not-exist');
-                }
-
-                $id = user_signup(array('status' => 'new'));
-                return user_get($id, $columns);
+                throw new bException(tr('user_get(): Specified user ":user" does not exist', array(':user' => $user)), 'not-exist');
             }
 
         }else{
