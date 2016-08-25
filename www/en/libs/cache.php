@@ -142,7 +142,7 @@ function cache_write($value, $key = null, $group = null){
          *
          * Notify and continue without the cache
          */
-        notify('cache_write_fail', tr('Failed write ":method" for key ":kley"', array(':key' => $key, ':method' => $_CONFIG['cache']['method'])), 'development');
+        notify('cache_write_fail', tr('Failed write ":method" for key ":key"', array(':key' => $key, ':method' => $_CONFIG['cache']['method'])), 'development');
         return $value;
     }
 }
@@ -180,23 +180,11 @@ function cache_key_hash($key){
     global $_CONFIG;
 
     try{
-        switch($_CONFIG['cache']['key_hash']){
-            case false:
-                /*
-                 * Don't do key hashing
-                 */
-                break;
+        try{
+            get_hash($key, $_CONFIG['cache']['key_hash']);
 
-            case 'md5':
-                $key = md5($key);
-                break;
-
-            case 'sha1':
-                $key = sha1($key);
-                break;
-
-            default:
-                throw new bException(tr('Unknown key hash "%hash%" configured in $_CONFIG[hash][key_hash]', array('%hash%' => $_CONFIG['cache']['key_hash'])), 'unknown');
+        }catch(Exception $e){
+            throw new bException(tr('Unknown key hash algorithm ":algorithm" configured in $_CONFIG[hash][key_hash]', array(':algorithm' => $_CONFIG['cache']['key_hash'])), $e);
         }
 
         if($_CONFIG['cache']['key_interlace']){

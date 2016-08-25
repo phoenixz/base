@@ -859,34 +859,35 @@ function add_stat($code, $count = 1, $details = '') {
 
 
 /*
- * Calculate the DB password hash
+ * Calculate the hash value for the given password with the (possibly) given
+ * algorithm
  */
-function password($password, $algorithm = null){
+function get_hash($source, $algorithm, $add_meta = true){
     global $_CONFIG;
 
     try{
-        if(!$algorithm){
-            $algorithm = $_CONFIG['security']['passwords']['algorithm'];
+        try{
+            $source = hash($algorithm, SEED.$source);
+
+        }catch(Exception $e){
+            if(strstr($e->getMessage(), 'Unknown hashing algorithm')){
+                throw new bException(tr('get_hash(): Unknown hash algorithm ":algorithm" specified', array(':algorithm' => $algorithm)), 'unknown-algorithm');
+            }
+
+            throw $e;
         }
 
-        switch($algorithm){
-            case 'sha1':
-                return '*sha1*'.sha1(SEED.$password);
-
-            case 'sha256':
-                return '*sha256*'.sha256(SEED.$password);
-
-            case 'sha512':
-                return '*sha512*'.hash('sha512', SEED.$password);
-
-            default:
-                throw new bException(tr('password(): Unknown algorithm ":algorithm" specified', array(':algorithm' => str_log($algorithm))), 'unknown');
+        if($add_meta){
+            return '*'.$algorithm.'*'.$source;
         }
+
+        return $source;
 
     }catch(Exception $e){
-        throw new bException('password(): Failed', $e);
+        throw new bException('get_hash(): Failed', $e);
     }
 }
+
 
 
 /*
@@ -1741,7 +1742,7 @@ function api_prefix($id = null, $force_environment = false){
 /*
  *
  */
-function name($user = null, $key_prefix = ''){
+function name($user = null, $key_prefix = '', $default = null){
     try{
         if($user){
             if(is_scalar($user)){
@@ -1765,17 +1766,21 @@ function name($user = null, $key_prefix = ''){
                 throw new bException(tr('name(): Invalid data specified, please specify either user id, name, or an array containing username, email and or id'), 'invalid');
             }
 
-            $user = not_empty(isset_get($user[$key_prefix.'name']), isset_get($user[$key_prefix.'username']), isset_get($user[$key_prefix.'email']), isset_get($user[$key_prefix.'id']));
+            $user = not_empty(isset_get($user[$key_prefix.'name']), isset_get($user[$key_prefix.'username']), isset_get($user[$key_prefix.'email']));
 
             if($user){
                 return $user;
             }
         }
 
+        if($default === null){
+            $default = tr('Guest');
+        }
+
         /*
          * No user data found, assume guest user.
          */
-        return tr('Guest');
+        return $default;
 
     }catch(Exception $e){
         throw new bException(tr('name(): Failed'), $e);

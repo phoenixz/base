@@ -11,30 +11,71 @@
 
 
 /*
- * Return data for the specified user role
+ * Return requested data for specified role
  */
-function roles_get($role, $columns = 'id,name,description'){
+function roles_get($role = null, $columns = '*'){
+    global $_CONFIG;
+
     try{
-        if(!$role){
-            throw new bException(tr('roles_get(): No role specified'), 'not-specified');
-        }
+        $query = 'SELECT    `roles`.`id`,
+                            `roles`.`name`,
+                            `roles`.`status`,
+                            `roles`.`createdon`,
+                            `roles`.`modifiedon`,
+                            `roles`.`description`,
 
-        if(!is_scalar($role)){
-            throw new bException(tr('roles_get(): Specified role "%$role%" is not scalar', array('%$role%' => $role)), 'invalid');
-        }
+                            `createdby`.`name`   AS `created_name`,
+                            `createdby`.`email`  AS `created_email`,
+                            `modifiedby`.`name`  AS `modified_name`,
+                            `modifiedby`.`email` AS `modified_email`
 
-        $retval = sql_get('SELECT '.$columns.'
 
-                           FROM   `roles`
+                  FROM      `roles`
 
-                           WHERE  `id`   = :role
-                           OR     `name` = :role2', $columns,
+                  LEFT JOIN `users` as `createdby`
+                  ON        `roles`.`createdby`     = `createdby`.`id`
 
-                           array(':role'  => $role,
-                                 ':role2' => $role));
+                  LEFT JOIN `users` as `modifiedby`
+                  ON        `roles`.`modifiedby`    = `modifiedby`.`id`';
 
-        if(!$retval){
-            throw new bException('roles_get(): Specified role "'.str_log($role).'" does not exist', 'not-exist');
+        if($role){
+            if(!is_string($role)){
+                throw new bException(tr('roles_get(): Specified role name ":name" is not a string', array(':name' => $role)), 'invalid');
+            }
+
+            $retval = sql_get($query.'
+
+                              WHERE      `roles`.`name`   = :name
+                              AND        `roles`.`status` IS NULL',
+
+                              array(':name' => $role));
+
+            if(!$retval){
+                throw new bException(tr('roles_get(): Specified role ":role" does not exist', array(':role' => $role)), 'not-exist');
+            }
+
+        }else{
+            /*
+             * Pre-create a new role
+             */
+            $retval = sql_get($query.'
+
+                              WHERE  `roles`.`createdby` = :createdby
+
+                              AND    `roles`.`status`    = "new"',
+
+                              array(':createdby' => $_SESSION['user']['id']));
+
+            if(!$retval){
+                sql_query('INSERT INTO `roles` (`createdby`, `status`, `name`)
+                           VALUES              (:createdby , :status , :name )',
+
+                           array(':name'      => $role,
+                                 ':status'    => 'new',
+                                 ':createdby' => isset_get($_SESSION['user']['id'])));
+
+                return roles_get($role, $columns);
+            }
         }
 
         return $retval;
@@ -49,15 +90,17 @@ function roles_get($role, $columns = 'id,name,description'){
 /*
  *
  */
-function roles_validate($role, $old_role = null){
+function roles_validate($role){
     try{
         load_libs('validate');
 
-        if($old_role){
-            $role = array_merge($old_role, $role);
+        $v = new validate_form($role, 'name,role,description');
+        if(empty($role['name'])){
+            $role['name'] = isset_get($role['role']);
         }
 
-        $v = new validate_form($role, 'name,description');
+
+        $v->isNatural  ($role['id']       , tr('Invalid role id specified'));
         $v->isNotEmpty ($role['name']     , tr('No roles name specified'));
         $v->hasMinChars($role['name'],   2, tr('Please ensure the role\'s name has at least 2 characters'));
         $v->hasMaxChars($role['name'],  32, tr('Please ensure the role\'s name has less than 32 characters'));
@@ -71,23 +114,109 @@ function roles_validate($role, $old_role = null){
             $v->setError(tr('Please ensure that the role\'s name does not start with a number'));
         }
 
-        if(empty($role['id'])){
-            if($id = sql_get('SELECT `id` FROM `roles` WHERE `name` = :name', array(':name' => $role['name']))){
-                $v->setError(tr('The role "%role%" already exists with id "%id%"', array('%role%' => str_log($role['name']), '%id%' => $id)));
-            }
-
-        }else{
-            if($id = sql_get('SELECT `id` FROM `roles` WHERE `name` = :name AND `id` != :id', array(':name' => $role['name'], ':id' => $role['id']))){
-                $v->setError(tr('The role "%role%" already exists with id "%id%"', array('%role%' => str_log($role['name']), '%id%' => $id)));
-            }
-        }
-
         $v->isValid();
 
         return $role;
 
     }catch(Exception $e){
         throw new bException(tr('roles_validate(): Failed'), $e);
+    }
+}
+
+
+
+/*
+ * Update the roles_rights and users_rights tables after an update of the
+ * specified role
+ */
+function roles_update_rights($role, $rights){
+    try{
+        if(empty($role['id'])){
+            throw new bException('roles_update_rights(): Cannot update rights, no role specified', 'not_specified');
+        }
+
+        if(isset_get($rights) and !is_array($rights)){
+            throw new bException('roles_update_rights(): The specified rights list is invalid', 'invalid');
+        }
+
+
+
+        /*
+         * First check, clean rights and obtain both rights id and name
+         */
+        $rights_list = array();
+
+        foreach($rights as $key => $right){
+            if(!$right){
+                continue;
+            }
+
+            if(is_numeric($right)){
+                $rights_name = sql_get('SELECT `name` FROM `rights` WHERE `id` = :id', 'name', array(':id' => cfi($right)));
+
+                if($rights_name){
+                    $rights_list[$right] = $rights_name;
+                    continue;
+                }
+
+
+            }else{
+                $rights_id = sql_get('SELECT `id` FROM `rights` WHERE `name` = :name', 'id', array(':name' => cfm($right)));
+
+                if($rights_id){
+                    $rights_list[$rights_id] = $right;
+                    continue;
+                }
+            }
+
+            /*
+             * Specified right does not exist.
+             */
+            notify('unknown', tr('Tried adding non existing right ":right" to role ":role", ignoring', array(':right' => $right, ':role' => $role['name'])));
+        }
+
+
+
+        /*
+         * First update the roles_rights table.
+         */
+        sql_query('DELETE FROM `roles_rights` WHERE `roles_id` = :roles_id', array(':roles_id' => $role['id']));
+
+        $p = sql_prepare('INSERT INTO `roles_rights` (`roles_id`, `rights_id`)
+                          VALUES                     (:roles_id , :rights_id )');
+
+        $role_right = array(':roles_id' => $role['id']);
+
+        foreach($rights_list as $rights_id => $name){
+            $p->execute(array(':roles_id'  => $role['id'],
+                              ':rights_id' => $rights_id));
+        }
+
+
+
+        /*
+         * Now update the users_rights table
+         */
+        $users  = sql_query('SELECT `id` FROM `users` WHERE `roles_id` = :roles_id', array(':roles_id' => $role['id']));
+
+        $delete = sql_prepare('DELETE FROM `users_rights` WHERE `users_id` = :users_id');
+        $insert = sql_prepare('INSERT INTO `users_rights` (`users_id`, `rights_id`, `right`)
+                               VALUES                     (:users_id , :rights_id , :right )');
+
+        foreach($users as $users_id){
+            foreach($rights as $rights_id => $name){
+                $delete->execute(array(':users_id'  => $users_id));
+
+                $insert->execute(array(':users_id'  => $users_id,
+                                       ':rights_id' => $rights_id,
+                                       ':right'     => $name));
+            }
+        }
+
+        return $rights_list;
+
+    }catch(Exception $e){
+        throw new bException('roles_update_rights(): Failed', $e);
     }
 }
 ?>

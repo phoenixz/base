@@ -3,9 +3,9 @@
 /*
  * Blog management script
  */
-$usage = "./scripts/base/blogs\n".
-         "./scripts/base/blogs rebuild-post-urls [option]\n";
-         "./scripts/base/blogs recompress-images [option]\n";
+$usage = './scripts/base/blogs
+./scripts/base/blogs rebuild-post-urls [option]
+./scripts/base/blogs reprocess-images [option]';
 
 $help  = "This script can manage blog post information
 
@@ -32,6 +32,7 @@ load_config('blogs');
 
 switch(cli_method()){
     case 'rebuild-post-urls':
+        cli_no_arguments_left();
         cli_log(tr('Updating all blog post URLs'), 'white');
 
         load_libs('blogs');
@@ -42,125 +43,163 @@ switch(cli_method()){
 
     case 'reprocess-images':
         /*
-         * Check destination path
+         * Reprocess all blog images
          */
-        $source    = cli_argument(1);
-        $recursive = cli_argument('--recursive');
-
-        if(cli_argument('--default') or cli_argument('--defaults')){
-            $params = array();
-
-        }else{
-            $params['keep_aspectratio'] = cli_argument('--keep-aspectratio');
-            $params['quality']          = cli_argument('--quality'        , true);
-            $params['interlace']        = cli_argument('--interlace'      , true , 'line');
-            $params['strip']            = cli_argument('--strip'          , false, true);
-            $params['blur']             = cli_argument('--blur'           , true , '1x3');
-            $params['defines']          = cli_argument('--defines'        , true);
-            $params['sampling_factor']  = cli_argument('--sampling-factor', true);
-            $params['limit_memory']     = cli_argument('--limit-memory'   , true);
-            $params['limit_map']        = cli_argument('--limit-map'      , true);
-
-        //    $params['type']            = not_empty(cli_argument('jpg'), (cli_argument('jpeg') ? 'jpg' : ''), cli_argument('png'));
-
-            $method = cli_argument('--method', true);
-            $format = cli_argument('--format', true);
-            $x      = not_empty(cli_argument('--width' , true), cli_argument('-x', true));
-            $y      = not_empty(cli_argument('--height', true), cli_argument('-y', true));
-        }
+        $blogs = cli_argument('--blogs', true);
 
         cli_no_arguments_left();
         load_libs('file,image');
 
+        $formats      = $_CONFIG['blogs']['images'];
+
+        $source_types = array('original',
+                              'large@2x',
+                              'large');
+
+        $query   = 'SELECT `id`,
+                           `name`,
+                           `seoname`,
+                           `thumb_x`,
+                           `thumb_y`,
+                           `wide_x`,
+                           `wide_y`,
+                           `large_x`,
+                           `large_y`,
+                           `medium_x`,
+                           `medium_y`,
+                           `small_x`,
+                           `small_y`
+
+                    FROM   `blogs`
+
+                    WHERE  `status` IS NULL ';
+
+        if($blogs){
+            $blogs   = array_force($blogs, ',');
+            $blogs   = array_clean($blogs);
+            $in      = sql_in($blogs);
+            $query  .= 'AND `seoname` IN ('.implode(',', array_keys($in)).')';
+
+            $execute = $in;
+
+        }else{
+            $execute = array();
+        }
+
 
 
         /*
-         * Check source path
+         * Process all blogs
          */
-        if(!$source){
-            $source = ROOT.'data/content/photos';
-        }
+        $blogs = sql_query($query, $execute);
 
-        if(!file_exists($source)){
-            throw new bException(tr('The specified source path ":path" does not exist', array(':path' => $source)), 'not-exist');
-        }
+        while($blog = sql_fetch($blogs)){
+            cli_log(tr('Processing photos for blog ":blog"', array(':blog' => $blog['name'])), 'white');
 
-        $formats = implode('|', array_keys($_CONFIG['blogs']['images']));
+            $path   = ROOT.'data/content/photos/';
+
+            $photos = sql_query('SELECT  `id`,
+                                         `blogs_posts_id`,
+                                         `blogs_id`,
+                                         `file`
+
+                                 FROM    `blogs_media`
+
+                                 WHERE   `blogs_id` = :blogs_id
+                                 AND     `type`     = "photo"',
+
+                                 array(':blogs_id' => $blog['id']));
 
 
 
-        /*
-         * Execute the conversion on the specified path
-         */
-        file_tree_execute(array('path'      => realpath($source),
-                                'recursive' => true,
-                                'callback'  =>  function($file) use ($params, $formats){
-                                                    global $_CONFIG;
+            /*
+             * Process all photos for the current blog
+             */
+            while($photo = sql_fetch($photos)){
+                if(VERBOSE){
+                    cli_log(tr('Processing photo file group ":file"', array(':file' => $photo['file'])));
 
-                                                    if(is_image($file)){
-                                                        try{
-                                                            $image = sql_get('SELECT  `blogs_media`.`id`,
-                                                                                      `blogs_media`.`blogs_posts_id`,
-                                                                                      `blogs_media`.`blogs_id`,
-                                                                                      `blogs`.`thumb_x`,
-                                                                                      `blogs`.`thumb_y`,
-                                                                                      `blogs`.`wide_x`,
-                                                                                      `blogs`.`wide_y`,
-                                                                                      `blogs`.`large_x`,
-                                                                                      `blogs`.`large_y`,
-                                                                                      `blogs`.`medium_x`,
-                                                                                      `blogs`.`medium_y`,
-                                                                                      `blogs`.`small_x`,
-                                                                                      `blogs`.`small_y`
+                }else{
+                    cli_dot(1);
+                }
 
-                                                                              FROM    `blogs_media`
 
-                                                                              JOIN    `blogs`
-                                                                              ON      `blogs`.`id` = `blogs_media`.`blogs_id`
 
-                                                                              WHERE   `blogs_media`.`file` = :file AND `type` = "photo"', array(':file' => str_until(str_until(str_from($file, 'data/content/photos/'), '_'), '-')));
+                /*
+                 * Find source file for the image to be recompressed
+                 */
+                $base_file = $path.$photo['file'];
 
-                                                            if(!preg_match_all('/.+?[-_]('.$formats.')(?:@2x)?.(?:png|jpg)/', $file, $matches) or empty($matches[1][0])){
-                                                                /*
-                                                                 * Image file name format does not match, ignore
-                                                                 */
-                                                                cli_log(tr('Skipping file ":image", file name does not match required blog image filename pattern', array(':image' => $file)), 'yellow');
-                                                            }
+                foreach($source_types as $type){
+                    $source_file = $base_file.'-'.$type.'.jpg';
 
-                                                            $format = $matches[1][0];
-                                                            $params = $_CONFIG['blogs']['images'][$format];
+                    if(file_exists($source_file)){
+                        break;
+                    }
 
-                                                            $params['x'] = get_null($image[$format.'_x']);
-                                                            $params['y'] = get_null($image[$format.'_y']);
+                    unset($source_file);
+                }
 
-                                                            image_convert($file, str_replace('_', '-', $file), $params);
+                if(empty($source_file)){
+                    /*
+                     * No source file available for this image. Remove the image
+                     * Ensure all other file formats are cleaned up as well.
+                     */
+                    $photo_path = dirname($base_file);
+                    file_delete_tree($photo_path);
+                    file_clear_path($photo_path);
+                    sql_query('DELETE FROM `blogs_images` WHERE `id` = :id', array(':id' => $photo['id']));
+                    cli_log(tr('Failed to find source file (-origin or -large) for photo ":photo", removed all files and database references to cleanup', array(':photo' => $photo['file'])), 'yellow');
+                    continue;
+                }
 
-                                                            if(strstr($file, '_')){
-                                                                /*
-                                                                 * Delete the old style _ files, which have been replaced by - named files
-                                                                 */
-                                                                file_delete($file);
-                                                            }
+                $source_type = str_rfrom($source_file, '-');
+                $source_type = str_until($source_type, '.');
 
-                                                            usleep(5000);
 
-                                                        }catch(Exception $e){
-                                                            cli_log(tr('Skipping file ":image", image_convert() failed with ":error"', array(':image' => $file, ':error' => $e->getMessage())), 'yellow');
-                                                        }
 
-                                                    }else{
-                                                        cli_log(tr('Skipping file ":image", it is not an image', array(':image' => $file)), 'yellow');
-                                                    }
-                                                }));
+                /*
+                 * Regenerate all formats according to the configured sizes for the current blog
+                 */
+                foreach($formats as $format => $format_data){
+                    $file   = $base_file.'-'.$format.'.jpg';
+                    $filex2 = $base_file.'-'.$format.'@2x.jpg';
 
-        sql_query('TRUNCATE `html_img`');
-        cli_log(tr('Cleared html_img cache'), 'green');
+                    if($file === $source_file){
+                        /*
+                         * Don't process the source file
+                         */
+                        continue;
+                    }
 
-        if(!VERBOSE){
+                    if($format != $source_type){
+                        $format_data['x'] = get_null($blog[$format.'_x']);
+                        $format_data['y'] = get_null($blog[$format.'_y']);
+
+                        file_delete($file);
+                        image_convert($source_file, $file, $format_data);
+                    }
+
+
+                    if($format.'@2x' != $source_type){
+                        $format_data['x'] = get_null($blog[$format.'_x']) * 2;
+                        $format_data['y'] = get_null($blog[$format.'_y']) * 2;
+
+                        file_delete($filex2);
+                        image_convert($source_file, $filex2, $format_data);
+                    }
+
+
+                    usleep(5000);
+                }
+            }
+
             cli_dot(false);
         }
 
-        cli_log(tr('Finished!'), 'green');
+        sql_query('TRUNCATE `html_img`');
+        cli_log(tr('Cleared html_img cache'), 'green');
+        cli_log(tr('Done!'), 'green');
 
         break;
 

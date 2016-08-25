@@ -17,7 +17,7 @@ if(!$user = sql_get('SELECT `id`, `name`, `username` FROM `users` WHERE `usernam
                array(':name'      => $user['name'],
                      ':email'     => $user['email'],
                      ':username'  => $user['username'],
-                     ':password'  => password($user['password'])));
+                     ':password'  => get_hash($user['password'], $_CONFIG['security']['passwords']['hash'])));
 
     $user = sql_get('SELECT `id`,
                             `name`,

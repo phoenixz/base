@@ -63,7 +63,7 @@ function image_convert($source, $destination, $params = null){
          * Validations
          */
         if(file_exists($destination) and $destination != $source){
-            throw new bException(tr('image_convert(): Destination file ":file" already exists', array(':file' => $destination)));
+            throw new bException(tr('image_convert(): Destination file ":file" already exists', array(':file' => $destination)), 'exists');
         }
 
         ///*

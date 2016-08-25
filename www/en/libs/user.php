@@ -175,28 +175,28 @@ function user_authenticate($username, $password, $columns = '*') {
          */
         if(substr($user['password'], 0, 1) != '*'){
             /*
-             * No encryption method specified, user default SHA1
+             * No encryption method specified, assume SHA1
              */
-            $encryption = 'sha1';
+            $algorithm = 'sha256';
 
         }else{
-            $encryption = str_cut($user['password'], '*', '*');
+            $algorithm = str_cut($user['password'], '*', '*');
         }
 
-        switch($encryption){
-            case 'sha1':
-                $encryption = sha1(SEED.$password);
-                break;
+        try{
+            $password = get_hash($password, $algorithm, false);
 
-            case 'sha256':
-                $encryption = sha256(SEED.$password);
-                break;
+        }catch(Exception $e){
+            switch($e->getCode()){
+                case 'unknown-algorithm':
+                    throw new bException(tr('user_authenticate(): User ":name" has an unknown algorithm ":algorithm" specified', array(':user' => name($user), ':algorithm' => $algorithm)), $e);
 
-            default:
-                throw new bException(tr('user_authenticate(): Unknown encryption type ":type" in user password specification', array(':type' => str_log($encryption))), 'unknown');
+                default:
+                    throw new bException(tr('user_authenticate(): Password hashing failed for user ":name"', array(':user' => name($user))), $e);
+            }
         }
 
-        if($encryption != str_rfrom($user['password'], '*')){
+        if($password != str_rfrom($user['password'], '*')){
             log_database(tr('user_authenticate(): Specified password does not match stored password for user ":username"', array(':username' => $username)), 'authentication/failed');
             throw new bException(tr('user_authenticate(): Specified password does not match stored password'), 'password');
         }
@@ -241,6 +241,11 @@ function user_authenticate($username, $password, $columns = '*') {
             return $user;
         }
 
+        /*
+         * Wait a little bit so the authentication failure cannot be timed, and
+         * library attacks will be harder
+         */
+        usleep(mt_rand(1000, 200000));
         log_database(tr('user_authenticate(): Authenticated user ":username"', array(':username' => $username)), 'authentication/success');
 
         $user['authenticated'] = true;
@@ -248,12 +253,17 @@ function user_authenticate($username, $password, $columns = '*') {
 
     }catch(Exception $e){
         /*
-         * Wait a little bit so the authentication failure cannot be timed
+         * Wait a little bit so the authentication failure cannot be timed, and
+         * library attacks will be harder
          */
         usleep(mt_rand(1000, 2000000));
 
         if($e->getCode() == 'password'){
-            if($date = sql_get('SELECT `createdon` FROM `passwords` WHERE `users_id` = :users_id AND `password` = :password', 'id', array(':users_id' => isset_get($user['id']), ':password' => isset_get($encryption)))){
+            /*
+             * Password match failed. Check old passwords table to see if
+             * perhaps the user used an old password
+             */
+            if($date = sql_get('SELECT `createdon` FROM `passwords` WHERE `users_id` = :users_id AND `password` = :password', 'id', array(':users_id' => isset_get($user['id']), ':password' => isset_get($password)))){
                 $date = new DateTime($date);
                 throw new bException('user_authenticate(): Your password was updated on "'.str_log($date->format($_CONFIG['formats']['human_date'])).'"', 'oldpassword');
             }
@@ -512,7 +522,7 @@ function user_signup($params){
                          ':username'  => get_null(isset_get($params['username'])),
                          ':status'    => isset_get($params['status']),
                          ':name'      => isset_get($params['name']),
-                         ':password'  => ((isset_get($params['status']) === 'new') ? '' : password($params['password'])),
+                         ':password'  => ((isset_get($params['status']) === 'new') ? '' : get_hash($params['password'], $_CONFIG['security']['passwords']['hash'])),
                          ':email'     => get_null(isset_get($params['email'])),
                          ':role'      => get_null(isset_get($params['role'])),
                          ':roles_id'  => get_null(isset_get($params['roles_id']))));
@@ -613,6 +623,8 @@ function user_signup($params){
  * admin user updating the users password
  */
 function user_update_password($params, $current = true){
+    global $_CONFIG;
+
     try{
         array_params($params);
         array_default($params, 'validated'             , false);
@@ -664,7 +676,7 @@ function user_update_password($params, $current = true){
         /*
          * Prepare new password
          */
-        $password = password($params['password']);
+        $password = get_hash($params['password'], $_CONFIG['security']['passwords']['hash']);
 
         $r = sql_query('UPDATE `users`
 
