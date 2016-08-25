@@ -15,7 +15,7 @@ class bException extends Exception{
     public  $code     = null;
 
     function __construct($messages, $code, $data = null){
-        $messages = array_force($messages);
+        $messages = array_force($messages, "\n");
 
         if(is_object($code)){
             /*
@@ -290,11 +290,11 @@ function load_content($file, $replace = false, $language = null, $autocreate = n
         }
 
         if(!isset($replace['###SITENAME###'])){
-            $replace['###SITENAME###'] = str_capitalize($_CONFIG['domain']);
+            $replace['###SITENAME###'] = str_capitalize($_SESSION['domain']);
         }
 
         if(!isset($replace['###DOMAIN###'])){
-            $replace['###DOMAIN###']   = $_CONFIG['domain'];
+            $replace['###DOMAIN###']   = $_SESSION['domain'];
         }
 
         /*
@@ -771,12 +771,12 @@ function load_config($files){
             }
 
             if(!$loaded){
-                throw new bException('load_config(): No configuration file was found for requested configuration "'.str_log($file).'"');
+                throw new bException(tr('load_config(): No configuration file was found for requested configuration ":file"', array(':file' => $file)), 'not-found');
             }
         }
 
     }catch(Exception $e){
-        throw new bException('load_config(): Failed to load some or all of config file(s) "'.str_log($files).'"', $e);
+        throw new bException(tr('load_config(): Failed to load some or all of config file(s) ":file"', array(':file' => $file)), $e);
     }
 }
 
@@ -849,7 +849,7 @@ function add_stat($code, $count = 1, $details = '') {
                        ON DUPLICATE KEY UPDATE `count` = `count` + '.cfi($count).';');
         }
 
-        error_log($_CONFIG['domain'].'-'.str_log($code).($details ? ' "'.str_log($details).'"' : ''));
+        error_log($_SESSION['domain'].'-'.str_log($code).($details ? ' "'.str_log($details).'"' : ''));
 
     }catch(Exception $e){
         throw new bException('add_stat(): Failed', $e);
@@ -896,22 +896,22 @@ function domain($current_url = false, $query = null){
     global $_CONFIG;
 
     try{
-        if(empty($_CONFIG['domain'])){
-            throw new bException(tr('domain(): $_CONFIG[domain] is not configured'), 'not-specified');
+        if(empty($_SESSION['domain'])){
+            throw new bException(tr('domain(): $_SESSION[\'domain\'] is not configured'), 'not-specified');
         }
 
-        if($_CONFIG['domain'] == 'auto'){
-            $_CONFIG['domain'] = $_SERVER['SERVER_NAME'];
+        if($_SESSION['domain'] == 'auto'){
+            $_SESSION['domain'] = $_SERVER['SERVER_NAME'];
         }
 
         if(!$current_url){
-            $retval = $_CONFIG['protocol'].$_CONFIG['domain'].$_CONFIG['root'];
+            $retval = $_CONFIG['protocol'].$_SESSION['domain'].$_CONFIG['root'];
 
         }elseif($current_url === true){
-            $retval = $_CONFIG['protocol'].$_CONFIG['domain'].$_SERVER['REQUEST_URI'];
+            $retval = $_CONFIG['protocol'].$_SESSION['domain'].$_SERVER['REQUEST_URI'];
 
         }else{
-            $retval = $_CONFIG['protocol'].$_CONFIG['domain'].$_CONFIG['root'].str_starts($current_url, '/');
+            $retval = $_CONFIG['protocol'].$_SESSION['domain'].$_CONFIG['root'].str_starts($current_url, '/');
         }
 
         if($query){
