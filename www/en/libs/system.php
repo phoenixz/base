@@ -1384,8 +1384,11 @@ function system_date_format($date = null, $requested_format = 'human_datetime'){
         /*
          * Ensure we have some valid date string
          */
-        if(!$date){
+        if($date === null){
             $date = date('Y-m-d H:i:s');
+
+        }elseif(!$date){
+            return '';
 
         }elseif(is_numeric($date)){
             $date = date('Y-m-d H:i:s', $date);
