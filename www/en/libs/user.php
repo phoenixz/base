@@ -880,9 +880,14 @@ function user_load_rights($user){
             $user = isset_get($user['id']);
         }
 
-        return sql_list('SELECT `name`, `name` AS `right`
+        return sql_list('SELECT `name`,
+                                `name` AS `right`
+
                          FROM   `users_rights`
-                         WHERE  `users_id` = :users_id', array(':users_id' => $user));
+
+                         WHERE  `users_id` = :users_id',
+
+                         array(':users_id' => $user));
 
     }catch(Exception $e){
         throw new bException('user_load_rights(): Failed', $e);
@@ -893,36 +898,10 @@ function user_load_rights($user){
 
 /*
  * Make the current session the specified user
+ * NOTE: Since this function is rarely used, it it implemented by a handler
  */
 function user_switch($username, $redirect = '/'){
-    try{
-        /*
-         * Does the specified user exist?
-         */
-        if(!$user = sql_get('SELECT *, `email` FROM `users` WHERE `name` = :name', array(':name' => $username))){
-            throw new bException('user_switch(): The specified user "'.str_log($username).'" does not exist', 'usernotexist');
-        }
-
-        /*
-         * Switch the current session to the new user
-         */
-        $_SESSION['user'] = $user;
-
-        /*
-         * Store last login
-         */
-        sql_query('UPDATE `users` SET `last_signin` = DATE(NOW()) WHERE `id` = '.cfi($user['id']).';');
-
-        html_flash_set(tr('You are now the user ":user"', array(':user' => $user['name'])), 'success');
-        html_flash_set(tr('NOTICE: You will now be limited to the access level of user ":user"', array(':user' => $user['name'])), 'warning');
-
-        if($redirect){
-            redirect($redirect);
-        }
-
-    }catch(Exception $e){
-        throw new bException('user_switch(): Failed', $e);
-    }
+    include(dirname(__FILE__).'/handlers/user_switch.php');
 }
 
 
