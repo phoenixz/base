@@ -95,10 +95,6 @@ function roles_validate($role){
         load_libs('validate');
 
         $v = new validate_form($role, 'name,role,description');
-        if(empty($role['name'])){
-            $role['name'] = isset_get($role['role']);
-        }
-
 
         $v->isNatural  ($role['id']       , tr('Invalid role id specified'));
         $v->isNotEmpty ($role['name']     , tr('No roles name specified'));
