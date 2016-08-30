@@ -902,15 +902,32 @@ function sql_fetch_column($r, $column){
 
 
 /*
- * Merge database entry with new posted entry, overwriting the old DB values, while skipping the values specified in $filter
+ * Merge database entry with new posted entry, overwriting the old DB values,
+ * while skipping the values specified in $filter
  */
 function sql_merge($db, $post, $skip = null){
     try{
-        if($skip === null){
-            $skip = 'status';
+        if($post === null){
+            /*
+             * Nothing to merge
+             */
+            return $db;
         }
 
-        $post = array_remove($post, 'id,'.str_force($skip));
+        if($skip === null){
+            $skip = 'id,status';
+        }
+
+        if(!is_array($db)){
+            throw new bException(tr('sql_merge(): Specified database source should be an array but is a ":type"', array(':type' => gettype($db))), 'invalid');
+        }
+
+        if(!is_array($post)){
+            throw new bException(tr('sql_merge(): Specified POST source should be an array but is a ":type"', array(':type' => gettype($post))), 'invalid');
+        }
+
+        $post = array_remove($post, $skip);
+
         return array_merge($db, $post);
 
     }catch(Exception $e){
