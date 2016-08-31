@@ -813,7 +813,7 @@ function debug($class = null){
 /*
  * Execute shell commands with exception checks
  */
-function safe_exec($command, $ok_exitcodes = null, $route_errors = true){
+function safe_exec($commands, $ok_exitcodes = null, $route_errors = true){
     return include(dirname(__FILE__).'/handlers/system_safe_exec.php');
 }
 

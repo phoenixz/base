@@ -1,7 +1,34 @@
 <?php
 try{
-    $command = mb_trim($command);
+    /*
+     * Join all commands together
+     */
+    if(is_array($commands)){
+        /*
+         * Auto escape all arguments
+         */
+        foreach($commands as &$command){
+            if(empty($first)){
+                $first   = true;
+                $command = mb_trim($command);
+                continue;
+            }
 
+            $command = escapeshellarg($command);
+        }
+
+        unset($command);
+        $command = implode(' ', $commands);
+
+    }else{
+        $command = mb_trim($commands);
+    }
+
+
+
+    /*
+     *
+     */
     if(substr($command, -1, 1) == '&'){
         /*
          * Background commands cannot use "exec()" because that one will always wait for the exit code
