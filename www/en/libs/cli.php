@@ -72,7 +72,7 @@ class Colors {
         }
 
         // Add string and end coloring
-        $colored_string .=  $string . "\033[0m";
+        $colored_string .=  $string."\033[0m";
 
         return $colored_string;
     }
@@ -658,42 +658,60 @@ function cli_dot($each = 10, $color = 'green', $dot = '.'){
 /*
  * Log specified message to console, but only if we are in console mode!
  */
-function cli_log($message = '', $color = null, $newline = true, $filter_double = false){
+function cli_log($messages = '', $color = null, $newline = true, $filter_double = false){
     static $c, $fh, $last;
 
     try{
         if(PLATFORM != 'shell') return false;
 
-        if(($filter_double == true) and ($message == $last)){
+        if(($filter_double == true) and ($messages == $last)){
             /*
             * We already displayed this message, skip!
             */
             return;
         }
 
-        $last = $message;
+        $last = $messages;
 
         if($color and defined('NOCOLOR') and !NOCOLOR){
-            load_libs('cli');
-
-            $c       = cli_init_color();
-            $message = $c->$color($message);
+            $c = cli_init_color();
         }
 
-        $message = stripslashes(br2nl($message)).($newline ? "\n" : '');
+        if(is_object($messages)){
+            if($messages instanceof bException){
+                $messages = $messages->getMessages();
 
-        if(empty($error)){
-            echo $message;
+            }elseif($messages instanceof Exception){
+                $messages = array($messages->getMessage());
 
-        }else{
-            /*
-             * Log to STDERR instead of STDOUT
-             */
-            if(empty($fh)){
-                $fh = fopen('php://stderr','w');
+            }else{
+                $messages = $messages->__toString();
             }
 
-            fwrite($fh, $message);
+        }elseif(!is_array($messages)){
+            $messages = array($messages);
+        }
+
+        foreach($messages as $message){
+            if($color and defined('NOCOLOR') and !NOCOLOR){
+                $message = $c->$color($message);
+            }
+
+            $message = stripslashes(br2nl($message)).($newline ? "\n" : '');
+
+            if(empty($error)){
+                echo $message;
+
+            }else{
+                /*
+                 * Log to STDERR instead of STDOUT
+                 */
+                if(empty($fh)){
+                    $fh = fopen('php://stderr','w');
+                }
+
+                fwrite($fh, $message);
+            }
         }
 
         return true;
