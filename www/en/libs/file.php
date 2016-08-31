@@ -296,7 +296,7 @@ function file_ensure_path($path, $mode = null){
             $mode = $_CONFIG['fs']['dir_mode'];
         }
 
-        if(!file_exists($path)){
+        if(!file_exists(unslash($path))){
             try{
                 mkdir($path, $mode, true);
 
@@ -311,17 +311,17 @@ function file_ensure_path($path, $mode = null){
             }
 
         }elseif(!is_dir($path)){
-            throw new bException('file_ensure_path(): Specified "'.$path.'" is not a directory');
+            throw new bException(tr('file_ensure_path(): Specified ":path" is not a directory', array(':path' => $path)), 'invalid');
         }
 
         if(!$realpath = realpath($path)){
-            throw new bException('file_ensure_path(): realpath() failed for "'.$path.'"');
+            throw new bException(tr('file_ensure_path(): realpath() failed for ":path"', array(':path' => $path)), 'failed');
         }
 
         return slash($realpath);
 
     }catch(Exception $e){
-        throw new bException('file_ensure_path(): Failed to ensure path "'.str_log($path).'"', $e);
+        throw new bException(tr('file_ensure_path(): Failed to ensure path ":path"', array(':path' => $path)), $e);
     }
 }
 
