@@ -103,6 +103,10 @@ class bException extends Exception{
     function getData(){
         return $this->data;
     }
+
+    function setData($data){
+        $this->data = $data;
+    }
 }
 
 
