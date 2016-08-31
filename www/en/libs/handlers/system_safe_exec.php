@@ -64,6 +64,8 @@ try{
     return $output;
 
 }catch(Exception $e){
+    $e->setData($output);
+
     throw new bException('safe_exec(): Failed', $e);
 }
 ?>
