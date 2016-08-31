@@ -608,7 +608,7 @@ function file_delete($pattern){
             throw new bException('file_delete(): No file or pattern specified');
         }
 
-        safe_exec('rm '.$pattern.' -rf');
+        safe_exec(array('rm -rf ', $pattern));
 
         return $pattern;
 
