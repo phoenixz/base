@@ -1510,7 +1510,7 @@ function process_runs($process_name){
 /*
  *
  */
-function run_background($cmd, $single = true, $log = false){
+function run_background($cmd, $log = false, $single = true){
     try{
         $path = dirname($cmd);
         $args = str_from (basename($cmd), ' ');
@@ -1548,7 +1548,7 @@ function run_background($cmd, $single = true, $log = false){
 //show(sprintf('nohup %s >> '.ROOT.'data/log/%s 2>&1 & echo $! > %s', $path.$cmd.' '.$args, $cmd, ROOT.'data/run/'.$cmd));
 
         if($log){
-            exec(sprintf('nohup %s >> '.ROOT.'data/log/%s 2>&1 & echo $! > %s', $path.$cmd.' '.$args, $cmd, ROOT.'data/run/'.$cmd));
+            exec(sprintf('nohup %s >> '.ROOT.'data/log/%s 2>&1 & echo $! > %s', $path.$cmd.' '.$args, $log, ROOT.'data/run/'.$cmd));
 
         }else{
             exec(sprintf('nohup %s > /dev/null 2>&1 & echo $! > %s', $path.$cmd.' '.$args, ROOT.'data/run/'.$cmd));
