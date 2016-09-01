@@ -1000,6 +1000,59 @@ function sql_null($value){
 
 
 /*
+ * NOTE: Use only on huge tables (> 1M rows)
+ *
+ * Return table row count by returning results count for SELECT `id`
+ * Results will be cached in a counts table
+ */
+function sql_count($table, $where = '', $execute = null, $column = 'id'){
+    global $_CONFIG;
+
+    try{
+        load_config('sql_large');
+
+        $expires = $_CONFIG['sql_large']['cache']['expires'];
+        $hash    = hash('sha1', $table.$where.$column.json_encode($execute));
+        $count   = sql_get('SELECT `count` FROM `counts` WHERE `hash` = :hash AND `until` > NOW()', 'count', array(':hash' => $hash));
+
+        if($count){
+            return $count;
+        }
+
+
+
+        /*
+         * Count value was not found cached, count it directly
+         */
+        $count = sql_query('SELECT '.$column.' FROM '.$table.' '.$where, $execute);
+        $count = $count->rowCount();
+
+        sql_query('INSERT INTO `counts` (`createdby`, `count`, `hash`, `until`)
+                   VALUES               (:createdby , :count , :hash , NOW() + INTERVAL :expires SECOND)
+
+                   ON DUPLICATE KEY UPDATE `count`      = :update_count,
+                                           `modifiedon` = NOW(),
+                                           `modifiedby` = :update_modifiedby,
+                                           `until`      = NOW() + INTERVAL :update_expires SECOND',
+
+                   array(':createdby'         => isset_get($_SESSION['user']['id']),
+                         ':hash'              => $hash,
+                         ':count'             => $count,
+                         ':expires'           => $expires,
+                         ':update_expires'    => $expires,
+                         ':update_modifiedby' => isset_get($_SESSION['user']['id']),
+                         ':update_count'      => $count));
+
+        return $count;
+
+    }catch(Exception $e){
+        throw new bException('sql_count(): Failed', $e);
+    }
+}
+
+
+
+/*
  * COMPATIBILITY FUNCTIONS
  *
  * These functions below exist only for compatibility between pdo.php and mysqli.php
