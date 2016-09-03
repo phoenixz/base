@@ -1946,6 +1946,44 @@ function file_tree_execute($params){
 
 
 /*
+ * If specified path is not absolute, then return a path that is sure to start
+ * from the current working directory
+ */
+function file_absolute($path){
+    try{
+        if(substr($path, 0, 1) !== '/'){
+            $path = slash(getcwd()).$path;
+        }
+
+        return $path;
+
+    }catch(Exception $e){
+        throw new bException('file_absolute(): Failed', $e);
+    }
+}
+
+
+
+/*
+ * If specified path is not absolute, then return a path that is sure to start
+ * within ROOT
+ */
+function file_root($path){
+    try{
+        if(substr($path, 0, 1) !== '/'){
+            $path = ROOT.$path;
+        }
+
+        return $path;
+
+    }catch(Exception $e){
+        throw new bException('file_root(): Failed', $e);
+    }
+}
+
+
+
+/*
  * Execute the specified callback after setting the specified mode on the
  * specified path. Once the callback has finished, return to the original file
  * mode.
