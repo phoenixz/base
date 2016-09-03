@@ -337,7 +337,8 @@ function cli_argument($value = null, $next = null, $default = null){
         }
 
         if($value === null){
-            $retval = str_replace('-', '', array_shift($argv));
+            $retval = array_shift($argv);
+            $retval = str_starts_not($retval, '-');
             return $retval;
         }
 
@@ -426,26 +427,7 @@ function cli_no_arguments_left(){
         return true;
     }
 
-    $method = cli_method();
-
-    if($method){
-        switch(count($argv)){
-            //case 0:
-            //    throw new bException(tr('cli_no_arguments_left(): Unknown method ":method" encountered', array(':method' => $method)), 'invalid_arguments');
-            //
-            //case 1:
-            //    throw new bException(tr('cli_no_arguments_left(): Unknown method ":method" with unknown argument ":argument" encountered', array(':argument' => str_force($argv, ', '), ':method' => $method)), 'invalid_arguments');
-
-            default:
-                throw new bException(tr('cli_no_arguments_left(): Unknown arguments ":arguments" encountered', array(':arguments' => str_force($argv, ', '), ':method' => $method)), 'invalid_arguments');
-        }
-    }
-
-    if(count($argv) > 1){
-        throw new bException(tr('cli_no_arguments_left(): Unknown arguments ":arguments" encountered', array(':arguments' => str_force($argv, ', '))), 'invalid_arguments');
-    }
-
-    throw new bException(tr('cli_no_arguments_left(): Unknown argument ":argument" encountered', array(':argument' => str_force($argv, ', '))), 'invalid_arguments');
+    throw new bException(tr('cli_no_arguments_left(): Unknown arguments ":arguments" encountered', array(':arguments' => str_force($argv, ', '))), 'invalid_arguments');
 }
 
 
