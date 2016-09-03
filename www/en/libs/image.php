@@ -191,9 +191,6 @@ function image_convert($source, $destination, $params = null){
                 case 'format':
                     //do nothing (forced format)
                     break;
-
-                default:
-                    throw new bException(tr('image_convert(): Unknown parameter key ":key" specified', array(':key' => $key)), 'unknown');
             }
         }
 
@@ -237,6 +234,12 @@ function image_convert($source, $destination, $params = null){
 
             case 'jpg':
                 $command .= ' -background white';
+                break;
+
+            case '':
+                /*
+                 * Use current format
+                 */
                 break;
 
             default:
@@ -451,7 +454,7 @@ function is_image($file){
 /*
  *
  */
-function image_info($file){
+function image_info($file, $no_exif = false){
     global $_CONFIG;
 
     try{
@@ -466,6 +469,7 @@ function image_info($file){
         $size = getimagesize($file);
 
         $retval['file'] = basename($file);
+        $retval['size'] = filesize($file);
         $retval['path'] = slash(dirname($file));
         $retval['mime'] = $mime;
         $retval['bits'] = $size['bits'];
@@ -485,11 +489,17 @@ function image_info($file){
                     cli_log(tr('Failed to get compression information for file ":file" because ":e"', array(':e' => $e->getMessage(), ':file' => $file)), 'red');
                 }
 
-                $retval['exif'] = exif_read_data($file, null, true, true);
+                if(!$no_exif){
+                    $retval['exif'] = exif_read_data($file, null, true, true);
+                }
+
                 break;
 
             case 'tiff':
-                $retval['exif'] = exif_read_data($file, null, true, true);
+                if(!$no_exif){
+                    $retval['exif'] = exif_read_data($file, null, true, true);
+                }
+
                 break;
         }
 
