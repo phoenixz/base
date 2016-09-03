@@ -6,7 +6,8 @@
 $usage = './scripts/base/images parameters [OPTIONS]
 ./scripts/base/images optimize PATH | --all [--recursive] [OPTIONS]
 ./scripts/base/images retina PATH | --all [--recursive] [OPTIONS]
-./scripts/base/images info PATH | --all [--recursive] [OPTIONS]';
+./scripts/base/images info PATH | --all [--recursive] [OPTIONS]
+./scripts/base/images clear-cache';
 
 $help  = 'This script can perform various image actions
 
@@ -21,6 +22,18 @@ optimize                     - Optimize images using the specified parameters.
                                image sizes by recompressing using higher
                                compression settings, blurring and other
                                techniques, while retaining image quality
+
+parameters                   - Will show the parameters that will be used to
+                               optimize images. Parameters are taken from
+                               configuration and overridden by command line
+                               options
+
+info                         - Shows information about the specified image, or
+                               all images in the specified path (optionally
+                               tree, if --recursive is specified)
+
+clear-cache                  - Clear the `html_img` cache table that contains
+                               image sizes used by html_img()
 
 
 
@@ -41,25 +54,46 @@ OPTIONS
                                the image size, though this may affect image
                                quality (0x1 - 10x10 [1x3])
 
---defines
+--defines                    - imagemagick -defines
 
---sampling-factor
+--sampling-factor            - Sampling factor. Use 4:2:0 for even smaller
+                               images which retain relatively good quality
 
---limit-memory
+--limit-memory               -
 
---limit-map
+--limit-map                  -
 
---format
+--format                     - Force specified format on all images to be
+                               processed
 
---method
+--method                     - Force specified method on all images to be
+                               processed. Valid methods are thumb, resize-w,
+                               resize, thumb-circle, crop-resize, and custom
+                               (default is custom)
 
---width
+--width                      - Force specified width on all images to be
+                               processed
 
---height
+--height                     - Force specified height on all images to be
+                               processed
 
---recursive                     - If specified, process the source path
-                               recursively, processing all images
-                               found under that path';
+--recursive                  - If specified, process the source path
+                               recursively, processing all images found under
+                               that path
+
+--backup / -b                - (optimize only) Make a backup of each image
+                               before processing it. Backups will have the name
+                               file~Ymd-His
+
+--no-exif / -e               - (info or optimize with -d only) Do not display
+                               EXIF information
+
+--display-difference / -d    - When optimizing images, show the differce from
+                               before and after the optimization process
+
+--no-delete / -n             - (optimize and TEST mode only) Do not delete the
+                               temporary file so that it can be used to view the
+                               visual quality';
 
 require_once(dirname(__FILE__).'/../../libs/startup.php');
 
@@ -79,6 +113,7 @@ $params['limit']['memory']  = not_empty(cli_argument('--limit-memory'   , true) 
 $params['limit']['map']     = not_empty(cli_argument('--limit-map'      , true)         , $params['limit']['map']);
 
 $params['format']           = cli_argument('--format', true);
+$params['method']           = not_empty(cli_argument('--method', true), 'custom');
 $params['backup']           = not_empty(cli_argument('--backup-original'), cli_argument('-b'));
 $params['x']                = not_empty(cli_argument('--width' , true)   , cli_argument('-x', true));
 $params['y']                = not_empty(cli_argument('--height', true)   , cli_argument('-y', true));
@@ -86,7 +121,7 @@ $params['y']                = not_empty(cli_argument('--height', true)   , cli_a
 switch(cli_method()){
     case 'retina':
         $count = 0;
-        $all   = cli_argument('--all') or cli_argument('-a');
+        $all   = not_empty(cli_argument('--all'), cli_argument('-a'));
 
         cli_no_arguments_left();
 
@@ -182,6 +217,15 @@ switch(cli_method()){
                 continue;
             }
 
+            if($key === 'format'){
+                if($value){
+                    $value = tr('Force :format', array(':format' => $value));
+
+                }else{
+                    $value = tr('Keep');
+                }
+            }
+
             cli_log(str_size($key, 20), 'cyan', false);
             cli_log(str_force($value) , 'white');
         }
@@ -192,17 +236,17 @@ switch(cli_method()){
         /*
          * Display information on the images in the specified path
          */
-        $recursive = cli_argument('--recursive') or cli_argument('-r');
-        $all       = cli_argument('--all')       or cli_argument('-a');
+        $recursive = not_empty(cli_argument('--recursive'), cli_argument('-r'));
+        $all       = not_empty(cli_argument('--all')      , cli_argument('-a'));
+        $no_exif   = not_empty(cli_argument('--no-exif')  , cli_argument('-e'));
         $source    = cli_argument();
 
-        if(cli_argument('--default') or cli_argument('--defaults')){
+        if(not_empty(cli_argument('--default'), cli_argument('--defaults'))){
             $params = array();
         }
 
         cli_no_arguments_left();
-
-
+        load_libs('numbers');
 
         /*
          * Check source path
@@ -221,14 +265,16 @@ switch(cli_method()){
             $source = file_absolute($source);
         }
 
-
+        if(!$source){
+            throw new bException(tr('No path specified'), 'not-specified');
+        }
 
         /*
          * Display information on all image files
          */
         file_tree_execute(array('path'      => $source,
                                 'recursive' => $recursive,
-                                'callback'  => function($file) use ($params){
+                                'callback'  => function($file) use ($params, $no_exif){
                                                     if(!is_image($file)){
                                                         if(VERBOSE){
                                                             cli_log(tr('Skipping file ":image", it is not an image', array(':image' => $file)), 'yellow');
@@ -238,54 +284,8 @@ switch(cli_method()){
                                                     }
 
                                                     try{
-                                                        $info = image_info($file);
-
-                                                        cli_log(str_size(tr('Path'), 20), 'cyan', false);
-                                                        cli_log(str_force($info['path']) , 'white');
-                                                        cli_log(str_size(tr('File'), 20), 'cyan', false);
-                                                        cli_log(str_force($info['file']) , 'white');
-                                                        cli_log(str_size(tr('Mimetype'), 20), 'cyan', false);
-                                                        cli_log(str_force($info['mime']) , 'white');
-                                                        cli_log(str_size(tr('Width'), 20), 'cyan', false);
-                                                        cli_log(str_force($info['x']) , 'white');
-                                                        cli_log(str_size(tr('Height'), 20), 'cyan', false);
-                                                        cli_log(str_force($info['y']) , 'white');
-                                                        cli_log(str_size(tr('Bits'), 20), 'cyan', false);
-                                                        cli_log(str_force($info['bits']) , 'white');
-
-                                                        if(!empty($info['compression'])){
-                                                            cli_log(str_size(tr('Compression'), 20), 'cyan', false);
-                                                            cli_log(str_force($info['compression']) , 'white');
-                                                        }
-
-                                                        if(!empty($info['exif'])){
-                                                            cli_log(str_size(tr('EXIF INFORMATION:'), 20), 'cyan');
-
-                                                            foreach($info['exif'] as $key => $value){
-                                                                if(is_array($value)){
-                                                                    foreach($value as $subkey => $subvalue){
-                                                                        cli_log(str_size($key   , 30), 'cyan', false);
-
-                                                                        if(!is_numeric($subkey)){
-                                                                            cli_log(str_size($subkey, 30), 'cyan', false);
-                                                                        }
-
-                                                                        if($key === 'THUMBNAIL'){
-                                                                            $subvalue = tr('YES');
-                                                                        }
-
-                                                                        cli_log(str_force($subvalue), 'white');
-                                                                    }
-
-                                                                    continue;
-                                                                }
-
-                                                                cli_log(str_size($key, 30), 'cyan', false);
-                                                                cli_log(str_force($value) , 'white');
-                                                            }
-                                                        }
-
-                                                        cli_log();
+                                                        $info = image_info($file, $no_exif);
+                                                        s_display_info($info);
 
                                                     }catch(Exception $e){
                                                         cli_log(tr('Skipping file ":image", failed with ":error"', array(':image' => $file, ':error' => $e->getMessage())), 'yellow');
@@ -297,19 +297,28 @@ switch(cli_method()){
         /*
          * Check destination path
          */
-        $source    = cli_argument();
-        $recursive = cli_argument('--recursive') or cli_argument('-r');
-        $all       = cli_argument('--all')       or cli_argument('-a');
+        $recursive    = not_empty(cli_argument('--recursive')         , cli_argument('-r'));
+        $all          = not_empty(cli_argument('--all')               , cli_argument('-a'));
+        $no_exif      = not_empty(cli_argument('--no-exif')           , cli_argument('-e'));
+        $display_diff = not_empty(cli_argument('--display-difference'), cli_argument('-d'));
+        $display_diff = not_empty(cli_argument('--no-delete')         , cli_argument('-n'));
+        $source       = cli_argument();
 
-        if(cli_argument('--default') or cli_argument('--defaults')){
+        if(not_empty(cli_argument('--default'), cli_argument('--defaults'))){
             $params = array();
-
-        }else{
         }
 
         cli_no_arguments_left();
+        load_libs('numbers');
 
+        if(TEST){
+            if($params['backup']){
+                $params['backup'] = false;
+                cli_log(tr('Both backup and test options were specified, disabled "backup" since test will not change the original file'), 'yellow');
+            }
 
+            $display_diff = true;
+        }
 
         /*
          * Check source path
@@ -320,19 +329,27 @@ switch(cli_method()){
             }
 
             $source = ROOT;
+
+        }else{
+            /*
+             * Get absolute path from cwd
+             */
+            $source = file_absolute($source);
         }
 
-
+        if(!$source){
+            throw new bException(tr('No path specified'), 'not-specified');
+        }
 
         /*
          * Execute the conversion on the specified path
          */
-        file_tree_execute(array('path'      => realpath($source),
+        file_tree_execute(array('path'      => $source,
                                 'recursive' => $recursive,
-                                'callback'  => function($file) use ($params){
+                                'callback'  => function($file) use ($params, $display_diff, $no_exif){
                                                     global $_CONFIG;
 
-                                                    if(is_image($file)){
+                                                    if(!is_image($file)){
                                                         if(VERBOSE){
                                                             cli_log(tr('Skipping file ":image", it is not an image', array(':image' => $file)), 'yellow');
                                                         }
@@ -341,16 +358,39 @@ switch(cli_method()){
                                                     }
 
                                                     try{
-                                                        image_convert($file, $file, $params);
-                                                        usleep(5000);
+                                                        if($params['backup']){
+                                                            copy($file, $file.'~'.system_date_format(null, 'Ymd-His'));
+                                                        }
+
+                                                        if(TEST){
+                                                            $target = file_temp(false);
+
+                                                        }else{
+                                                            $target = $file;
+                                                        }
+
+                                                        if($display_diff){
+                                                            $before = image_info($file, $no_exif);
+                                                        }
+
+                                                        image_convert($file, $target, $params);
+
+                                                        if($display_diff){
+                                                            cli_log(tr('Before:'), 'white');
+                                                            s_display_info($before);
+
+                                                            cli_log(tr('After:'), 'white');
+                                                            s_display_info(image_info($target, $no_exif));
+                                                        }
+
+                                                        if(TEST){
+                                                            file_delete($target);
+                                                        }
 
                                                     }catch(Exception $e){
                                                         cli_log(tr('Skipping file ":image", failed with ":error"', array(':image' => $file, ':error' => $e->getMessage())), 'yellow');
                                                     }
                                                }));
-
-        sql_query('TRUNCATE `html_img`');
-        cli_log(tr('Cleared html_img cache'), 'green');
 
         if(!VERBOSE){
             cli_dot(false);
@@ -359,10 +399,80 @@ switch(cli_method()){
         cli_log(tr('Finished!'), 'green');
         break;
 
+    case 'clear-cache':
+        if(TEST){
+            break;
+        }
+
+        sql_query('TRUNCATE `html_img`');
+        cli_log(tr('Cleared html_img cache'), 'green');
+        break;
+
     case '':
         throw new bException(tr('No method specified'), 'unknown');
 
     default:
         throw new bException(tr('Unknown method ":method" specified', array(':method' => cli_method())), 'unknown');
+}
+
+
+
+/*
+ * Display image information
+ */
+function s_display_info($info){
+    try{
+        cli_log(str_size(tr('Path'), 20), 'cyan', false);
+        cli_log(str_force($info['path']) , 'white');
+        cli_log(str_size(tr('File'), 20), 'cyan', false);
+        cli_log(str_force($info['file']) , 'white');
+        cli_log(str_size(tr('File size'), 20), 'cyan', false);
+        cli_log(bytes($info['size']) , 'white');
+        cli_log(str_size(tr('Mimetype'), 20), 'cyan', false);
+        cli_log(str_force($info['mime']) , 'white');
+        cli_log(str_size(tr('Width'), 20), 'cyan', false);
+        cli_log(str_force($info['x']) , 'white');
+        cli_log(str_size(tr('Height'), 20), 'cyan', false);
+        cli_log(str_force($info['y']) , 'white');
+        cli_log(str_size(tr('Bits'), 20), 'cyan', false);
+        cli_log(str_force($info['bits']) , 'white');
+
+        if(!empty($info['compression'])){
+            cli_log(str_size(tr('Compression'), 20), 'cyan', false);
+            cli_log(str_force($info['compression']) , 'white');
+        }
+
+        if(!empty($info['exif'])){
+            cli_log(str_size(tr('EXIF INFORMATION:'), 20), 'cyan');
+
+            foreach($info['exif'] as $key => $value){
+                if(is_array($value)){
+                    foreach($value as $subkey => $subvalue){
+                        cli_log(str_size($key   , 30), 'cyan', false);
+
+                        if(!is_numeric($subkey)){
+                            cli_log(str_size($subkey, 30), 'cyan', false);
+                        }
+
+                        if($key === 'THUMBNAIL'){
+                            $subvalue = tr('YES');
+                        }
+
+                        cli_log(str_force($subvalue), 'white');
+                    }
+
+                    continue;
+                }
+
+                cli_log(str_size($key, 30), 'cyan', false);
+                cli_log(str_force($value) , 'white');
+            }
+        }
+
+        cli_log();
+
+    }catch(Exception $e){
+        throw new bException('s_display_info(): Failed', $e);
+    }
 }
 ?>
