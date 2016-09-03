@@ -19,7 +19,6 @@ load_config('images');
 file_ensure_path(ROOT.'/data/log');
 
 
-
 /*
  * Get and return text for image
  */
@@ -444,6 +443,60 @@ function is_image($file){
         }
 
         throw new bException('is_image(): Failed', $e);
+    }
+}
+
+
+
+/*
+ *
+ */
+function image_info($file){
+    global $_CONFIG;
+
+    try{
+        load_libs('file');
+
+        $mime = file_mimetype($file);
+
+        if(str_until($mime, '/') !== 'image'){
+            throw new bException(tr('image_info(): The specified file ":file" is not an image', array(':file' => $file)), 'invalid');
+        }
+
+        $size = getimagesize($file);
+
+        $retval['file'] = basename($file);
+        $retval['path'] = slash(dirname($file));
+        $retval['mime'] = $mime;
+        $retval['bits'] = $size['bits'];
+        $retval['x']    = $size[0];
+        $retval['y']    = $size[1];
+
+        /*
+         * Get EXIF information from JPG or TIFF image files
+         */
+        switch(str_from($mime, '/')){
+            case 'jpeg':
+                try{
+                    $retval['compression'] = safe_exec($_CONFIG['images']['imagemagick']['identify'].' -format "%Q" '.$file);
+                    $retval['compression'] = array_shift($retval['compression']);
+
+                }catch(Exception $e){
+                    cli_log(tr('Failed to get compression information for file ":file" because ":e"', array(':e' => $e->getMessage(), ':file' => $file)), 'red');
+                }
+
+                $retval['exif'] = exif_read_data($file, null, true, true);
+                break;
+
+            case 'tiff':
+                $retval['exif'] = exif_read_data($file, null, true, true);
+                break;
+        }
+
+        return $retval;
+
+    }catch(Exception $e){
+        throw new bException('image_info(): Failed', $e);
     }
 }
 
