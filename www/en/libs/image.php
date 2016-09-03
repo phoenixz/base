@@ -220,8 +220,14 @@ function image_convert($source, $destination, $params = null){
         }
 
         /*
-         * Check format
+         * Check format and update destination file name to match
          */
+        $source_path = dirname($source);
+        $source_file = basename($source);
+
+        $dest_path = dirname($destination);
+        $dest_file = basename($destination);
+
         switch($params['format']){
             case 'gif':
                 //FALLTHROUGH
@@ -229,22 +235,27 @@ function image_convert($source, $destination, $params = null){
                 /*
                  * Preserve transparent background
                  */
-                $command .= ' -background none';
+                $command  .= ' -background none';
+                $dest_file = str_runtil($dest_file, '.').'.'.$params['format'];
                 break;
 
             case 'jpg':
-                $command .= ' -background white';
+                $command  .= ' -background white';
+                $dest_file = str_runtil($dest_file, '.').'.'.$params['format'];
                 break;
 
             case '':
                 /*
                  * Use current format
                  */
+                $dest_file = str_runtil($dest_file, '.').'.'.str_rfrom($source_file, '.');
                 break;
 
             default:
                 throw new bException(tr('image_convert(): Unknown format ":format" specified.', array(':format' => $params['format'])), 'unknown');
         }
+
+        $destination = slash($dest_path).$dest_file;
 
         /*
          * Execute command to convert image
