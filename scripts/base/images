@@ -301,7 +301,7 @@ switch(cli_method()){
         $all          = not_empty(cli_argument('--all')               , cli_argument('-a'));
         $no_exif      = not_empty(cli_argument('--no-exif')           , cli_argument('-e'));
         $display_diff = not_empty(cli_argument('--display-difference'), cli_argument('-d'));
-        $display_diff = not_empty(cli_argument('--no-delete')         , cli_argument('-n'));
+        $no_delete    = not_empty(cli_argument('--no-delete')         , cli_argument('-n'));
         $source       = cli_argument();
 
         if(not_empty(cli_argument('--default'), cli_argument('--defaults'))){
@@ -346,7 +346,7 @@ switch(cli_method()){
          */
         file_tree_execute(array('path'      => $source,
                                 'recursive' => $recursive,
-                                'callback'  => function($file) use ($params, $display_diff, $no_exif){
+                                'callback'  => function($file) use ($params, $display_diff, $no_exif, $no_delete){
                                                     global $_CONFIG;
 
                                                     if(!is_image($file)){
@@ -373,7 +373,7 @@ switch(cli_method()){
                                                             $before = image_info($file, $no_exif);
                                                         }
 
-                                                        image_convert($file, $target, $params);
+                                                        $target = image_convert($file, $target, $params);
 
                                                         if($display_diff){
                                                             cli_log(tr('Before:'), 'white');
@@ -383,7 +383,7 @@ switch(cli_method()){
                                                             s_display_info(image_info($target, $no_exif));
                                                         }
 
-                                                        if(TEST){
+                                                        if(TEST and !$no_delete){
                                                             file_delete($target);
                                                         }
 
@@ -422,20 +422,22 @@ switch(cli_method()){
  */
 function s_display_info($info){
     try{
-        cli_log(str_size(tr('Path'), 20), 'cyan', false);
-        cli_log(str_force($info['path']) , 'white');
         cli_log(str_size(tr('File'), 20), 'cyan', false);
-        cli_log(str_force($info['file']) , 'white');
+        cli_log($info['path'].$info['file'], 'white');
+        cli_log(str_size(tr('Path'), 20), 'cyan', false);
+        cli_log($info['path'], 'white');
+        cli_log(str_size(tr('Filename'), 20), 'cyan', false);
+        cli_log($info['file'], 'white');
         cli_log(str_size(tr('File size'), 20), 'cyan', false);
         cli_log(bytes($info['size']) , 'white');
         cli_log(str_size(tr('Mimetype'), 20), 'cyan', false);
-        cli_log(str_force($info['mime']) , 'white');
+        cli_log($info['mime'], 'white');
         cli_log(str_size(tr('Width'), 20), 'cyan', false);
-        cli_log(str_force($info['x']) , 'white');
+        cli_log($info['x'], 'white');
         cli_log(str_size(tr('Height'), 20), 'cyan', false);
-        cli_log(str_force($info['y']) , 'white');
+        cli_log($info['y'], 'white');
         cli_log(str_size(tr('Bits'), 20), 'cyan', false);
-        cli_log(str_force($info['bits']) , 'white');
+        cli_log($info['bits'], 'white');
 
         if(!empty($info['compression'])){
             cli_log(str_size(tr('Compression'), 20), 'cyan', false);
