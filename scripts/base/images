@@ -344,9 +344,11 @@ switch(cli_method()){
         /*
          * Execute the conversion on the specified path
          */
-        file_tree_execute(array('path'      => $source,
-                                'recursive' => $recursive,
-                                'callback'  => function($file) use ($params, $display_diff, $no_exif, $no_delete){
+        cli_log(tr('Starting image converting'), 'white');
+
+        $count = file_tree_execute(array('path'      => $source,
+                                         'recursive' => $recursive,
+                                         'callback'  => function($file) use ($params, $display_diff, $no_exif, $no_delete){
                                                     global $_CONFIG;
 
                                                     if(!is_image($file)){
@@ -396,7 +398,7 @@ switch(cli_method()){
             cli_dot(false);
         }
 
-        cli_log(tr('Finished!'), 'green');
+        cli_log(tr('Finished converting ":count" images', array(':count' => $count)), 'green');
         break;
 
     case 'clear-cache':
