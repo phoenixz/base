@@ -420,14 +420,15 @@ function file_get_extension($filename){
 /*
  * Return a temporary filename for the specified file in the specified path
  */
-function file_temp($filename = ''){
+function file_temp($create = true){
     try{
-        if($filename){
-            file_ensure_path($path = TMP.($filename ? slash(getmypid().'_'.substr(uniqid(), 0, 8)) : ''));
-            return $path.$filename;
+        file_ensure_path(TMP);
+
+        if($create){
+            return tempnam(TMP);
         }
 
-        return tempnam(TMP, PROJECT);
+        return TMP.substr(hash('sha1', uniqid().microtime()), 0, 12);
 
     }catch(Exception $e){
         throw new bException('file_temp(): Failed', $e);
@@ -1774,8 +1775,16 @@ function file_tree_execute($params){
             throw new bException(tr('file_tree_execute(): Specified callback is not a function'), 'invalid');
         }
 
+        if(!($params['path'])){
+            throw new bException(tr('file_tree_execute(): No path specified'), 'not-specified');
+        }
+
+        if(substr($params['path'], 0, 1) !== '/'){
+            throw new bException(tr('file_tree_execute(): No absolute path specified'), 'invalid');
+        }
+
         if(!file_exists($params['path'])){
-            throw new bException(tr('file_tree_execute(): Specified path ":path" does not exist', array(':path' => $params['path'])), 'file-not-exist');
+            throw new bException(tr('file_tree_execute(): Specified path ":path" does not exist', array(':path' => $params['path'])), 'not-exist');
         }
 
         if((substr(basename($params['path']), 0, 1) == '.') and !$params['follow_hidden']){
