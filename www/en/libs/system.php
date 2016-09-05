@@ -1510,24 +1510,24 @@ function process_runs($process_name){
 /*
  *
  */
-function run_background($cmd, $log = false, $single = true){
+function run_background($cmd, $log = true, $single = true){
     try{
+        $args = str_from ($cmd, ' ');
+        $cmd  = str_until($cmd, ' ');
         $path = dirname($cmd);
-        $args = str_from (basename($cmd), ' ');
-        $cmd  = str_until(basename($cmd), ' ');
+        $path = slash($path);
+        $cmd  = basename($cmd);
 
         if($path == '.'){
             $path = ROOT.'scripts/';
 
-        }elseif(str_starts_not($path, '/') == 'base'){
+        }elseif(str_ends_not(str_starts_not($path, '/'), '/') == 'base'){
             $path = ROOT.'scripts/base/';
         }
 
         if($single and process_runs($cmd)){
             return false;
         }
-
-        $path = slash($path);
 
         if(!file_exists($path.$cmd)){
             throw new bException(tr('run_background(): Specified command ":cmd" does not exists', array(':cmd' => $path.$cmd)), 'not-exist');
@@ -1545,8 +1545,7 @@ function run_background($cmd, $log = false, $single = true){
         file_ensure_path(ROOT.'data/run');
         file_ensure_path(ROOT.'data/log');
 
-//show(sprintf('nohup %s >> '.ROOT.'data/log/%s 2>&1 & echo $! > %s', $path.$cmd.' '.$args, $cmd, ROOT.'data/run/'.$cmd));
-
+//show(sprintf('nohup %s >> '.ROOT.'data/log/%s 2>&1 & echo $! > %s', $path.$cmd.' '.$args, $log, ROOT.'data/run/'.$cmd));
         if($log){
             exec(sprintf('nohup %s >> '.ROOT.'data/log/%s 2>&1 & echo $! > %s', $path.$cmd.' '.$args, $log, ROOT.'data/run/'.$cmd));
 
