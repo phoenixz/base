@@ -11,7 +11,7 @@
  *
  * All tree user and group will be set to $_CONFIG[deploy][user] $_CONFIG[deploy][group]
  *
- * @copyright Sven Oostenbrink <support@svenoostenbrink.com>
+ * @copyright Sven Oostenbrink <support@ingiga.com>
  */
 $usage = "./scripts/base/fix-permissions\n";
 

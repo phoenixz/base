@@ -4,7 +4,7 @@
  * This is the project deploy script
  * See the help contents for more information
  *
- * @copyright Sven Oostenbrink <support@svenoostenbrink.com>, Johan Geuze
+ * @copyright Sven Oostenbrink <support@ingiga.com>, Johan Geuze
  */
 $usage = "./scripts/base/deploy ENVIRONMENT / all\n".
          "./scripts/base/deploy\n";
@@ -106,7 +106,7 @@ deploy_post_deploy
 deploy_post
 deploy_finish
 
-Copyright Sven Oostenbrink <support@svenoostenbrink.com>, Johan Geuze";
+Copyright Sven Oostenbrink <support@ingiga.com>, Johan Geuze";
 
 require_once(dirname(__FILE__).'/../../libs/startup.php');
 

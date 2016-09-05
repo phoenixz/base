@@ -3,7 +3,7 @@
 /*
  * This script will copy the target environments database and sync its files
  *
- * @copyright Sven Oostenbrink <support@svenoostenbrink.com>
+ * @copyright Sven Oostenbrink <support@ingiga.com>
  */
 // :TODO: Add support to indicate sync other databases than the core database
 $usage = "./scripts/base/sync ENVIRONMENT [OPTIONS]\n";

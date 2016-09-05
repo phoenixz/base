@@ -6,4 +6,4 @@ See /doc for documentation
 See /doc/features for available features
 
 This entire project has been released under the GNU Public License, Version 2, see http://opensource.org/licenses/GPL-2.0
-Unless specified differently, all files are copyright Sven Oostenbrink <support@svenoostenbrink.com>
+Unless specified differently, all files are copyright Sven Oostenbrink <support@ingiga.com>
