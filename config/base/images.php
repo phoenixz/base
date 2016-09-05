@@ -2,7 +2,9 @@
 /*
  * Imagemagic configuration
  */
-$_CONFIG['images'] = array('imagemagick' => array('convert'          => '/usr/bin/convert',                          // The location of the imagemagic "convert" command
+$_CONFIG['images'] = array('viewer'      => '/usr/bin/feh',                                                          // The image viewer that should be used
+
+                           'imagemagick' => array('convert'          => '/usr/bin/convert',                          // The location of the imagemagic "convert" command
                                                   'identify'         => '/usr/bin/identify',                         // The location of the imagemagic "identify" command
                                                   'nice'             => 11,                                          // imagemagick process "convert" nice level
                                                   'strip'            => true,                                        // Should exif information be stripped or not
