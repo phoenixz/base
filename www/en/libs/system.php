@@ -1752,6 +1752,10 @@ function api_prefix($id = null, $force_environment = false){
 function name($user = null, $key_prefix = '', $default = null){
     try{
         if($user){
+            if($key_prefix){
+                $key_prefix = str_ends($key_prefix, '_');
+            }
+
             if(is_scalar($user)){
                 if(!is_numeric($user)){
                     /*
