@@ -425,7 +425,7 @@ function file_temp($create = true){
         file_ensure_path(TMP);
 
         if($create){
-            return tempnam(TMP);
+            return tempnam(TMP, '');
         }
 
         return TMP.substr(hash('sha1', uniqid().microtime()), 0, 12);
