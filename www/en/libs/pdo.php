@@ -907,23 +907,30 @@ function sql_fetch_column($r, $column){
  */
 function sql_merge($db, $post, $skip = null){
     try{
-        if($post === null){
-            /*
-             * Nothing to merge
-             */
-            return $db;
-        }
-
         if($skip === null){
             $skip = 'id,status';
         }
 
         if(!is_array($db)){
-            throw new bException(tr('sql_merge(): Specified database source should be an array but is a ":type"', array(':type' => gettype($db))), 'invalid');
+            if($db !== null){
+                throw new bException(tr('sql_merge(): Specified database source data type should be an array but is a ":type"', array(':type' => gettype($db))), 'invalid');
+            }
+
+            /*
+             * Nothing to merge
+             */
+            $db = array();
         }
 
         if(!is_array($post)){
-            throw new bException(tr('sql_merge(): Specified POST source should be an array but is a ":type"', array(':type' => gettype($post))), 'invalid');
+            if($post !== null){
+                throw new bException(tr('sql_merge(): Specified post source data type should be an array but is a ":type"', array(':type' => gettype($post))), 'invalid');
+            }
+
+            /*
+             * Nothing to merge
+             */
+            $post = array();
         }
 
         $post = array_remove($post, $skip);
