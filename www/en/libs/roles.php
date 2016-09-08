@@ -13,7 +13,7 @@
 /*
  * Return requested data for specified role
  */
-function roles_get($role = null, $columns = '*'){
+function roles_get($role = null){
     global $_CONFIG;
 
     try{
@@ -24,11 +24,10 @@ function roles_get($role = null, $columns = '*'){
                             `roles`.`modifiedon`,
                             `roles`.`description`,
 
-                            `createdby`.`name`   AS `created_name`,
-                            `createdby`.`email`  AS `created_email`,
-                            `modifiedby`.`name`  AS `modified_name`,
-                            `modifiedby`.`email` AS `modified_email`
-
+                            `createdby`.`name`   AS `createdby_name`,
+                            `createdby`.`email`  AS `createdby_email`,
+                            `modifiedby`.`name`  AS `modifiedby_name`,
+                            `modifiedby`.`email` AS `modifiedby_email`
 
                   FROM      `roles`
 
@@ -70,7 +69,7 @@ function roles_get($role = null, $columns = '*'){
                                  ':status'    => 'new',
                                  ':createdby' => isset_get($_SESSION['user']['id'])));
 
-                return roles_get($role, $columns);
+                return roles_get($role);
             }
         }
 
@@ -106,6 +105,16 @@ function roles_validate($role){
             $v->setError(tr('Please ensure that the role\'s name does not start with a number'));
         }
 
+        /*
+         * Also check if this is not the god right. If so, it CAN NOT be
+         * updated
+         */
+        $name = sql_get('SELECT `name` FROM `roles` WHERE `id` = :id', 'name', array(':id' => $role['id']));
+
+        if($name === 'god'){
+            $v->setError(tr('The role "god" cannot be modified'));
+        }
+
         $v->isValid();
 
         return $role;
@@ -130,8 +139,6 @@ function roles_update_rights($role, $rights){
         if(isset_get($rights) and !is_array($rights)){
             throw new bException('roles_update_rights(): The specified rights list is invalid', 'invalid');
         }
-
-
 
         /*
          * First check, clean rights and obtain both rights id and name
@@ -167,8 +174,6 @@ function roles_update_rights($role, $rights){
             notify('unknown', tr('Tried adding non existing right ":right" to role ":role", ignoring', array(':right' => $right, ':role' => $role['name'])));
         }
 
-
-
         /*
          * First update the roles_rights table.
          */
@@ -184,24 +189,23 @@ function roles_update_rights($role, $rights){
                               ':rights_id' => $rights_id));
         }
 
-
-
         /*
          * Now update the users_rights table
          */
         $users  = sql_query('SELECT `id` FROM `users` WHERE `roles_id` = :roles_id', array(':roles_id' => $role['id']));
 
         $delete = sql_prepare('DELETE FROM `users_rights` WHERE `users_id` = :users_id');
-        $insert = sql_prepare('INSERT INTO `users_rights` (`users_id`, `rights_id`, `right`)
-                               VALUES                     (:users_id , :rights_id , :right )');
 
-        foreach($users as $users_id){
-            foreach($rights as $rights_id => $name){
-                $delete->execute(array(':users_id'  => $users_id));
+        $insert = sql_prepare('INSERT INTO `users_rights` (`users_id`, `rights_id`, `name`)
+                               VALUES                     (:users_id , :rights_id , :name )');
 
-                $insert->execute(array(':users_id'  => $users_id,
+        while($user = sql_fetch($users)){
+            foreach($rights_list as $rights_id => $name){
+                $delete->execute(array(':users_id'  => $user['id']));
+
+                $insert->execute(array(':users_id'  => $user['id'],
                                        ':rights_id' => $rights_id,
-                                       ':right'     => $name));
+                                       ':name'      => $name));
             }
         }
 
