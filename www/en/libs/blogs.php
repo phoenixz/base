@@ -719,6 +719,39 @@ function blogs_seo_keywords($keywords){
 
 
 /*
+ * Validate all blog data
+ */
+function blogs_validate($post){
+    try{
+        load_libs('seo,validate');
+
+        /*
+         * Validate input
+         */
+        $v = new validate_form($post, 'id,language,name,seoname,url_template,keywords,seokeywords,slogan,description');
+
+        $v->isNatural($post['id'], tr('Please ensure that the specified post id is a natural number; numeric, integer, and > 0'));
+
+        if(is_numeric($post['name'])){
+            throw new bException(tr('Blog post name can not be numeric'), 'invalid');
+        }
+
+        $v->isNotEmpty($post['name']    , tr('Please provide a name for your :objectname'      , array(':objectname' => $params['object_name'])));
+        $v->isNotEmpty($post['blogs_id'], tr('Please provide a blog for your :objectname'      , array(':objectname' => $params['object_name'])));
+        $v->isNumeric ($post['blogs_id'], tr('Please provide a valid blog for your :objectname', array(':objectname' => $params['object_name'])));
+
+        $v->isValid();
+
+        return $post;
+
+    }catch(Exception $e){
+        throw new bException('blogs_validate(): Failed', $e);
+    }
+}
+
+
+
+/*
  * Ensure that all post data is okay
  */
 function blogs_validate_post(&$post, $params = null){
