@@ -1217,13 +1217,15 @@ function user_validate($user, $sections = array()){
             $v->isEqual($user['password'], $user['password2'], tr('Please ensure that the password and validation password match'));
         }
 
+        $v->isValid();
+
         /*
          * Ensure that the username and email are not in use
          */
-        $query = 'SELECT `email`,
-                         `username`
+        $query   = 'SELECT `email`,
+                           `username`
 
-                  FROM   `users`';
+                    FROM   `users`';
 
         $where   = array();
         $execute = array();
