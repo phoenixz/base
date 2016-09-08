@@ -15,6 +15,82 @@ load_config('blogs');
 
 
 /*
+ * Return requested data for specified blog
+ */
+function blogs_get($blog = null){
+    global $_CONFIG;
+
+    try{
+        $query = 'SELECT    `blogs`.`id`,
+                            `blogs`.`name`,
+                            `blogs`.`status`,
+                            `blogs`.`slogan`,
+                            `blogs`.`seoname`,
+                            `blogs`.`keywords`,
+                            `blogs`.`createdon`,
+                            `blogs`.`modifiedon`,
+                            `blogs`.`description`,
+                            `blogs`.`url_template`,
+
+                            `createdby`.`name`   AS `createdby_name`,
+                            `createdby`.`email`  AS `createdby_email`,
+                            `modifiedby`.`name`  AS `modifiedby_name`,
+                            `modifiedby`.`email` AS `modifiedby_email`
+
+                  FROM      `blogs`
+
+                  LEFT JOIN `users` as `createdby`
+                  ON        `blogs`.`createdby`     = `createdby`.`id`
+
+                  LEFT JOIN `users` as `modifiedby`
+                  ON        `blogs`.`modifiedby`    = `modifiedby`.`id`';
+
+        if($blog){
+            if(!is_string($blog)){
+                throw new bException(tr('blogs_get(): Specified blog name ":name" is not a string', array(':name' => $blog)), 'invalid');
+            }
+
+            $retval = sql_get($query.'
+
+                              WHERE      `blogs`.`name`   = :name
+                              AND        `blogs`.`status` IS NULL',
+
+                              array(':name' => $blog));
+
+        }else{
+            /*
+             * Pre-create a new blog
+             */
+            $retval = sql_get($query.'
+
+                              WHERE  `blogs`.`createdby` = :createdby
+
+                              AND    `blogs`.`status`    = "new"',
+
+                              array(':createdby' => $_SESSION['user']['id']));
+
+            if(!$retval){
+                sql_query('INSERT INTO `blogs` (`createdby`, `status`, `name`)
+                           VALUES              (:createdby , :status , :name )',
+
+                           array(':name'      => $blog,
+                                 ':status'    => 'new',
+                                 ':createdby' => isset_get($_SESSION['user']['id'])));
+
+                return blogs_get($blog);
+            }
+        }
+
+        return $retval;
+
+    }catch(Exception $e){
+        throw new bException('blogs_get(): Failed', $e);
+    }
+}
+
+
+
+/*
  * Get a new or existing blog post
  */
 function blogs_post_get($post = null, $blog = null, $columns = null){
