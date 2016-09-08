@@ -640,7 +640,7 @@ function html_flash($class = null){
             //    $message = tr('Something went wrong, please try again later');
             //}
 
-            switch(strtolower($type)){
+            switch($type = strtolower($type)){
                 case 'info':
                     break;
 
@@ -663,7 +663,9 @@ function html_flash($class = null){
                     break;
 
                 default:
-                    throw new bException(tr('html_flash(): Unknown flash type ":type" specified. Please specify one of "info" or "success" or "attention" or "warning" or "error" or "danger"', array(':type' => $type)), 'flash/unknown');
+                    $type = 'error';
+//                    throw new bException(tr('html_flash(): Unknown flash type ":type" specified. Please specify one of "info" or "success" or "attention" or "warning" or "error" or "danger"', array(':type' => $type)), 'flash/unknown');
+// :TODO: Add notification
             }
 
             if(!debug()){
