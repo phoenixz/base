@@ -22,65 +22,70 @@ This is the project deploy script
 
 OPTIONS
 
---all / -a                        - Deploy all sub environments
+--all / -a                      - Deploy all sub environments
 
---ignore-changes / -i             - Ignore git status, don't check for
-                                    uncommitted changes
+--ignore-changes / -i           - Ignore git status, don't check for
+                                  uncommitted changes
 
---do-content / --do-content-check - Check content files
+--do-content-check              - Check content files
 
---do-syntax / --doparse           - Do PHP syntax check parse
+--do-syntax / --doparse         - Do PHP syntax check parse
 
---no-deploy / --test              - Do not deploy, only translate
+--no-deploy / --test            - Do not deploy, only translate
 
---no-hook / --no-hooks            - Do not execute hooks
+--no-hook / --no-hooks          - Do not execute hooks
 
---no-init                         - Do not execute an init on the target server
+--no-init                       - Do not execute an init on the target server
 
---no-notify                       - Do not send notifications
+--no-notify                     - Do not send notifications
 
---no-push                         - Do not automatically git push all changes
-                                    and tags
+--no-push                       - Do not automatically git push all changes
+                                  and tags
 
---no-parrallel                    - Do not use parrallel rsync deploy, even if
-                                    the website is configured to do so anyway
+--no-parrallel                  - Do not use parrallel rsync deploy, even if
+                                  the website is configured to do so anyway
 
---no-sitemap                      - Do not automatically reupdate the sitemap
-                                    files
+--no-sitemap                    - Do not automatically reupdate the sitemap
+                                  files
 
---no-tag / --no-tags              - Do not tag current version (tagging is
-                                    automatically disabled if doversion has
-                                    NOT been set)
+--no-tag / --no-tags            - Do not tag current version (tagging is
+                                  automatically disabled if doversion has
+                                  NOT been set)
 
---no-translate                    - Do not execute file translation
+--no-translate                  - Do not execute file translation
 
---no-bom-check                    - Do not test for BOM character in all
-                                    PHP files. The ByteOrderMark character is a
-                                    UTF8 character (added mostly by apple
-                                    machines) that indicates how to read the
-                                    UTF8 text, but is interpreted by the PHP as
-                                    a character before the <?php tag, which can
-                                    cause problems with headers(). The clearbom
-                                    script will strip the BOM characters and is
-                                    by default always executed on each deploy
-                                    to be sure no BOM characters end up in
-                                    production code. This option disables the
-                                    BOM check.
+--no-bom-check                  - Do not test for BOM character in all
+                                  PHP files. The ByteOrderMark character is a
+                                  UTF8 character (added mostly by apple
+                                  machines) that indicates how to read the
+                                  UTF8 text, but is interpreted by the PHP as
+                                  a character before the <?php tag, which can
+                                  cause problems with headers(). The clearbom
+                                  script will strip the BOM characters and is
+                                  by default always executed on each deploy
+                                  to be sure no BOM characters end up in
+                                  production code. This option disables the
+                                  BOM check.
 
---stash                           - Execute a \"git stash\" before and \"git
-                                    stash pop\" after deploy, in case the WT
-                                    contained changes
+--stash                         - Execute a \"git stash\" before and \"git
+                                  stash pop\" after deploy, in case the WT
+                                  contained changes
 
---up-version / --up-versions     - Update version (Does not do so by default)
+--up-version / --up-versions    - Update version (Does not do so by default)
 
+--update-content                - rsync the data/content path as well (Normally
+                                  always skipped)
 
--F --force                       - Force a deploy, even when it should be
-                                   stopped due to (for example) git changes
+--update-sitemap                - rsync the www/LANG/sitemap file as well
+                                  (Normally always skipped)
 
--C --nocolor                     - Do not use color in output
+-F --force                      - Force a deploy, even when it should be
+                                  stopped due to (for example) git changes
 
--T --test                        - Do not do anything, just test the flow of
-                                   the deploy
+-C --nocolor                    - Do not use color in output
+
+-T --test                       - Do not do anything, just test the flow of
+                                  the deploy
 
 
 
@@ -139,6 +144,8 @@ $all            =  (cli_argument('--all')            or cli_argument('-a'));
 $ignore         =  (cli_argument('--ignore-changes') or cli_argument('-i'));
 $nocacheclear   =   cli_argument('--no-cache-clear');
 $notranslate    =   cli_argument('--no-translate');
+$update_content =   cli_argument('--update-content');
+$update_sitemap =   cli_argument('--update-sitemap');
 
 $notag          =  (cli_argument('--no-tag')        or cli_argument('--no-tags') or $noversion);
 $nopush         =   cli_argument('--no-push');
@@ -752,9 +759,17 @@ foreach($targets as $target_environment){
         cli_log(tr('NOT deploying, due to "--no-deploy" or "--test" command line parameter'), 'yellow');
 
     }else{
-        $exclude = ' --exclude=*~ --exclude="data/mocks" --exclude="data/mock*" --exclude="data/uploads" --exclude="data/packages" --exclude=".git*" --exclude="/data/system" ';
+        $exclude = ' --exclude=*~ --exclude="data/mocks" --exclude="data/mock*" --exclude="data/uploads" --exclude="data/packages" --exclude=".git*" --exclude="/data/system"  --exclude="/data/tmp" ';
+
+        if(!$update_content){
+            $exclude .= ' --exclude="data/content" ';
+        }
 
         foreach($_CONFIG['language']['supported'] as $code => $language){
+            if(!$update_sitemap){
+                $exclude .= ' --exclude="www'.$language.'sitemap.html*" --exclude="www'.$language.'sitemap.xml*" --exclude="www'.$language.'mock" ';
+            }
+
             $exclude = ' --exclude="www'.$language.'sitemap.html*" --exclude="www'.$language.'sitemap.xml*" --exclude="www'.$language.'mock" ';
         }
 
