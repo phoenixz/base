@@ -1776,6 +1776,10 @@ function name($user = null, $key_prefix = '', $default = null){
                 throw new bException(tr('name(): Invalid data specified, please specify either user id, name, or an array containing username, email and or id'), 'invalid');
             }
 
+            if(!empty($user['createdby'])){
+                $user = sql_get('SELECT `name` `username`, `email` FROM `users` WHERE `id` = :id', array(':id' => $user['createdby']));
+            }
+
             $user = not_empty(isset_get($user[$key_prefix.'name']), isset_get($user[$key_prefix.'username']), isset_get($user[$key_prefix.'email']));
 
             if($user){
