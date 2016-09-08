@@ -50,10 +50,6 @@ function roles_get($role = null, $columns = '*'){
 
                               array(':name' => $role));
 
-            if(!$retval){
-                throw new bException(tr('roles_get(): Specified role ":role" does not exist', array(':role' => $role)), 'not-exist');
-            }
-
         }else{
             /*
              * Pre-create a new role
