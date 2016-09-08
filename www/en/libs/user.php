@@ -758,10 +758,6 @@ function user_get($user = null, $columns = '*'){
                                          ':username' => $user));
             }
 
-            if(!$retval){
-                throw new bException(tr('user_get(): Specified user ":user" does not exist', array(':user' => $user)), 'not-exist');
-            }
-
         }else{
             /*
              * Pre-create a new user
