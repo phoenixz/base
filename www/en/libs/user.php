@@ -490,31 +490,6 @@ function user_signup($params){
             throw new bException(tr('user_signup(): Please specify a password'), 'not-specified');
         }
 
-// :DELETE: This validation is already done (better) in user_validate();
-        //$dbuser = sql_get('SELECT `id`,
-        //                          `username`,
-        //                          `email`
-        //
-        //                   FROM   `users`
-        //
-        //                   WHERE  `username` = :username
-        //                   OR     `email`    = :email',
-        //
-        //                   array(':username' => isset_get($params['username']),
-        //                         ':email'    => $params['email']));
-        //
-        //if($dbuser){
-        //    if(!empty($dbuser['email']) and !empty($dbuser['username'])){
-        //        throw new bException(tr('user_signup(): User with username ":name" or email ":email" already exists', array(':name' => str_log(isset_get($params['username'])), ':email' => str_log(isset_get($params['email'])))), 'exists');
-        //
-        //    }elseif(!empty($dbuser['email'])){
-        //        throw new bException(tr('user_signup(): User with email ":email" already exists', array(':email' => str_log(isset_get($params['email'])))), 'exists');
-        //
-        //    }else{
-        //        throw new bException(tr('user_signup(): User with username ":name" already exists', array(':name' => str_log(isset_get($params['username'])))), 'exists');
-        //    }
-        //}
-
         sql_query('INSERT INTO `users` (`status`, `createdby`, `username`, `password`, `name`, `email`, `roles_id`, `role`)
                    VALUES              (:status , :createdby , :username , :password , :name , :email , :roles_id , :role )',
 
