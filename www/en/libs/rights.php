@@ -201,7 +201,7 @@ function rights_take($users, $rights){
 /*
  * Return requested data for specified rights
  */
-function rights_get($right, $columns = 'id,createdon,createdby,name,description'){
+function rights_get($right){
     try{
         if(!$right){
             throw new bException(tr('rights_get(): No right specified'), 'not-specified');
@@ -211,12 +211,26 @@ function rights_get($right, $columns = 'id,createdon,createdby,name,description'
             throw new bException(tr('rights_get(): Specified right ":right" is not scalar', array(':right' => $right)), 'invalid');
         }
 
-        $retval = sql_get('SELECT '.$columns.'
+        $retval = sql_get('SELECT    `rights`.`id`,
+                                     `rights`.`name`,
+                                     `rights`.`status`,
+                                     `rights`.`description`,
 
-                           FROM   `rights`
+                                     `createdby`.`name`   AS `createdby_name`,
+                                     `createdby`.`email`  AS `createdby_email`,
+                                     `modifiedby`.`name`  AS `modifiedby_name`,
+                                     `modifiedby`.`email` AS `modifiedby_email`
 
-                           WHERE  `id`   = :right
-                           OR     `name` = :right', $columns,
+                           FROM      `rights`
+
+                           LEFT JOIN `users` AS `createdby`
+                           ON        `rights`.`createdby`  = `createdby`.`id`
+
+                           LEFT JOIN `users` AS `modifiedby`
+                           ON        `rights`.`modifiedby` = `modifiedby`.`id`
+
+                           WHERE     `rights`.`id`   = :right
+                           OR        `rights`.`name` = :right', $columns,
 
                            array(':right' => $right));
 
