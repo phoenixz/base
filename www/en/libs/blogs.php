@@ -447,7 +447,7 @@ function blogs_categories_select($params) {
         }else{
             $execute = array(':blogs_id' => $params['blogs_id']);
 
-            $query   = 'SELECT  '.$params['column'].' AS id,
+            $query   = 'SELECT  '.$params['column'].' AS `id`,
                                 `blogs_categories`.`name`
 
                         FROM    `blogs_categories`';
@@ -822,6 +822,90 @@ function blogs_validate($post){
 
     }catch(Exception $e){
         throw new bException('blogs_validate(): Failed', $e);
+    }
+}
+
+
+
+/*
+ * Validate the specified category data
+ */
+function blogs_validate_category($category, $blog){
+    try{
+        load_libs('seo');
+        $v = new validate_form($category, 'name,keywords,description,parent,assigned_to');
+
+        $v->isNotEmpty ($category['name']            , tr('Please provide the name of your category'));
+        $v->hasMinChars($category['name']       ,   3, tr('Please ensure that the name has a minimum of 3 characters'));
+        $v->hasMaxChars($category['keywords']   , 255, tr('Please ensure that the keywords have a maximum of 255 characters'));
+        $v->hasMaxChars($category['description'], 160, tr('Please ensure that the description has a maximum of 160 characters'));
+
+        if(!empty($_GET['category'])){
+            if(!$category['id'] = sql_get('SELECT `id` FROM `blogs_categories` WHERE `seoname` = :seoname AND `blogs_id` = :blogs_id', 'id', array(':seoname' => $_GET['category'], ':blogs_id' => $blog['id']))){
+                throw new bException('blogs_validate_category(): Specified category "'.str_log($_GET['category']).'" does not exist in blog "'.str_log($blog['name']).'"', 'not-exist');
+            }
+        }
+
+        if(empty($category['parent'])){
+            $category['parents_id'] = null;
+
+        }else{
+            /*
+             * Make sure the parent category is inside this blog
+             */
+            if(!$parent = sql_get('SELECT `id`, `blogs_id` FROM `blogs_categories` WHERE `seoname` = :seoname', array(':seoname' => $category['parent']))){
+                /*
+                 * Specified parent does not exist at all
+                 */
+                throw new bException('The specified parent category does not exist', 'not-exist');
+            }
+
+            if($parent['blogs_id'] != $blog['id']){
+                /*
+                 * Specified parent does not exist inside this blog
+                 */
+                throw new bException('The specified parent category does not exist in this blog', 'not-exist');
+            }
+
+            $category['parents_id'] = $parent['id'];
+        }
+
+        if(!$v->isValid()) {
+           throw new bException(str_force($v->getErrors(), ', '), 'errors');
+
+        }
+
+        if($category['id']){
+            if(sql_get('SELECT `id` FROM `blogs_categories` WHERE `blogs_id` = :blogs_id AND `name` = :name AND `id` != :id', array(':blogs_id' => $blog['id'], ':id' => $category['id'], ':name' => $category['name']), 'id')){
+                /*
+                 * Another category with this name already exists in this blog
+                 */
+                throw new bException(tr('A category with the name ":category" already exists in the blog ":blog"', array(':category', ':blog'), array($category['name'], $blog['name'])), 'exists');
+            }
+
+        }else{
+            if(sql_get('SELECT `id` FROM `blogs_categories` WHERE `blogs_id` = :blogs_id AND `name` = :name', 'id', array(':blogs_id' => $blog['id'], ':name' => $category['name']))){
+                throw new bException(tr('A category with the name ":name" already exists', array(':user' => $category['name'])), 'exist');
+            }
+        }
+
+        if($category['assigned_to']){
+            if(!$category['assigned_to_id'] = sql_get('SELECT `id` FROM `users` WHERE (`username` = :username OR `email` = :email) AND `status` IS NULL', 'id', array(':username' => $category['assigned_to'], ':email' => $category['assigned_to']))){
+                throw new bException(tr('The specified user ":user" does not exist', array(':user' => $category['assigned_to'])), 'not-exist');
+            }
+
+        }else{
+            $category['assigned_to_id'] = null;
+        }
+
+        $category['seoname']     = seo_unique(array('seoname' => $category['name'], 'blogs_id' => $blog['id']), 'blogs_categories', $category['id']);
+        $category['keywords']    = blogs_clean_keywords($category['keywords'], true);
+        $category['seokeywords'] = blogs_seo_keywords($category['keywords']);
+
+        return $category;
+
+    }catch(Exception $e){
+        throw new bException('blogs_validate_category(): Failed', $e);
     }
 }
 
