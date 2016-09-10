@@ -771,6 +771,88 @@ function html_flash_class($class = null){
 
 
 /*
+ * Returns HTML for an HTML anchor link <a> that is safe for use with target
+ * _blank
+ */
+function html_a($params){
+    try{
+        array_params ($params, 'href');
+        array_default($params, 'name'  , '');
+        array_default($params, 'target', '');
+        array_default($params, 'rel'   , '');
+
+        switch($params['target']){
+            case '_blank':
+                $params['rel'] .= ' noreferrer noopener';
+                break;
+        }
+
+        if(empty($params['href'])){
+            throw new bException('html_a(): No href specified', 'not-specified');
+        }
+
+        if($params['name']){
+            $params['name'] = ' name="'.$params['name'].'"';
+        }
+
+        if($params['class']){
+            $params['class'] = ' class="'.$params['class'].'"';
+        }
+
+        $retval = '<a href="'.$params['href'].'"'.$params['name'].$params['class'].$params['rel'].'">';
+
+        return $retval;
+
+    }catch(Exception $e){
+        throw new bException('html_a(): Failed', $e);
+    }
+}
+
+
+
+/*
+ * Return HTML for a submit button
+ * If the button should not cause validation, then use "no_validation" true
+ */
+function html_submit($params, $class = ''){
+    static $added;
+
+    try{
+        array_params ($params, 'value');
+        array_default($params, 'name'         , 'dosubmit');
+        array_default($params, 'class'        , $class);
+        array_default($params, 'no_validation', false);
+        array_default($params, 'value'        , 'submit');
+
+        if($params['no_validation']){
+            $params['class'] .= ' no_validation';
+
+            if(empty($added)){
+                $added  = true;
+                $script = html_script('$(".no_validation").click(function(){ $(this).closest("form").find("input,textarea,select").addClass("ignore"); $(this).closest("form").submit(); });');
+            }
+        }
+
+        if($params['class']){
+            $params['class'] = ' class="'.$params['class'].'"';
+        }
+
+        if($params['value']){
+            $params['value'] = ' value="'.$params['value'].'"';
+        }
+
+        $retval = '<input type="submit" id="'.$params['name'].'" name="'.$params['name'].'"'.$params['class'].$params['value'].'>';
+
+        return $retval.isset_get($script);
+
+    }catch(Exception $e){
+        throw new bException('html_submit(): Failed', $e);
+    }
+}
+
+
+
+/*
  * Return an HTML <select> list
  */
 function html_select_submit($params){
