@@ -81,10 +81,19 @@ foreach($deploy_config['modes'] as $type => $modes){
     switch($type){
         case 'dirs':
             foreach($modes as $path => $mode){
-                passthru((!empty($deploy_config['sudo']) ? ' sudo' : '').' find '.ROOT.$path.' -type d -exec chmod '.$mode.' {} \;', $exitcode);
+                /*
+                 * Update modes for all directories in the specified path tree
+                 *
+                 * NOTE: The specified directory MAY not exist (eg. data/content)
+                 * If this is the case, it is not a problem, just skip. This
+                 * script should only care about that which exists
+                 */
+                if(file_exists(unslash(ROOT).$path)){
+                    passthru((!empty($deploy_config['sudo']) ? ' sudo' : '').' find '.unslash(ROOT).$path.' -type d -exec chmod '.$mode.' {} \;', $exitcode);
 
-                if($exitcode){
-                    throw new bException(tr('Failed to update mode for directories in path ":path"', array(':path' => $path)), 'failed');
+                    if($exitcode){
+                        throw new bException(tr('Failed to update mode for directories in path ":path"', array(':path' => $path)), 'failed');
+                    }
                 }
             }
 
@@ -93,10 +102,19 @@ foreach($deploy_config['modes'] as $type => $modes){
 
         case 'files':
             foreach($modes as $path => $mode){
-                passthru((!empty($deploy_config['sudo']) ? ' sudo' : '').' find '.ROOT.$path.' -type f -exec chmod '.$mode.' {} \;', $exitcode);
+                /*
+                 * Update modes for all files in the specified path tree
+                 *
+                 * NOTE: The specified directory MAY not exist (eg. data/content)
+                 * If this is the case, it is not a problem, just skip. This
+                 * script should only care about that which exists
+                 */
+                if(file_exists(unslash(ROOT).$path)){
+                    passthru((!empty($deploy_config['sudo']) ? ' sudo' : '').' find '.unslash(ROOT).$path.' -type f -exec chmod '.$mode.' {} \;', $exitcode);
 
-                if($exitcode){
-                    throw new bException(tr('Failed to update mode for files in path ":path"', array(':path' => $path)), 'failed');
+                    if($exitcode){
+                        throw new bException(tr('Failed to update mode for files in path ":path"', array(':path' => $path)), 'failed');
+                    }
                 }
             }
 
