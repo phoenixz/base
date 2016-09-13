@@ -1033,6 +1033,9 @@ function user_password_strength($password, $check_banned = true){
             $strength += 20;
 
         }elseif($length >= 12){
+            $strength += 15;
+
+        }elseif($length >= 8){
             $strength += 10;
         }
 
@@ -1075,7 +1078,7 @@ function user_password_strength($password, $check_banned = true){
         $strength = floor(($strength / 10) + 1);
 
         if($strength < 4){
-            throw new bException(tr('user_password_strength(): The specified password is too weak, please use a better password. Use more characters, add numbers, special characters, caps characters, etc. On a scale of 1-10, current strength is ":strength"', array(':strength' => $strength)), 'weak-password');
+            throw new bException(tr('user_password_strength(): The specified password is too weak, please use a better password. Use more characters, add numbers, special characters, caps characters, etc. On a scale of 1-10, current strength is ":strength"', array(':strength' => $strength)), 'weak');
         }
 
         return $strength;
@@ -1108,7 +1111,8 @@ function user_password_banned($password){
 
 
 /*
- *
+ * Validate the specified user. Validations is done in sections, and sections
+ * can be disabled if needed
  */
 function user_validate($user, $sections = array()){
     global $_CONFIG;
@@ -1119,26 +1123,39 @@ function user_validate($user, $sections = array()){
         array_default($sections, 'role'               , true);
 
         load_libs('validate');
-        $v = new validate_form($user, 'name,username,email,password,password2,redirect,description,role,roles_id,commentary,gender,latitude,longitude,language,country,fb_id,fb_token,gp_id,gp_token,ms_id,ms_token_authentication,ms_token_access,tw_id,tw_token,yh_id,yh_token,status,validated,avatar,phones,type');
+        $v = new validate_form($user, 'name,username,email,password,password2,redirect,description,role,roles_id,commentary,gender,latitude,longitude,language,country,fb_id,fb_token,gp_id,gp_token,ms_id,ms_token_authentication,ms_token_access,tw_id,tw_token,yh_id,yh_token,status,validated,avatar,phones,type,domain');
 
         $user['email2'] = $user['email'];
         $user['terms']  = true;
 
-        if(!$user['username'] and !$user['email']){
-            if($v->isNotEmpty  ($user['email'], tr('Please provide at least an email or username')));
+        if($user['domain']){
+            $user['domain'] = trim(strtolower($user['domain']));
+            if($v->isRegex($user['domain'], '/[a-z.]/', tr('Please provide a valid domain name')));
+
+            /*
+             * Does the domain exist?
+             */
+            $exist = sql_get('SELECT `domain` FROM `domains` WHERE `domain` = :domain', array(':domain' => $user['domain']));
+
+            if(!$exist){
+                $v->setError(tr('The specified domain ":domain" does not exist', array(':domain' => $user['domain'])));
+            }
         }
 
-        if($user['email']){
-            $v->isValidEmail($user['email'], tr('Please provide a valid email address'));
-        }
+        if(!$user['username']){
+            if(!$user['email']){
+                $v->setError(tr('Please provide at least an email or username'));
 
+            }else{
+                $v->isValidEmail($user['email'], tr('Please provide a valid email address'));
+            }
 
-        if($user['username']){
-            $v->isAlphaNumeric($user['username'] , tr('Please provide a valid username, it can only contain letters and numbers'));
+        }else{
+            $v->isAlphaNumeric($user['username'], tr('Please provide a valid username, it can only contain letters and numbers'));
         }
 
         if($user['name']){
-            $v->hasMinChars ($user['name'] , 2, tr('Please ensure that the real name has a minimum of 2 characters'));
+            $v->hasMinChars($user['name'], 2, tr('Please ensure that the real name has a minimum of 2 characters'));
         }
 
         if($sections['role']){
@@ -1183,19 +1200,34 @@ function user_validate($user, $sections = array()){
                 $v->setError(tr('Please specify a password'));
 
             }else{
-                $v->hasMinChars($user['password'], 8, tr('Please ensure that the password has a minimum of 8 characters'));
+                /*
+                 * Check password strength
+                 */
+                if($sections['validation_password']){
+                    if($user['password'] === $user['password2']){
+                        try{
+                            $strength = user_password_strength($params['password'], $params['check_banned_passwords']);
 
+                        }catch(Exception $e){
+                            if($e->getCode() !== 'weak'){
+                                /*
+                                 * Erw, something went really wrong!
+                                 */
+                                throw $e;
+                            }
+
+                            $v->setError(tr('The specified password is too weak and not accepted'));
+                        }
+
+                    }else{
+                        $v->setError(tr('Please ensure that the password and validation password match'));
+                    }
+                }
             }
         }
 
-        if($sections['validation_password']){
-            $v->isEqual($user['password'], $user['password2'], tr('Please ensure that the password and validation password match'));
-        }
-
-        $v->isValid();
-
         /*
-         * Ensure that the username and email are not in use
+         * Ensure that the username and or email are not in use
          */
         $query   = 'SELECT `email`,
                            `username`
@@ -1230,8 +1262,9 @@ function user_validate($user, $sections = array()){
         if($exists){
             if($user['username'] and ($exists['username'] == $user['username'])){
                 $v->setError(tr('The username ":username" is already in use by another user', array(':username' => str_log($user['username']))));
+            }
 
-            }else{
+            if($user['email'] and ($exists['email'] == $user['email'])){
                 $v->setError(tr('The email ":email" is already in use by another user', array(':email' => str_log($user['email']))));
             }
         }
@@ -1269,7 +1302,9 @@ function user_validate($user, $sections = array()){
                                `phones`,
                                `username`
 
-                        FROM   `users` WHERE';
+                        FROM   `users`
+
+                        WHERE';
 
             foreach($execute as $key => $value){
                 $where[] = '`phones` LIKE '.$key;
