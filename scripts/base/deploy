@@ -583,12 +583,12 @@ foreach($targets as $target_environment){
 
     if($deploy_config['sudo']){
         if($deploy_config['sudo'] === true){
-            $sudo      = 'sudo -i ';
-            $sudo_user = 'sudo -i ';
+            $sudo      = 'export SHELL=/bin/bash; sudo -s ';
+            $sudo_user = 'export SHELL=/bin/bash; sudo -s ';
 
         }elseif(is_string($deploy_config['sudo'])){
-            $sudo      = 'sudo -i ';
-            $sudo_user = 'sudo -i -u '.$deploy_config['sudo'].' ';
+            $sudo      = 'export SHELL=/bin/bash; sudo -s ';
+            $sudo_user = 'export SHELL=/bin/bash; sudo -s -u '.$deploy_config['sudo'].' ';
 
         }else{
             throw new bException('Invalid sudo configuration ":configuration" found for target environment ":target". It should be either true, false, or an (existing) username string', array(':configuration' => $deploy_config['sudo'], ':target' => $target_environment));
@@ -887,8 +887,7 @@ foreach($targets as $target_environment){
 
     }else{
         cli_log(tr('Executing init on target server with environment ":env"', array(':env' => $target_environment)), 'white');
-
-        passthru($command = 'ssh -t -p '.$target_port.' '.$deploy_config['target_user'].'@'.$deploy_config['target_server'].' \''.$sudo_user.$deploy_config['target_dir'].'/scripts/base/init -E '.$target_environment.' \'', $exitcode);
+        passthru($command = 'ssh -t -p '.$target_port.' '.$deploy_config['target_user'].'@'.$deploy_config['target_server'].' \''.$sudo.$deploy_config['target_dir'].'/scripts/base/init -E '.$target_environment.' \'', $exitcode);
 
         if($exitcode){
             throw new bException('Target version init failed with exit code "'.str_log($exitcode).'"', 'target_init');
