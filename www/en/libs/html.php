@@ -773,6 +773,13 @@ function html_flash_class($class = null){
 /*
  * Returns HTML for an HTML anchor link <a> that is safe for use with target
  * _blank
+ *
+ * For vulnerability info:
+ * See https://dev.to/ben/the-targetblank-vulnerability-by-example
+ * See https://mathiasbynens.github.io/rel-noopener/
+ *
+ * For when to use _blank anchors:
+ * See https://css-tricks.com/use-target_blank/
  */
 function html_a($params){
     try{
