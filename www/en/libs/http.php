@@ -18,7 +18,7 @@ function current_domain($current_url = false, $query = null){
 
     try{
         if(empty($_SERVER['SERVER_NAME'])){
-            $server_name = $_CONFIG['domain'];
+            $server_name = $_SESSION['domain'];
 
         }else{
             $server_name = $_SERVER['SERVER_NAME'];
@@ -269,9 +269,9 @@ function http_headers($params, $content_length){
                              * Origin is allowed from all sub domains
                              */
                             $origin = str_from(isset_get($_SERVER['HTTP_ORIGIN']), '://');
-                            $length = strlen($_CONFIG['domain']);
+                            $length = strlen($_SESSION['domain']);
 
-                            if(substr($origin, -$length, $length) === $_CONFIG['domain']){
+                            if(substr($origin, -$length, $length) === $_SESSION['domain']){
                                 /*
                                  * Sub domain matches. Since CORS does
                                  * not support sub domains, just show
