@@ -734,7 +734,7 @@ function load_libs($libraries){
         }
 
     }catch(Exception $e){
-        throw new bException('load_libs(): Failed to load libraries "'.str_log($libraries).'"', $e);
+        throw new bException('load_libs(): Failed to load library "'.str_log($library).'"', $e);
     }
 }
 
