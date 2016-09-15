@@ -375,5 +375,5 @@ $_CONFIG['translator']         = array('url'          => 'translator.localhost',
                                        'api_key'      => 'something',
                                        'allowed_tags' => '<b><a><strong>');
 
-$_CONFIG['whitelabels']        = array('enabled'      => false);
+$_CONFIG['whitelabels']        = array('enabled'      => false);                                            // Either false (No whitelabel domains, only the normal site FQDN allowed), true (only default and registered FQDNs allowed), "sub" (only default FQDN and its sub domains allowed), or "all" (All domains allowed)
 ?>
