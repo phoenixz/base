@@ -8,8 +8,6 @@
 
 
 
-
-
 /*
  * Return complete current domain with HTTP and all
  */
