@@ -1206,7 +1206,7 @@ function user_validate($user, $sections = array()){
                 if($sections['validation_password']){
                     if($user['password'] === $user['password2']){
                         try{
-                            $strength = user_password_strength($params['password'], $params['check_banned_passwords']);
+                            $strength = user_password_strength($user['password']);
 
                         }catch(Exception $e){
                             if($e->getCode() !== 'weak'){
