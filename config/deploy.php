@@ -27,6 +27,7 @@ $_CONFIG['deploy']['trial']      = array('target_user'         => '',
                                                                         'data/backups'),
 
                                          'modes'               => array('dirs'  => array('/'             => 'a-rwx,ug+rx,g+s',
+                                                                                         '/data'         => 'ug+w',
                                                                                          '/data/tmp'     => 'ug+w',
                                                                                          '/data/content' => 'ug+w'),
 
@@ -61,6 +62,7 @@ $_CONFIG['deploy']['production'] = array('target_user'         => '',
                                                                         'data/backups'),
 
                                          'modes'               => array('dirs'  => array('/'             => 'a-rwx,ug+rx,g+s',
+                                                                                         '/data'         => 'ug+w',
                                                                                          '/data/tmp'     => 'ug+w',
                                                                                          '/data/content' => 'u+w'),
 
