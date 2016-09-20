@@ -108,7 +108,7 @@ cli_only(true);
 load_libs('email');
 
 $criteria = strtoupper(cli_argument('--filter', true, 'UNSEEN'));
-$users    = cli_argument('--user', true);
+$users    = cli_argument('--users', 'all');
 
 if($users){
     /*
