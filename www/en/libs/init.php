@@ -195,7 +195,9 @@ function init($projectfrom = null, $frameworkfrom = null){
                         /*
                          * This init file has a higher version number than the current code, so it should not yet be executed (until a later time that is)
                          */
-                        log_console('Skipped future init file "'.$version.'"', 'init/'.$type);
+                        if(VERBOSE){
+                            log_console('Skipped future init file "'.$version.'"', 'init/'.$type);
+                        }
 
                     }else{
                         if(($dbversion === 0) or (version_compare($version, $dbversion) >= 1)){
@@ -249,7 +251,9 @@ function init($projectfrom = null, $frameworkfrom = null){
                             /*
                              * This init file has already been executed so we can skip it.
                              */
-                            log_console('Skipped older init file "'.$version.'"', 'init/'.$type);
+                            if(VERBOSE){
+                                log_console('Skipped older init file "'.$version.'"', 'init/'.$type);
+                            }
                         }
                     }
                 }

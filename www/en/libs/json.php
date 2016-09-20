@@ -9,6 +9,8 @@
  * @license http://opensource.org/licenses/GPL-2.0 GNU Public License, Version 2
  * @copyright Sven Oostenbrink <support@ingiga.com>, Johan Geuze
  */
+load_config('json');
+
 
 
 /*
@@ -257,6 +259,148 @@ function json_decode_custom($json, $as_array = true){
 
     }catch(Exception $e){
         throw new bException('json_decode_custom(): Failed', $e);
+    }
+}
+
+
+
+/*
+ *
+ */
+function json_authenticate($key){
+    global $_CONFIG;
+
+    try{
+        if($_CONFIG['production']){
+            /*
+             * This is a production platform, only allow JSON API key
+             * authentications over a secure connection
+             */
+            if($_CONFIG['protocol'] !== 'https://'){
+                throw new bException(tr('json_authenticate(): No API key authentication allowed on unsecure connections over non HTTPS connections'), 'not-allowed');
+            }
+        }
+
+        if(empty($key)){
+            throw new bException(tr('json_authenticate(): No auth key specified'), 'not-specified');
+        }
+
+        /*
+         * Authenticate using the supplied key
+         */
+        if(empty($_CONFIG['webdom']['auth_key'])){
+            /*
+             * Check in database if the authorization key exists
+             */
+            $user = sql_get('SELECT * FROM `users` WHERE `api_key` = :api_key', array(':api_key' => $key));
+
+            if(!$user){
+                throw new bException(tr('json_authenticate(): Specified auth key is not valid'), 'access-denied');
+            }
+
+        }else{
+            /*
+             * Use one system wide API key
+             */
+            if($key !== $_CONFIG['webdom']['auth_key']){
+                throw new bException(tr('json_authenticate(): Specified auth key is not valid'), 'access-denied');
+            }
+        }
+
+        /*
+         * Yay, auth worked, create session and send client the session token
+         */
+        session_destroy();
+        session_start();
+        session_regenerate_id();
+
+        $_SESSION['json_session_start'] = time();
+
+        if(!empty($user)){
+            $_SESSION['user'] = $user;
+        }
+
+        return session_id();
+
+    }catch(Exception $e){
+        throw new bException('json_authenticate(): Failed', $e);
+    }
+}
+
+
+
+/*
+ *
+ */
+function json_start_session($token){
+    global $_CONFIG;
+
+    try{
+        /*
+         * Check session token
+         */
+        if(empty($token)){
+            throw new bException(tr('json_start_session(): No auth key specified'), 'not-specified');
+        }
+
+        /*
+         * Yay, we have an actual token, create session!
+         */
+        session_write_close();
+        $_COOKIE['PHPSESSID'] = $token;
+        session_start();
+
+        if(empty($_SESSION['json_session_start'])){
+            /*
+             * Not a valid session!
+             */
+            session_destroy();
+            throw new bException(tr('json_start_session(): Specified token has no session'), 'access-denied');
+        }
+
+        return session_id();
+
+    }catch(Exception $e){
+        throw new bException('json_start_session(): Failed', $e);
+    }
+}
+
+
+
+/*
+ *
+ */
+function json_stop_session($token){
+    global $_CONFIG;
+
+    try{
+        /*
+         * Check session token
+         */
+        if(empty($token)){
+            throw new bException(tr('json_stop_session(): No auth key specified'), 'not-specified');
+        }
+
+        /*
+         * Yay, we have an actual token, create session!
+         */
+        session_write_close();
+        $_COOKIE['PHPSESSID'] = $token;
+        session_start();
+
+        if(empty($_SESSION['json_session_start'])){
+            /*
+             * Not a valid session!
+             */
+            session_destroy();
+            throw new bException(tr('json_stop_session(): Specified token has no session'), 'access-denied');
+        }
+
+        session_destroy();
+        return true;
+
+    }catch(Exception $e){
+        throw new bException('json_stop_session(): Failed', $e);
     }
 }
 ?>

@@ -771,12 +771,12 @@ function load_config($files){
             }
 
             if(!$loaded){
-                throw new bException('load_config(): No configuration file was found for requested configuration "'.str_log($file).'"');
+                throw new bException(tr('load_config(): No configuration file was found for requested configuration ":file"', array(':file' => $file)), 'not-found');
             }
         }
 
     }catch(Exception $e){
-        throw new bException('load_config(): Failed to load some or all of config file(s) "'.str_log($files).'"', $e);
+        throw new bException(tr('load_config(): Failed to load some or all of config file(s) ":file"', array(':file' => $file)), $e);
     }
 }
 
