@@ -866,6 +866,10 @@ function add_stat($code, $count = 1, $details = '') {
  * Calculate the hash value for the given password with the (possibly) given
  * algorithm
  */
+function password($source, $algorithm, $add_meta = true){
+    return get_hash($source, $algorithm, $add_meta );
+}
+
 function get_hash($source, $algorithm, $add_meta = true){
     global $_CONFIG;
 
