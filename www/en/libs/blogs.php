@@ -462,9 +462,6 @@ function blogs_categories_select($params) {
                             AND  `parents`.`id`      = `blogs_categories`.`parents_id`';
 
                 $execute[':parent'] = $params['parent'];
-
-            }elseif($params['parent'] !== false){
-                $where .= ' AND `blogs_categories`.`parents_id` IS NULL ';
             }
 
             /*
@@ -815,6 +812,20 @@ function blogs_validate($blog){
 
         $v->isNotEmpty($blog['name'], tr('Please provide a name for your blog'));
 
+        if($blog['id']){
+            if(sql_get('SELECT `id` FROM `blogs` WHERE `name` = :name AND `id` != :id', array(':id' => $blog['id'], ':name' => $blog['name']), 'id')){
+                /*
+                 * Another category with this name already exists in this blog
+                 */
+                $v->setError(tr('A blog with the name ":blog" already exists', array(':blog' => $blog['name'])));
+            }
+
+        }else{
+            if(sql_get('SELECT `id` FROM `blogs` WHERE `name` = :name', 'id', array(':name' => $blog['name']))){
+                $v->setError(tr('A blog with the name ":blog" already exists', array(':blog' => $blog['name'])));
+            }
+        }
+
         $v->isValid();
 
         $blog['seoname'] = seo_unique($blog['name'], 'blogs', $blog['id']);
@@ -865,28 +876,26 @@ function blogs_validate_category($category, $blog){
             $category['parents_id'] = $parent['id'];
         }
 
-        if(!$v->isValid()) {
-           throw new bException(str_force($v->getErrors(), ', '), 'errors');
-
-        }
+        $v->isValid();
 
         if($category['id']){
             if(sql_get('SELECT `id` FROM `blogs_categories` WHERE `blogs_id` = :blogs_id AND `name` = :name AND `id` != :id', array(':blogs_id' => $blog['id'], ':id' => $category['id'], ':name' => $category['name']), 'id')){
                 /*
                  * Another category with this name already exists in this blog
                  */
-                throw new bException(tr('A category with the name "%category%" already exists in the blog "%blog%"', array('%category%', '%blog%'), array($category['name'], $blog['name'])), 'exists');
+                $v->setError(tr('A category with the name ":category" already exists in the blog ":blog"', array(':category' => $category['name'], ':blog' => $blog['name'])));
             }
 
         }else{
             if(sql_get('SELECT `id` FROM `blogs_categories` WHERE `blogs_id` = :blogs_id AND `name` = :name', 'id', array(':blogs_id' => $blog['id'], ':name' => $category['name']))){
-                throw new bException('A category with the name "'.str_log($category['name']).'" already exists', 'exists');
+                $v->setError(tr('A category with the name ":category" already exists in the blog ":blog"', array(':category' => $category['name'], ':blog' => $blog['name'])));
             }
         }
 
+
         if($category['assigned_to']){
             if(!$category['assigned_to_id'] = sql_get(' SELECT `id` FROM `users` WHERE `username` = :username OR `email` = :email', 'id', array(':username' => $category['assigned_to'], ':email' => $category['assigned_to']))){
-                throw new bException('The specified user "'.str_log($category['assigned_to']).'" does not exist', 'not-exist');
+                $v->setError(tr('The specified user ":user" does not exist', array(':user' => $category['assigned_to'])));
             }
 
         }else{
@@ -896,6 +905,8 @@ function blogs_validate_category($category, $blog){
         $category['seoname']     = seo_unique(array('seoname' => $category['name'], 'blogs_id' => $blog['id']), 'blogs_categories', $category['id']);
         $category['keywords']    = blogs_clean_keywords($category['keywords'], true);
         $category['seokeywords'] = blogs_seo_keywords($category['keywords']);
+
+        $v->isValid();
 
         return $category;
 
