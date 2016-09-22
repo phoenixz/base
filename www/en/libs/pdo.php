@@ -1012,7 +1012,7 @@ function sql_null($value){
  * Return table row count by returning results count for SELECT `id`
  * Results will be cached in a counts table
  */
-function sql_count($table, $where = '', $execute = null, $column = 'id'){
+function sql_count($table, $where = '', $execute = null, $column = '`id`'){
     global $_CONFIG;
 
     try{
@@ -1026,13 +1026,10 @@ function sql_count($table, $where = '', $execute = null, $column = 'id'){
             return $count;
         }
 
-
-
         /*
          * Count value was not found cached, count it directly
          */
-        $count = sql_query('SELECT '.$column.' FROM '.$table.' '.$where, $execute);
-        $count = $count->rowCount();
+        $count = sql_get('SELECT COUNT('.$column.') AS `count` FROM `'.$table.'` '.$where, 'count', $execute);
 
         sql_query('INSERT INTO `counts` (`createdby`, `count`, `hash`, `until`)
                    VALUES               (:createdby , :count , :hash , NOW() + INTERVAL :expires SECOND)
