@@ -885,7 +885,7 @@ function blogs_validate_category($category, $blog){
         }
 
         if($category['assigned_to']){
-            if(!$category['assigned_to_id'] = sql_get('SELECT `id` FROM `users` WHERE `name` = :name', 'id', array(':name' => $category['assigned_to']))){
+            if(!$category['assigned_to_id'] = sql_get(' SELECT `id` FROM `users` WHERE `username` = :username OR `email` = :email', 'id', array(':username' => $category['assigned_to'], ':email' => $category['assigned_to']))){
                 throw new bException('The specified user "'.str_log($category['assigned_to']).'" does not exist', 'not-exist');
             }
 
