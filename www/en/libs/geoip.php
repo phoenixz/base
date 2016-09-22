@@ -29,10 +29,23 @@ function geoip_get($ip = null, $column = '*'){
 
                          LIMIT  1',
 
-                         array(':ip' => $ip), (($column == '*' ? null : $column)));
+                         array(':ip' => $ip));
 
         if(!$data){
-            return false;
+            /*
+             * No results? Do we actually have geo ip table contents?
+             */
+            $count = sql_get('SELECT COUNT(*) AS `count` FROM `geoip_locations`');
+
+            if(!$count){
+                throw new bException(tr('geoip_get(): geoip_locations table is empty'), 'empty');
+            }
+
+            return null;
+        }
+
+        if(count($data) == 1){
+            return array_shift($data);
         }
 
         return $data;
