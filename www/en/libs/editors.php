@@ -104,4 +104,19 @@ function editors_tinymce($params){
         throw new bException('editors_tinymce(): Failed', $e);
     }
 }
+
+
+
+/*
+ * Editor summernote to atlant template
+ */
+function editors_summernote($params){
+    html_load_js('plugins/summernote/summernote');
+
+    $html = '<textarea class="summernote" name="'.$params['name'].'" id="'.$params['name'].'" class="tinymce">'.$params['value'].'</textarea>'.
+
+    html_script('$(".summernote").summernote();');
+
+    return($html);
+}
 ?>
