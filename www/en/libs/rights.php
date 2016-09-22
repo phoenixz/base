@@ -26,11 +26,21 @@ function rights_give($users, $rights){
              * Ensure that the specified user exists (either id or name)
              */
             if(!is_numeric($value)){
-                if(!$users[$key] = sql_get('SELECT `id` FROM `users` WHERE `username` = :username OR `email` = :email', array(':username' => $value, ':email' => $value), 'id')){
+                $users[$key] = sql_get('SELECT `id`
+
+                                        FROM   `users`
+
+                                        WHERE  `username` = :username
+                                        OR     `email`    = :email',
+
+                                        array(':username' => $value,
+                                              ':email'    => $value), 'id');
+
+                if(!$users[$key]){
                     /*
                      * This user does not exist...
                      */
-                    throw new bException('rights_give(): The specified user "'.str_log($value).'" does not exist', 'not-exist');
+                    throw new bException(tr('rights_give(): The specified user ":user" does not exist', array(':user' => $value)), 'not-exist');
                 }
 
             }else{
@@ -38,7 +48,7 @@ function rights_give($users, $rights){
                     /*
                      * This user does not exist...
                      */
-                    throw new bException('rights_give(): The specified users id "'.str_log($value).'" does not exist', 'not-exist');
+                    throw new bException(tr('rights_give(): The specified users id ":users_id" does not exist', array(':users_id' => $value)), 'not-exist');
                 }
             }
         }
@@ -52,7 +62,7 @@ function rights_give($users, $rights){
                     /*
                      * This right does not exist...
                      */
-                    throw new bException('rights_give(): The specified right "'.str_log($value).'" does not exist', 'not-exist');
+                    throw new bException(tr('rights_give(): The specified right ":right" does not exist', array(':right' => $value)), 'not-exist');
                 }
 
             }else{
@@ -60,7 +70,7 @@ function rights_give($users, $rights){
                     /*
                      * This right does not exist...
                      */
-                    throw new bException('rights_give(): The specified rights id "'.str_log($value).'" does not exist', 'not-exist');
+                    throw new bException(tr('rights_give(): The specified rights id ":rights_id" does not exist', array(':rights_id' => $value)), 'not-exist');
                 }
             }
         }
@@ -129,7 +139,7 @@ function rights_take($users, $rights){
                     /*
                      * This user does not exist...
                      */
-                    throw new bException('rights_give(): The specified user "'.str_log($value).'" does not exist', 'not-exist');
+                    throw new bException(tr('rights_give(): The specified user ":user" does not exist', array(':users_id' => $value)), 'not-exist');
                 }
 
             }else{
@@ -137,7 +147,7 @@ function rights_take($users, $rights){
                     /*
                      * This user does not exist...
                      */
-                    throw new bException('rights_give(): The specified users id "'.str_log($value).'" does not exist', 'not-exist');
+                    throw new bException(tr('rights_give(): The specified users id ":users_id" does not exist', array(':users_id' => $value)), 'not-exist');
                 }
             }
         }
@@ -151,7 +161,7 @@ function rights_take($users, $rights){
                     /*
                      * This right does not exist...
                      */
-                    throw new bException('rights_give(): The specified right "'.str_log($value).'" does not exist', 'not-exist');
+                    throw new bException(tr('rights_give(): The specified right ":right" does not exist', array(':right' => $value)), 'not-exist');
                 }
 
             }else{
@@ -159,7 +169,7 @@ function rights_take($users, $rights){
                     /*
                      * This right does not exist...
                      */
-                    throw new bException('rights_give(): The specified rights id "'.str_log($value).'" does not exist', 'not-exist');
+                    throw new bException(tr('rights_give(): The specified rights id ":rights_id" does not exist', array(':rights_id' => $value)), 'not-exist');
                 }
             }
         }
@@ -191,28 +201,38 @@ function rights_take($users, $rights){
 /*
  * Return requested data for specified rights
  */
-function rights_get($right, $columns = 'id,name,description'){
+function rights_get($right){
     try{
         if(!$right){
             throw new bException(tr('rights_get(): No right specified'), 'not-specified');
         }
 
         if(!is_scalar($right)){
-            throw new bException(tr('rights_get(): Specified right "%right%" is not scalar', array('%right%' => $right)), 'invalid');
+            throw new bException(tr('rights_get(): Specified right ":right" is not scalar', array(':right' => $right)), 'invalid');
         }
 
-        $retval = sql_get('SELECT '.$columns.'
+        $retval = sql_get('SELECT    `rights`.`id`,
+                                     `rights`.`name`,
+                                     `rights`.`status`,
+                                     `rights`.`description`,
 
-                           FROM   `rights`
+                                     `createdby`.`name`   AS `createdby_name`,
+                                     `createdby`.`email`  AS `createdby_email`,
+                                     `modifiedby`.`name`  AS `modifiedby_name`,
+                                     `modifiedby`.`email` AS `modifiedby_email`
 
-                           WHERE  `id`   = :right
-                           OR     `name` = :right', $columns,
+                           FROM      `rights`
+
+                           LEFT JOIN `users` AS `createdby`
+                           ON        `rights`.`createdby`  = `createdby`.`id`
+
+                           LEFT JOIN `users` AS `modifiedby`
+                           ON        `rights`.`modifiedby` = `modifiedby`.`id`
+
+                           WHERE     `rights`.`id`   = :right
+                           OR        `rights`.`name` = :right', $columns,
 
                            array(':right' => $right));
-
-        if(!$retval){
-            throw new bException('roles_get(): Specified role "'.str_log($right).'" does not exist', 'not-exist');
-        }
 
         return $retval;
 
@@ -266,7 +286,7 @@ function rights_has($user, $right){
         }
 
         if(!$target = sql_get('SELECT `id` FROM `users` WHERE `id` = :id OR `name` = :name OR `email` = :email', array(':name' => $user, ':email' => $user, ':id' => $user), 'id')){
-            throw new bException('rights_has(): Specified user "'.str_log($user).'" does not exist', 'not-exist');
+            throw new bException(tr('rights_has(): Specified user ":user" does not exist', array(':user' => $user)), 'not-exist');
         }
 
         $rights = sql_list('SELECT `users_id`,
@@ -312,7 +332,7 @@ function rights_validate($right, $old_right = null){
         $v->isNotEmpty ($right['name']    , tr('No rights name specified'));
         $v->hasMinChars($right['name'],  2, tr('Please ensure the right\'s name has at least 2 characters'));
         $v->hasMaxChars($right['name'], 32, tr('Please ensure the right\'s name has less than 32 characters'));
-        $v->hasNoChars ($right['name'], ' ', tr('Please ensure the right\'s name contains no spaces'));
+        $v->isRegex    ($right['name'], '/^[a-z-]{2,32}$/', tr('Please ensure the right\'s name contains only lower case letters, and dashes'));
 
         $v->isNotEmpty ($right['description']      , tr('No right\'s description specified'));
         $v->hasMinChars($right['description'],    2, tr('Please ensure the right\'s description has at least 2 characters'));
@@ -322,14 +342,27 @@ function rights_validate($right, $old_right = null){
             $v->setError(tr('Please ensure that the rights\'s name does not start with a number'));
         }
 
+        /*
+         * Does the right already exist?
+         */
         if(empty($right['id'])){
             if($id = sql_get('SELECT `id` FROM `rights` WHERE `name` = :name', array(':name' => $right['name']))){
-                $v->setError(tr('The right "%right%" already exists with id "%id%"', array('%right%' => str_log($right['name']), '%id%' => $id)));
+                $v->setError(tr('The right ":right" already exists with id ":id"', array(':right' => $right['name'], ':id' => $id)));
             }
 
         }else{
             if($id = sql_get('SELECT `id` FROM `rights` WHERE `name` = :name AND `id` != :id', array(':name' => $right['name'], ':id' => $right['id']))){
-                $v->setError(tr('The right "%right%" already exists with id "%id%"', array('%right%' => str_log($right['name']), '%id%' => $id)));
+                $v->setError(tr('The right ":right" already exists with id ":id"', array(':right' => $right['name'], ':id' => $id)));
+            }
+
+            /*
+             * Also check if this is not the god right. If so, it CAN NOT be
+             * updated
+             */
+            $name = sql_get('SELECT `name` FROM `rights` WHERE `id` = :id', 'name', array(':id' => $right['id']));
+
+            if($name === 'god'){
+                $v->setError(tr('The right "god" cannot be modified'));
             }
         }
 

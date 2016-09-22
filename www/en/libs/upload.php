@@ -191,7 +191,7 @@ function upload_get_html($type, $target = null, $params = null){
         /*
          * Assign defaults values
          */
-        array_default($params, 'noscript', '<noscript><input type="hidden" name="redirect" value="'.$_CONFIG['domain'].'"></noscript>');
+        array_default($params, 'noscript', '<noscript><input type="hidden" name="redirect" value="'.$_SESSION['domain'].'"></noscript>');
         array_default($params, 'id'      , 'fileupload');
         array_default($params, 'lister'  , false);
 

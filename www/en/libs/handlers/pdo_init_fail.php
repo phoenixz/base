@@ -19,8 +19,12 @@
 
     $e = new bException('sql_init(): Failed', $e);
 
+    if(!is_string($connector)){
+        throw new bException(tr('sql_init(): Specified database connector ":connector" is invalid, must be a string', array(':connector' => $connector)), 'invalid');
+    }
+
     if(empty($_CONFIG['db'][$connector])){
-        throw new bException(tr('sql_init(): Specified database connector "%connector%" has not been configured', array('%connector%' => $connector)), 'not-exist');
+        throw new bException(tr('sql_init(): Specified database connector ":connector" has not been configured', array(':connector' => $connector)), 'not-exist');
     }
 
     try{

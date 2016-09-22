@@ -123,7 +123,7 @@ function html_generate_css(){
         foreach($GLOBALS['css'] as $file => $meta) {
             if(!$file) continue;
 
-            $html = '<link rel="stylesheet" type="text/css" href="'.cdn_prefix().(!empty($GLOBALS['page_is_admin']) ? 'admin/' : '').'css/'.(!empty($GLOBALS['page_is_mobile']) ? 'mobile/' : '').$file.($min ? '.min.css' : '.css').'"'.($meta['media'] ? ' media="'.$meta['media'].'"' : '').'>';
+            $html = '<link rel="stylesheet" type="text/css" href="'.cdn_prefix().(($_CONFIG['whitelabels']['enabled'] === true) ? $_SESSION['domain']. '/' : '').(!empty($GLOBALS['page_is_admin']) ? 'admin/' : '').'css/'.(!empty($GLOBALS['page_is_mobile']) ? 'mobile/' : '').$file.($min ? '.min.css' : '.css').'"'.($meta['media'] ? ' media="'.$meta['media'].'"' : '').'>';
 
             if(substr($file, 0, 2) == 'ie'){
                 $retval .= html_iefilter($html, str_until(str_from($file, 'ie'), '.'));
@@ -307,7 +307,7 @@ function html_generate_js(){
                     if($skip) continue;
                 }
 
-                $html = '<script'.(!empty($data['option']) ? ' '.$data['option'] : '').' type="text/javascript" src="'.cdn_prefix().(!empty($GLOBALS['page_is_admin']) ? 'admin/' : '').'js/'.$file.$min.'.js"></script>';
+                $html = '<script'.(!empty($data['option']) ? ' '.$data['option'] : '').' type="text/javascript" src="'.cdn_prefix().(($_CONFIG['whitelabels']['enabled'] === true) ? $_SESSION['domain'].'/' : '').(!empty($GLOBALS['page_is_admin']) ? 'admin/' : '').'js/'.$file.$min.'.js"></script>';
             }
 
             /*
@@ -640,7 +640,7 @@ function html_flash($class = null){
             //    $message = tr('Something went wrong, please try again later');
             //}
 
-            switch(strtolower($type)){
+            switch($type = strtolower($type)){
                 case 'info':
                     break;
 
@@ -663,7 +663,9 @@ function html_flash($class = null){
                     break;
 
                 default:
-                    throw new bException(tr('html_flash(): Unknown flash type ":type" specified. Please specify one of "info" or "success" or "attention" or "warning" or "error" or "danger"', array(':type' => $type)), 'flash/unknown');
+                    $type = 'error';
+//                    throw new bException(tr('html_flash(): Unknown flash type ":type" specified. Please specify one of "info" or "success" or "attention" or "warning" or "error" or "danger"', array(':type' => $type)), 'flash/unknown');
+// :TODO: Add notification
             }
 
             if(!debug()){
@@ -763,6 +765,95 @@ function html_flash_class($class = null){
 
     }catch(Exception $e){
         throw new bException('html_flash_class(): Failed', $e);
+    }
+}
+
+
+
+/*
+ * Returns HTML for an HTML anchor link <a> that is safe for use with target
+ * _blank
+ *
+ * For vulnerability info:
+ * See https://dev.to/ben/the-targetblank-vulnerability-by-example
+ * See https://mathiasbynens.github.io/rel-noopener/
+ *
+ * For when to use _blank anchors:
+ * See https://css-tricks.com/use-target_blank/
+ */
+function html_a($params){
+    try{
+        array_params ($params, 'href');
+        array_default($params, 'name'  , '');
+        array_default($params, 'target', '');
+        array_default($params, 'rel'   , '');
+
+        switch($params['target']){
+            case '_blank':
+                $params['rel'] .= ' noreferrer noopener';
+                break;
+        }
+
+        if(empty($params['href'])){
+            throw new bException('html_a(): No href specified', 'not-specified');
+        }
+
+        if($params['name']){
+            $params['name'] = ' name="'.$params['name'].'"';
+        }
+
+        if($params['class']){
+            $params['class'] = ' class="'.$params['class'].'"';
+        }
+
+        $retval = '<a href="'.$params['href'].'"'.$params['name'].$params['class'].$params['rel'].'">';
+
+        return $retval;
+
+    }catch(Exception $e){
+        throw new bException('html_a(): Failed', $e);
+    }
+}
+
+
+
+/*
+ * Return HTML for a submit button
+ * If the button should not cause validation, then use "no_validation" true
+ */
+function html_submit($params, $class = ''){
+    static $added;
+
+    try{
+        array_params ($params, 'value');
+        array_default($params, 'name'         , 'dosubmit');
+        array_default($params, 'class'        , $class);
+        array_default($params, 'no_validation', false);
+        array_default($params, 'value'        , 'submit');
+
+        if($params['no_validation']){
+            $params['class'] .= ' no_validation';
+
+            if(empty($added)){
+                $added  = true;
+                $script = html_script('$(".no_validation").click(function(){ $(this).closest("form").find("input,textarea,select").addClass("ignore"); $(this).closest("form").submit(); });');
+            }
+        }
+
+        if($params['class']){
+            $params['class'] = ' class="'.$params['class'].'"';
+        }
+
+        if($params['value']){
+            $params['value'] = ' value="'.$params['value'].'"';
+        }
+
+        $retval = '<input type="submit" id="'.$params['name'].'" name="'.$params['name'].'"'.$params['class'].$params['value'].'>';
+
+        return $retval.isset_get($script);
+
+    }catch(Exception $e){
+        throw new bException('html_submit(): Failed', $e);
     }
 }
 
@@ -1536,11 +1627,11 @@ function html_video($src, $type = null, $height = 0, $width = 0, $more = ''){
             $file  = ROOT.'www/en'.str_starts($src, '/');
 
         }else{
-            if(preg_match('/^'.$protocol.':\/\/(?:www\.)?'.str_replace('.', '\.', $_CONFIG['domain']).'\/.+$/ius', $src)){
+            if(preg_match('/^'.$protocol.':\/\/(?:www\.)?'.str_replace('.', '\.', $_SESSION['domain']).'\/.+$/ius', $src)){
                 /*
                  * This is a local video with domain specification
                  */
-                $file  = ROOT.'www/en'.str_starts(str_from($src, $_CONFIG['domain']), '/');
+                $file  = ROOT.'www/en'.str_starts(str_from($src, $_SESSION['domain']), '/');
 
             }elseif(!$_CONFIG['production']){
                 /*

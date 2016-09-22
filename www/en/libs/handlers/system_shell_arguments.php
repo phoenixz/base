@@ -62,9 +62,7 @@ try{
                 unset($argv[$argid + 1]);
                 break;
 
-            case '-e':
-                // FALLTHROUGH
-            case 'env':
+            case '-E':
                 // FALLTHROUGH
             case '--env':
                 /*

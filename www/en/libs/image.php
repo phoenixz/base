@@ -19,7 +19,6 @@ load_config('images');
 file_ensure_path(ROOT.'/data/log');
 
 
-
 /*
  * Get and return text for image
  */
@@ -192,9 +191,6 @@ function image_convert($source, $destination, $params = null){
                 case 'format':
                     //do nothing (forced format)
                     break;
-
-                default:
-                    throw new bException(tr('image_convert(): Unknown parameter key ":key" specified', array(':key' => $key)), 'unknown');
             }
         }
 
@@ -224,8 +220,14 @@ function image_convert($source, $destination, $params = null){
         }
 
         /*
-         * Check format
+         * Check format and update destination file name to match
          */
+        $source_path = dirname($source);
+        $source_file = basename($source);
+
+        $dest_path = dirname($destination);
+        $dest_file = basename($destination);
+
         switch($params['format']){
             case 'gif':
                 //FALLTHROUGH
@@ -233,16 +235,27 @@ function image_convert($source, $destination, $params = null){
                 /*
                  * Preserve transparent background
                  */
-                $command .= ' -background none';
+                $command  .= ' -background none';
+                $dest_file = str_runtil($dest_file, '.').'.'.$params['format'];
                 break;
 
             case 'jpg':
-                $command .= ' -background white';
+                $command  .= ' -background white';
+                $dest_file = str_runtil($dest_file, '.').'.'.$params['format'];
+                break;
+
+            case '':
+                /*
+                 * Use current format
+                 */
+                $dest_file = str_runtil($dest_file, '.').'.'.str_rfrom($source_file, '.');
                 break;
 
             default:
                 throw new bException(tr('image_convert(): Unknown format ":format" specified.', array(':format' => $params['format'])), 'unknown');
         }
+
+        $destination = slash($dest_path).$dest_file;
 
         /*
          * Execute command to convert image
@@ -444,6 +457,67 @@ function is_image($file){
         }
 
         throw new bException('is_image(): Failed', $e);
+    }
+}
+
+
+
+/*
+ *
+ */
+function image_info($file, $no_exif = false){
+    global $_CONFIG;
+
+    try{
+        load_libs('file');
+
+        $mime = file_mimetype($file);
+
+        if(str_until($mime, '/') !== 'image'){
+            throw new bException(tr('image_info(): The specified file ":file" is not an image', array(':file' => $file)), 'invalid');
+        }
+
+        $size = getimagesize($file);
+
+        $retval['file'] = basename($file);
+        $retval['size'] = filesize($file);
+        $retval['path'] = slash(dirname($file));
+        $retval['mime'] = $mime;
+        $retval['bits'] = $size['bits'];
+        $retval['x']    = $size[0];
+        $retval['y']    = $size[1];
+
+        /*
+         * Get EXIF information from JPG or TIFF image files
+         */
+        switch(str_from($mime, '/')){
+            case 'jpeg':
+                try{
+                    $retval['compression'] = safe_exec($_CONFIG['images']['imagemagick']['identify'].' -format "%Q" '.$file);
+                    $retval['compression'] = array_shift($retval['compression']);
+
+                }catch(Exception $e){
+                    cli_log(tr('Failed to get compression information for file ":file" because ":e"', array(':e' => $e->getMessage(), ':file' => $file)), 'red');
+                }
+
+                if(!$no_exif){
+                    $retval['exif'] = exif_read_data($file, null, true, true);
+                }
+
+                break;
+
+            case 'tiff':
+                if(!$no_exif){
+                    $retval['exif'] = exif_read_data($file, null, true, true);
+                }
+
+                break;
+        }
+
+        return $retval;
+
+    }catch(Exception $e){
+        throw new bException('image_info(): Failed', $e);
     }
 }
 

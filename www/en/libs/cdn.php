@@ -204,7 +204,7 @@ function cdn_commands_insert($message, $files){
         log_database('Inserted CDN command "'.str_log($message['command']).'"', 'cdncommand/'.str_log(isset_get($message['command'])));
 
         if(!debug()){
-            run_background('base/cdn process --verbose -e '.ENVIRONMENT, true, true);
+            run_background('base/cdn process --verbose -e '.ENVIRONMENT, 'cdn');
         }
 
     }catch(Exception $e){

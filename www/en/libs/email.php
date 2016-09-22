@@ -298,7 +298,7 @@ function email_get_attachments($imap, $email, $data, $flags){
                 }
 
                 $data['img'.$i]['file'] = $file_name;
-                file_put_contents(ROOT.'tmp/'.$file_name, $img);
+                file_put_contents(TMP.$file_name, $img);
 
             }catch(Exception $e){
                 /*
@@ -670,7 +670,7 @@ function email_check_images($email){
         $i = 0;
 
         $name   = str_until($email['to'], '@');
-        $domain = str_from($email['to'], '@');
+        $domain = str_from ($email['to'], '@');
 
         while(!empty($email['img'.$i])){
             if(empty($path)){
@@ -691,7 +691,7 @@ function email_check_images($email){
             /*
              * Move the image to the correct location
              */
-            rename(ROOT.'tmp/'.$email['img'.$i]['file'], ROOT.'data/email/images/'.$domain.'/'.$name.'/'.$email['id'].'/'.$email['img'.$i]['file']);
+            rename(TMP.$email['img'.$i]['file'], ROOT.'data/email/images/'.$domain.'/'.$name.'/'.$email['id'].'/'.$email['img'.$i]['file']);
             $email['img'.$i]['file'] = ROOT.'data/email/images/'.$domain.'/'.$name.'/'.$email['id'].'/'.$email['img'.$i]['file'];
 
             $i++;

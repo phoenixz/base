@@ -42,7 +42,7 @@ $_CONFIG['bootstrap']           = array('enabled'         => false,
 //
 $_CONFIG['cache']              = array('method'           => 'file',                                        // "file", "memcached" or false.
                                        'max_age'          => 86400,                                         // Max local cache age is one day
-                                       'key_hash'         => 'sha1',
+                                       'key_hash'         => 'sha256',
                                        'key_interlace'    => 3,
                                        'http'             => array('enabled'            => true,            // Enable HTTP cache or not
                                                                    'max_age'            => 604800));        // Default max-age is one week
@@ -235,11 +235,6 @@ $_CONFIG['paging']             = array('limit'            => 20,                
                                        'hide_single'      => true,                                          // Hide pager if there is only a single page
                                        'hide_ends'        => true);                                         // Hide the "first" and "last" options
 
-//Password configuration
-$_CONFIG['password']           = array('hash'             => 'sha1',                                        //
-                                       'usemeta'          => true,                                          //
-                                       'useseed'          => true);                                         //
-
 //Paypal configuration
 $_CONFIG['paypal']             = array('version'          => 'sandbox',                                     //
 
@@ -272,7 +267,7 @@ $_CONFIG['protocol']           = 'http://';                                     
 $_CONFIG['redirects']          = array('auto'             => 'get',                                         // Auto redirects (usually because of user or right required) done by "session" or "get"
                                        'query'            => false,                                         // If URL contains a query ? redirect to URL without query, see http_redirect_query_url() and startup
                                        'index'            => 'index.php',                                   // What is the default index page for this site
-                                       'accessdenied'     => 'access-denied',                               // Usually won't redirect, but just show
+                                       'accessdenied'     => '403',                                         // Usually won't redirect, but just show
                                        'signin'           => 'signin.php',                                  // What is the default signin page for this site
                                        'lock'             => 'lock.php',                                    // What is the default lock page for this site
                                        'aftersignin'      => 'index.php',                                   // Where will the site redirect to by default after a signin?
@@ -285,12 +280,16 @@ $_CONFIG['root']               = '';                                            
 $_CONFIG['share']              = array('provider'         => false);                                        // Share button provider
 
 // Security configuration
-$_CONFIG['security']           = array('signin'           => array('save_password' => true,                 // Allow the browser client to save the passwords. If set to false, different form names will be used to stop browsers from saving passwords
-                                                                   'ip_lock'       => false,                // Either "false", "true" or number n (which makes it lock to users with the right ip_lock), or "ip address" or array("ip address", "ip address", ...). If specified as true, only 1 IP will be allowed. If specified as number N, up to N IP addresses will be allowed. If specified as "ip address", only that IP address will be allowed. If specified as array("ip address", ...) all IP addresses in that array will be allowed
-                                                                   'two_factor'    => false),               // Either "false" or a valid twilio "from" phone number
+$_CONFIG['security']           = array('signin'           => array('save_password'   => true,               // Allow the browser client to save the passwords. If set to false, different form names will be used to stop browsers from saving passwords
+                                                                   'ip_lock'         => false,              // Either "false", "true" or number n (which makes it lock to users with the right ip_lock), or "ip address" or array("ip address", "ip address", ...). If specified as true, only 1 IP will be allowed. If specified as number N, up to N IP addresses will be allowed. If specified as "ip address", only that IP address will be allowed. If specified as array("ip address", ...) all IP addresses in that array will be allowed
+                                                                   'destroy_session' => false,              // Either "false", "true" or number n (which makes it lock to users with the right ip_lock), or "ip address" or array("ip address", "ip address", ...). If specified as true, only 1 IP will be allowed. If specified as number N, up to N IP addresses will be allowed. If specified as "ip address", only that IP address will be allowed. If specified as array("ip address", ...) all IP addresses in that array will be allowed
+                                                                   'two_factor'      => false),             // Either "false" or a valid twilio "from" phone number
 
-                                       'passwords'        => array('algorithm'     => 'sha1',               // What algorithm will we use to store the passwords?
-                                                                   'test'          => false),               // Test new user password strength?
+                                       'passwords'        => array('test'            => false,              // Test new user password strength?
+                                                                   'hash'            => 'sha256',           // What hash algorithm will we use to store the passwords?
+                                                                   'usemeta'         => true,               // Add used hash as meta data to the password when storing them so we know what hash was used.
+                                                                   'useseed'         => true),              // Use the SEED constant to calculate passwords
+
                                        'user'             => 'apache',                                      //
                                        'group'            => 'apache',                                      //
                                        'umask'            =>  0007,                                         //
@@ -375,4 +374,6 @@ $_CONFIG['translator']         = array('url'          => 'translator.localhost',
                                        'passphrase'   => 'translateplease',
                                        'api_key'      => 'something',
                                        'allowed_tags' => '<b><a><strong>');
+
+$_CONFIG['whitelabels']        = array('enabled'      => false);                                            // Either false (No whitelabel domains, only the normal site FQDN allowed), true (only default and registered FQDNs allowed), "sub" (only default FQDN and its sub domains allowed), or "all" (All domains allowed)
 ?>

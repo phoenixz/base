@@ -166,11 +166,11 @@ return false;
 
         if(SCRIPT != 'init'){
             if(empty($_CONFIG['mail']['developer'])){
-                log_error('[notifications_do() FAILED : '.strtoupper($_CONFIG['domain']).' / '.strtoupper(php_uname('n')).' / '.strtoupper(ENVIRONMENT).']', "notifications_do() failed with: ".implode("\n", $e->getMessages())."\n\nOriginal notification event was:\nEvent: \"".cfm($event)."\"\nMessage: \"".cfm($message)."\"");
+                log_error('[notifications_do() FAILED : '.strtoupper($_SESSION['domain']).' / '.strtoupper(php_uname('n')).' / '.strtoupper(ENVIRONMENT).']', "notifications_do() failed with: ".implode("\n", $e->getMessages())."\n\nOriginal notification event was:\nEvent: \"".cfm($event)."\"\nMessage: \"".cfm($message)."\"");
                 log_error('WARNING! $_CONFIG[mail][developer] IS NOT SET, NOTIFICATIONS CANNOT BE SENT!');
 
             }else{
-                mail($_CONFIG['mail']['developer'], '[notifications_do() FAILED : '.strtoupper($_CONFIG['domain']).' / '.strtoupper(php_uname('n')).' / '.strtoupper(ENVIRONMENT).']', "notifications_do() failed with: ".implode("\n", $e->getMessages())."\n\nOriginal notification event was:\nEvent: \"".cfm($event)."\"\nMessage: \"".cfm($message)."\"");
+                mail($_CONFIG['mail']['developer'], '[notifications_do() FAILED : '.strtoupper($_SESSION['domain']).' / '.strtoupper(php_uname('n')).' / '.strtoupper(ENVIRONMENT).']', "notifications_do() failed with: ".implode("\n", $e->getMessages())."\n\nOriginal notification event was:\nEvent: \"".cfm($event)."\"\nMessage: \"".cfm($message)."\"");
             }
         }
 
@@ -215,11 +215,11 @@ function notifications_email($event, $message, $users){
 
             $headers = array('MIME-Version' => '1.0',
                              'Content-type' => 'text/html; charset=UTF-8',
-                             'From'         => str_capitalize($_CONFIG['domain']).' Notifier <notifier@'.$_CONFIG['domain'].'>',
+                             'From'         => str_capitalize($_SESSION['domain']).' Notifier <notifier@'.$_SESSION['domain'].'>',
                              'To'           => (empty($user['name']) ? $user : $user['name']).' <'.isset_get($user['email']).'>');
 
             $start = microtime(true);
-            mail($user['email'], '['.strtoupper(cfm($event)).' : '.strtoupper($_CONFIG['domain']).' / '.strtoupper(php_uname('n')).' / '.strtoupper(ENVIRONMENT).']', $message, mail_headers($headers));
+            mail($user['email'], '['.strtoupper(cfm($event)).' : '.strtoupper($_SESSION['domain']).' / '.strtoupper(php_uname('n')).' / '.strtoupper(ENVIRONMENT).']', $message, mail_headers($headers));
 
             if((microtime(true) - $start) > 15){
                 /*

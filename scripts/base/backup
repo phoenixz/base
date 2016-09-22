@@ -3,7 +3,7 @@
 /*
  * This is the backup script
  *
- * @copyright Sven Oostenbrink <support@svenoostenbrink.com>
+ * @copyright Sven Oostenbrink <support@ingiga.com>
  */
 $usage = "backup database mysql username USERNAME password PASSWORD [database DATABASE]\n".
          "backup path PATH\n".

@@ -11,7 +11,7 @@
  *
  * All tree user and group will be set to $_CONFIG[deploy][user] $_CONFIG[deploy][group]
  *
- * @copyright Sven Oostenbrink <support@svenoostenbrink.com>
+ * @copyright Sven Oostenbrink <support@ingiga.com>
  */
 $usage = "./scripts/base/fix-permissions\n";
 
@@ -51,16 +51,8 @@ try{
         throw new bException(tr('No $_CONFIG[deploy][:target][group] specified', array(':target' => $target)), 'missing-configuration');
     }
 
-    if(empty($deploy_config['dir_mode'])){
-        throw new bException(tr('No $_CONFIG[deploy][:target][dir_mode] specified', array(':target' => $target)), 'missing-configuration');
-    }
-
-    if(empty($deploy_config['file_mode'])){
-        throw new bException(tr('No $_CONFIG[deploy][:target][file_mode] specified', array(':target' => $target)), 'missing-configuration');
-    }
-
-    if(empty($deploy_config['www_mode'])){
-        throw new bException(tr('No $_CONFIG[deploy][:target][www_mode] specified', array(':target' => $target)), 'missing-configuration');
+    if(empty($deploy_config['modes'])){
+        throw new bException(tr('No $_CONFIG[deploy][:target][modes] specified', array(':target' => $target)), 'missing-configuration');
     }
 
 }catch(Exception $e){
@@ -72,79 +64,67 @@ try{
 /*
  *
  */
-passthru((!empty($deploy_config['sudo']) ? ' sudo' : '').' chown '.$deploy_config['user'].':'.$deploy_config['group'].' '.$target_dir.' -R;', $exitcode);
+passthru((!empty($deploy_config['sudo']) ? ' sudo' : '').' chown '.$deploy_config['user'].':'.$deploy_config['group'].' '.ROOT.' -R;', $exitcode);
 
 if($exitcode){
     throw new bException('Failed to update target directory tree user/group ownership', 'update-ownership');
 }
 
-cli_log(tr('Updated owner:\group permissions to ":owner::group" for path ":path"', array(':owner' => $deploy_config['user'], ':group' => $deploy_config['group'], ':path' => $target_dir)), 'green');
+cli_log(tr('Updated owner:\group permissions to ":owner::group" for entire project', array(':owner' => $deploy_config['user'], ':group' => $deploy_config['group'])), 'green');
 
 
 
 /*
  *
  */
-passthru((!empty($deploy_config['sudo']) ? ' sudo' : '').' find '.$target_dir.' -type d -exec chmod '.$deploy_config['dir_mode'].' {} \;', $exitcode);
+foreach($deploy_config['modes'] as $type => $modes){
+    switch($type){
+        case 'dirs':
+            foreach($modes as $path => $mode){
+                /*
+                 * Update modes for all directories in the specified path tree
+                 *
+                 * NOTE: The specified directory MAY not exist (eg. data/content)
+                 * If this is the case, it is not a problem, just skip. This
+                 * script should only care about that which exists
+                 */
+                if(file_exists(unslash(ROOT).$path)){
+                    passthru((!empty($deploy_config['sudo']) ? ' sudo' : '').' find '.unslash(ROOT).$path.' -type d -exec chmod '.$mode.' {} \;', $exitcode);
 
-if($exitcode){
-    throw new bException('Failed to update target directories mode', 'failed-dirmode');
+                    if($exitcode){
+                        throw new bException(tr('Failed to update mode for directories in path ":path"', array(':path' => $path)), 'failed');
+                    }
+                }
+            }
+
+            cli_log(tr('Updated directories mode'), 'green');
+            break;
+
+        case 'files':
+            foreach($modes as $path => $mode){
+                /*
+                 * Update modes for all files in the specified path tree
+                 *
+                 * NOTE: The specified directory MAY not exist (eg. data/content)
+                 * If this is the case, it is not a problem, just skip. This
+                 * script should only care about that which exists
+                 */
+                if(file_exists(unslash(ROOT).$path)){
+                    passthru((!empty($deploy_config['sudo']) ? ' sudo' : '').' find '.unslash(ROOT).$path.' -type f -exec chmod '.$mode.' {} \;', $exitcode);
+
+                    if($exitcode){
+                        throw new bException(tr('Failed to update mode for files in path ":path"', array(':path' => $path)), 'failed');
+                    }
+                }
+            }
+
+            cli_log(tr('Updated files mode'), 'green');
+            break;
+
+        default:
+            throw new bException(tr('Unknown mode type ":type" specified', array(':type' => $type)), 'unknown');
+    }
 }
 
-cli_log(tr('Updated directories mode'), 'green');
-
-
-
-/*
- *
- */
-passthru((!empty($deploy_config['sudo']) ? ' sudo' : '').' find '.$target_dir.' -type f -exec chmod '.$deploy_config['file_mode'].' {} \;', $exitcode);
-
-if($exitcode){
-    throw new bException(tr('Failed to update target files mode'), 'failed-dirmode');
-}
-
-cli_log(tr('Updated files mode'), 'green');
-
-
-
-/*
- *
- */
-passthru((!empty($deploy_config['sudo']) ? ' sudo' : '').' find '.slash($target_dir).'scripts -type f -exec chmod 0750 {} \;', $exitcode);
-
-if($exitcode){
-    throw new bException(tr('Failed to update script files mode'), 'failed-dirmode');
-}
-
-cli_log(tr('Updated script files mode'), 'green');
-
-
-
-/*
- * Update the file permissions of all paths in www
- */
-passthru((!empty($deploy_config['sudo']) ? ' sudo' : '').' chmod '.$deploy_config['www_mode'].' '.slash($target_dir).'www/ -R', $exitcode);
-
-if($exitcode){
-    throw new bException(tr('Failed to set www path mode'), 'failed-dirmode');
-}
-
-cli_log(tr('Updated www path mode'), 'green');
-
-
-
-
-/*
- * Update the file permissions of temp directory
- */
-file_ensure_path(slash($target_dir).'tmp/');
-passthru((!empty($deploy_config['sudo']) ? ' sudo' : '').' chmod ug+rwx,g+s,o-rwx '.slash($target_dir).'tmp/ -R', $exitcode);
-
-if($exitcode){
-    throw new bException(tr('Failed to set tmp path mode'), 'failed-dirmode');
-}
-
-cli_log(tr('Updated tmp path mode'), 'green');
 cli_log(tr('Finished updating www directories permissions'), 'green');
 ?>

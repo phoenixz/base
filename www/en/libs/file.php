@@ -296,7 +296,7 @@ function file_ensure_path($path, $mode = null){
             $mode = $_CONFIG['fs']['dir_mode'];
         }
 
-        if(!file_exists($path)){
+        if(!file_exists(unslash($path))){
             try{
                 mkdir($path, $mode, true);
 
@@ -311,17 +311,17 @@ function file_ensure_path($path, $mode = null){
             }
 
         }elseif(!is_dir($path)){
-            throw new bException('file_ensure_path(): Specified "'.$path.'" is not a directory');
+            throw new bException(tr('file_ensure_path(): Specified ":path" is not a directory', array(':path' => $path)), 'invalid');
         }
 
         if(!$realpath = realpath($path)){
-            throw new bException('file_ensure_path(): realpath() failed for "'.$path.'"');
+            throw new bException(tr('file_ensure_path(): realpath() failed for ":path"', array(':path' => $path)), 'failed');
         }
 
         return slash($realpath);
 
     }catch(Exception $e){
-        throw new bException('file_ensure_path(): Failed to ensure path "'.str_log($path).'"', $e);
+        throw new bException(tr('file_ensure_path(): Failed to ensure path ":path"', array(':path' => $path)), $e);
     }
 }
 
@@ -420,14 +420,15 @@ function file_get_extension($filename){
 /*
  * Return a temporary filename for the specified file in the specified path
  */
-function file_temp($filename = ''){
+function file_temp($create = true){
     try{
-        if($filename){
-            file_ensure_path($path = TMP.($filename ? slash(getmypid().'_'.substr(uniqid(), 0, 8)) : ''));
-            return $path.$filename;
+        file_ensure_path(TMP);
+
+        if($create){
+            return tempnam(TMP, '');
         }
 
-        return tempnam(TMP, PROJECT);
+        return TMP.substr(hash('sha1', uniqid().microtime()), 0, 12);
 
     }catch(Exception $e){
         throw new bException('file_temp(): Failed', $e);
@@ -608,7 +609,7 @@ function file_delete($pattern){
             throw new bException('file_delete(): No file or pattern specified');
         }
 
-        safe_exec('rm '.$pattern.' -rf');
+        safe_exec(array('rm -rf ', $pattern));
 
         return $pattern;
 
@@ -1774,8 +1775,16 @@ function file_tree_execute($params){
             throw new bException(tr('file_tree_execute(): Specified callback is not a function'), 'invalid');
         }
 
+        if(!($params['path'])){
+            throw new bException(tr('file_tree_execute(): No path specified'), 'not-specified');
+        }
+
+        if(substr($params['path'], 0, 1) !== '/'){
+            throw new bException(tr('file_tree_execute(): No absolute path specified'), 'invalid');
+        }
+
         if(!file_exists($params['path'])){
-            throw new bException(tr('file_tree_execute(): Specified path ":path" does not exist', array(':path' => $params['path'])), 'file-not-exist');
+            throw new bException(tr('file_tree_execute(): Specified path ":path" does not exist', array(':path' => $params['path'])), 'not-exist');
         }
 
         if((substr(basename($params['path']), 0, 1) == '.') and !$params['follow_hidden']){
@@ -1940,6 +1949,44 @@ function file_tree_execute($params){
 
     }catch(Exception $e){
         throw new bException('file_tree_execute(): Failed', $e);
+    }
+}
+
+
+
+/*
+ * If specified path is not absolute, then return a path that is sure to start
+ * from the current working directory
+ */
+function file_absolute($path){
+    try{
+        if(substr($path, 0, 1) !== '/'){
+            $path = slash(getcwd()).$path;
+        }
+
+        return $path;
+
+    }catch(Exception $e){
+        throw new bException('file_absolute(): Failed', $e);
+    }
+}
+
+
+
+/*
+ * If specified path is not absolute, then return a path that is sure to start
+ * within ROOT
+ */
+function file_root($path){
+    try{
+        if(substr($path, 0, 1) !== '/'){
+            $path = ROOT.$path;
+        }
+
+        return $path;
+
+    }catch(Exception $e){
+        throw new bException('file_root(): Failed', $e);
     }
 }
 

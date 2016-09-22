@@ -103,6 +103,10 @@ class bException extends Exception{
     function getData(){
         return $this->data;
     }
+
+    function setData($data){
+        $this->data = $data;
+    }
 }
 
 
@@ -290,11 +294,11 @@ function load_content($file, $replace = false, $language = null, $autocreate = n
         }
 
         if(!isset($replace['###SITENAME###'])){
-            $replace['###SITENAME###'] = str_capitalize($_CONFIG['domain']);
+            $replace['###SITENAME###'] = str_capitalize($_SESSION['domain']);
         }
 
         if(!isset($replace['###DOMAIN###'])){
-            $replace['###DOMAIN###']   = $_CONFIG['domain'];
+            $replace['###DOMAIN###']   = $_SESSION['domain'];
         }
 
         /*
@@ -730,7 +734,7 @@ function load_libs($libraries){
         }
 
     }catch(Exception $e){
-        throw new bException('load_libs(): Failed to load libraries "'.str_log($libraries).'"', $e);
+        throw new bException('load_libs(): Failed to load library "'.str_log($library).'"', $e);
     }
 }
 
@@ -813,7 +817,7 @@ function debug($class = null){
 /*
  * Execute shell commands with exception checks
  */
-function safe_exec($command, $ok_exitcodes = null, $route_errors = true){
+function safe_exec($commands, $ok_exitcodes = null, $route_errors = true){
     return include(dirname(__FILE__).'/handlers/system_safe_exec.php');
 }
 
@@ -849,7 +853,7 @@ function add_stat($code, $count = 1, $details = '') {
                        ON DUPLICATE KEY UPDATE `count` = `count` + '.cfi($count).';');
         }
 
-        error_log($_CONFIG['domain'].'-'.str_log($code).($details ? ' "'.str_log($details).'"' : ''));
+        error_log($_SESSION['domain'].'-'.str_log($code).($details ? ' "'.str_log($details).'"' : ''));
 
     }catch(Exception $e){
         throw new bException('add_stat(): Failed', $e);
@@ -859,34 +863,35 @@ function add_stat($code, $count = 1, $details = '') {
 
 
 /*
- * Calculate the DB password hash
+ * Calculate the hash value for the given password with the (possibly) given
+ * algorithm
  */
-function password($password, $algorithm = null){
+function get_hash($source, $algorithm, $add_meta = true){
     global $_CONFIG;
 
     try{
-        if(!$algorithm){
-            $algorithm = $_CONFIG['security']['passwords']['algorithm'];
+        try{
+            $source = hash($algorithm, SEED.$source);
+
+        }catch(Exception $e){
+            if(strstr($e->getMessage(), 'Unknown hashing algorithm')){
+                throw new bException(tr('get_hash(): Unknown hash algorithm ":algorithm" specified', array(':algorithm' => $algorithm)), 'unknown-algorithm');
+            }
+
+            throw $e;
         }
 
-        switch($algorithm){
-            case 'sha1':
-                return '*sha1*'.sha1(SEED.$password);
-
-            case 'sha256':
-                return '*sha256*'.sha256(SEED.$password);
-
-            case 'sha512':
-                return '*sha512*'.hash('sha512', SEED.$password);
-
-            default:
-                throw new bException(tr('password(): Unknown algorithm ":algorithm" specified', array(':algorithm' => str_log($algorithm))), 'unknown');
+        if($add_meta){
+            return '*'.$algorithm.'*'.$source;
         }
+
+        return $source;
 
     }catch(Exception $e){
-        throw new bException('password(): Failed', $e);
+        throw new bException('get_hash(): Failed', $e);
     }
 }
+
 
 
 /*
@@ -896,22 +901,22 @@ function domain($current_url = false, $query = null){
     global $_CONFIG;
 
     try{
-        if(empty($_CONFIG['domain'])){
-            throw new bException(tr('domain(): $_CONFIG[domain] is not configured'), 'not-specified');
+        if(empty($_SESSION['domain'])){
+            throw new bException(tr('domain(): $_SESSION[\'domain\'] is not configured'), 'not-specified');
         }
 
-        if($_CONFIG['domain'] == 'auto'){
-            $_CONFIG['domain'] = $_SERVER['SERVER_NAME'];
+        if($_SESSION['domain'] == 'auto'){
+            $_SESSION['domain'] = $_SERVER['SERVER_NAME'];
         }
 
         if(!$current_url){
-            $retval = $_CONFIG['protocol'].$_CONFIG['domain'].$_CONFIG['root'];
+            $retval = $_CONFIG['protocol'].$_SESSION['domain'].$_CONFIG['root'];
 
         }elseif($current_url === true){
-            $retval = $_CONFIG['protocol'].$_CONFIG['domain'].$_SERVER['REQUEST_URI'];
+            $retval = $_CONFIG['protocol'].$_SESSION['domain'].$_SERVER['REQUEST_URI'];
 
         }else{
-            $retval = $_CONFIG['protocol'].$_CONFIG['domain'].$_CONFIG['root'].str_starts($current_url, '/');
+            $retval = $_CONFIG['protocol'].$_SESSION['domain'].$_CONFIG['root'].str_starts($current_url, '/');
         }
 
         if($query){
@@ -1042,7 +1047,7 @@ function user_or_signin(){
                 /*
                  * No session
                  */
-                redirect(isset_get($_CONFIG['redirects']['signin'], 'signin.php').'?redirect='.urlencode($_SERVER['SCRIPT_NAME']));
+                redirect(isset_get($_CONFIG['redirects']['signin'], 'signin.php').'?redirect='.urlencode($_SERVER['REQUEST_URI']));
             }
 
             if(!empty($_SESSION['lock'])){
@@ -1051,7 +1056,7 @@ function user_or_signin(){
                  * Redirect all pages EXCEPT the lock page itself!
                  */
                 if($_CONFIG['redirects']['lock'] !== str_cut($_SERVER['REQUEST_URI'], '/', '?')){
-                    redirect(isset_get($_CONFIG['redirects']['lock'], 'lock.php').'?redirect='.urlencode($_SERVER['SCRIPT_NAME']));
+                    redirect(isset_get($_CONFIG['redirects']['lock'], 'lock.php').'?redirect='.urlencode($_SERVER['REQUEST_URI']));
                 }
             }
 
@@ -1383,8 +1388,11 @@ function system_date_format($date = null, $requested_format = 'human_datetime'){
         /*
          * Ensure we have some valid date string
          */
-        if(!$date){
+        if($date === null){
             $date = date('Y-m-d H:i:s');
+
+        }elseif(!$date){
+            return '';
 
         }elseif(is_numeric($date)){
             $date = date('Y-m-d H:i:s', $date);
@@ -1502,24 +1510,24 @@ function process_runs($process_name){
 /*
  *
  */
-function run_background($cmd, $single = true, $log = false){
+function run_background($cmd, $log = true, $single = true){
     try{
+        $args = str_from ($cmd, ' ');
+        $cmd  = str_until($cmd, ' ');
         $path = dirname($cmd);
-        $args = str_from (basename($cmd), ' ');
-        $cmd  = str_until(basename($cmd), ' ');
+        $path = slash($path);
+        $cmd  = basename($cmd);
 
         if($path == '.'){
             $path = ROOT.'scripts/';
 
-        }elseif(str_starts_not($path, '/') == 'base'){
+        }elseif(str_ends_not(str_starts_not($path, '/'), '/') == 'base'){
             $path = ROOT.'scripts/base/';
         }
 
         if($single and process_runs($cmd)){
             return false;
         }
-
-        $path = slash($path);
 
         if(!file_exists($path.$cmd)){
             throw new bException(tr('run_background(): Specified command ":cmd" does not exists', array(':cmd' => $path.$cmd)), 'not-exist');
@@ -1537,10 +1545,9 @@ function run_background($cmd, $single = true, $log = false){
         file_ensure_path(ROOT.'data/run');
         file_ensure_path(ROOT.'data/log');
 
-//show(sprintf('nohup %s >> '.ROOT.'data/log/%s 2>&1 & echo $! > %s', $path.$cmd.' '.$args, $cmd, ROOT.'data/run/'.$cmd));
-
+//show(sprintf('nohup %s >> '.ROOT.'data/log/%s 2>&1 & echo $! > %s', $path.$cmd.' '.$args, $log, ROOT.'data/run/'.$cmd));
         if($log){
-            exec(sprintf('nohup %s >> '.ROOT.'data/log/%s 2>&1 & echo $! > %s', $path.$cmd.' '.$args, $cmd, ROOT.'data/run/'.$cmd));
+            exec(sprintf('nohup %s >> '.ROOT.'data/log/%s 2>&1 & echo $! > %s', $path.$cmd.' '.$args, $log, ROOT.'data/run/'.$cmd));
 
         }else{
             exec(sprintf('nohup %s > /dev/null 2>&1 & echo $! > %s', $path.$cmd.' '.$args, ROOT.'data/run/'.$cmd));
@@ -1741,9 +1748,13 @@ function api_prefix($id = null, $force_environment = false){
 /*
  *
  */
-function name($user = null, $key_prefix = ''){
+function name($user = null, $key_prefix = '', $default = null){
     try{
         if($user){
+            if($key_prefix){
+                $key_prefix = str_ends($key_prefix, '_');
+            }
+
             if(is_scalar($user)){
                 if(!is_numeric($user)){
                     /*
@@ -1765,17 +1776,21 @@ function name($user = null, $key_prefix = ''){
                 throw new bException(tr('name(): Invalid data specified, please specify either user id, name, or an array containing username, email and or id'), 'invalid');
             }
 
-            $user = not_empty(isset_get($user[$key_prefix.'name']), isset_get($user[$key_prefix.'username']), isset_get($user[$key_prefix.'email']), isset_get($user[$key_prefix.'id']));
+            $user = not_empty(isset_get($user[$key_prefix.'name']), isset_get($user[$key_prefix.'username']), isset_get($user[$key_prefix.'email']));
 
             if($user){
                 return $user;
             }
         }
 
+        if($default === null){
+            $default = tr('Guest');
+        }
+
         /*
          * No user data found, assume guest user.
          */
-        return tr('Guest');
+        return $default;
 
     }catch(Exception $e){
         throw new bException(tr('name(): Failed'), $e);

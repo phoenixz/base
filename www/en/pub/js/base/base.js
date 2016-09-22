@@ -276,7 +276,7 @@ $(document).ready(function(){
 
 
     // Allow that I can click anywhere on the row to select the link
-    $("table.link tr")
+    $("table.base-link tr")
         .click(function(e){
             if (e.target.nodeName != 'TD') {
                 return true;
@@ -284,7 +284,7 @@ $(document).ready(function(){
 
             e.stopPropagation();
 
-            if ($(e.target).hasClass("select")) {
+            if ($(e.target).hasClass("base-select")) {
                 // This is a select box, (un) check it
                 $(e.target).find("input[type=\"checkbox\"]").trigger("click");
                 return false;
@@ -297,7 +297,7 @@ $(document).ready(function(){
 
 
     // Allow the (de)select all checkbox
-    $("table.select input[type=\"checkbox\"].all")
+    $("table.base-select input[type=\"checkbox\"].all")
         .click(function(){
             $(this).closest("table").find("input[type=\"checkbox\"][name=\"" + $(this).prop("name") + "\"]").prop("checked", $(this).is(':checked'));
         });

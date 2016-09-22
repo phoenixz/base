@@ -3,7 +3,7 @@ try{
     global $_CONFIG;
 
     if(PLATFORM != 'http'){
-        throw new bException('redirect(): This function can only be called on webservers');
+        throw new bException(tr('redirect(): This function can only be called on webservers'));
     }
 
     /*
@@ -78,7 +78,7 @@ try{
             break;
 
         default:
-            throw new bException('redirect(): Invalid HTTP code "'.str_log($http_code).'" specified', 'invalid_http_code');
+            throw new bException(tr('redirect(): Invalid HTTP code ":code" specified', array(':code' => $http_code)), 'invalid-http-code');
     }
 
     if($clear_session_redirect){
@@ -90,10 +90,10 @@ try{
         $target = $_CONFIG['root'].$target;
     }
 
-    header("Location:".redirect_url($target), true, $http_code);
+    header('Location:'.redirect_url($target), true, $http_code);
     die();
 
 }catch(Exception $e){
-    throw new bException('redirect(): Failed', $e);
+    throw new bException(tr('redirect(): Failed'), $e);
 }
 ?>

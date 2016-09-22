@@ -72,7 +72,7 @@ class Colors {
         }
 
         // Add string and end coloring
-        $colored_string .=  $string . "\033[0m";
+        $colored_string .=  $string."\033[0m";
 
         return $colored_string;
     }
@@ -337,7 +337,8 @@ function cli_argument($value = null, $next = null, $default = null){
         }
 
         if($value === null){
-            $retval = str_replace('-', '', array_shift($argv));
+            $retval = array_shift($argv);
+            $retval = str_starts_not($retval, '-');
             return $retval;
         }
 
@@ -353,7 +354,7 @@ function cli_argument($value = null, $next = null, $default = null){
                 /*
                  * Return all following arguments, if available
                  */
-                return array_from($argv, array_search($value, $argv), true, true);
+                return array_from($argv, array_search($value, $argv), true);
             }
 
             /*
@@ -426,26 +427,7 @@ function cli_no_arguments_left(){
         return true;
     }
 
-    $method = cli_method();
-
-    if($method){
-        switch(count($argv)){
-            case 0:
-                throw new bException(tr('cli_no_arguments_left(): Unknown method ":method" encountered', array(':method' => $method)), 'invalid_arguments');
-
-            case 1:
-                throw new bException(tr('cli_no_arguments_left(): Unknown method ":method" with unknown argument ":argument" encountered', array(':argument' => str_force($argv, ', '), ':method' => $method)), 'invalid_arguments');
-
-            default:
-                throw new bException(tr('cli_no_arguments_left(): Unknown method ":method" with unknown arguments ":arguments" encountered', array(':arguments' => str_force($argv, ', '), ':method' => $method)), 'invalid_arguments');
-        }
-    }
-
-    if(count($argv) > 1){
-        throw new bException(tr('cli_no_arguments_left(): Unknown arguments ":arguments" encountered', array(':arguments' => str_force($argv, ', '))), 'invalid_arguments');
-    }
-
-    throw new bException(tr('cli_no_arguments_left(): Unknown argument ":argument" encountered', array(':argument' => str_force($argv, ', '))), 'invalid_arguments');
+    throw new bException(tr('cli_no_arguments_left(): Unknown arguments ":arguments" encountered', array(':arguments' => str_force($argv, ', '))), 'invalid_arguments');
 }
 
 
@@ -658,42 +640,60 @@ function cli_dot($each = 10, $color = 'green', $dot = '.'){
 /*
  * Log specified message to console, but only if we are in console mode!
  */
-function cli_log($message = '', $color = null, $newline = true, $filter_double = false){
+function cli_log($messages = '', $color = null, $newline = true, $filter_double = false){
     static $c, $fh, $last;
 
     try{
         if(PLATFORM != 'shell') return false;
 
-        if(($filter_double == true) and ($message == $last)){
+        if(($filter_double == true) and ($messages == $last)){
             /*
             * We already displayed this message, skip!
             */
             return;
         }
 
-        $last = $message;
+        $last = $messages;
 
         if($color and defined('NOCOLOR') and !NOCOLOR){
-            load_libs('cli');
-
-            $c       = cli_init_color();
-            $message = $c->$color($message);
+            $c = cli_init_color();
         }
 
-        $message = stripslashes(br2nl($message)).($newline ? "\n" : '');
+        if(is_object($messages)){
+            if($messages instanceof bException){
+                $messages = $messages->getMessages();
 
-        if(empty($error)){
-            echo $message;
+            }elseif($messages instanceof Exception){
+                $messages = array($messages->getMessage());
 
-        }else{
-            /*
-             * Log to STDERR instead of STDOUT
-             */
-            if(empty($fh)){
-                $fh = fopen('php://stderr','w');
+            }else{
+                $messages = $messages->__toString();
             }
 
-            fwrite($fh, $message);
+        }elseif(!is_array($messages)){
+            $messages = array($messages);
+        }
+
+        foreach($messages as $message){
+            if($color and defined('NOCOLOR') and !NOCOLOR){
+                $message = $c->$color($message);
+            }
+
+            $message = stripslashes(br2nl($message)).($newline ? "\n" : '');
+
+            if(empty($error)){
+                echo $message;
+
+            }else{
+                /*
+                 * Log to STDERR instead of STDOUT
+                 */
+                if(empty($fh)){
+                    $fh = fopen('php://stderr','w');
+                }
+
+                fwrite($fh, $message);
+            }
         }
 
         return true;

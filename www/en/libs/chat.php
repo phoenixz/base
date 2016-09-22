@@ -58,10 +58,10 @@ function chat_start($user){
     try{
         $user = sql_get('SELECT `user_name`, `user_password` FROM `users` WHERE `user_id` = :user_id', array(':user_id' => $user['id']), null, 'chat');
 
-        setcookie('username', $user['user_name']    , time() + 86400, '/', ''.str_starts($_CONFIG['domain'], '.'));
-        setcookie('password', $user['user_password'], time() + 86400, '/', ''.str_starts($_CONFIG['domain'], '.'));
+        setcookie('username', $user['user_name']    , time() + 86400, '/', ''.str_starts($_SESSION['domain'], '.'));
+        setcookie('password', $user['user_password'], time() + 86400, '/', ''.str_starts($_SESSION['domain'], '.'));
 
-        return '<iframe src="'.$_CONFIG['protocol'].'chat.'.$_CONFIG['domain'].'" frameborder="0" class="chat"></iframe>';
+        return '<iframe src="'.$_CONFIG['protocol'].'chat.'.$_SESSION['domain'].'" frameborder="0" class="chat"></iframe>';
 
     }catch(Exception $e){
         throw new bException(tr('chat_start(): Failed'), $e);

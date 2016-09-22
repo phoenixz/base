@@ -96,10 +96,10 @@ function sitemap_robots($params = array(), $return = false){
 
         $r   = sitemap_get_scan_resource($params, true);
 // :TODO: Add support for user agent specification
-        $txt = "Sitemap: ".$_CONFIG['protocol'].$_CONFIG['domain']."/sitemap.xml\nUser-agent: *\n";
+        $txt = "Sitemap: ".$_CONFIG['protocol'].$_SESSION['domain']."/sitemap.xml\nUser-agent: *\n";
 
         while($url = sql_fetch($r)){
-            $url['url'] = str_replace($_CONFIG['protocol'], '', str_replace($_CONFIG['domain'], '', $url['url']));
+            $url['url'] = str_replace($_CONFIG['protocol'], '', str_replace($_SESSION['domain'], '', $url['url']));
             $txt       .= 'Disallow: '.$url['url']."\n";
         }
 
@@ -324,7 +324,7 @@ function sitemap_scan_url($params, $scan_url, $recursive = true){
             return 0;
         }
 
-        $url = slash($_CONFIG['protocol'].$_CONFIG['domain']).str_starts_not($scan_url, '/');
+        $url = slash($_CONFIG['protocol'].$_SESSION['domain']).str_starts_not($scan_url, '/');
 
 
         /*
@@ -355,7 +355,7 @@ function sitemap_scan_url($params, $scan_url, $recursive = true){
                     }
 
                     $disallow     = 1;
-                    $disallow_url = str_replace('%protocol%', $_CONFIG['protocol'], str_replace('%domain%', $_CONFIG['domain'], $disallow_url));
+                    $disallow_url = str_replace('%protocol%', $_CONFIG['protocol'], str_replace('%domain%', $_SESSION['domain'], $disallow_url));
                     break;
                 }
 
@@ -547,12 +547,12 @@ function sitemap_scan_url($params, $scan_url, $recursive = true){
 
             foreach($urls[1] as $url){
                 if(strstr($url, '://')){
-                    if(str_until(str_from($url, '://'), '/') != $_CONFIG['domain']){
+                    if(str_until(str_from($url, '://'), '/') != $_SESSION['domain']){
                         /*
                          * This is a URL outside of our domain, skip
                          */
                         if($params['show_skip']){
-                            log_console(tr('Skipping URL "%url%", its outside our domain "%domain%"', array('%url%' => $url, '%domain%' => $_CONFIG['domain'])), 'skip', 'yellow');
+                            log_console(tr('Skipping URL "%url%", its outside our domain "%domain%"', array('%url%' => $url, '%domain%' => $_SESSION['domain'])), 'skip', 'yellow');
                         }
 
                         continue;

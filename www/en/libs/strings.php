@@ -340,8 +340,8 @@ function str_starts($source, $string){
  * Ensure that specified source string starts NOT with specified string
  */
 function str_starts_not($source, $string){
-    if(mb_substr($source, 0, mb_strlen($string)) == $string){
-        return mb_substr($source, mb_strlen($string));
+    while(mb_substr($source, 0, mb_strlen($string)) == $string){
+        $source = mb_substr($source, mb_strlen($string));
     }
 
     return $source;

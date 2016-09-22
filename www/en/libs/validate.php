@@ -336,7 +336,7 @@ class validate_form {
 
 
     /*
-     *
+     * Only allow alpha numeric characters
      */
     function isAlphaNumeric($value, $msg = null){
         if(!$value) return '';
@@ -353,7 +353,7 @@ class validate_form {
 
 
     /*
-     *
+     * Only allow a valid (unverified!) email address
      */
     function isValidEmail($value, $msg = null){
         $value = cfm($value);
@@ -371,7 +371,7 @@ class validate_form {
 
 
     /*
-     *
+     * Only allow numeric values (integers, floats, strings with numbers)
      */
     function isNumeric($value, $msg = null){
         if(!is_numeric($value)){
@@ -386,10 +386,10 @@ class validate_form {
 
 
     /*
-     *
+     * Only allow integer numbers 1 and up
      */
     function isNatural($value, $msg = null){
-        if(!is_numeric($value) or ($value < 0) or fmod($value, 1.0)){
+        if(!is_natural($value)){
             $this->setError($msg);
             return false;
 

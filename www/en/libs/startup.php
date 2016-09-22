@@ -17,7 +17,7 @@
 /*
  * Framework version
  */
-define('FRAMEWORKCODEVERSION', '0.32.0');
+define('FRAMEWORKCODEVERSION', '0.35.0');
 
 
 
@@ -314,7 +314,12 @@ try{
                         ini_set('session.save_handler', 'mm');
                     }
 
-                    session_set_cookie_params($_CONFIG['cookie']['lifetime'], $_CONFIG['cookie']['path'], $_CONFIG['cookie']['domain'], $_CONFIG['cookie']['secure'], $_CONFIG['cookie']['httponly']);
+
+
+                    /*
+                     * Set cookie
+                     */
+                    session_set_cookie_params($_CONFIG['cookie']['lifetime'], $_CONFIG['cookie']['path'], cfm($_SERVER['HTTP_HOST']), $_CONFIG['cookie']['secure'], $_CONFIG['cookie']['httponly']);
 
                     try{
                         session_start();
@@ -369,6 +374,76 @@ try{
                         }
                     }
 
+
+
+                    /*
+                     * Ensure we have domain information
+                     *
+                     * NOTE: This SHOULD be done before the session_start because
+                     * there we set a cookie to a possibly invalid domain BUT
+                     * if we do this before session_start(), then $_SESSION['domain']
+                     * does not yet exist, and we would perfom this check every page
+                     * load instead of just once every session.
+                     */
+                    if(empty($_SESSION['domain'])){
+                        /*
+                         * Check requested domain
+                         */
+                        $domain = cfm($_SERVER['HTTP_HOST']);
+
+                        switch(true){
+                            case ($_CONFIG['whitelabels']['enabled'] === false):
+                                /*
+                                 * white label domains are disabled, so the detected domain MUST match the configured domain
+                                 */
+                                if($domain !== $_CONFIG['domain']){
+                                    $domain = null;
+                                }
+
+                                break;
+
+                            case ($_CONFIG['whitelabels']['enabled'] === 'sub'):
+                                /*
+                                 * white label domains are disabled, but sub domains from the $_CONFIG[domain] are allowed
+                                 */
+// :TEST:
+                                $length = strlen('.'.$_CONFIG['domain']);
+
+                                if(substr($domain, -$length, $length) !== '.'.$_CONFIG['domain']){
+                                    $domain = null;
+                                }
+
+                                unset($length);
+                                break;
+
+                            case ($_CONFIG['whitelabels']['enabled'] === 'all'):
+                                /*
+                                 * Permit whichever domain
+                                 */
+                                break;
+
+                            default:
+                                /*
+                                 * Check the detected domain against the configured domain.
+                                 * If it doesnt match then check if its a registered whitelabel domain
+                                 */
+                                if($domain !== $_CONFIG['domain']){
+                                    $domain = sql_get('SELECT `domain` FROM `domains` WHERE `domain` = :domain AND `status` IS NULL', 'domain', array(':domain' => $_SERVER['HTTP_HOST']));
+                                }
+                        }
+
+                        if(!$domain){
+                            redirect($_CONFIG['protocol'].$_CONFIG['domain']);
+                        }
+
+                        $_SESSION['domain'] = $domain;
+                    }
+
+
+
+                    /*
+                     *
+                     */
                     $_SESSION['last_activity'] = time();
 
                     check_extended_session();

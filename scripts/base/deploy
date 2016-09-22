@@ -4,7 +4,7 @@
  * This is the project deploy script
  * See the help contents for more information
  *
- * @copyright Sven Oostenbrink <support@svenoostenbrink.com>, Johan Geuze
+ * @copyright Sven Oostenbrink <support@ingiga.com>, Johan Geuze
  */
 $usage = "./scripts/base/deploy ENVIRONMENT / all\n".
          "./scripts/base/deploy\n";
@@ -22,65 +22,70 @@ This is the project deploy script
 
 OPTIONS
 
---all / -a                        - Deploy all sub environments
+--all / -a                      - Deploy all sub environments
 
---ignore-changes / -i             - Ignore git status, don't check for
-                                    uncommitted changes
+--ignore-changes / -i           - Ignore git status, don't check for
+                                  uncommitted changes
 
---do-content / --do-content-check - Check content files
+--do-content-check              - Check content files
 
---do-syntax / --doparse           - Do PHP syntax check parse
+--do-syntax / --doparse         - Do PHP syntax check parse
 
---no-deploy / --test              - Do not deploy, only translate
+--no-deploy / --test            - Do not deploy, only translate
 
---no-hook / --no-hooks            - Do not execute hooks
+--no-hook / --no-hooks          - Do not execute hooks
 
---no-init                         - Do not execute an init on the target server
+--no-init                       - Do not execute an init on the target server
 
---no-notify                       - Do not send notifications
+--no-notify                     - Do not send notifications
 
---no-push                         - Do not automatically git push all changes
-                                    and tags
+--no-push                       - Do not automatically git push all changes
+                                  and tags
 
---no-parrallel                    - Do not use parrallel rsync deploy, even if
-                                    the website is configured to do so anyway
+--no-parrallel                  - Do not use parrallel rsync deploy, even if
+                                  the website is configured to do so anyway
 
---no-sitemap                      - Do not automatically reupdate the sitemap
-                                    files
+--no-sitemap                    - Do not automatically reupdate the sitemap
+                                  files
 
---no-tag / --no-tags              - Do not tag current version (tagging is
-                                    automatically disabled if doversion has
-                                    NOT been set)
+--no-tag / --no-tags            - Do not tag current version (tagging is
+                                  automatically disabled if doversion has
+                                  NOT been set)
 
---no-translate                    - Do not execute file translation
+--no-translate                  - Do not execute file translation
 
---no-bom-check                    - Do not test for BOM character in all
-                                    PHP files. The ByteOrderMark character is a
-                                    UTF8 character (added mostly by apple
-                                    machines) that indicates how to read the
-                                    UTF8 text, but is interpreted by the PHP as
-                                    a character before the <?php tag, which can
-                                    cause problems with headers(). The clearbom
-                                    script will strip the BOM characters and is
-                                    by default always executed on each deploy
-                                    to be sure no BOM characters end up in
-                                    production code. This option disables the
-                                    BOM check.
+--no-bom-check                  - Do not test for BOM character in all
+                                  PHP files. The ByteOrderMark character is a
+                                  UTF8 character (added mostly by apple
+                                  machines) that indicates how to read the
+                                  UTF8 text, but is interpreted by the PHP as
+                                  a character before the <?php tag, which can
+                                  cause problems with headers(). The clearbom
+                                  script will strip the BOM characters and is
+                                  by default always executed on each deploy
+                                  to be sure no BOM characters end up in
+                                  production code. This option disables the
+                                  BOM check.
 
---stash                           - Execute a \"git stash\" before and \"git
-                                    stash pop\" after deploy, in case the WT
-                                    contained changes
+--stash                         - Execute a \"git stash\" before and \"git
+                                  stash pop\" after deploy, in case the WT
+                                  contained changes
 
---up-version / --up-versions     - Update version (Does not do so by default)
+--up-version / --up-versions    - Update version (Does not do so by default)
 
+--update-content                - rsync the data/content path as well (Normally
+                                  always skipped)
 
--F --force                       - Force a deploy, even when it should be
-                                   stopped due to (for example) git changes
+--update-sitemap                - rsync the www/LANG/sitemap file as well
+                                  (Normally always skipped)
 
--C --nocolor                     - Do not use color in output
+-F --force                      - Force a deploy, even when it should be
+                                  stopped due to (for example) git changes
 
--T --test                        - Do not do anything, just test the flow of
-                                   the deploy
+-C --nocolor                    - Do not use color in output
+
+-T --test                       - Do not do anything, just test the flow of
+                                  the deploy
 
 
 
@@ -106,7 +111,7 @@ deploy_post_deploy
 deploy_post
 deploy_finish
 
-Copyright Sven Oostenbrink <support@svenoostenbrink.com>, Johan Geuze";
+Copyright Sven Oostenbrink <support@ingiga.com>, Johan Geuze";
 
 require_once(dirname(__FILE__).'/../../libs/startup.php');
 
@@ -139,6 +144,8 @@ $all            =  (cli_argument('--all')            or cli_argument('-a'));
 $ignore         =  (cli_argument('--ignore-changes') or cli_argument('-i'));
 $nocacheclear   =   cli_argument('--no-cache-clear');
 $notranslate    =   cli_argument('--no-translate');
+$update_content =   cli_argument('--update-content');
+$update_sitemap =   cli_argument('--update-sitemap');
 
 $notag          =  (cli_argument('--no-tag')        or cli_argument('--no-tags') or $noversion);
 $nopush         =   cli_argument('--no-push');
@@ -436,7 +443,7 @@ if($nopush){
  */
 if(!$noversion){
     cli_log(tr('Project version revision was updated, executing init script to update project database'), 'white');
-    passthru(ROOT.'script/base/init -e '.$target_environment, $exitcode);
+    passthru(ROOT.'script/base/init -E '.$target_environment, $exitcode);
 
     if($exitcode){
         throw new bException('System init failed with exit code "'.str_log($exitcode).'"', 'local_init');
@@ -576,12 +583,12 @@ foreach($targets as $target_environment){
 
     if($deploy_config['sudo']){
         if($deploy_config['sudo'] === true){
-            $sudo      = 'sudo -i ';
-            $sudo_user = 'sudo -i ';
+            $sudo      = 'export SHELL=/bin/bash; sudo -s ';
+            $sudo_user = 'export SHELL=/bin/bash; sudo -s ';
 
         }elseif(is_string($deploy_config['sudo'])){
-            $sudo      = 'sudo -i ';
-            $sudo_user = 'sudo -i -u '.$deploy_config['sudo'].' ';
+            $sudo      = 'export SHELL=/bin/bash; sudo -s ';
+            $sudo_user = 'export SHELL=/bin/bash; sudo -s -u '.$deploy_config['sudo'].' ';
 
         }else{
             throw new bException('Invalid sudo configuration ":configuration" found for target environment ":target". It should be either true, false, or an (existing) username string', array(':configuration' => $deploy_config['sudo'], ':target' => $target_environment));
@@ -752,9 +759,17 @@ foreach($targets as $target_environment){
         cli_log(tr('NOT deploying, due to "--no-deploy" or "--test" command line parameter'), 'yellow');
 
     }else{
-        $exclude = ' --exclude=*~ --exclude="data/mocks" --exclude="data/mock*" --exclude="data/uploads" --exclude="data/packages" --exclude=".git*" --exclude="/data/system" ';
+        $exclude = ' --exclude=*~ --exclude="data/mocks" --exclude="data/mock*" --exclude="data/uploads" --exclude="data/packages" --exclude=".git*" --exclude="/data/system"  --exclude="/data/tmp" ';
+
+        if(!$update_content){
+            $exclude .= ' --exclude="data/content" ';
+        }
 
         foreach($_CONFIG['language']['supported'] as $code => $language){
+            if(!$update_sitemap){
+                $exclude .= ' --exclude="www'.$language.'sitemap.html*" --exclude="www'.$language.'sitemap.xml*" --exclude="www'.$language.'mock" ';
+            }
+
             $exclude = ' --exclude="www'.$language.'sitemap.html*" --exclude="www'.$language.'sitemap.xml*" --exclude="www'.$language.'mock" ';
         }
 
@@ -790,10 +805,10 @@ foreach($targets as $target_environment){
         cli_log(tr('Executing structure fix'), 'white');
 
         if(!empty($deploy_config['rsync_parrallel'])){
-            passthru($command = 'ssh -t -p '.$target_port.' '.$deploy_config['target_user'].'@'.$deploy_config['target_server'].' \''.$sudo.$deploy_config['target_dir'].'/scripts/base/fix-structure -e '.$target_environment.' \'', $exitcode);
+            passthru($command = 'ssh -t -p '.$target_port.' '.$deploy_config['target_user'].'@'.$deploy_config['target_server'].' \''.$sudo.$deploy_config['target_dir'].'/scripts/base/fix-structure -E '.$target_environment.' \'', $exitcode);
 
         }else{
-            passthru($command = 'ssh -t -p '.$target_port.' '.$deploy_config['target_user'].'@'.$deploy_config['target_server'].' \''.$sudo.$deploy_config['target_dir'].'/scripts/base/fix-structure -e '.$target_environment.' \'', $exitcode);
+            passthru($command = 'ssh -t -p '.$target_port.' '.$deploy_config['target_user'].'@'.$deploy_config['target_server'].' \''.$sudo.$deploy_config['target_dir'].'/scripts/base/fix-structure -E '.$target_environment.' \'', $exitcode);
         }
 
         if($exitcode){
@@ -818,10 +833,10 @@ foreach($targets as $target_environment){
         cli_log(tr('Executing file permission fix'), 'white');
 
         if(!empty($deploy_config['rsync_parrallel'])){
-            passthru($command = 'ssh -t -p '.$target_port.' '.$deploy_config['target_user'].'@'.$deploy_config['target_server'].' \''.$sudo.$deploy_config['target_dir'].'/scripts/base/fix-permissions -e '.$target_environment.' \'', $exitcode);
+            passthru($command = 'ssh -t -p '.$target_port.' '.$deploy_config['target_user'].'@'.$deploy_config['target_server'].' \''.$sudo.$deploy_config['target_dir'].'/scripts/base/fix-permissions -E '.$target_environment.' \'', $exitcode);
 
         }else{
-            passthru($command = 'ssh -t -p '.$target_port.' '.$deploy_config['target_user'].'@'.$deploy_config['target_server'].' \''.$sudo.$deploy_config['target_dir'].'/scripts/base/fix-permissions -e '.$target_environment.' \'', $exitcode);
+            passthru($command = 'ssh -t -p '.$target_port.' '.$deploy_config['target_user'].'@'.$deploy_config['target_server'].' \''.$sudo.$deploy_config['target_dir'].'/scripts/base/fix-permissions -E '.$target_environment.' \'', $exitcode);
         }
 
         if($exitcode){
@@ -872,8 +887,7 @@ foreach($targets as $target_environment){
 
     }else{
         cli_log(tr('Executing init on target server with environment ":env"', array(':env' => $target_environment)), 'white');
-
-        passthru($command = 'ssh -t -p '.$target_port.' '.$deploy_config['target_user'].'@'.$deploy_config['target_server'].' \''.$sudo_user.$deploy_config['target_dir'].'/scripts/base/init -e '.$target_environment.' \'', $exitcode);
+        passthru($command = 'ssh -t -p '.$target_port.' '.$deploy_config['target_user'].'@'.$deploy_config['target_server'].' \''.$sudo.$deploy_config['target_dir'].'/scripts/base/init -E '.$target_environment.' \'', $exitcode);
 
         if($exitcode){
             throw new bException('Target version init failed with exit code "'.str_log($exitcode).'"', 'target_init');
@@ -896,7 +910,7 @@ foreach($targets as $target_environment){
     }else{
         cli_log(tr('Executing sitemap scan and deploy on target server'), 'white');
 
-        passthru($command = 'ssh -t -p '.$target_port.' '.$deploy_config['target_user'].'@'.$deploy_config['target_server'].' \''.$sudo_user.$deploy_config['target_dir'].'/scripts/base/sitemap scan -e '.$target_environment.' \'', $exitcode);
+        passthru($command = 'ssh -t -p '.$target_port.' '.$deploy_config['target_user'].'@'.$deploy_config['target_server'].' \''.$sudo_user.$deploy_config['target_dir'].'/scripts/base/sitemap scan -E '.$target_environment.' \'', $exitcode);
 
         if($exitcode){
             throw new bException('Target sitemap scan failed with exit code "'.str_log($exitcode).'"', 'target_sitemap_scan');
@@ -904,19 +918,19 @@ foreach($targets as $target_environment){
 
         if($_CONFIG['language']['supported']){
             foreach($_CONFIG['language']['supported'] as $language){
-                passthru($command = 'ssh -t -p '.$target_port.' '.$deploy_config['target_user'].'@'.$deploy_config['target_server'].' \''.$sudo_user.$deploy_config['target_dir'].'/scripts/base/sitemap deploy   html '.$language.' -e '.$target_environment.' \'', $exitcode);
+                passthru($command = 'ssh -t -p '.$target_port.' '.$deploy_config['target_user'].'@'.$deploy_config['target_server'].' \''.$sudo_user.$deploy_config['target_dir'].'/scripts/base/sitemap deploy   html '.$language.' -E '.$target_environment.' \'', $exitcode);
 
                 if($exitcode){
                     throw new bException('Target sitemap HTML build failed with exit code "'.str_log($exitcode).'"', 'target_sitemap_html');
                 }
 
-                passthru($command = 'ssh -t -p '.$target_port.' '.$deploy_config['target_user'].'@'.$deploy_config['target_server'].' \''.$sudo_user.$deploy_config['target_dir'].'/scripts/base/sitemap deploy    xml '.$language.' -e '.$target_environment.' \'', $exitcode);
+                passthru($command = 'ssh -t -p '.$target_port.' '.$deploy_config['target_user'].'@'.$deploy_config['target_server'].' \''.$sudo_user.$deploy_config['target_dir'].'/scripts/base/sitemap deploy    xml '.$language.' -E '.$target_environment.' \'', $exitcode);
 
                 if($exitcode){
                     throw new bException('Target sitemap XML build failed with exit code "'.str_log($exitcode).'"', 'target_sitemap_xml');
                 }
 
-                passthru($command = 'ssh -t -p '.$target_port.' '.$deploy_config['target_user'].'@'.$deploy_config['target_server'].' \''.$sudo_user.$deploy_config['target_dir'].'/scripts/base/sitemap deploy robots '.$language.' -e '.$target_environment.' \'', $exitcode);
+                passthru($command = 'ssh -t -p '.$target_port.' '.$deploy_config['target_user'].'@'.$deploy_config['target_server'].' \''.$sudo_user.$deploy_config['target_dir'].'/scripts/base/sitemap deploy robots '.$language.' -E '.$target_environment.' \'', $exitcode);
 
                 if($exitcode){
                     throw new bException('Target sitemap robots build failed with exit code "'.str_log($exitcode).'"', 'target_sitemap_robots');
@@ -953,7 +967,7 @@ foreach($targets as $target_environment){
     }else{
         cli_log(tr('Executing cache clear'), 'white');
 
-        passthru('ssh -t -p '.$target_port.' '.$deploy_config['target_user'].'@'.$deploy_config['target_server'].' \''.$sudo.$deploy_config['target_dir'].'/scripts/base/cache clear -e '.$target_environment.'\'', $exitcode);
+        passthru('ssh -t -p '.$target_port.' '.$deploy_config['target_user'].'@'.$deploy_config['target_server'].' \''.$sudo.$deploy_config['target_dir'].'/scripts/base/cache clear -E '.$target_environment.'\'', $exitcode);
 
         if($exitcode){
             throw new bException('Cache clear failed with exit code "'.str_log($exitcode).'"', 'cache clear');

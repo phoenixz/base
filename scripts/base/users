@@ -5,13 +5,13 @@
  */
 $usage = "./scripts/base/users list\n".
          "./scripts/base/users list [--with-right RIGHT] [-r RIGHT] \n".
-         "./scripts/base/users create --username USERNAME --name REALNAME --email EMAIL --password PASSWORD [--latitude LATITUDE] [--longitude LONGITUDE] [--status STATUS] [--type TYPE] [--redirect URL]\n".
-         "./scripts/base/users modify ID|USERNAME [--username USERNAME] [--name NAME] [--email EMAIL] [--latitude LATITUDE] [--longitude LONGITUDE] [--status STATUS] [--type TYPE] [--redirect URL] \n".
+         "./scripts/base/users create --username USERNAME --name REALNAME --email EMAIL --password PASSWORD [--latitude LATITUDE] [--longitude LONGITUDE] [--status STATUS] [--type TYPE] [--redirect URL] [--domain DOMAIN]\n".
+         "./scripts/base/users modify ID|USERNAME [--username USERNAME] [--name NAME] [--email EMAIL] [--latitude LATITUDE] [--longitude LONGITUDE] [--status STATUS] [--type TYPE] [--redirect URL] [--domain DOMAIN] \n".
          "./scripts/base/users password ID|USERNAME PASSWORD\n".
          "./scripts/base/users delete|undelete|erase ID|USERNAME ID|USERNAME ...\n".
          "./scripts/base/users whoami\n".
-         "./scripts/base/users setrole USERID|USERNAME ROLEID|ROLENAME\n".
-         "./scripts/base/users setrole --user USERID|USERNAME --role ROLEID|ROLENAME\n";
+         "./scripts/base/users set-role USERID|USERNAME ROLEID|ROLENAME\n".
+         "./scripts/base/users set-role --user USERID|USERNAME --role ROLEID|ROLENAME\n";
 
 $help  = "This is the users management script";
 
@@ -21,24 +21,25 @@ load_libs('user');
 
 switch(cli_method()){
     case 'create':
-        $user = cli_arguments('--name,--email,--username,--password,--latitude,--longitude,--status,--type,--role,--type,--redirect');
+        $user = cli_arguments('--name,--email,--username,--password,--latitude,--longitude,--status,--type,--role,--type,--redirect,--domain');
         $user = users_validate($user, array('validation_password' => false));
 
         cli_no_arguments_left();
 
-        sql_query('INSERT INTO `users` (`createdby`, `name`, `email`, `username`, `password`, `latitude`, `longitude`, `status`, `type`, `validated`, `redirect`)
-                   VALUES              (:createdby , :name , :email , :username , :password , :latitude , :longitude , :status , :type , :validated , :redirect )',
+        sql_query('INSERT INTO `users` (`createdby`, `name`, `email`, `username`, `password`, `latitude`, `longitude`, `status`, `type`, `validated`, `redirect`, `domain`)
+                   VALUES              (:createdby , :name , :email , :username , :password , :latitude , :longitude , :status , :type , :validated , :redirect , :domain )',
 
                    array(':createdby' => isset_get($_SESSION['user']['id']),
                          ':name'      => $user['name'],
                          ':email'     => $user['email'],
                          ':username'  => $user['username'],
-                         ':password'  => password($user['password']),
+                         ':password'  => get_hash($user['password'], $_CONFIG['security']['passwords']['hash']),
                          ':latitude'  => $user['latitude'],
                          ':longitude' => $user['longitude'],
                          ':status'    => $user['status'],
                          ':type'      => $user['type'],
                          ':redirect'  => $user['redirect'],
+                         ':domain'    => $user['domain'],
                          ':validated' => isset_get($user['validated'])));
 
 
@@ -52,7 +53,7 @@ switch(cli_method()){
             $v->setError(tr('No user specified'));
         }
 
-        $user = cli_arguments('--name,--email,--username,--latitude,--longitude,--redirect');
+        $user = cli_arguments('--name,--email,--username,--latitude,--longitude,--redirect,--domain');
         cli_no_arguments_left();
 
         /*
@@ -75,7 +76,8 @@ switch(cli_method()){
                                    `name`,
                                    `email`,
                                    `status`,
-                                   `redirect`
+                                   `redirect`,
+                                   `domain`
 
                             FROM   `users`
 
@@ -104,7 +106,8 @@ switch(cli_method()){
                                `username`  = :username,
                                `latitude`  = :latitude,
                                `longitude` = :longitude,
-                               `redirect`  = :redirect
+                               `redirect`  = :redirect,
+                               `domain`    = :domain
 
                         WHERE  `id`        = :id',
 
@@ -114,6 +117,7 @@ switch(cli_method()){
                               ':latitude'  => $user['latitude'],
                               ':longitude' => $user['longitude'],
                               ':redirect'  => $user['redirect'],
+                              ':domain'    => $user['domain'],
                               ':id'        => $db_user['id']));
 
         if(!$r->rowCount()){
@@ -125,9 +129,9 @@ switch(cli_method()){
 
         break;
 
-    case 'giverole':
+    case 'give-role':
         // FALLTHROUGH
-    case 'setrole':
+    case 'set-role':
         load_libs('roles');
 
         /*
@@ -422,7 +426,7 @@ switch(cli_method()){
         cli_no_arguments_left();
 
         $pass = user_test_password($pass);
-        $pass = password($pass);
+        $pass = get_hash($pass, $_CONFIG['security']['passwords']['hash']);
 
         $r    = sql_query('UPDATE `users`
 

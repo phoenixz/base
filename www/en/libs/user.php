@@ -137,6 +137,9 @@ function user_authenticate($username, $password, $columns = '*') {
     global $_CONFIG;
 
     try{
+        /*
+         * Data validation and get user data
+         */
         if(!is_scalar($username)){
             throw new bException('user_authenticate(): Specified username is not valid', 'invalid');
         }
@@ -152,6 +155,11 @@ function user_authenticate($username, $password, $columns = '*') {
             throw new bException(tr('user_authenticate(): Specified user has status ":status" and cannot be authenticated', array(':status' => $user['status'])), 'inactive');
         }
 
+
+
+        /*
+         * User with "type" not null are special users that are not allowed to sign in
+         */
         if(!empty($user['type'])){
             /*
              * This check will only do anything if the users table contains the "type" column. If it doesn't, nothing will ever happen here, really
@@ -160,33 +168,39 @@ function user_authenticate($username, $password, $columns = '*') {
             throw new bException(tr('user_authenticate(): Specified user has status ":type" and cannot be authenticated', array(':type' => $user['type'])), 'type');
         }
 
+
+
+        /*
+         * Compare user password
+         */
         if(substr($user['password'], 0, 1) != '*'){
             /*
-             * No encryption method specified, user default SHA1
+             * No encryption method specified, assume SHA1
              */
-            $encryption = 'sha1';
+            $algorithm = 'sha256';
 
         }else{
-            $encryption = str_cut($user['password'], '*', '*');
+            $algorithm = str_cut($user['password'], '*', '*');
         }
 
-        switch($encryption){
-            case 'sha1':
-                $encryption = sha1(SEED.$password);
-                break;
+        try{
+            $password = get_hash($password, $algorithm, false);
 
-            case 'sha256':
-                $encryption = sha256(SEED.$password);
-                break;
+        }catch(Exception $e){
+            switch($e->getCode()){
+                case 'unknown-algorithm':
+                    throw new bException(tr('user_authenticate(): User ":name" has an unknown algorithm ":algorithm" specified', array(':user' => name($user), ':algorithm' => $algorithm)), $e);
 
-            default:
-                throw new bException(tr('user_authenticate(): Unknown encryption type ":type" in user password specification', array(':type' => str_log($encryption))), 'unknown');
+                default:
+                    throw new bException(tr('user_authenticate(): Password hashing failed for user ":name"', array(':user' => name($user))), $e);
+            }
         }
 
-        if($encryption != str_rfrom($user['password'], '*')){
+        if($password != str_rfrom($user['password'], '*')){
             log_database(tr('user_authenticate(): Specified password does not match stored password for user ":username"', array(':username' => $username)), 'authentication/failed');
             throw new bException(tr('user_authenticate(): Specified password does not match stored password'), 'password');
         }
+
 
 
         /*
@@ -195,6 +209,19 @@ function user_authenticate($username, $password, $columns = '*') {
         if($_CONFIG['security']['signin']['ip_lock'] and (PLATFORM == 'http')){
             include(dirname(__FILE__).'/handlers/user_ip_lock.php');
         }
+
+
+
+        /*
+         * Check if authentication for this user is limited to a specific domain
+         */
+        if(($_CONFIG['whitelabels']['enabled'] === true) and $user['domain']){
+            if($user['domain'] !== $_SERVER['HTTP_HOST']){
+                throw new bException(tr('user_autohenticate(): User ":name" is limited to authenticate only in domain ":domain"', array(':name' => name($user), ':domain' => $user['domain'])), 'domain-limit');
+            }
+        }
+
+
 
         /*
          * Use two factor authentication, the user has to authenticate by SMS as well
@@ -214,6 +241,11 @@ function user_authenticate($username, $password, $columns = '*') {
             return $user;
         }
 
+        /*
+         * Wait a little bit so the authentication failure cannot be timed, and
+         * library attacks will be harder
+         */
+        usleep(mt_rand(1000, 200000));
         log_database(tr('user_authenticate(): Authenticated user ":username"', array(':username' => $username)), 'authentication/success');
 
         $user['authenticated'] = true;
@@ -221,12 +253,17 @@ function user_authenticate($username, $password, $columns = '*') {
 
     }catch(Exception $e){
         /*
-         * Wait a little bit so the authentication failure cannot be timed
+         * Wait a little bit so the authentication failure cannot be timed, and
+         * library attacks will be harder
          */
         usleep(mt_rand(1000, 2000000));
 
         if($e->getCode() == 'password'){
-            if($date = sql_get('SELECT `createdon` FROM `passwords` WHERE `users_id` = :users_id AND `password` = :password', 'id', array(':users_id' => isset_get($user['id']), ':password' => isset_get($encryption)))){
+            /*
+             * Password match failed. Check old passwords table to see if
+             * perhaps the user used an old password
+             */
+            if($date = sql_get('SELECT `createdon` FROM `passwords` WHERE `users_id` = :users_id AND `password` = :password', 'id', array(':users_id' => isset_get($user['id']), ':password' => isset_get($password)))){
                 $date = new DateTime($date);
                 throw new bException('user_authenticate(): Your password was updated on "'.str_log($date->format($_CONFIG['formats']['human_date'])).'"', 'oldpassword');
             }
@@ -263,15 +300,17 @@ function user_signin($user, $extended = false, $redirect = null, $html_flash = n
          * Shell signin requires neither
          */
         if((PLATFORM == 'http') and (empty($_COOKIE) or !session_id())){
-            throw new bException('user_signin(): This user has no active session or no session id, so probably has no cookies', 'cookiesrequired');
+            throw new bException('user_signin(): This user has no active session or no session id, so probably has no cookies', 'cookies-required');
         }
 
         if(session_status() == PHP_SESSION_ACTIVE){
             /*
              * Reset session data
              */
-            session_destroy();
-            session_start();
+            if($_CONFIG['security']['signin']['destroy_session']){
+                session_destroy();
+                session_start();
+            }
         }
 
         /*
@@ -363,7 +402,7 @@ function user_create_extended_session($users_id) {
         /*
          * Create new code
          */
-        $code = sha1($users_id.'-'.uniqid($_CONFIG['domain'], true).'-'.time());
+        $code = sha1($users_id.'-'.uniqid($_SESSION['domain'], true).'-'.time());
 
         //remove old entries
         if($_CONFIG['sessions']['extended']['clear'] != false) {
@@ -451,31 +490,6 @@ function user_signup($params){
             throw new bException(tr('user_signup(): Please specify a password'), 'not-specified');
         }
 
-// :DELETE: This validation is already done (better) in user_validate();
-        //$dbuser = sql_get('SELECT `id`,
-        //                          `username`,
-        //                          `email`
-        //
-        //                   FROM   `users`
-        //
-        //                   WHERE  `username` = :username
-        //                   OR     `email`    = :email',
-        //
-        //                   array(':username' => isset_get($params['username']),
-        //                         ':email'    => $params['email']));
-        //
-        //if($dbuser){
-        //    if(!empty($dbuser['email']) and !empty($dbuser['username'])){
-        //        throw new bException(tr('user_signup(): User with username ":name" or email ":email" already exists', array(':name' => str_log(isset_get($params['username'])), ':email' => str_log(isset_get($params['email'])))), 'exists');
-        //
-        //    }elseif(!empty($dbuser['email'])){
-        //        throw new bException(tr('user_signup(): User with email ":email" already exists', array(':email' => str_log(isset_get($params['email'])))), 'exists');
-        //
-        //    }else{
-        //        throw new bException(tr('user_signup(): User with username ":name" already exists', array(':name' => str_log(isset_get($params['username'])))), 'exists');
-        //    }
-        //}
-
         sql_query('INSERT INTO `users` (`status`, `createdby`, `username`, `password`, `name`, `email`, `roles_id`, `role`)
                    VALUES              (:status , :createdby , :username , :password , :name , :email , :roles_id , :role )',
 
@@ -483,7 +497,7 @@ function user_signup($params){
                          ':username'  => get_null(isset_get($params['username'])),
                          ':status'    => isset_get($params['status']),
                          ':name'      => isset_get($params['name']),
-                         ':password'  => ((isset_get($params['status']) === 'new') ? '' : password($params['password'])),
+                         ':password'  => ((isset_get($params['status']) === 'new') ? '' : get_hash($params['password'], $_CONFIG['security']['passwords']['hash'])),
                          ':email'     => get_null(isset_get($params['email'])),
                          ':role'      => get_null(isset_get($params['role'])),
                          ':roles_id'  => get_null(isset_get($params['roles_id']))));
@@ -584,6 +598,8 @@ function user_signup($params){
  * admin user updating the users password
  */
 function user_update_password($params, $current = true){
+    global $_CONFIG;
+
     try{
         array_params($params);
         array_default($params, 'validated'             , false);
@@ -635,7 +651,7 @@ function user_update_password($params, $current = true){
         /*
          * Prepare new password
          */
-        $password = password($params['password']);
+        $password = get_hash($params['password'], $_CONFIG['security']['passwords']['hash']);
 
         $r = sql_query('UPDATE `users`
 
@@ -699,7 +715,8 @@ function user_get($user = null, $columns = '*'){
 
                                    FROM   `users`
 
-                                   WHERE  `id` = :id',
+                                   WHERE  `id` = :id
+                                   AND    `status` IS NULL',
 
                                    array(':id' => $user));
 
@@ -709,19 +726,11 @@ function user_get($user = null, $columns = '*'){
                                    FROM   `users`
 
                                    WHERE  `email`    = :email
-                                   OR     `username` = :username',
+                                   OR     `username` = :username
+                                   AND    `status` IS NULL',
 
                                    array(':email'    => $user,
                                          ':username' => $user));
-            }
-
-            if(!$retval){
-                if(!$auto_create){
-                    throw new bException(tr('user_get(): Specified user ":user" does not exist', array(':user' => $user)), 'not-exist');
-                }
-
-                $id = user_signup(array('status' => 'new'));
-                return user_get($id, $columns);
             }
 
         }else{
@@ -842,9 +851,14 @@ function user_load_rights($user){
             $user = isset_get($user['id']);
         }
 
-        return sql_list('SELECT `name`, `name` AS `right`
+        return sql_list('SELECT `name`,
+                                `name` AS `right`
+
                          FROM   `users_rights`
-                         WHERE  `users_id` = :users_id', array(':users_id' => $user));
+
+                         WHERE  `users_id` = :users_id',
+
+                         array(':users_id' => $user));
 
     }catch(Exception $e){
         throw new bException('user_load_rights(): Failed', $e);
@@ -855,36 +869,10 @@ function user_load_rights($user){
 
 /*
  * Make the current session the specified user
+ * NOTE: Since this function is rarely used, it it implemented by a handler
  */
 function user_switch($username, $redirect = '/'){
-    try{
-        /*
-         * Does the specified user exist?
-         */
-        if(!$user = sql_get('SELECT *, `email` FROM `users` WHERE `name` = :name', array(':name' => $username))){
-            throw new bException('user_switch(): The specified user "'.str_log($username).'" does not exist', 'usernotexist');
-        }
-
-        /*
-         * Switch the current session to the new user
-         */
-        $_SESSION['user'] = $user;
-
-        /*
-         * Store last login
-         */
-        sql_query('UPDATE `users` SET `last_signin` = DATE(NOW()) WHERE `id` = '.cfi($user['id']).';');
-
-        html_flash_set(tr('You are now the user ":user"', array(':user' => $user['name'])), 'success');
-        html_flash_set(tr('NOTICE: You will now be limited to the access level of user ":user"', array(':user' => $user['name'])), 'warning');
-
-        if($redirect){
-            redirect($redirect);
-        }
-
-    }catch(Exception $e){
-        throw new bException('user_switch(): Failed', $e);
-    }
+    include(dirname(__FILE__).'/handlers/user_switch.php');
 }
 
 
@@ -1045,6 +1033,9 @@ function user_password_strength($password, $check_banned = true){
             $strength += 20;
 
         }elseif($length >= 12){
+            $strength += 15;
+
+        }elseif($length >= 8){
             $strength += 10;
         }
 
@@ -1087,7 +1078,7 @@ function user_password_strength($password, $check_banned = true){
         $strength = floor(($strength / 10) + 1);
 
         if($strength < 4){
-            throw new bException(tr('user_password_strength(): The specified password is too weak, please use a better password. Use more characters, add numbers, special characters, caps characters, etc. On a scale of 1-10, current strength is ":strength"', array(':strength' => $strength)), 'weak-password');
+            throw new bException(tr('user_password_strength(): The specified password is too weak, please use a better password. Use more characters, add numbers, special characters, caps characters, etc. On a scale of 1-10, current strength is ":strength"', array(':strength' => $strength)), 'weak');
         }
 
         return $strength;
@@ -1106,7 +1097,7 @@ function user_password_banned($password){
     global $_CONFIG;
 
     try{
-        if(($password == $_CONFIG['domain']) or ($password == str_until($_CONFIG['domain'], '.'))){
+        if(($password == $_SESSION['domain']) or ($password == str_until($_SESSION['domain'], '.'))){
             throw new bException(tr('user_password_banned(): The default password is not allowed to be used'), 'short-password');
         }
 
@@ -1120,7 +1111,8 @@ function user_password_banned($password){
 
 
 /*
- *
+ * Validate the specified user. Validations is done in sections, and sections
+ * can be disabled if needed
  */
 function user_validate($user, $sections = array()){
     global $_CONFIG;
@@ -1131,26 +1123,39 @@ function user_validate($user, $sections = array()){
         array_default($sections, 'role'               , true);
 
         load_libs('validate');
-        $v = new validate_form($user, 'name,username,email,password,password2,redirect,description,role,roles_id,commentary,gender,latitude,longitude,language,country,fb_id,fb_token,gp_id,gp_token,ms_id,ms_token_authentication,ms_token_access,tw_id,tw_token,yh_id,yh_token,status,validated,avatar,phones,type');
+        $v = new validate_form($user, 'name,username,email,password,password2,redirect,description,role,roles_id,commentary,gender,latitude,longitude,language,country,fb_id,fb_token,gp_id,gp_token,ms_id,ms_token_authentication,ms_token_access,tw_id,tw_token,yh_id,yh_token,status,validated,avatar,phones,type,domain');
 
         $user['email2'] = $user['email'];
         $user['terms']  = true;
 
-        if(!$user['username'] and !$user['email']){
-            if($v->isNotEmpty  ($user['email'], tr('Please provide at least an email or username')));
+        if($user['domain']){
+            $user['domain'] = trim(strtolower($user['domain']));
+            if($v->isRegex($user['domain'], '/[a-z.]/', tr('Please provide a valid domain name')));
+
+            /*
+             * Does the domain exist?
+             */
+            $exist = sql_get('SELECT `domain` FROM `domains` WHERE `domain` = :domain', array(':domain' => $user['domain']));
+
+            if(!$exist){
+                $v->setError(tr('The specified domain ":domain" does not exist', array(':domain' => $user['domain'])));
+            }
         }
 
-        if($user['email']){
-            $v->isValidEmail($user['email'], tr('Please provide a valid email address'));
-        }
+        if(!$user['username']){
+            if(!$user['email']){
+                $v->setError(tr('Please provide at least an email or username'));
 
+            }else{
+                $v->isValidEmail($user['email'], tr('Please provide a valid email address'));
+            }
 
-        if($user['username']){
-            $v->isAlphaNumeric($user['username'] , tr('Please provide a valid username, it can only contain letters and numbers'));
+        }else{
+            $v->isAlphaNumeric($user['username'], tr('Please provide a valid username, it can only contain letters and numbers'));
         }
 
         if($user['name']){
-            $v->hasMinChars ($user['name'] , 2, tr('Please ensure that the real name has a minimum of 2 characters'));
+            $v->hasMinChars($user['name'], 2, tr('Please ensure that the real name has a minimum of 2 characters'));
         }
 
         if($sections['role']){
@@ -1195,22 +1200,39 @@ function user_validate($user, $sections = array()){
                 $v->setError(tr('Please specify a password'));
 
             }else{
-                $v->hasMinChars($user['password'], 8, tr('Please ensure that the password has a minimum of 8 characters'));
+                /*
+                 * Check password strength
+                 */
+                if($sections['validation_password']){
+                    if($user['password'] === $user['password2']){
+                        try{
+                            $strength = user_password_strength($user['password']);
 
+                        }catch(Exception $e){
+                            if($e->getCode() !== 'weak'){
+                                /*
+                                 * Erw, something went really wrong!
+                                 */
+                                throw $e;
+                            }
+
+                            $v->setError(tr('The specified password is too weak and not accepted'));
+                        }
+
+                    }else{
+                        $v->setError(tr('Please ensure that the password and validation password match'));
+                    }
+                }
             }
         }
 
-        if($sections['validation_password']){
-            $v->isEqual($user['password'], $user['password2'], tr('Please ensure that the password and validation password match'));
-        }
-
         /*
-         * Ensure that the username and email are not in use
+         * Ensure that the username and or email are not in use
          */
-        $query = 'SELECT `email`,
-                         `username`
+        $query   = 'SELECT `email`,
+                           `username`
 
-                  FROM   `users`';
+                    FROM   `users`';
 
         $where   = array();
         $execute = array();
@@ -1240,8 +1262,9 @@ function user_validate($user, $sections = array()){
         if($exists){
             if($user['username'] and ($exists['username'] == $user['username'])){
                 $v->setError(tr('The username ":username" is already in use by another user', array(':username' => str_log($user['username']))));
+            }
 
-            }else{
+            if($user['email'] and ($exists['email'] == $user['email'])){
                 $v->setError(tr('The email ":email" is already in use by another user', array(':email' => str_log($user['email']))));
             }
         }
@@ -1279,7 +1302,9 @@ function user_validate($user, $sections = array()){
                                `phones`,
                                `username`
 
-                        FROM   `users` WHERE';
+                        FROM   `users`
+
+                        WHERE';
 
             foreach($execute as $key => $value){
                 $where[] = '`phones` LIKE '.$key;

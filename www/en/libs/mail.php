@@ -50,10 +50,10 @@ function mail_send_templated_email($params, $subject, $body, $language = false, 
             //}
         }
 
-        $defaults = array('reply_to_name'  => ucfirst($_CONFIG['domain']),
-                          'reply_to_email' => 'noreply@'.$_CONFIG['domain'],
-                          'from_name'      => ucfirst($_CONFIG['domain']),
-                          'from_email'     => 'noreply@'.$_CONFIG['domain']);
+        $defaults = array('reply_to_name'  => ucfirst($_SESSION['domain']),
+                          'reply_to_email' => 'noreply@'.$_SESSION['domain'],
+                          'from_name'      => ucfirst($_SESSION['domain']),
+                          'from_email'     => 'noreply@'.$_SESSION['domain']);
 
         $params   = array_merge($defaults, $params);
 
@@ -78,8 +78,8 @@ function mail_send_templated_email($params, $subject, $body, $language = false, 
                           mail_trace($params['to_email']),
                           $params['to_name'],
                           $body,
-                          '<a href="http://'.$_CONFIG['domain'].'/unsubscribe.php?email='.$params['to_email'].'">'.tr('Unsubscribe').'</a>',
-                          $_CONFIG['domain'],
+                          '<a href="http://'.$_SESSION['domain'].'/unsubscribe.php?email='.$params['to_email'].'">'.tr('Unsubscribe').'</a>',
+                          $_SESSION['domain'],
                           $_CONFIG['name'],
                           ENVIRONMENT,
                           $params['to_email']);
@@ -109,7 +109,7 @@ function mail_headers($headers = array()) {
 
         $defaults = array('MIME-Version' => '1.0',
                           'Content-type' => 'text/html; charset=UTF-8',
-                          'From'         => str_capitalize($_CONFIG['domain']).' <noreply@'.$_CONFIG['domain'].'>');
+                          'From'         => str_capitalize($_SESSION['domain']).' <noreply@'.$_SESSION['domain'].'>');
 
         $headers  = array_merge($defaults, $headers);
         $string   = '';

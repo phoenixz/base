@@ -283,6 +283,10 @@ function sql_init($connector = 'core'){
             throw new bException(tr('sql_init(): No connector specified'), 'not-specified');
         }
 
+        if(!is_string($connector)){
+            throw new bException(tr('sql_init(): Invalid connector ":connector" specified', array(':connector' => $connector)), 'invalid');
+        }
+
         $connector = sql_connector_name($connector);
 
         if(!empty($GLOBALS['sql_'.$connector])){
@@ -898,15 +902,39 @@ function sql_fetch_column($r, $column){
 
 
 /*
- * Merge database entry with new posted entry, overwriting the old DB values, while skipping the values specified in $filter
+ * Merge database entry with new posted entry, overwriting the old DB values,
+ * while skipping the values specified in $filter
  */
 function sql_merge($db, $post, $skip = null){
     try{
         if($skip === null){
-            $skip = 'status';
+            $skip = 'id,status';
         }
 
-        $post = array_remove($post, 'id,'.str_force($skip));
+        if(!is_array($db)){
+            if($db !== null){
+                throw new bException(tr('sql_merge(): Specified database source data type should be an array but is a ":type"', array(':type' => gettype($db))), 'invalid');
+            }
+
+            /*
+             * Nothing to merge
+             */
+            $db = array();
+        }
+
+        if(!is_array($post)){
+            if($post !== null){
+                throw new bException(tr('sql_merge(): Specified post source data type should be an array but is a ":type"', array(':type' => gettype($post))), 'invalid');
+            }
+
+            /*
+             * Nothing to merge
+             */
+            $post = array();
+        }
+
+        $post = array_remove($post, $skip);
+
         return array_merge($db, $post);
 
     }catch(Exception $e){
@@ -974,6 +1002,59 @@ function sql_null($value){
     }
 
     return ' = ';
+}
+
+
+
+/*
+ * NOTE: Use only on huge tables (> 1M rows)
+ *
+ * Return table row count by returning results count for SELECT `id`
+ * Results will be cached in a counts table
+ */
+function sql_count($table, $where = '', $execute = null, $column = 'id'){
+    global $_CONFIG;
+
+    try{
+        load_config('sql_large');
+
+        $expires = $_CONFIG['sql_large']['cache']['expires'];
+        $hash    = hash('sha1', $table.$where.$column.json_encode($execute));
+        $count   = sql_get('SELECT `count` FROM `counts` WHERE `hash` = :hash AND `until` > NOW()', 'count', array(':hash' => $hash));
+
+        if($count){
+            return $count;
+        }
+
+
+
+        /*
+         * Count value was not found cached, count it directly
+         */
+        $count = sql_query('SELECT '.$column.' FROM '.$table.' '.$where, $execute);
+        $count = $count->rowCount();
+
+        sql_query('INSERT INTO `counts` (`createdby`, `count`, `hash`, `until`)
+                   VALUES               (:createdby , :count , :hash , NOW() + INTERVAL :expires SECOND)
+
+                   ON DUPLICATE KEY UPDATE `count`      = :update_count,
+                                           `modifiedon` = NOW(),
+                                           `modifiedby` = :update_modifiedby,
+                                           `until`      = NOW() + INTERVAL :update_expires SECOND',
+
+                   array(':createdby'         => isset_get($_SESSION['user']['id']),
+                         ':hash'              => $hash,
+                         ':count'             => $count,
+                         ':expires'           => $expires,
+                         ':update_expires'    => $expires,
+                         ':update_modifiedby' => isset_get($_SESSION['user']['id']),
+                         ':update_count'      => $count));
+
+        return $count;
+
+    }catch(Exception $e){
+        throw new bException('sql_count(): Failed', $e);
+    }
 }
 
 

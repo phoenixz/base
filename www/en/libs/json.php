@@ -42,38 +42,37 @@ function json_encode_custom($source = false){
             }
 
             if(is_string($source)){
-                static $jsonReplaces = array(array("\\", "/", "\n", "\t", "\r", "\b", "\f", '"'), array('\\\\', '\\/', '\\n', '\\t', '\\r', '\\b', '\\f', '\"'));
-                return '"'.str_replace($jsonReplaces[0], $jsonReplaces[1], $source).'"';
+                static $json_replaces = array(array("\\", "/", "\n", "\t", "\r", "\b", "\f", '"'), array('\\\\', '\\/', '\\n', '\\t', '\\r', '\\b', '\\f', '\"'));
+                return '"'.str_replace($json_replaces[0], $json_replaces[1], $source).'"';
             }
 
             return $source;
         }
 
-        $isList = true;
+        $is_list = true;
 
         for($i = 0, reset($source); $i < count($source); $i++, next($source)){
             if(key($source) !== $i){
-                $isList = false;
+                $is_list = false;
                 break;
             }
         }
 
         $result = array();
 
-        if($isList){
+        if($is_list){
             foreach ($source as $v){
                 $result[] = json_encode_custom($v);
             }
 
             return '['.join(',', $result).']';
-
-        }else{
-            foreach ($source as $k => $v){
-                $result[] = json_encode_custom($k).':'.json_encode_custom($v);
-            }
-
-            return '{'.join(',', $result).'}';
         }
+
+        foreach ($source as $k => $v){
+            $result[] = json_encode_custom($k).':'.json_encode_custom($v);
+        }
+
+        return '{'.join(',', $result).'}';
 
     }catch(Exception $e){
         throw new bException('json_encode_custom(): Failed', $e);
