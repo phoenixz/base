@@ -152,12 +152,13 @@ $_CONFIG['feedback']           = array('emails'           => array('Sven Oostenb
 $_CONFIG['flash']              = array('html'             => '<div class="flash:type">:message</div>');
 
 //
-$_CONFIG['formats']            = array('date'             => 'Ymd',
+$_CONFIG['formats']            = array('force1224'        => '24',
+                                       'date'             => 'Ymd',
                                        'time'             => 'YmdHis',
                                        'human_date'       => 'd/m/Y',
                                        'human_time'       => 'H:i:s A',
                                        'human_datetime'   => 'd/m/Y H:i:s A',
-                                       'human_nice_date'  => 'l, F d Y');
+                                       'human_nice_date'  => 'l, j F Y');
 
 // Filesystem configuration
 $_CONFIG['fs']                 = array('system_tempdir'   => true,                                          // ?

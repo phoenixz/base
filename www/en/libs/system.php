@@ -1421,14 +1421,34 @@ function system_date_format($date = null, $requested_format = 'human_datetime'){
         }
 
         /*
+         * Force 12 or 24 hour format?
+         */
+        switch($_CONFIG['formats']['force1224']){
+            case false:
+                break;
+
+            case '12':
+                $format = str_replace('g', 'H', $format).' a';
+                break;
+
+            case '24':
+                $format = str_replace('H', 'g', $format);
+                break;
+
+            default:
+                throw new bException(tr('system_date_format(): Invalid force1224 hour format ":format" specified. Must be either false, "12", or "24". See $_CONFIG[formats][force1224]', array(':format' => $_CONFIG['formats']['force1224'])), 'invalid');
+        }
+
+        /*
          * Format
          */
         $date   = new DateTime($date);
         return $date->format($format);
 
     }catch(Exception $e){
+showdie($e);
         if(!isset($_CONFIG['formats'][$requested_format]) and ($requested_format != 'mysql')){
-            throw new bException('system_date_format(): Unknown format "'.str_log($requested_format).'" specified', 'unknown');
+            throw new bException(tr('system_date_format(): Unknown format ":format" specified', array(':format' => $requested_format)), 'unknown');
         }
 
         if(isset($format)){

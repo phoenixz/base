@@ -159,6 +159,8 @@ function blogs_post_get($post = null, $blog = null, $columns = null){
                         `blogs_posts`.`category1`,
                         `blogs_posts`.`seocategory2`,
                         `blogs_posts`.`category2`,
+                        `blogs_posts`.`seocategory3`,
+                        `blogs_posts`.`category3`,
                         `blogs_posts`.`keywords`,
                         `blogs_posts`.`seokeywords`,
                         `blogs_posts`.`featured_until`,
@@ -236,10 +238,12 @@ function blogs_post_update($post, $params = null){
                             `modifiedon`     = NOW(),
                             `featured_until` = :featured_until,
                             `parents_id`     = :parents_id,
-                            `category`       = :category,
-                            `seocategory`    = :seocategory,
-                            `group`          = :group,
-                            `seogroup`       = :seogroup,
+                            `category1`      = :category1,
+                            `seocategory1`   = :seocategory1,
+                            `category2`      = :category2,
+                            `seocategory2`   = :seocategory2,
+                            `category3`      = :category3,
+                            `seocategory3`   = :seocategory3,
                             `priority`       = :priority,
                             `language`       = :language,
                             `keywords`       = :keywords,
@@ -258,10 +262,12 @@ function blogs_post_update($post, $params = null){
                            ':parents_id'     => isset_get($post['parents_id']),
                            ':modifiedby'     => isset_get($_SESSION['user']['id']),
                            ':featured_until' => $post['featured_until'],
-                           ':category'       => $post['category'],
-                           ':seocategory'    => $post['seocategory'],
-                           ':group'          => $post['group'],
-                           ':seogroup'       => $post['seogroup'],
+                           ':category1'      => $post['category1'],
+                           ':seocategory1'   => $post['seocategory1'],
+                           ':category2'      => $post['category2'],
+                           ':seocategory2'   => $post['seocategory2'],
+                           ':category3'      => $post['category3'],
+                           ':seocategory3'   => $post['seocategory3'],
                            ':priority'       => $post['priority'],
                            ':language'       => $post['language'],
                            ':keywords'       => $post['keywords'],
@@ -815,6 +821,20 @@ function blogs_validate($blog){
 
         $v->isNotEmpty($blog['name'], tr('Please provide a name for your blog'));
 
+        if($blog['id']){
+            if(sql_get('SELECT `id` FROM `blogs` WHERE `name` = :name AND `id` != :id', array(':id' => $blog['id'], ':name' => $blog['name']), 'id')){
+                /*
+                 * Another category with this name already exists in this blog
+                 */
+                $v->setError(tr('A blog with the name ":blog" already exists', array(':blog' => $blog['name'])));
+            }
+
+        }else{
+            if(sql_get('SELECT `id` FROM `blogs` WHERE `name` = :name', 'id', array(':name' => $blog['name']))){
+                $v->setError(tr('A blog with the name ":blog" already exists', array(':blog' => $blog['name'])));
+            }
+        }
+
         $v->isValid();
 
         $blog['seoname'] = seo_unique($blog['name'], 'blogs', $blog['id']);
@@ -865,28 +885,26 @@ function blogs_validate_category($category, $blog){
             $category['parents_id'] = $parent['id'];
         }
 
-        if(!$v->isValid()) {
-           throw new bException(str_force($v->getErrors(), ', '), 'errors');
-
-        }
+        $v->isValid();
 
         if($category['id']){
             if(sql_get('SELECT `id` FROM `blogs_categories` WHERE `blogs_id` = :blogs_id AND `name` = :name AND `id` != :id', array(':blogs_id' => $blog['id'], ':id' => $category['id'], ':name' => $category['name']), 'id')){
                 /*
                  * Another category with this name already exists in this blog
                  */
-                throw new bException(tr('A category with the name "%category%" already exists in the blog "%blog%"', array('%category%', '%blog%'), array($category['name'], $blog['name'])), 'exists');
+                $v->setError(tr('A category with the name ":category" already exists in the blog ":blog"', array(':category' => $category['name'], ':blog' => $blog['name'])));
             }
 
         }else{
             if(sql_get('SELECT `id` FROM `blogs_categories` WHERE `blogs_id` = :blogs_id AND `name` = :name', 'id', array(':blogs_id' => $blog['id'], ':name' => $category['name']))){
-                throw new bException('A category with the name "'.str_log($category['name']).'" already exists', 'exists');
+                $v->setError(tr('A category with the name ":category" already exists in the blog ":blog"', array(':category' => $category['name'], ':blog' => $blog['name'])));
             }
         }
 
+
         if($category['assigned_to']){
-            if(!$category['assigned_to_id'] = sql_get('SELECT `id` FROM `users` WHERE `name` = :name', 'id', array(':name' => $category['assigned_to']))){
-                throw new bException('The specified user "'.str_log($category['assigned_to']).'" does not exist', 'not-exist');
+            if(!$category['assigned_to_id'] = sql_get(' SELECT `id` FROM `users` WHERE `username` = :username OR `email` = :email', 'id', array(':username' => $category['assigned_to'], ':email' => $category['assigned_to']))){
+                $v->setError(tr('The specified user ":user" does not exist', array(':user' => $category['assigned_to'])));
             }
 
         }else{
@@ -896,6 +914,8 @@ function blogs_validate_category($category, $blog){
         $category['seoname']     = seo_unique(array('seoname' => $category['name'], 'blogs_id' => $blog['id']), 'blogs_categories', $category['id']);
         $category['keywords']    = blogs_clean_keywords($category['keywords'], true);
         $category['seokeywords'] = blogs_seo_keywords($category['keywords']);
+
+        $v->isValid();
 
         return $category;
 
@@ -915,7 +935,9 @@ function blogs_validate_post(&$post, $params = null){
         array_default($params, 'force_id'       , false);
         array_default($params, 'use_id'         , false);
         array_default($params, 'use_parent'     , false);
-        array_default($params, 'use_categories' , false);
+        array_default($params, 'label_category1', false);
+        array_default($params, 'label_category2', false);
+        array_default($params, 'label_category3', false);
         array_default($params, 'namemax'        , 64);
         array_default($params, 'bodymin'        , 100);
         array_default($params, 'object_name'    , 'blog posts');
@@ -925,7 +947,7 @@ function blogs_validate_post(&$post, $params = null){
         /*
          * Validate input
          */
-        $v = new validate_form($post, 'id,name,featured_until,assigned_to,seocategory,category,body,keywords,description,language,group,priority,urlref,status');
+        $v = new validate_form($post, 'id,name,featured_until,assigned_to,seocategory1,seocategory2,seocategory3,category1,category2,category3,body,keywords,description,language,priority,urlref,status');
 
         /*
          * Just ensure that the specified id is a valid number
@@ -991,55 +1013,31 @@ function blogs_validate_post(&$post, $params = null){
             $post['parents_id'] = blogs_validate_parent($post['seoparent'], $params['use_parent']);
         }
 
-        if(empty($params['use_categories'])){
-            $post['category']    = '';
-            $post['seocategory'] = null;
-
-        }else{
-            if(empty($post['seocategory'])){
-                if(!empty($params['errors']['category_required'])){
-                    /*
-                     * Category required
-                     */
-                    $v->setError($params['errors']['category_required']);
-
-                }else{
-                    $post['category']    = '';
-                    $post['seocategory'] = null;
-                }
+        for($i = 1; $I <= 3; $i++){
+            if(empty($params['label_category'.$i])){
+                $post['category'.$i]    = '';
+                $post['seocategory'.$i] = null;
 
             }else{
+                if(empty($post['seocategory'.$i])){
+                    if(!empty($params['errors']['category'.$i.'_required'])){
+                        /*
+                         * Category required
+                         */
+                        $v->setError($params['errors']['category'.$i.'_required']);
 
-                $category = blogblogs_validate_category($post['seocategory'], $post['blogs_id'], isset_get($params['categories_parent']));
-
-                $post['category']    = $category['name'];
-                $post['seocategory'] = $category['seoname'];
-            }
-        }
-
-        if(empty($params['use_groups'])){
-            $post['group']    = '';
-            $post['seogroup'] = null;
-
-        }else{
-            if(empty($post['seogroup'])){
-                if(!empty($params['errors']['group_required'])){
-                    /*
-                     * Category required
-                     */
-                    $v->setError($params['errors']['group_required']);
+                    }else{
+                        $post['category'.$i]    = '';
+                        $post['seocategory'.$i] = null;
+                    }
 
                 }else{
-                    $post['group']    = '';
-                    $post['seogroup'] = null;
+
+                    $category = blogblogs_validate_category($post['seocategory'.$i], $post['blogs_id'], isset_get($params['categories'.$i.'_parent']));
+
+                    $post['category'.$i]    = $category['name'];
+                    $post['seocategory'.$i] = $category['seoname'];
                 }
-
-            }else{
-
-                $group = blogblogs_validate_category($post['seogroup'], $post['blogs_id'], isset_get($params['groups_parent']));
-
-                $post['group']    = $group['name'];
-                $post['seogroup'] = $group['seoname'];
             }
         }
 
@@ -1127,7 +1125,7 @@ function blogs_validate_post(&$post, $params = null){
             load_libs('user');
 
             $changes      = array();
-            $oldpost      = sql_get('SELECT `assigned_to_id`, `priority`, `status`, `name`, `urlref`, `seogroup`, `seocategory`, `body` FROM `blogs_posts` WHERE `id` = :id', array(':id' => $id));
+            $oldpost      = sql_get('SELECT `assigned_to_id`, `priority`, `status`, `name`, `urlref`, `seocategory1`, `seocategory2`, `seocategory3`, `body` FROM `blogs_posts` WHERE `id` = :id', array(':id' => $id));
 
             if(isset_get($oldpost['assigned_to_id']) != $post['assigned_to_id']){
                 $user = sql_get('SELECT `id`, `name`, `username`, `email` FROM `users` WHERE `id` = :id', array(':id' => $post['assigned_to_id']));
@@ -1156,12 +1154,10 @@ function blogs_validate_post(&$post, $params = null){
                 $changes[] = tr('Set status to ":status"', array(':status' => $post['status']));
             }
 
-            if(isset_get($oldpost['seocategory']) != $post['seocategory']){
-                $changes[] = tr('Set :categoryname to ":category"', array(':categoryname' => strtolower($params['label_category']), ':category' => $post['category']));
-            }
-
-            if(isset_get($oldpost['seogroup']) != $post['seogroup']){
-                $changes[] = tr('Set :groupname to ":group"', array(':groupname' => strtolower($params['label_group']), ':group' => $post['group']));
+            for($current = 1; ; $current++){
+                if(isset_get($oldpost['seocategory'.$i]) != $post['seocategory'.$i]){
+                    $changes[] = tr('Set :categoryname to ":category"', array(':categoryname' => strtolower($params['label_category'.$i]), ':category' => $post['category'.$i]));
+                }
             }
 
             /*
@@ -1694,10 +1690,12 @@ function blogs_post_url($post, $current_domain = true){
                           'blog',
                           'seoname',
                           'seoparent',
-                          'category',
-                          'seocategory',
-                          'group',
-                          'seogroup');
+                          'category1',
+                          'seocategory1',
+                          'category2',
+                          'seocategory2',
+                          'category3',
+                          'seocategory3');
 
         if(empty($post['blog'])){
             $post['blog'] = sql_get('SELECT `seoname` FROM `blogs` WHERE `id` = :id', array(':id' => $post['blogs_id']), 'seoname');
@@ -1837,8 +1835,12 @@ function blogs_update_urls($blogs = null, $category = null){
                                `createdon`,
                                `modifiedon`,
                                `createdby`,
-                               `category`,
-                               `seocategory`
+                               `category1`,
+                               `seocategory1`,
+                               `category2`,
+                               `seocategory2`,
+                               `category3`,
+                               `seocategory3`
 
                         FROM   `blogs_posts`
 
@@ -1860,8 +1862,10 @@ function blogs_update_urls($blogs = null, $category = null){
                     continue;
                 }
 
-                $query              .= ' AND `seocategory` = :seoname';
-                $execute[':seoname'] = $category['seoname'];
+                $query              .= ' AND (`seocategory1` = :seocategory1 OR `seocategory2` = :seocategory2 OR `seocategory3` = :seocategory3) ';
+                $execute[':seocategory1'] = $category['seoname'];
+                $execute[':seocategory2'] = $category['seoname'];
+                $execute[':seocategory3'] = $category['seoname'];
             }
 
             /*
