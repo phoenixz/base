@@ -52,10 +52,10 @@ function blogs_get($blog = null){
 
             $retval = sql_get($query.'
 
-                              WHERE      `blogs`.`name`   = :name
+                              WHERE      `blogs`.`seoname` = :seoname
                               AND        `blogs`.`status` IS NULL',
 
-                              array(':name' => $blog));
+                              array(':seoname' => $blog));
 
         }else{
             /*
@@ -154,10 +154,10 @@ function blogs_post_get($post = null, $blog = null, $columns = null){
                         `blogs_posts`.`status`,
                         `blogs_posts`.`blogs_id`,
                         `blogs_posts`.`assigned_to_id`,
-                        `blogs_posts`.`seocategory`,
-                        `blogs_posts`.`category`,
-                        `blogs_posts`.`seogroup`,
-                        `blogs_posts`.`group`,
+                        `blogs_posts`.`seocategory1`,
+                        `blogs_posts`.`category1`,
+                        `blogs_posts`.`seocategory2`,
+                        `blogs_posts`.`category2`,
                         `blogs_posts`.`keywords`,
                         `blogs_posts`.`seokeywords`,
                         `blogs_posts`.`featured_until`,
@@ -447,7 +447,7 @@ function blogs_categories_select($params) {
         }else{
             $execute = array(':blogs_id' => $params['blogs_id']);
 
-            $query   = 'SELECT  '.$params['column'].' AS `id`,
+            $query   = 'SELECT  '.$params['column'].' AS id,
                                 `blogs_categories`.`name`
 
                         FROM    `blogs_categories`';
@@ -797,28 +797,28 @@ function blogs_seo_keywords($keywords){
 /*
  * Validate all blog data
  */
-function blogs_validate($post){
+function blogs_validate($blog){
     try{
         load_libs('seo,validate');
 
         /*
          * Validate input
          */
-        $v = new validate_form($post, 'id,language,name,seoname,url_template,keywords,seokeywords,slogan,description');
+        $v = new validate_form($blog, 'id,name,url_template,keywords,slogan,description');
 
-        $v->isNatural($post['id'], tr('Please ensure that the specified post id is a natural number; numeric, integer, and > 0'));
+        $v->isNatural($blog['id'], tr('Please ensure that the specified post id is a natural number; numeric, integer, and > 0'));
 
-        if(is_numeric($post['name'])){
+        if(is_numeric($blog['name'])){
             throw new bException(tr('Blog post name can not be numeric'), 'invalid');
         }
 
-        $v->isNotEmpty($post['name']    , tr('Please provide a name for your :objectname'      , array(':objectname' => $params['object_name'])));
-        $v->isNotEmpty($post['blogs_id'], tr('Please provide a blog for your :objectname'      , array(':objectname' => $params['object_name'])));
-        $v->isNumeric ($post['blogs_id'], tr('Please provide a valid blog for your :objectname', array(':objectname' => $params['object_name'])));
+        $v->isNotEmpty($blog['name'], tr('Please provide a name for your blog'));
 
         $v->isValid();
 
-        return $post;
+        $blog['seoname'] = seo_unique($blog['name'], 'blogs');
+
+        return $blog;
 
     }catch(Exception $e){
         throw new bException('blogs_validate(): Failed', $e);
@@ -880,18 +880,18 @@ function blogs_validate_category($category, $blog){
                 /*
                  * Another category with this name already exists in this blog
                  */
-                throw new bException(tr('A category with the name ":category" already exists in the blog ":blog"', array(':category', ':blog'), array($category['name'], $blog['name'])), 'exists');
+                throw new bException(tr('A category with the name "%category%" already exists in the blog "%blog%"', array('%category%', '%blog%'), array($category['name'], $blog['name'])), 'exists');
             }
 
         }else{
             if(sql_get('SELECT `id` FROM `blogs_categories` WHERE `blogs_id` = :blogs_id AND `name` = :name', 'id', array(':blogs_id' => $blog['id'], ':name' => $category['name']))){
-                throw new bException(tr('A category with the name ":name" already exists', array(':user' => $category['name'])), 'exist');
+                throw new bException('A category with the name "'.str_log($category['name']).'" already exists', 'exists');
             }
         }
 
         if($category['assigned_to']){
-            if(!$category['assigned_to_id'] = sql_get('SELECT `id` FROM `users` WHERE (`username` = :username OR `email` = :email) AND `status` IS NULL', 'id', array(':username' => $category['assigned_to'], ':email' => $category['assigned_to']))){
-                throw new bException(tr('The specified user ":user" does not exist', array(':user' => $category['assigned_to'])), 'not-exist');
+            if(!$category['assigned_to_id'] = sql_get('SELECT `id` FROM `users` WHERE `name` = :name', 'id', array(':name' => $category['assigned_to']))){
+                throw new bException('The specified user "'.str_log($category['assigned_to']).'" does not exist', 'not-exist');
             }
 
         }else{
@@ -1015,7 +1015,7 @@ function blogs_validate_post(&$post, $params = null){
 
             }else{
 
-                $category = blogs_validate_category($post['seocategory'], $post['blogs_id'], isset_get($params['categories_parent']));
+                $category = blogblogs_validate_category($post['seocategory'], $post['blogs_id'], isset_get($params['categories_parent']));
 
                 $post['category']    = $category['name'];
                 $post['seocategory'] = $category['seoname'];
@@ -1041,7 +1041,7 @@ function blogs_validate_post(&$post, $params = null){
 
             }else{
 
-                $group = blogs_validate_category($post['seogroup'], $post['blogs_id'], isset_get($params['groups_parent']));
+                $group = blogblogs_validate_category($post['seogroup'], $post['blogs_id'], isset_get($params['groups_parent']));
 
                 $post['group']    = $group['name'];
                 $post['seogroup'] = $group['seoname'];
@@ -1605,10 +1605,10 @@ function blogs_priority($priority){
 /*
  * Validate the specified category
  */
-function blogs_validate_category($category, $blogs_id){
+function blogblogs_validate_category($category, $blogs_id){
     try{
         if(!$category){
-            throw new bException(tr('blogs_validate_category(): No category specified'), 'not-exist');
+            throw new bException(tr('blogblogs_validate_category(): No category specified'), 'not-exist');
         }
 
         if(!$retval = sql_get('SELECT `id`, `blogs_id`, `name`, `seoname` FROM `blogs_categories` WHERE `blogs_id` = :blogs_id AND `seoname` = :seoname', array(':blogs_id' => $blogs_id, ':seoname' => $category))){
@@ -1618,7 +1618,7 @@ function blogs_validate_category($category, $blogs_id){
             /*
              * The specified category does not exist
              */
-            throw new bException(tr('blogs_validate_category(): The specified category ":category" does not exists in blog ":blogs_id"', array(':blogs_id' => $blogs_id, ':category' => $category)), 'not-exist');
+            throw new bException(tr('blogblogs_validate_category(): The specified category ":category" does not exists in blog ":blogs_id"', array(':blogs_id' => $blogs_id, ':category' => $category)), 'not-exist');
         }
 
 // :DELETE: This check is no longer needed since the query now filters on blogs_id
@@ -1626,13 +1626,13 @@ function blogs_validate_category($category, $blogs_id){
         //    /*
         //     * The specified category is not of this blog
         //     */
-        //    throw new bException(tr('blogs_validate_category(): The specified category ":category" is not of this blog', array(':category' => $category)), 'invalid');
+        //    throw new bException(tr('blogblogs_validate_category(): The specified category ":category" is not of this blog', array(':category' => $category)), 'invalid');
         //}
 
         return $retval;
 
     }catch(Exception $e){
-        throw new bException('blogs_validate_category(): Failed', $e);
+        throw new bException('blogblogs_validate_category(): Failed', $e);
     }
 }
 
