@@ -17,7 +17,7 @@
 /*
  * Framework version
  */
-define('FRAMEWORKCODEVERSION', '0.34.1');
+define('FRAMEWORKCODEVERSION', '0.35.0');
 
 
 
@@ -391,8 +391,8 @@ try{
                          */
                         $domain = cfm($_SERVER['HTTP_HOST']);
 
-                        switch($_CONFIG['whitelabels']['enabled']){
-                            case false:
+                        switch(true){
+                            case ($_CONFIG['whitelabels']['enabled'] === false):
                                 /*
                                  * white label domains are disabled, so the detected domain MUST match the configured domain
                                  */
@@ -402,7 +402,7 @@ try{
 
                                 break;
 
-                            case 'sub':
+                            case ($_CONFIG['whitelabels']['enabled'] === 'sub'):
                                 /*
                                  * white label domains are disabled, but sub domains from the $_CONFIG[domain] are allowed
                                  */
@@ -416,7 +416,7 @@ try{
                                 unset($length);
                                 break;
 
-                            case 'all':
+                            case ($_CONFIG['whitelabels']['enabled'] === 'all'):
                                 /*
                                  * Permit whichever domain
                                  */
