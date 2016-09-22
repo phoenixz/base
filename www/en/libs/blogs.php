@@ -28,6 +28,7 @@ function blogs_get($blog = null){
                             `blogs`.`seoname`,
                             `blogs`.`keywords`,
                             `blogs`.`createdon`,
+                            `blogs`.`createdby`,
                             `blogs`.`modifiedon`,
                             `blogs`.`description`,
                             `blogs`.`url_template`,
@@ -816,7 +817,7 @@ function blogs_validate($blog){
 
         $v->isValid();
 
-        $blog['seoname'] = seo_unique($blog['name'], 'blogs');
+        $blog['seoname'] = seo_unique($blog['name'], 'blogs', $blog['id']);
 
         return $blog;
 
@@ -833,18 +834,12 @@ function blogs_validate($blog){
 function blogs_validate_category($category, $blog){
     try{
         load_libs('seo');
-        $v = new validate_form($category, 'name,keywords,description,parent,assigned_to');
+        $v = new validate_form($category, 'name,seoname,keywords,description,parent,assigned_to');
 
         $v->isNotEmpty ($category['name']            , tr('Please provide the name of your category'));
         $v->hasMinChars($category['name']       ,   3, tr('Please ensure that the name has a minimum of 3 characters'));
         $v->hasMaxChars($category['keywords']   , 255, tr('Please ensure that the keywords have a maximum of 255 characters'));
         $v->hasMaxChars($category['description'], 160, tr('Please ensure that the description has a maximum of 160 characters'));
-
-        if(!empty($_GET['category'])){
-            if(!$category['id'] = sql_get('SELECT `id` FROM `blogs_categories` WHERE `seoname` = :seoname AND `blogs_id` = :blogs_id', 'id', array(':seoname' => $_GET['category'], ':blogs_id' => $blog['id']))){
-                throw new bException('blogs_validate_category(): Specified category "'.str_log($_GET['category']).'" does not exist in blog "'.str_log($blog['name']).'"', 'not-exist');
-            }
-        }
 
         if(empty($category['parent'])){
             $category['parents_id'] = null;
