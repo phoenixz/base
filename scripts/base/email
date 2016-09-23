@@ -404,7 +404,7 @@ switch(cli_method()){
                 break;
 
             default:
-                cli_log(tr('Added "%count%" new emails', array('%count%' => $count)), 'green');
+                cli_log(tr('Added ":count" new emails', array(':count' => $count)), 'green');
         }
 
         break;
