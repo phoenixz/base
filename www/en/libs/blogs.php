@@ -1031,6 +1031,7 @@ function blogs_validate_post(&$post, $params = null){
             }else{
                 if(empty($post['seocategory1'.$i])){
                     if(!empty($params['errors']['category1'.$i.'_required'])){
+
                         /*
                          * Category required
                          */
@@ -1042,6 +1043,7 @@ function blogs_validate_post(&$post, $params = null){
                     }
 
                 }else{
+
                     $category = blogblogs_validate_category($post['seocategory1'.$i], $post['blogs_id'], isset_get($params['categories1'.$i.'_parent']));
 
                     $post['category1'.$i]    = $category['name'];

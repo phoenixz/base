@@ -482,6 +482,20 @@ function user_check_blacklisted($name){
 
 
 /*
+ * Wrapper for user_signup
+ */
+function user_create($params){
+    try{
+        return user_signup($params);
+
+    }catch(Exception $e){
+        throw new bException('user_create(): Failed', $e);
+    }
+}
+
+
+
+/*
  * Add a new user
  */
 function user_signup($params){
