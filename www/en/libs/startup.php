@@ -17,7 +17,7 @@
 /*
  * Framework version
  */
-define('FRAMEWORKCODEVERSION', '0.34.1');
+define('FRAMEWORKCODEVERSION', '0.35.1');
 
 
 
@@ -391,22 +391,45 @@ try{
                          */
                         $domain = cfm($_SERVER['HTTP_HOST']);
 
-                        if($_CONFIG['whitelabels']['enabled']){
-                            /*
-                             * Check the detected domain against the configured domain.
-                             * If it doesnt match then check if its a registered whitelabel domain
-                             */
-                            if($domain !== $_CONFIG['domain']){
-                                $domain = sql_get('SELECT `domain` FROM `domains` WHERE `domain` = :domain AND `status` IS NULL', 'domain', array(':domain' => $_SERVER['HTTP_HOST']));
-                            }
+                        switch(true){
+                            case ($_CONFIG['whitelabels']['enabled'] === false):
+                                /*
+                                 * white label domains are disabled, so the detected domain MUST match the configured domain
+                                 */
+                                if($domain !== $_CONFIG['domain']){
+                                    $domain = null;
+                                }
 
-                        }else{
-                            /*
-                             * white label domains are disabled, so the detected domain MUST match the configured domain
-                             */
-                            if($domain !== $_CONFIG['domain']){
-                                $domain = null;
-                            }
+                                break;
+
+                            case ($_CONFIG['whitelabels']['enabled'] === 'sub'):
+                                /*
+                                 * white label domains are disabled, but sub domains from the $_CONFIG[domain] are allowed
+                                 */
+// :TEST:
+                                $length = strlen('.'.$_CONFIG['domain']);
+
+                                if(substr($domain, -$length, $length) !== '.'.$_CONFIG['domain']){
+                                    $domain = null;
+                                }
+
+                                unset($length);
+                                break;
+
+                            case ($_CONFIG['whitelabels']['enabled'] === 'all'):
+                                /*
+                                 * Permit whichever domain
+                                 */
+                                break;
+
+                            default:
+                                /*
+                                 * Check the detected domain against the configured domain.
+                                 * If it doesnt match then check if its a registered whitelabel domain
+                                 */
+                                if($domain !== $_CONFIG['domain']){
+                                    $domain = sql_get('SELECT `domain` FROM `domains` WHERE `domain` = :domain AND `status` IS NULL', 'domain', array(':domain' => $_SERVER['HTTP_HOST']));
+                                }
                         }
 
                         if(!$domain){

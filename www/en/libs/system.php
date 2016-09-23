@@ -734,7 +734,7 @@ function load_libs($libraries){
         }
 
     }catch(Exception $e){
-        throw new bException('load_libs(): Failed to load libraries "'.str_log($libraries).'"', $e);
+        throw new bException('load_libs(): Failed to load library "'.str_log($library).'"', $e);
     }
 }
 
@@ -866,6 +866,10 @@ function add_stat($code, $count = 1, $details = '') {
  * Calculate the hash value for the given password with the (possibly) given
  * algorithm
  */
+function password($source, $algorithm, $add_meta = true){
+    return get_hash($source, $algorithm, $add_meta );
+}
+
 function get_hash($source, $algorithm, $add_meta = true){
     global $_CONFIG;
 
@@ -1047,7 +1051,7 @@ function user_or_signin(){
                 /*
                  * No session
                  */
-                redirect(isset_get($_CONFIG['redirects']['signin'], 'signin.php').'?redirect='.urlencode($_SERVER['SCRIPT_NAME']));
+                redirect(isset_get($_CONFIG['redirects']['signin'], 'signin.php').'?redirect='.urlencode($_SERVER['REQUEST_URI']));
             }
 
             if(!empty($_SESSION['lock'])){
@@ -1056,7 +1060,7 @@ function user_or_signin(){
                  * Redirect all pages EXCEPT the lock page itself!
                  */
                 if($_CONFIG['redirects']['lock'] !== str_cut($_SERVER['REQUEST_URI'], '/', '?')){
-                    redirect(isset_get($_CONFIG['redirects']['lock'], 'lock.php').'?redirect='.urlencode($_SERVER['SCRIPT_NAME']));
+                    redirect(isset_get($_CONFIG['redirects']['lock'], 'lock.php').'?redirect='.urlencode($_SERVER['REQUEST_URI']));
                 }
             }
 
@@ -1421,14 +1425,34 @@ function system_date_format($date = null, $requested_format = 'human_datetime'){
         }
 
         /*
+         * Force 12 or 24 hour format?
+         */
+        switch($_CONFIG['formats']['force1224']){
+            case false:
+                break;
+
+            case '12':
+                $format = str_replace('g', 'H', $format).' a';
+                break;
+
+            case '24':
+                $format = str_replace('H', 'g', $format);
+                break;
+
+            default:
+                throw new bException(tr('system_date_format(): Invalid force1224 hour format ":format" specified. Must be either false, "12", or "24". See $_CONFIG[formats][force1224]', array(':format' => $_CONFIG['formats']['force1224'])), 'invalid');
+        }
+
+        /*
          * Format
          */
         $date   = new DateTime($date);
         return $date->format($format);
 
     }catch(Exception $e){
+showdie($e);
         if(!isset($_CONFIG['formats'][$requested_format]) and ($requested_format != 'mysql')){
-            throw new bException('system_date_format(): Unknown format "'.str_log($requested_format).'" specified', 'unknown');
+            throw new bException(tr('system_date_format(): Unknown format ":format" specified', array(':format' => $requested_format)), 'unknown');
         }
 
         if(isset($format)){

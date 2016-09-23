@@ -11,6 +11,88 @@
 
 
 /*
+ * Get IPv4 from IPv6
+ * Kindly provided by http://stackoverflow.com/questions/12435582/php-serverremote-addr-shows-ipv6
+ * Rewritten for use in Base by Sven Oostenbrink
+ */
+function ip_v6_v4($ipv6){
+    try{
+        /*
+         * Known prefix
+         */
+        $v4mapped_prefix_hex = '00000000000000000000ffff';
+        $v4mapped_prefix_bin = hex2bin($v4mapped_prefix_hex);
+
+        /*
+         * Parse
+         */
+        $addr     = $_SERVER['REMOTE_ADDR'];
+        $addr_bin = inet_pton($addr);
+
+        if($addr_bin === false){
+            /*
+             * IP Unparsable? How did they connect?
+             */
+            throw new bException(tr('IP address ":ip" is invalid', array(':ip' => $ipv6)), 'invalid');
+        }
+
+        /*
+         * Check prefix
+         */
+        if(substr($addr_bin, 0, strlen($v4mapped_prefix_bin)) == $v4mapped_prefix_bin){
+            /*
+             * Strip prefix
+             */
+            $addr_bin = substr($addr_bin, strlen($v4mapped_prefix_bin));
+        }
+
+        /*
+         * Convert back to printable address in canonical form
+         */
+        $ipv4 = inet_ntop($addr_bin);
+        return $ipv4;
+
+    }catch(Exception $e){
+        throw new bException(tr('ip_v6_v4(): Failed'), $e);
+    }
+}
+
+
+
+/*
+ * Returns 4 if the specified (or if not specified, current) IP address is ipv4
+ * Returns 6 if the specified (or if not specified, current) IP address is ipv6
+ */
+function detect_ip_version($version = null){
+    try{
+        if(!$version){
+            $version = $_SERVER['REMOTE_ADDR'];
+        }
+
+        return strpos($version, ':') ? 6 : 4;
+
+    }catch(Exception $e){
+        throw new bException(tr('detect_ip_version(): Failed'), $e);
+    }
+}
+
+
+
+/*
+ * Returns true if specified (or if not, current) IP address is ipv6
+ */
+function is_ipv6($version = null){
+    try{
+        return detect_ip_version($version) === 6;
+
+    }catch(Exception $e){
+        throw new bException(tr('is_ipv6(): Failed'), $e);
+    }
+}
+
+
+
+/*
  * Correct domain name
  */
 function domain_correct($count){
