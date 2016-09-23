@@ -1175,7 +1175,8 @@ function blogs_validate_post($post, $params = null){
             }
 
             for($i = 1; $i <= 3; $i++){
-                if(isset_get($oldpost['category'.$i]) != $post['category'.$i]){
+
+                if(isset_get($oldpost['seocategory'.$i]) != $post['seocategory'.$i]){
                     $changes[] = tr('Set :categoryname to ":category"', array(':categoryname' => strtolower($params['label_category'.$i]), ':category' => $post['category'.$i]));
                 }
             }
