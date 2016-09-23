@@ -225,10 +225,7 @@ function blogs_post_get($post = null, $blog = null, $columns = null){
  */
 function blogs_post_update($post, $params = null){
     try{
-        load_libs('seo');
-
         $post    = blogs_validate_post($post, $params);
-        $seoname = seo_unique($post['name'], 'blogs_posts', $post['id']);
 
         $query   = 'UPDATE  `blogs_posts`
 
@@ -249,7 +246,9 @@ function blogs_post_update($post, $params = null){
                             `keywords`       = :keywords,
                             `seokeywords`    = :seokeywords,
                             `description`    = :description,
+                            `status`         = :status,
                             `url`            = :url,
+                            `urlref`         = :urlref,
                             `name`           = :name,
                             `seoname`        = :seoname,
                             `body`           = :body
@@ -267,15 +266,17 @@ function blogs_post_update($post, $params = null){
                            ':category2'      => $post['category2'],
                            ':seocategory2'   => $post['seocategory2'],
                            ':category3'      => $post['category3'],
-                           ':seocategory3'   => $post['seocategory3'],
+                           ':seocategory3'   => $post['seocategory2'],
                            ':priority'       => $post['priority'],
                            ':language'       => $post['language'],
                            ':keywords'       => $post['keywords'],
                            ':seokeywords'    => $post['seokeywords'],
                            ':description'    => $post['description'],
+                           ':status'         => $post['status'],
                            ':url'            => $post['url'],
+                           ':urlref'         => $post['urlref'],
                            ':name'           => $post['name'],
-                           ':seoname'        => $seoname,
+                           ':seoname'        => $post['seoname'],
                            ':body'           => $post['body']);
 
         if($execute[':featured_until']){
@@ -289,7 +290,6 @@ function blogs_post_update($post, $params = null){
          * Update the post, and ensure it is no longer registered as "new".
          */
         sql_query($query, $execute);
-        sql_query('UPDATE `blogs_posts` SET `status` = "unpublished" WHERE `id` = :id AND `status` = "new"', array(':id' => $post['id']));
 
         /*
          * Update keywords and key_value store
@@ -297,7 +297,7 @@ function blogs_post_update($post, $params = null){
         blogs_update_keywords($post);
         blogs_update_key_value_store($post, isset_get($params['key_values']));
 
-        return $seoname;
+        return $post['seoname'];
 
     }catch(Exception $e){
         throw new bException(tr('blogs_post_update(): Failed'), $e);
@@ -428,7 +428,7 @@ function blogs_select($params, $selected = 0, $name = 'blog', $none = '', $class
 
 
 /*
- * Return HTML select list containing all available blogs
+ * Return HTML select list containing all available blog categories
  */
 function blogs_categories_select($params) {
     try{
@@ -457,10 +457,10 @@ function blogs_categories_select($params) {
             $query   = 'SELECT  '.$params['column'].' AS id,
                                 `blogs_categories`.`name`
 
-                        FROM    `blogs_categories`';
+                        FROM    `blogs_categories` ';
 
-            $where   = ' WHERE  `blogs_categories`.`blogs_id` = :blogs_id
-                         AND    `blogs_categories`.`status`   IS NULL ';
+            $where   = 'WHERE   `blogs_categories`.`blogs_id` = :blogs_id
+                        AND     `blogs_categories`.`status`   IS NULL ';
 
             if($params['parent']){
                 $parent = ' JOIN `blogs_categories` AS parents
@@ -470,7 +470,7 @@ function blogs_categories_select($params) {
                 $execute[':parent'] = $params['parent'];
 
             }elseif($params['parent'] !== false){
-                $where .= ' AND `blogs_categories`.`parents_id` IS NULL ';
+                $where .= ' AND  `blogs_categories`.`parents_id` IS NULL ';
             }
 
             /*
@@ -935,9 +935,12 @@ function blogs_validate_post(&$post, $params = null){
         array_default($params, 'force_id'       , false);
         array_default($params, 'use_id'         , false);
         array_default($params, 'use_parent'     , false);
+        array_default($params, 'use_keywords'   , true);
         array_default($params, 'label_category1', false);
         array_default($params, 'label_category2', false);
         array_default($params, 'label_category3', false);
+        array_default($params, 'status_default' , 'unpublished');
+
         array_default($params, 'namemax'        , 64);
         array_default($params, 'bodymin'        , 100);
         array_default($params, 'object_name'    , 'blog posts');
@@ -998,6 +1001,13 @@ function blogs_validate_post(&$post, $params = null){
              * Only if we're editing in use_append mode we don't have to check body size
              */
             if($params['bodymin']){
+                /*
+                 * bodymin will be very small when using append mode because appended messages may be as short as "ok!"
+                 */
+                if(empty($params['use_append'])){
+                    $params['bodymin'] = 1;
+                }
+
                 $v->hasMinChars($post['body'], $params['bodymin'], tr('Please ensure that the body text has a minimum of :bodymin characters', array(':bodymin' => $params['bodymin'])));
                 $v->isNotEmpty ($post['body']                    , tr('Please provide the body text of your :objectname', array(':objectname' => $params['object_name'])));
             }
@@ -1013,32 +1023,35 @@ function blogs_validate_post(&$post, $params = null){
             $post['parents_id'] = blogs_validate_parent($post['seoparent'], $params['use_parent']);
         }
 
-        for($i = 1; $I <= 3; $i++){
+        for($i = 1; $i <= 3; $i++){
             if(empty($params['label_category'.$i])){
-                $post['category'.$i]    = '';
-                $post['seocategory'.$i] = null;
+                $post['category1'.$i]    = '';
+                $post['seocategory1'.$i] = null;
 
             }else{
-                if(empty($post['seocategory'.$i])){
-                    if(!empty($params['errors']['category'.$i.'_required'])){
+                if(empty($post['seocategory1'.$i])){
+                    if(!empty($params['errors']['category1'.$i.'_required'])){
+
                         /*
                          * Category required
                          */
-                        $v->setError($params['errors']['category'.$i.'_required']);
+                        $v->setError($params['errors']['category1'.$i.'_required']);
 
                     }else{
-                        $post['category'.$i]    = '';
-                        $post['seocategory'.$i] = null;
+                        $post['category1'.$i]    = '';
+                        $post['seocategory1'.$i] = null;
                     }
 
                 }else{
-                    $category = blogblogs_validate_category($post['seocategory'.$i], $post['blogs_id'], isset_get($params['categories'.$i.'_parent']));
 
-                    $post['category'.$i]    = $category['name'];
-                    $post['seocategory'.$i] = $category['seoname'];
+                    $category = blogblogs_validate_category($post['seocategory1'.$i], $post['blogs_id'], isset_get($params['categories1'.$i.'_parent']));
+
+                    $post['category1'.$i]    = $category['name'];
+                    $post['seocategory1'.$i] = $category['seoname'];
                 }
             }
         }
+
 
         if(empty($params['use_keywords'])){
             $post['keywords']    = '';
@@ -1072,7 +1085,11 @@ function blogs_validate_post(&$post, $params = null){
 
         if(!empty($params['use_status'])){
             if(!isset($params['status_list'][$post['status']])){
-                $v->setError(tr('The specified status ":status" is invalid, it must be either one of ":status_list"', array(':status' => $post['status'], ':status_list' => str_force($params['status_list']))));
+                if($params['status_default'] and ($post['status'] != $params['status_default'])){
+                    $v->setError(tr('The specified status ":status" is invalid, it must be either one of ":status_list"', array(':status' => $post['status'], ':status_list' => str_force($params['status_list']))));
+                }
+
+                $post['status'] = $params['status_default'];
             }
         }
 
@@ -1452,6 +1469,7 @@ function blogs_media_get_free_priority($blogs_posts_id, $insert = false){
                 if(!in_array($current, $list)){
                     return $current;
                 }
+
             }
 
             return $current;
