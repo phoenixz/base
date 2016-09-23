@@ -481,7 +481,7 @@ function email_update_conversation($email, $direction){
             $message_length = strlen($last_messages);
         }
 
-        if($direction == 'send'){
+        if($direction == 'sent'){
             sql_query('UPDATE `email_conversations`
 
                        SET    `last_messages` = :last_messages,
