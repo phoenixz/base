@@ -55,6 +55,7 @@ function jqueryui_date($selector, $params = null){
         array_default($params, 'change_month'    , true);
         array_default($params, 'default_date'    , '+1w');
         array_default($params, 'auto_submit'     , true);
+        array_default($params, 'date_format'     , 'Y/m/d');
 
         if($params['auto_submit']){
             array_default($params, 'on_select', '   function (date) {
@@ -63,7 +64,7 @@ function jqueryui_date($selector, $params = null){
         }
 
         if(isset_get($params['value'])){
-            $params['value'] = system_date_format($params['value'], 'human_date');
+            $params['value'] = system_date_format($params['value'], $params['date_format']);
         }
 
         $html = '<input type="text" class="'.$params['class'].' date" id="'.$selector.'" name="'.$selector.'" placeholder="'.$params['placeholder'].'" value="'.isset_get($params['value']).'">';
