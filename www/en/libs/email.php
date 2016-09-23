@@ -924,19 +924,47 @@ function email_from_exists($email){
     global $_CONFIG;
 
     try{
+        /*
+         * Validate email, extract it from "user <email>" if needed
+         */
+        if(!filter_var($email, FILTER_VALIDATE_EMAIL)){
+            $email = str_cut($email, '<', '>');
+
+            if(!filter_var($email, FILTER_VALIDATE_EMAIL)){
+                throw new bException(tr('email_from_exists(): Specified email address ":email" is not a valid email address', array(':email' => $email)), 'invalid');
+            }
+        }
+
         if(empty($_CONFIG['email']['users'])){
             /*
              * Get list from database
              */
-//:IMPLEMENT:
+            $account = sql_get('SELECT `id`, `email`, `status` FROM `email_accounts` WHERE `email` = :email', array(':email' => $email));
 
-        }else{
-            if(!empty($_CONFIG['email']['aliases'][$email])){
-                return $_CONFIG['email']['aliases'][$email];
+            if(!$account){
+// :DELETE: _exists() functions should just return true or false, the entry exists or not
+                //throw new bException(tr('email_from_exists(): Specified email address ":email" does not exist', array(':email' => $email)), 'not-exist');
+                return false;
             }
 
-            return !empty($_CONFIG['email']['users'][$email]);
+            if($account['status']){
+// :DELETE: _exists() functions should just return true or false, the entry exists or not
+                //throw new bException(tr('email_from_exists(): Specified email address ":email" is currently not available', array(':email' => $email)), 'not-available');
+                return false;
+            }
+
+            return true;
+
         }
+
+        /*
+         * Using the old (and obsoleted) hard configured emails
+         */
+        if(!empty($_CONFIG['email']['aliases'][$email])){
+            return $_CONFIG['email']['aliases'][$email];
+        }
+
+        return !empty($_CONFIG['email']['users'][$email]);
 
     }catch(Exception $e){
         throw new bException(tr('email_from_exists(): Failed'), $e);
@@ -1001,21 +1029,8 @@ function email_validate($email){
         $v->isNotEmpty('subject', tr('Please specify an email subject'));
         $v->isNotEmpty('subject', tr('Please write something in the email'));
 
-        if(empty($email['to']) and !empty($email['email'])){
-            /*
-             * Assume that the field "email" is the "to" field
-             */
-            $email['email'] = $email['to'];
-        }
-
         if(!email_from_exists($email['from'])){
             $v->setError(tr('Specified source email ":email" does not exist', array(':email' => $email['from'])));
-        }
-
-        if($email['validate_sender']){
-            if(empty($_CONFIG['email']['users'][$email['from']])){
-                $v->setError(tr('Unkown sender ":sender" specified', array(':sender' => $params['from'])));
-            }
         }
 
         switch(isset_get($email['format'])){
@@ -1128,8 +1143,8 @@ function email_prepare($email){
         }
 
         if(strpos($email['from'], '<') !== false){
-            $email['from_name'] = trim(str_until($email['to'], '<'));
-            $email['from']      = trim(str_cut($email['to'], '<', '>'));
+            $email['from_name'] = trim(str_until($email['from'], '<'));
+            $email['from']      = trim(str_cut($email['from'], '<', '>'));
 
         }else{
             $email['from_name'] = '';
@@ -1314,7 +1329,7 @@ function email_delay($email){
             /*
              * Run the script to send the "new" emails
              */
-            run_background('base/email -e '.ENVIRONMENT.' send', true, true);
+            run_background('base/email --env '.ENVIRONMENT.' send', true, true);
         }
 
         return sql_insert_id();
