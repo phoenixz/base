@@ -1565,11 +1565,15 @@ function run_background($cmd, $log = true, $single = true){
             throw new bException(tr('run_background(): Specified command ":cmd" is not executable', array(':cmd' => $path.$cmd)), 'notexecutable');
         }
 
+        if($log === true){
+            $log = $cmd;
+        }
+
         load_libs('file');
         file_ensure_path(ROOT.'data/run');
         file_ensure_path(ROOT.'data/log');
 
-//show(sprintf('nohup %s >> '.ROOT.'data/log/%s 2>&1 & echo $! > %s', $path.$cmd.' '.$args, $log, ROOT.'data/run/'.$cmd));
+//showdie(sprintf('nohup %s >> '.ROOT.'data/log/%s 2>&1 & echo $! > %s', $path.$cmd.' '.$args, $log, ROOT.'data/run/'.$cmd));
         if($log){
             exec(sprintf('nohup %s >> '.ROOT.'data/log/%s 2>&1 & echo $! > %s', $path.$cmd.' '.$args, $log, ROOT.'data/run/'.$cmd));
 
