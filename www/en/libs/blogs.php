@@ -66,7 +66,7 @@ function blogs_get($blog = null){
 
                               WHERE  `blogs`.`createdby` = :createdby
 
-                              AND    `blogs`.`status`    = "new"',
+                              AND    `blogs`.`status`    = "_new"',
 
                               array(':createdby' => $_SESSION['user']['id']));
 
@@ -127,14 +127,14 @@ function blogs_post_get($post = null, $blog = null, $columns = null){
 
                              WHERE  `createdby` = :createdby
                              AND    `blogs_id`  = :blogs_id
-                             AND    `status`    = "new"',
+                             AND    `status`    = "_new"',
 
                              'id', array(':createdby' => isset_get($_SESSION['user']['id']),
                                          ':blogs_id'  => $blogs_id));
 
             if(!$post){
                 sql_query('INSERT INTO `blogs_posts` (`status`, `blogs_id`, `createdby`)
-                           VALUES                    ("new"   , :blogs_id , :createdby )',
+                           VALUES                    ("_new"  , :blogs_id , :createdby )',
 
                            array(':createdby' => isset_get($_SESSION['user']['id']),
                                  ':blogs_id'  => $blogs_id));
@@ -205,7 +205,7 @@ function blogs_post_get($post = null, $blog = null, $columns = null){
          * So the post with the specified ID doesn't exist, create it now and then return
          */
         sql_query('INSERT INTO `blogs_posts` (`id`, `status`, `blogs_id`, `createdby`)
-                   VALUES                    (:id , "new"   , :blogs_id , :createdby )',
+                   VALUES                    (:id , "_new"  , :blogs_id , :createdby )',
 
                    array(':id'        => $post,
                          ':createdby' => isset_get($_SESSION['user']['id']),
@@ -225,6 +225,7 @@ function blogs_post_get($post = null, $blog = null, $columns = null){
  */
 function blogs_post_update($post, $params = null){
     try{
+
         $post    = blogs_validate_post($post, $params);
 
         $query   = 'UPDATE  `blogs_posts`
@@ -266,7 +267,7 @@ function blogs_post_update($post, $params = null){
                            ':category2'      => $post['category2'],
                            ':seocategory2'   => $post['seocategory2'],
                            ':category3'      => $post['category3'],
-                           ':seocategory3'   => $post['seocategory2'],
+                           ':seocategory3'   => $post['seocategory3'],
                            ':priority'       => $post['priority'],
                            ':language'       => $post['language'],
                            ':keywords'       => $post['keywords'],
@@ -469,9 +470,9 @@ function blogs_categories_select($params) {
 
                 $execute[':parent'] = $params['parent'];
 
-            }elseif($params['parent'] !== false){
+            }/*elseif($params['parent'] !== false){
                 $where .= ' AND  `blogs_categories`.`parents_id` IS NULL ';
-            }
+            }*/
 
             /*
              * Filter specified values.
@@ -929,13 +930,13 @@ function blogs_validate_category($category, $blog){
 /*
  * Ensure that all post data is okay
  */
-function blogs_validate_post(&$post, $params = null){
+function blogs_validate_post($post, $params = null){
     try{
         array_params($params);
         array_default($params, 'force_id'       , false);
         array_default($params, 'use_id'         , false);
-        array_default($params, 'use_parent'     , false);
-        array_default($params, 'use_keywords'   , true);
+        //array_default($params, 'use_parent'     , false);
+        array_default($params, 'label_keywords' , true);
         array_default($params, 'label_category1', false);
         array_default($params, 'label_category2', false);
         array_default($params, 'label_category3', false);
@@ -987,7 +988,7 @@ function blogs_validate_post(&$post, $params = null){
             }
         }
 
-        if(!empty($params['use_append'])){
+        if(!empty($params['label_append'])){
             /*
              * Only allow data to be appended to this post
              * Find changes between current and previous state and store those as well
@@ -998,13 +999,13 @@ function blogs_validate_post(&$post, $params = null){
             $oldpost = sql_get('SELECT `assigned_to_id`, `priority`, `status`, `name`, `urlref`, `body` FROM `blogs_posts` WHERE `id` = :id', array(':id' => $id));
         }else{
             /*
-             * Only if we're editing in use_append mode we don't have to check body size
+             * Only if we're editing in label_append mode we don't have to check body size
              */
             if($params['bodymin']){
                 /*
                  * bodymin will be very small when using append mode because appended messages may be as short as "ok!"
                  */
-                if(empty($params['use_append'])){
+                if(empty($params['label_append'])){
                     $params['bodymin'] = 1;
                 }
 
@@ -1016,44 +1017,46 @@ function blogs_validate_post(&$post, $params = null){
         $v->isChecked  ($post['name']   , tr('Please provide the name of your :objectname'     , array(':objectname' => $params['object_name'])));
         $v->hasMinChars($post['name'], 1, tr('Please ensure that the name has a minimum of 1 character'));
 
-        if(empty($params['use_parent'])){
+        if(empty($params['label_parent'])){
             $post['parents_id'] = null;
 
         }else{
-            $post['parents_id'] = blogs_validate_parent($post['seoparent'], $params['use_parent']);
+            $post['parents_id'] = blogs_validate_parent($post['seoparent'], $params['label_parent']);
         }
 
         for($i = 1; $i <= 3; $i++){
+            /*
+             * Translate categories
+             */
+            $post['category'.$i] = isset_get($post[$params['category'.$i]]);
+
             if(empty($params['label_category'.$i])){
-                $post['category1'.$i]    = '';
-                $post['seocategory1'.$i] = null;
+                $post['category'.$i]    = null;
+                $post['seocategory'.$i] = null;
 
             }else{
-                if(empty($post['seocategory1'.$i])){
-                    if(!empty($params['errors']['category1'.$i.'_required'])){
-
+                if(empty($post['category'.$i])){
+                    if(!empty($params['errors']['category'.$i.'_required'])){
                         /*
                          * Category required
                          */
-                        $v->setError($params['errors']['category1'.$i.'_required']);
+                        $v->setError($params['errors']['category'.$i.'_required']);
 
                     }else{
-                        $post['category1'.$i]    = '';
-                        $post['seocategory1'.$i] = null;
+                        $post['category'.$i]    = null;
+                        $post['seocategory'.$i] = null;
                     }
 
                 }else{
+                    $category = blogblogs_validate_category($post['category'.$i], $post['blogs_id'], isset_get($params['categories'.$i.'_parent']));
 
-                    $category = blogblogs_validate_category($post['seocategory1'.$i], $post['blogs_id'], isset_get($params['categories1'.$i.'_parent']));
-
-                    $post['category1'.$i]    = $category['name'];
-                    $post['seocategory1'.$i] = $category['seoname'];
+                    $post['category'.$i]    = $category['name'];
+                    $post['seocategory'.$i] = $category['seoname'];
                 }
             }
         }
 
-
-        if(empty($params['use_keywords'])){
+        if(empty($params['label_keywords'])){
             $post['keywords']    = '';
             $post['seokeywords'] = '';
 
@@ -1074,7 +1077,7 @@ function blogs_validate_post(&$post, $params = null){
             }
         }
 
-        if(!empty($params['use_featured'])){
+        if(!empty($params['label_featured'])){
             if($post['featured_until']){
                 $post['featured_until'] = system_date_format($post['featured_until'], 'mysql');
 
@@ -1083,22 +1086,23 @@ function blogs_validate_post(&$post, $params = null){
             }
         }
 
-        if(!empty($params['use_status'])){
+        if(!empty($params['label_status'])){
             if(!isset($params['status_list'][$post['status']])){
-                if($params['status_default'] and ($post['status'] != $params['status_default'])){
+                if($post['status'] and ($post['status'] != $params['status_default'])){
                     $v->setError(tr('The specified status ":status" is invalid, it must be either one of ":status_list"', array(':status' => $post['status'], ':status_list' => str_force($params['status_list']))));
-                }
 
-                $post['status'] = $params['status_default'];
+                }else{
+                    $post['status'] = $params['status_default'];
+                }
             }
         }
 
-        if(!empty($params['use_language'])){
+        if(!empty($params['label_language'])){
             $v->isNotEmpty($post['language'],    tr('Please select a language for your :objectname', array(':objectname' => $params['object_name'])));
             $v->hasChars($post['keywords']  , 2, tr('Please provide a valid language'));
         }
 
-        if(!empty($params['use_priorities'])){
+        if(!empty($params['label_priorities'])){
             $v->isNotEmpty ($post['priority'], tr('Please provide a priority for your :objectname', array(':objectname' => $params['object_name'])));
 
 // :TODO: Check against priority list, or min-max
@@ -1107,13 +1111,13 @@ function blogs_validate_post(&$post, $params = null){
             //}
         }
 
-        if(!empty($params['use_description'])){
+        if(!empty($params['label_description'])){
             $v->isNotEmpty ($post['description'],      tr('Please provide a description for your :objectname', array(':objectname' => $params['object_name'])));
             $v->hasMinChars($post['description'],   4, tr('Please ensure that the description has a minimum of 4 characters'));
             $v->hasMaxChars($post['description'], 160, tr('Please ensure that the description has a maximum of 160 characters'));
         }
 
-        if(!empty($params['use_status'])){
+        if(!empty($params['label_status'])){
             if(empty($params['status_select']['resource'][$post['status']])){
                 $v->setError(tr('Please provide a valid status for your :objectname', array(':objectname' => $params['object_name'])));
             }
@@ -1133,7 +1137,7 @@ function blogs_validate_post(&$post, $params = null){
         /*
          * Append post to current body?
          */
-        if(!empty($params['use_append'])){
+        if(!empty($params['label_append'])){
             /*
              * Only allow data to be appended to this post
              * Find changes between current and previous state and store those as well
@@ -1170,8 +1174,8 @@ function blogs_validate_post(&$post, $params = null){
                 $changes[] = tr('Set status to ":status"', array(':status' => $post['status']));
             }
 
-            for($current = 1; ; $current++){
-                if(isset_get($oldpost['seocategory'.$i]) != $post['seocategory'.$i]){
+            for($i = 1; $i <= 3; $i++){
+                if(isset_get($oldpost['category'.$i]) != $post['category'.$i]){
                     $changes[] = tr('Set :categoryname to ":category"', array(':categoryname' => strtolower($params['label_category'.$i]), ':category' => $post['category'.$i]));
                 }
             }
