@@ -332,8 +332,8 @@ function email_get_conversation($email){
 
         $conversation = sql_get('SELECT `id`,
                                         `users_id`,
-                                        `email_accounts_id`,
-                                        `last_messages`
+                                        `last_messages`,
+                                        `email_accounts_id`
 
                                  FROM   `email_conversations`
 
@@ -520,10 +520,10 @@ function email_update_conversation($email, $direction){
  */
 function email_update_message($email, $direction){
     try{
-        $email['users_id']           = email_get_users_id($email);
-        $email['email_accounts_id']  = email_get_accounts_id($email);
-        $email['conversation']       = email_get_conversation($email);
-        $email['reply_to_id']        = email_get_reply_to_id($email);
+        $email['users_id']          = email_get_users_id($email);
+        $email['email_accounts_id'] = email_get_accounts_id($email);
+        $email['conversation']      = email_get_conversation($email);
+        $email['reply_to_id']       = email_get_reply_to_id($email);
 
         if(empty($email['id']) and !empty($email['message_id'])){
             /*
@@ -545,7 +545,7 @@ function email_update_message($email, $direction){
                                      ':to'                => $email['to'],
                                      ':users_id'          => $email['users_id'],
                                      ':email_accounts_id' => $email['email_accounts_id'],
-                                     ':date'              => $email['date'],
+                                     ':date'              => isset_get($email['date'], system_date_format(null, 'mysql')),
                                      ':subject'           => (string) $email['subject'],
                                      ':text'              => $email['text'],
                                      ':html'              => $email['html']));
@@ -562,7 +562,7 @@ function email_update_message($email, $direction){
                                      ':to'                => $email['to'],
                                      ':users_id'          => $email['users_id'],
                                      ':email_accounts_id' => $email['email_accounts_id'],
-                                     ':date'              => $email['date'],
+                                     ':date'              => isset_get($email['date'], system_date_format(null, 'mysql')),
                                      ':message_id'        => $email['message_id'],
                                      ':size'              => $email['size'],
                                      ':uid'               => $email['uid'],
@@ -612,7 +612,7 @@ function email_update_message($email, $direction){
                              ':to'                => $email['to'],
                              ':users_id'          => $email['users_id'],
                              ':email_accounts_id' => $email['email_accounts_id'],
-                             ':date'              => $email['date'],
+                             ':date'              => isset_get($email['date'], system_date_format(null, 'mysql')),
                              ':subject'           => $email['subject'],
                              ':text'              => $email['text'],
                              ':html'              => $email['html'],
@@ -793,7 +793,7 @@ function email_send($email, $smtp = null){
     try{
         array_params($email);
         array_default($email, 'delayed'     , true);
-        array_default($email, 'conversation', false);
+        array_default($email, 'conversation', true);
         array_default($email, 'validate'    , true);
         array_default($email, 'smtp_host'   , false);
 
@@ -931,7 +931,7 @@ function email_from_exists($email){
             $email = str_cut($email, '<', '>');
 
             if(!filter_var($email, FILTER_VALIDATE_EMAIL)){
-                throw new bException(tr('email_from_exists(): Specified email address ":email" is not a valid email address', array(':email' => $email)), 'invalid');
+                throw new bException(tr('email_from_exists(): Specified "from" email address ":email" is not a valid email address', array(':email' => $email)), 'invalid');
             }
         }
 
@@ -1123,10 +1123,12 @@ function email_prepare($email){
          */
         if($email['header']){
             $email['text'] = $_CONFIG['email']['header'].$email['text'];
+            $email['html'] = $_CONFIG['email']['header'].$email['html'];
         }
 
         if($email['footer']){
             $email['text'] = $email['text'].$_CONFIG['email']['footer'];
+            $email['html'] = $email['html'].$_CONFIG['email']['footer'];
         }
 
 
@@ -1351,7 +1353,7 @@ function email_send_unsent(){
         /*
          * Load the emails where status is "new"
          */
-        $r = sql_query('SELECT    `emails`.`id`,
+        $r = sql_query('SELECT    `emails`.`id` AS `emails_id`,
                                   `emails`.`status`,
                                   `emails`.`template`,
                                   `emails`.`subject`,
@@ -1413,7 +1415,7 @@ function email_send_unsent(){
             /*
              * The mail was sent, update the `status` and `senton`
              */
-            $p->execute(array(':id' => $email['id']));
+            $p->execute(array(':id' => $email['emails_id']));
 
             /*
              * Wait a little as to not be too heavy on system resources
