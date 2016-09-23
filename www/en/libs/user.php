@@ -499,6 +499,8 @@ function user_create($params){
  * Add a new user
  */
 function user_signup($params){
+    global $_CONFIG;
+
     try{
         if(empty($params['password']) and (isset_get($params['status']) !== 'new')){
             throw new bException(tr('user_signup(): Please specify a password'), 'not-specified');
