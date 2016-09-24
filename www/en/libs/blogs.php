@@ -75,7 +75,7 @@ function blogs_get($blog = null){
                            VALUES              (:createdby , :status , :name )',
 
                            array(':name'      => $blog,
-                                 ':status'    => 'new',
+                                 ':status'    => '_new',
                                  ':createdby' => isset_get($_SESSION['user']['id'])));
 
                 return blogs_get($blog);
