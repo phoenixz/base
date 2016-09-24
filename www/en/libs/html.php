@@ -897,6 +897,7 @@ function html_select($params){
         array_default($params, 'none'        , tr('None selected'));
         array_default($params, 'empty'       , tr('None available'));
         array_default($params, 'option_class', '');
+        array_default($params, 'extra'       , '');
         array_default($params, 'selected'    , null);
         array_default($params, 'bodyonly'    , false);
         array_default($params, 'autosubmit'  , false);
@@ -972,10 +973,10 @@ function html_select($params){
             /*
              * Add a hidden element with the name to ensure that multiple selects with [] will not show holes
              */
-            return '<select'.$params['multiple'].($params['id'] ? ' id="'.$params['id'].'_disabled"' : '').' name="'.$params['name'].'" '.($class ? ' class="'.$class.'"' : '').' readonly disabled>'.
+            return '<select'.$params['multiple'].($params['id'] ? ' id="'.$params['id'].'_disabled"' : '').' name="'.$params['name'].'" '.($class ? ' class="'.$class.'"' : '').($params['extra'] ? ' '.$params['extra'] : '').' readonly disabled>'.
                     $body.'</select><input type="hidden" name="'.$params['name'].'" >';
         }else{
-            $retval = '<select'.$params['multiple'].($params['id'] ? ' id="'.$params['id'].'"' : '').' name="'.$params['name'].'" '.($class ? ' class="'.$class.'"' : '').($params['disabled'] ? ' disabled' : '').($params['autofocus'] ? ' autofocus' : '').'>'.
+            $retval = '<select'.$params['multiple'].($params['id'] ? ' id="'.$params['id'].'"' : '').' name="'.$params['name'].'" '.($class ? ' class="'.$class.'"' : '').($params['disabled'] ? ' disabled' : '').($params['autofocus'] ? ' autofocus' : '').($params['extra'] ? ' '.$params['extra'] : '').'>'.
                       $body.'</select>';
         }
 
