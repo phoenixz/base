@@ -197,21 +197,7 @@ function blogs_post_get($post = null, $blog = null, $columns = null){
                             LEFT JOIN `users`
                             ON        `users`.`id` = `blogs_posts`.`assigned_to_id`'.$where, $execute);
 
-        if($retval){
-            return $retval;
-        }
-
-        /*
-         * So the post with the specified ID doesn't exist, create it now and then return
-         */
-        sql_query('INSERT INTO `blogs_posts` (`id`, `status`, `blogs_id`, `createdby`)
-                   VALUES                    (:id , "_new"  , :blogs_id , :createdby )',
-
-                   array(':id'        => $post,
-                         ':createdby' => isset_get($_SESSION['user']['id']),
-                         ':blogs_id'  => $blogs_id));
-
-        return blogs_post_get($post, $blog, $columns);
+        return $retval;
 
     }catch(Exception $e){
         throw new bException('blogs_post_get(): Failed', $e);
@@ -935,15 +921,13 @@ function blogs_validate_post($post, $params = null){
         array_params($params);
         array_default($params, 'force_id'       , false);
         array_default($params, 'use_id'         , false);
-        //array_default($params, 'use_parent'     , false);
+        array_default($params, 'namemax'        , 64);
+        array_default($params, 'bodymin'        , 100);
         array_default($params, 'label_keywords' , true);
         array_default($params, 'label_category1', false);
         array_default($params, 'label_category2', false);
         array_default($params, 'label_category3', false);
         array_default($params, 'status_default' , 'unpublished');
-
-        array_default($params, 'namemax'        , 64);
-        array_default($params, 'bodymin'        , 100);
         array_default($params, 'object_name'    , 'blog posts');
 
         load_libs('seo,validate');
