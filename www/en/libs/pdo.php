@@ -931,7 +931,16 @@ function sql_merge($db, $post, $skip = 'id,status'){
 
         $post = array_remove($post, $skip);
 
-        return array_merge($db, $post);
+        /*
+         * Copy all POST variables over DB
+         * Skip POST variables that have NULL value
+         */
+        foreach($post as $key => $value){
+            if($value === null) continue;
+            $db[$key] = $value;
+        }
+
+        return $db;
 
     }catch(Exception $e){
         throw new bException('sql_merge(): Failed', $e);
