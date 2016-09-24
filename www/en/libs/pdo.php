@@ -905,12 +905,8 @@ function sql_fetch_column($r, $column){
  * Merge database entry with new posted entry, overwriting the old DB values,
  * while skipping the values specified in $filter
  */
-function sql_merge($db, $post, $skip = null){
+function sql_merge($db, $post, $skip = 'id,status'){
     try{
-        if($skip === null){
-            $skip = 'id,status';
-        }
-
         if(!is_array($db)){
             if($db !== null){
                 throw new bException(tr('sql_merge(): Specified database source data type should be an array but is a ":type"', array(':type' => gettype($db))), 'invalid');
