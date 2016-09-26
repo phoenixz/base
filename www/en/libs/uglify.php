@@ -480,7 +480,7 @@ function uglify_js($paths = null){
             /*
              * Start at the base js path
              */
-            $paths = ROOT.'pub/js/,'.ROOT.'pub/admin/js/';
+            $paths = ROOT.'pub/js/';
         }
 
         foreach(array_force($paths) as $path){
