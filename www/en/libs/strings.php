@@ -198,49 +198,54 @@ function str_runtil($source, $needle, $more = 0, $start = 0){
  * Truncate string using the specified fill and method
  */
 function str_truncate($source, $length, $fill = ' ... ', $method = 'right', $on_word = false){
-    if(!$length or ($length < (mb_strlen($fill) + 1))){
-        throw new bException('str_truncate(): No length or insufficient length specified. You must specify a length of minimal $fill length + 1');
-    }
+    try{
+        if(!$length or ($length < (mb_strlen($fill) + 1))){
+            throw new bException('str_truncate(): No length or insufficient length specified. You must specify a length of minimal $fill length + 1');
+        }
 
-    if($length >= mb_strlen($source)){
+        if($length >= mb_strlen($source)){
+            /*
+             * No need to truncate, the string is short enough
+             */
+            return $source;
+        }
+
         /*
-         * No need to truncate, the string is short enough
+         * Correct length
          */
-        return $source;
-    }
+        $length -= mb_strlen($fill);
 
-    /*
-     * Correct length
-     */
-    $length -= mb_strlen($fill);
-
-    switch($method){
-        case 'right':
-            $retval = mb_substr($source, 0, $length);
-            if($on_word and (strpos(substr($source, $length, 2), ' ') === false)){
-                if($pos = strrpos($retval, ' ')){
-                    $retval = substr($retval, 0, $pos);
+        switch($method){
+            case 'right':
+                $retval = mb_substr($source, 0, $length);
+                if($on_word and (strpos(substr($source, $length, 2), ' ') === false)){
+                    if($pos = strrpos($retval, ' ')){
+                        $retval = substr($retval, 0, $pos);
+                    }
                 }
-            }
 
-            return trim($retval).$fill;
+                return trim($retval).$fill;
 
-        case 'center':
-            return mb_substr($source, 0, floor($length / 2)).$fill.mb_substr($source, -ceil($length / 2));
+            case 'center':
+                return mb_substr($source, 0, floor($length / 2)).$fill.mb_substr($source, -ceil($length / 2));
 
-        case 'left':
-            $retval = mb_substr($source, -$length, $length);
+            case 'left':
+                $retval = mb_substr($source, -$length, $length);
 
-            if($on_word and substr($retval)){
-                if($pos = strpos($retval, ' ')){
-                    $retval = substr($retval, $pos);
+                if($on_word and substr($retval)){
+                    if($pos = strpos($retval, ' ')){
+                        $retval = substr($retval, $pos);
+                    }
                 }
-            }
 
-            return $fill.trim($retval);
+                return $fill.trim($retval);
 
-        default:
-            throw new bException('str_truncate(): Invalid method "'.$method.'" specified, please use "left", "center", or "right" or undefined which will default to "right"');
+            default:
+                throw new bException('str_truncate(): Invalid method "'.$method.'" specified, please use "left", "center", or "right" or undefined which will default to "right"');
+        }
+
+    }catch(Exception $e){
+        throw new bException(tr('str_truncate(): Failed for ":source"', array(':source' => $source)), $e);
     }
 }
 
@@ -460,7 +465,7 @@ function str_hex($source){
 /*
  * Return a string that is suitable for logging.
  */
-function str_log($source, $truncate = 511, $separator = ', '){
+function str_log($source, $truncate = 2047, $separator = ', '){
     try{
         load_libs('json');
 
