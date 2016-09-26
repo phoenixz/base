@@ -278,7 +278,7 @@ if($nofiles){
             passthru($command = 'rsync -aczvAXHS --progress -p '.($deploy_config['sudo'] ? '--rsync-path="sudo rsync" ' : '').'-e "ssh -p '.$deploy_config['target_port'].'" '.($deploy_config['target_user'] ? $deploy_config['target_user'].'@' : '').$deploy_config['target_server'].':'.slash($deploy_config['target_dir']).slash($path).' '.ROOT.slash($path).' --exclude="*.php" --exclude="*.css" --exclude="*.js" --exclude="/scripts/*" --exclude="/data/doc" --exclude="/data/system" --exclude="/data/mock*" --exclude="/data/sources" --exclude=".htaccess" --exclude=".git*" --exclude="/pub/*"', $exitcode);
 
         }catch(Exception $e){
-            cli_log(tr('Failed to get path ":path" from environment ":environment"', array(':path' => $path, ':' => $environment)), 'yellow');
+            cli_log(tr('Failed to get path ":path" from environment ":environment"', array(':path' => $path, ':environment' => $environment)), 'yellow');
         }
 
         /*
