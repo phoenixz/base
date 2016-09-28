@@ -1659,7 +1659,7 @@ function get_next_cdn_id(){
         return $current_id;
 
     }catch(Exception $e){
-        throw new bException(tr('get_this_cdn_id(): Failed'), $e);
+        throw new bException(tr('get_next_cdn_id(): Failed'), $e);
     }
 }
 
@@ -1668,7 +1668,7 @@ function get_next_cdn_id(){
 /*
  *
  */
-function cdn_prefix($id = null, $force_environment = false){
+function cdn_prefix($path, $id = null, $force_environment = false){
     global $_CONFIG;
 
     try{
@@ -1682,9 +1682,12 @@ function cdn_prefix($id = null, $force_environment = false){
 
         if(!$id){
             $id = get_next_cdn_id();
+if($id){
+throw new bException('cdn_prefix():MULTIPLE CDN SERVER SUPPORT IS UNDER CONSTRUCTION FOR /admin SUPPORT WITH THE NEW ADMIN SYSTEM', 'not-supported');
+}
         }
 
-        return str_replace(':id', $id, $cdn['prefix']);
+        return str_replace(':id', $id, unslash($_CONFIG['root']).$cdn['prefix']).$path;
 
     }catch(Exception $e){
         throw new bException(tr('cdn_prefix(): Failed'), $e);
