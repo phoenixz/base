@@ -92,28 +92,29 @@ function html_generate_css(){
             $GLOBALS['css'] = array();
         }
 
-        if($GLOBALS['page_is_admin']){
-            /*
-             * Use normal admin CSS
-             */
-            $GLOBALS['css']['admin'] = array('media' => null);
+// :DELETE: admin pages and mobile pages are no longer supported
+//        if($GLOBALS['page_is_admin']){
+//            /*
+//             * Use normal admin CSS
+//             */
+//            $GLOBALS['css']['admin'] = array('media' => null);
+//
+//        }elseif($GLOBALS['page_is_mobile'] or empty($_CONFIG['bootstrap']['enabled'])){
+//            /*
+//             * Use normal, default CSS
+//             */
+////            $GLOBALS['css']['style'] = array('media' => null);
+//
+//        }else{
+//            /*
+//             * Use bootstrap CSS
+//             */
+////            $GLOBALS['css'][$_CONFIG['bootstrap']['css']] = array('media' => null);
+////            $GLOBALS['css']['style']                      = array('media' => null);
+////            $GLOBALS['css'][''bootstrap-theme']           => array('media' => null),
+//        }
 
-        }elseif($GLOBALS['page_is_mobile'] or empty($_CONFIG['bootstrap']['enabled'])){
-            /*
-             * Use normal, default CSS
-             */
-//            $GLOBALS['css']['style'] = array('media' => null);
-
-        }else{
-            /*
-             * Use bootstrap CSS
-             */
-//            $GLOBALS['css'][$_CONFIG['bootstrap']['css']] = array('media' => null);
-//            $GLOBALS['css']['style']                      = array('media' => null);
-//            $GLOBALS['css'][''bootstrap-theme']           => array('media' => null),
-        }
-
-        if(!empty($_CONFIG['cdn']['css']['post']) and !$GLOBALS['page_is_admin']){
+        if(!empty($_CONFIG['cdn']['css']['post'])){
             $GLOBALS['css']['post'] = array('min' => $_CONFIG['cdn']['min'], 'media' => (is_string($_CONFIG['cdn']['css']['post']) ? $_CONFIG['cdn']['css']['post'] : ''));
         }
 
@@ -123,7 +124,7 @@ function html_generate_css(){
         foreach($GLOBALS['css'] as $file => $meta) {
             if(!$file) continue;
 
-            $html = '<link rel="stylesheet" type="text/css" href="'.cdn_prefix().(($_CONFIG['whitelabels']['enabled'] === true) ? $_SESSION['domain']. '/' : '').(!empty($GLOBALS['page_is_admin']) ? 'admin/' : '').'css/'.(!empty($GLOBALS['page_is_mobile']) ? 'mobile/' : '').$file.($min ? '.min.css' : '.css').'"'.($meta['media'] ? ' media="'.$meta['media'].'"' : '').'>';
+            $html = '<link rel="stylesheet" type="text/css" href="'.cdn_prefix('css/').(!empty($GLOBALS['page_is_mobile']) ? 'mobile/' : '').$file.($min ? '.min.css' : '.css').'"'.($meta['media'] ? ' media="'.$meta['media'].'"' : '').'>';
 
             if(substr($file, 0, 2) == 'ie'){
                 $retval .= html_iefilter($html, str_until(str_from($file, 'ie'), '.'));
@@ -307,7 +308,7 @@ function html_generate_js(){
                     if($skip) continue;
                 }
 
-                $html = '<script'.(!empty($data['option']) ? ' '.$data['option'] : '').' type="text/javascript" src="'.cdn_prefix().(($_CONFIG['whitelabels']['enabled'] === true) ? $_SESSION['domain'].'/' : '').(!empty($GLOBALS['page_is_admin']) ? 'admin/' : '').'js/'.$file.$min.'.js"></script>';
+                $html = '<script'.(!empty($data['option']) ? ' '.$data['option'] : '').' type="text/javascript" src="'.cdn_prefix('js/').$file.$min.'.js"></script>';
             }
 
             /*
@@ -437,7 +438,7 @@ function html_header($params = null, $meta = array()){
         /*
          * Add meta tag no-index for non production environments and admin pages
          */
-        if(!$_CONFIG['production'] || $GLOBALS['page_is_admin']){
+        if(!$_CONFIG['production'] || $_CONFIG['noindex']){
            $meta['robots'] = 'noindex';
         }
 
@@ -1244,14 +1245,14 @@ function html_favicon($icon = null, $mobile_icon = null, $sizes = null, $precomp
         foreach($params['sizes'] as $sizes){
             if($GLOBALS['page_is_mobile']){
                 if(!$params['mobile_icon']){
-                    $params['mobile_icon'] = cdn_prefix().'img/mobile/favicon.png';
+                    $params['mobile_icon'] = cdn_prefix('img/mobile/favicon.png');
                 }
 
                 return '<link rel="apple-touch-icon'.($params['precomposed'] ? '-precompsed' : '').'"'.($sizes ? ' sizes="'.$sizes.'"' : '').' href="'.$params['mobile_icon'].'" />';
 
             }else{
                 if(empty($params['icon'])){
-                    $params['icon'] = cdn_prefix().'img/favicon.png';
+                    $params['icon'] = cdn_prefix('img/favicon.png');
                 }
 
                 return '<link rel="icon" type="image/x-icon"'.($sizes ? ' sizes="'.$sizes.'"' : '').'  href="'.$params['icon'].'" />';
@@ -1628,11 +1629,11 @@ function html_video($src, $type = null, $height = 0, $width = 0, $more = ''){
             $file  = ROOT.'www/en'.str_starts($src, '/');
 
         }else{
-            if(preg_match('/^'.$protocol.':\/\/(?:www\.)?'.str_replace('.', '\.', $_SESSION['domain']).'\/.+$/ius', $src)){
+            if(preg_match('/^'.$protocol.':\/\/(?:www\.)?'.str_replace('.', '\.', domain()).'\/.+$/ius', $src)){
                 /*
                  * This is a local video with domain specification
                  */
-                $file  = ROOT.'www/en'.str_starts(str_from($src, $_SESSION['domain']), '/');
+                $file  = ROOT.'www/en'.str_starts(str_from($src, domain()), '/');
 
             }elseif(!$_CONFIG['production']){
                 /*

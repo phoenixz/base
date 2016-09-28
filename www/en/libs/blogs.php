@@ -428,7 +428,8 @@ function blogs_categories_select($params) {
         array_default($params, 'none'        , tr('Select a category'));
         array_default($params, 'empty'       , tr('No categories available'));
         array_default($params, 'option_class', '');
-        array_default($params, 'parent'      , null);
+        array_default($params, 'right'       , false);
+        array_default($params, 'parent'      , false);
         array_default($params, 'filter'      , array());
 
         if(empty($params['blogs_id'])){
@@ -446,19 +447,42 @@ function blogs_categories_select($params) {
 
                         FROM    `blogs_categories` ';
 
+            $join    = '';
+
             $where   = 'WHERE   `blogs_categories`.`blogs_id` = :blogs_id
                         AND     `blogs_categories`.`status`   IS NULL ';
 
+            if($params['right']){
+                /*
+                 * User must have right of the category to be able to see it
+                 */
+                $join .= ' JOIN `users_rights`
+                           ON   `users_rights`.`users_id` = :users_id
+                           AND (`users_rights`.`name`     = `blogs_categories`.`seoname`
+                           OR   `users_rights`.`name`     = "god") ';
+
+                $execute[':users_id'] = isset_get($_SESSION['user']['id']);
+            }
+
             if($params['parent']){
-                $parent = ' JOIN `blogs_categories` AS parents
-                            ON   `parents`.`seoname` = :parent
-                            AND  `parents`.`id`      = `blogs_categories`.`parents_id`';
+                $join .= ' JOIN `blogs_categories` AS parents
+                           ON   `parents`.`seoname` = :parent
+                           AND  `parents`.`id`      = `blogs_categories`.`parents_id`';
 
                 $execute[':parent'] = $params['parent'];
 
-            }/*elseif($params['parent'] !== false){
+            }elseif($params['parent'] === null){
                 $where .= ' AND  `blogs_categories`.`parents_id` IS NULL ';
-            }*/
+
+            }elseif($params['parent'] === false){
+                /*
+                 * Don't filter for any parent
+                 */
+
+            }else{
+                $where .= ' AND `blogs_categories`.`parents_id` = 0 ';
+
+            }
 
             /*
              * Filter specified values.
@@ -470,7 +494,7 @@ function blogs_categories_select($params) {
                 $execute[':'.$key] = $value;
             }
 
-            $params['resource'] = sql_query($query.isset_get($parent).$where.' ORDER BY `name` ASC', $execute);
+            $params['resource'] = sql_query($query.$join.$where.' ORDER BY `name` ASC', $execute);
         }
 
         return html_select($params);

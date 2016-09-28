@@ -15,11 +15,16 @@ function current_domain($current_url = false, $query = null){
     global $_CONFIG;
 
     try{
-        if(empty($_SERVER['SERVER_NAME'])){
-            $server_name = $_SESSION['domain'];
+        if(PLATFORM_HTTP){
+            if(empty($_SERVER['SERVER_NAME'])){
+                $server_name = $_SESSION['domain'];
+
+            }else{
+                $server_name = $_SERVER['SERVER_NAME'];
+            }
 
         }else{
-            $server_name = $_SERVER['SERVER_NAME'];
+            $server_name = $_CONFIG['domain'];
         }
 
         if(!$current_url){
