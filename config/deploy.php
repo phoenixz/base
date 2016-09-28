@@ -28,12 +28,15 @@ $_CONFIG['deploy']['trial']      = array('target_user'         => '',
 
                                          'modes'               => array('dirs'  => array('/'             => 'a-rwx,ug+rx,g+s',
                                                                                          '/data'         => 'ug+w',
-                                                                                         '/data/tmp'     => 'ug+w',
-                                                                                         '/data/content' => 'ug+w'),
+                                                                                         '/data/doc'     => 'ug-w',
+                                                                                         '/data/audio'   => 'ug-w',
+                                                                                         '/data/plugins' => 'ug-w'),
 
                                                                         'files' => array('/'             => 'a-rwx,ug+r',
-                                                                                         '/data/tmp'     => 'ug+w',
-                                                                                         '/data/content' => 'ug+w',
+                                                                                         '/data'         => 'ug+w',
+                                                                                         '/data/doc'     => 'ug-w',
+                                                                                         '/data/audio'   => 'ug-w',
+                                                                                         '/data/plugins' => 'ug-w',
                                                                                          '/scripts'      => 'a-rw,ug+x')));
 
 $_CONFIG['deploy']['production'] = array('target_user'         => '',
