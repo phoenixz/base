@@ -1629,7 +1629,7 @@ function html_video($src, $type = null, $height = 0, $width = 0, $more = ''){
             $file  = ROOT.'www/en'.str_starts($src, '/');
 
         }else{
-            if(preg_match('/^'.$protocol.':\/\/(?:www\.)?'.str_replace('.', '\.', domain()).'\/.+$/ius', $src)){
+            if(preg_match('/^'.str_replace('/', '\/', str_replace('.', '\.', domain())).'\/.+$/ius', $src)){
                 /*
                  * This is a local video with domain specification
                  */
