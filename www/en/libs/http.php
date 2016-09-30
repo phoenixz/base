@@ -582,11 +582,21 @@ function http_redirect_query_url(){
             return true;
         }
 
-        if(!$_CONFIG['redirects']['query']){
-            /*
-             * No need to auto redirect URL's with queries
-             */
-            return true;
+        if($GLOBALS['page_is_admin']){
+            if(!$_CONFIG['redirects']['backend']['query']){
+                /*
+                 * No need to auto redirect URL's with queries
+                 */
+                return true;
+            }
+
+        }else{
+            if(!$_CONFIG['redirects']['frontend']['query']){
+                /*
+                 * No need to auto redirect URL's with queries
+                 */
+                return true;
+            }
         }
 
         if(($pos = strpos($_SERVER['REQUEST_URI'], '?')) === false){

@@ -920,7 +920,7 @@ function domain($current_url = false, $query = null){
             $retval = $_CONFIG['protocol'].$_SESSION['domain'].$_SERVER['REQUEST_URI'];
 
         }else{
-            $retval = $_CONFIG['protocol'].$_SESSION['domain'].$_CONFIG['root'].str_starts($current_url, '/');
+            $retval = $_CONFIG['protocol'].$_SESSION['domain'].unslash($_CONFIG['root']).str_starts($current_url, '/');
         }
 
         if($query){

@@ -211,60 +211,59 @@ function blogs_post_get($post = null, $blog = null, $columns = null){
  */
 function blogs_post_update($post, $params = null){
     try{
+        $post  = blogs_validate_post($post, $params);
 
-        $post    = blogs_validate_post($post, $params);
+        $query = 'UPDATE  `blogs_posts`
 
-        $query   = 'UPDATE  `blogs_posts`
+                  SET     `blogs_id`       = :blogs_id,
+                          `assigned_to_id` = :assigned_to_id,
+                          `modifiedby`     = :modifiedby,
+                          `modifiedon`     = NOW(),
+                          `featured_until` = :featured_until,
+                          `parents_id`     = :parents_id,
+                          `category1`      = :category1,
+                          `seocategory1`   = :seocategory1,
+                          `category2`      = :category2,
+                          `seocategory2`   = :seocategory2,
+                          `category3`      = :category3,
+                          `seocategory3`   = :seocategory3,
+                          `priority`       = :priority,
+                          `language`       = :language,
+                          `keywords`       = :keywords,
+                          `seokeywords`    = :seokeywords,
+                          `description`    = :description,
+                          `status`         = :status,
+                          `url`            = :url,
+                          `urlref`         = :urlref,
+                          `name`           = :name,
+                          `seoname`        = :seoname,
+                          `body`           = :body
 
-                    SET     `blogs_id`       = :blogs_id,
-                            `assigned_to_id` = :assigned_to_id,
-                            `modifiedby`     = :modifiedby,
-                            `modifiedon`     = NOW(),
-                            `featured_until` = :featured_until,
-                            `parents_id`     = :parents_id,
-                            `category1`      = :category1,
-                            `seocategory1`   = :seocategory1,
-                            `category2`      = :category2,
-                            `seocategory2`   = :seocategory2,
-                            `category3`      = :category3,
-                            `seocategory3`   = :seocategory3,
-                            `priority`       = :priority,
-                            `language`       = :language,
-                            `keywords`       = :keywords,
-                            `seokeywords`    = :seokeywords,
-                            `description`    = :description,
-                            `status`         = :status,
-                            `url`            = :url,
-                            `urlref`         = :urlref,
-                            `name`           = :name,
-                            `seoname`        = :seoname,
-                            `body`           = :body
+                  WHERE   `id`             = :id';
 
-                    WHERE   `id`             = :id';
-
-        $execute   = array(':id'             => $post['id'],
-                           ':blogs_id'       => $post['blogs_id'],
-                           ':assigned_to_id' => $post['assigned_to_id'],
-                           ':parents_id'     => isset_get($post['parents_id']),
-                           ':modifiedby'     => isset_get($_SESSION['user']['id']),
-                           ':featured_until' => $post['featured_until'],
-                           ':category1'      => $post['category1'],
-                           ':seocategory1'   => $post['seocategory1'],
-                           ':category2'      => $post['category2'],
-                           ':seocategory2'   => $post['seocategory2'],
-                           ':category3'      => $post['category3'],
-                           ':seocategory3'   => $post['seocategory3'],
-                           ':priority'       => $post['priority'],
-                           ':language'       => $post['language'],
-                           ':keywords'       => $post['keywords'],
-                           ':seokeywords'    => $post['seokeywords'],
-                           ':description'    => $post['description'],
-                           ':status'         => $post['status'],
-                           ':url'            => $post['url'],
-                           ':urlref'         => $post['urlref'],
-                           ':name'           => $post['name'],
-                           ':seoname'        => $post['seoname'],
-                           ':body'           => $post['body']);
+        $execute = array(':id'             => $post['id'],
+                         ':blogs_id'       => $post['blogs_id'],
+                         ':assigned_to_id' => $post['assigned_to_id'],
+                         ':parents_id'     => isset_get($post['parents_id']),
+                         ':modifiedby'     => isset_get($_SESSION['user']['id']),
+                         ':featured_until' => $post['featured_until'],
+                         ':category1'      => $post['category1'],
+                         ':seocategory1'   => $post['seocategory1'],
+                         ':category2'      => $post['category2'],
+                         ':seocategory2'   => $post['seocategory2'],
+                         ':category3'      => $post['category3'],
+                         ':seocategory3'   => $post['seocategory3'],
+                         ':priority'       => $post['priority'],
+                         ':language'       => $post['language'],
+                         ':keywords'       => $post['keywords'],
+                         ':seokeywords'    => $post['seokeywords'],
+                         ':description'    => $post['description'],
+                         ':status'         => $post['status'],
+                         ':url'            => $post['url'],
+                         ':urlref'         => $post['urlref'],
+                         ':name'           => $post['name'],
+                         ':seoname'        => $post['seoname'],
+                         ':body'           => $post['body']);
 
         if($execute[':featured_until']){
             $execute[':featured_until'] = system_date_format($post['featured_until'], 'mysql');
@@ -284,7 +283,7 @@ function blogs_post_update($post, $params = null){
         blogs_update_keywords($post);
         blogs_update_key_value_store($post, isset_get($params['key_values']));
 
-        return $post['seoname'];
+        return $post;
 
     }catch(Exception $e){
         throw new bException(tr('blogs_post_update(): Failed'), $e);

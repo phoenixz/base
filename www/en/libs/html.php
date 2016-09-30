@@ -88,11 +88,11 @@ function html_generate_css(){
     global $_CONFIG;
 
     try{
-        if(empty($GLOBALS['css'])){
-            $GLOBALS['css'] = array();
-        }
-
-// :DELETE: admin pages and mobile pages are no longer supported
+//        if(empty($GLOBALS['css'])){
+//            $GLOBALS['css'] = array();
+//        }
+//
+//// :DELETE: admin pages and mobile pages are no longer supported
 //        if($GLOBALS['page_is_admin']){
 //            /*
 //             * Use normal admin CSS
@@ -103,15 +103,15 @@ function html_generate_css(){
 //            /*
 //             * Use normal, default CSS
 //             */
-////            $GLOBALS['css']['style'] = array('media' => null);
+//////            $GLOBALS['css']['style'] = array('media' => null);
 //
 //        }else{
 //            /*
 //             * Use bootstrap CSS
 //             */
-////            $GLOBALS['css'][$_CONFIG['bootstrap']['css']] = array('media' => null);
-////            $GLOBALS['css']['style']                      = array('media' => null);
-////            $GLOBALS['css'][''bootstrap-theme']           => array('media' => null),
+//////            $GLOBALS['css'][$_CONFIG['bootstrap']['css']] = array('media' => null);
+//////            $GLOBALS['css']['style']                      = array('media' => null);
+//////            $GLOBALS['css'][''bootstrap-theme']           => array('media' => null),
 //        }
 
         if(!empty($_CONFIG['cdn']['css']['post'])){
@@ -124,7 +124,7 @@ function html_generate_css(){
         foreach($GLOBALS['css'] as $file => $meta) {
             if(!$file) continue;
 
-            $html = '<link rel="stylesheet" type="text/css" href="'.cdn_prefix('css/').(!empty($GLOBALS['page_is_mobile']) ? 'mobile/' : '').$file.($min ? '.min.css' : '.css').'"'.($meta['media'] ? ' media="'.$meta['media'].'"' : '').'>';
+            $html = '<link rel="stylesheet" type="text/css" href="'.cdn_prefix((($_CONFIG['whitelabels']['enabled'] === true) ? $_SESSION['domain']. '/' : '').'css/'.(!empty($GLOBALS['page_is_mobile']) ? 'mobile/' : '').$file.($min ? '.min.css' : '.css')).'"'.($meta['media'] ? ' media="'.$meta['media'].'"' : '').'>';
 
             if(substr($file, 0, 2) == 'ie'){
                 $retval .= html_iefilter($html, str_until(str_from($file, 'ie'), '.'));
@@ -308,7 +308,7 @@ function html_generate_js(){
                     if($skip) continue;
                 }
 
-                $html = '<script'.(!empty($data['option']) ? ' '.$data['option'] : '').' type="text/javascript" src="'.cdn_prefix('js/').$file.$min.'.js"></script>';
+                $html = '<script'.(!empty($data['option']) ? ' '.$data['option'] : '').' type="text/javascript" src="'.cdn_prefix((($_CONFIG['whitelabels']['enabled'] === true) ? $_SESSION['domain'].'/' : '').'js/'.$file.$min.'.js').'"></script>';
             }
 
             /*
@@ -1629,7 +1629,7 @@ function html_video($src, $type = null, $height = 0, $width = 0, $more = ''){
             $file  = ROOT.'www/en'.str_starts($src, '/');
 
         }else{
-            if(preg_match('/^'.$protocol.':\/\/(?:www\.)?'.str_replace('.', '\.', domain()).'\/.+$/ius', $src)){
+            if(preg_match('/^'.str_replace('/', '\/', str_replace('.', '\.', domain())).'\/.+$/ius', $src)){
                 /*
                  * This is a local video with domain specification
                  */
@@ -1719,8 +1719,8 @@ function page_show($pagename, $die = true, $force = false, $data = null) {
             // Execute ajax page
             return include(ROOT.'www/'.LANGUAGE.'/ajax/'.$pagename.'.php');
 
-        }elseif(!empty($GLOBALS['page_is_ajax'])){
-                $prefix = 'ajax/';
+        }elseif(!empty($GLOBALS['page_is_admin'])){
+            $prefix = 'admin/';
 
         }else{
             $prefix = '';
