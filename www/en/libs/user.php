@@ -717,7 +717,7 @@ function user_update_password($params, $current = true){
 /*
  * Return requested data for specified user
  */
-function user_get($user = null, $columns = '*'){
+function user_get($user = null){
     global $_CONFIG;
 
     try{
@@ -727,23 +727,51 @@ function user_get($user = null, $columns = '*'){
             }
 
             if(is_numeric($user)){
-                $retval = sql_get('SELECT '.$columns.'
+                $retval = sql_get('SELECT    `users`.*,
 
-                                   FROM   `users`
+                                             `createdby`.`name`      AS `createdby_name`,
+                                             `createdby`.`email`     AS `createdby_email`,
+                                             `createdby`.`username`  AS `createdby_username`,
 
-                                   WHERE  `id` = :id
-                                   AND    `status` IS NULL',
+                                             `modifiedby`.`name`     AS `modifiedby_name`,
+                                             `modifiedby`.`email`    AS `modifiedby_email`,
+                                             `modifiedby`.`username` AS `modifiedby_username`
+
+                                   FROM      `users`
+
+                                   LEFT JOIN `users` AS `createdby`
+                                   ON        `createdby`.`id` = `users`.`createdby`
+
+                                   LEFT JOIN `users` AS `modifiedby`
+                                   ON        `modifiedby`.`id` = `users`.`modifiedby`
+
+                                   WHERE     `users`.`id` = :id
+                                   AND       `users`.`status` IS NULL',
 
                                    array(':id' => $user));
 
             }else{
-                $retval = sql_get('SELECT '.$columns.'
+                $retval = sql_get('SELECT    `users`.*,
 
-                                   FROM   `users`
+                                             `createdby`.`name`      AS `createdby_name`,
+                                             `createdby`.`email`     AS `createdby_email`,
+                                             `createdby`.`username`  AS `createdby_username`,
 
-                                   WHERE  `email`    = :email
-                                   OR     `username` = :username
-                                   AND    `status` IS NULL',
+                                             `modifiedby`.`name`     AS `modifiedby_name`,
+                                             `modifiedby`.`email`    AS `modifiedby_email`,
+                                             `modifiedby`.`username` AS `modifiedby_username`
+
+                                   FROM      `users`
+
+                                   LEFT JOIN `users` AS `createdby`
+                                   ON        `createdby`.`id` = `users`.`createdby`
+
+                                   LEFT JOIN `users` AS `modifiedby`
+                                   ON        `modifiedby`.`id` = `users`.`modifiedby`
+
+                                   WHERE     `users`.`email`    = :email
+                                   OR        `users`.`username` = :username
+                                   AND       `users`.`status` IS NULL',
 
                                    array(':email'    => $user,
                                          ':username' => $user));
@@ -753,13 +781,26 @@ function user_get($user = null, $columns = '*'){
             /*
              * Pre-create a new user
              */
-            $retval = sql_get('SELECT '.$columns.'
+            $retval = sql_get('SELECT    `users`.*,
 
-                               FROM   `users`
+                                         `createdby`.`name`      AS `createdby_name`,
+                                         `createdby`.`email`     AS `createdby_email`,
+                                         `createdby`.`username`  AS `createdby_username`,
 
-                               WHERE  `createdby` = :createdby
+                                         `modifiedby`.`name`     AS `modifiedby_name`,
+                                         `modifiedby`.`email`    AS `modifiedby_email`,
+                                         `modifiedby`.`username` AS `modifiedby_username`
 
-                               AND    `status`    = "new"',
+                               FROM      `users`
+
+                               LEFT JOIN `users` AS `createdby`
+                               ON        `createdby`.`id` = `users`.`createdby`
+
+                               LEFT JOIN `users` AS `modifiedby`
+                               ON        `modifiedby`.`id` = `users`.`modifiedby`
+
+                               WHERE     `users`.`createdby` = :createdby
+                               AND       `users`.`status`    = "new"',
 
                                array(':createdby' => $_SESSION['user']['id']));
 
