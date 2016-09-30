@@ -52,7 +52,7 @@ include_once(ROOT.'config/project.php');
  */
 define('PLATFORM', (php_sapi_name() === 'cli') ? 'shell' : 'http');
 
-if((PLATFORM == 'shell') and (count($argv) > 1)){
+if(PLATFORM == 'shell'){
     /*
      * Pre-process very basic command line arguments
      */
