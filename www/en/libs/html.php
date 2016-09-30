@@ -93,26 +93,26 @@ function html_generate_css(){
         }
 
 // :DELETE: admin pages and mobile pages are no longer supported
-//        if($GLOBALS['page_is_admin']){
-//            /*
-//             * Use normal admin CSS
-//             */
-//            $GLOBALS['css']['admin'] = array('media' => null);
-//
-//        }elseif($GLOBALS['page_is_mobile'] or empty($_CONFIG['bootstrap']['enabled'])){
-//            /*
-//             * Use normal, default CSS
-//             */
+        if($GLOBALS['page_is_admin']){
+            /*
+             * Use normal admin CSS
+             */
+            $GLOBALS['css']['admin'] = array('media' => null);
+
+        }elseif($GLOBALS['page_is_mobile'] or empty($_CONFIG['bootstrap']['enabled'])){
+            /*
+             * Use normal, default CSS
+             */
 ////            $GLOBALS['css']['style'] = array('media' => null);
-//
-//        }else{
-//            /*
-//             * Use bootstrap CSS
-//             */
+
+        }else{
+            /*
+             * Use bootstrap CSS
+             */
 ////            $GLOBALS['css'][$_CONFIG['bootstrap']['css']] = array('media' => null);
 ////            $GLOBALS['css']['style']                      = array('media' => null);
 ////            $GLOBALS['css'][''bootstrap-theme']           => array('media' => null),
-//        }
+        }
 
         if(!empty($_CONFIG['cdn']['css']['post'])){
             $GLOBALS['css']['post'] = array('min' => $_CONFIG['cdn']['min'], 'media' => (is_string($_CONFIG['cdn']['css']['post']) ? $_CONFIG['cdn']['css']['post'] : ''));
@@ -124,7 +124,7 @@ function html_generate_css(){
         foreach($GLOBALS['css'] as $file => $meta) {
             if(!$file) continue;
 
-            $html = '<link rel="stylesheet" type="text/css" href="'.cdn_prefix('css/').(!empty($GLOBALS['page_is_mobile']) ? 'mobile/' : '').$file.($min ? '.min.css' : '.css').'"'.($meta['media'] ? ' media="'.$meta['media'].'"' : '').'>';
+            $html = '<link rel="stylesheet" type="text/css" href="'.cdn_prefix().(($_CONFIG['whitelabels']['enabled'] === true) ? $_SESSION['domain']. '/' : '').(!empty($GLOBALS['page_is_admin']) ? 'admin/' : '').'css/'.(!empty($GLOBALS['page_is_mobile']) ? 'mobile/' : '').$file.($min ? '.min.css' : '.css').'"'.($meta['media'] ? ' media="'.$meta['media'].'"' : '').'>';
 
             if(substr($file, 0, 2) == 'ie'){
                 $retval .= html_iefilter($html, str_until(str_from($file, 'ie'), '.'));
@@ -308,7 +308,7 @@ function html_generate_js(){
                     if($skip) continue;
                 }
 
-                $html = '<script'.(!empty($data['option']) ? ' '.$data['option'] : '').' type="text/javascript" src="'.cdn_prefix('js/').$file.$min.'.js"></script>';
+                $html = '<script'.(!empty($data['option']) ? ' '.$data['option'] : '').' type="text/javascript" src="'.cdn_prefix().(($_CONFIG['whitelabels']['enabled'] === true) ? $_SESSION['domain'].'/' : '').(!empty($GLOBALS['page_is_admin']) ? 'admin/' : '').'js/'.$file.$min.'.js"></script>';
             }
 
             /*
