@@ -762,14 +762,14 @@ try{
     define('LIBS', ROOT.'www/'.LANGUAGE.'/libs/');
 
     try{
-        if($GLOBALS['page_is_admin']){
-            if(file_exists(LIBS.'/custom_admin.php')){
-               include_once(LIBS.'/custom_admin.php');
+        if(empty($GLOBALS['page_is_admin'])){
+            if(file_exists(LIBS.'/custom.php')){
+               include_once(LIBS.'/custom.php');
             }
 
         }else{
-            if(file_exists(LIBS.'/custom.php')){
-               include_once(LIBS.'/custom.php');
+            if(file_exists(LIBS.'/custom_admin.php')){
+               include_once(LIBS.'/custom_admin.php');
             }
         }
 
