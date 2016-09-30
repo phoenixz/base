@@ -32,9 +32,7 @@ if(!isset($GLOBALS['quiet'])){
 /*
  * Allow for ROOT to be predefined. This may be useful when using www/404.php with www/en, www/es, etc
  */
-if(!defined('ROOT')){
-    define('ROOT', realpath(dirname(__FILE__).'/../../..').'/');
-}
+define('ROOT', realpath(dirname(__FILE__).'/../../..').'/');
 
 
 /*
@@ -705,7 +703,6 @@ try{
             $_CONFIG['cache']['http']['enabled'] = false;
 
             load_config('admin');
-            load_libs('custom_admin');
             restore_post();
 
         }elseif((!empty($_SESSION['mobile']['site']) and $_CONFIG['mobile']['enabled']) or !empty($_CONFIG['mobile']['force'])){
@@ -765,9 +762,16 @@ try{
     define('LIBS', ROOT.'www/'.LANGUAGE.'/libs/');
 
     try{
-       if(file_exists(LIBS.'/custom.php')){
-           include_once(LIBS.'/custom.php');
-       }
+        if($GLOBALS['page_is_admin']){
+            if(file_exists(LIBS.'/custom_admin.php')){
+               include_once(LIBS.'/custom_admin.php');
+            }
+
+        }else{
+            if(file_exists(LIBS.'/custom.php')){
+               include_once(LIBS.'/custom.php');
+            }
+        }
 
     }catch(Exception $e){
         throw new bException('startup(): Failed to load custom library', $e);
