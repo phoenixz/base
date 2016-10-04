@@ -49,7 +49,7 @@ function upload_dropzone($selector = null, $url = '/ajax/upload.php', $params = 
  *
  * WARNING: OCUPLOAD CANNOT UPLOAD ACROSS DOMAINS!
  */
-function upload_ocupload($selector = "input[name=upload]", $url = '/ajax/upload.php', $params = array()){
+function upload_ocupload($selector = 'input[name=upload]', $url = '/ajax/upload.php', $params = array()){
     try{
         array_params($params);
         array_default($params, 'executeon', true);
