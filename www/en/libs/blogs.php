@@ -211,59 +211,60 @@ function blogs_post_get($post = null, $blog = null, $columns = null){
  */
 function blogs_post_update($post, $params = null){
     try{
-        $post  = blogs_validate_post($post, $params);
 
-        $query = 'UPDATE  `blogs_posts`
+        $post    = blogs_validate_post($post, $params);
 
-                  SET     `blogs_id`       = :blogs_id,
-                          `assigned_to_id` = :assigned_to_id,
-                          `modifiedby`     = :modifiedby,
-                          `modifiedon`     = NOW(),
-                          `featured_until` = :featured_until,
-                          `parents_id`     = :parents_id,
-                          `category1`      = :category1,
-                          `seocategory1`   = :seocategory1,
-                          `category2`      = :category2,
-                          `seocategory2`   = :seocategory2,
-                          `category3`      = :category3,
-                          `seocategory3`   = :seocategory3,
-                          `priority`       = :priority,
-                          `language`       = :language,
-                          `keywords`       = :keywords,
-                          `seokeywords`    = :seokeywords,
-                          `description`    = :description,
-                          `status`         = :status,
-                          `url`            = :url,
-                          `urlref`         = :urlref,
-                          `name`           = :name,
-                          `seoname`        = :seoname,
-                          `body`           = :body
+        $query   = 'UPDATE  `blogs_posts`
 
-                  WHERE   `id`             = :id';
+                    SET     `blogs_id`       = :blogs_id,
+                            `assigned_to_id` = :assigned_to_id,
+                            `modifiedby`     = :modifiedby,
+                            `modifiedon`     = NOW(),
+                            `featured_until` = :featured_until,
+                            `parents_id`     = :parents_id,
+                            `category1`      = :category1,
+                            `seocategory1`   = :seocategory1,
+                            `category2`      = :category2,
+                            `seocategory2`   = :seocategory2,
+                            `category3`      = :category3,
+                            `seocategory3`   = :seocategory3,
+                            `priority`       = :priority,
+                            `language`       = :language,
+                            `keywords`       = :keywords,
+                            `seokeywords`    = :seokeywords,
+                            `description`    = :description,
+                            `status`         = :status,
+                            `url`            = :url,
+                            `urlref`         = :urlref,
+                            `name`           = :name,
+                            `seoname`        = :seoname,
+                            `body`           = :body
 
-        $execute = array(':id'             => $post['id'],
-                         ':blogs_id'       => $post['blogs_id'],
-                         ':assigned_to_id' => $post['assigned_to_id'],
-                         ':parents_id'     => isset_get($post['parents_id']),
-                         ':modifiedby'     => isset_get($_SESSION['user']['id']),
-                         ':featured_until' => $post['featured_until'],
-                         ':category1'      => $post['category1'],
-                         ':seocategory1'   => $post['seocategory1'],
-                         ':category2'      => $post['category2'],
-                         ':seocategory2'   => $post['seocategory2'],
-                         ':category3'      => $post['category3'],
-                         ':seocategory3'   => $post['seocategory3'],
-                         ':priority'       => $post['priority'],
-                         ':language'       => $post['language'],
-                         ':keywords'       => $post['keywords'],
-                         ':seokeywords'    => $post['seokeywords'],
-                         ':description'    => $post['description'],
-                         ':status'         => $post['status'],
-                         ':url'            => $post['url'],
-                         ':urlref'         => $post['urlref'],
-                         ':name'           => $post['name'],
-                         ':seoname'        => $post['seoname'],
-                         ':body'           => $post['body']);
+                    WHERE   `id`             = :id';
+
+        $execute   = array(':id'             => $post['id'],
+                           ':blogs_id'       => $post['blogs_id'],
+                           ':assigned_to_id' => $post['assigned_to_id'],
+                           ':parents_id'     => isset_get($post['parents_id']),
+                           ':modifiedby'     => isset_get($_SESSION['user']['id']),
+                           ':featured_until' => $post['featured_until'],
+                           ':category1'      => $post['category1'],
+                           ':seocategory1'   => $post['seocategory1'],
+                           ':category2'      => $post['category2'],
+                           ':seocategory2'   => $post['seocategory2'],
+                           ':category3'      => $post['category3'],
+                           ':seocategory3'   => $post['seocategory3'],
+                           ':priority'       => $post['priority'],
+                           ':language'       => $post['language'],
+                           ':keywords'       => $post['keywords'],
+                           ':seokeywords'    => $post['seokeywords'],
+                           ':description'    => $post['description'],
+                           ':status'         => $post['status'],
+                           ':url'            => $post['url'],
+                           ':urlref'         => $post['urlref'],
+                           ':name'           => $post['name'],
+                           ':seoname'        => $post['seoname'],
+                           ':body'           => $post['body']);
 
         if($execute[':featured_until']){
             $execute[':featured_until'] = system_date_format($post['featured_until'], 'mysql');
@@ -283,7 +284,7 @@ function blogs_post_update($post, $params = null){
         blogs_update_keywords($post);
         blogs_update_key_value_store($post, isset_get($params['key_values']));
 
-        return $post;
+        return $post['seoname'];
 
     }catch(Exception $e){
         throw new bException(tr('blogs_post_update(): Failed'), $e);
@@ -822,7 +823,6 @@ function blogs_validate($blog){
          * Validate input
          */
         $v = new validate_form($blog, 'id,name,url_template,keywords,slogan,description');
-
         $v->isNatural($blog['id'], tr('Please ensure that the specified post id is a natural number; numeric, integer, and > 0'));
 
         if(is_numeric($blog['name'])){
@@ -1324,7 +1324,7 @@ function blogs_media_process($file, $post, $priority = null){
          */
         $prefix = ROOT.'data/content/photos/';
         $file   = $post['blog_name'].'/'.file_move_to_target($file, $prefix.$post['blog_name'].'/', '-original.jpg', false, 4);
-        $photo  = str_runtil($file, '-');
+        $media  = str_runtil($file, '-');
         $types  = $_CONFIG['blogs']['images'];
 
         /*
@@ -1335,10 +1335,10 @@ function blogs_media_process($file, $post, $priority = null){
                 $params['x'] = $post[$type.'_x'];
                 $params['y'] = $post[$type.'_y'];
 
-                image_convert($prefix.$file, $prefix.$photo.'-'.$type.'.jpg', $params);
+                image_convert($prefix.$file, $prefix.$media.'-'.$type.'.jpg', $params);
 
             }else{
-                copy($prefix.$file, $prefix.$photo.'-'.$type.'.jpg');
+                copy($prefix.$file, $prefix.$media.'-'.$type.'.jpg');
             }
 
             if($post['retina']){
@@ -1346,17 +1346,17 @@ function blogs_media_process($file, $post, $priority = null){
                     $params['x'] = $post[$type.'_x'] * 2;
                     $params['y'] = $post[$type.'_y'] * 2;
 
-                    image_convert($prefix.$file, $prefix.$photo.'-'.$type.'@2x.jpg', $params);
+                    image_convert($prefix.$file, $prefix.$media.'-'.$type.'@2x.jpg', $params);
 
                 }else{
-                    symlink($prefix.$photo.'-'.$type.'.jpg', $prefix.$photo.'-'.$type.'@2x.jpg');
+                    symlink($prefix.$media.'-'.$type.'.jpg', $prefix.$media.'-'.$type.'@2x.jpg');
                 }
 
             }else{
                 /*
                  * If retina images are not supported, then just symlink them so that they at least are available
                  */
-                symlink(basename($prefix.$photo.'-'.$type.'.jpg')  , $prefix.$photo.'-'.$type.'@2x.jpg');
+                symlink(basename($prefix.$media.'-'.$type.'.jpg')  , $prefix.$media.'-'.$type.'@2x.jpg');
             }
         }
 
@@ -1376,20 +1376,21 @@ function blogs_media_process($file, $post, $priority = null){
                           array(':createdby'      => isset_get($_SESSION['user']['id']),
                                 ':blogs_posts_id' => $post['id'],
                                 ':blogs_id'       => $post['blogs_id'],
-                                ':file'           => $photo,
+                                ':file'           => $media,
                                 ':priority'       => $priority));
 
         $id   = sql_insert_id();
 
 // :DELETE: This block is replaced by the code below. Only left here in case it contains something usefull still
 //    $html = '<li style="display:none;" id="photo'.$id.'" class="myclub photo">
-//                <img style="width:219px;height:130px;" src="/photos/'.$photo.'-small.jpg" />
+//                <img style="width:219px;height:130px;" src="/photos/'.$media.'-small.jpg" />
 //                <a class="myclub photo delete">'.tr('Delete this photo').'</a>
 //                <textarea placeholder="'.tr('Description of this photo').'" class="myclub photo description"></textarea>
 //            </li>';
 
-        return array('id'    => $id,
-                     'photo' => $photo);
+        return array('id'          => $id,
+                     'file'        => $media,
+                     'description' => '');
 
     }catch(Exception $e){
         throw new bException('blogs_media_process(): Failed', $e);
@@ -1502,13 +1503,13 @@ function blogs_media_get_free_priority($blogs_posts_id, $insert = false){
 /*
  * Photo description
  */
-function blogs_photo_description($user, $photo_id, $description){
+function blogs_photo_description($user, $media_id, $description){
     try{
-        if(!is_numeric($photo_id)){
-            $photo_id = str_from($photo_id, 'photo');
+        if(!is_numeric($media_id)){
+            $media_id = str_from($media_id, 'photo');
         }
 
-        $photo    = sql_get('SELECT `blogs_media`.`id`,
+        $media    = sql_get('SELECT `blogs_media`.`id`,
                                     `blogs_media`.`createdby`
 
                              FROM   `blogs_media`
@@ -1516,13 +1517,13 @@ function blogs_photo_description($user, $photo_id, $description){
                              JOIN   `blogs_posts`
 
                              WHERE  `blogs_media`.`blogs_posts_id` = `blogs_posts`.`id`
-                             AND    `blogs_media`.`id`             = '.cfi($photo_id));
+                             AND    `blogs_media`.`id`             = '.cfi($media_id));
 
-        if(empty($photo['id'])) {
+        if(empty($media['id'])) {
             throw new bException('blogs_photo_description(): Unknown blog post photo specified', 'unknown');
         }
 
-        if(($photo['createdby'] != $_SESSION['user']['id']) and !has_rights('god')){
+        if(($media['createdby'] != $_SESSION['user']['id']) and !has_rights('god')){
             throw new bException('blogs_photo_description(): Cannot upload photos, this post is not yours', 'accessdenied');
         }
 
@@ -1533,7 +1534,7 @@ function blogs_photo_description($user, $photo_id, $description){
                    WHERE  `id`          = :id',
 
                    array(':description' => cfm($description),
-                         ':id'          => cfi($photo_id)));
+                         ':id'          => cfi($media_id)));
 
     }catch(Exception $e){
         throw new bException('blogs_photo_description(): Failed', $e);
@@ -1545,7 +1546,7 @@ function blogs_photo_description($user, $photo_id, $description){
 /*
  * Get a full URL of the photo
  */
-function blogs_photo_url($photo, $size){
+function blogs_photo_url($media, $size){
     try{
         switch($size){
             case 'large':
@@ -1560,7 +1561,7 @@ function blogs_photo_url($photo, $size){
                 /*
                  * Valid
                  */
-                return current_domain('/photos/'.$photo.'-'.$size.'.jpg');
+                return current_domain('/photos/'.$media.'-'.$size.'.jpg');
 
             default:
                 throw new bException(tr('blogs_photo_url(): Unknown size ":size" specified', array(':size' => $size)), 'unknown');
