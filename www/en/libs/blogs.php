@@ -1563,7 +1563,7 @@ function blogs_photo_url($media, $size){
                 /*
                  * Valid
                  */
-                return current_domain('/photos/'.$media.'-'.$size.'.jpg');
+                return current_domain('/photos/'.$media.'-'.$size.'.jpg', null, '');
 
             default:
                 throw new bException(tr('blogs_photo_url(): Unknown size ":size" specified', array(':size' => $size)), 'unknown');
