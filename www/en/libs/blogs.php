@@ -1236,10 +1236,11 @@ function blogs_media_upload($files, $post, $priority = null){
             throw new bException($_FILES['files'][0]['error_message'], 'uploaderror');
         }
 
-        $file = $files;
-        $file = file_get_local($file['tmp_name'][0]);
+        $file     = $files;
+        $original = $file['name'][0];
+        $file     = file_get_local($file['tmp_name'][0]);
 
-        return blogs_media_process($file, $post, $priority);
+        return blogs_media_process($file, $post, $priority, $original);
 
     }catch(Exception $e){
         throw new bException('blogs_media_upload(): Failed', $e);
@@ -1274,7 +1275,7 @@ function blogs_media_add($file, $post, $priority = null){
 /*
  * Process blog media file
  */
-function blogs_media_process($file, $post, $priority = null){
+function blogs_media_process($file, $post, $priority = null, $original = null){
     global $_CONFIG;
 
     try{
@@ -1370,13 +1371,14 @@ function blogs_media_process($file, $post, $priority = null){
         /*
          * Store blog post photo in database
          */
-        $res  = sql_query('INSERT INTO `blogs_media` (`createdby`, `blogs_posts_id`, `blogs_id`, `file`, `priority`)
-                           VALUES                    (:createdby , :blogs_posts_id , :blogs_id , :file , :priority )',
+        $res  = sql_query('INSERT INTO `blogs_media` (`createdby`, `blogs_posts_id`, `blogs_id`, `file`, `original`, `priority`)
+                           VALUES                    (:createdby , :blogs_posts_id , :blogs_id , :file , :original , :priority )',
 
                           array(':createdby'      => isset_get($_SESSION['user']['id']),
                                 ':blogs_posts_id' => $post['id'],
                                 ':blogs_id'       => $post['blogs_id'],
                                 ':file'           => $media,
+                                ':original'       => $original,
                                 ':priority'       => $priority));
 
         $id   = sql_insert_id();

@@ -1098,7 +1098,10 @@ function file_get_local($file, &$is_downloaded = false){
             }
 
             if(is_uploaded_file($file)){
-                $file = file_get_uploaded($file);
+                $tmp  = file_get_uploaded($file);
+                $file = file_temp($file);
+
+                rename($tmp, $file);
             }
 
             return $file;
