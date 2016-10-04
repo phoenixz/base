@@ -1225,6 +1225,18 @@ function not_empty(){
 
 
 /*
+ * Return the first non null argument
+ */
+function not_null(){
+    foreach(func_get_args() as $argument){
+        if($argument === null) continue;
+        return $argument;
+    }
+}
+
+
+
+/*
  * Return the first non empty argument
  */
 function pick_random($count){

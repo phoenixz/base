@@ -123,26 +123,36 @@ function image_convert($source, $destination, $params = null){
         foreach($params as $key => $value){
             switch($key){
                 case 'limit_memory':
-                    $command .= ' -limit memory '.$value;
+                    if($value){
+                       $command .= ' -limit memory '.$value;
+                    }
                     break;
 
                 case 'limit_map':
-                    $command .= ' -limit map '.$value;
+                    if($value){
+                        $command .= ' -limit map '.$value;
+                    }
                     break;
 
                 case 'quality':
-                    $command .= ' -quality '.$value.'%';
+                    if($value){
+                        $command .= ' -quality '.$value.'%';
+                    }
                     break;
 
                 case 'blur':
-                    $command .= ' -gaussian-blur '.$value;
+                    if($value){
+                        $command .= ' -gaussian-blur '.$value;
+                    }
                     break;
 
                 case 'keep_aspectratio':
                     break;
 
                 case 'sampling_factor':
-                    $command .= ' -sampling-factor '.$value;
+                    if($value){
+                        $command .= ' -sampling-factor '.$value;
+                    }
                     break;
 
                 case 'defines':
@@ -159,8 +169,10 @@ function image_convert($source, $destination, $params = null){
                     break;
 
                 case 'interlace':
-                    $value    = image_interlace_valid(strtolower($value));
-                    $command .= ' -interlace '.$value;
+                    if($value){
+                        $value    = image_interlace_valid(strtolower($value));
+                        $command .= ' -interlace '.$value;
+                    }
                     break;
 
                 case 'updatemode':
