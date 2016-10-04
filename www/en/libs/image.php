@@ -673,25 +673,23 @@ function image_fix_extension($file){
  */
 function image_fancybox($params = null){
     try{
+        load_libs('json');
+
         array_params($params, 'selector');
-        array_default($params, 'selector'   , '.fancy');
-        array_default($params, 'openEffect' , 'fade');
-        array_default($params, 'closeEffect', 'fade');
-        array_default($params, 'arrows'     , 'true');
+        array_default($params, 'selector', '.fancy');
+        array_default($params, 'options' , array());
+
+        array_default($params['options'], 'openEffect'   , 'fade');
+        array_default($params['options'], 'closeEffect'  , 'fade');
+        array_default($params['options'], 'arrows'       , true);
+        array_default($params['options'], 'titleShow'    , true);
+        array_default($params['options'], 'titleFromAlt' , true);
+        array_default($params['options'], 'titlePosition', 'outside'); // over, outside, inside
 
         html_load_js('base/fancybox/jquery.fancybox');
         html_load_css('base/fancybox/jquery.fancybox');
 
-        $selector = $params['selector'];
-        $options  = array();
-
-        unset($params['selector']);
-
-        foreach($params as $key => $value){
-            $options[] = $key .' : "'.$value.'"';
-        }
-
-        return html_script('$("'.$selector.'").fancybox({'.implode(',', $options).'});');
+        return html_script('$("'.$params['selector'].'").fancybox('.json_encode_custom($params['options']).');');
 
     }catch(Exception $e){
         throw new bException('image_fancybox(): Failed', $e);
