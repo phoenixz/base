@@ -20,6 +20,20 @@ function html_only(){
 
 
 /*
+ *
+ */
+function html_safe($html){
+    try{
+        return htmlentities($html);
+
+    }catch(Exception $e){
+        throw new bException('html_safe(): Failed', $e);
+    }
+}
+
+
+
+/*
  * Generate and return the HTML footer
  */
 function html_iefilter($html, $filter){
@@ -1075,7 +1089,7 @@ function html_select_body($params) {
                         }
                     }
 
-                    $retval  .= '<option'.($params['class'] ? ' class="'.$params['class'].'"' : '').''.((($params['selected'] !== null) and ($key === $params['selected'])) ? ' selected' : '').' value="'.$key.'"'.$option_data.'>'.$value.'</option>';
+                    $retval  .= '<option'.($params['class'] ? ' class="'.$params['class'].'"' : '').''.((($params['selected'] !== null) and ($key === $params['selected'])) ? ' selected' : '').' value="'.html_safe($key).'"'.$option_data.'>'.html_safe($value).'</option>';
                 }
 
             }elseif(is_object($params['resource'])){
@@ -1116,11 +1130,10 @@ function html_select_body($params) {
                             }
                         }
 
-                        $retval  .= '<option'.($params['class'] ? ' class="'.$params['class'].'"' : '').''.(($row[0] === $params['selected']) ? ' selected' : '').' value="'.$row[0].'"'.$option_data.'>'.$row[1].'</option>';
+                        $retval  .= '<option'.($params['class'] ? ' class="'.$params['class'].'"' : '').''.(($row[0] === $params['selected']) ? ' selected' : '').' value="'.html_safe($row[0]).'"'.$option_data.'>'.html_safe($row[1]).'</option>';
                     }
 
                 }catch(Exception $e){
-
                     throw $e;
                 }
 
