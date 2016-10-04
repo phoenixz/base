@@ -110,11 +110,11 @@ if($local){
     }
 
     cli_log(tr('Updating base project, branch ":branch"', array(':branch' => $branch)), 'white');
-    echo shell_exec('cd '.$base['path'].'; git checkout '.$branch.'; git pull origin '.$branch.'');
+    passthru('cd '.$base['path'].'; git checkout '.$branch.'; git pull origin '.$branch.'');
 
 }else{
     cli_log(tr('Updating base project, branch ":branch"', array(':branch' => $branch)), 'white');
-    echo shell_exec('ssh -t '.$base['host'].' -p '.$base['port'].' "cd '.$base['path'].'; git reset --hard; git checkout '.$branch.'; git pull origin '.$branch.'"');
+    passthru('ssh -t '.$base['host'].' -p '.$base['port'].' "cd '.$base['path'].'; git reset --hard; git checkout '.$branch.'; git pull origin '.$branch.'"');
 }
 
 /*
