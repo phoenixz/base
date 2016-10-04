@@ -32,9 +32,7 @@ if(!isset($GLOBALS['quiet'])){
 /*
  * Allow for ROOT to be predefined. This may be useful when using www/404.php with www/en, www/es, etc
  */
-if(!defined('ROOT')){
-    define('ROOT', realpath(dirname(__FILE__).'/../../..').'/');
-}
+define('ROOT', realpath(dirname(__FILE__).'/../../..').'/');
 
 
 /*
@@ -54,7 +52,7 @@ include_once(ROOT.'config/project.php');
  */
 define('PLATFORM', (php_sapi_name() === 'cli') ? 'shell' : 'http');
 
-if((PLATFORM == 'shell') and (count($argv) > 1)){
+if(PLATFORM == 'shell'){
     /*
      * Pre-process very basic command line arguments
      */
@@ -117,7 +115,7 @@ try{
 /*
  * Load basic platform libraries
  */
-if((PLATFORM == 'shell')){
+if(PLATFORM_SHELL){
     /*
      * Add CLI support library
      */
@@ -128,6 +126,72 @@ if((PLATFORM == 'shell')){
      * Add HTTP support library
      */
     load_libs('http,html,inet'.(empty($_CONFIG['memcached']) ? '' : ',memcached'));
+
+    /*
+     * Check OPTIONS request.
+     * If options was requested, just return basic HTTP headers
+     */
+// :TODO: Should pages themselves not check for this and perhaps send other headers?
+    if($_SERVER['REQUEST_METHOD'] == 'OPTIONS'){
+        http_headers(200, 0);
+        die();
+    }
+
+    /*
+     * HTTP specific stuff
+     */
+// :TODO: Replace this with only one global variable.
+    $GLOBALS['page_is_mobile'] = false;
+    $GLOBALS['page_is_admin']  = false;
+    $GLOBALS['page_is_ajax']   = false;
+    $GLOBALS['page_is_api']    = false;
+    $GLOBALS['page_is_404']    = false;
+
+    if(substr($_SERVER['PHP_SELF'], -7, 7) == '404.php'){
+        /*
+         * This is a 404 page
+         */
+        $GLOBALS['page_is_404'] = true;
+    }
+
+    $_CONFIG['cdn']['prefix'] = slash($_CONFIG['cdn']['prefix']);
+
+    if($_CONFIG['cdn']['prefix'] != '/pub/'){
+        $GLOBALS['header'] = html_script('var cdnprefix="'.$_CONFIG['cdn']['prefix'].'";', false);
+    }
+
+    if(substr($_SERVER['PHP_SELF'], 0, 7) == '/admin/'){
+        /*
+         * This is an admin page
+         * Disabled all caching (both server side, and HTTP) for admin pages
+         */
+        $GLOBALS['page_is_admin']            = true;
+
+        $_CONFIG['cache']['method']          = false;
+        $_CONFIG['cache']['http']['enabled'] = false;
+
+        load_config('admin');
+        restore_post();
+
+    }elseif(strstr($_SERVER['PHP_SELF'], '/ajax/')){
+        $GLOBALS['page_is_ajax'] = true;
+
+    }elseif(strstr($_SERVER['PHP_SELF'], '/api/')){
+        $GLOBALS['page_is_api'] = true;
+
+    }elseif(!empty($GLOBALS['page_force'])){
+        /*
+         * We're being forced to run a different script from the one that was requested
+         */
+        restore_post();
+        page_show(SCRIPT, true);
+
+    }else{
+        /*
+         * Just a normal page
+         */
+        restore_post();
+    }
 }
 
 
@@ -144,7 +208,7 @@ set_exception_handler('uncaught_exception');
  */
 try{
     include($file = ROOT.'config/base/default.php');
-    include($file = ROOT.'config/production.php');
+    include($file = ROOT.'config/production'.(empty($GLOBALS['page_is_admin']) ? '' : '_admin').'.php');
 
     /*
      * Also load environment specific configuration, overwriting some production settings
@@ -641,9 +705,9 @@ try{
 
 
     /*
-     * http specific post processing
+     * Shell and HTTP specific post processing
      */
-    if(PLATFORM == 'http'){
+    if(PLATFORM_HTTP){
         /*
          * New session?
          */
@@ -655,88 +719,10 @@ try{
         }
 
         /*
-         * Check OPTIONS request.
-         * If options was requested, just return basic HTTP headers
-         */
-// :TODO: Should pages themselves not check for this and perhaps send other headers?
-        if($_SERVER['REQUEST_METHOD'] == 'OPTIONS'){
-            http_headers(200, 0);
-            die();
-        }
-
-        /*
-         * HTTP specific stuff
-         */
-// :TODO: Replace this with only one global variable.
-        $GLOBALS['page_is_mobile'] = false;
-        $GLOBALS['page_is_admin']  = false;
-        $GLOBALS['page_is_ajax']   = false;
-        $GLOBALS['page_is_api']    = false;
-        $GLOBALS['page_is_404']    = false;
-
-        if(substr($_SERVER['PHP_SELF'], -7, 7) == '404.php'){
-            /*
-             * This is a 404 page
-             */
-            $GLOBALS['page_is_404'] = true;
-        }
-
-        $_CONFIG['cdn']['prefix'] = slash($_CONFIG['cdn']['prefix']);
-
-        if($_CONFIG['cdn']['prefix'] != '/pub/'){
-            $GLOBALS['header'] = html_script('var cdnprefix="'.$_CONFIG['cdn']['prefix'].'";', false);
-        }
-
-        /*
          * Check if some session redirect was requested
          */
         if(isset($_GET['redirect'])){
             $_SESSION['redirect'] = $_GET['redirect'];
-        }
-
-        if(substr($_SERVER['PHP_SELF'], 0, 7) == '/admin/'){
-            /*
-             * This is an admin page
-             * Disabled all caching (both server side, and HTTP) for admin pages
-             */
-            $GLOBALS['page_is_admin']            = true;
-
-            $_CONFIG['cache']['method']          = false;
-            $_CONFIG['cache']['http']['enabled'] = false;
-
-            load_config('admin');
-            load_libs('custom_admin');
-            restore_post();
-
-        }elseif((!empty($_SESSION['mobile']['site']) and $_CONFIG['mobile']['enabled']) or !empty($_CONFIG['mobile']['force'])){
-            /*
-             * Switch to mobile site
-             * We're not on mobile version, but should show mobile version.
-             * If a mobile version exists for this page, load it
-             */
-            $GLOBALS['page_is_mobile'] = true;
-            load_libs('mobile');
-            restore_post();
-            page_show(SCRIPT, true);
-
-        }elseif(strstr($_SERVER['PHP_SELF'], '/ajax/')){
-            $GLOBALS['page_is_ajax'] = true;
-
-        }elseif(strstr($_SERVER['PHP_SELF'], '/api/')){
-            $GLOBALS['page_is_api'] = true;
-
-        }elseif(!empty($GLOBALS['page_force'])){
-            /*
-             * We're being forced to run a different script from the one that was requested
-             */
-            restore_post();
-            page_show(SCRIPT, true);
-
-        }else{
-            /*
-             * Just a normal page
-             */
-            restore_post();
         }
 
         /*
@@ -765,9 +751,16 @@ try{
     define('LIBS', ROOT.'www/'.LANGUAGE.'/libs/');
 
     try{
-       if(file_exists(LIBS.'/custom.php')){
-           include_once(LIBS.'/custom.php');
-       }
+        if(empty($GLOBALS['page_is_admin'])){
+            if(file_exists(LIBS.'/custom.php')){
+               include_once(LIBS.'/custom.php');
+            }
+
+        }else{
+            if(file_exists(LIBS.'/custom_admin.php')){
+               include_once(LIBS.'/custom_admin.php');
+            }
+        }
 
     }catch(Exception $e){
         throw new bException('startup(): Failed to load custom library', $e);
