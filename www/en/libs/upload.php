@@ -55,7 +55,7 @@ function upload_ocupload($selector = "input[name=upload]", $url = '/ajax/upload.
         array_default($params, 'executeon', true);
 
         load_libs('html');
-        html_load_js('base/ocupload/jquery.ocupload');
+        html_load_js('ocupload/jquery.ocupload');
 
         if(!empty($params['params'])){
             load_libs('json');
@@ -114,13 +114,13 @@ function upload_multi($params){
             throw new bException(tr('upload_multi(): No "url" specified'), 'not-specified');
         }
 
-        html_load_js('base/jquery-ui/jquery-ui,base/base');
+        html_load_js('jquery-ui/jquery-ui,base/base');
 
         if($params['iframe']){
-            html_load_js('base/jfu/jquery.iframe-transport');
+            html_load_js('jfu/jquery.iframe-transport');
         }
 
-        html_load_js('base/jfu/jquery.fileupload');
+        html_load_js('jfu/jquery.fileupload');
 
         if($params['processall'] === '' and $params['process'] === ''){
             /*
@@ -207,27 +207,27 @@ function upload_get_html($type, $target = null, $params = null){
         /*
          * Basic JS library requirements
          */
-        $js = array('base/jquery-ui/jquery-ui');
+        $js = array('jquery-ui/jquery-ui');
 
         /*
          * Optional libraries
          */
         foreach($params['options'] as $key => $value){
             if(($key == 'iframe') and $value){
-                $js[] = 'base/jfu/jquery.iframe-transport';
+                $js[] = 'jfu/jquery.iframe-transport';
                 continue;
             }
 
             if($value){
-                $js[] = 'base/jfu/jquery.fileupload-'.$key;
+                $js[] = 'jfu/jquery.fileupload-'.$key;
             }
         }
 
         /*
          * Add main library
          */
-        $js[] = 'base/jfu/jquery.fileupload';
-        $js[] = 'base/jfu/main';
+        $js[] = 'jfu/jquery.fileupload';
+        $js[] = 'jfu/main';
 
 
         /*
