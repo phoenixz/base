@@ -18,11 +18,12 @@ require_once(dirname(__FILE__).'/../../libs/startup.php');
 load_libs('git');
 
 
+
 /*
  * Get options
  */
 $do_merge = cli_argument('--do-merge');
-cli_no_arguments_left();
+
 
 
 /*
@@ -51,9 +52,10 @@ foreach(safe_exec('git branch') as $branch){
 /*
  * Detect target branch, either current, or specified on command line
  */
-if(!$target = cli_argument('target', true)){
+if(!$target = not_null(cli_argument('--target', true), cli_argument('-t', true))){
     $target = $current;
 }
+
 
 
 /*
@@ -116,7 +118,7 @@ foreach($branches as $branch){
     safe_exec('git pull origin '.$branch);
 
     cli_log(tr('Updating from base'));
-    script_exec('base/update', 'local noinit');
+    script_exec('base/update', '-l --no-init');
 
     cli_log(tr('Merging from ":branch"', array(':branch' => $branch)));
     safe_exec('git merge '.$target);
