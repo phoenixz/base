@@ -249,23 +249,32 @@ function image_convert($source, $destination, $params = null){
                  */
                 $command  .= ' -background none';
                 $dest_file = str_runtil($dest_file, '.').'.'.$params['format'];
+
                 break;
 
             case 'jpg':
                 $command  .= ' -background white';
                 $dest_file = str_runtil($dest_file, '.').'.'.$params['format'];
+
                 break;
 
             case '':
                 /*
-                 * Use current format
+                 * Use current format. If source file has no extension (Hello PHP temporary upload files!)
+                 * then let the dest file keep its own extension
                  */
-                $dest_file = str_runtil($dest_file, '.').'.'.str_rfrom($source_file, '.');
+                $extension = str_rfrom($source_file, '.');
+
+                if(!$extension){
+                    $dest_file = str_runtil($dest_file, '.').'.'.$extension;
+                }
+
                 break;
 
             default:
                 throw new bException(tr('image_convert(): Unknown format ":format" specified.', array(':format' => $params['format'])), 'unknown');
         }
+
 
         $destination = slash($dest_path).$dest_file;
 
@@ -327,6 +336,7 @@ function image_convert($source, $destination, $params = null){
         return $destination;
 
     }catch(Exception $e){
+showdie($e);
         try{
             if(file_exists(TMP.'imagemagic_convert.log')){
                 $contents = file_get_contents(TMP.'imagemagic_convert.log');
@@ -441,7 +451,9 @@ function image_create_avatars($file){
                 throw new bException('image_create_avatar(): Invalid avatar type configuration for type "'.str_log($name).'"', 'invalid/config');
             }
 
-            image_convert($file, ROOT.'www/avatars/'.$destination.'_'.$name.'.'.file_get_extension($file), $type[0], $type[1], $type[2]);
+            image_convert($file['tmp_name'][0], ROOT.'www/avatars/'.$destination.'_'.$name.'.'.file_get_extension($file['name'][0]), array('x'      => $type[0],
+                                                                                                                                           'y'      => $type[1],
+                                                                                                                                           'method' => $type[2]));
         }
 
         return $destination;
