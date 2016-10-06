@@ -23,7 +23,7 @@ function user_data($id) {
         $user = mc_get($key);
 
         if(empty($user)) {
-            $user = sql_get("SELECT * FROM users WHERE id = ".cfi($id).";");
+            $user = sql_get('SELECT * FROM users WHERE id = :id', array(':id' => cfi($id)));
             mc_put($key, $user);
 
         } else {
@@ -72,8 +72,7 @@ function user_update_avatar($user, $avatar) {
             $user = $user['id'];
         }
 
-        sql_query('UPDATE `users` SET `avatar` = :avataar WHERE `id` = :id', array(':avatar' => cfm($avatar),
-                                                                                   ':user'   => $user));
+        sql_query('UPDATE `users` SET `avatar` = :avatar WHERE `id` = :id', array(':avatar' => cfm($avatar), ':user' => $user));
 
         return $avatar;
 
@@ -96,7 +95,7 @@ function user_find_avatar($user) {
                 throw new bException('user_find_avatar(): Invalid user specified');
             }
 
-            $user = sql_get('SELECT * FROM `users` WHERE id = '.cfi($user));
+            $user = sql_get('SELECT * FROM `users` WHERE id = :id', array(':id' => cfi($user)));
         }
 
         /*
@@ -148,8 +147,8 @@ function user_authenticate($username, $password, $columns = '*') {
         $user = sql_get('SELECT '.$columns.' FROM `users` WHERE `email` = :email OR `username` = :username', array(':email' => $username, ':username' => $username));
 
         if(!$user){
-            log_database(tr('user_authenticate(): Specified user ":username" not found', array(':username' => str_log($username))), 'authentication/notfound');
-            throw new bException(tr('user_authenticate(): Specified user ":username" not found', array(':username' => str_log($username))), 'notfound');
+            log_database(tr('user_authenticate(): Specified user ":username" not found', array(':username' => $username)), 'authentication/notfound');
+            throw new bException(tr('user_authenticate(): Specified user ":username" not found', array(':username' => $username)), 'notfound');
         }
 
         if($user['status'] !== null){
@@ -317,7 +316,7 @@ function user_signin($user, $extended = false, $redirect = null, $html_flash = n
         /*
          * Store last login
          */
-        sql_query('UPDATE `users` SET `last_signin` = DATE(NOW()), `signin_count` = `signin_count` + 1 WHERE `id` = '.cfi($user['id']).';');
+        sql_query('UPDATE `users` SET `last_signin` = DATE(NOW()), `signin_count` = `signin_count` + 1 WHERE `id` = :id', array(':id' => cfi($user['id'])));
 
         if($extended){
             user_create_extended_session($user['id']);
@@ -373,7 +372,7 @@ function user_signout() {
             setcookie('extsession', 'stub', 1);
 
             if(isset($_SESSION['user'])){
-                sql_query('DELETE FROM `extended_sessions` WHERE `user_id` = '.cfi($_SESSION['user']['id']).';');
+                sql_query('DELETE FROM `extended_sessions` WHERE `user_id` = :users_id', array('users_id' => cfi($_SESSION['user']['id'])));
             }
         }
 
@@ -407,14 +406,19 @@ function user_create_extended_session($users_id) {
 
         //remove old entries
         if($_CONFIG['sessions']['extended']['clear'] != false) {
-            sql_query('DELETE FROM `extended_sessions` WHERE `user_id` = '.cfi($users_id).';');
+            sql_query('DELETE FROM `extended_sessions` WHERE `users_id` = :users_id', array('users_id' => cfi($users_id)));
         }
 
-        //add to db
-        sql_query('INSERT INTO `extended_sessions` (      `user_id`  ,  `session_key`,  `ip`)
-                   VALUES                          ('.cfi($users_id).', "'.$code.'"   , '.ip2long($_SERVER['REMOTE_ADDR']).')');
+        /*
+         * Add to db
+         */
+        sql_query('INSERT INTO `extended_sessions` (`user_id`, `session_key`, `ip`)
+                   VALUES                          (:users_id, :session_key , :ip)',
 
-        //set cookie
+                   array(':users_id'    => cfi($users_id),
+                         ':session_key' => $code,
+                         ':ip'          => ip2long($_SERVER['REMOTE_ADDR'])));
+
         setcookie('extsession', $code, (time() + $_CONFIG['sessions']['extended']['age']));
         return $code;
 
@@ -433,10 +437,12 @@ function user_set_verification_code($user){
         if(is_array($user)){
             if(!empty($user['id'])){
                 $user = $user['id'];
+
             }elseif(!empty($user['email'])){
                 $user = $user['email'];
             }
         }
+
         /*
          * Create a unique code.
          */
@@ -446,17 +452,19 @@ function user_set_verification_code($user){
          * Update user validation with that code
          */
         if(is_numeric($user)){
-            sql_query('UPDATE `users` SET `validated` = "'.cfm($code).'" WHERE `id` = '.cfi($user));
+            sql_query('UPDATE `users` SET `validated` = :code WHERE `id` = :id', array(':id'   => cfi($user),
+                                                                                       ':code' => cfm($code)));
 
         }elseif(is_string($user)){
-            sql_query('UPDATE `users` SET `validated` = "'.cfm($code).'" WHERE `email` = '.cfi($user));
+            sql_query('UPDATE `users` SET `validated` = :code WHERE `email` = :email', array(':email' => cfm($user),
+                                                                                             ':code'  => cfm($code)));
 
         }else{
             throw new bException('user_set_verification_code(): Invalid user specified');
         }
 
         if(!sql_affected_rows()){
-            throw new bException('user_set_verification_code(): Specified user "'.str_log($user).'" does not exist');
+            throw new bException(tr('user_set_verification_code(): Specified user ":user" does not exist', array(':user' => $user)));
         }
 
         return $code;
