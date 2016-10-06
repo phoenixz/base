@@ -72,7 +72,8 @@ function user_update_avatar($user, $avatar) {
             $user = $user['id'];
         }
 
-        sql_query('UPDATE `users` SET `avatar` = "'.cfm($avatar).'" WHERE `id` = '.$user);
+        sql_query('UPDATE `users` SET `avatar` = :avataar WHERE `id` = :id', array(':avatar' => cfm($avatar),
+                                                                                   ':user'   => $user));
 
         return $avatar;
 
