@@ -11,10 +11,16 @@
 /*
  * Return complete current domain with HTTP and all
  */
-function current_domain($current_url = false, $query = null){
+function current_domain($current_url = false, $query = null, $root = null){
     global $_CONFIG;
 
     try{
+        if($root === null){
+            $root = $_CONFIG['root'];
+        }
+
+        $root = unslash($root);
+
         if(PLATFORM_HTTP){
             if(empty($_SERVER['SERVER_NAME'])){
                 $server_name = $_SESSION['domain'];
@@ -28,13 +34,13 @@ function current_domain($current_url = false, $query = null){
         }
 
         if(!$current_url){
-            $retval = $_CONFIG['protocol'].$server_name.$_CONFIG['root'];
+            $retval = $_CONFIG['protocol'].$server_name.$root;
 
         }elseif($current_url === true){
             $retval = $_CONFIG['protocol'].$server_name.$_SERVER['REQUEST_URI'];
 
         }else{
-            $retval = $_CONFIG['protocol'].$server_name.$_CONFIG['root'].str_starts($current_url, '/');
+            $retval = $_CONFIG['protocol'].$server_name.$root.str_starts($current_url, '/');
         }
 
         if($query){

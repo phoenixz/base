@@ -207,6 +207,27 @@ function blogs_post_get($post = null, $blog = null, $columns = null){
 
 
 /*
+ * Return all key_values for the specified blog post
+ */
+function blogs_post_get_key_values($blogs_posts_id, $seovalues = false){
+    try{
+        return sql_list('SELECT `seokey`,
+                                `'.($seovalues ? 'seo' : '').'value`
+
+                         FROM   `blogs_key_values`
+
+                         WHERE  `blogs_posts_id` = :blogs_posts_id',
+
+                         array(':blogs_posts_id' => $blogs_posts_id));
+
+    }catch(Exception $e){
+        throw new bException('blogs_post_get_key_values(): Failed', $e);
+    }
+}
+
+
+
+/*
  *
  */
 function blogs_post_update($post, $params = null){
@@ -1563,7 +1584,7 @@ function blogs_photo_url($media, $size){
                 /*
                  * Valid
                  */
-                return current_domain('/photos/'.$media.'-'.$size.'.jpg');
+                return current_domain('/photos/'.$media.'-'.$size.'.jpg', null, '');
 
             default:
                 throw new bException(tr('blogs_photo_url(): Unknown size ":size" specified', array(':size' => $size)), 'unknown');
