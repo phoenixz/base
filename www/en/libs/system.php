@@ -1051,7 +1051,7 @@ function user_or_signin(){
                 /*
                  * No session
                  */
-                redirect(isset_get($_CONFIG['redirects']['signin'], 'signin.php').'?redirect='.urlencode($_SERVER['REQUEST_URI']));
+                redirect(isset_get($_CONFIG['redirects'][WHATEND]['signin'], 'signin.php').'?redirect='.urlencode($_SERVER['REQUEST_URI']));
             }
 
             if(!empty($_SESSION['lock'])){
@@ -1059,8 +1059,8 @@ function user_or_signin(){
                  * Session is, but locked
                  * Redirect all pages EXCEPT the lock page itself!
                  */
-                if($_CONFIG['redirects']['lock'] !== str_cut($_SERVER['REQUEST_URI'], '/', '?')){
-                    redirect(isset_get($_CONFIG['redirects']['lock'], 'lock.php').'?redirect='.urlencode($_SERVER['REQUEST_URI']));
+                if($_CONFIG['redirects'][WHATEND]['lock'] !== str_cut($_SERVER['REQUEST_URI'], '/', '?')){
+                    redirect(isset_get($_CONFIG['redirects'][WHATEND]['lock'], 'lock.php').'?redirect='.urlencode($_SERVER['REQUEST_URI']));
                 }
             }
 
@@ -1096,7 +1096,7 @@ function rights_or_access_denied($rights){
             return $_SESSION['user'];
         }
 
-        page_show($_CONFIG['redirects']['accessdenied']);
+        page_show($_CONFIG['redirects'][WHATEND]['accessdenied']);
 
     }catch(Exception $e){
         throw new bException('rights_or_access_denied(): Failed', $e);
@@ -1699,6 +1699,7 @@ throw new bException('cdn_prefix():MULTIPLE CDN SERVER SUPPORT IS UNDER CONSTRUC
 }
         }
 
+// :URGENT: Implement correct CDN support! MUST WORK WITH WHITELABEL SYSTEM!!!!
         return str_replace(':id', $id, unslash($_CONFIG['root']).$cdn['prefix']).$path;
 
     }catch(Exception $e){

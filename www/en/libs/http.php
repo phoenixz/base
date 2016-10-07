@@ -589,7 +589,7 @@ function http_redirect_query_url(){
         }
 
         if($GLOBALS['page_is_admin']){
-            if(!$_CONFIG['redirects']['backend']['query']){
+            if(!$_CONFIG['redirects'][WHATEND]['query']){
                 /*
                  * No need to auto redirect URL's with queries
                  */
@@ -597,7 +597,7 @@ function http_redirect_query_url(){
             }
 
         }else{
-            if(!$_CONFIG['redirects']['frontend']['query']){
+            if(!$_CONFIG['redirects'][WHATEND]['query']){
                 /*
                  * No need to auto redirect URL's with queries
                  */

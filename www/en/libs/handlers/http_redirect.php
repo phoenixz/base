@@ -25,7 +25,7 @@ try{
             /*
              * Don't redirect to the same page! If the referrer was this page, then drop back to the index page
              */
-            $target = $_CONFIG['redirects']['index'];
+            $target = $_CONFIG['redirects'][WHATEND]['index'];
         }
 
     }elseif($target === false){
@@ -38,7 +38,7 @@ try{
         /*
          * No target specified, redirect to index page
          */
-        $target = $_CONFIG['redirects']['index'];
+        $target = $_CONFIG['redirects'][WHATEND]['index'];
     }
 
     if(empty($http_code)){

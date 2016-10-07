@@ -752,11 +752,15 @@ try{
 
     try{
         if(empty($GLOBALS['page_is_admin'])){
+            define('WHATEND', 'frontend');
+
             if(file_exists(LIBS.'/custom.php')){
                include_once(LIBS.'/custom.php');
             }
 
         }else{
+            define('WHATEND', 'backend');
+
             if(file_exists(LIBS.'/custom_admin.php')){
                include_once(LIBS.'/custom_admin.php');
             }
