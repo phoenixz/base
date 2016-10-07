@@ -170,14 +170,17 @@ if(PLATFORM_SHELL){
         $_CONFIG['cache']['method']          = false;
         $_CONFIG['cache']['http']['enabled'] = false;
 
+        define('WHATEND', 'backend');
         load_config('admin');
         restore_post();
 
     }elseif(strstr($_SERVER['PHP_SELF'], '/ajax/')){
         $GLOBALS['page_is_ajax'] = true;
+        define('WHATEND', 'frontend');
 
     }elseif(strstr($_SERVER['PHP_SELF'], '/api/')){
         $GLOBALS['page_is_api'] = true;
+        define('WHATEND', 'frontend');
 
     }elseif(!empty($GLOBALS['page_force'])){
         /*
@@ -185,12 +188,14 @@ if(PLATFORM_SHELL){
          */
         restore_post();
         page_show(SCRIPT, true);
+        define('WHATEND', 'frontend');
 
     }else{
         /*
          * Just a normal page
          */
         restore_post();
+        define('WHATEND', 'frontend');
     }
 }
 
@@ -752,15 +757,11 @@ try{
 
     try{
         if(empty($GLOBALS['page_is_admin'])){
-            define('WHATEND', 'frontend');
-
             if(file_exists(LIBS.'/custom.php')){
                include_once(LIBS.'/custom.php');
             }
 
         }else{
-            define('WHATEND', 'backend');
-
             if(file_exists(LIBS.'/custom_admin.php')){
                include_once(LIBS.'/custom_admin.php');
             }
