@@ -1503,18 +1503,18 @@ function is_natural($number, $start = 1){
  */
 function force_natural($number, $default = 1, $start = 1){
     if(!is_numeric($number)){
-        return $default;
+        return (integer) $default;
     }
 
     if($number < $start){
-        return $default;
+        return (integer) $default;
     }
 
     if(!is_int($number)){
-        return round($number);
+        return (integer) round($number);
     }
 
-    return $number;
+    return (integer) $number;
 }
 
 
