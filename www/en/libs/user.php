@@ -343,8 +343,8 @@ function user_signin($user, $extended = false, $redirect = null, $html_flash = n
             /*
              * Do not redirect to signin page
              */
-            if($redirect == $_CONFIG['redirects'][WHATEND]['signin']){
-                $redirect = $_CONFIG['redirects'][WHATEND]['index'];
+            if($redirect == $_CONFIG['redirects']['signin']){
+                $redirect = $_CONFIG['redirects']['index'];
             }
 
             session_redirect('http', $redirect);
@@ -1589,7 +1589,7 @@ function user_key_or_redirect($user, $key = null, $timestamp = null, $redirect =
         }
 
         if(!$redirect){
-            $redirect = $_CONFIG['redirects'][WHATEND]['signin'];
+            $redirect = $_CONFIG['redirects']['signin'];
         }
 
         /*
