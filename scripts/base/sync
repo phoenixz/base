@@ -18,7 +18,7 @@ Possible arguments:
 --no-dump                      - Do not do the temporary mysql dump on the
                                  target environment
 
---no-clear                     - Do not clear local data content
+--clear-data                   - Do not clear local data content
 
 --no-copy                      - Do not copy the temporary mysql dump on the
                                  target environment
@@ -72,7 +72,7 @@ $nodump          =  cli_argument('--no-dump');
 $nocopy          =  cli_argument('--no-copy');
 $nofiles         =  cli_argument('--no-files');
 $noinit          =  cli_argument('--no-init');
-$noclear         =  cli_argument('--no-clear');
+$cleardata       =  cli_argument('--clear-data');
 $noimport        =  cli_argument('--no-import');
 $nohooks         = (cli_argument('--no-hook') or cli_argument('--no-hooks'));
 $nodelete        =  cli_argument('--no-delete');
@@ -233,11 +233,8 @@ if($nodelete){
  * Clear local content data to avoid broken links and other possible problems,
  * just work with clean data from the target environment
  */
-if($noclear){
-    cli_log(tr('NOT clearing local content data due to "--no-clear" command line parameters'), 'yellow');
-
-}else{
-    cli_log(tr('Clearing local content data'), 'white');
+if($cleardata){
+    cli_log(tr('Clearing local content data due to "--clear-data" command line parameter'), 'white');
 
     load_libs('file');
     file_delete_tree(ROOT.'data/content');
@@ -260,34 +257,39 @@ if($nofiles){
         $_CONFIG['sync'][] = '/data/content/';
     }
 
+    /*
+     * Ensure write permissions to all files to avoid sync crashes on write protected files
+     */
+    safe_exec('chmod ug+w '.ROOT.' -R');
+
     foreach($_CONFIG['sync'] as $path){
-        if(!$path) continue;
-
-        cli_log(tr('Syncing path ":path"', array(':path' => $path)), 'white');
-
-        if($deletesync){
-            cli_log(tr('Deleting local path ":path"', array(':path' => $path)), 'white');
-            passthru($command = 'rm '.ROOT.$path.' -rf', $exitcode);
-
-            if($exitcode){
-                throw new bException(tr('Deleting of local path failed with exit code ":code"', array(':code' => $exitcode)), 'remote');
-            }
-        }
-
         try{
-            passthru($command = 'rsync -aczvAXHS --progress -p '.($deploy_config['sudo'] ? '--rsync-path="sudo rsync" ' : '').'-e "ssh -p '.$deploy_config['target_port'].'" '.($deploy_config['target_user'] ? $deploy_config['target_user'].'@' : '').$deploy_config['target_server'].':'.slash($deploy_config['target_dir']).slash($path).' '.ROOT.slash($path).' --exclude="*.php" --exclude="*.css" --exclude="*.js" --exclude="/scripts/*" --exclude="/data/doc" --exclude="/data/system" --exclude="/data/mock*" --exclude="/data/sources" --exclude=".htaccess" --exclude=".git*" --exclude="/pub/*"', $exitcode);
+            if(!$path) continue;
+
+            cli_log(tr('Syncing path ":path"', array(':path' => $path)), 'white');
+
+            if($deletesync){
+                cli_log(tr('Deleting local path ":path"', array(':path' => $path)), 'white');
+                passthru($command = 'rm '.ROOT.$path.' -rf', $exitcode);
+
+                if($exitcode){
+                    throw new bException(tr('Deleting of local path failed with exit code ":code"', array(':code' => $exitcode)), 'remote');
+                }
+            }
+
+            try{
+                passthru($command = 'rsync -aczvAXHS --progress -p '.($deploy_config['sudo'] ? '--rsync-path="sudo rsync" ' : '').'-e "ssh -p '.$deploy_config['target_port'].'" '.($deploy_config['target_user'] ? $deploy_config['target_user'].'@' : '').$deploy_config['target_server'].':'.slash($deploy_config['target_dir']).slash($path).' '.ROOT.slash($path).' --exclude="*.php" --exclude="*.css" --exclude="*.js" --exclude="/scripts/*" --exclude="/data/doc" --exclude="/data/system" --exclude="/data/mock*" --exclude="/data/sources" --exclude=".htaccess" --exclude=".git*" --exclude="/pub/*"', $exitcode);
+
+                if($exitcode){
+                    throw new bException(tr('Rsync of remote files with local server failed with exit code ":code"', array(':code' => $exitcode)), 'rsync');
+                }
+
+            }catch(Exception $e){
+                cli_log(tr('Failed to get path ":path" from environment ":environment"', array(':path' => $path, ':environment' => $environment)), 'yellow');
+            }
 
         }catch(Exception $e){
-            cli_log(tr('Failed to get path ":path" from environment ":environment"', array(':path' => $path, ':environment' => $environment)), 'yellow');
-        }
-
-        /*
-         * Ensure write permissions to all files to avoid syn crashes on write protected files
-         */
-        safe_exec('chmod ug+w '.ROOT.' -R');
-
-        if($exitcode){
-            throw new bException(tr('Rsync of remote files with local server failed with exit code ":code"', array('code' => $exitcode)), 'rsync');
+            cli_log($e);
         }
     }
 }
@@ -373,6 +375,13 @@ if($noinit or $noblogupdateurl){
 if(!$nobadgescached){
     init_hook('sync_badges_cached', $nohooks);
 }
+
+
+
+/*
+ * Fix permissions to ensure all files will have correct file modes
+ */
+script_exec('base/fix-permissions');
 
 cli_log(tr('Finished!'), 'green');
 
