@@ -1,93 +1,73 @@
 <?php
 /*
- * Empty custom Admin library
+ * Ingiga toolkit custom admin library template
  *
- * This are functions only used for the admin section
+ * This library can be used to add project specific functionalities
  *
  * @license http://opensource.org/licenses/GPL-2.0 GNU Public License, Version 2
- * @copyright Sven Oostenbrink <support@ingiga.com>, Johan Geuze
+ * @copyright Sven Oostenbrink <support@ingiga.com>
  */
+//showdie(SCRIPT);
+
+
+
+load_libs('atlant');
+atlant_force_my_profile('HERE BE THE HASH OF THE DEFAULT PASSWORD');
 
 
 
 /*
- * Always automatically load the admin library
+ * Custom page loader. Will add header and footer to the given HTML, then send
+ * HTTP headers, and then HTML to client
  */
-global $_CONFIG;
-
-
-
-/*
- *
- */
-function admin_page($html, $params = '', $flash = null, $flash_type = null) {
-    return admin_start($params).$html.admin_end();
-}
-
-
-/*
- *
- */
-function admin_start($params = '', $flash = null, $flash_type = null) {
-    global $_CONFIG;
-
+function c_page($params, $meta, $html){
     try{
-        //if(!has_rights('admin')){
-        //    /*
-        //     * This is not a user or not an admin user. either way, don't show admin menu
-        //     */
-        //    load_libs('user');
-        //    throw new bException('admin_menu($params): User "'.str_log(user_name(isset_get($_SESSION['user']))).'" is not an admin', 'notadmin');
-        //}
-
-        array_params($params, 'title');
-        array_default($params, 'title', tr('Admin section'));
-
-        html_load_js('base/base,base/flash');
-
-        $meta   = array('keywords'    => tr('Admin'),
-                        'description' => tr('This is the admin section!'));
-
-        return html_header($params, $meta).'<body>
-    <div class="top">
-        <a href="/index.php" class="toplogo" target="_blank">
-            <span class="center logo"></span>
-            '.html_img(domain('/pub/img/logo.png'), tr('Admin section logo'), 'class="logo"').'
-        </a>
-        <h1 class="toptitle">'.$params['title'].'</h1>
-        <span class="topuser">'.isset_get($_SESSION['user']['name'], '').'</span>
-    </div>
-    <div>
-        <div class="menu">
-            '.admin_menu($params).'
-        </div>
-        <div class="content">'.
-            html_flash($flash, $flash_type);
-
-////                <script type="text/javascript" src="/pub/js/base/admin.js"></script>
-//        return '<html>
-//            <head>
-//                <title>'.$_SERVER['SERVER_NAME'].' '.$title.'</title>
-//                <link rel="stylesheet" type="text/css" href="/pub/css/admin.css"/>
-//                <script type="text/javascript" src="/pub/js/base/jquery1.js"></script>
-//                <script type="text/javascript" src="/pub/js/base/base.js"></script>
-//                <script type="text/javascript" src="/pub/js/base/flash.js"></script>
-//            </head>
-//            <body>
-//            <div class="top">
-//                <a href="index.php" class="toplogo"></a>
-//                <div class="topuser">'.isset_get($_SESSION['user']['name'], '').'</div>
-//                <div class="toptitle">'.$title.'</div>
-//            </div>
-//            <div>
-//                <div class="menu">
-//                    '.admin_menu($params).'
-//                </div>
-//                <div class="content">'.
-//                    html_flash($flash, $flash_type);
+        return atlant_page($params, $meta, $html);
 
     }catch(Exception $e){
-        throw new bException('admin_start(): Failed', $e);
+        throw new bException('c_page(): Failed', $e);
+    }
+}
+
+
+
+/*
+ * Create and return the page header
+ */
+function c_html_header($params = null, $meta = null, $links = null){
+    try{
+        return atlant_html_header($params, $meta, $links);
+
+    }catch(Exception $e){
+        throw new bException('c_html_header(): Failed', $e);
+    }
+}
+
+
+
+/*
+ * Create and return the page header
+ */
+function c_page_header($params){
+    try{
+        return atlant_page_header($params);
+
+    }catch(Exception $e){
+        throw new bException('c_page_header(): Failed', $e);
+    }
+}
+
+
+
+/*
+ * Create and return the page footer
+ */
+function c_html_footer($params){
+    try{
+        return atlant_html_footer($params);
+
+    }catch(Exception $e){
+        throw new bException('c_html_footer(): Failed', $e);
     }
 }
 
@@ -96,42 +76,57 @@ function admin_start($params = '', $flash = null, $flash_type = null) {
 /*
  *
  */
-function admin_end() {
-    return '</div></div></body></html>';
-}
+function c_menu(){
+    try{
+        $html = '   <li>
+                        <a href="'.domain('/').'"><span class="fa fa-dashboard"></span> <span class="xn-text">'.tr('Dashboard').'</span></a>
+                    </li>
+                    <li class="xn-openable">
+                        <a href="#"><span class="fa fa-user"></span> <span class="xn-text">'.tr('My Account').'</span></a>
+                        <ul>
+                            <li><a href="'.domain('/my-profile.html').'"><span class="fa fa-pencil"></span> <span class="xn-text">'.tr('My Profile').'</span></a></li>
+                        </ul>
+                    </li>
+                    <li>
+                        <a href="https://google.com" target="_blank"><span class="fa fa-book"></span> <span class="xn-text">'.tr('External link').'</span></a>
+                    </li>
+                    '.return_with_rights('blogs', '
+                    <li>
+                        <a href="'.domain('/blogs.html').'"><span class="fa fa-book"></span> <span class="xn-text">'.tr('Blogs').'</span></a>
+                    </li>').'
+                    '.return_with_rights('admin', '
+                    <li class="xn-openable">
+                        <a href="#"><span class="fa fa-cog"></span> <span class="xn-text">'.tr('System').'</span></a>
+                        <ul>
+                            '.return_with_rights('accounts', '
+                            <li class="xn-openable">
+                                <a href="#"><span class="fa fa-users"></span> <span class="xn-text">'.tr('Accounts').'</span></a>
+                                <ul>
+                                    <li><a href="'.domain('/users.html').'"><span class="fa fa-users"></span> <span class="xn-text">'.tr('Users').'</span></a></li>
+                                    <li><a href="'.domain('/roles.html').'"><span class="fa fa-cog"></span> <span class="xn-text">'.tr('Roles').'</span></a></li>
+                                    <li><a href="'.domain('/rights.html').'"><span class="fa fa-lock"></span> <span class="xn-text">'.tr('Rights').'</span></a></li>
+                                    <li><a href="'.domain('/user-switches.html').'"><span class="fa fa-exchange"></span> <span class="xn-text">'.tr('User switches').'</span></a></li>
+                                </ul>
+                            </li>').'
+                            <li><a href="'.domain('/configuration.html').'"><span class="fa fa-cogs"></span> <span class="xn-text">'.tr('Configuration').'</span></a></li>
+                            <li><a href="'.domain('/activity-log.html').'"><span class="fa fa-edit"></span> <span class="xn-text">'.tr('Activity log').'</span></a></li>
+                            <li><a href="'.domain('/statistics.html').'"><span class="fa fa-line-chart"></span> <span class="xn-text">'.tr('Statistics').'</span></a></li>
+                            <li><a href="'.domain('/ip-locking.html').'"><span class="fa fa-lock"></span> <span class="xn-text">'.tr('IP locking').'</span></a></li>
+                            '.return_with_rights('cache', '
+                                <li class="xn-openable">
+                                    <a href="#"><span class="fa fa-database"></span> <span class="xn-text">'.tr('Cache').'</span></a>
+                                    <ul>
+                                        <li><a href="'.domain('/cache-manager.html').'"><span class="fa fa-database"></span> <span class="xn-text">'.tr('Manager').'</span></a></li>
+                                        <li><a href="'.domain('/cache-viewer.html').'"><span class="fa fa-database"></span> <span class="xn-text">'.tr('Viewer').'</span></a></li>
+                                    </ul>
+                                </li>').'
+                        </ul>
+                    </li>');
 
+        return $html;
 
-
-/*
- *
- */
-function admin_menu($params) {
-    global $_CONFIG;
-
-    if(!has_rights('admin')){
-        return '';
+    }catch(Exception $e){
+        throw new bException('c_menu(): Failed', $e);
     }
-
-    load_libs('user');
-
-    array_default($params, 'script', SCRIPT.'.php');
-
-    $html = '<ul>';
-
-    foreach($_CONFIG['admin']['pages'] as $right => $menu) {
-        if(has_rights($right)) {
-            $html .= '<li'.(($menu['script'] == $params['script']) ? ' class="selected"' : '').'><a'.(empty($menu['target']) ? '' : ' target="'.$menu['target'].'"').' href="'.$menu['script'].'">'.$menu['title'].'</a></li>';
-        }
-
-        if(!empty($menu['subs'])){
-            foreach($menu['subs'] as $right => $menu) {
-                if(has_rights($right)) {
-                    $html .= '<li class="sub'.(($menu['script'] == $params['script']) ? ' selected' : '').'"><a'.(empty($menu['target']) ? '' : ' target="'.$menu['target'].'"').' href="'.$menu['script'].'">'.$menu['title'].'</a></li>';
-                }
-            }
-        }
-    }
-
-    return $html.'<li><a href="/admin/signout.php">'.tr('Sign out').'</a></li></ul>';
 }
 ?>
