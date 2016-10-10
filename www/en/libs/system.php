@@ -924,6 +924,10 @@ function domain($current_url = false, $query = null){
         }
 
         if($query){
+            if($query === true){
+                $query = $_SERVER['QUERY_STRING'];
+            }
+
             load_libs('inet');
             $retval = url_add_query($retval, $query);
         }
@@ -1694,9 +1698,6 @@ function cdn_prefix($path, $id = null, $force_environment = false){
 
         if(!$id){
             $id = get_next_cdn_id();
-if($id){
-throw new bException('cdn_prefix():MULTIPLE CDN SERVER SUPPORT IS UNDER CONSTRUCTION FOR /admin SUPPORT WITH THE NEW ADMIN SYSTEM', 'not-supported');
-}
         }
 
 // :URGENT: Implement correct CDN support! MUST WORK WITH WHITELABEL SYSTEM!!!!
