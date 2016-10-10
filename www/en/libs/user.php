@@ -815,7 +815,7 @@ function user_get($user = null){
 
             if(!$retval){
                 $id = user_signup(array('status' => 'new'));
-                return user_get(null, $columns);
+                return user_get(null);
             }
         }
 
@@ -1568,7 +1568,7 @@ function user_get_from_key($user, $key, $timestamp){
 /*
  *
  */
-function user_key_or_redirect($user, $key = null, $timestamp = null, $redirect = null, $columns = '*'){
+function user_key_or_redirect($user, $key = null, $timestamp = null, $redirect = null){
     global $_CONFIG;
 
     try{
@@ -1582,7 +1582,7 @@ function user_key_or_redirect($user, $key = null, $timestamp = null, $redirect =
             $user      = isset_get($user['user']);
         }
 
-        $user = user_get($user, $columns);
+        $user = user_get($user);
 
         if(user_check_key($user, $key, $timestamp)){
             return $user;
