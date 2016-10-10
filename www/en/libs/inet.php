@@ -203,7 +203,7 @@ function url_add_query($url, $query){
     }
 
     if(!preg_match('/.+?=.*?/', $query)){
-        throw new bException('url_add_query(): Invalid query specified. Please ensure it has the "key=value" format');
+        throw new bException(tr('url_add_query(): Invalid query ":query" specified. Please ensure it has the "key=value" format', array(':query' => $query)), 'invalid');
     }
 
     $key = str_until($query, '=');
