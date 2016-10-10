@@ -924,10 +924,6 @@ function domain($current_url = false, $query = null){
         }
 
         if($query){
-            if($query === true){
-                $query = $_SERVER['QUERY_STRING'];
-            }
-
             load_libs('inet');
             $retval = url_add_query($retval, $query);
         }
@@ -1401,7 +1397,7 @@ function in_source($source, $key, $return = true){
 /*
  *
  */
-function system_date_format($date = null, $requested_format = 'human_datetime'){
+function date_format($date = null, $requested_format = 'human_datetime', $to_timezone = null, $from_timezone = null){
     global $_CONFIG;
 
     try{
@@ -1460,13 +1456,21 @@ function system_date_format($date = null, $requested_format = 'human_datetime'){
         }
 
         /*
-         * Format
+         * Create date in specified timezone (if specifed)
+         * Return formatted date
          */
-        $date   = new DateTime($date);
+        $date = new DateTime($date, ($from_timezone ? new DateTimeZone($from_timezone) : null));
+
+        if($to_timezone){
+            /*
+             * Output to specified timezone
+             */
+            $date->setTimezone(new DateTimeZone($to_timezone));
+        }
+
         return $date->format($format);
 
     }catch(Exception $e){
-showdie($e);
         if(!isset($_CONFIG['formats'][$requested_format]) and ($requested_format != 'mysql')){
             throw new bException(tr('system_date_format(): Unknown format ":format" specified', array(':format' => $requested_format)), 'unknown');
         }
@@ -1698,6 +1702,9 @@ function cdn_prefix($path, $id = null, $force_environment = false){
 
         if(!$id){
             $id = get_next_cdn_id();
+if($id){
+throw new bException('cdn_prefix():MULTIPLE CDN SERVER SUPPORT IS UNDER CONSTRUCTION FOR /admin SUPPORT WITH THE NEW ADMIN SYSTEM', 'not-supported');
+}
         }
 
 // :URGENT: Implement correct CDN support! MUST WORK WITH WHITELABEL SYSTEM!!!!
@@ -1945,5 +1952,9 @@ function user_or_redirect($url = null, $method = 'http'){
 
 function force_natural_number($number, $default = 1){
     return force_natural($number, $default);
+}
+
+function system_date_format($date = null, $requested_format = 'human_datetime', $to_timezone = null, $from_timezone = null){
+    return system_date_format($date, $requested_format, $to_timezone, $from_timezone);
 }
 ?>
