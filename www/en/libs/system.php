@@ -1708,7 +1708,7 @@ throw new bException('cdn_prefix():MULTIPLE CDN SERVER SUPPORT IS UNDER CONSTRUC
         }
 
 // :URGENT: Implement correct CDN support! MUST WORK WITH WHITELABEL SYSTEM!!!!
-        return str_replace(':id', $id, unslash($_CONFIG['root']).$cdn['prefix']).$path;
+        return str_replace(':id', $id, slash($_CONFIG['root'].$cdn['prefix'])).str_starts_not($path, '/');
 
     }catch(Exception $e){
         throw new bException(tr('cdn_prefix(): Failed'), $e);
