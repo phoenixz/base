@@ -1397,7 +1397,7 @@ function in_source($source, $key, $return = true){
 /*
  *
  */
-function date_format($date = null, $requested_format = 'human_datetime', $to_timezone = null, $from_timezone = null){
+function date_convert($date = null, $requested_format = 'human_datetime', $to_timezone = null, $from_timezone = null){
     global $_CONFIG;
 
     try{
@@ -1452,7 +1452,7 @@ function date_format($date = null, $requested_format = 'human_datetime', $to_tim
                 break;
 
             default:
-                throw new bException(tr('system_date_format(): Invalid force1224 hour format ":format" specified. Must be either false, "12", or "24". See $_CONFIG[formats][force1224]', array(':format' => $_CONFIG['formats']['force1224'])), 'invalid');
+                throw new bException(tr('date_convert(): Invalid force1224 hour format ":format" specified. Must be either false, "12", or "24". See $_CONFIG[formats][force1224]', array(':format' => $_CONFIG['formats']['force1224'])), 'invalid');
         }
 
         /*
@@ -1472,14 +1472,14 @@ function date_format($date = null, $requested_format = 'human_datetime', $to_tim
 
     }catch(Exception $e){
         if(!isset($_CONFIG['formats'][$requested_format]) and ($requested_format != 'mysql')){
-            throw new bException(tr('system_date_format(): Unknown format ":format" specified', array(':format' => $requested_format)), 'unknown');
+            throw new bException(tr('date_convert(): Unknown format ":format" specified', array(':format' => $requested_format)), 'unknown');
         }
 
         if(isset($format)){
-            throw new bException(tr('system_date_format(): Either :error, or Invalid format ":format" specified', array(':error' => $e->getMessage(), ':format' => str_log($format))), 'invalid');
+            throw new bException(tr('date_convert(): Either :error, or Invalid format ":format" specified', array(':error' => $e->getMessage(), ':format' => str_log($format))), 'invalid');
         }
 
-        throw new bException('system_date_format(): Failed', $e);
+        throw new bException('date_convert(): Failed', $e);
     }
 }
 
@@ -1708,7 +1708,7 @@ throw new bException('cdn_prefix():MULTIPLE CDN SERVER SUPPORT IS UNDER CONSTRUC
         }
 
 // :URGENT: Implement correct CDN support! MUST WORK WITH WHITELABEL SYSTEM!!!!
-        return str_replace(':id', $id, slash($_CONFIG['root'].$cdn['prefix'])).str_starts_not($path, '/');
+        return str_replace(':id', $id, unslash($_CONFIG['root']).$cdn['prefix']).$path;
 
     }catch(Exception $e){
         throw new bException(tr('cdn_prefix(): Failed'), $e);
@@ -1955,6 +1955,10 @@ function force_natural_number($number, $default = 1){
 }
 
 function system_date_format($date = null, $requested_format = 'human_datetime', $to_timezone = null, $from_timezone = null){
-    return system_date_format($date, $requested_format, $to_timezone, $from_timezone);
+    try{
+        return date_convert($date, $requested_format, $to_timezone, $from_timezone);
+    }catch(Exception $e){
+        throw new bException('system_date_format(): Failed', $e);
+    }
 }
 ?>
