@@ -8,30 +8,39 @@
 
 
 
-
-
 /*
  * Return complete current domain with HTTP and all
  */
-function current_domain($current_url = false, $query = null){
+function current_domain($current_url = false, $query = null, $root = null){
     global $_CONFIG;
 
     try{
-        if(empty($_SERVER['SERVER_NAME'])){
-            $server_name = $_CONFIG['domain'];
+        if($root === null){
+            $root = $_CONFIG['root'];
+        }
+
+        $root = unslash($root);
+
+        if(PLATFORM_HTTP){
+            if(empty($_SERVER['SERVER_NAME'])){
+                $server_name = $_SESSION['domain'];
+
+            }else{
+                $server_name = $_SERVER['SERVER_NAME'];
+            }
 
         }else{
-            $server_name = $_SERVER['SERVER_NAME'];
+            $server_name = $_CONFIG['domain'];
         }
 
         if(!$current_url){
-            $retval = $_CONFIG['protocol'].$server_name.$_CONFIG['root'];
+            $retval = $_CONFIG['protocol'].$server_name.$root;
 
         }elseif($current_url === true){
             $retval = $_CONFIG['protocol'].$server_name.$_SERVER['REQUEST_URI'];
 
         }else{
-            $retval = $_CONFIG['protocol'].$server_name.$_CONFIG['root'].str_starts($current_url, '/');
+            $retval = $_CONFIG['protocol'].$server_name.$root.str_starts($current_url, '/');
         }
 
         if($query){
@@ -269,9 +278,9 @@ function http_headers($params, $content_length){
                              * Origin is allowed from all sub domains
                              */
                             $origin = str_from(isset_get($_SERVER['HTTP_ORIGIN']), '://');
-                            $length = strlen($_CONFIG['domain']);
+                            $length = strlen($_SESSION['domain']);
 
-                            if(substr($origin, -$length, $length) === $_CONFIG['domain']){
+                            if(substr($origin, -$length, $length) === $_SESSION['domain']){
                                 /*
                                  * Sub domain matches. Since CORS does
                                  * not support sub domains, just show
@@ -579,11 +588,21 @@ function http_redirect_query_url(){
             return true;
         }
 
-        if(!$_CONFIG['redirects']['query']){
-            /*
-             * No need to auto redirect URL's with queries
-             */
-            return true;
+        if($GLOBALS['page_is_admin']){
+            if(!$_CONFIG['redirects']['backend']['query']){
+                /*
+                 * No need to auto redirect URL's with queries
+                 */
+                return true;
+            }
+
+        }else{
+            if(!$_CONFIG['redirects']['frontend']['query']){
+                /*
+                 * No need to auto redirect URL's with queries
+                 */
+                return true;
+            }
         }
 
         if(($pos = strpos($_SERVER['REQUEST_URI'], '?')) === false){

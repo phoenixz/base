@@ -111,7 +111,7 @@ $params['keep_aspectratio'] = not_empty(cli_argument('--keep-aspectratio')      
 $params['quality']          = not_empty(cli_argument('--quality'        , true)         , $params['quality']);
 $params['interlace']        = not_empty(cli_argument('--interlace'      , true , 'line'), $params['interlace']);
 $params['strip']            = not_empty(cli_argument('--strip'          , false, true)  , $params['strip']);
-$params['blur']             = not_empty(cli_argument('--blur'           , true , '1x3') , $params['blur']);
+$params['blur']             = not_null (cli_argument('--blur'           , true , '1x3') , $params['blur']);
 $params['defines']          = not_empty(cli_argument('--defines'        , true)         , $params['defines']);
 $params['sampling_factor']  = not_empty(cli_argument('--sampling-factor', true)         , $params['sampling_factor']);
 $params['limit']['memory']  = not_empty(cli_argument('--limit-memory'   , true)         , $params['limit']['memory']);
@@ -218,6 +218,10 @@ switch(cli_method()){
                         cli_log(str_size($subkey, 20), 'cyan', false);
                     }
 
+                    if(($key === 'blur') and (!$value)){
+                        $value = tr('No');
+                    }
+
                     cli_log(str_force($subvalue), 'white');
                 }
 
@@ -308,6 +312,7 @@ switch(cli_method()){
         $all          = not_empty(cli_argument('--all')               , cli_argument('-a'));
         $display_diff = not_empty(cli_argument('--display-difference'), cli_argument('-d'));
         $show_images  = not_empty(cli_argument('--show-images')       , cli_argument('-s'));
+        $no_exif      = not_empty(cli_argument('--no-exif')           , cli_argument('-e'));
         $source       = cli_argument();
         $no_delete    = false;
 

@@ -108,7 +108,7 @@ cli_only(true);
 load_libs('email');
 
 $criteria = strtoupper(cli_argument('--filter', true, 'UNSEEN'));
-$users    = cli_argument('--user', true);
+$users    = cli_argument('--users', 'all');
 
 if($users){
     /*
@@ -404,7 +404,7 @@ switch(cli_method()){
                 break;
 
             default:
-                cli_log(tr('Added "%count%" new emails', array('%count%' => $count)), 'green');
+                cli_log(tr('Added ":count" new emails', array(':count' => $count)), 'green');
         }
 
         break;

@@ -1098,7 +1098,10 @@ function file_get_local($file, &$is_downloaded = false){
             }
 
             if(is_uploaded_file($file)){
-                $file = file_get_uploaded($file);
+                $tmp  = file_get_uploaded($file);
+                $file = file_temp($file);
+
+                rename($tmp, $file);
             }
 
             return $file;
@@ -1766,6 +1769,7 @@ function file_tree_execute($params){
         array_default($params, 'follow_hidden'    , false);
         array_default($params, 'recursive'        , false);
         array_default($params, 'execute_directory', false);
+        array_default($params, 'params'           , null);
 
         if(empty($params['callback'])){
             throw new bException(tr('file_tree_execute(): No callback function specified'), 'not-specified');
@@ -1870,39 +1874,40 @@ function file_tree_execute($params){
                                 // FALLTHROUGH
 
                             case 'directory':
-                                if($params['recursive']){
+                                // FALLTHROUGH
+                            case 'regular file':
+                                if(($type != 'directory') or $params['execute_directory']){
+                                    if($params['filter'] and !preg_match($params['filter'], $file)){
+                                        if(VERBOSE and PLATFORM_SHELL){
+                                            cli_log(tr('file_tree_execute(): Skipping file ":file" because of filter ":filter"', array(':file' => $file, ':filter' => $params['filter'])), 'yellow');
+                                        }
+
+                                        continue;
+                                    }
+
+                                    $result = $params['callback']($file, $type, $params['params']);
+                                    $count++;
+
+                                    if($result === false){
+                                        /*
+                                         * When the callback returned boolean false, cancel all other files
+                                         */
+                                        goto end;
+                                    }
+
+                                    if(PLATFORM_SHELL){
+                                        if(VERBOSE){
+                                            cli_log(tr('file_tree_execute(): Executed code for file ":file"', array(':file' => $file)), 'green');
+
+                                        }else{
+                                            cli_dot();
+                                        }
+                                    }
+                                }
+
+                                if(($type == 'directory') and $params['recursive']){
                                     $params['path'] = $file;
                                     $count         += file_tree_execute($params);
-                                }
-
-                                if(!$params['execute_directory']){
-                                    break;
-                                }
-
-                                /*
-                                 * Process the directory file as well
-                                 */
-                                // FALLTHROUGH
-
-                            case 'regular file':
-                                if($params['filter'] and !preg_match($params['filter'], $file)){
-                                    if(VERBOSE and PLATFORM_SHELL){
-                                        cli_log(tr('file_tree_execute(): Skipping file ":file" because of filter ":filter"', array(':file' => $file, ':filter' => $params['filter'])), 'yellow');
-                                    }
-
-                                    continue;
-                                }
-
-                                $params['callback']($file);
-                                $count++;
-
-                                if(PLATFORM_SHELL){
-                                    if(VERBOSE){
-                                        cli_log(tr('file_tree_execute(): Executed code for file ":file"', array(':file' => $file)), 'green');
-
-                                    }else{
-                                        cli_dot();
-                                    }
                                 }
 
                                 break;
@@ -1932,6 +1937,7 @@ function file_tree_execute($params){
                     }
                 }
 
+                end:
                 closedir($h);
 
                 break;
@@ -1958,10 +1964,14 @@ function file_tree_execute($params){
  * If specified path is not absolute, then return a path that is sure to start
  * from the current working directory
  */
-function file_absolute($path){
+function file_absolute($path, $root = null){
     try{
+        if(empty($root)){
+            $root = slash(getcwd());
+        }
+
         if(substr($path, 0, 1) !== '/'){
-            $path = slash(getcwd()).$path;
+            $path = $root.$path;
         }
 
         return $path;

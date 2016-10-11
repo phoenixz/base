@@ -359,7 +359,7 @@ class validate_form {
         $value = cfm($value);
         if(!$value) return '';
 
-        if(!preg_match("/^[_a-z0-9-]+(\.[_a-z0-9-]+)*@[a-z0-9-]+(\.[a-z0-9-]+)*(\.[a-z]{2,4})$/i", $value)){
+        if(!filter_var($value, FILTER_VALIDATE_EMAIL)){
             $this->setError($msg);
             return false;
 

@@ -905,12 +905,8 @@ function sql_fetch_column($r, $column){
  * Merge database entry with new posted entry, overwriting the old DB values,
  * while skipping the values specified in $filter
  */
-function sql_merge($db, $post, $skip = null){
+function sql_merge($db, $post, $skip = 'id,status'){
     try{
-        if($skip === null){
-            $skip = 'id,status';
-        }
-
         if(!is_array($db)){
             if($db !== null){
                 throw new bException(tr('sql_merge(): Specified database source data type should be an array but is a ":type"', array(':type' => gettype($db))), 'invalid');
@@ -935,7 +931,16 @@ function sql_merge($db, $post, $skip = null){
 
         $post = array_remove($post, $skip);
 
-        return array_merge($db, $post);
+        /*
+         * Copy all POST variables over DB
+         * Skip POST variables that have NULL value
+         */
+        foreach($post as $key => $value){
+            if($value === null) continue;
+            $db[$key] = $value;
+        }
+
+        return $db;
 
     }catch(Exception $e){
         throw new bException('sql_merge(): Failed', $e);
@@ -1012,7 +1017,7 @@ function sql_null($value){
  * Return table row count by returning results count for SELECT `id`
  * Results will be cached in a counts table
  */
-function sql_count($table, $where = '', $execute = null, $column = 'id'){
+function sql_count($table, $where = '', $execute = null, $column = '`id`'){
     global $_CONFIG;
 
     try{
@@ -1026,13 +1031,10 @@ function sql_count($table, $where = '', $execute = null, $column = 'id'){
             return $count;
         }
 
-
-
         /*
          * Count value was not found cached, count it directly
          */
-        $count = sql_query('SELECT '.$column.' FROM '.$table.' '.$where, $execute);
-        $count = $count->rowCount();
+        $count = sql_get('SELECT COUNT('.$column.') AS `count` FROM `'.$table.'` '.$where, 'count', $execute);
 
         sql_query('INSERT INTO `counts` (`createdby`, `count`, `hash`, `until`)
                    VALUES               (:createdby , :count , :hash , NOW() + INTERVAL :expires SECOND)

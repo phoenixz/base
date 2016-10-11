@@ -123,26 +123,36 @@ function image_convert($source, $destination, $params = null){
         foreach($params as $key => $value){
             switch($key){
                 case 'limit_memory':
-                    $command .= ' -limit memory '.$value;
+                    if($value){
+                       $command .= ' -limit memory '.$value;
+                    }
                     break;
 
                 case 'limit_map':
-                    $command .= ' -limit map '.$value;
+                    if($value){
+                        $command .= ' -limit map '.$value;
+                    }
                     break;
 
                 case 'quality':
-                    $command .= ' -quality '.$value.'%';
+                    if($value){
+                        $command .= ' -quality '.$value.'%';
+                    }
                     break;
 
                 case 'blur':
-                    $command .= ' -gaussian-blur '.$value;
+                    if($value){
+                        $command .= ' -gaussian-blur '.$value;
+                    }
                     break;
 
                 case 'keep_aspectratio':
                     break;
 
                 case 'sampling_factor':
-                    $command .= ' -sampling-factor '.$value;
+                    if($value){
+                        $command .= ' -sampling-factor '.$value;
+                    }
                     break;
 
                 case 'defines':
@@ -159,8 +169,10 @@ function image_convert($source, $destination, $params = null){
                     break;
 
                 case 'interlace':
-                    $value    = image_interlace_valid(strtolower($value));
-                    $command .= ' -interlace '.$value;
+                    if($value){
+                        $value    = image_interlace_valid(strtolower($value));
+                        $command .= ' -interlace '.$value;
+                    }
                     break;
 
                 case 'updatemode':
@@ -237,23 +249,32 @@ function image_convert($source, $destination, $params = null){
                  */
                 $command  .= ' -background none';
                 $dest_file = str_runtil($dest_file, '.').'.'.$params['format'];
+
                 break;
 
             case 'jpg':
                 $command  .= ' -background white';
                 $dest_file = str_runtil($dest_file, '.').'.'.$params['format'];
+
                 break;
 
             case '':
                 /*
-                 * Use current format
+                 * Use current format. If source file has no extension (Hello PHP temporary upload files!)
+                 * then let the dest file keep its own extension
                  */
-                $dest_file = str_runtil($dest_file, '.').'.'.str_rfrom($source_file, '.');
+                $extension = str_rfrom($source_file, '.');
+
+                if(!$extension){
+                    $dest_file = str_runtil($dest_file, '.').'.'.$extension;
+                }
+
                 break;
 
             default:
                 throw new bException(tr('image_convert(): Unknown format ":format" specified.', array(':format' => $params['format'])), 'unknown');
         }
+
 
         $destination = slash($dest_path).$dest_file;
 
@@ -315,6 +336,7 @@ function image_convert($source, $destination, $params = null){
         return $destination;
 
     }catch(Exception $e){
+showdie($e);
         try{
             if(file_exists(TMP.'imagemagic_convert.log')){
                 $contents = file_get_contents(TMP.'imagemagic_convert.log');
@@ -429,7 +451,9 @@ function image_create_avatars($file){
                 throw new bException('image_create_avatar(): Invalid avatar type configuration for type "'.str_log($name).'"', 'invalid/config');
             }
 
-            image_convert($file, ROOT.'www/avatars/'.$destination.'_'.$name.'.'.file_get_extension($file), $type[0], $type[1], $type[2]);
+            image_convert($file['tmp_name'][0], ROOT.'www/avatars/'.$destination.'_'.$name.'.'.file_get_extension($file['name'][0]), array('x'      => $type[0],
+                                                                                                                                           'y'      => $type[1],
+                                                                                                                                           'method' => $type[2]));
         }
 
         return $destination;
@@ -661,25 +685,23 @@ function image_fix_extension($file){
  */
 function image_fancybox($params = null){
     try{
+        load_libs('json');
+
         array_params($params, 'selector');
-        array_default($params, 'selector'   , '.fancy');
-        array_default($params, 'openEffect' , 'fade');
-        array_default($params, 'closeEffect', 'fade');
-        array_default($params, 'arrows'     , 'true');
+        array_default($params, 'selector', '.fancy');
+        array_default($params, 'options' , array());
+
+        array_default($params['options'], 'openEffect'   , 'fade');
+        array_default($params['options'], 'closeEffect'  , 'fade');
+        array_default($params['options'], 'arrows'       , true);
+        array_default($params['options'], 'titleShow'    , true);
+        array_default($params['options'], 'titleFromAlt' , true);
+        array_default($params['options'], 'titlePosition', 'outside'); // over, outside, inside
 
         html_load_js('base/fancybox/jquery.fancybox');
         html_load_css('base/fancybox/jquery.fancybox');
 
-        $selector = $params['selector'];
-        $options  = array();
-
-        unset($params['selector']);
-
-        foreach($params as $key => $value){
-            $options[] = $key .' : "'.$value.'"';
-        }
-
-        return html_script('$("'.$selector.'").fancybox({'.implode(',', $options).'});');
+        return html_script('$("'.$params['selector'].'").fancybox('.json_encode_custom($params['options']).');');
 
     }catch(Exception $e){
         throw new bException('image_fancybox(): Failed', $e);

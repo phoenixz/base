@@ -230,7 +230,7 @@ function rights_get($right){
                            ON        `rights`.`modifiedby` = `modifiedby`.`id`
 
                            WHERE     `rights`.`id`   = :right
-                           OR        `rights`.`name` = :right', $columns,
+                           OR        `rights`.`name` = :right',
 
                            array(':right' => $right));
 

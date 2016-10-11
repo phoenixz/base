@@ -298,7 +298,7 @@ function email_get_attachments($imap, $email, $data, $flags){
                 }
 
                 $data['img'.$i]['file'] = $file_name;
-                file_put_contents(ROOT.'tmp/'.$file_name, $img);
+                file_put_contents(TMP.$file_name, $img);
 
             }catch(Exception $e){
                 /*
@@ -332,8 +332,8 @@ function email_get_conversation($email){
 
         $conversation = sql_get('SELECT `id`,
                                         `users_id`,
-                                        `email_accounts_id`,
-                                        `last_messages`
+                                        `last_messages`,
+                                        `email_accounts_id`
 
                                  FROM   `email_conversations`
 
@@ -481,7 +481,7 @@ function email_update_conversation($email, $direction){
             $message_length = strlen($last_messages);
         }
 
-        if($direction == 'send'){
+        if($direction == 'sent'){
             sql_query('UPDATE `email_conversations`
 
                        SET    `last_messages` = :last_messages,
@@ -520,10 +520,10 @@ function email_update_conversation($email, $direction){
  */
 function email_update_message($email, $direction){
     try{
-        $email['users_id']           = email_get_users_id($email);
-        $email['email_accounts_id']  = email_get_accounts_id($email);
-        $email['conversation']       = email_get_conversation($email);
-        $email['reply_to_id']        = email_get_reply_to_id($email);
+        $email['users_id']          = email_get_users_id($email);
+        $email['email_accounts_id'] = email_get_accounts_id($email);
+        $email['conversation']      = email_get_conversation($email);
+        $email['reply_to_id']       = email_get_reply_to_id($email);
 
         if(empty($email['id']) and !empty($email['message_id'])){
             /*
@@ -545,7 +545,7 @@ function email_update_message($email, $direction){
                                      ':to'                => $email['to'],
                                      ':users_id'          => $email['users_id'],
                                      ':email_accounts_id' => $email['email_accounts_id'],
-                                     ':date'              => $email['date'],
+                                     ':date'              => isset_get($email['date'], system_date_format(null, 'mysql')),
                                      ':subject'           => (string) $email['subject'],
                                      ':text'              => $email['text'],
                                      ':html'              => $email['html']));
@@ -562,7 +562,7 @@ function email_update_message($email, $direction){
                                      ':to'                => $email['to'],
                                      ':users_id'          => $email['users_id'],
                                      ':email_accounts_id' => $email['email_accounts_id'],
-                                     ':date'              => $email['date'],
+                                     ':date'              => isset_get($email['date'], system_date_format(null, 'mysql')),
                                      ':message_id'        => $email['message_id'],
                                      ':size'              => $email['size'],
                                      ':uid'               => $email['uid'],
@@ -612,7 +612,7 @@ function email_update_message($email, $direction){
                              ':to'                => $email['to'],
                              ':users_id'          => $email['users_id'],
                              ':email_accounts_id' => $email['email_accounts_id'],
-                             ':date'              => $email['date'],
+                             ':date'              => isset_get($email['date'], system_date_format(null, 'mysql')),
                              ':subject'           => $email['subject'],
                              ':text'              => $email['text'],
                              ':html'              => $email['html'],
@@ -670,7 +670,7 @@ function email_check_images($email){
         $i = 0;
 
         $name   = str_until($email['to'], '@');
-        $domain = str_from($email['to'], '@');
+        $domain = str_from ($email['to'], '@');
 
         while(!empty($email['img'.$i])){
             if(empty($path)){
@@ -691,7 +691,7 @@ function email_check_images($email){
             /*
              * Move the image to the correct location
              */
-            rename(ROOT.'tmp/'.$email['img'.$i]['file'], ROOT.'data/email/images/'.$domain.'/'.$name.'/'.$email['id'].'/'.$email['img'.$i]['file']);
+            rename(TMP.$email['img'.$i]['file'], ROOT.'data/email/images/'.$domain.'/'.$name.'/'.$email['id'].'/'.$email['img'.$i]['file']);
             $email['img'.$i]['file'] = ROOT.'data/email/images/'.$domain.'/'.$name.'/'.$email['id'].'/'.$email['img'.$i]['file'];
 
             $i++;
@@ -793,7 +793,7 @@ function email_send($email, $smtp = null){
     try{
         array_params($email);
         array_default($email, 'delayed'     , true);
-        array_default($email, 'conversation', false);
+        array_default($email, 'conversation', true);
         array_default($email, 'validate'    , true);
         array_default($email, 'smtp_host'   , false);
 
@@ -924,19 +924,47 @@ function email_from_exists($email){
     global $_CONFIG;
 
     try{
+        /*
+         * Validate email, extract it from "user <email>" if needed
+         */
+        if(!filter_var($email, FILTER_VALIDATE_EMAIL)){
+            $email = str_cut($email, '<', '>');
+
+            if(!filter_var($email, FILTER_VALIDATE_EMAIL)){
+                throw new bException(tr('email_from_exists(): Specified "from" email address ":email" is not a valid email address', array(':email' => $email)), 'invalid');
+            }
+        }
+
         if(empty($_CONFIG['email']['users'])){
             /*
              * Get list from database
              */
-//:IMPLEMENT:
+            $account = sql_get('SELECT `id`, `email`, `status` FROM `email_accounts` WHERE `email` = :email', array(':email' => $email));
 
-        }else{
-            if(!empty($_CONFIG['email']['aliases'][$email])){
-                return $_CONFIG['email']['aliases'][$email];
+            if(!$account){
+// :DELETE: _exists() functions should just return true or false, the entry exists or not
+                //throw new bException(tr('email_from_exists(): Specified email address ":email" does not exist', array(':email' => $email)), 'not-exist');
+                return false;
             }
 
-            return !empty($_CONFIG['email']['users'][$email]);
+            if($account['status']){
+// :DELETE: _exists() functions should just return true or false, the entry exists or not
+                //throw new bException(tr('email_from_exists(): Specified email address ":email" is currently not available', array(':email' => $email)), 'not-available');
+                return false;
+            }
+
+            return true;
+
         }
+
+        /*
+         * Using the old (and obsoleted) hard configured emails
+         */
+        if(!empty($_CONFIG['email']['aliases'][$email])){
+            return $_CONFIG['email']['aliases'][$email];
+        }
+
+        return !empty($_CONFIG['email']['users'][$email]);
 
     }catch(Exception $e){
         throw new bException(tr('email_from_exists(): Failed'), $e);
@@ -1001,21 +1029,8 @@ function email_validate($email){
         $v->isNotEmpty('subject', tr('Please specify an email subject'));
         $v->isNotEmpty('subject', tr('Please write something in the email'));
 
-        if(empty($email['to']) and !empty($email['email'])){
-            /*
-             * Assume that the field "email" is the "to" field
-             */
-            $email['email'] = $email['to'];
-        }
-
         if(!email_from_exists($email['from'])){
             $v->setError(tr('Specified source email ":email" does not exist', array(':email' => $email['from'])));
-        }
-
-        if($email['validate_sender']){
-            if(empty($_CONFIG['email']['users'][$email['from']])){
-                $v->setError(tr('Unkown sender ":sender" specified', array(':sender' => $params['from'])));
-            }
         }
 
         switch(isset_get($email['format'])){
@@ -1108,10 +1123,12 @@ function email_prepare($email){
          */
         if($email['header']){
             $email['text'] = $_CONFIG['email']['header'].$email['text'];
+            $email['html'] = $_CONFIG['email']['header'].$email['html'];
         }
 
         if($email['footer']){
             $email['text'] = $email['text'].$_CONFIG['email']['footer'];
+            $email['html'] = $email['html'].$_CONFIG['email']['footer'];
         }
 
 
@@ -1128,8 +1145,8 @@ function email_prepare($email){
         }
 
         if(strpos($email['from'], '<') !== false){
-            $email['from_name'] = trim(str_until($email['to'], '<'));
-            $email['from']      = trim(str_cut($email['to'], '<', '>'));
+            $email['from_name'] = trim(str_until($email['from'], '<'));
+            $email['from']      = trim(str_cut($email['from'], '<', '>'));
 
         }else{
             $email['from_name'] = '';
@@ -1314,7 +1331,7 @@ function email_delay($email){
             /*
              * Run the script to send the "new" emails
              */
-            run_background('base/email -e '.ENVIRONMENT.' send', true, true);
+            run_background('base/email --env '.ENVIRONMENT.' send', true, true);
         }
 
         return sql_insert_id();
@@ -1336,7 +1353,7 @@ function email_send_unsent(){
         /*
          * Load the emails where status is "new"
          */
-        $r = sql_query('SELECT    `emails`.`id`,
+        $r = sql_query('SELECT    `emails`.`id` AS `emails_id`,
                                   `emails`.`status`,
                                   `emails`.`template`,
                                   `emails`.`subject`,
@@ -1398,7 +1415,7 @@ function email_send_unsent(){
             /*
              * The mail was sent, update the `status` and `senton`
              */
-            $p->execute(array(':id' => $email['id']));
+            $p->execute(array(':id' => $email['emails_id']));
 
             /*
              * Wait a little as to not be too heavy on system resources

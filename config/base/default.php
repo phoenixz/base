@@ -152,12 +152,13 @@ $_CONFIG['feedback']           = array('emails'           => array('Sven Oostenb
 $_CONFIG['flash']              = array('html'             => '<div class="flash:type">:message</div>');
 
 //
-$_CONFIG['formats']            = array('date'             => 'Ymd',
+$_CONFIG['formats']            = array('force1224'        => '24',
+                                       'date'             => 'Ymd',
                                        'time'             => 'YmdHis',
                                        'human_date'       => 'd/m/Y',
                                        'human_time'       => 'H:i:s A',
                                        'human_datetime'   => 'd/m/Y H:i:s A',
-                                       'human_nice_date'  => 'l, F d Y');
+                                       'human_nice_date'  => 'l, j F Y');
 
 // Filesystem configuration
 $_CONFIG['fs']                 = array('system_tempdir'   => true,                                          // ?
@@ -226,6 +227,10 @@ $_CONFIG['mobile']             = array('enabled'          => true,              
 // Name of the website
 $_CONFIG['name']               = 'base';
 
+// Do not index this site?
+$_CONFIG['noindex']            = false;
+
+
 // Paging configuration
 $_CONFIG['paging']             = array('limit'            => 20,                                            // The maximum amount of items shown per page
                                        'show_pages'       => 5,                                             // The maximum amount of pages show, should always be an odd number, or an exception will be thrown!
@@ -264,14 +269,23 @@ $_CONFIG['production']         = true;
 $_CONFIG['protocol']           = 'http://';                                                                 // The base protocol of this website. Basically either "http://",  or "https://".
 
 // Redirects configuration (This ususally would not require changes unless you want to have other file names for certain actions like signin, etc)
-$_CONFIG['redirects']          = array('auto'             => 'get',                                         // Auto redirects (usually because of user or right required) done by "session" or "get"
-                                       'query'            => false,                                         // If URL contains a query ? redirect to URL without query, see http_redirect_query_url() and startup
-                                       'index'            => 'index.php',                                   // What is the default index page for this site
-                                       'accessdenied'     => '403',                                         // Usually won't redirect, but just show
-                                       'signin'           => 'signin.php',                                  // What is the default signin page for this site
-                                       'lock'             => 'lock.php',                                    // What is the default lock page for this site
-                                       'aftersignin'      => 'index.php',                                   // Where will the site redirect to by default after a signin?
-                                       'aftersignout'     => 'index.php');                                  //Where will the site redirect to by default after a signout?
+$_CONFIG['redirects']          = array('frontend' => array('auto'             => 'get',                                         // Auto redirects (usually because of user or right required) done by "session" or "get"
+                                                           'query'            => false,                                         // If URL contains a query ? redirect to URL without query, see http_redirect_query_url() and startup
+                                                           'index'            => 'index.php',                                   // What is the default index page for this site
+                                                           'accessdenied'     => '403',                                         // Usually won't redirect, but just show
+                                                           'signin'           => 'signin.php',                                  // What is the default signin page for this site
+                                                           'lock'             => 'lock.php',                                    // What is the default lock page for this site
+                                                           'aftersignin'      => 'index.php',                                   // Where will the site redirect to by default after a signin?
+                                                           'aftersignout'     => 'index.php'),
+
+                                        'backend' => array('auto'             => 'get',                                         // Auto redirects (usually because of user or right required) done by "session" or "get"
+                                                           'query'            => false,                                         // If URL contains a query ? redirect to URL without query, see http_redirect_query_url() and startup
+                                                           'index'            => 'admin/index.php',                                   // What is the default index page for this site
+                                                           'accessdenied'     => '403',                                         // Usually won't redirect, but just show
+                                                           'signin'           => 'admin/signin.php',                                  // What is the default signin page for this site
+                                                           'lock'             => 'admin/lock.php',                                    // What is the default lock page for this site
+                                                           'aftersignin'      => 'admin/index.php',                                   // Where will the site redirect to by default after a signin?
+                                                           'aftersignout'     => 'admin/index.php'));                                  //Where will the site redirect to by default after a signout?
 
 // Root URL of the website
 $_CONFIG['root']               = '';                                                                        //
@@ -375,5 +389,5 @@ $_CONFIG['translator']         = array('url'          => 'translator.localhost',
                                        'api_key'      => 'something',
                                        'allowed_tags' => '<b><a><strong>');
 
-$_CONFIG['whitelabels']        = array('enabled'      => false);
+$_CONFIG['whitelabels']        = array('enabled'      => false);                                            // Either false (No whitelabel domains, only the normal site FQDN allowed), true (only default and registered FQDNs allowed), "sub" (only default FQDN and its sub domains allowed), or "all" (All domains allowed)
 ?>

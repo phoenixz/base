@@ -20,6 +20,20 @@ function html_only(){
 
 
 /*
+ *
+ */
+function html_safe($html){
+    try{
+        return htmlentities($html);
+
+    }catch(Exception $e){
+        throw new bException('html_safe(): Failed', $e);
+    }
+}
+
+
+
+/*
  * Generate and return the HTML footer
  */
 function html_iefilter($html, $filter){
@@ -88,32 +102,33 @@ function html_generate_css(){
     global $_CONFIG;
 
     try{
-        if(empty($GLOBALS['css'])){
-            $GLOBALS['css'] = array();
-        }
+//        if(empty($GLOBALS['css'])){
+//            $GLOBALS['css'] = array();
+//        }
+//
+//// :DELETE: admin pages and mobile pages are no longer supported
+//        if($GLOBALS['page_is_admin']){
+//            /*
+//             * Use normal admin CSS
+//             */
+//            $GLOBALS['css']['admin'] = array('media' => null);
+//
+//        }elseif($GLOBALS['page_is_mobile'] or empty($_CONFIG['bootstrap']['enabled'])){
+//            /*
+//             * Use normal, default CSS
+//             */
+//////            $GLOBALS['css']['style'] = array('media' => null);
+//
+//        }else{
+//            /*
+//             * Use bootstrap CSS
+//             */
+//////            $GLOBALS['css'][$_CONFIG['bootstrap']['css']] = array('media' => null);
+//////            $GLOBALS['css']['style']                      = array('media' => null);
+//////            $GLOBALS['css'][''bootstrap-theme']           => array('media' => null),
+//        }
 
-        if($GLOBALS['page_is_admin']){
-            /*
-             * Use normal admin CSS
-             */
-            $GLOBALS['css']['admin'] = array('media' => null);
-
-        }elseif($GLOBALS['page_is_mobile'] or empty($_CONFIG['bootstrap']['enabled'])){
-            /*
-             * Use normal, default CSS
-             */
-//            $GLOBALS['css']['style'] = array('media' => null);
-
-        }else{
-            /*
-             * Use bootstrap CSS
-             */
-//            $GLOBALS['css'][$_CONFIG['bootstrap']['css']] = array('media' => null);
-//            $GLOBALS['css']['style']                      = array('media' => null);
-//            $GLOBALS['css'][''bootstrap-theme']           => array('media' => null),
-        }
-
-        if(!empty($_CONFIG['cdn']['css']['post']) and !$GLOBALS['page_is_admin']){
+        if(!empty($_CONFIG['cdn']['css']['post'])){
             $GLOBALS['css']['post'] = array('min' => $_CONFIG['cdn']['min'], 'media' => (is_string($_CONFIG['cdn']['css']['post']) ? $_CONFIG['cdn']['css']['post'] : ''));
         }
 
@@ -123,7 +138,7 @@ function html_generate_css(){
         foreach($GLOBALS['css'] as $file => $meta) {
             if(!$file) continue;
 
-            $html = '<link rel="stylesheet" type="text/css" href="'.cdn_prefix().(empty($_CONFIG['whitelabels']['enabled']) ? '' : $_SESSION['domain']. '/').(!empty($GLOBALS['page_is_admin']) ? 'admin/' : '').'css/'.(!empty($GLOBALS['page_is_mobile']) ? 'mobile/' : '').$file.($min ? '.min.css' : '.css').'"'.($meta['media'] ? ' media="'.$meta['media'].'"' : '').'>';
+            $html = '<link rel="stylesheet" type="text/css" href="'.cdn_prefix((($_CONFIG['whitelabels']['enabled'] === true) ? $_SESSION['domain']. '/' : '').'css/'.(!empty($GLOBALS['page_is_mobile']) ? 'mobile/' : '').$file.($min ? '.min.css' : '.css')).'"'.($meta['media'] ? ' media="'.$meta['media'].'"' : '').'>';
 
             if(substr($file, 0, 2) == 'ie'){
                 $retval .= html_iefilter($html, str_until(str_from($file, 'ie'), '.'));
@@ -307,7 +322,7 @@ function html_generate_js(){
                     if($skip) continue;
                 }
 
-                $html = '<script'.(!empty($data['option']) ? ' '.$data['option'] : '').' type="text/javascript" src="'.cdn_prefix().(empty($_CONFIG['whitelabels']['enabled']) ? '' : $_SESSION['domain'].'/').(!empty($GLOBALS['page_is_admin']) ? 'admin/' : '').'js/'.$file.$min.'.js"></script>';
+                $html = '<script'.(!empty($data['option']) ? ' '.$data['option'] : '').' type="text/javascript" src="'.cdn_prefix((($_CONFIG['whitelabels']['enabled'] === true) ? $_SESSION['domain'].'/' : '').'js/'.$file.$min.'.js').'"></script>';
             }
 
             /*
@@ -437,7 +452,7 @@ function html_header($params = null, $meta = array()){
         /*
          * Add meta tag no-index for non production environments and admin pages
          */
-        if(!$_CONFIG['production'] || $GLOBALS['page_is_admin']){
+        if(!$_CONFIG['production'] || $_CONFIG['noindex']){
            $meta['robots'] = 'noindex';
         }
 
@@ -773,6 +788,13 @@ function html_flash_class($class = null){
 /*
  * Returns HTML for an HTML anchor link <a> that is safe for use with target
  * _blank
+ *
+ * For vulnerability info:
+ * See https://dev.to/ben/the-targetblank-vulnerability-by-example
+ * See https://mathiasbynens.github.io/rel-noopener/
+ *
+ * For when to use _blank anchors:
+ * See https://css-tricks.com/use-target_blank/
  */
 function html_a($params){
     try{
@@ -890,6 +912,7 @@ function html_select($params){
         array_default($params, 'none'        , tr('None selected'));
         array_default($params, 'empty'       , tr('None available'));
         array_default($params, 'option_class', '');
+        array_default($params, 'extra'       , '');
         array_default($params, 'selected'    , null);
         array_default($params, 'bodyonly'    , false);
         array_default($params, 'autosubmit'  , false);
@@ -965,10 +988,10 @@ function html_select($params){
             /*
              * Add a hidden element with the name to ensure that multiple selects with [] will not show holes
              */
-            return '<select'.$params['multiple'].($params['id'] ? ' id="'.$params['id'].'_disabled"' : '').' name="'.$params['name'].'" '.($class ? ' class="'.$class.'"' : '').' readonly disabled>'.
+            return '<select'.$params['multiple'].($params['id'] ? ' id="'.$params['id'].'_disabled"' : '').' name="'.$params['name'].'" '.($class ? ' class="'.$class.'"' : '').($params['extra'] ? ' '.$params['extra'] : '').' readonly disabled>'.
                     $body.'</select><input type="hidden" name="'.$params['name'].'" >';
         }else{
-            $retval = '<select'.$params['multiple'].($params['id'] ? ' id="'.$params['id'].'"' : '').' name="'.$params['name'].'" '.($class ? ' class="'.$class.'"' : '').($params['disabled'] ? ' disabled' : '').($params['autofocus'] ? ' autofocus' : '').'>'.
+            $retval = '<select'.$params['multiple'].($params['id'] ? ' id="'.$params['id'].'"' : '').' name="'.$params['name'].'" '.($class ? ' class="'.$class.'"' : '').($params['disabled'] ? ' disabled' : '').($params['autofocus'] ? ' autofocus' : '').($params['extra'] ? ' '.$params['extra'] : '').'>'.
                       $body.'</select>';
         }
 
@@ -1066,7 +1089,7 @@ function html_select_body($params) {
                         }
                     }
 
-                    $retval  .= '<option'.($params['class'] ? ' class="'.$params['class'].'"' : '').''.((($params['selected'] !== null) and ($key === $params['selected'])) ? ' selected' : '').' value="'.$key.'"'.$option_data.'>'.$value.'</option>';
+                    $retval  .= '<option'.($params['class'] ? ' class="'.$params['class'].'"' : '').''.((($params['selected'] !== null) and ($key === $params['selected'])) ? ' selected' : '').' value="'.html_safe($key).'"'.$option_data.'>'.html_safe($value).'</option>';
                 }
 
             }elseif(is_object($params['resource'])){
@@ -1107,11 +1130,10 @@ function html_select_body($params) {
                             }
                         }
 
-                        $retval  .= '<option'.($params['class'] ? ' class="'.$params['class'].'"' : '').''.(($row[0] === $params['selected']) ? ' selected' : '').' value="'.$row[0].'"'.$option_data.'>'.$row[1].'</option>';
+                        $retval  .= '<option'.($params['class'] ? ' class="'.$params['class'].'"' : '').''.(($row[0] === $params['selected']) ? ' selected' : '').' value="'.html_safe($row[0]).'"'.$option_data.'>'.html_safe($row[1]).'</option>';
                     }
 
                 }catch(Exception $e){
-
                     throw $e;
                 }
 
@@ -1236,14 +1258,14 @@ function html_favicon($icon = null, $mobile_icon = null, $sizes = null, $precomp
         foreach($params['sizes'] as $sizes){
             if($GLOBALS['page_is_mobile']){
                 if(!$params['mobile_icon']){
-                    $params['mobile_icon'] = cdn_prefix().'img/mobile/favicon.png';
+                    $params['mobile_icon'] = cdn_prefix('img/mobile/favicon.png');
                 }
 
                 return '<link rel="apple-touch-icon'.($params['precomposed'] ? '-precompsed' : '').'"'.($sizes ? ' sizes="'.$sizes.'"' : '').' href="'.$params['mobile_icon'].'" />';
 
             }else{
                 if(empty($params['icon'])){
-                    $params['icon'] = cdn_prefix().'img/favicon.png';
+                    $params['icon'] = cdn_prefix('img/favicon.png');
                 }
 
                 return '<link rel="icon" type="image/x-icon"'.($sizes ? ' sizes="'.$sizes.'"' : '').'  href="'.$params['icon'].'" />';
@@ -1620,11 +1642,11 @@ function html_video($src, $type = null, $height = 0, $width = 0, $more = ''){
             $file  = ROOT.'www/en'.str_starts($src, '/');
 
         }else{
-            if(preg_match('/^'.$protocol.':\/\/(?:www\.)?'.str_replace('.', '\.', $_CONFIG['domain']).'\/.+$/ius', $src)){
+            if(preg_match('/^'.str_replace('/', '\/', str_replace('.', '\.', domain())).'\/.+$/ius', $src)){
                 /*
                  * This is a local video with domain specification
                  */
-                $file  = ROOT.'www/en'.str_starts(str_from($src, $_SESSION['domain']), '/');
+                $file  = ROOT.'www/en'.str_starts(str_from($src, domain()), '/');
 
             }elseif(!$_CONFIG['production']){
                 /*
@@ -1710,8 +1732,8 @@ function page_show($pagename, $die = true, $force = false, $data = null) {
             // Execute ajax page
             return include(ROOT.'www/'.LANGUAGE.'/ajax/'.$pagename.'.php');
 
-        }elseif(!empty($GLOBALS['page_is_ajax'])){
-                $prefix = 'ajax/';
+        }elseif(!empty($GLOBALS['page_is_admin'])){
+            $prefix = 'admin/';
 
         }else{
             $prefix = '';

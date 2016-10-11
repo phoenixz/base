@@ -734,7 +734,7 @@ function load_libs($libraries){
         }
 
     }catch(Exception $e){
-        throw new bException('load_libs(): Failed to load libraries "'.str_log($libraries).'"', $e);
+        throw new bException('load_libs(): Failed to load library "'.str_log($library).'"', $e);
     }
 }
 
@@ -866,6 +866,10 @@ function add_stat($code, $count = 1, $details = '') {
  * Calculate the hash value for the given password with the (possibly) given
  * algorithm
  */
+function password($source, $algorithm, $add_meta = true){
+    return get_hash($source, $algorithm, $add_meta );
+}
+
 function get_hash($source, $algorithm, $add_meta = true){
     global $_CONFIG;
 
@@ -916,7 +920,7 @@ function domain($current_url = false, $query = null){
             $retval = $_CONFIG['protocol'].$_SESSION['domain'].$_SERVER['REQUEST_URI'];
 
         }else{
-            $retval = $_CONFIG['protocol'].$_SESSION['domain'].$_CONFIG['root'].str_starts($current_url, '/');
+            $retval = $_CONFIG['protocol'].$_SESSION['domain'].unslash($_CONFIG['root']).str_starts($current_url, '/');
         }
 
         if($query){
@@ -1221,6 +1225,18 @@ function not_empty(){
 
 
 /*
+ * Return the first non null argument
+ */
+function not_null(){
+    foreach(func_get_args() as $argument){
+        if($argument === null) continue;
+        return $argument;
+    }
+}
+
+
+
+/*
  * Return the first non empty argument
  */
 function pick_random($count){
@@ -1421,14 +1437,34 @@ function system_date_format($date = null, $requested_format = 'human_datetime'){
         }
 
         /*
+         * Force 12 or 24 hour format?
+         */
+        switch($_CONFIG['formats']['force1224']){
+            case false:
+                break;
+
+            case '12':
+                $format = str_replace('g', 'H', $format).' a';
+                break;
+
+            case '24':
+                $format = str_replace('H', 'g', $format);
+                break;
+
+            default:
+                throw new bException(tr('system_date_format(): Invalid force1224 hour format ":format" specified. Must be either false, "12", or "24". See $_CONFIG[formats][force1224]', array(':format' => $_CONFIG['formats']['force1224'])), 'invalid');
+        }
+
+        /*
          * Format
          */
         $date   = new DateTime($date);
         return $date->format($format);
 
     }catch(Exception $e){
+showdie($e);
         if(!isset($_CONFIG['formats'][$requested_format]) and ($requested_format != 'mysql')){
-            throw new bException('system_date_format(): Unknown format "'.str_log($requested_format).'" specified', 'unknown');
+            throw new bException(tr('system_date_format(): Unknown format ":format" specified', array(':format' => $requested_format)), 'unknown');
         }
 
         if(isset($format)){
@@ -1541,11 +1577,15 @@ function run_background($cmd, $log = true, $single = true){
             throw new bException(tr('run_background(): Specified command ":cmd" is not executable', array(':cmd' => $path.$cmd)), 'notexecutable');
         }
 
+        if($log === true){
+            $log = $cmd;
+        }
+
         load_libs('file');
         file_ensure_path(ROOT.'data/run');
         file_ensure_path(ROOT.'data/log');
 
-//show(sprintf('nohup %s >> '.ROOT.'data/log/%s 2>&1 & echo $! > %s', $path.$cmd.' '.$args, $log, ROOT.'data/run/'.$cmd));
+//showdie(sprintf('nohup %s >> '.ROOT.'data/log/%s 2>&1 & echo $! > %s', $path.$cmd.' '.$args, $log, ROOT.'data/run/'.$cmd));
         if($log){
             exec(sprintf('nohup %s >> '.ROOT.'data/log/%s 2>&1 & echo $! > %s', $path.$cmd.' '.$args, $log, ROOT.'data/run/'.$cmd));
 
@@ -1631,7 +1671,7 @@ function get_next_cdn_id(){
         return $current_id;
 
     }catch(Exception $e){
-        throw new bException(tr('get_this_cdn_id(): Failed'), $e);
+        throw new bException(tr('get_next_cdn_id(): Failed'), $e);
     }
 }
 
@@ -1640,7 +1680,7 @@ function get_next_cdn_id(){
 /*
  *
  */
-function cdn_prefix($id = null, $force_environment = false){
+function cdn_prefix($path, $id = null, $force_environment = false){
     global $_CONFIG;
 
     try{
@@ -1654,9 +1694,12 @@ function cdn_prefix($id = null, $force_environment = false){
 
         if(!$id){
             $id = get_next_cdn_id();
+if($id){
+throw new bException('cdn_prefix():MULTIPLE CDN SERVER SUPPORT IS UNDER CONSTRUCTION FOR /admin SUPPORT WITH THE NEW ADMIN SYSTEM', 'not-supported');
+}
         }
 
-        return str_replace(':id', $id, $cdn['prefix']);
+        return str_replace(':id', $id, unslash($_CONFIG['root']).$cdn['prefix']).$path;
 
     }catch(Exception $e){
         throw new bException(tr('cdn_prefix(): Failed'), $e);

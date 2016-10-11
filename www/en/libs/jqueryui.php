@@ -55,6 +55,8 @@ function jqueryui_date($selector, $params = null){
         array_default($params, 'change_month'    , true);
         array_default($params, 'default_date'    , '+1w');
         array_default($params, 'auto_submit'     , true);
+        array_default($params, 'extra'           , '');
+        array_default($params, 'date_format'     , 'Y/m/d');
 
         if($params['auto_submit']){
             array_default($params, 'on_select', '   function (date) {
@@ -63,10 +65,10 @@ function jqueryui_date($selector, $params = null){
         }
 
         if(isset_get($params['value'])){
-            $params['value'] = system_date_format($params['value'], 'human_date');
+            $params['value'] = system_date_format($params['value'], $params['date_format']);
         }
 
-        $html = '<input type="text" class="'.$params['class'].' date" id="'.$selector.'" name="'.$selector.'" placeholder="'.$params['placeholder'].'" value="'.isset_get($params['value']).'">';
+        $html = '<input type="text" class="'.$params['class'].' date" id="'.$selector.'" name="'.$selector.'" placeholder="'.$params['placeholder'].'" value="'.isset_get($params['value']).'"'.($params['extra'] ? ' '.$params['extra'] : '').'>';
 
         return $html.html_script('$(function() {
             $( "#'.$selector.'" ).datepicker({
@@ -104,6 +106,7 @@ function jqueryui_time($selector, $params = null){
         array_default($params, 'disable_time_ranges', false);
         array_default($params, 'time_format'        , $_CONFIG['formats']['human_time']);
         array_default($params, 'step'               , 60);
+        array_default($params, 'extra'              , '');
         array_default($params, 'force_round_time'   , false);
         array_default($params, 'use_select'         , false);
 
@@ -113,7 +116,7 @@ function jqueryui_time($selector, $params = null){
         //                                            }');
         //}
 
-        $html    = '<input type="text" class="'.$params['class'].' time" id="'.$selector.'" name="'.$selector.'" placeholder="'.$params['placeholder'].'"'.($params['default_time'] ? ' value="'.$params['default_time'].'"' : '').'>';
+        $html    = '<input type="text" class="'.$params['class'].' time" id="'.$selector.'" name="'.$selector.'" placeholder="'.$params['placeholder'].'"'.($params['default_time'] ? ' value="'.$params['default_time'].'"' : '').($params['extra'] ? ' '.$params['extra'] : '').'>';
 
         $script  = '$(function() {
                         $( "#'.$selector.'" ).timepicker({
@@ -249,6 +252,7 @@ function jqueryui_date_range($from_selector, $to_selector, $params = null){
         array_default($params, 'default_date'    , '+1w');
         array_default($params, 'auto_submit'     , true);
         array_default($params, 'separator'       , '');
+        array_default($params, 'extra'           , '');
         array_default($params, 'time'            , false);
 
         if($params['auto_submit']){
@@ -279,31 +283,31 @@ function jqueryui_date_range($from_selector, $to_selector, $params = null){
 
             if($params['labels']){
                 $html = '   <label class="'.$params['class'].'" for="'.$from_selector.'">'.$params['labels']['from'].'</label>
-                            <input class="'.$params['class'].'" type="text" id="'.$from_selector.'" name="'.$from_selector.'" value="'.substr(cfm(isset_get($params['from'], '')), 0, 10).'" placeholder="'.isset_get($params['placeholders']['from']).'">
+                            <input class="'.$params['class'].'" type="text" id="'.$from_selector.'" name="'.$from_selector.'" value="'.substr(cfm(isset_get($params['from'], '')), 0, 10).'" placeholder="'.isset_get($params['placeholders']['from']).'"'.($params['extra'] ? ' '.$params['extra'] : '').'>
                             '.jqueryui_time($from_selector.'_t', $from_t).' '.$params['separator'].'
                             <label class="'.$params['class'].'" for="'.$to_selector.'">'.$params['labels']['until'].'</label>
-                            <input class="'.$params['class'].'" type="text" id="'.$to_selector.'" name="'.$to_selector.'" value="'.substr(cfm(isset_get($params['until'], '')), 0, 10).'" placeholder="'.isset_get($params['placeholders']['until']).'">
+                            <input class="'.$params['class'].'" type="text" id="'.$to_selector.'" name="'.$to_selector.'" value="'.substr(cfm(isset_get($params['until'], '')), 0, 10).'" placeholder="'.isset_get($params['placeholders']['until']).'"'.($params['extra'] ? ' '.$params['extra'] : '').'>
                             '.jqueryui_time($to_selector.'_t', $until_t);
 
             }else{
-                $html = '   <input class="'.$params['class'].'" type="text" id="'.$from_selector.'" name="'.$from_selector.'" value="'.substr(cfm(isset_get($params['from'], '')), 0, 10).'" placeholder="'.isset_get($params['placeholders']['from']).'">
+                $html = '   <input class="'.$params['class'].'" type="text" id="'.$from_selector.'" name="'.$from_selector.'" value="'.substr(cfm(isset_get($params['from'], '')), 0, 10).'" placeholder="'.isset_get($params['placeholders']['from']).'"'.($params['extra'] ? ' '.$params['extra'] : '').'>
                             '.jqueryui_time($from_selector.'_t', $from_t).' '.$params['separator'].'
-                            <input class="'.$params['class'].'" type="text" id="'.$to_selector.'" name="'.$to_selector.'" value="'.substr(cfm(isset_get($params['until'], '')), 0, 10).'" placeholder="'.isset_get($params['placeholders']['until']).'">
+                            <input class="'.$params['class'].'" type="text" id="'.$to_selector.'" name="'.$to_selector.'" value="'.substr(cfm(isset_get($params['until'], '')), 0, 10).'" placeholder="'.isset_get($params['placeholders']['until']).'"'.($params['extra'] ? ' '.$params['extra'] : '').'>
                             '.jqueryui_time($to_selector.'_t', $until_t);
             }
 
         }else{
             if($params['labels']){
                 $html = '   <label class="'.$params['class'].'" for="'.$from_selector.'">'.$params['labels']['from'].'</label>
-                            <input class="'.$params['class'].'" type="text" id="'.$from_selector.'" name="'.$from_selector.'" value="'.substr(cfm(isset_get($params['from'], '')), 0, 10).'" placeholder="'.isset_get($params['placeholders']['from']).'">
+                            <input class="'.$params['class'].'" type="text" id="'.$from_selector.'" name="'.$from_selector.'" value="'.substr(cfm(isset_get($params['from'], '')), 0, 10).'" placeholder="'.isset_get($params['placeholders']['from']).'"'.($params['extra'] ? ' '.$params['extra'] : '').'>
                             '.$params['separator'].'
                             <label class="'.$params['class'].'" for="'.$to_selector.'">'.$params['labels']['until'].'</label>
-                            <input class="'.$params['class'].'" type="text" id="'.$to_selector.'" name="'.$to_selector.'" value="'.substr(cfm(isset_get($params['until'], '')), 0, 10).'" placeholder="'.isset_get($params['placeholders']['until']).'">';
+                            <input class="'.$params['class'].'" type="text" id="'.$to_selector.'" name="'.$to_selector.'" value="'.substr(cfm(isset_get($params['until'], '')), 0, 10).'" placeholder="'.isset_get($params['placeholders']['until']).'"'.($params['extra'] ? ' '.$params['extra'] : '').'>';
 
             }else{
-                $html = '   <input class="'.$params['class'].'" type="text" id="'.$from_selector.'" name="'.$from_selector.'" value="'.substr(cfm(isset_get($params['from'], '')), 0, 10).'" placeholder="'.isset_get($params['placeholders']['from']).'">
+                $html = '   <input class="'.$params['class'].'" type="text" id="'.$from_selector.'" name="'.$from_selector.'" value="'.substr(cfm(isset_get($params['from'], '')), 0, 10).'" placeholder="'.isset_get($params['placeholders']['from']).'"'.($params['extra'] ? ' '.$params['extra'] : '').'>
                             '.$params['separator'].'
-                            <input class="'.$params['class'].'" type="text" id="'.$to_selector.'" name="'.$to_selector.'" value="'.substr(cfm(isset_get($params['until'], '')), 0, 10).'" placeholder="'.isset_get($params['placeholders']['until']).'">';
+                            <input class="'.$params['class'].'" type="text" id="'.$to_selector.'" name="'.$to_selector.'" value="'.substr(cfm(isset_get($params['until'], '')), 0, 10).'" placeholder="'.isset_get($params['placeholders']['until']).'"'.($params['extra'] ? ' '.$params['extra'] : '').'>';
             }
         }
 
@@ -412,7 +416,7 @@ function jqueryui_fancybox($params){
 
         $retval .= html_script('
             $("'.$params['selector'].'").fancybox({
-                openEffect    : "'.$params['open_effect'].'",
+                openEffect  : "'.$params['open_effect'].'",
                 closeEffect : "'.$params['close_effect'].'",
                 autoSize    : '.str_boolean($params['auto_size']).',
                 autoResize  : '.str_boolean($params['auto_resize']).',
