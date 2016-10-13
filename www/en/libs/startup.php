@@ -120,6 +120,7 @@ if(PLATFORM_SHELL){
      * Add CLI support library
      */
     load_libs('cli'.(empty($_CONFIG['memcached']) ? '' : ',memcached'));
+    define('ADMIN', '');
 
 }else{
     /*
@@ -160,7 +161,7 @@ if(PLATFORM_SHELL){
         $GLOBALS['header'] = html_script('var cdnprefix="'.$_CONFIG['cdn']['prefix'].'";', false);
     }
 
-    if(substr($_SERVER['PHP_SELF'], 0, 7) == '/admin/'){
+    if(substr($_SERVER['REQUEST_URI'], 0, 7) == '/admin/'){
         /*
          * This is an admin page
          * Disabled all caching (both server side, and HTTP) for admin pages
@@ -170,17 +171,17 @@ if(PLATFORM_SHELL){
         $_CONFIG['cache']['method']          = false;
         $_CONFIG['cache']['http']['enabled'] = false;
 
-        define('WHATEND', 'backend');
+        define('ADMIN', '_admin');
         load_config('admin');
         restore_post();
 
     }elseif(strstr($_SERVER['PHP_SELF'], '/ajax/')){
         $GLOBALS['page_is_ajax'] = true;
-        define('WHATEND', 'frontend');
+        define('ADMIN', '');
 
     }elseif(strstr($_SERVER['PHP_SELF'], '/api/')){
         $GLOBALS['page_is_api'] = true;
-        define('WHATEND', 'frontend');
+        define('ADMIN', '');
 
     }elseif(!empty($GLOBALS['page_force'])){
         /*
@@ -188,14 +189,14 @@ if(PLATFORM_SHELL){
          */
         restore_post();
         page_show(SCRIPT, true);
-        define('WHATEND', 'frontend');
+        define('ADMIN', '');
 
     }else{
         /*
          * Just a normal page
          */
         restore_post();
-        define('WHATEND', 'frontend');
+        define('ADMIN', '');
     }
 }
 
@@ -213,13 +214,13 @@ set_exception_handler('uncaught_exception');
  */
 try{
     include($file = ROOT.'config/base/default.php');
-    include($file = ROOT.'config/production'.(empty($GLOBALS['page_is_admin']) ? '' : '_admin').'.php');
+    include($file = ROOT.'config/production'.ADMIN.'.php');
 
     /*
      * Also load environment specific configuration, overwriting some production settings
      */
     if(ENVIRONMENT !== 'production'){
-        include($file = ROOT.'config/'.ENVIRONMENT.'.php');
+        include($file = ROOT.'config/'.ENVIRONMENT.ADMIN.'.php');
     }
 
     /*
@@ -363,7 +364,6 @@ try{
                      */
                     $GLOBALS['page_force'] = true;
 // :TODO: The following line should not be necessary
-//                    define('SCRIPT', 'maintenance');
                     page_show(500);
 
                 }else{
@@ -382,8 +382,6 @@ try{
                          */
                         ini_set('session.save_handler', 'mm');
                     }
-
-
 
                     /*
                      * Set cookie
@@ -610,6 +608,7 @@ try{
     }
 
 
+
     /*
      * Get required language.
      *
@@ -692,7 +691,6 @@ try{
         $e = new bException('startup(): Language selection failed', $e);
     }
 
-
     /*
      * Delayed exception throwing for
      */
@@ -700,14 +698,12 @@ try{
         throw $e;
     }
 
-
     /*
      * Verify project data integrity
      */
     if(!defined("SEED") or !SEED or (PROJECTCODEVERSION == '0.0.0')){
         return include(dirname(__FILE__).'/handlers/startup_no_project_data.php');
     }
-
 
     /*
      * Shell and HTTP specific post processing
@@ -747,6 +743,7 @@ try{
             log_console('Warning: Running in TEST mode', 'test', 'yellow');
         }
     }
+
 
 
     /*
