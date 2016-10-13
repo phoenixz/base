@@ -172,7 +172,6 @@ if(PLATFORM_SHELL){
         $_CONFIG['cache']['http']['enabled'] = false;
 
         define('ADMIN', '_admin');
-        load_config('admin');
         restore_post();
 
     }elseif(strstr($_SERVER['PHP_SELF'], '/ajax/')){
