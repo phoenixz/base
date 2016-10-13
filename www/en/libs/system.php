@@ -1705,7 +1705,8 @@ function cdn_prefix($path, $id = null, $force_environment = false){
         }
 
 // :URGENT: Implement correct CDN support! MUST WORK WITH WHITELABEL SYSTEM!!!!
-        return str_replace(':id', $id, slash($_CONFIG['root'].$cdn['prefix'])).str_starts_not($path, '/');
+//show(str_replace(':id', $id, slash($cdn['prefix'])).str_starts_not($path, '/'));
+        return str_replace(':id', $id, slash($cdn['prefix'])).str_starts_not($path, '/');
 
     }catch(Exception $e){
         throw new bException(tr('cdn_prefix(): Failed'), $e);
