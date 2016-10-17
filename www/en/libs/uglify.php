@@ -120,10 +120,12 @@ function uglify_css($paths = null){
             /*
              * Start at the base css path
              */
-            $paths = ROOT.'pub/css/,'.ROOT.'pub/css/';
+            $paths = ROOT.'www/en/pub/css/,'.ROOT.'www/en/admin/pub/css/';
         }
 
         foreach(array_force($paths) as $path){
+            if(!file_exists($path)) continue;
+
             log_console(tr('uglify_css(): Compressing all CSS files in ":path"', array(':path' => $path)), 'uglify');
 
             if(is_dir($path)){
@@ -480,10 +482,12 @@ function uglify_js($paths = null){
             /*
              * Start at the base js path
              */
-            $paths = ROOT.'pub/js/';
+            $paths = ROOT.'www/en/pub/js/,'.ROOT.'www/en/admin/pub/js/';
         }
 
         foreach(array_force($paths) as $path){
+            if(!file_exists($path)) continue;
+
             log_console(tr('uglify_js(): Compressing all javascript files in ":path"', array(':path' => $path)), 'uglify');
 
             if(is_dir($path)){
