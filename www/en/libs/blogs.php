@@ -232,60 +232,119 @@ function blogs_post_get_key_values($blogs_posts_id, $seovalues = false){
  */
 function blogs_post_update($post, $params = null){
     try{
-
         $post    = blogs_validate_post($post, $params);
+
+        $execute = array(':id'         => $post['id'],
+                         ':modifiedby' => isset_get($_SESSION['user']['id']));
 
         $query   = 'UPDATE  `blogs_posts`
 
-                    SET     `blogs_id`       = :blogs_id,
-                            `assigned_to_id` = :assigned_to_id,
-                            `modifiedby`     = :modifiedby,
-                            `modifiedon`     = NOW(),
-                            `featured_until` = :featured_until,
-                            `parents_id`     = :parents_id,
-                            `category1`      = :category1,
-                            `seocategory1`   = :seocategory1,
-                            `category2`      = :category2,
-                            `seocategory2`   = :seocategory2,
-                            `category3`      = :category3,
-                            `seocategory3`   = :seocategory3,
-                            `priority`       = :priority,
-                            `language`       = :language,
-                            `keywords`       = :keywords,
-                            `seokeywords`    = :seokeywords,
-                            `description`    = :description,
-                            `status`         = :status,
-                            `url`            = :url,
-                            `urlref`         = :urlref,
-                            `name`           = :name,
-                            `seoname`        = :seoname,
-                            `body`           = :body
+                    SET     `modifiedby` = :modifiedby,
+                            `modifiedon` = NOW()';
 
-                    WHERE   `id`             = :id';
+        if($params['label_blog']){
+            $updates[] = ' `blogs_id` = :blogs_id ';
+            $execute[':blogs_id'] = $post['blogs_id'];
+        }
 
-        $execute   = array(':id'             => $post['id'],
-                           ':blogs_id'       => $post['blogs_id'],
-                           ':assigned_to_id' => $post['assigned_to_id'],
-                           ':parents_id'     => isset_get($post['parents_id']),
-                           ':modifiedby'     => isset_get($_SESSION['user']['id']),
-                           ':featured_until' => $post['featured_until'],
-                           ':category1'      => $post['category1'],
-                           ':seocategory1'   => $post['seocategory1'],
-                           ':category2'      => $post['category2'],
-                           ':seocategory2'   => $post['seocategory2'],
-                           ':category3'      => $post['category3'],
-                           ':seocategory3'   => $post['seocategory3'],
-                           ':priority'       => $post['priority'],
-                           ':language'       => $post['language'],
-                           ':keywords'       => $post['keywords'],
-                           ':seokeywords'    => $post['seokeywords'],
-                           ':description'    => $post['description'],
-                           ':status'         => $post['status'],
-                           ':url'            => $post['url'],
-                           ':urlref'         => $post['urlref'],
-                           ':name'           => $post['name'],
-                           ':seoname'        => $post['seoname'],
-                           ':body'           => $post['body']);
+        if($params['label_assigned_to']){
+            $updates[] = ' `assigned_to_id` = :assigned_to_id ';
+            $execute[':assigned_to_id'] = $post['assigned_to_id'];
+        }
+
+        if($params['label_until']){
+            $updates[] = ' `featured_until` = :featured_until ';
+            $execute[':featured_until'] = get_null($post['featured_until']);
+        }
+
+        if($params['label_parent']){
+            $updates[] = ' `parents_id` = :parents_id ';
+            $execute[':parents_id'] = $post['parents_id'];
+        }
+
+        if($params['label_category1']){
+            $updates[] = ' `category1` = :category1 ';
+            $execute[':category1'] = $post['category1'];
+        }
+
+        if($params['label_status']){
+            $updates[] = ' `seocategory1` = :seocategory1 ';
+            $execute[':seocategory1'] = $post['seocategory1'];
+        }
+
+        if($params['label_category2']){
+            $updates[] = ' `category2` = :category2 ';
+            $execute[':category2'] = $post['category2'];
+        }
+
+        if($params['label_status']){
+            $updates[] = ' `seocategory2` = :category2 ';
+            $execute[':category2'] = $post['category2'];
+        }
+
+        if($params['label_category3']){
+            $updates[] = ' `category3` = :category3 ';
+            $execute[':category3'] = $post['category3'];
+        }
+
+        if($params['label_status']){
+            $updates[] = ' `seocategory3` = :seocategory3 ';
+            $execute[':seocategory3'] = $post['seocategory3'];
+        }
+
+        if($params['label_priority']){
+            $updates[] = ' `priority` = :priority ';
+            $execute[':priority'] = $post['priority'];
+        }
+
+        if($params['label_language']){
+            $updates[] = ' `language` = :language ';
+            $execute[':language'] = $post['language'];
+        }
+
+        if($params['label_keywords']){
+            $updates[] = ' `keywords`    = :keywords ';
+            $updates[] = ' `seokeywords` = :seokeywords ';
+
+            $execute[':keywords']    = $post['keywords'];
+            $execute[':seokeywords'] = $post['seokeywords'];
+        }
+
+        if($params['label_description']){
+            $updates[] = ' `description` = :description ';
+            $execute[':description'] = $post['description'];
+        }
+
+        if($params['label_status']){
+            $updates[] = ' `status` = :status ';
+            $execute[':status'] = $post['status'];
+        }
+
+        if($params['label_url']){
+            $updates[] = ' `url` = :url ';
+            $execute[':url'] = $post['url'];
+        }
+
+        //if($post['urlref']){
+        //    $updates[] = ' `urlref` = :urlref ';
+        //    $execute[':urlref'] = $post['urlref'];
+        //}
+
+        if($params['label_title']){
+            $updates[] = ' `name`    = :name ';
+            $updates[] = ' `seoname` = :seoname ';
+
+            $execute[':name']    = $post['name'];
+            $execute[':seoname'] = $post['seoname'];
+        }
+
+        $query .= ' `body` = :body ';
+
+        if(!empty($updates)){
+            $query .= $updates;
+        }
+
+        $query .= ' WHERE `id` = :id';
 
         if($execute[':featured_until']){
             $execute[':featured_until'] = system_date_format($post['featured_until'], 'mysql');
