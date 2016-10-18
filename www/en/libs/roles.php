@@ -200,9 +200,9 @@ function roles_update_rights($role, $rights){
                                VALUES                     (:users_id , :rights_id , :name )');
 
         while($user = sql_fetch($users)){
-            foreach($rights_list as $rights_id => $name){
-                $delete->execute(array(':users_id'  => $user['id']));
+            $delete->execute(array(':users_id'  => $user['id']));
 
+            foreach($rights_list as $rights_id => $name){
                 $insert->execute(array(':users_id'  => $user['id'],
                                        ':rights_id' => $rights_id,
                                        ':name'      => $name));

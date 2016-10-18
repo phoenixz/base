@@ -198,35 +198,44 @@ function ensure_protocol($url, $protocol = 'http', $force = false){
  * Add specified query to the specified URL and return
  */
 function url_add_query($url, $query){
-    if(!$query){
-        return $url;
-    }
+    try{
+        if($query === true){
+            $query = $_SERVER['QUERY_STRING'];
+        }
 
-    if(!preg_match('/.+?=.*?/', $query)){
-        throw new bException('url_add_query(): Invalid query specified. Please ensure it has the "key=value" format');
-    }
+        if(!$query){
+            return $url;
+        }
 
-    $key = str_until($query, '=');
+        if(!preg_match('/.+?=.*?/', $query)){
+            throw new bException(tr('url_add_query(): Invalid query ":query" specified. Please ensure it has the "key=value" format', array(':query' => $query)), 'invalid');
+        }
 
-    if(strpos($url, '?') === false){
+        $key = str_until($query, '=');
+
+        if(strpos($url, '?') === false){
+            /*
+             * This URL has no query yet, begin one
+             */
+            return $url.'?'.$query;
+        }
+
+        if(strpos($url, $key.'=') !== false){
+            /*
+             * The query already exists in the specified URL, replace it.
+             */
+            $replace = str_cut($url, $key.'=', '&');
+            return str_replace($key.'='.$replace, $key.'='.str_from($query, '='), $url);
+        }
+
         /*
-         * This URL has no query yet, begin one
+         * Append the query to the URL
          */
-        return $url.'?'.$query;
-    }
+        return str_ends($url, '&').$query;
 
-    if(strpos($url, $key.'=') !== false){
-        /*
-         * The query already exists in the specified URL, replace it.
-         */
-        $replace = str_cut($url, $key.'=', '&');
-        return str_replace($key.'='.$replace, $key.'='.str_from($query, '='), $url);
+    }catch(Exception $e){
+        throw new bException('url_add_query(): Failed', $e);
     }
-
-    /*
-     * Append the query to the URL
-     */
-    return str_ends($url, '&').$query;
 }
 
 

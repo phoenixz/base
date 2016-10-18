@@ -9,24 +9,23 @@
  */
 try{
     /*
+     * Does the specified user exist?
+     */
+    if(!$user = sql_get('SELECT *, `email` FROM `users` WHERE `name` = :name', array(':name' => $username))){
+        throw new bException(tr('user_switch(): The specified user ":user" does not exist', array(':user' => $username)), 'not-exist');
+    }
+
+    /*
      * Only god users may perform user switching
      */
     if(has_rights('god')){
-        /*
-         * Does the specified user exist?
-         */
-        if(!$user = sql_get('SELECT *, `email` FROM `users` WHERE `name` = :name', array(':name' => $username))){
-            throw new bException(tr('user_switch(): The specified user ":user" does not exist', array(':user' => $username)), 'not-exist');
-        }
-
-
-
         /*
          * Switch the current session to the new user
          * Store last login
          * Register this action
          */
         $from = $_SESSION['user'];
+
         $_SESSION['user'] = $user;
 
         sql_query('UPDATE `users`
@@ -39,13 +38,14 @@ try{
 
     }else{
         $status = 'denied';
+        $from   = $user;
     }
 
     sql_query('INSERT INTO `users_switch` (`createdby`, `users_id`, `status`)
                VALUES                     (:createdby , :users_id , :status )',
 
-               array(':users_id'  => $user['id'],
-                     ':createdby' => $from['id'],
+               array(':users_id'  => cfi($user['id']),
+                     ':createdby' => cfi($from['id']),
                      ':status'    => isset_get($status)));
 
 
@@ -56,8 +56,8 @@ try{
     if(empty($status)){
         log_database(tr('Executing user switch from ":from" to ":to"', array(':from' => name($from), ':to' => name($_SESSION['user']))), 'user/switch');
 
-        html_flash_set(tr('You are now the user ":user"', array(':user' => $user['name'])), 'success');
-        html_flash_set(tr('NOTICE: You will now be limited to the access level of user ":user"', array(':user' => $user['name'])), 'warning');
+        html_flash_set(tr('You are now the user ":user"', array(':user' => name($user))), 'success');
+        html_flash_set(tr('NOTICE: You will now be limited to the access level of user ":user"', array(':user' => name($user))), 'warning');
 
         if($redirect){
             redirect($redirect);
@@ -70,8 +70,7 @@ try{
      * Not all ok? then fail
      */
     log_database(tr('Denied user switch from ":from" to ":to"', array(':from' => name($from), ':to' => name($_SESSION['user']))), 'user/switch');
-    html_flash_set(tr('WARNING: You do not have the required rights to perform user switching'), 'danger');
-    throw new bException(tr('user_switch(): The user ":user" does not have the required rights to perform user switching', array(':user' => name($_SESSION['name']))), 'access-denied');
+    throw new bException(tr('user_switch(): The user ":user" does not have the required rights to perform user switching', array(':user' => name($_SESSION['user']))), 'access-denied');
 
 }catch(Exception $e){
     throw new bException('user_switch(): Failed', $e);

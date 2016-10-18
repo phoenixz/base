@@ -20,7 +20,7 @@ $_CONFIG['cookie']['domain']            = 'base';
 $_CONFIG['db']['core']['db']            = '';
 $_CONFIG['db']['core']['user']          = 'base';
 $_CONFIG['db']['core']['pass']          = 'base';
-$_CONFIG['db']['core']['timezone']      = 'America/Los_Angeles';
+$_CONFIG['db']['core']['timezone']      = 'UTC';
 
 //domain
 $_CONFIG['domain']                      = 'base';

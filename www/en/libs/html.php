@@ -1019,6 +1019,9 @@ function html_select($params){
         /*
          * Autosubmit on the specified selector
          */
+        $params['autosubmit'] = str_replace('[', '\\\\[', $params['autosubmit']);
+        $params['autosubmit'] = str_replace(']', '\\\\]', $params['autosubmit']);
+
         return $retval.html_script('$("'.$params['autosubmit'].'").change(function(){ $(this).closest("form").find("input,textarea,select").addClass("ignore"); $(this).closest("form").submit(); });');
 
     }catch(Exception $e){

@@ -1397,7 +1397,7 @@ function in_source($source, $key, $return = true){
 /*
  *
  */
-function system_date_format($date = null, $requested_format = 'human_datetime'){
+function date_convert($date = null, $requested_format = 'human_datetime', $to_timezone = null, $from_timezone = null){
     global $_CONFIG;
 
     try{
@@ -1452,26 +1452,34 @@ function system_date_format($date = null, $requested_format = 'human_datetime'){
                 break;
 
             default:
-                throw new bException(tr('system_date_format(): Invalid force1224 hour format ":format" specified. Must be either false, "12", or "24". See $_CONFIG[formats][force1224]', array(':format' => $_CONFIG['formats']['force1224'])), 'invalid');
+                throw new bException(tr('date_convert(): Invalid force1224 hour format ":format" specified. Must be either false, "12", or "24". See $_CONFIG[formats][force1224]', array(':format' => $_CONFIG['formats']['force1224'])), 'invalid');
         }
 
         /*
-         * Format
+         * Create date in specified timezone (if specifed)
+         * Return formatted date
          */
-        $date   = new DateTime($date);
+        $date = new DateTime($date, ($from_timezone ? new DateTimeZone($from_timezone) : null));
+
+        if($to_timezone){
+            /*
+             * Output to specified timezone
+             */
+            $date->setTimezone(new DateTimeZone($to_timezone));
+        }
+
         return $date->format($format);
 
     }catch(Exception $e){
-showdie($e);
         if(!isset($_CONFIG['formats'][$requested_format]) and ($requested_format != 'mysql')){
-            throw new bException(tr('system_date_format(): Unknown format ":format" specified', array(':format' => $requested_format)), 'unknown');
+            throw new bException(tr('date_convert(): Unknown format ":format" specified', array(':format' => $requested_format)), 'unknown');
         }
 
         if(isset($format)){
-            throw new bException(tr('system_date_format(): Either :error, or Invalid format ":format" specified', array(':error' => $e->getMessage(), ':format' => str_log($format))), 'invalid');
+            throw new bException(tr('date_convert(): Either :error, or Invalid format ":format" specified', array(':error' => $e->getMessage(), ':format' => str_log($format))), 'invalid');
         }
 
-        throw new bException('system_date_format(): Failed', $e);
+        throw new bException('date_convert(): Failed', $e);
     }
 }
 
@@ -1503,18 +1511,18 @@ function is_natural($number, $start = 1){
  */
 function force_natural($number, $default = 1, $start = 1){
     if(!is_numeric($number)){
-        return $default;
+        return (integer) $default;
     }
 
     if($number < $start){
-        return $default;
+        return (integer) $default;
     }
 
     if(!is_int($number)){
-        return round($number);
+        return (integer) round($number);
     }
 
-    return $number;
+    return (integer) $number;
 }
 
 
@@ -1694,12 +1702,11 @@ function cdn_prefix($path, $id = null, $force_environment = false){
 
         if(!$id){
             $id = get_next_cdn_id();
-if($id){
-throw new bException('cdn_prefix():MULTIPLE CDN SERVER SUPPORT IS UNDER CONSTRUCTION FOR /admin SUPPORT WITH THE NEW ADMIN SYSTEM', 'not-supported');
-}
         }
 
-        return str_replace(':id', $id, unslash($_CONFIG['root']).$cdn['prefix']).$path;
+// :URGENT: Implement correct CDN support! MUST WORK WITH WHITELABEL SYSTEM!!!!
+//show(str_replace(':id', $id, slash($cdn['prefix'])).str_starts_not($path, '/'));
+        return str_replace(':id', $id, slash($cdn['prefix'])).str_starts_not($path, '/');
 
     }catch(Exception $e){
         throw new bException(tr('cdn_prefix(): Failed'), $e);
@@ -1943,5 +1950,13 @@ function user_or_redirect($url = null, $method = 'http'){
 
 function force_natural_number($number, $default = 1){
     return force_natural($number, $default);
+}
+
+function system_date_format($date = null, $requested_format = 'human_datetime', $to_timezone = null, $from_timezone = null){
+    try{
+        return date_convert($date, $requested_format, $to_timezone, $from_timezone);
+    }catch(Exception $e){
+        throw new bException('system_date_format(): Failed', $e);
+    }
 }
 ?>

@@ -377,6 +377,9 @@ switch(cli_method()){
                                                     'delete'   => $delete,
                                                     'peek'     => $peek,
                                                     'store'    => true));
+
+                        $count += count($results);
+
                     }catch(Exception $e){
                         log_error($e);
                     }
@@ -396,7 +399,7 @@ switch(cli_method()){
 
         switch($count){
             case 0:
-                cli_log(tr('Added no new emails'), 'green');
+                cli_log(tr('Added no new emails'), 'yellow');
                 break;
 
             case 1:

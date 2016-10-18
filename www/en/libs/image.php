@@ -336,16 +336,10 @@ function image_convert($source, $destination, $params = null){
         return $destination;
 
     }catch(Exception $e){
-<<<<<<< HEAD
-
-=======
-showdie($e);
->>>>>>> 9880dc15917113b83ddea0c2af0514816314510a
         try{
 
             if(file_exists(ROOT.'data/log/imagemagic_convert.log')){
                 $contents = file_get_contents(ROOT.'data/log/imagemagic_convert.log');
-showdie($contents);
             }
 
         }catch(Exception $e){
