@@ -449,7 +449,7 @@ function curl_get($params, $referer = null, $post = false, $options = array()){
 
         if($retval['status']['http_code'] != 200){
             load_libs('http');
-            throw new bException('curl_get(): URL "'.str_log($params['url']).'" gave HTTP "'.str_log($retval['status']['http_code']).'"', 'HTTP'.$retval['status']['http_code'], null, $retval);
+            throw new bException('curl_get(): URL "'.str_log($params['url']).'" gave HTTP "'.str_log($retval['status']['http_code']).'"', 'HTTP'.$retval['status']['http_code'], $retval);
         }
 
         if($params['file']){
