@@ -272,6 +272,16 @@ function blogs_post_update($post, $params = null){
         if($params['label_status']){
             $updates[] = ' `seocategory1` = :seocategory1 ';
             $execute[':seocategory1'] = $post['seocategory1'];
+
+        }else{
+            /*
+             * New post? Set to default status
+             */
+            if($post['status'] === '_new'){
+                $post['status'] = $params['status_default'];
+                $updates[] = ' `status` = :status ';
+                $execute[':status'] = $post['status'];
+            }
         }
 
         if($params['label_category2']){
@@ -1201,9 +1211,6 @@ function blogs_validate_post($post, $params = null){
             if(empty($params['status_select']['resource'][$post['status']])){
                 $v->setError(tr('Please provide a valid status for your :objectname', array(':objectname' => $params['object_name'])));
             }
-
-        }else{
-            $post['status'] = null;
         }
 
         $v->isValid();
