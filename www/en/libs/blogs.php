@@ -240,7 +240,7 @@ function blogs_post_update($post, $params = null){
         $query   = 'UPDATE  `blogs_posts`
 
                     SET     `modifiedby` = :modifiedby,
-                            `modifiedon` = NOW()';
+                            `modifiedon` = NOW(),';
 
         if($params['label_blog']){
             $updates[] = ' `blogs_id` = :blogs_id ';
@@ -339,19 +339,23 @@ function blogs_post_update($post, $params = null){
         }
 
         $query .= ' `body` = :body ';
+        $execute[':body']  = $post['body'];
 
         if(!empty($updates)){
-            $query .= $updates;
+            foreach($updates as $values){
+                $query .=  ','.$values;
+            }
+
         }
 
         $query .= ' WHERE `id` = :id';
 
-        if($execute[':featured_until']){
-            $execute[':featured_until'] = system_date_format($post['featured_until'], 'mysql');
-
-        }else{
-            $execute[':featured_until'] = null;
-        }
+        //if(!$execute[':featured_until']){
+        //    $execute[':featured_until'] = system_date_format($post['featured_until'], 'mysql');
+        //
+        //}else{
+        //    $execute[':featured_until'] = null;
+        //}
 
         /*
          * Update the post, and ensure it is no longer registered as "new".
