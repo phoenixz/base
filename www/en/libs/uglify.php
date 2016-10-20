@@ -120,23 +120,30 @@ function uglify_css($paths = null){
             /*
              * Start at the base css path
              */
-            $paths = ROOT.'pub/css/,'.ROOT.'pub/css/';
+            $paths = ROOT.'www/en/pub/css/,'.ROOT.'www/en/admin/pub/css/';
         }
 
         foreach(array_force($paths) as $path){
+            if(!file_exists($path)) continue;
+
             log_console(tr('uglify_css(): Compressing all CSS files in ":path"', array(':path' => $path)), 'uglify');
 
             if(is_dir($path)){
                 $path = slash($path);
+
                 if(VERBOSE){
                     log_console('uglify_css(): Compressing all CSS files in directory "'.str_log($path).'"', 'uglify');
                 }
+
                 load_libs('file');
                 file_check_dir($path);
 
             }elseif(is_file($path)){
                 if(VERBOSE){
                     log_console('uglify_css(): Compressing CSS file "'.str_log($path).'"', 'uglify');
+
+                }else{
+                    cli_dot();
                 }
 
             }else{
@@ -357,6 +364,9 @@ function uglify_css($paths = null){
                      */
                     if(VERBOSE){
                         log_console('uglify_css(): Compressing CSS file "'.str_log($file).'"', 'uglify');
+
+                    }else{
+                        cli_dot();
                     }
 
                     file_delete(substr($file, 0, -4).'.min.css');
@@ -480,10 +490,12 @@ function uglify_js($paths = null){
             /*
              * Start at the base js path
              */
-            $paths = ROOT.'pub/js/';
+            $paths = ROOT.'www/en/pub/js/,'.ROOT.'www/en/admin/pub/js/';
         }
 
         foreach(array_force($paths) as $path){
+            if(!file_exists($path)) continue;
+
             log_console(tr('uglify_js(): Compressing all javascript files in ":path"', array(':path' => $path)), 'uglify');
 
             if(is_dir($path)){
@@ -491,12 +503,16 @@ function uglify_js($paths = null){
                 if(VERBOSE){
                     log_console('uglify_js(): Compressing all javascript files in directory "'.str_log($path).'"', 'uglify');
                 }
+
                 load_libs('file');
                 file_check_dir($path);
 
             }elseif(is_file($path)){
                 if(VERBOSE){
                     log_console('uglify_js(): Compressing javascript file "'.str_log($path).'"', 'uglify');
+
+                }else{
+                    cli_dot();
                 }
 
             }else{
@@ -718,6 +734,9 @@ function uglify_js($paths = null){
                      */
                     if(VERBOSE){
                         log_console('uglify_js(): Compressing javascript file "'.str_log($file).'"', 'uglify');
+
+                    }else{
+                        cli_dot();
                     }
 
                     file_delete(substr($file, 0, -3).'.min.js');
