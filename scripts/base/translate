@@ -82,11 +82,41 @@ switch(cli_method()){
         break;
 
     case 'scan':
-        cli_log(tr('Executing translateable string search'));
+        // fALLTHROUGH
+    case 'translate':
+        $ignore_php  = cli_argument('--ignore-php');
+        $ignore_html = cli_argument('--ignore-html');
+        $mode        = cli_argument('--mode', true, $_CONFIG['translate']['mode']);
 
-        $noutf8check = (cli_argument('--no-utf') or cli_argument('--no-utf8') or cli_argument('--no-utf8-check'));
-        $ignore_html = (cli_argument('--ignore-html'));
-        $ignore_php  = (cli_argument('--ignore-php'));
+        if(cli_method() == 'translate'){
+            $noutf8check = (cli_argument('--no-utf') or cli_argument('--no-utf8')   or cli_argument('--no-utf8-check'));
+            $languages   = cli_argument('--languages', 'all');
+
+            /*
+             * Validate command line parameters
+             */
+            if(empty($languages)){
+                $languages = array_keys($_CONFIG['language']['supported']);
+
+                if(empty($languages)){
+                    throw new bException(tr('No languages specified, no languages configured'), 'not-specified');
+                }
+
+                cli_log(tr('Translating to configured languages ":languages"', array(':languages' => implode(', ', $languages))), 'white');
+
+            }else{
+                cli_log(tr('Translating to requested languages ":languages"', array(':languages' => implode(', ', $languages))), 'white');
+            }
+
+            if(!in_array($mode, $available_modes)){
+                throw new bException(tr('Unknown mode ":mode" specified', array(':mode' => $mode)), 'unknown');
+            }
+
+        }else{
+            $noutf8check = (cli_argument('--no-utf') or cli_argument('--no-utf8')   or cli_argument('--no-utf8-check'));
+
+            cli_log(tr('Scanning for translatable strings'), 'white');
+        }
 
         cli_no_arguments_left();
 
@@ -177,6 +207,11 @@ switch(cli_method()){
             cli_log(tr('Found :count strings', array(':count' => number_format($count))), 'white');
         }
 
+
+
+        /*
+         *
+         */
         if(count($results['failed_html']) > 0){
             foreach($results['failed_html'] as $string => $file){
                 if($ignore_html){
@@ -197,6 +232,11 @@ switch(cli_method()){
             cli_log(tr('Ignored ":count" files because of HTML', array(':count' => count($results['failed_html']))), 'yellow');
         }
 
+
+
+        /*
+         *
+         */
         if(count($results['failed_php']) > 0){
             foreach($results['failed_php'] as $string => $file){
                 if($ignore_php){
@@ -217,96 +257,58 @@ switch(cli_method()){
             cli_log(tr('Ignored ":count" files because of PHP', array(':count' => count($results['failed_php']))), 'yellow');
         }
 
-        cli_log(tr('Sending translatable strings to server'), 'green');
 
-        $timestamp = date('c');
 
         /*
-         * Construct data for sending
+         *
          */
-        $data = array('project'      => PROJECT,
-                      'api_key'      => $_CONFIG['translate']['api_key'],
-                      'translations' => $results['translations'],
-                      'method'       => 'post',
-                      'timestamp'    => $timestamp);
+        if(cli_method() == 'scan'){
+            cli_log(tr('Sending translatable strings to server'), 'green');
 
-        try{
+            /*
+             * Construct data for sending
+             */
+            $data = array('project'      => PROJECT,
+                          'api_key'      => $_CONFIG['translate']['api_key'],
+                          'translations' => $results['translations'],
+                          'method'       => 'post',
+                          'options'         => array('mode' => $mode));
+
+            try{
 $_CONFIG['translate']['url'] = 'http://toolkit.ingiga.com.l.ingiga.com/api/translate.php';
-            $response = curl_get(array('url'         => $_CONFIG['translate']['url'],
-                                       'getdata'     => true,
-                                       'proxies'     => false,
-                                       'getheaders'  => false,
-                                       'post'        => array('data' => encrypt($data, $_CONFIG['translate']['passphrase'])),
-                                       'httpheaders' => false));
+                $response = curl_get(array('url'         => $_CONFIG['translate']['url'],
+                                           'getdata'     => true,
+                                           'proxies'     => false,
+                                           'getheaders'  => false,
+                                           'post'        => array('data' => encrypt($data, $_CONFIG['translate']['passphrase'])),
+                                           'httpheaders' => false));
 
-        }catch(Exception $e){
-showdie($e);
-            if(substr($e->getCode(), 0, 4) == 'HTTP'){
-                $server_message = $e->getData()['data'];
-                $code           = $e->getCode();
+            }catch(Exception $e){
+                if(substr($e->getCode(), 0, 4) == 'HTTP'){
+                    $server_message = $e->getData()['data'];
+                    $code           = $e->getCode();
 
-                throw new bException(tr('Server connection gave HTTP code ":code" with server message ":message"', array(':code' => $code, ':message' => $server_message)), 'translation_error');
+                    throw new bException(tr('Server connection gave HTTP code ":code" with server message ":message"', array(':code' => $code, ':message' => $server_message)), 'translation_error');
+                }
+
+                throw new bException(tr('Error trying to connect with server : ":error"', array(':error' => $e->getMessage())), 'translation_error');
             }
 
-            throw new bException(tr('Error trying to connect with server : ":error"', array(':error' => $e->getMessage())), 'translation_error');
-        }
-showdie($response);
-
-        if(empty($response['status'])){
-            throw new bException(tr('Error trying to connect with server'), 'translation_error');
-        }
-
-        $returned_data = json_decode(decrypt(trim($response['data']), $_CONFIG['translate']['passphrase']), true);
-
-        if(!is_array($returned_data) or ($returned_data['status'] != 'success')){
-            throw new bException(tr('Failed to receive translations', 'translation_error'));
-        }
-
-
-        if(VERBOSE){
-            cli_log('Received translations', 'green');
-        }
-
-        break;
-
-    case 'translate':
-        $noutf8check = (cli_argument('--no-utf') or cli_argument('--no-utf8')   or cli_argument('--no-utf8-check'));
-        $mode        = cli_argument('--mode'     , true, $_CONFIG['translate']['mode']);
-        $languages   = cli_argument('--languages', 'all');
-
-        cli_no_arguments_left();
-
-        /*
-         * Validate command line parameters
-         */
-        if(empty($languages)){
-            $languages = array_keys($_CONFIG['language']['supported']);
-
-            if(empty($languages)){
-                throw new bException(tr('No languages specified, no languages configured'), 'not-specified');
+            if(empty($response['status'])){
+                throw new bException(tr('Error trying to connect with server'), 'translation_error');
             }
 
-            cli_log(tr('Translating to configured languages ":languages"', array(':languages' => implode(', ', $languages))), 'white');
+            $result = decrypt(trim($response['data']), $_CONFIG['translate']['passphrase']);
 
-        }else{
-            cli_log(tr('Translating to requested languages ":languages"', array(':languages' => implode(', ', $languages))), 'white');
-        }
-
-        if(!in_array($mode, $available_modes)){
-            throw new bException(tr('Unknown mode ":mode" specified', array(':mode' => $mode)), 'unknown');
-        }
-
-        foreach($languages as $id => $language){
-            if($language == 'en'){
-                log_message('Ignoring translation to English', 'translate', 'yellow');
-                unset($languages[$id]);
-                continue;
+            if($result['status'] != 'success'){
+                throw new bException(tr('Failed to send translatable strings'), $result['status'], $result);
             }
 
-            if(!preg_match('/\w{2}/', $language)){
-                throw new bException(tr('Invalid language code ":language" specified', array(':language' => $language)), 'invalid');
-            }
+            cli_log('Sent translatable strings', 'green');
+            die();
         }
+
+
 
         /*
          * Translate to specified languages
@@ -316,110 +318,6 @@ showdie($response);
             $target_dir = ROOT.'www/'.$language;
 
             cli_log(tr('translate: Starting :language', array(':language' => $language)), 'white');
-
-            if(VERBOSE){
-                cli_log(tr('Searching for translateable strings : '), '', false);
-            }
-
-            if($noutf8check){
-                cli_log(tr('Skipping UTF8 check due to "noutf8check" command line parameter'), 'yellow');
-            }
-
-            $results = array('translations' => array(),
-                             'failed_html'  => array(),
-                             'failed_php'   => array(),
-                             'count'        => 0);
-
-            $params  = array('source_dir'   => $source_dir,
-                             'target_dir'   => $target_dir,
-                             'noutf8check'  => $noutf8check);
-
-            file_tree_execute(array('path'      => ROOT,
-                                    'recursive' => true,
-                                    'params'    => $params,
-                                    'callback'  => function($file, $type, $params) use ($results){
-
-                if(file_get_extension($file) != 'php'){
-                    return;
-                }
-
-                $target_file = $params['target_dir'].str_replace($params['source_dir'], '', $file);
-
-                /*
-                 * Timestamp check, we skip files that were not modified since last scan
-                 * Instead of an == comparation we check that the difference is less than 10 seconds
-                 * Since a  touch on the entire project wont be made on all files at exactly the same second
-                 */
-                if(file_exists($target_file) and (abs(filemtime($file) - filemtime($target_file)) < 10)){
-                    if(VERBOSE){
-                        cli_log(tr('Skipping file ":file" because it hasn\'t changed since last string scan', array(':file' => $file)), 'yellow');
-
-                    }else{
-                        cli_dot();
-                    }
-
-                    return;
-                }
-
-                if(VERBOSE){
-                    cli_log(tr('Scanning file ":file"', array(':file' => $file)));
-
-                }else{
-                    cli_dot();
-                }
-
-                $content = file_get_contents($file);
-
-                /*
-                 * UTF8 check!
-                 */
-                if(!$params['noutf8check']){
-                    if(!str_is_utf8($content)){
-                        /*
-                         * Crap, this file is not UTF8 and will bork the translator. Update file contents, and safe file to force all files be UTF8
-                         */
-                        $content = utf8_encode($content);
-                        file_put_contents($file, $content);
-
-                        $forcedutf8[str_replace(ROOT, '', $file)] = true;
-
-                        if(VERBOSE){
-                            cli_dot();
-                        }
-                    }
-                }
-
-                preg_match_all('/tr\([\'"](.*?)[\'"](:?\s*,\s*array\((.*)\))?\)/iu', $content , $matches, PREG_PATTERN_ORDER);
-
-                if(!empty($matches[1])){
-                    foreach($matches[1] as $key => $value){
-                        if(strip_tags($value, isset_get($_CONFIG['translate']['allowed_tags'])) != $value){
-                            /*
-                             * Translation string contains HTML!
-                             */
-                            $results['failed_html'][$value] = $file;
-                            $results['count']++;
-
-                        }elseif(strstr($value,'.$')){
-                            /*
-                             * Translation string contains PHP variables!
-                             */
-                            $results['failed_php'][$value] = $file;
-
-                        }else{
-                            /*
-                             * Translation string is ok
-                             */
-                            $short_file = str_replace(ROOT, '', $file);
-                            $results['translations'][$short_file][$value] = '';
-                        }
-                    }
-                }
-            }));
-
-            if(VERBOSE){
-                cli_log(tr('Found :count strings', array(':count' => number_format($count))), 'white');
-            }
 
             if(count($results['failed_html']) > 0){
                 foreach($results['failed_html'] as $string => $file){
