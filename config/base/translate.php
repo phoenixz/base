@@ -13,6 +13,6 @@ $_CONFIG['translate'] = array('url'          => 'http://toolkit.ingiga.com/api/t
                               'mode'         => 'full',
                               'passphrase'   => 'translate',
                               'api_key'      => '',
-                              'allowed_tags' => '<b><a><strong>');
+                              'allowed_tags' => '<b><a><strong><small>');
 
 ?>
