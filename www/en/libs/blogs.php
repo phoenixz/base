@@ -264,9 +264,13 @@ function blogs_post_update($post, $params = null){
             $execute[':parents_id'] = $post['parents_id'];
         }
 
-        if($params['label_category1']){
-            $updates[] = ' `category1` = :category1 ';
-            $execute[':category1'] = $post['category1'];
+        for($i = 1; $i <= 3; $i++){
+            if($params['label_category'.$i]){
+                $updates[] = ' `category'.$i.'`    = :category'.$i.' ';
+                $updates[] = ' `seocategory'.$i.'` = :seocategory'.$i.' ';
+                $execute[':category'.$i]    = $post['category'.$i];
+                $execute[':seocategory'.$i] = $post['seocategory'.$i];
+            }
         }
 
         if($params['label_status']){
