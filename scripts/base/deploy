@@ -165,7 +165,7 @@ $nobomcheck     =   cli_argument('--no-bom-check');
 $tilde          = '~'.date('Ymd-His');
 $targets        =   cli_arguments();
 
-
+cli_no_arguments_left();
 
 if(!$message and !$notag){
     throw new bException(tr('No tag message specified! please use ./scripts/base/deploy ..... message "commit message"'), 'not-specified');
