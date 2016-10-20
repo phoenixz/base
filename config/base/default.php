@@ -344,10 +344,6 @@ $_CONFIG['sync']               = array();                                       
 // Sync configuration.
 $_CONFIG['statistics']         = array('enabled'            => true);                                       //
 
-// System configuration
-$_CONFIG['system']             = array('translator'         => 'translator.localhost',
-                                       'obsolete_exception' => true);                                       //
-
 // Timezone configuration. See http://www.php.net/manual/en/timezones.php for more info
 $_CONFIG['timezone']           = 'America/Mexico_City';                                                     //
 
@@ -362,24 +358,6 @@ $_CONFIG['users']              = array('type_filter'      => null);
 
 //Xapian search
 $_CONFIG['xapian']             = array('dir'              => ROOT.'data/xapian/');                          // Base path for Xapian databases
-
-
-
-/*
- * Translation system configuration
- *
- * mode defines what to do when no translations are found
- * possible values : strict               (all strings must be translated, fails if thats not possible)
-                     full                 (search for alternative translations on other projects
-                                           if they are not available on the current one (fails if not found))
-                     most                 (same as above but doesnt fail if not translations are found)
-                     none                 (leave original strings if not translations are found)
- */
-$_CONFIG['translator']         = array('url'          => 'translator.localhost',
-                                       'mode'         => 'full',
-                                       'passphrase'   => 'translateplease',
-                                       'api_key'      => 'something',
-                                       'allowed_tags' => '<b><a><strong>');
 
 $_CONFIG['whitelabels']        = array('enabled'      => false);                                            // Either false (No whitelabel domains, only the normal site FQDN allowed), true (only default and registered FQDNs allowed), "sub" (only default FQDN and its sub domains allowed), or "all" (All domains allowed)
 ?>
