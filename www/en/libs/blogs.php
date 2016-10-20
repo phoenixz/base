@@ -235,12 +235,14 @@ function blogs_post_update($post, $params = null){
         $post    = blogs_validate_post($post, $params);
 
         $execute = array(':id'         => $post['id'],
-                         ':modifiedby' => isset_get($_SESSION['user']['id']));
+                         ':modifiedby' => isset_get($_SESSION['user']['id']),
+                         ':body'       => $post['body']);
 
         $query   = 'UPDATE  `blogs_posts`
 
                     SET     `modifiedby` = :modifiedby,
-                            `modifiedon` = NOW(),';
+                            `modifiedon` = NOW(),
+                            `body`       = :body ';
 
         if($params['label_blog']){
             $updates[] = ' `blogs_id` = :blogs_id ';
@@ -338,24 +340,11 @@ function blogs_post_update($post, $params = null){
             $execute[':seoname'] = $post['seoname'];
         }
 
-        $query .= ' `body` = :body ';
-        $execute[':body']  = $post['body'];
-
         if(!empty($updates)){
-            foreach($updates as $values){
-                $query .=  ','.$values;
-            }
-
+            $query .= ', '.implode(', ', $updates);
         }
 
         $query .= ' WHERE `id` = :id';
-
-        //if(!$execute[':featured_until']){
-        //    $execute[':featured_until'] = system_date_format($post['featured_until'], 'mysql');
-        //
-        //}else{
-        //    $execute[':featured_until'] = null;
-        //}
 
         /*
          * Update the post, and ensure it is no longer registered as "new".
