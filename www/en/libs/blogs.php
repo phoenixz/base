@@ -264,13 +264,9 @@ function blogs_post_update($post, $params = null){
             $execute[':parents_id'] = $post['parents_id'];
         }
 
-        for($i = 1; $i <= 3; $i++){
-            if($params['label_category'.$i]){
-                $updates[] = ' `category'.$i.'`    = :category'.$i.' ';
-                $updates[] = ' `seocategory'.$i.'` = :seocategory'.$i.' ';
-                $execute[':category'.$i]    = $post['category'.$i];
-                $execute[':seocategory'.$i] = $post['seocategory'.$i];
-            }
+        if($params['label_category1']){
+            $updates[] = ' `category1` = :category1 ';
+            $execute[':category1'] = $post['category1'];
         }
 
         if($params['label_status']){
@@ -371,7 +367,7 @@ function blogs_post_update($post, $params = null){
         blogs_update_keywords($post);
         blogs_update_key_value_store($post, isset_get($params['key_values']));
 
-        return $post['seoname'];
+        return $post;
 
     }catch(Exception $e){
         throw new bException(tr('blogs_post_update(): Failed'), $e);
