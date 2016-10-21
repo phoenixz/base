@@ -88,7 +88,7 @@ switch(cli_method()){
         /*
          * First clean all last_messages from conversations and rebuild them from scratch
          */
-        log_console('Rebuilding all twilio conversations', 'conversations', 'white');
+        log_console('Rebuilding twilio conversation messages', 'conversations', 'white');
 
         sql_query('UPDATE `sms_conversations` SET `last_messages` = ""');
 
