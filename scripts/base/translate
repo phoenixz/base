@@ -130,7 +130,7 @@ switch(cli_method()){
             }
 
             if($language == 'en'){
-                unset($languages['$id']);
+                unset($languages[$id]);
                 cli_log(tr('Ignoring language "en - English"'), 'yellow');
             }
         }
@@ -346,9 +346,7 @@ $_CONFIG['translate']['url'] = 'http://toolkit.ingiga.com.l.ingiga.com/api/trans
             //   throw new bException(tr('Translatable strings with PHP code found'), 'translation-error');
             //}
 
-            if(VERBOSE){
-                cli_log(tr('Requesting translations from server'), '', false);
-            }
+            cli_log(tr('Requesting translations from server'));
 
             /*
              * Construct data for sending
@@ -396,12 +394,14 @@ $_CONFIG['translate']['url'] = 'http://toolkit.ingiga.com.l.ingiga.com/api/trans
                 $count += count($translations);
             }
 
-            cli_log(tr('Received ":count" translations from translation server', array(':count' => $count)), 'green');
+            cli_log(tr('Received ":count" translations for ":files" files from translation server', array(':count' => $count, ':files' => count($returned_data['translations']))), 'green');
 
-            $params['translations'] = $returned_data['translations'];
 
-            //translations ready, start processing.
-            //delete target dir
+
+            /*
+             * Translations ready, start processing.
+             * Delete target dir
+             */
             try{
                 // if(VERBOSE){
                 //     cli_log('Deleting target dir '.$target_dir, 'translate', '', true);
@@ -427,7 +427,7 @@ $_CONFIG['translate']['url'] = 'http://toolkit.ingiga.com.l.ingiga.com/api/trans
                     cli_log(tr('Applying translations'), '', true);
                 }
 
-                foreach($params['translations'] as $short_file => $data){
+                foreach($returned_data['translations'] as $short_file => $data){
                     if(VERBOSE){
                         cli_log(tr('Translating ":file"', array(':file' => $short_file)), '', false);
                     }
