@@ -410,11 +410,8 @@ $_CONFIG['translate']['url'] = 'http://toolkit.ingiga.com.l.ingiga.com/api/trans
                 shell_exec('rm -rf '.$target_dir);
 
                 // Copy english to target dir
-                if(VERBOSE){
-                    cli_log(tr('Copying ":source" to ":target"', array(':source' => $params['source_dir'], ':target' => $target_dir)));
-                }
-
-                shell_exec('cp -a '.$params['source_dir'].' '.$target_dir);
+                cli_log(tr('Copying ":source" to ":target"', array(':source' => $source_dir, ':target' => $target_dir)));
+                shell_exec('cp -a '.$source_dir.' '.$target_dir);
 
                 // :DELETE: Its not going to save too much space, and doesnt make sense
                 //          to only link css and forgot about js, images, etc
@@ -422,14 +419,14 @@ $_CONFIG['translate']['url'] = 'http://toolkit.ingiga.com.l.ingiga.com/api/trans
                 // file_delete_tree(slash($target_dir).'pub/css');
                 // symlink('../../en/pub/css', slash($target_dir).'pub/css');
 
-                //Apply translations
-                if(VERBOSE){
-                    cli_log(tr('Applying translations'), '', true);
-                }
+                cli_log(tr('Applying translations'), '', true);
 
                 foreach($returned_data['translations'] as $short_file => $data){
                     if(VERBOSE){
                         cli_log(tr('Translating ":file"', array(':file' => $short_file)), '', false);
+
+                    }else{
+                        cli_dot();
                     }
 
                     if(!empty($forcedutf8[$short_file])){
