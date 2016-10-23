@@ -5,6 +5,42 @@
 global $_CONFIG;
 static $count, $code, $messages;
 debug(true);
+//showdie($e);
+
+/*
+ * Log data to apache logs
+ */
+error_log(tr('*** UNCAUGHT EXCEPTION ***'));
+
+if(is_object($e)){
+    if($e instanceof Exception){
+        if($e instanceof bException){
+            foreach($e->getMessages() as $message){
+                error_log(base64_encode($message).PHP_EOL);
+            }
+
+        }else{
+            /*
+             * Non bException exception, will only have one message to log
+             */
+            error_log(base64_encode($e->getMessage()).PHP_EOL);
+        }
+
+    }else{
+        /*
+         * WUT? Should be at least an exception objecth ere!
+         */
+        error_log(tr('*** EXCEPTION IS NOT AN EXCEPTION OBJECT ***'));
+        error_log(base64_encode(print_r($e, true)).PHP_EOL);
+    }
+
+}else{
+    /*
+     * WUT? We should have an object here
+     */
+    error_log(tr('*** EXCEPTION IS NOT AN OBJECT ***'));
+    error_log(base64_encode(str_log($e)).PHP_EOL);
+}
 
 $session   = "\n\n\n<br><br>SESSION DATA<br><br>\n\n\n".htmlentities(print_r(isset_get($_SESSION), true));
 $server    = "\n\n\n<br><br>SERVER DATA<br><br>\n\n\n".htmlentities(print_r(isset_get($_SERVER), true));
