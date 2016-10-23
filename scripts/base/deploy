@@ -508,8 +508,17 @@ if($notranslate){
     cli_log(tr('Executing translations'), 'white');
 
     if($_CONFIG['language']['supported']){
-        cli_log(tr('Translating to ":language"', array(':language' => $language)), 'white');
-        script_exec('base/translate', array('translate', '--languages'.($ignore_html ? ' --ignore-html' : '').($ignore_php ? ' --ignore-php' : ''), $code));
+        $options[] = 'translate';
+
+        if($ignore_php){
+            $options[] = '--ignore-php';
+        }
+
+        if($ignore_html){
+            $options[] = '--ignore-html';
+        }
+
+        script_exec('base/translate', $options);
         init_hook('deploy_post_translation', $nohooks, array('languages' => $_CONFIG['language']['supported']));
     }
 }
