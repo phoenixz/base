@@ -24,7 +24,7 @@ function init($projectfrom = null, $frameworkfrom = null){
             throw new bException('init(): This platform is not authorized to do init()', 'denied');
         }
 
-        load_libs('file,pdo_exists');
+        load_libs('file,sql_exists');
 
         /*
          * Check tmp dir configuration

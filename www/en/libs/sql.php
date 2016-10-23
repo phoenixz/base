@@ -54,7 +54,7 @@ function sql_query($query, $execute = false, $handle_exceptions = true, $connect
             /*
              * Failure is probably that one of the the $execute array values is not scalar
              */
-// :TODO: Move all of this to pdo_error()
+// :TODO: Move all of this to sql_error()
             if(!is_array($execute)){
                 throw new bException('sql_query(): Specified $execute is not an array!');
             }
@@ -98,8 +98,8 @@ function sql_query($query, $execute = false, $handle_exceptions = true, $connect
         }
 
         try{
-            load_libs('pdo_error');
-            pdo_error($e, $query, $execute, isset_get($GLOBALS['sql_'.$connector]));
+            load_libs('sql_error');
+            sql_error($e, $query, $execute, isset_get($GLOBALS['sql_'.$connector]));
 
         }catch(Exception $e){
             throw new bException(tr('sql_query(:connector): Query ":query" failed', array(':connector' => $connector, ':query' => $query)), $e);
@@ -317,7 +317,7 @@ function sql_init($connector = 'core'){
          * This is only required for the system connection
          */
         if((PLATFORM == 'shell') and (SCRIPT == 'init') and FORCE and !empty($_CONFIG['db'][$connector]['init'])){
-            include(dirname(__FILE__).'/handlers/pdo_init_force.php');
+            include(dirname(__FILE__).'/handlers/sql_init_force.php');
         }
 
         /*
@@ -378,7 +378,7 @@ function sql_init($connector = 'core'){
         }
 
     }catch(Exception $e){
-        include(dirname(__FILE__).'/handlers/pdo_init_fail.php');
+        include(dirname(__FILE__).'/handlers/sql_init_fail.php');
     }
 }
 
@@ -428,7 +428,7 @@ function sql_connect($connector, $use_database = true){
                 $pdo->query('SET time_zone = "'.$connector['timezone'].'";');
 
             }catch(Exception $e){
-                include(dirname(__FILE__).'/handlers/pdo_timezone_fail.php');
+                include(dirname(__FILE__).'/handlers/sql_timezone_fail.php');
             }
 
             if(!empty($connector['mode'])){
@@ -437,7 +437,7 @@ function sql_connect($connector, $use_database = true){
 
         }catch(Exception $e){
             log_console(tr('Encountered exception ":e" while connecting to database server, attempting to resolve', array(':e' => $e->getMessage())), '', 'yellow');
-            include(dirname(__FILE__).'/handlers/pdo_connect_exception.php');
+            include(dirname(__FILE__).'/handlers/sql_connect_exception.php');
         }
 
         return $pdo;
