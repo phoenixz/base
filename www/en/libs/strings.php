@@ -497,12 +497,7 @@ function str_log($source, $truncate = 2047, $separator = ', '){
             }
         }
 
-// :DELETE: str_log() should not modify data specially for HTML display, only should be a valid string, not too large, etc
-        //if(PLATFORM == 'http'){
-        //    return htmlentities(str_replace('  ', ' ', str_replace("\n", ' ', str_truncate($source, $truncate, ' ... ', 'center'))), ENT_DISALLOWED | ENT_SUBSTITUTE | ENT_NOQUOTES | ENT_HTML5, 'UTF-8', false);
-        //}
-
-        return str_replace('  ', ' ', str_replace("\n", ' ', str_truncate($source, $truncate, ' ... ', 'center')));
+        return preg_replace('/[\x00-\x1F\x80-\xFF]/', '', str_replace('  ', ' ', str_replace("\n", ' ', str_truncate($source, $truncate, ' ... ', 'center'))));
 
     }catch(Exception $e){
         throw new bException('str_log(): Failed', $e);
