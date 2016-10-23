@@ -633,7 +633,7 @@ function html_flash($class = null){
         $retval = '';
 
         foreach($_SESSION['flash'] as $id => $message){
-            if(($class != $message['class']) and ($class != 'all')){
+            if(($message['class'] != $class) and ($message['class'] != '*')){
                 continue;
             }
 
@@ -722,7 +722,7 @@ function html_flash_set($messages, $type = 'info', $class = null){
         }elseif(!is_array($_SESSION['flash'])){
             $_SESSION['flash'] = array($_SESSION['flash']);
         }
-$_CONFIG['production'] = true;
+
         if(!is_array($messages)){
             if(is_object($messages)){
                 if($messages instanceof bException){
@@ -824,7 +824,7 @@ function html_flash_class($class = null){
     try{
         if(isset($_SESSION['flash'])){
             foreach($_SESSION['flash'] as $message){
-                if($message['class'] == $class){
+                if(($message['class'] == $class) or ($message['class'] == '*')){
                     return true;
                 }
             }
