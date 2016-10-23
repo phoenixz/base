@@ -144,6 +144,9 @@ $all            =  (cli_argument('--all')            or cli_argument('-a'));
 $ignore         =  (cli_argument('--ignore-changes') or cli_argument('-i'));
 $nocacheclear   =   cli_argument('--no-cache-clear');
 $notranslate    =   cli_argument('--no-translate');
+$ignore_php     =   cli_argument('--ignore-php');
+$ignore_html    =   cli_argument('--ignore-html');
+
 $update_content =   cli_argument('--update-content');
 $update_sitemap =   cli_argument('--update-sitemap');
 
@@ -505,15 +508,9 @@ if($notranslate){
     cli_log(tr('Executing translations'), 'white');
 
     if($_CONFIG['language']['supported']){
-        foreach($_CONFIG['language']['supported'] as $code => $language){
-            cli_log(tr('Deleting translations ":language"', array(':language' => $language)), 'white');
-            script_exec('base/translate', array('clear'));
-
-            cli_log(tr('Translating to ":language"', array(':language' => $language)), 'white');
-            script_exec('base/translate', array('translate', '--languages', $code));
-
-            init_hook('deploy_post_translation', $nohooks, array('languages' => $_CONFIG['language']['supported']));
-        }
+        cli_log(tr('Translating to ":language"', array(':language' => $language)), 'white');
+        script_exec('base/translate', array('translate', '--languages'.($ignore_html ? ' --ignore-html' : '').($ignore_php ? ' --ignore-php' : ''), $code));
+        init_hook('deploy_post_translation', $nohooks, array('languages' => $_CONFIG['language']['supported']));
     }
 }
 

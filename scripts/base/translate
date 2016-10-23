@@ -48,7 +48,15 @@ clear                                   -
 
 scan                                    -
 
-translate                               -';
+translate                               -
+
+
+
+OPTIONS
+
+--ignore-php                            -
+
+--ignore-html                           -';
 
 require_once(dirname(__FILE__).'/../../libs/startup.php');
 load_libs('file,inet,curl,crypt');
@@ -56,17 +64,17 @@ load_config('translate');
 
 
 
-$available_modes     = array('strict',
-                             'full',
-                             'most',
-                             'none');
+$available_modes = array('strict',
+                         'full',
+                         'most',
+                         'none');
 
 
 
 /*
  *
  */
-$languages   = cli_argument('--languages', 'all');
+$languages = cli_argument('--languages', 'all');
 
 /*
  * Validate command line parameters
