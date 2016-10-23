@@ -346,7 +346,8 @@ $_CONFIG['translate']['url'] = 'http://toolkit.ingiga.com.l.ingiga.com/api/trans
             //   throw new bException(tr('Translatable strings with PHP code found'), 'translation-error');
             //}
 
-            cli_log(tr('Requesting translations from server'));
+$_CONFIG['translate']['url'] = 'http://toolkit.ingiga.com.l.ingiga.com/api/translate.php';
+            cli_log(tr('Requesting translations from server url":url"', array(':url' => $_CONFIG['translate']['url'])));
 
             /*
              * Construct data for sending
@@ -359,7 +360,6 @@ $_CONFIG['translate']['url'] = 'http://toolkit.ingiga.com.l.ingiga.com/api/trans
                           'options'         => array('mode' => $mode));
 
             try{
-$_CONFIG['translate']['url'] = 'http://toolkit.ingiga.com.l.ingiga.com/api/translate.php';
                 $response = curl_get(array('url'         => $_CONFIG['translate']['url'],
                                            'getdata'     => true,
                                            'proxies'     => false,
@@ -441,7 +441,7 @@ $_CONFIG['translate']['url'] = 'http://toolkit.ingiga.com.l.ingiga.com/api/trans
                     }else{
                         //store new file
                         $filedata    = file_get_contents(ROOT.$short_file);
-                        $target_file = str_replace($params['source_dir'], $target_dir, ROOT.$short_file);
+                        $target_file = str_replace($source_dir, $target_dir, ROOT.$short_file);
 
                         //replace strings
                         foreach($data as $source => $translation){
@@ -462,7 +462,7 @@ $_CONFIG['translate']['url'] = 'http://toolkit.ingiga.com.l.ingiga.com/api/trans
                     }
                 }
 
-                cli_log(tr('Translations completed'), 'green');
+                cli_dot(false);
 
                 if($returned_data['stats']['translations_missing'] > 0){
                     cli_log('Missing ":count" translations', array(':count' => number_format($returned_data['stats']['translations_missing'])), 'yellow');
@@ -471,6 +471,7 @@ $_CONFIG['translate']['url'] = 'http://toolkit.ingiga.com.l.ingiga.com/api/trans
                 cli_log('Successfully translated ":count" sections', array(':count' => number_format($returned_data['stats']['translations_done'])), 'green');
 
             }catch(Exception $e){
+showdie($e);
                 throw new bException(tr('Error applying ":lang" translations', array(':lang' => $language)), $e);
             }
         }
