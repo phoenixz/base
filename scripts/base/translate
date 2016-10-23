@@ -300,7 +300,6 @@ switch(cli_method()){
                           'options'         => array('mode' => $mode));
 
             try{
-$_CONFIG['translate']['url'] = 'http://toolkit.ingiga.com.l.ingiga.com/api/translate.php';
                 $response = curl_get(array('url'         => $_CONFIG['translate']['url'],
                                            'getdata'     => true,
                                            'proxies'     => false,
@@ -343,24 +342,6 @@ $_CONFIG['translate']['url'] = 'http://toolkit.ingiga.com.l.ingiga.com/api/trans
             $target_dir = ROOT.'www/'.$language;
 
             cli_log(tr('Translating language ":language"', array(':language' => $language)), 'white');
-
-            //if(count($results['failed_html']) > 0){
-            //    foreach($results['failed_html'] as $string => $file){
-            //        cli_log(tr('Contains HTML ":html" in ":file"', array(':html' => $string, ':file' => $file)), 'red');
-            //    }
-            //
-            //   throw new bException(tr('Translatable strings with disallowed HTML tags found'), 'translation-error');
-            //}
-            //
-            //if(count($results['failed_php']) > 0){
-            //    foreach($results['failed_php'] as $string => $file){
-            //        cli_log(tr('Contains PHP ":php" in ":file"', array(':php' => $string, ':file' => $file)), 'red');
-            //    }
-            //
-            //   throw new bException(tr('Translatable strings with PHP code found'), 'translation-error');
-            //}
-
-$_CONFIG['translate']['url'] = 'http://toolkit.ingiga.com.l.ingiga.com/api/translate.php';
             cli_log(tr('Requesting translations from server url":url"', array(':url' => $_CONFIG['translate']['url'])));
 
             /*
