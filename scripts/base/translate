@@ -64,6 +64,29 @@ $available_modes     = array('strict',
 
 
 /*
+ *
+ */
+$languages   = cli_argument('--languages', 'all');
+
+/*
+ * Validate command line parameters
+ */
+if(empty($languages)){
+    $languages = array_keys($_CONFIG['language']['supported']);
+
+    if(empty($languages)){
+        throw new bException(tr('No languages specified, no languages configured'), 'not-specified');
+    }
+
+    cli_log(tr('Translating to configured languages ":languages"', array(':languages' => implode(', ', $languages))), 'white');
+
+}else{
+    cli_log(tr('Translating to requested languages ":languages"', array(':languages' => implode(', ', $languages))), 'white');
+}
+
+
+
+/*
  * Process requested actions
  */
 switch(cli_method()){
@@ -90,23 +113,6 @@ switch(cli_method()){
 
         if(cli_method() == 'translate'){
             $noutf8check = (cli_argument('--no-utf') or cli_argument('--no-utf8')   or cli_argument('--no-utf8-check'));
-            $languages   = cli_argument('--languages', 'all');
-
-            /*
-             * Validate command line parameters
-             */
-            if(empty($languages)){
-                $languages = array_keys($_CONFIG['language']['supported']);
-
-                if(empty($languages)){
-                    throw new bException(tr('No languages specified, no languages configured'), 'not-specified');
-                }
-
-                cli_log(tr('Translating to configured languages ":languages"', array(':languages' => implode(', ', $languages))), 'white');
-
-            }else{
-                cli_log(tr('Translating to requested languages ":languages"', array(':languages' => implode(', ', $languages))), 'white');
-            }
 
             if(!in_array($mode, $available_modes)){
                 throw new bException(tr('Unknown mode ":mode" specified', array(':mode' => $mode)), 'unknown');
@@ -465,13 +471,12 @@ $_CONFIG['translate']['url'] = 'http://toolkit.ingiga.com.l.ingiga.com/api/trans
                 cli_dot(false);
 
                 if($returned_data['stats']['translations_missing'] > 0){
-                    cli_log('Missing ":count" translations', array(':count' => number_format($returned_data['stats']['translations_missing'])), 'yellow');
+                    cli_log(tr('Missing ":count" translations', array(':count' => number_format($returned_data['stats']['translations_missing']))), 'yellow');
                 }
 
-                cli_log('Successfully translated ":count" sections', array(':count' => number_format($returned_data['stats']['translations_done'])), 'green');
+                cli_log(tr('Successfully translated ":count" sections', array(':count' => number_format($returned_data['stats']['translations_done']))), 'green');
 
             }catch(Exception $e){
-showdie($e);
                 throw new bException(tr('Error applying ":lang" translations', array(':lang' => $language)), $e);
             }
         }
