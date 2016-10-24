@@ -58,6 +58,27 @@ function current_domain($current_url = false, $query = null, $root = null){
 
 
 /*
+ * Return $_POST[dosubmit] value, and reset it to be sure it won't be applied twice
+ */
+function get_dosubmit(){
+    try{
+        if(empty($_POST['dosubmit'])){
+            return '';
+        }
+
+        $dosubmit = strtolower(isset_get($_POST['dosubmit'], ''));
+        unset($_POST['dosubmit']);
+
+        return $dosubmit;
+
+    }catch(Exception $e){
+        throw new bException('get_dosubmit(): Failed', $e);
+    }
+}
+
+
+
+/*
  * Redirect
  */
 function redirect($target = '', $http_code = null, $clear_session_redirect = true){
