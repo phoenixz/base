@@ -1208,7 +1208,7 @@ function blogs_validate_post($post, $params = null){
         }
 
         if(!empty($params['label_status'])){
-            if(empty($params['status_select']['resource'][$post['status']])){
+            if(empty($params['status_list'][$post['status']])){
                 $v->setError(tr('Please provide a valid status for your :objectname', array(':objectname' => $params['object_name'])));
             }
         }
