@@ -530,7 +530,7 @@ function image_info($file, $no_exif = false){
                         $retval['exif'] = exif_read_data($file, null, true, true);
 
                     }catch(Exception $e){
-                        $retval['exif'] = tr('Failed to get EXIF information because ":error"', array(':error' => $e->getMessage()));
+                        $retval['exif'] = array(tr('Failed to get EXIF information because ":error"', array(':error' => $e->getMessage())));
                     }
                 }
 
@@ -542,7 +542,7 @@ function image_info($file, $no_exif = false){
                         $retval['exif'] = exif_read_data($file, null, true, true);
 
                     }catch(Exception $e){
-                        $retval['exif'] = tr('Failed to get EXIF information because ":error"', array(':error' => $e->getMessage()));
+                        $retval['exif'] = array(tr('Failed to get EXIF information because ":error"', array(':error' => $e->getMessage())));
                     }
                 }
 
