@@ -526,14 +526,24 @@ function image_info($file, $no_exif = false){
                 }
 
                 if(!$no_exif){
-                    $retval['exif'] = exif_read_data($file, null, true, true);
+                    try{
+                        $retval['exif'] = exif_read_data($file, null, true, true);
+
+                    }catch(Exception $e){
+                        $retval['exif'] = array(tr('Failed to get EXIF information because ":error"', array(':error' => $e->getMessage())));
+                    }
                 }
 
                 break;
 
             case 'tiff':
                 if(!$no_exif){
-                    $retval['exif'] = exif_read_data($file, null, true, true);
+                    try{
+                        $retval['exif'] = exif_read_data($file, null, true, true);
+
+                    }catch(Exception $e){
+                        $retval['exif'] = array(tr('Failed to get EXIF information because ":error"', array(':error' => $e->getMessage())));
+                    }
                 }
 
                 break;
