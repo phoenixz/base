@@ -264,14 +264,9 @@ function blogs_post_update($post, $params = null){
             $execute[':parents_id'] = $post['parents_id'];
         }
 
-        if($params['label_category1']){
-            $updates[] = ' `category1` = :category1 ';
-            $execute[':category1'] = $post['category1'];
-        }
-
         if($params['label_status']){
-            $updates[] = ' `seocategory1` = :seocategory1 ';
-            $execute[':seocategory1'] = $post['seocategory1'];
+            $updates[] = ' `status` = :status ';
+            $execute[':status'] = $post['status'];
 
         }else{
             /*
@@ -284,24 +279,14 @@ function blogs_post_update($post, $params = null){
             }
         }
 
-        if($params['label_category2']){
-            $updates[] = ' `category2` = :category2 ';
-            $execute[':category2'] = $post['category2'];
-        }
+        for($i = 1; $i <= 3; $i++){
+            if($params['label_category'.$i]){
+                $updates[] = ' `category'.$i.'`    = :category'.$i.' ';
+                $updates[] = ' `seocategory'.$i.'` = :seocategory'.$i.' ';
 
-        if($params['label_status']){
-            $updates[] = ' `seocategory2` = :category2 ';
-            $execute[':category2'] = $post['category2'];
-        }
-
-        if($params['label_category3']){
-            $updates[] = ' `category3` = :category3 ';
-            $execute[':category3'] = $post['category3'];
-        }
-
-        if($params['label_status']){
-            $updates[] = ' `seocategory3` = :seocategory3 ';
-            $execute[':seocategory3'] = $post['seocategory3'];
+                $execute[':category'.$i]    = $post['category'.$i];
+                $execute[':seocategory'.$i] = $post['seocategory'.$i];
+            }
         }
 
         if($params['label_priority']){
