@@ -775,7 +775,7 @@ foreach($targets as $target_environment){
             $exclude .= ' --exclude="data/content/photos" ';
         }
 
-        if(!$send_content_text){
+        if(!$send_content_texts){
             foreach($_CONFIG['language']['supported'] as $code => $language){
                 $exclude .= ' --exclude="data/content/'.$code.'" ';
             }
