@@ -236,12 +236,14 @@ function blogs_post_update($post, $params = null){
 
         $execute = array(':id'         => $post['id'],
                          ':modifiedby' => isset_get($_SESSION['user']['id']),
+                         ':url'        => $post['url'],
                          ':body'       => $post['body']);
 
         $query   = 'UPDATE  `blogs_posts`
 
                     SET     `modifiedby` = :modifiedby,
                             `modifiedon` = NOW(),
+                            `url`        = :url,
                             `body`       = :body ';
 
         if($params['label_blog']){
@@ -317,15 +319,10 @@ function blogs_post_update($post, $params = null){
             $execute[':status'] = $post['status'];
         }
 
-        if($params['label_url']){
-            $updates[] = ' `url` = :url ';
-            $execute[':url'] = $post['url'];
+        if($post['urlref']){
+            $updates[] = ' `urlref` = :urlref ';
+            $execute[':urlref'] = $post['urlref'];
         }
-
-        //if($post['urlref']){
-        //    $updates[] = ' `urlref` = :urlref ';
-        //    $execute[':urlref'] = $post['urlref'];
-        //}
 
         if($params['label_title']){
             $updates[] = ' `name`    = :name ';
