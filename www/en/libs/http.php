@@ -281,8 +281,12 @@ function http_headers($params, $content_length){
         }
 
         if($params['http_code'] == 200){
-            $headers[] = 'Last-Modified: '.gmdate('D, d M Y H:i:s', filemtime($_SERVER['SCRIPT_FILENAME'])).' GMT';
-            //$headers[] = 'Last-Modified: Mon, 1 Jan 2000 00:00:00 GMT';
+            if(empty($params['last_modified'])){
+                $headers[] = 'Last-Modified: '.system_date_format(filemtime($_SERVER['SCRIPT_FILENAME']), 'D, d M Y H:i:s', 'GMT').' GMT';
+
+            }else{
+                $headers[] = 'Last-Modified: '.system_date_format($params['last_modified'], 'D, d M Y H:i:s', 'GMT').' GMT';
+            }
         }
 
         if($_CONFIG['cors'] or $params['cors']){
@@ -452,11 +456,11 @@ function http_build_url($url, $query){
  * For more information, see https://developers.google.com/speed/docs/insights/LeverageBrowserCaching
  * and https://developers.google.com/web/fundamentals/performance/optimizing-content-efficiency/http-caching
  */
-function http_cache_test(){
+function http_cache_test($etag = null){
     global $_CONFIG;
 
     try{
-        $GLOBALS['etag'] = sha1(PROJECT.$_SERVER['SCRIPT_FILENAME'].filemtime($_SERVER['SCRIPT_FILENAME']).isset_get($params['etag']));
+        $GLOBALS['etag'] = md5(PROJECT.$_SERVER['SCRIPT_FILENAME'].filemtime($_SERVER['SCRIPT_FILENAME']).$etag);
 
         if(!$_CONFIG['cache']['http']['enabled']){
             return false;
@@ -513,19 +517,18 @@ function http_cache($params, $headers = array()){
             $params['expires']    = '0';
 
             $GLOBALS['etag']      = null;
-
-            $expires   = 0;
+            $expires              = 0;
 
             $headers[] = 'Pragma : no-cache';
 
         }else{
             if(empty($GLOBALS['etag'])){
                 if(!empty($GLOBALS['flash'])){
-                    $GLOBALS['etag']  = null;
+                    $GLOBALS['etag']  = md5(str_random());
                     $params['policy'] = 'no-store';
 
                 }else{
-                    $GLOBALS['etag'] = sha1(PROJECT.$_SERVER['SCRIPT_FILENAME'].filemtime($_SERVER['SCRIPT_FILENAME']).isset_get($params['etag']));
+                    $GLOBALS['etag'] = md5(PROJECT.$_SERVER['SCRIPT_FILENAME'].filemtime($_SERVER['SCRIPT_FILENAME']).isset_get($params['etag']));
                 }
             }
 
@@ -569,8 +572,11 @@ function http_cache($params, $headers = array()){
         }
 
         $headers[] = 'Cache-Control: '.$params['visibility'].', '.$params['policy'];
-//            $headers[] = 'DTag: "'.$GLOBALS['etag'].'"';
-        $headers[] = 'ETag: "'.$GLOBALS['etag'].'"';
+
+        if(!empty($GLOBALS['etag'])){
+            $headers[] = 'ETag: "'.$GLOBALS['etag'].'"';
+        }
+
         $headers[] = 'Expires: '.$expires;
 
 //            $headers[] = 'FTag: "'.$GLOBALS['etag'].'"';
