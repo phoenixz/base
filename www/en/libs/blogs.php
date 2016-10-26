@@ -1294,8 +1294,8 @@ function blogs_media_upload($files, $post, $priority = null){
          */
         upload_check_files(1);
 
-        if(!empty($_FILES['files'][0]['error'])) {
-            throw new bException($_FILES['files'][0]['error_message'], 'uploaderror');
+        if(!empty($_FILES['files'][0]['error'])){
+            throw new bException(isset_get($_FILES['files'][0]['error_message'], $_FILES['files'][0]['error']), 'uploaderror');
         }
 
         $file     = $files;
@@ -1814,10 +1814,10 @@ function blogs_post_url($post, $current_domain = true){
 
         if($current_domain){
             load_libs('http');
-            return current_domain($url);
+            return current_domain($url, null, '');
         }
 
-        return domain($url);
+        return domain($url, null, '');
 
     }catch(Exception $e){
         throw new bException('blogs_post_url(): Failed', $e);
