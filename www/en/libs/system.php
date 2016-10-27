@@ -907,7 +907,7 @@ function domain($current_url = false, $query = null, $root = null){
 
     try{
         if($root === null){
-            $root = $_CONFIG['root'];
+            $root = str_ends_not($_CONFIG['root'], '/');
         }
 
         if(empty($_SESSION['domain'])){
