@@ -1017,6 +1017,8 @@ function blogs_validate_post($post, $params = null){
         array_default($params, 'label_category3', false);
         array_default($params, 'status_default' , 'unpublished');
         array_default($params, 'object_name'    , 'blog posts');
+// :TODO: Make this configurable from `blogs` configuration table
+        array_default($params, 'filter_html'    , '<p><a><br><span><small><strong><img>');
 
         load_libs('seo,validate');
 
@@ -1261,6 +1263,13 @@ function blogs_validate_post($post, $params = null){
         }
 
         $post['body'] = str_replace('&nbsp;', ' ', $post['body']);
+
+        if($params['filter_html']){
+            /*
+             * Filter all HTML, allowing only the specified tags in filter_html
+             */
+            $post['body'] = strip_tags($post['body'], $params['filter_html']);
+        }
 
         return $post;
 
