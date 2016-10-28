@@ -1748,7 +1748,7 @@ function blogs_validate_parent($blog_post_seoname, $blogs_id){
  * Generate and return a URL for the specified blog post,
  * based on blog url configuration
  */
-function blogs_post_url($post, $current_domain = true){
+function blogs_post_url($post){
     global $_CONFIG;
 
     try{
@@ -1812,9 +1812,13 @@ function blogs_post_url($post, $current_domain = true){
             $url = str_replace('%'.$section.'%', isset_get($post[$section]), $url);
         }
 
-        if($current_domain){
-            load_libs('http');
-            return current_domain($url, null, '');
+        $url = trim($url);
+
+        if(preg_match('/$https?:\/\//', $url)){
+            /*
+             * This is an absolute URL, return it as-is
+             */
+            return $url;
         }
 
         return domain($url, null, '');
