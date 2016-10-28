@@ -911,7 +911,11 @@ function domain($current_url = false, $query = null, $root = null){
         }
 
         if(empty($_SESSION['domain'])){
-            throw new bException(tr('domain(): $_SESSION[\'domain\'] is not configured'), 'not-specified');
+            if(PLATFORM_HTTP){
+                throw new bException(tr('domain(): $_SESSION[\'domain\'] is not configured'), 'not-specified');
+            }
+
+            $_SESSION['domain'] = $_CONFIG['domain'];
         }
 
         if($_SESSION['domain'] == 'auto'){
