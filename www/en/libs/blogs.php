@@ -1007,18 +1007,19 @@ function blogs_validate_category($category, $blog){
 function blogs_validate_post($post, $params = null){
     try{
         array_params($params);
-        array_default($params, 'force_id'       , false);
-        array_default($params, 'use_id'         , false);
-        array_default($params, 'namemax'        , 64);
-        array_default($params, 'bodymin'        , 100);
-        array_default($params, 'label_keywords' , true);
-        array_default($params, 'label_category1', false);
-        array_default($params, 'label_category2', false);
-        array_default($params, 'label_category3', false);
-        array_default($params, 'status_default' , 'unpublished');
-        array_default($params, 'object_name'    , 'blog posts');
+        array_default($params, 'force_id'         , false);
+        array_default($params, 'use_id'           , false);
+        array_default($params, 'namemax'          , 64);
+        array_default($params, 'bodymin'          , 100);
+        array_default($params, 'label_keywords'   , true);
+        array_default($params, 'label_category1'  , false);
+        array_default($params, 'label_category2'  , false);
+        array_default($params, 'label_category3'  , false);
+        array_default($params, 'status_default'   , 'unpublished');
+        array_default($params, 'object_name'      , 'blog posts');
 // :TODO: Make this configurable from `blogs` configuration table
-        array_default($params, 'filter_html'    , '<p><a><br><span><small><strong><img>');
+        array_default($params, 'filter_html'      , '<p><a><br><span><small><strong><img>');
+        array_default($params, 'filter_attributes', true);
 
         load_libs('seo,validate');
 
@@ -1269,6 +1270,10 @@ function blogs_validate_post($post, $params = null){
              * Filter all HTML, allowing only the specified tags in filter_html
              */
             $post['body'] = strip_tags($post['body'], $params['filter_html']);
+        }
+
+        if($params['filter_attributes']){
+            $post['body'] = preg_replace('/<([a-z][a-z0-9]*)[^>]*?(\/?)>/imus','<$1$2>', $post['body']);
         }
 
         return $post;
