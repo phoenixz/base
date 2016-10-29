@@ -206,7 +206,7 @@ function cache_key_hash($key){
 /*
  *
  */
-function cache_showpage($key = null, $namespace = 'htmlpage', $die = true){
+function cache_showpage($key = null, $namespace = 'htmlpage', $etag = null){
     global $_CONFIG;
 
     try{
@@ -222,15 +222,12 @@ function cache_showpage($key = null, $namespace = 'htmlpage', $die = true){
             /*
              * First try to apply HTTP ETag cache test
              */
-            http_cache_test();
+            http_cache_test($etag);
 
             if($page = cache_read($key, $namespace)){
                 http_headers(null, strlen($page));
                 echo $page;
-
-                if($die){
-                    die();
-                }
+                die();
             }
         }
 

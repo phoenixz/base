@@ -73,8 +73,11 @@ OPTIONS
 
 --up-version / --up-versions    - Update version (Does not do so by default)
 
---update-content                - rsync the data/content path as well (Normally
-                                  always skipped)
+--send-content-texts            - rsync the data/content/photos path as well
+                                  (Normally always skipped)
+
+--send-content-photos           - rsync the data/content/LANGUAGECODE paths as
+                                  well (Normally always skipped)
 
 --update-sitemap                - rsync the www/LANG/sitemap file as well
                                   (Normally always skipped)
@@ -131,42 +134,43 @@ if(ENVIRONMENT == 'production') {
 /*
  * Check command line parameters
  */
-$noinit         =   cli_argument('--no-init');
-$nositemap      =   cli_argument('--no-sitemap');
-$nohooks        =  (cli_argument('--no-hook')        or cli_argument('--no-hooks'));
-$nosyntax       = !(cli_argument('--do-syntax')      or cli_argument('--do-parse'));
-$nodeploy       =  (cli_argument('--no-deploy')      or cli_argument('--test'));
-$noversion      = !(cli_argument('--up-version')     or cli_argument('--up-versions'));
-$nocontent      = !(cli_argument('--do-content')     or cli_argument('--do-conten-tcheck'));
-$nofixperms     =  (cli_argument('--no-fix-perms')   or cli_argument('--no-fix-permissions'));
-$nofixstructure =  (cli_argument('--no-fix-struct')  or cli_argument('--no-fix-structure'));
-$all            =  (cli_argument('--all')            or cli_argument('-a'));
-$ignore         =  (cli_argument('--ignore-changes') or cli_argument('-i'));
-$nocacheclear   =   cli_argument('--no-cache-clear');
-$notranslate    =   cli_argument('--no-translate');
-$ignore_php     =   cli_argument('--ignore-php');
-$ignore_html    =   cli_argument('--ignore-html');
+$noinit              =   cli_argument('--no-init');
+$nositemap           =   cli_argument('--no-sitemap');
+$nohooks             =  (cli_argument('--no-hook')        or cli_argument('--no-hooks'));
+$nosyntax            = !(cli_argument('--do-syntax')      or cli_argument('--do-parse'));
+$nodeploy            =  (cli_argument('--no-deploy')      or cli_argument('--test'));
+$noversion           = !(cli_argument('--up-version')     or cli_argument('--up-versions'));
+$nocontent           = !(cli_argument('--do-content')     or cli_argument('--do-conten-tcheck'));
+$nofixperms          =  (cli_argument('--no-fix-perms')   or cli_argument('--no-fix-permissions'));
+$nofixstructure      =  (cli_argument('--no-fix-struct')  or cli_argument('--no-fix-structure'));
+$all                 =  (cli_argument('--all')            or cli_argument('-a'));
+$ignore              =  (cli_argument('--ignore-changes') or cli_argument('-i'));
+$nocacheclear        =   cli_argument('--no-cache-clear');
+$notranslate         =   cli_argument('--no-translate');
+$ignore_php          =   cli_argument('--ignore-php');
+$ignore_html         =   cli_argument('--ignore-html');
 
-$update_content =   cli_argument('--update-content');
-$update_sitemap =   cli_argument('--update-sitemap');
+$send_content_photos =   cli_argument('--send-content-photos');
+$send_content_texts  =   cli_argument('--send-content-texts');
+$send_sitemap        =   cli_argument('--send-sitemap');
 
-$notag          =  (cli_argument('--no-tag')        or cli_argument('--no-tags') or $noversion);
-$nopush         =   cli_argument('--no-push');
-$stash          =   cli_argument('--stash');
-$notouch        =   cli_argument('--no-touch');
+$notag               =  (cli_argument('--no-tag')        or cli_argument('--no-tags') or $noversion);
+$nopush              =   cli_argument('--no-push');
+$stash               =   cli_argument('--stash');
+$notouch             =   cli_argument('--no-touch');
 
-$nocompress     =   cli_argument('--no-compress');
-$forcecompress  =   cli_argument('--force-compress');
-$noparrallel    =   cli_argument('--no-parrallel');
-$nonotify       =   cli_argument('nonotify');
+$nocompress          =   cli_argument('--no-compress');
+$forcecompress       =   cli_argument('--force-compress');
+$noparrallel         =   cli_argument('--no-parrallel');
+$nonotify            =   cli_argument('nonotify');
 
-$message        =   cli_argument('--message'       , true);
-$continuersync  =   cli_argument('--continuer-sync', true);
-$categories     =   cli_argument('--category'      , 'all', cli_argument('--categories', 'all'));
-$nobomcheck     =   cli_argument('--no-bom-check');
+$message             =   cli_argument('--message'       , true);
+$continuersync       =   cli_argument('--continuer-sync', true);
+$categories          =   cli_argument('--category'      , 'all', cli_argument('--categories', 'all'));
+$nobomcheck          =   cli_argument('--no-bom-check');
 
-$tilde          = '~'.date('Ymd-His');
-$targets        =   cli_arguments();
+$tilde               = '~'.date('Ymd-His');
+$targets             =   cli_arguments();
 
 cli_no_arguments_left();
 
@@ -767,16 +771,22 @@ foreach($targets as $target_environment){
     }else{
         $exclude = ' --exclude=*~ --exclude="data/mocks" --exclude="data/mock*" --exclude="data/uploads" --exclude="data/packages" --exclude=".git*" --exclude="/data/system"  --exclude="/data/tmp" ';
 
-        if(!$update_content){
-            $exclude .= ' --exclude="data/content" ';
+        if(!$send_content_photos){
+            $exclude .= ' --exclude="data/content/photos" ';
+        }
+
+        if(!$send_content_texts){
+            foreach($_CONFIG['language']['supported'] as $code => $language){
+                $exclude .= ' --exclude="data/content/'.$code.'" ';
+            }
         }
 
         foreach($_CONFIG['language']['supported'] as $code => $language){
-            if(!$update_sitemap){
+            if(!$send_sitemap){
                 $exclude .= ' --exclude="www'.$language.'sitemap.html*" --exclude="www'.$language.'sitemap.xml*" --exclude="www'.$language.'mock" ';
             }
 
-            $exclude = ' --exclude="www'.$language.'sitemap.html*" --exclude="www'.$language.'sitemap.xml*" --exclude="www'.$language.'mock" ';
+            $exclude .= ' --exclude="www'.$language.'sitemap.html*" --exclude="www'.$language.'sitemap.xml*" --exclude="www'.$language.'mock" ';
         }
 
         if(count($deploy_config['exclude_dirs'])) {

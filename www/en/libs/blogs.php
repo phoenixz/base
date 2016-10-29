@@ -236,12 +236,14 @@ function blogs_post_update($post, $params = null){
 
         $execute = array(':id'         => $post['id'],
                          ':modifiedby' => isset_get($_SESSION['user']['id']),
+                         ':url'        => $post['url'],
                          ':body'       => $post['body']);
 
         $query   = 'UPDATE  `blogs_posts`
 
                     SET     `modifiedby` = :modifiedby,
                             `modifiedon` = NOW(),
+                            `url`        = :url,
                             `body`       = :body ';
 
         if($params['label_blog']){
@@ -264,14 +266,9 @@ function blogs_post_update($post, $params = null){
             $execute[':parents_id'] = $post['parents_id'];
         }
 
-        if($params['label_category1']){
-            $updates[] = ' `category1` = :category1 ';
-            $execute[':category1'] = $post['category1'];
-        }
-
         if($params['label_status']){
-            $updates[] = ' `seocategory1` = :seocategory1 ';
-            $execute[':seocategory1'] = $post['seocategory1'];
+            $updates[] = ' `status` = :status ';
+            $execute[':status'] = $post['status'];
 
         }else{
             /*
@@ -284,24 +281,14 @@ function blogs_post_update($post, $params = null){
             }
         }
 
-        if($params['label_category2']){
-            $updates[] = ' `category2` = :category2 ';
-            $execute[':category2'] = $post['category2'];
-        }
+        for($i = 1; $i <= 3; $i++){
+            if($params['label_category'.$i]){
+                $updates[] = ' `category'.$i.'`    = :category'.$i.' ';
+                $updates[] = ' `seocategory'.$i.'` = :seocategory'.$i.' ';
 
-        if($params['label_status']){
-            $updates[] = ' `seocategory2` = :category2 ';
-            $execute[':category2'] = $post['category2'];
-        }
-
-        if($params['label_category3']){
-            $updates[] = ' `category3` = :category3 ';
-            $execute[':category3'] = $post['category3'];
-        }
-
-        if($params['label_status']){
-            $updates[] = ' `seocategory3` = :seocategory3 ';
-            $execute[':seocategory3'] = $post['seocategory3'];
+                $execute[':category'.$i]    = $post['category'.$i];
+                $execute[':seocategory'.$i] = $post['seocategory'.$i];
+            }
         }
 
         if($params['label_priority']){
@@ -332,15 +319,10 @@ function blogs_post_update($post, $params = null){
             $execute[':status'] = $post['status'];
         }
 
-        if($params['label_url']){
-            $updates[] = ' `url` = :url ';
-            $execute[':url'] = $post['url'];
+        if($post['urlref']){
+            $updates[] = ' `urlref` = :urlref ';
+            $execute[':urlref'] = $post['urlref'];
         }
-
-        //if($post['urlref']){
-        //    $updates[] = ' `urlref` = :urlref ';
-        //    $execute[':urlref'] = $post['urlref'];
-        //}
 
         if($params['label_title']){
             $updates[] = ' `name`    = :name ';
@@ -1208,7 +1190,7 @@ function blogs_validate_post($post, $params = null){
         }
 
         if(!empty($params['label_status'])){
-            if(empty($params['status_select']['resource'][$post['status']])){
+            if(empty($params['status_list'][$post['status']])){
                 $v->setError(tr('Please provide a valid status for your :objectname', array(':objectname' => $params['object_name'])));
             }
         }
@@ -1312,8 +1294,8 @@ function blogs_media_upload($files, $post, $priority = null){
          */
         upload_check_files(1);
 
-        if(!empty($_FILES['files'][0]['error'])) {
-            throw new bException($_FILES['files'][0]['error_message'], 'uploaderror');
+        if(!empty($_FILES['files'][0]['error'])){
+            throw new bException(isset_get($_FILES['files'][0]['error_message'], $_FILES['files'][0]['error']), 'uploaderror');
         }
 
         $file     = $files;
@@ -1832,10 +1814,10 @@ function blogs_post_url($post, $current_domain = true){
 
         if($current_domain){
             load_libs('http');
-            return current_domain($url);
+            return current_domain($url, null, '');
         }
 
-        return domain($url);
+        return domain($url, null, '');
 
     }catch(Exception $e){
         throw new bException('blogs_post_url(): Failed', $e);

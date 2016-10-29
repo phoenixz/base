@@ -902,10 +902,14 @@ function get_hash($source, $algorithm, $add_meta = true){
 /*
  * Return complete domain with HTTP and all
  */
-function domain($current_url = false, $query = null){
+function domain($current_url = false, $query = null, $root = null){
     global $_CONFIG;
 
     try{
+        if($root === null){
+            $root = str_ends_not($_CONFIG['root'], '/');
+        }
+
         if(empty($_SESSION['domain'])){
             throw new bException(tr('domain(): $_SESSION[\'domain\'] is not configured'), 'not-specified');
         }
@@ -915,13 +919,13 @@ function domain($current_url = false, $query = null){
         }
 
         if(!$current_url){
-            $retval = $_CONFIG['protocol'].$_SESSION['domain'].$_CONFIG['root'];
+            $retval = $_CONFIG['protocol'].$_SESSION['domain'].$root;
 
         }elseif($current_url === true){
             $retval = $_CONFIG['protocol'].$_SESSION['domain'].$_SERVER['REQUEST_URI'];
 
         }else{
-            $retval = $_CONFIG['protocol'].$_SESSION['domain'].unslash($_CONFIG['root']).str_starts($current_url, '/');
+            $retval = $_CONFIG['protocol'].$_SESSION['domain'].$root.str_starts($current_url, '/');
         }
 
         if($query){

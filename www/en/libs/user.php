@@ -1398,7 +1398,7 @@ function user_validate($user, $sections = array()){
                             /*
                              * The current phone number is already in use by another user
                              */
-                            $v->setError(tr('The phone ":phone" is already in use by user ":user"', array(':phone' => $value, ':user' => '<a target="_blank" href="'.domain('/admin/user.php?user='.$exist['username']).'">'.$exist['username'].'</a>')));
+                            $v->setError(tr('The phone ":phone" is already in use by user ":user"', array(':phone' => $value, ':user' => '<a target="_blank" href="'.domain('/user.html?user='.$exist['username']).'">'.$exist['username'].'</a>')));
                         }
                     }
                 }
