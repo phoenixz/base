@@ -186,6 +186,15 @@ console.log(data.result + ' > ' + data.redirect);
         document.cookie = escape(name) + "=" + escape(value) + expires + "; path=/";
     };
 
+    $.urlQuery = function(obj) {
+      var str = [];
+      for(var p in obj)
+        if (obj.hasOwnProperty(p)) {
+          str.push(encodeURIComponent(p) + "=" + encodeURIComponent(obj[p]));
+        }
+      return str.join("&");
+    }
+
     $.readCookie = function(name) {
         var nameEQ = escape(name) + "=",
             ca     = document.cookie.split(';'),
