@@ -111,7 +111,7 @@ try{
         log_console('Not importing data files due to "noimport" option', '', 'yellow');
 
     }else{
-        load_libs('pdo_exists');
+        load_libs('sql_exists');
 
         if(!file_exists($tmpdir.'geoip_blocks.csv')){
             throw new bException('The required file "'.$tmpdir.'geoip_blocks.csv" is missing');
@@ -145,7 +145,7 @@ try{
 
     }else{
         log_console('Fixing data structures geoip_locations', '', '');
-        load_libs('pdo_exists');
+        load_libs('sql_exists');
 
         /*
          * Location table

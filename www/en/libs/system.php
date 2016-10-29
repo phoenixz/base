@@ -80,9 +80,10 @@ class bException extends Exception{
             foreach($messages as $id => $message){
                 $this->messages[] = $message;
 
-                if(PLATFORM == 'http'){
-                    error_log('Exception ['.$id.']: '.$message);
-                }
+// :DELETE: No longer do this. Exceptions can be as simple as "Could not delete users, no users spoecified". We don't want those messages in the apache log. We DO want uncaught exceptions though!
+                //if(PLATFORM == 'http'){
+                //    error_log('Exception ['.$id.']: '.$message);
+                //}
             }
         }
     }

@@ -7,7 +7,7 @@
             if(!empty($retry)){
                 static $retry = true;
 
-                pdo_error_init($e, $_CONFIG['db'][$connector], $connector);
+                sql_error_init($e, $_CONFIG['db'][$connector], $connector);
                 return sql_init();
             }
 
@@ -28,8 +28,8 @@
     }
 
     try{
-        load_libs('pdo_error');
-        return pdo_error($e, $_CONFIG['db'][$connector], null, isset_get($GLOBALS['sql_'.$connector]));
+        load_libs('sql_error');
+        return sql_error($e, $_CONFIG['db'][$connector], null, isset_get($GLOBALS['sql_'.$connector]));
 
     }catch(Exception $e){
         throw new bException('sql_init(): Failed', $e);

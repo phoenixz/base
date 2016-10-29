@@ -235,12 +235,14 @@ function blogs_post_update($post, $params = null){
         $post    = blogs_validate_post($post, $params);
 
         $execute = array(':id'         => $post['id'],
-                         ':modifiedby' => isset_get($_SESSION['user']['id']));
+                         ':modifiedby' => isset_get($_SESSION['user']['id']),
+                         ':body'       => $post['body']);
 
         $query   = 'UPDATE  `blogs_posts`
 
                     SET     `modifiedby` = :modifiedby,
-                            `modifiedon` = NOW(),';
+                            `modifiedon` = NOW(),
+                            `body`       = :body ';
 
         if($params['label_blog']){
             $updates[] = ' `blogs_id` = :blogs_id ';
@@ -270,6 +272,16 @@ function blogs_post_update($post, $params = null){
         if($params['label_status']){
             $updates[] = ' `seocategory1` = :seocategory1 ';
             $execute[':seocategory1'] = $post['seocategory1'];
+
+        }else{
+            /*
+             * New post? Set to default status
+             */
+            if($post['status'] === '_new'){
+                $post['status'] = $params['status_default'];
+                $updates[] = ' `status` = :status ';
+                $execute[':status'] = $post['status'];
+            }
         }
 
         if($params['label_category2']){
@@ -338,24 +350,11 @@ function blogs_post_update($post, $params = null){
             $execute[':seoname'] = $post['seoname'];
         }
 
-        $query .= ' `body` = :body ';
-        $execute[':body']  = $post['body'];
-
         if(!empty($updates)){
-            foreach($updates as $values){
-                $query .=  ','.$values;
-            }
-
+            $query .= ', '.implode(', ', $updates);
         }
 
         $query .= ' WHERE `id` = :id';
-
-        //if(!$execute[':featured_until']){
-        //    $execute[':featured_until'] = system_date_format($post['featured_until'], 'mysql');
-        //
-        //}else{
-        //    $execute[':featured_until'] = null;
-        //}
 
         /*
          * Update the post, and ensure it is no longer registered as "new".
@@ -368,7 +367,7 @@ function blogs_post_update($post, $params = null){
         blogs_update_keywords($post);
         blogs_update_key_value_store($post, isset_get($params['key_values']));
 
-        return $post['seoname'];
+        return $post;
 
     }catch(Exception $e){
         throw new bException(tr('blogs_post_update(): Failed'), $e);
@@ -1212,9 +1211,6 @@ function blogs_validate_post($post, $params = null){
             if(empty($params['status_select']['resource'][$post['status']])){
                 $v->setError(tr('Please provide a valid status for your :objectname', array(':objectname' => $params['object_name'])));
             }
-
-        }else{
-            $post['status'] = null;
         }
 
         $v->isValid();

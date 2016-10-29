@@ -636,7 +636,7 @@ function array_merge_keys_values($keys, $values){
         return $retval;
 
     }catch(Exception $e){
-        throw new bException('array_until(): Failed', $e);
+        throw new bException('array_merge_keys_values(): Failed', $e);
     }
 }
 
@@ -666,7 +666,7 @@ function array_prefix($source, $prefix, $auto = false){
         return $retval;
 
     }catch(Exception $e){
-        throw new bException('array_prefix_keys(): Failed', $e);
+        throw new bException('array_prefix(): Failed', $e);
     }
 }
 

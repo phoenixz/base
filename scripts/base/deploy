@@ -144,6 +144,9 @@ $all            =  (cli_argument('--all')            or cli_argument('-a'));
 $ignore         =  (cli_argument('--ignore-changes') or cli_argument('-i'));
 $nocacheclear   =   cli_argument('--no-cache-clear');
 $notranslate    =   cli_argument('--no-translate');
+$ignore_php     =   cli_argument('--ignore-php');
+$ignore_html    =   cli_argument('--ignore-html');
+
 $update_content =   cli_argument('--update-content');
 $update_sitemap =   cli_argument('--update-sitemap');
 
@@ -165,7 +168,7 @@ $nobomcheck     =   cli_argument('--no-bom-check');
 $tilde          = '~'.date('Ymd-His');
 $targets        =   cli_arguments();
 
-
+cli_no_arguments_left();
 
 if(!$message and !$notag){
     throw new bException(tr('No tag message specified! please use ./scripts/base/deploy ..... message "commit message"'), 'not-specified');
@@ -505,15 +508,18 @@ if($notranslate){
     cli_log(tr('Executing translations'), 'white');
 
     if($_CONFIG['language']['supported']){
-        foreach($_CONFIG['language']['supported'] as $code => $language){
-            cli_log(tr('Deleting translations ":language"', array(':language' => $language)), 'white');
-            script_exec('base/translate', array('clear'));
+        $options[] = 'translate';
 
-            cli_log(tr('Translating to ":language"', array(':language' => $language)), 'white');
-            script_exec('base/translate', array('translate', '--languages', $code));
-
-            init_hook('deploy_post_translation', $nohooks, array('languages' => $_CONFIG['language']['supported']));
+        if($ignore_php){
+            $options[] = '--ignore-php';
         }
+
+        if($ignore_html){
+            $options[] = '--ignore-html';
+        }
+
+        script_exec('base/translate', $options);
+        init_hook('deploy_post_translation', $nohooks, array('languages' => $_CONFIG['language']['supported']));
     }
 }
 

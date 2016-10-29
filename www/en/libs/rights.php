@@ -100,14 +100,14 @@ function rights_give($users, $rights){
                             $p->execute($execute);
 
                         }catch(Exception $e){
-                            load_libs('pdo_error');
-                            pdo_error($e, $p->queryString, isset_get($execute));
+                            load_libs('sql_error');
+                            sql_error($e, $p->queryString, isset_get($execute));
                         }
                     }
 
                 }catch(Exception $e){
-                    load_libs('pdo_error');
-                    pdo_error($e, $r->queryString, isset_get($execute));
+                    load_libs('sql_error');
+                    sql_error($e, $r->queryString, isset_get($execute));
                 }
             }
         }
@@ -185,8 +185,8 @@ function rights_take($users, $rights){
                     $p->execute($execute);
 
                 }catch(Exception $e){
-                    load_libs('pdo_error');
-                    pdo_error($e, $p->queryString, isset_get($execute));
+                    load_libs('sql_error');
+                    sql_error($e, $p->queryString, isset_get($execute));
                 }
             }
         }

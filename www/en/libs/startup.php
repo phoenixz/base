@@ -96,7 +96,7 @@ try{
      * Load basic required libraries
      */
     $path      = dirname(__FILE__).'/';
-    $libraries = array('system', 'mb', 'strings', 'array', 'pdo');
+    $libraries = array('system', 'mb', 'strings', 'array', 'sql');
 
     foreach($libraries as $library){
         include_once($path.$library.'.php');

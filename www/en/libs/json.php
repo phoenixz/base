@@ -233,25 +233,25 @@ function json_decode_custom($json, $as_array = true){
                 break;
 
             case JSON_ERROR_DEPTH:
-                throw new bException('json_decode_custom(): Maximum stack depth exceeded');
+                throw new bException('json_decode_custom(): Maximum stack depth exceeded', 'invalid');
 
             case JSON_ERROR_STATE_MISMATCH:
-                throw new bException('json_decode_custom(): Underflow or the modes mismatch');
+                throw new bException('json_decode_custom(): Underflow or the modes mismatch', 'invalid');
 
             case JSON_ERROR_CTRL_CHAR:
-                throw new bException('json_decode_custom(): Unexpected control character found');
+                throw new bException('json_decode_custom(): Unexpected control character found', 'invalid');
 
             case JSON_ERROR_SYNTAX:
-                throw new bException('json_decode_custom(): Syntax error, malformed JSON');
+                throw new bException('json_decode_custom(): Syntax error, malformed JSON', 'invalid');
 
             case JSON_ERROR_UTF8:
                 /*
                  * Only PHP 5.3+
                  */
-                throw new bException('json_decode_custom(): Malformed UTF-8 characters, possibly incorrectly encoded');
+                throw new bException('json_decode_custom(): Malformed UTF-8 characters, possibly incorrectly encoded', 'invalid');
 
             default:
-                throw new bException('json_decode_custom(): Unknown JSON error occured');
+                throw new bException('json_decode_custom(): Unknown JSON error occured', 'error');
         }
 
         return $retval;

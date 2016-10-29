@@ -47,6 +47,7 @@ function encrypt($data, $key) {
 function decrypt($data, $key){
     try{
         load_libs('json');
+
         $encrypted_data = base64_decode($data);
         $td             = mcrypt_module_open('tripledes', '', 'ecb', '');
         $iv             = mcrypt_create_iv (mcrypt_enc_get_iv_size($td), MCRYPT_RAND);
@@ -54,6 +55,7 @@ function decrypt($data, $key){
         mcrypt_generic_init($td, mb_substr($key, 0, mcrypt_enc_get_key_size($td)), $iv);
 
         $data = mdecrypt_generic($td, $encrypted_data);
+        $data = trim($data);
         $data = json_decode_custom($data);
 
         return $data;

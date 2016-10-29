@@ -48,8 +48,8 @@
 
     }else{
         try{
-            load_libs('pdo_error');
-            return pdo_error($e, '', $connector, isset_get($pdo));
+            load_libs('sql_error');
+            return sql_error($e, '', $connector, isset_get($pdo));
 
         }catch(Exception $e){
             throw new bException('sql_connect(): Failed', $e);

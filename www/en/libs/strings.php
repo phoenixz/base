@@ -304,6 +304,7 @@ function str_clean($source, $replace = '-'){
 /*
  * Return a clean string, basically leaving only printable latin1 characters,
  */
+// :DELETE: This is never used, where would it be used?
 function str_escape_for_jquery($source, $replace = ''){
     return preg_replace('/[#;&,.+*~\':"!^$[\]()=>|\/]/gu', '\\\\$&', $source);
 }
@@ -446,6 +447,7 @@ function str_cut($source, $start, $stop){
 /*
  * Return a safe size string for displaying
  */
+// :DELETE: Isn't this str_log()?
 function str_safe($source, $maxsize = 50){
     load_libs('json');
     return str_truncate(json_encode_custom($source), $maxsize);
@@ -495,12 +497,7 @@ function str_log($source, $truncate = 2047, $separator = ', '){
             }
         }
 
-// :DELETE: str_log() should not modify data specially for HTML display, only should be a valid string, not too large, etc
-        //if(PLATFORM == 'http'){
-        //    return htmlentities(str_replace('  ', ' ', str_replace("\n", ' ', str_truncate($source, $truncate, ' ... ', 'center'))), ENT_DISALLOWED | ENT_SUBSTITUTE | ENT_NOQUOTES | ENT_HTML5, 'UTF-8', false);
-        //}
-
-        return str_replace('  ', ' ', str_replace("\n", ' ', str_truncate($source, $truncate, ' ... ', 'center')));
+        return preg_replace('/[\x00-\x1F\x80-\xFF]/', '', str_replace('  ', ' ', str_replace("\n", ' ', str_truncate($source, $truncate, ' ... ', 'center'))));
 
     }catch(Exception $e){
         throw new bException('str_log(): Failed', $e);
@@ -578,6 +575,7 @@ function str_interleave($source, $interleave, $end = 0, $chunksize = 1){
 /*
  * Convert weird chars to their standard ASCII variant
  */
+// :TODO: Isnt this the same as str_fix_spanish_chars() ??
 function str_convert_accents($source) {
     $from = explode(',', "ç,æ,œ,á,é,í,ó,ú,à,è,ì,ò,ù,ä,ë,ï,ö,ü,ÿ,â,ê,î,ô,û,å,e,i,ø,u,Ú,ñ,Ñ,º");
     $to   = explode(',', "c,ae,oe,a,e,i,o,u,a,e,i,o,u,a,e,i,o,u,y,a,e,i,o,u,a,e,i,o,u,U,n,n,o");

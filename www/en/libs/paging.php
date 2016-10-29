@@ -1,8 +1,9 @@
 <?php
 /*
- * Empty library
+ * Paging library
  *
- * This is an empty template library file
+ * This library contains functions to generate HTML paging snippets
+ * The only really necesary functions are paging_data() and paging_generate()
  *
  * @license http://opensource.org/licenses/GPL-2.0 GNU Public License, Version 2
  * @copyright Sven Oostenbrink <support@ingiga.com>
@@ -173,81 +174,6 @@ function paging_generate($params){
         $html = str_replace('%list%', $list, $html);
 
         return $html.'<input type="hidden" name="page" id="page" value="'.$params['current'].'">';
-
-// :DELETE: This is the old paging code, which was crap and no longer supported. Delete ASAP
-        //if($GLOBALS['page_is_mobile']){
-        //    $pages_ba = 0;
-        //
-        //}else{
-        //    $pages_ba = 3;
-        //}
-        //
-        //$prev_page  = $current_page - 1;
-        //$next_page  = $current_page + 1;
-        //$first_page = 0;
-        //$last_page  = $total_pages;
-        //
-        //$html= '<div class="hPaging">
-        //        <div class="Paging">';
-        //
-        ////Previous Page
-        //if($prev_page >= 0) {
-        //    $html .= '<a class="PagingPrev" href="'.eval('return '.str_replace('###PAGE###', $prev_page, $url_function)).'">'.tr('Previous').'</a>';
-        //}
-        //
-        ////Next page
-        //if($next_page < $total_pages) {
-        //    $html .= '<a class="PagingNext" href="'.eval('return '.str_replace('###PAGE###', $next_page, $url_function)).'">'.tr('Next').'</a>';
-        //}
-        //
-        //$html .= '<p class="PagingContent">';
-        //
-        ////first page
-        //if($current_page > 3) {
-        //    $html .= '<a href="'.eval('return '.str_replace('###PAGE###', 0, $url_function)).'">1</a>
-        //              <span>...</span>';
-        //}
-        //
-        ////3 pages before this one
-        //$a = 0;
-        //while($a < $pages_ba) {
-        //    $a++;
-        //
-        //    $page = $current_page - 4 + $a;
-        //
-        //    if($page >= 0) {
-        //        $html .= '<a href="'.eval('return '.str_replace('###PAGE###', $page, $url_function)).'">'.($page + 1).'</a>';
-        //    }
-        //}
-        //
-        ////current page
-        //$html .= '<span>'.cfi($current_page + 1).'</span>';
-        //
-        ////3 pages after this one
-        //$a = 0;
-        //while($a < $pages_ba) {
-        //    $a++;
-        //
-        //    $page = $current_page + $a;
-        //
-        //    if($page<$total_pages) {
-        //        $html .= '<a href="'.eval('return '.str_replace('###PAGE###', $page, $url_function)).'">'.($page + 1).'</a>';
-        //    }
-        //}
-        //
-        ////Last page if its not already covered by next or 3 pages after (Not on mobile)
-        //if(!$GLOBALS['page_is_mobile']){
-        //    if(($total_pages > $page) and ($total_pages != $next_page)) {
-        //        $html .= '<span>...</span>
-        //                  <a href="'.eval('return '.str_replace('###PAGE###', $total_pages, $url_function)).'">'.($total_pages + 1).'</a>';
-        //    }
-        //}
-        //
-        //$html .= '</p>
-        //        </div>
-        //    </div>';
-        //
-        //return $html;
 
     }catch(Exception $e){
         throw new bException('paging_generate(): Failed', $e);
