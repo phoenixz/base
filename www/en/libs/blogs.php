@@ -978,7 +978,7 @@ function blogs_validate_category($category, $blog){
 
 
         if($category['assigned_to']){
-            if(!$category['assigned_to_id'] = sql_get(' SELECT `id` FROM `users` WHERE `username` = :username OR `email` = :email', 'id', array(':username' => $category['assigned_to'], ':email' => $category['assigned_to']))){
+            if(!$category['assigned_to_id'] = sql_get('SELECT `id` FROM `users` WHERE `username` = :username OR `email` = :email', 'id', array(':username' => $category['assigned_to'], ':email' => $category['assigned_to']))){
                 $v->setError(tr('The specified user ":user" does not exist', array(':user' => $category['assigned_to'])));
             }
 
@@ -1007,16 +1007,19 @@ function blogs_validate_category($category, $blog){
 function blogs_validate_post($post, $params = null){
     try{
         array_params($params);
-        array_default($params, 'force_id'       , false);
-        array_default($params, 'use_id'         , false);
-        array_default($params, 'namemax'        , 64);
-        array_default($params, 'bodymin'        , 100);
-        array_default($params, 'label_keywords' , true);
-        array_default($params, 'label_category1', false);
-        array_default($params, 'label_category2', false);
-        array_default($params, 'label_category3', false);
-        array_default($params, 'status_default' , 'unpublished');
-        array_default($params, 'object_name'    , 'blog posts');
+        array_default($params, 'force_id'         , false);
+        array_default($params, 'use_id'           , false);
+        array_default($params, 'namemax'          , 64);
+        array_default($params, 'bodymin'          , 100);
+        array_default($params, 'label_keywords'   , true);
+        array_default($params, 'label_category1'  , false);
+        array_default($params, 'label_category2'  , false);
+        array_default($params, 'label_category3'  , false);
+        array_default($params, 'status_default'   , 'unpublished');
+        array_default($params, 'object_name'      , 'blog posts');
+// :TODO: Make this configurable from `blogs` configuration table
+        array_default($params, 'filter_html'      , '<p><a><br><span><small><strong><img>');
+        array_default($params, 'filter_attributes', true);
 
         load_libs('seo,validate');
 
@@ -1261,6 +1264,17 @@ function blogs_validate_post($post, $params = null){
         }
 
         $post['body'] = str_replace('&nbsp;', ' ', $post['body']);
+
+        if($params['filter_html']){
+            /*
+             * Filter all HTML, allowing only the specified tags in filter_html
+             */
+            $post['body'] = strip_tags($post['body'], $params['filter_html']);
+        }
+
+        if($params['filter_attributes']){
+            $post['body'] = preg_replace('/<([a-z][a-z0-9]*)[^>]*?(\/?)>/imus','<$1$2>', $post['body']);
+        }
 
         return $post;
 
@@ -1748,7 +1762,7 @@ function blogs_validate_parent($blog_post_seoname, $blogs_id){
  * Generate and return a URL for the specified blog post,
  * based on blog url configuration
  */
-function blogs_post_url($post, $current_domain = true){
+function blogs_post_url($post){
     global $_CONFIG;
 
     try{
@@ -1812,9 +1826,13 @@ function blogs_post_url($post, $current_domain = true){
             $url = str_replace('%'.$section.'%', isset_get($post[$section]), $url);
         }
 
-        if($current_domain){
-            load_libs('http');
-            return current_domain($url, null, '');
+        $url = trim($url);
+
+        if(preg_match('/$https?:\/\//', $url)){
+            /*
+             * This is an absolute URL, return it as-is
+             */
+            return $url;
         }
 
         return domain($url, null, '');
