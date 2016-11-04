@@ -113,15 +113,35 @@ function editors_tinymce($params){
 function editors_summernote($params = null){
     try{
         array_params($params, 'name');
-        array_default($params, 'name' , 'editor');
-        array_default($params, 'class', 'summernote editor');
-        array_default($params, 'extra', '');
-        array_default($params, 'value', '');
+        array_default($params, 'name'  , 'editor');
+        array_default($params, 'class' , 'summernote editor');
+        array_default($params, 'extra' , '');
+        array_default($params, 'value' , '');
+        array_default($params, 'height', 500);
+        array_default($params, 'focus' , false);
 
         html_load_js('plugins/summernote/summernote');
 
+        if($params['height']){
+           $options['height'] = $params['height'];
+        }
+
+        if($params['focus']){
+           $options['focus'] = $params['focus'];
+        }
+
+        /*
+         * Build JS options array
+         */
+        if(!empty($options)){
+            $options = json_encode($options);
+
+        }else{
+            $options = '';
+        }
+
         $html = '<textarea class="summernote" name="'.$params['name'].'" id="'.$params['name'].'" class="'.$params['class'].'"'.($params['extra'] ? ' '.$params['extra'] : '').'>'.$params['value'].'</textarea>'.
-                html_script('$(".summernote").summernote();');
+                html_script('$(".summernote").summernote('.$options.');');
 
         return $html;
 
