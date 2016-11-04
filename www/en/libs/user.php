@@ -45,10 +45,10 @@ function user_avatar($avatar, $type) {
 
     try{
         if(empty($avatar)) {
-            return $_CONFIG['avatars']['default'].'_'.$type.'.jpg';
+            return $_CONFIG['avatars']['default'].'-'.$type.'.jpg';
         }
 
-        return $avatar.'_'.$type.'.jpg';
+        return $avatar.'-'.$type.'.jpg';
 
     }catch(Exception $e){
         throw new bException('user_avatar(): Failed', $e);
