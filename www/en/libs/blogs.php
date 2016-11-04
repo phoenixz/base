@@ -1006,6 +1006,7 @@ function blogs_validate_category($category, $blog){
  */
 function blogs_validate_post($post, $params = null){
     try{
+
         array_params($params);
         array_default($params, 'force_id'         , false);
         array_default($params, 'use_id'           , false);
@@ -1019,7 +1020,8 @@ function blogs_validate_post($post, $params = null){
         array_default($params, 'object_name'      , 'blog posts');
 // :TODO: Make this configurable from `blogs` configuration table
         array_default($params, 'filter_html'      , '<p><a><br><span><small><strong><img>');
-        array_default($params, 'filter_attributes', true);
+        array_default($params, 'filter_attributes', '(?:class=".*?"|style=".*?")');  // Filter only class and style attributes
+        //array_default($params, 'filter_attributes', '[^>]'); // Filter all attributes
 
         load_libs('seo,validate');
 
@@ -1273,7 +1275,7 @@ function blogs_validate_post($post, $params = null){
         }
 
         if($params['filter_attributes']){
-            $post['body'] = preg_replace('/<([a-z][a-z0-9]*)[^>]*?(\/?)>/imus','<$1$2>', $post['body']);
+            $post['body'] = preg_replace('/<([a-z][a-z0-9]*)(?:'.$params['filter_attributes'].')*?(\/?)>/imus','<$1$2>', $post['body']);
         }
 
         return $post;
