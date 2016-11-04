@@ -532,7 +532,7 @@ function blogs_categories_select($params) {
             if($params['parent']){
                 $join .= ' JOIN `blogs_categories` AS parents
                            ON   `parents`.`seoname` = :parent
-                           AND  `parents`.`id`      = `blogs_categories`.`parents_id`';
+                           AND  `parents`.`id`      = `blogs_categories`.`parents_id` ';
 
                 $execute[':parent'] = $params['parent'];
 
