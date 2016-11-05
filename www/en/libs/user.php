@@ -809,12 +809,12 @@ function user_get($user = null){
                                ON        `modifiedby`.`id` = `users`.`modifiedby`
 
                                WHERE     `users`.`createdby` = :createdby
-                               AND       `users`.`status`    = "new"',
+                               AND       `users`.`status`    = "_new"',
 
                                array(':createdby' => $_SESSION['user']['id']));
 
             if(!$retval){
-                $id = user_signup(array('status' => 'new'));
+                $id = user_signup(array('status' => '_new'));
                 return user_get(null);
             }
         }
