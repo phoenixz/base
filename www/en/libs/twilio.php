@@ -15,26 +15,6 @@ load_config('twilio');
 
 
 /*
- * Configuration tests only to be ran in debug mode
- */
-if(debug()){
-    try{
-        foreach($_CONFIG['twilio']['accounts'] as $account => $data){
-            foreach($data['sources'] as $phone => $name){
-                if(!is_numeric($phone)){
-                    throw new bException(tr('twilio(): Specified phone number ":phone" from account ":account" is invalid. It should contain no formatting and no spaces and only numbers', array(':account' => str_log($account), ':phone' => str_log($phone))), 'invalid');
-                }
-            }
-        }
-
-    }catch(Exception $e){
-        throw new bException('twilio(): Library init failed, please check your twilio configuration', $e);
-    }
-}
-
-
-
-/*
  * Install twilio using PEAR
  */
 function twilio_install(){
@@ -81,15 +61,32 @@ function twilio_load($account = null, $auto_install = true){
     global $_CONFIG;
 
     try{
+
+        $account = sql_get('SELECT `twilio_numbers`.`id`,
+                                   `twilio_numbers`.`number`,
+                                   `twilio_numbers`.`accounts_id`,
+
+                                   `twilio_accounts`.`email`
+
+                            FROM   `twilio_numbers`
+
+                            RIGHT JOIN `twilio_accounts`
+
+                            ON `twilio_numbers`.`accounts_id` = `twilio_accounts`.`id`');
+
         if(!$account){
             /*
              * Use the first account as the default account
              */
-            reset($_CONFIG['twilio']['accounts']);
-            $account = key($_CONFIG['twilio']['accounts']);
+            //::::::IMPLEMENT TWILIO IN DATABASE
+            //reset($_CONFIG['twilio']['accounts']);
+            //$account = key($_CONFIG['twilio']['accounts']);
+
+            reset($account['accounts_id']);
+            $account = key($account['accounts_id']);
 
         }elseif(is_numeric($account)){
-            foreach($_CONFIG['twilio']['accounts'] as $account_email => $data){
+            foreach($account['email'] as $account_email => $data){
                 if(!empty($data['sources'][$account])){
                     $account = $account_email;
                 }
@@ -152,9 +149,19 @@ function twilio_name_phones($phones, $non_numeric = null){
                 }
 
             }else{
-                foreach($_CONFIG['twilio']['accounts'] as $account => $data){
+                 $accounts = sql_get('SELECT `twilio_numbers`.`id`,
+                                             `twilio_numbers`.`number`,
+                                             `twilio_numbers`.`accounts_id`
+
+                                      FROM   `twilio_numbers`
+
+                                      WHERE  `numbers` = :numbers',
+
+                                      array(':numbers' => $phones));
+
+                foreach($accounts as $account => $data){
                     if(isset($data['sources'][$phone])){
-                        $phone = $_CONFIG['twilio']['accounts'][$account]['sources'][$phone];
+                        $phone = $account['number'];
                         break;
                     }
                 }
@@ -179,8 +186,17 @@ function twilio_verify_source_phone($phone){
     try{
         load_libs('sms');
         $phone = sms_full_phones($phone);
+        $accounts = sql_get('SELECT `twilio_numbers`.`id`,
+                                    `twilio_numbers`.`number`,
+                                    `twilio_numbers`.`accounts_id`
 
-        foreach($_CONFIG['twilio']['accounts'] as $account => $data){
+                             FROM   `twilio_numbers`
+
+                             WHERE  `numbers` = :numbers',
+
+                             array(':numbers' => $phone));
+
+        foreach($accounts as $account => $data){
             if(isset($data['sources'][$phone])){
                 return $phone;
             }
@@ -203,7 +219,17 @@ function twilio_send_message($message, $to, $from = null){
     static $twilio;
 
     try{
-        foreach($_CONFIG['twilio']['accounts'] as $account => $data){
+        $accounts = sql_get('SELECT `twilio_numbers`.`id`,
+                                    `twilio_numbers`.`number`,
+                                    `twilio_numbers`.`accounts_id`
+
+                            FROM    `twilio_numbers`
+
+                            WHERE   `numbers` = :numbers',
+
+                            array(':numbers' => $phones));
+
+        foreach($accounts as $account => $data){
             if(!empty($data['sources'][$from])){
                 if(empty($twilio)){
                     $twilio = twilio_load($account);
