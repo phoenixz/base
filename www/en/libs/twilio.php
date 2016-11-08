@@ -57,49 +57,10 @@ function twilio_install(){
 /*
  * Load twilio base library
  */
-function twilio_load($account = null, $auto_install = true){
+function twilio_load($auto_install = true){
     global $_CONFIG;
 
     try{
-
-        $account = sql_get('SELECT `twilio_numbers`.`id`,
-                                   `twilio_numbers`.`number`,
-                                   `twilio_numbers`.`accounts_id`,
-
-                                   `twilio_accounts`.`email`
-
-                            FROM   `twilio_numbers`
-
-                            RIGHT JOIN `twilio_accounts`
-
-                            ON `twilio_numbers`.`accounts_id` = `twilio_accounts`.`id`');
-
-        if(!$account){
-            /*
-             * Use the first account as the default account
-             */
-            //::::::IMPLEMENT TWILIO IN DATABASE
-            //reset($_CONFIG['twilio']['accounts']);
-            //$account = key($_CONFIG['twilio']['accounts']);
-
-            reset($account['accounts_id']);
-            $account = key($account['accounts_id']);
-
-        }elseif(is_numeric($account)){
-            foreach($account['email'] as $account_email => $data){
-                if(!empty($data['sources'][$account])){
-                    $account = $account_email;
-                }
-            }
-
-            if(is_numeric($account)){
-                /*
-                 * Specified number is not found in any account
-                 */
-                throw new bException(tr('twilio_load(): Specified phone number ":number" was not found in any Twilio account', array(':number' => str_log($account))), 'not-exist');
-            }
-        }
-
         $file = ROOT.'libs/external/twilio/Services/Twilio.php';
 
         if(!file_exists($file)){
@@ -118,10 +79,6 @@ function twilio_load($account = null, $auto_install = true){
 
         include($file);
 
-        if(empty($_CONFIG['twilio']['accounts'][$account])){
-            throw new bException(tr('twilio_load(): Specified Twilio account ":account" does not exist', array(':account' => str_log($account))), 'not-exist');
-        }
-
         return new Services_Twilio($_CONFIG['twilio']['accounts'][$account]['accounts_id'], $_CONFIG['twilio']['accounts'][$account]['accounts_token']);
 
     }catch(Exception $e){
@@ -139,6 +96,7 @@ function twilio_name_phones($phones, $non_numeric = null){
 
     try{
         load_libs('sms');
+
         $phones = sms_full_phones($phones);
         $phones = array_force($phones);
 
@@ -149,22 +107,7 @@ function twilio_name_phones($phones, $non_numeric = null){
                 }
 
             }else{
-                 $accounts = sql_get('SELECT `twilio_numbers`.`id`,
-                                             `twilio_numbers`.`number`,
-                                             `twilio_numbers`.`accounts_id`
-
-                                      FROM   `twilio_numbers`
-
-                                      WHERE  `numbers` = :numbers',
-
-                                      array(':numbers' => $phones));
-
-                foreach($accounts as $account => $data){
-                    if(isset($data['sources'][$phone])){
-                        $phone = $account['number'];
-                        break;
-                    }
-                }
+                $phone = sql_get('SELECT `name` FROM `twilio_numbers` WHERE `number` = :number', 'name', array(':number' => $phone));
             }
         }
 
@@ -185,24 +128,9 @@ function twilio_verify_source_phone($phone){
 
     try{
         load_libs('sms');
+
         $phone = sms_full_phones($phone);
-        $accounts = sql_get('SELECT `twilio_numbers`.`id`,
-                                    `twilio_numbers`.`number`,
-                                    `twilio_numbers`.`accounts_id`
-
-                             FROM   `twilio_numbers`
-
-                             WHERE  `numbers` = :numbers',
-
-                             array(':numbers' => $phone));
-
-        foreach($accounts as $account => $data){
-            if(isset($data['sources'][$phone])){
-                return $phone;
-            }
-        }
-
-        return null;
+        return sql_get('SELECT `number` FROM `twilio_numbers` WHERE `number` = :number', 'number', array(':number' => $phone));
 
     }catch(Exception $e){
         throw new bException('twilio_verify_source_phone(): Failed', $e);
@@ -219,25 +147,13 @@ function twilio_send_message($message, $to, $from = null){
     static $twilio;
 
     try{
-        $accounts = sql_get('SELECT `twilio_numbers`.`id`,
-                                    `twilio_numbers`.`number`,
-                                    `twilio_numbers`.`accounts_id`
-
-                            FROM    `twilio_numbers`
-
-                            WHERE   `numbers` = :numbers',
-
-                            array(':numbers' => $phones));
-
-        foreach($accounts as $account => $data){
-            if(!empty($data['sources'][$from])){
-                if(empty($twilio)){
-                    $twilio = twilio_load($account);
-                }
-            }
+        if(empty($twilio)){
+            $twilio = twilio_load();
         }
 
-        if(!$twilio){
+        $source = sql_get('SELECT `number` FROM `twilio_numbers` WHERE `number` = :number', 'number', array(':number' => $from));
+
+        if(!$source){
             throw new bException(tr('twilio_send_message(): Specified source phone ":from" is not known', array(':from' => $from)), 'unknown');
         }
 
@@ -253,13 +169,13 @@ function twilio_send_message($message, $to, $from = null){
                 throw new bException(tr('twilio_send_message(): No media specified'), 'not-specified');
             }
 
-            return $twilio->account->messages->sendMessage($from, $to, $message['message'], $message['media']);
+            return $twilio->account->messages->sendMessage($source, $to, $message['message'], $message['media']);
         }
 
         /*
          * Send a normal SMS message
          */
-        return $twilio->account->messages->sendMessage($from, $to, $message);
+        return $twilio->account->messages->sendMessage($source, $to, $message);
 
     }catch(Exception $e){
         throw new bException(tr('twilio_send_message(): Failed'), $e);
