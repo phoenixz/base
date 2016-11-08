@@ -511,7 +511,7 @@ function user_signup($params){
     global $_CONFIG;
 
     try{
-        if(empty($params['password']) and (isset_get($params['status']) !== 'new')){
+        if(empty($params['password']) and (isset_get($params['status']) !== '_new')){
             throw new bException(tr('user_signup(): Please specify a password'), 'not-specified');
         }
 
@@ -522,7 +522,7 @@ function user_signup($params){
                          ':username'  => get_null(isset_get($params['username'])),
                          ':status'    => isset_get($params['status']),
                          ':name'      => isset_get($params['name']),
-                         ':password'  => ((isset_get($params['status']) === 'new') ? '' : get_hash($params['password'], $_CONFIG['security']['passwords']['hash'])),
+                         ':password'  => ((isset_get($params['status']) === '_new') ? '' : get_hash($params['password'], $_CONFIG['security']['passwords']['hash'])),
                          ':email'     => get_null(isset_get($params['email'])),
                          ':role'      => get_null(isset_get($params['role'])),
                          ':roles_id'  => get_null(isset_get($params['roles_id']))));
@@ -809,12 +809,12 @@ function user_get($user = null){
                                ON        `modifiedby`.`id` = `users`.`modifiedby`
 
                                WHERE     `users`.`createdby` = :createdby
-                               AND       `users`.`status`    = "new"',
+                               AND       `users`.`status`    = "_new"',
 
                                array(':createdby' => $_SESSION['user']['id']));
 
             if(!$retval){
-                $id = user_signup(array('status' => 'new'));
+                $id = user_signup(array('status' => '_new'));
                 return user_get(null);
             }
         }
