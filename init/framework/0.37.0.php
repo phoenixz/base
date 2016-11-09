@@ -8,15 +8,15 @@ sql_query('DROP TABLE IF EXISTS `twilio_accounts`');
 
 
 
-sql_query('CREATE TABLE `twilio_accounts` (`id`             INT(11)      NOT NULL AUTO_INCREMENT PRIMARY KEY,
-                                           `createdon`      TIMESTAMP    NOT NULL DEFAULT CURRENT_TIMESTAMP,
-                                           `createdby`      INT(11)          NULL,
-                                           `modifiedon`     DATETIME         NULL,
-                                           `modifiedby`     INT(11)          NULL,
-                                           `status`         VARCHAR(16)      NULL,
-                                           `email`          VARCHAR(128)     NULL,
-                                           `account_id`     VARCHAR(40)      NULL,
-                                           `account_tokens` VARCHAR(40)      NULL,
+sql_query('CREATE TABLE `twilio_accounts` (`id`              INT(11)      NOT NULL AUTO_INCREMENT PRIMARY KEY,
+                                           `createdon`       TIMESTAMP    NOT NULL DEFAULT CURRENT_TIMESTAMP,
+                                           `createdby`       INT(11)          NULL,
+                                           `modifiedon`      DATETIME         NULL,
+                                           `modifiedby`      INT(11)          NULL,
+                                           `status`          VARCHAR(16)      NULL,
+                                           `email`           VARCHAR(128)     NULL,
+                                           `accounts_id`     VARCHAR(40)      NULL,
+                                           `accounts_tokens` VARCHAR(40)      NULL,
 
                                            INDEX (`createdon`),
                                            INDEX (`createdby`),
@@ -24,7 +24,7 @@ sql_query('CREATE TABLE `twilio_accounts` (`id`             INT(11)      NOT NUL
                                            INDEX (`modifiedby`),
                                            INDEX (`status`),
                                            INDEX (`email`),
-                                           INDEX (`account_id`),
+                                           INDEX (`accounts_id`),
 
                                            CONSTRAINT `fk_twilio_accounts_createdby`  FOREIGN KEY (`createdby`)  REFERENCES `users` (`id`) ON DELETE RESTRICT,
                                            CONSTRAINT `fk_twilio_accounts_modifiedby` FOREIGN KEY (`modifiedby`) REFERENCES `users` (`id`) ON DELETE RESTRICT
