@@ -243,6 +243,40 @@ function url_add_query($url, $query){
 
 
 /*
+ * Add specified query to the specified URL and return
+ */
+function url_remove_keys($url, $keys){
+    try{
+        $query = str_from($url , '?');
+        $url   = str_until($url, '?');
+        $query = explode('&', $query);
+
+        foreach($query as $id => $kv){
+            foreach(array_force($keys) as $key){
+                if(str_until($kv, '=') == $key){
+                    unset($query[$id]);
+
+                    /*
+                     * Don't break in case the specified key exists twice in the URL (might happen somehow)
+                     */
+                }
+            }
+        }
+
+        if($query){
+            return $url.'?'.implode('&', $query);
+        }
+
+        return $url;
+
+    }catch(Exception $e){
+        throw new bException('url_remove_keys(): Failed', $e);
+    }
+}
+
+
+
+/*
  * Return information about a domain
  *
  * See http://en.wikipedia.org/wiki/List_of_DNS_record_types for more information
