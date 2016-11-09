@@ -77,55 +77,52 @@ function twilio_install(){
 /*
  * Load twilio base library
  */
-function twilio_load($account = null, $auto_install = true){
+function twilio_load($phone, $auto_install = true){
     global $_CONFIG;
 
     try{
-        if(!$account){
-            /*
-             * Use the first account as the default account
-             */
-            reset($_CONFIG['twilio']['accounts']);
-            $account = key($_CONFIG['twilio']['accounts']);
-
-        }elseif(is_numeric($account)){
-            foreach($_CONFIG['twilio']['accounts'] as $account_email => $data){
-                if(!empty($data['sources'][$account])){
-                    $account = $account_email;
-                }
-            }
-
-            if(is_numeric($account)){
-                /*
-                 * Specified number is not found in any account
-                 */
-                throw new bException(tr('twilio_load(): Specified phone number ":number" was not found in any Twilio account', array(':number' => str_log($account))), 'not-exist');
-            }
-        }
-
+        /*
+         * Load Twilio library
+         * If Twilio isnt available, then try auto install
+         */
         $file = ROOT.'libs/external/twilio/Services/Twilio.php';
 
         if(!file_exists($file)){
             log_console('twilio_load(): Twilio API library not found', 'notinstalled');
 
             if(!$auto_install){
-                throw new bException(tr('twilio_load(): Twilio API library file ":file" was not found', array(':file' => str_log($file))), 'notinstalled');
+                throw new bException(tr('twilio_load(): Twilio API library file ":file" was not found', array(':file' => $file)), 'notinstalled');
             }
 
             twilio_install();
 
             if(!file_exists($file)){
-                throw new bException(tr('twilio_load(): Twilio API library file ":file" was not found, and auto install seems to have failed', array(':file' => str_log($file))), 'notinstalled');
+                throw new bException(tr('twilio_load(): Twilio API library file ":file" was not found, and auto install seems to have failed', array(':file' => $file)), 'notinstalled');
             }
         }
 
         include($file);
 
-        if(empty($_CONFIG['twilio']['accounts'][$account])){
-            throw new bException(tr('twilio_load(): Specified Twilio account ":account" does not exist', array(':account' => str_log($account))), 'not-exist');
+        /*
+         * Get Twilio object with account data for the specified phone number
+         */
+        $account = sql_get('SELECT `twilio_accounts`.`accounts_id`,
+                                   `twilio_accounts`.`accounts_token`
+
+                            FROM   `twilio_numbers`
+
+                            JOIN   `twilio_accounts`
+                            ON     `twilio_accounts`.`id` = `twilio_numbers`.`accounts_id`
+
+                            WHERE  `twilio_numbers`.`number` = :number',
+
+                            array(':number' => $phone));
+
+        if(!$account){
+            throw new bException(tr('twilio_load(): No Twilio account found for phone number ":phone"', array(':phone' => $phone)), 'not-exist');
         }
 
-        return new Services_Twilio($_CONFIG['twilio']['accounts'][$account]['accounts_id'], $_CONFIG['twilio']['accounts'][$account]['accounts_token']);
+        return new Services_Twilio($account['accounts_id'], $account['accounts_token']);
 
     }catch(Exception $e){
         throw new bException('twilio_load(): Failed', $e);
