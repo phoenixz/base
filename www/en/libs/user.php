@@ -131,6 +131,228 @@ function user_find_avatar($user) {
 
 
 /*
+ * Remove the user from the specified groups
+ */
+function user_update_groups($user, $groups, $validate = false){
+    try{
+        if(!$validate){
+            $users_id = $user;
+
+        }else{
+            /*
+             * Validate user
+             */
+            if(!$user){
+                throw new bException(tr('user_add_to_group(): No user specified'), 'not-specified');
+            }
+
+            if(is_numeric($user)){
+                $users_id = sql_get('SELECT `id` FROM `users` WHERE `id` = :id', 'id', array(':id' => $user));
+
+            }else{
+                $users_id = sql_get('SELECT `id` FROM `users` WHERE (`username` = :username OR `email` = :email)', 'id', array(':username' => $user, ':email' => $user));
+
+                if(!$users_id){
+                    throw new bException(tr('user_add_to_group(): Specified user ":user" does not exist', array(':user' => $user)), 'not-exist');
+                }
+            }
+        }
+
+        sql_query('DELETE FROM `users_groups` WHERE `users_id` = :users_id', array(':users_id' => $users_id));
+
+        if($groups){
+            return user_add_to_group($user, $groups, false);
+        }
+
+        return 0;
+
+    }catch(Exception $e){
+        throw new bException('user_update_groups(): Failed', $e);
+    }
+}
+
+
+
+/*
+ * Add the user to the specified groups
+ */
+function user_add_to_group($user, $groups, $validate = true){
+    try{
+        if(!$validate){
+            $users_id = $user;
+
+        }else{
+            /*
+             * Validate user
+             */
+            if(!$user){
+                throw new bException(tr('user_add_to_group(): No user specified'), 'not-specified');
+            }
+
+            if(is_numeric($user)){
+                $users_id = sql_get('SELECT `id` FROM `users` WHERE `id` = :id', 'id', array(':id' => $user));
+
+            }else{
+                $users_id = sql_get('SELECT `id` FROM `users` WHERE (`username` = :username OR `email` = :email)', 'id', array(':username' => $user, ':email' => $user));
+
+                if(!$users_id){
+                    throw new bException(tr('user_add_to_group(): Specified user ":user" does not exist', array(':user' => $user)), 'not-exist');
+                }
+            }
+        }
+
+        /*
+         * Validate group
+         */
+        if(!$groups){
+            throw new bException(tr('user_add_to_group(): No groups specified'), 'not-specified');
+        }
+
+        if(is_numeric($groups)){
+            $groups_id = sql_get('SELECT `id` FROM `groups` WHERE `id` = :id', 'id', array(':id' => $groups));
+
+        }else{
+            if(is_string($groups) and strstr($groups, ',')){
+                /*
+                 * Groups specified as CSV list
+                 */
+                $groups = array_force($groups);
+            }
+
+            /*
+             * Add user to multiple groups?
+             */
+            if(is_array($groups)){
+                $count = 0;
+
+                foreach($groups as $group){
+                    if(!$group) continue;
+
+                    if(user_add_to_group($user, $group, false)){
+                        $count++;
+                    }
+                }
+
+                return $count;
+            }
+
+            $groups_id = sql_get('SELECT `id` FROM `groups` WHERE `seoname` = :seoname', 'id', array(':seoname' => $groups));
+
+            if(!$groups_id){
+                throw new bException(tr('user_add_to_group(): Specified group ":group" does not exist', array(':group' => $groups)), 'not-exist');
+            }
+        }
+
+        /*
+         * User already member of specified group?
+         */
+        $exists = sql_get('SELECT `users_id` FROM `users_groups` WHERE `users_id` = :users_id AND `groups_id` = :groups_id', 'users_id', array(':users_id'  => $users_id, ':groups_id' => $groups_id));
+
+        if($exists){
+            return 0;
+        }
+
+        /*
+         * Add user to the specified group
+         */
+        sql_query('INSERT INTO `users_groups` (`users_id`, `groups_id`)
+                   VALUES                     (:users_id , :groups_id )',
+
+                   array(':users_id'  => $users_id,
+                         ':groups_id' => $groups_id));
+
+        return 1;
+
+    }catch(Exception $e){
+        throw new bException('user_add_to_group(): Failed', $e);
+    }
+}
+
+
+
+/*
+ * Remove the user from the specified groups
+ */
+function user_remove_from_group($user, $groups, $validate = true){
+    try{
+        if(!$validate){
+            $users_id = $user;
+
+        }else{
+            /*
+             * Validate user
+             */
+            if(!$user){
+                throw new bException(tr('user_remove_from_group(): No user specified'), 'not-specified');
+            }
+
+            if(is_numeric($user)){
+                $users_id = sql_get('SELECT `id` FROM `users` WHERE `id` = :id', 'id', array(':id' => $user));
+
+            }else{
+                $users_id = sql_get('SELECT `id` FROM `users` WHERE (`username` = :username OR `email` = :email)', 'id', array(':username' => $user, ':email' => $user));
+
+                if(!$users_id){
+                    throw new bException(tr('user_remove_from_group(): Specified user ":user" does not exist', array(':user' => $user)), 'not-exist');
+                }
+            }
+        }
+
+        /*
+         * Validate group
+         */
+        if(!$groups){
+            throw new bException(tr('user_remove_from_group(): No groups specified'), 'not-specified');
+        }
+
+        if(is_numeric($groups)){
+            $groups_id = sql_get('SELECT `id` FROM `groups` WHERE `id` = :id', 'id', array(':id' => $groups));
+
+        }else{
+            if(is_string($groups) and strstr($groups, ',')){
+                /*
+                 * Groups specified as CSV list
+                 */
+                $groups = array_force($groups);
+            }
+
+            /*
+             * Add user to multiple groups?
+             */
+            if(is_array($groups)){
+                $count = 0;
+
+                foreach($groups as $group){
+                    if(user_remove_from_group($user, $group, false)){
+                        $count++;
+                    }
+                }
+
+                return $count;
+            }
+
+            $groups_id = sql_get('SELECT `id` FROM `groups` WHERE `seoname` = :seoname', 'id', array(':seoname' => $groups));
+
+            if(!$groups_id){
+                throw new bException(tr('user_remove_from_group(): Specified group ":group" does not exist', array(':group' => $groups)), 'not-exist');
+            }
+        }
+
+        /*
+         * Delete user from specified group
+         */
+        $r = sql_query('DELETE FROM `users_groups` WHERE `users_id` = :users_id AND `groups_id` = :groups_id', 'users_id', array(':users_id'  => $users_id, ':groups_id' => $groups_id));
+
+        return $r->rowCount();
+
+    }catch(Exception $e){
+        throw new bException('user_remove_from_group(): Failed', $e);
+    }
+}
+
+
+
+/*
  * `cate the specified user with the specified password
  */
 function user_authenticate($username, $password, $columns = '*') {

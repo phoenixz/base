@@ -130,7 +130,11 @@ function twilio_name_phones($phones, $non_numeric = null){
                 }
 
             }else{
-                $phone = sql_get('SELECT `name` FROM `twilio_numbers` WHERE `number` = :number', 'name', array(':number' => $phone));
+                $label = sql_get('SELECT `name` FROM `twilio_numbers` WHERE `number` = :number', 'name', array(':number' => $phone));
+
+                if($label){
+                    $phone = $label;
+                }
             }
         }
 
