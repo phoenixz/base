@@ -78,30 +78,32 @@ sql_query('CREATE TABLE `twilio_numbers` (`id`          INT(11)      NOT NULL AU
 
                                          ) ENGINE=InnoDB AUTO_INCREMENT='.$_CONFIG['db']['core']['autoincrement'].' DEFAULT CHARSET="'.$_CONFIG['db']['core']['charset'].'" COLLATE="'.$_CONFIG['db']['core']['collate'].'";');
 
-load_config('twilio');
-cli_log(tr('Copying twilio configuration...'), 'white');
+if(!empty($_CONFIG['twilio']['accounts'])){
+    load_config('twilio');
+    cli_log(tr('Copying twilio configuration...'), 'white');
 
-$r_account = sql_prepare('INSERT INTO `twilio_accounts` (`email`, `accounts_id`, `accounts_token`)
-                          VALUES                        (:email , :accounts_id , :accounts_token )');
+    $r_account = sql_prepare('INSERT INTO `twilio_accounts` (`email`, `accounts_id`, `accounts_token`)
+                              VALUES                        (:email , :accounts_id , :accounts_token )');
 
-$r_number = sql_prepare('INSERT INTO `twilio_numbers` (`accounts_id`, `number`, `name`)
-                         VALUES                       (:accounts_id , :number , :name )');
+    $r_number = sql_prepare('INSERT INTO `twilio_numbers` (`accounts_id`, `number`, `name`)
+                             VALUES                       (:accounts_id , :number , :name )');
 
-foreach($_CONFIG['twilio']['accounts'] as $email => $data){
-    cli_dot(1);
-    $r_account->execute(array(':email'          => $email,
-                              ':accounts_id'    => $data['accounts_id'],
-                              ':accounts_token' => $data['accounts_token']));
-
-    $accounts_id = sql_insert_id();
-
-    foreach($data['sources'] as $number => $name){
+    foreach($_CONFIG['twilio']['accounts'] as $email => $data){
         cli_dot(1);
-        $r_number->execute(array(':accounts_id' => $accounts_id,
-                                 ':number'      => $number,
-                                 ':name'        => $name));
-    }
-}
+        $r_account->execute(array(':email'          => $email,
+                                  ':accounts_id'    => $data['accounts_id'],
+                                  ':accounts_token' => $data['accounts_token']));
 
-cli_dot(false);
+        $accounts_id = sql_insert_id();
+
+        foreach($data['sources'] as $number => $name){
+            cli_dot(1);
+            $r_number->execute(array(':accounts_id' => $accounts_id,
+                                     ':number'      => $number,
+                                     ':name'        => $name));
+        }
+    }
+
+    cli_dot(false);
+}
 ?>
