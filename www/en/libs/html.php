@@ -977,7 +977,7 @@ function html_select($params){
         array_default($params, 'multiple'    , false);
 
         if(!$params['name']){
-            throw new bException('html_select(): No name specified');
+            throw new bException(tr('html_select(): No name specified'), 'not-specified');
         }
 
         if($params['autosubmit']){

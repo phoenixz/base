@@ -161,7 +161,9 @@ function seo_string($source, $replace = '-') {
             $last   = preg_replace ( '/[^a-zA-Z0-9]/u', $replace, $source);
 
             //Remove double "replace" chars
-            return preg_replace('/\\'.$replace.'\\'.$replace.'+/', '-', $last);
+            $last   = preg_replace('/\\'.$replace.'\\'.$replace.'+/', '-', $last);
+
+            return trim($last, '-');
 
         }else{
             //clean up string
@@ -178,10 +180,12 @@ function seo_string($source, $replace = '-') {
             $source = preg_replace('/\s\s+/', ' ', $source3);
 
             //Replace anything that is junk
-            $last   = preg_replace ( '/[^a-zA-Z0-9]/', $replace, $source);
+            $last   = preg_replace( '/[^a-zA-Z0-9]/', $replace, $source);
 
             //Remove double "replace" chars
-            return preg_replace('/\\'.$replace.'\\'.$replace.'+/', '-', $last);
+            $last   = preg_replace('/\\'.$replace.'\\'.$replace.'+/', '-', $last);
+
+            return trim($last, '-');
         }
 
     }catch(Exception $e){
