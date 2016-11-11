@@ -24,9 +24,9 @@ sql_query('CREATE TABLE `whitelabel` (`id`          INT(11)      NOT NULL AUTO_I
                                       UNIQUE(`domain`),
                                       UNIQUE(`users_id`),
 
-                                      CONSTRAINT `fk_domains_createdby`  FOREIGN KEY (`createdby`)  REFERENCES `users` (`id`) ON DELETE RESTRICT,
-                                      CONSTRAINT `fk_domains_modifiedby` FOREIGN KEY (`modifiedby`) REFERENCES `users` (`id`) ON DELETE RESTRICT,
-                                      CONSTRAINT `fk_domains_users_id`   FOREIGN KEY (`users_id`)   REFERENCES `users` (`id`) ON DELETE RESTRICT
+                                      CONSTRAINT `fk_whitelabel_createdby`  FOREIGN KEY (`createdby`)  REFERENCES `users` (`id`) ON DELETE RESTRICT,
+                                      CONSTRAINT `fk_whitelabel_modifiedby` FOREIGN KEY (`modifiedby`) REFERENCES `users` (`id`) ON DELETE RESTRICT,
+                                      CONSTRAINT `fk_whitelabel_users_id`   FOREIGN KEY (`users_id`)   REFERENCES `users` (`id`) ON DELETE RESTRICT
 
                                       ) ENGINE=InnoDB AUTO_INCREMENT='.$_CONFIG['db']['core']['autoincrement'].' DEFAULT CHARSET="'.$_CONFIG['db']['core']['charset'].'" COLLATE="'.$_CONFIG['db']['core']['collate'].'";');
 ?>
