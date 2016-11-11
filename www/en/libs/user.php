@@ -1421,9 +1421,9 @@ function user_validate($user, $sections = array()){
             if($v->isRegex($user['domain'], '/[a-z.]/', tr('Please provide a valid domain name')));
 
             /*
-             * Does the domain exist?
+             * Does the domain exist in the whitelabel system?
              */
-            $exist = sql_get('SELECT `domain` FROM `domains` WHERE `domain` = :domain', array(':domain' => $user['domain']));
+            $exist = sql_get('SELECT `domain` FROM `whitelabels` WHERE `domain` = :domain', array(':domain' => $user['domain']));
 
             if(!$exist){
                 $v->setError(tr('The specified domain ":domain" does not exist', array(':domain' => $user['domain'])));
