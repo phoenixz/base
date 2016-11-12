@@ -15,8 +15,8 @@ sql_query('CREATE TABLE `twilio_accounts` (`id`             INT(11)      NOT NUL
                                            `modifiedby`     INT(11)          NULL,
                                            `status`         VARCHAR(16)      NULL,
                                            `email`          VARCHAR(128)     NULL,
-                                           `account_id`     VARCHAR(40)      NULL,
-                                           `account_tokens` VARCHAR(40)      NULL,
+                                           `accounts_id`    VARCHAR(40)      NULL,
+                                           `accounts_token` VARCHAR(40)      NULL,
 
                                            INDEX (`createdon`),
                                            INDEX (`createdby`),
@@ -24,7 +24,7 @@ sql_query('CREATE TABLE `twilio_accounts` (`id`             INT(11)      NOT NUL
                                            INDEX (`modifiedby`),
                                            INDEX (`status`),
                                            INDEX (`email`),
-                                           INDEX (`account_id`),
+                                           INDEX (`accounts_id`),
 
                                            CONSTRAINT `fk_twilio_accounts_createdby`  FOREIGN KEY (`createdby`)  REFERENCES `users` (`id`) ON DELETE RESTRICT,
                                            CONSTRAINT `fk_twilio_accounts_modifiedby` FOREIGN KEY (`modifiedby`) REFERENCES `users` (`id`) ON DELETE RESTRICT
@@ -77,4 +77,33 @@ sql_query('CREATE TABLE `twilio_numbers` (`id`          INT(11)      NOT NULL AU
                                           CONSTRAINT `fk_twilio_numbers_groups_id`   FOREIGN KEY (`groups_id`)   REFERENCES `twilio_groups`   (`id`) ON DELETE RESTRICT
 
                                          ) ENGINE=InnoDB AUTO_INCREMENT='.$_CONFIG['db']['core']['autoincrement'].' DEFAULT CHARSET="'.$_CONFIG['db']['core']['charset'].'" COLLATE="'.$_CONFIG['db']['core']['collate'].'";');
+
+if(!empty($_CONFIG['twilio']['accounts'])){
+    load_config('twilio');
+    cli_log(tr('Copying twilio configuration...'), 'white');
+
+    $r_account = sql_prepare('INSERT INTO `twilio_accounts` (`email`, `accounts_id`, `accounts_token`)
+                              VALUES                        (:email , :accounts_id , :accounts_token )');
+
+    $r_number = sql_prepare('INSERT INTO `twilio_numbers` (`accounts_id`, `number`, `name`)
+                             VALUES                       (:accounts_id , :number , :name )');
+
+    foreach($_CONFIG['twilio']['accounts'] as $email => $data){
+        cli_dot(1);
+        $r_account->execute(array(':email'          => $email,
+                                  ':accounts_id'    => $data['accounts_id'],
+                                  ':accounts_token' => $data['accounts_token']));
+
+        $accounts_id = sql_insert_id();
+
+        foreach($data['sources'] as $number => $name){
+            cli_dot(1);
+            $r_number->execute(array(':accounts_id' => $accounts_id,
+                                     ':number'      => $number,
+                                     ':name'        => $name));
+        }
+    }
+
+    cli_dot(false);
+}
 ?>
