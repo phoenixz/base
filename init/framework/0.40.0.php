@@ -2,7 +2,7 @@
 /*
  * Add whitelabel tables for whitelabel support
  */
-sql_query('DROP TABLE IF EXISTS `whitelabel`;');
+sql_query('DROP TABLE IF EXISTS `whitelabels`;');
 
 sql_query('CREATE TABLE `whitelabels` (`id`          INT(11)      NOT NULL AUTO_INCREMENT PRIMARY KEY,
                                        `createdon`   TIMESTAMP    NOT NULL DEFAULT CURRENT_TIMESTAMP,
