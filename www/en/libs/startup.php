@@ -17,7 +17,7 @@
 /*
  * Framework version
  */
-define('FRAMEWORKCODEVERSION', '0.39.0');
+define('FRAMEWORKCODEVERSION', '0.41.0');
 
 
 
@@ -494,7 +494,7 @@ try{
                                  * If it doesnt match then check if its a registered whitelabel domain
                                  */
                                 if($domain !== $_CONFIG['domain']){
-                                    $domain = sql_get('SELECT `domain` FROM `domains` WHERE `domain` = :domain AND `status` IS NULL', 'domain', array(':domain' => $_SERVER['HTTP_HOST']));
+                                    $domain = sql_get('SELECT `domain` FROM `whitelabels` WHERE `domain` = :domain AND `status` IS NULL', 'domain', array(':domain' => $_SERVER['HTTP_HOST']));
                                 }
                         }
 
