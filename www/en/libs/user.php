@@ -538,7 +538,7 @@ function user_signin($user, $extended = false, $redirect = null, $html_flash = n
         /*
          * Store last login
          */
-        sql_query('UPDATE `users` SET `last_signin` = DATE(NOW()), `signin_count` = `signin_count` + 1 WHERE `id` = :id', array(':id' => cfi($user['id'])));
+        sql_query('UPDATE `users` SET `last_signin` = UTC_TIMESTAMP(), `signin_count` = `signin_count` + 1 WHERE `id` = :id', array(':id' => cfi($user['id'])));
 
         if($extended){
             user_create_extended_session($user['id']);
