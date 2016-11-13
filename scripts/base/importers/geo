@@ -232,7 +232,7 @@ switch(cli_argument(0)){
 
         foreach(array('geonameid', 'parents_id', 'name', 'country', 'admin1', 'admin2', 'moddate', 'latitude', 'longitude') as $column){
             $geosql->query('ALTER TABLE `geonames` ADD INDEX (`geonameid`);');
-            log_console(tr('Applied index for "%column%"', array('%column%', $column)), '', 'green');
+            log_console(tr('Applied index for ":column"', array(':column' => $column)), '', 'green');
         }
 
         ///*
