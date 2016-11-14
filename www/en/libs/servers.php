@@ -122,21 +122,160 @@ function servers_test($hostname, $port, $user){
     }
 }
 
-function servers_execute($hostname, $port, $user){
+
+
+/*
+ * Update a server
+ */
+function servers_update($server){
     try{
-        $file = file_exists('/www/ingiga/toolkit.ingiga.com/data/keys/juan.key');
+        user_or_redirect();
 
-        $result = safe_exec('ssh -Tp '.$port.' '.$user.'@'.$hostname.' echo 1');
+        array_params($server);
+        array_default($server, 'port', 22);
 
-        if(array_shift($result) != '1'){
-            throw new bException(tr('Failed to SSH connect to ":server"', array(':server' => $user.'@'.$hostname.':'.$port)), 'failedconnect');
+        if(empty($server['id'])){
+            throw new bException('servers_update(): Domain has no id specified');
         }
 
+        if(empty($server['ip'])){
+            throw new bException('servers_insert(): Domain has no IP specified');
+        }
+
+        load_libs('validate');
+
+        $v = new validate_form();
+
+        if(empty($server['hostname'])){
+            throw new bException('servers_update(): Domain has no hostname specified');
+        }
+
+        if(sql_get('SELECT `id` FROM `servers` WHERE `ip` :ip AND `port` = :port AND `id` != :id', array(':ip' => $server['ip'], ':port' => $server['port'], ':id' => $server['id']), 'id')){
+            throw new bException('servers_update(): A server with that IPv4 or IPv6 already exists');
+        }
+
+        sql_query('UPDATE `servers`
+
+                   SET    `modifiedon` = NOW(),
+                          `modifiedby` = :users_id,
+                          `ip`         = :ip,
+                          `port`       = :port,
+                          `hostname`   = :hostname
+
+                   WHERE  `id`         = :id,
+
+                   AND    `createdby`  = :createdby',
+
+                   array(':modifiedby' => $_SESSION['user']['id'],
+                         ':ip'         => $server['ip'],
+                         ':port'       => $server['port'],
+                         ':hostname'   => $server['hostname'],
+                         ':id'         => $server['id'],
+                         ':createdby'  => $_SESSION['users']['id']));
+
     }catch(Exception $e){
-        throw new bException('servers_test(): Failed', $e);
+        throw new bException('servers_update(): Failed', $e);
+    }
+}
+
+/*
+ * Get server group data
+ */
+function servers_groups_list($params = null, $columns = '*', $require_filters = true){
+    try{
+        user_or_redirect();
+
+        $admin = has_rights('admin');
+
+        array_params($params);
+        array_default($params, 'all'            , $admin);
+        array_default($params, 'require_filters', $require_filters);
+
+        if($params['all']){
+            if(!$admin){
+                throw new bException(tr('servers_groups_list(): "all" option can only be used by admin users'), 'noadmin');
+            }
+
+            $filters = sql_filters($params, 'id,ip,port,status,name');
+
+        }else{
+            /*
+             *
+             */
+            $params['groups`.`createdby'] = $_SESSION['user']['id'];
+            $filters                      = sql_filters($params, 'id,ip,port,status,name,servers_groups`.`createdby');
+        }
+
+        $filters['filters'] = sql_where(implode(' AND ', $filters['filters']), $params['require_filters']);
+
+        return sql_list('SELECT    '.$columns.',
+                                   `tk_groups`.`name` as group_name,
+                                   `users`.`name`,
+                                   `users`.`username`,
+                                   `users`.`email`
+
+                         FROM      `tk_groups`
+
+                         LEFT JOIN `users`
+                         ON        `users`.`id` = `tk_groups`.`createdby` '.
+
+                         $filters['filters'].' ORDER BY `tk_groups`.`createdon` DESC'.(isset_get($params['limit']) ? ' LIMIT '.cfi($params['limit']) : ''),
+
+                         $filters['execute']);
+
+    }catch(Exception $e){
+        throw new bException('servers_groups_list(): Failed', $e);
     }
 }
 
 
+/*
+ * Get server data
+ */
+function servers_list($params = null, $columns = '*', $require_filters = true){
+    try{
+        user_or_redirect();
 
+        array_params($params);
+        array_default($params, 'all'            , has_rights('admin'));
+        array_default($params, 'status'         , null);
+        array_default($params, 'require_filters', $require_filters);
+
+        if(has_rights('admin')){
+            if($params['all']){
+                $filters = sql_filters($params, 'id,ip,port,hostname', 'servers');
+
+            }else{
+                $filters = sql_filters($params, 'id,ip,port,hostname,status', 'servers');
+            }
+
+        }else{
+            if($params['all']){
+                throw new bException('servers_list(): "all" option can only be used by admin users');
+            }
+
+            $params['servers`.`createdby'] = $_SESSION['user']['id'];
+            $filters = sql_filters($params, 'id,ip,port,status,hostname,createdby', 'servers');
+        }
+
+        $filters['filters'] = sql_where(implode(' AND ', $filters['filters']), $params['require_filters']);
+
+        return sql_list('SELECT    '.$columns.',
+                                   `users`.`name`,
+                                   `users`.`username`,
+                                   `users`.`email`
+
+                         FROM      `servers`
+
+                         LEFT JOIN `users`
+                         ON        `users`.`id` = `servers`.`createdby` '.
+
+                         $filters['filters'].' ORDER BY `servers`.`createdon` DESC'.(isset_get($params['limit']) ? ' LIMIT '.cfi($params['limit']) : ''),
+
+                         $filters['execute']);
+
+    }catch(Exception $e){
+        throw new bException('servers_list(): Failed', $e);
+    }
+}
 ?>
