@@ -124,6 +124,8 @@ function servers_test($hostname, $port, $user){
 
 function servers_execute($hostname, $port, $user){
     try{
+        $file = file_exists('/www/ingiga/toolkit.ingiga.com/data/keys/juan.key');
+
         $result = safe_exec('ssh -Tp '.$port.' '.$user.'@'.$hostname.' echo 1');
 
         if(array_shift($result) != '1'){

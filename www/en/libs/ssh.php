@@ -20,13 +20,18 @@ function ssh_validate($ssh, $old_right = null){
         }
 
         $v = new validate_form($ssh, 'name,description');
-        $v->isNotEmpty ($ssh['name']    , tr('No rights name specified'));
-        $v->hasMinChars($ssh['name'],  2, tr('Please ensure the right\'s name has at least 2 characters'));
-        $v->hasMaxChars($ssh['name'], 32, tr('Please ensure the right\'s name has less than 32 characters'));
+        $v->isNotEmpty ($ssh['name']    , tr('No ssh name specified'));
+        $v->hasMinChars($ssh['name'],  2, tr('Please ensure the ssh\'s name has at least 2 characters'));
+        $v->hasMaxChars($ssh['name'], 32, tr('Please ensure the ssh\'s name has less than 32 characters'));
 
-        $v->isNotEmpty ($ssh['description']      , tr('No right\'s description specified'));
+        $v->isNotEmpty ($ssh['username']    , tr('No user name specified'));
+        $v->hasMinChars($ssh['username'],  2, tr('Please ensure the user name has at least 2 characters'));
+        $v->hasMaxChars($ssh['username'], 32, tr('Please ensure the user name has less than 32 characters'));
+
+        $v->isNotEmpty ($ssh['ssh']    , tr('No ssh key specified'));
+
+        $v->isNotEmpty ($ssh['description']      , tr('No description specified'));
         $v->hasMinChars($ssh['description'],    2, tr('Please ensure the right\'s description has at least 2 characters'));
-        $v->hasMaxChars($ssh['description'], 2047, tr('Please ensure the right\'s description has less than 2047 characters'));
 
         if(is_numeric(substr($ssh['name'], 0, 1))){
             $v->setError(tr('Please ensure that the rights\'s name does not start with a number'));
