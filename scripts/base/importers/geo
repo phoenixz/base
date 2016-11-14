@@ -619,10 +619,11 @@ switch(cli_argument(0)){
 
                                                       FROM   `geo_cities`
 
-                                                      WHERE  `name`         = :name
-                                                      AND    `country_code` = :country
-                                                      AND    `latitude`     = :latitude
-                                                      AND    `longitude`    = :longitude');
+                                                      WHERE (`name`      = :name
+                                                      AND    `states_id` = :states_id)
+                                                      OR    (`name`      = :name
+                                                      AND    `latitude`  = :latitude
+                                                      AND    `longitude` = :longitude)');
 
                 /*
                  * Add cities for all countries
@@ -733,7 +734,7 @@ switch(cli_argument(0)){
 
                             while($row = $r->fetch(PDO::FETCH_ASSOC)){
                                 $city_exists_statement->execute(array(':name'      => $row['name'],
-                                                                      ':country'   => $row['country'],
+                                                                      ':states_id' => $states_id,
                                                                       ':latitude'  => $row['latitude'],
                                                                       ':longitude' => $row['longitude']));
 
@@ -801,9 +802,8 @@ switch(cli_argument(0)){
                                                      AND    `population`  > '.cfi($threshold, false));
 
                                 while($row = $r->fetch(PDO::FETCH_ASSOC)){
-
                                     $city_exists_statement->execute(array(':name'      => $row['name'],
-                                                                          ':country'   => $row['country'],
+                                                                          ':states_id' => $row['states_id'],
                                                                           ':latitude'  => $row['latitude'],
                                                                           ':longitude' => $row['longitude']));
 
