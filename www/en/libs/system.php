@@ -1480,6 +1480,10 @@ function date_convert($date = null, $requested_format = 'human_datetime', $to_ti
         return $date->format($format);
 
     }catch(Exception $e){
+        if(!isset($_CONFIG['formats'][$requested_format]) and ($requested_format != 'mysql')){
+            throw new bException(tr('date_convert(): Unknown format ":format" specified', array(':format' => $requested_format)), 'unknown');
+        }
+
         if(isset($format)){
             throw new bException(tr('date_convert(): Either :error, or Invalid format ":format" specified', array(':error' => $e->getMessage(), ':format' => str_log($format))), 'invalid');
         }
@@ -1919,6 +1923,67 @@ function ensure_value($value, $enum, $default){
 
     }catch(Exception $e){
         throw new bException(tr('ensure_value(): Failed'), $e);
+    }
+}
+
+
+
+/*
+ *
+ */
+function session_reset_domain(){
+    global $_CONFIG;
+
+    try{
+        $domain = cfm($_SERVER['HTTP_HOST']);
+
+        switch(true){
+            case ($_CONFIG['whitelabels']['enabled'] === false):
+                /*
+                 * white label domains are disabled, so the detected domain MUST match the configured domain
+                 */
+                if($domain !== $_CONFIG['domain']){
+                    $domain = null;
+                }
+
+                break;
+
+            case ($_CONFIG['whitelabels']['enabled'] === 'sub'):
+                /*
+                 * white label domains are disabled, but sub domains from the $_CONFIG[domain] are allowed
+                 */
+                $length = strlen('.'.$_CONFIG['domain']);
+
+                if(substr($domain, -$length, $length) !== '.'.$_CONFIG['domain']){
+                    $domain = null;
+                }
+
+                break;
+
+            case ($_CONFIG['whitelabels']['enabled'] === 'all'):
+                /*
+                 * Permit whichever domain
+                 */
+                break;
+
+            default:
+                /*
+                 * Check the detected domain against the configured domain.
+                 * If it doesnt match then check if its a registered whitelabel domain
+                 */
+                if($domain !== $_CONFIG['domain']){
+                    $domain = sql_get('SELECT `domain` FROM `whitelabels` WHERE `domain` = :domain AND `status` IS NULL', 'domain', array(':domain' => $_SERVER['HTTP_HOST']));
+                }
+        }
+
+        if(!$domain){
+            redirect($_CONFIG['protocol'].$_CONFIG['domain']);
+        }
+
+        $_SESSION['domain'] = $domain;
+
+    }catch(Exception $e){
+        throw new bException(tr('set_session_domain(): Failed'), $e);
     }
 }
 
