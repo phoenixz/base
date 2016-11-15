@@ -318,10 +318,33 @@ function cli_argument($value = null, $next = null, $default = null){
             $count = count($argv) - 1;
 
             if($next === 'all'){
-                $retval = array_from($argv, $value);
-                $argv   = array_until($argv, $value);
+// :TODO: This could be optimized using a for() starting at $value instead of a foreach() over all entries
+                foreach($argv as $argv_key => $argv_value){
+                    if($argv_key < $value){
+                        continue;
+                    }
 
-                return $retval;
+                    if($argv_key == $value){
+                        unset($argv[$key]);
+                        continue;
+                    }
+
+                    if(substr($argv_value, 0, 1) == '-'){
+                        /*
+                         * Encountered a new option, stop!
+                         */
+                        break;
+
+                    }
+
+                    /*
+                     * Add this argument to the list
+                     */
+                    $retval[] = $argv_value;
+                    unset($argv[$argv_key]);
+                }
+
+                return isset_get($retval);
             }
 
             if(!empty($argv[$value++])){
@@ -352,9 +375,33 @@ function cli_argument($value = null, $next = null, $default = null){
         if($next){
             if($next === 'all'){
                 /*
-                 * Return all following arguments, if available
+                 * Return all following arguments, if available, until the next option
                  */
-                return array_from($argv, array_search($value, $argv), true);
+                foreach($argv as $argv_key => $argv_value){
+                    if(empty($start)){
+                        if($argv_value == $value){
+                            $start = true;
+                            unset($argv[$argv_key]);
+                        }
+
+                        continue;
+                    }
+
+                    if(substr($argv_value, 0, 1) == '-'){
+                        /*
+                         * Encountered a new option, stop!
+                         */
+                        break;
+                    }
+
+                    /*
+                     * Add this argument to the list
+                     */
+                    $retval[] = $argv_value;
+                    unset($argv[$argv_key]);
+                }
+
+                return $retval;
             }
 
             /*

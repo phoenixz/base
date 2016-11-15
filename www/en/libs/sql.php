@@ -56,7 +56,7 @@ function sql_query($query, $execute = false, $handle_exceptions = true, $connect
              */
 // :TODO: Move all of this to sql_error()
             if(!is_array($execute)){
-                throw new bException('sql_query(): Specified $execute is not an array!');
+                throw new bException('sql_query(): Specified $execute is not an array!', 'invalid');
             }
 
             /*
@@ -262,10 +262,6 @@ function sql_list($query, $execute = null, $numerical_array = false, $connector 
         return $retval;
 
     }catch(Exception $e){
-        if(strtolower(substr(trim($query), 0, 6)) != 'select'){
-            throw new bException('sql_list(): Query "'.str_log($query, 4096).'" is not a select query and as such cannot return results', $e);
-        }
-
         throw new bException('sql_list(): Failed', $e);
     }
 }

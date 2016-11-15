@@ -3,22 +3,204 @@
 /*
  * This is an empty test script template
  */
-$usage = "./scripts/base/mysql method [options]\n";
+$usage = './scripts/base/mysql method [OPTIONS]
 
-$help  = "This script contains various methods to assist with mysql";
+./scripts/base/mysql list databases [OPTIONS]
+./scripts/base/mysql list tables [OPTIONS]
+./scripts/base/mysql list foreign-keys [OPTIONS]
+
+./scripts/base/mysql change default-charset [OPTIONS]';
+
+$help  = 'This script contains various methods to assist with various mysql operations
+
+
+
+METHODS
+
+list databases              - List the available databases for the used
+                              connector
+
+list tables                 - List the available tables for the used connector
+                              and database
+
+list foreign-keys           - List the available foreign keys for the used
+                              connector and database
+
+
+
+
+
+OPTIONS
+
+--all                       - Apply to all databases
+
+--databases                 - Apply to specified databases. NOTE: Specified
+                              databases will have to exist on the mysql server
+                              specified by the used connector!
+
+--connector                 - Use a different database connector. By default,
+                              "core" is used, which will use connector
+                              $_CONFIG[db][core]
+
+--database                  - Use a different database. By default, the first
+                              database found in the used connector will be
+                              used';
 
 require_once(dirname(__FILE__).'/../../libs/startup.php');
 
 cli_only();
 
-$type = cli_argument('-T', true, cli_argument('--type', true));
+$all       = cli_argument('--all');
+$type      = cli_argument('-T', true, cli_argument('--type', true));
+$connector = cli_argument('--connector', true);
+$databases = cli_argument('--databases', 'all');
 
+/*
+ * Check required connector, load connector data
+ */
+if(!$connector){
+    $connector = 'core';
+}
+
+if(empty($_CONFIG['db'][$connector])){
+    throw new bException(tr('Specified connector ":connector" does not exist. Please check the configuration $_CONFIG[db][CONNECTORNAME]', array(':connector' => $connector)), 'not-exist');
+}
+
+$connector_data = $_CONFIG['db'][$connector];
+
+/*
+ * Check required database
+ */
+if($all){
+    if($databases){
+        throw new bException(tr('Both --databases and --all have been specified. Use either one or the other.'), 'invalid');
+    }
+
+    /*
+     * Use all databases available on the server specified by this connector
+     */
+    $databases = sql_query('SELECT `TABLE_SCHEMA` FROM `information_schema`.`TABLES` GROUP BY `TABLE_SCHEMA`', null, null, $connector);
+
+}else{
+    if(!$databases){
+        /*
+         * Use the default database for the specified connector
+         * If not, use the list of specified databases
+         */
+        $databases = array($_CONFIG['db'][$connector]['db']);
+    }
+
+    /*
+     * Confirm that the required databases exist on the server specified by the connector
+     */
+    foreach($databases as $database){
+        $exist = sql_get('SELECT `TABLE_SCHEMA` FROM `information_schema`.`TABLES` WHERE `TABLE_SCHEMA` = :TABLE_SCHEMA GROUP BY `TABLE_SCHEMA` LIMIT 1', 'TABLE_SCHEMA', array(':TABLE_SCHEMA' => $database), $connector);
+
+        if(!$exist){
+            throw new bException(tr('Specified database ":database" does not exist', array(':database' => $database)), 'not-exist');
+        }
+    }
+}
+
+/*
+ * Process required methods
+ */
 switch(cli_method()){
-    case 'list':
+    case 'change':
+        // FALLTHROUGH
+    case 'alter':
+        $type = cli_argument(1);
+
         switch($type){
+            case 'charset':
+                // FALLTHROUGH
+            case 'default-charset':
+                $tables     = cli_argument('--tables', 'all');
+                $all_tables = cli_argument('--all-tables');
+                $charset    = cli_argument(2);
+
+                cli_no_arguments_left();
+
+                if($tables and $all_tables){
+                    throw new bException(tr('Both --all-tables and --tables have been specified. --all-tables is not needed, if --tables is not specified, all tables will be displayed'), 'invalid');
+                }
+
+                $tables = s_get_tables($tables, $databases);
+
+                if($all){
+                    cli_log(tr('Changing default charset for tables (:count) for connector/host/database ":connector/:host/all databases"', array(':connector' => $connector, ':host' => $_CONFIG['db'][$connector]['host'], ':count' => $tables->rowCount())), 'white');
+
+                }else{
+                    cli_log(tr('Changing default charset for tables (:count) in connector/host/database ":connector/:host/:database"', array(':connector' => $connector, ':host' => $_CONFIG['db'][$connector]['host'], ':database' => $database, ':count' => $tables->rowCount())), 'white');
+                }
+
+                cli_log(str_size(tr('Database'), 40).tr('Table'), 'cyan');
+
+                while($table = sql_fetch($tables)){
+                    cli_log(str_size($table['TABLE_SCHEMA'], 40).$table['TABLE_NAME']);
+                    sql_query('ALTER TABLE `'.$table['TABLE_SCHEMA'].'`.`'.$table['TABLE_NAME'].'` CONVERT TO CHARACTER SET "'.$charset.'"', null, null, $connector);
+                }
+        }
+
+        break;
+
+    case 'list':
+        $type = cli_argument(1);
+
+        switch($type){
+            case 'db':
+                // FALLTHROUGH
+            case 'dbs':
+                // FALLTHROUGH
+            case 'databases':
+                cli_no_arguments_left();
+
+                if(VERBOSE){
+                    cli_log(tr('Databases (:count) for connector/host ":connector/:host"', array(':connector' => $connector, ':host' => $_CONFIG['db'][$connector]['host'], ':count' => $databases->rowCount())), 'white');
+                }
+
+                cli_log(tr('Database'), 'cyan');
+
+                foreach($databases as $database){
+                    cli_log($database);
+                }
+
+                break;
+
+            case 'tables':
+                $tables     = cli_argument('--tables', 'all');
+                $all_tables = cli_argument('--all-tables');
+
+                cli_no_arguments_left();
+
+                if($tables and $all_tables){
+                    throw new bException(tr('Both --all-tables and --tables have been specified. --all-tables is not needed, if --tables is not specified, all tables will be displayed'), 'invalid');
+                }
+
+                $tables = s_get_tables($tables, $databases);
+
+                if(VERBOSE){
+                    if($all){
+                        cli_log(tr('Tables (:count) for connector/host/database ":connector/:host/all databases"', array(':connector' => $connector, ':host' => $_CONFIG['db'][$connector]['host'], ':count' => $tables->rowCount())), 'white');
+
+                    }else{
+                        cli_log(tr('Tables (:count) for connector/host/database ":connector/:host/:database"', array(':connector' => $connector, ':host' => $_CONFIG['db'][$connector]['host'], ':database' => $database, ':count' => $tables->rowCount())), 'white');
+                    }
+                }
+
+                cli_log(str_size(tr('Database'), 40).tr('Table'), 'cyan');
+
+                while($table = sql_fetch($tables)){
+                    cli_log(str_size($table['TABLE_SCHEMA'], 40).$table['TABLE_NAME']);
+                }
+
+                break;
+
             case 'fk':
                 // FALLTHROUGH
-            case 'foreign key':
+            case 'foreign-key':
+                // FALLTHROUGH
+            case 'foreign-keys':
                 $filter      = cli_argument('--filter'     , true);
                 $reference   = cli_argument('--reference'  , true);
                 $constraint  = cli_argument('--constraint' , true);
@@ -89,5 +271,62 @@ switch(cli_method()){
 
     default:
         throw new bException(tr('Unknown method ":method" specified', array(':method' => cli_method())), 'unknown');
+}
+
+
+/*
+ *
+ */
+function s_get_tables($tables, $databases){
+    global $all, $all_tables, $connector;
+
+    try{
+        if($all){
+            /*
+             * Show from all databases
+             */
+            if($tables){
+                /*
+                 * Show specified tables from all databases
+                 */
+                $tables = sql_in($tables);
+                $tables = sql_query('SELECT CONCAT(`TABLE_SCHEMA`, `TABLE_NAME`) AS `id`, `TABLE_SCHEMA`, `TABLE_NAME` FROM `information_schema`.`TABLES` WHERE `TABLE_NAME` IN ('.implode(',', array_keys($tables)).') GROUP BY `TABLE_NAME`', $tables, null, $connector);
+
+            }else{
+                /*
+                 * Show all tables from all databases
+                 */
+                $tables = sql_query('SELECT CONCAT(`TABLE_SCHEMA`, `TABLE_NAME`) AS `id`, `TABLE_SCHEMA`, `TABLE_NAME` FROM `information_schema`.`TABLES` GROUP BY `TABLE_NAME`', null, null, $connector);
+            }
+
+        }else{
+            /*
+             * Show all tables from specified databases
+             */
+            $databases = sql_in($databases);
+            $databases = sql_list('SELECT `TABLE_SCHEMA` FROM `information_schema`.`TABLES` WHERE `TABLE_SCHEMA` IN ('.implode(',', array_keys($databases)).') GROUP BY `TABLE_SCHEMA` ORDER BY `TABLE_SCHEMA` ASC', $databases, null, $connector);
+            $databases = sql_in($databases);
+
+            if($tables){
+                /*
+                 * Show specified tables from specified databases
+                 */
+                $tables = sql_in($tables, ':table');
+                $in     = array_merge($databases, $tables);
+                $tables = sql_query(' SELECT CONCAT(`TABLE_SCHEMA`, `TABLE_NAME`) AS `id`, `TABLE_SCHEMA`, `TABLE_NAME` FROM `information_schema`.`TABLES` WHERE `TABLE_SCHEMA` IN ('.implode(',', array_keys($databases)).') AND `TABLE_NAME` IN ('.implode(',', array_keys($tables)).')  GROUP BY `TABLE_SCHEMA`, `TABLE_NAME` ORDER BY `TABLE_SCHEMA` ASC, `TABLE_NAME` ASC', $in, null, $connector);
+
+            }else{
+                /*
+                 * Show specified tables from specified databases
+                 */
+                $tables = sql_query('SELECT CONCAT(`TABLE_SCHEMA`, `TABLE_NAME`) AS `id`, `TABLE_SCHEMA`, `TABLE_NAME` FROM `information_schema`.`TABLES` WHERE `TABLE_SCHEMA` IN ('.implode(',', array_keys($databases)).') GROUP BY `TABLE_SCHEMA`, `TABLE_NAME` ORDER BY `TABLE_SCHEMA` ASC, `TABLE_NAME` ASC', $databases, null, $connector);
+            }
+        }
+
+        return $tables;
+
+    }catch(Exception $e){
+        throw new bException(tr('s_get_tables(): Failed'), $e);
+    }
 }
 ?>
