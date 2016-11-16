@@ -532,6 +532,8 @@ function user_signin($user, $extended = false, $redirect = null, $html_flash = n
             if($_CONFIG['security']['signin']['destroy_session']){
                 session_destroy();
                 session_start();
+                session_reset_domain();
+                session_regenerate_id();
             }
         }
 
@@ -602,6 +604,8 @@ function user_signout() {
         unset($_SESSION['user']);
 
         session_destroy();
+        session_reset_domain();
+        session_regenerate_id();
 
     }catch(Exception $e){
         throw new bException('user_signout(): Failed', $e);

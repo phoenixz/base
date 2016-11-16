@@ -115,6 +115,27 @@ switch(cli_argument(0)){
         file_put_contents($geoimport_path.'geonames_importer.sh', $data);
 
         /*
+         * Fix geonames_db_struct.sql
+         *
+         * geonames_db_struct.sql creates tables using CHARSET UTF8. This should be utf8mb4
+         */
+        $data = file_get_contents($geoimport_path.'geonames_db_struct.sql');
+        $data = str_replace('utf8;'   , 'utf8mb4;', $data);
+        $data = str_replace('utf8mb4;', 'utf8mb4 COLLATE="utf8mb4_unicode_ci";', $data);
+
+        file_put_contents($geoimport_path.'geonames_db_struct.sql', $data);
+
+        /*
+         * Fix geonames_db_struct.sql
+         *
+         * geonames_db_struct.sql creates tables using CHARSET UTF8. This should be utf8mb4
+         */
+        $data = file_get_contents($geoimport_path.'geonames_import_data.sql');
+        $data = str_replace('CHARACTER SET \'UTF8\'' , 'CHARACTER SET \'UTF8MB4\'', $data);
+
+        file_put_contents($geoimport_path.'geonames_import_data.sql', $data);
+
+        /*
          * Due to a fucked up MySQL "security feature" that does not allow LOAD DATA LOCAL INFILE
          * but MAY allow LOAD DATA INFILE (which requires the file to be in /var/lib/mysql), we
          * need to modify the ./geonames_import_data.sql file a little.
@@ -131,14 +152,12 @@ switch(cli_argument(0)){
             log_console('Updating geonames_import_data.sql for non local import', 'warning', 'yellow');
 
             $uniqid = uniqid();
-
             $data   = file_get_contents($geoimport_path.'geonames_import_data.sql');
             $data   = str_replace('LOAD DATA LOCAL INFILE ', 'LOAD DATA INFILE'   , $data);
             $data   = str_replace('LOAD DATA INFILE \'./'  , 'LOAD DATA INFILE \'', $data);
             $data   = str_replace('LOAD DATA INFILE \''    , 'LOAD DATA INFILE \''.$uniqid.'/', $data);
 
             file_put_contents($geoimport_path.'geonames_import_data.sql', $data);
-
             symlink($geoimport_path, '/var/lib/mysql/'.$uniqid);
         }
 
@@ -213,7 +232,7 @@ switch(cli_argument(0)){
 
         foreach(array('geonameid', 'parents_id', 'name', 'country', 'admin1', 'admin2', 'moddate', 'latitude', 'longitude') as $column){
             $geosql->query('ALTER TABLE `geonames` ADD INDEX (`geonameid`);');
-            log_console(tr('Applied index for "%column%"', array('%column%', $column)), '', 'green');
+            log_console(tr('Applied index for ":column"', array(':column' => $column)), '', 'green');
         }
 
         ///*
@@ -600,10 +619,11 @@ switch(cli_argument(0)){
 
                                                       FROM   `geo_cities`
 
-                                                      WHERE  `name`         = :name
-                                                      AND    `country_code` = :country
-                                                      AND    `latitude`     = :latitude
-                                                      AND    `longitude`    = :longitude');
+                                                      WHERE (`name`      = :name
+                                                      AND    `states_id` = :states_id)
+                                                      OR    (`name`      = :name
+                                                      AND    `latitude`  = :latitude
+                                                      AND    `longitude` = :longitude)');
 
                 /*
                  * Add cities for all countries
@@ -714,7 +734,7 @@ switch(cli_argument(0)){
 
                             while($row = $r->fetch(PDO::FETCH_ASSOC)){
                                 $city_exists_statement->execute(array(':name'      => $row['name'],
-                                                                      ':country'   => $row['country'],
+                                                                      ':states_id' => $states_id,
                                                                       ':latitude'  => $row['latitude'],
                                                                       ':longitude' => $row['longitude']));
 
@@ -782,9 +802,8 @@ switch(cli_argument(0)){
                                                      AND    `population`  > '.cfi($threshold, false));
 
                                 while($row = $r->fetch(PDO::FETCH_ASSOC)){
-
                                     $city_exists_statement->execute(array(':name'      => $row['name'],
-                                                                          ':country'   => $row['country'],
+                                                                          ':states_id' => $row['states_id'],
                                                                           ':latitude'  => $row['latitude'],
                                                                           ':longitude' => $row['longitude']));
 

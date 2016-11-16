@@ -312,6 +312,7 @@ function json_authenticate($key){
         session_destroy();
         session_start();
         session_regenerate_id();
+        session_reset_domain();
 
         $_SESSION['json_session_start'] = time();
 
@@ -354,6 +355,8 @@ function json_start_session($token){
              * Not a valid session!
              */
             session_destroy();
+            session_regenerate_id();
+            session_reset_domain();
             throw new bException(tr('json_start_session(): Specified token has no session'), 'access-denied');
         }
 
@@ -392,10 +395,14 @@ function json_stop_session($token){
              * Not a valid session!
              */
             session_destroy();
+            session_reset_domain();
+            session_regenerate_id();
             throw new bException(tr('json_stop_session(): Specified token has no session'), 'access-denied');
         }
 
         session_destroy();
+        session_reset_domain();
+        session_regenerate_id();
         return true;
 
     }catch(Exception $e){
