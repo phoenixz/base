@@ -105,7 +105,7 @@ class Zend_Utf8
         ), $options);
         if (! self::isCallable($options['write']))
         {
-            throw new bException('Zend_Utf8::escape(): Expected a valid write (callable, array).');
+            throw new bException('Zend_Utf8::escape(): Expected a valid write (callable, array)', 'invalid');
         }
         if (self::validateFilters($options) && isset($options['filters']['before-write']))
         {
@@ -164,7 +164,7 @@ class Zend_Utf8
 
                 default:
                     //no more cases in unicode, whose range is 0x00000000..0x0010FFFF
-                    throw new bException('Zend_Utf8::escape(): Expected a valid UTF-8 character.');
+                    throw new bException('Zend_Utf8::escape(): Expected a valid UTF-8 character', 'invalid');
                 break;
             }
         }
@@ -238,7 +238,7 @@ class Zend_Utf8
 
                 default:
                     //no more cases in unicode, whose range is 0x00000000 - 0x0010FFFF
-                    throw new bException('Zend_Utf8::utf8CharToCodePoint(): Expected a valid UTF-8 character.');
+                    throw new bException('Zend_Utf8::utf8CharToCodePoint(): Expected a valid UTF-8 character', 'invalid');
                 break;
             }
             $utf32Char = call_user_func_array('pack', $bytes);
@@ -247,12 +247,12 @@ class Zend_Utf8
         if (0xD800 <= $result && $result <= 0xDFFF)
         {
             //reserved for UTF-16 surrogates
-            throw new bException('Zend_Utf8::utf8CharToCodePoint(): Expected a valid UTF-8 character.');
+            throw new bException('Zend_Utf8::utf8CharToCodePoint(): Expected a valid UTF-8 character', 'invalid');
         }
         if (0xFFFE == $result || 0xFFFF == $result)
         {
             //reserved
-            throw new bException('Zend_Utf8::utf8CharToCodePoint(): Expected a valid UTF-8 character.');
+            throw new bException('Zend_Utf8::utf8CharToCodePoint(): Expected a valid UTF-8 character', 'invalid');
         }
 
         return $result;
@@ -273,7 +273,7 @@ class Zend_Utf8
         $codePoint = self::utf8CharToCodePoint($utf8Char);
         if ($codePoint < 0x10000)
         {
-            throw new bException('Zend_Utf8::utf8CharToSurrogatePair(): Expected an extended UTF-8 character.');
+            throw new bException('Zend_Utf8::utf8CharToSurrogatePair(): Expected an extended UTF-8 character', 'invalid');
         }
         $codePoint -= 0x10000;
         $upperSurrogate = 0xD800 + ($codePoint >> 10);
@@ -321,7 +321,7 @@ class Zend_Utf8
         ), $options);
         if (! self::isCallable($options['read']))
         {
-            throw new bException('Zend_Utf8::unescape(): Expected a valid read (callable, array).');
+            throw new bException('Zend_Utf8::unescape(): Expected a valid read (callable, array)', 'invalid');
         }
         $thereAreFilters = self::validateFilters($options);
 
@@ -350,7 +350,7 @@ class Zend_Utf8
                     preg_match($pattern, $value, $matches, 0, $offset);
                     if (! $matches[2])
                     {
-                        throw new bException('Zend_Utf8::unescape(): Expected an extended UTF-8 character.');
+                        throw new bException('Zend_Utf8::unescape(): Expected an extended UTF-8 character', 'invalid');
                     }
                     $offset += strlen($matches[0]);
                     $args = array_splice($matches, 2, count($matches) - 1);
@@ -388,12 +388,12 @@ class Zend_Utf8
         if (0xD800 <= $codePoint && $codePoint <= 0xDFFF)
         {
             //reserved for UTF-16 surrogates
-            throw new bException('Zend_Utf8::utf8CharFromCodePoint(): Expected a valid code point.');
+            throw new bException('Zend_Utf8::utf8CharFromCodePoint(): Expected a valid code point', 'invalid');
         }
         if (0xFFFE == $codePoint || 0xFFFF == $codePoint)
         {
             //reserved
-            throw new bException('Zend_Utf8::utf8CharFromCodePoint(): Expected a valid code point.');
+            throw new bException('Zend_Utf8::utf8CharFromCodePoint(): Expected a valid code point', 'invalid');
         }
 
         if (function_exists('mb_convert_encoding'))
@@ -441,7 +441,7 @@ class Zend_Utf8
                 break;
 
                 default:
-                    throw new bException('Zend_Utf8::utf8CharFromCodePoint(): Expected a valid code point.');
+                    throw new bException('Zend_Utf8::utf8CharFromCodePoint(): Expected a valid code point', 'invalid');
                 break;
             }
             $result = call_user_func_array('pack', $bytes);
@@ -464,11 +464,11 @@ class Zend_Utf8
         list($upperSurrogate, $lowerSurrogate) = $surrogatePair;
         if (! (0xD800 <= $upperSurrogate && $upperSurrogate < 0xDC00))
         {
-            throw new bException('Zend_Utf8::utf8CharFromSurrogatePair(): Expected an extended UTF-8 character.');
+            throw new bException('Zend_Utf8::utf8CharFromSurrogatePair(): Expected an extended UTF-8 character', 'invalid');
         }
         if (! (0xDC00 <= $lowerSurrogate && $lowerSurrogate < 0xE000))
         {
-            throw new bException('Zend_Utf8::utf8CharFromSurrogatePair(): Expected an extended UTF-8 character.');
+            throw new bException('Zend_Utf8::utf8CharFromSurrogatePair(): Expected an extended UTF-8 character', 'invalid');
         }
         $codePoint = ($upperSurrogate & 0x03FF) << 10 | ($lowerSurrogate & 0x03FF);
         $codePoint += 0x10000;
@@ -516,13 +516,13 @@ class Zend_Utf8
         {
             if (! is_array($options['filters']))
             {
-                throw new bException('Zend_Utf8::validateFilters(): Expected valid filters.');
+                throw new bException('Zend_Utf8::validateFilters(): Expected valid filters', 'invalid');
             }
             foreach ($options['filters'] as $key => $value)
             {
                 if (! self::isCallable($value))
                 {
-                    throw new bException('Zend_Utf8::validateFilters(): Expected a valid "'.str_log($key).'" filter.');
+                    throw new bException('Zend_Utf8::validateFilters(): Expected a valid "'.str_log($key).'" filter', 'invalid');
                 }
             }
             return true;
