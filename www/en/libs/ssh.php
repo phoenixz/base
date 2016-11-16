@@ -1,64 +1,35 @@
 <?php
 /*
- * Custom servers library
+ * SSH library library
  *
- * This library contains functions to manage toolkit servers
+ * This library contains functions to manage SSH accounts
  *
  * Written and Copyright by Sven Oostenbrink
  */
 
 /*
- *ssh validate ssh accounts
+ * SSH account validation
  */
-
-function ssh_validate($ssh, $old_right = null){
+function ssh_validate_account($ssh){
     try{
         load_libs('validate');
 
-        if($old_right){
-            $ssh = array_merge($old_right, $ssh);
-        }
-
-        $v = new validate_form($ssh, 'name,description');
-        $v->isNotEmpty ($ssh['name']    , tr('No ssh name specified'));
-        $v->hasMinChars($ssh['name'],  2, tr('Please ensure the ssh\'s name has at least 2 characters'));
-        $v->hasMaxChars($ssh['name'], 32, tr('Please ensure the ssh\'s name has less than 32 characters'));
+        $v = new validate_form($ssh, 'name,username,ssh_key,description');
+        $v->isNotEmpty ($ssh['name']    , tr('No account name specified'));
+        $v->hasMinChars($ssh['name'],  2, tr('Please ensure the account name has at least 2 characters'));
+        $v->hasMaxChars($ssh['name'], 32, tr('Please ensure the account name has less than 32 characters'));
 
         $v->isNotEmpty ($ssh['username']    , tr('No user name specified'));
         $v->hasMinChars($ssh['username'],  2, tr('Please ensure the user name has at least 2 characters'));
         $v->hasMaxChars($ssh['username'], 32, tr('Please ensure the user name has less than 32 characters'));
 
-        $v->isNotEmpty ($ssh['ssh']    , tr('No ssh key specified'));
+        $v->isNotEmpty ($ssh['ssh_key'], tr('No SSH key specified to the account'));
 
-        $v->isNotEmpty ($ssh['description']      , tr('No description specified'));
-        $v->hasMinChars($ssh['description'],    2, tr('Please ensure the right\'s description has at least 2 characters'));
+        $v->isNotEmpty ($ssh['description']   , tr('No description specified'));
+        $v->hasMinChars($ssh['description'], 2, tr('Please ensure the description has at least 2 characters'));
 
         if(is_numeric(substr($ssh['name'], 0, 1))){
-            $v->setError(tr('Please ensure that the rights\'s name does not start with a number'));
-        }
-
-        /*
-         * Does the right already exist?
-         */
-        if(empty($ssh['id'])){
-            if($id = sql_get('SELECT `id` FROM `rights` WHERE `name` = :name', array(':name' => $ssh['name']))){
-                $v->setError(tr('The right ":right" already exists with id ":id"', array(':right' => $ssh['name'], ':id' => $id)));
-            }
-
-        }else{
-            if($id = sql_get('SELECT `id` FROM `rights` WHERE `name` = :name AND `id` != :id', array(':name' => $ssh['name'], ':id' => $ssh['id']))){
-                $v->setError(tr('The right ":right" already exists with id ":id"', array(':right' => $ssh['name'], ':id' => $id)));
-            }
-
-            /*
-             * Also check if this is not the god right. If so, it CAN NOT be
-             * updated
-             */
-            $name = sql_get('SELECT `name` FROM `rights` WHERE `id` = :id', 'name', array(':id' => $ssh['id']));
-
-            if($name === 'god'){
-                $v->setError(tr('The right "god" cannot be modified'));
-            }
+            $v->setError(tr('Please ensure that the account name does not start with a number'));
         }
 
         $v->isValid();
@@ -66,51 +37,53 @@ function ssh_validate($ssh, $old_right = null){
         return $ssh;
 
     }catch(Exception $e){
-        throw new bException(tr('ssh_validate(): Failed'), $e);
+        throw new bException(tr('ssh_validate_account(): Failed'), $e);
     }
 }
 
+
+
 /*
- *Get data ssh accounts
+ * Returns ssh account data
  */
-function ssh_get($ssh){
+function ssh_get_account($account){
     try{
-        if(!$ssh){
-            throw new bException(tr('ssh_get(): No right specified'), 'not-specified');
+        if(!$account){
+            throw new bException(tr('ssh_get_account(): No accounts id specified'), 'not-specified');
         }
 
-        if(!is_scalar($ssh)){
-            throw new bException(tr('ssh_get(): Specified right ":right" is not scalar', array(':right' => $ssh)), 'invalid');
+        if(!is_numeric($account)){
+            throw new bException(tr('ssh_get_account(): Specified accounts id ":id" is not numeric', array(':id' => $account)), 'invalid');
         }
 
-        $retval = sql_get('SELECT    `ssh_keys`.`id`,
-                                     `ssh_keys`.`name`,
-                                     `ssh_keys`.`username`,
-                                     `ssh_keys`.`ssh_key`,
-                                     `ssh_keys`.`status`,
-                                     `ssh_keys`.`description`,
+        $retval = sql_get('SELECT    `ssh_accounts`.`id`,
+                                     `ssh_accounts`.`name`,
+                                     `ssh_accounts`.`username`,
+                                     `ssh_accounts`.`ssh_key`,
+                                     `ssh_accounts`.`status`,
+                                     `ssh_accounts`.`description`,
 
                                      `createdby`.`name`   AS `createdby_name`,
                                      `createdby`.`email`  AS `createdby_email`,
                                      `modifiedby`.`name`  AS `modifiedby_name`,
                                      `modifiedby`.`email` AS `modifiedby_email`
 
-                           FROM      `ssh_keys`
+                           FROM      `ssh_accounts`
 
                            LEFT JOIN `users` AS `createdby`
-                           ON        `ssh_keys`.`createdby`  = `createdby`.`id`
+                           ON        `ssh_accounts`.`createdby`  = `createdby`.`id`
 
                            LEFT JOIN `users` AS `modifiedby`
-                           ON        `ssh_keys`.`modifiedby` = `modifiedby`.`id`
+                           ON        `ssh_accounts`.`modifiedby` = `modifiedby`.`id`
 
-                           WHERE     `ssh_keys`.`id`   = :ssh
-                           OR        `ssh_keys`.`name` = :ssh',
+                           WHERE     `ssh_accounts`.`id`   = :id',
 
-                           array(':ssh' => $ssh));
+                           array(':id' => $account));
+
         return $retval;
 
     }catch(Exception $e){
-        throw new bException('ssh_get(): Failed', $e);
+        throw new bException('ssh_get_account(): Failed', $e);
     }
 }
 ?>
