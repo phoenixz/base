@@ -1952,9 +1952,9 @@ function session_reset_domain(){
                 /*
                  * white label domains are disabled, but sub domains from the $_CONFIG[domain] are allowed
                  */
-                $length = strlen('.'.$_CONFIG['domain']);
+                $length = strlen($_CONFIG['domain']);
 
-                if(substr($domain, -$length, $length) !== '.'.$_CONFIG['domain']){
+                if(substr($domain, -$length, $length) !== $_CONFIG['domain']){
                     $domain = null;
                 }
 
