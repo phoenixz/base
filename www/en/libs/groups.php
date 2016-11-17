@@ -13,7 +13,7 @@
 /*
  * Return requested data for specified groups
  */
-function groups_get($group){
+function groups_get($group, $createdby = null){
     try{
         if(!$group){
             throw new bException(tr('groups_get(): No group specified'), 'not-specified');
@@ -23,28 +23,35 @@ function groups_get($group){
             throw new bException(tr('groups_get(): Specified group ":group" is not scalar', array(':group' => $group)), 'invalid');
         }
 
-        $retval = sql_get('SELECT    `groups`.`id`,
-                                     `groups`.`name`,
-                                     `groups`.`status`,
-                                     `groups`.`description`,
+        $query = 'SELECT    `groups`.`id`,
+                            `groups`.`name`,
+                            `groups`.`status`,
+                            `groups`.`description`,
 
-                                     `createdby`.`name`   AS `createdby_name`,
-                                     `createdby`.`email`  AS `createdby_email`,
-                                     `modifiedby`.`name`  AS `modifiedby_name`,
-                                     `modifiedby`.`email` AS `modifiedby_email`
+                            `createdby`.`name`   AS `createdby_name`,
+                            `createdby`.`email`  AS `createdby_email`,
+                            `modifiedby`.`name`  AS `modifiedby_name`,
+                            `modifiedby`.`email` AS `modifiedby_email`
 
-                           FROM      `groups`
+                  FROM      `groups`
 
-                           LEFT JOIN `users` AS `createdby`
-                           ON        `groups`.`createdby`  = `createdby`.`id`
+                  LEFT JOIN `users` AS `createdby`
+                  ON        `groups`.`createdby`  = `createdby`.`id`
 
-                           LEFT JOIN `users` AS `modifiedby`
-                           ON        `groups`.`modifiedby` = `modifiedby`.`id`
+                  LEFT JOIN `users` AS `modifiedby`
+                  ON        `groups`.`modifiedby` = `modifiedby`.`id`
 
-                           WHERE     `groups`.`id`   = :group
-                           OR        `groups`.`name` = :group',
+                  WHERE    (`groups`.`id`   = :group
+                  OR        `groups`.`name` = :group)';
 
-                           array(':group' => $group));
+        $execute = array(':group' => $group);
+
+        if($createdby){
+            $query .= 'AND `groups`.`createdby` = :createdby';
+            $execute[':createdby'] = $createdby;
+        }
+
+        $retval = sql_get($query, $execute);
 
         return $retval;
 
