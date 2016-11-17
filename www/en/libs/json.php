@@ -357,6 +357,7 @@ function json_start_session(){
             session_destroy();
             session_regenerate_id();
             session_reset_domain();
+
             throw new bException(tr('json_start_session(): Specified token ":token" has no session', array(':token' => $token)), 'access-denied');
         }
 
