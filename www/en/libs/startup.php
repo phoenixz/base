@@ -453,7 +453,7 @@ try{
                      * does not yet exist, and we would perfom this check every page
                      * load instead of just once every session.
                      */
-                    if(empty($_SESSION['domain'])){
+                    if(isset_get($_SESSION['domain']) !== $_SERVER['HTTP_HOST']){
                         /*
                          * Check requested domain
                          */

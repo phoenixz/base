@@ -368,6 +368,12 @@ function http_headers($params, $content_length){
         return true;
 
     }catch(Exception $e){
+        /*
+         * http_headers() itself crashed. Since http_headers()
+         * would send out http 500, and since it crashed, it no
+         * longer can do this, send out the http 500 here.
+         */
+        http_response_code(500);
         throw new bException('http_headers(): Failed', $e);
     }
 }
