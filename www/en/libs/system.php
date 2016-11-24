@@ -116,9 +116,8 @@ class bException extends Exception{
  * Send notifications of the specified class
  */
 function notify($event, $message, $classes = null){
-    load_libs('notifications');
-
     try{
+        load_libs('notifications');
         return notifications_do($event, $message, $classes);
 
     }catch(Exception $e){
