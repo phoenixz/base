@@ -267,16 +267,16 @@ function twilio_groups_validate($group){
 
         $v = new validate_form($group, 'name,description');
         $v->isNotEmpty ($group['name']    , tr('No twilios name specified'));
-        $v->hasMinChars($group['name'],  2, tr('Please ensure the twilio\'s name has at least 2 characters'));
-        $v->hasMaxChars($group['name'], 32, tr('Please ensure the twilio\'s name has less than 32 characters'));
-        $v->isRegex    ($group['name'], '/^[a-z-]{2,32}$/', tr('Please ensure the twilio\'s name contains only lower case letters, and dashes'));
+        $v->hasMinChars($group['name'],  2, tr('Please ensure the twilio name has at least 2 characters'));
+        $v->hasMaxChars($group['name'], 32, tr('Please ensure the twilio name has less than 32 characters'));
+        $v->isRegex    ($group['name'], '/^[a-z-]{2,32}$/', tr('Please ensure the twilio name contains only lower case letters, and dashes'));
 
-        $v->isNotEmpty ($group['description']      , tr('No twilio\'s description specified'));
-        $v->hasMinChars($group['description'],    2, tr('Please ensure the twilio\'s description has at least 2 characters'));
-        $v->hasMaxChars($group['description'], 2047, tr('Please ensure the twilio\'s description has less than 2047 characters'));
+        $v->isNotEmpty ($group['description']      , tr('No twilio description specified'));
+        $v->hasMinChars($group['description'],    2, tr('Please ensure the twilio description has at least 2 characters'));
+        $v->hasMaxChars($group['description'], 2047, tr('Please ensure the twilio description has less than 2047 characters'));
 
         if(is_numeric(substr($group['name'], 0, 1))){
-            $v->setError(tr('Please ensure that the twilios\'s name does not start with a number'));
+            $v->setError(tr('Please ensure that the name does not start with a number'));
         }
 
         /*
@@ -358,15 +358,15 @@ function twilio_accounts_validate($account){
 
         $v = new validate_form($account, 'email,accounts_id,accounts_token');
         $v->isNotEmpty   ($account['email']    , tr('No twilios name specified'));
-        $v->isValidEmail ($account['email'],  2, tr('Please ensure the twilio\'s name has at least 2 characters'));
+        $v->isValidEmail ($account['email'],  2, tr('Please ensure the twilio name has at least 2 characters'));
 
         $v->isNotEmpty ($account['accounts_id']    , tr('No twilio account description specified'));
-        $v->hasMinChars($account['accounts_id'], 32, tr('Please ensure the twilio\'s description has at least 2 characters'));
-        $v->hasMaxChars($account['accounts_id'], 40, tr('Please ensure the twilio\'s description has less than 2047 characters'));
+        $v->hasMinChars($account['accounts_id'], 32, tr('Please ensure the twilio description has at least 2 characters'));
+        $v->hasMaxChars($account['accounts_id'], 40, tr('Please ensure the twilio description has less than 2047 characters'));
 
         $v->isNotEmpty ($account['accounts_token']    , tr('No Account token specified'));
         $v->hasMinChars($account['accounts_token'], 32, tr('Please ensure the account\'s description has at least 2 characters'));
-        $v->hasMaxChars($account['accounts_token'], 40, tr('Please ensure the twilio\'s description has less than 2047 characters'));
+        $v->hasMaxChars($account['accounts_token'], 40, tr('Please ensure the twilio description has less than 2047 characters'));
 
 
         /*
@@ -451,43 +451,57 @@ function twilio_numbers_validate($number, $old_twilio = null){
             $number = array_merge($old_twilio, $number);
         }
 
-        $v = new validate_form($number, 'email,account_id,account_token');
+        $v = new validate_form($number, 'email,accounts_id,account_token');
         $v->isNotEmpty  ($number['name']    , tr('No name specified'));
         $v->hasMinChars ($number['name'],  2, tr('Please ensure the number name has at least 2 characters'));
 
-        $v->isNotEmpty ($number['number']       , tr('No twilio\'s description specified'));
-        $v->hasMinChars($number['number']   , 11, tr('Please ensure the numero has at least 11 numbers'));
+        $v->isNotEmpty ($number['number']       , tr('No number description specified'));
+        $v->hasMinChars($number['number']   , 12, tr('Please ensure the number has at least 12 digits'));
         $v->isValidPhonenumber($number['number'], tr('Please ensure the number is telphone number valid'));
 
-        $v->isNotEmpty($number['account_id'], tr('No Account specified'));
-        $v->isNumeric ($number['account_id'], tr('Invalid account specified'));
+        $v->isNotEmpty($number['accounts_id'], tr('No account specified'));
+        $v->isNumeric ($number['accounts_id'], tr('Invalid account specified'));
 
-        if($number['group_id']){
-            $v->isNumeric($number['group_id'], tr('Invalid group specified'));
+        if($number['groups_id']){
+            $v->isNumeric($number['groups_id'], tr('Invalid group specified'));
+
+        }else{
+            $number['groups_id'] = null;
         }
 
         /*
          * Does the twilio already exist?
          */
-
-        $id = sql_get('SELECT `id`
-
-                       FROM `twilio_numbers`
-
-                       WHERE `name` = :name AND
-                             `number` = :number'   ,
-
-                      array(':name'   => $number['name'],
-                            ':number' => $number['number']));
-
         if(empty($number['id'])){
+            $id = sql_get('SELECT `id`
+
+                           FROM   `twilio_numbers`
+
+                           WHERE  `name`   = :name
+                           OR     `number` = :number',
+
+                          'id', array(':name'   => $number['name'],
+                                      ':number' => $number['number']));
+
             if($id){
-                $v->setError(tr('The twilio ":name" already exists with id ":id"'       , array(':name' => $number['name'], ':id' => $id)));
+                $v->setError(tr('The twilio number ":number" or name ":name" already exists with id ":id"', array(':name' => $number['name'], ':number' => $number['number'], ':id' => $id)));
             }
 
         }else{
-            if($id = sql_get('SELECT `id` FROM twilio_numbers WHERE `name` = :name AND `number` != :number', array(':name' => $number['name'], ':number' => $number['number']))){
-                $v->setError(tr('The twilio ":twilio" already exists with id ":id"', array(':twilio' => $number['email'], ':id' => $id)));
+            $id = sql_get('SELECT `id`
+
+                           FROM   `twilio_numbers`
+
+                           WHERE (`name`   = :name
+                           OR     `number` = :number)
+                           AND    `id`    != :id',
+
+                          'id', array(':id'     => $number['id'],
+                                      ':name'   => $number['name'],
+                                      ':number' => $number['number']));
+
+            if($id){
+                $v->setError(tr('The twilio number ":number" or name ":name" already exists with id ":id"', array(':name' => $number['name'], ':number' => $number['number'], ':id' => $id)));
             }
         }
 
@@ -496,7 +510,7 @@ function twilio_numbers_validate($number, $old_twilio = null){
         return $number;
 
     }catch(Exception $e){
-        throw new bException(tr('twilios_validate(): Failed'), $e);
+        throw new bException(tr('twilio_numbers_validate(): Failed'), $e);
     }
 }
 
@@ -522,17 +536,16 @@ function twilio_numbers_get($number){
                                     `twilio_numbers`.`groups_id`,
                                     `twilio_numbers`.`status`
 
+                           FROM     `twilio_numbers`
 
-                          FROM      `twilio_numbers`
-
-                          WHERE     `twilio_numbers`.`name`   = :twilio',
+                           WHERE    `twilio_numbers`.`name` = :twilio',
 
                            array(':twilio' => $number));
 
         return $retval;
 
     }catch(Exception $e){
-        throw new bException('twilio_twilio_numbers_get(): Failed', $e);
+        throw new bException('twilio_numbers_get(): Failed', $e);
     }
 }
 ?>
