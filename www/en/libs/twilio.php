@@ -496,7 +496,7 @@ function twilio_numbers_validate($number, $old_twilio = null){
         return $number;
 
     }catch(Exception $e){
-        throw new bException(tr('twilios_validate(): Failed'), $e);
+        throw new bException(tr('twilio_numbers_validate(): Failed'), $e);
     }
 }
 
@@ -532,7 +532,7 @@ function twilio_numbers_get($number){
         return $retval;
 
     }catch(Exception $e){
-        throw new bException('twilio_twilio_numbers_get(): Failed', $e);
+        throw new bException('twilio_numbers_get(): Failed', $e);
     }
 }
 ?>
