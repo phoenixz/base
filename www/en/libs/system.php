@@ -1479,10 +1479,6 @@ function date_convert($date = null, $requested_format = 'human_datetime', $to_ti
         return $date->format($format);
 
     }catch(Exception $e){
-        if(!isset($_CONFIG['formats'][$requested_format]) and ($requested_format != 'mysql')){
-            throw new bException(tr('date_convert(): Unknown format ":format" specified', array(':format' => $requested_format)), 'unknown');
-        }
-
         if(isset($format)){
             throw new bException(tr('date_convert(): Either :error, or Invalid format ":format" specified', array(':error' => $e->getMessage(), ':format' => str_log($format))), 'invalid');
         }
