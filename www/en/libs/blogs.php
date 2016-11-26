@@ -943,19 +943,20 @@ function blogs_validate_category($category, $blog){
             /*
              * Make sure the parent category is inside this blog
              */
-            if(!$parent = sql_get('SELECT `id`, `blogs_id` FROM `blogs_categories` WHERE `seoname` = :seoname', array(':seoname' => $category['parent']))){
+            if(!$parent = sql_get('SELECT `id`, `blogs_id` FROM `blogs_categories` WHERE `id` = :id', array(':id' => $category['parent']))){
                 /*
                  * Specified parent does not exist at all
                  */
                 throw new bException('The specified parent category does not exist', 'not-exist');
             }
 
-            if($parent['blogs_id'] != $blog['id']){
-                /*
-                 * Specified parent does not exist inside this blog
-                 */
-                throw new bException('The specified parent category does not exist in this blog', 'not-exist');
-            }
+// :DELETE: parents_id can be blog post from any blog
+            //if($parent['blogs_id'] != $blog['id']){
+            //    /*
+            //     * Specified parent does not exist inside this blog
+            //     */
+            //    throw new bException('The specified parent category does not exist in this blog', 'not-exist');
+            //}
 
             $category['parents_id'] = $parent['id'];
         }
