@@ -80,7 +80,8 @@ function servers_validate($server){
             }
         }
 
-        $server['seohostname'] = seo_unique($server['hostname'], 'servers', $server['id'], 'seohostname');
+        $server['seohostname']  = seo_unique($server['hostname'], 'servers', $server['id'], 'seohostname');
+        $server['bill_duedate'] = date_convert($server['bill_duedate'], 'mysql');
 
         $v->isValid();
         return $server;
