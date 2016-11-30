@@ -274,7 +274,10 @@ function http_headers($params, $content_length){
         }
 
         $headers[] = 'Content-Type: '.$params['mimetype'].'; charset='.$_CONFIG['charset'];
-        $headers[] = 'Content-Language: '.LANGUAGE;
+
+        if(defined('LANGUAGE')){
+            $headers[] = 'Content-Language: '.LANGUAGE;
+        }
 
         if($content_length){
             $headers[] = 'Content-Length: '.$content_length;
