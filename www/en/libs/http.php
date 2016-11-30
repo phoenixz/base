@@ -274,7 +274,10 @@ function http_headers($params, $content_length){
         }
 
         $headers[] = 'Content-Type: '.$params['mimetype'].'; charset='.$_CONFIG['charset'];
-        $headers[] = 'Content-Language: '.LANGUAGE;
+
+        if(defined('LANGUAGE')){
+            $headers[] = 'Content-Language: '.LANGUAGE;
+        }
 
         if($content_length){
             $headers[] = 'Content-Length: '.$content_length;
@@ -368,6 +371,12 @@ function http_headers($params, $content_length){
         return true;
 
     }catch(Exception $e){
+        /*
+         * http_headers() itself crashed. Since http_headers()
+         * would send out http 500, and since it crashed, it no
+         * longer can do this, send out the http 500 here.
+         */
+        http_response_code(500);
         throw new bException('http_headers(): Failed', $e);
     }
 }
