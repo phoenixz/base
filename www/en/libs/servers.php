@@ -18,12 +18,12 @@ function servers_validate($server){
     try{
         load_libs('validate,file,seo');
 
-        $v = new validate_form($server, 'port,user,hostname,provider,customer,description');
-        $v->isNotEmpty($server['ssh_user'], tr('Please specifiy a user'));
-        $v->isNotEmpty($server['hostname'], tr('Please specifiy a hostnames'));
-        $v->isNotEmpty($server['port']    , tr('Please specifiy a port'));
-        $v->isNotEmpty($server['provider'], tr('Please specifiy a provider'));
-        $v->isNotEmpty($server['customer'], tr('Please specifiy a customer'));
+        $v = new validate_form($server, 'port,hostname,provider,customer,ssh_account,description');
+        $v->isNotEmpty($server['ssh_account'], tr('Please specifiy an SSH account'));
+        $v->isNotEmpty($server['hostname']   , tr('Please specifiy a hostnames'));
+        $v->isNotEmpty($server['port']       , tr('Please specifiy a port'));
+        $v->isNotEmpty($server['provider']   , tr('Please specifiy a provider'));
+        $v->isNotEmpty($server['customer']   , tr('Please specifiy a customer'));
 
         /*
          * Hostname
@@ -48,37 +48,11 @@ function servers_validate($server){
         }
 
         /*
-         * Username
+         * Validate provider, customer, and ssh account
          */
-        if(empty($server['ssh_user'])){
-            $v->setError(tr('Server has no SSH user specified'));
-
-        }else{
-            $users_id = sql_get('SELECT `id`, `username` FROM `ssh_accounts` WHERE `id` = :id', array(':id' => $server['ssh_user']));
-
-            if(empty($users_id)){
-                $v->setError(tr('Specified SSH user ":user" does not exist', array(':user' => $server['ssh_user'])));
-            }
-
-            $test = servers_test($server['hostname']);
-        }
-
-        /*
-         * Already exists?
-         */
-        if($server['id']){
-            if(sql_get(' SELECT `id` FROM `servers` WHERE `hostname` = :hostname AND `ssh_account_id` = :ssh_account_id AND `id` != :id', array(':hostname' => $server['hostname'], ':ssh_account_id' => $server['ssh_user'], ':id' => $server['id']), 'id')){
-                $v->setError(tr('servers_validate(): A server with hostname ":hostname" and user ":user" already exists', array(':hostname' => $server['hostname'], ':ssh_account_id' => $server['ssh_user'])));
-            }
-
-        }else{
-            if(sql_get('SELECT `id` FROM `servers` WHERE `hostname` = :hostname AND `ssh_account_id` = :ssh_account_id', array(':hostname' => $server['hostname'], ':ssh_account_id' => $server['ssh_user']), 'id')){
-                $v->setError(tr('servers_validate(): A server with hostname ":hostname" and ssh_account_id ":ssh_account_id" already exists', array(':hostname' => $server['hostname'], ':ssh_account_id' => $server['ssh_user'])));
-            }
-        }
-
-        $server['providers_id'] = sql_get('SELECT `id` FROM `providers` WHERE `seoname` = :seoname AND `status` IS NULL', array(':seoname' => $server['provider']), 'id');
-        $server['customers_id'] = sql_get('SELECT `id` FROM `customers` WHERE `seoname` = :seoname AND `status` IS NULL', array(':seoname' => $server['customer']), 'id');
+        $server['providers_id']    = sql_get('SELECT `id` FROM `providers`    WHERE `seoname` = :seoname AND `status` IS NULL', array(':seoname' => $server['provider'])   , 'id');
+        $server['customers_id']    = sql_get('SELECT `id` FROM `customers`    WHERE `seoname` = :seoname AND `status` IS NULL', array(':seoname' => $server['customer'])   , 'id');
+        $server['ssh_accounts_id'] = sql_get('SELECT `id` FROM `ssh_accounts` WHERE `seoname` = :seoname AND `status` IS NULL', array(':seoname' => $server['ssh_account']), 'id');
 
         if(!$server['providers_id']){
             $v->setError(tr('servers_validate(): Specified provider ":provider" does not exist', array(':provider' => $server['provider'])));
@@ -86,6 +60,24 @@ function servers_validate($server){
 
         if(!$server['customers_id']){
             $v->setError(tr('servers_validate(): Specified customer ":customer" does not exist', array(':customer' => $server['customer'])));
+        }
+
+        if(!$server['ssh_accounts_id']){
+            $v->setError(tr('servers_validate(): Specified SSH account ":account" does not exist', array(':account' => $server['ssh_account'])));
+        }
+
+        /*
+         * Already exists?
+         */
+        if($server['id']){
+            if(sql_get('SELECT `id` FROM `servers` WHERE `hostname` = :hostname AND `ssh_accounts_id` = :ssh_accounts_id AND `id` != :id', array(':hostname' => $server['hostname'], ':ssh_accounts_id' => $server['ssh_account'], ':id' => $server['id']), 'id')){
+                $v->setError(tr('servers_validate(): A server with hostname ":hostname" and user ":user" already exists', array(':hostname' => $server['hostname'], ':ssh_accounts_id' => $server['ssh_account'])));
+            }
+
+        }else{
+            if(sql_get('SELECT `id` FROM `servers` WHERE `hostname` = :hostname AND `ssh_accounts_id` = :ssh_accounts_id', array(':hostname' => $server['hostname'], ':ssh_accounts_id' => $server['ssh_account']), 'id')){
+                $v->setError(tr('servers_validate(): A server with hostname ":hostname" and ssh_accounts_id ":ssh_accounts_id" already exists', array(':hostname' => $server['hostname'], ':ssh_accounts_id' => $server['ssh_account'])));
+            }
         }
 
         $server['seohostname'] = seo_unique($server['hostname'], 'servers', $server['id'], 'seohostname');
@@ -109,7 +101,7 @@ function servers_test($hostname){
         $result = array_pop($result);
 
         if($result != '1'){
-            throw new bException(tr('Failed to SSH connect to ":server"', array(':server' => $user.'@'.$hostname.':'.$port)), 'failedconnect');
+            throw new bException(tr('servers_test(): Failed to SSH connect to ":server"', array(':server' => $user.'@'.$hostname.':'.$port)), 'failedconnect');
         }
 
     }catch(Exception $e){
@@ -124,19 +116,22 @@ function servers_test($hostname){
  */
 function servers_exec($hostname, $commands){
     try{
-        $server = sql_get('SELECT    `servers`.`ssh_account_id`,
+        $server = sql_get('SELECT    `servers`.`ssh_accounts_id`,
                                      `servers`.`port`,
 
                                      `ssh_accounts`.`username`,
-                                     `ssh_accounts`.`ssh_key`,
-                                     `ssh_accounts`.`key_file`
+                                     `ssh_accounts`.`ssh_key`
 
                            FROM      `servers`
 
                            LEFT JOIN `ssh_accounts`
-                           ON        `servers`.`ssh_account_id` = `ssh_accounts`.`id`
+                           ON        `servers`.`ssh_accounts_id` = `ssh_accounts`.`id`
 
                            WHERE     `servers`.`hostname` = :hostname', array(':hostname' => $hostname));
+
+        if(!$server){
+            throw new bException(tr('servers_exec(): Specified hostname ":hostname" does not exist', array(':hostname' => $hostname)), 'not-exists');
+        }
 
         /*
          * Ensure that ssk_keys directory exists and that its safe
@@ -173,7 +168,7 @@ function servers_exec($hostname, $commands){
          * Try deleting the keyfile anyway!
          */
         try{
-            if($filepath){
+            if(!empty($filepath)){
                 safe_exec(chmod($filepath, 0600));
                 file_delete($filepath);
             }

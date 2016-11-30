@@ -7,6 +7,8 @@
  * Written and Copyright by Sven Oostenbrink
  */
 
+
+
 /*
  * SSH account validation
  */
@@ -57,6 +59,8 @@ function ssh_get_account($account){
         }
 
         $retval = sql_get('SELECT    `ssh_accounts`.`id`,
+                                     `ssh_accounts`.`createdon`,
+                                     `ssh_accounts`.`modifiedon`,
                                      `ssh_accounts`.`name`,
                                      `ssh_accounts`.`username`,
                                      `ssh_accounts`.`ssh_key`,
