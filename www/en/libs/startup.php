@@ -330,19 +330,7 @@ try{
      * Start platform specific stuff
      */
     try{
-        switch($_CONFIG['tmp']){
-            case 'local':
-                define('TMP', ROOT.'data/tmp/');
-                break;
-
-            case 'global':
-                define('TMP', '/tmp/'.strtolower(PROJECT).'/');
-                break;
-
-            default:
-                throw new bException(tr('startup(): Unknown $_CONFIG[tmp] ":type" specified. Please use only "local" or "global"', array(':type' => $_CONFIG['tmp'])), 'unknown');
-        }
-
+        define('TMP'   , ROOT.'tmp/');
         define('PUBTMP', ROOT.'data/content/tmp/');
 
         switch(PLATFORM){
