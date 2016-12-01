@@ -47,8 +47,8 @@ try{
      *
      * IMPORTANT! These scripts are location sensitive and as such can ONLY run in the local tmp path!
      */
-    $_script_exec_file = file_assign_target(ROOT.'tmp/', false, false, $length);
-    $_script_exec_file = file_copy_tree(ROOT.'scripts/'.$script, ROOT.'tmp/'.$_script_exec_file, "#!/usr/bin/php\n", '', '.php');
+    $_script_exec_file = file_assign_target(TMP, false, false, $length);
+    $_script_exec_file = file_copy_tree(ROOT.'scripts/'.$script, TMP.$_script_exec_file, "#!/usr/bin/php\n", '', '.php');
 
     log_console('Executing script "'.str_log($script).'" as "'.$_script_exec_file.'"', 'script_exec', 'white');
 
