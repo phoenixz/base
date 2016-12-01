@@ -51,7 +51,7 @@ try{
         if(is_object($GLOBALS['sql_core']) and $GLOBALS['sql_core'] instanceof PDO){
             $GLOBALS['sql_core']->query('DROP DATABASE '.$_CONFIG['db']['core']['db']);
 
-            cli_log('Dropped database ":db"', array(':db' => $_CONFIG['db']['core']['db']), 'yellow');
+            cli_log(tr('Dropped database ":db"', array(':db' => $_CONFIG['db']['core']['db'])), 'yellow');
             die();
         }
     }
@@ -88,6 +88,6 @@ try{
         throw new bException('scripts/base/init: Failed', $e);
     }
 
-    cli_log('Core database init system has been disabled in db configuration', 'yellow');
+    cli_log(tr('Core database init system has been disabled in db configuration'), 'yellow');
 }
 ?>
