@@ -604,8 +604,6 @@ function user_signout() {
         unset($_SESSION['user']);
 
         session_destroy();
-        session_reset_domain();
-        session_regenerate_id();
 
     }catch(Exception $e){
         throw new bException('user_signout(): Failed', $e);
