@@ -943,19 +943,20 @@ function blogs_validate_category($category, $blog){
             /*
              * Make sure the parent category is inside this blog
              */
-            if(!$parent = sql_get('SELECT `id`, `blogs_id` FROM `blogs_categories` WHERE `seoname` = :seoname', array(':seoname' => $category['parent']))){
+            if(!$parent = sql_get('SELECT `id`, `blogs_id` FROM `blogs_categories` WHERE `id` = :id', array(':id' => $category['parent']))){
                 /*
                  * Specified parent does not exist at all
                  */
                 throw new bException('The specified parent category does not exist', 'not-exist');
             }
 
-            if($parent['blogs_id'] != $blog['id']){
-                /*
-                 * Specified parent does not exist inside this blog
-                 */
-                throw new bException('The specified parent category does not exist in this blog', 'not-exist');
-            }
+// :DELETE: parents_id can be blog post from any blog
+            //if($parent['blogs_id'] != $blog['id']){
+            //    /*
+            //     * Specified parent does not exist inside this blog
+            //     */
+            //    throw new bException('The specified parent category does not exist in this blog', 'not-exist');
+            //}
 
             $category['parents_id'] = $parent['id'];
         }
@@ -1098,7 +1099,7 @@ function blogs_validate_post($post, $params = null){
             $post['parents_id'] = null;
 
         }else{
-            $post['parents_id'] = blogs_validate_parent($post['seoparent'], $params['label_parent']);
+            $post['parents_id'] = blogs_validate_parent($post['parents_id'], $params['use_parent']);
         }
 
         for($i = 1; $i <= 3; $i++){
@@ -1742,13 +1743,13 @@ function blogblogs_validate_category($category, $blogs_id){
 /*
  *
  */
-function blogs_validate_parent($blog_post_seoname, $blogs_id){
+function blogs_validate_parent($blog_post_id, $blogs_id){
     try{
-        $id = sql_get('SELECT `id` FROM `blogs_posts` WHERE `seoname` = :seoname AND `blogs_id` = :blogs_id', 'id', array(':blogs_id' => $blogs_id,
-                                                                                                                          ':seoname'  => $blog_post_seoname));
+        $id = sql_get('SELECT `id` FROM `blogs_posts` WHERE `id` = :id AND `blogs_id` = :blogs_id', 'id', array(':blogs_id' => $blogs_id,
+                                                                                                                ':id'       => $blog_post_id));
 
         if(!$id){
-            throw new bException(tr('blogs_validate_parent(): Blog ":blog" does not contain a blog post named ":post"', array(':blog' => $blogs_id, ':post' => $blog_post_seoname)), 'notmember');
+            throw new bException(tr('blogs_validate_parent(): Blog ":blog" does not contain a blog post named ":post"', array(':blog' => $blogs_id, ':post' => $blog_post_id)), 'notmember');
         }
 
         return $id;
