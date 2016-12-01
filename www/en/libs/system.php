@@ -116,9 +116,8 @@ class bException extends Exception{
  * Send notifications of the specified class
  */
 function notify($event, $message, $classes = null){
-    load_libs('notifications');
-
     try{
+        load_libs('notifications');
         return notifications_do($event, $message, $classes);
 
     }catch(Exception $e){
@@ -1480,10 +1479,6 @@ function date_convert($date = null, $requested_format = 'human_datetime', $to_ti
         return $date->format($format);
 
     }catch(Exception $e){
-        if(!isset($_CONFIG['formats'][$requested_format]) and ($requested_format != 'mysql')){
-            throw new bException(tr('date_convert(): Unknown format ":format" specified', array(':format' => $requested_format)), 'unknown');
-        }
-
         if(isset($format)){
             throw new bException(tr('date_convert(): Either :error, or Invalid format ":format" specified', array(':error' => $e->getMessage(), ':format' => str_log($format))), 'invalid');
         }
@@ -1952,9 +1947,9 @@ function session_reset_domain(){
                 /*
                  * white label domains are disabled, but sub domains from the $_CONFIG[domain] are allowed
                  */
-                $length = strlen('.'.$_CONFIG['domain']);
+                $length = strlen($_CONFIG['domain']);
 
-                if(substr($domain, -$length, $length) !== '.'.$_CONFIG['domain']){
+                if(substr($domain, -$length, $length) !== $_CONFIG['domain']){
                     $domain = null;
                 }
 

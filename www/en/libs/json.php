@@ -332,14 +332,14 @@ function json_authenticate($key){
 /*
  *
  */
-function json_start_session($token){
+function json_start_session(){
     global $_CONFIG;
 
     try{
         /*
          * Check session token
          */
-        if(empty($token)){
+        if(empty($_GET['PHPSESSID'])){
             throw new bException(tr('json_start_session(): No auth key specified'), 'not-specified');
         }
 
@@ -347,7 +347,7 @@ function json_start_session($token){
          * Yay, we have an actual token, create session!
          */
         session_write_close();
-        $_COOKIE['PHPSESSID'] = $token;
+        session_id($_GET['PHPSESSID']);
         session_start();
 
         if(empty($_SESSION['json_session_start'])){
@@ -357,7 +357,8 @@ function json_start_session($token){
             session_destroy();
             session_regenerate_id();
             session_reset_domain();
-            throw new bException(tr('json_start_session(): Specified token has no session'), 'access-denied');
+
+            throw new bException(tr('json_start_session(): Specified token ":token" has no session', array(':token' => $token)), 'access-denied');
         }
 
         return session_id();

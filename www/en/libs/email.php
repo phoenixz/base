@@ -539,16 +539,16 @@ function email_update_message($email, $direction){
                                VALUES                       (:direction , :conversations_id , :reply_to_id , :from , :to , :users_id , :email_accounts_id , :date , :subject , :text , :html , '.($email['sent'] ? 'NOW()' : '').')',
 
                                array(':direction'         => $direction,
-                                     ':conversations_id'  => $email['conversation']['id'],
-                                     ':reply_to_id'       => $email['reply_to_id'],
-                                     ':from'              => $email['from'],
-                                     ':to'                => $email['to'],
-                                     ':users_id'          => $email['users_id'],
-                                     ':email_accounts_id' => $email['email_accounts_id'],
+                                     ':conversations_id'  => isset_get($email['conversation']['id']),
+                                     ':reply_to_id'       => isset_get($email['reply_to_id']),
+                                     ':from'              => isset_get($email['from']),
+                                     ':to'                => isset_get($email['to']),
+                                     ':users_id'          => isset_get($email['users_id']),
+                                     ':email_accounts_id' => isset_get($email['email_accounts_id']),
                                      ':date'              => isset_get($email['date'], system_date_format(null, 'mysql')),
-                                     ':subject'           => (string) $email['subject'],
-                                     ':text'              => $email['text'],
-                                     ':html'              => $email['html']));
+                                     ':subject'           => (string) isset_get($email['subject']),
+                                     ':text'              => isset_get($email['text']),
+                                     ':html'              => isset_get($email['html'])));
                     break;
 
                 case 'received':
@@ -556,27 +556,27 @@ function email_update_message($email, $direction){
                                VALUES                       (:direction , :conversations_id , :reply_to_id , :from , :to , :users_id , :email_accounts_id , :date , :message_id , :size , :uid , :msgno , :recent , :flagged , :answered , :deleted , :seen , :draft , :udate , :subject , :text , :html )',
 
                                array(':direction'         => $direction,
-                                     ':conversations_id'  => $email['conversation']['id'],
-                                     ':reply_to_id'       => $email['reply_to_id'],
-                                     ':from'              => $email['from'],
-                                     ':to'                => $email['to'],
-                                     ':users_id'          => $email['users_id'],
-                                     ':email_accounts_id' => $email['email_accounts_id'],
+                                     ':conversations_id'  => isset_get($email['conversation']['id']),
+                                     ':reply_to_id'       => isset_get($email['reply_to_id']),
+                                     ':from'              => isset_get($email['from']),
+                                     ':to'                => isset_get($email['to']),
+                                     ':users_id'          => isset_get($email['users_id']),
+                                     ':email_accounts_id' => isset_get($email['email_accounts_id']),
                                      ':date'              => isset_get($email['date'], system_date_format(null, 'mysql')),
-                                     ':message_id'        => $email['message_id'],
-                                     ':size'              => $email['size'],
-                                     ':uid'               => $email['uid'],
-                                     ':msgno'             => $email['msgno'],
-                                     ':recent'            => $email['recent'],
-                                     ':flagged'           => $email['flagged'],
-                                     ':answered'          => $email['answered'],
-                                     ':deleted'           => $email['deleted'],
-                                     ':seen'              => $email['seen'],
-                                     ':draft'             => $email['draft'],
-                                     ':udate'             => $email['udate'],
-                                     ':subject'           => (string) $email['subject'],
-                                     ':text'              => $email['text'],
-                                     ':html'              => $email['html']));
+                                     ':message_id'        => isset_get($email['message_id']),
+                                     ':size'              => isset_get($email['size']),
+                                     ':uid'               => isset_get($email['uid']),
+                                     ':msgno'             => isset_get($email['msgno']),
+                                     ':recent'            => isset_get($email['recent']),
+                                     ':flagged'           => isset_get($email['flagged']),
+                                     ':answered'          => isset_get($email['answered']),
+                                     ':deleted'           => isset_get($email['deleted']),
+                                     ':seen'              => isset_get($email['seen']),
+                                     ':draft'             => isset_get($email['draft']),
+                                     ':udate'             => isset_get($email['udate']),
+                                     ':subject'           => (string) isset_get($email['subject']),
+                                     ':text'              => isset_get($email['text']),
+                                     ':html'              => isset_get($email['html'])));
                     break;
 
                 default:
