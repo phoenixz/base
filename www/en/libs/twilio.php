@@ -174,14 +174,14 @@ function twilio_send_message($message, $to, $from = null){
     static $twilio;
 
     try{
-        if(empty($twilio)){
-            $twilio = twilio_load();
-        }
-
         $source = sql_get('SELECT `number` FROM `twilio_numbers` WHERE `number` = :number', 'number', array(':number' => $from));
 
         if(!$source){
             throw new bException(tr('twilio_send_message(): Specified source phone ":from" is not known', array(':from' => $from)), 'unknown');
+        }
+
+        if(empty($twilio)){
+            $twilio = twilio_load($source);
         }
 
         if(is_array($message)){
@@ -545,6 +545,7 @@ function twilio_numbers_get($number){
         return $retval;
 
     }catch(Exception $e){
+showdie($e);
         throw new bException('twilio_numbers_get(): Failed', $e);
     }
 }
