@@ -1566,7 +1566,7 @@ function run_background($cmd, $log = true, $single = true){
         $path = slash($path);
         $cmd  = basename($cmd);
 
-        if($path == '.'){
+        if($path == './'){
             $path = ROOT.'scripts/';
 
         }elseif(str_ends_not(str_starts_not($path, '/'), '/') == 'base'){
