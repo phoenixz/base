@@ -186,9 +186,9 @@ function curl_get($params, $referer = null, $post = false, $options = array()){
         array_default($params, 'method'         , null);
         array_default($params, 'dns_cache'      , true);
         array_default($params, 'proxies'        , $_CONFIG['curl']['proxies']);
-        array_default($params, 'simulation'     , false); // false, partial, or full
-        array_default($params, 'sleep'          , 15);    // Sleep howmany seconds between retries
-        array_default($params, 'retries'        ,  5);    // Retry howmany time on HTTP0 failures
+        array_default($params, 'simulation'     , false);   // false, partial, or full
+        array_default($params, 'sleep'          , 1000);    // Sleep howmany microseconds between retries
+        array_default($params, 'retries'        , 5);       // Retry howmany time on HTTP0 failures
         array_default($params, 'timeout'        , $_CONFIG['curl']['timeout']);         // # of seconds for cURL functions to execute
         array_default($params, 'connect_timeout', $_CONFIG['curl']['connect_timeout']); // # of seconds before connection try will fail
 
@@ -468,7 +468,7 @@ function curl_get($params, $referer = null, $post = false, $options = array()){
              * for a limited number of times
              *
              */
-            sleep($params['sleep']);
+            usleep($params['sleep']);
             log_error('curl_get(): Got HTTP0 for url "'.str_log($params['url']).'", retry "'.str_log($retry).'"', 'HTTP0');
             return curl_get($params, $referer, $post, $options);
         }
