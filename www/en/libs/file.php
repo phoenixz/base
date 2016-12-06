@@ -449,7 +449,7 @@ function file_delete_tree($directory, $empty = false){
 
         if(!file_exists($directory) and !is_link($directory)){
             if(!file_exists(dirname($directory))){
-                throw new bException('file_delete_tree(): Specified directory "'.str_log($directory).'" does not exist');
+                throw new bException(tr('file_delete_tree(): Specified directory ":directory" does not exist', array(':directory' => $directory)), 'not-exist');
             }
 
             /*
