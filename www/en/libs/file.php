@@ -448,14 +448,10 @@ function file_delete_tree($directory, $empty = false){
         $directory = unslash($directory);
 
         if(!file_exists($directory) and !is_link($directory)){
-            if(!file_exists(dirname($directory))){
-                throw new bException(tr('file_delete_tree(): Specified directory ":directory" does not exist', array(':directory' => $directory)), 'not-exist');
-            }
-
             /*
-             * The path itself no (longer) exists, but the parent does. Maybe it was already deleted,
-             * but the situation now is exactly how this function is supposed to leave it behind, so
-             * we're okay and done!
+             * The path itself no (longer) exists. Maybe it was already
+             * deleted, but the situation now is exactly how this function is
+             * supposed to leave it behind, so we're okay and done!
              */
             return;
 
