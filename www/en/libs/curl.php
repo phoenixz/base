@@ -47,7 +47,7 @@ function curl_get_proxy($url, $file = '', $serverurl = null) {
 
         $data = curl_get(array('url'        => str_ends($serverurl, '?apikey='.$_CONFIG['curl']['apikey'].'&url=').urlencode($url),
                                'getheaders' => false,
-                               'proxy'      => false));
+                               'proxies'    => false));
 
         if(!trim($data['data'])){
             throw new bException(tr('curl_get_proxy(): Proxy returned no data. Is proxy correctly configured? Proxy domain resolves correctly?'), 'no-data');
