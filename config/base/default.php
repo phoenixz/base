@@ -52,13 +52,7 @@ $_CONFIG['cdn']                = array('min'              => true,              
 
                                        'css'              => array('post'               => false),          // The default last CSS file to be loaded (after all others have been loaded, so that this one can override any CSS rule if needed)
 
-                                       'fonts'            => array(),                                       // Load font files?
-
-                                       'production_fonts' => false,                                         // Load font files only for production?
-
-                                       'js'               => array('default_libs'       => array('jquery', 'base/strings', 'base/base'),   // Default JS libraries to be loaded
-
-                                                                   'load_delayed'       => false,           // If set to true, the JS files will NOT be loaded in the <head> tag but at the end of the HTML <body> code so that the site will load faster. This may require some special site design to avoid problems though!
+                                       'js'               => array('load_delayed'       => false,           // If set to true, the JS files will NOT be loaded in the <head> tag but at the end of the HTML <body> code so that the site will load faster. This may require some special site design to avoid problems though!
 
                                                                    'use_linked'         => false,           // If set to true, all files in the "linked" configuration below will be placed together in one larger file, and only that larger file will be loaded. This makes loading the pages faster since fewer requests are needed
 

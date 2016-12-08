@@ -244,9 +244,9 @@ function html_generate_js(){
         /*
          * Set to load default JS libraries
          */
-        foreach($js['default_libs'] as $lib){
-            $libs[$lib] = array();
-        }
+if(isset($js['default_libs'])){
+throw new bException('WARNING: $_CONFIG[js][default_libs] CONFIGURATION FOUND! THIS IS NO LONGER SUPPORTED! JS LIBRARIES SHOULD ALWAYS BE LOADED USING html_load_js() AND JS SCRIPT ADDED THROUGH html_script()', 'obsolete');
+}
 
         if(!empty($GLOBALS['js'])){
             $libs = array_merge($libs, $GLOBALS['js']);
@@ -503,11 +503,13 @@ function html_header($params = null, $meta = array()){
         /*
          * Add required fonts
          */
-        if(!empty($_CONFIG['cdn']['fonts'])){
-            if($_CONFIG['production'] or (empty($_CONFIG['cdn']['production_fonts']))){
-                foreach($_CONFIG['cdn']['fonts'] as $font){
-                    $retval .= "<link href=\"".$font."\" rel=\"stylesheet\" type=\"text/css\">\n";
-                }
+if(isset($_CONFIG['cdn']['fonts'])){
+throw new bException('WARNING: $_CONFIG[cdn][fonts] CONFIGURATION FOUND! THIS IS NO LONGER SUPPORTED! FONTS SHOULD BE SPECIFIED IN $params[fonts] IN c_page()', 'obsolete');
+}
+
+        if(!empty($params['fonts'])){
+            foreach($params['fonts'] as $font){
+                $retval .= "<link href=\"".$font."\" rel=\"stylesheet\" type=\"text/css\">\n";
             }
         }
 
@@ -726,7 +728,11 @@ function html_flash_set($messages, $type = 'info', $class = null){
         if(!is_array($messages)){
             if(is_object($messages)){
                 if($messages instanceof bException){
-                    if($_CONFIG['production']){
+                    if(debug()){
+                        $type     = 'error';
+                        $messages = array($messages->getMessages('<br>'));
+
+                    }else{
                         /*
                          * This may or may not contain messages that are confidential.
                          * All bExceptions thrown by functions will contain the function name like function():
@@ -761,14 +767,14 @@ function html_flash_set($messages, $type = 'info', $class = null){
                             unset($delete);
                             $messages = array(implode('<br>', $messages));
                         }
-
-                    }else{
-                        $type     = 'error';
-                        $messages = array($messages->getMessages('<br>'));
                     }
 
                 }elseif($messages instanceof Exception){
-                    if($_CONFIG['production']){
+                    if(debug()){
+                        $type     = 'error';
+                        $messages = array($messages->getMessage());
+
+                    }else{
                         /*
                          * Non bExceptions basically are caused by PHP and should basically not ever happen.
                          * These should also be considdered confidential and their info should never be
@@ -777,14 +783,10 @@ function html_flash_set($messages, $type = 'info', $class = null){
                         $type     = 'error';
                         $messages = array(tr('Something went wrong, please try again later'));
                         notify('html_flash/Exception', tr('html_flash(): Received PHP exception class ":class" with code ":code" and message ":message"', array(':class' => get_class($messages), ':code' => $messages->getCode(), ':message' => $messages->getMessage())), 'developers');
-
-                    }else{
-                        $type     = 'error';
-                        $messages = array($messages->getMessage());
                     }
 
                 }else{
-                    if($_CONFIG['production']){
+                    if(debug()){
                         $type     = 'error';
                         $messages = array(tr('Something went wrong, please try again later'));
                         notify('html_flash/object', tr('html_flash(): Received PHP object with class ":class" and content ":content"', array(':class' => get_class($messages), ':content' => print_r($messages->getMessage(), true))), 'developers');
