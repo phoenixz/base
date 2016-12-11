@@ -57,7 +57,7 @@ function roles_get($role = null){
 
                               WHERE  `roles`.`createdby` = :createdby
 
-                              AND    `roles`.`status`    = "new"',
+                              AND    `roles`.`status`    = "_new"',
 
                               array(':createdby' => $_SESSION['user']['id']));
 
@@ -66,7 +66,7 @@ function roles_get($role = null){
                            VALUES              (:createdby , :status , :name )',
 
                            array(':name'      => $role,
-                                 ':status'    => 'new',
+                                 ':status'    => '_new',
                                  ':createdby' => isset_get($_SESSION['user']['id'])));
 
                 return roles_get($role);
