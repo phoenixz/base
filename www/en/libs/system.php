@@ -1985,6 +1985,25 @@ function session_reset_domain(){
 
 
 /*
+ * Callback funtion
+ */
+function execute_callback($callback_name, $params = null){
+    try{
+        if(is_callable($callback_name)){
+            return $callback_name($params);
+        }
+
+        return null;
+
+    }catch(Exception $e){
+        throw new bException(tr('execute_callback(): Failed'), $e);
+    }
+}
+
+
+
+
+/*
  * OBSOLETE FUNCTIONS AND WRAPPERS BE HERE BELOW
  */
 
