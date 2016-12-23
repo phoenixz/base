@@ -364,8 +364,8 @@ function email_get_conversation($email){
 
                                  array(':us'        => '%'.$email['to'].'%',
                                        ':them'      => '%'.$email['from'].'%',
-                                       ':subject'   => str_from($email['subject'], 'RE: '),
-                                       ':resubject' => 'RE: '.$email['subject']));
+                                       ':subject'   => mb_trim(str_starts_not($email['subject'], 'RE:')),
+                                       ':resubject' => str_starts($email['subject'], 'RE:')));
 
         if(!$conversation){
             /*
