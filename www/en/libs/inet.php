@@ -375,4 +375,86 @@ function inet_dig($domain, $section = false){
 function get_domain($strip = array('www', 'dev', 'm')){
     return inet_get_domain($strip);
 }
+
+
+
+/*
+ *
+ */
+function inet_get_client_data(){
+    try{
+        /*
+         * Fetch user data
+         * Get email, IPv4, IPv6, user_agent, reverse host, provider, longitude, latitude, referrer
+         */
+        load_libs('geoip');
+
+        $client['ip']           = $_SERVER['REMOTE_ADDR'];
+        $client['email']        = isset_get($_GET['email']);
+        $client['user_agent']   = isset_get($_SERVER['HTTP_USER_AGENT']);
+        $client['referrer']     = isset_get($_SERVER['HTTP_REFERER']);
+        $client['reverse_host'] = gethostbyaddr($client['ip']);
+
+        $geodata = geoip_get($client['ip']);
+
+        $client['latitude']  = isset_get($geodata['latitude']);
+        $client['longitude'] = isset_get($geodata['longitude']);
+
+        //if(empty($client['email']) and $_CONFIG['production']){
+        //    header("HTTP/1.0 404 Not Found");
+        //    die('404 - Not Found');
+        //}
+
+
+
+        /*
+         * Detect browser
+         */
+        $user_agent = strtolower($client['user_agent']);
+        $browsers   = array('chrome',
+                            'firefox',
+                            'msie 10',
+                            'msie 9',
+                            'msie 8',
+                            'msie 7',
+                            'opera');
+
+        foreach($browsers as $browser){
+            if(strstr($user_agent, $browser)){
+                $client['browser'] = $browser;
+                break;
+            }
+        }
+
+        if(empty($client['browser'])){
+            $client['browser'] = 'unknown';
+        }
+
+
+
+        /*
+         * Detect operating system
+         */
+        $user_agent = strtolower($client['user_agent']);
+        $oses       = array('android',
+                            'iphone',
+                            'windows');
+
+        foreach($oses as $os){
+            if(strstr($user_agent, $os)){
+                $client['os'] = $os;
+                break;
+            }
+        }
+
+        if(empty($client['os'])){
+            $client['os'] = 'unknown';
+        }
+
+        return $client;
+
+    }catch(Exception $e){
+        throw new bException('inet_get_client_data(): Failed', $e);
+    }
+}
 ?>
