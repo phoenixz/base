@@ -1161,7 +1161,7 @@ function user_load_rights($user){
  * Make the current session the specified user
  * NOTE: Since this function is rarely used, it it implemented by a handler
  */
-function user_switch($username, $redirect = '/'){
+function user_switch($users_id, $redirect = '/'){
     include(dirname(__FILE__).'/handlers/user_switch.php');
 }
 
