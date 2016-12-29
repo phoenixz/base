@@ -572,7 +572,7 @@ foreach($targets as $target_environment){
         /*
          * No target user specified, use the current process user
          */
-        $deploy_config['target_user'] = get_current_user();
+        $deploy_config['target_user'] = get_process_user();
     }
 
     cli_log(tr('Deploying to target environment ":target"', array(':target' => $target_environment)), 'white');
@@ -769,7 +769,7 @@ foreach($targets as $target_environment){
         cli_log(tr('NOT deploying, due to "--no-deploy" or "--test" command line parameter'), 'yellow');
 
     }else{
-        $exclude = ' --exclude=*~ --exclude="data/mocks" --exclude="data/mock*" --exclude="data/uploads" --exclude="data/packages" --exclude=".git*" --exclude="/data/system"  --exclude="/data/tmp" ';
+        $exclude = ' --exclude=*~ --exclude="data/mocks" --exclude="tmp" --exclude="data/mock*" --exclude="data/uploads" --exclude="data/packages" --exclude=".git*" --exclude="/data/system"  --exclude="/data/tmp" ';
 
         if(!$send_content_photos){
             $exclude .= ' --exclude="data/content/photos" ';

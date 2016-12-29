@@ -2002,6 +2002,29 @@ function execute_callback($callback_name, $params = null){
 
 
 
+/*
+ *
+ */
+function get_process_user(){
+    try{
+        if(is_executable('posix_getpwuid')){
+            $id   = posix_geteuid();
+            $user = posix_getpwuid($id);
+            $user = $user['name'];
+
+        }else{
+            $user = safe_exec('whoami');
+            $user = array_pop($user);
+        }
+
+        return $user;
+
+    }catch(Exception $e){
+        throw new bException(tr('get_process_user(): Failed'), $e);
+    }
+}
+
+
 
 /*
  * OBSOLETE FUNCTIONS AND WRAPPERS BE HERE BELOW
