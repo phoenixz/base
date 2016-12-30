@@ -1,6 +1,15 @@
 <?php
 // Deploy target environments configuration
 
+$_CONFIG['deploy']['local']     = array('sudo'            => true,
+                                        'user'            => 'www-data',
+                                        'group'           => 'www-data',
+
+                                        'modes'           => array('dirs'  => array('/'             => 'a-rwx,ug+rwx,g+s'),
+
+                                                                   'files' => array('/'             => 'a-rwx,ug+rw',
+                                                                                    '/scripts'      => 'a-w,ug+rx')));
+
 $_CONFIG['deploy']['trial']      = array('target_user'         => '',
                                          'target_server'       => '?website-server-domain-name?',
                                          'target_port'         => 22,
