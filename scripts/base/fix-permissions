@@ -36,23 +36,25 @@ if(empty($_CONFIG['deploy'][$target])){
 }
 
 $deploy_config = $_CONFIG['deploy'][$target];
-$target_dir    = cli_argument('--target-dir', true, $deploy_config['target_dir']);
+$target_dir    = cli_argument('--target-dir', true, isset_get($deploy_config['target_dir'], ROOT));
 
 try{
     if(empty($_CONFIG['deploy'][$target])){
         throw new bException(tr('Specified target environment ":target" has no deploy configuration $_CONFIG[deploy][:target] in ":ROOTconfig/deploy.php"', array(':target' => $target, ':ROOT' => ROOT)), 'missing-configuration');
     }
 
-    if(empty($deploy_config['user'])){
-        throw new bException(tr('No $_CONFIG[deploy][:target][user] specified', array(':target' => $target)), 'missing-configuration');
-    }
+    if(!empty($deploy_config['target_server'])){
+        if(empty($deploy_config['user'])){
+            throw new bException(tr('No $_CONFIG[deploy][:target][user] specified', array(':target' => $target)), 'missing-configuration');
+        }
 
-    if(empty($deploy_config['group'])){
-        throw new bException(tr('No $_CONFIG[deploy][:target][group] specified', array(':target' => $target)), 'missing-configuration');
-    }
+        if(empty($deploy_config['group'])){
+            throw new bException(tr('No $_CONFIG[deploy][:target][group] specified', array(':target' => $target)), 'missing-configuration');
+        }
 
-    if(empty($deploy_config['modes'])){
-        throw new bException(tr('No $_CONFIG[deploy][:target][modes] specified', array(':target' => $target)), 'missing-configuration');
+        if(empty($deploy_config['modes'])){
+            throw new bException(tr('No $_CONFIG[deploy][:target][modes] specified', array(':target' => $target)), 'missing-configuration');
+        }
     }
 
 }catch(Exception $e){
