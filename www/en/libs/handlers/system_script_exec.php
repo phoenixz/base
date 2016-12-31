@@ -57,7 +57,7 @@ try{
          * Execute the script (by its tempfile)
          */
         global $argv;
-        cli_method(false);
+        cli_method(null, false);
 
         include($_script_exec_file);
 
