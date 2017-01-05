@@ -457,29 +457,9 @@ try{
 
                     check_extended_session();
 
-                    /*
-                     * Language might have been set by GET or POST
-                     */
-                    if(empty($_GET['l'])){
-                        $_GET['l'] = substr(__DIR__, -7, 2);
-
-                    }else{
-                        if(!is_string($_GET['l']) or strlen($_GET['l']) != 2){
-                            unset($_GET['l']);
-
-                        }else{
-                            if(empty($_CONFIG['language']['supported'][$_GET['l']])){
-                                unset($_GET['l']);
-
-                            }else{
-                                $language = $_GET['l'];
-                            }
-                        }
-                    }
-
                 }catch(Exception $e){
                     if(!is_writable(session_save_path())){
-                        throw new bException('startup(): Session startup failed because the session path "'.str_log(session_save_path()).'" is not writable for platform "'.PLATFORM.'"', $e);
+                        throw new bException('startup(): Session startup failed because the session path ":path" is not writable for platform ":platform"', array(':path' => session_save_path(), ':platform' => PLATFORM), $e);
                     }
 
                     throw new bException('Session startup failed', $e);
@@ -558,52 +538,45 @@ try{
      * Both will set $language
      */
     try{
-        if(empty($language)){
-            if(PLATFORM == 'shell'){
-                $language = isset_get($_CONFIG['language']['fallback'], 'en');
+        if(PLATFORM_SHELL){
+            $language = 'en';
 
-            }else{
-                /*
-                 * No specific language was requested, rules are as follows:
-                 * Use the language in $_SESSION[language], if set
-                 * If not, use language set in $_CONFIG[language][supported]
-                 * If $_CONFIG[language][supported] is "auto" then use geoip
-                 * location
-                 */
-                if(empty($_SESSION['language'])){
-                    if($_CONFIG['language']['default'] == 'auto'){
-                        /*
-                         * Use GEO-IP language detection
-                         */
-                        try{
-                            load_libs('locales');
-                            $locales  = locales_get_for_ip($_SERVER['REMOTE_ADDR']);
-                            $language =  str_until(str_until($locales, ','), '-');
+        }else{
+            /*
+             * Language is defined by the www/LANGUAGE dir that is used.
+             */
+            $_GET['l'] = substr(__DIR__, -7, 2);
 
-                        }catch(Exception $e){
-                            /*
-                             * If anything goes wrong, fall back to US english
-                             */
-// :TODO: Notifications?
-                            $language = isset_get($_CONFIG['language']['fallback'], 'en');
-                        }
-
-                    }else{
-                        $language = $_CONFIG['language']['default'];
-                    }
-
-                }else{
-                    $language = $_SESSION['language'];
-                }
+            if(!is_string($_GET['l']) or strlen($_GET['l']) != 2){
+                unset($_GET['l']);
+                page_show(404);
             }
 
-// :DELETE: Next line was from old language detection system
-//            define('LANGUAGE', str_rfrom(substr(dirname(__FILE__), 0, -5), '/'));
+            if(empty($_CONFIG['language']['supported'][$_GET['l']])){
+                unset($_GET['l']);
+                page_show(404);
+
+            }
+
+            $language = $_GET['l'];
         }
 
-        if(empty($_CONFIG['language']['supported'][$language])){
-            throw new bException('startup(): Specified language code "'.str_log($language).'" is not supported', 'invalidlanguage');
-        }
+// :TODO: Add GEO-IP language lookup
+//                    /*
+//                     * Use GEO-IP language detection
+//                     */
+//                    try{
+//                        load_libs('locales');
+//                        $locales  = locales_get_for_ip($_SERVER['REMOTE_ADDR']);
+//                        $language =  str_until(str_until($locales, ','), '-');
+//
+//                    }catch(Exception $e){
+//                        /*
+//                         * If anything goes wrong, fall back to US english
+//                         */
+//// :TODO: Notifications?
+//                        $language = isset_get($_CONFIG['language']['fallback'], 'en');
+//                    }
 
         define('LANGUAGE', $language);
         define('LOCALE'  , $language.(empty($_SESSION['location']['country']['code']) ? '' : '_'.$_SESSION['location']['country']['code']));
