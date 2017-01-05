@@ -137,7 +137,16 @@ function html_bundler($type){
         /*
          * If we don't find an existing bundle file, then procced with the concatination process
          */
-        if(!file_exists($bundle_file)){
+        if(file_exists($bundle_file)){
+            if((filemtime($bundle_file) + $_CONFIG['cdn']['bundler']['max_age']) < time()){
+                /*
+                 * This file is too old, dump and retry
+                 */
+                file_delete($bundle_file);
+                return html_bundler($type);
+            }
+
+        }else{
             /*
              * Generate new bundle
              */
@@ -177,6 +186,7 @@ function html_bundler($type){
             unset($file);
 
             if($_CONFIG['cdn']['network']){
+                load_libs('cdn');
                 cdn_add_object($bundle_file);
             }
         }
