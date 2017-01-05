@@ -14,7 +14,7 @@ define('CDN', str_from(ENVIRONMENT, 'cdn'));
 /*
  * Adds the required amount of copies of the specified object to random CDN servers
  */
-function cdn_add_object($table = 'pub', $file){
+function cdn_add_object($file, $table = 'pub'){
     global $_CONFIG;
 
     try{
