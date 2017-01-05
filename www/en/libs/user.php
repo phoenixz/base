@@ -1848,6 +1848,37 @@ notify('not-implemented', 'user_test_password() has not yet been implemented!!')
 
 
 /*
+ * Generate a new API key for the (optionally specified) user
+ */
+function user_update_apikey($users_id = null){
+    global $_CONFIG;
+
+    try{
+        if(!$users_id){
+            $users_id = $_SESSION['user']['id'];
+        }
+
+        $apikey = substr(hash('sha512', uniqid().microtime(true)), 0, 64);
+
+        sql_query('UPDATE `users`
+
+                   SET    `api_key` = :api_key
+
+                   WHERE  `id`      = :id',
+
+                   array(':id'      => $users_id,
+                         ':api_key' => $apikey));
+
+        return $apikey;
+
+    }catch(Exception $e){
+        throw new bException(tr('user_update_apikey(): Failed'), $e);
+    }
+}
+
+
+
+/*
  * OBSOLETE WRAPPERS BELOW
  */
 function users_validate($user, $sections = array()){
