@@ -132,8 +132,6 @@ function html_bundler($type){
         $bundle      = substr(md5(str_force($GLOBALS[$realtype])), 1, 16);
         $bundle_file = ROOT.'www/en/pub/'.$type.'/bundle/'.$bundle.$ext;
 
-        file_ensure_path(ROOT.'www/en/pub/'.$type.'/bundle/');
-
         /*
          * If we don't find an existing bundle file, then procced with the concatination process
          */
@@ -150,6 +148,9 @@ function html_bundler($type){
             /*
              * Generate new bundle
              */
+            load_libs('file');
+            file_ensure_path(ROOT.'www/en/pub/'.$type.'/bundle/');
+
             foreach($GLOBALS[$realtype] as &$file){
                 /*
                  * Check for @imports
