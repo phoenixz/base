@@ -9,8 +9,6 @@ $_CONFIG['debug']                       = true;
 // Detect browser?
 $_CONFIG['browser_detect']	            = false;
 
-$_CONFIG['cdn']['fonts']                = array('https://fonts.googleapis.com/css?family=Lato:300,400,400italic,600,700|Raleway:300,400,500,600,700|Crete+Round:400italic');
-$_CONFIG['cdn']['js']['default_libs']   = array('jquery', 'base/strings', 'base/base', 'plugins', 'functions');
 $_CONFIG['cdn']['js']['load_delayed']   = true;
 
 // Cookie configuration

@@ -17,6 +17,7 @@
  *
  * In case basic authentication is used, allow less secure apps in https://www.google.com/settings/security/lesssecureapps, see also https://support.google.com/accounts/answer/6010255?hl=en
  *
+ * TO ADD USERS TO POSTFIX VIRTUAL USERS:
  * INSERT INTO `virtual_users` (`domain_id`, `password`, `email`) VALUES (1, ENCRYPT('the_password_here', CONCAT('$6$', SUBSTRING(SHA(RAND()), -16))), "user@domain.com");
  */
 
@@ -96,16 +97,18 @@ function email_connect($userdata, $mail_box = null){
 function email_poll($params){
     try{
         array_params($params);
-        array_default($params, 'account'      , null);
-        array_default($params, 'mail_box'     , null);
-        array_default($params, 'criteria'     , 'ALL');
-        array_default($params, 'delete'       , false);
-        array_default($params, 'peek'         , false);
-        array_default($params, 'internal'     , false);
-        array_default($params, 'uid'          , false);
-        array_default($params, 'character_set', 'UTF-8');
-        array_default($params, 'store'        , false);
-        array_default($params, 'return'       , false);
+        array_default($params, 'account'           , null);
+        array_default($params, 'mail_box'          , null);
+        array_default($params, 'criteria'          , 'ALL');
+        array_default($params, 'delete'            , false);
+        array_default($params, 'peek'              , false);
+        array_default($params, 'internal'          , false);
+        array_default($params, 'uid'               , false);
+        array_default($params, 'character_set'     , 'UTF-8');
+        array_default($params, 'store'             , false);
+        array_default($params, 'return'            , false);
+        array_default($params, 'callbacks'         , array());
+        array_default($params, 'return'            , false);
 
         if($params['peek'] and $params['delete']){
             throw new bException(tr('email_poll(): Both peek and delete were specified, though they are mutually exclusive. Please specify one or the other'), 'conflict');
@@ -120,9 +123,20 @@ function email_poll($params){
         }
 
         $userdata = email_get_user($params['account']);
+
+        /*
+         * Pre IMAP Fetch
+         */
+        execute_callback(isset_get($params['callbacks']['start']));
+
         $imap     = email_connect($userdata, $params['mail_box']);
         $mails    = imap_search($imap, $params['criteria'], SE_FREE, $params['character_set']);
         $retval   = array();
+
+        /*
+         * Post IMAP Fetch
+         */
+        execute_callback(isset_get($params['post_search'], $mails));
 
         if(!$mails){
             if(PLATFORM_SHELL){
@@ -148,6 +162,8 @@ function email_poll($params){
                 /*
                  * Get information specific to this email
                  */
+                execute_callback(isset_get($params['callbacks']['pre_fetch'], $mail));
+
                 $data = imap_fetch_overview($imap, $mail, 0);
                 $data = array_shift($data);
                 $data = array_from_object($data);
@@ -167,6 +183,8 @@ function email_poll($params){
                  * Get the images of the email
                  */
                 $data = email_get_attachments($imap, $mail, $data, $flags);
+
+                $data = execute_callback(isset_get($params['callbacks']['post_fetch']), $data);
 
                 /*
                  * Decode the body text.
@@ -192,6 +210,7 @@ function email_poll($params){
                         $data['email_accounts_id'] = $userdata['email_accounts_id'];
 
                         email_update_conversation($data, 'received');
+                        execute_callback(isset_get($params['callbacks']['post_update']), $data);
 
                     }catch(bException $e){
                         /*
@@ -209,11 +228,13 @@ function email_poll($params){
 
                 if($params['delete']){
                     imap_delete($imap, $mail);
+                    execute_callback(isset_get($params['callbacks']['post_delete']), $mail);
                 }
             }
 
             if($params['delete']){
                 imap_expunge($imap);
+                execute_callback(isset_get($params['callbacks']['post_expunge']), $imap);
             }
 
             if(VERBOSE and PLATFORM_SHELL){
@@ -343,8 +364,8 @@ function email_get_conversation($email){
 
                                  array(':us'        => '%'.$email['to'].'%',
                                        ':them'      => '%'.$email['from'].'%',
-                                       ':subject'   => str_from($email['subject'], 'RE: '),
-                                       ':resubject' => 'RE: '.$email['subject']));
+                                       ':subject'   => mb_trim(str_starts_not($email['subject'], 'RE:')),
+                                       ':resubject' => str_starts($email['subject'], 'RE:')));
 
         if(!$conversation){
             /*

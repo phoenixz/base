@@ -1985,6 +1985,48 @@ function session_reset_domain(){
 
 
 /*
+ * Callback funtion
+ */
+function execute_callback($callback_name, $params = null){
+    try{
+        if(is_callable($callback_name)){
+            return $callback_name($params);
+        }
+
+        return null;
+
+    }catch(Exception $e){
+        throw new bException(tr('execute_callback(): Failed'), $e);
+    }
+}
+
+
+
+/*
+ *
+ */
+function get_process_user(){
+    try{
+        if(is_executable('posix_getpwuid')){
+            $id   = posix_geteuid();
+            $user = posix_getpwuid($id);
+            $user = $user['name'];
+
+        }else{
+            $user = safe_exec('whoami');
+            $user = array_pop($user);
+        }
+
+        return $user;
+
+    }catch(Exception $e){
+        throw new bException(tr('get_process_user(): Failed'), $e);
+    }
+}
+
+
+
+/*
  * OBSOLETE FUNCTIONS AND WRAPPERS BE HERE BELOW
  */
 
