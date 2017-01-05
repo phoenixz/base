@@ -1,12 +1,16 @@
 <?php
 /*
- * Empty library
+ * API library
  *
- * This is an empty template library file
+ *
  *
  * @license http://opensource.org/licenses/GPL-2.0 GNU Public License, Version 2
  * @copyright Sven Oostenbrink <support@ingiga.com>
  */
+
+
+
+load_config('api');
 
 
 
@@ -61,6 +65,46 @@ function api_decode($data){
 
     }catch(Exception $e){
         throw new bException('api_decode(): Failed', $e);
+    }
+}
+
+
+
+/*
+ * Make an API call to a BASE framework
+ */
+function api_call_base($api, $call, $data){
+    global $_CONFIG;
+
+    try{
+        if(empty($api)){
+            throw new bException(tr('api_call_base(): No API specified'), 'not-specified');
+        }
+
+        if(empty($_CONFIG['api']['list'][$api])){
+            throw new bException(tr('api_call_base(): Specified API ":api" does not exist', array(':api' => $api)), 'not-exist');
+        }
+
+        $url    = $_CONFIG['api']['list'][$api]['url'].$call;
+        $apikey = $_CONFIG['api']['list'][$api]['apikey'];
+
+        if(empty($_SESSION['api']['session_keys'][$api])){
+            /*
+             * Authenticate first
+             */
+            $result = curl_exec(array('url'            => $url,
+                                      'posturlencoded' => true,
+                                      'getheaders'     => false,
+                                      'post'           => array('PHPSESSID' => $apikey)));
+showdie($result);
+            if(!$result){
+                throw new bException(tr('api_call_base(): Authentication on API ":api" returned no response', array(':api' => $api)), 'not-exist');
+            }
+        }
+
+
+    }catch(Exception $e){
+        throw new bException('api_call_base(): Failed', $e);
     }
 }
 ?>

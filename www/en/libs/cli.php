@@ -274,24 +274,24 @@ function cli_run_once($action = 'exception', $force = false){
  * The result will be removed from $argv, but will remain stored in a static
  * variable which will return the same result every subsequent function call
  */
-function cli_method($default = null){
+function cli_method($index = null, $default = null){
     global $argv;
-    static $method;
+    static $method = array();
 
     try{
         if($default === false){
-            $method = null;
+            $method[$index] = null;
         }
 
-        if($method){
-            return $method;
+        if(isset($method[$index])){
+            return $method[$index];
         }
 
         foreach($argv as $key => $value){
             if(substr($value, 0, 1) !== '-'){
                 unset($argv[$key]);
-                $method = $value;
-                return $method;
+                $method[$index] = $value;
+                return $value;
             }
         }
 
