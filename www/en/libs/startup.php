@@ -460,27 +460,21 @@ try{
                     /*
                      * Language might have been set by GET or POST
                      */
-                    if(empty($_REQUEST['l'])){
-                        $_REQUEST['l'] = substr(__DIR__, -7, 2);
-                    }
+                    if(empty($_GET['l'])){
+                        $_GET['l'] = substr(__DIR__, -7, 2);
 
-                    if(!empty($_REQUEST['l'])){
-                        $language = $_REQUEST['l'];
+                    }else{
+                        if(!is_string($_GET['l']) or strlen($_GET['l']) != 2){
+                            unset($_GET['l']);
 
-                        /*
-                         * Ensure that the requested language exists
-                         */
-                        if(is_scalar(isset_get($language))){
-                            if(!empty($_CONFIG['language']['supported'][$language])){
-                                $_SESSION['language'] = $language;
+                        }else{
+                            if(empty($_CONFIG['language']['supported'][$_GET['l']])){
+                                unset($_GET['l']);
+
+                            }else{
+                                $language = $_GET['l'];
                             }
                         }
-
-                    }elseif(!empty($_SESSION['language'])){
-                        /*
-                         * Get language from session
-                         */
-                        $language = $_SESSION['language'];
                     }
 
                 }catch(Exception $e){
