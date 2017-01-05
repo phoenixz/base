@@ -44,19 +44,25 @@ $help = 'The translate script can translate the www/en directory to configured l
 
 METHODS
 
-clear                                   -
+clear                                   - Delete all www/LANGUAGE trees except
+                                          www/en
 
-scan                                    -
+scan                                    - Scan www/en for translatable strings
+                                          and submit these strings to the
+                                          translator
 
-translate                               -
+translate                               - Actually translate www/en to the
+                                          configured target languages
 
 
 
 OPTIONS
 
---ignore-php                            -
+--ignore-php                            - Ignores translations that contain PHP
+                                          code
 
---ignore-html                           -';
+--ignore-html                           - Ignores translations that contain
+                                          HTML';
 
 require_once(dirname(__FILE__).'/../../libs/startup.php');
 load_libs('file,inet,curl,crypt');
