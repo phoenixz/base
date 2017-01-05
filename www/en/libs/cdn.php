@@ -43,8 +43,16 @@ function cdn_add_object($file, $table = 'pub'){
 
                                array(':id' => $servers_id));
 
-            $server['domain'] = cdn_get_domain($servers_id);
+            if(!$server){
+                /*
+                 * CDN server is configured in $_CONFIG but not in the DB!
+                 */
+                notify('cdn-not-configured', tr('CDN server ":id" is not configured in the database', array(':id' => $servers_id)), 'developers');
+                continue;
+            }
 
+            $server['domain'] = cdn_get_domain($servers_id);
+show($server);
             ssh_start_control_master($server, TMP.'cdn'.$servers_id.'.sock');
 
 //show('rsync -az -e "ssh -p '.$_CONFIG['cdn']['port'].' -o ConnectTimeout='.$_CONFIG['cdn']['timeout'].',ControlPath='.TMP.'cdn'.$servers_id.'.sock'.'" '.$file.' source.jpg');
