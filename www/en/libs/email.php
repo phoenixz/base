@@ -136,7 +136,7 @@ function email_poll($params){
         /*
          * Post IMAP Fetch
          */
-        execute_callback(isset_get($params['post_search'], $mails));
+        $mails = execute_callback(isset_get($params['post_search']), $mails);
 
         if(!$mails){
             if(PLATFORM_SHELL){
@@ -162,7 +162,7 @@ function email_poll($params){
                 /*
                  * Get information specific to this email
                  */
-                $mail = execute_callback(isset_get($params['callbacks']['pre_fetch'], $mail));
+                $mail = execute_callback(isset_get($params['callbacks']['pre_fetch']), $mail);
 
                 $data = imap_fetch_overview($imap, $mail, 0);
                 $data = array_shift($data);
