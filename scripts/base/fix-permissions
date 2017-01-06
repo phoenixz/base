@@ -77,7 +77,32 @@ cli_log(tr('Updated owner:\group permissions to ":owner::group" for entire proje
 
 
 /*
- *
+ * Merge requested modes with default modes
+ */
+$default_modes = array('dirs'  => array('/'                => 'a-rwx,ug+rx,g+s',
+                                        '/data'            => 'ug+w',           // Should not be writable at all
+                                        '/data/doc'        => 'ug-w',           // Should not be writable at all
+                                        '/data/audio'      => 'ug-w',           // Should not be writable at all
+                                        '/data/plugins'    => 'ug-w',           // Should not be writable at all
+                                        '/www/en/pub/js/'  => 'ug+w',           // Required writable for bundler
+                                        '/www/en/pub/css/' => 'ug+w'),          // Required writable for bundler
+
+                       'files' => array('/'             => 'a-rwx,ug+r',
+                                        '/data'         => 'ug+w',
+                                        '/data/doc'     => 'ug-w',
+                                        '/data/audio'   => 'ug-w',
+                                        '/data/plugins' => 'ug-w',
+                                        '/www/en/pub/'  => 'ug+w',
+                                        '/scripts'      => 'a-rw,ug+x'));
+
+foreach($deploy_config['modes'] as $type => $modes){
+    $deploy_config['modes'][$type] = array_merge($deploy_config['modes'][$type], $default_modes[$type]);
+}
+
+
+
+/*
+ * Apply all required file and directory modes
  */
 foreach($deploy_config['modes'] as $type => $modes){
     switch($type){
