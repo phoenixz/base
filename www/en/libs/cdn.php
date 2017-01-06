@@ -31,7 +31,8 @@ function cdn_add_object($file, $table = 'pub'){
         $servers = cdn_assign_servers();
 
         foreach($servers as $servers_id){
-            $server = sql_get('SELECT `ssh_accounts`.`username`,
+            $server = sql_get('SELECT `cdn`.`path`,
+                                      `ssh_accounts`.`username`,
                                       `ssh_accounts`.`ssh_key`
 
                                FROM   `cdn`
@@ -54,17 +55,13 @@ function cdn_add_object($file, $table = 'pub'){
             $server['domain'] = cdn_get_domain($servers_id);
 show($server);
             ssh_start_control_master($server, TMP.'cdn'.$servers_id.'.sock');
-
-//show('rsync -az -e "ssh -p '.$_CONFIG['cdn']['port'].' -o ConnectTimeout='.$_CONFIG['cdn']['timeout'].',ControlPath='.TMP.'cdn'.$servers_id.'.sock'.'" '.$file.' source.jpg');
-//            safe_exec('rsync -az -e "ssh -p '.$_CONFIG['cdn']['port'].' -o ConnectTimeout='.$_CONFIG['cdn']['timeout'].',ControlPath='.TMP.'cdn'.$servers_id.'.sock'.'" '.$file.' source.jpg');
-//            safe_exec('rsync -az -e "ssh -p '.$_CONFIG['cdn']['port'].' -o ConnectTimeout='.$_CONFIG['cdn']['timeout'].',ControlPath='.$socket.'" source '.$server['domain'].'');
+            safe_exec('rsync -e "ssh -p '.$_CONFIG['cdn']['port'].' -o ConnectTimeout='.$_CONFIG['cdn']['timeout'].' -o ControlPath='.TMP.'cdn' .$servers_id.'.sock" -az --rsync-path="mkdir -p '.$server['path'].'/'.strtolower(PROJECT).'/'.$table.'/'.' && rsync" '.$file.' '.$server['username'].'@'.$server['domain'].':'.$server['path'].'/'.strtolower(PROJECT).'/'.$table.'/'.basename($file));
+            //safe_exec('rsync -e "ssh -p '.$_CONFIG['cdn']['port'].' -o ConnectTimeout='.$_CONFIG['cdn']['timeout'].' -o ControlPath='.TMP.'cdn' .$servers_id.'.sock" -az '.$file.' '.$server['username'].'@'.$server['domain'].':'.$server['path'].'/'.strtolower(PROJECT).'/'.$table.'/'.basename($file));
         }
 
-showdie('FIISHED');
         return ','.implode(',', $servers).',';
 
     }catch(Exception $e){
-showdie($e);
         throw new bException('cdn_add_object(): Failed', $e);
     }
 }
@@ -74,10 +71,12 @@ showdie($e);
 /*
  * Removes the specified object from all CDN servers
  */
-function cdn_remove_object($table, $file){
+function cdn_remove_object($table = 'pub', $file, $id){
     global $_CONFIG;
 
     try{
+        load_libs('ssh');
+
         if(!$table){
             throw new bException(tr('cdn_remove_object(): No table specified'), 'not-specified');
         }
@@ -86,7 +85,53 @@ function cdn_remove_object($table, $file){
             throw new bException(tr('cdn_remove_object(): No file specified'), 'not-specified');
         }
 
+        if(!$id){
+            throw new bException(tr('cdn_remove_object(): No ID specified'), 'not-specified');
+        }
+
+        if(!is_numeric($id)){
+            throw new bException(tr('cdn_remove_object(): Invalid ID ":id" specified, must be numeric', array(':id' => $id)), 'invalid');
+        }
+
+        //$servers = sql_get('SELECT `cdns`
+        //
+        //                    FROM   `blogs_media`
+        //
+        //                    WHERE  `blogs_posts_id` = :blogs_posts_id
+        //
+        //                    LIMIT  1',
+        //
+        //                    array(':blogs_posts_id' => $id));
+
+        $servers = ',2,3,'; ///
+        $servers = explode(',', trim($servers, ','));
+
+        foreach($servers as $servers_id){
+
+            $server = sql_get('SELECT `cdn`.`path`,
+                                      `ssh_accounts`.`username`,
+                                      `ssh_accounts`.`ssh_key`
+
+                               FROM   `cdn`
+
+                               JOIN   `ssh_accounts`
+                               ON     `ssh_accounts`.`id` = `cdn`.`ssh_accounts_id`
+
+                               WHERE  `cdn`.`id` = :id',
+
+                               array(':id' => $servers_id));
+
+            $server['domain'] = cdn_get_domain($servers_id);
+
+            ssh_start_control_master($server, TMP.'cdn'.$servers_id.'.sock');
+            safe_exec('rsync -e "ssh -p '.$_CONFIG['cdn']['port'].' -o ConnectTimeout='.$_CONFIG['cdn']['timeout'].' -o ControlPath='.TMP.'cdn' .$servers_id.'.sock" --remove-source-files -a  '.$server['username'].'@'.$server['domain'].':'.$server['path'].'/'.strtolower(PROJECT).'/'.$table.'/'.basename($file).' -p '.$_CONFIG['cdn']['port']);
+            //Remove full path (?)
+        }
+
+        return 'OK';
+
     }catch(Exception $e){
+showdie($e);
         throw new bException('cdn_remove_object(): Failed', $e);
     }
 }
@@ -232,25 +277,36 @@ function cdn_get_domain($cdn_id){
 /*
  * Validate CDN
  */
-function cdn_validate($cdn){
+function cdn_validate($cdn, $insert = true){
 
     try{
         load_libs('validate');
 
-        $vj = new validate_form($cdn, 'project_code,table,table_code,path,ssh_accounts_id');
+        $v = new validate_form($cdn, 'ide,path,ssh_accounts_id');
 
-        $vj->validate($cdn['project_code'],     'required',  'true'        , '<span class="FcbErrorTail"></span>'.tr('Please ensure that the project code exists'));
-        $vj->validate($cdn['table'],            'required',  'true'        , '<span class="FcbErrorTail"></span>'.tr('Please ensure that the table name exists'));
-        $vj->validate($cdn['table_code'],       'required',  'true'        , '<span class="FcbErrorTail"></span>'.tr('Please ensure that the table code exists'));
-        $vj->validate($cdn['table_code'],       'minlength', '4'           , '<span class="FcbErrorTail"></span>'.tr('Please ensure that the table code has 4 characters'));
-        $vj->validate($cdn['path'],             'required',  'true'        , '<span class="FcbErrorTail"></span>'.tr('Please ensure that the path exists'));
-        $vj->validate($cdn['ssh_accounts_id'],  'required',  'true'        , '<span class="FcbErrorTail"></span>'.tr('Please ensure that the ssh account id exists'));
+        $v->isNotEmpty ($cdn['ide'],  tr('No cdn id specified'));
+        $v->isNatural  ($cdn['ide'],  tr('Please ensure the cdn id is numeric'));
+
+        $v->isNotEmpty ($cdn['path']     , tr('No path specified'));
+        $v->hasMinChars($cdn['path'],   2, tr('Please ensure the path has at least 2 characters'));
+        $v->hasMaxChars($cdn['path'], 255, tr('Please ensure the path has less than 255 characters'));
+
+        $v->isNotEmpty ($cdn['ssh_accounts_id'],  tr('No ssh account id specified'));
+        $v->isNumeric  ($cdn['ssh_accounts_id'],  tr('Please ensure the ssh account id is numeric'));
+
+        if($insert AND $cdn['ide']){
+            $id = sql_get('SELECT `id` FROM `cdn` WHERE `id` = :id', array(':id' => $cdn['ide']));
+            if(!empty($id)){
+                $v->setError(tr('The ID already exists'));
+            }
+        }
 
         $v->isValid();
 
         return $cdn;
 
     }catch(Exception $e){
+//showdie($e);
         throw new bException(tr('cdn_validate(): Failed'), $e);
     }
 }
@@ -262,18 +318,18 @@ function cdn_validate($cdn){
  */
 function cdns_test($hostname){
     try{
+        load_libs('servers');
         $result = servers_exec($hostname, 'echo 1');
         $result = array_pop($result);
 
         if($result != '1'){
-            throw new bException(tr('servers_test(): Failed to SSH connect to ":server"', array(':server' => $user.'@'.$hostname.':'.$port)), 'failedconnect');
+            throw new bException(tr('cdns_test(): Failed to CDN connect to ":server"', array(':server' => $user.'@'.$hostname.':'.$port)), 'failedconnect');
         }
 
     }catch(Exception $e){
         throw new bException('cdns_test(): Failed', $e);
     }
 }
-
 
 
 
