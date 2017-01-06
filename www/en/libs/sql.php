@@ -9,6 +9,18 @@
  */
 
 
+/*
+ * Helper for building sql_in key value pairs
+ */
+function sql_in_columns($in){
+    try{
+        return implode(',', array_keys($in));
+
+    }catch(Exception $e){
+        throw new bException('sql_in_columns(): Failed', $e);
+    }
+}
+
 
 /*
  * Execute specified query
