@@ -127,50 +127,65 @@ if(empty($test)){
      * Libraries
      */
     cli_log(tr('Copying libraries'), 'purple');
-    echo shell_exec('rsync -e "ssh -p '.$base['port'].'" -aczvAXHS --no-perms '.$base['host'].':'.$base['path'].'/www/en/libs '.ROOT.'www/en/');
-    echo shell_exec('rsync -e "ssh -p '.$base['port'].'" -aczvAXHS --no-perms '.$base['host'].':'.$base['path'].'/www/en/tests '.ROOT.'www/en/');
+    passthru('rsync -e "ssh -p '.$base['port'].'" -aczvAXHS --no-perms '.$base['host'].':'.$base['path'].'/www/en/libs '.ROOT.'www/en/', $exitcodes['www/en/libs']);
+    passthru('rsync -e "ssh -p '.$base['port'].'" -aczvAXHS --no-perms '.$base['host'].':'.$base['path'].'/www/en/tests '.ROOT.'www/en/', $exitcodes['www/en']);
 
     // Base AJAX files
     cli_log(tr('Copying ajax files'), 'purple');
-    echo shell_exec('rsync -e "ssh -p '.$base['port'].'" -aczvAXHS --no-perms '.$base['host'].':'.$base['path'].'/www/en/ajax/base '.ROOT.'www/en/ajax/');
+    passthru('rsync -e "ssh -p '.$base['port'].'" -aczvAXHS --no-perms '.$base['host'].':'.$base['path'].'/www/en/ajax/base '.ROOT.'www/en/ajax/', $exitcodes['www/en/ajax']);
 
     // Scripts
     cli_log(tr('Copying base scripts'), 'purple');
-    echo shell_exec('rsync -e "ssh -p '.$base['port'].'" -aczvAXHS --no-perms --delete '.$base['host'].':'.$base['path'].'/scripts/base/* '.ROOT.'scripts/base/');
-    echo shell_exec('rsync -e "ssh -p '.$base['port'].'" -aczvAXHS --no-perms --delete '.$base['host'].':'.$base['path'].'/scripts/tests/* '.ROOT.'scripts/tests/');
+    passthru('rsync -e "ssh -p '.$base['port'].'" -aczvAXHS --no-perms --delete '.$base['host'].':'.$base['path'].'/scripts/base/* '.ROOT.'scripts/base/', $exitcodes['scripts/base']);
+    passthru('rsync -e "ssh -p '.$base['port'].'" -aczvAXHS --no-perms --delete '.$base['host'].':'.$base['path'].'/scripts/tests/* '.ROOT.'scripts/tests/', $exitcodes['libs']);
 
     // Framework init files
     cli_log(tr('Copying framework init files'), 'purple');
-    echo shell_exec('rsync -e "ssh -p '.$base['port'].'" -aczvAXHS --no-perms --delete '.$base['host'].':'.$base['path'].'/init/framework/* '.ROOT.'init/framework/');
+    passthru('rsync -e "ssh -p '.$base['port'].'" -aczvAXHS --no-perms --delete '.$base['host'].':'.$base['path'].'/init/framework/* '.ROOT.'init/framework/', $exitcodes['init/framework']);
 
     // Base configuration
     cli_log(tr('Config base configuration'), 'purple');
-    echo shell_exec('rsync -e "ssh -p '.$base['port'].'" -aczvAXHS --no-perms --delete '.$base['host'].':'.$base['path'].'/config/base/* '.ROOT.'config/base/');
+    passthru('rsync -e "ssh -p '.$base['port'].'" -aczvAXHS --no-perms --delete '.$base['host'].':'.$base['path'].'/config/base/* '.ROOT.'config/base/', $exitcodes['config/base']);
 
     // Javascript
     cli_log(tr('Copying javascript files'), 'purple');
-    echo shell_exec('rsync -e "ssh -p '.$base['port'].'" -aczvAXHS --no-perms --delete '.$base['host'].':'.$base['path'].'/www/en/pub/js/base/* '.ROOT.'www/en/pub/js/base/');
+    passthru('rsync -e "ssh -p '.$base['port'].'" -aczvAXHS --no-perms --delete '.$base['host'].':'.$base['path'].'/www/en/pub/js/base/* '.ROOT.'www/en/pub/js/base/', $exitcodes['www/en/pub/js/base']);
 
     // CSS
     cli_log(tr('Copying style sheets'), 'purple');
-    echo shell_exec('rsync -e "ssh -p '.$base['port'].'" -aczvAXHS --no-perms --delete '.$base['host'].':'.$base['path'].'/www/en/pub/css/base/* '.ROOT.'www/en/pub/css/base/');
+    passthru('rsync -e "ssh -p '.$base['port'].'" -aczvAXHS --no-perms --delete '.$base['host'].':'.$base['path'].'/www/en/pub/css/base/* '.ROOT.'www/en/pub/css/base/', $exitcodes['www/en/pub/css/base']);
 
     // Images
     cli_log(tr('Copying images'), 'purple');
-    echo shell_exec('rsync -e "ssh -p '.$base['port'].'" -aczvAXHS --no-perms --delete '.$base['host'].':'.$base['path'].'/www/en/pub/img/base/* '.ROOT.'www/en/pub/img/base/');
+    passthru('rsync -e "ssh -p '.$base['port'].'" -aczvAXHS --no-perms --delete '.$base['host'].':'.$base['path'].'/www/en/pub/img/base/* '.ROOT.'www/en/pub/img/base/', $exitcodes['www/en/pub/img/base']);
 
     // Documentation
     cli_log(tr('Copying documentation'), 'purple');
-    echo shell_exec('rsync -e "ssh -p '.$base['port'].'" -aczvAXHS --no-perms '.$base['host'].':'.$base['path'].'/data/doc/* '.ROOT.'data/doc/');
+    passthru('rsync -e "ssh -p '.$base['port'].'" -aczvAXHS --no-perms '.$base['host'].':'.$base['path'].'/data/doc/* '.ROOT.'data/doc/', $exitcodes['data/doc']);
 
     // Sources
     cli_log(tr('Copying data sources'), 'purple');
-    echo shell_exec('rsync -e "ssh -p '.$base['port'].'" -aczvAXHS --no-perms '.$base['host'].':'.$base['path'].'/data/sources/* '.ROOT.'data/sources/');
+    passthru('rsync -e "ssh -p '.$base['port'].'" -aczvAXHS --no-perms '.$base['host'].':'.$base['path'].'/data/sources/* '.ROOT.'data/sources/', $exitcodes['data/sources']);
 
     // Audio files
     cli_log(tr('Copying audio files'), 'purple');
-    echo shell_exec('rsync -e "ssh -p '.$base['port'].'" -aczvAXHS --no-perms '.$base['host'].':'.$base['path'].'/data/audio/* '.ROOT.'data/audio/');
+    passthru('rsync -e "ssh -p '.$base['port'].'" -aczvAXHS --no-perms '.$base['host'].':'.$base['path'].'/data/audio/* '.ROOT.'data/audio/', $exitcodes['data/audio']);
 }
+
+foreach($exitcodes as $path => $exitcode){
+    if($exitcode){
+        log_error(tr('Rsync of ":path" failed with exit code ":code"', array(':path' => $path, ':code' => $exitcode)));
+        $e = true;
+    }
+}
+
+if($e){
+    throw new bException(tr('One or more rsync commands failed, see above log output'), 'rsync');
+}
+
+unset($exitcode);
+
+
 
 /*
  * Execute init script
@@ -180,8 +195,14 @@ if($noinit){
 
 }else{
     cli_log(tr('Excuting system init'), 'white');
-    echo passthru('cd '.ROOT.'scripts/base/;export '.PROJECT.'_ENVIRONMENT='.ENVIRONMENT.'; php init');
+    passthru('cd '.ROOT.'scripts/base/;export '.PROJECT.'_ENVIRONMENT='.ENVIRONMENT.'; php init', $exitcode);
+
+    if($exitcode){
+        throw new bException(tr('System init failed with exit code ":code"', array(':code' => $exitcode)), 'init');
+    }
 }
+
+
 
 /*
  * Done
@@ -191,14 +212,25 @@ if($nocommit){
 
 }else{
     cli_log(tr('Git commit updates'), 'white');
-    echo shell_exec('cd '.ROOT.';git add .;git commit -am "Update from base"');
+    passthru('cd '.ROOT.';git add .;git commit -am "Update from base"', $exitcode);
+
+    if($exitcode){
+        throw new bException(tr('Git commit of updates failed with exit code ":code"', array(':code' => $exitcode)), 'git');
+    }
 }
+
+
 
 /*
  * Did we stash anything? get it back now..
  */
 if(!empty($stashed)){
-    shell_exec('git stash pop; git reset HEAD');
+    passthru('git stash pop; git reset HEAD', $exitcode);
+
+    if($exitcode){
+        throw new bException(tr('Git commit of updates failed with exit code ":code"', array(':code' => $exitcode)), 'git');
+    }
+
     cli_log(tr('scripts/update: Found stashed git changes, popping them back'), 'yellow');
 }
 

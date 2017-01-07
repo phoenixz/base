@@ -181,14 +181,14 @@ if($noimport){
     passthru($command = 'cd /tmp/; rm /tmp/'.$project.'_'.$source_config['db']['core']['db'].'.sql -f; gunzip /tmp/'.$project.'_'.$source_config['db']['core']['db'].'.sql.gz', $exitcode);
 
     if($exitcode){
-        throw new bException(tr('Gunzip of mysqldump file failed with exit code ":code"', array(':code' => $exitcode)), 'rsync');
+        throw new bException(tr('Gunzip of mysqldump file failed with exit code ":code"', array(':code' => $exitcode)), 'gunzip');
     }
 
     cli_log(tr('Importing remote SQL dump file ":file" in local MySQL server', array(':file' => '/tmp/'.$project.'_'.$source_config['db']['core']['db'].'.sql')), 'white');
     passthru($command = 'cd /tmp/; sed -i -e"s/USE \`'.$source_config['db']['core']['db'].'\`;/USE \`'.$_CONFIG['db']['core']['db'].'\`;/" /tmp/'.$project.'_'.$source_config['db']['core']['db'].'.sql', $exitcode);
 
     if($exitcode){
-        throw new bException(tr('Rewrite of "USE DATABASENAME" in mysqldump file failed with exit code ":code"', array(':code' => $exitcode)), 'rsync');
+        throw new bException(tr('Rewrite of "USE DATABASENAME" in mysqldump file failed with exit code ":code"', array(':code' => $exitcode)), 'sql');
     }
 
     $GLOBALS['sql_core'] = sql_connect($_CONFIG['db']['core'], false);
