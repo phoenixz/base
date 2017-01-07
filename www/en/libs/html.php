@@ -156,6 +156,12 @@ function html_bundler($type){
                  * Check for @imports
                  */
                 $file = ROOT.'pub/'.$type.'/'.$file.$ext;
+
+                if(!file_exists($file)){
+                    notify('bundler-file/not-exist', tr('The bundler ":type" file ":file" does not exist', array(':type' => $type, ':file' => $file)), 'developers');
+                    continue;
+                }
+
                 $data = file_get_contents($file);
 
                 if($type == 'css'){
@@ -165,15 +171,29 @@ function html_bundler($type){
                              * Inline replace each @import with the file contents
                              */
                             if(preg_match('/@import\s".+?"/', $match)){
-                                $file   = str_cut($match, '"', '"');
-                                $import = file_get_contents(ROOT.'pub/'.$type.'/'.$file);
+                                $file = str_cut($match, '"', '"');
+
+                                if(!file_exists($file)){
+                                    notify('bundler-file/not-exist', tr('The bundler ":type" file ":file" does not exist', array(':type' => $type, ':file' => $file)), 'developers');
+                                    $import = '';
+
+                                }else{
+                                    $import = file_get_contents(ROOT.'pub/'.$type.'/'.$file);
+                                }
 
                             }elseif(preg_match('/@import\surl\(.+?\)/', $match)){
                                 /*
                                  * This is an external URL. Get it locally as a temp file, then include
                                  */
                                 $file   = str_cut($match, '(', ')');
-                                $import = file_get_contents($file);
+
+                                if(!file_exists($file)){
+                                    notify('bundler-file/not-exist', tr('The bundler ":type" file ":file" does not exist', array(':type' => $type, ':file' => $file)), 'developers');
+                                    $import = '';
+
+                                }else{
+                                    $import = file_get_contents($file);
+                                }
                             }
 
                             $data = str_replace($match, $import, $data);
@@ -186,7 +206,7 @@ function html_bundler($type){
 
             unset($file);
 
-            if($_CONFIG['cdn']['network']){
+            if($_CONFIG['cdn']['network']['enabled']){
                 load_libs('cdn');
                 cdn_add_object($bundle_file);
             }

@@ -12,9 +12,10 @@ try{
     /*
      * Clear normal cache
      */
+    load_libs('file');
+
     switch($_CONFIG['cache']['method']){
         case 'file':
-            load_libs('file');
 
             if($group){
                 if($key){

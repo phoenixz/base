@@ -57,6 +57,25 @@ try{
         }
     }
 
+    if(empty($deploy_config['sudo'])){
+        /*
+         * Don't use sudo at all
+         */
+        $sudo = '';
+
+    }elseif(isset_get($deploy_config['sudo']) === true){
+        /*
+         * Use default sudo
+         */
+        $sudo = ' sudo ';
+
+    }else{
+        /*
+         * Use configured sudo line
+         */
+        $sudo = ' '.$deploy_config['sudo'].' ';
+    }
+
 }catch(Exception $e){
     throw new bException(tr('Check configuration in ":ROOTconfig/deploy.php"', array(':ROOT' => ROOT)), $e);
 }
@@ -64,38 +83,60 @@ try{
 
 
 /*
- *
+ * Update user:group only if we have a target server configuration, and if we're
+ * using sudo, which is required for chown
  */
-passthru((!empty($deploy_config['sudo']) ? ' sudo' : '').' chown '.$deploy_config['user'].':'.$deploy_config['group'].' '.ROOT.' -R;', $exitcode);
+if($sudo and !empty($deploy_config['target_server'])){
+    passthru($sudo.'chown '.$deploy_config['user'].':'.$deploy_config['group'].' '.ROOT.' -R;', $exitcode);
 
-if($exitcode){
-    throw new bException('Failed to update target directory tree user/group ownership', 'update-ownership');
+    if($exitcode){
+        throw new bException('Failed to update target directory tree user/group ownership', 'update-ownership');
+    }
+
+    cli_log(tr('Updated owner:\group permissions to ":owner::group" for entire project', array(':owner' => $deploy_config['user'], ':group' => $deploy_config['group'])), 'green');
 }
-
-cli_log(tr('Updated owner:\group permissions to ":owner::group" for entire project', array(':owner' => $deploy_config['user'], ':group' => $deploy_config['group'])), 'green');
 
 
 
 /*
  * Merge requested modes with default modes
  */
-$default_modes = array('dirs'  => array('/'                => 'a-rwx,ug+rx,g+s',
-                                        '/data'            => 'ug+w',           // Should not be writable at all
-                                        '/data/doc'        => 'ug-w',           // Should not be writable at all
-                                        '/data/audio'      => 'ug-w',           // Should not be writable at all
-                                        '/data/plugins'    => 'ug-w',           // Should not be writable at all
-                                        '/www/en/pub/js/'  => 'ug+w',           // Required writable for bundler
-                                        '/www/en/pub/css/' => 'ug+w'),          // Required writable for bundler
+if(empty($deploy_config['target_server'])){
+    /*
+     * No target_server configuration specified, assume this is for local
+     * development, make more writable
+     */
+    $default_modes = array('dirs'  => array('/'             => 'a-rwx,ug+rx,g+s',
+                                            '/'             => 'ug+w'),
 
-                       'files' => array('/'             => 'a-rwx,ug+r',
-                                        '/data'         => 'ug+w',
-                                        '/data/doc'     => 'ug-w',
-                                        '/data/audio'   => 'ug-w',
-                                        '/data/plugins' => 'ug-w',
-                                        '/www/en/pub/'  => 'ug+w',
-                                        '/scripts'      => 'a-rw,ug+x'));
+                           'files' => array('/'             => 'a-rwx,ug+r',
+                                            '/'             => 'ug+w',
+                                            '/scripts'      => 'ug+x'));
 
-foreach($deploy_config['modes'] as $type => $modes){
+}else{
+    $default_modes = array('dirs'  => array('/'                => 'a-rwx,ug+rx,g+s',
+                                            '/data'            => 'ug+w',           // Should not be writable at all
+                                            '/data/doc'        => 'ug-w',           // Should not be writable at all
+                                            '/data/audio'      => 'ug-w',           // Should not be writable at all
+                                            '/data/plugins'    => 'ug-w',           // Should not be writable at all
+                                            '/www/en/pub/js/'  => 'ug+w',           // Required writable for bundler
+                                            '/www/en/pub/css/' => 'ug+w'),          // Required writable for bundler
+
+                           'files' => array('/'                => 'a-rwx,ug+r',
+                                            '/data'            => 'ug+w',
+                                            '/data/doc'        => 'ug-w',
+                                            '/data/audio'      => 'ug-w',
+                                            '/data/plugins'    => 'ug-w',
+                                            '/www/en/pub/'     => 'ug+w',
+                                            '/scripts'         => 'a-w,ug+x'));
+}
+
+if(empty($deploy_config['modes'])){
+    $deploy_config['modes'] = array('dirs'  => array(),
+                                    'files' => array());
+}
+
+foreach($default_modes as $type => $modes){
     $deploy_config['modes'][$type] = array_merge($deploy_config['modes'][$type], $default_modes[$type]);
 }
 
@@ -115,8 +156,12 @@ foreach($deploy_config['modes'] as $type => $modes){
                  * If this is the case, it is not a problem, just skip. This
                  * script should only care about that which exists
                  */
+                if(VERBOSE){
+                    cli_log(tr('Updated directories mode for ":path"', array(':path' => $path)));
+                }
+
                 if(file_exists(unslash(ROOT).$path)){
-                    passthru((!empty($deploy_config['sudo']) ? ' sudo' : '').' find '.unslash(ROOT).$path.' -type d -exec chmod '.$mode.' {} \;', $exitcode);
+                    passthru($sudo.'find '.unslash(ROOT).$path.' -type d -exec chmod '.$mode.' {} \;', $exitcode);
 
                     if($exitcode){
                         throw new bException(tr('Failed to update mode for directories in path ":path"', array(':path' => $path)), 'failed');
@@ -136,8 +181,12 @@ foreach($deploy_config['modes'] as $type => $modes){
                  * If this is the case, it is not a problem, just skip. This
                  * script should only care about that which exists
                  */
+                if(VERBOSE){
+                    cli_log(tr('Updated directories mode for ":path"', array(':path' => $path)));
+                }
+
                 if(file_exists(unslash(ROOT).$path)){
-                    passthru((!empty($deploy_config['sudo']) ? ' sudo' : '').' find '.unslash(ROOT).$path.' -type f -exec chmod '.$mode.' {} \;', $exitcode);
+                    passthru($sudo.'find '.unslash(ROOT).$path.' -type f -exec chmod '.$mode.' {} \;', $exitcode);
 
                     if($exitcode){
                         throw new bException(tr('Failed to update mode for files in path ":path"', array(':path' => $path)), 'failed');
