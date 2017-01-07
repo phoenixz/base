@@ -242,7 +242,7 @@ function json_decode_custom($json, $as_array = true){
                 throw new bException('json_decode_custom(): Unexpected control character found', 'invalid');
 
             case JSON_ERROR_SYNTAX:
-                throw new bException('json_decode_custom(): Syntax error, malformed JSON', 'invalid');
+                throw new bException('json_decode_custom(): Syntax error, malformed JSON', 'invalid', $json);
 
             case JSON_ERROR_UTF8:
                 /*
