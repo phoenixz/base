@@ -63,7 +63,7 @@ try{
          */
         $sudo = '';
 
-    }elseif($deploy_config['sudo'] === true){
+    }elseif(isset_get($deploy_config['sudo']) === true){
         /*
          * Use default sudo
          */
