@@ -2025,7 +2025,7 @@ function execute_callback($callback_name, $params = null){
             return $callback_name($params);
         }
 
-        return null;
+        return $params;
 
     }catch(Exception $e){
         throw new bException(tr('execute_callback(): Failed'), $e);

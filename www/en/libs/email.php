@@ -136,7 +136,7 @@ function email_poll($params){
         /*
          * Post IMAP Fetch
          */
-        execute_callback(isset_get($params['post_search'], $mails));
+        $mails = execute_callback(isset_get($params['post_search']), $mails);
 
         if(!$mails){
             if(PLATFORM_SHELL){
@@ -162,7 +162,7 @@ function email_poll($params){
                 /*
                  * Get information specific to this email
                  */
-                execute_callback(isset_get($params['callbacks']['pre_fetch'], $mail));
+                $mail = execute_callback(isset_get($params['callbacks']['pre_fetch']), $mail);
 
                 $data = imap_fetch_overview($imap, $mail, 0);
                 $data = array_shift($data);
@@ -183,7 +183,6 @@ function email_poll($params){
                  * Get the images of the email
                  */
                 $data = email_get_attachments($imap, $mail, $data, $flags);
-
                 $data = execute_callback(isset_get($params['callbacks']['post_fetch']), $data);
 
                 /*
@@ -210,7 +209,7 @@ function email_poll($params){
                         $data['email_accounts_id'] = $userdata['email_accounts_id'];
 
                         email_update_conversation($data, 'received');
-                        execute_callback(isset_get($params['callbacks']['post_update']), $data);
+                        $data = execute_callback(isset_get($params['callbacks']['post_update']), $data);
 
                     }catch(bException $e){
                         /*
@@ -228,13 +227,13 @@ function email_poll($params){
 
                 if($params['delete']){
                     imap_delete($imap, $mail);
-                    execute_callback(isset_get($params['callbacks']['post_delete']), $mail);
+                    $mail = execute_callback(isset_get($params['callbacks']['post_delete']), $mail);
                 }
             }
 
             if($params['delete']){
                 imap_expunge($imap);
-                execute_callback(isset_get($params['callbacks']['post_expunge']), $imap);
+                $imap = execute_callback(isset_get($params['callbacks']['post_expunge']), $imap);
             }
 
             if(VERBOSE and PLATFORM_SHELL){

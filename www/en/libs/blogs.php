@@ -228,12 +228,16 @@ function blogs_post_get_key_values($blogs_posts_id, $seovalues = false){
 
 
 /*
- *
+ * Update the specified blog post and ensure it no longer has status "_new".
+ * $params specified what columns are used for this blog post
  */
 function blogs_post_update($post, $params = null){
     try{
         $post    = blogs_validate_post($post, $params);
 
+        /*
+         * Build basic blog post query and execute array
+         */
         $execute = array(':id'         => $post['id'],
                          ':modifiedby' => isset_get($_SESSION['user']['id']),
                          ':url'        => $post['url'],
@@ -246,6 +250,9 @@ function blogs_post_update($post, $params = null){
                             `url`        = :url,
                             `body`       = :body ';
 
+        /*
+         * Add colunmns for update IF they are used only!
+         */
         if($params['label_blog']){
             $updates[] = ' `blogs_id` = :blogs_id ';
             $execute[':blogs_id'] = $post['blogs_id'];
@@ -281,6 +288,9 @@ function blogs_post_update($post, $params = null){
             }
         }
 
+        /*
+         * Convert category input labels to standard categoryN names
+         */
         for($i = 1; $i <= 3; $i++){
             if($params['label_category'.$i]){
                 $updates[] = ' `category'.$i.'`    = :category'.$i.' ';
@@ -339,7 +349,7 @@ function blogs_post_update($post, $params = null){
         $query .= ' WHERE `id` = :id';
 
         /*
-         * Update the post, and ensure it is no longer registered as "new".
+         * Update the post
          */
         sql_query($query, $execute);
 
