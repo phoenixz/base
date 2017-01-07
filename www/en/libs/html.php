@@ -186,7 +186,7 @@ function html_bundler($type){
 
             unset($file);
 
-            if($_CONFIG['cdn']['network']){
+            if($_CONFIG['cdn']['network']['enabled']){
                 load_libs('cdn');
                 cdn_add_object($bundle_file);
             }

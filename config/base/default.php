@@ -62,6 +62,8 @@ $_CONFIG['cdn']                = array('min'              => true,              
                                                                    'linked'             => array('base' => array('popup',       // Assoc array list of all files that are to be linked in one file for faster loading. See "use_linked" configuration setting
                                                                                                                  'validate'))),
 
+                                       'network'          => array('enabled'            => false),          // Use CDN network or not
+
                                        'normal'           => array('js'                 => 'pub/js',        // Location of js, CSS and image files for desktop pages
                                                                    'css'                => 'pub/css',
                                                                    'img'                => 'pub/img'),

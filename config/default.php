@@ -57,7 +57,7 @@ $_CONFIG['cdn']                = array('min'              => true,              
 
                                        'fonts'            => array(),                                       // Load font files?
 
-                                       'network'          => false,                                         // Use CDN network or not
+                                       'network'          => array('enabled'            => false),          // Use CDN network or not
 
                                        'production_fonts' => false,                                         // Load font files only for production?
 
