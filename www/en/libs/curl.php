@@ -313,13 +313,16 @@ function curl_get($params, $referer = null, $post = false, $options = array()){
             }
         }
 
-        curl_setopt($ch, CURLOPT_VERBOSE       , not_empty($params['verbose'], null));
-        curl_setopt($ch, CURLOPT_REFERER       , not_empty($params['referer'], null));
-        curl_setopt($ch, CURLOPT_HEADER        , ($params['getcookies'] or $params['getheaders'] ?  1 : 0));
-        curl_setopt($ch, CURLOPT_FOLLOWLOCATION, ($params['followlocation']                      ?  1 : 0));
-        curl_setopt($ch, CURLOPT_MAXREDIRS     , ($params['followlocation']                      ? 50 : null));
+        curl_setopt($ch, CURLOPT_VERBOSE, not_empty($params['verbose'], null));
+        curl_setopt($ch, CURLOPT_REFERER, not_empty($params['referer'], null));
+        curl_setopt($ch, CURLOPT_HEADER , ($params['getcookies'] or $params['getheaders'] ?  1 : 0));
 
         if($params['post'] !== false) {
+            /*
+             * Disable 301 302 location header following since this would cause the POST to go to GET
+             */
+            $params['followlocation'] = false;
+
             if($params['content-type']){
                 curl_setopt($ch, CURLINFO_CONTENT_TYPE, $params['content-type']);
             }
@@ -349,6 +352,9 @@ function curl_get($params, $referer = null, $post = false, $options = array()){
         }else{
             curl_setopt($ch, CURLOPT_POST, 0);
         }
+
+        curl_setopt($ch, CURLOPT_FOLLOWLOCATION, ($params['followlocation'] ?  1 : 0));
+        curl_setopt($ch, CURLOPT_MAXREDIRS     , ($params['followlocation'] ? 50 : null));
 
         if($params['httpheaders'] !== false){
 //show($params['httpheaders']);
