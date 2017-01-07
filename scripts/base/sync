@@ -74,7 +74,8 @@ $nofiles         =  cli_argument('--no-files');
 $noinit          =  cli_argument('--no-init');
 $cleardata       =  cli_argument('--clear-data');
 $noimport        =  cli_argument('--no-import');
-$nohooks         = (cli_argument('--no-hook') or cli_argument('--no-hooks'));
+$no_times        =  cli_argument('--no-times') or cli_argument('-n');
+$nohooks         = (cli_argument('--no-hook')  or cli_argument('--no-hooks'));
 $nodelete        =  cli_argument('--no-delete');
 $nodefinerfix    =  cli_argument('--no-definer-fix');
 $nocacheclear    =  cli_argument('--no-cache-clear');
@@ -118,6 +119,40 @@ if(!isset($source_config['deploy'][$environment])){
 $deploy_config = $source_config['deploy'][$environment];
 $local_config  = s_get_environment_configuration(ENVIRONMENT);
 $project       = strtolower(PROJECT);
+
+
+
+/*
+ * Should we use sudo? if so, what sudo command?
+ */
+if($no_times or !empty($source_config['deploy'][ENVIRONMENT]['no_times'])){
+    $no_times = ' --no-times ';
+}
+
+
+
+/*
+ * Should we use sudo? This would cause problems if the current user has no sudo
+ * rights!
+ */
+if(empty($deploy_config['sudo'])){
+    /*
+     * Don't use sudo at all
+     */
+    $sudo = '';
+
+}elseif(isset_get($deploy_config['sudo']) === true){
+    /*
+     * Use default sudo
+     */
+    $sudo = ' sudo ';
+
+}else{
+    /*
+     * Use configured sudo line
+     */
+    $sudo = ' '.$deploy_config['sudo'].' ';
+}
 
 
 
@@ -260,7 +295,7 @@ if($nofiles){
     /*
      * Ensure write permissions to all files to avoid sync crashes on write protected files
      */
-    safe_exec('chmod ug+w '.ROOT.' -R');
+    safe_exec($sudo.'chmod ug+w '.ROOT.' -R');
 
     foreach($_CONFIG['sync'] as $path){
         try{
@@ -278,7 +313,7 @@ if($nofiles){
             }
 
             try{
-                passthru($command = 'rsync -aczvAXHS --progress -p '.($deploy_config['sudo'] ? '--rsync-path="sudo rsync" ' : '').'-e "ssh -p '.$deploy_config['target_port'].'" '.($deploy_config['target_user'] ? $deploy_config['target_user'].'@' : '').$deploy_config['target_server'].':'.slash($deploy_config['target_dir']).slash($path).' '.ROOT.slash($path).' --exclude="*.php" --exclude="*.css" --exclude="*.js" --exclude="/scripts/*" --exclude="/data/doc" --exclude="/data/system" --exclude="/data/mock*" --exclude="/data/sources" --exclude=".htaccess" --exclude=".git*" --exclude="/pub/*"', $exitcode);
+                passthru($command = 'rsync -aczvAXHS '.$no_times.' --no-perms --progress -p '.($deploy_config['sudo'] ? '--rsync-path="sudo rsync" ' : '').'-e "ssh -p '.$deploy_config['target_port'].'" '.($deploy_config['target_user'] ? $deploy_config['target_user'].'@' : '').$deploy_config['target_server'].':'.slash($deploy_config['target_dir']).slash($path).' '.ROOT.slash($path).' --exclude="*.php" --exclude="*.css" --exclude="*.js" --exclude="/scripts/*" --exclude="/data/doc" --exclude="/data/system" --exclude="/data/mock*" --exclude="/data/sources" --exclude=".htaccess" --exclude=".git*" --exclude="/pub/*"', $exitcode);
 
                 if($exitcode){
                     throw new bException(tr('Rsync of remote files with local server failed with exit code ":code"', array(':code' => $exitcode)), 'rsync');
@@ -333,7 +368,7 @@ if($noinit){
      * executed in a completely separate PHP process, while still dumping output on command line
      */
     cli_log(tr('Executing init script to ensure that database will be up to date'), 'white');
-    passthru(ROOT.'scripts/base/init');
+    passthru(ROOT.'scripts/base/init', $exitcode);
 
     if($exitcode){
         throw new bException(tr('Local init failed with exit code ":code"', array(':code' => $exitcode)), 'init');
