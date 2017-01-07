@@ -157,7 +157,7 @@ function html_bundler($type){
                  */
                 $file = ROOT.'pub/'.$type.'/'.$file.$ext;
 
-                if(!file_exist($file)){
+                if(!file_exists($file)){
                     notify('bundler-file/not-exist', tr('The bundler ":type" file ":file" does not exist', array(':type' => $type, ':file' => $file)), 'developers');
                     continue;
                 }
@@ -173,7 +173,7 @@ function html_bundler($type){
                             if(preg_match('/@import\s".+?"/', $match)){
                                 $file = str_cut($match, '"', '"');
 
-                                if(!file_exist($file)){
+                                if(!file_exists($file)){
                                     notify('bundler-file/not-exist', tr('The bundler ":type" file ":file" does not exist', array(':type' => $type, ':file' => $file)), 'developers');
                                     $import = '';
 
@@ -187,7 +187,7 @@ function html_bundler($type){
                                  */
                                 $file   = str_cut($match, '(', ')');
 
-                                if(!file_exist($file)){
+                                if(!file_exists($file)){
                                     notify('bundler-file/not-exist', tr('The bundler ":type" file ":file" does not exist', array(':type' => $type, ':file' => $file)), 'developers');
                                     $import = '';
 
