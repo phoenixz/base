@@ -180,7 +180,7 @@ foreach($exitcodes as $path => $exitcode){
 }
 
 if($e){
-    throw new bException(tr('One or more rsync commands failed, see above log output'), 'rsync');
+    throw new bException(tr('One or more rsync commands failed, see above log output. NOTE: If working on files that have a different user:group than your own user, rsync mtime updates may fail if sudo is not configured to be used in config/deploy [local] target!'), 'rsync');
 }
 
 unset($exitcode);
