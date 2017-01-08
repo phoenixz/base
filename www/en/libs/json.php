@@ -84,7 +84,7 @@ function json_encode_custom($source = false){
 /*
  * Send correct JSON reply
  */
-function json_reply($reply = null, $result = 'OK', $http_code = null){
+function json_reply($reply = null, $result = 'OK', $http_code = null, $after = 'die'){
     try{
         if(!$reply){
             $reply = array_force($reply);
@@ -123,7 +123,31 @@ function json_reply($reply = null, $result = 'OK', $http_code = null){
         http_headers($params, strlen($reply));
 
         echo $reply;
-        die();
+
+        switch($after){
+            case 'die':
+                /*
+                 * We're done, kill the connection % process (default)
+                 */
+                die();
+
+            case 'continue':
+                /*
+                 * Continue running
+                 */
+                return;
+
+            case 'close_continue':
+                /*
+                 * Close the current HTTP connection but continue in the background
+                 */
+                session_write_close();
+                fastcgi_finish_request();
+                return;
+
+            default:
+                throw new bException(tr('json_reply(): Unknown after ":after" specified. Use one of "die", "continue", or "close_continue"', array(':after' => $after)), 'unknown');
+        }
 
     }catch(Exception $e){
         throw new bException('json_reply(): Failed', $e);
