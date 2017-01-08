@@ -50,9 +50,14 @@ $_CONFIG['cache']              = array('method'           => 'file',            
 // CDN configuration
 $_CONFIG['cdn']                = array('min'              => true,                                          // If set to "true" all CSS and JS files loaded with html_load_js() and html_load_css() will be loaded as file.min.js instead of file.js. Use "true" in production environment, "false" in all other environments
 
+                                       'bundler'          => array('enabled'            => false,           // If JS and CSS bundler should be enabled or not
+                                                                   'max_age'            => 86400),          // Max age of bundle files before they are deleted and regenerated
+
                                        'css'              => array('post'               => false),          // The default last CSS file to be loaded (after all others have been loaded, so that this one can override any CSS rule if needed)
 
                                        'fonts'            => array(),                                       // Load font files?
+
+                                       'network'          => array('enabled'            => false),          // Use CDN network or not
 
                                        'production_fonts' => false,                                         // Load font files only for production?
 

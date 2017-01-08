@@ -228,12 +228,16 @@ function blogs_post_get_key_values($blogs_posts_id, $seovalues = false){
 
 
 /*
- *
+ * Update the specified blog post and ensure it no longer has status "_new".
+ * $params specified what columns are used for this blog post
  */
 function blogs_post_update($post, $params = null){
     try{
         $post    = blogs_validate_post($post, $params);
 
+        /*
+         * Build basic blog post query and execute array
+         */
         $execute = array(':id'         => $post['id'],
                          ':modifiedby' => isset_get($_SESSION['user']['id']),
                          ':url'        => $post['url'],
@@ -246,6 +250,9 @@ function blogs_post_update($post, $params = null){
                             `url`        = :url,
                             `body`       = :body ';
 
+        /*
+         * Add colunmns for update IF they are used only!
+         */
         if($params['label_blog']){
             $updates[] = ' `blogs_id` = :blogs_id ';
             $execute[':blogs_id'] = $post['blogs_id'];
@@ -281,6 +288,9 @@ function blogs_post_update($post, $params = null){
             }
         }
 
+        /*
+         * Convert category input labels to standard categoryN names
+         */
         for($i = 1; $i <= 3; $i++){
             if($params['label_category'.$i]){
                 $updates[] = ' `category'.$i.'`    = :category'.$i.' ';
@@ -339,7 +349,7 @@ function blogs_post_update($post, $params = null){
         $query .= ' WHERE `id` = :id';
 
         /*
-         * Update the post, and ensure it is no longer registered as "new".
+         * Update the post
          */
         sql_query($query, $execute);
 
@@ -1021,8 +1031,11 @@ function blogs_validate_post($post, $params = null){
         array_default($params, 'object_name'      , 'blog posts');
 // :TODO: Make this configurable from `blogs` configuration table
         array_default($params, 'filter_html'      , '<p><a><br><span><small><strong><img><iframe>');
-        array_default($params, 'filter_attributes', '(?:class=".*?"|style=".*?")');  // Filter only class and style attributes
+//        array_default($params, 'filter_attributes', '/<([a-z][a-z0-9]*)(?: .*?=".*?")*?(\/?)>/imus');  // Filter only class and style attributes
+        array_default($params, 'filter_attributes', '/<([a-z][a-z0-9]*)(?: style=".*?)>/imus');  // Filter only class and style attributes
         //array_default($params, 'filter_attributes', '[^>]'); // Filter all attributes
+
+
 
         load_libs('seo,validate');
 
@@ -1276,7 +1289,7 @@ function blogs_validate_post($post, $params = null){
         }
 
         if($params['filter_attributes']){
-            $post['body'] = preg_replace('/<([a-z][a-z0-9]*)(?:'.$params['filter_attributes'].')*?(\/?)>/imus','<$1$2>', $post['body']);
+            $post['body'] = preg_replace($params['filter_attributes'],'<$1>', $post['body']);
         }
 
         return $post;

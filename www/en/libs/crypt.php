@@ -24,15 +24,18 @@ function encrypt($data, $key) {
         load_libs('json');
 
         $data = json_encode_custom($data);
-        $td   = mcrypt_module_open('tripledes', '', 'ecb', '');
-        $iv   = mcrypt_create_iv (mcrypt_enc_get_iv_size($td), MCRYPT_RAND);
 
-        mcrypt_generic_init($td, mb_substr($key, 0, mcrypt_enc_get_key_size($td)), $iv);
+        if($key){
+            $td   = mcrypt_module_open('tripledes', '', 'ecb', '');
+            $iv   = mcrypt_create_iv (mcrypt_enc_get_iv_size($td), MCRYPT_RAND);
 
-        $encrypted_data = mcrypt_generic($td, $data);
+            mcrypt_generic_init($td, mb_substr($key, 0, mcrypt_enc_get_key_size($td)), $iv);
+
+            $data = mcrypt_generic($td, $data);
+        }
 
         //make save for transport
-        return base64_encode($encrypted_data);
+        return base64_encode($data);
 
     }catch(Exception $e){
         throw new bException('encrypt(): Failed', $e);
@@ -48,13 +51,21 @@ function decrypt($data, $key){
     try{
         load_libs('json');
 
-        $encrypted_data = base64_decode($data);
-        $td             = mcrypt_module_open('tripledes', '', 'ecb', '');
-        $iv             = mcrypt_create_iv (mcrypt_enc_get_iv_size($td), MCRYPT_RAND);
+        $data = base64_decode($data);
 
-        mcrypt_generic_init($td, mb_substr($key, 0, mcrypt_enc_get_key_size($td)), $iv);
+        if($data === false){
+            throw new bException(tr('decrypt(): base64_decode() asppears to have failed to decode data, probably invalid base64 string'), 'invalid');
+        }
 
-        $data = mdecrypt_generic($td, $encrypted_data);
+        if($key){
+            $td   = mcrypt_module_open('tripledes', '', 'ecb', '');
+            $iv   = mcrypt_create_iv (mcrypt_enc_get_iv_size($td), MCRYPT_RAND);
+
+            mcrypt_generic_init($td, mb_substr($key, 0, mcrypt_enc_get_key_size($td)), $iv);
+
+            $data = mdecrypt_generic($td, $data);
+        }
+
         $data = trim($data);
         $data = json_decode_custom($data);
 

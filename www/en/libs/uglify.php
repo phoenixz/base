@@ -11,6 +11,7 @@
 
 
 load_libs('node');
+load_config('deploy');
 
 
 
@@ -103,7 +104,7 @@ function uglify_css_check(){
  * Uglify all CSS files in www/en/pub/css
  */
 function uglify_css($paths = null){
-    global $npm, $node, $node_modules;
+    global $npm, $node, $node_modules, $_CONFIG;
     static $check;
 
     try{
@@ -387,8 +388,17 @@ function uglify_css($paths = null){
                      * Make mtime equal
                      */
                     $time = time();
-                    touch(str_runtil($file, '.').'.css'    , $time, $time);
-                    touch(str_runtil($file, '.').'.min.css', $time, $time);
+
+                    if(empty($_CONFIG['deploy'][ENVIRONMENT]['sudo'])){
+                        touch(str_runtil($file, '.').'.css'    , $time, $time);
+                        touch(str_runtil($file, '.').'.min.css', $time, $time);
+
+                    }else{
+                        $time = date_convert($time, 'Y-m-d H:i:s');
+
+                        safe_exec('sudo touch --date="'.$time.'" '.str_runtil($file, '.').'.css');
+                        safe_exec('sudo touch --date="'.$time.'" '.str_runtil($file, '.').'.min.css');
+                    }
 
                 }catch(Exception $e){
                     log_error('Failed to compress CSS file "'.str_log($file).'"', 'error/uglify');
@@ -757,8 +767,17 @@ function uglify_js($paths = null){
                      * Make mtime equal
                      */
                     $time = time();
-                    touch(str_runtil($file, '.').'.js'    , $time, $time);
-                    touch(str_runtil($file, '.').'.min.js', $time, $time);
+
+                    if(empty($_CONFIG['deploy'][ENVIRONMENT]['sudo'])){
+                        touch(str_runtil($file, '.').'.css'    , $time, $time);
+                        touch(str_runtil($file, '.').'.min.css', $time, $time);
+
+                    }else{
+                        $time = date_convert($time, 'Y-m-d H:i:s');
+
+                        safe_exec('sudo touch --date="'.$time.'" '.str_runtil($file, '.').'.js');
+                        safe_exec('sudo touch --date="'.$time.'" '.str_runtil($file, '.').'.min.js');
+                    }
 
                 }catch(Exception $e){
                     log_error('Failed to compress javascript file "'.str_log($file).'"', 'error/uglify');

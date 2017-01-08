@@ -120,7 +120,7 @@ function ssh_start_control_master($server, $socket = null){
         return $socket;
 
     }catch(Exception $e){
-showdie($e);
+//showdie($e);
         throw new bException('ssh_start_control_master(): Failed', $e);
     }
 }
@@ -145,7 +145,7 @@ function ssh_get_control_master($socket = null){
         return $pid;
 
     }catch(Exception $e){
-showdie($e);
+//showdie($e);
         throw new bException('ssh_get_control_master(): Failed', $e);
     }
 }
@@ -168,7 +168,7 @@ function ssh_stop_control_master($socket = null){
         return true;
 
     }catch(Exception $e){
-showdie($e);
+//showdie($e);
         throw new bException('ssh_stop_control_master(): Failed', $e);
     }
 }
@@ -222,7 +222,7 @@ function ssh_exec($server, $commands = null){
         return $result;
 
     }catch(Exception $e){
-showdie($e);
+//showdie($e);
         notify(tr('ssh_exec() exception'), $e, 'developers');
 
         /*

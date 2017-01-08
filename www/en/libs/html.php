@@ -59,6 +59,170 @@ function html_iefilter($html, $filter){
 
 
 /*
+ * Bundles CSS or JS files togueter, gives them a md5 substr to 16 chacarter name
+ */
+function html_bundler($type){
+    global $_CONFIG;
+
+    if(!$_CONFIG['cdn']['bundler']['enabled']) return false;
+
+    try{
+        $realtype           = $type;
+        $GLOBALS[$realtype] = array_keys($GLOBALS[$realtype]);
+
+        switch($type){
+            case 'css':
+                $prefix = '';
+                break;
+
+            case 'js_header':
+                $prefix = '<';
+                $type   = 'js';
+                break;
+
+            case 'js_footer':
+                $prefix = '>';
+                $type   = 'js';
+                break;
+
+            case 'js':
+                $default = ($_CONFIG['cdn']['js']['load_delayed'] ? 'js_footer' : 'js_header');
+
+                foreach($GLOBALS[$type] as &$file){
+                    switch($file[1]){
+                        case '<':
+                            /*
+                             * Header
+                             */
+                            $GLOBALS['js_header'][$file] = $file;
+                            break;
+
+                        case '>':
+                            /*
+                             * Footer
+                             */
+                            $GLOBALS['js_footer'][$file] = $file;
+                            break;
+
+                        default:
+                            /*
+                             * Default
+                             */
+                            $GLOBALS[$default][$file] = $file;
+                    }
+                }
+
+                $GLOBALS['js'] = array();
+
+                /*
+                 * Bundle header and footer javascript files separately
+                 */
+                if(!empty($GLOBALS['js_header'])) html_bundler('js_header');
+                if(!empty($GLOBALS['js_footer'])) html_bundler('js_footer');
+                return;
+
+            default:
+                throw new bException(tr('html_bundler(): Unknown type ":type" specified', array()), 'unknown');
+        }
+
+        /*
+         * Prepare bundle information
+         */
+        $ext         = ($_CONFIG['cdn']['min'] ? '.min.'.$type : '.'.$type);
+        $bundle      = substr(md5(str_force($GLOBALS[$realtype])), 1, 16);
+        $bundle_file = ROOT.'www/en/pub/'.$type.'/bundle/'.$bundle.$ext;
+
+        /*
+         * If we don't find an existing bundle file, then procced with the concatination process
+         */
+        if(file_exists($bundle_file)){
+            if((filemtime($bundle_file) + $_CONFIG['cdn']['bundler']['max_age']) < time()){
+                /*
+                 * This file is too old, dump and retry
+                 */
+                file_delete($bundle_file);
+                return html_bundler($type);
+            }
+
+        }else{
+            /*
+             * Generate new bundle
+             */
+            load_libs('file');
+            file_ensure_path(ROOT.'www/en/pub/'.$type.'/bundle/');
+
+            foreach($GLOBALS[$realtype] as &$file){
+                /*
+                 * Check for @imports
+                 */
+                $file = ROOT.'pub/'.$type.'/'.$file.$ext;
+
+                if(!file_exists($file)){
+                    notify('bundler-file/not-exist', tr('The bundler ":type" file ":file" does not exist', array(':type' => $type, ':file' => $file)), 'developers');
+                    continue;
+                }
+
+                $data = file_get_contents($file);
+
+                if($type == 'css'){
+                    if(preg_match_all('/@import.+?;/', $data, $matches)){
+                        foreach($matches[0] as $match){
+                            /*
+                             * Inline replace each @import with the file contents
+                             */
+                            if(preg_match('/@import\s".+?"/', $match)){
+                                $file = str_cut($match, '"', '"');
+
+                                if(!file_exists($file)){
+                                    notify('bundler-file/not-exist', tr('The bundler ":type" file ":file" does not exist', array(':type' => $type, ':file' => $file)), 'developers');
+                                    $import = '';
+
+                                }else{
+                                    $import = file_get_contents(ROOT.'pub/'.$type.'/'.$file);
+                                }
+
+                            }elseif(preg_match('/@import\surl\(.+?\)/', $match)){
+                                /*
+                                 * This is an external URL. Get it locally as a temp file, then include
+                                 */
+                                $file   = str_cut($match, '(', ')');
+
+                                if(!file_exists($file)){
+                                    notify('bundler-file/not-exist', tr('The bundler ":type" file ":file" does not exist', array(':type' => $type, ':file' => $file)), 'developers');
+                                    $import = '';
+
+                                }else{
+                                    $import = file_get_contents($file);
+                                }
+                            }
+
+                            $data = str_replace($match, $import, $data);
+                        }
+                    }
+                }
+
+                file_append($bundle_file, $data);
+            }
+
+            unset($file);
+
+            if($_CONFIG['cdn']['network']['enabled']){
+                load_libs('cdn');
+                cdn_add_object($bundle_file);
+            }
+        }
+
+        $GLOBALS[$type] = array('bundle/'.$prefix.$bundle => array('min'   => $_CONFIG['cdn']['min'],
+                                                                   'media' => ''));
+
+    }catch(Exception $e){
+        throw new bException('html_bundler(): Failed', $e);
+    }
+}
+
+
+
+/*
  * Store libs for later loading
  */
 function html_load_css($files = '', $media = null){
@@ -128,12 +292,15 @@ function html_generate_css(){
 //////            $GLOBALS['css'][''bootstrap-theme']           => array('media' => null),
 //        }
 
+
         if(!empty($_CONFIG['cdn']['css']['post'])){
             $GLOBALS['css']['post'] = array('min' => $_CONFIG['cdn']['min'], 'media' => (is_string($_CONFIG['cdn']['css']['post']) ? $_CONFIG['cdn']['css']['post'] : ''));
         }
 
         $retval = '';
         $min    = $_CONFIG['cdn']['min'];
+
+        html_bundler('css');
 
         foreach($GLOBALS['css'] as $file => $meta) {
             if(!$file) continue;
@@ -241,6 +408,8 @@ function html_generate_js(){
         $retval = '';
         $footer = '';
 
+        html_bundler('js');
+
         /*
          * Set to load default JS libraries
          */
@@ -328,6 +497,7 @@ throw new bException('WARNING: $_CONFIG[js][default_libs] CONFIGURATION FOUND! T
             /*
              * Add the scripts with IE only filters?
              */
+
             if(isset_get($data['ie'])){
                 $html = html_iefilter($html, $data['ie']);
 
@@ -378,7 +548,7 @@ function html_header($params = null, $meta = array()){
 
         array_default($params, 'http'          , 'html');
         array_default($params, 'captcha'       , false);
-        array_default($params, 'doctype'       , 'html');
+        array_default($params, 'doctype'       , '<!DOCTYPE html>');
         array_default($params, 'html'          , '<html lang="'.LANGUAGE.'">');
         array_default($params, 'body'          , '<body>');
         array_default($params, 'title'         , isset_get($meta['title']));
@@ -441,7 +611,7 @@ function html_header($params = null, $meta = array()){
         }
 
         if(!empty($params['canonical'])){
-            $params['links'] .= '<link rel="canonical" href="'.$params['canonical']."\">\n";
+            $params['links'] .= '<link rel="canonical" href="'.$params['canonical'].'">';
         }
 
 //:DELETE: Above is already a meta-viewport
@@ -452,18 +622,18 @@ function html_header($params = null, $meta = array()){
         /*
          * Add meta tag no-index for non production environments and admin pages
          */
-        if(!$_CONFIG['production'] || $_CONFIG['noindex']){
+        if(!$_CONFIG['production'] or $_CONFIG['noindex']){
            $meta['robots'] = 'noindex';
         }
 
         $title = html_title($meta['title']);
         unset($meta['title']);
 
-        $retval = "<!DOCTYPE ".$params['doctype'].">\n".
-                  $params['html']."\n".
-                  "<head>\n".
-                  "<meta http-equiv=\"Content-Type\" content=\"text/html;charset=".$_CONFIG['charset']."\">\n".
-                  "<title>".$title."</title>\n";
+        $retval =  $params['doctype'].
+                   $params['html'].'
+                   <head>'.
+                  '<meta http-equiv="Content-Type" content="text/html;charset="'.$_CONFIG['charset'].'">'.
+                  '<title>'.$title.'</title>';
 
         unset($meta['title']);
 
@@ -479,16 +649,16 @@ function html_header($params = null, $meta = array()){
                     $sections[] = $key.'="'.$value.'"';
                 }
 
-                $retval .= '<link '.implode(' ', $sections).">\n";
+                $retval .= '<link '.implode(' ', $sections).'>';
             }
         }
 
         foreach($params['prefetch_dns'] as $prefetch){
-            $retval .= '<link rel="dns-prefetch" href="//'.$prefetch."\">\n";
+            $retval .= '<link rel="dns-prefetch" href="//'.$prefetch.'">';
         }
 
         foreach($params['prefetch_files'] as $prefetch){
-            $retval .= '<link rel="prefetch" href="'.$prefetch."\">\n";
+            $retval .= '<link rel="prefetch" href="'.$prefetch.'">';
         }
 
         unset($prefetch);
@@ -509,7 +679,7 @@ throw new bException('WARNING: $_CONFIG[cdn][fonts] CONFIGURATION FOUND! THIS IS
 
         if(!empty($params['fonts'])){
             foreach($params['fonts'] as $font){
-                $retval .= "<link href=\"".$font."\" rel=\"stylesheet\" type=\"text/css\">\n";
+                $retval .= '<link href="'.$font.'" rel="stylesheet" type="text/css">';
             }
         }
 
@@ -519,21 +689,18 @@ throw new bException('WARNING: $_CONFIG[cdn][fonts] CONFIGURATION FOUND! THIS IS
          * as false, and do-not-add
          */
         foreach($meta as $keyword => $content){
-            $retval .= "<meta name=\"".$keyword."\" content=\"".$content."\">\n";
+            $retval .= '<meta name="'.$keyword.'" content="'.$content.'">';
         }
 
         if(!empty($params['properties'])){
             foreach($params['properties'] as $property => $content){
-                $retval .= "<meta property=\"".$property."\" content=\"".$content."\">\n";
+                $retval .= '<meta property="'.$property.'" content="'.$content.'">';
             }
         }
 
-
         $retval .= html_favicon($params['favicon']).$params['extra'];
-
-
-        return $retval."</head>\n".
-                       $params['body']."\n";
+//showdie($retval.'</head>'.$params['body']);
+        return $retval.'</head>'.$params['body'];
 
     }catch(Exception $e){
         throw new bException('html_header(): Failed', $e);
@@ -550,10 +717,10 @@ function html_footer(){
 
     try{
         if(empty($GLOBALS['footer'])){
-            return "</body>\n</html>";
+            return '</body></html>';
         }
 
-        return $GLOBALS['footer']."</body>\n</html>";
+        return $GLOBALS['footer'].'</body></html>';
 
     }catch(Exception $e){
         throw new bException('html_footer(): Failed', $e);
