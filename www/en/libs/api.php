@@ -143,11 +143,11 @@ function api_call_base($api, $call, $data = array()){
                     throw new bException(tr('api_call_base(): Authentication on API ":api" returned result ":result"', array(':result' => $result['result'])), 'failed', $result);
                 }
 
-                if(empty($result['token'])){
+                if(empty($result['data']['token'])){
                     throw new bException(tr('api_call_base(): Authentication on API ":api" returned ok result but no token'), 'failed');
                 }
 
-                $_SESSION['api']['session_keys'][$api] = $result['token'];
+                $_SESSION['api']['session_keys'][$api] = $result['data']['token'];
                 $signin = true;
 
             }catch(Exception $e){
