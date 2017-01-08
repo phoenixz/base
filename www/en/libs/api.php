@@ -157,16 +157,16 @@ function api_call_base($api, $call, $data = array()){
 
         $data['PHPSESSID'] = $_SESSION['api']['session_keys'][$api];
 
-        $result = curl_get(array('url'            => str_starts_not($_CONFIG['api']['list'][$api]['baseurl'], '/').str_starts($call, '/'),
-                                 'posturlencoded' => true,
-                                 'getheaders'     => false,
-                                 'post'           => $data));
+        $json = curl_get(array('url'            => str_starts_not($_CONFIG['api']['list'][$api]['baseurl'], '/').str_starts($call, '/'),
+                               'posturlencoded' => true,
+                               'getheaders'     => false,
+                               'post'           => $data));
 
-        if(!$result){
+        if(!$json){
             throw new bException(tr('api_call_base(): API call ":call" on ":api" returned no response', array(':api' => $api, ':call' => $call)), 'not-response');
         }
 
-        $result = json_decode_custom($result['data']);
+        $result = json_decode_custom($json['data']);
 
         switch(isset_get($result['result'])){
             case 'OK':
@@ -197,6 +197,7 @@ function api_call_base($api, $call, $data = array()){
         }
 
     }catch(Exception $e){
+show(isset_get($json));
 show(isset_get($result));
 showdie($e);
         throw new bException('api_call_base(): Failed', $e);
