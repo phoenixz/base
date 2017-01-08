@@ -84,10 +84,12 @@ function json_encode_custom($source = false){
 /*
  * Send correct JSON reply
  */
-function json_reply($reply = null, $result = 'OK', $http_code = null, $after = 'die'){
+function json_reply($payload = null, $result = 'OK', $http_code = null, $after = 'die'){
+    global $_CONFIG;
+
     try{
-        if(!$reply){
-            $reply = array_force($reply);
+        if(!$payload){
+            $payload = array_force($payload);
         }
 
         /*
@@ -99,30 +101,35 @@ function json_reply($reply = null, $result = 'OK', $http_code = null, $after = '
              */
 
         }elseif(strtoupper($result) == 'REDIRECT'){
-            $reply = array('redirect' => $reply,
-                           'result'   => 'REDIRECT');
+            $payload = array('redirect' => $payload,
+                             'result'   => 'REDIRECT');
 
-        }elseif(!is_array($reply)){
-            $reply = array('result'  => strtoupper($result),
-                           'message' => $reply);
-
-        }else{
-            if(empty($reply['result'])){
-                $reply['result'] = $result;
+        }elseif(!is_array($payload) or empty($payload['data'])){
+            if($_CONFIG['json']['obsolete_support']){
+                $payload = array('result'  => strtoupper($result),
+                                 'message' => $payload,
+                                 'data'    => $payload);
+            }else{
+                $payload = array('result'  => strtoupper($result),
+                                 'data'    => $payload);
             }
 
-            $reply['result'] = strtoupper($reply['result']);
         }
 
-        $reply  = json_encode_custom($reply);
+        if(empty($payload['result'])){
+            $payload['result'] = $result;
+        }
+
+        $payload['result'] = strtoupper($payload['result']);
+        $payload           = json_encode_custom($payload);
 
         $params = array('http_code' => $http_code,
                         'mimetype'  => 'application/json');
 
         load_libs('http');
-        http_headers($params, strlen($reply));
+        http_headers($params, strlen($payload));
 
-        echo $reply;
+        echo $payload;
 
         switch($after){
             case 'die':
