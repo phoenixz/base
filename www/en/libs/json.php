@@ -217,20 +217,40 @@ function json_error($message, $data = array(), $result = 'ERROR', $http_code = 5
              * Assume this is an bException object
              */
             if(!($message instanceof bException)){
-                throw new bException('json_error(): Specified message must either be a string or an bException ojbect, but is neither');
-            }
+                if(!($message instanceof Exception)){
+                    $type = gettype($message);
 
-            $code = $message->code;
+                    if($type === 'object'){
+                        $type .= '/'.get_class($message);
+                    }
 
-    //        if(debug('messages') and (substr($code, 0, 5) == 'user/') or ($code == 'user')){
-            if(debug()){
-                /*
-                 * This is a user visible message
-                 */
-                $message = $message->getMessages("\n");
+                    throw new bException(tr('json_error(): Specified message must either be a string or an bException ojbect, or PHP Exception ojbect, but is a ":type"', array(':type' => $type)), 'invalid');
+                }
 
-            }elseif(!empty($default)){
-                $message = $default;
+                $code = $message->getCode();
+
+                if(debug()){
+                    /*
+                     * This is a user visible message
+                     */
+                    $message = $message->getMessage();
+
+                }elseif(!empty($default)){
+                    $message = $default;
+                }
+
+            }else{
+                $code = $message->getCode();
+
+                if(debug()){
+                    /*
+                     * This is a user visible message
+                     */
+                    $message = $message->getMessages("\n");
+
+                }elseif(!empty($default)){
+                    $message = $default;
+                }
             }
         }
 
