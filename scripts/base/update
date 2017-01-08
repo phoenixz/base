@@ -233,11 +233,13 @@ if($nocommit){
     cli_log(tr('Skipping git commit due to "--no-commit" option'), 'yellow');
 
 }else{
-    cli_log(tr('Git commit updates'), 'white');
-    passthru('cd '.ROOT.';git add .;git commit -am "Update from base"', $exitcode);
+    if(!trim(shell_exec('git status | grep "nothing to commit" | wc -l'))){
+        cli_log(tr('Git commit updates'), 'white');
+        passthru('cd '.ROOT.';git add .;git commit -am "Update from base"', $exitcode);
 
-    if($exitcode){
-        throw new bException(tr('Git commit of updates failed with exit code ":code"', array(':code' => $exitcode)), 'git');
+        if($exitcode){
+            throw new bException(tr('Git commit of updates failed with exit code ":code"', array(':code' => $exitcode)), 'git');
+        }
     }
 }
 
