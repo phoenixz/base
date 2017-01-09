@@ -1059,7 +1059,12 @@ function user_or_signin(){
                 /*
                  * No session
                  */
-                redirect(isset_get($_CONFIG['redirects']['signin'], 'signin.php').'?redirect='.urlencode($_SERVER['REQUEST_URI']));
+                if($GLOBALS['page_is_api']){
+                    json_reply(tr('api_start_session(): Specified token ":token" has no session', array(':token' => $_POST['PHPSESSID'])), 'signin');
+
+                }else{
+                    redirect(isset_get($_CONFIG['redirects']['signin'], 'signin.php').'?redirect='.urlencode($_SERVER['REQUEST_URI']));
+                }
             }
 
             if(!empty($_SESSION['lock'])){
