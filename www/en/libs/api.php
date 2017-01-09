@@ -11,6 +11,7 @@
 
 
 load_config('api');
+load_libs('json');
 
 
 
@@ -69,6 +70,184 @@ function api_encode($data){
 
     }catch(Exception $e){
         throw new bException('api_encode(): Failed', $e);
+    }
+}
+
+
+
+/*
+ *
+ */
+function api_authenticate($apikey){
+    global $_CONFIG;
+
+    try{
+        if($_CONFIG['production']){
+            /*
+             * This is a production platform, only allow JSON API key
+             * authentications over a secure connection
+             */
+            if($_CONFIG['protocol'] !== 'https://'){
+                throw new bException(tr('api_authenticate(): No API key authentication allowed on unsecure connections over non HTTPS connections'), 'not-allowed');
+            }
+        }
+
+        if(empty($apikey)){
+            throw new bException(tr('api_authenticate(): No auth key specified'), 'not-specified');
+        }
+
+        /*
+         * Authenticate using the supplied key
+         */
+        if(empty($_CONFIG['api']['apikey'])){
+            /*
+             * Check in database if the authorization key exists
+             */
+            $user = sql_get('SELECT * FROM `users` WHERE `api_key` = :apikey', array(':apikey' => $apikey));
+
+            if(!$user){
+                throw new bException(tr('api_authenticate(): Specified apikey is not valid'), 'access-denied');
+            }
+
+        }else{
+            /*
+             * Use one system wide API key
+             */
+            if($apikey !== $_CONFIG['api']['apikey']){
+                throw new bException(tr('api_authenticate(): Specified auth key is not valid'), 'access-denied');
+            }
+        }
+
+        /*
+         * Yay, auth worked, create session and send client the session token
+         */
+        session_destroy();
+        session_start();
+        session_regenerate_id();
+        session_reset_domain();
+
+        sql_query('INSERT INTO `api_sessions` (`createdby`, `ip`, `apikey`)
+                   VALUES                     (:createdby , :ip , :apikey )',
+
+                   array('createdby' => isset_get($_SESSION['user']['id']),
+                         'ip'        => $_SERVER['REMOTE_ADDR'],
+                         'apikey'    => $apikey));
+
+        $_SESSION['user'] = $user;
+        $_SESSION['api']  = array('session_start' => time(),
+                                  'session_id'    => sql_insert_id());
+
+        return session_id();
+
+    }catch(Exception $e){
+        throw new bException('api_authenticate(): Failed', $e);
+    }
+}
+
+
+
+/*
+ *
+ */
+function api_start_session(){
+    global $_CONFIG;
+
+    try{
+        /*
+         * Check session token
+         */
+        if(empty($_POST['PHPSESSID'])){
+            throw new bException(tr('api_start_session(): No auth key specified'), 'not-specified');
+        }
+
+        /*
+         * Yay, we have an actual token, create session!
+         */
+        session_write_close();
+        session_id($_POST['PHPSESSID']);
+        session_start();
+
+        if(empty($_SESSION['api']['session_start'])){
+            /*
+             * Not a valid session!
+             */
+            session_destroy();
+            session_reset_domain();
+
+            json_reply(tr('api_start_session(): Specified token ":token" has no session', array(':token' => $_POST['PHPSESSID'])), 'signin');
+        }
+
+        return session_id();
+
+    }catch(Exception $e){
+        throw new bException('api_start_session(): Failed', $e);
+    }
+}
+
+
+
+/*
+ *
+ */
+function api_close_session(){
+    global $_CONFIG;
+
+    try{
+        /*
+         * Yay, we have an actual token, create session!
+         */
+        sql_query('UPDATE `api_sessions`
+
+                   SET    `closedon` = NOW()
+
+                   WHERE  `id`       = :id',
+
+                   array('id' => isset_get($_SESSION['api']['sessions_id'])));
+
+        session_destroy();
+        session_reset_domain();
+        return true;
+
+    }catch(Exception $e){
+        throw new bException('api_close_session(): Failed', $e);
+    }
+}
+
+
+
+/*
+ * Register session open or close in the api_session database table
+ */
+function api_call($call, $result = null){
+    static $time, $id;
+
+    try{
+        if($result){
+            sql_query('UPDATE `api_calls`
+
+                       SET    `time`   = :time,
+                              `result` = :result
+
+                       WHERE  `id`     = :id',
+
+                       array(':time'   => microtime(true) - $time,
+                             ':result' => $result,
+                             ':id'     => $id));
+
+        }else{
+            sql_query('INSERT INTO `api_calls` (`sessions_id`, `call`)
+                       VALUES                  (:sessions_id , :call )',
+
+                       array('sessions_id' => isset_get($_SESSION['user']['id']),
+                             'ip'          => $_SESSION['api']['session_id'],
+                             'apikey'      => $apikey));
+
+            $time = microtime(true);
+            $id   = sql_insert_id();
+        }
+
+    }catch(Exception $e){
+        throw new bException('api_session(): Failed', $e);
     }
 }
 
