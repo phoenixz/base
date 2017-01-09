@@ -9,6 +9,7 @@ sql_query('DROP TABLE IF EXISTS `api_sessions`');
 sql_query('CREATE TABLE `api_sessions` (`id`        INT(11)     NOT NULL AUTO_INCREMENT,
                                         `createdon` TIMESTAMP   NOT NULL DEFAULT CURRENT_TIMESTAMP,
                                         `createdby` INT(11)         NULL DEFAULT NULL,
+                                        `closedon`  DATETIME        NULL DEFAULT NULL,
                                         `ip`        INT(11)         NULL DEFAULT NULL,
                                         `apikey`    VARCHAR(64)     NULL DEFAULT NULL,
 
