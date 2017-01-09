@@ -116,4 +116,107 @@ sql_query('CREATE TABLE `email_client_accounts` (`id`            INT(11)      NO
                                                  CONSTRAINT `fk_email_client_accounts_modifiedby` FOREIGN KEY (`modifiedby`) REFERENCES `users`                (`id`)
 
                                                ) ENGINE=InnoDB AUTO_INCREMENT='.$_CONFIG['db']['core']['autoincrement'].' DEFAULT CHARSET="'.$_CONFIG['db']['core']['charset'].'" COLLATE="'.$_CONFIG['db']['core']['collate'].'";');
+
+/*
+ * Copy all email_domains and email_accounts data to email_client_domains and
+ * email_client_accounts
+ */
+load_libs('seo');
+
+$accounts = sql_query('SELECT `id`,
+                              `createdon`,
+                              `createdby`,
+                              `modifiedon`,
+                              `modifiedby`,
+                              `status`,
+                              `servers_id`,
+                              `domain`,
+                              `smtp_host`,
+                              `smtp_port`,
+                              `imap`,
+                              `poll_interval`,
+                              `header`,
+                              `footer`,
+                              `description`
+
+                       FROM   `email_domains`');
+
+$insert = sql_prepare('INSERT INTO `email_client_domains` (`id`, `createdon`, `createdby`, `modifiedon`, `modifiedby`, `status`, `name`, `seoname`, `smtp_host`, `smtp_port`, `imap`, `poll_interval`, `header`, `footer`, `description`)
+                       VALUES                             (:id , :createdon , :createdby , :modifiedon , :modifiedby , :status , :name , :seoname , :smtp_host , :smtp_port , :imap , :poll_interval , :header , :footer , :description )');
+
+while($domain = sql_fetch($accounts)){
+    $domain['name']    = $domain['domain'];
+    $domain['seoname'] = seo_unique($domain['name'], 'email_client_domains');
+
+    $insert->execute(array(':id'            => $domain['id'],
+                           ':createdon'     => $domain['createdon'],
+                           ':createdby'     => $domain['createdby'],
+                           ':modifiedon'    => $domain['modifiedon'],
+                           ':modifiedby'    => $domain['modifiedby'],
+                           ':status'        => $domain['status'],
+                           ':name'          => $domain['name'],
+                           ':seoname'       => $domain['seoname'],
+                           ':smtp_host'     => $domain['smtp_host'],
+                           ':smtp_port'     => $domain['smtp_port'],
+                           ':imap'          => $domain['imap'],
+                           ':poll_interval' => $domain['poll_interval'],
+                           ':header'        => $domain['header'],
+                           ':footer'        => $domain['footer'],
+                           ':description'   => $domain['description']));
+}
+
+$accounts = sql_query('SELECT `id`,
+                              `createdon`,
+                              `createdby`,
+                              `modifiedon`,
+                              `modifiedby`,
+                              `status`,
+                              `domains_id`,
+                              `users_id`,
+                              `poll_interval`,
+                              `last_poll`,
+                              `email`,
+                              `name`,
+                              `password`,
+                              `header`,
+                              `footer`,
+                              `description`
+
+                       FROM   `email_accounts`');
+
+$insert = sql_prepare('INSERT INTO `email_client_accounts` (`id`, `createdon`, `createdby`, `modifiedon`, `modifiedby`, `status`, `domains_id`, `users_id`, `poll_interval`, `last_poll`, `email`, `seoemail`, `name`, `password`, `header`, `footer`, `description`)
+                       VALUES                              (:id , :createdon , :createdby , :modifiedon , :modifiedby , :status , :domains_id , :users_id , :poll_interval , :last_poll , :email , :seoemail , :name , :password , :header , :footer , :description )');
+
+while($account = sql_fetch($accounts)){
+    $accounts['domains_id'] = sql_get('SELECT `id` FROM `email_client_domains` WHERE `domain` = :domain', array(':domain' => str_from($account['email'], '@')));
+    $accounts['seoemail']   = seo_unique($domain['email'], 'email_client_accounts');
+
+    $insert->execute(array(':id'            => $domain['id'],
+                           ':createdon'     => $domain['createdon'],
+                           ':createdby'     => $domain['createdby'],
+                           ':modifiedon'    => $domain['modifiedon'],
+                           ':modifiedby'    => $domain['modifiedby'],
+                           ':status'        => $domain['status'],
+                           ':email'         => $domain['email'],
+                           ':seoemail'      => $domain['seoemail'],
+                           ':domains_id'    => $domain['domains_id'],
+                           ':users_id'      => $domain['users_id'],
+                           ':name'          => $domain['name'],
+                           ':password'      => $domain['password'],
+                           ':poll_interval' => $domain['poll_interval'],
+                           ':last_poll'     => $domain['last_poll'],
+                           ':header'        => $domain['header'],
+                           ':footer'        => $domain['footer'],
+                           ':description'   => $domain['description']));
+}
+
+/*
+ * Link email conversations and messages tables to the new client tables
+ */
+sql_foreignkey_exists('email_conversations', 'fk_email_conversations_email_accounts_id', 'ALTER TABLE `email_conversations` DROP FOREIGN KEY `fk_email_conversations_email_accounts_id`');
+sql_query('ALTER TABLE `email_conversations` ADD CONSTRAINT `fk_email_conversations_email_accounts_id` FOREIGN KEY (`email_accounts_id`) REFERENCES `email_client_accounts` (id) ON DELETE RESTRICT');
+
+sql_foreignkey_exists('email_messages', 'fk_email_messages_email_accounts_id', 'ALTER TABLE `email_messages` DROP FOREIGN KEY `fk_email_messages_email_accounts_id`');
+sql_query('ALTER TABLE `email_conversations` ADD CONSTRAINT `fk_email_messages_email_accounts_id` FOREIGN KEY (`email_accounts_id`) REFERENCES `email_client_accounts` (id) ON DELETE RESTRICT');
+
 ?>

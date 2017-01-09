@@ -122,7 +122,7 @@ function email_poll($params){
             }
         }
 
-        $userdata = email_get_user($params['account']);
+        $userdata = email_get_client_account($params['account']);
 
         /*
          * Pre IMAP Fetch
@@ -206,7 +206,7 @@ function email_poll($params){
 
                         $data                      = email_cleanup($data);
                         $data['users_id']          = $userdata['users_id'];
-                        $data['email_accounts_id'] = $userdata['email_accounts_id'];
+                        $data['email_accounts_id'] = $userdata['id'];
 
                         email_update_conversation($data, 'received');
                         $data = execute_callback(isset_get($params['callbacks']['post_update']), $data);
@@ -240,7 +240,7 @@ function email_poll($params){
                 cli_log(tr('Processed ":count" new mails for account ":account"', array(':count' => count($mails), ':account' => $params['account'])));
             }
 
-            sql_query('UPDATE `email_accounts` SET `last_poll` = NOW() WHERE `id` = :id', array(':id' => $userdata['id']));
+            sql_query('UPDATE `email_client_accounts` SET `last_poll` = NOW() WHERE `id` = :id', array(':id' => $userdata['id']));
         }
 
         return $retval;
@@ -835,7 +835,7 @@ function email_send($email, $smtp = null){
          * Send the email right now
          */
         $mail    = email_load_phpmailer();
-        $account = email_get_user($email['from']);
+        $account = email_get_client_account($email['from']);
 
         $mail->IsSMTP(); // send via SMTP
 
@@ -1236,6 +1236,7 @@ function email_get_account($email, $columns = null){
                         `email_accounts`.`header`,
                         `email_accounts`.`footer`,
                         `email_accounts`.`description`,
+
                         `email_domains`.`domain`        AS `domain`,
                         `email_domains`.`header`        AS `domain_header`,
                         `email_domains`.`footer`        AS `domain_footer`,
@@ -1320,9 +1321,11 @@ function email_get_client_account($email, $columns = null){
                            LEFT JOIN `email_client_domains`
                            ON        `email_client_domains`.`id` = `email_client_accounts`.`domains_id`
 
-                           WHERE  `seoemail` = :seoemail',
+                           WHERE  `seoemail` = :seoemail
+                           OR     `email`    = :email',
 
-                           array(':seoemail' => $email));
+                           array(':email'    => $email,
+                                 ':seoemail' => $email));
 
         if(!$retval){
             throw new bException(tr('email_get_client_account(): Specified email ":email" does not exist', array(':email' => $email)), 'not-exist');
@@ -1374,13 +1377,9 @@ function email_get_domain($email_or_domain, $columns = null, $table = 'email_dom
 
                            FROM   `'.$table.'`
 
-                           WHERE  `seoname` = :domain',
+                           WHERE  `seoname` = :seoname',
 
-                           array(':domain' => $domain));
-
-        if(!$retval){
-            throw new bException(tr('email_get_domain(): Specified email ":email" has domain ":domain" does not exist', array(':email' => $email_or_domain, ':domain' => $domain)), 'not-exist');
-        }
+                           array(':seoname' => $domain));
 
         return $retval;
 
@@ -1645,7 +1644,7 @@ function email_validate_account($account, $client){
 
         $v->isNatural($account['poll_interval'], tr('Please provide a natural numeric poll interval'), 0);
 
-        $account['seoemail'] = seo_unique($account['email'], 'email'.$client.'_accounts', $domain['id'], 'seoemail');
+        $account['seoemail'] = seo_unique($account['email'], 'email'.$client.'_accounts', $account['id'], 'seoemail');
 
         $v->isValid();
 
@@ -1709,7 +1708,7 @@ function email_delete($params){
         }
 
         $count    = 0;
-        $userdata = email_get_user($params['account']);
+        $userdata = email_get_client_account($params['account']);
         $imap     = email_connect($userdata, $params['mail_box']);
         $mails    = imap_search($imap, $params['criteria']);
         $retval   = array();
@@ -1789,6 +1788,33 @@ function email_delete($params){
 
 
 
+/*
+ *
+ */
+function email_test_account($account, $mail_box = 'INBOX'){
+    try{
+throw new bException(tr('email_test(): This functionality is still under construction'), 'under-construction');
+        $userdata = email_get_client_account($account);
+        $imap     = email_connect($userdata, $mail_box);
+        $mails    = imap_search($imap, 'UNSEEN', SE_FREE, 'UTF-8');
+
+show($mails);
+showdie($imap);
+$mail = array_pop($mails);
+$data = imap_fetch_overview($imap, $mail, 0);
+$data = array_shift($data);
+$data = array_from_object($data);
+showdie($data);
+
+        return count($mails);
+
+    }catch(Exception $e){
+showdie($e);
+        throw new bException(tr('email_test_account(): Failed'), $e);
+    }
+}
+
+
 
 
 /*
@@ -1796,7 +1822,7 @@ function email_delete($params){
  */
 function email_get_user($email, $columns = null){
     try{
-        return email_get_account($email, $columns = null);
+        return email_get_client_account($email, $columns = null);
 
     }catch(Exception $e){
         throw new bException(tr('email_delete(): Failed'), $e);
