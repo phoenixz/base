@@ -52,7 +52,7 @@ try{
             throw new bException(tr('No $_CONFIG[deploy][:target][group] specified', array(':target' => $target)), 'missing-configuration');
         }
 
-        if(empty($deploy_config['modes'])){
+        if(!isset($deploy_config['modes'])){
             throw new bException(tr('No $_CONFIG[deploy][:target][modes] specified', array(':target' => $target)), 'missing-configuration');
         }
     }
