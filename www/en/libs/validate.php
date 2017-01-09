@@ -400,8 +400,8 @@ class validate_form {
     /*
      * Only allow integer numbers 1 and up
      */
-    function isNatural($value, $msg = null){
-        if(!is_natural($value)){
+    function isNatural($value, $msg = null, $start = 1){
+        if(!is_natural($value, $start)){
             $this->setError($msg);
             return false;
         }
