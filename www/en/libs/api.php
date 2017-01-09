@@ -299,24 +299,22 @@ function api_call_base($api, $call, $data = array()){
             throw new bException(tr('api_call_base(): Specified API ":api" does not exist', array(':api' => $api)), 'not-exist');
         }
 
-        $url    = $_CONFIG['api']['list'][$api]['baseurl'].$call;
-        $apikey = $_CONFIG['api']['list'][$api]['apikey'];
-
         if(empty($_SESSION['api']['session_keys'][$api])){
             try{
                 /*
                  * Auto authenticate
                  */
-                $result = curl_get(array('url'            => str_starts_not($_CONFIG['api']['list'][$api]['baseurl'], '/').'/authenticate',
+                $apikey = $_CONFIG['api']['list'][$api]['apikey'];
+                $json   = curl_get(array('url'            => str_starts_not($_CONFIG['api']['list'][$api]['baseurl'], '/').'/authenticate',
                                          'posturlencoded' => true,
                                          'getheaders'     => false,
                                          'post'           => array('PHPSESSID' => $apikey)));
 
-                if(!$result){
+                if(!$json){
                     throw new bException(tr('api_call_base(): Authentication on API ":api" returned no response', array(':api' => $api)), 'not-exist');
                 }
 
-                $result = json_decode_custom($result['data']);
+                $result = json_decode_custom($json['data']);
 
                 if(isset_get($result['result']) !== 'OK'){
                     throw new bException(tr('api_call_base(): Authentication on API ":api" returned result ":result"', array(':result' => $result['result'])), 'failed', $result);
