@@ -97,18 +97,18 @@ function email_connect($userdata, $mail_box = null){
 function email_poll($params){
     try{
         array_params($params);
-        array_default($params, 'account'           , null);
-        array_default($params, 'mail_box'          , null);
-        array_default($params, 'criteria'          , 'ALL');
-        array_default($params, 'delete'            , false);
-        array_default($params, 'peek'              , false);
-        array_default($params, 'internal'          , false);
-        array_default($params, 'uid'               , false);
-        array_default($params, 'character_set'     , 'UTF-8');
-        array_default($params, 'store'             , false);
-        array_default($params, 'return'            , false);
-        array_default($params, 'callbacks'         , array());
-        array_default($params, 'return'            , false);
+        array_default($params, 'account'      , null);
+        array_default($params, 'mail_box'     , null);
+        array_default($params, 'criteria'     , 'ALL');
+        array_default($params, 'delete'       , false);
+        array_default($params, 'peek'         , false);
+        array_default($params, 'internal'     , false);
+        array_default($params, 'uid'          , false);
+        array_default($params, 'character_set', 'UTF-8');
+        array_default($params, 'store'        , false);
+        array_default($params, 'return'       , false);
+        array_default($params, 'callbacks'    , array());
+        array_default($params, 'return'       , false);
 
         if($params['peek'] and $params['delete']){
             throw new bException(tr('email_poll(): Both peek and delete were specified, though they are mutually exclusive. Please specify one or the other'), 'conflict');
@@ -1208,7 +1208,7 @@ function email_prepare($email){
 /*
  * Return userdata for the specified username
  */
-function email_get_user($email, $columns = null){
+function email_get_account($email, $columns = null){
     try{
         /*
          * Ensure we have only email address
@@ -1258,13 +1258,80 @@ function email_get_user($email, $columns = null){
                            array(':email' => $email));
 
         if(!$retval){
-            throw new bException(tr('email_get_user(): Specified email ":email" does not exist', array(':email' => $email)), 'not-exist');
+            throw new bException(tr('email_get_account(): Specified email ":email" does not exist', array(':email' => $email)), 'not-exist');
         }
 
         return $retval;
 
     }catch(Exception $e){
-        throw new bException(tr('email_get_user(): Failed'), $e);
+        throw new bException(tr('email_get_account(): Failed'), $e);
+    }
+}
+
+
+
+/*
+ * Return userdata for the specified username
+ */
+function email_get_client_account($email, $columns = null){
+    try{
+        /*
+         * Ensure we have only email address
+         * Get domain name
+         */
+        if(strpos($email, '<') !== false){
+            $email = str_cut($email, '<', '>');
+        }
+
+        if(!$columns){
+            $columns = '`email_client_accounts`.`id`,
+                        `email_client_accounts`.`createdby`,
+                        `email_client_accounts`.`createdon`,
+                        `email_client_accounts`.`modifiedby`,
+                        `email_client_accounts`.`modifiedon`,
+                        `email_client_accounts`.`status`,
+                        `email_client_accounts`.`domains_id`,
+                        `email_client_accounts`.`users_id`,
+                        `email_client_accounts`.`id` AS `email_client_accounts_id`,
+                        `email_client_accounts`.`name`,
+                        `email_client_accounts`.`email`,
+                        `email_client_accounts`.`seoemail`,
+                        `email_client_accounts`.`password`,
+                        `email_client_accounts`.`poll_interval`,
+                        `email_client_accounts`.`last_poll`,
+                        `email_client_accounts`.`header`,
+                        `email_client_accounts`.`footer`,
+                        `email_client_accounts`.`description`,
+
+                        `email_client_domains`.`seoname`       AS `domain`,
+                        `email_client_domains`.`header`        AS `domain_header`,
+                        `email_client_domains`.`footer`        AS `domain_footer`,
+                        `email_client_domains`.`poll_interval` AS `domain_poll_interval`,
+
+                        `email_client_domains`.`smtp_host`,
+                        `email_client_domains`.`smtp_port`,
+                        `email_client_domains`.`imap`';
+        }
+
+        $retval = sql_get('SELECT    '.$columns.'
+
+                           FROM      `email_client_accounts`
+
+                           LEFT JOIN `email_client_domains`
+                           ON        `email_client_domains`.`id` = `email_client_accounts`.`domains_id`
+
+                           WHERE  `seoemail` = :seoemail',
+
+                           array(':seoemail' => $email));
+
+        if(!$retval){
+            throw new bException(tr('email_get_client_account(): Specified email ":email" does not exist', array(':email' => $email)), 'not-exist');
+        }
+
+        return $retval;
+
+    }catch(Exception $e){
+        throw new bException(tr('email_get_client_account(): Failed'), $e);
     }
 }
 
@@ -1273,16 +1340,8 @@ function email_get_user($email, $columns = null){
 /*
  * Return domain data for the specified username
  */
-function email_get_domain($email_or_domain, $columns = null){
+function email_get_domain($email_or_domain, $columns = null, $table = 'email_domains'){
     try{
-        /*
-         * Ensure we have only email address
-         * Get domain name
-         */
-        if(strpos($email_or_domain, '<') !== false){
-            $email_or_domain = str_cut($email_or_domain, '<', '>');
-        }
-
         if(!$columns){
             $columns = '`id`,
                         `createdby`,
@@ -1292,6 +1351,8 @@ function email_get_domain($email_or_domain, $columns = null){
                         `status`,
                         `name`,
                         `seoname`,
+                        `poll_interval`,
+                        `description`,
                         `smtp_host`,
                         `smtp_port`,
                         `imap`,
@@ -1299,11 +1360,19 @@ function email_get_domain($email_or_domain, $columns = null){
                         `footer`';
         }
 
+        /*
+         * Ensure we have only email address
+         * Get domain name
+         */
+        if(strpos($email_or_domain, '<') !== false){
+            $email_or_domain = str_cut($email_or_domain, '<', '>');
+        }
+
         $domain = str_from($email_or_domain, '@');
 
         $retval = sql_get('SELECT '.$columns.'
 
-                           FROM   `email_domains`
+                           FROM   `'.$table.'`
 
                            WHERE  `seoname` = :domain',
 
@@ -1317,6 +1386,20 @@ function email_get_domain($email_or_domain, $columns = null){
 
     }catch(Exception $e){
         throw new bException(tr('email_get_domain(): Failed'), $e);
+    }
+}
+
+
+
+/*
+ * Return domain data for the specified username
+ */
+function email_client_get_domain($email_or_domain, $columns = null){
+    try{
+        return email_get_domain($email_or_domain, $columns, 'email_client_domains');
+
+    }catch(Exception $e){
+        throw new bException(tr('email_client_get_domain(): Failed'), $e);
     }
 }
 
@@ -1473,15 +1556,16 @@ function email_get_encryption_key(){
 /*
  * Validate the data of the specified email-domain
  */
-function email_validate_domain($domain){
+function email_validate_domain($domain, $table = 'email_domains'){
     try{
-        $v = new validate_form($domain, 'domain,imap,smpt_host,smtp_port,description,header,footer,poll_interval');
+        load_libs('seo');
+        $v = new validate_form($domain, 'name,imap,smpt_host,smtp_port,description,header,footer,poll_interval');
 
-        $v->isNotEmpty  ($domain['domain']    , tr('Please provide a name'));
-        $v->hasMinChars ($domain['domain'],  2, tr('Please ensure that the name has a minimum of 2 characters'));
-        $v->hasMaxChars ($domain['domain'], 96, tr('Please ensure that the name has a maximum of 96 characters'));
+        $v->isNotEmpty  ($domain['name']    , tr('Please provide a name'));
+        $v->hasMinChars ($domain['name'],  2, tr('Please ensure that the name has a minimum of 2 characters'));
+        $v->hasMaxChars ($domain['name'], 96, tr('Please ensure that the name has a maximum of 96 characters'));
 
-        if(strpos($domain['domain'], ' ') !== false){
+        if(strpos($domain['name'], ' ') !== false){
             $v->setError(tr('Please ensure that the domain name contains no spaces'));
         }
 
@@ -1497,11 +1581,13 @@ function email_validate_domain($domain){
         $v->isNotEmpty ($domain['imap'], tr('Please provide an IMAP connection string'));
         $v->isRegex    ($domain['imap'], '/^\{[a-zA-Z0-9\.-]+?:\d{1,5}(?:\/imap\/ssl(?:\/novalidate-cert)?)?\}[A-Z]+$/', tr('Please provide valid a IMAP connection string, like {mail.domain.com:993/imap/ssl}INBOX'));
 
-        $v->isNatural  ($domain['poll_interval'], tr('Please provide a natural numeric poll interval'));
-
         if($domain['poll_interval'] === ''){
             $domain['poll_interval'] = null;
         }
+
+        $v->isNatural  ($domain['poll_interval'], tr('Please provide a natural numeric poll interval'), 0);
+
+        $domain['seoname'] = seo_unique($domain['name'], $table, $domain['id']);
 
         $v->isValid();
 
@@ -1517,50 +1603,56 @@ function email_validate_domain($domain){
 /*
  * Validate the data of the specified email-user
  */
-function email_validate_user($user){
+function email_validate_account($account, $client){
     try{
-        $v = new validate_form($user, 'name,email,password,description,header,footer,poll_interval');
+        load_libs('seo');
 
-        $v->isValidEmail($user['email']   , tr('Please provide a valid email'));
+        if($client){
+            $client = '_client';
+        }
 
-        $v->isNotEmpty  ($user['name']    , tr('Please provide a name'));
-        $v->hasMinChars ($user['name']    , 1, tr('Please ensure that the name has a minimum of 1 character'));
-        $v->isNotEmpty  ($user['password'], tr('Please provide a password'));
+        $v = new validate_form($account, 'name,email,password,description,header,footer,poll_interval');
+        $v->isValidEmail($account['email']   , tr('Please provide a valid email'));
+        $v->isNotEmpty  ($account['name']    , tr('Please provide a name'));
+        $v->hasMinChars ($account['name']    , 1, tr('Please ensure that the name has a minimum of 1 character'));
+        $v->isNotEmpty  ($account['password'], tr('Please provide a password'));
 
-        if(empty($user['domain'])){
+        if(empty($account['domain'])){
             $v->setError(tr('Please specify a domain from the list'));
         }
 
-        $v->hasMaxChars ($user['description'], 4096, tr('Please ensure that the description has a maximum of 4K characters'));
-        $v->hasMaxChars ($user['header']     , 4096, tr('Please ensure that the header has a maximum of 4K characters'));
-        $v->hasMaxChars ($user['footer']     , 4096, tr('Please ensure that the footer has a maximum of 4K characters'));
+        $v->hasMaxChars ($account['description'], 4096, tr('Please ensure that the description has a maximum of 4K characters'));
+        $v->hasMaxChars ($account['header']     , 4096, tr('Please ensure that the header has a maximum of 4K characters'));
+        $v->hasMaxChars ($account['footer']     , 4096, tr('Please ensure that the footer has a maximum of 4K characters'));
 
-        $domain = sql_get('SELECT `id`, `status` FROM `email_domains` WHERE `domain` = :domain', array(':domain' => $user['domain']));
+        $domain = sql_get('SELECT `id`, `status` FROM `email'.$client.'_domains` WHERE `seoname` = :seoname', array(':seoname' => $account['domain']));
 
         if(!$domain){
-            $v->setError(tr('The specified domain ":domain" does not exist', array(':domain' => $user['domain'])));
+            $v->setError(tr('The specified domain ":domain" does not exist', array(':domain' => $account['domain'])));
 
         }elseif($domain['status']){
             /*
              * Domain is possibly deleted, or disabled
              */
-            $v->setError(tr('The specified domain ":domain" is not available', array(':domain' => $user['domain'])));
+            $v->setError(tr('The specified domain ":domain" is not available', array(':domain' => $account['domain'])));
         }
 
-        $user['domains_id'] = $domain['id'];
+        $account['domains_id'] = $domain['id'];
 
-        $v->isNatural($user['poll_interval'], tr('Please provide a natural numeric poll interval'));
-
-        if(!$user['poll_interval']){
-            $user['poll_interval'] = 0;
+        if(!$account['poll_interval']){
+            $account['poll_interval'] = 0;
         }
+
+        $v->isNatural($account['poll_interval'], tr('Please provide a natural numeric poll interval'), 0);
+
+        $account['seoemail'] = seo_unique($account['email'], 'email'.$client.'_accounts', $domain['id'], 'seoemail');
 
         $v->isValid();
 
-        return $user;
+        return $account;
 
     }catch(Exception $e){
-        throw new bException(tr('email_validate_user(): Failed'), $e);
+        throw new bException(tr('email_validate_account(): Failed'), $e);
     }
 }
 
@@ -1692,6 +1784,31 @@ function email_delete($params){
 
     }catch(Exception $e){
         throw new bException(tr('email_delete(): Failed'), $e);
+    }
+}
+
+
+
+
+
+/*
+ * OBSOLETE FUNCTIONS FOLLOW BELOW
+ */
+function email_get_user($email, $columns = null){
+    try{
+        return email_get_account($email, $columns = null);
+
+    }catch(Exception $e){
+        throw new bException(tr('email_delete(): Failed'), $e);
+    }
+}
+
+function email_validate_user($user){
+    try{
+        return email_validate_account($user);
+
+    }catch(Exception $e){
+        throw new bException(tr('email_validate_user(): Failed'), $e);
     }
 }
 ?>
