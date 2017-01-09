@@ -444,13 +444,14 @@ function curl_get($params, $referer = null, $post = false, $options = array()){
             unset($retval['ch']);
 
             sql_query('INSERT INTO `curl_cache` (`users_id`, `url`, `data`)
-                      VALUES                    (:users_id , :url , :data)
+                       VALUES                   (:users_id , :url , :data )
 
-                      ON DUPLICATE KEY UPDATE `data` = :data;',
+                       ON DUPLICATE KEY UPDATE `data` = :data_update',
 
-                      array(':users_id' => (empty($_SESSION['user']['id']) ? null : $_SESSION['user']['id']),
-                            ':url'      => $params['url'],
-                            ':data'     => json_encode_custom($retval)));
+                      array(':users_id'    => (empty($_SESSION['user']['id']) ? null : $_SESSION['user']['id']),
+                            ':url'         => $params['url'],
+                            ':data'        => json_encode_custom($retval),
+                            ':data_update' => json_encode_custom($retval)));
         }
 
         if($retval['status']['http_code'] != 200){
