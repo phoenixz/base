@@ -97,18 +97,18 @@ function email_connect($userdata, $mail_box = null){
 function email_poll($params){
     try{
         array_params($params);
-        array_default($params, 'account'           , null);
-        array_default($params, 'mail_box'          , null);
-        array_default($params, 'criteria'          , 'ALL');
-        array_default($params, 'delete'            , false);
-        array_default($params, 'peek'              , false);
-        array_default($params, 'internal'          , false);
-        array_default($params, 'uid'               , false);
-        array_default($params, 'character_set'     , 'UTF-8');
-        array_default($params, 'store'             , false);
-        array_default($params, 'return'            , false);
-        array_default($params, 'callbacks'         , array());
-        array_default($params, 'return'            , false);
+        array_default($params, 'account'         , null);
+        array_default($params, 'mail_box'        , null);
+        array_default($params, 'criteria'        , 'ALL');
+        array_default($params, 'delete'          , false);
+        array_default($params, 'peek'            , false);
+        array_default($params, 'internal'        , false);
+        array_default($params, 'uid'             , false);
+        array_default($params, 'character_set'   , 'UTF-8');
+        array_default($params, 'store'           , false);
+        array_default($params, 'return'          , false);
+        array_default($params, 'callbacks'       , array());
+        array_default($params, 'return'          , false);
         array_default($params, 'forward_option'  , false);
 
         if($params['peek'] and $params['delete']){
