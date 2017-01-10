@@ -307,6 +307,7 @@ function api_call_base($api, $call, $data = array()){
                 $apikey = $_CONFIG['api']['list'][$api]['apikey'];
                 $json   = curl_get(array('url'            => str_starts_not($_CONFIG['api']['list'][$api]['baseurl'], '/').'/authenticate',
                                          'posturlencoded' => true,
+                                         'verify_ssl'     => $_CONFIG['api']['list'][$api]['verify_ssl'],
                                          'getheaders'     => false,
                                          'post'           => array('PHPSESSID' => $apikey)));
 
