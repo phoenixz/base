@@ -97,18 +97,19 @@ function email_connect($userdata, $mail_box = null){
 function email_poll($params){
     try{
         array_params($params);
-        array_default($params, 'account'      , null);
-        array_default($params, 'mail_box'     , null);
-        array_default($params, 'criteria'     , 'ALL');
-        array_default($params, 'delete'       , false);
-        array_default($params, 'peek'         , false);
-        array_default($params, 'internal'     , false);
-        array_default($params, 'uid'          , false);
-        array_default($params, 'character_set', 'UTF-8');
-        array_default($params, 'store'        , false);
-        array_default($params, 'return'       , false);
-        array_default($params, 'callbacks'    , array());
-        array_default($params, 'return'       , false);
+        array_default($params, 'account'       , null);
+        array_default($params, 'mail_box'      , null);
+        array_default($params, 'criteria'      , 'ALL');
+        array_default($params, 'delete'        , false);
+        array_default($params, 'peek'          , false);
+        array_default($params, 'internal'      , false);
+        array_default($params, 'uid'           , false);
+        array_default($params, 'character_set' , 'UTF-8');
+        array_default($params, 'store'         , false);
+        array_default($params, 'return'        , false);
+        array_default($params, 'callbacks'     , array());
+        array_default($params, 'return'        , false);
+        array_default($params, 'forward_option', false);
 
         if($params['peek'] and $params['delete']){
             throw new bException(tr('email_poll(): Both peek and delete were specified, though they are mutually exclusive. Please specify one or the other'), 'conflict');
@@ -170,6 +171,45 @@ function email_poll($params){
 
                 if(VERBOSE and PLATFORM_SHELL){
                     cli_log(tr('Found mail ":subject"', array(':subject' => isset_get($data['subject']))));
+                }
+
+
+                /*
+                 * - Source matches "To:" to "Inbox recibe in", this is usefull when there are aliases sending
+                 * to and inbox and we want to modify the "To: " file acordingly
+                 * - Target will leave it as it is
+                 * - Account is usefull just to we can perform the same checks per account and not globally
+                 */
+                if($userdata['email'] !== $data['to']){
+                    switch($_CONFIG['email']['forward_option']){
+                        case 'source':
+                            $data['to'] = $userdata['email'];
+                            break;
+
+                        case 'target':
+                            break;
+
+                        case 'account':
+                            /*
+                             * Per account settings
+                             */
+                            switch($userdata['forward_option']){
+                                case 'source':
+                                    $data['to'] = $userdata['email'];
+                                    break;
+
+                                case 'target':
+                                    break;
+
+                                default:
+                                    throw new bException(tr('email_poll(): Unknown account forward_option ":option" specified', array(':option' => $params['forward_option'])), 'unknown');
+                            }
+
+                            break;
+
+                        default:
+                            throw new bException(tr('email_poll(): Unknown $_CONFIG[email][forward_option] ":option" specified', array(':option' => $_CONFIG['email']['forward_option'])), 'unknown');
+                    }
                 }
 
                 $data['text'] = imap_fetchbody($imap, $mail, 1.1, $flags);
