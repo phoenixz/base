@@ -96,6 +96,7 @@ function email_connect($userdata, $mail_box = null){
  */
 function email_poll($params){
     global $_CONFIG;
+
     try{
         array_params($params);
         array_default($params, 'account'       , null);
