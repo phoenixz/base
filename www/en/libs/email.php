@@ -184,10 +184,10 @@ function email_poll($params){
                 if($userdata['email'] !== $data['to']){
                     switch($_CONFIG['email']['forward_option']){
                         case 'source':
-                            $data['to'] = $userdata['email'];
                             break;
 
                         case 'target':
+                            $data['to'] = $userdata['email'];
                             break;
 
                         case 'account':
@@ -196,10 +196,10 @@ function email_poll($params){
                              */
                             switch($userdata['forward_option']){
                                 case 'source':
-                                    $data['to'] = $userdata['email'];
                                     break;
 
                                 case 'target':
+                                    $data['to'] = $userdata['email'];
                                     break;
 
                                 default:
