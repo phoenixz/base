@@ -115,7 +115,7 @@ class bException extends Exception{
 /*
  * Send notifications of the specified class
  */
-function notify($event, $message, $classes = null){
+function notify($event, $message = null, $classes = null){
     try{
         load_libs('notifications');
         return notifications_do($event, $message, $classes);
@@ -227,7 +227,7 @@ function tr($text, $replace = null, $verify = true){
 function cfm($string, $utf8 = true){
     if(!is_scalar($string)){
         if(!is_null($string)){
-            throw new bException('cfm(): Specified variable should be datatype "string" but has datatype "'.gettype($string).'"', 'invalid');
+            throw new bException(tr('cfm(): Specified variable ":variable" from ":location" should be datatype "string" but has datatype ":datatype"', array(':variable' => $string, ':datatype' => gettype($string), ':location' => current_file(1).'@'.current_line(1))), 'invalid');
         }
     }
 
