@@ -129,6 +129,7 @@ function html_bundler($type){
          * Prepare bundle information
          */
         $ext         = ($_CONFIG['cdn']['min'] ? '.min.'.$type : '.'.$type);
+        $is_admin    = ($GLOBALS['page_is_admin'] ? 'admin/' : '');
         $bundle      = substr(md5(str_force($GLOBALS[$realtype])), 1, 16);
         $bundle_file = ROOT.'www/en/pub/'.$type.'/bundle/'.$bundle.$ext;
 
@@ -149,7 +150,7 @@ function html_bundler($type){
              * Generate new bundle
              */
             load_libs('file');
-            file_ensure_path(ROOT.'www/en/pub/'.$type.'/bundle/');
+            file_ensure_path(ROOT.'www/en/'.$is_admin.'pub/'.$type.'/bundle/');
 
             foreach($GLOBALS[$realtype] as &$file){
                 /*
@@ -158,47 +159,63 @@ function html_bundler($type){
                 $file = ROOT.'pub/'.$type.'/'.$file.$ext;
 
                 if(!file_exists($file)){
+                    $file = ROOT.'www/en/'.$is_admin.'pub/'.$type.'/'.$file_name.$ext;
+
+                } else if(!file_exists($file)) {
                     notify('bundler-file/not-exist', tr('The bundler ":type" file ":file" does not exist', array(':type' => $type, ':file' => $file)), 'developers');
                     continue;
+
                 }
 
                 $data = file_get_contents($file);
 
-                if($type == 'css'){
-                    if(preg_match_all('/@import.+?;/', $data, $matches)){
-                        foreach($matches[0] as $match){
-                            /*
-                             * Inline replace each @import with the file contents
-                             */
-                            if(preg_match('/@import\s".+?"/', $match)){
-                                $file = str_cut($match, '"', '"');
+                switch($type){
+                    case 'js':
+                        /*
+                         * Prevent issues with JS files that do not end in ;
+                         */
+                        $data .= ';';
+                        break;
 
-                                if(!file_exists($file)){
-                                    notify('bundler-file/not-exist', tr('The bundler ":type" file ":file" does not exist', array(':type' => $type, ':file' => $file)), 'developers');
-                                    $import = '';
-
-                                }else{
-                                    $import = file_get_contents(ROOT.'pub/'.$type.'/'.$file);
-                                }
-
-                            }elseif(preg_match('/@import\surl\(.+?\)/', $match)){
+                    case 'css':
+                        if(preg_match_all('/@import.+?;/', $data, $matches)){
+                            foreach($matches[0] as $match){
                                 /*
-                                 * This is an external URL. Get it locally as a temp file, then include
+                                 * Inline replace each @import with the file contents
                                  */
-                                $file   = str_cut($match, '(', ')');
+                                if(preg_match('/@import\s".+?"/', $match)){
+                                    $file = str_cut($match, '"', '"');
 
-                                if(!file_exists($file)){
-                                    notify('bundler-file/not-exist', tr('The bundler ":type" file ":file" does not exist', array(':type' => $type, ':file' => $file)), 'developers');
-                                    $import = '';
+                                    if(file_exists(ROOT.'pub/'.$type.'/'.$file)){
+                                        $import = file_get_contents(ROOT.'pub/'.$type.'/'.$file);
 
-                                }else{
-                                    $import = file_get_contents($file);
+                                    }else if(file_exists(ROOT.'www/en/'.$is_admin.'pub/'.$type.'/'.$file)){
+                                        $import = file_get_contents(ROOT.'www/en/admin/pub/'.$type.'/'.$file);
+
+                                    } else {
+                                        notify('bundler-file/not-exist', tr('The bundler ":type" file ":file" does not exist', array(':type' => $type, ':file' => $file)), 'developers');
+                                        $import = '';
+
+                                    }
+
+                                }elseif(preg_match('/@import\surl\(.+?\)/', $match)){
+                                    /*
+                                     * This is an external URL. Get it locally as a temp file, then include
+                                     */
+                                    $file   = str_cut($match, '(', ')');
+
+                                    if(!file_exists($file)){
+                                        notify('bundler-file/not-exist', tr('The bundler ":type" file ":file" does not exist', array(':type' => $type, ':file' => $file)), 'developers');
+                                        $import = '';
+
+                                    }else{
+                                        $import = file_get_contents($file);
+                                    }
                                 }
-                            }
 
-                            $data = str_replace($match, $import, $data);
+                                $data = str_replace($match, $import, $data);
+                            }
                         }
-                    }
                 }
 
                 file_append($bundle_file, $data);
