@@ -319,7 +319,10 @@ class validate_form {
      *
      */
     function isNotEmpty($value, $msg = null){
-        $this->isScalar($value, $msg = null);
+        if(!$this->isScalar($value, $msg = null)){
+            return false;
+        }
+
         $value = trim($value);
 
         if(!$value){
@@ -368,7 +371,9 @@ class validate_form {
      * Only allow a valid (unverified!) email address
      */
     function isValidEmail($value, $msg = null){
-        $this->isScalar($value, $msg = null);
+        if(!$this->isScalar($value, $msg = null)){
+            return false;
+        }
 
         $value = cfm($value);
         if(!$value) return '';
@@ -415,7 +420,9 @@ class validate_form {
      *
      */
     function isValidPhonenumber($value, $msg = null){
-        $this->isScalar($value, $msg = null);
+        if(!$this->isScalar($value, $msg = null)){
+            return false;
+        }
 
         $value = strtolower(cfm($value));
         if(!$value) return '';
@@ -476,7 +483,9 @@ class validate_form {
      *
      */
     function isBetween($value, $min, $max, $msg = null){
-        $this->isScalar($value, $msg = null);
+        if(!$this->isScalar($value, $msg = null)){
+            return false;
+        }
 
         if($value < $min and $value > $max){
             $this->setError($msg);
@@ -492,7 +501,10 @@ class validate_form {
      *
      */
     function isEnabled($value, $msg = null){
-        $this->isScalar($value, $msg = null);
+        if(!$this->isScalar($value, $msg = null)){
+            return false;
+        }
+
         $value = cfm($value);
 
         if(!$value){
@@ -509,7 +521,10 @@ class validate_form {
      *
      */
     function hasNoChars($value, $chars, $msg = null){
-        $this->isScalar($value, $msg = null);
+        if(!$this->isScalar($value, $msg = null)){
+            return false;
+        }
+
         $value = trim($value);
 
         foreach(array_force($chars) as $char){
@@ -528,7 +543,10 @@ class validate_form {
      *
      */
     function hasMinChars($value, $limit, $msg = null){
-        $this->isScalar($value, $msg = null);
+        if(!$this->isScalar($value, $msg = null)){
+            return false;
+        }
+
         $value = trim($value);
 
         if(strlen($value) < $limit){
@@ -545,7 +563,10 @@ class validate_form {
      *
      */
     function hasMaxChars($value, $limit, $msg = null){
-        $this->isScalar($value, $msg = null);
+        if(!$this->isScalar($value, $msg = null)){
+            return false;
+        }
+
         $value = trim($value);
 
         if(strlen($value) > $limit){
@@ -562,7 +583,10 @@ class validate_form {
      *
      */
     function hasChars($value, $limit, $msg = null){
-        $this->isScalar($value, $msg = null);
+        if(!$this->isScalar($value, $msg = null)){
+            return false;
+        }
+
         $value = trim($value);
 
         if(strlen($value) != $limit){
@@ -579,7 +603,10 @@ class validate_form {
      *
      */
     function isValidUrl($value, $msg = null){
-        $this->isScalar($value, $msg = null);
+        if(!$this->isScalar($value, $msg = null)){
+            return false;
+        }
+
         if(!$value) return '';
 
         if(filter_var($value, FILTER_VALIDATE_URL) === FALSE){
@@ -597,7 +624,9 @@ class validate_form {
      *
      */
     function isValidFacebookUserpage($value, $msg = null){
-        $this->isScalar($value, $msg = null);
+        if(!$this->isScalar($value, $msg = null)){
+            return false;
+        }
 
         $value  = cfm($value);
         if(!$value) return '';
@@ -616,7 +645,9 @@ class validate_form {
      *
      */
     function isValidTwitterUserpage($value, $msg = null){
-        $this->isScalar($value, $msg = null);
+        if(!$this->isScalar($value, $msg = null)){
+            return false;
+        }
 
         $value  = cfm($value);
         if(!$value) return '';
@@ -635,7 +666,9 @@ class validate_form {
      *
      */
     function isValidGoogleplusUserpage($value, $msg = null){
-        $this->isScalar($value, $msg = null);
+        if(!$this->isScalar($value, $msg = null)){
+            return false;
+        }
 
         $value = cfm($value);
         if(!$value) return '';
@@ -654,7 +687,9 @@ class validate_form {
      *
      */
     function isValidYoutubeUserpage($value, $msg = null){
-        $this->isScalar($value, $msg = null);
+        if(!$this->isScalar($value, $msg = null)){
+            return false;
+        }
 
         $value = cfm($value);
         if(!$value) return '';
@@ -673,7 +708,9 @@ class validate_form {
      *
      */
     function isValidLinkedinUserpage($value, $msg = null){
-        $this->isScalar($value, $msg = null);
+        if(!$this->isScalar($value, $msg = null)){
+            return false;
+        }
 
         $value = cfm($value);
         if(!$value) return '';
@@ -704,7 +741,9 @@ class validate_form {
      *
      */
     function isValidPassword($value, $msg = null){
-        $this->isScalar($value, $msg = null);
+        if(!$this->isScalar($value, $msg = null)){
+            return false;
+        }
 
         if(strlen($value) >= 8){
             $this->setError($msg);
@@ -721,7 +760,9 @@ class validate_form {
      */
     function isRegex($value, $regex, $msg = null){
          try{
-            $this->isScalar($value, $msg = null);
+            if(!$this->isScalar($value, $msg = null)){
+                return false;
+            }
 
             if(!preg_match($regex, $value)){
                $this->setError($msg);
@@ -741,7 +782,9 @@ class validate_form {
      *
      */
     function isInRange($value, $min, $max, $msg = null){
-        $this->isScalar($value, $msg = null);
+        if(!$this->isScalar($value, $msg = null)){
+            return false;
+        }
 
         if(!is_numeric($value) or ($value < $min) or ($value > $max)){
             $this->setError($msg);
@@ -768,7 +811,9 @@ class validate_form {
      */
     function isTime($value, $msg = null){
         try{
-            $this->isScalar($value, $msg = null);
+            if(!$this->isScalar($value, $msg = null)){
+                return false;
+            }
 
             load_libs('date');
             $value = date_time_validate($value);
@@ -791,7 +836,9 @@ class validate_form {
      * Basically this is an enum check
      */
     function inArray($value, $array, $msg = null){
-        $this->isScalar($value, $msg = null);
+        if(!$this->isScalar($value, $msg = null)){
+            return false;
+        }
 
         if(!in_array($value, $array)){
             $this->setError($msg);

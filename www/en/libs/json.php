@@ -131,10 +131,6 @@ function json_reply($payload = null, $result = 'OK', $http_code = null, $after =
 
         echo $payload;
 
-        if(!empty($_SESSION['api']['session_id'])){
-            api_call(null, $payload['result']);
-        }
-
         switch($after){
             case 'die':
                 /*
@@ -161,10 +157,6 @@ function json_reply($payload = null, $result = 'OK', $http_code = null, $after =
         }
 
     }catch(Exception $e){
-        if(!empty($_SESSION['api']['session_id'])){
-            api_call(null, $payload['result']);
-        }
-
         throw new bException('json_reply(): Failed', $e);
     }
 }
