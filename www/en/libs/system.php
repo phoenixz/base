@@ -115,7 +115,7 @@ class bException extends Exception{
 /*
  * Send notifications of the specified class
  */
-function notify($event, $message, $classes = null){
+function notify($event, $message = null, $classes = null){
     try{
         load_libs('notifications');
         return notifications_do($event, $message, $classes);
@@ -227,7 +227,7 @@ function tr($text, $replace = null, $verify = true){
 function cfm($string, $utf8 = true){
     if(!is_scalar($string)){
         if(!is_null($string)){
-            throw new bException('cfm(): Specified variable should be datatype "string" but has datatype "'.gettype($string).'"', 'invalid');
+            throw new bException(tr('cfm(): Specified variable ":variable" from ":location" should be datatype "string" but has datatype ":datatype"', array(':variable' => $string, ':datatype' => gettype($string), ':location' => current_file(1).'@'.current_line(1))), 'invalid');
         }
     }
 
@@ -1059,7 +1059,12 @@ function user_or_signin(){
                 /*
                  * No session
                  */
-                redirect(isset_get($_CONFIG['redirects']['signin'], 'signin.php').'?redirect='.urlencode($_SERVER['REQUEST_URI']));
+                if($GLOBALS['page_is_api']){
+                    json_reply(tr('api_start_session(): Specified token ":token" has no session', array(':token' => $_POST['PHPSESSID'])), 'signin');
+
+                }else{
+                    redirect(isset_get($_CONFIG['redirects']['signin'], 'signin.php').'?redirect='.urlencode($_SERVER['REQUEST_URI']));
+                }
             }
 
             if(!empty($_SESSION['lock'])){
@@ -1493,19 +1498,46 @@ function date_convert($date = null, $requested_format = 'human_datetime', $to_ti
  *
  */
 function is_natural($number, $start = 1){
-    if(!is_numeric($number)){
-        return false;
-    }
+    try{
+        if(!is_numeric($number)){
+            return false;
+        }
 
-    if($number < $start){
-        return false;
-    }
+        if($number < $start){
+            return false;
+        }
 
-    if($number != (integer) $number){
-        return false;
-    }
+        if($number != (integer) $number){
+            return false;
+        }
 
-    return true;
+        return true;
+
+    }catch(Exception $e){
+        throw new bException('is_natural(): Failed', $e);
+    }
+}
+
+
+
+/*
+ *
+ */
+function is_new($entry){
+    try{
+        if(isset_get($entry['status']) === '_new'){
+            return true;
+        }
+
+        if(isset_get($entry['id']) === null){
+            return true;
+        }
+
+        return false;
+
+    }catch(Exception $e){
+        throw new bException('is_new(): Failed', $e);
+    }
 }
 
 
@@ -1514,19 +1546,24 @@ function is_natural($number, $start = 1){
  *
  */
 function force_natural($number, $default = 1, $start = 1){
-    if(!is_numeric($number)){
-        return (integer) $default;
-    }
+    try{
+        if(!is_numeric($number)){
+            return (integer) $default;
+        }
 
-    if($number < $start){
-        return (integer) $default;
-    }
+        if($number < $start){
+            return (integer) $default;
+        }
 
-    if(!is_int($number)){
-        return (integer) round($number);
-    }
+        if(!is_int($number)){
+            return (integer) round($number);
+        }
 
-    return (integer) $number;
+        return (integer) $number;
+
+    }catch(Exception $e){
+        throw new bException('force_natural(): Failed', $e);
+    }
 }
 
 
@@ -1993,7 +2030,7 @@ function execute_callback($callback_name, $params = null){
             return $callback_name($params);
         }
 
-        return null;
+        return $params;
 
     }catch(Exception $e){
         throw new bException(tr('execute_callback(): Failed'), $e);

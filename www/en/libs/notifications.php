@@ -18,6 +18,15 @@ function notifications_do($event, $message, $classes = null){
     static $count = 0;
     global $_CONFIG;
 
+    if(empty($message) and is_object($event) and ($event instanceof Exception)){
+        /*
+         * Notify about an exception
+         */
+        $message = $event;
+        $event   = 'exception';
+        $group   = 'developers';
+    }
+
 return false;
     if(++$count > 15){
         /*

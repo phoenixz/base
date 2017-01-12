@@ -84,10 +84,12 @@ function json_encode_custom($source = false){
 /*
  * Send correct JSON reply
  */
-function json_reply($reply = null, $result = 'OK', $http_code = null){
+function json_reply($payload = null, $result = 'OK', $http_code = null, $after = 'die'){
+    global $_CONFIG;
+
     try{
-        if(!$reply){
-            $reply = array_force($reply);
+        if(!$payload){
+            $payload = array_force($payload);
         }
 
         /*
@@ -99,31 +101,60 @@ function json_reply($reply = null, $result = 'OK', $http_code = null){
              */
 
         }elseif(strtoupper($result) == 'REDIRECT'){
-            $reply = array('redirect' => $reply,
-                           'result'   => 'REDIRECT');
+            $payload = array('redirect' => $payload,
+                             'result'   => 'REDIRECT');
 
-        }elseif(!is_array($reply)){
-            $reply = array('result'  => strtoupper($result),
-                           'message' => $reply);
-
-        }else{
-            if(empty($reply['result'])){
-                $reply['result'] = $result;
+        }elseif(!is_array($payload) or empty($payload['data'])){
+            if($_CONFIG['json']['obsolete_support']){
+                $payload = array('result'  => strtoupper($result),
+                                 'message' => $payload,
+                                 'data'    => $payload);
+            }else{
+                $payload = array('result'  => strtoupper($result),
+                                 'data'    => $payload);
             }
 
-            $reply['result'] = strtoupper($reply['result']);
         }
 
-        $reply  = json_encode_custom($reply);
+        if(empty($payload['result'])){
+            $payload['result'] = $result;
+        }
+
+        $payload['result'] = strtoupper($payload['result']);
+        $payload           = json_encode_custom($payload);
 
         $params = array('http_code' => $http_code,
                         'mimetype'  => 'application/json');
 
         load_libs('http');
-        http_headers($params, strlen($reply));
+        http_headers($params, strlen($payload));
 
-        echo $reply;
-        die();
+        echo $payload;
+
+        switch($after){
+            case 'die':
+                /*
+                 * We're done, kill the connection % process (default)
+                 */
+                die();
+
+            case 'continue':
+                /*
+                 * Continue running
+                 */
+                return;
+
+            case 'close_continue':
+                /*
+                 * Close the current HTTP connection but continue in the background
+                 */
+                session_write_close();
+                fastcgi_finish_request();
+                return;
+
+            default:
+                throw new bException(tr('json_reply(): Unknown after ":after" specified. Use one of "die", "continue", or "close_continue"', array(':after' => $after)), 'unknown');
+        }
 
     }catch(Exception $e){
         throw new bException('json_reply(): Failed', $e);
@@ -186,20 +217,40 @@ function json_error($message, $data = array(), $result = 'ERROR', $http_code = 5
              * Assume this is an bException object
              */
             if(!($message instanceof bException)){
-                throw new bException('json_error(): Specified message must either be a string or an bException ojbect, but is neither');
-            }
+                if(!($message instanceof Exception)){
+                    $type = gettype($message);
 
-            $code = $message->code;
+                    if($type === 'object'){
+                        $type .= '/'.get_class($message);
+                    }
 
-    //        if(debug('messages') and (substr($code, 0, 5) == 'user/') or ($code == 'user')){
-            if(debug()){
-                /*
-                 * This is a user visible message
-                 */
-                $message = $message->getMessages("\n");
+                    throw new bException(tr('json_error(): Specified message must either be a string or an bException ojbect, or PHP Exception ojbect, but is a ":type"', array(':type' => $type)), 'invalid');
+                }
 
-            }elseif(!empty($default)){
-                $message = $default;
+                $code = $message->getCode();
+
+                if(debug()){
+                    /*
+                     * This is a user visible message
+                     */
+                    $message = $message->getMessage();
+
+                }elseif(!empty($default)){
+                    $message = $default;
+                }
+
+            }else{
+                $code = $message->getCode();
+
+                if(debug()){
+                    /*
+                     * This is a user visible message
+                     */
+                    $message = $message->getMessages("\n");
+
+                }elseif(!empty($default)){
+                    $message = $default;
+                }
             }
         }
 
@@ -242,7 +293,7 @@ function json_decode_custom($json, $as_array = true){
                 throw new bException('json_decode_custom(): Unexpected control character found', 'invalid');
 
             case JSON_ERROR_SYNTAX:
-                throw new bException('json_decode_custom(): Syntax error, malformed JSON', 'invalid');
+                throw new bException('json_decode_custom(): Syntax error, malformed JSON', 'invalid', $json);
 
             case JSON_ERROR_UTF8:
                 /*
@@ -258,156 +309,6 @@ function json_decode_custom($json, $as_array = true){
 
     }catch(Exception $e){
         throw new bException('json_decode_custom(): Failed', $e);
-    }
-}
-
-
-
-/*
- *
- */
-function json_authenticate($key){
-    global $_CONFIG;
-
-    try{
-        if($_CONFIG['production']){
-            /*
-             * This is a production platform, only allow JSON API key
-             * authentications over a secure connection
-             */
-            if($_CONFIG['protocol'] !== 'https://'){
-                throw new bException(tr('json_authenticate(): No API key authentication allowed on unsecure connections over non HTTPS connections'), 'not-allowed');
-            }
-        }
-
-        if(empty($key)){
-            throw new bException(tr('json_authenticate(): No auth key specified'), 'not-specified');
-        }
-
-        /*
-         * Authenticate using the supplied key
-         */
-        if(empty($_CONFIG['webdom']['auth_key'])){
-            /*
-             * Check in database if the authorization key exists
-             */
-            $user = sql_get('SELECT * FROM `users` WHERE `api_key` = :api_key', array(':api_key' => $key));
-
-            if(!$user){
-                throw new bException(tr('json_authenticate(): Specified auth key is not valid'), 'access-denied');
-            }
-
-        }else{
-            /*
-             * Use one system wide API key
-             */
-            if($key !== $_CONFIG['webdom']['auth_key']){
-                throw new bException(tr('json_authenticate(): Specified auth key is not valid'), 'access-denied');
-            }
-        }
-
-        /*
-         * Yay, auth worked, create session and send client the session token
-         */
-        session_destroy();
-        session_start();
-        session_regenerate_id();
-        session_reset_domain();
-
-        $_SESSION['json_session_start'] = time();
-
-        if(!empty($user)){
-            $_SESSION['user'] = $user;
-        }
-
-        return session_id();
-
-    }catch(Exception $e){
-        throw new bException('json_authenticate(): Failed', $e);
-    }
-}
-
-
-
-/*
- *
- */
-function json_start_session(){
-    global $_CONFIG;
-
-    try{
-        /*
-         * Check session token
-         */
-        if(empty($_GET['PHPSESSID'])){
-            throw new bException(tr('json_start_session(): No auth key specified'), 'not-specified');
-        }
-
-        /*
-         * Yay, we have an actual token, create session!
-         */
-        session_write_close();
-        session_id($_GET['PHPSESSID']);
-        session_start();
-
-        if(empty($_SESSION['json_session_start'])){
-            /*
-             * Not a valid session!
-             */
-            session_destroy();
-            session_regenerate_id();
-            session_reset_domain();
-
-            throw new bException(tr('json_start_session(): Specified token ":token" has no session', array(':token' => $token)), 'access-denied');
-        }
-
-        return session_id();
-
-    }catch(Exception $e){
-        throw new bException('json_start_session(): Failed', $e);
-    }
-}
-
-
-
-/*
- *
- */
-function json_stop_session($token){
-    global $_CONFIG;
-
-    try{
-        /*
-         * Check session token
-         */
-        if(empty($token)){
-            throw new bException(tr('json_stop_session(): No auth key specified'), 'not-specified');
-        }
-
-        /*
-         * Yay, we have an actual token, create session!
-         */
-        session_write_close();
-        $_COOKIE['PHPSESSID'] = $token;
-        session_start();
-
-        if(empty($_SESSION['json_session_start'])){
-            /*
-             * Not a valid session!
-             */
-            session_destroy();
-            session_reset_domain();
-            session_regenerate_id();
-            throw new bException(tr('json_stop_session(): Specified token has no session'), 'access-denied');
-        }
-
-        session_destroy();
-        session_reset_domain();
-        session_regenerate_id();
-        return true;
-
-    }catch(Exception $e){
-        throw new bException('json_stop_session(): Failed', $e);
     }
 }
 ?>

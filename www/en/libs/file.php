@@ -9,6 +9,71 @@
 
 
 /*
+ * Append specified data string to the end of the specified file
+ */
+function file_append($target, $data){
+    global $_CONFIG;
+
+    try {
+        /*
+         * Open target
+         */
+        if(!file_exists(dirname($target))){
+            throw new bException(tr('file_append(): Specified target path ":target" does not exist', array(':target' => dirname($target))), 'not-exist');
+        }
+
+        $target_h = fopen($target, 'a');
+        fwrite($target_h, $data);
+        fclose($target_h);
+
+    }catch(Exception $e){
+        throw new bException('file_append(): Failed', $e);
+    }
+}
+
+
+
+/*
+ * Concatenates a list of files to a target file
+ */
+function file_concat($target, $sources){
+    global $_CONFIG;
+
+    try {
+        if(!is_array($sources)){
+            $sources = array($sources);
+        }
+
+        /*
+         * Open target
+         */
+        if(!file_exists(dirname($target))){
+            throw new bException(tr('file_concat(): Specified target path ":target" does not exist', array(':target' => dirname($target))), 'not-exist');
+        }
+
+        $target_h = fopen($target, 'a');
+
+        foreach($sources as $source){
+            $source_h = fopen($source, 'r');
+
+            while(!feof($source_h)){
+                $data = fread($source_h, 8192);
+                fwrite($target_h, $data);
+            }
+
+            fclose($source_h);
+        }
+
+        fclose($target_h);
+
+    }catch(Exception $e){
+        throw new bException('file_concat(): Failed', $e);
+    }
+}
+
+
+
+/*
  * Move uploaded image to correct target
  */
 function file_get_uploaded($source){

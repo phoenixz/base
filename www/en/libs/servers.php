@@ -115,7 +115,7 @@ function servers_test($hostname){
 /*
  *
  */
-function servers_exec($hostname, $commands){
+function servers_exec($hostname, $commands, $options = null){
     try{
         $server = sql_get('SELECT    `servers`.`ssh_accounts_id`,
                                      `servers`.`port`,
@@ -132,6 +132,10 @@ function servers_exec($hostname, $commands){
 
         if(!$server){
             throw new bException(tr('servers_exec(): Specified hostname ":hostname" does not exist', array(':hostname' => $hostname)), 'not-exists');
+        }
+
+        if(!$options){
+            $options = '-o UserKnownHostsFile=/dev/null -o StrictHostKeyChecking=no';
         }
 
         /*
@@ -155,10 +159,18 @@ function servers_exec($hostname, $commands){
         /*
          * Execute command on remote server
          */
-//showdie('ssh -Tp '.$server['port'].' -i '.$filepath.' '.$server['username'].'@'.$hostname.' '.$commands);
-        $result = safe_exec('ssh -Tp '.$server['port'].' -i '.$filepath.' '.$server['username'].'@'.$hostname.' '.$commands);
+        $result = safe_exec($command = 'ssh '.$options.' -Tp '.$server['port'].' -i '.$filepath.' '.$server['username'].'@'.$hostname.' '.$commands);
+//show($command);
+
         chmod($filepath, 0600);
         file_delete($filepath);
+
+        if(preg_match('/Warning: Permanently added \'\[.+?\]:\d{1,5}\' \(\w+\) to the list of known hosts\./', isset_get($result[0]))){
+            /*
+             * Remove known host warning from results
+             */
+            array_shift($result);
+        }
 
         return $result;
 

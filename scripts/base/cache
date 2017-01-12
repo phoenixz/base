@@ -41,7 +41,7 @@ switch(cli_method()){
         cli_no_arguments_left();
 
         cache_clear($key, $namespace);
-        cli_log('Cleared cache', 'green');
+        cli_log('Cleared caches', 'green');
         break;
 
     case 'size':

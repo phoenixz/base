@@ -4,14 +4,18 @@
  */
 global $_CONFIG;
 
+if($key){
+    $key = cache_key_hash($key);
+}
+
 try{
-    if($key){
-        $key = cache_key_hash($key);
-    }
+    /*
+     * Clear normal cache
+     */
+    load_libs('file');
 
     switch($_CONFIG['cache']['method']){
         case 'file':
-            load_libs('file');
 
             if($group){
                 if($key){
@@ -41,6 +45,7 @@ try{
             }
 
             file_ensure_path(ROOT.'data/cache');
+            log_console(tr('Cleared file caches from path ":path"', array(':path' => 'ROOT/data/cache')));
             break;
 
         case 'memcached':
@@ -57,6 +62,7 @@ try{
                 mc_clear();
             }
 
+            log_console(tr('Cleared memchached caches from servers ":servers"', array(':servers' => $_CONFIG['memcached']['servers'])));
             break;
 
         case false:
@@ -70,6 +76,24 @@ try{
     }
 
 }catch(Exception $e){
-    throw new bException('cache_clear(): Failed', $e);
+    notify('cache-clear/failed', $e);
+    log_error($e);
 }
+
+
+
+/*
+ * Clear bundler caches
+ */
+try{
+    file_delete_tree(ROOT.'pub/js/bundle');
+    file_delete_tree(ROOT.'pub/css/bundle');
+    log_console(tr('Cleared bundler caches from paths ":path"', array(':path' => 'ROOT/pub/js/bundle,ROOT/pub/css/bundle')));
+
+}catch(Exception $e){
+    notify('cache-clear/failed', $e);
+    log_error($e);
+}
+
+log_database('Cleared all caches', 'clearcache');
 ?>

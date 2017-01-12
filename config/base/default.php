@@ -50,6 +50,9 @@ $_CONFIG['cache']              = array('method'           => 'file',            
 // CDN configuration
 $_CONFIG['cdn']                = array('min'              => true,                                          // If set to "true" all CSS and JS files loaded with html_load_js() and html_load_css() will be loaded as file.min.js instead of file.js. Use "true" in production environment, "false" in all other environments
 
+                                       'bundler'          => array('enabled'            => true,            // If JS and CSS bundler should be enabled or not
+                                                                   'max_age'            => 86400),          // Max age of bundle files before they are deleted and regenerated
+
                                        'css'              => array('post'               => false),          // The default last CSS file to be loaded (after all others have been loaded, so that this one can override any CSS rule if needed)
 
                                        'js'               => array('load_delayed'       => false,           // If set to true, the JS files will NOT be loaded in the <head> tag but at the end of the HTML <body> code so that the site will load faster. This may require some special site design to avoid problems though!
@@ -58,6 +61,8 @@ $_CONFIG['cdn']                = array('min'              => true,              
 
                                                                    'linked'             => array('base' => array('popup',       // Assoc array list of all files that are to be linked in one file for faster loading. See "use_linked" configuration setting
                                                                                                                  'validate'))),
+
+                                       'network'          => array('enabled'            => false),          // Use CDN network or not
 
                                        'normal'           => array('js'                 => 'pub/js',        // Location of js, CSS and image files for desktop pages
                                                                    'css'                => 'pub/css',
