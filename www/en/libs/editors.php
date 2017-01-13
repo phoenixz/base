@@ -107,6 +107,7 @@ function editors_tinymce($params){
 
 
 
+
 /*
  * Editor summernote to atlant template
  */
@@ -119,15 +120,28 @@ function editors_summernote($params = null){
         array_default($params, 'value' , '');
         array_default($params, 'height', 500);
         array_default($params, 'focus' , false);
+        array_default($params, 'onImageUpload' , '');
+        array_default($params, 'toolbar'       , '');
 
         html_load_js('plugins/summernote/summernote');
 
-        if($params['height']){
-           $options['height'] = $params['height'];
-        }
+        if($params['height'])        $options['height'] = $params['height'];
+        if($params['focus'])         $options['focus'] = $params['focus'];
+        if($params['onImageUpload']) $options['onImageUpload'] = $params['onImageUpload'];
+        if($params['toolbar'])       $options['toolbar'] = $params['toolbar'];
 
-        if($params['focus']){
-           $options['focus'] = $params['focus'];
+        $value_arr = array();
+        $replace_keys = array();
+        foreach($options as $key => &$value){
+          // Look for values starting with 'function('
+          if(strpos($value, 'function(') === 0 or strpos($value, '(function(') === 0){
+            // Store function string.
+            $value_arr[] = $value;
+            // Replace function string in $foo with a ‘unique’ special key.
+            $value = '%' . $key . '%';
+            // Later on, we’ll look for the value, and replace it.
+            $replace_keys[] = '"' . $value . '"';
+          }
         }
 
         /*

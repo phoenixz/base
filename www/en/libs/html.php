@@ -159,8 +159,12 @@ function html_bundler($type){
                 $file = ROOT.'www/en/'.$admin_path.'pub/'.$type.'/'.$file_name.$ext;
 
                 if(!file_exists($file)){
+                    $file = ROOT.'www/en/'.$is_admin.'pub/'.$type.'/'.$file_name.$ext;
+
+                } else if(!file_exists($file)) {
                     notify('bundler-file/not-exist', tr('The bundler ":type" file ":file" does not exist', array(':type' => $type, ':file' => $file)), 'developers');
                     continue;
+
                 }
 
                 $data = file_get_contents($file);

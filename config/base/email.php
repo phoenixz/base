@@ -10,7 +10,7 @@ $_CONFIG['email'] = array('imap'            => '{imap.gmail.com:993/imap/ssl}INB
 
                           'sql'             => array(),
 
-                          'forward_option'  => 'target',
+                          'forward_option'  => 'source',
 
                           'users'           => null,
 
