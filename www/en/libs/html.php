@@ -131,7 +131,8 @@ function html_bundler($type){
         $ext         = ($_CONFIG['cdn']['min']    ? '.min.'.$type : '.'.$type);
         $admin_path  = ($GLOBALS['page_is_admin'] ? 'admin/'      : '');
         $bundle      = substr(md5(str_force($GLOBALS[$realtype])), 1, 16);
-        $bundle_file = ROOT.'www/en/'.$admin_path.'pub/'.$type.'/bundle/'.$bundle.$ext;
+        $path        = ROOT.'www/en/'.$admin_path.'pub/'.$type.'/';
+        $bundle_file = $path.'bundle/'.$bundle.$ext;
 
         /*
          * If we don't find an existing bundle file, then procced with the concatination process
@@ -150,21 +151,20 @@ function html_bundler($type){
              * Generate new bundle
              */
             load_libs('file');
-            file_ensure_path(ROOT.'www/en/'.$admin_path.'pub/'.$type.'/bundle/');
+            file_ensure_path($path.'bundle/');
 
             foreach($GLOBALS[$realtype] as &$file){
                 /*
                  * Check for @imports
                  */
-                $file = ROOT.'www/en/'.$admin_path.'pub/'.$type.'/'.$file_name.$ext;
+                $file = $path.$file.$ext;
 
                 if(!file_exists($file)){
-                    $file = ROOT.'www/en/'.$is_admin.'pub/'.$type.'/'.$file_name.$ext;
+                    $file = $path.$file.$ext;
 
-                } else if(!file_exists($file)) {
+                }elseif(!file_exists($file)){
                     notify('bundler-file/not-exist', tr('The bundler ":type" file ":file" does not exist', array(':type' => $type, ':file' => $file)), 'developers');
                     continue;
-
                 }
 
                 $data = file_get_contents($file);
