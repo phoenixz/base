@@ -263,7 +263,7 @@ function blogs_post_update($post, $params = null){
             $execute[':assigned_to_id'] = $post['assigned_to_id'];
         }
 
-        if($params['featured_until']){
+        if($params['label_featured']){
             $updates[] = ' `featured_until` = :featured_until ';
             $execute[':featured_until'] = get_null($post['featured_until']);
         }
