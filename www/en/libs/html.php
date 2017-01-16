@@ -179,7 +179,8 @@ function html_bundler($type){
                         if(preg_match_all('/@import.+?;/', $data, $matches)){
                             foreach($matches[0] as $match){
                                 /*
-                                 * Inline replace each @import with the file contents
+                                 * Inline replace each @import with the file
+                                 * contents
                                  */
                                 if(preg_match('/@import\s".+?"/', $match)){
 // :TODO: What if specified URLs are absolute? WHat if start with either / or http(s):// ????
@@ -196,7 +197,8 @@ function html_bundler($type){
                                 }elseif(preg_match('/@import\surl\(.+?\)/', $match)){
 // :TODO: What if specified URLs are absolute? WHat if start with either / or http(s):// ????
                                     /*
-                                     * This is an external URL. Get it locally as a temp file, then include
+                                     * This is an external URL. Get it locally
+                                     * as a temp file, then include
                                      */
                                     $import = str_cut($match, '(', ')');
 
@@ -210,6 +212,50 @@ function html_bundler($type){
                                 }
 
                                 $data = str_replace($match, $import, $data);
+                            }
+
+                        }elseif(preg_match_all('/url\(.+?\)/', $data, $matches)){
+                            /*
+                             * Rewrite all URL's to avoid relative URL's failing
+                             * for files in sub directories
+                             *
+                             * e.g.:
+                             *
+                             * The bundle file is /pub/css/bundle-1.css,
+                             * includes a css file /pub/css/foo/bar.css,
+                             * bar.css includes an image 1.jpg that is in the
+                             * same directory as bar.css with url("1.jpg")
+                             *
+                             * In the bundled file, this should become
+                             * url("foo/1.jpg")
+                             */
+                            $subpath = dirname($file);
+
+                            foreach($matches[1] as $match){
+                                $url = $subpath.$match[0];
+                                $url = str_replace(array('"', "'"), '', $url);
+
+                                if(substr($url, 0, 1) == '/'){
+                                    /*
+                                     * Absolute URL, we can ignore these since
+                                     * they already point towards the correct
+                                     * path
+                                     */
+                                }
+
+                                if(preg_match('/https?:\/\//', $url)){
+                                    /*
+                                     * Absolute domain, ignore because we cannot
+                                     * fix anything here
+                                     */
+                                    continue;
+                                }
+
+                                $url = realpath($match[0]);
+
+                                if($url){
+                                    str_replace($match[0], '"'.$url.'"', $data);
+                                }
                             }
                         }
                 }
