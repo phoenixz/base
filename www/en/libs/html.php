@@ -185,7 +185,7 @@ function html_bundler($type){
 // :TODO: What if specified URLs are absolute? WHat if start with either / or http(s):// ????
                                     $import = str_cut($match, '"', '"');
 
-                                    if(!file_exists($import)){
+                                    if(!file_exists($path.$import)){
                                         notify('bundler-file/not-exist', tr('The bundler ":type" file ":import" @imported by file ":file" does not exist', array(':type' => $type, ':import' => $import, ':file' => $file)), 'developers');
                                         $import = '';
 
