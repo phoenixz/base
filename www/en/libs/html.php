@@ -128,11 +128,11 @@ function html_bundler($type){
         /*
          * Prepare bundle information
          */
-        $ext         = ($_CONFIG['cdn']['min']    ? '.min.'.$type : '.'.$type);
-        $admin_path  = ($GLOBALS['page_is_admin'] ? 'admin/'      : '');
-        $bundle      = substr(md5(str_force($GLOBALS[$realtype])), 1, 16);
-        $path        = ROOT.'www/en/'.$admin_path.'pub/'.$type.'/';
-        $bundle_file = $path.'bundle/'.$bundle.$ext;
+        $ext         = ($_CONFIG['cdn']['min'] ? '.min.'.$type : '.'.$type);
+        $bundle      =  substr(md5(str_force($GLOBALS[$realtype])), 1, 16);
+        $path        =  ROOT.'www/en/'.$admin_path.'pub/'.$type.'/';
+        $admin_path  = ($GLOBALS['page_is_admin'] ? 'admin/' : '');
+        $bundle_file =  $path.'bundle-'.$bundle.$ext;
 
         /*
          * If we don't find an existing bundle file, then procced with the concatination process
@@ -151,7 +151,7 @@ function html_bundler($type){
              * Generate new bundle
              */
             load_libs('file');
-            file_ensure_path($path.'bundle/');
+            file_ensure_path($path.'bundle-');
 
             foreach($GLOBALS[$realtype] as &$file){
                 /*
@@ -160,9 +160,6 @@ function html_bundler($type){
                 $file = $path.$file.$ext;
 
                 if(!file_exists($file)){
-                    $file = $path.$file.$ext;
-
-                }elseif(!file_exists($file)){
                     notify('bundler-file/not-exist', tr('The bundler ":type" file ":file" does not exist', array(':type' => $type, ':file' => $file)), 'developers');
                     continue;
                 }
@@ -193,7 +190,7 @@ function html_bundler($type){
                                         $import = '';
 
                                     }else{
-                                        $import = file_get_contents(ROOT.$admin_path.'pub/'.$type.'/'.$import);
+                                        $import = file_get_contents($path.$import);
                                     }
 
                                 }elseif(preg_match('/@import\surl\(.+?\)/', $match)){
@@ -228,7 +225,7 @@ function html_bundler($type){
             }
         }
 
-        $GLOBALS[$type] = array('bundle/'.$prefix.$bundle => array('min'   => $_CONFIG['cdn']['min'],
+        $GLOBALS[$type] = array('bundle-'.$prefix.$bundle => array('min'   => $_CONFIG['cdn']['min'],
                                                                    'media' => ''));
 
     }catch(Exception $e){

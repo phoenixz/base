@@ -142,6 +142,11 @@ function email_poll($params){
         $mails = execute_callback(isset_get($params['post_search']), $mails);
 
         if(!$mails){
+            cli_log(tr('Callback "post_search" canceled email_poll'), 'yellow');
+            return false;
+        }
+
+        if(!$mails){
             if(PLATFORM_SHELL){
                 cli_log(tr('No emails found for account ":email"', array(':email' => $userdata['email'])), 'yellow');
             }
@@ -161,13 +166,18 @@ function email_poll($params){
             /*
              * Process every email
              */
-            foreach($mails as $mail){
+            foreach($mails as $mails_id){
                 /*
                  * Get information specific to this email
                  */
-                $mail = execute_callback(isset_get($params['callbacks']['pre_fetch']), $mail);
+                $mail = execute_callback(isset_get($params['callbacks']['pre_fetch']), $mails_id);
 
-                $data = imap_fetch_overview($imap, $mail, 0);
+                if(!$mail){
+                    cli_log(tr('Callback "pre_fetch" canceled processing of email ":mails_id"', array(':mails_id' => $mails_id)), 'yellow');
+                    continue;
+                }
+
+                $data = imap_fetch_overview($imap, $mails_id, 0);
                 $data = array_shift($data);
                 $data = array_from_object($data);
 
@@ -185,10 +195,10 @@ function email_poll($params){
                 if($userdata['email'] !== $data['to']){
                     switch($_CONFIG['email']['forward_option']){
                         case 'source':
+                            $data['to'] = $userdata['email'];
                             break;
 
                         case 'target':
-                            $data['to'] = $userdata['email'];
                             break;
 
                         case 'account':
@@ -197,10 +207,10 @@ function email_poll($params){
                              */
                             switch($userdata['forward_option']){
                                 case 'source':
+                                    $data['to'] = $userdata['email'];
                                     break;
 
                                 case 'target':
-                                    $data['to'] = $userdata['email'];
                                     break;
 
                                 default:
@@ -225,7 +235,6 @@ function email_poll($params){
                  * Get the images of the email
                  */
                 $data = email_get_attachments($imap, $mail, $data, $flags);
-                $data = execute_callback(isset_get($params['callbacks']['post_fetch']), $data);
 
                 /*
                  * Decode the body text.
@@ -240,6 +249,13 @@ function email_poll($params){
                 $data['html'] = trim(mb_strip_invalid(imap_qprint($data['html'])));
                 $data['html'] = str_replace("\r", '', $data['html']);
 
+                $data = execute_callback(isset_get($params['callbacks']['post_fetch']), $data);
+
+                if(!$data){
+                    cli_log(tr('Callback "post_fetch" canceled processing of email ":mails_id"', array(':mails_id' => $mails_id)), 'yellow');
+                    continue;
+                }
+
                 if($params['store']){
                     try{
                         if(VERBOSE AND PLATFORM_SHELL){
@@ -253,30 +269,36 @@ function email_poll($params){
                         email_update_conversation($data, 'received');
                         $data = execute_callback(isset_get($params['callbacks']['post_update']), $data);
 
+                        if(!$data){
+                            cli_log(tr('Callback "post_update" canceled processing of email ":mails_id"', array(':mails_id' => $mails_id)), 'yellow');
+                            continue;
+                        }
+
                     }catch(bException $e){
                         /*
                          * Continue working on the next mail
                          */
-//:TODO: Add more exception data here
-                        log_error($e);
+                        notify($e);
                         log_error(tr('Failed polling process'));
                     }
                 }
 
                 if($params['return']){
-                    $retval[] = $data;
+                    $retval[$mails_id] = $data;
                 }
 
                 if($params['delete']){
                     imap_delete($imap, $mail);
-                    $mail = execute_callback(isset_get($params['callbacks']['post_delete']), $mail);
                 }
+
+                execute_callback(isset_get($params['callbacks']['post_delete']), $mail);
             }
 
             if($params['delete']){
                 imap_expunge($imap);
-                $imap = execute_callback(isset_get($params['callbacks']['post_expunge']), $imap);
             }
+
+            execute_callback(isset_get($params['callbacks']['post_expunge']), $mails);
 
             if(VERBOSE and PLATFORM_SHELL){
                 cli_log(tr('Processed ":count" new mails for account ":account"', array(':count' => count($mails), ':account' => $params['account'])));

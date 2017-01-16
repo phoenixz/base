@@ -27,6 +27,10 @@ function notifications_do($event, $message, $classes = null){
         $group   = 'developers';
     }
 
+    if(empty($_CONFIG['production'])){
+        throw new bException($message, $event);
+    }
+
 return false;
     if(++$count > 15){
         /*
