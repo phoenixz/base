@@ -130,8 +130,8 @@ function html_bundler($type){
          */
         $ext         = ($_CONFIG['cdn']['min'] ? '.min.'.$type : '.'.$type);
         $bundle      =  substr(md5(str_force($GLOBALS[$realtype])), 1, 16);
-        $path        =  ROOT.'www/en/'.$admin_path.'pub/'.$type.'/';
         $admin_path  = ($GLOBALS['page_is_admin'] ? 'admin/' : '');
+        $path        =  ROOT.'www/en/'.$admin_path.'pub/'.$type.'/';
         $bundle_file =  $path.'bundle-'.$bundle.$ext;
 
         /*
