@@ -107,27 +107,46 @@ function editors_tinymce($params){
 
 
 
+
 /*
  * Editor summernote to atlant template
  */
 function editors_summernote($params = null){
     try{
         array_params($params, 'name');
-        array_default($params, 'name'  , 'editor');
-        array_default($params, 'class' , 'summernote editor');
-        array_default($params, 'extra' , '');
-        array_default($params, 'value' , '');
-        array_default($params, 'height', 500);
-        array_default($params, 'focus' , false);
+        array_default($params, 'name'           , 'editor');
+        array_default($params, 'class'          , 'summernote editor');
+        array_default($params, 'extra'          , '');
+        array_default($params, 'value'          , '');
+        array_default($params, 'height'         , 500);
+        array_default($params, 'focus'          , false);
+        array_default($params, 'on_image_upload', '');
+        array_default($params, 'toolbar'        , '');
 
         html_load_js('plugins/summernote/summernote');
 
-        if($params['height']){
-           $options['height'] = $params['height'];
-        }
+        if($params['height'])          $options['height']        = $params['height'];
+        if($params['focus'])           $options['focus']         = $params['focus'];
+        if($params['on_image_upload']) $options['onImageUpload'] = $params['on_image_upload'];
+        if($params['toolbar'])         $options['toolbar']       = $params['toolbar'];
 
-        if($params['focus']){
-           $options['focus'] = $params['focus'];
+        $value_arr    = array();
+        $replace_keys = array();
+
+        /*
+         *
+         */
+        foreach($options as $key => &$value){
+            /*
+             * Look for values starting with 'function('
+             * Store function string.
+             * Replace function string in $foo with a ‘unique’ special key.
+             */
+            if((strpos($value, 'function(') === 0) or (strpos($value, '(function(') === 0)){
+                $value_arr[]    = $value;
+                $value          = '%' . $key . '%';
+                $replace_keys[] = '"' . $value . '"';
+            }
         }
 
         /*

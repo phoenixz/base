@@ -52,7 +52,7 @@ try{
             throw new bException(tr('No $_CONFIG[deploy][:target][group] specified', array(':target' => $target)), 'missing-configuration');
         }
 
-        if(empty($deploy_config['modes'])){
+        if(!isset($deploy_config['modes'])){
             throw new bException(tr('No $_CONFIG[deploy][:target][modes] specified', array(':target' => $target)), 'missing-configuration');
         }
     }
@@ -115,6 +115,7 @@ if(empty($deploy_config['target_server'])){
 
 }else{
     $default_modes = array('dirs'  => array('/'                => 'a-rwx,ug+rx,g+s',
+                                            '/tmp'             => 'ug+w',           // Should not be writable at all
                                             '/data'            => 'ug+w',           // Should not be writable at all
                                             '/data/doc'        => 'ug-w',           // Should not be writable at all
                                             '/data/audio'      => 'ug-w',           // Should not be writable at all

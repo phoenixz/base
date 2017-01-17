@@ -185,6 +185,7 @@ function curl_get($params, $referer = null, $post = false, $options = array()){
         array_default($params, 'verbose'        , null);
         array_default($params, 'method'         , null);
         array_default($params, 'dns_cache'      , true);
+        array_default($params, 'verify_ssl'     , true);
         array_default($params, 'proxies'        , $_CONFIG['curl']['proxies']);
         array_default($params, 'simulation'     , false);   // false, partial, or full
         array_default($params, 'sleep'          , 1000);    // Sleep howmany microseconds between retries
@@ -253,12 +254,14 @@ function curl_get($params, $referer = null, $post = false, $options = array()){
              */
             $ch = curl_init();
 
-            curl_setopt($ch, CURLOPT_URL           , $params['url']);
-            curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+            curl_setopt($ch, CURLOPT_URL           ,  $params['url']);
+            curl_setopt($ch, CURLOPT_RETURNTRANSFER,  true);
             curl_setopt($ch, CURLOPT_USERAGENT     , ($params['useragent'] ? $params['useragent'] : curl_get_random_user_agent()));
-            curl_setopt($ch, CURLOPT_INTERFACE     , curl_get_random_ip());
-            curl_setopt($ch, CURLOPT_TIMEOUT       , $params['timeout']);
-            curl_setopt($ch, CURLOPT_CONNECTTIMEOUT, $params['connect_timeout']);
+            curl_setopt($ch, CURLOPT_INTERFACE     ,  curl_get_random_ip());
+            curl_setopt($ch, CURLOPT_TIMEOUT       ,  $params['timeout']);
+            curl_setopt($ch, CURLOPT_CONNECTTIMEOUT,  $params['connect_timeout']);
+            curl_setopt($ch, CURLOPT_SSL_VERIFYHOST, ($params['verify_ssl'] ? 2 : 0));
+            curl_setopt($ch, CURLOPT_SSL_VERIFYPEER,  $params['verify_ssl']);
 
             if($params['method']){
                 $params['method'] = strtoupper($params['method']);
@@ -444,13 +447,14 @@ function curl_get($params, $referer = null, $post = false, $options = array()){
             unset($retval['ch']);
 
             sql_query('INSERT INTO `curl_cache` (`users_id`, `url`, `data`)
-                      VALUES                    (:users_id , :url , :data)
+                       VALUES                   (:users_id , :url , :data )
 
-                      ON DUPLICATE KEY UPDATE `data` = :data;',
+                       ON DUPLICATE KEY UPDATE `data` = :data_update',
 
-                      array(':users_id' => (empty($_SESSION['user']['id']) ? null : $_SESSION['user']['id']),
-                            ':url'      => $params['url'],
-                            ':data'     => json_encode_custom($retval)));
+                      array(':users_id'    => (empty($_SESSION['user']['id']) ? null : $_SESSION['user']['id']),
+                            ':url'         => $params['url'],
+                            ':data'        => json_encode_custom($retval),
+                            ':data_update' => json_encode_custom($retval)));
         }
 
         if($retval['status']['http_code'] != 200){

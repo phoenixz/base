@@ -169,17 +169,17 @@ if(empty($test)){
     cli_log(tr('Config base configuration'), 'purple');
     passthru('rsync -e "ssh -p '.$base['port'].'" -aczvAXHS '.$no_times.' --no-perms --delete '.$base['host'].':'.$base['path'].'/config/base/* '.ROOT.'config/base/', $exitcodes['config/base']);
 
-    // Javascript
-    cli_log(tr('Copying javascript files'), 'purple');
-    passthru('rsync -e "ssh -p '.$base['port'].'" -aczvAXHS '.$no_times.' --no-perms --delete '.$base['host'].':'.$base['path'].'/www/en/pub/js/base/* '.ROOT.'www/en/pub/js/base/', $exitcodes['www/en/pub/js/base']);
-
-    // CSS
-    cli_log(tr('Copying style sheets'), 'purple');
-    passthru('rsync -e "ssh -p '.$base['port'].'" -aczvAXHS '.$no_times.' --no-perms --delete '.$base['host'].':'.$base['path'].'/www/en/pub/css/base/* '.ROOT.'www/en/pub/css/base/', $exitcodes['www/en/pub/css/base']);
-
-    // Images
-    cli_log(tr('Copying images'), 'purple');
-    passthru('rsync -e "ssh -p '.$base['port'].'" -aczvAXHS '.$no_times.' --no-perms --delete '.$base['host'].':'.$base['path'].'/www/en/pub/img/base/* '.ROOT.'www/en/pub/img/base/', $exitcodes['www/en/pub/img/base']);
+    //// Javascript
+    //cli_log(tr('Copying javascript files'), 'purple');
+    //passthru('rsync -e "ssh -p '.$base['port'].'" -aczvAXHS '.$no_times.' --no-perms --delete '.$base['host'].':'.$base['path'].'/www/en/pub/js/base/* '.ROOT.'www/en/pub/js/base/', $exitcodes['www/en/pub/js/base']);
+    //
+    //// CSS
+    //cli_log(tr('Copying style sheets'), 'purple');
+    //passthru('rsync -e "ssh -p '.$base['port'].'" -aczvAXHS '.$no_times.' --no-perms --delete '.$base['host'].':'.$base['path'].'/www/en/pub/css/base/* '.ROOT.'www/en/pub/css/base/', $exitcodes['www/en/pub/css/base']);
+    //
+    //// Images
+    //cli_log(tr('Copying images'), 'purple');
+    //passthru('rsync -e "ssh -p '.$base['port'].'" -aczvAXHS '.$no_times.' --no-perms --delete '.$base['host'].':'.$base['path'].'/www/en/pub/img/base/* '.ROOT.'www/en/pub/img/base/', $exitcodes['www/en/pub/img/base']);
 
     // Documentation
     cli_log(tr('Copying documentation'), 'purple');
@@ -233,11 +233,13 @@ if($nocommit){
     cli_log(tr('Skipping git commit due to "--no-commit" option'), 'yellow');
 
 }else{
-    cli_log(tr('Git commit updates'), 'white');
-    passthru('cd '.ROOT.';git add .;git commit -am "Update from base"', $exitcode);
+    if(!trim(shell_exec('git status | grep "nothing to commit" | wc -l'))){
+        cli_log(tr('Git commit updates'), 'white');
+        passthru('cd '.ROOT.';git add .;git commit -am "Update from base"', $exitcode);
 
-    if($exitcode){
-        throw new bException(tr('Git commit of updates failed with exit code ":code"', array(':code' => $exitcode)), 'git');
+        if($exitcode){
+            throw new bException(tr('Git commit of updates failed with exit code ":code"', array(':code' => $exitcode)), 'git');
+        }
     }
 }
 
