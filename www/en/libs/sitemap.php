@@ -21,17 +21,74 @@ load_config('sitemap');
 
 
 /*
+ * Regenerate (all) sitemap file(s)
+ * If sitemap database does not contain any "file" data then only the
+ * sitemap.xml will be created. If it does, the sitemap.xml will be the index
+ * file, and the other sitemap files will be auto generated one by one
+ */
+function sitemap_generate(){
+    global $_CONFIG;
+
+    try{
+        load_libs('file');
+
+        foreach($_CONFIG['language']['supported'] as $code => $name){
+            file_delete(ROOT.'www/'.$code.'/sitemap*');
+        }
+
+        $count = sql_get('SELECT COUNT(*) AS `count`
+
+                          FROM   `sitemap_data`
+
+                          WHERE  `status` IS     NULL
+                          AND    `file`   IS NOT NULL', 'count');
+
+        if(!$count){
+            /*
+             * There are no sitemap entries that require extra sitemap files
+             * Just generate the default sitemap.xml file and we're done!
+             */
+            sitemap_xml(null);
+
+        }else{
+            /*
+             * Generate multiple sitemap files
+             */
+            sitemap_index();
+
+            $files = sql_query('SELECT   `file`
+
+                                FROM     `sitemap_data`
+
+                                WHERE    `status` IS     NULL
+
+                                GROUP BY `file`');
+
+            while($file = sql_fetch($files)){
+                if(!$file) $file = 'basic';
+                sitemap_xml($file);
+            }
+        }
+
+    }catch(Exception $e){
+        throw new bException('sitemap_generate(): Failed', $e);
+    }
+}
+
+
+
+/*
  * Generate the sitemap index file
  */
 function sitemap_index(){
     try{
-        $files = 'SELECT   `file`
+        $files = sql_query('SELECT   `file`
 
-                  FROM     `sitemap_data`
+                            FROM     `sitemap_data`
 
-                  WHERE    `status` IS NULL
+                            WHERE    `status` IS NULL
 
-                  GROUP BY `file`';
+                            GROUP BY `file`');
 
         $xml  = "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n".
                 "    <sitemapindex xmlns=\"http://www.sitemaps.org/schemas/sitemap/0.9\">\n";
@@ -41,6 +98,10 @@ function sitemap_index(){
         }
 
         $xml .= "</sitemapindex>";
+
+        file_put_contents(ROOT.'www/en/sitemap.xml', $xml);
+
+        return $xml;
 
     }catch(Exception $e){
         throw new bException('sitemap_xml(): Failed', $e);
@@ -56,25 +117,29 @@ function sitemap_xml($file = null, $language = null){
     global $_CONFIG;
 
     try{
-        $query = 'SELECT    `id`,
-                            `url`,
-                            `page_modifiedon`,
-                            `change_frequency`,
-                            `priority`,
-                            `url`
+        $sitemap = 'sitemap';
 
-                  FROM      `sitemap_data`
+        $query   = 'SELECT    `id`,
+                              `url`,
+                              `page_modifiedon`,
+                              `change_frequency`,
+                              `priority`,
+                              `url`
 
-                  WHERE     `status` IS NULL ';
+                    FROM      `sitemap_data`
+
+                    WHERE     `status` IS NULL ';
 
         if($file){
-            $query .= ' AND `file` = :file ';
+            $sitemap = '-'.$file;
+            $query  .= ' AND `file` = :file ';
             $execute[':file'] = $file;
         }
 
         if($language){
-            $query .= ' AND `file` = :file ';
-            $execute[':file'] = $file;
+            $sitemap = '-'.$language;
+            $query .= ' AND `language` = :language ';
+            $execute[':language'] = $language;
         }
 
         $entries = sql_query($query.'ORDER BY (`file` IS NOT NULL), `file` DESC, (`priority` IS NOT NULL), `priority` DESC', $execute);
@@ -87,6 +152,8 @@ function sitemap_xml($file = null, $language = null){
         }
 
         $xml .= "</urlset>\n";
+
+        file_put_contents(ROOT.'www/en/'.$sitemap.'.xml', $xml);
 
         return $xml;
 
