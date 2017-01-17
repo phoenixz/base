@@ -49,6 +49,7 @@ function jqueryui_accordeon($selector, $options = 'collapsible: true,heightStyle
  */
 function jqueryui_date($selector, $params = null){
     try{
+        html_load_css('base/jquery-ui/jquery-ui.min');
         array_params($params);
         array_default($params, 'placeholder'     , tr('Select a date'));
         array_default($params, 'number_of_months', 1);

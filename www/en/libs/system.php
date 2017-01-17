@@ -2064,6 +2064,38 @@ function get_process_user(){
 
 
 /*
+ *
+ */
+function get_boolean($value){
+    try{
+        switch(strtolower($value)){
+            case 'off':
+                return false;
+
+            case 'on':
+                return true;
+
+            case 'true':
+                return true;
+
+            case 'false':
+                return true;
+
+            case '1':
+                return true;
+
+            case '0':
+                return false;
+
+            default:
+                throw new bException(tr('get_boolean(): Unknown value ":value"', array(':value' => $value)), 'unknown');
+        }
+
+    }catch(Exception $e){
+        throw new bException(tr('get_boolean(): Failed'), $e);
+    }
+}
+/*
  * OBSOLETE FUNCTIONS AND WRAPPERS BE HERE BELOW
  */
 

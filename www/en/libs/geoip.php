@@ -51,6 +51,10 @@ function geoip_get($ip = null, $column = '*'){
         return $data;
 
     }catch(Exception $e){
+        if(!sql_get('SHOW TABLES LIKE "geoip_locations"')){
+            throw new bException('geoip_get(): `geoip_locations` table not found, please run the ./scripts/base/importers/geoip script to import the GEO IP data', $e);
+        }
+
         throw new bException('geoip_get(): Failed', $e);
     }
 }
