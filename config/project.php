@@ -31,7 +31,7 @@
  *                         configuration), and production_subenvironmentname.php for configuration
  *                         settings specific to that sub environment
  */
-define('SEED'                   , '');
-define('PROJECT'                , '');
-define('PROJECTCODEVERSION'     , '0.0.0');
+define('SEED'              , '');
+define('PROJECT'           , '');
+define('PROJECTCODEVERSION', '0.0.0');
 ?>
