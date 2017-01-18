@@ -34,5 +34,4 @@
 define('SEED'                   , '');
 define('PROJECT'                , '');
 define('PROJECTCODEVERSION'     , '0.0.0');
-define('REQUIRE_SUBENVIRONMENTS', false);
 ?>
