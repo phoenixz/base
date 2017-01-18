@@ -157,7 +157,8 @@ function html_bundler($type){
                 /*
                  * Check for @imports
                  */
-                $file = $path.$file.$ext;
+                $orgfile = $file;
+                $file    = $path.$file.$ext;
 
                 if(!file_exists($file)){
                     notify('bundler-file/not-exist', tr('The bundler ":type" file ":file" does not exist', array(':type' => $type, ':file' => $file)), 'developers');
@@ -213,8 +214,19 @@ function html_bundler($type){
 
                                 $data = str_replace($match, $import, $data);
                             }
+                        }
 
-                        }elseif(preg_match_all('/url\(.+?\)/', $data, $matches)){
+                        $count = substr_count($orgfile, '/');
+
+                        if(!$count){
+                            /*
+                             * No URL rewriting required, this file is directly
+                             * in /css or /js, and not in a sub dir
+                             */
+                            continue;
+                        }
+
+                        if(preg_match_all('/url\((.+?)\)/', $data, $matches)){
                             /*
                              * Rewrite all URL's to avoid relative URL's failing
                              * for files in sub directories
@@ -229,11 +241,14 @@ function html_bundler($type){
                              * In the bundled file, this should become
                              * url("foo/1.jpg")
                              */
-                            $subpath = dirname($file);
-
-                            foreach($matches[1] as $match){
-                                $url = $subpath.$match[0];
-                                $url = str_replace(array('"', "'"), '', $url);
+                            foreach($matches[1] as $url){
+                                if(strtolower(substr($url, 0, 5)) == 'data:'){
+                                    /*
+                                     * This is inline data, nothing we can do so
+                                     * ignore
+                                     */
+                                    continue;
+                                }
 
                                 if(substr($url, 0, 1) == '/'){
                                     /*
@@ -251,11 +266,7 @@ function html_bundler($type){
                                     continue;
                                 }
 
-                                $url = realpath($match[0]);
-
-                                if($url){
-                                    str_replace($match[0], '"'.$url.'"', $data);
-                                }
+                                $data = str_replace($url, '"'.str_repeat('../', $count).$url.'"', $data);
                             }
                         }
                 }
