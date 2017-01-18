@@ -478,26 +478,29 @@ function ads_update_image_cluster($user, $cluster, $image){
  */
 function ads_get_html(){
     global $_CONFIG;
+
     try{
+        $userdata  = inet_get_client_data();
 
-        $userdata = inet_get_client_data();
+        $campaigns = sql_get('SELECT   `id`,
+                                       `image_ttl`,
+                                       `class`,
+                                       `animation`
 
-        $campaigns = sql_get('SELECT `id`,
-                                     `image_ttl`,
-                                     `class`,
-                                     `animation`
+                              FROM     `ads_campaigns`
 
-                              FROM   `ads_campaigns`
-
-                              WHERE `from`   <= NOW()
-                              AND   `until`  >= NOW()
-                              AND   `status` IS NULL
+                              WHERE    `from`   <= NOW()
+                              AND      `until`  >= NOW()
+                              AND      `status` IS NULL
 
                               ORDER BY RAND()
 
                               LIMIT 1');
 
         if(empty($campaigns)){
+            /*
+             * We have no ad campaigns
+             */
             return '';
         }
 
@@ -519,6 +522,9 @@ function ads_get_html(){
                                    ':platform'     => $userdata['os']));
 
         if(!$images->rowCount()){
+            /*
+             * This campaign have no images
+             */
             return '';
         }
 
@@ -528,9 +534,9 @@ function ads_get_html(){
 
         while($image = sql_fetch($images)){
             if(!is_null($image['description'])){
-                $html .= '      <li>
-                                    <a href="'.$url.'">'.html_img(current_domain('/photos/'.$image['file'].'-original.jpg', null), $image['description']).'</a>
-                                </li>';
+                $html .= '  <li>
+                                <a href="'.$url.'">'.html_img(current_domain('/photos/'.$image['file'].'-original.jpg', null), $image['description']).'</a>
+                            </li>';
             }
         }
 
@@ -547,8 +553,9 @@ function ads_get_html(){
                                     delay: '.$campaigns['image_ttl'].'
                                 });');
 
+        ads_insert_view($image['id'], $campaigns['id'], $userdata);
+
         return $html;
-        //ads_insert_view($image['id'], $campaigns['id'], $userdata);
 
     }catch(Exception $e){
         throw new bException('ads_get_html(): Failed', $e);
