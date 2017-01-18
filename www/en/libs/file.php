@@ -670,7 +670,7 @@ function file_delete($pattern){
             throw new bException('file_delete(): No file or pattern specified');
         }
 
-        safe_exec(array('rm -rf ', $pattern));
+        safe_exec('rm -rf '.$pattern);
 
         return $pattern;
 
@@ -1364,7 +1364,6 @@ function file_http_download($file, $stream = false){
         }
 
         // set the headers, prevent caching
-        header('Pragma: public');
         header('Expires: -1');
         header('Cache-Control: public, must-revalidate, post-check=0, pre-check=0');
         header('Content-Disposition: attachment; filename="'.$file_name.'"');
