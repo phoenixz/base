@@ -528,8 +528,6 @@ function http_cache($params, $headers = array()){
             $GLOBALS['etag']      = null;
             $expires              = 0;
 
-            $headers[] = 'Pragma : no-cache';
-
         }else{
             if(empty($GLOBALS['etag'])){
                 if(!empty($GLOBALS['flash'])){
@@ -544,10 +542,7 @@ function http_cache($params, $headers = array()){
             if(!empty($GLOBALS['page_is_ajax']) or !empty($GLOBALS['page_is_api'])){
                 $params['policy']     = 'no-cache, no-store, must-revalidate';
                 $params['visibility'] = 'private';
-
-                $expires   = '0';
-
-                $headers[] = 'Pragma : no-cache';
+                $expires              = '0';
 
             }else{
                 if(!empty($GLOBALS['page_is_admin']) or !empty($_SESSION['user']['id'])){
