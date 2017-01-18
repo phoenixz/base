@@ -16,7 +16,7 @@ if(!class_exists('Imagick')){
 
 load_libs('file');
 load_config('images');
-file_ensure_path(ROOT.'/data/log');
+file_ensure_path(ROOT.'data/log');
 
 
 /*
