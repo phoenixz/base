@@ -2,7 +2,6 @@
 /*
  * Add API call registry table
  */
-
 sql_query('DROP TABLE IF EXISTS `sitemap_data`');
 sql_query('DROP TABLE IF EXISTS `sitemap_scans`');
 
@@ -12,7 +11,7 @@ sql_query('DROP TABLE IF EXISTS `sitemaps_generated`');
 sql_query('CREATE TABLE `sitemaps_data` (`id`               INT(11)      NOT NULL AUTO_INCREMENT,
                                          `createdon`        TIMESTAMP    NOT NULL DEFAULT CURRENT_TIMESTAMP,
                                          `createdby`        INT(11)          NULL DEFAULT NULL,
-                                         `modifiedon`       DATETIME         NULL,
+                                         `modifiedon`       DATETIME         NULL DEFAULT NULL,
                                          `modifiedby`       INT(11)          NULL DEFAULT NULL,
                                          `status`           VARCHAR(16)      NULL DEFAULT NULL,
                                          `url`              VARCHAR(255)     NULL DEFAULT NULL,
