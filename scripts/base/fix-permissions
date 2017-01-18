@@ -52,7 +52,7 @@ try{
             throw new bException(tr('No $_CONFIG[deploy][:target][group] specified', array(':target' => $target)), 'missing-configuration');
         }
 
-        if(empty($deploy_config['modes'])){
+        if(!isset($deploy_config['modes'])){
             throw new bException(tr('No $_CONFIG[deploy][:target][modes] specified', array(':target' => $target)), 'missing-configuration');
         }
     }
@@ -114,21 +114,24 @@ if(empty($deploy_config['target_server'])){
                                             '/scripts'      => 'ug+x'));
 
 }else{
-    $default_modes = array('dirs'  => array('/'                => 'a-rwx,ug+rx,g+s',
-                                            '/data'            => 'ug+w',           // Should not be writable at all
-                                            '/data/doc'        => 'ug-w',           // Should not be writable at all
-                                            '/data/audio'      => 'ug-w',           // Should not be writable at all
-                                            '/data/plugins'    => 'ug-w',           // Should not be writable at all
-                                            '/www/en/pub/js/'  => 'ug+w',           // Required writable for bundler
-                                            '/www/en/pub/css/' => 'ug+w'),          // Required writable for bundler
+    $default_modes = array('dirs'  => array('/'                      => 'a-rwx,ug+rx,g+s',
+                                            '/tmp'                   => 'ug+w',           // Should not be writable at all
+                                            '/data'                  => 'ug+w',           // Should not be writable at all
+                                            '/data/doc'              => 'ug-w',           // Should not be writable at all
+                                            '/data/audio'            => 'ug-w',           // Should not be writable at all
+                                            '/data/plugins'          => 'ug-w',           // Should not be writable at all
+                                            '/www/en/pub/js/'        => 'ug+w',           // Required writable for bundler
+                                            '/www/en/pub/css/'       => 'ug+w',           // Required writable for bundler
+                                            '/www/en/admin/pub/js/'  => 'ug+w',           // Required writable for bundler
+                                            '/www/en/admin/pub/css/' => 'ug+w'),          // Required writable for bundler
 
-                           'files' => array('/'                => 'a-rwx,ug+r',
-                                            '/data'            => 'ug+w',
-                                            '/data/doc'        => 'ug-w',
-                                            '/data/audio'      => 'ug-w',
-                                            '/data/plugins'    => 'ug-w',
-                                            '/www/en/pub/'     => 'ug+w',
-                                            '/scripts'         => 'a-w,ug+x'));
+                           'files' => array('/'                      => 'a-rwx,ug+r',
+                                            '/data'                  => 'ug+w',
+                                            '/data/doc'              => 'ug-w',
+                                            '/data/audio'            => 'ug-w',
+                                            '/data/plugins'          => 'ug-w',
+                                            '/www/en/pub/'           => 'ug+w',
+                                            '/scripts'               => 'a-w,ug+x'));
 }
 
 if(empty($deploy_config['modes'])){

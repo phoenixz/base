@@ -116,27 +116,27 @@ if($users){
      */
     $in = sql_in($users);
 
-    $r  = sql_query('SELECT     `email_accounts`.`email`,
+    $r  = sql_query('SELECT     `email_client_accounts`.`email`,
                                 IFNULL(IFNULL(`users`.`name`, `users`.`email`), `users`.`username`) AS `user`
 
-                     FROM      `email_accounts`
+                     FROM      `email_client_accounts`
 
                      LEFT JOIN `users`
-                     ON        `users`.`id` = `email_accounts`.`users_id`
+                     ON        `users`.`id` = `email_client_accounts`.`users_id`
 
-                     WHERE     `email_accounts`.`email` IN ('.implode(',', array_keys($in)).')', $in);
+                     WHERE     `email_client_accounts`.`email` IN ('.implode(',', array_keys($in)).')', $in);
 
 }else{
     $in = null;
-    $r  = sql_query('SELECT    `email_accounts`.`email`,
+    $r  = sql_query('SELECT    `email_client_accounts`.`email`,
                                IFNULL(IFNULL(`users`.`name`, `users`.`email`), `users`.`username`) AS `user`
 
-                     FROM      `email_accounts`
+                     FROM      `email_client_accounts`
 
                      LEFT JOIN `users`
-                     ON        `users`.`id` = `email_accounts`.`users_id`
+                     ON        `users`.`id` = `email_client_accounts`.`users_id`
 
-                     WHERE     `email_accounts`.`status` IS NULL');
+                     WHERE     `email_client_accounts`.`status` IS NULL');
 }
 
 /*
@@ -173,7 +173,7 @@ switch(cli_method()){
             sql_query('DELETE FROM `email_files`');
             sql_query('DELETE FROM `email_messages`');
             sql_query('DELETE FROM `email_conversations`');
-            sql_query('DELETE FROM `email_accounts`');
+            sql_query('DELETE FROM `email_client_accounts`');
 
             cli_log(tr('Finished wiping ALL email data, messages, conversations, accounts, etc...'), 'green');
 

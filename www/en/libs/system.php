@@ -115,7 +115,7 @@ class bException extends Exception{
 /*
  * Send notifications of the specified class
  */
-function notify($event, $message, $classes = null){
+function notify($event, $message = null, $classes = null){
     try{
         load_libs('notifications');
         return notifications_do($event, $message, $classes);
@@ -227,7 +227,7 @@ function tr($text, $replace = null, $verify = true){
 function cfm($string, $utf8 = true){
     if(!is_scalar($string)){
         if(!is_null($string)){
-            throw new bException('cfm(): Specified variable should be datatype "string" but has datatype "'.gettype($string).'"', 'invalid');
+            throw new bException(tr('cfm(): Specified variable ":variable" from ":location" should be datatype "string" but has datatype ":datatype"', array(':variable' => $string, ':datatype' => gettype($string), ':location' => current_file(1).'@'.current_line(1))), 'invalid');
         }
     }
 
@@ -1059,7 +1059,12 @@ function user_or_signin(){
                 /*
                  * No session
                  */
-                redirect(isset_get($_CONFIG['redirects']['signin'], 'signin.php').'?redirect='.urlencode($_SERVER['REQUEST_URI']));
+                if($GLOBALS['page_is_api']){
+                    json_reply(tr('api_start_session(): Specified token ":token" has no session', array(':token' => $_POST['PHPSESSID'])), 'signin');
+
+                }else{
+                    redirect(isset_get($_CONFIG['redirects']['signin'], 'signin.php').'?redirect='.urlencode($_SERVER['REQUEST_URI']));
+                }
             }
 
             if(!empty($_SESSION['lock'])){
@@ -2058,6 +2063,38 @@ function get_process_user(){
 
 
 
+/*
+ *
+ */
+function get_boolean($value){
+    try{
+        switch(strtolower($value)){
+            case 'off':
+                return false;
+
+            case 'on':
+                return true;
+
+            case 'true':
+                return true;
+
+            case 'false':
+                return true;
+
+            case '1':
+                return true;
+
+            case '0':
+                return false;
+
+            default:
+                throw new bException(tr('get_boolean(): Unknown value ":value"', array(':value' => $value)), 'unknown');
+        }
+
+    }catch(Exception $e){
+        throw new bException(tr('get_boolean(): Failed'), $e);
+    }
+}
 /*
  * OBSOLETE FUNCTIONS AND WRAPPERS BE HERE BELOW
  */
