@@ -362,24 +362,55 @@ function file_ensure_path($path, $mode = null){
         }
 
         if(!file_exists(unslash($path))){
-            try{
-                mkdir($path, $mode, true);
+            /*
+             * The complete requested path doesn't exist. Try to create it, but
+             * directory by directory so that we can correct issues as we run in
+             * to them
+             */
+            $dirs = explode('/', $path);
+            $path = '';
 
-            }catch(Exception $e){
-                /*
-                 * It sometimes happens that the specified path was created
-                 * just in between the file_exists and mkdir
-                 */
-                if(!file_exists($path)){
-                    throw $e;
+            foreach($dirs as $dir){
+                $path .= '/'.$dir;
+
+                if(file_exists($path)){
+                    if(!is_dir($path)){
+                        /*
+                         * Some normal file is in the way. Delete the file, and
+                         * retry
+                         */
+                        file_delete($path);
+                        return file_ensure_path($path, $mode);
+                    }
+
+                    continue;
+                }
+
+                try{
+                    mkdir($path, $mode);
+
+                }catch(Exception $e){
+                    /*
+                     * It sometimes happens that the specified path was created
+                     * just in between the file_exists and mkdir
+                     */
+                    if(!file_exists($path)){
+                        throw $e;
+                    }
                 }
             }
 
         }elseif(!is_dir($path)){
-            throw new bException(tr('file_ensure_path(): Specified ":path" is not a directory', array(':path' => $path)), 'invalid');
+            /*
+             * Some other file is in the way. Delete the file, and retry
+             */
+            file_delete($path);
+            return file_ensure_path($path, $mode);
         }
 
-        if(!$realpath = realpath($path)){
+        $realpath = realpath($path);
+
+        if(!$realpath){
             throw new bException(tr('file_ensure_path(): realpath() failed for ":path"', array(':path' => $path)), 'failed');
         }
 
