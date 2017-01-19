@@ -9,6 +9,7 @@
  */
 
 
+
 /*
  * Get the avatar from the google account of the specified user
  */
@@ -58,22 +59,25 @@ function google_get_avatar($user){
 
 /*
  * Returns the necessary javascript for adding a google analytics code to a page
+ * This code, however, will load the script from our own servers, avoiding extra
+ * DNS lookups, avoiding shitty google caching headers which google is
+ * complaining about, etc
  */
 function google_get_analytics($code){
     global $_CONFIG;
 
     try{
-        $analytics_js = "<script>
-        (function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){
+        $retval = '<script>
+        (function(i,s,o,g,r,a,m){i["GoogleAnalyticsObject"]=r;i[r]=i[r]||function(){
         (i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),
         m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)
-        })(window,document,'script','/pub/google/analytics.js','ga');
+        })(window,document,"script","'.domain('/pub/google/analytics.js').'","ga");
 
-        ga('create', '".$code."', 'auto');
-        ga('send', 'pageview');
-        </script>";
+        ga("create", "'.$code.'", "auto");
+        ga("send", "pageview");
+        </script>';
 
-        return $analytics_js;
+        return $retval;
 
     }catch(Exception $e){
         throw new bException('google_get_analytics(): Failed', $e);
