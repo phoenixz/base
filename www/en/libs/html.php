@@ -2148,7 +2148,7 @@ function html_minify($html, $full = false){
              * Remove empty lines (sequence of line-end and white-space characters)
              */
             $search [] = '/[\r\n]+([\t ]?[\r\n]+)+/s';
-            $replace[] = '\n';
+            $replace[] = '';
 
             /*
              * Remove empty lines (between HTML tags);
