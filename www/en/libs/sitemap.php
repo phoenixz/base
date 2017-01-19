@@ -38,37 +38,48 @@ function sitemap_generate(){
 
         $count = sql_get('SELECT COUNT(*) AS `count`
 
-                          FROM   `sitemap_data`
+                          FROM   (SELECT   `file`
 
-                          WHERE  `status` IS     NULL
-                          AND    `file`   IS NOT NULL', 'count');
+                                  FROM     `sitemaps_data`
+
+                                  WHERE    `status` IS     NULL
+                                  AND      `file`   IS NOT NULL
+
+                                  GROUP BY `file`) AS `count`', 'count');
 
         if(!$count){
             /*
              * There are no sitemap entries that require extra sitemap files
              * Just generate the default sitemap.xml file and we're done!
              */
-            sitemap_xml(null);
-
-        }else{
-            /*
-             * Generate multiple sitemap files
-             */
-            sitemap_index();
-
-            $files = sql_query('SELECT   `file`
-
-                                FROM     `sitemap_data`
-
-                                WHERE    `status` IS     NULL
-
-                                GROUP BY `file`');
-
-            while($file = sql_fetch($files)){
-                if(!$file) $file = 'basic';
-                sitemap_xml($file);
-            }
+            cli_log(tr('Generating single sitemap file'));
+            return sitemap_xml(null);
         }
+
+        /*
+         * Generate multiple sitemap files
+         */
+        file_ensure_path(ROOT.'www/en/sitemaps');
+        sitemap_index();
+
+        $files = sql_query('SELECT   `file`
+
+                            FROM     `sitemaps_data`
+
+                            WHERE    `status` IS NULL
+
+                            GROUP BY `file`');
+
+        cli_log(tr('Generating ":count" sitemap files', array(':count' => $count)));
+
+        while($file = sql_fetch($files)){
+            if(!$file['file']) $file['file'] = 'basic';
+
+            cli_dot(1);
+            sitemap_xml($file['file']);
+        }
+
+        cli_dot(false);
 
     }catch(Exception $e){
         throw new bException('sitemap_generate(): Failed', $e);
@@ -84,22 +95,27 @@ function sitemap_index(){
     try{
         $files = sql_query('SELECT   `file`
 
-                            FROM     `sitemap_data`
+                            FROM     `sitemaps_data`
 
-                            WHERE    `status` IS NULL
+                            WHERE    `status` IS     NULL
+                            AND      `file`   IS NOT NULL
 
                             GROUP BY `file`');
 
         $xml  = "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n".
                 "    <sitemapindex xmlns=\"http://www.sitemaps.org/schemas/sitemap/0.9\">\n";
 
-        while($file = sql_fetch($files, 'file')){
+        cli_log(tr('Generating sitemap index file'));
+
+        while($file = sql_fetch($files, true)){
+            cli_dot(1);
             $xml .= sitemap_file($file);
         }
 
         $xml .= "</sitemapindex>";
 
         file_put_contents(ROOT.'www/en/sitemap.xml', $xml);
+        cli_dot(false);
 
         return $xml;
 
@@ -117,8 +133,6 @@ function sitemap_xml($file = null, $language = null){
     global $_CONFIG;
 
     try{
-        $sitemap = 'sitemap';
-
         $query   = 'SELECT    `id`,
                               `url`,
                               `page_modifiedon`,
@@ -126,14 +140,17 @@ function sitemap_xml($file = null, $language = null){
                               `priority`,
                               `url`
 
-                    FROM      `sitemap_data`
+                    FROM      `sitemaps_data`
 
-                    WHERE     `status` IS NULL ';
+                    WHERE     `status` IS NULL';
 
         if($file){
-            $sitemap = '-'.$file;
+            $sitemap = 'sitemaps/'.$file;
             $query  .= ' AND `file` = :file ';
             $execute[':file'] = $file;
+
+        }else{
+            $sitemap = 'sitemap';
         }
 
         if($language){
@@ -148,7 +165,7 @@ function sitemap_xml($file = null, $language = null){
                 "   <urlset xmlns=\"http://www.sitemaps.org/schemas/sitemap/0.9\">\n";
 
         while($entry = sql_fetch($entries)){
-            $xml .= sitemap_entry($entry)."\n";
+            $xml .= sitemap_entry($entry);
         }
 
         $xml .= "</urlset>\n";
@@ -182,25 +199,25 @@ function sitemap_entry($entry){
             if(!empty($entry[$key])){
                 switch($key){
                     case 'url':
-                        $retval[] = '<loc>'.$entry[$key].'</loc>';
+                        $retval[] = "    <loc>".$entry[$key]."</loc>\n";
                         break;
 
                     case 'page_modifiedon':
-                        $retval[] = '<lastmod>'.date_convert($entry[$key], 'c').'</lastmod>';
+                        $retval[] = "    <lastmod>".date_convert($entry[$key], 'c')."</lastmod>\n";
                         break;
 
                     case 'change_frequency':
-                        $retval[] = '<changefreq>'.$entry[$key].'</changefreq>';
+                        $retval[] = "    <changefreq>".$entry[$key]."</changefreq>\n";
                         break;
 
                     case 'priority':
-                        $retval[] = '<priority>'.number_format($entry[$key], 2).'</priority>';
+                        $retval[] = "    <priority>".number_format($entry[$key], 2)."</priority>\n";
                         break;
                 }
             }
         }
 
-        return '<url>'.implode($retval).'</url>';
+        return "<url>\n".implode($retval)."</url>\n";
 
     }catch(Exception $e){
         throw new bException('sitemap_entry(): Failed', $e);
@@ -212,15 +229,19 @@ function sitemap_entry($entry){
 /*
  * Get a sitemap file
  */
-function sitemap_file($file, $lastmod){
+function sitemap_file($file, $lastmod = null){
     try{
-        if(empty($file['url'])){
-            throw new bException(tr('sitemap_file(): No URL specified'), 'not-specified');
+        if(empty($file)){
+            throw new bException(tr('sitemap_file(): No file specified'), 'not-specified');
+        }
+
+        if(empty($lastmod)){
+            $lastmod = date('c');
         }
 
         return  "<sitemap>\n".
-                "   <loc>'.domain('/sitemap-'.$file.'.xml').'</loc>\n".
-                "   <lastmod>'.date_convert($lastmod, 'c').'</lastmod>\n".
+                "   <loc>".domain('/sitemaps/'.$file.'.xml')."</loc>\n".
+                "   <lastmod>".date_convert($lastmod, 'c')."</lastmod>\n".
                 "</sitemap>\n";
 
     }catch(Exception $e){
@@ -233,14 +254,14 @@ function sitemap_file($file, $lastmod){
 /*
  * Clear the sitemap table
  */
-function sitemap_clear($groups){
+function sitemap_clear($groups = null){
     try{
         if($groups){
             $in = sql_in($groups);
-            $r  = sql_query('DELETE FROM `sitemap` WHERE `group` IN ('.sql_in_columns($in).')', $in);
+            $r  = sql_query('DELETE FROM `sitemaps_data` WHERE `group` IN ('.sql_in_columns($in).')', $in);
 
         }else{
-            $r = sql_query('DELETE FROM `sitemap`');
+            $r = sql_query('DELETE FROM `sitemaps_data`');
         }
 
         return $r->rowCount();
@@ -258,7 +279,7 @@ function sitemap_clear($groups){
 function sitemap_delete($filter){
     try{
         $in = sql_in($groups);
-        $r  = sql_query('DELETE FROM `sitemap` WHERE `group` IN ('.sql_in_columns($in).')', $in);
+        $r  = sql_query('DELETE FROM `sitemaps_data` WHERE `group` IN ('.sql_in_columns($in).')', $in);
 
         return $r->rowCount();
 
@@ -283,8 +304,8 @@ function sitemap_add_url($url){
         array_default($url, 'group'           , 'standard');
         array_default($url, 'file'            , null);
 
-        sql_query('INSERT INTO `sitemap` (`createdby`, `url`, `priority`, `page_modifiedon`, `change_frequency`, `language`, `group`, `file`)
-                   VALUES                (:createdby , :url , :priority , :page_modifiedon , :change_frequency , :language , :group , :file )',
+        sql_query('INSERT INTO `sitemaps_data` (`createdby`, `url`, `priority`, `page_modifiedon`, `change_frequency`, `language`, `group`, `file`)
+                   VALUES                      (:createdby , :url , :priority , :page_modifiedon , :change_frequency , :language , :group , :file )',
 
                    array(':createdby'        => isset_get($_SESSION['user']['id']),
                          ':url'              => $url['url'],
@@ -319,7 +340,7 @@ function sitemap_update_url($url, $id){
         array_default($url, 'group'           , 'standard');
         array_default($url, 'file'            , null);
 
-        sql_query('UPDATE `sitemap`
+        sql_query('UPDATE `sitemaps_data`
 
                    SET    `modifiedby`       = :modifiedby,
                           `modifiedon`       = :NOW(),
