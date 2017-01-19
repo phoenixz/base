@@ -27,4 +27,9 @@ sql_query('ALTER TABLE `ads_campaigns` CHANGE COLUMN `seoname` `seoname` VARCHAR
  * Add hash to no save duplicated images in blogs_media
  */
 sql_column_exists('blogs_media', 'hash', '!ALTER TABLE `blogs_media` ADD COLUMN `hash` CHAR(40) NULL DEFAULT NULL AFTER `original`');
+
+/*
+ * Fix minor sitemaps_data issues
+ */
+sql_index_exists('sitemaps_data', 'url', 'ALTER TABLE `sitemaps_data` ADD UNIQUE KEY `url` (`url`)');
 ?>
