@@ -19,13 +19,13 @@ $help  = "This sitemap script can create new sitemap files";
 
 require_once(dirname(__FILE__).'/../../libs/startup.php');
 
+load_libs('sitemap');
+right_or_redirect('admin');
+
 if(empty($_CONFIG['sitemap']['enabled'])){
     cli_log(tr('Sitemap has been disabled in the configuration'), 'yellow');
     cli_die(0);
 }
-
-load_libs('sitemap');
-right_or_redirect('admin');
 
 switch(cli_method()){
     case 'clear':
