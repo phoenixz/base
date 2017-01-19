@@ -15,7 +15,7 @@ sql_query('CREATE TABLE `sitemaps_data` (`id`               INT(11)      NOT NUL
                                          `modifiedby`       INT(11)          NULL DEFAULT NULL,
                                          `status`           VARCHAR(16)      NULL DEFAULT NULL,
                                          `url`              VARCHAR(255)     NULL DEFAULT NULL,
-                                         `priority`         FLOAT(2,2)       NULL DEFAULT NULL,
+                                         `priority`         FLOAT(4,2)       NULL DEFAULT NULL,
                                          `page_modifiedon`  DATETIME     NOT NULL,
                                          `change_frequency` ENUM ("always", "hourly", "daily", "weekly", "monthly", "yearly", "never") NOT NULL,
                                          `language`         VARCHAR(2)       NULL DEFAULT NULL,

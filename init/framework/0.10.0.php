@@ -53,6 +53,7 @@ log_console('Created admin user "'.$_SERVER['USER'].'" with god rights', 'create
  * Setup blogging tables
  */
 sql_query('DROP TABLE IF EXISTS `blogs_keywords`');
+sql_query('DROP TABLE IF EXISTS `blogs_comments`');
 sql_query('DROP TABLE IF EXISTS `blogs_posts`');
 
 sql_foreignkey_exists('blogs_categories', 'fk_blogs_categories_parents_id', 'ALTER TABLE `blogs_categories` DROP FOREIGN KEY `fk_blogs_categories_parents_id`');

@@ -210,8 +210,7 @@ function curl_get($params, $referer = null, $post = false, $options = array()){
                                            'Connection: keep-alive',
                                            'Keep-Alive: 300',
                                            'Accept-Charset: utf-8,ISO-8859-1;q=0.7,*;q=0.7',
-                                           'Accept-Language: en-us,en;q=0.5',
-                                           'Pragma: ');
+                                           'Accept-Language: en-us,en;q=0.5');
 
         }elseif($params['httpheaders'] and !is_array($params['httpheaders'])){
                 throw new bException('curl_get(): Invalid headers specified');

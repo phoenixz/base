@@ -8,3 +8,8 @@
 data/sources/synonyms/thesaurus_en.txt
 /www/en/libs/external
 www/en/data
+www/en/sitemap*
+www/en/pub/js/bundle-*
+www/en/pub/css/bundle-*
+www/en/admin/pub/js/bundle-*
+www/en/admin/pub/js/bundle-*

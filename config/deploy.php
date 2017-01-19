@@ -1,14 +1,8 @@
 <?php
 // Deploy target environments configuration
 
-$_CONFIG['deploy']['local']     = array('sudo'            => true,
-                                        'user'            => 'www-data',
-                                        'group'           => 'www-data',
-
-                                        'modes'           => array('dirs'  => array('/'             => 'a-rwx,ug+rwx,g+s'),
-
-                                                                   'files' => array('/'             => 'a-rwx,ug+rw',
-                                                                                    '/scripts'      => 'a-w,ug+rx')));
+$_CONFIG['deploy']['local']      = array('sudo'                => true,
+                                         'no_times'            => true);
 
 $_CONFIG['deploy']['trial']      = array('target_user'         => '',
                                          'target_server'       => '?website-server-domain-name?',
@@ -22,6 +16,8 @@ $_CONFIG['deploy']['trial']      = array('target_user'         => '',
 
                                          'languages'           => array('es'),
 
+                                         'modes'               => array(),
+
                                          'exclude_dirs'        => array('.git',
                                                                         'www/avatars/*',
                                                                         'www/logos/*',
@@ -33,9 +29,7 @@ $_CONFIG['deploy']['trial']      = array('target_user'         => '',
                                                                         'data/tmp',
                                                                         'data/content',
                                                                         'data/cache',
-                                                                        'data/backups'),
-
-                                         'modes'               => array());
+                                                                        'data/backups'));
 
 $_CONFIG['deploy']['production'] = array('target_user'         => '',
                                          'target_server'       => '?website-server-domain-name?',
@@ -49,6 +43,8 @@ $_CONFIG['deploy']['production'] = array('target_user'         => '',
 
                                          'languages'           => array('es'),
 
+                                         'modes'               => array(),
+
                                          'exclude_dirs'        => array('.git',
                                                                         'www/avatars/*',
                                                                         'www/logos/*',
@@ -60,7 +56,5 @@ $_CONFIG['deploy']['production'] = array('target_user'         => '',
                                                                         'data/tmp',
                                                                         'data/content',
                                                                         'data/cache',
-                                                                        'data/backups'),
-
-                                         'modes'               => array());
+                                                                        'data/backups'));
 ?>

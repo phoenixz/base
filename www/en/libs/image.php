@@ -16,7 +16,7 @@ if(!class_exists('Imagick')){
 
 load_libs('file');
 load_config('images');
-file_ensure_path(ROOT.'/data/log');
+file_ensure_path(ROOT.'data/log');
 
 
 /*
@@ -611,7 +611,6 @@ function image_send($file, $cache_maxage = 86400){
             header('Last-Modified: '.gmdate('D, d M Y H:i:s', filemtime($file)).' GMT', true, 200);
 
             if($cache_maxage){
-                header('Pragma: public');
                 header('Cache-Control: max-age='.$cache_maxage.', public');
                 header('Expires: '. gmdate('D, d M Y H:i:s \G\M\T', time() + $cache_maxage));
             }
