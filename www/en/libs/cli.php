@@ -671,7 +671,7 @@ function cli_dot($each = 10, $color = 'green', $dot = '.'){
             $count  = 0;
         }
 
-        if(++$count > $l_each){
+        if(++$count >= $l_each){
             $count = 0;
             cli_log($dot, $color, false);
             return true;
