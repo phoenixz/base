@@ -139,7 +139,7 @@ function sql_prepare($query, $connector = 'core'){
 /*
  * Fetch and return data from specified resource
  */
-function sql_fetch($r, $columns = false, $style = PDO::FETCH_ASSOC){
+function sql_fetch($r, $single_column = false, $style = PDO::FETCH_ASSOC){
     try{
         if(!is_object($r)){
             throw new bException('sql_fetch(): Specified resource is not a PDO object', 'invalid');
@@ -154,7 +154,7 @@ function sql_fetch($r, $columns = false, $style = PDO::FETCH_ASSOC){
             return null;
         }
 
-        if(!$columns){
+        if(!$single_column){
             /*
              * Return everything
              */
@@ -162,27 +162,9 @@ function sql_fetch($r, $columns = false, $style = PDO::FETCH_ASSOC){
         }
 
         /*
-         * Validate that all specified columns were returned
+         * Return only the first column
          */
-        foreach(array_force($columns) as $column){
-            if(!array_key_exists($column, $result)){
-                throw new bException('sql_fetch(): Specified column "'.str_log($column).'" does not exist in the specified result set', 'columnnotexist');
-            }
-
-            $retval[$column] = $result[$column];
-        }
-
-        /*
-         * Return the one specified column value
-         */
-        if(count($retval) == 1){
-            return array_pop($retval);
-        }
-
-        /*
-         * Return all specified columns
-         */
-        return $retval;
+        return array_pop($result);
 
     }catch(Exception $e){
         throw new bException('sql_fetch(): Failed', $e);
@@ -194,24 +176,24 @@ function sql_fetch($r, $columns = false, $style = PDO::FETCH_ASSOC){
 /*
  * Execute query and return only the first row
  */
-function sql_get($query, $column = null, $execute = null, $connector = 'core'){
+function sql_get($query, $single_column = null, $execute = null, $connector = 'core'){
     try{
         if(is_object($query)){
-            return sql_fetch($query, $column);
+            return sql_fetch($query, $single_column);
 
         }else{
-            if(is_array($column)){
+            if(is_array($single_column)){
                 /*
                  * Argument shift, no columns were specified.
                  */
-                $tmp     = $execute;
-                $execute = $column;
-                $column  = $tmp;
+                $tmp            = $execute;
+                $execute        = $single_column;
+                $single_column  = $tmp;
                 unset($tmp);
             }
 
     // :TODO: Exception on multiple results
-            return sql_fetch(sql_query($query, $execute, true, $connector), $column);
+            return sql_fetch(sql_query($query, $execute, true, $connector), $single_column);
         }
 
     }catch(Exception $e){
@@ -825,34 +807,14 @@ function sql_get_cached($key, $query, $column = false, $execute = false, $expira
  * Try to get data list from memcached. If not available, get it from
  * MySQL and store results in memcached for future use
  */
-function sql_list_cached($key, $query, $column = false, $execute = false, $expiration_time = 86400, $connector = 'core'){
+function sql_list_cached($key, $query, $execute = false, $numerical_array = false, $connector = 'core', $expiration_time = 86400){
     try{
         if(($list = mc_get($key, 'sql_')) === false){
             /*
              * Keyword data not found in cache, get it from MySQL with
              * specified query and store it in cache for next read
              */
-            if(is_array($column)){
-                /*
-                 * Argument shift, no columns were specified.
-                 */
-                $tmp     = $execute;
-                $execute = $column;
-                $column  = $tmp;
-                unset($tmp);
-            }
-
-            if(is_numeric($column)){
-                /*
-                 * Argument shift, no columns were specified.
-                 */
-                $tmp             = $expiration_time;
-                $expiration_time = $execute;
-                $execute         = $tmp;
-                unset($tmp);
-            }
-
-            $list = sql_list($query, $column, $execute, $connector);
+            $list = sql_list($query, $execute, $numerical_array, $connector);
 
             mc_put($list, $key, 'sql_', $expiration_time);
         }
