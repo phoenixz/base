@@ -378,9 +378,9 @@ function blogs_post_update($post, $params = null){
         }
 
         sitemap_add_url(array('url'              => $post['url'],
-                              'priority'         => 1,
+                              'priority'         => $params['priority'],
                               'page_modifiedon'  => date_convert(null, 'mysql'),
-                              'change_frequency' => 'weekly'));
+                              'change_frequency' => $params['change_frequency']));
         return $post;
 
     }catch(Exception $e){
@@ -1049,6 +1049,8 @@ function blogs_validate_post($post, $params = null){
         array_default($params, 'label_category1'  , false);
         array_default($params, 'label_category2'  , false);
         array_default($params, 'label_category3'  , false);
+        array_default($params, 'priority'         , 1);
+        array_default($params, 'change_frequency' , 'weekly');
         array_default($params, 'status_default'   , 'unpublished');
         array_default($params, 'object_name'      , 'blog posts');
 // :TODO: Make this configurable from `blogs` configuration table
