@@ -26,6 +26,7 @@ include(ROOT.'config/deploy.php');
 
 $target = cli_argument('target', true, ENVIRONMENT);
 
+cli_only(true);
 cli_no_arguments_left();
 
 load_libs('file');

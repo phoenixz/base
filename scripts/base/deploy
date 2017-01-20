@@ -118,7 +118,7 @@ Copyright Sven Oostenbrink <support@ingiga.com>, Johan Geuze";
 
 require_once(dirname(__FILE__).'/../../libs/startup.php');
 
-cli_only();
+cli_only(true);
 load_libs('init,deploy');
 
 cli_log(tr('Starting deploy of project ":project"', array(':project' => PROJECT)), 'white');

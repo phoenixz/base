@@ -37,6 +37,7 @@ if($ignore and FORCE){
     throw new bException(tr('Both --ignore-changes and --force (or -i and -F) have been used. These options are mutually exclusive'), 'invalid');
 }
 
+cli_only(true);
 cli_no_arguments_left();
 
 load_config('update');
