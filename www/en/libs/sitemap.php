@@ -276,10 +276,21 @@ function sitemap_clear($groups = null){
 /*
  * Delete indivitual entries from the sitemap table
  */
-function sitemap_delete($filter){
+function sitemap_delete($list){
     try{
-        $in = sql_in($groups);
-        $r  = sql_query('DELETE FROM `sitemaps_data` WHERE `group` IN ('.sql_in_columns($in).')', $in);
+        if(is_array($list) or is_numeric($list) or (is_string($list) and strstr($list, ','))){
+            /*
+             * Delete by one or multiple id's
+             */
+            $in = sql_in(array_force($list));
+            $r  = sql_query('DELETE FROM `sitemaps_data` WHERE `id` IN ('.sql_in_columns($in).')', $in);
+
+        }else{
+            /*
+             * Delete by URL
+             */
+            $r  = sql_query('DELETE FROM `sitemaps_data` WHERE `url` = :url', $list);
+        }
 
         return $r->rowCount();
 
@@ -305,63 +316,36 @@ function sitemap_add_url($url){
         array_default($url, 'file'            , null);
 
         sql_query('INSERT INTO `sitemaps_data` (`createdby`, `url`, `priority`, `page_modifiedon`, `change_frequency`, `language`, `group`, `file`)
-                   VALUES                      (:createdby , :url , :priority , :page_modifiedon , :change_frequency , :language , :group , :file )',
+                   VALUES                      (:createdby , :url , :priority , :page_modifiedon , :change_frequency , :language , :group , :file )
 
-                   array(':createdby'        => isset_get($_SESSION['user']['id']),
-                         ':url'              => $url['url'],
-                         ':priority'         => $url['priority'],
-                         ':page_modifiedon'  => $url['page_modifiedon'],
-                         ':change_frequency' => $url['change_frequency'],
-                         ':group'            => $url['group'],
-                         ':language'         => $url['language'],
-                         ':file'             => $url['file']));
+                   ON DUPLICATE KEY UPDATE `url`              = :url_update,
+                                           `modifiedon`       = :NOW(),
+                                           `modifiedby`       = :modifiedby_update,
+                                           `priority`         = :priority_update,
+                                           `page_modifiedon`  = :page_modifiedon_update,
+                                           `change_frequency` = :change_frequency_update,
+                                           `language`         = :language_update,
+                                           `file`             = :file_update,
+                                           `group`            = :group_update',
+
+                   array(':createdby'               => isset_get($_SESSION['user']['id']),
+                         ':modifiedby'              => isset_get($_SESSION['user']['id']),
+                         ':url'                     => $url['url'],
+                         ':priority'                => $url['priority'],
+                         ':page_modifiedon'         => $url['page_modifiedon'],
+                         ':change_frequency'        => $url['change_frequency'],
+                         ':group'                   => $url['group'],
+                         ':language'                => $url['language'],
+                         ':file_update'             => $url['file'],
+                         ':url_update'              => $url['url'],
+                         ':priority_update'         => $url['priority'],
+                         ':page_modifiedon_update'  => $url['page_modifiedon'],
+                         ':change_frequency_update' => $url['change_frequency'],
+                         ':group_update'            => $url['group'],
+                         ':language_update'         => $url['language'],
+                         ':file_update'             => $url['file']));
 
         return sql_insert_id();
-
-    }catch(Exception $e){
-        throw new bException('sitemap_add_url(): Failed', $e);
-    }
-}
-
-
-
-/*
- * Add a new URL to the sitemap table
- */
-function sitemap_update_url($url, $id){
-    try{
-        array_params($url);
-        array_default($url, 'id'              , null);
-        array_default($url, 'url'             , '');
-        array_default($url, 'priority'        , '');
-        array_default($url, 'page_modifiedon' , '');
-        array_default($url, 'change_frequency', '');
-        array_default($url, 'language'        , '');
-        array_default($url, 'group'           , 'standard');
-        array_default($url, 'file'            , null);
-
-        sql_query('UPDATE `sitemaps_data`
-
-                   SET    `modifiedby`       = :modifiedby,
-                          `modifiedon`       = :NOW(),
-                          `url`              = :url,
-                          `priority`         = :priority,
-                          `page_modifiedon`  = :page_modifiedon,
-                          `change_frequency` = :change_frequency,
-                          `language`         = :language,
-                          `group`            = :group,
-                          `file`             = :file
-
-                   WHERE  `id`               = :id',
-
-                   array(':modifiedby'       => isset_get($_SESSION['user']['id']),
-                         ':url'              => $url['url'],
-                         ':priority'         => $url['priority'],
-                         ':page_modifiedon'  => $url['page_modifiedon'],
-                         ':change_frequency' => $url['change_frequency'],
-                         ':group'            => $url['group'],
-                         ':language'         => $url['language'],
-                         ':file'             => $url['file']));
 
     }catch(Exception $e){
         throw new bException('sitemap_add_url(): Failed', $e);
