@@ -233,7 +233,7 @@ function blogs_post_get_key_values($blogs_posts_id, $seovalues = false){
  */
 function blogs_post_update($post, $params = null){
     try{
-        $post    = blogs_validate_post($post, $params);
+        $post = blogs_validate_post($post, $params);
 
         /*
          * Build basic blog post query and execute array
@@ -350,7 +350,12 @@ function blogs_post_update($post, $params = null){
 
         /*
          * Update the post
+         * First get the original URL so we can compare against new $post[url]
+         * We'll need that because if the url changed, sitemap below will have
+         * to drop a now no longer existing URL entry
          */
+        $url = sql_get('SELECT `url` FROM `blogs_posts` WHERE `id` = :id', true, array(':id' => $post['id']));
+
         sql_query($query, $execute);
 
         /*
@@ -359,6 +364,23 @@ function blogs_post_update($post, $params = null){
         blogs_update_keywords($post);
         blogs_update_key_value_store($post, isset_get($params['key_values']));
 
+        /*
+         * Add this new escort to the sitemap table.
+         */
+        load_libs('sitemap');
+
+        if($url != $post['url']){
+            /*
+             * Page URL changed, delete old entry from the sitemap table to
+             * avoid it still showing up in sitemaps, since this page is now 404
+             */
+            sitemap_delete($post['url']);
+        }
+
+        sitemap_add_url(array('url'              => $post['url'],
+                              'priority'         => $params['priority'],
+                              'page_modifiedon'  => date_convert(null, 'mysql'),
+                              'change_frequency' => $params['change_frequency']));
         return $post;
 
     }catch(Exception $e){
@@ -1027,6 +1049,8 @@ function blogs_validate_post($post, $params = null){
         array_default($params, 'label_category1'  , false);
         array_default($params, 'label_category2'  , false);
         array_default($params, 'label_category3'  , false);
+        array_default($params, 'priority'         , 1);
+        array_default($params, 'change_frequency' , 'weekly');
         array_default($params, 'status_default'   , 'unpublished');
         array_default($params, 'object_name'      , 'blog posts');
 // :TODO: Make this configurable from `blogs` configuration table
