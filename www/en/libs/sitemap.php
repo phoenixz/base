@@ -26,60 +26,71 @@ load_config('sitemap');
  * sitemap.xml will be created. If it does, the sitemap.xml will be the index
  * file, and the other sitemap files will be auto generated one by one
  */
-function sitemap_generate(){
+function sitemap_generate($languages = null){
     global $_CONFIG;
 
     try{
         load_libs('file');
 
-        foreach($_CONFIG['language']['supported'] as $code => $name){
-            file_delete(ROOT.'www/'.$code.'/sitemap*');
+        if(empty($languages)){
+            $languages = array_keys($_CONFIG['language']['supported']);
         }
 
-        $count = sql_get('SELECT COUNT(*) AS `count`
+        foreach(array_force($languages) as $language){
+            cli_log(tr('Generating sitemap file(s) for language ":language"', array(':language' => $language)));
 
-                          FROM   (SELECT   `file`
+            file_delete(ROOT.'www/'.$language.'/sitemap*');
 
-                                  FROM     `sitemaps_data`
+            $count = sql_get('SELECT COUNT(*) AS `count`
 
-                                  WHERE    `status` IS     NULL
-                                  AND      `file`   IS NOT NULL
+                              FROM   (SELECT   `file`
 
-                                  GROUP BY `file`) AS `count`', 'count');
+                                      FROM     `sitemaps_data`
 
-        if(!$count){
+                                      WHERE    `status` IS     NULL
+                                      AND      `file`   IS NOT NULL
+
+                                      GROUP BY `file`) AS `count`', 'count');
+
+            if(!$count){
+                /*
+                 * There are no sitemap entries that require extra sitemap files
+                 * Just generate the default sitemap.xml file and we're done!
+                 */
+                cli_log(tr('Generating single sitemap file'));
+                return sitemap_xml(null);
+            }
+
             /*
-             * There are no sitemap entries that require extra sitemap files
-             * Just generate the default sitemap.xml file and we're done!
+             * Generate multiple sitemap files
              */
-            cli_log(tr('Generating single sitemap file'));
-            return sitemap_xml(null);
+            file_ensure_path(ROOT.'www/en/sitemaps');
+            sitemap_index();
+
+            $files = sql_query('SELECT   `file`
+
+                                FROM     `sitemaps_data`
+
+                                WHERE    `status` IS NULL
+
+                                GROUP BY `file`');
+
+            cli_log(tr('Generating ":count" sitemap files', array(':count' => $count)));
+
+            while($file = sql_fetch($files)){
+                if(!$file['file']) $file['file'] = 'basic';
+
+                cli_dot(1);
+                sitemap_xml($file['file']);
+            }
+
+            cli_dot(false);
+
+            sql_query('INSERT INTO `sitemaps_generated` (`language`)
+                       VALUES                           (:language )',
+
+                       array(':language' => $language));
         }
-
-        /*
-         * Generate multiple sitemap files
-         */
-        file_ensure_path(ROOT.'www/en/sitemaps');
-        sitemap_index();
-
-        $files = sql_query('SELECT   `file`
-
-                            FROM     `sitemaps_data`
-
-                            WHERE    `status` IS NULL
-
-                            GROUP BY `file`');
-
-        cli_log(tr('Generating ":count" sitemap files', array(':count' => $count)));
-
-        while($file = sql_fetch($files)){
-            if(!$file['file']) $file['file'] = 'basic';
-
-            cli_dot(1);
-            sitemap_xml($file['file']);
-        }
-
-        cli_dot(false);
 
     }catch(Exception $e){
         throw new bException('sitemap_generate(): Failed', $e);
@@ -103,7 +114,8 @@ function sitemap_index(){
                             GROUP BY `file`');
 
         $xml  = "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n".
-                "    <sitemapindex xmlns=\"http://www.sitemaps.org/schemas/sitemap/0.9\">\n";
+                "    <sitemapindex xmlns=\"http://www.sitemaps.org/schemas/sitemap/0.9\">\n".
+                sitemap_file('basic');
 
         cli_log(tr('Generating sitemap index file'));
 
@@ -133,6 +145,7 @@ function sitemap_xml($file = null, $language = null){
     global $_CONFIG;
 
     try{
+        $execute = array();
         $query   = 'SELECT    `id`,
                               `url`,
                               `page_modifiedon`,
@@ -262,6 +275,7 @@ function sitemap_clear($groups = null){
 
         }else{
             $r = sql_query('DELETE FROM `sitemaps_data`');
+            $r = sql_query('DELETE FROM `sitemaps_generated`');
         }
 
         return $r->rowCount();
@@ -319,7 +333,7 @@ function sitemap_add_url($url){
                    VALUES                      (:createdby , :url , :priority , :page_modifiedon , :change_frequency , :language , :group , :file )
 
                    ON DUPLICATE KEY UPDATE `url`              = :url_update,
-                                           `modifiedon`       = :NOW(),
+                                           `modifiedon`       = UTC_TIMESTAMP(),
                                            `modifiedby`       = :modifiedby_update,
                                            `priority`         = :priority_update,
                                            `page_modifiedon`  = :page_modifiedon_update,
@@ -329,21 +343,21 @@ function sitemap_add_url($url){
                                            `group`            = :group_update',
 
                    array(':createdby'               => isset_get($_SESSION['user']['id']),
-                         ':modifiedby'              => isset_get($_SESSION['user']['id']),
                          ':url'                     => $url['url'],
                          ':priority'                => $url['priority'],
                          ':page_modifiedon'         => $url['page_modifiedon'],
                          ':change_frequency'        => $url['change_frequency'],
+                         ':language'                => get_null($url['language']),
                          ':group'                   => $url['group'],
-                         ':language'                => $url['language'],
-                         ':file_update'             => $url['file'],
+                         ':file'                    => $url['file'],
                          ':url_update'              => $url['url'],
+                         ':modifiedby_update'       => isset_get($_SESSION['user']['id']),
                          ':priority_update'         => $url['priority'],
                          ':page_modifiedon_update'  => $url['page_modifiedon'],
                          ':change_frequency_update' => $url['change_frequency'],
-                         ':group_update'            => $url['group'],
-                         ':language_update'         => $url['language'],
-                         ':file_update'             => $url['file']));
+                         ':language_update'         => get_null($url['language']),
+                         ':file_update'             => $url['file'],
+                         ':group_update'            => $url['group']));
 
         return sql_insert_id();
 

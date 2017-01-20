@@ -374,13 +374,16 @@ function blogs_post_update($post, $params = null){
              * Page URL changed, delete old entry from the sitemap table to
              * avoid it still showing up in sitemaps, since this page is now 404
              */
-            sitemap_delete($post['url']);
+            sitemap_delete($url);
         }
 
         sitemap_add_url(array('url'              => $post['url'],
                               'priority'         => $params['priority'],
                               'page_modifiedon'  => date_convert(null, 'mysql'),
                               'change_frequency' => $params['change_frequency']));
+
+        run_background('base/sitemap update');
+
         return $post;
 
     }catch(Exception $e){

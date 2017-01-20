@@ -139,13 +139,13 @@ function sql_prepare($query, $connector = 'core'){
 /*
  * Fetch and return data from specified resource
  */
-function sql_fetch($r, $single_column = false, $style = PDO::FETCH_ASSOC){
+function sql_fetch($r, $single_column = false, $fetch_style = PDO::FETCH_ASSOC){
     try{
         if(!is_object($r)){
             throw new bException('sql_fetch(): Specified resource is not a PDO object', 'invalid');
         }
 
-        $result = $r->fetch($style);
+        $result = $r->fetch($fetch_style);
 
         if($result === false){
             /*
@@ -154,17 +154,17 @@ function sql_fetch($r, $single_column = false, $style = PDO::FETCH_ASSOC){
             return null;
         }
 
-        if(!$single_column){
+        if($single_column){
             /*
-             * Return everything
+             * Return only the first column
              */
-            return $result;
+            return array_pop($result);
         }
 
         /*
-         * Return only the first column
+         * Return everything
          */
-        return array_pop($result);
+        return $result;
 
     }catch(Exception $e){
         throw new bException('sql_fetch(): Failed', $e);

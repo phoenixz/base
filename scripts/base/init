@@ -40,7 +40,7 @@ cli_no_arguments_left();
 try{
     load_libs(array('init'));
 
-    cli_only();
+    cli_only(true);
     cli_exclusive();
 
     if($drop){

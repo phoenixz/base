@@ -18,6 +18,7 @@ $help  = "This sitemap script can create new sitemap files";
 
 require_once(dirname(__FILE__).'/../../libs/startup.php');
 
+cli_only(true);
 load_libs('sitemap');
 
 if(empty($_CONFIG['sitemap']['enabled'])){
@@ -44,6 +45,50 @@ switch(cli_method()){
 
         break;
 
+    case 'update':
+        $generated = sql_get('SELECT COUNT(*) AS `count` FROM `sitemaps_generated`', 'count');
+
+        if(!$generated){
+            cli_log(tr('No sitemap data has been generated ever before. Generating all sitemap files now'), 'yellow');
+
+        }else{
+            foreach($_CONFIG['language']['supported'] as $language_code => $language_name){
+                /*
+                 * Check if there are updates for each language
+                 */
+                $modified = sql_get('SELECT COUNT(`sitemaps_data`.`id`) AS `count`
+
+                                     FROM   `sitemaps_generated`
+
+                                     JOIN   `sitemaps_data`
+
+                                     ON   ((`sitemaps_data`.`language` = `sitemaps_generated`.`language`) OR (`sitemaps_data`.`language` IS NULL))
+
+                                     WHERE  `sitemaps_generated`.`language` = :language
+                                     AND (((`sitemaps_data`.`modifiedon` IS     NULL) AND (`sitemaps_data`.`createdon`  > `sitemaps_generated`.`createdon`))
+                                     OR   ((`sitemaps_data`.`modifiedon` IS NOT NULL) AND (`sitemaps_data`.`modifiedon` > `sitemaps_generated`.`createdon`)))',
+
+                                     true, array(':language' => $language_code));
+
+                if($modified){
+                    cli_log(tr('Sitemap data for language ":language" has been modified, regenerating all sitemap files', array(':language' => $language_name)), 'green');
+
+                }else{
+                    if(file_exists(ROOT.'www/en/sitemap.xml')){
+                        cli_log(tr('Sitemap files for language ":language" exists and sitemap data has not been modified, not regenerating sitemap files', array(':language' => $language_name)), 'green');
+                        continue;
+                    }
+
+                    cli_log(tr('Sitemap data for language ":language" has not been modified, but sitemap file was not found. Regenerating all sitemap files', array(':language' => $language_name)), 'yellow');
+                }
+
+                sitemap_generate($language_code);
+            }
+
+            break;
+        }
+
+        // FALLTHROUGH
     case 'generate':
         cli_no_arguments_left();
         cli_log(tr('Regenerating sitemap files'), 'white');
