@@ -233,7 +233,7 @@ function blogs_post_get_key_values($blogs_posts_id, $seovalues = false){
  */
 function blogs_post_update($post, $params = null){
     try{
-        $post    = blogs_validate_post($post, $params);
+        $post = blogs_validate_post($post, $params);
 
         /*
          * Build basic blog post query and execute array
@@ -350,7 +350,12 @@ function blogs_post_update($post, $params = null){
 
         /*
          * Update the post
+         * First get the original URL so we can compare against new $post[url]
+         * We'll need that because if the url changed, sitemap below will have
+         * to drop a now no longer existing URL entry
          */
+        $url = sql_get('SELECT `url` FROM `blogs_posts` WHERE `id` = :id', true, array(':id' => $post['id']));
+
         sql_query($query, $execute);
 
         /*
@@ -359,6 +364,23 @@ function blogs_post_update($post, $params = null){
         blogs_update_keywords($post);
         blogs_update_key_value_store($post, isset_get($params['key_values']));
 
+        /*
+         * Add this new escort to the sitemap table.
+         */
+        load_libs('sitemap');
+
+        if($url != $post['url']){
+            /*
+             * Page URL changed, delete old entry from the sitemap table to
+             * avoid it still showing up in sitemaps, since this page is now 404
+             */
+            sitemap_delete($post['url']);
+        }
+
+        sitemap_add_url(array('url'              => $post['url'],
+                              'priority'         => 1,
+                              'page_modifiedon'  => date_convert(null, 'mysql'),
+                              'change_frequency' => 'weekly'));
         return $post;
 
     }catch(Exception $e){
