@@ -233,6 +233,10 @@ function blogs_post_get_key_values($blogs_posts_id, $seovalues = false){
  */
 function blogs_post_update($post, $params = null){
     try{
+        array_params($params);
+        array_default($params, 'sitemap_priority'        , 1);
+        array_default($params, 'sitemap_change_frequency', 'weekly');
+
         $post = blogs_validate_post($post, $params);
 
         /*
@@ -378,9 +382,9 @@ function blogs_post_update($post, $params = null){
         }
 
         sitemap_add_url(array('url'              => $post['url'],
-                              'priority'         => $params['priority'],
+                              'priority'         => $params['sitemap_priority'],
                               'page_modifiedon'  => date_convert(null, 'mysql'),
-                              'change_frequency' => $params['change_frequency']));
+                              'change_frequency' => $params['sitemap_change_frequency']));
 
         run_background('base/sitemap update');
 
