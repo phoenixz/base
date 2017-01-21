@@ -2175,7 +2175,62 @@ function blogs_post_erase($post){
         return 1;
 
     }catch(Exception $e){
-        throw new bException('blogs_update_urls(): Failed', $e);
+        throw new bException('blogs_post_erase(): Failed', $e);
+    }
+}
+
+
+
+/*
+ *
+ */
+function blogs_regenerate_sitemap_data($blogs_id, $priority, $change_frequency, $group = '', $file = ''){
+    try{
+        load_libs('sitemape');
+
+        if(is_string($categories)){
+            $categories = array($categories);
+        }
+
+        $count = 1;
+        $query = 'SELECT `id`,
+                         `url`,
+                         `createdon`,
+                         `modifiedon`
+
+                  FROM   `blogs_posts`';
+
+        if($blogs_id){
+            $where[] = ' `blogs_id` = :blogs_id ';
+            $execute[':blogs_id'] = $blogs_id;
+            $count++;
+        }
+
+        if(!empty($where)){
+            $query .= ' WHERE '.implode(' AND ', $where);
+        }
+
+        if($group){
+            sitemap_clear($group);
+        }
+
+        $posts = sql_query($query);
+        $count = 0;
+
+        while($post = sql_fetch($posts)){
+            $count++;
+            sitemap_add_url(array('file'             => $file,
+                                  'group'            => $group,
+                                  'url'              => $post['url'],
+                                  'change_frequency' => $change_frequency,
+                                  'post_modifiedon'  => $post['modifiedon'],
+                                  'priority'         => $priority));
+        }
+
+        return $count;
+
+    }catch(Exception $e){
+        throw new bException('blogs_regenerate_sitemap_data(): Failed', $e);
     }
 }
 ?>
