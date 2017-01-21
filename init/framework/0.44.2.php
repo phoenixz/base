@@ -31,7 +31,7 @@ sql_column_exists('blogs_media', 'hash', '!ALTER TABLE `blogs_media` ADD COLUMN 
 /*
  * Fix minor sitemaps_data and sitemaps_generate issues
  */
-sql_index_exists('sitemaps_data', 'url', '!ALTER TABLE `sitemaps_data` ADD UNIQUE KEY `url` (`url`)');
+sql_index_exists('sitemaps_data', 'url', '!ALTER TABLE `sitemaps_data` ADD UNIQUE KEY `url` (`url` (150))');
 
 sql_index_exists ('sitemaps_generated', 'file', 'ALTER TABLE `sitemaps_generated` DROP INDEX  `file`');
 sql_column_exists('sitemaps_generated', 'file', 'ALTER TABLE `sitemaps_generated` DROP COLUMN `file`');
