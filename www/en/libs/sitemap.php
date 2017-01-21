@@ -37,8 +37,6 @@ function sitemap_generate($languages = null){
         }
 
         foreach(array_force($languages) as $language){
-            cli_log(tr('Generating sitemap file(s) for language ":language"', array(':language' => $language)));
-
             file_delete(ROOT.'www/'.$language.'/sitemap*');
 
             $count = sql_get('SELECT COUNT(*) AS `count`
@@ -57,13 +55,14 @@ function sitemap_generate($languages = null){
                  * There are no sitemap entries that require extra sitemap files
                  * Just generate the default sitemap.xml file and we're done!
                  */
-                cli_log(tr('Generating single sitemap file'));
-                return sitemap_xml(null);
+                cli_log(tr('Generating single sitemap file for language ":language"', array(':language' => $language)));
+                return sitemap_xml();
             }
 
             /*
              * Generate multiple sitemap files
              */
+            cli_log(tr('Generating sitemap files for language ":language"', array(':language' => $language)));
             file_ensure_path(ROOT.'www/en/sitemaps');
             sitemap_index();
 
@@ -75,16 +74,26 @@ function sitemap_generate($languages = null){
 
                                 GROUP BY `file`');
 
+            /*
+             * Generate the sitemap files in a temp dir which we'll then move
+             * into place
+             */
             cli_log(tr('Generating ":count" sitemap files', array(':count' => $count)));
+            file_delete(TMP.'sitemap');
 
             while($file = sql_fetch($files)){
                 if(!$file['file']) $file['file'] = 'basic';
 
                 cli_dot(1);
-                sitemap_xml($file['file']);
+                sitemap_xml($file['file'], $language, TMP);
             }
 
+            rename(ROOT.'www/'.$language.'/sitemap', ROOT.'www/'.$language.'/sitemap~');
+            rename(TMP.'sitemap', ROOT.'www/'.$language.'/sitemap');
             cli_dot(false);
+
+            cli_log(tr('Deleting old sitemap files'));
+            file_delete(ROOT.'www/'.$language.'/sitemap~');
 
             sql_query('INSERT INTO `sitemaps_generated` (`language`)
                        VALUES                           (:language )',
@@ -100,7 +109,10 @@ function sitemap_generate($languages = null){
 
 
 /*
- * Generate the sitemap index file
+ * Generate the sitemap index file.
+ *
+ * Data will first be written to a new temp file, and then be moved over the
+ * currently existing one, if one exist
  */
 function sitemap_index(){
     try{
@@ -128,14 +140,20 @@ function sitemap_index(){
         $file = file_temp();
 
         file_put_contents($file, $xml);
+
+        if(file_exists(ROOT.'www/en/sitemap.xml')){
+            chmod(ROOT.'www/en/sitemap.xml', 0660);
+        }
+
         rename($file, ROOT.'www/en/sitemap.xml');
+        chmod(ROOT.'www/en/sitemap.xml', 0440);
 
         cli_dot(false);
 
         return $xml;
 
     }catch(Exception $e){
-        throw new bException('sitemap_xml(): Failed', $e);
+        throw new bException('sitemap_index(): Failed', $e);
     }
 }
 
@@ -144,7 +162,7 @@ function sitemap_index(){
 /*
  * Generate the sitemap.xml file
  */
-function sitemap_xml($file = null, $language = null){
+function sitemap_xml($file = null, $language = null, $path = ROOT.'www/en/'){
     global $_CONFIG;
 
     try{
@@ -175,10 +193,10 @@ function sitemap_xml($file = null, $language = null){
             $execute[':language'] = $language;
         }
 
-        $entries = sql_query($query.'ORDER BY (`file` IS NOT NULL), `file` DESC, (`priority` IS NOT NULL), `priority` DESC', $execute);
+        $entries = sql_query($query.' ORDER BY (`file` IS NOT NULL), `file` DESC, (`priority` IS NOT NULL), `priority` DESC', $execute);
 
         $xml  = "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n".
-                "   <urlset xmlns=\"http://www.sitemaps.org/schemas/sitemap/0.9\">\n";
+                "   <urlset xmlns=\"http://www.sitemaps.org/schemas/sitemap/0.9\" xmlns:xsi=\"http://www.w3.org/2001/XMLSchema-instance\" xsi:schemaLocation=\"http://www.sitemaps.org/schemas/sitemap/0.9 http://www.sitemaps.org/schemas/sitemap/0.9/sitemap.xsd\">\n";
 
         while($entry = sql_fetch($entries)){
             $xml .= sitemap_entry($entry);
@@ -188,7 +206,13 @@ function sitemap_xml($file = null, $language = null){
         $file = file_temp();
 
         file_put_contents($file, $xml);
-        rename($file, ROOT.'www/en/'.$sitemap.'.xml');
+
+        if(file_exists($path.$sitemap.'.xml')){
+            chmod($path.$sitemap.'.xml', 0660);
+        }
+
+        rename($file, $path.$sitemap.'.xml');
+        chmod($path.$sitemap.'.xml', 0440);
 
         return $xml;
 
@@ -308,7 +332,7 @@ function sitemap_delete($list){
             /*
              * Delete by URL
              */
-            $r  = sql_query('DELETE FROM `sitemaps_data` WHERE `url` = :url', $list);
+            $r = sql_query('DELETE FROM `sitemaps_data` WHERE `url` = :url', array(':url' => $list));
         }
 
         return $r->rowCount();
@@ -350,18 +374,18 @@ function sitemap_add_url($url){
                    array(':createdby'               => isset_get($_SESSION['user']['id']),
                          ':url'                     => $url['url'],
                          ':priority'                => $url['priority'],
-                         ':page_modifiedon'         => $url['page_modifiedon'],
+                         ':page_modifiedon'         => date_convert($url['page_modifiedon'], 'c'),
                          ':change_frequency'        => $url['change_frequency'],
                          ':language'                => get_null($url['language']),
                          ':group'                   => $url['group'],
-                         ':file'                    => $url['file'],
+                         ':file'                    => get_null($url['file']),
                          ':url_update'              => $url['url'],
                          ':modifiedby_update'       => isset_get($_SESSION['user']['id']),
                          ':priority_update'         => $url['priority'],
-                         ':page_modifiedon_update'  => $url['page_modifiedon'],
+                         ':page_modifiedon_update'  => date_convert($url['page_modifiedon'], 'c'),
                          ':change_frequency_update' => $url['change_frequency'],
                          ':language_update'         => get_null($url['language']),
-                         ':file_update'             => $url['file'],
+                         ':file_update'             => get_null($url['file']),
                          ':group_update'            => $url['group']));
 
         return sql_insert_id();
