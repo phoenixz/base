@@ -388,7 +388,7 @@ function blogs_post_update($post, $params = null){
                                   'change_frequency' => $params['sitemap_change_frequency']));
         }
 
-        run_background('base/sitemap update');
+        run_background('base/sitemap update --env '.ENVIRONMENT);
 
         return $post;
 
@@ -2186,19 +2186,19 @@ function blogs_post_erase($post){
  */
 function blogs_regenerate_sitemap_data($blogs_id, $priority, $change_frequency, $group = '', $file = ''){
     try{
-        load_libs('sitemape');
+        load_libs('sitemap');
 
-        if(is_string($categories)){
-            $categories = array($categories);
-        }
+        $count   = 1;
+        $execute = array();
+        $query   = 'SELECT `id`,
+                           `url`,
+                           `createdon`,
+                           `modifiedon`
 
-        $count = 1;
-        $query = 'SELECT `id`,
-                         `url`,
-                         `createdon`,
-                         `modifiedon`
+                    FROM   `blogs_posts`
 
-                  FROM   `blogs_posts`';
+                    WHERE  `status`   = "published"
+                    AND    `seoname` != ""';
 
         if($blogs_id){
             $where[] = ' `blogs_id` = :blogs_id ';
@@ -2207,26 +2207,29 @@ function blogs_regenerate_sitemap_data($blogs_id, $priority, $change_frequency, 
         }
 
         if(!empty($where)){
-            $query .= ' WHERE '.implode(' AND ', $where);
+            $query .= ' AND '.implode(' AND ', $where);
         }
 
         if($group){
             sitemap_clear($group);
         }
 
-        $posts = sql_query($query);
+        $posts = sql_query($query, $execute);
         $count = 0;
 
         while($post = sql_fetch($posts)){
+            cli_dot();
             $count++;
+
             sitemap_add_url(array('file'             => $file,
                                   'group'            => $group,
                                   'url'              => $post['url'],
                                   'change_frequency' => $change_frequency,
-                                  'post_modifiedon'  => $post['modifiedon'],
+                                  'page_modifiedon'  => ($post['modifiedon'] ? $post['modifiedon'] : $post['createdon']),
                                   'priority'         => $priority));
         }
 
+        cli_dot(false);
         return $count;
 
     }catch(Exception $e){
