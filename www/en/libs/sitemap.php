@@ -125,8 +125,11 @@ function sitemap_index(){
         }
 
         $xml .= "</sitemapindex>";
+        $file = file_temp();
 
-        file_put_contents(ROOT.'www/en/sitemap.xml', $xml);
+        file_put_contents($file, $xml);
+        rename($file, ROOT.'www/en/sitemap.xml');
+
         cli_dot(false);
 
         return $xml;
@@ -182,8 +185,10 @@ function sitemap_xml($file = null, $language = null){
         }
 
         $xml .= "</urlset>\n";
+        $file = file_temp();
 
-        file_put_contents(ROOT.'www/en/'.$sitemap.'.xml', $xml);
+        file_put_contents($file, $xml);
+        rename($file, ROOT.'www/en/'.$sitemap.'.xml');
 
         return $xml;
 
@@ -303,7 +308,7 @@ function sitemap_delete($list){
             /*
              * Delete by URL
              */
-            $r  = sql_query('DELETE FROM `sitemaps_data` WHERE `url` = :url', array(':url' => $list));
+            $r  = sql_query('DELETE FROM `sitemaps_data` WHERE `url` = :url', $list);
         }
 
         return $r->rowCount();
