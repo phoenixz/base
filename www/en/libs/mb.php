@@ -16,10 +16,14 @@
  * Note: Some of them could have added arguments with default values defined.
  */
 
- 
+
 
 if(!function_exists('utf8_decode')){
-    throw new bException(tr('mb: php modules "xml" and "mbstring" appears not to be installed. Please install the modules first. On Ubuntu and alikes, use "sudo apt-get -y install php-xml php-mbstring; sudo php5enmod xml; sudo php5enmod mbstring" to install and enable the module., on Redhat and alikes use ""sudo yum -y install php-xml php-mbstring" to install the module. After this, a restart of your webserver or php-fpm server might be needed'), 'not_available');
+    throw new bException(tr('mb: php module "xml" appears not to be installed. Please install the modules first. On Ubuntu and alikes, use "sudo apt-get -y install php-xml php-mbstring; sudo php5enmod xml; sudo php5enmod mbstring" to install and enable the module., on Redhat and alikes use ""sudo yum -y install php-xml php-mbstring" to install the module. After this, a restart of your webserver or php-fpm server might be needed'), 'not_available');
+}
+
+if(!function_exists('mb_strlen')){
+    throw new bException(tr('mb: php module "mbstring" appears not to be installed. Please install the modules first. On Ubuntu and alikes, use "sudo apt-get -y install php-xml php-mbstring; sudo php5enmod xml; sudo php5enmod mbstring" to install and enable the module., on Redhat and alikes use ""sudo yum -y install php-xml php-mbstring" to install the module. After this, a restart of your webserver or php-fpm server might be needed'), 'not_available');
 }
 
 
