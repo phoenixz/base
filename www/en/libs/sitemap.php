@@ -303,7 +303,7 @@ function sitemap_delete($list){
             /*
              * Delete by URL
              */
-            $r  = sql_query('DELETE FROM `sitemaps_data` WHERE `url` = :url', $list);
+            $r  = sql_query('DELETE FROM `sitemaps_data` WHERE `url` = :url', array(':url' => $list));
         }
 
         return $r->rowCount();
