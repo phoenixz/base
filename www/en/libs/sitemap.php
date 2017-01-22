@@ -352,41 +352,73 @@ function sitemap_add_url($url){
         array_params($url);
         array_default($url, 'url'             , '');
         array_default($url, 'priority'        , '');
-        array_default($url, 'page_modifiedon' , '');
+        array_default($url, 'page_modifiedon' , null);
         array_default($url, 'change_frequency', '');
         array_default($url, 'language'        , '');
         array_default($url, 'group'           , 'standard');
         array_default($url, 'file'            , null);
 
-        sql_query('INSERT INTO `sitemaps_data` (`createdby`, `url`, `priority`, `page_modifiedon`, `change_frequency`, `language`, `group`, `file`)
-                   VALUES                      (:createdby , :url , :priority , :page_modifiedon , :change_frequency , :language , :group , :file )
+        if($url['page_modifiedon']){
+            sql_query('INSERT INTO `sitemaps_data` (`createdby`, `url`, `priority`, `page_modifiedon`, `change_frequency`, `language`, `group`, `file`)
+                       VALUES                      (:createdby , :url , :priority , :page_modifiedon , :change_frequency , :language , :group , :file )
 
-                   ON DUPLICATE KEY UPDATE `url`              = :url_update,
-                                           `modifiedon`       = UTC_TIMESTAMP(),
-                                           `modifiedby`       = :modifiedby_update,
-                                           `priority`         = :priority_update,
-                                           `page_modifiedon`  = :page_modifiedon_update,
-                                           `change_frequency` = :change_frequency_update,
-                                           `language`         = :language_update,
-                                           `file`             = :file_update,
-                                           `group`            = :group_update',
+                       ON DUPLICATE KEY UPDATE `url`              = :url_update,
+                                               `modifiedon`       = UTC_TIMESTAMP(),
+                                               `modifiedby`       = :modifiedby_update,
+                                               `priority`         = :priority_update,
+                                               `page_modifiedon`  = :page_modifiedon_update,
+                                               `change_frequency` = :change_frequency_update,
+                                               `language`         = :language_update,
+                                               `file`             = :file_update,
+                                               `group`            = :group_update',
 
-                   array(':createdby'               => isset_get($_SESSION['user']['id']),
-                         ':url'                     => $url['url'],
-                         ':priority'                => $url['priority'],
-                         ':page_modifiedon'         => date_convert($url['page_modifiedon'], 'c'),
-                         ':change_frequency'        => $url['change_frequency'],
-                         ':language'                => get_null($url['language']),
-                         ':group'                   => $url['group'],
-                         ':file'                    => get_null($url['file']),
-                         ':url_update'              => $url['url'],
-                         ':modifiedby_update'       => isset_get($_SESSION['user']['id']),
-                         ':priority_update'         => $url['priority'],
-                         ':page_modifiedon_update'  => date_convert($url['page_modifiedon'], 'c'),
-                         ':change_frequency_update' => $url['change_frequency'],
-                         ':language_update'         => get_null($url['language']),
-                         ':file_update'             => get_null($url['file']),
-                         ':group_update'            => $url['group']));
+                       array(':createdby'               => isset_get($_SESSION['user']['id']),
+                             ':url'                     => $url['url'],
+                             ':priority'                => $url['priority'],
+                             ':page_modifiedon'         => date_convert($url['page_modifiedon'], 'c'),
+                             ':change_frequency'        => $url['change_frequency'],
+                             ':language'                => get_null($url['language']),
+                             ':group'                   => $url['group'],
+                             ':file'                    => get_null($url['file']),
+                             ':url_update'              => $url['url'],
+                             ':modifiedby_update'       => isset_get($_SESSION['user']['id']),
+                             ':priority_update'         => $url['priority'],
+                             ':page_modifiedon_update'  => date_convert($url['page_modifiedon'], 'c'),
+                             ':change_frequency_update' => $url['change_frequency'],
+                             ':language_update'         => get_null($url['language']),
+                             ':file_update'             => get_null($url['file']),
+                             ':group_update'            => $url['group']));
+
+
+        }else{
+            sql_query('INSERT INTO `sitemaps_data` (`createdby`, `url`, `priority`, `page_modifiedon`, `change_frequency`, `language`, `group`, `file`)
+                       VALUES                      (:createdby , :url , :priority , NOW()            , :change_frequency , :language , :group , :file )
+
+                       ON DUPLICATE KEY UPDATE `url`              = :url_update,
+                                               `modifiedon`       = UTC_TIMESTAMP(),
+                                               `modifiedby`       = :modifiedby_update,
+                                               `priority`         = :priority_update,
+                                               `page_modifiedon`  = NOW(),
+                                               `change_frequency` = :change_frequency_update,
+                                               `language`         = :language_update,
+                                               `file`             = :file_update,
+                                               `group`            = :group_update',
+
+                       array(':createdby'               => isset_get($_SESSION['user']['id']),
+                             ':url'                     => $url['url'],
+                             ':priority'                => $url['priority'],
+                             ':change_frequency'        => $url['change_frequency'],
+                             ':language'                => get_null($url['language']),
+                             ':group'                   => $url['group'],
+                             ':file'                    => get_null($url['file']),
+                             ':url_update'              => $url['url'],
+                             ':modifiedby_update'       => isset_get($_SESSION['user']['id']),
+                             ':priority_update'         => $url['priority'],
+                             ':change_frequency_update' => $url['change_frequency'],
+                             ':language_update'         => get_null($url['language']),
+                             ':file_update'             => get_null($url['file']),
+                             ':group_update'            => $url['group']));
+        }
 
         return sql_insert_id();
 
