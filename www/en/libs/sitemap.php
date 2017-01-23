@@ -68,7 +68,7 @@ function sitemap_generate($languages = null){
                 }
 
                 rename(TMP.'sitemap.xml', ROOT.'www/'.$language.'/sitemap.xml');
-                chmod(TMP.'sitemap.xml', 0440);
+                chmod(ROOT.'www/'.$language.'/sitemap.xml', 0440);
             }
 
             /*
