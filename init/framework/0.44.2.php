@@ -19,14 +19,23 @@ sql_index_exists ('ads_images', 'priority'   , '!ALTER TABLE `ads_images` ADD IN
 sql_index_exists ('ads_images', 'platform'   , '!ALTER TABLE `ads_images` ADD INDEX (`platform`)');
 sql_column_exists('ads_images', 'clusters_id', '!ALTER TABLE `ads_images` ADD INDEX (`clusters_id`)');
 
+sql_query('ALTER TABLE `ads_images` CHANGE COLUMN `platform` `platform` ENUM("unknown", "mobile", "android", "ios", "linux", "windows", "mac", "desktop") NOT NULL');
+
 sql_foreignkey_exists('ads_images', 'fk_ads_images_clusters_id', '!ALTER TABLE `ads_images` ADD CONSTRAINT `fk_ads_images_clusters_id` FOREIGN KEY (`clusters_id`) REFERENCES `forwarder_clusters` (`id`) ON DELETE RESTRICT;');
 
-sql_query('ALTER TABLE `ads_campaigns` CHANGE COLUMN `seoname` `seoname` VARCHAR(64) NULL DEFAULT NULL');
+sql_query('ALTER TABLE `ads_campaigns` CHANGE COLUMN `seoname`  `seoname` VARCHAR(64) NULL DEFAULT NULL');
+
+sql_column_exists('ads_campaigns', 'animation', '!ALTER TABLE `ads_campaigns` ADD COLUMN `animation` ENUM("fade", "horizontal", "vertical") AFTER `image_ttl`');
+sql_column_exists('ads_views'    , 'platform' , '!ALTER TABLE `ads_views`     ADD COLUMN `platform`  ENUM("unknown", "mobile", "android", "ios", "linux", "windows", "mac", "desktop") NOT NULL AFTER `ip`');
+
+
 
 /*
  * Add hash to no save duplicated images in blogs_media
  */
 sql_column_exists('blogs_media', 'hash', '!ALTER TABLE `blogs_media` ADD COLUMN `hash` CHAR(40) NULL DEFAULT NULL AFTER `original`');
+
+
 
 /*
  * Fix minor sitemaps_data and sitemaps_generate issues
