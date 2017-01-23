@@ -63,12 +63,13 @@ function sitemap_generate($languages = null){
                 cli_log(tr('Generating single sitemap file for language ":language"', array(':language' => $language)));
                 sitemap_xml();
 
-                if(file_exists(ROOT.'www/'.$language.'/sitemap.xml')){
-                    chmod(ROOT.'www/'.$language.'/sitemap.xml', 0660);
-                }
-
-                rename(TMP.'sitemap.xml', ROOT.'www/'.$language.'/sitemap.xml');
-                chmod(ROOT.'www/'.$language.'/sitemap.xml', 0440);
+                file_execute_mode(ROOT.'www/'.$language, 0770, array('language' => $language), function($params){
+                    if(file_exists(ROOT.'www/'.$params['language'].'/sitemap.xml')){
+                        chmod(ROOT.'www/'.$params['language'].'/sitemap.xml', 0660);
+                        rename(TMP.'sitemap.xml', ROOT.'www/'.$params['language'].'/sitemap.xml');
+                        chmod(ROOT.'www/'.$params['language'].'/sitemap.xml', 0440);
+                    }
+                });
             }
 
             /*
@@ -100,20 +101,22 @@ function sitemap_generate($languages = null){
                 sitemap_xml($file['file'], $language, TMP);
             }
 
-            if(file_exists(ROOT.'www/'.$language.'/sitemap.xml')){
-                chmod(ROOT.'www/'.$language.'/sitemap.xml', 0660);
-            }
+            file_execute_mode(ROOT.'www/'.$language, 0770, array('language' => $language), function($params){
+                if(file_exists(ROOT.'www/'.$params['language'].'/sitemap.xml')){
+                    chmod(ROOT.'www/'.$params['language'].'/sitemap.xml', 0660);
+                }
 
-            rename(TMP.'sitemap.xml', ROOT.'www/'.$language.'/sitemap.xml');
+                rename(TMP.'sitemap.xml', ROOT.'www/'.$params['language'].'/sitemap.xml');
 
-            if(file_exists(ROOT.'www/'.$language.'/sitemaps')){
-                rename(ROOT.'www/'.$language.'/sitemaps', ROOT.'www/'.$language.'/sitemaps~');
-            }
+                if(file_exists(ROOT.'www/'.$params['language'].'/sitemaps')){
+                    rename(ROOT.'www/'.$params['language'].'/sitemaps', ROOT.'www/'.$params['language'].'/sitemaps~');
+                }
 
-            rename(TMP.'sitemaps', ROOT.'www/'.$language.'/sitemaps');
-            chmod(ROOT.'www/'.$language.'/sitemaps', 0550);
+                rename(TMP.'sitemaps', ROOT.'www/'.$params['language'].'/sitemaps');
+                chmod(ROOT.'www/'.$params['language'].'/sitemaps', 0550);
 
-            sitemap_delete_backups($language);
+                sitemap_delete_backups($params['language']);
+            });
 
             cli_dot(false);
 
