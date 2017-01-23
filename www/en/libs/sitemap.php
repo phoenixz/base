@@ -208,7 +208,6 @@ function sitemap_xml($file = null, $language = null, $path = ROOT.'www/en/'){
         }
 
         if($language){
-            $sitemap .= '-'.$language;
             $query   .= ' AND `language` = :language ';
             $execute[':language'] = $language;
         }
