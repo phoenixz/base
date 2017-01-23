@@ -2091,13 +2091,28 @@ function file_root($path){
  * Execute the specified callback after setting the specified mode on the
  * specified path. Once the callback has finished, return to the original file
  * mode.
+ *
+ * NOTE: When params are specified, they are specified BEFORE the anonymous
+ * function!!!
+ *
+ * This means that if NO params are specified, the function signature is this
+ * file_execute_mode($path, $mode, $callback)
+ *
+ * When params ARE specified, the function signature is like this:
+ * file_execute_mode($path, $mode, $params, $callback)
  */
-function file_execute_mode($path, $mode, $callback){
+function file_execute_mode($path, $mode, $callback, $params = null){
     try{
         $original_mode = fileperms($path);
         chmod($path, $mode);
 
-        $retval = $callback();
+        if($params === null){
+            $retval = $callback();
+
+        }else{
+            $retval = $params($callback);
+        }
+
         chmod($path, $original_mode);
 
         return $retval;
