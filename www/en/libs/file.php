@@ -408,13 +408,7 @@ function file_ensure_path($path, $mode = null){
             return file_ensure_path($path, $mode);
         }
 
-        $realpath = realpath($path);
-
-        if(!$realpath){
-            throw new bException(tr('file_ensure_path(): realpath() failed for ":path"', array(':path' => $path)), 'failed');
-        }
-
-        return slash($realpath);
+        return slash(realpath($path).'/');
 
     }catch(Exception $e){
         throw new bException(tr('file_ensure_path(): Failed to ensure path ":path"', array(':path' => $path)), $e);
