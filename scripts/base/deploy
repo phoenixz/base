@@ -916,46 +916,46 @@ foreach($targets as $target_environment){
     }
 
 
-
-    /*
-     * Auto rebuild the sitemap?
-     */
-    if($nositemap){
-        cli_log(tr('Skipping auto sitemap deploy due to "--no-sitemap" command line parameter'), 'yellow');
-
-    }else{
-        cli_log(tr('Executing sitemap scan and deploy on target server'), 'white');
-
-        passthru($command = 'ssh -t -p '.$target_port.' '.$deploy_config['target_user'].'@'.$deploy_config['target_server'].' \''.$sudo_user.$deploy_config['target_dir'].'/scripts/base/sitemap scan -E '.$target_environment.' \'', $exitcode);
-
-        if($exitcode){
-            throw new bException('Target sitemap scan failed with exit code "'.str_log($exitcode).'"', 'target_sitemap_scan');
-        }
-
-        if($_CONFIG['language']['supported']){
-            foreach($_CONFIG['language']['supported'] as $language){
-                passthru($command = 'ssh -t -p '.$target_port.' '.$deploy_config['target_user'].'@'.$deploy_config['target_server'].' \''.$sudo_user.$deploy_config['target_dir'].'/scripts/base/sitemap deploy   html '.$language.' -E '.$target_environment.' \'', $exitcode);
-
-                if($exitcode){
-                    throw new bException('Target sitemap HTML build failed with exit code "'.str_log($exitcode).'"', 'target_sitemap_html');
-                }
-
-                passthru($command = 'ssh -t -p '.$target_port.' '.$deploy_config['target_user'].'@'.$deploy_config['target_server'].' \''.$sudo_user.$deploy_config['target_dir'].'/scripts/base/sitemap deploy    xml '.$language.' -E '.$target_environment.' \'', $exitcode);
-
-                if($exitcode){
-                    throw new bException('Target sitemap XML build failed with exit code "'.str_log($exitcode).'"', 'target_sitemap_xml');
-                }
-
-                passthru($command = 'ssh -t -p '.$target_port.' '.$deploy_config['target_user'].'@'.$deploy_config['target_server'].' \''.$sudo_user.$deploy_config['target_dir'].'/scripts/base/sitemap deploy robots '.$language.' -E '.$target_environment.' \'', $exitcode);
-
-                if($exitcode){
-                    throw new bException('Target sitemap robots build failed with exit code "'.str_log($exitcode).'"', 'target_sitemap_robots');
-                }
-            }
-        }
-
-        init_hook('deploy_post_sitemap', $nohooks, array('exitcode' => $exitcode));
-    }
+// :DELETE: Sitemaps are no longer updated on deploy, this entire code has become obsolete and only causes crashes upon deploy. Remove ASAP
+    ///*
+    // * Auto rebuild the sitemap?
+    // */
+    //if($nositemap){
+    //    cli_log(tr('Skipping auto sitemap deploy due to "--no-sitemap" command line parameter'), 'yellow');
+    //
+    //}else{
+    //    cli_log(tr('Executing sitemap scan and deploy on target server'), 'white');
+    //
+    //    passthru($command = 'ssh -t -p '.$target_port.' '.$deploy_config['target_user'].'@'.$deploy_config['target_server'].' \''.$sudo_user.$deploy_config['target_dir'].'/scripts/base/sitemap scan -E '.$target_environment.' \'', $exitcode);
+    //
+    //    if($exitcode){
+    //        throw new bException('Target sitemap scan failed with exit code "'.str_log($exitcode).'"', 'target_sitemap_scan');
+    //    }
+    //
+    //    if($_CONFIG['language']['supported']){
+    //        foreach($_CONFIG['language']['supported'] as $language){
+    //            passthru($command = 'ssh -t -p '.$target_port.' '.$deploy_config['target_user'].'@'.$deploy_config['target_server'].' \''.$sudo_user.$deploy_config['target_dir'].'/scripts/base/sitemap deploy   html '.$language.' -E '.$target_environment.' \'', $exitcode);
+    //
+    //            if($exitcode){
+    //                throw new bException('Target sitemap HTML build failed with exit code "'.str_log($exitcode).'"', 'target_sitemap_html');
+    //            }
+    //
+    //            passthru($command = 'ssh -t -p '.$target_port.' '.$deploy_config['target_user'].'@'.$deploy_config['target_server'].' \''.$sudo_user.$deploy_config['target_dir'].'/scripts/base/sitemap deploy    xml '.$language.' -E '.$target_environment.' \'', $exitcode);
+    //
+    //            if($exitcode){
+    //                throw new bException('Target sitemap XML build failed with exit code "'.str_log($exitcode).'"', 'target_sitemap_xml');
+    //            }
+    //
+    //            passthru($command = 'ssh -t -p '.$target_port.' '.$deploy_config['target_user'].'@'.$deploy_config['target_server'].' \''.$sudo_user.$deploy_config['target_dir'].'/scripts/base/sitemap deploy robots '.$language.' -E '.$target_environment.' \'', $exitcode);
+    //
+    //            if($exitcode){
+    //                throw new bException('Target sitemap robots build failed with exit code "'.str_log($exitcode).'"', 'target_sitemap_robots');
+    //            }
+    //        }
+    //    }
+    //
+    //    init_hook('deploy_post_sitemap', $nohooks, array('exitcode' => $exitcode));
+    //}
 
     /*
      * Send notifications

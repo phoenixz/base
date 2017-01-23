@@ -2100,7 +2100,7 @@ function html_autosuggest($params){
  */
 function html_minify($html, $full = false){
     try{
-        if(debug()){
+        if(debug() and false){
             /*
              * Don't do anything. This way, on non debug systems, where this is
              * used to minify HTML output, we can still see normal HTML that is
@@ -2127,12 +2127,13 @@ function html_minify($html, $full = false){
          */
         $search [] = '~//[a-zA-Z0-9 ]+$~m';
 
-        /*
-         * Remove quotes from HTML attributes that does not contain spaces;
-         * keep quotes around URLs!
-         * $1 and $4 insert first white-space character found before/after attribute
-         */
-        $search [] = '~([\r\n\t ])?([a-zA-Z0-9]+)="([a-zA-Z0-9_/\\-]+)"([\r\n\t ])?~s';
+// :DISABLED: This causes issues with javascript <script>var foo="bar"</script>
+        ///*
+        // * Remove quotes from HTML attributes that does not contain spaces;
+        // * keep quotes around URLs!
+        // * $1 and $4 insert first white-space character found before/after attribute
+        // */
+        //$search [] = '~([\r\n\t ])?([a-zA-Z0-9]+)="([a-zA-Z0-9_/\\-]+)"([\r\n\t ])?~s';
 
         /*
          * Replace array for the above searches
@@ -2141,7 +2142,8 @@ function html_minify($html, $full = false){
         $replace[] = '';
         $replace[] = '';
         $replace[] = '';
-        $replace[] = '$1$2=$3$4';
+// :DISABLED: This causes issues with javascript <script>var foo="bar"</script>
+//        $replace[] = '$1$2=$3$4';
 
         if($full){
             /*

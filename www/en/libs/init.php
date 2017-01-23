@@ -219,7 +219,7 @@ function init($projectfrom = null, $frameworkfrom = null){
 
                             try{
                                 log_console('Executing newer init file with version "'.$version.'"', 'init/'.$type,'green');
-                                include_once($initpath.$file);
+                                init_include($initpath.$file);
 
                             }catch(Exception $e){
                                 /*
@@ -243,7 +243,7 @@ function init($projectfrom = null, $frameworkfrom = null){
 
                             $versions[$type] = $version;
 
-                            $GLOBALS['sql_core']->query('INSERT INTO `versions` (`framework`, `project`) VALUES ("'.cfm((string) $versions['framework']).'", "'.cfm((string) $versions['project']).'")');
+                            $GLOBALS['sql_core']->query('INSERT INTO `versions` (`framework`, `project`) VALUES ("'.cfm($versions['framework']).'", "'.cfm($versions['project']).'")');
 
                             log_console('Finished init version "'.$version.'"', 'init/'.$type);
 
@@ -324,35 +324,40 @@ function init($projectfrom = null, $frameworkfrom = null){
 function init_process_version_diff(){
     global $_CONFIG;
 
-    if((SCRIPT == 'init') or (SCRIPT == 'update') or (SCRIPT == 'sync')){
-        return false;
-    }
-
-    $compare_project   = version_compare(PROJECTCODEVERSION  , PROJECTDBVERSION);
-    $compare_framework = version_compare(FRAMEWORKCODEVERSION, FRAMEWORKDBVERSION);
-
-    if(PROJECTDBVERSION === 0){
-        $versionerror     = 'Database is empty';
-        $GLOBALS['no-db'] = true;
-
-    }else{
-        if($compare_framework > 0){
-            $versionerror = (empty($versionerror) ? "" : "\n").tr('Framework core database ":db" version ":dbversion" is older than code version ":codeversion"', array(':db' => str_log($_CONFIG['db']['core']['db']), ':dbversion' => FRAMEWORKDBVERSION, ':codeversion' => FRAMEWORKCODEVERSION));
-
-        }elseif($compare_framework < 0){
-            $versionerror = (empty($versionerror) ? "" : "\n").tr('Framework core database ":db" version ":dbversion" is older than code version ":codeversion"', array(':db' => str_log($_CONFIG['db']['core']['db']), ':dbversion' => FRAMEWORKDBVERSION, ':codeversion' => FRAMEWORKCODEVERSION));
+    try{
+        if((SCRIPT == 'init') or (SCRIPT == 'update') or (SCRIPT == 'sync')){
+            return false;
         }
 
-        if($compare_project > 0){
-            $versionerror = (empty($versionerror) ? "" : "\n").tr('Project core database ":db" version ":dbversion" is older than code version ":codeversion"', array(':db' => str_log($_CONFIG['db']['core']['db']), ':dbversion' => PROJECTDBVERSION, ':codeversion' => PROJECTCODEVERSION));
+        $compare_project   = version_compare(PROJECTCODEVERSION  , PROJECTDBVERSION);
+        $compare_framework = version_compare(FRAMEWORKCODEVERSION, FRAMEWORKDBVERSION);
 
-        }elseif($compare_project < 0){
-            $versionerror = (empty($versionerror) ? "" : "\n").tr('Project core database ":db" version ":dbversion" is newer than code version ":codeversion"!', array(':db' => str_log($_CONFIG['db']['core']['db']), ':dbversion' => PROJECTDBVERSION, ':codeversion' => PROJECTCODEVERSION));
+        if(PROJECTDBVERSION === 0){
+            $versionerror     = 'Database is empty';
+            $GLOBALS['no-db'] = true;
+
+        }else{
+            if($compare_framework > 0){
+                $versionerror = (empty($versionerror) ? "" : "\n").tr('Framework core database ":db" version ":dbversion" is older than code version ":codeversion"', array(':db' => str_log($_CONFIG['db']['core']['db']), ':dbversion' => FRAMEWORKDBVERSION, ':codeversion' => FRAMEWORKCODEVERSION));
+
+            }elseif($compare_framework < 0){
+                $versionerror = (empty($versionerror) ? "" : "\n").tr('Framework core database ":db" version ":dbversion" is older than code version ":codeversion"', array(':db' => str_log($_CONFIG['db']['core']['db']), ':dbversion' => FRAMEWORKDBVERSION, ':codeversion' => FRAMEWORKCODEVERSION));
+            }
+
+            if($compare_project > 0){
+                $versionerror = (empty($versionerror) ? "" : "\n").tr('Project core database ":db" version ":dbversion" is older than code version ":codeversion"', array(':db' => str_log($_CONFIG['db']['core']['db']), ':dbversion' => PROJECTDBVERSION, ':codeversion' => PROJECTCODEVERSION));
+
+            }elseif($compare_project < 0){
+                $versionerror = (empty($versionerror) ? "" : "\n").tr('Project core database ":db" version ":dbversion" is newer than code version ":codeversion"!', array(':db' => str_log($_CONFIG['db']['core']['db']), ':dbversion' => PROJECTDBVERSION, ':codeversion' => PROJECTCODEVERSION));
+            }
         }
-    }
 
-    if(PLATFORM_HTTP or !cli_argument('--no-version-check')){
-        throw new bException(tr('init_process_version_diff(): Please run script ROOT/scripts/base/init because ":error"', array(':error' => $versionerror)), 'doinit');
+        if(PLATFORM_HTTP or !cli_argument('--no-version-check')){
+            throw new bException(tr('init_process_version_diff(): Please run script ROOT/scripts/base/init because ":error"', array(':error' => $versionerror)), 'doinit');
+        }
+
+    }catch(Exception $e){
+        throw new bException('init_process_version_diff(): Failed', $e);
     }
 }
 
@@ -369,19 +374,24 @@ function init_process_version_diff(){
 function init_process_version_fail($e){
     global $_CONFIG;
 
-    $r = $GLOBALS['sql_core']->query('SHOW TABLES WHERE `Tables_in_'.$_CONFIG['db']['core']['db'].'` = "versions";');
+    try{
+        $r = $GLOBALS['sql_core']->query('SHOW TABLES WHERE `Tables_in_'.$_CONFIG['db']['core']['db'].'` = "versions";');
 
-    if($r->rowCount($r)){
-        throw new bException('init_process_version_fail(): Failed version detection', $e);
-    }
+        if($r->rowCount($r)){
+            throw new bException('init_process_version_fail(): Failed version detection', $e);
+        }
 
-    define('FRAMEWORKDBVERSION', 0);
-    define('PROJECTDBVERSION'  , 0);
+        define('FRAMEWORKDBVERSION', 0);
+        define('PROJECTDBVERSION'  , 0);
 
-    $GLOBALS['no-db'] = true;
+        $GLOBALS['no-db'] = true;
 
-    if(PLATFORM == 'shell'){
-        log_console('init_process_version_fail(): No versions table found, assumed empty database', 'warning/versions', 'yellow');
+        if(PLATFORM == 'shell'){
+            log_console('init_process_version_fail(): No versions table found, assumed empty database', 'warning/versions', 'yellow');
+        }
+
+    }catch(Exception $e){
+        throw new bException('init_process_version_fail(): Failed', $e);
     }
 }
 
@@ -410,7 +420,7 @@ function init_hook($hook, $disabled = false, $params = null){
         }
 
     }catch(Exception $e){
-        throw new bException('init_hook(): Hook "'.str_log($hook).'" failed', $e);
+        throw new bException(tr('init_hook(): Hook ":hook" failed', array(':hook' => $hook)), $e);
     }
 }
 
@@ -420,29 +430,49 @@ function init_hook($hook, $disabled = false, $params = null){
  * Upgrade the specified part of the specified version
  */
 function init_version_upgrade($version, $part){
-    if(!str_is_version($version)){
-        throw new bException('init_version_upgrade(): Specified version is not a valid n.n.n version format');
+    try{
+        if(!str_is_version($version)){
+            throw new bException('init_version_upgrade(): Specified version is not a valid n.n.n version format');
+        }
+
+        $version = explode('.', $version);
+
+        switch($part){
+            case 'major':
+                $version[0]++;
+                break;
+
+            case 'minor':
+                $version[1]++;
+                break;
+
+            case 'revision':
+                $version[2]++;
+                break;
+
+            default:
+                throw new bException(tr('init_version_upgrade(): Unknown version part type ":part" specified. Please specify one of "major", "minor", or "revision"', array(':part' => $part)));
+        }
+
+        return implode('.', $version);
+
+    }catch(Exception $e){
+        throw new bException('init_version_upgrade(): Failed', $e);
     }
+}
 
-    $version = explode('.', $version);
 
-    switch($part){
-        case 'major':
-            $version[0]++;
-            break;
 
-        case 'minor':
-            $version[1]++;
-            break;
+/*
+ * Have a function that executes the include to separate the variable scope and
+ * avoid init files interfering with variables in this library
+ */
+function init_include($file){
+    try{
+        include_once($file);
 
-        case 'revision':
-            $version[2]++;
-            break;
-
-        default:
-            throw new bException(tr('init_version_upgrade(): Unknown version part type ":part" specified. Please specify one of "major", "minor", or "revision"', array(':part' => $part)));
+    }catch(Exception $e){
+        throw new bException('init_include(): Failed', $e);
     }
-
-    return implode('.', $version);
 }
 ?>

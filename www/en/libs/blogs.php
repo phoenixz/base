@@ -381,17 +381,100 @@ function blogs_post_update($post, $params = null){
             sitemap_delete($url);
         }
 
-        sitemap_add_url(array('url'              => $post['url'],
-                              'priority'         => $params['sitemap_priority'],
-                              'page_modifiedon'  => date_convert(null, 'mysql'),
-                              'change_frequency' => $params['sitemap_change_frequency']));
+        if(isset_get($post['status']) === 'published'){
+            sitemap_add_url(array('url'              => $post['url'],
+                                  'priority'         => $params['sitemap_priority'],
+                                  'page_modifiedon'  => date_convert(null, 'mysql'),
+                                  'change_frequency' => $params['sitemap_change_frequency']));
+        }
 
-        run_background('base/sitemap update');
+        run_background('base/sitemap update --env '.ENVIRONMENT);
 
         return $post;
 
     }catch(Exception $e){
         throw new bException(tr('blogs_post_update(): Failed'), $e);
+    }
+}
+
+
+
+/*
+ * Update the status for the specified blogs
+ */
+function blogs_update_post_status($blog, $params, $list, $status){
+    try{
+        load_libs('sitemap');
+
+        $count   = 0;
+        $execute = array(':blogs_id' => $blog['id'],
+                         ':status'   => $status);
+
+        $update  = sql_prepare('UPDATE  `blogs_posts`
+
+                                SET     `status`   = :status
+
+                                WHERE   `id`       = :id
+                                AND     `blogs_id` = :blogs_id');
+
+        foreach($list as $execute[':id']){
+            $post = sql_get('SELECT `id`, `url`, `seoname`, `status` FROM `blogs_posts` WHERE `id` = :id', array(':id' => $id));
+
+            if(!$post){
+                /*
+                 * This post doesn't exist
+                 */
+                notify('blogs_update_post_status(): post not exist', tr('The specified blogs_post ":id" does not exist', array(':id' => $id)));
+                continue;
+            }
+
+            /*
+             * Clear affected objects from cache
+             */
+            cache_clear(null, 'blogpages_'.$post['seoname']);
+            cache_clear(null, 'blogpage_'.$post['seoname']);
+
+            /*
+             * Update sitemap for the posts
+             */
+            switch($status){
+                case 'erased':
+                    // FALLTHROUGH
+                case 'deleted':
+                    // FALLTHROUGH
+                case 'unpublished':
+// :TODO: sitemap script can detect new and updated links, it cannot detect deleted links, so with deleting we always force generation of new sitemap files. Make a better solution for this
+                    $force = true;
+                    sitemap_delete($post['url']);
+                    break;
+
+                case 'published':
+                    sitemap_add_url(array('url'              => $post['url'],
+                                          'priority'         => $params['sitemap_priority'],
+                                          'page_modifiedon'  => date_convert(null, 'mysql'),
+                                          'change_frequency' => $params['sitemap_change_frequency']));
+            }
+
+            $update->execute($execute);
+            $count += $update->rowCount();
+        }
+
+        if(!$count){
+            throw new bException(tr('Found no :object to :status', array(':object' => $params['object_name'], ':status' => $status)), 'not-found');
+        }
+
+        /*
+         * Process sitemap
+         */
+        if(empty($force)){
+            run_background('base/sitemap update');
+
+        }else{
+            run_background('base/sitemap generate');
+        }
+
+    }catch(Exception $e){
+        throw new bException('blogs_update_post_status(): Failed', $e);
     }
 }
 
@@ -2092,7 +2175,65 @@ function blogs_post_erase($post){
         return 1;
 
     }catch(Exception $e){
-        throw new bException('blogs_update_urls(): Failed', $e);
+        throw new bException('blogs_post_erase(): Failed', $e);
+    }
+}
+
+
+
+/*
+ *
+ */
+function blogs_regenerate_sitemap_data($blogs_id, $priority, $change_frequency, $group = '', $file = ''){
+    try{
+        load_libs('sitemap');
+
+        $count   = 1;
+        $execute = array();
+        $query   = 'SELECT `id`,
+                           `url`,
+                           `createdon`,
+                           `modifiedon`
+
+                    FROM   `blogs_posts`
+
+                    WHERE  `status`   = "published"
+                    AND    `seoname` != ""';
+
+        if($blogs_id){
+            $where[] = ' `blogs_id` = :blogs_id ';
+            $execute[':blogs_id'] = $blogs_id;
+            $count++;
+        }
+
+        if(!empty($where)){
+            $query .= ' AND '.implode(' AND ', $where);
+        }
+
+        if($group){
+            sitemap_clear($group);
+        }
+
+        $posts = sql_query($query, $execute);
+        $count = 0;
+
+        while($post = sql_fetch($posts)){
+            cli_dot();
+            $count++;
+
+            sitemap_add_url(array('file'             => $file,
+                                  'group'            => $group,
+                                  'url'              => $post['url'],
+                                  'change_frequency' => $change_frequency,
+                                  'page_modifiedon'  => ($post['modifiedon'] ? $post['modifiedon'] : $post['createdon']),
+                                  'priority'         => $priority));
+        }
+
+        cli_dot(false);
+        return $count;
+
+    }catch(Exception $e){
+        throw new bException('blogs_regenerate_sitemap_data(): Failed', $e);
     }
 }
 ?>
