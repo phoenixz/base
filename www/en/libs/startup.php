@@ -96,7 +96,7 @@ try{
      * Load basic required libraries
      */
     $path      = dirname(__FILE__).'/';
-    $libraries = array('system', 'mb', 'strings', 'array', 'sql');
+    $libraries = array('system', 'strings', 'array', 'sql', 'mb');
 
     foreach($libraries as $library){
         include_once($path.$library.'.php');
@@ -358,154 +358,164 @@ try{
                 }
 
                 /*
-                 * Set session and cookie parameters
+                 * Set cookie
                  */
-                try{
-                    if(!empty($_CONFIG['sessions']['shared_memory'])){
-                        /*
-                         * Store session data in share memory. This is very
-                         * useful for security on shared servers if you do not
-                         * want your session data available to other users
-                         */
-                        ini_set('session.save_handler', 'mm');
-                    }
-
+                if(empty($_CONFIG['cookie']['domain'])){
                     /*
-                     * Set cookie
+                     * Ensure we have a domain configured in $_SESSION[domain]
                      */
-                    session_set_cookie_params($_CONFIG['cookie']['lifetime'], $_CONFIG['cookie']['path'], cfm($_SERVER['HTTP_HOST']), $_CONFIG['cookie']['secure'], $_CONFIG['cookie']['httponly']);
+                    session_reset_domain();
 
+                }else{
+                    /*
+                     * Set session and cookie parameters
+                     */
                     try{
-                        session_start();
+                        if(!empty($_CONFIG['sessions']['shared_memory'])){
+                            /*
+                             * Store session data in share memory. This is very
+                             * useful for security on shared servers if you do not
+                             * want your session data available to other users
+                             */
+                            ini_set('session.save_handler', 'mm');
+                        }
 
-                    }catch(Exception $e){
-                        /*
-                         * Session startup failed. Clear session and try again
-                         */
+                        session_set_cookie_params($_CONFIG['cookie']['lifetime'], $_CONFIG['cookie']['path'], cfm($_SERVER['HTTP_HOST']), $_CONFIG['cookie']['secure'], $_CONFIG['cookie']['httponly']);
+
                         try{
-                            session_regenerate_id(true);
+                            session_start();
 
                         }catch(Exception $e){
                             /*
-                             * Woah, something really went wrong..
-                             *
-                             * This may be
-                             * headers already sent (the SCRIPT file has a space or BOM at the beginning maybe?)
-                             * permissions of PHP session directory?
+                             * Session startup failed. Clear session and try again
                              */
-// :TODO: Add check on SCRIPT file if it contains BOM!
-                            throw new bException('startup(): session start and session regenerate both failed, check PHP session directory', $e);
-                        }
-                    }
+                            try{
+                                session_regenerate_id(true);
 
-                    if($_CONFIG['sessions']['regenerate_id']){
-                        if(isset($_SESSION['created']) and (time() - $_SESSION['created'] > $_CONFIG['sessions']['regenerate_id'])){
-                            /*
-                             * Use "created" to monitor session id age and
-                             * refresh it periodically to mitigate attacks on
-                             * sessions like session fixation
-                             */
-                            session_regenerate_id(true);
-                            $_SESSION['created'] = time();
-                        }
-                    }
-
-                    if($_CONFIG['sessions']['lifetime']){
-                        if(ini_get('session.gc_maxlifetime') < $_CONFIG['sessions']['lifetime']){
-                            /*
-                             * Ensure that session data is not considdered
-                             * garbage within the configured session lifetime!
-                             */
-                            ini_set('session.gc_maxlifetime', $_CONFIG['sessions']['lifetime']);
+                            }catch(Exception $e){
+                                /*
+                                 * Woah, something really went wrong..
+                                 *
+                                 * This may be
+                                 * headers already sent (the SCRIPT file has a space or BOM at the beginning maybe?)
+                                 * permissions of PHP session directory?
+                                 */
+    // :TODO: Add check on SCRIPT file if it contains BOM!
+                                throw new bException('startup(): session start and session regenerate both failed, check PHP session directory', $e);
+                            }
                         }
 
-                        if(isset($_SESSION['last_activity']) and (time() - $_SESSION['last_activity'] > $_CONFIG['sessions']['lifetime'])){
-                            /*
-                             * Session expired!
-                             */
-                            session_unset();
-                            session_destroy();
-                            session_reset_domain();
-                            session_regenerate_id();
+                        if($_CONFIG['sessions']['regenerate_id']){
+                            if(isset($_SESSION['created']) and (time() - $_SESSION['created'] > $_CONFIG['sessions']['regenerate_id'])){
+                                /*
+                                 * Use "created" to monitor session id age and
+                                 * refresh it periodically to mitigate attacks on
+                                 * sessions like session fixation
+                                 */
+                                session_regenerate_id(true);
+                                $_SESSION['created'] = time();
+                            }
                         }
-                    }
+
+                        if($_CONFIG['sessions']['lifetime']){
+                            if(ini_get('session.gc_maxlifetime') < $_CONFIG['sessions']['lifetime']){
+                                /*
+                                 * Ensure that session data is not considdered
+                                 * garbage within the configured session lifetime!
+                                 */
+                                ini_set('session.gc_maxlifetime', $_CONFIG['sessions']['lifetime']);
+                            }
+
+                            if(isset($_SESSION['last_activity']) and (time() - $_SESSION['last_activity'] > $_CONFIG['sessions']['lifetime'])){
+                                /*
+                                 * Session expired!
+                                 */
+                                session_unset();
+                                session_destroy();
+                                session_reset_domain();
+                                session_regenerate_id();
+                            }
+                        }
 
 
 
-                    /*
-                     * Ensure we have domain information
-                     *
-                     * NOTE: This SHOULD be done before the session_start because
-                     * there we set a cookie to a possibly invalid domain BUT
-                     * if we do this before session_start(), then $_SESSION['domain']
-                     * does not yet exist, and we would perfom this check every page
-                     * load instead of just once every session.
-                     */
-                    if(isset_get($_SESSION['domain']) !== $_SERVER['HTTP_HOST']){
                         /*
-                         * Check requested domain
+                         * Ensure we have domain information
+                         *
+                         * NOTE: This SHOULD be done before the session_start because
+                         * there we set a cookie to a possibly invalid domain BUT
+                         * if we do this before session_start(), then $_SESSION['domain']
+                         * does not yet exist, and we would perfom this check every page
+                         * load instead of just once every session.
                          */
-                        session_reset_domain();
+                        if(isset_get($_SESSION['domain']) !== $_SERVER['HTTP_HOST']){
+                            /*
+                             * Check requested domain
+                             */
+                            session_reset_domain();
+                        }
+
+
+
+                        /*
+                         *
+                         */
+                        $_SESSION['last_activity'] = time();
+
+                        check_extended_session();
+
+                    }catch(Exception $e){
+                        if(!is_writable(session_save_path())){
+                            throw new bException('startup(): Session startup failed because the session path ":path" is not writable for platform ":platform"', array(':path' => session_save_path(), ':platform' => PLATFORM), $e);
+                        }
+
+                        throw new bException('Session startup failed', $e);
                     }
-
-
 
                     /*
-                     *
+                     * Check the cookie domain configuration to see if its valid. This should only have to be checked
+                     * at first session page load. Since $_SESSION[language] should always be set, we can check its not set,
+                     * we know we have a fresh and new session.
                      */
-                    $_SESSION['last_activity'] = time();
+                    if(empty($_SESSION['language'])){
+                        switch($_CONFIG['cookie']['domain']){
+                            case '':
+                                /*
+                                 * This domain has no cookies
+                                 */
+                                break;
 
-                    check_extended_session();
+                            case 'auto':
+                                $_CONFIG['domain'] = $_SERVER['SERVER_NAME'];
+                                break;
 
-                }catch(Exception $e){
-                    if(!is_writable(session_save_path())){
-                        throw new bException('startup(): Session startup failed because the session path ":path" is not writable for platform ":platform"', array(':path' => session_save_path(), ':platform' => PLATFORM), $e);
-                    }
+                            case '.auto':
+                                $_CONFIG['domain'] = '.'.$_SERVER['SERVER_NAME'];
+                                break;
 
-                    throw new bException('Session startup failed', $e);
-                }
+                            default:
+                                /*
+                                 * Test cookie domain limitation
+                                 *
+                                 * If the configured cookie domain is different from the current domain then all cookie will inexplicably fail without warning,
+                                 * so this must be detected to avoid lots of hair pulling and throwing arturo off the balcony incidents :)
+                                 */
+                                if(substr($_CONFIG['cookie']['domain'], 0, 1) == '.'){
+                                    $test = substr($_CONFIG['cookie']['domain'], 1);
 
+                                }else{
+                                    $test = $_CONFIG['cookie']['domain'];
+                                }
 
-                /*
-                 * Check the cookie domain configuration to see if its valid. This should only have to be checked
-                 * at first session page load. Since $_SESSION[language] should always be set, we can check its not set,
-                 * we know we have a fresh and new session.
-                 */
-                if(empty($_SESSION['language'])){
-                    switch($_CONFIG['cookie']['domain']){
-                        case '':
-                            throw new bException(tr('startup(): No cookie domain specified'), 'not-specified');
+                                $length = strlen($test);
 
-                        case 'auto':
-                            $_CONFIG['domain'] = $_SERVER['SERVER_NAME'];
-                            break;
+                                if(substr($_SERVER['SERVER_NAME'], -$length, $length) != $test){
+                                    throw new bException('startup(): Specified cookie domain "'.str_log($_CONFIG['cookie']['domain']).'" is invalid for current domain "'.str_log($_SERVER['SERVER_NAME']).'"', 'cookiedomain');
+                                }
 
-                        case '.auto':
-                            $_CONFIG['domain'] = '.'.$_SERVER['SERVER_NAME'];
-                            break;
-
-                        default:
-                            /*
-                             * Test cookie domain limitation
-                             *
-                             * If the configured cookie domain is different from the current domain then all cookie will inexplicably fail without warning,
-                             * so this must be detected to avoid lots of hair pulling and throwing arturo off the balcony incidents :)
-                             */
-                            if(substr($_CONFIG['cookie']['domain'], 0, 1) == '.'){
-                                $test = substr($_CONFIG['cookie']['domain'], 1);
-
-                            }else{
-                                $test = $_CONFIG['cookie']['domain'];
-                            }
-
-                            $length = strlen($test);
-
-                            if(substr($_SERVER['SERVER_NAME'], -$length, $length) != $test){
-                                throw new bException('startup(): Specified cookie domain "'.str_log($_CONFIG['cookie']['domain']).'" is invalid for current domain "'.str_log($_SERVER['SERVER_NAME']).'"', 'cookiedomain');
-                            }
-
-                            unset($test);
-                            unset($length);
+                                unset($test);
+                                unset($length);
+                        }
                     }
                 }
 
