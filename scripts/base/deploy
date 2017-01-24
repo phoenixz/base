@@ -536,7 +536,7 @@ if($notouch){
     cli_log(tr('Skipping touch mtime update due to no "--no-touch" command line parameters'), 'yellow');
 
 }else{
-    cli_log(tr('Executing touch on entire project tree updating all mtimes (Excluding ROOT/data/content/'), 'white');
+    cli_log(tr('Executing touch on entire project tree updating all mtimes (Excluding ROOT/data/content/)'), 'white');
 
     passthru('cd '.ROOT.'; find . ! -path "./data/content/*" -exec touch {} \;', $exitcode);
 
