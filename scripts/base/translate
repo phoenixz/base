@@ -294,7 +294,7 @@ switch(cli_method()){
          *
          */
         if(cli_method() == 'scan'){
-            cli_log(tr('Sending translatable strings to server'), 'green');
+            cli_log(tr('Sending translatable strings to server ":server"', array(':server' => $_CONFIG['translate']['url'])), 'green');
 
             /*
              * Construct data for sending
@@ -313,6 +313,8 @@ switch(cli_method()){
                                            'post'        => array('data' => encrypt($data, $_CONFIG['translate']['passphrase'])),
                                            'httpheaders' => false));
 
+
+//showdie($response);
             }catch(Exception $e){
                 if(substr($e->getCode(), 0, 4) == 'HTTP'){
                     $server_message = $e->getData()['data'];
@@ -329,6 +331,7 @@ switch(cli_method()){
             }
 
             $result = decrypt(trim($response['data']), $_CONFIG['translate']['passphrase']);
+//showdie($result);
 
             if($result['status'] != 'success'){
                 throw new bException(tr('Failed to send translatable strings'), $result['status'], $result);

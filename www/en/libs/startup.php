@@ -360,7 +360,13 @@ try{
                 /*
                  * Set cookie
                  */
-                if(!empty($_CONFIG['cookie']['domain'])){
+                if(empty($_CONFIG['cookie']['domain'])){
+                    /*
+                     * Ensure we have a domain configured in $_SESSION[domain]
+                     */
+                    session_reset_domain();
+
+                }else{
                     /*
                      * Set session and cookie parameters
                      */
