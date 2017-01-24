@@ -475,7 +475,7 @@ function ads_get(){
 
     try{
         html_load_js('unslider/unslider');
-        html_load_css('unslider/unslider');
+        html_load_css('unslider/unslider,ads');
 
         $userdata  = inet_get_client_data();
         $campaigns = sql_get('SELECT   `id`,
@@ -557,12 +557,12 @@ function ads_get(){
             /*
              * This campaign have no images
              */
-            return '';
+            return false;
         }
 
         $url  = $_CONFIG['ads']['url'];
         $html = '   <div class="ads '.$campaigns['class'].'">
-                        <ul>';
+                        <ul class="'.$campaigns['class'].'">';
 
         while($image = sql_fetch($images)){
             if($image['description']){
@@ -583,7 +583,7 @@ function ads_get(){
         $html .= '      </ul>
                     </div>';
 
-        $html .= html_script('  $(\'.ads.'.$campaigns['class'].' \').unslider({
+        $html .= html_script('  $("div.ads.'.$campaigns['class'].'").unslider({
                                     animation: \''.$campaigns['animation'].'\',
                                     autoplay: true,
                                     infinite: true,
@@ -594,7 +594,9 @@ function ads_get(){
                                 });');
 
         ads_insert_view($campaigns['id'], $images_list, $userdata);
-        return $html;
+
+        return array('class' => $campaigns['class'],
+                     'html'  => $html);
 
     }catch(Exception $e){
         throw new bException('ads_get(): Failed', $e);
