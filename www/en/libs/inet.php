@@ -436,19 +436,23 @@ function inet_get_client_data(){
          * Detect operating system
          */
         $user_agent = strtolower($client['user_agent']);
-        $oses       = array('android',
+        $oses       = array('mac',
+                            'linux',
+                            'android',
                             'iphone',
                             'windows');
 
         foreach($oses as $os){
             if(strstr($user_agent, $os)){
-                $client['os'] = $os;
+                $client['os']       = $os;
+                $client['platform'] = $os;
                 break;
             }
         }
 
         if(empty($client['os'])){
-            $client['os'] = 'unknown';
+            $client['os']       = 'unknown';
+            $client['platform'] = 'unknown';
         }
 
         return $client;

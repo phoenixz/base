@@ -468,6 +468,8 @@ function init_version_upgrade($version, $part){
  * avoid init files interfering with variables in this library
  */
 function init_include($file){
+    global $_CONFIG;
+
     try{
         include_once($file);
 
