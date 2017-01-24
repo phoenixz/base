@@ -32,12 +32,12 @@ function showrandomdie($data = '', $return = false, $quiet = false, $trace_offse
 /*
  * Short hand for show and then die
  */
-function showdie($data = null, $return = false, $quiet = false, $trace_offset = 2){
+function showdie($data = null, $trace_offset = 2){
     if(!debug()){
         return $data;
     }
 
-    show($data, $return, $quiet, $trace_offset);
+    show($data, $trace_offset);
     die();
 }
 
@@ -46,7 +46,7 @@ function showdie($data = null, $return = false, $quiet = false, $trace_offset = 
 /*
  * Show debug data in a readable format
  */
-function show($data = null, $return = false, $quiet = false, $trace_offset = 1){
+function show($data = null, $trace_offset = 1){
     global $_CONFIG;
 
     try{
@@ -79,32 +79,9 @@ function show($data = null, $return = false, $quiet = false, $trace_offset = 1){
 
             echo debug_html($data, tr('Unknown'), $trace_offset);
 
-    /*
-            if(is_scalar($data) or is_null($data)){
-                $retval .= 'DEBUG '.current_file($trace_offset).'@'.current_line($trace_offset).': '.htmlentities($data).'<br/>';
-
-            }else{
-                *
-                 * Sort if is array for easier reading
-                 *
-                if(is_array($data)){
-                    ksort($data);
-                }
-
-                if(!$quiet){
-                    $retval .= '<div class="debug"><div class="debug title">DEBUG SHOW '.current_file($trace_offset).'@'.current_line($trace_offset).':<div/><pre>';
-                }
-
-                $retval .= print_r($data, true);
-
-                if(!$quiet){
-                    $retval .= '</pre></div>';
-                }
-            }
-    */
         }else{
             if(is_scalar($data)){
-                $retval .= (!$quiet ? tr('DEBUG SHOW (%file%@%line%) ', array('%file%' => current_file($trace_offset), '%line%' => current_line($trace_offset))) : '').$data."\n";
+                $retval .= tr('DEBUG SHOW (%file%@%line%) ', array('%file%' => current_file($trace_offset), '%line%' => current_line($trace_offset))).$data."\n";
 
             }else{
                 /*
@@ -114,17 +91,10 @@ function show($data = null, $return = false, $quiet = false, $trace_offset = 1){
                     ksort($data);
                 }
 
-                if(!$quiet){
-                    $retval .= tr('DEBUG SHOW (%file%@%line%) ', array('%file%' => current_file($trace_offset), '%line%' => current_line($trace_offset)))."\n";
-                }
-
+                $retval .= tr('DEBUG SHOW (%file%@%line%) ', array('%file%' => current_file($trace_offset), '%line%' => current_line($trace_offset)))."\n";
                 $retval .= print_r($data, true);
                 $retval .= "\n";
             }
-        }
-
-        if($return){
-            return $retval;
         }
 
         echo $retval;
@@ -518,7 +488,7 @@ function debug_sql($query, $column = null, $execute = null, $return_only = false
             return $query;
         }
 
-        return show(str_ends($query, ';'), false, false, 2);
+        return show(str_ends($query, ';'), 3);
 
     }catch(Exception $e){
         throw new bException('debug_sql(): Failed', $e);
