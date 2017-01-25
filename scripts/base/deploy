@@ -536,9 +536,9 @@ if($notouch){
     cli_log(tr('Skipping touch mtime update due to no "--no-touch" command line parameters'), 'yellow');
 
 }else{
-    cli_log(tr('Executing touch on entire project tree updating all mtimes'), 'white');
+    cli_log(tr('Executing touch on entire project tree updating all mtimes (Excluding ROOT/data/content/)'), 'white');
 
-    passthru('cd '.ROOT.'; find . -exec touch {} \;', $exitcode);
+    passthru('cd '.ROOT.'; find . ! -path "./data/content/*" -exec touch {} \;', $exitcode);
 
     if($exitcode){
         throw new bException('Touch failed with exit code ":code"', array(':code' => $exitcode), 'git_push');
@@ -783,10 +783,10 @@ foreach($targets as $target_environment){
 
         foreach($_CONFIG['language']['supported'] as $code => $language){
             if(!$send_sitemap){
-                $exclude .= ' --exclude="www'.$language.'sitemap.html*" --exclude="www'.$language.'sitemap.xml*" --exclude="www'.$language.'mock" ';
+                $exclude .= ' --exclude="www'.$language.'sitemap*" ';
             }
 
-            $exclude .= ' --exclude="www'.$language.'sitemap.html*" --exclude="www'.$language.'sitemap.xml*" --exclude="www'.$language.'mock" ';
+            $exclude .= ' --exclude="www'.$language.'mock" ';
         }
 
         if(count($deploy_config['exclude_dirs'])) {

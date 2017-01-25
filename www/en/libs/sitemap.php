@@ -70,60 +70,61 @@ function sitemap_generate($languages = null){
                         chmod(ROOT.'www/'.$params['language'].'/sitemap.xml', 0440);
                     }
                 });
-            }
 
-            /*
-             * Generate multiple sitemap files
-             */
-            cli_log(tr('Generating sitemap files for language ":language"', array(':language' => $language)));
-            sitemap_index();
+            }else{
+                /*
+                 * Generate multiple sitemap files
+                 */
+                cli_log(tr('Generating sitemap files for language ":language"', array(':language' => $language)));
+                sitemap_index();
 
-            $files = sql_query('SELECT   `file`
+                $files = sql_query('SELECT   `file`
 
-                                FROM     `sitemaps_data`
+                                    FROM     `sitemaps_data`
 
-                                WHERE    `status` IS NULL
+                                    WHERE    `status` IS NULL
 
-                                GROUP BY `file`');
+                                    GROUP BY `file`');
 
-            /*
-             * Generate the sitemap files in a temp dir which we'll then move
-             * into place
-             */
-            cli_log(tr('Generating ":count" sitemap files', array(':count' => $count)));
-            file_ensure_path(ROOT.'tmp/sitemaps');
-            chmod(ROOT.'tmp/sitemaps', $_CONFIG['fs']['dir_mode']);
+                /*
+                 * Generate the sitemap files in a temp dir which we'll then move
+                 * into place
+                 */
+                cli_log(tr('Generating ":count" sitemap files', array(':count' => $count)));
+                file_ensure_path(ROOT.'tmp/sitemaps');
+                chmod(ROOT.'tmp/sitemaps', $_CONFIG['fs']['dir_mode']);
 
-            while($file = sql_fetch($files)){
-                if(!$file['file']) $file['file'] = 'basic';
+                while($file = sql_fetch($files)){
+                    if(!$file['file']) $file['file'] = 'basic';
 
-                cli_dot(1);
-                sitemap_xml($file['file'], $language, TMP);
-            }
-
-            file_execute_mode(ROOT.'www/'.$language, 0770, array('language' => $language), function($params){
-                if(file_exists(ROOT.'www/'.$params['language'].'/sitemap.xml')){
-                    chmod(ROOT.'www/'.$params['language'].'/sitemap.xml', 0660);
+                    cli_dot(1);
+                    sitemap_xml($file['file'], $language, TMP);
                 }
 
-                rename(TMP.'sitemap.xml', ROOT.'www/'.$params['language'].'/sitemap.xml');
+                file_execute_mode(ROOT.'www/'.$language, 0770, array('language' => $language), function($params){
+                    if(file_exists(ROOT.'www/'.$params['language'].'/sitemap.xml')){
+                        chmod(ROOT.'www/'.$params['language'].'/sitemap.xml', 0660);
+                    }
 
-                if(file_exists(ROOT.'www/'.$params['language'].'/sitemaps')){
-                    rename(ROOT.'www/'.$params['language'].'/sitemaps', ROOT.'www/'.$params['language'].'/sitemaps~');
-                }
+                    rename(TMP.'sitemap.xml', ROOT.'www/'.$params['language'].'/sitemap.xml');
 
-                rename(TMP.'sitemaps', ROOT.'www/'.$params['language'].'/sitemaps');
-                chmod(ROOT.'www/'.$params['language'].'/sitemaps', 0550);
+                    if(file_exists(ROOT.'www/'.$params['language'].'/sitemaps')){
+                        rename(ROOT.'www/'.$params['language'].'/sitemaps', ROOT.'www/'.$params['language'].'/sitemaps~');
+                    }
 
-                sitemap_delete_backups($params['language']);
-            });
+                    rename(TMP.'sitemaps', ROOT.'www/'.$params['language'].'/sitemaps');
+                    chmod(ROOT.'www/'.$params['language'].'/sitemaps', 0550);
 
-            cli_dot(false);
+                    sitemap_delete_backups($params['language']);
+                });
 
-            sql_query('INSERT INTO `sitemaps_generated` (`language`)
-                       VALUES                           (:language )',
+                cli_dot(false);
 
-                       array(':language' => $language));
+                sql_query(' INSERT INTO `sitemaps_generated` (`language`)
+                           VALUES                           (:language )',
+
+                           array(':language' => $language));
+            }
         }
 
     }catch(Exception $e){
