@@ -192,11 +192,15 @@ function email_poll($params){
                  * - Target will leave it as it is
                  * - Account is usefull just to we can perform the same checks per account and not globally
                  */
+                $mark_for_deletion = $params['delete'];
                 if(empty($data['from']) or empty($data['to'])){
                         /*
                          * Apparently this is not an email
                          */
                         cli_log(tr('Warning: email ":mail" appears not to be an email, skipping. Mail contains data ":data"', array(':mail' => $mail, ':data' => $data)), 'yellow');
+                        /*
+                         * This is likely and email we don't want so we manually mark it for deliton
+                         */
                         $params['delete'] = true;
 
                 } else {
@@ -299,6 +303,11 @@ function email_poll($params){
 
                 if($params['delete']){
                     imap_delete($imap, $mail);
+                    /*
+                     * Makes sure to return $params['delete'] to its original value in case it was manually
+                     * set to true during mail processing
+                     */
+                    $params['delete'] = $mark_for_deletion;
                 }
 
                 execute_callback(isset_get($params['callbacks']['post_delete']), $mail);
