@@ -358,9 +358,10 @@ try{
                 }
 
                 /*
-                 * Set cookie
+                 * Set cookie, but only if page is not API and domain has
+                 * cookie configured
                  */
-                if(empty($_CONFIG['cookie']['domain'])){
+                if(empty($_CONFIG['cookie']['domain']) or $GLOBALS['page_is_api']){
                     /*
                      * Ensure we have a domain configured in $_SESSION[domain]
                      */
