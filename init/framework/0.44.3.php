@@ -15,5 +15,5 @@ sql_query('UPDATE `blogs_posts` SET `language` = "en" WHERE `language` = ""');
 sql_foreignkey_exists ('blogs_posts', 'fk_blogs_posts_masters_id', '!ALTER TABLE `blogs_posts` ADD CONSTRAINT `fk_blogs_posts_masters_id` FOREIGN KEY (`masters_id`) REFERENCES `blogs_posts` (`id`) ON DELETE RESTRICT');
 
 sql_index_exists('blogs_posts', 'masters_id_language'      , '!ALTER TABLE `blogs_posts` ADD UNIQUE INDEX `masters_id_language`       (`masters_id`, `language`)');
-sql_index_exists('blogs_posts', 'blogs_id_language_seoname', '!ALTER TABLE `blogs_posts` ADD UNIQUE INDEX `blogs_id_language_seoname` (`blogs_id`, `language`, `seoname`)');
+sql_index_exists('blogs_posts', 'blogs_id_language_seoname', '!ALTER TABLE `blogs_posts` ADD UNIQUE INDEX `blogs_id_language_seoname` (`blogs_id`, `language`, `seoname` (80))');
 ?>
