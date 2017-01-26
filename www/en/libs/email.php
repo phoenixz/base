@@ -192,7 +192,9 @@ function email_poll($params){
                  * - Target will leave it as it is
                  * - Account is usefull just to we can perform the same checks per account and not globally
                  */
-                $mark_for_deletion = $params['delete'];
+                $delete       = $params['delete'];
+                $delete_count = 0;
+
                 if(empty($data['from']) or empty($data['to'])){
                         /*
                          * Apparently this is not an email
@@ -201,9 +203,9 @@ function email_poll($params){
                         /*
                          * This is likely and email we don't want so we manually mark it for deliton
                          */
-                        $params['delete'] = true;
+                        $delete = true;
 
-                } else {
+                }else{
                     if($userdata['email'] !== $data['to']){
                         switch($_CONFIG['email']['forward_option']){
                             case 'source':
@@ -301,19 +303,16 @@ function email_poll($params){
 
                 }
 
-                if($params['delete']){
+                if($delete){
+                    $delete_count++;
+
                     imap_delete($imap, $mail);
-                    /*
-                     * Makes sure to return $params['delete'] to its original value in case it was manually
-                     * set to true during mail processing
-                     */
-                    $params['delete'] = $mark_for_deletion;
                 }
 
                 execute_callback(isset_get($params['callbacks']['post_delete']), $mail);
             }
 
-            if($params['delete']){
+            if($delete_count){
                 imap_expunge($imap);
             }
 
