@@ -2152,8 +2152,8 @@ function html_minify($html, $full = false){
              * things like "function (){// Comment" and won't match urls since urls do
              * not contain spaces.
              */
-            $search [] = '/\/{2} .*[\r\n]/';
-            $replace[] = '';
+            $search [] = '/([^:])\/{2}.*[\n\r]/';
+            $replace[] = '$1';
 
             /*
              * Remove empty lines (sequence of line-end and white-space characters)
