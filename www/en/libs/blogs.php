@@ -94,7 +94,7 @@ function blogs_get($blog = null){
 /*
  * Get a new or existing blog post
  */
-function blogs_post_get($post = null, $blog = null, $columns = null){
+function blogs_post_get($blog = null, $post = null, $language = null, $columns = null){
     try{
         if($blog){
             /*
@@ -113,8 +113,8 @@ function blogs_post_get($post = null, $blog = null, $columns = null){
         }
 
         if(!$post){
-            if(empty($blogs_id)){
-                throw new bException(tr('blogs_post_get(): No blog and no post specified. For a new post, specify at least a blog'), 'not-specified');
+            if(empty($blogs_id) and empty($language)){
+                throw new bException(tr('blogs_post_get(): No post and no blog and no language specified. For a new post, specify at least a blog and a language'), 'not-specified');
             }
 
             /*
@@ -127,77 +127,103 @@ function blogs_post_get($post = null, $blog = null, $columns = null){
 
                              WHERE  `createdby` = :createdby
                              AND    `blogs_id`  = :blogs_id
+                             AND    `language`  = :language
                              AND    `status`    = "_new"',
 
                              'id', array(':createdby' => isset_get($_SESSION['user']['id']),
+                                         ':language'  => $language,
                                          ':blogs_id'  => $blogs_id));
+        }
 
-            if(!$post){
-                sql_query('INSERT INTO `blogs_posts` (`status`, `blogs_id`, `createdby`)
-                           VALUES                    ("_new"  , :blogs_id , :createdby )',
+        if($post){
+            if(!$columns){
+                /*
+                 * Select default columns
+                 */
+                $columns = '`blogs_posts`.`id`,
+                            `blogs_posts`.`createdon`,
+                            `blogs_posts`.`createdby`,
+                            `blogs_posts`.`modifiedby`,
+                            `blogs_posts`.`modifiedon`,
+                            `blogs_posts`.`status`,
+                            `blogs_posts`.`blogs_id`,
+                            `blogs_posts`.`assigned_to_id`,
+                            `blogs_posts`.`seocategory1`,
+                            `blogs_posts`.`category1`,
+                            `blogs_posts`.`seocategory2`,
+                            `blogs_posts`.`category2`,
+                            `blogs_posts`.`seocategory3`,
+                            `blogs_posts`.`category3`,
+                            `blogs_posts`.`keywords`,
+                            `blogs_posts`.`seokeywords`,
+                            `blogs_posts`.`featured_until`,
+                            `blogs_posts`.`upvotes`,
+                            `blogs_posts`.`downvotes`,
+                            `blogs_posts`.`description`,
+                            `blogs_posts`.`priority`,
+                            `blogs_posts`.`views`,
+                            `blogs_posts`.`rating`,
+                            `blogs_posts`.`comments`,
+                            `blogs_posts`.`language`,
+                            `blogs_posts`.`url`,
+                            `blogs_posts`.`urlref`,
+                            `blogs_posts`.`name`,
+                            `blogs_posts`.`seoname`,
+                            `blogs_posts`.`body`,
+                            `blogs_posts`.`parents_id`,
+                            `users`.`name` AS `assigned_to`';
+            }
 
-                           array(':createdby' => isset_get($_SESSION['user']['id']),
-                                 ':blogs_id'  => $blogs_id));
+            if(is_numeric($post)){
+                if(empty($language)){
+                    /*
+                     * Get the post by its id
+                     */
+                    $where   = ' WHERE `blogs_posts`.`id` = :id';
+                    $execute = array(':id'                => $post);
 
-                $post = sql_insert_id();
+                }else{
+                    /*
+                     * Get the post by its masters id, and get the specified
+                     * language
+                     */
+                    $where   = ' WHERE `blogs_posts`.`masters_id` = :masters_id
+                                 AND   `blogs_posts`.`language`   = :language';
+
+                    $execute = array(':masters_id' => $post,
+                                     ':language'   => $language);
+                }
+
+            }else{
+                $where = ' WHERE `blogs_posts`.`seoname` = :seoname';
+                $execute = array(':seoname' => $post);
+            }
+
+            $retval = sql_get('SELECT    '.$columns.'
+
+                               FROM      `blogs_posts`
+
+                               LEFT JOIN `users`
+                               ON        `users`.`id` = `blogs_posts`.`assigned_to_id`'.$where, $execute);
+
+            if($retval){
+                return $retval;
             }
         }
 
-        if(!$columns){
-            /*
-             * Select default columns
-             */
-            $columns = '`blogs_posts`.`id`,
-                        `blogs_posts`.`createdon`,
-                        `blogs_posts`.`createdby`,
-                        `blogs_posts`.`modifiedby`,
-                        `blogs_posts`.`modifiedon`,
-                        `blogs_posts`.`status`,
-                        `blogs_posts`.`blogs_id`,
-                        `blogs_posts`.`assigned_to_id`,
-                        `blogs_posts`.`seocategory1`,
-                        `blogs_posts`.`category1`,
-                        `blogs_posts`.`seocategory2`,
-                        `blogs_posts`.`category2`,
-                        `blogs_posts`.`seocategory3`,
-                        `blogs_posts`.`category3`,
-                        `blogs_posts`.`keywords`,
-                        `blogs_posts`.`seokeywords`,
-                        `blogs_posts`.`featured_until`,
-                        `blogs_posts`.`upvotes`,
-                        `blogs_posts`.`downvotes`,
-                        `blogs_posts`.`description`,
-                        `blogs_posts`.`priority`,
-                        `blogs_posts`.`views`,
-                        `blogs_posts`.`rating`,
-                        `blogs_posts`.`comments`,
-                        `blogs_posts`.`language`,
-                        `blogs_posts`.`url`,
-                        `blogs_posts`.`urlref`,
-                        `blogs_posts`.`name`,
-                        `blogs_posts`.`seoname`,
-                        `blogs_posts`.`body`,
-                        `blogs_posts`.`parents_id`,
-                        `users`.`name` AS `assigned_to`';
-        }
+        /*
+         * From here, specified blog post was not found!!! omg omg!
+         */
+        sql_query('INSERT INTO `blogs_posts` (`status`, `blogs_id`, `createdby`, `language`)
+                   VALUES                    ("_new"  , :blogs_id , :createdby , :language )',
 
-        if(is_numeric($post)){
-            $where = ' WHERE `blogs_posts`.`id`      = :post';
+                   array(':createdby' => isset_get($_SESSION['user']['id']),
+                         ':language'  => $language,
+                         ':blogs_id'  => $blogs_id));
 
-        }else{
-            $where = ' WHERE `blogs_posts`.`seoname` = :post';
-        }
+        $post = sql_insert_id();
 
-        $execute = array(':post' => $post);
-
-        $retval  = sql_get('SELECT    '.$columns.'
-
-                            FROM      `blogs_posts`
-
-                            LEFT JOIN `users`
-                            ON        `users`.`id` = `blogs_posts`.`assigned_to_id`'.$where, $execute);
-
-        return $retval;
+        return blogs_post_get($blog, $post, null, $columns);
 
     }catch(Exception $e){
         throw new bException('blogs_post_get(): Failed', $e);
@@ -1304,7 +1330,14 @@ function blogs_validate_post($post, $params = null){
 
         if(!empty($params['label_language'])){
             $v->isNotEmpty($post['language'],    tr('Please select a language for your :objectname', array(':objectname' => $params['object_name'])));
-            $v->hasChars($post['keywords']  , 2, tr('Please provide a valid language'));
+            $v->hasChars($post['language']  , 2, tr('Please provide a valid language'));
+
+            if(empty($_CONFIG['language']['supported'][$post['language']])){
+                $v->setError(tr('Please provide a valid language, must be one of ":languages"', array(':languages' => implode(', ', $post['language']))));
+            }
+
+        }else{
+            $post['language'] = 'en';
         }
 
         if(!empty($params['label_priorities'])){

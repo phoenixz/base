@@ -192,109 +192,127 @@ function email_poll($params){
                  * - Target will leave it as it is
                  * - Account is usefull just to we can perform the same checks per account and not globally
                  */
-                if($userdata['email'] !== $data['to']){
-                    switch($_CONFIG['email']['forward_option']){
-                        case 'source':
-                            $data['to'] = $userdata['email'];
-                            break;
+                $delete       = $params['delete'];
+                $delete_count = 0;
 
-                        case 'target':
-                            break;
+                if(empty($data['from']) or empty($data['to'])){
+                        /*
+                         * Apparently this is not an email
+                         */
+                        cli_log(tr('Warning: email ":mail" appears not to be an email, skipping. Mail contains data ":data"', array(':mail' => $mail, ':data' => $data)), 'yellow');
+                        /*
+                         * This is likely and email we don't want so we manually mark it for deliton
+                         */
+                        $delete = true;
 
-                        case 'account':
-                            /*
-                             * Per account settings
-                             */
-                            switch($userdata['forward_option']){
-                                case 'source':
-                                    $data['to'] = $userdata['email'];
-                                    break;
+                }else{
+                    if($userdata['email'] !== $data['to']){
+                        switch($_CONFIG['email']['forward_option']){
+                            case 'source':
+                                $data['to'] = $userdata['email'];
+                                break;
 
-                                case 'target':
-                                    break;
+                            case 'target':
+                                break;
 
-                                default:
-                                    throw new bException(tr('email_poll(): Unknown account forward_option ":option" specified', array(':option' => $params['forward_option'])), 'unknown');
+                            case 'account':
+                                /*
+                                 * Per account settings
+                                 */
+                                switch($userdata['forward_option']){
+                                    case 'source':
+                                        $data['to'] = $userdata['email'];
+                                        break;
+
+                                    case 'target':
+                                        break;
+
+                                    default:
+                                        throw new bException(tr('email_poll(): Unknown account forward_option ":option" specified', array(':option' => $params['forward_option'])), 'unknown');
+                                }
+
+                                break;
+
+                            default:
+                                throw new bException(tr('email_poll(): Unknown $_CONFIG[email][forward_option] ":option" specified', array(':option' => $_CONFIG['email']['forward_option'])), 'unknown');
+                        }
+                    }
+
+                    $data['text'] = imap_fetchbody($imap, $mail, 1.1, $flags);
+                    $data['html'] = imap_fetchbody($imap, $mail, 1.2, $flags);
+
+                    if(!$data['text']){
+                        $data['text'] = imap_fetchbody($imap, $mail, 1, $flags);
+                    }
+
+                    /*
+                     * Get the images of the email
+                     */
+                    $data = email_get_attachments($imap, $mail, $data, $flags);
+
+                    /*
+                     * Decode the body text.
+                     *
+                     * NOTE: Do not use imap_qprint() but quoted_printable_decode()
+                     * for this due to a bug in imap_qprint(). See
+                     * http://php.net/manual/en/function.imap-qprint.php#4009 for
+                     * more information
+                     */
+                    $data['text'] = trim(mb_strip_invalid(quoted_printable_decode($data['text'])));
+                    $data['text'] = str_replace("\r", '', $data['text']);
+                    $data['html'] = trim(mb_strip_invalid(imap_qprint($data['html'])));
+                    $data['html'] = str_replace("\r", '', $data['html']);
+
+                    $data = execute_callback(isset_get($params['callbacks']['post_fetch']), $data);
+
+                    if(!$data){
+                        cli_log(tr('Callback "post_fetch" canceled processing of email ":mails_id"', array(':mails_id' => $mails_id)), 'yellow');
+                        continue;
+                    }
+
+                    if($params['store']){
+                        try{
+                            if(VERBOSE AND PLATFORM_SHELL){
+                                cli_log(tr('Processing email ":subject"', array(':subject' => $mail['subject'])));
                             }
 
-                            break;
+                            $data                      = email_cleanup($data);
+                            $data['users_id']          = $userdata['users_id'];
+                            $data['email_accounts_id'] = $userdata['id'];
 
-                        default:
-                            throw new bException(tr('email_poll(): Unknown $_CONFIG[email][forward_option] ":option" specified', array(':option' => $_CONFIG['email']['forward_option'])), 'unknown');
-                    }
-                }
+                            email_update_conversation($data, 'received');
+                            $data = execute_callback(isset_get($params['callbacks']['post_update']), $data);
 
-                $data['text'] = imap_fetchbody($imap, $mail, 1.1, $flags);
-                $data['html'] = imap_fetchbody($imap, $mail, 1.2, $flags);
+                            if(!$data){
+                                cli_log(tr('Callback "post_update" canceled processing of email ":mails_id"', array(':mails_id' => $mails_id)), 'yellow');
+                                continue;
+                            }
 
-                if(!$data['text']){
-                    $data['text'] = imap_fetchbody($imap, $mail, 1, $flags);
-                }
-
-                /*
-                 * Get the images of the email
-                 */
-                $data = email_get_attachments($imap, $mail, $data, $flags);
-
-                /*
-                 * Decode the body text.
-                 *
-                 * NOTE: Do not use imap_qprint() but quoted_printable_decode()
-                 * for this due to a bug in imap_qprint(). See
-                 * http://php.net/manual/en/function.imap-qprint.php#4009 for
-                 * more information
-                 */
-                $data['text'] = trim(mb_strip_invalid(quoted_printable_decode($data['text'])));
-                $data['text'] = str_replace("\r", '', $data['text']);
-                $data['html'] = trim(mb_strip_invalid(imap_qprint($data['html'])));
-                $data['html'] = str_replace("\r", '', $data['html']);
-
-                $data = execute_callback(isset_get($params['callbacks']['post_fetch']), $data);
-
-                if(!$data){
-                    cli_log(tr('Callback "post_fetch" canceled processing of email ":mails_id"', array(':mails_id' => $mails_id)), 'yellow');
-                    continue;
-                }
-
-                if($params['store']){
-                    try{
-                        if(VERBOSE AND PLATFORM_SHELL){
-                            cli_log(tr('Processing email ":subject"', array(':subject' => $mail['subject'])));
+                        }catch(bException $e){
+                            /*
+                             * Continue working on the next mail
+                             */
+                            notify($e);
+                            log_error(tr('Failed polling process'));
                         }
-
-                        $data                      = email_cleanup($data);
-                        $data['users_id']          = $userdata['users_id'];
-                        $data['email_accounts_id'] = $userdata['id'];
-
-                        email_update_conversation($data, 'received');
-                        $data = execute_callback(isset_get($params['callbacks']['post_update']), $data);
-
-                        if(!$data){
-                            cli_log(tr('Callback "post_update" canceled processing of email ":mails_id"', array(':mails_id' => $mails_id)), 'yellow');
-                            continue;
-                        }
-
-                    }catch(bException $e){
-                        /*
-                         * Continue working on the next mail
-                         */
-                        notify($e);
-                        log_error(tr('Failed polling process'));
                     }
+
+                    if($params['return']){
+                        $retval[$mails_id] = $data;
+                    }
+
                 }
 
-                if($params['return']){
-                    $retval[$mails_id] = $data;
-                }
+                if($delete){
+                    $delete_count++;
 
-                if($params['delete']){
                     imap_delete($imap, $mail);
                 }
 
                 execute_callback(isset_get($params['callbacks']['post_delete']), $mail);
             }
 
-            if($params['delete']){
+            if($delete_count){
                 imap_expunge($imap);
             }
 
