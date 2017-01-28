@@ -154,7 +154,7 @@ function sql_fetch($r, $single_column = false, $fetch_style = PDO::FETCH_ASSOC){
             return null;
         }
 
-        if($single_column){
+        if($single_column === true){
             /*
              * Return only the first column
              */
@@ -163,6 +163,14 @@ function sql_fetch($r, $single_column = false, $fetch_style = PDO::FETCH_ASSOC){
             }
 
             return array_shift($result);
+        }
+
+        if($single_column){
+            if(!isset($result[$single_column])){
+                throw new bException(tr('sql_fetch(): Failed for query ":query" to fetch single column ":column", specified query result does not contain the requested column', array(':column' => $single_column, ':query' => $r->queryString)), 'multiple');
+            }
+
+            return $result[$single_column];
         }
 
         /*
