@@ -158,7 +158,11 @@ function sql_fetch($r, $single_column = false, $fetch_style = PDO::FETCH_ASSOC){
             /*
              * Return only the first column
              */
-            return array_pop($result);
+            if(count($result) !== 1){
+                throw new bException(tr('sql_fetch(): Failed for query ":query" to fetch single column, specified query result contains not 1 but ":count" columns', array(':count' => count($result), ':query' => $r->queryString)), 'multiple');
+            }
+
+            return array_shift($result);
         }
 
         /*
@@ -192,8 +196,13 @@ function sql_get($query, $single_column = null, $execute = null, $connector = 'c
                 unset($tmp);
             }
 
-    // :TODO: Exception on multiple results
-            return sql_fetch(sql_query($query, $execute, true, $connector), $single_column);
+            $result = sql_query($query, $execute, true, $connector);
+
+            if($result->rowCount() > 1){
+                throw new bException(tr('sql_get(): Failed for query ":query" to fetch single row, specified query result contains not 1 but ":count" results', array(':count' => $result->rowCount(), ':query' => $result->queryString)), 'multiple');
+            }
+
+            return sql_fetch($result, $single_column);
         }
 
     }catch(Exception $e){
