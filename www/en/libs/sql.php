@@ -334,7 +334,7 @@ function sql_init($connector = 'core'){
          */
         if(!empty($_CONFIG['db'][$connector]['init'])){
             try{
-                $r = $GLOBALS['sql_'.$connector]->query('SELECT `project`, `framework` FROM `versions` ORDER BY `id` DESC LIMIT 1;');
+                $r = $GLOBALS['sql_'.$connector]->query('SELECT `project`, `framework`, `offline_until` FROM `versions` ORDER BY `id` DESC LIMIT 1;');
 
                 if(!$r->rowCount()){
                     log_console(tr('sql_init(): No versions in versions table found, assumed empty database ":db"', array(':db' => $_CONFIG['db'][$connector]['db'])), 'warning/versions', 'yellow');
@@ -346,6 +346,15 @@ function sql_init($connector = 'core'){
 
                 }else{
                     $versions = $r->fetch(PDO::FETCH_ASSOC);
+
+                    if(!empty($versions['offline_until'])){
+                        if(PLATFORM_HTTP){
+                            page_show(503, array('offline_until' => $versions['offline_until']));
+
+                        }
+
+                        throw new bException(tr('The system is offline until ":until"', array(':until' => $versions['offline_until'])), 'offline');
+                    }
 
                     define('FRAMEWORKDBVERSION', $versions['framework']);
                     define('PROJECTDBVERSION'  , $versions['project']);

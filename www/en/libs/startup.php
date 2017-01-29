@@ -17,7 +17,7 @@
 /*
  * Framework version
  */
-define('FRAMEWORKCODEVERSION', '0.44.3');
+define('FRAMEWORKCODEVERSION', '0.44.4');
 
 
 

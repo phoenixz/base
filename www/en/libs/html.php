@@ -2022,7 +2022,7 @@ function html_video($src, $type = null, $height = 0, $width = 0, $more = ''){
 /*
  * Show the specified page
  */
-function page_show($pagename, $die = true, $force = false, $data = null) {
+function page_show($pagename, $params = null){
     global $_CONFIG;
 
     try{
@@ -2037,11 +2037,10 @@ function page_show($pagename, $die = true, $force = false, $data = null) {
             $prefix = '';
         }
 
+// :COMPATIBILITY: $data only is added here for compatibility purposes. This should be removed after 20170601
+$data = $params;
         include(ROOT.'www/'.LANGUAGE.'/'.$prefix.$pagename.'.php');
-
-        if($die){
-            die();
-        }
+        die();
 
     }catch(Exception $e){
         throw new bException(tr('page_show(): Failed to show page "%page%"', array('%page%' => str_log($pagename))), $e);
