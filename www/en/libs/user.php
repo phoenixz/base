@@ -636,8 +636,8 @@ function user_create_extended_session($users_id) {
         /*
          * Add to db
          */
-        sql_query('INSERT INTO `extended_sessions` (`user_id`, `session_key`, `ip`)
-                   VALUES                          (:users_id, :session_key , :ip)',
+        sql_query('INSERT INTO `extended_sessions` (`users_id`, `session_key`, `ip`)
+                   VALUES                          (:users_id , :session_key , :ip)',
 
                    array(':users_id'    => cfi($users_id),
                          ':session_key' => $code,
