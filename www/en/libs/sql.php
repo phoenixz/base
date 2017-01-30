@@ -154,11 +154,23 @@ function sql_fetch($r, $single_column = false, $fetch_style = PDO::FETCH_ASSOC){
             return null;
         }
 
-        if($single_column){
+        if($single_column === true){
             /*
              * Return only the first column
              */
-            return array_pop($result);
+            if(count($result) !== 1){
+                throw new bException(tr('sql_fetch(): Failed for query ":query" to fetch single column, specified query result contains not 1 but ":count" columns', array(':count' => count($result), ':query' => $r->queryString)), 'multiple');
+            }
+
+            return array_shift($result);
+        }
+
+        if($single_column){
+            if(!isset($result[$single_column])){
+                throw new bException(tr('sql_fetch(): Failed for query ":query" to fetch single column ":column", specified query result does not contain the requested column', array(':column' => $single_column, ':query' => $r->queryString)), 'multiple');
+            }
+
+            return $result[$single_column];
         }
 
         /*
@@ -192,8 +204,13 @@ function sql_get($query, $single_column = null, $execute = null, $connector = 'c
                 unset($tmp);
             }
 
-    // :TODO: Exception on multiple results
-            return sql_fetch(sql_query($query, $execute, true, $connector), $single_column);
+            $result = sql_query($query, $execute, true, $connector);
+
+            if($result->rowCount() > 1){
+                throw new bException(tr('sql_get(): Failed for query ":query" to fetch single row, specified query result contains not 1 but ":count" results', array(':count' => $result->rowCount(), ':query' => $result->queryString)), 'multiple');
+            }
+
+            return sql_fetch($result, $single_column);
         }
 
     }catch(Exception $e){
@@ -317,7 +334,7 @@ function sql_init($connector = 'core'){
          */
         if(!empty($_CONFIG['db'][$connector]['init'])){
             try{
-                $r = $GLOBALS['sql_'.$connector]->query('SELECT `project`, `framework` FROM `versions` ORDER BY `id` DESC LIMIT 1;');
+                $r = $GLOBALS['sql_'.$connector]->query('SELECT `project`, `framework`, `offline_until` FROM `versions` ORDER BY `id` DESC LIMIT 1;');
 
                 if(!$r->rowCount()){
                     log_console(tr('sql_init(): No versions in versions table found, assumed empty database ":db"', array(':db' => $_CONFIG['db'][$connector]['db'])), 'warning/versions', 'yellow');
@@ -329,6 +346,15 @@ function sql_init($connector = 'core'){
 
                 }else{
                     $versions = $r->fetch(PDO::FETCH_ASSOC);
+
+                    if(!empty($versions['offline_until'])){
+                        if(PLATFORM_HTTP){
+                            page_show(503, array('offline_until' => $versions['offline_until']));
+
+                        }
+
+                        throw new bException(tr('The system is offline until ":until"', array(':until' => $versions['offline_until'])), 'offline');
+                    }
 
                     define('FRAMEWORKDBVERSION', $versions['framework']);
                     define('PROJECTDBVERSION'  , $versions['project']);

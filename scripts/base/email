@@ -116,8 +116,7 @@ if($users){
      */
     $in = sql_in($users);
 
-    $r  = sql_query('SELECT     `email_client_accounts`.`email`,
-                                IFNULL(IFNULL(`users`.`name`, `users`.`email`), `users`.`username`) AS `user`
+    $r  = sql_query('SELECT     `email_client_accounts`.`email`
 
                      FROM      `email_client_accounts`
 

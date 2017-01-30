@@ -182,10 +182,14 @@ function sitemap_index(){
 /*
  * Generate the sitemap.xml file
  */
-function sitemap_xml($file = null, $language = null, $path = ROOT.'www/en/'){
+function sitemap_xml($file = null, $language = null, $path = null){
     global $_CONFIG;
 
     try{
+        if(!$path){
+            $path = ROOT.'www/en/';
+        }
+
         $sitemap = '';
         $execute = array();
         $query   = 'SELECT    `id`,

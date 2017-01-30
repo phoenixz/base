@@ -17,7 +17,7 @@
 /*
  * Framework version
  */
-define('FRAMEWORKCODEVERSION', '0.44.3');
+define('FRAMEWORKCODEVERSION', '0.44.4');
 
 
 
@@ -241,6 +241,7 @@ try{
 
     die("\033[0;31mstartup: Failed to load ".str_log($file)." for environment \"".str_log(ENVIRONMENT)."\"\033[0m\n");
 }
+
 
 
 try{

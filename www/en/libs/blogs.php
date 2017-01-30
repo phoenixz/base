@@ -432,6 +432,10 @@ function blogs_update_post_status($blog, $params, $list, $status){
     try{
         load_libs('sitemap');
 
+        array_params($params);
+        array_default($params, 'sitemap_priority'        , 1);
+        array_default($params, 'sitemap_change_frequency', 'daily');
+
         $count   = 0;
         $execute = array(':blogs_id' => $blog['id'],
                          ':status'   => $status);
@@ -443,7 +447,7 @@ function blogs_update_post_status($blog, $params, $list, $status){
                                 WHERE   `id`       = :id
                                 AND     `blogs_id` = :blogs_id');
 
-        foreach($list as $execute[':id']){
+        foreach($list as $id){
             $post = sql_get('SELECT `id`, `url`, `seoname`, `status` FROM `blogs_posts` WHERE `id` = :id', array(':id' => $id));
 
             if(!$post){
@@ -481,6 +485,7 @@ function blogs_update_post_status($blog, $params, $list, $status){
                                           'change_frequency' => $params['sitemap_change_frequency']));
             }
 
+            $execute[':id'] = $id;
             $update->execute($execute);
             $count += $update->rowCount();
         }
@@ -498,6 +503,8 @@ function blogs_update_post_status($blog, $params, $list, $status){
         }else{
             run_background('base/sitemap generate');
         }
+
+        return $count;
 
     }catch(Exception $e){
         throw new bException('blogs_update_post_status(): Failed', $e);
