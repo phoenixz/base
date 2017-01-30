@@ -89,19 +89,19 @@ function html_bundler($type){
                 $default = ($_CONFIG['cdn']['js']['load_delayed'] ? 'js_footer' : 'js_header');
 
                 foreach($GLOBALS[$type] as &$file){
-                    switch($file[1]){
+                    switch($file[0]){
                         case '<':
                             /*
                              * Header
                              */
-                            $GLOBALS['js_header'][$file] = $file;
+                            $GLOBALS['js_header'][substr($file, 1)] = substr($file, 1);
                             break;
 
                         case '>':
                             /*
                              * Footer
                              */
-                            $GLOBALS['js_footer'][$file] = $file;
+                            $GLOBALS['js_footer'][substr($file, 1)] = substr($file, 1);
                             break;
 
                         default:
@@ -153,7 +153,7 @@ function html_bundler($type){
             load_libs('file');
             file_ensure_path($path.'bundle-');
 
-            foreach($GLOBALS[$realtype] as &$file){
+            foreach($GLOBALS[$realtype] as $key => &$file){
                 /*
                  * Check for @imports
                  */
@@ -166,6 +166,7 @@ function html_bundler($type){
                 }
 
                 $data = file_get_contents($file);
+                unset($GLOBALS[$realtype][$key]);
 
                 switch($type){
                     case 'js':
@@ -275,6 +276,7 @@ function html_bundler($type){
             }
 
             unset($file);
+            $GLOBALS[$realtype] = array();
 
             if($_CONFIG['cdn']['network']['enabled']){
                 load_libs('cdn');
@@ -282,8 +284,7 @@ function html_bundler($type){
             }
         }
 
-        $GLOBALS[$type] = array('bundle-'.$prefix.$bundle => array('min'   => $_CONFIG['cdn']['min'],
-                                                                   'media' => ''));
+        $GLOBALS[$type][$prefix.'bundle-'.$bundle] = true;
 
     }catch(Exception $e){
         throw new bException('html_bundler(): Failed', $e);
@@ -375,7 +376,7 @@ function html_generate_css(){
         foreach($GLOBALS['css'] as $file => $meta) {
             if(!$file) continue;
 
-            $html = '<link rel="stylesheet" type="text/css" href="'.cdn_prefix((($_CONFIG['whitelabels']['enabled'] === true) ? $_SESSION['domain'].'/' : '').'css/'.(!empty($GLOBALS['page_is_mobile']) ? 'mobile/' : '').$file.($min ? '.min.css' : '.css')).'"'.($meta['media'] ? ' media="'.$meta['media'].'"' : '').'>';
+            $html = '<link rel="stylesheet" type="text/css" href="'.cdn_prefix((($_CONFIG['whitelabels']['enabled'] === true) ? $_SESSION['domain'].'/' : '').'css/'.$file.($min ? '.min.css' : '.css')).'">';
 
             if(substr($file, 0, 2) == 'ie'){
                 $retval .= html_iefilter($html, str_until(str_from($file, 'ie'), '.'));
@@ -564,16 +565,15 @@ throw new bException('WARNING: $_CONFIG[js][default_libs] CONFIGURATION FOUND! T
                 $html = '<script'.(!empty($data['option']) ? ' '.$data['option'] : '').' type="text/javascript" src="'.cdn_prefix((($_CONFIG['whitelabels']['enabled'] === true) ? $_SESSION['domain'].'/' : '').'js/'.$file.$min.'.js').'"></script>';
             }
 
-            /*
-             * Add the scripts with IE only filters?
-             */
-
-            if(isset_get($data['ie'])){
-                $html = html_iefilter($html, $data['ie']);
-
-            }else{
-                $html = $html."\n";
-            }
+            ///*
+            // * Add the scripts with IE only filters?
+            // */
+            //if(isset_get($data['ie'])){
+            //    $html = html_iefilter($html, $data['ie']);
+            //
+            //}else{
+            //    $html = $html."\n";
+            //}
 
             if($check[0] == '>' or (!empty($js['load_delayed']) and ($check[0] != '<'))){
                 /*
