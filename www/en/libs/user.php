@@ -469,6 +469,7 @@ function user_authenticate($username, $password, $columns = '*') {
          */
         usleep(mt_rand(1000, 200000));
         log_database(tr('user_authenticate(): Authenticated user ":username"', array(':username' => $username)), 'authentication/success');
+        user_log_authentication();
 
         $user['authenticated'] = true;
         return $user;
@@ -478,6 +479,7 @@ function user_authenticate($username, $password, $columns = '*') {
          * Wait a little bit so the authentication failure cannot be timed, and
          * library attacks will be harder
          */
+        user_log_authentication($e);
         usleep(mt_rand(1000, 2000000));
 
         if($e->getCode() == 'password'){
@@ -492,6 +494,80 @@ function user_authenticate($username, $password, $columns = '*') {
         }
 
         throw new bException('user_authenticate(): Failed', $e);
+    }
+}
+
+
+
+/*
+ *
+ */
+function user_log_authentication($createdby, $users_id, $with_captcha, $status = null){
+    try{
+        if($status){
+            $failed_reason = $e->getMessage();
+            $status        = 'failed';
+        }
+
+        sql_query('INSERT INTO `authentications` (`createdby`, `status`, `with_captcha`, `failed_reason`, `users_id`, `ip`)
+                   VALUES                        (:createdby , :status , :with_captcha , :failed_reason , :users_id , :ip )',
+
+                   array(':status'        => $status,
+                         ':createdby'     => $createdby,
+                         ':users_id'      => $users_id,
+                         ':failed_reason' => $failed_reason,
+                         ':with_captcha'  => $with_captcha,
+                         ':ip'            => isset_get($_SERVER['REMOTE_ADDR'])));
+
+    }catch(Exception $e){
+        throw new bException('user_log_authentication(): Failed', $e);
+    }
+}
+
+
+
+/*
+ *
+ */
+function user_authentication_requires_captcha($failures = null){
+    global $_CONFIG;
+
+    try{
+        if(!$failures){
+            $failures = $_CONFIG['security']['captcha_failures'];
+        }
+
+        /*
+         * Get the last N logins. If they are all failed, then captcha is
+         * required
+         */
+        $list = sql_query('SELECT   `status`
+
+                           FROM     `authentications`
+
+                           WHERE    `ip` = :ip
+
+                           ORDER BY `id`',
+
+                           array(':ip' => isset_get($_SERVER['REMOTE_ADDR'])));
+
+        if($list->rowCount() < $failures){
+            return false;
+        }
+
+        while($status = sql_fetch($list)){
+            if(!$status){
+                /*
+                 * We had a non failure in between, so we're okay
+                 */
+                false;
+            }
+        }
+
+        return true;
+
+    }catch(Exception $e){
+        throw new bException('user_log_authentication(): Failed', $e);
     }
 }
 
@@ -902,6 +978,38 @@ function user_update_password($params, $current = true){
          */
         $password = get_hash($params['password'], $_CONFIG['security']['passwords']['hash']);
 
+        /*
+         * Ensure that this new password is not the same as one of the N
+         * previous passwords
+         */
+        if($_CONFIG['security']['passwords']['unique_days']){
+            $list = sql_query('SELECT   `password`
+
+                               FROM     `passwords`
+
+                               WHERE    `users_id` = :users_id
+                               AND      `createdon` + INTERVAL :days DAYS > UTC_TIMESTAMP()
+
+                               ORDER BY `id`
+
+                               LIMIT    '.$_CONFIG['security']['passwords']['unique_updates'],
+
+                               array(':users_id' => $_SESSION['user']['id'],
+                                     ':days'     => $_CONFIG['security']['passwords']['unique_days']));
+
+            while($previous = sql_fetch($list)){
+                if($previous == $password){
+                    /*
+                     * This password has been used before
+                     */
+                    throw new bException(tr('user_update_password(): The specified password has already been used before'), 'not-specified');
+                }
+            }
+        }
+
+        /*
+         * Update the password
+         */
         $r = sql_query('UPDATE `users`
 
                         SET    `modifiedon` = NOW(),

@@ -96,7 +96,7 @@ try{
      * Load basic required libraries
      */
     $path      = dirname(__FILE__).'/';
-    $libraries = array('system', 'strings', 'array', 'sql', 'mb');
+    $libraries = array('system', 'strings', 'array', 'sql', 'mb', 'debug');
 
     foreach($libraries as $library){
         include_once($path.$library.'.php');
@@ -245,37 +245,6 @@ try{
 
 
 try{
-    /*
-     * Load debug files if needed
-     */
-    try{
-        if($_CONFIG['debug']){
-            /*
-             * We're in debug mode, so load debug configuration and library as well
-             */
-            include_once($file = ROOT.'config/debug.php');
-            include_once($file = dirname(__FILE__).'/debug.php');
-        }
-
-    }catch(Exception $e){
-        switch($path){
-            case 'libs':
-                $type = 'library';
-                break;
-
-            case 'config':
-                $type = 'configuration';
-                break;
-        }
-
-        if(!file_exists($file)){
-            throw new bException('startup(): The debug '.str_log($type).' file "'.str_log($file).'" does not exist', $e);
-        }
-
-        throw new bException('startup(): Failed to load the debug '.str_log($type).' file "'.str_log($file).'"', $e);
-    }
-
-
     /*
      * Set security umask
      */

@@ -293,7 +293,9 @@ $_CONFIG['security']           = array('signin'           => array('save_passwor
                                        'passwords'        => array('test'            => false,              // Test new user password strength?
                                                                    'hash'            => 'sha256',           // What hash algorithm will we use to store the passwords?
                                                                    'usemeta'         => true,               // Add used hash as meta data to the password when storing them so we know what hash was used.
-                                                                   'useseed'         => true),              // Use the SEED constant to calculate passwords
+                                                                   'useseed'         => true,               // Use the SEED constant to calculate passwords
+                                                                   'unique_updates'  => 3,                  // Passwords cannot be updated to the same password for minimum N times
+                                                                   'unique_days'     => 30),                // Passwords cannot be updated to the same password for minimum N days
 
                                        'user'             => 'apache',                                      //
                                        'group'            => 'apache',                                      //

@@ -12,6 +12,10 @@
 
 
 
+load_config('debug');
+
+
+
 /*
  * Short hand for show and then randomly die
  */

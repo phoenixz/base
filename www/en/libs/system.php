@@ -2095,6 +2095,40 @@ function get_boolean($value){
         throw new bException(tr('get_boolean(): Failed'), $e);
     }
 }
+
+
+
+/*
+ * Return TRUE if the user of the current process is the root user
+ */
+function detect_root(){
+    try{
+        if(!is_executable('posix_getuid')){
+            throw new bException(tr('detect_root(): The PHP posix module is not installed. Do note that this function only works on Linux machines!'), 'not-installed');
+        }
+
+        return posix_getuid() == 0;
+
+    }catch(Exception $e){
+        throw new bException(tr('detect_root(): Failed'), $e);
+    }
+}
+
+
+
+/*
+ * Return TRUE if the user of the current process has sudo available
+ */
+function detect_sudo(){
+    try{
+
+    }catch(Exception $e){
+        throw new bException(tr('detect_sudo(): Failed'), $e);
+    }
+}
+
+
+
 /*
  * OBSOLETE FUNCTIONS AND WRAPPERS BE HERE BELOW
  */
