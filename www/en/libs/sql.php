@@ -337,16 +337,19 @@ function sql_init($connector = 'core'){
                 $r = $GLOBALS['sql_'.$connector]->query('SELECT `project`, `framework`, `offline_until` FROM `versions` ORDER BY `id` DESC LIMIT 1;');
 
             }catch(Exception $e){
-                if($e->getMessage() !== 'SQLSTATE[42S22]: Column not found: 1054 Unknown column \'offline_until\' in \'field list\''){
-                    /*
-                     * Compatibility issue, this happens when older DB is running init.
-                     * Just ignore it, since in these older DB's the functionality
-                     * wasn't even there
-                     */
-                    throw $e;
-                }
+                if($e->getCode() !== '42S02'){
+                    if($e->getMessage() === 'SQLSTATE[42S22]: Column not found: 1054 Unknown column \'offline_until\' in \'field list\''){
+                        $r = $GLOBALS['sql_'.$connector]->query('SELECT `project`, `framework` FROM `versions` ORDER BY `id` DESC LIMIT 1;');
 
-                $r = $GLOBALS['sql_'.$connector]->query('SELECT `project`, `framework` FROM `versions` ORDER BY `id` DESC LIMIT 1;');
+                    }else{
+                        /*
+                         * Compatibility issue, this happens when older DB is running init.
+                         * Just ignore it, since in these older DB's the functionality
+                         * wasn't even there
+                         */
+                        throw $e;
+                    }
+                }
             }
 
             try{
