@@ -554,7 +554,7 @@ function user_authenticate($username, $password, $captcha = null){
          */
         if(!empty($user['id'])){
             if(!$user['locked_left'] and (($user['auth_fails'] + 1) >= $_CONFIG['security']['authentication']['auto_lock_fails'])){
-                sql_query(' UPDATE `users`
+                sql_query('UPDATE `users`
 
                            SET    `locked_until` = UTC_TIMESTAMP() + INTERVAL '.$_CONFIG['security']['authentication']['auto_lock_time'].' SECOND,
                                   `auth_fails`   = `auth_fails` + 1
@@ -567,7 +567,7 @@ function user_authenticate($username, $password, $captcha = null){
                 /*
                  * Update only the authentication failure count
                  */
-                sql_query(' UPDATE `users`
+                sql_query('UPDATE `users`
 
                            SET    `auth_fails` = `auth_fails` + 1
 
