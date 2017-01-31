@@ -17,8 +17,9 @@
 function amp_page($params){
     try{
         array_params($params);
-        array_default($params, 'template', null);
-        array_default($params, 'resource', null);
+        array_default($params, 'template' , null);
+        array_default($params, 'canonical', null);
+        array_default($params, 'resource' , null);
 
         load_libs('cache');
 
@@ -29,11 +30,15 @@ function amp_page($params){
             throw new bException(tr('amp_page(): No template page specified'), 'not-specified');
         }
 
+        if(!$params['canonical']){
+            throw new bException(tr('amp_page(): No canonical url specified'), 'not-specified');
+        }
+
         if(!$params['resource']){
             throw new bException(tr('amp_page(): No resource specified'), 'not-specified');
         }
 
-        $file = ROOT.'data/content/amp/'.$params['template'].'.html';
+        $file = ROOT.'data/content/amp/'.$params['template'].'.amp';
 
         if(!file_exists($file)){
             throw new bException(tr('amp_page(): Specified template ":template"', array(':template' => $template)), 'not-exist');
