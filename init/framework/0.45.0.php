@@ -7,7 +7,7 @@
  * Add user authentication failure tracking and user account locking
  */
 sql_column_exists('users', 'auth_fails'  , '!ALTER TABLE `users` ADD COLUMN `auth_fails`   INT(11)  NOT NULL AFTER `last_signin`');
-sql_column_exists('users', 'locked_until', '!ALTER TABLE `users` ADD COLUMN `locked_until` DATETIME     NULL AFTER `auth_fail`');
+sql_column_exists('users', 'locked_until', '!ALTER TABLE `users` ADD COLUMN `locked_until` DATETIME     NULL AFTER `auth_fails`');
 
 sql_query('DROP TABLE IF EXISTS `authentications`');
 sql_query('DROP TABLE IF EXISTS `users_messages`');
