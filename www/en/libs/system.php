@@ -2130,6 +2130,120 @@ function detect_sudo(){
 
 
 /*
+ * DEBUG FUNCTIONS BELOW HERE
+ */
+
+
+
+/*
+ * Show debug data in a readable format
+ */
+function show($data = null, $trace_offset = 1){
+    return include(__DIR__.'/handlers/debug_show.php');
+}
+
+
+
+/*
+ * Short hand for show and then die
+ */
+function showdie($data = null, $trace_offset = 2){
+    return include(__DIR__.'/handlers/debug_showdie.php');
+}
+
+
+
+/*
+ * Short hand for show and then randomly die
+ */
+function showrandomdie($data = '', $return = false, $quiet = false, $trace_offset = 2){
+    return include(__DIR__.'/handlers/debug_showrandomdie.php');
+}
+
+
+
+/*
+ * Show nice HTML table with all debug data
+ */
+function debug_html($value, $key = null, $trace_offset = 0){
+    return include(__DIR__.'/handlers/debug_html.php');
+}
+
+
+
+/*
+ * Show HTML <tr> for the specified debug data
+ */
+function debug_html_row($value, $key = null, $type = null){
+    return include(__DIR__.'/handlers/debug_html_row.php');
+}
+
+
+
+/*
+ * Return the file where this call was made
+ */
+function current_file($trace = 0){
+    return include(__DIR__.'/handlers/debug_current_file.php');
+}
+
+
+
+/*
+ * Return the line number where this call was made
+ */
+function current_line($trace = 0){
+    return include(__DIR__.'/handlers/debug_current_line.php');
+}
+
+
+
+/*
+ * Return the function where this call was made
+ */
+function current_function($trace = 0){
+    return include(__DIR__.'/handlers/debug_current_function.php');
+}
+
+
+
+/*
+ * Return a test value that can be used for quick form debugging
+ */
+function debug_value($format, $size = null){
+    return include(__DIR__.'/handlers/debug_value.php');
+}
+
+
+
+/*
+ *
+ */
+function debug_sql($query, $column = null, $execute = null, $return_only = false){
+    return include(__DIR__.'/handlers/debug_sql.php');
+}
+
+
+
+/*
+ * Gives a filtered debug_backtrace()
+ */
+function debug_trace($filters = 'args'){
+    return include(__DIR__.'/handlers/debug_trace.php');
+}
+
+
+
+/*
+ *
+ */
+function die_in($count, $message = null){
+    return include(__DIR__.'/handlers/debug_die_in.php');
+}
+
+
+
+/*
  * OBSOLETE FUNCTIONS AND WRAPPERS BE HERE BELOW
  */
 
