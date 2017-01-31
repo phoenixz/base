@@ -801,7 +801,6 @@ function debug($class = null){
          * Force debug to be true. This may be useful in production situations where some bug needs quick testing.
          */
         $_CONFIG['debug'] = true;
-        load_libs('debug');
         return true;
     }
 
