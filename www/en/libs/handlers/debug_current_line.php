@@ -1,9 +1,9 @@
 <?php
 $backtrace = debug_backtrace();
 
-if(!isset($backtrace[$trace])){
+if(!isset($backtrace[$trace + 2])){
     return -1;
 }
 
-return $backtrace[$trace]['line'];
+return $backtrace[$trace + 2]['line'];
 ?>

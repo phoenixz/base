@@ -1292,18 +1292,6 @@ function pick_random($count){
 
 
 /*
- * Wrapper for debug_value
- */
-function value($format, $size = null){
-    if(!debug()) return '';
-
-    load_libs('debug');
-    return debug_value($format, $size);
-}
-
-
-
-/*
  * Return display status for specified status
  */
 function status($status, $list = null){
@@ -2135,9 +2123,19 @@ function detect_sudo(){
 
 
 /*
- * Show debug data in a readable format
+ * Auto fill in values (very useful for debugging and testing)
  */
-function show($data = null, $trace_offset = 1){
+function value($format, $size = null){
+    if(!debug()) return '';
+    return include(__DIR__.'/handlers/debug_value.php');
+}
+
+
+
+/*
+ * Show data, function results and variables in a readable format
+ */
+function show($data = null, $trace_offset = 2){
     return include(__DIR__.'/handlers/debug_show.php');
 }
 
@@ -2146,7 +2144,7 @@ function show($data = null, $trace_offset = 1){
 /*
  * Short hand for show and then die
  */
-function showdie($data = null, $trace_offset = 2){
+function showdie($data = null, $trace_offset = 4){
     return include(__DIR__.'/handlers/debug_showdie.php');
 }
 
@@ -2202,15 +2200,6 @@ function current_line($trace = 0){
  */
 function current_function($trace = 0){
     return include(__DIR__.'/handlers/debug_current_function.php');
-}
-
-
-
-/*
- * Return a test value that can be used for quick form debugging
- */
-function debug_value($format, $size = null){
-    return include(__DIR__.'/handlers/debug_value.php');
 }
 
 

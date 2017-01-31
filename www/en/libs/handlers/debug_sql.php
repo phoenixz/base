@@ -45,7 +45,7 @@ try{
         return $query;
     }
 
-    return show(str_ends($query, ';'), 3);
+    return show(str_ends($query, ';'), 5);
 
 }catch(Exception $e){
     throw new bException('debug_sql(): Failed', $e);
