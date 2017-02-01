@@ -2135,7 +2135,7 @@ function value($format, $size = null){
 /*
  * Show data, function results and variables in a readable format
  */
-function show($data = null, $trace_offset = 2){
+function show($data = null, $trace_offset = null){
     return include(__DIR__.'/handlers/debug_show.php');
 }
 
@@ -2144,7 +2144,7 @@ function show($data = null, $trace_offset = 2){
 /*
  * Short hand for show and then die
  */
-function showdie($data = null, $trace_offset = 4){
+function showdie($data = null, $trace_offset = null){
     return include(__DIR__.'/handlers/debug_showdie.php');
 }
 

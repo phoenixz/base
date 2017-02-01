@@ -2,6 +2,15 @@
 global $_CONFIG;
 
 try{
+    if($trace_offset === null){
+        if(PLATFORM_HTTP){
+            $trace_offset = 2;
+
+        }else{
+            $trace_offset = 1;
+        }
+    }
+
     if(!debug()){
         return $data;
     }
