@@ -410,44 +410,52 @@ function inet_get_client_data(){
         /*
          * Detect browser
          */
-        $user_agent = strtolower($client['user_agent']);
-        $browsers   = array('chrome',
-                            'firefox',
-                            'msie 10',
-                            'msie 9',
-                            'msie 8',
-                            'msie 7',
-                            'opera');
+        $oses = array('mac'     => 'desktop',
+                      'linux'   => 'desktop',
+                      'android' => 'mobile',
+                      'iphone'  => 'mobile',
+                      'windows' => 'desktop');
 
-        foreach($browsers as $browser){
-            if(strstr($user_agent, $browser)){
-                $client['browser'] = $browser;
-                break;
+        if(empty($_SESSION['client'])){
+            $user_agent = strtolower($client['user_agent']);
+            $browsers   = array('chrome',
+                                'firefox',
+                                'msie 10',
+                                'msie 9',
+                                'msie 8',
+                                'msie 7',
+                                'opera');
+
+            foreach($browsers as $browser){
+                if(strstr($user_agent, $browser)){
+                    $client['browser'] = $browser;
+                    break;
+                }
             }
-        }
 
-        if(empty($client['browser'])){
-            $client['browser'] = 'unknown';
-        }
-
-
-
-        /*
-         * Detect operating system
-         */
-        $user_agent = strtolower($client['user_agent']);
-        $oses       = array('mac'     => 'desktop',
-                            'linux'   => 'desktop',
-                            'android' => 'mobile',
-                            'iphone'  => 'mobile',
-                            'windows' => 'desktop');
-
-        foreach($oses as $os => $platform){
-            if(strstr($user_agent, $os)){
-                $client['os']       = $os;
-                $client['platform'] = $platform;
-                break;
+            if(empty($client['browser'])){
+                $client['browser'] = 'unknown';
             }
+
+            /*
+             * Detect operating system
+             */
+            $user_agent = strtolower($client['user_agent']);
+
+            foreach($oses as $os => $platform){
+                if(strstr($user_agent, $os)){
+                    $client['os']       = $os;
+                    $client['platform'] = $platform;
+                    break;
+                }
+            }
+
+        }else{
+            /*
+             * Get the information from $_SESSION[client]
+             */
+            $client['os']       = strtolower(isset_get($_SESSION['client']['info']['platform']));
+            $client['platform'] = (isset_get($_SESSION['client']['info']['ismobiledevice']) ? 'mobile' : 'desktop');
         }
 
         if(empty($client['os'])){
