@@ -1800,15 +1800,22 @@ function html_img($src, $alt, $width = null, $height = null, $more = ''){
 
             }else{
                 try{
-                    if(preg_match('/^ftp|https?/i', $src)){
+                    $url      = preg_match('/^ftp|https?/i', $src);
+                    $file_src = $src;
 
+                    if(strstr($file_src, domain(''))){
+                        $url      = false;
+                        $file_src = str_from($file_src, domain(''));
+                    }
+
+                    if($url){
                         /*
                          * Image comes from a domain, fetch to temp directory to analize
                          */
                         load_libs('file');
 
                         try{
-                            $file  = file_move_to_target($src, TMP, false, true);
+                            $file  = file_move_to_target($file_src, TMP, false, true);
                             $image = getimagesize(TMP.$file);
 
                         }catch(Exception $e){
@@ -1825,7 +1832,7 @@ function html_img($src, $alt, $width = null, $height = null, $more = ''){
                             /*
                              * Image doesnt exist
                              */
-                            notify('image does not exist', tr('html_img(): Specified image ":src" does not exist', array(':src' => $src)), 'developers');
+                            notify('image does not exist', tr('html_img(): Specified image ":src" does not exist', array(':src' => $file_src)), 'developers');
                             $image[0] = -1;
                             $image[1] = -1;
                         }
@@ -1839,14 +1846,14 @@ function html_img($src, $alt, $width = null, $height = null, $more = ''){
                         /*
                          * Local image. Analize directly
                          */
-                        if(file_exists(ROOT.'www/en/'.$src)){
-                            $image = getimagesize(ROOT.'www/en/'.$src);
+                        if(file_exists(ROOT.'www/en/'.$file_src)){
+                            $image = getimagesize(ROOT.'www/en/'.$file_src);
 
                         }else{
                             /*
                              * Image doesn't exist.
                              */
-                            log_error(tr('html_img(): image ":src" does not exist', array(':src' => $src, ':width' => $width, ':height' => $height)), 'invalid');
+                            log_error(tr('html_img(): image ":src" does not exist', array(':src' => $file_src, ':width' => $width, ':height' => $height)), 'invalid');
                             $image[0] = -1;
                             $image[1] = -1;
                         }
