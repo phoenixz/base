@@ -602,7 +602,7 @@ try{
         /*
          * New session?
          */
-        if(!isset($_SESSION['client'])){
+        if(empty($_SESSION['client'])){
             /*
              * Detect what client we are dealing with
              */
