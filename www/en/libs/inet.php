@@ -454,8 +454,9 @@ function inet_get_client_data(){
             /*
              * Get the information from $_SESSION[client]
              */
+            $client['browser']  = strtolower(isset_get($_SESSION['client']['info']['browser']));
             $client['os']       = strtolower(isset_get($_SESSION['client']['info']['platform']));
-            $client['platform'] = (isset_get($_SESSION['client']['info']['ismobiledevice']) ? 'mobile' : 'desktop');
+            $client['platform'] = (empty($_SESSION['client']['info']['ismobiledevice']) ? 'desktop' : 'mobile');
         }
 
         if(empty($client['os'])){

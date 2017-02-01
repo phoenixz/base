@@ -577,7 +577,7 @@ function ads_get(){
 
                 if($image['keyword']){
                     $html .= '  <li>
-                                    <a href="'.str_replace(':keyword', $image['file'], $url).'">'.html_img(current_domain('/photos/'.$image['file'].'-original.jpg', null), $image['description']).'</a>
+                                    <a href="'.str_replace(':keyword', $image['keyword'], $url).'">'.html_img(current_domain('/photos/'.$image['file'].'-original.jpg', null), $image['description']).'</a>
                                 </li>';
                 }else{
                     $html .= '  <li>
