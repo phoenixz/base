@@ -827,10 +827,10 @@ foreach($targets as $target_environment){
 
         foreach($_CONFIG['language']['supported'] as $code => $language){
             if(!$send_sitemap){
-                $exclude .= ' --exclude="www'.$language.'sitemap*" ';
+                $exclude .= ' --exclude="www/'.$code.'/sitemap*" ';
             }
 
-            $exclude .= ' --exclude="www'.$language.'mock" ';
+            $exclude .= ' --exclude="www/'.$code.'/mock" ';
         }
 
         if(count($deploy_config['exclude_dirs'])) {
