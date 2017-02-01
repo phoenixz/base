@@ -1858,7 +1858,7 @@ function name($user = null, $key_prefix = '', $default = null){
                  * This is not a user assoc array, but a user ID.
                  * Fetch user data from DB, then treat it as an array
                  */
-                if(!$user = sql_get('SELECT `name` `username`, `email` FROM `users` WHERE `id` = :id', array(':id' => $user))){
+                if(!$user = sql_get('SELECT `nickname`, `name`, `username`, `email` FROM `users` WHERE `id` = :id', array(':id' => $user))){
                    throw new bException('name(): Specified user id ":id" does not exist', array(':id' => str_log($user)), 'not-exist');
                 }
             }
@@ -1867,7 +1867,7 @@ function name($user = null, $key_prefix = '', $default = null){
                 throw new bException(tr('name(): Invalid data specified, please specify either user id, name, or an array containing username, email and or id'), 'invalid');
             }
 
-            $user = not_empty(isset_get($user[$key_prefix.'name']), isset_get($user[$key_prefix.'username']), isset_get($user[$key_prefix.'email']));
+            $user = not_empty(isset_get($user[$key_prefix.'nickname']), isset_get($user[$key_prefix.'name']), isset_get($user[$key_prefix.'username']), isset_get($user[$key_prefix.'email']));
 
             if($user){
                 return $user;

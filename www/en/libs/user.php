@@ -636,8 +636,8 @@ function user_create_extended_session($users_id) {
         /*
          * Add to db
          */
-        sql_query('INSERT INTO `extended_sessions` (`user_id`, `session_key`, `ip`)
-                   VALUES                          (:users_id, :session_key , :ip)',
+        sql_query('INSERT INTO `extended_sessions` (`users_id`, `session_key`, `ip`)
+                   VALUES                          (:users_id , :session_key , :ip)',
 
                    array(':users_id'    => cfi($users_id),
                          ':session_key' => $code,
@@ -1413,7 +1413,7 @@ function user_validate($user, $sections = array()){
         array_default($sections, 'role'               , true);
 
         load_libs('validate');
-        $v = new validate_form($user, 'name,username,email,password,password2,redirect,description,role,roles_id,commentary,gender,latitude,longitude,language,country,fb_id,fb_token,gp_id,gp_token,ms_id,ms_token_authentication,ms_token_access,tw_id,tw_token,yh_id,yh_token,status,validated,avatar,phones,type,domain');
+        $v = new validate_form($user, 'name,username,nickname,email,password,password2,redirect,description,role,roles_id,commentary,gender,latitude,longitude,language,country,fb_id,fb_token,gp_id,gp_token,ms_id,ms_token_authentication,ms_token_access,tw_id,tw_token,yh_id,yh_token,status,validated,avatar,phones,type,domain');
 
         $user['email2'] = $user['email'];
         $user['terms']  = true;
@@ -1444,8 +1444,12 @@ function user_validate($user, $sections = array()){
             $v->isAlphaNumeric($user['username'], tr('Please provide a valid username, it can only contain letters and numbers'));
         }
 
+        if($user['nickname']){
+            $v->hasMinChars($user['name'], 2, tr('Please ensure that the users nick name has a minimum of 2 characters'));
+        }
+
         if($user['name']){
-            $v->hasMinChars($user['name'], 2, tr('Please ensure that the real name has a minimum of 2 characters'));
+            $v->hasMinChars($user['name'], 2, tr('Please ensure that the users name has a minimum of 2 characters'));
         }
 
         if($sections['role']){

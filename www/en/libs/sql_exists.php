@@ -17,7 +17,7 @@ function sql_index_exists($table, $index, $query = '', $connector = null){
     global $pdo;
 
     try{
-        $retval = sql_get('SHOW INDEX FROM `'.cfm($table).'` WHERE `Key_name` = "'.cfm($index).'"', null, null, $connector);
+        $retval = sql_list('SHOW INDEX FROM `'.cfm($table).'` WHERE `Key_name` = "'.cfm($index).'"', null, null, $connector);
 
         if(substr($query, 0, 1) == '!'){
             $not   = true;
@@ -35,7 +35,7 @@ function sql_index_exists($table, $index, $query = '', $connector = null){
             sql_query($query, null, null, $connector);
         }
 
-        return $retval;
+        return array_shift($retval);
 
     }catch(Exception $e){
         throw new bException('sql_index_exists(): Failed', $e);
@@ -54,7 +54,7 @@ function sql_table_exists($table, $query = '', $connector = null){
     global $pdo;
 
     try{
-        $retval = sql_get('SHOW TABLES LIKE "'.cfm($table).'"', null, null, $connector);
+        $retval = sql_list('SHOW TABLES LIKE "'.cfm($table).'"', null, null, $connector);
 
         if(substr($query, 0, 1) == '!'){
             $not   = true;
