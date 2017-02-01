@@ -121,7 +121,8 @@ function api_authenticate($apikey){
         /*
          * Yay, auth worked, create session and send client the session token
          */
-        session_destroy();
+// :TODO: Check if session_destroy() is required or not. IMPORTANT!!! If it is required, there are situations where it CANNOT be called because no session had been started yet!!
+//        session_destroy();
         session_start();
         session_regenerate_id();
         session_reset_domain();
@@ -149,14 +150,14 @@ function api_authenticate($apikey){
 /*
  *
  */
-function api_start_session(){
+function api_start_session($sessionkey){
     global $_CONFIG;
 
     try{
         /*
          * Check session token
          */
-        if(empty($_POST['PHPSESSID'])){
+        if(empty($sessionkey)){
             throw new bException(tr('api_start_session(): No auth key specified'), 'not-specified');
         }
 
@@ -189,7 +190,7 @@ function api_start_session(){
 /*
  *
  */
-function api_close_session(){
+function api_stop_session(){
     global $_CONFIG;
 
     try{
