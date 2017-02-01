@@ -93,12 +93,19 @@ function ads_validate_image($image, $old_image = null){
 
         switch($image['platform']){
             case 'unknown':
+                // FALLTHROUGH
             case 'android':
+                // FALLTHROUGH
             case 'ios':
+                // FALLTHROUGH
             case 'mobile':
+                // FALLTHROUGH
             case 'windows':
+                // FALLTHROUGH
             case 'mac':
+                // FALLTHROUGH
             case 'linux':
+                // FALLTHROUGH
             case 'desktop':
                 break;
 
