@@ -166,7 +166,7 @@ function sql_fetch($r, $single_column = false, $fetch_style = PDO::FETCH_ASSOC){
         }
 
         if($single_column){
-            if(!isset($result[$single_column])){
+            if(!array_key_exists($single_column, $result)){
                 throw new bException(tr('sql_fetch(): Failed for query ":query" to fetch single column ":column", specified query result does not contain the requested column', array(':column' => $single_column, ':query' => $r->queryString)), 'multiple');
             }
 
