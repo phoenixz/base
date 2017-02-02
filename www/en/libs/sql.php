@@ -154,7 +154,7 @@ function sql_fetch($r, $single_column = false, $fetch_style = PDO::FETCH_ASSOC){
             return null;
         }
 
-        if($single_column){
+        if($single_column === true){
             /*
              * Return only the first column
              */
@@ -163,6 +163,14 @@ function sql_fetch($r, $single_column = false, $fetch_style = PDO::FETCH_ASSOC){
             }
 
             return array_shift($result);
+        }
+
+        if($single_column){
+            if(!isset($result[$single_column])){
+                throw new bException(tr('sql_fetch(): Failed for query ":query" to fetch single column ":column", specified query result does not contain the requested column', array(':column' => $single_column, ':query' => $r->queryString)), 'multiple');
+            }
+
+            return $result[$single_column];
         }
 
         /*
@@ -326,8 +334,25 @@ function sql_init($connector = 'core'){
          */
         if(!empty($_CONFIG['db'][$connector]['init'])){
             try{
-                $r = $GLOBALS['sql_'.$connector]->query('SELECT `project`, `framework` FROM `versions` ORDER BY `id` DESC LIMIT 1;');
+                $r = $GLOBALS['sql_'.$connector]->query('SELECT `project`, `framework`, `offline_until` FROM `versions` ORDER BY `id` DESC LIMIT 1;');
 
+            }catch(Exception $e){
+                if($e->getCode() !== '42S02'){
+                    if($e->getMessage() === 'SQLSTATE[42S22]: Column not found: 1054 Unknown column \'offline_until\' in \'field list\''){
+                        $r = $GLOBALS['sql_'.$connector]->query('SELECT `project`, `framework` FROM `versions` ORDER BY `id` DESC LIMIT 1;');
+
+                    }else{
+                        /*
+                         * Compatibility issue, this happens when older DB is running init.
+                         * Just ignore it, since in these older DB's the functionality
+                         * wasn't even there
+                         */
+                        throw $e;
+                    }
+                }
+            }
+
+            try{
                 if(!$r->rowCount()){
                     log_console(tr('sql_init(): No versions in versions table found, assumed empty database ":db"', array(':db' => $_CONFIG['db'][$connector]['db'])), 'warning/versions', 'yellow');
 
@@ -338,6 +363,15 @@ function sql_init($connector = 'core'){
 
                 }else{
                     $versions = $r->fetch(PDO::FETCH_ASSOC);
+
+                    if(!empty($versions['offline_until'])){
+                        if(PLATFORM_HTTP){
+                            page_show(503, array('offline_until' => $versions['offline_until']));
+
+                        }
+
+                        throw new bException(tr('The system is offline until ":until"', array(':until' => $versions['offline_until'])), 'offline');
+                    }
 
                     define('FRAMEWORKDBVERSION', $versions['framework']);
                     define('PROJECTDBVERSION'  , $versions['project']);
@@ -435,7 +469,6 @@ function sql_connect($connector, $use_database = true){
             }
 
         }catch(Exception $e){
-            log_console(tr('Encountered exception ":e" while connecting to database server, attempting to resolve', array(':e' => $e->getMessage())), '', 'yellow');
             include(dirname(__FILE__).'/handlers/sql_connect_exception.php');
         }
 

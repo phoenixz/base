@@ -17,6 +17,9 @@ $_CONFIG['ajax']               = array('autosuggest'      => array('min_characte
                                                                    'default_results'    => 5,
                                                                    'max_results'        => 15));
 
+// Google AMP configuration
+$_CONFIG['amp']                = array('enabled'          => false);
+
 // Avatar configuration, default avatar image, type will be added after this string, e.g.  _48x48.jpg
 $_CONFIG['avatars']            = array('default'          => '/pub/img/img_avatar',
 
@@ -285,15 +288,21 @@ $_CONFIG['root']               = '';                                            
 $_CONFIG['share']              = array('provider'         => false);                                        // Share button provider
 
 // Security configuration
-$_CONFIG['security']           = array('signin'           => array('save_password'   => true,               // Allow the browser client to save the passwords. If set to false, different form names will be used to stop browsers from saving passwords
-                                                                   'ip_lock'         => false,              // Either "false", "true" or number n (which makes it lock to users with the right ip_lock), or "ip address" or array("ip address", "ip address", ...). If specified as true, only 1 IP will be allowed. If specified as number N, up to N IP addresses will be allowed. If specified as "ip address", only that IP address will be allowed. If specified as array("ip address", ...) all IP addresses in that array will be allowed
-                                                                   'destroy_session' => false,              // Either "false", "true" or number n (which makes it lock to users with the right ip_lock), or "ip address" or array("ip address", "ip address", ...). If specified as true, only 1 IP will be allowed. If specified as number N, up to N IP addresses will be allowed. If specified as "ip address", only that IP address will be allowed. If specified as array("ip address", ...) all IP addresses in that array will be allowed
-                                                                   'two_factor'      => false),             // Either "false" or a valid twilio "from" phone number
+$_CONFIG['security']           = array('signin'           => array('save_password'    => true,              // Allow the browser client to save the passwords. If set to false, different form names will be used to stop browsers from saving passwords
+                                                                   'ip_lock'          => false,             // Either "false", "true" or number n (which makes it lock to users with the right ip_lock), or "ip address" or array("ip address", "ip address", ...). If specified as true, only 1 IP will be allowed. If specified as number N, up to N IP addresses will be allowed. If specified as "ip address", only that IP address will be allowed. If specified as array("ip address", ...) all IP addresses in that array will be allowed
+                                                                   'destroy_session'  => false,             // Either "false", "true" or number n (which makes it lock to users with the right ip_lock), or "ip address" or array("ip address", "ip address", ...). If specified as true, only 1 IP will be allowed. If specified as number N, up to N IP addresses will be allowed. If specified as "ip address", only that IP address will be allowed. If specified as array("ip address", ...) all IP addresses in that array will be allowed
+                                                                   'two_factor'       => false),            // Either "false" or a valid twilio "from" phone number
+
+                                       'authentication'   => array('captcha_failures' => 2,                 // Authentication failures until re-captcha is required. If 0, recaptcha will be required with every authentication
+                                                                   'auto_lock_fails'  => 5,                 // Upon N authentication failures, auto lock user accounts
+                                                                   'auto_lock_time'   => 60),               // Upon user account auto locking, keep the account locked for N seconds
 
                                        'passwords'        => array('test'            => false,              // Test new user password strength?
                                                                    'hash'            => 'sha256',           // What hash algorithm will we use to store the passwords?
                                                                    'usemeta'         => true,               // Add used hash as meta data to the password when storing them so we know what hash was used.
-                                                                   'useseed'         => true),              // Use the SEED constant to calculate passwords
+                                                                   'useseed'         => true,               // Use the SEED constant to calculate passwords
+                                                                   'unique_updates'  => 3,                  // Passwords cannot be updated to the same password for minimum N times
+                                                                   'unique_days'     => 30),                // Passwords cannot be updated to the same password for minimum N days
 
                                        'user'             => 'apache',                                      //
                                        'group'            => 'apache',                                      //

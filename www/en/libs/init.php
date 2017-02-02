@@ -155,7 +155,7 @@ function init($projectfrom = null, $frameworkfrom = null){
              * ALWAYS First init framework, then project
              */
             foreach(array('framework', 'project') as $type){
-                log_console('Starting init', 'init/'.$type);
+                cli_log(tr('Starting ":type" init', array(':type' => $type)));
 
                 /*
                  * Get path for the init type (either init/framework or init/project)
@@ -175,6 +175,7 @@ function init($projectfrom = null, $frameworkfrom = null){
                      * Skip garbage
                      */
                     if(($file == '.') or ($file == '..') or (file_extension($file) != 'php') or !str_is_version(str_until($file, '.php'))) {
+                        cli_log(tr('Skipping unknown file ":file"', array(':file' => $file)), 'yellow');
                         unset($files[$key]);
                         continue;
                     }
