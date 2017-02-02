@@ -393,23 +393,33 @@ function user_authenticate($username, $password, $captcha = null){
          */
         if($user['locked_left'] > 0){
             /*
-             * Account is locked
+             * Only lock if configured to do so
              */
-            throw new bException(tr('user_authenticate(): Specified user account is locked'), 'locked', array('locked' => $user['locked_left']));
+            if($_CONFIG['security']['authentication']['auto_lock_fails'] and $_CONFIG['security']['authentication']['auto_lock_time']){
+                throw new bException(tr('user_authenticate(): Specified user account is locked'), 'locked', array('locked' => $user['locked_left']));
+            }
         }
 
+        /*
+         * If we have too many auth_fails then lock the account temporarily
+         */
         if(!$user['locked_until'] and ($user['auth_fails'] >= $_CONFIG['security']['authentication']['auto_lock_fails'])){
-            $user['locked_left'] = $_CONFIG['security']['authentication']['auto_lock_time'];
+            /*
+             * Only lock if configured to do so
+             */
+            if($_CONFIG['security']['authentication']['auto_lock_fails'] and $_CONFIG['security']['authentication']['auto_lock_time']){
+                $user['locked_left'] = $_CONFIG['security']['authentication']['auto_lock_time'];
 
-            sql_query('UPDATE `users`
+                sql_query('UPDATE `users`
 
-                       SET    `locked_until` = UTC_TIMESTAMP() + INTERVAL '.$_CONFIG['security']['authentication']['auto_lock_time'].' SECOND
+                           SET    `locked_until` = UTC_TIMESTAMP() + INTERVAL '.$_CONFIG['security']['authentication']['auto_lock_time'].' SECOND
 
-                       WHERE  `id`           = :id',
+                           WHERE  `id`           = :id',
 
-                       array(':id' => $user['id']));
+                           array(':id' => $user['id']));
 
-            throw new bException(tr('user_authenticate(): Specified user account is locked'), 'locked', array('locked' => $user['locked_left']));
+                throw new bException(tr('user_authenticate(): Specified user account is locked'), 'locked', array('locked' => $user['locked_left']));
+            }
         }
 
         if($user['locked_until']){
@@ -446,7 +456,13 @@ function user_authenticate($username, $password, $captcha = null){
         /*
          * Check captcha
          */
-        $captcha_required = user_authentication_requires_captcha($_CONFIG['security']['authentication']['captcha_failures'] - 1);
+        $failures = $_CONFIG['security']['authentication']['captcha_failures'] - 1;
+
+        if($failures < 0){
+            $failures = 0;
+        }
+
+        $captcha_required = user_authentication_requires_captcha($failures);
 
         if($captcha_required){
 // :TODO: There might be a configuration issue where $_CONFIG['captcha']['type'] is disabled, but $captcha_required does require captcha..
@@ -651,6 +667,13 @@ function user_authentication_requires_captcha($failures = null){
         }
 
         if(!$failures){
+            if($failures === false){
+                /*
+                 * Never use CAPTCHA!
+                 */
+                return false;
+            }
+
             /*
              * Always use CAPTCHA!
              */
