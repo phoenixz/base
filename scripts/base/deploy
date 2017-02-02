@@ -166,11 +166,12 @@ $nonotify            =   cli_argument('nonotify');
 
 $message             =   cli_argument('--message'       , true);
 $continuersync       =   cli_argument('--continuer-sync', true);
-$categories          =   cli_argument('--category'      , 'all', cli_argument('--categories', 'all'));
+$targets             =   cli_argument('--target'        , 'all', cli_argument('--targets', 'all'));
 $nobomcheck          =   cli_argument('--no-bom-check');
+$nobackup            =   cli_argument('--no-backup');
 
 $tilde               = '~'.date('Ymd-His');
-$targets             =   cli_arguments();
+$categories          =   cli_arguments();
 
 cli_no_arguments_left();
 
@@ -453,7 +454,7 @@ if(!$noversion){
     passthru(ROOT.'script/base/init -E '.$target_environment, $exitcode);
 
     if($exitcode){
-        throw new bException('System init failed with exit code "'.str_log($exitcode).'"', 'local_init');
+        throw new bException(tr('System init failed with exit code ":code"', array(':code' => $exitcode)), 'local_init');
     }
 }
 
@@ -491,7 +492,7 @@ if($nocompress){
      */
     if(!trim(shell_exec('git status | grep "nothing to commit" | wc -l'))){
         cli_log(tr('Changes detected from the compression script script, committing to git'), 'white');
-        safe_exec('cd '.ROOT.'; git add .');
+        safe_exec('cd '.ROOT.'; git add www/en/pub; git add www/en/admin/pub; ');
         safe_exec('git commit -m "Deploy commit: compressed files changed"');
 
         if(!$nopush){
@@ -715,6 +716,49 @@ foreach($targets as $target_environment){
     }
 
 
+
+    /*
+     *
+     */
+    if(empty($deploy_config['auto_backup']) or $nobackup){
+        cli_log(tr('Not executing auto site backup, due to either configuration or --no-backup option'), 'yellow');
+
+    }else{
+        /*
+         * Make a backup of website files and database
+         */
+        cli_log(tr('Generating auto site and database backup'), 'white');
+
+        load_libs('config');
+        $config = config_get_for_environment($target_environment);
+
+        /*
+         * Does the project exist at all? or is it an initial deploy?
+         */
+        passthru('ssh -t -p '.$target_port.' '.$deploy_config['target_user'].'@'.$deploy_config['target_server'].' \''.$sudo.'mkdir /data/backups/'.date_convert(null, 'Ymd').' > /dev/null 2>&1', $exitcode);
+
+        if($exitcode){
+            throw new bException(tr('rsync_parrallel copy failed with exit code ":code"', array(':code' => $exitcode)), 'rsync_parrallel');
+        }
+
+        passthru('ssh -t -p '.$target_port.' '.$deploy_config['target_user'].'@'.$deploy_config['target_server'].' \''.$sudo.'mysqldump -p -K -R -n -e --dump-date --comments -B '.$config['db']['core']['db'].' | gzip > /data/backups/'.date_convert(null, 'Ymd').'/'.$config['db']['core']['db'].'.sql.gz', $exitcode);
+
+        if($exitcode){
+            throw new bException(tr('rsync_parrallel copy failed with exit code ":code"', array(':code' => $exitcode)), 'rsync_parrallel');
+        }
+
+        passthru('ssh -t -p '.$target_port.' '.$deploy_config['target_user'].'@'.$deploy_config['target_server'].' \''.$sudo.'tar -cjf /data/backups/'.date_convert(null, 'Ymd').'/'.basename($deploy_config['target_dir']).'.tgz '.$deploy_config['target_dir'], $exitcode);
+
+        if($exitcode){
+            throw new bException(tr('rsync_parrallel copy failed with exit code ":code"', array(':code' => $exitcode)), 'rsync_parrallel');
+        }
+    }
+
+
+
+    /*
+     *
+     */
     if(!empty($deploy_config['rsync_parrallel'])){
         /*
          * Make a copy on the server, rsync that copy, then move that copy in place of the current version. This will cause less down time due to version differences
@@ -753,7 +797,7 @@ foreach($targets as $target_environment){
             passthru('ssh -t -p '.$target_port.' '.$deploy_config['target_user'].'@'.$deploy_config['target_server'].' \''.$sudo.'rm '.$deploy_config['target_dir'].$tilde.' -rf; '.$sudo.'cp -a '.$deploy_config['target_dir'].' '.$deploy_config['target_dir'].$tilde.'\'', $exitcode);
 
             if($exitcode){
-                throw new bException('rsync_parrallel copy failed with exit code "'.str_log($exitcode).'"', 'rsync_parrallel');
+                throw new bException(tr('rsync_parrallel copy failed with exit code ":code"', array(':code' => $exitcode)), 'rsync_parrallel');
             }
         }
 
@@ -769,7 +813,7 @@ foreach($targets as $target_environment){
         cli_log(tr('NOT deploying, due to "--no-deploy" or "--test" command line parameter'), 'yellow');
 
     }else{
-        $exclude = ' --exclude=*~ --exclude="data/mocks" --exclude="tmp" --exclude="data/mock*" --exclude="data/uploads" --exclude="data/packages" --exclude=".git*" --exclude="/data/system"  --exclude="/data/tmp" ';
+        $exclude = ' --exclude=*~ --exclude="data/mocks" --exclude="tmp" --exclude="data/mock*" --exclude="data/uploads" --exclude="data/packages" --exclude=".git*" --exclude="/data/system"  --exclude="/data/tmp" --exclude="sitemaps" --exclude="sitemap.xml" ';
 
         if(!$send_content_photos){
             $exclude .= ' --exclude="data/content/photos" ';
@@ -783,10 +827,10 @@ foreach($targets as $target_environment){
 
         foreach($_CONFIG['language']['supported'] as $code => $language){
             if(!$send_sitemap){
-                $exclude .= ' --exclude="www'.$language.'sitemap*" ';
+                $exclude .= ' --exclude="www/'.$code.'/sitemap*" ';
             }
 
-            $exclude .= ' --exclude="www'.$language.'mock" ';
+            $exclude .= ' --exclude="www/'.$code.'/mock" ';
         }
 
         if(count($deploy_config['exclude_dirs'])) {

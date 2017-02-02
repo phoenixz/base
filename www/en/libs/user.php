@@ -355,7 +355,7 @@ function user_remove_from_group($user, $groups, $validate = true){
 /*
  * `cate the specified user with the specified password
  */
-function user_authenticate($username, $password, $columns = '*') {
+function user_authenticate($username, $password, $captcha = null){
     global $_CONFIG;
 
     try{
@@ -366,15 +366,76 @@ function user_authenticate($username, $password, $columns = '*') {
             throw new bException('user_authenticate(): Specified username is not valid', 'invalid');
         }
 
-        $user = sql_get('SELECT '.$columns.' FROM `users` WHERE `email` = :email OR `username` = :username', array(':email' => $username, ':username' => $username));
+        $user = sql_get('SELECT *,
+                                `locked_until` - UTC_TIMESTAMP() AS `locked_left`
+
+                         FROM   `users`
+
+                         WHERE  `email`    = :email
+                         OR     `username` = :username',
+
+                         array(':email'    => $username,
+                               ':username' => $username));
 
         if(!$user){
-            log_database(tr('user_authenticate(): Specified user ":username" not found', array(':username' => $username)), 'authentication/notfound');
-            throw new bException(tr('user_authenticate(): Specified user ":username" not found', array(':username' => $username)), 'notfound');
+            log_database(tr('user_authenticate(): Specified user account ":username" not found', array(':username' => $username)), 'authentication/notfound');
+            throw new bException(tr('user_authenticate(): Specified user account ":username" not found', array(':username' => $username)), 'notfound');
         }
 
         if($user['status'] !== null){
-            throw new bException(tr('user_authenticate(): Specified user has status ":status" and cannot be authenticated', array(':status' => $user['status'])), 'inactive');
+            throw new bException(tr('user_authenticate(): Specified user account has status ":status" and cannot be authenticated', array(':status' => $user['status'])), 'inactive');
+        }
+
+
+
+        /*
+         * Check authentication failures and account locking
+         */
+        if($user['locked_left'] > 0){
+            /*
+             * Only lock if configured to do so
+             */
+            if($_CONFIG['security']['authentication']['auto_lock_fails'] and $_CONFIG['security']['authentication']['auto_lock_time']){
+                throw new bException(tr('user_authenticate(): Specified user account is locked'), 'locked', array('locked' => $user['locked_left']));
+            }
+        }
+
+        /*
+         * If we have too many auth_fails then lock the account temporarily
+         */
+        if(!$user['locked_until'] and ($user['auth_fails'] >= $_CONFIG['security']['authentication']['auto_lock_fails'])){
+            /*
+             * Only lock if configured to do so
+             */
+            if($_CONFIG['security']['authentication']['auto_lock_fails'] and $_CONFIG['security']['authentication']['auto_lock_time']){
+                $user['locked_left'] = $_CONFIG['security']['authentication']['auto_lock_time'];
+
+                sql_query('UPDATE `users`
+
+                           SET    `locked_until` = UTC_TIMESTAMP() + INTERVAL '.$_CONFIG['security']['authentication']['auto_lock_time'].' SECOND
+
+                           WHERE  `id`           = :id',
+
+                           array(':id' => $user['id']));
+
+                throw new bException(tr('user_authenticate(): Specified user account is locked'), 'locked', array('locked' => $user['locked_left']));
+            }
+        }
+
+        if($user['locked_until']){
+            /*
+             * This account was locked but the timout expired. Set the
+             * locked_until date back to NULL. We haven't authenticated yet, but
+             * that is okay, we're only doing this to auto update the user
+             * administration
+             */
+            sql_query('UPDATE `users`
+
+                       SET    `locked_until` = NULL
+
+                       WHERE  `id`           = :id',
+
+                       array(':id'           => $user['id']));
         }
 
 
@@ -386,8 +447,33 @@ function user_authenticate($username, $password, $columns = '*') {
             /*
              * This check will only do anything if the users table contains the "type" column. If it doesn't, nothing will ever happen here, really
              */
-            log_database(tr('user_authenticate(): Specified user ":username" has status ":type" and cannot be authenticated', array(':username' => str_log($username), ':type' => str_log($user['type']))), 'authentication/notfound');
-            throw new bException(tr('user_authenticate(): Specified user has status ":type" and cannot be authenticated', array(':type' => $user['type'])), 'type');
+            log_database(tr('user_authenticate(): Specified user account ":username" has status ":type" and cannot be authenticated', array(':username' => str_log($username), ':type' => str_log($user['type']))), 'authentication/notfound');
+            throw new bException(tr('user_authenticate(): Specified user account has status ":type" and cannot be authenticated', array(':type' => $user['type'])), 'type');
+        }
+
+
+
+        /*
+         * Check captcha
+         */
+        $failures = $_CONFIG['security']['authentication']['captcha_failures'] - 1;
+
+        if($failures < 0){
+            $failures = 0;
+        }
+
+        $captcha_required = user_authentication_requires_captcha($failures);
+
+        if($captcha_required){
+// :TODO: There might be a configuration issue where $_CONFIG['captcha']['type'] is disabled, but $captcha_required does require captcha..
+            load_libs('captcha');
+
+            try{
+                captcha_verify_response($captcha);
+
+            }catch(Exception $e){
+                throw new bException(tr('user_authenticate(): CAPTCHA test failed'), 'captcha');
+            }
         }
 
 
@@ -411,10 +497,10 @@ function user_authenticate($username, $password, $columns = '*') {
         }catch(Exception $e){
             switch($e->getCode()){
                 case 'unknown-algorithm':
-                    throw new bException(tr('user_authenticate(): User ":name" has an unknown algorithm ":algorithm" specified', array(':user' => name($user), ':algorithm' => $algorithm)), $e);
+                    throw new bException(tr('user_authenticate(): User account ":name" has an unknown algorithm ":algorithm" specified', array(':user' => name($user), ':algorithm' => $algorithm)), $e);
 
                 default:
-                    throw new bException(tr('user_authenticate(): Password hashing failed for user ":name"', array(':user' => name($user))), $e);
+                    throw new bException(tr('user_authenticate(): Password hashing failed for user account ":name"', array(':user' => name($user))), $e);
             }
         }
 
@@ -439,7 +525,7 @@ function user_authenticate($username, $password, $columns = '*') {
          */
         if(($_CONFIG['whitelabels']['enabled'] === true) and $user['domain']){
             if($user['domain'] !== $_SERVER['HTTP_HOST']){
-                throw new bException(tr('user_autohenticate(): User ":name" is limited to authenticate only in domain ":domain"', array(':name' => name($user), ':domain' => $user['domain'])), 'domain-limit');
+                throw new bException(tr('user_autohenticate(): User account ":name" is limited to authenticate only in domain ":domain"', array(':name' => name($user), ':domain' => $user['domain'])), 'domain-limit');
             }
         }
 
@@ -450,7 +536,7 @@ function user_authenticate($username, $password, $columns = '*') {
          */
         if($_CONFIG['security']['signin']['two_factor']){
             if(empty($user['phone'])){
-                throw new bException('user_autohenticate(): Two factor authentication impossible for user "'.$user['id'].' / '.$user['name'].'" because no phone is registered', 'twofactor_nophone');
+                throw new bException('user_autohenticate(): Two factor authentication impossible for user account "'.$user['id'].' / '.$user['name'].'" because no phone is registered', 'twofactor_nophone');
             }
 
             $user['authenticated'] = 'two_factor';
@@ -463,21 +549,57 @@ function user_authenticate($username, $password, $columns = '*') {
             return $user;
         }
 
+
         /*
-         * Wait a little bit so the authentication failure cannot be timed, and
-         * library attacks will be harder
+         * Wait a random little bit so the authentication failure cannot be
+         * timed (timing attacks will be harder), and library attacks will be
+         * harder because authentication will be a relatively slow process
          */
-        usleep(mt_rand(1000, 200000));
-        log_database(tr('user_authenticate(): Authenticated user ":username"', array(':username' => $username)), 'authentication/success');
+        usleep(mt_rand(1000, 500000));
+        sql_query('UPDATE `users` SET `auth_fails` = 0 WHERE `id` = :id', array(':id' => $user['id']));
+
+        log_database(tr('user_authenticate(): Authenticated user account ":username"', array(':username' => $username)), 'authentication/success');
+        user_log_authentication($username, $user['id'], $captcha_required);
 
         $user['authenticated'] = true;
         return $user;
 
     }catch(Exception $e){
         /*
+         * If a certain account is being attacked, then lock it temporarily
+         */
+        if(!empty($user['id'])){
+            if(!$user['locked_left'] and (($user['auth_fails'] + 1) >= $_CONFIG['security']['authentication']['auto_lock_fails'])){
+                sql_query('UPDATE `users`
+
+                           SET    `locked_until` = UTC_TIMESTAMP() + INTERVAL '.$_CONFIG['security']['authentication']['auto_lock_time'].' SECOND,
+                                  `auth_fails`   = `auth_fails` + 1
+
+                           WHERE  `id` = :id',
+
+                           array(':id' => $user['id']));
+
+            }else{
+                /*
+                 * Update only the authentication failure count
+                 */
+                sql_query('UPDATE `users`
+
+                           SET    `auth_fails` = `auth_fails` + 1
+
+                           WHERE  `id`         = :id',
+
+                           array(':id' => $user['id']));
+            }
+        }
+
+
+
+        /*
          * Wait a little bit so the authentication failure cannot be timed, and
          * library attacks will be harder
          */
+        user_log_authentication($username, isset_get($user['id']), isset_get($captcha_required), $e);
         usleep(mt_rand(1000, 2000000));
 
         if($e->getCode() == 'password'){
@@ -492,6 +614,107 @@ function user_authenticate($username, $password, $columns = '*') {
         }
 
         throw new bException('user_authenticate(): Failed', $e);
+    }
+}
+
+
+
+/*
+ *
+ */
+function user_log_authentication($username, $users_id, $captcha_required, $e = null){
+    try{
+        if($e){
+            $failed_reason = $e->getMessage();
+            $status        = $e->getCode();
+
+        }else{
+            $status = null;
+        }
+
+        sql_query('INSERT INTO `authentications` (`createdby`, `status`, `captcha_required`, `failed_reason`, `users_id`, `username`, `ip`)
+                   VALUES                        (:createdby , :status , :captcha_required , :failed_reason , :users_id , :username , :ip )',
+
+                   array(':status'            => $status,
+                         ':createdby'         => isset_get($_SESSION['user']['id']),
+                         ':users_id'          => $users_id,
+                         ':username'          => $username,
+                         ':failed_reason'     => str_truncate(trim(str_from(isset_get($failed_reason), '():')), 127),
+                         ':captcha_required'  => (boolean) $captcha_required,
+                         ':ip'                => isset_get($_SERVER['REMOTE_ADDR'])));
+
+    }catch(Exception $e){
+        throw new bException('user_log_authentication(): Failed', $e);
+    }
+}
+
+
+
+/*
+ *
+ */
+function user_authentication_requires_captcha($failures = null){
+    global $_CONFIG;
+    static $result = null;
+
+    try{
+        if(is_bool($result)){
+            return $result;
+        }
+
+        if(!$failures){
+            $failures = $_CONFIG['security']['authentication']['captcha_failures'];
+        }
+
+        if(!$failures){
+            if($failures === false){
+                /*
+                 * Never use CAPTCHA!
+                 */
+                return false;
+            }
+
+            /*
+             * Always use CAPTCHA!
+             */
+            return true;
+        }
+
+        /*
+         * Get the last N logins. If they are all failed, then captcha is
+         * required
+         */
+        $list = sql_query('SELECT   `status` IS NOT NULL AS `fail`
+
+                           FROM     `authentications`
+
+                           WHERE    `ip` = :ip
+
+                           ORDER BY `id` DESC
+
+                           LIMIT    '.$failures,
+
+                           array(':ip' => isset_get($_SERVER['REMOTE_ADDR'])));
+
+        if($list->rowCount() < $failures){
+            return false;
+        }
+
+        while(($fail = sql_fetch($list, true)) !== null){
+            if(!$fail){
+                /*
+                 * We had a non failure in between, so we're okay
+                 */
+                $result = false;
+                return $result;
+            }
+        }
+
+        $result = true;
+        return $result;
+
+    }catch(Exception $e){
+        throw new bException('user_log_authentication(): Failed', $e);
     }
 }
 
@@ -592,15 +815,19 @@ function user_signout() {
 
     try{
         if(isset($_COOKIE['extsession'])) {
-            //remove cookie
+            /*
+             * Remove cookie
+             */
             setcookie('extsession', 'stub', 1);
 
             if(isset($_SESSION['user'])){
-                sql_query('DELETE FROM `extended_sessions` WHERE `user_id` = :users_id', array('users_id' => cfi($_SESSION['user']['id'])));
+                sql_query('DELETE FROM `extended_sessions` WHERE `users_id` = :users_id', array('users_id' => cfi($_SESSION['user']['id'])));
             }
         }
 
-        //remove session info
+        /*
+         * Remove session info
+         */
         unset($_SESSION['user']);
 
         session_destroy();
@@ -902,6 +1129,38 @@ function user_update_password($params, $current = true){
          */
         $password = get_hash($params['password'], $_CONFIG['security']['passwords']['hash']);
 
+        /*
+         * Ensure that this new password is not the same as one of the N
+         * previous passwords
+         */
+        if($_CONFIG['security']['passwords']['unique_days']){
+            $list = sql_query('SELECT   `password`
+
+                               FROM     `passwords`
+
+                               WHERE    `users_id` = :users_id
+                               AND      `createdon` + INTERVAL :days DAYS > UTC_TIMESTAMP()
+
+                               ORDER BY `id`
+
+                               LIMIT    '.$_CONFIG['security']['passwords']['unique_updates'],
+
+                               array(':users_id' => $_SESSION['user']['id'],
+                                     ':days'     => $_CONFIG['security']['passwords']['unique_days']));
+
+            while($previous = sql_fetch($list)){
+                if($previous == $password){
+                    /*
+                     * This password has been used before
+                     */
+                    throw new bException(tr('user_update_password(): The specified password has already been used before'), 'not-specified');
+                }
+            }
+        }
+
+        /*
+         * Update the password
+         */
         $r = sql_query('UPDATE `users`
 
                         SET    `modifiedon` = NOW(),

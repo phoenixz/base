@@ -801,7 +801,6 @@ function debug($class = null){
          * Force debug to be true. This may be useful in production situations where some bug needs quick testing.
          */
         $_CONFIG['debug'] = true;
-        load_libs('debug');
         return true;
     }
 
@@ -1288,18 +1287,6 @@ function pick_random($count){
 
         return $retval;
     }
-}
-
-
-
-/*
- * Wrapper for debug_value
- */
-function value($format, $size = null){
-    if(!debug()) return '';
-
-    load_libs('debug');
-    return debug_value($format, $size);
 }
 
 
@@ -2095,6 +2082,155 @@ function get_boolean($value){
         throw new bException(tr('get_boolean(): Failed'), $e);
     }
 }
+
+
+
+/*
+ * Return TRUE if the user of the current process is the root user
+ */
+function detect_root(){
+    try{
+        if(!is_executable('posix_getuid')){
+            throw new bException(tr('detect_root(): The PHP posix module is not installed. Do note that this function only works on Linux machines!'), 'not-installed');
+        }
+
+        return posix_getuid() == 0;
+
+    }catch(Exception $e){
+        throw new bException(tr('detect_root(): Failed'), $e);
+    }
+}
+
+
+
+/*
+ * Return TRUE if the user of the current process has sudo available
+ */
+function detect_sudo(){
+    try{
+
+    }catch(Exception $e){
+        throw new bException(tr('detect_sudo(): Failed'), $e);
+    }
+}
+
+
+
+/*
+ * DEBUG FUNCTIONS BELOW HERE
+ */
+
+
+
+/*
+ * Auto fill in values (very useful for debugging and testing)
+ */
+function value($format, $size = null){
+    if(!debug()) return '';
+    return include(__DIR__.'/handlers/debug_value.php');
+}
+
+
+
+/*
+ * Show data, function results and variables in a readable format
+ */
+function show($data = null, $trace_offset = null){
+    return include(__DIR__.'/handlers/debug_show.php');
+}
+
+
+
+/*
+ * Short hand for show and then die
+ */
+function showdie($data = null, $trace_offset = null){
+    return include(__DIR__.'/handlers/debug_showdie.php');
+}
+
+
+
+/*
+ * Short hand for show and then randomly die
+ */
+function showrandomdie($data = '', $return = false, $quiet = false, $trace_offset = 2){
+    return include(__DIR__.'/handlers/debug_showrandomdie.php');
+}
+
+
+
+/*
+ * Show nice HTML table with all debug data
+ */
+function debug_html($value, $key = null, $trace_offset = 0){
+    return include(__DIR__.'/handlers/debug_html.php');
+}
+
+
+
+/*
+ * Show HTML <tr> for the specified debug data
+ */
+function debug_html_row($value, $key = null, $type = null){
+    return include(__DIR__.'/handlers/debug_html_row.php');
+}
+
+
+
+/*
+ * Return the file where this call was made
+ */
+function current_file($trace = 0){
+    return include(__DIR__.'/handlers/debug_current_file.php');
+}
+
+
+
+/*
+ * Return the line number where this call was made
+ */
+function current_line($trace = 0){
+    return include(__DIR__.'/handlers/debug_current_line.php');
+}
+
+
+
+/*
+ * Return the function where this call was made
+ */
+function current_function($trace = 0){
+    return include(__DIR__.'/handlers/debug_current_function.php');
+}
+
+
+
+/*
+ *
+ */
+function debug_sql($query, $column = null, $execute = null, $return_only = false){
+    return include(__DIR__.'/handlers/debug_sql.php');
+}
+
+
+
+/*
+ * Gives a filtered debug_backtrace()
+ */
+function debug_trace($filters = 'args'){
+    return include(__DIR__.'/handlers/debug_trace.php');
+}
+
+
+
+/*
+ *
+ */
+function die_in($count, $message = null){
+    return include(__DIR__.'/handlers/debug_die_in.php');
+}
+
+
+
 /*
  * OBSOLETE FUNCTIONS AND WRAPPERS BE HERE BELOW
  */

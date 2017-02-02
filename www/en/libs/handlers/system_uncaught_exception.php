@@ -88,8 +88,6 @@ try{
         }
     }
 
-    require_once(dirname(__FILE__).'/../debug.php');
-
     $code = 'error/'.$e->getCode();
 
     if($e instanceof bException){

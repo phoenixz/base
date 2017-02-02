@@ -146,6 +146,8 @@ function html_bundler($type){
                 return html_bundler($type);
             }
 
+            $GLOBALS[$type] = array();
+
         }else{
             /*
              * Generate new bundle
@@ -625,6 +627,7 @@ function html_header($params = null, $meta = array()){
         array_default($params, 'links'         , '');
         array_default($params, 'extra'         , '');
         array_default($params, 'favicon'       , true);
+        array_default($params, 'amp'           , false);
         array_default($params, 'prefetch_dns'  , $_CONFIG['prefetch']['dns']);
         array_default($params, 'prefetch_files', $_CONFIG['prefetch']['files']);
 
@@ -678,6 +681,10 @@ function html_header($params = null, $meta = array()){
             if(!$meta['viewport']){
                 throw new bException(tr('html_header(): Meta viewport tag is not specified'), 'not-specified');
             }
+        }
+
+        if(!empty($params['amp'])){
+            $params['links'] .= '<link rel="amphtml" href="'.domain('/amp'.$_SERVER['REQUEST_URI']).'">';
         }
 
         if(!empty($params['canonical'])){
@@ -1800,15 +1807,22 @@ function html_img($src, $alt, $width = null, $height = null, $more = ''){
 
             }else{
                 try{
-                    if(preg_match('/^ftp|https?/i', $src)){
+                    $url      = preg_match('/^ftp|https?/i', $src);
+                    $file_src = $src;
 
+                    if(strstr($file_src, domain(''))){
+                        $url      = false;
+                        $file_src = str_from($file_src, domain(''));
+                    }
+
+                    if($url){
                         /*
                          * Image comes from a domain, fetch to temp directory to analize
                          */
                         load_libs('file');
 
                         try{
-                            $file  = file_move_to_target($src, TMP, false, true);
+                            $file  = file_move_to_target($file_src, TMP, false, true);
                             $image = getimagesize(TMP.$file);
 
                         }catch(Exception $e){
@@ -1825,7 +1839,7 @@ function html_img($src, $alt, $width = null, $height = null, $more = ''){
                             /*
                              * Image doesnt exist
                              */
-                            notify('image does not exist', tr('html_img(): Specified image ":src" does not exist', array(':src' => $src)), 'developers');
+                            notify('image does not exist', tr('html_img(): Specified image ":src" does not exist', array(':src' => $file_src)), 'developers');
                             $image[0] = -1;
                             $image[1] = -1;
                         }
@@ -1839,14 +1853,14 @@ function html_img($src, $alt, $width = null, $height = null, $more = ''){
                         /*
                          * Local image. Analize directly
                          */
-                        if(file_exists(ROOT.'www/en/'.$src)){
-                            $image = getimagesize(ROOT.'www/en/'.$src);
+                        if(file_exists(ROOT.'www/en/'.$file_src)){
+                            $image = getimagesize(ROOT.'www/en/'.$file_src);
 
                         }else{
                             /*
                              * Image doesn't exist.
                              */
-                            log_error(tr('html_img(): image ":src" does not exist', array(':src' => $src, ':width' => $width, ':height' => $height)), 'invalid');
+                            log_error(tr('html_img(): image ":src" does not exist', array(':src' => $file_src, ':width' => $width, ':height' => $height)), 'invalid');
                             $image[0] = -1;
                             $image[1] = -1;
                         }
@@ -2146,6 +2160,14 @@ function html_minify($html, $full = false){
 //        $replace[] = '$1$2=$3$4';
 
         if($full){
+            /*
+             * Finds and removes single line comments, this regex actually matches
+             * things like "function (){// Comment" and won't match urls with or wihtout
+             * protocol: "//facebook.com or http://
+             */
+            $search [] = '/([^:"\'])\/{2}.*[\n\r]/';
+            $replace[] = '$1';
+
             /*
              * Remove empty lines (sequence of line-end and white-space characters)
              */
