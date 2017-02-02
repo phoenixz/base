@@ -262,7 +262,6 @@ function wp_admin_post($params, $force_new = false){
              * Looks like the page was not updated successfully
              */
             if(empty($retval['curl']['simulation'])){
-load_libs('debug');
 show($retval['curl']['data']);
                throw new bException('wp_admin_post(): Failed to find post URL', 'posturl');
             }

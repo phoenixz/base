@@ -469,7 +469,6 @@ function sql_connect($connector, $use_database = true){
             }
 
         }catch(Exception $e){
-            log_console(tr('Encountered exception ":e" while connecting to database server, attempting to resolve', array(':e' => $e->getMessage())), '', 'yellow');
             include(dirname(__FILE__).'/handlers/sql_connect_exception.php');
         }
 

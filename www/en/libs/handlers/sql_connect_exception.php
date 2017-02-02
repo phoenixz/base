@@ -1,9 +1,10 @@
 <?php
     global $_CONFIG;
-
     if($e->getMessage() == 'could not find driver'){
         throw new bException('sql_connect(): Failed to connect with "'.str_log($connector['driver']).'" driver, it looks like its not available', 'driverfail');
     }
+
+    log_console(tr('Encountered exception ":e" while connecting to database server, attempting to resolve', array(':e' => $e->getMessage())), '', 'yellow');
 
     /*
      * Check that all connector values have been set!
