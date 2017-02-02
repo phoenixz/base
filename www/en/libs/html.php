@@ -2160,10 +2160,10 @@ function html_minify($html, $full = false){
         if($full){
             /*
              * Finds and removes single line comments, this regex actually matches
-             * things like "function (){// Comment" and won't match urls since urls do
-             * not contain spaces.
+             * things like "function (){// Comment" and won't match urls with or wihtout
+             * protocol: "//facebook.com or http://
              */
-            $search [] = '/([^:])\/{2}.*[\n\r]/';
+            $search [] = '/([^:"\'])\/{2}.*[\n\r]/';
             $replace[] = '$1';
 
             /*
