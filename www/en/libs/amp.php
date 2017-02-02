@@ -124,7 +124,7 @@ function amp_page($params){
                     $component      = str_replace(':', '', $key);
                     $component      = 'amp_component_'.$component;
                     $component_data = amp_component_carousel($component_data);
-                    $data           = str_replace($key, $component_data, $data);
+                    $data           = str_replace(':'.$key, $component_data, $data);
 
                 }catch(Exception $e){
                     throw new bException(tr('amp_page(): Specified component failed or does not exist ":component"', array(':component' => $component)), $e);
