@@ -146,6 +146,8 @@ function html_bundler($type){
                 return html_bundler($type);
             }
 
+            $GLOBALS[$type] = array();
+
         }else{
             /*
              * Generate new bundle
