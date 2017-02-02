@@ -147,6 +147,7 @@ if(PLATFORM_SHELL){
     $GLOBALS['page_is_ajax']   = false;
     $GLOBALS['page_is_api']    = false;
     $GLOBALS['page_is_404']    = false;
+    $GLOBALS['page_is_amp']    = $_CONFIG['amp']['enabled'] and !empty($_GET['amp']);
 
     if(substr($_SERVER['PHP_SELF'], -7, 7) == '404.php'){
         /*

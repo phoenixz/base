@@ -625,6 +625,7 @@ function html_header($params = null, $meta = array()){
         array_default($params, 'links'         , '');
         array_default($params, 'extra'         , '');
         array_default($params, 'favicon'       , true);
+        array_default($params, 'amp'           , false);
         array_default($params, 'prefetch_dns'  , $_CONFIG['prefetch']['dns']);
         array_default($params, 'prefetch_files', $_CONFIG['prefetch']['files']);
 
@@ -678,6 +679,10 @@ function html_header($params = null, $meta = array()){
             if(!$meta['viewport']){
                 throw new bException(tr('html_header(): Meta viewport tag is not specified'), 'not-specified');
             }
+        }
+
+        if(!empty($params['amp'])){
+            $params['links'] .= '<link rel="amphtml" href="'.domain('/amp'.$_SERVER['REQUEST_URI']).'">';
         }
 
         if(!empty($params['canonical'])){

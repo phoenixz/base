@@ -17,6 +17,9 @@ $_CONFIG['ajax']               = array('autosuggest'      => array('min_characte
                                                                    'default_results'    => 5,
                                                                    'max_results'        => 15));
 
+// Google AMP configuration
+$_CONFIG['amp']                = array('enabled'          => false);
+
 // Avatar configuration, default avatar image, type will be added after this string, e.g.  _48x48.jpg
 $_CONFIG['avatars']            = array('default'          => '/pub/img/img_avatar',
 
