@@ -168,7 +168,7 @@ foreach($deploy_config['modes'] as $type => $modes){
                     passthru($sudo.'find '.unslash(ROOT).$path.' -type d -exec chmod '.$mode.' {} \;', $exitcode);
 
                     if($exitcode){
-                        throw new bException(tr('Failed to update mode for directories in path ":path"', array(':path' => $path)), 'failed');
+                        throw new bException(tr('Failed to update mode for directories in path ":path"', array(':path' => unslash(ROOT).$path)), 'failed');
                     }
                 }
             }
@@ -193,7 +193,7 @@ foreach($deploy_config['modes'] as $type => $modes){
                     passthru($sudo.'find '.unslash(ROOT).$path.' -type f -exec chmod '.$mode.' {} \;', $exitcode);
 
                     if($exitcode){
-                        throw new bException(tr('Failed to update mode for files in path ":path"', array(':path' => $path)), 'failed');
+                        throw new bException(tr('Failed to update mode for files in path ":path"', array(':path' => unslash(ROOT).$path)), 'failed');
                     }
                 }
             }
