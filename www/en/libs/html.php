@@ -486,7 +486,7 @@ function html_generate_js(){
         /*
          * Set to load default JS libraries
          */
-if(isset($js['default_libs'])){
+if(isset($js['default_libs']) and empty($_CONFIG['production'])){
 throw new bException('WARNING: $_CONFIG[js][default_libs] CONFIGURATION FOUND! THIS IS NO LONGER SUPPORTED! JS LIBRARIES SHOULD ALWAYS BE LOADED USING html_load_js() AND JS SCRIPT ADDED THROUGH html_script()', 'obsolete');
 }
 
@@ -750,7 +750,7 @@ function html_header($params = null, $meta = array()){
         /*
          * Add required fonts
          */
-if(isset($_CONFIG['cdn']['fonts'])){
+if(isset($_CONFIG['cdn']['fonts']) and empty($_CONFIG['production'])){
 throw new bException('WARNING: $_CONFIG[cdn][fonts] CONFIGURATION FOUND! THIS IS NO LONGER SUPPORTED! FONTS SHOULD BE SPECIFIED IN $params[fonts] IN c_page()', 'obsolete');
 }
 
