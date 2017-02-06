@@ -1977,6 +1977,7 @@ function file_tree_execute($params){
                                         /*
                                          * When the callback returned boolean false, cancel all other files
                                          */
+                                        cli_log(tr('file_tree_execute(): callback returned FALSE for file ":file", skipping rest of directory contents!', array(':file' => $file)), 'yellow');
                                         goto end;
                                     }
 
