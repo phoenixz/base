@@ -1161,8 +1161,9 @@ function blogs_validate_category($category, $blog){
  * Ensure that all post data is okay
  */
 function blogs_validate_post($post, $params = null){
-    try{
+    global $_CONFIG;
 
+    try{
         array_params($params);
         array_default($params, 'force_id'         , false);
         array_default($params, 'use_id'           , false);
@@ -1340,7 +1341,7 @@ function blogs_validate_post($post, $params = null){
             $v->hasChars($post['language']  , 2, tr('Please provide a valid language'));
 
             if(empty($_CONFIG['language']['supported'][$post['language']])){
-                $v->setError(tr('Please provide a valid language, must be one of ":languages"', array(':languages' => implode(', ', $post['language']))));
+                $v->setError(tr('Please provide a valid language, must be one of ":languages"', array(':languages' => $post['language'])));
             }
 
         }else{

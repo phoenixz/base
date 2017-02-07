@@ -151,11 +151,40 @@ function amp_img($src, $alt, $width = null, $height = null, $more = 'layout="res
     try{
         $img = html_img($src, $alt, $width, $height, $more);
         $img = '<amp-img'.substr($img, 4);
+        $img .= '</amp-img>';
 
         return $img;
 
     }catch(Exception $e){
         throw new bException('amp_img(): Failed', $e);
+    }
+}
+
+
+
+/*
+ * Returns <amp-video> componet
+ */
+function amp_video(array $attributes){
+    try{
+        $dont_support     = tr('Your browser doesn\'\t support HTML5 video.');
+        $format_amp_video = '<amp-video width="'.$attributes['width'].'"
+                                height="'.$attributes['height'].'"
+                                src="'.$attributes['src'].'"
+                                poster="'.$attributes['poster'].'"
+                                layout="responsive"
+                                class="amp_base_video"
+                                controls>
+                                <div fallback>
+                                <p>'.$dont_support.'</p>
+                                </div>
+                                <source type="'.$attributes['type'].'" src="'.$attributes['src'].'">
+                            </amp-video>';
+
+        return $format_amp_video;
+
+    }catch(Exception $e){
+        throw new bException('amp_video(): Failed', $e);
     }
 }
 
@@ -172,4 +201,81 @@ function amp_url($url){
         throw new bException('amp_url(): Failed', $e);
     }
 }
+
+
+
+/*
+ * Convert HTML to AMP HTML
+ */
+function amp_content($html){
+    try{
+// :TODO: Add caching support!
+        /*
+         * Do we have this content cached?
+         */
+
+        /*
+         * Turn video tags into amp-video tags
+         */
+        if(strstr($html, '<video')){
+            preg_match_all('/<video.+?>[ ?\n?\r?].*<\/video>/', $html, $video_match);
+
+            $attributes = ['class','width','height','poster','src','type'];
+            $videos     = $video_match[0];
+
+            foreach($videos as $video ){
+                $search[] = $video;
+
+                foreach($attributes as $attribute){
+                    $value_matches = array();
+                    preg_match('/'.$attribute.'=(["\'][:\/\/a-zA-Z0-9 -\/.]+["\'])/', $video, $value_matches);
+
+                    $string = isset_get($value_matches[1]);
+                    $values[$attribute] = trim($string, '"');
+                }
+
+                $replace[] = amp_video($values);
+            }
+        }
+
+        /*
+         * Turn img tags into amp-img tags
+         */
+        $amp_imgs = [];
+
+        if(strstr($html, '<img')){
+            preg_match_all('/<img.+?>/', $html, $img_match);
+
+            $attributes = array('src', 'alt', 'width', 'height', 'class');
+            $images     = $img_match[0];
+
+            if(count($images)){
+                foreach ($images as $image) {
+                    $search[] = $image;
+
+                    foreach ($attributes as $attribute) {
+                        $value_match = [];
+                        preg_match('/'.$attribute.'=(["\'][:\/\/a-zA-Z0-9 -\/.]+["\'])/',$image,$value_match);
+
+                        $string             = isset_get($value_match[1]);
+                        $values[$attribute] = trim($string,'"');
+
+                    }
+
+                    $values['width']  = (empty($values['width'])  ? null                  : $values['width']);
+                    $values['height'] = (empty($values['height']) ? null                  : $values['height']);
+                    $values['class']  = (empty($values['class'])  ? 'layout="responsive"' : 'class="'.$values['class'].'"');
+
+                    $replace[] = amp_img($values['src'], $values['alt'], $values['width'], $values['height'], $values['class']);
+                }
+            }
+        }
+
+        return str_replace($search, $replace, $html);
+
+    }catch(Exception $e){
+        throw new bException('amp_content(): Failed', $e);
+    }
+}
+
 ?>
