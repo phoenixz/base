@@ -17,7 +17,7 @@
 /*
  * Framework version
  */
-define('FRAMEWORKCODEVERSION', '0.44.3');
+define('FRAMEWORKCODEVERSION', '0.45.1');
 
 
 
@@ -147,6 +147,7 @@ if(PLATFORM_SHELL){
     $GLOBALS['page_is_ajax']   = false;
     $GLOBALS['page_is_api']    = false;
     $GLOBALS['page_is_404']    = false;
+    $GLOBALS['page_is_amp']    = $_CONFIG['amp']['enabled'] and !empty($_GET['amp']);
 
     if(substr($_SERVER['PHP_SELF'], -7, 7) == '404.php'){
         /*
@@ -243,38 +244,8 @@ try{
 }
 
 
+
 try{
-    /*
-     * Load debug files if needed
-     */
-    try{
-        if($_CONFIG['debug']){
-            /*
-             * We're in debug mode, so load debug configuration and library as well
-             */
-            include_once($file = ROOT.'config/debug.php');
-            include_once($file = dirname(__FILE__).'/debug.php');
-        }
-
-    }catch(Exception $e){
-        switch($path){
-            case 'libs':
-                $type = 'library';
-                break;
-
-            case 'config':
-                $type = 'configuration';
-                break;
-        }
-
-        if(!file_exists($file)){
-            throw new bException('startup(): The debug '.str_log($type).' file "'.str_log($file).'" does not exist', $e);
-        }
-
-        throw new bException('startup(): Failed to load the debug '.str_log($type).' file "'.str_log($file).'"', $e);
-    }
-
-
     /*
      * Set security umask
      */
@@ -632,7 +603,7 @@ try{
         /*
          * New session?
          */
-        if(!isset($_SESSION['client'])){
+        if(empty($_SESSION['client'])){
             /*
              * Detect what client we are dealing with
              */

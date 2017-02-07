@@ -4,6 +4,11 @@
  */
 global $_CONFIG;
 static $count, $code, $messages;
+
+if(empty($_CONFIG['production'])){
+    showdie($e);
+}
+
 debug(true);
 //showdie($e);
 
@@ -87,8 +92,6 @@ try{
             error_log($e->getMessage());
         }
     }
-
-    require_once(dirname(__FILE__).'/../debug.php');
 
     $code = 'error/'.$e->getCode();
 

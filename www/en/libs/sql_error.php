@@ -206,7 +206,6 @@ function sql_error($e, $query, $execute, $sql = null){
                             $query = $query->queryString;
                         }
 
-                        load_libs('debug');
                         throw new bException('sql_error(): Query "'.str_log(debug_sql(preg_replace('!\s+!', ' ', $query), null, $execute, true)).'" failed', $e);
 
                         $body = "SQL STATE ERROR : \"".$error[0]."\"\n".

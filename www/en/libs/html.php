@@ -89,19 +89,19 @@ function html_bundler($type){
                 $default = ($_CONFIG['cdn']['js']['load_delayed'] ? 'js_footer' : 'js_header');
 
                 foreach($GLOBALS[$type] as &$file){
-                    switch($file[1]){
+                    switch($file[0]){
                         case '<':
                             /*
                              * Header
                              */
-                            $GLOBALS['js_header'][$file] = $file;
+                            $GLOBALS['js_header'][substr($file, 1)] = substr($file, 1);
                             break;
 
                         case '>':
                             /*
                              * Footer
                              */
-                            $GLOBALS['js_footer'][$file] = $file;
+                            $GLOBALS['js_footer'][substr($file, 1)] = substr($file, 1);
                             break;
 
                         default:
@@ -146,6 +146,8 @@ function html_bundler($type){
                 return html_bundler($type);
             }
 
+            $GLOBALS[$type] = array();
+
         }else{
             /*
              * Generate new bundle
@@ -153,7 +155,7 @@ function html_bundler($type){
             load_libs('file');
             file_ensure_path($path.'bundle-');
 
-            foreach($GLOBALS[$realtype] as &$file){
+            foreach($GLOBALS[$realtype] as $key => &$file){
                 /*
                  * Check for @imports
                  */
@@ -166,6 +168,7 @@ function html_bundler($type){
                 }
 
                 $data = file_get_contents($file);
+                unset($GLOBALS[$realtype][$key]);
 
                 switch($type){
                     case 'js':
@@ -275,6 +278,7 @@ function html_bundler($type){
             }
 
             unset($file);
+            $GLOBALS[$realtype] = array();
 
             if($_CONFIG['cdn']['network']['enabled']){
                 load_libs('cdn');
@@ -282,8 +286,7 @@ function html_bundler($type){
             }
         }
 
-        $GLOBALS[$type] = array('bundle-'.$prefix.$bundle => array('min'   => $_CONFIG['cdn']['min'],
-                                                                   'media' => ''));
+        $GLOBALS[$type][$prefix.'bundle-'.$bundle] = true;
 
     }catch(Exception $e){
         throw new bException('html_bundler(): Failed', $e);
@@ -375,7 +378,7 @@ function html_generate_css(){
         foreach($GLOBALS['css'] as $file => $meta) {
             if(!$file) continue;
 
-            $html = '<link rel="stylesheet" type="text/css" href="'.cdn_prefix((($_CONFIG['whitelabels']['enabled'] === true) ? $_SESSION['domain'].'/' : '').'css/'.(!empty($GLOBALS['page_is_mobile']) ? 'mobile/' : '').$file.($min ? '.min.css' : '.css')).'"'.($meta['media'] ? ' media="'.$meta['media'].'"' : '').'>';
+            $html = '<link rel="stylesheet" type="text/css" href="'.cdn_prefix((($_CONFIG['whitelabels']['enabled'] === true) ? $_SESSION['domain'].'/' : '').'css/'.$file.($min ? '.min.css' : '.css')).'">';
 
             if(substr($file, 0, 2) == 'ie'){
                 $retval .= html_iefilter($html, str_until(str_from($file, 'ie'), '.'));
@@ -483,7 +486,7 @@ function html_generate_js(){
         /*
          * Set to load default JS libraries
          */
-if(isset($js['default_libs'])){
+if(isset($js['default_libs']) and empty($_CONFIG['production'])){
 throw new bException('WARNING: $_CONFIG[js][default_libs] CONFIGURATION FOUND! THIS IS NO LONGER SUPPORTED! JS LIBRARIES SHOULD ALWAYS BE LOADED USING html_load_js() AND JS SCRIPT ADDED THROUGH html_script()', 'obsolete');
 }
 
@@ -564,16 +567,15 @@ throw new bException('WARNING: $_CONFIG[js][default_libs] CONFIGURATION FOUND! T
                 $html = '<script'.(!empty($data['option']) ? ' '.$data['option'] : '').' type="text/javascript" src="'.cdn_prefix((($_CONFIG['whitelabels']['enabled'] === true) ? $_SESSION['domain'].'/' : '').'js/'.$file.$min.'.js').'"></script>';
             }
 
-            /*
-             * Add the scripts with IE only filters?
-             */
-
-            if(isset_get($data['ie'])){
-                $html = html_iefilter($html, $data['ie']);
-
-            }else{
-                $html = $html."\n";
-            }
+            ///*
+            // * Add the scripts with IE only filters?
+            // */
+            //if(isset_get($data['ie'])){
+            //    $html = html_iefilter($html, $data['ie']);
+            //
+            //}else{
+            //    $html = $html."\n";
+            //}
 
             if($check[0] == '>' or (!empty($js['load_delayed']) and ($check[0] != '<'))){
                 /*
@@ -625,6 +627,7 @@ function html_header($params = null, $meta = array()){
         array_default($params, 'links'         , '');
         array_default($params, 'extra'         , '');
         array_default($params, 'favicon'       , true);
+        array_default($params, 'amp'           , false);
         array_default($params, 'prefetch_dns'  , $_CONFIG['prefetch']['dns']);
         array_default($params, 'prefetch_files', $_CONFIG['prefetch']['files']);
 
@@ -678,6 +681,10 @@ function html_header($params = null, $meta = array()){
             if(!$meta['viewport']){
                 throw new bException(tr('html_header(): Meta viewport tag is not specified'), 'not-specified');
             }
+        }
+
+        if(!empty($params['amp'])){
+            $params['links'] .= '<link rel="amphtml" href="'.domain('/amp'.$_SERVER['REQUEST_URI']).'">';
         }
 
         if(!empty($params['canonical'])){
@@ -743,7 +750,7 @@ function html_header($params = null, $meta = array()){
         /*
          * Add required fonts
          */
-if(isset($_CONFIG['cdn']['fonts'])){
+if(isset($_CONFIG['cdn']['fonts']) and empty($_CONFIG['production'])){
 throw new bException('WARNING: $_CONFIG[cdn][fonts] CONFIGURATION FOUND! THIS IS NO LONGER SUPPORTED! FONTS SHOULD BE SPECIFIED IN $params[fonts] IN c_page()', 'obsolete');
 }
 
@@ -1800,15 +1807,22 @@ function html_img($src, $alt, $width = null, $height = null, $more = ''){
 
             }else{
                 try{
-                    if(preg_match('/^ftp|https?/i', $src)){
+                    $url      = preg_match('/^ftp|https?/i', $src);
+                    $file_src = $src;
 
+                    if(strstr($file_src, domain(''))){
+                        $url      = false;
+                        $file_src = str_from($file_src, domain(''));
+                    }
+
+                    if($url){
                         /*
                          * Image comes from a domain, fetch to temp directory to analize
                          */
                         load_libs('file');
 
                         try{
-                            $file  = file_move_to_target($src, TMP, false, true);
+                            $file  = file_move_to_target($file_src, TMP, false, true);
                             $image = getimagesize(TMP.$file);
 
                         }catch(Exception $e){
@@ -1825,7 +1839,7 @@ function html_img($src, $alt, $width = null, $height = null, $more = ''){
                             /*
                              * Image doesnt exist
                              */
-                            notify('image does not exist', tr('html_img(): Specified image ":src" does not exist', array(':src' => $src)), 'developers');
+                            notify('image does not exist', tr('html_img(): Specified image ":src" does not exist', array(':src' => $file_src)), 'developers');
                             $image[0] = -1;
                             $image[1] = -1;
                         }
@@ -1839,14 +1853,14 @@ function html_img($src, $alt, $width = null, $height = null, $more = ''){
                         /*
                          * Local image. Analize directly
                          */
-                        if(file_exists(ROOT.'www/en/'.$src)){
-                            $image = getimagesize(ROOT.'www/en/'.$src);
+                        if(file_exists(ROOT.'www/en/'.$file_src)){
+                            $image = getimagesize(ROOT.'www/en/'.$file_src);
 
                         }else{
                             /*
                              * Image doesn't exist.
                              */
-                            log_error(tr('html_img(): image ":src" does not exist', array(':src' => $src, ':width' => $width, ':height' => $height)), 'invalid');
+                            log_error(tr('html_img(): image ":src" does not exist', array(':src' => $file_src, ':width' => $width, ':height' => $height)), 'invalid');
                             $image[0] = -1;
                             $image[1] = -1;
                         }
@@ -2022,7 +2036,7 @@ function html_video($src, $type = null, $height = 0, $width = 0, $more = ''){
 /*
  * Show the specified page
  */
-function page_show($pagename, $die = true, $force = false, $data = null) {
+function page_show($pagename, $params = null){
     global $_CONFIG;
 
     try{
@@ -2037,11 +2051,10 @@ function page_show($pagename, $die = true, $force = false, $data = null) {
             $prefix = '';
         }
 
+// :COMPATIBILITY: $data only is added here for compatibility purposes. This should be removed after 20170601
+$data = $params;
         include(ROOT.'www/'.LANGUAGE.'/'.$prefix.$pagename.'.php');
-
-        if($die){
-            die();
-        }
+        die();
 
     }catch(Exception $e){
         throw new bException(tr('page_show(): Failed to show page "%page%"', array('%page%' => str_log($pagename))), $e);
