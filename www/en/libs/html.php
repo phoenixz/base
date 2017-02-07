@@ -2165,8 +2165,9 @@ function html_minify($html, $full = false){
              * things like "function (){// Comment" and won't match urls with or wihtout
              * protocol: "//facebook.com or http://
              */
-            $search [] = '/([^:"\'])\/{2}.*[\n\r]/';
-            $replace[] = '$1';
+// :TODO: This regex is way too general, shuld only be match against script tags content, disabled for the moment
+            //$search [] = '/([^:"\'])\/{2}.*[\n\r]/';
+            //$replace[] = '$1';
 
             /*
              * Remove empty lines (sequence of line-end and white-space characters)
