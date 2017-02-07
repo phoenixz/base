@@ -165,31 +165,23 @@ function amp_img($src, $alt, $width = null, $height = null, $more = 'layout="res
 /*
  * Returns <amp-video> componet
  */
-function amp_video(array $attributes ){
+function amp_video(array $attributes){
     try{
-        $dont_support = tr('Your browser doesn\'\t support HTML5 video.');
-        $format_amp_video = '<amp-video width="%d"
-                                height="%d"
-                                src="%s"
-                                poster="%s"
+        $dont_support     = tr('Your browser doesn\'\t support HTML5 video.');
+        $format_amp_video = '<amp-video width="'.$attributes['width'].'"
+                                height="'.$attributes['height'].'"
+                                src="'.$attributes['src'].'"
+                                poster="'.$attributes['poster'].'"
                                 layout="responsive"
                                 class="amp_base_video"
                                 controls>
                                 <div fallback>
-                                <p>%s</p>
+                                <p>'.$dont_support.'</p>
                                 </div>
-                                <source type="%s" src="%s">
+                                <source type="'.$attributes['type'].'" src="'.$attributes['src'].'">
                             </amp-video>';
 
-        return sprintf($format_amp_video,
-            $attributes['width'],
-            $attributes['height'],
-            $attributes['src'],
-            $attributes['poster'],
-            $dont_support,
-            $attributes['type'],
-            $attributes['src']
-        );
+        return $format_amp_video;
 
     }catch(Exception $e){
         throw new bException('amp_video(): Failed', $e);
@@ -217,11 +209,15 @@ function amp_url($url){
  */
 function amp_content($html){
     try{
+// :TODO: Add caching support!
+        /*
+         * Do we have this content cached?
+         */
 
         /*
          * Turn video tags into amp-video tags
          */
-        if ( stripos($html, '<video') !== false){
+        if(strstr($html, '<video')){
             preg_match_all('/<video.+?>[ ?\n?\r?].*<\/video>/', $html, $video_match);
 
             $attributes = ['class','width','height','poster','src','type'];
@@ -229,13 +225,15 @@ function amp_content($html){
 
             foreach($videos as $video ){
                 $search[] = $video;
-                foreach($attributes as $attribute){
-                    $value_matches = [];
-                    preg_match('/'.$attribute.'=(["\'][:\/\/a-zA-Z0-9 -\/.]+["\'])/',$video,$value_matches);
-                    $string = isset_get($value_matches[1]);
-                    $values[$attribute] = trim($string,'"');
 
+                foreach($attributes as $attribute){
+                    $value_matches = array();
+                    preg_match('/'.$attribute.'=(["\'][:\/\/a-zA-Z0-9 -\/.]+["\'])/', $video, $value_matches);
+
+                    $string = isset_get($value_matches[1]);
+                    $values[$attribute] = trim($string, '"');
                 }
+
                 $replace[] = amp_video($values);
             }
         }
@@ -244,29 +242,31 @@ function amp_content($html){
          * Turn img tags into amp-img tags
          */
         $amp_imgs = [];
-        if (stripos($html, '<img') !== false){
+
+        if(strstr($html, '<img')){
             preg_match_all('/<img.+?>/', $html, $img_match);
 
-            $attributes = ['src','alt','width','height','class'];
+            $attributes = array('src', 'alt', 'width', 'height', 'class');
             $images     = $img_match[0];
 
-            if (count($images) > 0){
+            if(count($images)){
                 foreach ($images as $image) {
                     $search[] = $image;
+
                     foreach ($attributes as $attribute) {
                         $value_match = [];
                         preg_match('/'.$attribute.'=(["\'][:\/\/a-zA-Z0-9 -\/.]+["\'])/',$image,$value_match);
-                        $string = isset_get($value_match[1]);
+
+                        $string             = isset_get($value_match[1]);
                         $values[$attribute] = trim($string,'"');
 
                     }
-                    $replace[] = amp_img(
-                        $values['src'],
-                        $values['alt'],
-                        (empty($values['width']) ? null : $values['width']),
-                        (empty($values['height']) ? null : $values['height']),
-                        (empty($values['class']) ? 'layout="responsive"' : 'class="'.$values['class'].'"')
-                    );
+
+                    $values['width']  = (empty($values['width'])  ? null                  : $values['width']);
+                    $values['height'] = (empty($values['height']) ? null                  : $values['height']);
+                    $values['class']  = (empty($values['class'])  ? 'layout="responsive"' : 'class="'.$values['class'].'"');
+
+                    $replace[] = amp_img($values['src'], $values['alt'], $values['width'], $values['height'], $values['class']);
                 }
             }
         }
