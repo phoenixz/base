@@ -151,11 +151,48 @@ function amp_img($src, $alt, $width = null, $height = null, $more = 'layout="res
     try{
         $img = html_img($src, $alt, $width, $height, $more);
         $img = '<amp-img'.substr($img, 4);
+        $img .= '</amp-img>';
 
         return $img;
 
     }catch(Exception $e){
         throw new bException('amp_img(): Failed', $e);
+    }
+}
+
+
+
+/*
+ * Returns <amp-video> componet
+ */
+function amp_video(array $attributes ){
+    try{
+        $dont_support = tr('Your browser doesn\'\t support HTML5 video.');
+        $format_amp_video = '<amp-video width="%d"
+                                height="%d"
+                                src="%s"
+                                poster="%s"
+                                layout="responsive"
+                                class="amp_base_video"
+                                controls>
+                                <div fallback>
+                                <p>%s</p>
+                                </div>
+                                <source type="%s" src="%s">
+                            </amp-video>';
+
+        return sprintf($format_amp_video,
+            $attributes['width'],
+            $attributes['height'],
+            $attributes['src'],
+            $attributes['poster'],
+            $dont_support,
+            $attributes['type'],
+            $attributes['src']
+        );
+
+    }catch(Exception $e){
+        throw new bException('amp_video(): Failed', $e);
     }
 }
 
@@ -172,4 +209,73 @@ function amp_url($url){
         throw new bException('amp_url(): Failed', $e);
     }
 }
+
+
+
+/*
+ * Convert HTML to AMP HTML
+ */
+function amp_content($html){
+    try{
+
+        /*
+         * Turn video tags into amp-video tags
+         */
+        if ( stripos($html, '<video') !== false){
+            preg_match_all('/<video.+?>[ ?\n?\r?].*<\/video>/', $html, $video_match);
+
+            $attributes = ['class','width','height','poster','src','type'];
+            $videos     = $video_match[0];
+
+            foreach($videos as $video ){
+                $search[] = $video;
+                foreach($attributes as $attribute){
+                    $value_matches = [];
+                    preg_match('/'.$attribute.'=(["\'][:\/\/a-zA-Z0-9 -\/.]+["\'])/',$video,$value_matches);
+                    $string = isset_get($value_matches[1]);
+                    $values[$attribute] = trim($string,'"');
+
+                }
+                $replace[] = amp_video($values);
+            }
+        }
+
+        /*
+         * Turn img tags into amp-img tags
+         */
+        $amp_imgs = [];
+        if (stripos($html, '<img') !== false){
+            preg_match_all('/<img.+?>/', $html, $img_match);
+
+            $attributes = ['src','alt','width','height','class'];
+            $images     = $img_match[0];
+
+            if (count($images) > 0){
+                foreach ($images as $image) {
+                    $search[] = $image;
+                    foreach ($attributes as $attribute) {
+                        $value_match = [];
+                        preg_match('/'.$attribute.'=(["\'][:\/\/a-zA-Z0-9 -\/.]+["\'])/',$image,$value_match);
+                        $string = isset_get($value_match[1]);
+                        $values[$attribute] = trim($string,'"');
+
+                    }
+                    $replace[] = amp_img(
+                        $values['src'],
+                        $values['alt'],
+                        (empty($values['width']) ? null : $values['width']),
+                        (empty($values['height']) ? null : $values['height']),
+                        (empty($values['class']) ? 'layout="responsive"' : 'class="'.$values['class'].'"')
+                    );
+                }
+            }
+        }
+
+        return str_replace($search, $replace, $html);
+
+    }catch(Exception $e){
+        throw new bException('amp_content(): Failed', $e);
+    }
+}
+
 ?>
