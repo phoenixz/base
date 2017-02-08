@@ -180,7 +180,7 @@ function amp_youtube(array $attributes){
                             height="'.$attributes['height'].'"
                             layout="responsive"
                             '.$attributes['class'].'
-                            data-videoid="'.$attributes['hashtag'].'"
+                            data-videoid="'.$attributes['hashtag'].'">
                         </amp-youtube>';
 
         return $amp_youtube;
