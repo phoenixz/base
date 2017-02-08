@@ -168,11 +168,18 @@ function amp_img($src, $alt, $width = null, $height = null, $more = 'layout="res
  */
 function amp_youtube(array $attributes){
     try{
+        if(!isset_get($attributes['hashtag'])) return '';
+        array_default($attributes, 'width' , '480');
+        array_default($attributes, 'height' , '385');
+        array_default($attributes, 'class' , '');
+
+        $attributes['class'] = (empty($attributes['class']) ? 'class="amp_base_youtube"' : 'class="amp_base_youtube '.$attributes['class'].'"' );
+
         $dont_support     = tr('Your browser doesn\'\t support HTML5 youtube.');
         $amp_youtube = '<amp-youtube width="'.$attributes['width'].'"
                             height="'.$attributes['height'].'"
                             layout="responsive"
-                            class="amp_base_youtube"
+                            '.$attributes['class'].'
                             data-videoid="'.$attributes['hashtag'].'"
                         </amp-youtube>';
 
@@ -243,7 +250,6 @@ function amp_content($html){
          * First we make sure we don't have forbbiden html tags in our html
          */
         $html = amp_html_cleanup($html);
-
         /*
          * Turn video tags into amp-video tags
          */
@@ -295,8 +301,8 @@ function amp_content($html){
                     }
 
                     $hashtag = array();
-                    preg_match('/(?:youtube\.com\/\S*(?:(?:\/e(?:mbed))?\/|watch\?(?:\S*?&?v\=))|youtu\.be\/)([a-zA-Z0-9_-]{6,11})/',$iframe, $hashtag);
-                    $values['hashtag'] = $hashtag[1];
+                    preg_match('/(?:(youtube\.com\/|youtube-nocookie\.com\/)\S*(?:(?:\/e(?:embed))?\/|watch\?(?:\S*?&?v\=))|youtu\.be\/)([a-zA-Z0-9_-]{6,11})/',$iframe, $hashtag);
+                    $values['hashtag'] = $hashtag[2];
 
                     $replace[] = amp_youtube($values);
                 }
@@ -384,7 +390,6 @@ function amp_html_cleanup($html){
             $search [] = '/<'.$tag.'.*>(.*)<\/'.$tag.'>/s';
             $replace[] = '$1';
         }
-
         /*
          * Populate empty attributes with defaults
          */
