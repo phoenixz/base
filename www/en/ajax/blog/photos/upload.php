@@ -38,17 +38,27 @@ try{
 
 }catch(Exception $e){
     switch($e->getCode()){
+        case UPLOAD_ERR_INI_SIZE:
+        case UPLOAD_ERR_FORM_SIZE:
+            json_error(tr('Uploaded image is too big "'.str_log(isset_get($_POST['id'])).'" specified'));
+
+        case UPLOAD_ERR_NO_FILE:
+            json_error(tr('No image was uploaded "'.str_log(isset_get($_POST['id'])).'" specified'));
+
+        case UPLOAD_ERR_PARTIAL:
+        case UPLOAD_ERR_NO_TMP_DIR:
+        case UPLOAD_ERR_CANT_WRITE:
+        case UPLOAD_ERR_EXTENSION:
+            json_error(tr('Error, please try again later "'.str_log(isset_get($_POST['id'])).'" specified'));
+
         case 'unknown':
             json_error(tr('Unknown blog post "'.str_log(isset_get($_POST['id'])).'" specified'));
-            break;
 
         case 'notspecified':
             json_error(tr('No blog post specified'));
-            break;
 
         case 'accessdenied':
             json_error(tr('You cannot upload a photo to this blog post, the post is not yours'));
-            break;
 
         default:
             json_error(tr('Something went wrong, please try again'));
