@@ -378,7 +378,7 @@ function amp_html_cleanup($html){
         /*
          * Remove tags that are
          */
-        foreach ($forbidden_keep_content as $tag) {
+        foreach ($keep_content_tags as $tag) {
             $search [] = '/<'.$tag.'.*>(.*)<\/'.$tag.'>/s';
             $replace[] = '$1';
         }
@@ -386,7 +386,7 @@ function amp_html_cleanup($html){
         /*
          * Just remove
          */
-        foreach ($forbidden_just_remove as $tag) {
+        foreach ($forbidden_tags as $tag) {
             $search [] = '/<'.$tag.'.*>.*<\/'.$tag.'>/s';
             $replace[] = '';
         }
