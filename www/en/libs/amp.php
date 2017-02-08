@@ -162,6 +162,29 @@ function amp_img($src, $alt, $width = null, $height = null, $more = 'layout="res
 
 
 
+
+/*
+ * Returns <amp-youtube> componet
+ */
+function amp_youtube(array $attributes){
+    try{
+        $dont_support     = tr('Your browser doesn\'\t support HTML5 youtube.');
+        $amp_youtube = '<amp-youtube width="'.$attributes['width'].'"
+                            height="'.$attributes['height'].'"
+                            layout="responsive"
+                            class="amp_base_youtube"
+                            data-videoid="'.$attributes['hashtag'].'"
+                        </amp-youtube>';
+
+        return $amp_youtube;
+
+    }catch(Exception $e){
+        throw new bException('amp_video(): Failed', $e);
+    }
+}
+
+
+
 /*
  * Returns <amp-video> componet
  */
@@ -209,6 +232,8 @@ function amp_url($url){
  */
 function amp_content($html){
     try{
+        $search  = array();
+        $replace = array();
 // :TODO: Add caching support!
         /*
          * Do we have this content cached?
@@ -223,18 +248,53 @@ function amp_content($html){
             $attributes = ['class','width','height','poster','src','type'];
             $videos     = $video_match[0];
 
-            foreach($videos as $video ){
-                $search[] = $video;
+            if(count($videos)){
+                foreach($videos as $video ){
+                    $search[] = $video;
 
-                foreach($attributes as $attribute){
-                    $value_matches = array();
-                    preg_match('/'.$attribute.'=(["\'][:\/\/a-zA-Z0-9 -\/.]+["\'])/', $video, $value_matches);
+                    foreach($attributes as $attribute){
+                        $value_matches = array();
+                        preg_match('/'.$attribute.'=(["\'][:\/\/a-zA-Z0-9 -\/.]+["\'])/', $video, $value_matches);
 
-                    $string = isset_get($value_matches[1]);
-                    $values[$attribute] = trim($string, '"');
+                        $string = isset_get($value_matches[1]);
+                        $values[$attribute] = trim($string, '"');
+                    }
+
+                    $replace[] = amp_video($values);
                 }
+            }
+        }
 
-                $replace[] = amp_video($values);
+        /*
+         * Turn iframes into their target components
+         */
+        if(strstr($html, '<iframe')){
+            preg_match_all('/<iframe.*>.*<\/iframe>/s', $html, $iframe_match);
+
+            $attributes = ['class','width','height'];
+            $iframes     = $iframe_match[0];
+
+            if(count($iframes)){
+                foreach($iframes as $iframe ){
+                    if (!strstr($iframe,'youtube')) continue;
+                    $search[] = $iframe;
+
+
+
+                    foreach($attributes as $attribute){
+                        $value_matches = array();
+                        preg_match('/'.$attribute.'=(["\'][:\/\/a-zA-Z0-9 -\/.]+["\'])/', $iframe, $value_matches);
+
+                        $string = isset_get($value_matches[1]);
+                        $values[$attribute] = trim($string, '"');
+                    }
+
+                    $hashtag = array();
+                    preg_match('/(?:youtube\.com\/\S*(?:(?:\/e(?:mbed))?\/|watch\?(?:\S*?&?v\=))|youtu\.be\/)([a-zA-Z0-9_-]{6,11})/',$iframe, $hashtag);
+                    $values['hashtag'] = $hashtag[1];
+
+                    $replace[] = amp_youtube($values);
+                }
             }
         }
 
@@ -261,10 +321,27 @@ function amp_content($html){
                         $values[$attribute] = trim($string,'"');
 
                     }
+                    /*
+                     * If our src is empty we should check to see if it is an inline image
+                     * Ej. base64, this is useful when sending blog post body into amp content
+                     * function
+                     */
+                    if (empty($values['src'])) {
+// :TODO: remove continue and implemnt, from this point on html_img will complain about the base64 String
+                        $replace[] = '';
+                        continue;
+
+                        preg_match('/src=(["\'][a-z:\/;a-z64,0-9A-Z\+=]+["\'])/',$image,$base64_match);
+                        $string        = isset_get($base64_match[1]);
+                        $values['src'] = trim($string,'"');
+                    } elseif(empty($values['src'])) {
+                        continue;
+                    }
 
                     $values['width']  = (empty($values['width'])  ? null                  : $values['width']);
                     $values['height'] = (empty($values['height']) ? null                  : $values['height']);
                     $values['class']  = (empty($values['class'])  ? 'layout="responsive"' : 'class="'.$values['class'].'"');
+                    $values['alt']    = (empty($values['alt'])    ? 'image'               : $values['alt']);
 
                     $replace[] = amp_img($values['src'], $values['alt'], $values['width'], $values['height'], $values['class']);
                 }
