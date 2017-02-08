@@ -368,25 +368,43 @@ function amp_content($html){
 function amp_html_cleanup($html){
     try{
         /*
-         * List of tags that need to be handled
+         * List of things that need to be handled, populate list as needed
          */
         $keep_content_tags = array('font');
         $forbidden_tags    = array('frame', 'frameset', 'object', 'param', 'applet', 'embed');
+        $empty_attributes  = array('target' => '_blank');
+        $remove_attributes = array('style');
         $search            = array();
         $replace           = array();
 
         /*
          * Remove tags that are
          */
-        foreach ($keep_content_tags as $tag) {
+        foreach($keep_content_tags as $tag) {
             $search [] = '/<'.$tag.'.*>(.*)<\/'.$tag.'>/s';
             $replace[] = '$1';
         }
 
         /*
+         * Populate empty attributes with defaults
+         */
+        foreach($empty_attributes as $attribute => $value) {
+            $search [] = '/'.$attribute.'=(["\']["\'])/';
+            $replace[] = $attribute.'="'.$value.'"';
+        }
+
+        /*
+         * Remove forbidden attributes
+         */
+        foreach($remove_attributes as $attribute) {
+            $search [] = '/'.$attribute.'=(["\']([:; \-\(\)\!a-zA-Z0-9\/.]+|)["\'])/';
+            $replace[] = '';
+        }
+
+        /*
          * Just remove
          */
-        foreach ($forbidden_tags as $tag) {
+        foreach($forbidden_tags as $tag) {
             $search [] = '/<'.$tag.'.*>.*<\/'.$tag.'>/s';
             $replace[] = '';
         }
