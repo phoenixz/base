@@ -168,12 +168,19 @@ function amp_img($src, $alt, $width = null, $height = null, $more = 'layout="res
  */
 function amp_youtube(array $attributes){
     try{
+        if(!isset_get($attributes['hashtag'])) return '';
+        array_default($attributes, 'width' , '480');
+        array_default($attributes, 'height' , '385');
+        array_default($attributes, 'class' , '');
+
+        $attributes['class'] = (empty($attributes['class']) ? 'class="amp_base_youtube"' : 'class="amp_base_youtube '.$attributes['class'].'"' );
+
         $dont_support     = tr('Your browser doesn\'\t support HTML5 youtube.');
         $amp_youtube = '<amp-youtube width="'.$attributes['width'].'"
                             height="'.$attributes['height'].'"
                             layout="responsive"
-                            class="amp_base_youtube"
-                            data-videoid="'.$attributes['hashtag'].'"
+                            '.$attributes['class'].'
+                            data-videoid="'.$attributes['hashtag'].'">
                         </amp-youtube>';
 
         return $amp_youtube;
@@ -243,7 +250,6 @@ function amp_content($html){
          * First we make sure we don't have forbbiden html tags in our html
          */
         $html = amp_html_cleanup($html);
-
         /*
          * Turn video tags into amp-video tags
          */
@@ -295,8 +301,8 @@ function amp_content($html){
                     }
 
                     $hashtag = array();
-                    preg_match('/(?:youtube\.com\/\S*(?:(?:\/e(?:mbed))?\/|watch\?(?:\S*?&?v\=))|youtu\.be\/)([a-zA-Z0-9_-]{6,11})/',$iframe, $hashtag);
-                    $values['hashtag'] = $hashtag[1];
+                    preg_match('/(?:(youtube\.com\/|youtube-nocookie\.com\/)\S*(?:(?:\/e(?:embed))?\/|watch\?(?:\S*?&?v\=))|youtu\.be\/)([a-zA-Z0-9_-]{6,11})/',$iframe, $hashtag);
+                    $values['hashtag'] = $hashtag[2];
 
                     $replace[] = amp_youtube($values);
                 }
@@ -368,25 +374,42 @@ function amp_content($html){
 function amp_html_cleanup($html){
     try{
         /*
-         * List of tags that need to be handled
+         * List of things that need to be handled, populate list as needed
          */
         $keep_content_tags = array('font');
         $forbidden_tags    = array('frame', 'frameset', 'object', 'param', 'applet', 'embed');
+        $empty_attributes  = array('target' => '_blank');
+        $remove_attributes = array('style');
         $search            = array();
         $replace           = array();
 
         /*
          * Remove tags that are
          */
-        foreach ($keep_content_tags as $tag) {
+        foreach($keep_content_tags as $tag) {
             $search [] = '/<'.$tag.'.*>(.*)<\/'.$tag.'>/s';
             $replace[] = '$1';
+        }
+        /*
+         * Populate empty attributes with defaults
+         */
+        foreach($empty_attributes as $attribute => $value) {
+            $search [] = '/'.$attribute.'=(["\']["\'])/';
+            $replace[] = $attribute.'="'.$value.'"';
+        }
+
+        /*
+         * Remove forbidden attributes
+         */
+        foreach($remove_attributes as $attribute) {
+            $search [] = '/'.$attribute.'=(["\']([:; \-\(\)\!a-zA-Z0-9\/.]+|)["\'])/';
+            $replace[] = '';
         }
 
         /*
          * Just remove
          */
-        foreach ($forbidden_tags as $tag) {
+        foreach($forbidden_tags as $tag) {
             $search [] = '/<'.$tag.'.*>.*<\/'.$tag.'>/s';
             $replace[] = '';
         }

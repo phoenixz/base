@@ -1480,7 +1480,8 @@ function blogs_media_upload($files, $post, $priority = null){
         upload_check_files(1);
 
         if(!empty($_FILES['files'][0]['error'])){
-            throw new bException(isset_get($_FILES['files'][0]['error_message'], $_FILES['files'][0]['error']), 'uploaderror');
+            $error_code = $_FILES['files'][0]['error'];
+            throw new bException(isset_get($_FILES['files'][0]['error_message'], $error_code, $error_code));
         }
 
         $file     = $files;
