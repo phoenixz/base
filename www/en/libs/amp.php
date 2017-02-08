@@ -240,6 +240,11 @@ function amp_content($html){
          */
 
         /*
+         * First we make sure we don't have forbbiden html tags in our html
+         */
+        $html = amp_html_cleanup($html);
+
+        /*
          * Turn video tags into amp-video tags
          */
         if(strstr($html, '<video')){
@@ -355,4 +360,41 @@ function amp_content($html){
     }
 }
 
+
+
+/*
+ * Removes unallowed HTML tags for AMP
+ */
+function amp_html_cleanup($html){
+    try{
+        /*
+         * List of tags that need to be handled
+         */
+        $forbidden_keep_content = array('font');
+        $forbidden_just_remove  = array('frame', 'frameset', 'object', 'param', 'applet', 'embed',);
+        $search                 = array();
+        $replace                = array();
+
+        /*
+         * Remove tags that are
+         */
+        foreach ($forbidden_keep_content as $tag) {
+            $search [] = '/<'.$tag.'.*>(.*)<\/'.$tag.'>/s';
+            $replace[] = '$1';
+        }
+
+        /*
+         * Just remove
+         */
+        foreach ($forbidden_just_remove as $tag) {
+            $search [] = '/<'.$tag.'.*>.*<\/'.$tag.'>/s';
+            $replace[] = '';
+        }
+
+        return preg_replace($search, $replace, $html);
+
+    }catch(Exception $e){
+        throw new bException('amp_content(): Failed', $e);
+    }
+}
 ?>
