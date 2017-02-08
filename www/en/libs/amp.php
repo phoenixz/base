@@ -370,10 +370,10 @@ function amp_html_cleanup($html){
         /*
          * List of tags that need to be handled
          */
-        $forbidden_keep_content = array('font');
-        $forbidden_just_remove  = array('frame', 'frameset', 'object', 'param', 'applet', 'embed',);
-        $search                 = array();
-        $replace                = array();
+        $keep_content_tags = array('font');
+        $forbidden_tags    = array('frame', 'frameset', 'object', 'param', 'applet', 'embed');
+        $search            = array();
+        $replace           = array();
 
         /*
          * Remove tags that are
