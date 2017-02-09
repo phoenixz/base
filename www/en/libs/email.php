@@ -142,16 +142,16 @@ function email_poll($params){
         $mails = execute_callback(isset_get($params['post_search']), $mails);
 
         if(!$mails){
-            cli_log(tr('Callback "post_search" canceled email_poll'), 'yellow');
-            return false;
-        }
-
-        if(!$mails){
             if(PLATFORM_SHELL){
                 cli_log(tr('No emails found for account ":email"', array(':email' => $userdata['email'])), 'yellow');
             }
 
         }else{
+            if(!$mails){
+                cli_log(tr('Callback "post_search" canceled email_poll'), 'yellow');
+                return false;
+            }
+
             if(PLATFORM_SHELL){
                 cli_log(tr('Found ":count" mails for account ":email"', array(':count' => count($mails), ':email' => $userdata['email'])), 'green');
             }
