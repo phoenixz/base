@@ -39,6 +39,7 @@ try{
 }catch(Exception $e){
     switch($e->getCode()){
         case UPLOAD_ERR_INI_SIZE:
+            // FALLTHROUGH
         case UPLOAD_ERR_FORM_SIZE:
             json_error(tr('Uploaded image is too big "'.str_log(isset_get($_POST['id'])).'" specified'));
 
@@ -46,8 +47,11 @@ try{
             json_error(tr('No image was uploaded "'.str_log(isset_get($_POST['id'])).'" specified'));
 
         case UPLOAD_ERR_PARTIAL:
+            // FALLTHROUGH
         case UPLOAD_ERR_NO_TMP_DIR:
+            // FALLTHROUGH
         case UPLOAD_ERR_CANT_WRITE:
+            // FALLTHROUGH
         case UPLOAD_ERR_EXTENSION:
             json_error(tr('Error, please try again later "'.str_log(isset_get($_POST['id'])).'" specified'));
 
