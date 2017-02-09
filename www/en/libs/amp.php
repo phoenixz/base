@@ -61,7 +61,7 @@ function amp_page_cache(){
         return false;
 
     }catch(Exception $e){
-        throw new bException('amp_page(): Failed', $e);
+        throw new bException('amp_page_cache(): Failed', $e);
     }
 }
 
@@ -163,11 +163,39 @@ function amp_img($src, $alt, $width = null, $height = null, $more = 'layout="res
 
 
 /*
+ * Returns <amp-youtube> componet
+ */
+function amp_youtube(array $attributes){
+    try{
+        if(empty($attributes['hashtag'])) return '';
+
+        array_default($attributes, 'width' , '480');
+        array_default($attributes, 'height', '385');
+        array_default($attributes, 'class' , '');
+
+        $attributes['class'] .= ' amp_base_youtube';
+
+        $amp_youtube    = '<amp-youtube width="'.$attributes['width'].'"
+                                height="'.$attributes['height'].'"
+                                layout="responsive"
+                                class="'.trim($attributes['class']).'"
+                                data-videoid="'.$attributes['hashtag'].'">
+                            </amp-youtube>';
+
+        return $amp_youtube;
+
+    }catch(Exception $e){
+        throw new bException('amp_youtube(): Failed', $e);
+    }
+}
+
+
+
+/*
  * Returns <amp-video> componet
  */
 function amp_video(array $attributes){
     try{
-        $dont_support     = tr('Your browser doesn\'\t support HTML5 video.');
         $format_amp_video = '<amp-video width="'.$attributes['width'].'"
                                 height="'.$attributes['height'].'"
                                 src="'.$attributes['src'].'"
@@ -176,7 +204,7 @@ function amp_video(array $attributes){
                                 class="amp_base_video"
                                 controls>
                                 <div fallback>
-                                <p>'.$dont_support.'</p>
+                                <p>'.tr('Your browser doesn\'\t support HTML5 video.').'</p>
                                 </div>
                                 <source type="'.$attributes['type'].'" src="'.$attributes['src'].'">
                             </amp-video>';
@@ -209,40 +237,77 @@ function amp_url($url){
  */
 function amp_content($html){
     try{
+        $search  = array();
+        $replace = array();
 // :TODO: Add caching support!
         /*
          * Do we have this content cached?
          */
 
         /*
+         * First we make sure we don't have forbbiden html tags in our html
+         */
+        $html = amp_html_cleanup($html);
+        /*
          * Turn video tags into amp-video tags
          */
         if(strstr($html, '<video')){
             preg_match_all('/<video.+?>[ ?\n?\r?].*<\/video>/', $html, $video_match);
 
-            $attributes = ['class','width','height','poster','src','type'];
+            $attributes = array('class', 'width', 'height', 'poster', 'src', 'type');
             $videos     = $video_match[0];
 
-            foreach($videos as $video ){
-                $search[] = $video;
+            if(count($videos)){
+                foreach($videos as $video ){
+                    $search[] = $video;
 
-                foreach($attributes as $attribute){
-                    $value_matches = array();
-                    preg_match('/'.$attribute.'=(["\'][:\/\/a-zA-Z0-9 -\/.]+["\'])/', $video, $value_matches);
+                    foreach($attributes as $attribute){
+                        $value_matches = array();
+                        preg_match('/'.$attribute.'=(["\'][:\/\/a-zA-Z0-9 -\/.]+["\'])/', $video, $value_matches);
 
-                    $string = isset_get($value_matches[1]);
-                    $values[$attribute] = trim($string, '"');
+                        $string = isset_get($value_matches[1]);
+                        $values[$attribute] = trim($string, '"');
+                    }
+
+                    $replace[] = amp_video($values);
                 }
+            }
+        }
 
-                $replace[] = amp_video($values);
+        /*
+         * Turn iframes into their target components
+         */
+        if(strstr($html, '<iframe')){
+            preg_match_all('/<iframe.*>.*<\/iframe>/s', $html, $iframe_match);
+
+            $attributes = array('class', 'width', 'height');
+            $iframes    = $iframe_match[0];
+
+            if(count($iframes)){
+                foreach($iframes as $iframe ){
+                    if(!strstr($iframe, 'youtube')) continue;
+
+                    $search[] = $iframe;
+
+                    foreach($attributes as $attribute){
+                        $value_matches = array();
+                        preg_match('/'.$attribute.'=(["\'][:\/\/a-zA-Z0-9 -\/.]+["\'])/', $iframe, $value_matches);
+
+                        $string = isset_get($value_matches[1]);
+                        $attributes[$attribute] = trim($string, '"');
+                    }
+
+                    preg_match('/(?:(youtube\.com\/|youtube-nocookie\.com\/)\S*(?:(?:\/e(?:embed))?\/|watch\?(?:\S*?&?v\=))|youtu\.be\/)([a-zA-Z0-9_-]{6,11})/', $iframe, $hashtag);
+                    $attributes['hashtag'] = $hashtag[2];
+
+                    $replace[] = amp_youtube($attributes);
+                }
             }
         }
 
         /*
          * Turn img tags into amp-img tags
          */
-        $amp_imgs = [];
-
         if(strstr($html, '<img')){
             preg_match_all('/<img.+?>/', $html, $img_match);
 
@@ -250,21 +315,39 @@ function amp_content($html){
             $images     = $img_match[0];
 
             if(count($images)){
-                foreach ($images as $image) {
+                foreach($images as $image){
                     $search[] = $image;
 
-                    foreach ($attributes as $attribute) {
-                        $value_match = [];
-                        preg_match('/'.$attribute.'=(["\'][:\/\/a-zA-Z0-9 -\/.]+["\'])/',$image,$value_match);
+                    foreach($attributes as $attribute){
+                        $value_match = array();
+                        preg_match('/'.$attribute.'=(["\'][:\/\/a-zA-Z0-9 -\/.]+["\'])/', $image, $value_match);
 
                         $string             = isset_get($value_match[1]);
-                        $values[$attribute] = trim($string,'"');
+                        $values[$attribute] = trim($string, '"');
+                    }
 
+                    /*
+                     * If our src is empty we should check to see if it is an inline image
+                     * Ej. base64, this is useful when sending blog post body into amp content
+                     * function
+                     */
+                    if(empty($values['src'])){
+// :TODO: remove continue and implement, from this point on html_img will complain about the base64 String
+$replace[] = '';
+continue;
+
+                        preg_match('/src=(["\'][a-z:\/;a-z64,0-9A-Z\+=]+["\'])/', $image, $base64_match);
+                        $string        = isset_get($base64_match[1]);
+                        $values['src'] = trim($string, '"');
+
+                    }elseif(empty($values['src'])){
+                        continue;
                     }
 
                     $values['width']  = (empty($values['width'])  ? null                  : $values['width']);
                     $values['height'] = (empty($values['height']) ? null                  : $values['height']);
                     $values['class']  = (empty($values['class'])  ? 'layout="responsive"' : 'class="'.$values['class'].'"');
+                    $values['alt']    = (empty($values['alt'])    ? 'image'               : $values['alt']);
 
                     $replace[] = amp_img($values['src'], $values['alt'], $values['width'], $values['height'], $values['class']);
                 }
@@ -278,4 +361,58 @@ function amp_content($html){
     }
 }
 
+
+
+/*
+ * Removes unallowed HTML tags for AMP
+ */
+function amp_html_cleanup($html){
+    try{
+        /*
+         * List of things that need to be handled, populate list as needed
+         */
+        $keep_content_tags = array('font');
+        $forbidden_tags    = array('frame', 'frameset', 'object', 'param', 'applet', 'embed');
+        $empty_attributes  = array('target' => '_blank');
+        $remove_attributes = array('style');
+        $search            = array();
+        $replace           = array();
+
+        /*
+         * Remove tags that are
+         */
+        foreach($keep_content_tags as $tag){
+            $search [] = '/<'.$tag.'.*>(.*)<\/'.$tag.'>/s';
+            $replace[] = '$1';
+        }
+        /*
+         * Populate empty attributes with defaults
+         */
+        foreach($empty_attributes as $attribute => $value){
+            $search [] = '/'.$attribute.'=(["\']["\'])/';
+            $replace[] = $attribute.'="'.$value.'"';
+        }
+
+        /*
+         * Remove forbidden attributes
+         */
+        foreach($remove_attributes as $attribute){
+            $search [] = '/'.$attribute.'=(["\']([:; \-\(\)\!a-zA-Z0-9\/.]+|)["\'])/';
+            $replace[] = '';
+        }
+
+        /*
+         * Just remove
+         */
+        foreach($forbidden_tags as $tag){
+            $search [] = '/<'.$tag.'.*>.*<\/'.$tag.'>/s';
+            $replace[] = '';
+        }
+
+        return preg_replace($search, $replace, $html);
+
+    }catch(Exception $e){
+        throw new bException('amp_html_cleanup(): Failed', $e);
+    }
+}
 ?>
