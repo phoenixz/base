@@ -61,7 +61,7 @@ function amp_page_cache(){
         return false;
 
     }catch(Exception $e){
-        throw new bException('amp_page(): Failed', $e);
+        throw new bException('amp_page_cache(): Failed', $e);
     }
 }
 
@@ -167,29 +167,25 @@ function amp_img($src, $alt, $width = null, $height = null, $more = 'layout="res
  */
 function amp_youtube(array $attributes){
     try{
-        if(!isset_get($attributes['hashtag'])) return '';
+        if(empty($attributes['hashtag'])) return '';
 
-        array_default($attributes, 'width'  , '480');
-        array_default($attributes, 'height' , '385');
-        array_default($attributes, 'class'  , '');
+        array_default($attributes, 'width' , '480');
+        array_default($attributes, 'height', '385');
+        array_default($attributes, 'class' , '');
 
-        if(empty($attributes['class'])){
-            $attributes['class'] = 'class="amp_base_youtube';
-        }else{
-            $attributes['class'] = 'class="amp_base_youtube '.$attributes['class'];
-        }
+        $attributes['class'] .= ' amp_base_youtube';
 
         $amp_youtube    = '<amp-youtube width="'.$attributes['width'].'"
                                 height="'.$attributes['height'].'"
                                 layout="responsive"
-                                '.$attributes['class'].'
+                                class="'.trim($attributes['class']).'"
                                 data-videoid="'.$attributes['hashtag'].'">
                             </amp-youtube>';
 
         return $amp_youtube;
 
     }catch(Exception $e){
-        throw new bException('amp_video(): Failed', $e);
+        throw new bException('amp_youtube(): Failed', $e);
     }
 }
 
@@ -200,7 +196,6 @@ function amp_youtube(array $attributes){
  */
 function amp_video(array $attributes){
     try{
-        $dont_support     = tr('Your browser doesn\'\t support HTML5 video.');
         $format_amp_video = '<amp-video width="'.$attributes['width'].'"
                                 height="'.$attributes['height'].'"
                                 src="'.$attributes['src'].'"
@@ -209,7 +204,7 @@ function amp_video(array $attributes){
                                 class="amp_base_video"
                                 controls>
                                 <div fallback>
-                                <p>'.$dont_support.'</p>
+                                <p>'.tr('Your browser doesn\'\t support HTML5 video.').'</p>
                                 </div>
                                 <source type="'.$attributes['type'].'" src="'.$attributes['src'].'">
                             </amp-video>';
@@ -259,7 +254,7 @@ function amp_content($html){
         if(strstr($html, '<video')){
             preg_match_all('/<video.+?>[ ?\n?\r?].*<\/video>/', $html, $video_match);
 
-            $attributes = ['class', 'width', 'height', 'poster', 'src', 'type'];
+            $attributes = array('class', 'width', 'height', 'poster', 'src', 'type');
             $videos     = $video_match[0];
 
             if(count($videos)){
@@ -285,8 +280,8 @@ function amp_content($html){
         if(strstr($html, '<iframe')){
             preg_match_all('/<iframe.*>.*<\/iframe>/s', $html, $iframe_match);
 
-            $attributes = ['class', 'width', 'height'];
-            $iframes     = $iframe_match[0];
+            $attributes = array('class', 'width', 'height');
+            $iframes    = $iframe_match[0];
 
             if(count($iframes)){
                 foreach($iframes as $iframe ){
@@ -299,14 +294,13 @@ function amp_content($html){
                         preg_match('/'.$attribute.'=(["\'][:\/\/a-zA-Z0-9 -\/.]+["\'])/', $iframe, $value_matches);
 
                         $string = isset_get($value_matches[1]);
-                        $values[$attribute] = trim($string, '"');
+                        $attributes[$attribute] = trim($string, '"');
                     }
 
-                    $hashtag = array();
-                    preg_match('/(?:(youtube\.com\/|youtube-nocookie\.com\/)\S*(?:(?:\/e(?:embed))?\/|watch\?(?:\S*?&?v\=))|youtu\.be\/)([a-zA-Z0-9_-]{6,11})/', $iframe,  $hashtag);
-                    $values['hashtag'] = $hashtag[2];
+                    preg_match('/(?:(youtube\.com\/|youtube-nocookie\.com\/)\S*(?:(?:\/e(?:embed))?\/|watch\?(?:\S*?&?v\=))|youtu\.be\/)([a-zA-Z0-9_-]{6,11})/', $iframe, $hashtag);
+                    $attributes['hashtag'] = $hashtag[2];
 
-                    $replace[] = amp_youtube($values);
+                    $replace[] = amp_youtube($attributes);
                 }
             }
         }
@@ -314,8 +308,6 @@ function amp_content($html){
         /*
          * Turn img tags into amp-img tags
          */
-        $amp_imgs = [];
-
         if(strstr($html, '<img')){
             preg_match_all('/<img.+?>/', $html, $img_match);
 
@@ -327,26 +319,27 @@ function amp_content($html){
                     $search[] = $image;
 
                     foreach($attributes as $attribute){
-                        $value_match = [];
+                        $value_match = array();
                         preg_match('/'.$attribute.'=(["\'][:\/\/a-zA-Z0-9 -\/.]+["\'])/', $image, $value_match);
 
                         $string             = isset_get($value_match[1]);
                         $values[$attribute] = trim($string, '"');
-
                     }
+
                     /*
                      * If our src is empty we should check to see if it is an inline image
                      * Ej. base64, this is useful when sending blog post body into amp content
                      * function
                      */
                     if(empty($values['src'])){
-// :TODO: remove continue and implemnt, from this point on html_img will complain about the base64 String
-                        $replace[] = '';
-                        continue;
+// :TODO: remove continue and implement, from this point on html_img will complain about the base64 String
+$replace[] = '';
+continue;
 
                         preg_match('/src=(["\'][a-z:\/;a-z64,0-9A-Z\+=]+["\'])/', $image, $base64_match);
                         $string        = isset_get($base64_match[1]);
                         $values['src'] = trim($string, '"');
+
                     }elseif(empty($values['src'])){
                         continue;
                     }
@@ -419,7 +412,7 @@ function amp_html_cleanup($html){
         return preg_replace($search, $replace, $html);
 
     }catch(Exception $e){
-        throw new bException('amp_content(): Failed', $e);
+        throw new bException('amp_html_cleanup(): Failed', $e);
     }
 }
 ?>
