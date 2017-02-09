@@ -179,7 +179,6 @@ function amp_youtube(array $attributes){
             $attributes['class'] = 'class="amp_base_youtube '.$attributes['class'];
         }
 
-        $dont_support   = tr('Your browser doesn\'\t support HTML5 youtube.');
         $amp_youtube    = '<amp-youtube width="'.$attributes['width'].'"
                                 height="'.$attributes['height'].'"
                                 layout="responsive"
@@ -260,7 +259,7 @@ function amp_content($html){
         if(strstr($html, '<video')){
             preg_match_all('/<video.+?>[ ?\n?\r?].*<\/video>/', $html, $video_match);
 
-            $attributes = ['class','width','height','poster','src','type'];
+            $attributes = ['class', 'width', 'height', 'poster', 'src', 'type'];
             $videos     = $video_match[0];
 
             if(count($videos)){
@@ -286,15 +285,14 @@ function amp_content($html){
         if(strstr($html, '<iframe')){
             preg_match_all('/<iframe.*>.*<\/iframe>/s', $html, $iframe_match);
 
-            $attributes = ['class','width','height'];
+            $attributes = ['class', 'width', 'height'];
             $iframes     = $iframe_match[0];
 
             if(count($iframes)){
                 foreach($iframes as $iframe ){
-                    if(!strstr($iframe,'youtube')) continue;
+                    if(!strstr($iframe, 'youtube')) continue;
+
                     $search[] = $iframe;
-
-
 
                     foreach($attributes as $attribute){
                         $value_matches = array();
@@ -305,7 +303,7 @@ function amp_content($html){
                     }
 
                     $hashtag = array();
-                    preg_match('/(?:(youtube\.com\/|youtube-nocookie\.com\/)\S*(?:(?:\/e(?:embed))?\/|watch\?(?:\S*?&?v\=))|youtu\.be\/)([a-zA-Z0-9_-]{6,11})/',$iframe, $hashtag);
+                    preg_match('/(?:(youtube\.com\/|youtube-nocookie\.com\/)\S*(?:(?:\/e(?:embed))?\/|watch\?(?:\S*?&?v\=))|youtu\.be\/)([a-zA-Z0-9_-]{6,11})/', $iframe,  $hashtag);
                     $values['hashtag'] = $hashtag[2];
 
                     $replace[] = amp_youtube($values);
@@ -330,10 +328,10 @@ function amp_content($html){
 
                     foreach($attributes as $attribute){
                         $value_match = [];
-                        preg_match('/'.$attribute.'=(["\'][:\/\/a-zA-Z0-9 -\/.]+["\'])/',$image,$value_match);
+                        preg_match('/'.$attribute.'=(["\'][:\/\/a-zA-Z0-9 -\/.]+["\'])/', $image, $value_match);
 
                         $string             = isset_get($value_match[1]);
-                        $values[$attribute] = trim($string,'"');
+                        $values[$attribute] = trim($string, '"');
 
                     }
                     /*
@@ -346,9 +344,9 @@ function amp_content($html){
                         $replace[] = '';
                         continue;
 
-                        preg_match('/src=(["\'][a-z:\/;a-z64,0-9A-Z\+=]+["\'])/',$image,$base64_match);
+                        preg_match('/src=(["\'][a-z:\/;a-z64,0-9A-Z\+=]+["\'])/', $image, $base64_match);
                         $string        = isset_get($base64_match[1]);
-                        $values['src'] = trim($string,'"');
+                        $values['src'] = trim($string, '"');
                     }elseif(empty($values['src'])){
                         continue;
                     }

@@ -41,10 +41,10 @@ try{
         case UPLOAD_ERR_INI_SIZE:
             // FALLTHROUGH
         case UPLOAD_ERR_FORM_SIZE:
-            json_error(tr('Uploaded image is too big "'.str_log(isset_get($_POST['id'])).'" specified'));
+            json_error(tr('Uploaded image is too big'));
 
         case UPLOAD_ERR_NO_FILE:
-            json_error(tr('No image was uploaded "'.str_log(isset_get($_POST['id'])).'" specified'));
+            json_error(tr('No image was uploaded'));
 
         case UPLOAD_ERR_PARTIAL:
             // FALLTHROUGH
