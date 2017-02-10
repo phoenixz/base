@@ -16,9 +16,11 @@
 html_load_js('jquery-ui/jquery-ui');
 html_load_css('jquery/jquery-ui');
 
-if(!empty($_CONFIG['jquery-ui']['theme'])){
-    html_load_css('base/jquery-ui/themes/'.$_CONFIG['jquery-ui']['theme'].'/jquery-ui');
+if(empty($_CONFIG['jquery-ui']['theme'])){
+    throw new bException(tr('jqueryui(): No jquery-ui theme specified, please check $_CONFIG[jquery-ui][theme]'), 'not-exist');
 }
+
+html_load_css('base/jquery-ui/themes/'.$_CONFIG['jquery-ui']['theme'].'/jquery-ui');
 
 
 
@@ -50,6 +52,8 @@ function jqueryui_accordeon($selector, $options = 'collapsible: true,heightStyle
  */
 function jqueryui_date($selector, $params = null){
     try{
+        html_load_css('jquery.ui/jquery.ui.datepicker');
+
         array_params($params);
         array_default($params, 'placeholder'     , tr('Select a date'));
         array_default($params, 'number_of_months', 1);
