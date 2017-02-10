@@ -144,7 +144,7 @@ function jqueryui_time($selector, $params = null){
 
             foreach($params['disable_time_ranges'] as $range){
                 if(!is_array($range)){
-                    throw new bException('jqueryui_time(): All $params[disable_time_ranges] entries should be arrays, "'.str_log($range).'" is not', 'invalid');
+                    throw new bException(tr('jqueryui_time(): All $params[disable_time_ranges] entries should be arrays, ":range" is not', array(':range' => $range)), 'invalid');
                 }
 
                 $script  = '["'.isset_get($range[0]).'", "'.isset_get($range[1]).'"]';
