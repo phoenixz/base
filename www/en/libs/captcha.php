@@ -19,7 +19,7 @@ function captcha_html($class = null){
 
     try{
         if(empty($_CONFIG['captcha']['public'])){
-            throw new bException(tr('get_captcha_html(): No captcha public apikey specified'), 'not-specified');
+            throw new bException(tr('captcha_html(): No captcha public apikey specified'), 'not-specified');
         }
 
         switch($_CONFIG['captcha']['type']){
@@ -34,11 +34,11 @@ function captcha_html($class = null){
                 return '<div class="g-recaptcha'.($class ? ' '.$class : '').'" data-sitekey="'.$_CONFIG['captcha']['public'].'"></div>';
 
             default:
-               throw new bException(tr('get_captcha_html(): Unknown captcha type ":type" configured', array(':type' => $_CONFIG['captcha']['type'])), 'unknown');
+               throw new bException(tr('captcha_html(): Unknown captcha type ":type" configured', array(':type' => $_CONFIG['captcha']['type'])), 'unknown');
         }
 
     }catch(Exception $e){
-        throw new bException('get_captcha_html(): Failed', $e);
+        throw new bException('captcha_html(): Failed', $e);
     }
 }
 
@@ -52,7 +52,7 @@ function captcha_verify_response($captcha){
 
     try{
         if(empty($_CONFIG['captcha']['private'])){
-            throw new bException(tr('get_captcha_html(): No captcha public apikey specified'), 'not-specified');
+            throw new bException(tr('captcha_verify_response(): No captcha public apikey specified'), 'not-specified');
         }
 
         if(!$_CONFIG['captcha']['type']){
