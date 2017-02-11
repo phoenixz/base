@@ -224,7 +224,7 @@ function amp_video(array $attributes){
 function amp_url($url){
     try{
         /*
-         * Strit out protocol and domain from url
+         * Strip out protocol and domain from url
          */
         $url         = str_from($url, '//');
         $first_slash = strpos( $url, '/');
