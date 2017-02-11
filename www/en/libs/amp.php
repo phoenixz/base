@@ -223,7 +223,15 @@ function amp_video(array $attributes){
  */
 function amp_url($url){
     try{
-        return domain('/amp'.str_from($url, domain()));
+        /*
+         * Strit out protocol and domain from url
+         */
+        $url         = str_from($url, '//');
+        $first_slash = strpos( $url, '/');
+        $path_length = strlen($url) - $first_slash;
+        $path        = substr($url, $first_slash, $path_length);
+
+        return domain('/amp'.$path);
 
     }catch(Exception $e){
         throw new bException('amp_url(): Failed', $e);
