@@ -1,5 +1,5 @@
 <?php
-$_CONFIG['captcha']  = array('type'    => 'recaptcha',
+$_CONFIG['captcha']  = array('type'    => false,
                              'public'  => '',
                              'private' => '');
 ?>
