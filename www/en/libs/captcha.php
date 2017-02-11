@@ -18,7 +18,7 @@ function captcha_html($class = null){
     global $_CONFIG;
 
     try{
-        if(empty($_CONFIG['captcha']['public'])){
+        if($_CONFIG['captcha']['type'] and empty($_CONFIG['captcha']['public'])){
             throw new bException(tr('captcha_html(): No captcha public apikey specified'), 'not-specified');
         }
 
@@ -51,7 +51,7 @@ function captcha_verify_response($captcha){
     global $_CONFIG;
 
     try{
-        if(empty($_CONFIG['captcha']['private'])){
+        if($_CONFIG['captcha']['type'] and empty($_CONFIG['captcha']['private'])){
             throw new bException(tr('captcha_verify_response(): No captcha public apikey specified'), 'not-specified');
         }
 
