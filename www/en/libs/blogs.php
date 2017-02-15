@@ -128,7 +128,8 @@ function blogs_post_get($blog = null, $post = null, $language = null, $columns =
                              WHERE  `createdby` = :createdby
                              AND    `blogs_id`  = :blogs_id
                              AND    `language`  = :language
-                             AND    `status`    = "_new"',
+                             AND    `status`    = "_new"
+                             LIMIT  1',
 
                              'id', array(':createdby' => isset_get($_SESSION['user']['id']),
                                          ':language'  => $language,
