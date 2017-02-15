@@ -158,8 +158,8 @@ $_CONFIG['formats']            = array('force1224'        => '24',
                                        'date'             => 'Ymd',
                                        'time'             => 'YmdHis',
                                        'human_date'       => 'd/m/Y',
-                                       'human_time'       => 'H:i:s A',
-                                       'human_datetime'   => 'd/m/Y H:i:s A',
+                                       'human_time'       => 'H:i:s',
+                                       'human_datetime'   => 'd/m/Y H:i:s',
                                        'human_nice_date'  => 'l, j F Y');
 
 // Filesystem configuration

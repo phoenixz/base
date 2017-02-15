@@ -29,6 +29,10 @@ if(cli_argument('-D') or cli_argument('--debug')){
     debug(true);
 }
 
+if(VERBOSE){
+    cli_log(tr('Running in VERBOSE mode, started @ ":datetime"', array(':datetime' => date_convert(null, 'human_datetime'))), 'white');
+}
+
 array_shift($argv);
 
 ///*
