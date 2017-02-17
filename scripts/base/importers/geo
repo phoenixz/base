@@ -26,8 +26,8 @@ cli_only();
 /*
  * Get some optional data required for loaddata
  */
-$username     = cli_argument('user'    , true, cli_argument('username'  , true, 'toolkit'));
-$password     = cli_argument('pass'    , true, cli_argument('password'  , true, 'toolkit'));
+$username     = cli_argument('user'    , true, cli_argument('username'  , true, 'base'));
+$password     = cli_argument('pass'    , true, cli_argument('password'  , true, 'base'));
 $database     = cli_argument('database', true, 'geonames');
 $skipcounties = cli_argument('nocounties');
 
