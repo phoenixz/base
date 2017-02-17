@@ -9,68 +9,47 @@
  */
 
 
-// :DELETE: These codes can now be found in the database
-///*
-// * Return US states with their codes
-// */
-//function geo_us_states(){
-//    try{
-//        return array('al' => 'alabama',
-//                     'ak' => 'alaska',
-//                     'az' => 'arizona',
-//                     'ar' => 'arkansas',
-//                     'ca' => 'california',
-//                     'co' => 'colorado',
-//                     'ct' => 'connecticut',
-//                     'de' => 'delaware',
-//                     'dc' => 'columbia', //district of columbia
-//                     'fl' => 'florida',
-//                     'ga' => 'georgia',
-//                     'hi' => 'hawaii',
-//                     'id' => 'idaho',
-//                     'il' => 'illinois',
-//                     'in' => 'indiana',
-//                     'ia' => 'iowa',
-//                     'ks' => 'kansas',
-//                     'ky' => 'kentucky',
-//                     'la' => 'louisiana',
-//                     'me' => 'maine',
-//                     'md' => 'maryland',
-//                     'ma' => 'massachusetts',
-//                     'mi' => 'michigan',
-//                     'mn' => 'minnesota',
-//                     'ms' => 'mississippi',
-//                     'mo' => 'missouri',
-//                     'mt' => 'montana',
-//                     'ne' => 'nebraska',
-//                     'nv' => 'nevada',
-//                     'nh' => 'new hampshire',
-//                     'nj' => 'new jersey',
-//                     'nm' => 'new mexico',
-//                     'ny' => 'new york',
-//                     'nc' => 'north carolina',
-//                     'nd' => 'north dakota',
-//                     'oh' => 'ohio',
-//                     'ok' => 'oklahoma',
-//                     'or' => 'oregon',
-//                     'pa' => 'pennsylvania',
-//                     'ri' => 'rhode island',
-//                     'sc' => 'south carolina',
-//                     'sd' => 'south dakota',
-//                     'tn' => 'tennessee',
-//                     'tx' => 'texas',
-//                     'ut' => 'utah',
-//                     'vt' => 'vermont',
-//                     'va' => 'virginia',
-//                     'wa' => 'washington',
-//                     'wv' => 'west virginia',
-//                     'wi' => 'wisconsin',
-//                     'wy' => 'wyoming');
-//
-//    }catch(Exception $e){
-//        throw new bException('geo_us_states(): Failed', $e);
-//    }
-//}
+
+/*
+ * Get HTML countries select list
+ */
+function geo_location_from_ip($ip = null) {
+    try{
+        if(!$ip){
+            $ip = $_SERVER['REMOTE_ADDR'];
+        }
+
+        load_libs('geoip');
+
+        $location         = geoip_get('187.163.219.201');
+        $location['city'] = geo_get_nearest_city($location['latitude'], $location['longitude']);
+
+        if($location['city']){
+            $location['state']   = sql_get('SELECT `id`,
+                                                   `code`,
+                                                   `name`,
+                                                   `seoname`
+
+                                            FROM   `geo_countries`
+
+                                            WHERE  `id` = :id', array(':id' => $location['city']['states_id']));
+
+            $location['country'] = sql_get('SELECT `id`,
+                                                   `code`,
+                                                   `name`,
+                                                   `seoname`
+
+                                            FROM   `geo_countries`
+
+                                            WHERE  `id` = :id', array(':id' => $location['city']['countries_id']));
+        }
+
+        return $location;
+
+    }catch(Exception $e){
+        throw new bException('geo_location_from_ip(): Failed', $e);
+    }
+}
 
 
 
@@ -196,80 +175,81 @@ function geo_cities_select($params) {
 }
 
 
-
-/*
- * Return specified column (or all) for the specified country
- */
-function geo_countries_get($country, $column = false){
-    try{
-        $country = sql_get_id_or_name($country, true, true);
-
-        if(!$column){
-            $columns = '*';
-
-        }else{
-            $columns = cfm($column);
-        }
-
-        return sql_get('SELECT '.$columns.' FROM geo_countries WHERE '.$country['where'], $column, $country['execute']);
-
-    }catch(bException $e){
-        throw new bException('geo_countries_get() Failed', $e);
-    }
-}
-
-
-
-/*
- * Return specified column (or all) for the specified state
- */
-function geo_states_get($state, $column = false){
-    try{
-        $state = sql_get_id_or_name($state);
-
-        if(!$column){
-            $columns = '*';
-
-        }else{
-            $columns = cfm($column);
-        }
-
-        return sql_get('SELECT '.$columns.' FROM geo_states WHERE '.$state['where'], $column, $state['execute']);
-
-    }catch(bException $e){
-        throw new bException('geo_states_get() Failed', $e);
-    }
-}
+// :OBSOLETE:
+///*
+// * Return specified column (or all) for the specified country
+// */
+//function geo_countries_get($country, $column = '*'){
+//    try{
+//        $country = sql_get_id_or_name($country, true, true);
+//
+//        return sql_get('SELECT '.$columns.'
+//
+//                        FROM   `geo_countries`
+//
+//                        WHERE  '.$country['where'],
+//
+//                        strstr($column, ','), $country['execute']);
+//
+//    }catch(bException $e){
+//        throw new bException('geo_countries_get() Failed', $e);
+//    }
+//}
 
 
 
-/*
- * Return specified column (or all) for the specified city
- */
-function geo_cities_get($city, $column = false){
-    try{
-        $city = sql_get_id_or_name($city);
+// :OBSOLETE:
+///*
+// * Return specified column (or all) for the specified state
+// */
+//function geo_states_get($state, $column = false){
+//    try{
+//        $state = sql_get_id_or_name($state);
+//
+//        if(!$column){
+//            $columns = '*';
+//
+//        }else{
+//            $columns = cfm($column);
+//        }
+//
+//        return sql_get('SELECT '.$columns.' FROM geo_states WHERE '.$state['where'], $column, $state['execute']);
+//
+//    }catch(bException $e){
+//        throw new bException('geo_states_get() Failed', $e);
+//    }
+//}
 
-        if(!$column){
-            $columns = '*';
 
-        }else{
-            $columns = cfm($column);
-        }
 
-        return sql_get('SELECT '.$columns.' FROM geo_cities WHERE '.$city['where'], $column, $city['execute']);
-
-    }catch(bException $e){
-        throw new bException('geo_cities_get() Failed', $e);
-    }
-}
+// :OBSOLETE:
+///*
+// * Return specified column (or all) for the specified city
+// */
+//function geo_cities_get($city, $column = false){
+//    try{
+//        $city = sql_get_id_or_name($city);
+//
+//        if(!$column){
+//            $columns = '*';
+//
+//        }else{
+//            $columns = cfm($column);
+//        }
+//
+//        return sql_get('SELECT '.$columns.' FROM geo_cities WHERE '.$city['where'], $column, $city['execute']);
+//
+//    }catch(bException $e){
+//        throw new bException('geo_cities_get() Failed', $e);
+//    }
+//}
 
 
 
 /*
  * Return the closest city to the specified latitude / longitude
  */
-function geo_get_nearest_city($latitude, $longitude, $filters = null, $columns = '`id`, `name`, `seoname`, `states_id`, `latitude`, `longitude`'){
+function geo_get_nearest_city($latitude, $longitude, $filters = null, $columns = '`id`, `name`, `seoname`, `counties_id`, `states_id`, `countries_id`, `latitude`, `longitude`'){
     global $_CONFIG;
 
     try{
@@ -319,7 +299,7 @@ function geo_get_nearest_city($latitude, $longitude, $filters = null, $columns =
         }
 
         return sql_get('SELECT   '.$columns.',
-                                 DISTANCE(`latitude`, `longitude`, :latitude, :longitude) AS distance
+                                 BASE_DISTANCE(`latitude`, `longitude`, :latitude, :longitude) AS `distance`
 
                         FROM     `geo_cities`
 
@@ -327,7 +307,7 @@ function geo_get_nearest_city($latitude, $longitude, $filters = null, $columns =
 
                         ORDER BY `distance`
 
-                        LIMIT 1',
+                        LIMIT    1',
 
                         $execute);
 

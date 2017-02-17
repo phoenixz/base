@@ -13,13 +13,13 @@
 /*
  * Get the requested data for the specified IP address
  */
-function geoip_get($ip = null, $column = '*'){
+function geoip_get($ip = null, $columns = '*'){
     try{
         if(!$ip){
             $ip = $_SERVER['REMOTE_ADDR'];
         }
 
-        $data = sql_get('SELECT `geoip_locations`.'.$column.'
+        $data = sql_get('SELECT `geoip_locations`.'.$columns.'
 
                          FROM   `geoip_blocks`,
                                 `geoip_locations`

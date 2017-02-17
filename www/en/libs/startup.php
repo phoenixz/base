@@ -17,7 +17,7 @@
 /*
  * Framework version
  */
-define('FRAMEWORKCODEVERSION', '0.45.2');
+define('FRAMEWORKCODEVERSION', '0.46.0');
 
 
 
@@ -95,7 +95,7 @@ try{
     /*
      * Load basic required libraries
      */
-    $path      = dirname(__FILE__).'/';
+    $path      = __DIR__.'/';
     $libraries = array('system', 'strings', 'array', 'sql', 'mb');
 
     foreach($libraries as $library){
@@ -107,7 +107,11 @@ try{
     unset($libraries);
 
 }catch(Exception $e){
-    throw new bException('startup(): Failed to load system library "'.str_log($library).'"', $e);
+    /*
+     * NOTE! Do not use tr() here! If the system library is not yet loaded, this
+     * function will not be available
+     */
+    throw new bException('startup(): Failed to load system library "'.$library.'"', $e);
 }
 
 
@@ -521,7 +525,26 @@ try{
      */
     try{
         if(PLATFORM_SHELL){
-            $language = 'en';
+        /*
+         * This is a shell,
+         */
+        $language = cli_argument('language');
+
+        if($language){
+            $_SESSION['language'] = $language;
+
+        }else{
+            $language = cli_argument('L');
+
+            if($language){
+                $_SESSION['language'] = $language;
+
+            }else{
+                $_SESSION['language'] = isset_get($_CONFIG['language']['default'], 'en');
+            }
+        }
+
+        return $_SESSION['language'];
 
         }else{
             /*
@@ -603,11 +626,25 @@ try{
         /*
          * New session?
          */
-        if(empty($_SESSION['client'])){
+        if(!isset($_SESSION['client'])){
             /*
              * Detect what client we are dealing with
              */
-            client_detect();
+            detect_client();
+        }
+
+        if(!isset($_SESSION['location'])){
+            /*
+             * Detect at what location client is
+             */
+            detect_location();
+        }
+
+        if(!isset($_SESSION['language'])){
+            /*
+             * Detect what language client wants
+             */
+            detect_language();
         }
 
         /*

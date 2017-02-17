@@ -706,26 +706,20 @@ function load_libs($libraries){
     global $_CONFIG;
 
     try{
-        if(is_string($libraries)){
-            $libraries = explode(',', $libraries);
-        }
-
         if(defined('LIBS')){
             $libs = LIBS;
 
         }else{
             /*
-             * Oops, LIBS is not defined yet
-             *
-             * This (probably) means that something went wrong
-             * in the startup, which caused an exception which
-             * caused a library being loaded..?
+             * LIBS is not defined yet. This may happen when load_libs() is
+             * called during the startup sequence (for example, location
+             * detection during startup sequence uses load_libs(). For now,
+             * assume the same directory as this systems library file
              */
-// :TODO: In theory, this should not be happening... ?
-            $libs = dirname(__FILE__).'/';
+            $libs = slash(__DIR__);
         }
 
-        foreach($libraries as $library){
+        foreach(array_force($libraries) as $library){
             if(!$library){
                 throw new bException('load_libs(): Empty library specified', 'emptyspecified');
             }
@@ -734,7 +728,7 @@ function load_libs($libraries){
         }
 
     }catch(Exception $e){
-        throw new bException('load_libs(): Failed to load library "'.str_log($library).'"', $e);
+        throw new bException(tr('load_libs(): Failed'), $e);
     }
 }
 
@@ -749,7 +743,6 @@ function load_config($files){
 
     try{
         if(!$paths){
-
             $paths = array(ROOT.'config/base/',
                            ROOT.'config/production_',
                            ROOT.'config/'.ENVIRONMENT.'_');
@@ -1208,8 +1201,26 @@ function check_extended_session() {
 /*
  * Sets client info in $_SESSION and returns it
  */
-function client_detect(){
-    return include(dirname(__FILE__).'/handlers/system_client_detect.php');
+function detect_client(){
+    return include(dirname(__FILE__).'/handlers/system_detect_client.php');
+}
+
+
+
+/*
+ * Sets location info in $_SESSION and returns it
+ */
+function detect_location(){
+    return include(dirname(__FILE__).'/handlers/system_detect_location.php');
+}
+
+
+
+/*
+ * Sets language info in $_SESSION and returns it
+ */
+function detect_language(){
+    return include(dirname(__FILE__).'/handlers/system_detect_language.php');
 }
 
 
