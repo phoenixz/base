@@ -137,7 +137,7 @@ function html_bundler($type){
         /*
          * If we don't find an existing bundle file, then procced with the concatination process
          */
-        if(file_exists($bundle_file)){
+        if($_CONFIG['cache']['method'] and file_exists($bundle_file)){
             if((filemtime($bundle_file) + $_CONFIG['cdn']['bundler']['max_age']) < time()){
                 /*
                  * This file is too old, dump and retry
