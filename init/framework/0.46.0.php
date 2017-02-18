@@ -66,7 +66,7 @@ sql_query('CREATE TABLE `cdn_objects` (`id`          INT(11)      NOT NULL AUTO_
                                        `createdon`   TIMESTAMP    NOT NULL DEFAULT CURRENT_TIMESTAMP,
                                        `projects_id` INT(11)      NOT NULL,
                                        `filesize`    INT(11)      NOT NULL,
-                                       `url`         VARCHAR(255) NOT NULL,
+                                       `url`         VARCHAR(127) NOT NULL,
 
                                        PRIMARY KEY `id`          (`id`),
                                                KEY `createdon`   (`createdon`),
