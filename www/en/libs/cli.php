@@ -209,7 +209,7 @@ function cli_run_once_local($close = false){
              * the registered PID exists, and if the process name matches this
              * one
              */
-            $pid  = file_get_contents($run_dir.SCRIPT);
+            $pid  = trim(file_get_contents($run_dir.SCRIPT));
             $name = safe_exec('ps -p '.$pid.' | tail -n 1');
             $name = array_pop($name);
 
