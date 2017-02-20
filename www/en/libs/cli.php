@@ -193,10 +193,9 @@ function cli_run_once_local($close = false){
     static $executed = false;
 
     try{
-        load_libs('file');
-
         $run_dir = ROOT.'data/run/';
 
+        load_libs('file');
         file_ensure_path($run_dir);
 
         if($close){
