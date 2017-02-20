@@ -115,7 +115,7 @@ try{
 
 // :TODO:SVEN:20130717: Add notifications!
     if((PLATFORM != 'shell') and $_CONFIG['production']){
-        page_show(500);
+        page_show(500, array('exception' => $e));
         die();
 
     }else{
