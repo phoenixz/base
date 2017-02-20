@@ -553,25 +553,20 @@ function http_cache($params, $headers = array()){
                 /*
                  * Extract expires time from cache-control header
                  */
-                $expires = preg_match('/max-age=\d+/', $params['policy']);
+                preg_match_all('/max-age=(\d+)/', $params['policy'], $matches);
 
-                if($expires){
-                    $expires = new DateTime();
-                    $expires = $expires->add(new DateInterval('PT'.$params['policy'].'S'));
-                    $expires = $expires->format('D, d M Y H:i:s \G\M\T');
-                }
+                $expires = new DateTime();
+                $expires = $expires->add(new DateInterval('PT'.isset_get($matches[1][0], 0).'S'));
+                $expires = $expires->format('D, d M Y H:i:s \G\M\T');
             }
         }
 
         $headers[] = 'Cache-Control: '.$params['policy'];
+        $headers[] = 'Expires: '.$expires;
 
         if(!empty($GLOBALS['etag'])){
             $headers[] = 'ETag: "'.$GLOBALS['etag'].'"';
         }
-
-        $headers[] = 'Expires: '.$expires;
-
-//            $headers[] = 'FTag: "'.$GLOBALS['etag'].'"';
 
         return $headers;
 
