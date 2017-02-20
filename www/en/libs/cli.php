@@ -226,7 +226,7 @@ function cli_run_once_local($close = false){
              * different process. Remove the PID file
              */
             cli_log(tr('cli_run_once_local(): Cleaning up stale run file ":file"', array(':file' => $run_dir.SCRIPT)), 'yellow');
-            cli_run_once_local(true);
+            file_delete($run_dir.SCRIPT);
         }
 
         /*
