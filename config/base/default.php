@@ -87,8 +87,8 @@ $_CONFIG['cdn']                = array('min'              => true,              
 // Characterset
 $_CONFIG['charset']            = 'UTF-8';                                                                                               // The default character set for this website (Will be used in meta charset tag)
 
-// Detect client?
-$_CONFIG['client_detect']      = false;                                                                                                 // Should system try a client_detect() on first page of session? If yes, system will try to obtain client data (stored in $_SESSION[client]), is it mobile, is it spider, etc.
+// Client configuration
+$_CONFIG['client']             = array('detect'           => true);
 
 // PHP composer configuration
 $_CONFIG['composer']           = array('global'           => false);
@@ -158,8 +158,8 @@ $_CONFIG['formats']            = array('force1224'        => '24',
                                        'date'             => 'Ymd',
                                        'time'             => 'YmdHis',
                                        'human_date'       => 'd/m/Y',
-                                       'human_time'       => 'H:i:s A',
-                                       'human_datetime'   => 'd/m/Y H:i:s A',
+                                       'human_time'       => 'H:i:s',
+                                       'human_datetime'   => 'd/m/Y H:i:s',
                                        'human_nice_date'  => 'l, j F Y');
 
 // Filesystem configuration
@@ -182,20 +182,23 @@ $_CONFIG['js']                 = array('animate'          => array('speed'      
 $_CONFIG['jquery-ui']          = array('theme'            => 'smoothness');                                                             // Sets the default UI theme for jquery-ui
 
 // Language
-$_CONFIG['language']           = array('default'          => 'auto',                                                                    // If www user has no language specified, this determines the default language. Either a 2 char language code (en, es, nl, ru, pr, etc) or "auto" to do GEOIP language detection
-                                       'fallback'         => 'en',                                                                      // If language default was set to "auto" and GEOIP detection failed, what will be the fallback language? 2 char language code like "en", "es", "nl", etc.
+$_CONFIG['language']           = array('default'          => 'en',                                                                      // If www user has no language specified, this determines the default language. Either a 2 char language code (en, es, nl, ru, pr, etc) or "auto" to do GEOIP language detection
+                                       'detect'           => true,                                                                      // Perform requested language auto detect
                                        'supported'        => array('en'                 => 'English',                                   // Associated array list of language_code => language_name of supported languages for this website
                                                                    'es'                 => 'Español',                                   // Associated array list of language_code => language_name of supported languages for this website
                                                                    'nl'                 => 'Nederlands'));
 
 // Locale configuration
-$_CONFIG['locale']             = array(LC_ALL      => 'en_US.UTF8',
-                                       LC_COLLATE  => null,
-                                       LC_CTYPE    => null,
-                                       LC_MONETARY => null,
-                                       LC_NUMERIC  => null,
-                                       LC_TIME     => null,
-                                       LC_MESSAGES => null);
+$_CONFIG['locale']             = array(LC_ALL             => 'en_US.UTF8',
+                                       LC_COLLATE         => null,
+                                       LC_CTYPE           => null,
+                                       LC_MONETARY        => null,
+                                       LC_NUMERIC         => null,
+                                       LC_TIME            => null,
+                                       LC_MESSAGES        => null);
+
+// Location configuration
+$_CONFIG['location']           = array('detect'           => false);                                                                    // Attempt auto location detect if current session doesn't have location information
 
 //Log configuration
 $_CONFIG['log']                = array('default'          => 'db',                                                                      // Where entries will be logged. Either "db", "file", or "both"
@@ -350,7 +353,7 @@ $_CONFIG['sso']                = array('facebook'         => false,             
 $_CONFIG['sync']               = array();                                                                                               //
 
 // Sync configuration.
-$_CONFIG['statistics']         = array('enabled'            => true);                                                                   //
+$_CONFIG['statistics']         = array('enabled'          => true);                                                                     //
 
 // Timezone configuration. See http://www.php.net/manual/en/timezones.php for more info
 $_CONFIG['timezone']           = 'America/Mexico_City';                                                                                 //
@@ -367,5 +370,5 @@ $_CONFIG['users']              = array('type_filter'      => null);
 //Xapian search
 $_CONFIG['xapian']             = array('dir'              => ROOT.'data/xapian/');                                                      // Base path for Xapian databases
 
-$_CONFIG['whitelabels']        = array('enabled'      => false);                                                                        // Either false (No whitelabel domains, only the normal site FQDN allowed), true (only default and registered FQDNs allowed), "sub" (only default FQDN and its sub domains allowed), or "all" (All domains allowed)
+$_CONFIG['whitelabels']        = array('enabled'          => false);                                                                    // Either false (No whitelabel domains, only the normal site FQDN allowed), true (only default and registered FQDNs allowed), "sub" (only default FQDN and its sub domains allowed), or "all" (All domains allowed)
 ?>
