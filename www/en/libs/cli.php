@@ -190,6 +190,8 @@ function cli_code_begin(){
  * Returns true if the startup script is already running
  */
 function cli_run_once_local($close = false){
+    static $executed = false;
+
     try{
         load_libs('file');
 
@@ -201,6 +203,16 @@ function cli_run_once_local($close = false){
             file_delete($run_dir.SCRIPT);
             return true;
         }
+
+        if($executed){
+            /*
+             * Hey, script has already been run before, and its run again
+             * without the close option, this should never happen!
+             */
+            throw new bException(tr('cli_run_once_local(): The cli_run_once_local() has been called twice without $close set to true! This function should be called twice, once without argument, and once with boolean "true"'), 'invalid');
+        }
+
+        $executed = true;
 
         if(file_exists($run_dir.SCRIPT)){
             /*
