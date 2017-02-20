@@ -488,7 +488,7 @@ function http_cache_test($etag = null){
 //                header("HTTP/1.1 304 Not Modified");
 
 // :TODO: Should the next lines be deleted or not? Investigate if 304 should again return the etag or not
-//                header('Cache-Control: '.$params['visibility'].', '.$params['policy']);
+//                header('Cache-Control: '.$params['policy']);
 //                header('ETag: "'.$GLOBALS['etag'].'"');
                 http_response_code(304);
                 die();
@@ -521,8 +521,7 @@ function http_cache($params, $headers = array()){
              * Non HTTP 200 / 304 pages should NOT have cache enabled!
              * For example 404, 505, etc...
              */
-            $params['policy']     = 'no-cache, no-store, must-revalidate';
-            $params['visibility'] = 'private';
+            $params['policy']     = 'private, no-store';
             $params['expires']    = '0';
 
             $GLOBALS['etag']      = null;
@@ -540,42 +539,31 @@ function http_cache($params, $headers = array()){
             }
 
             if(!empty($GLOBALS['page_is_ajax']) or !empty($GLOBALS['page_is_api'])){
-                $params['policy']     = 'no-cache, no-store, must-revalidate';
-                $params['visibility'] = 'private';
-                $expires              = '0';
+                $params['policy'] = 'private, no-store';
+                $expires          = '0';
 
             }else{
                 if(!empty($GLOBALS['page_is_admin']) or !empty($_SESSION['user']['id'])){
-                    array_default($params, 'visibility', 'private');
+                    array_default($params, 'policy', 'private, no-store');
 
                 }else{
-                    array_default($params, 'visibility', 'public');
+                    array_default($params, 'policy', $_CONFIG['cache']['http']['policy']);
                 }
 
-                array_default($params, 'policy', $_CONFIG['cache']['http']['max_age']);
+                /*
+                 * Extract expires time from cache-control header
+                 */
+                $expires = preg_match('/max-age=\d+/', $params['policy']);
 
-                switch($params['policy']){
-                    case 'no-store':
-                        // FALLTHROUGH
-                    case 'no-cache':
-                        $expires = 0;
-                        break;
-
-                    default:
-                        if(!is_numeric($params['policy']) or !is_natural($params['policy'])){
-                            throw new bException(tr('http_cache(): Invalid policy "%policy%" specified. Use either "no-cache", "no-store", or a natural number', array('%policy%' => $params['policy'])), '');
-                        }
-
-                        $expires = new DateTime();
-                        $expires = $expires->add(new DateInterval('PT'.$params['policy'].'S'));
-                        $expires = $expires->format('D, d M Y H:i:s \G\M\T');
-
-                        $params['policy'] = 'max-age='.$params['policy'];
+                if($expires){
+                    $expires = new DateTime();
+                    $expires = $expires->add(new DateInterval('PT'.$params['policy'].'S'));
+                    $expires = $expires->format('D, d M Y H:i:s \G\M\T');
                 }
             }
         }
 
-        $headers[] = 'Cache-Control: '.$params['visibility'].', '.$params['policy'];
+        $headers[] = 'Cache-Control: '.$params['policy'];
 
         if(!empty($GLOBALS['etag'])){
             $headers[] = 'ETag: "'.$GLOBALS['etag'].'"';
