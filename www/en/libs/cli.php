@@ -193,10 +193,9 @@ function cli_run_once_local($close = false){
     static $executed = false;
 
     try{
-        load_libs('file');
-
         $run_dir = ROOT.'data/run/';
 
+        load_libs('file');
         file_ensure_path($run_dir);
 
         if($close){
@@ -221,21 +220,28 @@ function cli_run_once_local($close = false){
              * the registered PID exists, and if the process name matches this
              * one
              */
-            $pid  = trim(file_get_contents($run_dir.SCRIPT));
-            $name = safe_exec('ps -p '.$pid.' | tail -n 1');
-            $name = array_pop($name);
+            $pid = file_get_contents($run_dir.SCRIPT);
+            $pid = trim($pid);
 
-            if($name){
-                preg_match_all('/.+?\d{2}:\d{2}:\d{2}\s+('.SCRIPT.')/', $name, $matches);
+            if(!is_numeric($pid) or !is_natural($pid) or ($pid > 65536)){
+                cli_log(tr('cli_run_once_local(): The run file ":file" contains invalid information, ignoring', array(':file' => $run_dir.SCRIPT)), 'invalid');
 
-                if(!empty($matches[1][0])){
-                    throw new bException(tr('cli_run_once_local(): The script ":script" for this project is already running', array(':script' => SCRIPT)), 'already-running');
+            }else{
+                $name = safe_exec('ps -p '.$pid.' | tail -n 1');
+                $name = array_pop($name);
+
+                if($name){
+                    preg_match_all('/.+?\d{2}:\d{2}:\d{2}\s+('.SCRIPT.')/', $name, $matches);
+
+                    if(!empty($matches[1][0])){
+                        throw new bException(tr('cli_run_once_local(): The script ":script" for this project is already running', array(':script' => SCRIPT)), 'already-running');
+                    }
                 }
             }
 
             /*
-             * File exists, but PID either doesn't exist, or is used by a
-             * different process. Remove the PID file
+             * File exists, or contains invalid data, but PID either doesn't
+             * exist, or is used by a different process. Remove the PID file
              */
             cli_log(tr('cli_run_once_local(): Cleaning up stale run file ":file"', array(':file' => $run_dir.SCRIPT)), 'yellow');
             file_delete($run_dir.SCRIPT);
