@@ -186,7 +186,8 @@ function html_bundler($type){
                                  * Inline replace each @import with the file
                                  * contents
                                  */
-                                if(preg_match('/@import\s".+?"/', $match)){
+//                                if(preg_match('/@import\s?(?:url\()?((?:"?.+?"?)|(?:\'.+?\'))\)?/', $match)){
+                                if(preg_match('/@import\s"|\'.+?"|\'/', $match)){
 // :TODO: What if specified URLs are absolute? WHat if start with either / or http(s):// ????
                                     $import = str_cut($match, '"', '"');
 
@@ -205,13 +206,14 @@ function html_bundler($type){
                                      * as a temp file, then include
                                      */
                                     $import = str_cut($match, '(', ')');
+                                    $import = slash(dirname($file)).unslash($import);
 
                                     if(!file_exists($import)){
                                         notify('bundler-file/not-exist', tr('The bundler ":type" file ":import" @imported by file ":file" does not exist', array(':type' => $type, ':import' => $import, ':file' => $file)), 'developers');
                                         $import = '';
 
                                     }else{
-                                        $import = file_get_contents($file);
+                                        $import = file_get_contents($import);
                                     }
                                 }
 
@@ -2057,7 +2059,7 @@ $data = $params;
         die();
 
     }catch(Exception $e){
-        throw new bException(tr('page_show(): Failed to show page "%page%"', array('%page%' => str_log($pagename))), $e);
+        throw new bException(tr('page_show(): Failed to show page ":page"', array(':page' => str_log($pagename))), $e);
     }
 }
 
