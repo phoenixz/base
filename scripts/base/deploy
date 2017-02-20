@@ -1055,9 +1055,10 @@ foreach($targets as $target_environment){
 /*
  * We're all done here!
  */
-cli_log(tr('Finished deploy sequence'), 'green');
 init_hook('deploy_finish', $nohooks, array('target_user'    => $deploy_config['target_user'],
                                            'target_port'    => $deploy_config['target_port'],
                                            'target_server'  => $deploy_config['target_server'],
                                            'target_dir'     => $deploy_config['target_dir']));
+cli_run_once_local(true);
+cli_log(tr('Finished deploy sequence'), 'green');
 ?>

@@ -127,7 +127,7 @@ function cli_only($exclusive = false){
     }
 
     if($exclusive){
-        cli_run_once();
+        cli_run_once_local();
     }
 }
 

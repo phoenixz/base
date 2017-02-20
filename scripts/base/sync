@@ -59,8 +59,7 @@ $nologin = true;
 
 require_once(dirname(__FILE__).'/../../libs/startup.php');
 
-cli_only();
-cli_run_once_local();
+cli_only(true);
 load_libs('init,array,config');
 
 

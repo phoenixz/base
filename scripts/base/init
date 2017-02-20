@@ -35,6 +35,7 @@ $drop                 = cli_argument('--drop') or cli_argument('-d');
 $fromprojectversion   = not_empty(cli_argument('--from-project-version'  , true, null), cli_argument('-p', true, null));
 $fromframeworkversion = not_empty(cli_argument('--from-framework-version', true, null), cli_argument('-f', true, null));
 
+cli_only(true);
 cli_no_arguments_left();
 
 try{
@@ -82,6 +83,7 @@ try{
     }
 
     init($pfrom, $ffrom);
+    cli_run_once_local(true);
 
 }catch(Exception $e){
     if($e->getCode() != 'noinit'){
