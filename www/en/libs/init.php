@@ -174,7 +174,12 @@ function init($projectfrom = null, $frameworkfrom = null){
                     /*
                      * Skip garbage
                      */
-                    if(($file == '.') or ($file == '..') or (file_extension($file) != 'php') or !str_is_version(str_until($file, '.php'))) {
+                    if(($file == '.') or ($file == '..')){
+                        unset($files[$key]);
+                        continue;
+                    }
+
+                    if((file_extension($file) != 'php') or !str_is_version(str_until($file, '.php'))) {
                         cli_log(tr('Skipping unknown file ":file"', array(':file' => $file)), 'yellow');
                         unset($files[$key]);
                         continue;
