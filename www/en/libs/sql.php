@@ -1013,6 +1013,29 @@ function sql_log($enable){
 /*
  *
  */
+function sql_exists($table, $id, $value){
+    try{
+        if(!is_array($value)){
+            throw new bException(tr('sql_exists(): Specified value ":value" is not a key => value array', array(':value' => $value)), 'invalid');
+        }
+
+        if($id){
+            $value[':id'] = $id;
+            return sql_get(' SELECT `id` FROM `'.$table.'` WHERE `'.key($value).'` = :domain AND `id` != :id', true, $value);
+        }
+
+        return sql_get(' SELECT `id` FROM `'.$table.'` WHERE `'.key($value).'` = :domain', true, $value);
+
+    }catch(Exception $e){
+        throw new bException(tr('sql_exists(): Failed'), $e);
+    }
+}
+
+
+
+/*
+ *
+ */
 function sql_null($value){
     if($value === null){
         return ' IS ';
