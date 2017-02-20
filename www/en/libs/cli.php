@@ -189,6 +189,69 @@ function cli_code_begin(){
 /*
  * Returns true if the startup script is already running
  */
+function cli_run_once_local($close = false){
+    try{
+        load_libs('file');
+
+        $run_dir = ROOT.'data/run/';
+
+        file_ensure_path($run_dir);
+
+        if($close){
+            file_delete($run_dir.SCRIPT);
+            return true;
+        }
+
+        if(file_exists($run_dir.SCRIPT)){
+            /*
+             * Run file exists, so either a process is running, or a process was
+             * running but crashed before it could delete the run file. Check if
+             * the registered PID exists, and if the process name matches this
+             * one
+             */
+            $pid  = file_get_contents($run_dir.SCRIPT);
+            $name = safe_exec('ps -p '.$pid.' | tail -n 1');
+            $name = array_pop($name);
+
+            if($name){
+                preg_match_all('/.+?\d{2}:\d{2}:\d{2}\s+('.SCRIPT.')/', $name, $matches);
+
+                if(!empty($matches[1][0])){
+                    throw new bException(tr('cli_run_once_local(): The script ":script" for this project is already running', array(':script' => SCRIPT)), 'already-running');
+                }
+            }
+
+            /*
+             * File exists, but PID either doesn't exist, or is used by a
+             * different process. Remove the PID file
+             */
+            cli_log(tr('cli_run_once_local(): Cleaning up stale run file ":file"', array(':file' => $run_dir.SCRIPT)), 'yellow');
+            cli_run_once_local(true);
+        }
+
+        /*
+         * No run file exists yet, create one now
+         */
+        file_put_contents($run_dir.SCRIPT, getmypid());
+        return true;
+
+    }catch(Exception $e){
+        if($e->getCode() == 'already-running'){
+            /*
+            * Just keep throwing this one
+            */
+            throw($e);
+        }
+
+        throw new bException('cli_run_once_local(): Failed', $e);
+    }
+}
+
+
+
+/*
+ * Returns true if the startup script is already running
+ */
 function cli_run_once($action = 'exception', $force = false){
     try{
         if(PLATFORM != 'shell'){
@@ -216,7 +279,7 @@ function cli_run_once($action = 'exception', $force = false){
                 if(++$count >= 2){
                     switch($action){
                         case 'exception':
-                            throw new bException('cli_run_once(): This script is already running', 'alreadyrunning');
+                            throw new bException('cli_run_once(): This script is already running', 'already-running');
 
                         case 'kill':
                             $thispid = getmypid();
@@ -255,7 +318,7 @@ function cli_run_once($action = 'exception', $force = false){
         return false;
 
     }catch(Exception $e){
-        if($e->getCode() == 'alreadyrunning'){
+        if($e->getCode() == 'already-running'){
             /*
             * Just keep throwing this one
             */

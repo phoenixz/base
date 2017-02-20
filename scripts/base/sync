@@ -59,7 +59,8 @@ $nologin = true;
 
 require_once(dirname(__FILE__).'/../../libs/startup.php');
 
-cli_only(true);
+cli_only();
+cli_run_once_local();
 load_libs('init,array,config');
 
 
@@ -417,6 +418,6 @@ if(!$nobadgescached){
  * Fix permissions to ensure all files will have correct file modes
  */
 script_exec('base/fix-permissions');
-
+cli_run_once_local(true);
 cli_log(tr('Finished!'), 'green');
 ?>
