@@ -212,6 +212,8 @@ function json_error($message, $data = array(), $result = 'ERROR', $http_code = 5
                 }
             }
 
+            $message = trim(str_from($message, '():'));
+
         }elseif(is_object($message)){
             /*
              * Assume this is an bException object
@@ -246,7 +248,19 @@ function json_error($message, $data = array(), $result = 'ERROR', $http_code = 5
                     /*
                      * This is a user visible message
                      */
-                    $message = $message->getMessages("\n");
+                    $messages = $message->getMessages();
+
+                    foreach($messages as $id => &$message){
+                        $message = trim(str_from($message, '():'));
+
+                        if($message == tr('Failed')){
+                            unset($messages[$id]);
+                        }
+                    }
+
+                    unset($message);
+
+                    $message = implode("\n", $messages);
 
                 }elseif(!empty($default)){
                     $message = $default;
