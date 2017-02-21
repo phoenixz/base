@@ -16,6 +16,87 @@ load_libs('json');
 
 
 /*
+ * Validate API account
+ */
+function api_validate_account($account){
+
+    try{
+        load_libs('validate,seo');
+
+        $v = new validate_form($account, 'name,baseurl,apikey,description,customer,account,verify_ssl');
+
+        $v->isNotEmpty ($account['name']    ,  tr('Please specify an API account name'));
+        $v->hasMaxChars($account['name'], 64, tr('Please ensure the API account name has less than 64 characters'));
+
+        $v->isNotEmpty ($account['apikey'] ,  tr('Please specify an API key'));
+
+        if(strlen($account['apikey']) != 64){
+            $v->setError(tr('Please ensure the API key has exactly 64 characters'));
+        }
+
+        $v->isNotEmpty ($account['baseurl']     , tr('No API root api URL specified'));
+        $v->hasMaxChars($account['baseurl'], 127, tr('Please ensure the API root api URL has less than 127 characters'));
+
+        $v->isNotEmpty ($account['customer']    , tr('Please specify a customer'));
+        $v->isNotEmpty ($account['server']      , tr('Please specify a server'));
+
+        $account['servers_id']   = sql_get('SELECT `id` FROM `servers`   WHERE `seohostname` = :seohostname AND `status` IS NULL', true, array(':seohostname' => $account['server']));
+        $account['customers_id'] = sql_get('SELECT `id` FROM `customers` WHERE `seoname`     = :seoname     AND `status` IS NULL', true, array(':seoname'     => $account['customer']));
+
+        if(!$account['servers_id']){
+            $v->setError(tr('Specified server ":server" does not exist', array(':server' => $account['server'])));
+        }
+
+        if(!$account['customers_id']){
+            $v->setError(tr('Specified customer ":customer" does not exist', array(':customer' => $account['customer'])));
+        }
+
+        $exists = sql_exists('api_accounts', 'name', $account['name'], $account['id']);
+
+        if($exists){
+            $v->setError(tr('The API account ":account" already exists', array(':account' => $account['name'])));
+        }
+
+        $account['seoname']    = seo_unique($account['name'], 'api_accounts', $account['id']);
+        $account['verify_ssl'] = (boolean) $account['verify_ssl'];
+
+        if($account['verify_ssl']){
+            if(!strstr($account['baseurl'], 'https://')){
+                $v->setError(tr('The "Verify SSL" option can only be used for base URLs using the HTTPS protocol'));
+            }
+        }
+
+        $v->isValid();
+
+        return $account;
+
+    }catch(Exception $e){
+        throw new bException(tr('api_validate_account(): Failed'), $e);
+    }
+}
+
+
+
+/*
+ * Test API account
+ */
+function api_test_account($account){
+
+    try{
+        sql_query('UPDATE `api_servers` SET `status` = "testing" WHERE `seoname` = :seoname', array(':seoname' => $account));
+        $result = api_call_base($account, '/test');
+        sql_query('UPDATE `api_servers` SET `status` = NULL      WHERE `seoname` = :seoname', array(':seoname' => $account));
+
+        return $result;
+
+    }catch(Exception $e){
+        throw new bException(tr('api_test_account(): Failed'), $e);
+    }
+}
+
+
+
+/*
  * Ensure that the remote IP is on the API whitelist and
  */
 function api_whitelist(){
@@ -285,48 +366,49 @@ function api_decode($data){
 /*
  * Make an API call to a BASE framework
  */
-function api_call_base($api, $call, $data = array()){
+function api_call_base($account, $call, $data = array()){
     global $_CONFIG;
 
     try{
         load_libs('curl,json');
         load_config('api');
 
-        if(empty($api)){
+        if(empty($account)){
             throw new bException(tr('api_call_base(): No API specified'), 'not-specified');
         }
 
-        if(empty($_CONFIG['api']['list'][$api])){
-            throw new bException(tr('api_call_base(): Specified API ":api" does not exist', array(':api' => $api)), 'not-exist');
+        $account_data = sql_get('SELECT `id`, `baseurl`, `apikey` FROM `api_accounts` WHERE `seoname` = :seoname', array(':seoname' => $account));
+
+        if(!$account_data){
+            throw new bException(tr('api_call_base(): Specified API account ":account" does not exist', array(':account' => $account)), 'not-exist');
         }
 
-        if(empty($_SESSION['api']['session_keys'][$api])){
+        if(empty($_SESSION['api']['session_keys'][$account])){
             try{
                 /*
                  * Auto authenticate
                  */
-                $apikey = $_CONFIG['api']['list'][$api]['apikey'];
-                $json   = curl_get(array('url'            => str_starts_not($_CONFIG['api']['list'][$api]['baseurl'], '/').'/authenticate',
+                $json   = curl_get(array('url'            => str_starts_not($account_data['baseurl'], '/').'/authenticate',
                                          'posturlencoded' => true,
-                                         'verify_ssl'     => isset_get($_CONFIG['api']['list'][$api]['verify_ssl']),
+                                         'verify_ssl'     => isset_get($account_data['verify_ssl']),
                                          'getheaders'     => false,
-                                         'post'           => array('PHPSESSID' => $apikey)));
+                                         'post'           => array('PHPSESSID' => $account_data['apikey'])));
 
                 if(!$json){
-                    throw new bException(tr('api_call_base(): Authentication on API ":api" returned no response', array(':api' => $api)), 'not-exist');
+                    throw new bException(tr('api_call_base(): Authentication on API account ":account" returned no response', array(':account' => $account)), 'not-exist');
                 }
 
                 $result = json_decode_custom($json['data']);
 
                 if(isset_get($result['result']) !== 'OK'){
-                    throw new bException(tr('api_call_base(): Authentication on API ":api" returned result ":result"', array(':result' => $result['result'])), 'failed', $result);
+                    throw new bException(tr('api_call_base(): Authentication on API account ":account" returned result ":result"', array('":account' => $account, ':result' => $result['result'])), 'failed', $result);
                 }
 
                 if(empty($result['data']['token'])){
-                    throw new bException(tr('api_call_base(): Authentication on API ":api" returned ok result but no token'), 'failed');
+                    throw new bException(tr('api_call_base(): Authentication on API account ":account" returned ok result but no token', array('":account' => $account)), 'failed');
                 }
 
-                $_SESSION['api']['session_keys'][$api] = $result['data']['token'];
+                $_SESSION['api']['session_keys'][$account] = $result['data']['token'];
                 $signin = true;
 
             }catch(Exception $e){
@@ -334,15 +416,16 @@ function api_call_base($api, $call, $data = array()){
             }
         }
 
-        $data['PHPSESSID'] = $_SESSION['api']['session_keys'][$api];
+        $data['PHPSESSID'] = $_SESSION['api']['session_keys'][$account];
 
-        $json = curl_get(array('url'            => str_starts_not($_CONFIG['api']['list'][$api]['baseurl'], '/').str_starts($call, '/'),
+        $json = curl_get(array('url'            => str_starts_not($account_data['baseurl'], '/').str_starts($call, '/'),
                                'posturlencoded' => true,
+                               'verify_ssl'     => isset_get($account_data['verify_ssl']),
                                'getheaders'     => false,
                                'post'           => $data));
 
         if(!$json){
-            throw new bException(tr('api_call_base(): API call ":call" on ":api" returned no response', array(':api' => $api, ':call' => $call)), 'not-response');
+            throw new bException(tr('api_call_base(): API call ":call" on account ":account" returned no response', array(':account' => $account, ':call' => $call)), 'not-response');
         }
 
         $result = json_decode_custom($json['data']);
@@ -368,11 +451,11 @@ function api_call_base($api, $call, $data = array()){
                     throw new bException(tr('api_call_base(): API call ":call" on ":api" required auto signin but that failed with a request to signin as well. Stopping to avoid endless signin loop', array(':api' => $api, ':call' => $call)), 'failed');
                 }
 
-                unset($_SESSION['api']['session_keys'][$api]);
-                return api_call_base($api, $call, $data);
+                unset($_SESSION['api']['session_keys'][$account]);
+                return api_call_base($account, $call, $data);
 
             default:
-                throw new bException(tr('api_call_base(): API call ":call" on ":api" returned result ":result"', array(':api' => $api, ':call' => $call, ':result' => $result['result'])), 'failed', $result);
+                throw new bException(tr('api_call_base(): API call ":call" on account ":account" returned result ":result"', array(':account' => $account, ':call' => $call, ':result' => $result['result'])), 'failed', $result);
         }
 
     }catch(Exception $e){
