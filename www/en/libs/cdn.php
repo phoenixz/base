@@ -31,9 +31,8 @@ function cdn_add_object($file, $table = 'pub'){
         $servers = cdn_assign_servers();
 
         foreach($servers as $servers_id){
-            $server = sql_get('SELECT `cdn`.`path`,
-                                      `ssh_accounts`.`username`,
-                                      `ssh_accounts`.`ssh_key`
+            $server = sql_get('SELECT `cdn_servers`.`domain`,
+                                      `cdn_servers`.`root`
 
                                FROM   `cdn`
 
@@ -277,36 +276,40 @@ function cdn_get_domain($cdn_id){
 /*
  * Validate CDN server
  */
-function cdn_validate_server($cdn, $insert = true){
+function cdn_validate_server($server){
 
     try{
-        load_libs('validate');
+        load_libs('validate,seo');
 
-        $v = new validate_form($cdn, 'ide,path,ssh_accounts_id');
+        $v = new validate_form($server, 'name,baseurl,api_account,description');
 
-        $v->isNotEmpty ($cdn['ide'],  tr('No cdn id specified'));
-        $v->isNatural  ($cdn['ide'],  tr('Please ensure the cdn id is numeric'));
+        $v->isNotEmpty ($server['name']        , tr('Please specify a CDN server name'));
+        $v->hasMaxChars($server['name']   ,  32, tr('Please make sure the specified CDN server name is less than 32 characters long'));
 
-        $v->isNotEmpty ($cdn['path']     , tr('No path specified'));
-        $v->hasMinChars($cdn['path'],   2, tr('Please ensure the path has at least 2 characters'));
-        $v->hasMaxChars($cdn['path'], 255, tr('Please ensure the path has less than 255 characters'));
+        $v->isNotEmpty ($server['baseurl']     , tr('Please specify a base URL'));
+        $v->hasMaxChars($server['baseurl'], 127, tr('Please make sure the specified base URL is less than 127 characters long'));
 
-        $v->isNotEmpty ($cdn['ssh_accounts_id'],  tr('No ssh account id specified'));
-        $v->isNumeric  ($cdn['ssh_accounts_id'],  tr('Please ensure the ssh account id is numeric'));
+        $v->isNotEmpty ($server['api_account'] , tr('Please specify an API account'));
 
-        if($insert AND $cdn['ide']){
-            $id = sql_get('SELECT `id` FROM `cdn` WHERE `id` = :id', array(':id' => $cdn['ide']));
-            if(!empty($id)){
-                $v->setError(tr('The ID already exists'));
-            }
+        $server['api_accounts_id'] = sql_get('SELECT `id` FROM `api_accounts` WHERE `seoname` = :seoname AND `status` IS NULL', true, array(':seoname' => $server['api_account']));
+
+        if(!$server['api_accounts_id']){
+            $v->setError(tr('Specified server ":account" does not exist', array(':account' => $server['api_account'])));
         }
+
+        $exists = sql_exists('cdn_servers', 'name', $server['name'], $server['id']);
+
+        if($exists){
+            $v->setError(tr('The domain ":name" already exists', array(':name' => $server['name'])));
+        }
+
+        $server['seoname'] = seo_unique($server['name'], 'cdn_servers', $server['id'], 'seoname');
 
         $v->isValid();
 
-        return $cdn;
+        return $server;
 
     }catch(Exception $e){
-//showdie($e);
         throw new bException(tr('cdn_validate_server(): Failed'), $e);
     }
 }
@@ -323,18 +326,16 @@ function cdn_validate_project($cdn, $insert = true){
 
         $v = new validate_form($cdn, 'ide,path,ssh_accounts_id');
 
-        $v->isNotEmpty ($cdn['ide'],  tr('No cdn id specified'));
-        $v->isNatural  ($cdn['ide'],  tr('Please ensure the cdn id is numeric'));
-
-        $v->isNotEmpty ($cdn['path']     , tr('No path specified'));
-        $v->hasMinChars($cdn['path'],   2, tr('Please ensure the path has at least 2 characters'));
-        $v->hasMaxChars($cdn['path'], 255, tr('Please ensure the path has less than 255 characters'));
+        $v->isNotEmpty ($cdn['project']    , tr('No project specified'));
+        $v->hasMinChars($cdn['project'],  2, tr('Please ensure the path has at least 2 characters'));
+        $v->hasMaxChars($cdn['project'], 32, tr('Please ensure the path has less than 32 characters'));
 
         $v->isNotEmpty ($cdn['ssh_accounts_id'],  tr('No ssh account id specified'));
         $v->isNumeric  ($cdn['ssh_accounts_id'],  tr('Please ensure the ssh account id is numeric'));
 
         if($insert AND $cdn['ide']){
             $id = sql_get('SELECT `id` FROM `cdn` WHERE `id` = :id', array(':id' => $cdn['ide']));
+
             if(!empty($id)){
                 $v->setError(tr('The ID already exists'));
             }
@@ -353,20 +354,59 @@ function cdn_validate_project($cdn, $insert = true){
 
 
 /*
- * Test CDNs
+ * Test specified CDN server
  */
-function cdns_test($hostname){
+function cdn_test_server($server){
     try{
-        load_libs('servers');
-        $result = servers_exec($hostname, 'echo 1');
-        $result = array_pop($result);
+        load_libs('api');
 
-        if($result != '1'){
-            throw new bException(tr('cdns_test(): Failed to CDN connect to ":server"', array(':server' => $user.'@'.$hostname.':'.$port)), 'failedconnect');
+        $api_account = sql_get('SELECT `api_accounts`.`seoname`
+
+                                FROM   `cdn_servers`
+
+                                JOIN   `api_accounts`
+                                ON     `api_accounts`.`id`     = `cdn_servers`.`api_accounts_id`
+
+                                WHERE  `cdn_servers`.`seoname` = :seoname',
+
+                                true, array(':seoname' => $server));
+
+        if(!$api_account){
+            throw new bException(tr('cdn_validate_project(): Specified server ":server" does not exist', array(':server' => $server)), 'not-exist');
         }
 
+        load_libs('api');
+
+        sql_query('UPDATE `cdn_servers` SET `status` = "testing" WHERE `seoname` = :seoname', array(':seoname' => $server));
+        $result = api_test_account($api_account);
+        sql_query('UPDATE `cdn_servers` SET `status` = NULL WHERE `seoname` = :seoname', array(':seoname' => $server));
+
+        return $result;
+
     }catch(Exception $e){
-        throw new bException('cdns_test(): Failed', $e);
+        throw new bException('cdn_test_server(): Failed', $e);
+    }
+}
+
+
+
+/*
+ * Register this project at the specified CDN server
+ */
+function cdn_register_project($server){
+    try{
+        load_libs('api');
+
+        $root_url = sql_get('SELECT `api_root_url` FROM `cdn_servers` WHERE `id` = :id', true, array(':id' => $domains_id));
+
+        sql_query('UPDATE `cdn_servers` SET `status` = "testing" WHERE `id` = :id', array(':id' => $cdn['id']));
+        $result = api_call_base($api, '/test');
+        sql_query('UPDATE `cdn_servers` SET `status` = NULL WHERE `id` = :id', array(':id' => $cdn['id']));
+showdie($result);
+        return $result;
+
+    }catch(Exception $e){
+        throw new bException('cdn_register_project(): Failed', $e);
     }
 }
 ?>
