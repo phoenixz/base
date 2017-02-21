@@ -576,52 +576,54 @@ function log_database($messages, $type = 'unknown'){
         /*
          * Avoid endless looping if the database log fails
          */
-        if($busy) return false;
-        $busy = true;
+        if($busy){
+            $busy = true;
 
-        if(!empty($GLOBALS['no-db'])){
-            /*
-             * Don't log to DB, there is no DB
-             */
-            return $messages;
-        }
-
-        if(is_object($messages)){
-            if($messages instanceof bException){
-                $messages = $messages->getMessages();
-                $type     = 'exception';
+            if(!empty($GLOBALS['no-db'])){
+                /*
+                 * Don't log to DB, there is no DB
+                 */
+                return $messages;
             }
 
-            if($messages instanceof Exception){
-                $messages = $messages->getMessage();
-                $type     = 'exception';
+            if(is_object($messages)){
+                if($messages instanceof bException){
+                    $messages = $messages->getMessages();
+                    $type     = 'exception';
+                }
+
+                if($messages instanceof Exception){
+                    $messages = $messages->getMessage();
+                    $type     = 'exception';
+                }
             }
+
+            if($messages == $last){
+                /*
+                * We already displayed this message, skip!
+                */
+                return $messages;
+            }
+
+            $last = $messages;
+
+            if(is_numeric($type)){
+                throw new bException('log_database(): Type cannot be numeric');
+            }
+
+            foreach(array_force($messages, "\n") as $message){
+                sql_query('INSERT INTO `log` (`createdby`, `ip`, `type`, `message`)
+                           VALUES            (:createdby , :ip , :type , :message )',
+
+                           array(':createdby' => isset_get($_SESSION['user']['id']),
+                                 ':ip'        => isset_get($_SERVER['REMOTE_ADDR']),
+                                 ':type'      => cfm($type),
+                                 ':message'   => $message));
+            }
+
+            $busy = false;
         }
 
-        if($messages == $last){
-            /*
-            * We already displayed this message, skip!
-            */
-            return $messages;
-        }
-
-        $last = $messages;
-
-        if(is_numeric($type)){
-            throw new bException('log_database(): Type cannot be numeric');
-        }
-
-        foreach(array_force($messages, "\n") as $message){
-            sql_query('INSERT INTO `log` (`createdby`, `ip`, `type`, `message`)
-                       VALUES            (:createdby , :ip , :type , :message )',
-
-                       array(':createdby' => isset_get($_SESSION['user']['id']),
-                             ':ip'        => isset_get($_SERVER['REMOTE_ADDR']),
-                             ':type'      => cfm($type),
-                             ':message'   => $message));
-        }
-
-        $busy = false;
         return $messages;
 
     }catch(Exception $e){
