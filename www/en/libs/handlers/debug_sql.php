@@ -33,7 +33,7 @@ try{
 
             }else{
                 if(!is_scalar($value)){
-                    throw new bException(tr('debug_sql(): Specified key "%key%" has non-scalar value "%value%"', array('%key%' => str_log($key), '%value%' => str_log($value))));
+                    throw new bException(tr('debug_sql(): Specified key ":key" has non-scalar value ":value"', array(':key' => $key, ':value' => $value)));
                 }
 
                 $query = str_replace($key, $value, $query);
@@ -45,7 +45,7 @@ try{
         return $query;
     }
 
-    return show(str_ends($query, ';'), 5);
+    return show(str_ends($query, ';'), 6);
 
 }catch(Exception $e){
     throw new bException('debug_sql(): Failed', $e);
