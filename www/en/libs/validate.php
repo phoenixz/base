@@ -319,7 +319,7 @@ class validate_form {
      *
      */
     function isNotEmpty($value, $msg = null){
-        if(!$this->isScalar($value, $msg = null)){
+        if(!$this->isScalar($value, $msg)){
             return false;
         }
 
@@ -371,7 +371,7 @@ class validate_form {
      * Only allow a valid (unverified!) email address
      */
     function isValidEmail($value, $msg = null){
-        if(!$this->isScalar($value, $msg = null)){
+        if(!$this->isScalar($value, $msg)){
             return false;
         }
 
@@ -420,7 +420,7 @@ class validate_form {
      *
      */
     function isValidPhonenumber($value, $msg = null){
-        if(!$this->isScalar($value, $msg = null)){
+        if(!$this->isScalar($value, $msg)){
             return false;
         }
 
@@ -443,8 +443,8 @@ class validate_form {
      *
      */
     function isEqual($value, $value2, $msg = null){
-        $this->isScalar($value , $msg = null);
-        $this->isScalar($value2, $msg = null);
+        $this->isScalar($value , $msg);
+        $this->isScalar($value2, $msg);
 
         $value  = trim($value);
         $value2 = trim($value2);
@@ -463,8 +463,8 @@ class validate_form {
      *
      */
     function isNotEqual($value, $value2, $msg = null){
-        $this->isScalar($value , $msg = null);
-        $this->isScalar($value2, $msg = null);
+        $this->isScalar($value , $msg);
+        $this->isScalar($value2, $msg);
 
         $value  = trim($value);
         $value2 = trim($value2);
@@ -483,7 +483,7 @@ class validate_form {
      *
      */
     function isBetween($value, $min, $max, $msg = null){
-        if(!$this->isScalar($value, $msg = null)){
+        if(!$this->isScalar($value, $msg)){
             return false;
         }
 
@@ -501,7 +501,7 @@ class validate_form {
      *
      */
     function isEnabled($value, $msg = null){
-        if(!$this->isScalar($value, $msg = null)){
+        if(!$this->isScalar($value, $msg)){
             return false;
         }
 
@@ -521,7 +521,7 @@ class validate_form {
      *
      */
     function hasNoChars($value, $chars, $msg = null){
-        if(!$this->isScalar($value, $msg = null)){
+        if(!$this->isScalar($value, $msg)){
             return false;
         }
 
@@ -543,7 +543,7 @@ class validate_form {
      *
      */
     function hasMinChars($value, $limit, $msg = null){
-        if(!$this->isScalar($value, $msg = null)){
+        if(!$this->isScalar($value, $msg)){
             return false;
         }
 
@@ -563,7 +563,7 @@ class validate_form {
      *
      */
     function hasMaxChars($value, $limit, $msg = null){
-        if(!$this->isScalar($value, $msg = null)){
+        if(!$this->isScalar($value, $msg)){
             return false;
         }
 
@@ -583,7 +583,7 @@ class validate_form {
      *
      */
     function hasChars($value, $limit, $msg = null){
-        if(!$this->isScalar($value, $msg = null)){
+        if(!$this->isScalar($value, $msg)){
             return false;
         }
 
@@ -603,7 +603,7 @@ class validate_form {
      *
      */
     function isValidUrl($value, $msg = null){
-        if(!$this->isScalar($value, $msg = null)){
+        if(!$this->isScalar($value, $msg)){
             return false;
         }
 
@@ -624,7 +624,7 @@ class validate_form {
      *
      */
     function isValidFacebookUserpage($value, $msg = null){
-        if(!$this->isScalar($value, $msg = null)){
+        if(!$this->isScalar($value, $msg)){
             return false;
         }
 
@@ -645,7 +645,7 @@ class validate_form {
      *
      */
     function isValidTwitterUserpage($value, $msg = null){
-        if(!$this->isScalar($value, $msg = null)){
+        if(!$this->isScalar($value, $msg)){
             return false;
         }
 
@@ -666,7 +666,7 @@ class validate_form {
      *
      */
     function isValidGoogleplusUserpage($value, $msg = null){
-        if(!$this->isScalar($value, $msg = null)){
+        if(!$this->isScalar($value, $msg)){
             return false;
         }
 
@@ -687,7 +687,7 @@ class validate_form {
      *
      */
     function isValidYoutubeUserpage($value, $msg = null){
-        if(!$this->isScalar($value, $msg = null)){
+        if(!$this->isScalar($value, $msg)){
             return false;
         }
 
@@ -708,7 +708,7 @@ class validate_form {
      *
      */
     function isValidLinkedinUserpage($value, $msg = null){
-        if(!$this->isScalar($value, $msg = null)){
+        if(!$this->isScalar($value, $msg)){
             return false;
         }
 
@@ -741,7 +741,7 @@ class validate_form {
      *
      */
     function isValidPassword($value, $msg = null){
-        if(!$this->isScalar($value, $msg = null)){
+        if(!$this->isScalar($value, $msg)){
             return false;
         }
 
@@ -760,7 +760,7 @@ class validate_form {
      */
     function isRegex($value, $regex, $msg = null){
          try{
-            if(!$this->isScalar($value, $msg = null)){
+            if(!$this->isScalar($value, $msg)){
                 return false;
             }
 
@@ -782,7 +782,7 @@ class validate_form {
      *
      */
     function isInRange($value, $min, $max, $msg = null){
-        if(!$this->isScalar($value, $msg = null)){
+        if(!$this->isScalar($value, $msg)){
             return false;
         }
 
@@ -811,7 +811,7 @@ class validate_form {
      */
     function isTime($value, $msg = null){
         try{
-            if(!$this->isScalar($value, $msg = null)){
+            if(!$this->isScalar($value, $msg)){
                 return false;
             }
 
@@ -836,7 +836,7 @@ class validate_form {
      * Basically this is an enum check
      */
     function inArray($value, $array, $msg = null){
-        if(!$this->isScalar($value, $msg = null)){
+        if(!$this->isScalar($value, $msg)){
             return false;
         }
 
@@ -867,16 +867,17 @@ class validate_form {
     /*
      *
      */
-    //set error, useful if validation is done outside of this script.
     function setError($msg){
         if(is_object($msg) and $msg instanceof bException){
             $msg = str_from($msg->getMessage(), '():');
         }
 
-        if($msg){
-            $this->errors[] = $msg;
-            return false;
+        if(!$msg){
+            $msg = tr('Unkown validation error');
         }
+
+        $this->errors[] = $msg;
+        return false;
     }
 
 
@@ -885,13 +886,11 @@ class validate_form {
      *
      */
     function isValid($throw_exception = true){
-        $valid = !count($this->errors);
-
-        if(!$valid and $throw_exception){
+        if($this->errors and $throw_exception){
             throw new bException($this->errors, 'validation');
         }
 
-        return $valid;
+        return ! (boolean) $this->errors;
     }
 
 
