@@ -23,7 +23,7 @@ function api_validate_account($account){
     try{
         load_libs('validate,seo');
 
-        $v = new validate_form($account, 'name,baseurl,apikey,description,customer,account,verify_ssl');
+        $v = new validate_form($account, 'customer,server,name,description,baseurl,apikey,verify_ssl');
 
         $v->isNotEmpty ($account['name']    ,  tr('Please specify an API account name'));
         $v->hasMaxChars($account['name'], 64, tr('Please ensure the API account name has less than 64 characters'));
@@ -32,6 +32,14 @@ function api_validate_account($account){
 
         if(strlen($account['apikey']) != 64){
             $v->setError(tr('Please ensure the API key has exactly 64 characters'));
+        }
+
+        if($account['description']){
+            $v->hasMinChars($account['description'],   16, tr('Please ensure the API account description has at least 16 characters, or empty'));
+            $v->hasMaxChars($account['description'], 2047, tr('Please ensure the API account description has less than 2047 characters'));
+
+        }else{
+            $account['description'] = '';
         }
 
         $v->isNotEmpty ($account['baseurl']     , tr('No API root api URL specified'));
