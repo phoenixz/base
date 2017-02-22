@@ -10,7 +10,7 @@ if(sql_table_exists('cdn_objects')){
     sql_column_exists('cdn_objects', 'url' ,  'ALTER TABLE `cdn_objects` CHANGE COLUMN `url` `file` VARCHAR(128) NOT NULL');
     sql_index_exists ('cdn_objects', 'file', '!ALTER TABLE `cdn_objects` ADD UNIQUE KEY `file` (`file`)');
 
-    sql_query('DROP TABLE `cdn_files`');
+    sql_table_exists('cdn_files', 'DROP TABLE `cdn_files`');
     sql_query('RENAME TABLE `cdn_objects` TO `cdn_files`');
 
     sql_foreignkey_exists('cdn_files', 'fk_cdn_cdn_files_projects_id', 'ALTER TABLE `cdn_files` ADD CONSTRAINT `fk_cdn_cdn_files_projects_id` FOREIGN KEY (`projects_id`) REFERENCES `cdn_projects` (`id`) ON DELETE RESTRICT;');
