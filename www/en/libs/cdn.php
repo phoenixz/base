@@ -294,7 +294,7 @@ function cdn_validate_server($server){
         $server['api_accounts_id'] = sql_get('SELECT `id` FROM `api_accounts` WHERE `seoname` = :seoname AND `status` IS NULL', true, array(':seoname' => $server['api_account']));
 
         if(!$server['api_accounts_id']){
-            $v->setError(tr('Specified server ":account" does not exist', array(':account' => $server['api_account'])));
+            $v->setError(tr('Specified API account ":account" does not exist', array(':account' => $server['api_account'])));
         }
 
         $exists = sql_exists('cdn_servers', 'name', $server['name'], $server['id']);
@@ -356,7 +356,7 @@ function cdn_validate_project($cdn, $insert = true){
 /*
  * Test specified CDN server
  */
-function cdn_test_server($server){
+function cdn_get_api_account($server){
     try{
         load_libs('api');
 
@@ -375,12 +375,27 @@ function cdn_test_server($server){
             throw new bException(tr('cdn_validate_project(): Specified server ":server" does not exist', array(':server' => $server)), 'not-exist');
         }
 
+        return $api_account;
+
+    }catch(Exception $e){
+        throw new bException('cdn_get_api_account(): Failed', $e);
+    }
+}
+
+
+
+/*
+ * Test specified CDN server
+ */
+function cdn_test_server($server){
+    try{
         load_libs('api');
+        $api_account = cdn_get_api_account($server);
 
         sql_query('UPDATE `cdn_servers` SET `status` = "testing" WHERE `seoname` = :seoname', array(':seoname' => $server));
         $result = api_test_account($api_account);
-        sql_query('UPDATE `cdn_servers` SET `status` = NULL WHERE `seoname` = :seoname', array(':seoname' => $server));
 
+        sql_query('UPDATE `cdn_servers` SET `status` = NULL WHERE `seoname` = :seoname', array(':seoname' => $server));
         return $result;
 
     }catch(Exception $e){
@@ -396,14 +411,22 @@ function cdn_test_server($server){
 function cdn_register_project($server){
     try{
         load_libs('api');
+        $api_account = cdn_get_api_account($server);
 
-        $root_url = sql_get('SELECT `api_root_url` FROM `cdn_servers` WHERE `id` = :id', true, array(':id' => $domains_id));
+        $result = api_call_base($api_account, '/cdn/project-exists', array('project' => PROJECT));
 
-        sql_query('UPDATE `cdn_servers` SET `status` = "testing" WHERE `id` = :id', array(':id' => $cdn['id']));
-        $result = api_call_base($api, '/test');
-        sql_query('UPDATE `cdn_servers` SET `status` = NULL WHERE `id` = :id', array(':id' => $cdn['id']));
-showdie($result);
-        return $result;
+        if(!empty($result['exists'])){
+            sql_query('UPDATE `cdn_servers` SET `status` = "registering" WHERE `seoname` = :seoname', array(':seoname' => $server));
+            $result = api_call_base($api, '/cdn/create-project', array('project' => PROJECT));
+
+            sql_query('UPDATE `cdn_servers` SET `status` = NULL WHERE `seoname` = :seoname', array(':seoname' => $server));
+            return $result;
+        }
+
+        /*
+         * Project already exists
+         */
+        return false;
 
     }catch(Exception $e){
         throw new bException('cdn_register_project(): Failed', $e);
