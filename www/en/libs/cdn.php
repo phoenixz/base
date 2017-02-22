@@ -348,34 +348,32 @@ function cdn_validate_server($server){
 /*
  * Validate CDN project
  */
-function cdn_validate_project($cdn, $insert = true){
+function cdn_validate_project($project, $insert = true){
 
     try{
-        load_libs('validate');
+        load_libs('validate,seo');
 
-        $v = new validate_form($cdn, 'ide,path,ssh_accounts_id');
+        $v = new validate_form($project, 'name,description');
 
-        $v->isNotEmpty ($cdn['project']    , tr('No project specified'));
-        $v->hasMinChars($cdn['project'],  2, tr('Please ensure the path has at least 2 characters'));
-        $v->hasMaxChars($cdn['project'], 32, tr('Please ensure the path has less than 32 characters'));
+        $v->isNotEmpty ($project['name']    , tr('No project specified'));
+        $v->hasMinChars($project['name'],  2, tr('Please ensure the path has at least 2 characters'));
+        $v->hasMaxChars($project['name'], 32, tr('Please ensure the path has less than 32 characters'));
 
-        $v->isNotEmpty ($cdn['ssh_accounts_id'],  tr('No ssh account id specified'));
-        $v->isNumeric  ($cdn['ssh_accounts_id'],  tr('Please ensure the ssh account id is numeric'));
+        if(empty($project['desdription'])){
+            $project['desdription'] = '';
 
-        if($insert AND $cdn['ide']){
-            $id = sql_get('SELECT `id` FROM `cdn` WHERE `id` = :id', array(':id' => $cdn['ide']));
-
-            if(!empty($id)){
-                $v->setError(tr('The ID already exists'));
-            }
+        }else{
+            $v->hasMinChars($project['desdription'],   16, tr('Please ensure the description has at least 16 characters'));
+            $v->hasMaxChars($project['desdription'], 2047, tr('Please ensure the description has less than 2047 characters'));
         }
+
+        $project['seoname'] = seo_unique($project['name'], 'cdn_projects', $project['id']);
 
         $v->isValid();
 
-        return $cdn;
+        return $project;
 
     }catch(Exception $e){
-//showdie($e);
         throw new bException(tr('cdn_validate_project(): Failed'), $e);
     }
 }
@@ -463,9 +461,9 @@ function cdn_register_project($server){
         $api_account = cdn_get_api_account($server);
         $result      = api_call_base($api_account, '/cdn/project-exists', array('project' => PROJECT));
 
-        if(!empty($result['exists'])){
+        if(empty($result['exists'])){
             sql_query('UPDATE `cdn_servers` SET `status` = "registering" WHERE `seoname` = :seoname', array(':seoname' => $server));
-            $result = api_call_base($api, '/cdn/create-project', array('project' => PROJECT));
+            $result = api_call_base($api_account, '/cdn/create-project', array('name' => PROJECT));
 
             sql_query('UPDATE `cdn_servers` SET `status` = NULL WHERE `seoname` = :seoname', array(':seoname' => $server));
             return $result;
@@ -478,6 +476,34 @@ function cdn_register_project($server){
 
     }catch(Exception $e){
         throw new bException('cdn_register_project(): Failed', $e);
+    }
+}
+
+
+
+/*
+ * Unregister this project from the specified CDN server
+ */
+function cdn_unregister_project($server){
+    try{
+        load_libs('api');
+
+        $api_account = cdn_get_api_account($server);
+        $result      = api_call_base($api_account, '/cdn/project-exists', array('project' => PROJECT));
+
+        if(!empty($result['exists'])){
+            /*
+             * Project does not exist on specified serv
+             */
+            return false;
+        }
+
+        sql_query('UPDATE `cdn_servers` SET `status` = "unregistering" WHERE `seoname` = :seoname', array(':seoname' => $server));
+        $result = api_call_base($api_account, '/cdn/delete-project', array('name' => PROJECT));
+        return $result;
+
+    }catch(Exception $e){
+        throw new bException('cdn_unregister_project(): Failed', $e);
     }
 }
 ?>
