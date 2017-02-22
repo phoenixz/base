@@ -385,6 +385,25 @@ function cdn_get_api_account($server){
 
 
 /*
+ * Get information from specified CDN server
+ */
+function cdn_get_server_info($server){
+    try{
+        load_libs('api');
+
+        $api_account = cdn_get_api_account($server);
+        $result      = api_call_base($api_account, '/cdn/info');
+
+        return $result;
+
+    }catch(Exception $e){
+        throw new bException('cdn_get_server_info(): Failed', $e);
+    }
+}
+
+
+
+/*
  * Test specified CDN server
  */
 function cdn_test_server($server){
@@ -411,9 +430,9 @@ function cdn_test_server($server){
 function cdn_register_project($server){
     try{
         load_libs('api');
-        $api_account = cdn_get_api_account($server);
 
-        $result = api_call_base($api_account, '/cdn/project-exists', array('project' => PROJECT));
+        $api_account = cdn_get_api_account($server);
+        $result      = api_call_base($api_account, '/cdn/project-exists', array('project' => PROJECT));
 
         if(!empty($result['exists'])){
             sql_query('UPDATE `cdn_servers` SET `status` = "registering" WHERE `seoname` = :seoname', array(':seoname' => $server));
