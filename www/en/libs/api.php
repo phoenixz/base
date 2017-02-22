@@ -83,9 +83,9 @@ function api_validate_account($account){
 function api_test_account($account){
 
     try{
-        sql_query('UPDATE `api_servers` SET `status` = "testing" WHERE `seoname` = :seoname', array(':seoname' => $account));
+        sql_query('UPDATE `api_accounts` SET `status` = "testing" WHERE `seoname` = :seoname', array(':seoname' => $account));
         $result = api_call_base($account, '/test');
-        sql_query('UPDATE `api_servers` SET `status` = NULL      WHERE `seoname` = :seoname', array(':seoname' => $account));
+        sql_query('UPDATE `api_accounts` SET `status` = NULL      WHERE `seoname` = :seoname', array(':seoname' => $account));
 
         return $result;
 
