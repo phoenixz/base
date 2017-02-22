@@ -40,9 +40,8 @@ sql_query('CREATE TABLE `api_accounts` (`id`           INT(11)       NOT NULL AU
 
 sql_query('DELETE FROM `cdn_servers`');
 
-sql_index_exists ('cdn_servers', 'api',  'ALTER TABLE `cdn_servers` DROP KEY `api`');
-sql_column_exists('cdn_servers', 'api',  'ALTER TABLE `cdn_servers` CHANGE COLUMN `api` `api_accounts_id` INT(11) NOT NULL');
-
+sql_index_exists ('cdn_servers', 'api'            ,  'ALTER TABLE `cdn_servers` DROP KEY `api`');
+sql_column_exists('cdn_servers', 'api'            ,  'ALTER TABLE `cdn_servers` CHANGE COLUMN `api` `api_accounts_id` INT(11) NOT NULL');
 sql_index_exists ('cdn_servers', 'api_accounts_id', '!ALTER TABLE `cdn_servers` ADD KEY             `api_accounts_id` (`api_accounts_id`)');
 
 sql_foreignkey_exists('cdn_servers', 'fk_cdn_servers_api_accounts_id', '!ALTER TABLE `cdn_servers` ADD CONSTRAINT `fk_cdn_servers_api_accounts_id` FOREIGN KEY (`api_accounts_id`) REFERENCES `api_accounts` (`id`) ON DELETE RESTRICT;');
@@ -57,10 +56,13 @@ sql_column_exists('cdn_servers', 'root'     ,  'ALTER TABLE `cdn_servers` CHANGE
 sql_index_exists ('cdn_servers', 'name'     , '!ALTER TABLE `cdn_servers` ADD KEY `name`    (`name`)');
 sql_index_exists ('cdn_servers', 'seoname'  , '!ALTER TABLE `cdn_servers` ADD KEY `seoname` (`seoname`)');
 
-sql_column_exists('cdn_storage', 'projects_id', '!ALTER TABLE `cdn_storage` ADD COLUMN `projects_id` INT(11) NOT NULL AFTER `servers_id`');
-sql_index_exists ('cdn_storage', 'projects_id', '!ALTER TABLE `cdn_storage` ADD KEY    `projects_id` (`projects_id`)');
+sql_index_exists ('cdn_storage', 'servers_id' , '!ALTER TABLE `cdn_storage` DROP KEY `servers_id` (`servers_id`)');
+sql_column_exists('cdn_storage', 'servers_id' ,  'ALTER TABLE `cdn_storage` CHANGE COLUMN `servers_id` `projects_id` INT(11) NOT NULL');
+sql_index_exists ('cdn_storage', 'projects_id', '!ALTER TABLE `cdn_storage` ADD KEY                    `projects_id` (`projects_id`)');
 
-sql_column_exists('cdn_storage', 'section', '!ALTER TABLE `cdn_storage` ADD COLUMN `section` VARCHAR(24)  NOT NULL');
+sql_foreignkey_exists('cdn_storage', 'fk_cdn_storage_projects_id', '!ALTER TABLE `cdn_storage` ADD CONSTRAINT `fk_cdn_storage_projects_id` FOREIGN KEY (`projects_id`) REFERENCES `cdn_projects` (`id`) ON DELETE RESTRICT');
+
+sql_column_exists('cdn_storage', 'section', '!ALTER TABLE `cdn_storage` ADD COLUMN `section` VARCHAR(24) NULL');
 sql_index_exists ('cdn_storage', 'section', '!ALTER TABLE `cdn_storage` ADD KEY    `section` (`section`)');
 
 sql_column_exists('cdn_storage', 'file'   , '!ALTER TABLE `cdn_storage` ADD COLUMN `file`    VARCHAR(128) NOT NULL AFTER `projects_id`');
@@ -70,7 +72,18 @@ sql_foreignkey_exists('cdn_storage', 'fk_cdn_storage_objects_id', 'ALTER TABLE `
 sql_index_exists ('cdn_storage', 'objects_id', 'ALTER TABLE `cdn_storage` DROP KEY    `objects_id`');
 sql_column_exists('cdn_storage', 'objects_id', 'ALTER TABLE `cdn_storage` DROP COLUMN `objects_id`');
 
-sql_foreignkey_exists('cdn_storage', 'fk_cdn_storage_projects_id', '!ALTER TABLE `cdn_storage` ADD CONSTRAINT `fk_cdn_storage_projects_id` FOREIGN KEY (`projects_id`) REFERENCES `cdn_projects` (`id`) ON DELETE RESTRICT');
+sql_foreignkey_exists('cdn_files', 'fk_cdn_files_projects_id', 'ALTER TABLE `cdn_files` DROP FOREIGN KEY `fk_cdn_files_projects_id`');
+sql_index_exists ('cdn_files', 'projects_id',  'ALTER TABLE `cdn_files` DROP KEY `projects_id`');
 
-sql_table_exists('cdn_files', 'DROP TABLE `cdn_files`');
+sql_column_exists('cdn_files', 'filesize'   ,  'ALTER TABLE `cdn_files` DROP   COLUMN `filesize`');
+sql_column_exists('cdn_files', 'section'    , '!ALTER TABLE `cdn_files` ADD    COLUMN `section` VARCHAR(24) NULL AFTER `servers_id`');
+sql_column_exists('cdn_files', 'projects_id',  'ALTER TABLE `cdn_files` CHANGE COLUMN `projects_id` `servers_id` INT(11) NOT NULL');
+
+sql_index_exists ('cdn_files', 'servers_id' , '!ALTER TABLE `cdn_files` ADD KEY                     `servers_id` (`servers_id`)');
+sql_index_exists ('cdn_files', 'section'    , '!ALTER TABLE `cdn_files` ADD KEY                     `section`    (`section`)');
+
+sql_index_exists ('cdn_files', 'file'           ,  'ALTER TABLE `cdn_files` DROP KEY `file`');
+sql_index_exists ('cdn_files', 'servers_id_file', '!ALTER TABLE `cdn_files` ADD UNIQUE KEY `servers_id_file` (`servers_id`, `file`)');
+
+sql_foreignkey_exists('cdn_files', 'fk_cdn_files_servers_id', '!ALTER TABLE `cdn_files` ADD CONSTRAINT `fk_cdn_files_servers_id` FOREIGN KEY (`servers_id`) REFERENCES `cdn_servers` (`id`) ON DELETE RESTRICT');
 ?>
