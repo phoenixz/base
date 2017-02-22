@@ -7,157 +7,186 @@
  * @license http://opensource.org/licenses/GPL-2.0 GNU Public License, Version 2
  * @copyright Sven Oostenbrink <support@ingiga.com>
  */
-define('CDN', str_from(ENVIRONMENT, 'cdn'));
 
 
 
 /*
- * Adds the required amount of copies of the specified object to random CDN servers
+ *
  */
-function cdn_add_object($file, $table = 'pub'){
+function cdn_domain($current_url = false){
     global $_CONFIG;
 
     try{
-        load_libs('ssh');
-
-        if(!$table){
-            throw new bException(tr('cdn_add_object(): No table specified'), 'not-specified');
+        if(!$_CONFIG['cdn']['enabled']){
+            return domain($current_url);
         }
 
-        if(!$file){
-            throw new bException(tr('cdn_add_object(): No file specified'), 'not-specified');
-        }
-
-        $servers = cdn_assign_servers();
-
-        foreach($servers as $servers_id){
-            $server = sql_get('SELECT `cdn_servers`.`domain`,
-                                      `cdn_servers`.`root`
-
-                               FROM   `cdn`
-
-                               JOIN   `ssh_accounts`
-                               ON     `ssh_accounts`.`id` = `cdn`.`ssh_accounts_id`
-
-                               WHERE  `cdn`.`id` = :id',
-
-                               array(':id' => $servers_id));
+        /*
+         * We have a CDN server in session? If not, get one.
+         */
+        if(isset_get($_SESSION['cdn']) === null){
+            $server = sql_get('SELECT `baseurl` FROM `cdn_servers` WHERE `status` IS NULL ORDER BY RAND() LIMIT 1');
 
             if(!$server){
                 /*
-                 * CDN server is configured in $_CONFIG but not in the DB!
+                 * Err we have no CDN servers, though CDN is configured.. Just
+                 * continue locally?
                  */
-                notify('cdn-not-configured', tr('CDN server ":id" is not configured in the database', array(':id' => $servers_id)), 'developers');
-                continue;
+                notify('no-cdn-servers', tr('CDN system is enabled, but no availabe CDN servers were found'), 'developers');
+                $_SESSION['cdn'] = false;
+                return domain($current_url, $query, $root);
             }
 
-            $server['domain'] = cdn_get_domain($servers_id);
-show($server);
-            ssh_start_control_master($server, TMP.'cdn'.$servers_id.'.sock');
-            safe_exec('rsync -e "ssh -p '.$_CONFIG['cdn']['port'].' -o ConnectTimeout='.$_CONFIG['cdn']['timeout'].' -o ControlPath='.TMP.'cdn' .$servers_id.'.sock" -az --rsync-path="mkdir -p '.$server['path'].'/'.strtolower(PROJECT).'/'.$table.'/'.' && rsync" '.$file.' '.$server['username'].'@'.$server['domain'].':'.$server['path'].'/'.strtolower(PROJECT).'/'.$table.'/'.basename($file));
-            //safe_exec('rsync -e "ssh -p '.$_CONFIG['cdn']['port'].' -o ConnectTimeout='.$_CONFIG['cdn']['timeout'].' -o ControlPath='.TMP.'cdn' .$servers_id.'.sock" -az '.$file.' '.$server['username'].'@'.$server['domain'].':'.$server['path'].'/'.strtolower(PROJECT).'/'.$table.'/'.basename($file));
+            $_SESSION['cdn'] = $server;
         }
 
-        return ','.implode(',', $servers).',';
+        return $_SESSION['cdn'].$current_url;
 
     }catch(Exception $e){
-        throw new bException('cdn_add_object(): Failed', $e);
+        throw new bException('cdn_domain(): Failed', $e);
     }
 }
 
 
 
 /*
- * Removes the specified object from all CDN servers
+ * Adds the required amount of copies of the specified file to random CDN servers
  */
-function cdn_remove_object($table = 'pub', $file, $id){
+function cdn_add_files($files, $section = 'pub'){
     global $_CONFIG;
 
     try{
         load_libs('ssh');
 
-        if(!$table){
-            throw new bException(tr('cdn_remove_object(): No table specified'), 'not-specified');
+        if(!$section){
+            throw new bException(tr('cdn_add_files(): No section specified'), 'not-specified');
         }
 
         if(!$file){
-            throw new bException(tr('cdn_remove_object(): No file specified'), 'not-specified');
+            throw new bException(tr('cdn_add_files(): No file specified'), 'not-specified');
         }
 
-        if(!$id){
-            throw new bException(tr('cdn_remove_object(): No ID specified'), 'not-specified');
+        /*
+         * In what servers are we going to store these files?
+         */
+        $servers  = cdn_assign_servers();
+
+        $file_insert = sql_prepare('INSERT INTO `cdn_storage` (`projects_id`, `section`, )
+                                    VALUES                          (: , : )');
+
+        /*
+         * Register the files
+         */
+        foreach($files as $id => $file){
+            $file_insert->execute(array(':file' => $file,
+                                        ':size' => filesize($file)));
+
+            $files[$id] = array('id'   => sql_insert_id(),
+                                'file' => $file);
         }
 
-        if(!is_numeric($id)){
-            throw new bException(tr('cdn_remove_object(): Invalid ID ":id" specified, must be numeric', array(':id' => $id)), 'invalid');
+        /*
+         * Register at what CDN servers the files will be uploaded, and send the
+         * files there
+         */
+        $server_insert = sql_prepare('INSERT INTO `cdn_files_servers` ()
+                                      VALUES                          ()');
+
+        foreach($servers as $server){
+            foreach($files as $file){
+                $server_insert->execute(array(':servers_id' => $server['id'],
+                                              ':files_id'   => $file['id']));
+            }
+
+            cdn_send_files($files, $server, $section);
         }
 
-        //$servers = sql_get('SELECT `cdns`
-        //
-        //                    FROM   `blogs_media`
-        //
-        //                    WHERE  `blogs_posts_id` = :blogs_posts_id
-        //
-        //                    LIMIT  1',
-        //
-        //                    array(':blogs_posts_id' => $id));
-
-        $servers = ',2,3,'; ///
-        $servers = explode(',', trim($servers, ','));
-
-        foreach($servers as $servers_id){
-
-            $server = sql_get('SELECT `cdn`.`path`,
-                                      `ssh_accounts`.`username`,
-                                      `ssh_accounts`.`ssh_key`
-
-                               FROM   `cdn`
-
-                               JOIN   `ssh_accounts`
-                               ON     `ssh_accounts`.`id` = `cdn`.`ssh_accounts_id`
-
-                               WHERE  `cdn`.`id` = :id',
-
-                               array(':id' => $servers_id));
-
-            $server['domain'] = cdn_get_domain($servers_id);
-
-            ssh_start_control_master($server, TMP.'cdn'.$servers_id.'.sock');
-            safe_exec('rsync -e "ssh -p '.$_CONFIG['cdn']['port'].' -o ConnectTimeout='.$_CONFIG['cdn']['timeout'].' -o ControlPath='.TMP.'cdn' .$servers_id.'.sock" --remove-source-files -a  '.$server['username'].'@'.$server['domain'].':'.$server['path'].'/'.strtolower(PROJECT).'/'.$table.'/'.basename($file).' -p '.$_CONFIG['cdn']['port']);
-            //Remove full path (?)
-        }
-
-        return 'OK';
+        return $files;
 
     }catch(Exception $e){
-showdie($e);
-        throw new bException('cdn_remove_object(): Failed', $e);
+        throw new bException('cdn_add_files(): Failed', $e);
     }
 }
 
 
 
 /*
- * Assigns random CDN servers for the object to be stored in the CDN
+ * Send the specified file to the specified CDN server
+ */
+function cdn_send_files($files, $server, $section){
+    global $_CONFIG;
+
+    try{
+        load_libs('api');
+
+        $result = api_call_base($api_account, '/cdn/add-files', array('project' => PROJECT, 'section' => $section), $files);
+
+        return $result;
+
+    }catch(Exception $e){
+        throw new bException('cdn_send_files(): Failed', $e);
+    }
+}
+
+
+
+/*
+ * Removes the specified file from all CDN servers
+ */
+function cdn_remove_files($section = 'pub', $files){
+    global $_CONFIG;
+
+    try{
+        load_libs('api');
+
+        if(!$section){
+            throw new bException(tr('cdn_remove_files(): No section specified'), 'not-specified');
+        }
+
+        if(!$files){
+            throw new bException(tr('cdn_remove_files(): No files specified'), 'not-specified');
+        }
+
+        /*
+         * Delete the files one by one
+         */
+        foreach($files as $file){
+            /*
+             * What CDN servers is this file stored?
+             */
+            $servers = sql_list('SELECT    `cdn_storage`.`seoname`
+
+                                 FROM      ``
+
+                                 LEFT JOIN `cdn_sto`
+                                 ON        `cdn_servers`.`id` = `cdn_files_servers`.`servers_id`
+
+                                 WHERE     `cdn_files_servers`.`file` = :file', array(':file' => $file));
+
+            foreach($server as $server){
+                $api_account = cdn_get_api_account($server);
+                api_call_base($api_account, '/cdn/add-files', array('project' => PROJECT, 'section' => $section), $files);
+            }
+        }
+
+
+    }catch(Exception $e){
+showdie($e);
+        throw new bException('cdn_remove_files(): Failed', $e);
+    }
+}
+
+
+
+/*
+ * Assigns random CDN servers for the file to be stored in the CDN
  */
 function cdn_assign_servers(){
     global $_CONFIG;
 
     try{
-        $assigned = array();
-
-        for($i = 0; $i <= ($_CONFIG['cdn']['copies'] - 1); $i++){
-
-            $cdn = array_random_value($_CONFIG['cdn']['servers']);
-
-            while(!empty($assigned[$cdn])){
-                $cdn = array_random_value($_CONFIG['cdn']['servers']);
-            }
-
-            $assigned[$cdn] = $cdn;
-        }
-
-        return array_values($assigned);
+        $servers = sql_list('SELECT `id`, `seoname` FROM `cdn_servers` WHERE `status` IS NULL ORDER BY RAND() LIMIT '.$_CONFIG['cdn']['servers']);
+        return $servers;
 
     }catch(Exception $e){
         throw new bException('cdn_assign_servers(): Failed', $e);
@@ -211,7 +240,7 @@ function cdn_pick_server($cdns){
 
 
 /*
- * Will balance all objects over the available CDN servers using the configured amount of required copies
+ * Will balance all files over the available CDN servers using the configured amount of required copies
  */
 function cdn_balance($params){
     global $_CONFIG;
