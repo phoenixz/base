@@ -104,12 +104,15 @@ function servers_validate($server){
  */
 function servers_test($hostname){
     try{
+        sql_query('UPDATE `servers` SET `status` = "testing" WHERE `hostname` = :hostname', array(':hostname' => $hostname));
         $result = servers_exec($hostname, 'echo 1');
         $result = array_pop($result);
 
         if($result != '1'){
             throw new bException(tr('servers_test(): Failed to SSH connect to ":server"', array(':server' => $user.'@'.$hostname.':'.$port)), 'failedconnect');
         }
+
+        sql_query('UPDATE `servers` SET `status` = NULL WHERE `hostname` = :hostname', array(':hostname' => $hostname));
 
     }catch(Exception $e){
         throw new bException('servers_test(): Failed', $e);
