@@ -2,6 +2,8 @@
 /*
  * Add api_accounts support
  */
+sql_foreignkey_exists('cdn_servers', 'fk_cdn_servers_api_accounts_id', 'ALTER TABLE `cdn_servers` DROP FOREIGN KEY `fk_cdn_servers_api_accounts_id`');
+
 sql_query('DROP TABLE IF EXISTS `api_accounts`');
 
 sql_query('CREATE TABLE `api_accounts` (`id`           INT(11)       NOT NULL AUTO_INCREMENT,
@@ -43,15 +45,25 @@ sql_column_exists('cdn_servers', 'api',  'ALTER TABLE `cdn_servers` CHANGE COLUM
 
 sql_index_exists ('cdn_servers', 'api_accounts_id', '!ALTER TABLE `cdn_servers` ADD KEY             `api_accounts_id` (`api_accounts_id`)');
 
-sql_foreignkey_exists('cdn_servers', 'fk_cdn_servers_api_accounts_id', 'ALTER TABLE `cdn_servers` ADD CONSTRAINT `fk_cdn_servers_api_accounts_id` FOREIGN KEY (`api_accounts_id`) REFERENCES `api_accounts` (`id`) ON DELETE RESTRICT;');
+sql_foreignkey_exists('cdn_servers', 'fk_cdn_servers_api_accounts_id', '!ALTER TABLE `cdn_servers` ADD CONSTRAINT `fk_cdn_servers_api_accounts_id` FOREIGN KEY (`api_accounts_id`) REFERENCES `api_accounts` (`id`) ON DELETE RESTRICT;');
 
-sql_index_exists ('cdn_servers', 'domain'   , 'ALTER TABLE `cdn_servers` DROP KEY `domain`');
-sql_index_exists ('cdn_servers', 'seodomain', 'ALTER TABLE `cdn_servers` DROP KEY `seodomain`');
+sql_index_exists ('cdn_servers', 'domain'   ,  'ALTER TABLE `cdn_servers` DROP KEY `domain`');
+sql_index_exists ('cdn_servers', 'seodomain',  'ALTER TABLE `cdn_servers` DROP KEY `seodomain`');
 
-sql_column_exists('cdn_servers', 'domain'   , 'ALTER TABLE `cdn_servers` CHANGE `domain`    `name`    VARCHAR(64)  NOT NULL');
-sql_column_exists('cdn_servers', 'seodomain', 'ALTER TABLE `cdn_servers` CHANGE `seodomain` `seoname` VARCHAR(64)  NOT NULL');
-sql_column_exists('cdn_servers', 'root'     , 'ALTER TABLE `cdn_servers` CHANGE `root`      `baseurl` VARCHAR(127) NOT NULL');
+sql_column_exists('cdn_servers', 'domain'   ,  'ALTER TABLE `cdn_servers` CHANGE `domain`    `name`    VARCHAR(64)  NOT NULL');
+sql_column_exists('cdn_servers', 'seodomain',  'ALTER TABLE `cdn_servers` CHANGE `seodomain` `seoname` VARCHAR(64)  NOT NULL');
+sql_column_exists('cdn_servers', 'root'     ,  'ALTER TABLE `cdn_servers` CHANGE `root`      `baseurl` VARCHAR(127) NOT NULL');
 
-sql_index_exists ('cdn_servers', 'name'     , 'ALTER TABLE `cdn_servers` ADD KEY `name`    (`name`)');
-sql_index_exists ('cdn_servers', 'seoname'  , 'ALTER TABLE `cdn_servers` ADD KEY `seoname` (`seoname`)');
+sql_index_exists ('cdn_servers', 'name'     , '!ALTER TABLE `cdn_servers` ADD KEY `name`    (`name`)');
+sql_index_exists ('cdn_servers', 'seoname'  , '!ALTER TABLE `cdn_servers` ADD KEY `seoname` (`seoname`)');
+
+sql_column_exists('cdn_storage', 'file'   , '!ALTER TABLE `cdn_storage` ADD COLUMN `file`    VARCHAR(128) NOT NULL');
+sql_column_exists('cdn_storage', 'section', '!ALTER TABLE `cdn_storage` ADD COLUMN `section` VARCHAR(24)  NOT NULL');
+sql_index_exists ('cdn_storage', 'section', '!ALTER TABLE `cdn_storage` ADD KEY    `section` (`section`)');
+
+sql_foreignkey_exists('cdn_storage', 'fk_cdn_storage_objects_id', 'ALTER TABLE `cdn_storage` DROP FOREIGN KEY `fk_cdn_storage_objects_id`');
+sql_index_exists ('cdn_storage', 'objects_id', '!ALTER TABLE `cdn_storage` DROP KEY    `objects_id`');
+sql_column_exists('cdn_storage', 'objects_id', '!ALTER TABLE `cdn_storage` DROP COLUMN `objects_id`');
+
+sql_table_exists('cdn_files', 'DROP TABLE `cdn_files`');
 ?>
