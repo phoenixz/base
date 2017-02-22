@@ -57,13 +57,20 @@ sql_column_exists('cdn_servers', 'root'     ,  'ALTER TABLE `cdn_servers` CHANGE
 sql_index_exists ('cdn_servers', 'name'     , '!ALTER TABLE `cdn_servers` ADD KEY `name`    (`name`)');
 sql_index_exists ('cdn_servers', 'seoname'  , '!ALTER TABLE `cdn_servers` ADD KEY `seoname` (`seoname`)');
 
-sql_column_exists('cdn_storage', 'file'   , '!ALTER TABLE `cdn_storage` ADD COLUMN `file`    VARCHAR(128) NOT NULL');
+sql_column_exists('cdn_storage', 'projects_id', '!ALTER TABLE `cdn_storage` ADD COLUMN `projects_id` INT(11) NOT NULL AFTER `servers_id`');
+sql_index_exists ('cdn_storage', 'projects_id', '!ALTER TABLE `cdn_storage` ADD KEY    `projects_id` (`projects_id`)');
+
 sql_column_exists('cdn_storage', 'section', '!ALTER TABLE `cdn_storage` ADD COLUMN `section` VARCHAR(24)  NOT NULL');
 sql_index_exists ('cdn_storage', 'section', '!ALTER TABLE `cdn_storage` ADD KEY    `section` (`section`)');
 
+sql_column_exists('cdn_storage', 'file'   , '!ALTER TABLE `cdn_storage` ADD COLUMN `file`    VARCHAR(128) NOT NULL AFTER `projects_id`');
+sql_column_exists('cdn_storage', 'size'   , '!ALTER TABLE `cdn_storage` ADD COLUMN `size`    INT(11)      NOT NULL AFTER `file`');
+
 sql_foreignkey_exists('cdn_storage', 'fk_cdn_storage_objects_id', 'ALTER TABLE `cdn_storage` DROP FOREIGN KEY `fk_cdn_storage_objects_id`');
-sql_index_exists ('cdn_storage', 'objects_id', '!ALTER TABLE `cdn_storage` DROP KEY    `objects_id`');
-sql_column_exists('cdn_storage', 'objects_id', '!ALTER TABLE `cdn_storage` DROP COLUMN `objects_id`');
+sql_index_exists ('cdn_storage', 'objects_id', 'ALTER TABLE `cdn_storage` DROP KEY    `objects_id`');
+sql_column_exists('cdn_storage', 'objects_id', 'ALTER TABLE `cdn_storage` DROP COLUMN `objects_id`');
+
+sql_foreignkey_exists('cdn_storage', 'fk_cdn_storage_projects_id', '!ALTER TABLE `cdn_storage` ADD CONSTRAINT `fk_cdn_storage_projects_id` FOREIGN KEY (`projects_id`) REFERENCES `cdn_projects` (`id`) ON DELETE RESTRICT');
 
 sql_table_exists('cdn_files', 'DROP TABLE `cdn_files`');
 ?>
