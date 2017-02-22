@@ -366,7 +366,7 @@ function api_decode($data){
 /*
  * Make an API call to a BASE framework
  */
-function api_call_base($account, $call, $data = array()){
+function api_call_base($account, $call, $data = array(), $files = null){
     global $_CONFIG;
 
     try{
@@ -377,22 +377,28 @@ function api_call_base($account, $call, $data = array()){
             throw new bException(tr('api_call_base(): No API specified'), 'not-specified');
         }
 
+        /*
+         * Get account information
+         */
         $account_data = sql_get('SELECT `id`, `baseurl`, `apikey` FROM `api_accounts` WHERE `seoname` = :seoname', array(':seoname' => $account));
 
         if(!$account_data){
             throw new bException(tr('api_call_base(): Specified API account ":account" does not exist', array(':account' => $account)), 'not-exist');
         }
 
+        /*
+         * Check if we have cached session key
+         */
         if(empty($_SESSION['api']['session_keys'][$account])){
+            /*
+             * Auto authenticate
+             */
             try{
-                /*
-                 * Auto authenticate
-                 */
-                $json   = curl_get(array('url'            => str_starts_not($account_data['baseurl'], '/').'/authenticate',
-                                         'posturlencoded' => true,
-                                         'verify_ssl'     => isset_get($account_data['verify_ssl']),
-                                         'getheaders'     => false,
-                                         'post'           => array('PHPSESSID' => $account_data['apikey'])));
+                $json = curl_get(array('url'            => str_starts_not($account_data['baseurl'], '/').'/authenticate',
+                                       'posturlencoded' => true,
+                                       'verify_ssl'     => isset_get($account_data['verify_ssl']),
+                                       'getheaders'     => false,
+                                       'post'           => array('PHPSESSID' => $account_data['apikey'])));
 
                 if(!$json){
                     throw new bException(tr('api_call_base(): Authentication on API account ":account" returned no response', array(':account' => $account)), 'not-exist');
@@ -418,6 +424,18 @@ function api_call_base($account, $call, $data = array()){
 
         $data['PHPSESSID'] = $_SESSION['api']['session_keys'][$account];
 
+        if($files){
+            /*
+             * Add the specified files
+             */
+            foreach($files as $file){
+                $data[] = '@'.$file;
+            }
+        }
+
+        /*
+         * Make the API call
+         */
         $json = curl_get(array('url'            => str_starts_not($account_data['baseurl'], '/').str_starts($call, '/'),
                                'posturlencoded' => true,
                                'verify_ssl'     => isset_get($account_data['verify_ssl']),
