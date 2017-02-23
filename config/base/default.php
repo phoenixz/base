@@ -53,6 +53,12 @@ $_CONFIG['cache']              = array('method'           => 'file',            
 // CDN configuration
 $_CONFIG['cdn']                = array('min'              => true,                                                                      // If set to "true" all CSS and JS files loaded with html_load_js() and html_load_css() will be loaded as file.min.js instead of file.js. Use "true" in production environment, "false" in all other environments
 
+                                       'enabled'          => false,                                                                     // If set to "true", base will try to use configured CDN servers for the content files. If set to false, files will be used from the local server
+
+                                       'is_server'        => false,                                                                     // If set to "true", this server can function as a CDN server
+
+                                       'copies'           => 2,                                                                         // Required amount of copies of each files. NOTE: This amount should be lower or equal to the amount of available CDN servers! (would not make sense otherwise)
+
                                        'bundler'          => array('enabled'            => true,                                        // If JS and CSS bundler should be enabled or not
                                                                    'max_age'            => 86400),                                      // Max age of bundle files before they are deleted and regenerated
 
@@ -78,8 +84,6 @@ $_CONFIG['cdn']                = array('min'              => true,              
                                        'path'             => '',                                                                        // Path component for location of CDN files. Useful for debugging multiple CDN servers
 
                                        'prefix'           => '/pub/',                                                                   // Prefix for all CDN objects, may be CDN server domain, for example
-
-                                       'servers'          => array(),                                                                   // List of available CDN servers
 
                                        'shared_key'       => '');                                                                       // Shared encryption key between site servers and CDN servers to send and receive encrypted messages
 
