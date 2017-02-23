@@ -52,6 +52,17 @@ try{
 
     log_console('Executing script "'.str_log($script).'" as "'.$_script_exec_file.'"', 'script_exec', 'white');
 
+    /*
+     * Store the list of scripts being executed, just in case script_exec() is
+     * executed by multiple scripts
+     */
+    if(empty($GLOBALS['scripts'])){
+        $GLOBALS['scripts'] = array(SCRIPT, $script);
+
+    }else{
+        $GLOBALS['scripts'][] = $script;
+    }
+
     try{
         /*
          * Execute the script (by its tempfile)
@@ -60,6 +71,7 @@ try{
         cli_method(null, false);
 
         include($_script_exec_file);
+        array_pop($GLOBALS['scripts']);
 
     }catch(Exception $e){
         if(!$e->getCode()){
