@@ -56,8 +56,8 @@ sql_column_exists('cdn_servers', 'root'     ,  'ALTER TABLE `cdn_servers` CHANGE
 sql_index_exists ('cdn_servers', 'name'     , '!ALTER TABLE `cdn_servers` ADD KEY `name`    (`name`)');
 sql_index_exists ('cdn_servers', 'seoname'  , '!ALTER TABLE `cdn_servers` ADD KEY `seoname` (`seoname`)');
 
-sql_foreignkey_exists('cdn_storage', 'fk_cdn_storage_projects_id', 'ALTER TABLE `cdn_servers` DROP FOREIGN KEY `fk_cdn_storage_projects_id`');
-sql_foreignkey_exists('cdn_storage', 'fk_cdn_storage_servers_id' , 'ALTER TABLE `cdn_servers` DROP FOREIGN KEY `fk_cdn_storage_servers_id`');
+sql_foreignkey_exists('cdn_storage', 'fk_cdn_storage_projects_id', 'ALTER TABLE `cdn_storage` DROP FOREIGN KEY `fk_cdn_storage_projects_id`');
+sql_foreignkey_exists('cdn_storage', 'fk_cdn_storage_servers_id' , 'ALTER TABLE `cdn_storage` DROP FOREIGN KEY `fk_cdn_storage_servers_id`');
 
 sql_index_exists ('cdn_storage', 'servers_id' , '!ALTER TABLE `cdn_storage` DROP KEY `servers_id` (`servers_id`)');
 sql_column_exists('cdn_storage', 'servers_id' ,  'ALTER TABLE `cdn_storage` CHANGE COLUMN `servers_id` `projects_id` INT(11) NOT NULL');
