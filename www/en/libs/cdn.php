@@ -62,40 +62,28 @@ function cdn_add_files($files, $section = 'pub'){
             throw new bException(tr('cdn_add_files(): No section specified'), 'not-specified');
         }
 
-        if(!$file){
-            throw new bException(tr('cdn_add_files(): No file specified'), 'not-specified');
+        if(!$files){
+            throw new bException(tr('cdn_add_files(): No files specified'), 'not-specified');
         }
 
         /*
          * In what servers are we going to store these files?
          */
-        $servers  = cdn_assign_servers();
-
-        $file_insert = sql_prepare('INSERT INTO `cdn_storage` (`projects_id`, `section`, )
-                                    VALUES                          (: , : )');
-
-        /*
-         * Register the files
-         */
-        foreach($files as $id => $file){
-            $file_insert->execute(array(':file' => $file,
-                                        ':size' => filesize($file)));
-
-            $files[$id] = array('id'   => sql_insert_id(),
-                                'file' => $file);
-        }
+        $servers     = cdn_assign_servers();
+        $file_insert = sql_prepare('INSERT INTO `cdn_files` (`servers_id`, `section`, `file`)
+                                    VALUES                  (:servers_id , :section , :file )');
 
         /*
          * Register at what CDN servers the files will be uploaded, and send the
          * files there
          */
-        $server_insert = sql_prepare('INSERT INTO `cdn_files_servers` ()
-                                      VALUES                          ()');
 
-        foreach($servers as $server){
+        foreach($servers as $servers_id => $server){
             foreach($files as $file){
-                $server_insert->execute(array(':servers_id' => $server['id'],
-                                              ':files_id'   => $file['id']));
+                $file_insert->execute(array(':servers_id' => $servers_id,
+                                            ':section'    => $section,
+                                            ':file'       => $file));
+
             }
 
             cdn_send_files($files, $server, $section);
@@ -119,8 +107,9 @@ function cdn_send_files($files, $server, $section){
     try{
         load_libs('api');
 
-        $result = api_call_base($api_account, '/cdn/add-files', array('project' => PROJECT, 'section' => $section), $files);
+        $result = api_call_base($api_account, '/cdn/add-files', array('project' => PROJECT, 'section' => $section, 'files' => $files), $files);
 
+showdie($result);
         return $result;
 
     }catch(Exception $e){
@@ -169,9 +158,7 @@ function cdn_remove_files($section = 'pub', $files){
             }
         }
 
-
     }catch(Exception $e){
-showdie($e);
         throw new bException('cdn_remove_files(): Failed', $e);
     }
 }
@@ -185,7 +172,7 @@ function cdn_assign_servers(){
     global $_CONFIG;
 
     try{
-        $servers = sql_list('SELECT `id`, `seoname` FROM `cdn_servers` WHERE `status` IS NULL ORDER BY RAND() LIMIT '.$_CONFIG['cdn']['servers']);
+        $servers = sql_list('SELECT `id`, `seoname` FROM `cdn_servers` WHERE `status` IS NULL ORDER BY RAND() LIMIT '.$_CONFIG['cdn']['copies']);
         return $servers;
 
     }catch(Exception $e){
@@ -363,7 +350,7 @@ function cdn_validate_project($project, $insert = true){
             $project['desdription'] = '';
 
         }else{
-            $v->hasMinChars($project['desdription'],   16, tr('Please ensure the description has at least 16 characters'));
+            $v->hasMinChars($project['desdription'],   16, tr('Please ensure the description has at least 16 characters, or empty'));
             $v->hasMaxChars($project['desdription'], 2047, tr('Please ensure the description has less than 2047 characters'));
         }
 
