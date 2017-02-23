@@ -206,5 +206,6 @@ foreach($deploy_config['modes'] as $type => $modes){
     }
 }
 
+cli_run_once_local(true);
 cli_log(tr('Finished updating www directories permissions'), 'green');
 ?>
