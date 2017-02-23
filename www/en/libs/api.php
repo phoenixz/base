@@ -2,8 +2,6 @@
 /*
  * API library
  *
- *
- *
  * @license http://opensource.org/licenses/GPL-2.0 GNU Public License, Version 2
  * @copyright Sven Oostenbrink <support@ingiga.com>
  */
@@ -192,7 +190,7 @@ function api_authenticate($apikey){
             /*
              * Check in database if the authorization key exists
              */
-            $user = sql_get('SELECT * FROM `users` WHERE `api_key` = :apikey', array(':apikey' => $apikey));
+            $user = sql_get('SELECT * FROM `users` WHERE `apikey` = :apikey', array(':apikey' => $apikey));
 
             if(!$user){
                 throw new bException(tr('api_authenticate(): Specified apikey is not valid'), 'access-denied');
@@ -485,9 +483,9 @@ function api_call_base($account, $call, $data = array(), $files = null){
         }
 
     }catch(Exception $e){
-show(isset_get($json));
-show(isset_get($result));
-showdie($e);
+//show(isset_get($json));
+//show(isset_get($result));
+//showdie($e);
         throw new bException('api_call_base(): Failed', $e);
     }
 }
