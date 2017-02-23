@@ -2125,12 +2125,12 @@ function user_update_apikey($users_id = null){
 
         sql_query('UPDATE `users`
 
-                   SET    `api_key` = :api_key
+                   SET    `apikey` = :apikey
 
                    WHERE  `id`      = :id',
 
-                   array(':id'      => $users_id,
-                         ':api_key' => $apikey));
+                   array(':id'     => $users_id,
+                         ':apikey' => $apikey));
 
         return $apikey;
 
