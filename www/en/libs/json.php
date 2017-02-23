@@ -166,7 +166,7 @@ function json_reply($payload = null, $result = 'OK', $http_code = null, $after =
 /*
  * Send correct JSON reply
  */
-function json_error($message, $data = array(), $result = 'ERROR', $http_code = 500){
+function json_error($message, $data = null, $result = null, $http_code = 500){
     global $_CONFIG;
 
     try{
@@ -268,10 +268,7 @@ function json_error($message, $data = array(), $result = 'ERROR', $http_code = 5
             }
         }
 
-        $data            = array_force($data);
-        $data['message'] = $message;
-
-        json_reply($data, $result, $http_code);
+        json_reply(array_force($data), ($result ? $result : 'ERROR'), $http_code);
 
     }catch(Exception $e){
         throw new bException('json_error(): Failed', $e);
