@@ -187,54 +187,83 @@ function cli_code_begin(){
 
 
 /*
+ * Returns the current script that is running. script_exec() allows other
+ * scripts to be run from the first, original, SCRIPT, this function returns the
+ * script currently running from script_exec()
+ */
+function cli_current_script(){
+    try{
+        if(empty($GLOBALS['scripts'])){
+            return SCRIPT;
+        }
+
+        return str_rfrom(end($GLOBALS['scripts']), '/');
+
+    }catch(Exception $e){
+        throw new bException('cli_current_script(): Failed', $e);
+    }
+}
+
+
+
+/*
  * Returns true if the startup script is already running
  */
 function cli_run_once_local($close = false){
-    static $executed = false;
+    static $executed = array();
 
     try{
         $run_dir = ROOT.'data/run/';
+        $script  = cli_current_script();
 
         load_libs('file');
         file_ensure_path($run_dir);
 
         if($close){
-            file_delete($run_dir.SCRIPT);
+            if(empty($executed[$script])){
+                /*
+                 * Hey, this script is being closed but was never opened?
+                 */
+                throw new bException(tr('cli_run_once_local(): The cli_run_once_local() has been called with close option, but it was never opened'), 'invalid');
+            }
+
+            file_delete($run_dir.$script);
+            unset($executed[$script]);
             return true;
         }
 
-        if($executed){
+        if(!empty($executed[$script])){
             /*
              * Hey, script has already been run before, and its run again
              * without the close option, this should never happen!
              */
-            throw new bException(tr('cli_run_once_local(): The cli_run_once_local() has been called twice without $close set to true! This function should be called twice, once without argument, and once with boolean "true"'), 'invalid');
+            throw new bException(tr('cli_run_once_local(): The cli_run_once_local() has been called twice by script ":script" without $close set to true! This function should be called twice, once without argument, and once with boolean "true"', array(':script' => $script)), 'invalid');
         }
 
-        $executed = true;
+        $executed[$script] = true;
 
-        if(file_exists($run_dir.SCRIPT)){
+        if(file_exists($run_dir.$script)){
             /*
              * Run file exists, so either a process is running, or a process was
              * running but crashed before it could delete the run file. Check if
              * the registered PID exists, and if the process name matches this
              * one
              */
-            $pid = file_get_contents($run_dir.SCRIPT);
+            $pid = file_get_contents($run_dir.$script);
             $pid = trim($pid);
 
             if(!is_numeric($pid) or !is_natural($pid) or ($pid > 65536)){
-                cli_log(tr('cli_run_once_local(): The run file ":file" contains invalid information, ignoring', array(':file' => $run_dir.SCRIPT)), 'invalid');
+                cli_log(tr('cli_run_once_local(): The run file ":file" contains invalid information, ignoring', array(':file' => $run_dir.$script)), 'invalid');
 
             }else{
                 $name = safe_exec('ps -p '.$pid.' | tail -n 1');
                 $name = array_pop($name);
 
                 if($name){
-                    preg_match_all('/.+?\d{2}:\d{2}:\d{2}\s+('.SCRIPT.')/', $name, $matches);
+                    preg_match_all('/.+?\d{2}:\d{2}:\d{2}\s+('.$script.')/', $name, $matches);
 
                     if(!empty($matches[1][0])){
-                        throw new bException(tr('cli_run_once_local(): The script ":script" for this project is already running', array(':script' => SCRIPT)), 'already-running');
+                        throw new bException(tr('cli_run_once_local(): The script ":script" for this project is already running', array(':script' => $script)), 'already-running');
                     }
                 }
             }
@@ -243,14 +272,14 @@ function cli_run_once_local($close = false){
              * File exists, or contains invalid data, but PID either doesn't
              * exist, or is used by a different process. Remove the PID file
              */
-            cli_log(tr('cli_run_once_local(): Cleaning up stale run file ":file"', array(':file' => $run_dir.SCRIPT)), 'yellow');
-            file_delete($run_dir.SCRIPT);
+            cli_log(tr('cli_run_once_local(): Cleaning up stale run file ":file"', array(':file' => $run_dir.$script)), 'yellow');
+            file_delete($run_dir.$script);
         }
 
         /*
          * No run file exists yet, create one now
          */
-        file_put_contents($run_dir.SCRIPT, getmypid());
+        file_put_contents($run_dir.$script, getmypid());
         return true;
 
     }catch(Exception $e){
