@@ -2,6 +2,8 @@
 /*
  * Upgraded CDN system support
  */
+sql_foreignkey_exists('cdn_files', 'fk_cdn_files_servers_id', 'ALTER TABLE `cdn_files` DROP FOREIGN KEY `fk_cdn_files_servers_id`');
+
 sql_query('DROP TABLE IF EXISTS `cdn_storage`');
 sql_query('DROP TABLE IF EXISTS `cdn_objects`');
 sql_query('DROP TABLE IF EXISTS `cdn_servers`');

@@ -76,6 +76,7 @@ sql_foreignkey_exists('cdn_files', 'fk_cdn_files_projects_id', 'ALTER TABLE `cdn
 sql_index_exists ('cdn_files', 'projects_id',  'ALTER TABLE `cdn_files` DROP KEY `projects_id`');
 
 sql_column_exists('cdn_files', 'filesize'   ,  'ALTER TABLE `cdn_files` DROP   COLUMN `filesize`');
+sql_column_exists('cdn_files', 'projects_id',  'ALTER TABLE `cdn_files` CHANGE COLUMN `projects_id` `servers_id` INT(11) NOT NULL');
 sql_column_exists('cdn_files', 'section'    , '!ALTER TABLE `cdn_files` ADD    COLUMN `section` VARCHAR(24) NULL AFTER `servers_id`');
 sql_column_exists('cdn_files', 'projects_id',  'ALTER TABLE `cdn_files` CHANGE COLUMN `projects_id` `servers_id` INT(11) NOT NULL');
 
