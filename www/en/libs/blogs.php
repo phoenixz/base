@@ -1575,6 +1575,7 @@ function blogs_media_process($file, $post, $priority = null, $original = null){
         $file   = $post['blog_name'].'/'.file_move_to_target($file, $prefix.$post['blog_name'].'/', '-original.jpg', false, 4);
         $media  = str_runtil($file, '-');
         $types  = $_CONFIG['blogs']['images'];
+        $files  = array('photos/'.$media.'-original.jpg' => $prefix.$file);
 
         /*
          * Process all image types
@@ -1585,6 +1586,7 @@ function blogs_media_process($file, $post, $priority = null, $original = null){
                 $params['y'] = $post[$type.'_y'];
 
                 image_convert($prefix.$file, $prefix.$media.'-'.$type.'.jpg', $params);
+                $files['photos/'.$media.'-'.$type.'.jpg'] = $prefix.$media.'-'.$type.'.jpg';
 
             }else{
                 copy($prefix.$file, $prefix.$media.'-'.$type.'.jpg');
@@ -1598,7 +1600,7 @@ function blogs_media_process($file, $post, $priority = null, $original = null){
                     image_convert($prefix.$file, $prefix.$media.'-'.$type.'@2x.jpg', $params);
 
                 }else{
-                    symlink($prefix.$media.'-'.$type.'.jpg', $prefix.$media.'-'.$type.'@2x.jpg');
+                    symlink($prefix.$media.'-'.$type.'@2x.jpg', $prefix.$media.'-'.$type.'@2x.jpg');
                 }
 
             }else{
@@ -1607,6 +1609,8 @@ function blogs_media_process($file, $post, $priority = null, $original = null){
                  */
                 symlink(basename($prefix.$media.'-'.$type.'.jpg')  , $prefix.$media.'-'.$type.'@2x.jpg');
             }
+
+            $files['photos/'.$media.'-'.$type.'@2x.jpg'] = $prefix.$media.'-'.$type.'@2x.jpg';
         }
 
         /*
@@ -1622,20 +1626,22 @@ function blogs_media_process($file, $post, $priority = null, $original = null){
         $res  = sql_query('INSERT INTO `blogs_media` (`createdby`, `blogs_posts_id`, `blogs_id`, `file`, `original`, `priority`)
                            VALUES                    (:createdby , :blogs_posts_id , :blogs_id , :file , :original , :priority )',
 
-                          array(':createdby'      => isset_get($_SESSION['user']['id']),
-                                ':blogs_posts_id' => $post['id'],
-                                ':blogs_id'       => $post['blogs_id'],
-                                ':file'           => $media,
-                                ':original'       => $original,
-                                ':priority'       => $priority));
+                           array(':createdby'      => isset_get($_SESSION['user']['id']),
+                                 ':blogs_posts_id' => $post['id'],
+                                 ':blogs_id'       => $post['blogs_id'],
+                                 ':file'           => $media,
+                                 ':original'       => $original,
+                                 ':priority'       => $priority));
 
         $id   = sql_insert_id();
 
-        if(cdn_add_files(array($media => $prefix.$file), 'blogs')){
+        if(cdn_add_files($files, 'blogs')){
             /*
              * Files have been added to the CDN system, delete the local versions
              */
-            file_delete($prefix.$file);
+            foreach($files as $file){
+                file_delete($file);
+            }
         }
 
 // :DELETE: This block is replaced by the code below. Only left here in case it contains something usefull still
@@ -1805,6 +1811,8 @@ function blogs_photo_description($user, $media_id, $description){
  */
 function blogs_photo_url($media, $size){
     try{
+        load_libs('cdn');
+
         switch($size){
             case 'large':
                 // FALLTHROUGH
@@ -1818,7 +1826,7 @@ function blogs_photo_url($media, $size){
                 /*
                  * Valid
                  */
-                return current_domain('/photos/'.$media.'-'.$size.'.jpg', null, '');
+                return cdn_domain('/photos/'.$media.'-'.$size.'.jpg', null, '');
 
             default:
                 throw new bException(tr('blogs_photo_url(): Unknown size ":size" specified', array(':size' => $size)), 'unknown');
