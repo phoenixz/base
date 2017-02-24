@@ -1527,7 +1527,7 @@ function blogs_media_process($file, $post, $priority = null, $original = null){
     global $_CONFIG;
 
     try{
-        load_libs('file,image,upload');
+        load_libs('file,image,upload,cdn');
 
         if(empty($post['id'])) {
             throw new bException('blogs_media_process(): No blog post specified', 'not-specified');
@@ -1630,6 +1630,13 @@ function blogs_media_process($file, $post, $priority = null, $original = null){
                                 ':priority'       => $priority));
 
         $id   = sql_insert_id();
+
+        if(cdn_add_files(array($media => $prefix.$file), 'blogs')){
+            /*
+             * Files have been added to the CDN system, delete the local versions
+             */
+            file_delete($prefix.$file);
+        }
 
 // :DELETE: This block is replaced by the code below. Only left here in case it contains something usefull still
 //    $html = '<li style="display:none;" id="photo'.$id.'" class="myclub photo">
