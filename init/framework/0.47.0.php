@@ -38,6 +38,12 @@ sql_query('CREATE TABLE `api_accounts` (`id`           INT(11)       NOT NULL AU
 
                                        ) ENGINE=InnoDB AUTO_INCREMENT='.$_CONFIG['db']['core']['autoincrement'].' DEFAULT CHARSET="'.$_CONFIG['db']['core']['charset'].'" COLLATE="'.$_CONFIG['db']['core']['collate'].'";');
 
+load_libs('file');
+file_delete(ROOT.'data/cdn');
+
+sql_query('DELETE FROM `cdn_storage`');
+sql_query('DELETE FROM `cdn_projects`');
+sql_query('DELETE FROM `cdn_files`');
 sql_query('DELETE FROM `cdn_servers`');
 
 sql_index_exists ('cdn_servers', 'api'            ,  'ALTER TABLE `cdn_servers` DROP KEY `api`');
@@ -59,9 +65,9 @@ sql_index_exists ('cdn_servers', 'seoname'  , '!ALTER TABLE `cdn_servers` ADD KE
 sql_foreignkey_exists('cdn_storage', 'fk_cdn_storage_projects_id', 'ALTER TABLE `cdn_storage` DROP FOREIGN KEY `fk_cdn_storage_projects_id`');
 sql_foreignkey_exists('cdn_storage', 'fk_cdn_storage_servers_id' , 'ALTER TABLE `cdn_storage` DROP FOREIGN KEY `fk_cdn_storage_servers_id`');
 
-sql_index_exists ('cdn_storage', 'servers_id' , '!ALTER TABLE `cdn_storage` DROP KEY `servers_id` (`servers_id`)');
-sql_column_exists('cdn_storage', 'servers_id' ,  'ALTER TABLE `cdn_storage` CHANGE COLUMN `servers_id` `projects_id` INT(11) NOT NULL');
-sql_index_exists ('cdn_storage', 'projects_id', '!ALTER TABLE `cdn_storage` ADD KEY                    `projects_id` (`projects_id`)');
+sql_index_exists ('cdn_storage', 'servers_id' ,  'ALTER TABLE `cdn_storage` DROP KEY      `servers_id` (`servers_id`)');
+sql_column_exists('cdn_storage', 'servers_id' ,  'ALTER TABLE `cdn_storage` CHANGE COLUMN `servers_id`  `projects_id` INT(11) NOT NULL');
+sql_index_exists ('cdn_storage', 'projects_id', '!ALTER TABLE `cdn_storage` ADD KEY                     `projects_id` (`projects_id`)');
 
 sql_foreignkey_exists('cdn_storage', 'fk_cdn_storage_projects_id', '!ALTER TABLE `cdn_storage` ADD CONSTRAINT `fk_cdn_storage_projects_id` FOREIGN KEY (`projects_id`) REFERENCES `cdn_projects` (`id`) ON DELETE RESTRICT');
 
@@ -74,6 +80,10 @@ sql_column_exists('cdn_storage', 'size'   , '!ALTER TABLE `cdn_storage` ADD COLU
 sql_foreignkey_exists('cdn_storage', 'fk_cdn_storage_objects_id', 'ALTER TABLE `cdn_storage` DROP FOREIGN KEY `fk_cdn_storage_objects_id`');
 sql_index_exists ('cdn_storage', 'objects_id', 'ALTER TABLE `cdn_storage` DROP KEY    `objects_id`');
 sql_column_exists('cdn_storage', 'objects_id', 'ALTER TABLE `cdn_storage` DROP COLUMN `objects_id`');
+
+sql_index_exists ('cdn_storage', 'entry'     ,  'ALTER TABLE `cdn_storage` DROP KEY `entry`');
+sql_index_exists ('cdn_storage', 'servers_id',  'ALTER TABLE `cdn_storage` DROP KEY `servers_id`');
+sql_index_exists ('cdn_storage', 'file'      , '!ALTER TABLE `cdn_storage` ADD KEY (`projects_id`, `file`)');
 
 sql_foreignkey_exists('cdn_files', 'fk_cdn_files_projects_id', 'ALTER TABLE `cdn_files` DROP FOREIGN KEY `fk_cdn_files_projects_id`');
 sql_index_exists ('cdn_files', 'projects_id',  'ALTER TABLE `cdn_files` DROP KEY `projects_id`');
