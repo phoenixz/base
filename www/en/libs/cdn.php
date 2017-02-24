@@ -13,19 +13,19 @@
 /*
  *
  */
-function cdn_domain($current_url = false){
+function cdn_domain($current_url = false, $query, $url){
     global $_CONFIG;
 
     try{
         if(!$_CONFIG['cdn']['enabled']){
-            return domain($current_url);
+            return current_domain($current_url, $query, $url);
         }
 
         /*
          * We have a CDN server in session? If not, get one.
          */
         if(isset_get($_SESSION['cdn']) === null){
-            $server = sql_get('SELECT `baseurl` FROM `cdn_servers` WHERE `status` IS NULL ORDER BY RAND() LIMIT 1');
+            $server = sql_get('SELECT `baseurl` FROM `cdn_servers` WHERE `status` IS NULL ORDER BY RAND() LIMIT 1', true);
 
             if(!$server){
                 /*
@@ -34,7 +34,7 @@ function cdn_domain($current_url = false){
                  */
                 notify('no-cdn-servers', tr('CDN system is enabled, but no availabe CDN servers were found'), 'developers');
                 $_SESSION['cdn'] = false;
-                return domain($current_url, $query, $root);
+                return current_domain($current_url, $query, $root);
             }
 
             $_SESSION['cdn'] = $server;
