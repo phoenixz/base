@@ -437,7 +437,7 @@ function api_call_base($account, $call, $data = array(), $files = null){
             $count = 0;
 
             foreach($files as $url => $file){
-                $data['file'.$count++] =  curl_file_create($file, file_mimetype($file), str_replace('/', '-', str_replace('-', '', $url)));
+                $data['file'.$count++] =  curl_file_create($file, file_mimetype($file), str_replace('/', '_', str_replace('_', '', $url)));
             }
         }
 
