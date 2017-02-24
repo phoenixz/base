@@ -77,19 +77,17 @@ function cdn_add_files($files, $section = 'pub'){
          * Register at what CDN servers the files will be uploaded, and send the
          * files there
          */
-
         foreach($servers as $servers_id => $server){
-            foreach($files as $file){
+            foreach($files as $url => $file){
                 $file_insert->execute(array(':servers_id' => $servers_id,
                                             ':section'    => $section,
-                                            ':file'       => $file));
-
+                                            ':file'       => $url));
             }
 
             cdn_send_files($files, $server, $section);
         }
 
-        return $files;
+        return count($files);
 
     }catch(Exception $e){
         throw new bException('cdn_add_files(): Failed', $e);
@@ -107,9 +105,9 @@ function cdn_send_files($files, $server, $section){
     try{
         load_libs('api');
 
-        $result = api_call_base($api_account, '/cdn/add-files', array('project' => PROJECT, 'section' => $section, 'files' => $files), $files);
+        $api_account = cdn_get_api_account($server);
+        $result      = api_call_base($api_account, '/cdn/add-files', array('project' => PROJECT, 'section' => $section), $files);
 
-showdie($result);
         return $result;
 
     }catch(Exception $e){
