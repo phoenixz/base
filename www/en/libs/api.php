@@ -434,19 +434,20 @@ function api_call_base($account, $call, $data = array(), $files = null){
             /*
              * Add the specified files
              */
-            foreach($files as $file){
-                $data[] = '@'.$file;
+            $count = 0;
+
+            foreach($files as $url => $file){
+                $data['file'.$count++] =  curl_file_create($file, file_mimetype($file), str_replace('/', '-', str_replace('-', '', $url)));
             }
         }
 
         /*
          * Make the API call
          */
-        $json = curl_get(array('url'            => str_starts_not($account_data['baseurl'], '/').str_starts($call, '/'),
-                               'posturlencoded' => true,
-                               'verify_ssl'     => isset_get($account_data['verify_ssl']),
-                               'getheaders'     => false,
-                               'post'           => $data));
+        $json = curl_get(array('url'        => str_starts_not($account_data['baseurl'], '/').str_starts($call, '/'),
+                               'verify_ssl' => isset_get($account_data['verify_ssl']),
+                               'getheaders' => false,
+                               'post'       => $data));
 
         if(!$json){
             throw new bException(tr('api_call_base(): API call ":call" on account ":account" returned no response', array(':account' => $account, ':call' => $call)), 'not-response');
@@ -483,9 +484,9 @@ function api_call_base($account, $call, $data = array(), $files = null){
         }
 
     }catch(Exception $e){
-//show(isset_get($json));
-//show(isset_get($result));
-//showdie($e);
+show(isset_get($json));
+show(isset_get($result));
+showdie($e);
         throw new bException('api_call_base(): Failed', $e);
     }
 }
