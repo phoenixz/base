@@ -37,7 +37,7 @@ function cdn_domain($current_url = false, $query, $url){
                 return current_domain($current_url, $query, $root);
             }
 
-            $_SESSION['cdn'] = $server;
+            $_SESSION['cdn'] = slash($server).strtolower(str_replace('_', '-', PROJECT));
         }
 
         return $_SESSION['cdn'].$current_url;
@@ -56,8 +56,6 @@ function cdn_add_files($files, $section = 'pub'){
     global $_CONFIG;
 
     try{
-        load_libs('ssh');
-
         if(!$section){
             throw new bException(tr('cdn_add_files(): No section specified'), 'not-specified');
         }
@@ -120,44 +118,73 @@ function cdn_send_files($files, $server, $section){
 /*
  * Removes the specified file from all CDN servers
  */
-function cdn_remove_files($section = 'pub', $files){
+function cdn_delete_files($section = 'pub', $files){
     global $_CONFIG;
 
     try{
         load_libs('api');
 
         if(!$section){
-            throw new bException(tr('cdn_remove_files(): No section specified'), 'not-specified');
+            throw new bException(tr('cdn_delete_files(): No section specified'), 'not-specified');
         }
 
         if(!$files){
-            throw new bException(tr('cdn_remove_files(): No files specified'), 'not-specified');
+            throw new bException(tr('cdn_delete_files(): No files specified'), 'not-specified');
         }
 
         /*
-         * Delete the files one by one
+         * Get list of servers / files
          */
+        $count   = 0;
+        $servers = array();
+        $data    = array('project' => PROJECT,
+                         'section' => $section);
+
+        $in      = sql_in($files);
+        $r       = sql_query('SELECT   `cdn_servers`.`seoname` AS `server`,
+                                       `cdn_files`.`file`
+
+                              FROM     `cdn_files`
+
+                              JOIN     `cdn_servers`
+                              ON       `cdn_servers`.`id` = `cdn_files`.`servers_id`
+
+                              WHERE    `cdn_files`.`file` IN ('.sql_in_columns($in).')
+
+                              ORDER BY `cdn_servers`.`seoname`',
+
+                              $in);
+
+        while($row = sql_fetch($r)){
+            if(empty($servers[$row['server']])){
+                $servers[$row['server']] = array();
+            }
+
+            $servers[$row['server']]['files['.$count++.']'] = $row['file'];
+        }
+
+        /*
+         * Delete files from each CDN server
+         */
+        foreach($servers as $server => $files){
+            $api_account = cdn_get_api_account($server);
+            api_call_base($api_account, '/cdn/delete-files', array_merge($data, $files));
+        }
+
+        /*
+         * Delete the files one by one from DB
+         */
+        $delete = sql_prepare('DELETE FROM `cdn_files` WHERE `file` = :file');
+
         foreach($files as $file){
             /*
              * What CDN servers is this file stored?
              */
-            $servers = sql_list('SELECT    `cdn_storage`.`seoname`
-
-                                 FROM      ``
-
-                                 LEFT JOIN `cdn_sto`
-                                 ON        `cdn_servers`.`id` = `cdn_files_servers`.`servers_id`
-
-                                 WHERE     `cdn_files_servers`.`file` = :file', array(':file' => $file));
-
-            foreach($server as $server){
-                $api_account = cdn_get_api_account($server);
-                api_call_base($api_account, '/cdn/add-files', array('project' => PROJECT, 'section' => $section), $files);
-            }
+            $delete->execute(array(':file' => $file));
         }
 
     }catch(Exception $e){
-        throw new bException('cdn_remove_files(): Failed', $e);
+        throw new bException('cdn_delete_files(): Failed', $e);
     }
 }
 
