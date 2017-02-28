@@ -50,15 +50,26 @@ function servers_validate($server){
         /*
          * Validate provider, customer, and ssh account
          */
-        $server['providers_id']    = sql_get('SELECT `id` FROM `providers`    WHERE `seoname` = :seoname AND `status` IS NULL', array(':seoname' => $server['provider'])   , 'id');
-        $server['customers_id']    = sql_get('SELECT `id` FROM `customers`    WHERE `seoname` = :seoname AND `status` IS NULL', array(':seoname' => $server['customer'])   , 'id');
+        if($server['provider']){
+            $server['providers_id'] = sql_get('SELECT `id` FROM `providers`    WHERE `seoname` = :seoname AND `status` IS NULL', array(':seoname' => $server['provider']), 'id');
 
-        if(!$server['providers_id']){
-            $v->setError(tr('servers_validate(): Specified provider ":provider" does not exist', array(':provider' => $server['provider'])));
+            if(!$server['providers_id']){
+                $v->setError(tr('servers_validate(): Specified provider ":provider" does not exist', array(':provider' => $server['provider'])));
+            }
+
+        }else{
+            $v->setError(tr('servers_validate(): No provider specified'));
         }
 
-        if(!$server['customers_id']){
-            $v->setError(tr('servers_validate(): Specified customer ":customer" does not exist', array(':customer' => $server['customer'])));
+        if($server['customer']){
+            $server['customers_id'] = sql_get('SELECT `id` FROM `customers`    WHERE `seoname` = :seoname AND `status` IS NULL', array(':seoname' => $server['customer']), 'id');
+
+            if(!$server['customers_id']){
+                $v->setError(tr('servers_validate(): Specified customer ":customer" does not exist', array(':customer' => $server['customer'])));
+            }
+
+        }else{
+            $v->setError(tr('servers_validate(): No customer specified'));
         }
 
         if($server['ssh_account']){
