@@ -205,12 +205,31 @@ function curl_get($params, $referer = null, $post = false, $options = array()){
             /*
              * Send headers that hide cURL
              */
-            $params['httpheaders'] = array('Accept: text/xml,application/xml,application/xhtml+xml,text/html;q=0.9,text/plain;q=0.8,image/png,*/*;q=0.5',
-                                           'Cache-Control: max-age=0',
-                                           'Connection: keep-alive',
-                                           'Keep-Alive: 300',
-                                           'Accept-Charset: utf-8,ISO-8859-1;q=0.7,*;q=0.7',
-                                           'Accept-Language: en-us,en;q=0.5');
+            foreach($params['post'] as $post){
+                if(is_object($post) and ($post instanceof CURLFile)){
+                    $multipart = true;
+                    break;
+                }
+            }
+
+            if(empty($multipart)){
+                $params['httpheaders'] = array('Accept: text/xml,application/xml,application/xhtml+xml,text/html;q=0.9,text/plain;q=0.8,image/png,*/*;q=0.5',
+                                               'Cache-Control: max-age=0',
+                                               'Connection: keep-alive',
+                                               'Keep-Alive: 300',
+                                               'Accept-Charset: utf-8,ISO-8859-1;q=0.7,*;q=0.7',
+                                               'Accept-Language: en-us,en;q=0.5');
+
+            }else{
+                $params['httpheaders'] = array('Content-Type: multipart/form-data',
+                                               'boundary={-0-0-0-0-0-(00000000000000000000)-0-0-0-0-0-}',
+                                               'Accept: text/xml,application/xml,application/xhtml+xml,text/html;q=0.9,text/plain;q=0.8,image/png,*/*;q=0.5',
+                                               'Cache-Control: max-age=0',
+                                               'Connection: keep-alive',
+                                               'Keep-Alive: 300',
+                                               'Accept-Charset: utf-8,ISO-8859-1;q=0.7,*;q=0.7',
+                                               'Accept-Language: en-us,en;q=0.5');
+            }
 
         }elseif($params['httpheaders'] and !is_array($params['httpheaders'])){
                 throw new bException('curl_get(): Invalid headers specified');
@@ -343,12 +362,12 @@ function curl_get($params, $referer = null, $post = false, $options = array()){
 ////                $params['httpheaders'][] = 'Content-Type: application/x-www-form-urlencoded; charset='.$_CONFIG['charset'].';';
 ////                $params['httpheaders'][] = 'Content-Type: text/html; charset='.strtolower($_CONFIG['charset']).';';
 //            }
-
+show($params);
             if($params['posturlencoded']){
                 curl_setopt($ch, CURLOPT_POSTFIELDS, http_build_query($params['post']));
 
             }else{
-                curl_setopt($ch, CURLOPT_POSTFIELDS, $params['post']);
+                curl_setopt($ch, CURLOPT_POSTFIELDS , $params['post']);
             }
 
         }else{
@@ -458,6 +477,7 @@ function curl_get($params, $referer = null, $post = false, $options = array()){
 
         if($retval['status']['http_code'] != 200){
             load_libs('http');
+showdie($retval);
             throw new bException('curl_get(): URL "'.str_log($params['url']).'" gave HTTP "'.str_log($retval['status']['http_code']).'"', 'HTTP'.$retval['status']['http_code'], $retval);
         }
 
