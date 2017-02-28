@@ -33,7 +33,7 @@ try{
 
             }else{
                 if(!is_scalar($value)){
-                    throw new bException(tr('debug_sql(): Specified key ":key" has non-scalar value ":value"', array(':key' => $key, ':value' => $value)));
+                    throw new bException(tr('debug_sql(): Specified key ":key" has non-scalar value ":value"', array(':key' => $key, ':value' => $value)), 'invalid');
                 }
 
                 $query = str_replace($key, $value, $query);
