@@ -362,7 +362,7 @@ function curl_get($params, $referer = null, $post = false, $options = array()){
 ////                $params['httpheaders'][] = 'Content-Type: application/x-www-form-urlencoded; charset='.$_CONFIG['charset'].';';
 ////                $params['httpheaders'][] = 'Content-Type: text/html; charset='.strtolower($_CONFIG['charset']).';';
 //            }
-show($params);
+
             if($params['posturlencoded']){
                 curl_setopt($ch, CURLOPT_POSTFIELDS, http_build_query($params['post']));
 
