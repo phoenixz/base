@@ -65,7 +65,7 @@ sql_index_exists ('cdn_servers', 'seoname'  , '!ALTER TABLE `cdn_servers` ADD KE
 sql_foreignkey_exists('cdn_storage', 'fk_cdn_storage_projects_id', 'ALTER TABLE `cdn_storage` DROP FOREIGN KEY `fk_cdn_storage_projects_id`');
 sql_foreignkey_exists('cdn_storage', 'fk_cdn_storage_servers_id' , 'ALTER TABLE `cdn_storage` DROP FOREIGN KEY `fk_cdn_storage_servers_id`');
 
-sql_index_exists ('cdn_storage', 'servers_id' ,  'ALTER TABLE `cdn_storage` DROP KEY      `servers_id` (`servers_id`)');
+sql_index_exists ('cdn_storage', 'servers_id' ,  'ALTER TABLE `cdn_storage` DROP KEY      `servers_id`');
 sql_column_exists('cdn_storage', 'servers_id' ,  'ALTER TABLE `cdn_storage` CHANGE COLUMN `servers_id`  `projects_id` INT(11) NOT NULL');
 sql_index_exists ('cdn_storage', 'projects_id', '!ALTER TABLE `cdn_storage` ADD KEY                     `projects_id` (`projects_id`)');
 
