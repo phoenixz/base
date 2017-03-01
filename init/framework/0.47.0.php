@@ -48,6 +48,7 @@ sql_query('DELETE FROM `cdn_servers`');
 
 sql_index_exists ('cdn_servers', 'api'            ,  'ALTER TABLE `cdn_servers` DROP KEY `api`');
 sql_column_exists('cdn_servers', 'api'            ,  'ALTER TABLE `cdn_servers` CHANGE COLUMN `api` `api_accounts_id` INT(11) NOT NULL');
+sql_column_exists('cdn_servers', 'api_accounts_id', '!ALTER TABLE `cdn_servers` ADD COLUMN          `api_accounts_id` INT(11) NOT NULL AFTER `seodomain`');
 sql_index_exists ('cdn_servers', 'api_accounts_id', '!ALTER TABLE `cdn_servers` ADD KEY             `api_accounts_id` (`api_accounts_id`)');
 
 sql_foreignkey_exists('cdn_servers', 'fk_cdn_servers_api_accounts_id', '!ALTER TABLE `cdn_servers` ADD CONSTRAINT `fk_cdn_servers_api_accounts_id` FOREIGN KEY (`api_accounts_id`) REFERENCES `api_accounts` (`id`) ON DELETE RESTRICT;');
