@@ -13,12 +13,12 @@
 /*
  *
  */
-function cdn_domain($current_url = false, $query, $url){
+function cdn_domain($current_url = false, $query = null, $section = 'pub'){
     global $_CONFIG;
 
     try{
         if(!$_CONFIG['cdn']['enabled']){
-            return current_domain($current_url, $query, $url);
+            return current_domain(str_starts($current_url, '/'), $query, $section);
         }
 
         /*

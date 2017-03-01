@@ -380,7 +380,7 @@ function html_generate_css(){
         foreach($GLOBALS['css'] as $file => $meta) {
             if(!$file) continue;
 
-            $html = '<link rel="stylesheet" type="text/css" href="'.cdn_prefix((($_CONFIG['whitelabels']['enabled'] === true) ? $_SESSION['domain'].'/' : '').'css/'.$file.($min ? '.min.css' : '.css')).'">';
+            $html = '<link rel="stylesheet" type="text/css" href="'.cdn_domain((($_CONFIG['whitelabels']['enabled'] === true) ? $_SESSION['domain'].'/' : '').'css/'.$file.($min ? '.min.css' : '.css')).'">';
 
             if(substr($file, 0, 2) == 'ie'){
                 $retval .= html_iefilter($html, str_until(str_from($file, 'ie'), '.'));
@@ -566,7 +566,7 @@ throw new bException('WARNING: $_CONFIG[js][default_libs] CONFIGURATION FOUND! T
                     if($skip) continue;
                 }
 
-                $html = '<script'.(!empty($data['option']) ? ' '.$data['option'] : '').' type="text/javascript" src="'.cdn_prefix((($_CONFIG['whitelabels']['enabled'] === true) ? $_SESSION['domain'].'/' : '').'js/'.$file.$min.'.js').'"></script>';
+                $html = '<script'.(!empty($data['option']) ? ' '.$data['option'] : '').' type="text/javascript" src="'.cdn_domain((($_CONFIG['whitelabels']['enabled'] === true) ? $_SESSION['domain'].'/' : '').'js/'.$file.$min.'.js').'"></script>';
             }
 
             ///*
@@ -1507,7 +1507,7 @@ function html_script($script, $jquery_ready = true, $option = null, $type = null
         }
 
         if(substr($script, 0, 1) == '>'){
-            $retval = '<script type="'.$type.'" src="'.cdn_prefix().'js/'.substr($script, 1).'"'.($option ? ' '.$option : '').'></script>';
+            $retval = '<script type="'.$type.'" src="'.cdn_domain().'js/'.substr($script, 1).'"'.($option ? ' '.$option : '').'></script>';
 
         }else{
             $retval = '<script type="'.$type.'"'.($option ? ' '.$option : '').">\n".
@@ -1565,14 +1565,14 @@ function html_favicon($icon = null, $mobile_icon = null, $sizes = null, $precomp
         foreach($params['sizes'] as $sizes){
             if($GLOBALS['page_is_mobile']){
                 if(!$params['mobile_icon']){
-                    $params['mobile_icon'] = cdn_prefix('img/mobile/favicon.png');
+                    $params['mobile_icon'] = cdn_domain('img/mobile/favicon.png');
                 }
 
                 return '<link rel="apple-touch-icon'.($params['precomposed'] ? '-precompsed' : '').'"'.($sizes ? ' sizes="'.$sizes.'"' : '').' href="'.$params['mobile_icon'].'" />';
 
             }else{
                 if(empty($params['icon'])){
-                    $params['icon'] = cdn_prefix('img/favicon.png');
+                    $params['icon'] = cdn_domain('img/favicon.png');
                 }
 
                 return '<link rel="icon" type="image/x-icon"'.($sizes ? ' sizes="'.$sizes.'"' : '').'  href="'.$params['icon'].'" />';

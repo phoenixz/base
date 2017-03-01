@@ -1667,92 +1667,95 @@ function unique_code($hash = 'sha512'){
 
 
 
-/*
- *
- */
-function get_this_cdn_id(){
-    try{
-        if(empty($GLOBALS['cdn_id'])){
-            $GLOBALS['cdn_id'] = str_until($_SERVER['SERVER_NAME'], '.');
+// :OBSOLETE: With the new CDN system, all this old really crappy CDN functionality no longer is needed
+///*
+// *
+// */
+//function get_this_cdn_id(){
+//    try{
+//        if(empty($GLOBALS['cdn_id'])){
+//            $GLOBALS['cdn_id'] = str_until($_SERVER['SERVER_NAME'], '.');
+//
+//            if(!is_numeric($GLOBALS['cdn_id'])){
+//                throw new bException(tr('get_this_cdn_id(): This is not a numeric CDN server'), 'invalid');
+//            }
+//        }
+//
+//        return $GLOBALS['cdn_id'];
+//
+//    }catch(Exception $e){
+//        throw new bException(tr('get_this_cdn_id(): Failed'), $e);
+//    }
+//}
+//
+//
+//
+///*
+// * Use this function to get resources from multiple CDN servers if resources
+// * are not limited to only one CDN server
+// *
+// * At first call, it will return the first CDN server from the
+// * $_CONFIG['cdn']['servers'] list. At subsequent calls, it will return the
+// * next CDN server in the $_CONFIG['cdn']['servers'] list. Once at the end of
+// * the list, it will start from the beginning again
+// *
+// * This way, a single page will request data from multiple CDN servers, and so
+// * increase page load speed. Since for each page, the order of CDN servers is
+// * the same for each load, for each CDN server, most file requests will be the
+// * same as well, so the server will be able to use its file cache more
+// * efficient as well.
+// */
+//function get_next_cdn_id(){
+//    global $_CONFIG;
+//    static $current_id;
+//
+//    try{
+//        if(empty($current_id)){
+//            reset($_CONFIG['cdn']['servers']);
+//            $current_id = current($_CONFIG['cdn']['servers']);
+//
+//        }else{
+//            $current_id = array_next_value($_CONFIG['cdn']['servers'], $current_id, false, true);
+//        }
+//
+//        return $current_id;
+//
+//    }catch(Exception $e){
+//        throw new bException(tr('get_next_cdn_id(): Failed'), $e);
+//    }
+//}
 
-            if(!is_numeric($GLOBALS['cdn_id'])){
-                throw new bException(tr('get_this_cdn_id(): This is not a numeric CDN server'), 'invalid');
-            }
-        }
-
-        return $GLOBALS['cdn_id'];
-
-    }catch(Exception $e){
-        throw new bException(tr('get_this_cdn_id(): Failed'), $e);
-    }
-}
 
 
-
-/*
- * Use this function to get resources from multiple CDN servers if resources
- * are not limited to only one CDN server
- *
- * At first call, it will return the first CDN server from the
- * $_CONFIG['cdn']['servers'] list. At subsequent calls, it will return the
- * next CDN server in the $_CONFIG['cdn']['servers'] list. Once at the end of
- * the list, it will start from the beginning again
- *
- * This way, a single page will request data from multiple CDN servers, and so
- * increase page load speed. Since for each page, the order of CDN servers is
- * the same for each load, for each CDN server, most file requests will be the
- * same as well, so the server will be able to use its file cache more
- * efficient as well.
- */
-function get_next_cdn_id(){
-    global $_CONFIG;
-    static $current_id;
-
-    try{
-        if(empty($current_id)){
-            reset($_CONFIG['cdn']['servers']);
-            $current_id = current($_CONFIG['cdn']['servers']);
-
-        }else{
-            $current_id = array_next_value($_CONFIG['cdn']['servers'], $current_id, false, true);
-        }
-
-        return $current_id;
-
-    }catch(Exception $e){
-        throw new bException(tr('get_next_cdn_id(): Failed'), $e);
-    }
-}
-
-
-
-/*
- *
- */
-function cdn_prefix($path, $id = null, $force_environment = false){
-    global $_CONFIG;
-
-    try{
-        if($force_environment){
-            $config = get_config('', $force_environment);
-            $cdn    = $config['cdn'];
-
-        }else{
-            $cdn    = $_CONFIG['cdn'];
-        }
-
-        if(!$id){
-            $id = get_next_cdn_id();
-        }
-
-// :URGENT: Implement correct CDN support! MUST WORK WITH WHITELABEL SYSTEM!!!!
-//show(str_replace(':id', $id, slash($cdn['prefix'])).str_starts_not($path, '/'));
-        return str_replace(':id', $id, slash($cdn['prefix'])).str_starts_not($path, '/');
-
-    }catch(Exception $e){
-        throw new bException(tr('cdn_prefix(): Failed'), $e);
-    }
-}
+///*
+// *
+// */
+//function cdn_prefix($path, $id = null, $force_environment = false){
+//    return cdn_domain($path);
+//
+//    global $_CONFIG;
+//
+//    try{
+//        if($force_environment){
+//            $config = get_config('', $force_environment);
+//            $cdn    = $config['cdn'];
+//
+//        }else{
+//            $cdn    = $_CONFIG['cdn'];
+//        }
+//
+//        if(!$id){
+//            $id = get_next_cdn_id();
+//        }
+//
+//// :URGENT: Implement correct CDN support! MUST WORK WITH WHITELABEL SYSTEM!!!!
+////show(str_replace(':id', $id, slash($cdn['prefix'])).str_starts_not($path, '/'));
+//        return str_replace(':id', $id, slash($cdn['prefix'])).str_starts_not($path, '/');
+//
+//    }catch(Exception $e){
+//        throw new bException(tr('cdn_prefix(): Failed'), $e);
+//    }
+//}
 
 
 

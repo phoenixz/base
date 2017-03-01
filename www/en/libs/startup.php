@@ -130,7 +130,7 @@ if(PLATFORM_SHELL){
     /*
      * Add HTTP support library
      */
-    load_libs('http,html,inet'.(empty($_CONFIG['memcached']) ? '' : ',memcached'));
+    load_libs('http,html,inet,cdn'.(empty($_CONFIG['memcached']) ? '' : ',memcached'));
 
     /*
      * Check OPTIONS request.
