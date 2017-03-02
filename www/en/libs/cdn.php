@@ -18,6 +18,12 @@ function cdn_domain($current_url = false, $query = null, $section = 'pub'){
 
     try{
         if(!$_CONFIG['cdn']['enabled']){
+            if($section == 'pub'){
+                if(!empty($_CONFIG['cdn']['prefix'])){
+                    $section = $_CONFIG['cdn']['prefix'];
+                }
+            }
+
             return current_domain(str_starts($current_url, '/'), $query, $section);
         }
 
