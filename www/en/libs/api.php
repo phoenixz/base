@@ -208,10 +208,12 @@ function api_authenticate($apikey){
         /*
          * Yay, auth worked, create session and send client the session token
          */
-// :TODO: Check if session_destroy() is required or not. IMPORTANT!!! If it is required, there are situations where it CANNOT be called because no session had been started yet!!
-//        session_destroy();
-        session_start();
-        session_regenerate_id();
+        if($_CONFIG['api']['signin_reset_session'] and session_id()){
+            session_destroy();
+            session_start();
+            session_regenerate_id();
+        }
+
         session_reset_domain();
 
         sql_query('INSERT INTO `api_sessions` (`createdby`, `ip`, `apikey`)

@@ -6,7 +6,10 @@
  * @copyright Sven Oostenbrink <support@ingiga.com>, Johan Geuze
  */
 $_CONFIG['api'] = array('apikey'                            => '',
+                        'signin_reset_session'              => '',
+
                         'whitelist'                         => array(),
+
                         'blacklist'                         => array(),
 
                         'list'                              => array('localhost' => array('baseurl' => 'http://localhost/api',
