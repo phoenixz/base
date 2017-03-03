@@ -613,6 +613,126 @@ function ads_get(){
 
 
 /*
+ * Return the ad HTML for be inserted on AMP version
+ */
+function amp_ads_get(){
+    global $_CONFIG;
+
+    try{
+        $userdata  = inet_get_client_data();
+        $campaigns = sql_get('SELECT   `id`,
+                                       `image_ttl`,
+                                       `class`,
+                                       `animation`
+
+                              FROM     `ads_campaigns`
+
+                              WHERE    `from`   <= NOW()
+                              AND      `until`  >= NOW()
+                              AND      `status` IS NULL
+
+                              ORDER BY RAND()
+
+                              LIMIT 1');
+
+        if(empty($campaigns)){
+            /*
+             * We have no ad campaigns
+             */
+            return '';
+        }
+
+        $campaigns['image_ttl'] = $campaigns['image_ttl'] * 1000;
+
+        switch($userdata['os']){
+            case 'android':
+                // FALLTHROUGH
+            case 'ios':
+                // FALLTHROUGH
+            case 'mobile':
+                $userdata['os1'] = 'mobile';
+                $userdata['os2'] = $userdata['os'];
+                break;
+
+            case 'linux':
+                // FALLTHROUGH
+            case 'mac':
+                // FALLTHROUGH
+            case 'windows':
+                // FALLTHROUGH
+            case 'desktop':
+                $userdata['os1'] = 'desktop';
+                $userdata['os2'] = $userdata['os'];
+                break;
+
+            default:
+                // FALLTHROUGH
+            case 'unknown':
+                $userdata['os1'] = 'unknown';
+                $userdata['os2'] = 'unknown';
+                break;
+        }
+
+        $images = sql_query('SELECT    `ads_images`.`id`,
+                                       `ads_images`.`file`,
+                                       `ads_images`.`description`,
+
+                                       `forwarder_clusters`.`keyword`
+
+                             FROM      `ads_images`
+
+                             LEFT JOIN `forwarder_clusters`
+                             ON        `forwarder_clusters`.`id` = `ads_images`.`clusters_id`
+
+                             WHERE     `campaigns_id` = :campaigns_id
+                             AND       `description` != ""
+                             AND      (`platform`     = :platform1
+                                OR     `platform`     = :platform2)
+
+                             ORDER BY `priority` ASC',
+
+                             array(':campaigns_id' => $campaigns['id'],
+                                   ':platform1'    => $userdata['os1'],
+                                   ':platform2'    => $userdata['os2']));
+
+        if(!$images->rowCount()){
+            /*
+             * This campaign have no images
+             */
+            return false;
+        }
+
+        $url  = $_CONFIG['ads']['url'];
+        $html = '           <amp-carousel width="720" height="90" type="slides" class="ads '.$campaigns['class'].'">';
+
+        while($image = sql_fetch($images)){
+            if($image['description']){
+                $images_list[] = $image['id'];
+
+                if($image['keyword']){
+                    $html .= '  <a href="'.str_replace(':keyword', $image['keyword'], $url).'">
+                                    '.amp_img(current_domain('/photos/'.$image['file'].'-original.jpg', null), $image['description'], 720, 90).'
+                                </a>';
+                }else{
+                    $html .= '  '.amp_img(current_domain('/photos/'.$image['file'].'-original.jpg', null), $image['description'], 720, 90);
+                }
+            }
+        }
+
+        $html .= '          </amp-carousel>';
+
+        ads_insert_view($campaigns['id'], $images_list, $userdata);
+
+        return $html;
+
+    }catch(Exception $e){
+        throw new bException('ads_get(): Failed', $e);
+    }
+}
+
+
+
+/*
  * When the image of campaigns is clicked, get the data user
  */
 function ads_insert_view($campaigns_id, $images_list, $userdata){
