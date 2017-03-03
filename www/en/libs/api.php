@@ -252,7 +252,7 @@ function api_start_session($sessionkey){
          * Yay, we have an actual token, create session!
          */
         session_write_close();
-        session_id($_POST['PHPSESSID']);
+        session_id(isset_get($_POST['PHPSESSID']));
         session_start();
 
         if(empty($_SESSION['api']['session_start'])){
@@ -262,7 +262,7 @@ function api_start_session($sessionkey){
             session_destroy();
             session_reset_domain();
 
-            json_reply(tr('api_start_session(): Specified token ":token" has no session', array(':token' => $_POST['PHPSESSID'])), 'signin');
+            json_reply(tr('api_start_session(): Specified token ":token" has no session', array(':token' => isset_get($_POST['PHPSESSID']))), 'signin');
         }
 
         return session_id();
