@@ -475,10 +475,24 @@ function curl_get($params, $referer = null, $post = false, $options = array()){
                             ':data_update' => json_encode_custom($retval)));
         }
 
-        if($retval['status']['http_code'] != 200){
-            load_libs('http');
-showdie($retval);
-            throw new bException('curl_get(): URL "'.str_log($params['url']).'" gave HTTP "'.str_log($retval['status']['http_code']).'"', 'HTTP'.$retval['status']['http_code'], $retval);
+        switch($retval['status']['http_code']){
+            case 200:
+                break;
+
+            case 403:
+                try{
+                    $data = json_decode_custom($retval['data']);
+
+                }catch(Exception $e){
+                    $data = array('message' => tr('Failed to decode URL data ":data"', array(':data' => $retval['data'])));
+                }
+
+                load_libs('http');
+                throw new bException(tr('curl_get(): URL ":url" gave HTTP "403" ACCESS DENIED because ":message"', array(':url' => $params['url'], ':message' => $data['message'])), 'HTTP'.$retval['status']['http_code'], $retval);
+
+            default:
+                load_libs('http');
+                throw new bException('curl_get(): URL "'.str_log($params['url']).'" gave HTTP "'.str_log($retval['status']['http_code']).'"', 'HTTP'.$retval['status']['http_code'], $retval);
         }
 
         if($params['file']){
