@@ -242,7 +242,16 @@ function json_error($message, $data = null, $result = null, $http_code = 500){
                 }
 
             }else{
-                $code = $message->getCode();
+                $result = $message->getCode();
+
+                switch($result){
+                    case 'access-denied':
+                        $http_code = 403;
+                        break;
+
+                    default:
+                        $http_code = 500;
+                }
 
                 if(debug()){
                     /*
@@ -260,10 +269,10 @@ function json_error($message, $data = null, $result = null, $http_code = 500){
 
                     unset($message);
 
-                    $message = implode("\n", $messages);
+                    $data = implode("\n", $messages);
 
                 }elseif(!empty($default)){
-                    $message = $default;
+                    $data = $default;
                 }
             }
         }
