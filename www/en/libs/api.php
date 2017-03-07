@@ -210,10 +210,10 @@ function api_authenticate($apikey){
          */
         if($_CONFIG['api']['signin_reset_session'] and session_id()){
             session_destroy();
-            session_start();
-            session_regenerate_id();
         }
 
+        session_start();
+        session_regenerate_id();
         session_reset_domain();
 
         sql_query('INSERT INTO `api_sessions` (`createdby`, `ip`, `apikey`)
