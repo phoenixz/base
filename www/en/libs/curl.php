@@ -205,10 +205,12 @@ function curl_get($params, $referer = null, $post = false, $options = array()){
             /*
              * Send headers that hide cURL
              */
-            foreach($params['post'] as $post){
-                if(is_object($post) and ($post instanceof CURLFile)){
-                    $multipart = true;
-                    break;
+            if(is_array($params['post'])){
+                foreach($params['post'] as $post){
+                    if(is_object($post) and ($post instanceof CURLFile)){
+                        $multipart = true;
+                        break;
+                    }
                 }
             }
 
