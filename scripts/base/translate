@@ -165,6 +165,8 @@ switch(cli_method()){
                                 'params'    => array('noutf8check' => $noutf8check),
                                 'callback'  => function($file, $type, $params) use (&$results){
 
+            global $_CONFIG;
+
             $extension = file_get_extension($file);
 
 //            if(($extension != 'php') and ($extension != 'js')){
