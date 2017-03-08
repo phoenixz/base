@@ -17,7 +17,7 @@
 /*
  * Framework version
  */
-define('FRAMEWORKCODEVERSION', '0.47.1');
+define('FRAMEWORKCODEVERSION', '0.47.2');
 
 
 
@@ -71,6 +71,10 @@ try{
      * Check what environment we're in
      */
     if((isset($environment) and ($env = $environment)) or ($env = getenv(PROJECT.'_ENVIRONMENT'))){
+        if(strstr($env, '_')){
+            die("startup: Specified environment \"$env\" is invalid, environment names cannot contain the underscore character\n");
+        }
+
         define('ENVIRONMENT', $env);
 
     }elseif(empty($env)){
