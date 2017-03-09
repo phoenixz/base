@@ -230,6 +230,10 @@ function array_random_value($array){
 // :DEPRECATED: Use the above function
 function array_get_random($array){
     try{
+        if(empty($array)){
+            throw new bException(tr('array_get_random(): The specified array is empty'), 'empty');
+        }
+
         return $array[array_rand($array)];
 
     }catch(Exception $e){
