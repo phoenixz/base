@@ -576,7 +576,7 @@ foreach($targets as $target_environment){
         $deploy_config['target_user'] = get_process_user();
     }
 
-    cli_log(tr('Deploying to target environment ":target"', array(':target' => $target_environment)), 'white');
+    cli_log(tr('Deploying to target environment ":target" on server ":server"', array(':target' => $target_environment, ':server' => $deploy_config['target_server'])), 'white');
 
     init_hook('deploy_pre', $nohooks, array('target_user'   => $deploy_config['target_user'],
                                             'target_port'   => $deploy_config['target_port'],
