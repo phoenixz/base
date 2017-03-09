@@ -13,7 +13,7 @@
 /*
  *
  */
-function cdn_domain($current_url = false, $query = null, $section = 'pub'){
+function cdn_domain($file, $section = 'pub'){
     global $_CONFIG;
 
     try{
@@ -24,29 +24,78 @@ function cdn_domain($current_url = false, $query = null, $section = 'pub'){
                 }
             }
 
-            return current_domain(str_starts($current_url, '/'), $query, $section);
+            return current_domain(str_starts($file, '/'), null, $section);
+        }
+
+        if($section == 'pub'){
+            if(empty($_SESSION['cdn'])){
+                /*
+                 * Get this URL from the CDN system
+                 */
+                $_SESSION['cdn'] = sql_get('SELECT    `baseurl`
+
+                                            FROM      `cdn_servers`
+
+                                            WHERE     `status` IS NULL
+
+                                            ORDER BY  RAND() LIMIT 1', true);
+
+                $_SESSION['cdn'] = slash($_SESSION['cdn']).strtolower(str_replace('_', '-', PROJECT)).'/pub/';
+            }
+
+            return $_SESSION['cdn'].str_starts_not($file, '/');
         }
 
         /*
-         * We have a CDN server in session? If not, get one.
+         * Get this URL from the CDN system
          */
-        if(isset_get($_SESSION['cdn']) === null){
-            $server = sql_get('SELECT `baseurl` FROM `cdn_servers` WHERE `status` IS NULL ORDER BY RAND() LIMIT 1', true);
+        $url = sql_get('SELECT    `cdn_files`.`file`,
+                                  `cdn_files`.`servers_id`,
+                                  `cdn_servers`.`baseurl`
 
-            if(!$server){
-                /*
-                 * Err we have no CDN servers, though CDN is configured.. Just
-                 * continue locally?
-                 */
-                notify('no-cdn-servers', tr('CDN system is enabled, but no availabe CDN servers were found'), 'developers');
-                $_SESSION['cdn'] = false;
-                return current_domain($current_url, $query, $root);
-            }
+                        FROM      `cdn_files`
 
-            $_SESSION['cdn'] = slash($server).strtolower(str_replace('_', '-', PROJECT));
+                        LEFT JOIN `cdn_servers`
+                        ON        `cdn_files`.`servers_id` = `cdn_servers`.`id`
+
+                        WHERE     `cdn_files`.`file` = :file
+
+                        ORDER BY  RAND()',
+
+                        array(':file' => $file));
+
+        if($url){
+            /*
+             * Yay, found the file in the CDN database!
+             */
+            return slash($url['baseurl']).strtolower(str_replace('_', '-', PROJECT)).$url['file'];
         }
 
-        return $_SESSION['cdn'].$current_url;
+        /*
+         * The specified file is not found in the CDN system
+         */
+        return domain($file);
+
+        ///*
+        // * We have a CDN server in session? If not, get one.
+        // */
+        //if(isset_get($_SESSION['cdn']) === null){
+        //    $server = sql_get('SELECT `baseurl` FROM `cdn_servers` WHERE `status` IS NULL ORDER BY RAND() LIMIT 1', true);
+        //
+        //    if(!$server){
+        //        /*
+        //         * Err we have no CDN servers, though CDN is configured.. Just
+        //         * continue locally?
+        //         */
+        //        notify('no-cdn-servers', tr('CDN system is enabled, but no availabe CDN servers were found'), 'developers');
+        //        $_SESSION['cdn'] = false;
+        //        return current_domain($current_url, $query, $root);
+        //    }
+        //
+        //    $_SESSION['cdn'] = slash($server).strtolower(str_replace('_', '-', PROJECT));
+        //}
+        //
+        //return $_SESSION['cdn'].$current_url;
 
     }catch(Exception $e){
         throw new bException('cdn_domain(): Failed', $e);
@@ -58,7 +107,7 @@ function cdn_domain($current_url = false, $query = null, $section = 'pub'){
 /*
  * Adds the required amount of copies of the specified file to random CDN servers
  */
-function cdn_add_files($files, $section = 'pub'){
+function cdn_add_files($files, $section = 'pub', $group = null){
     global $_CONFIG;
 
     try{
@@ -74,8 +123,8 @@ function cdn_add_files($files, $section = 'pub'){
          * In what servers are we going to store these files?
          */
         $servers     = cdn_assign_servers();
-        $file_insert = sql_prepare('INSERT INTO `cdn_files` (`servers_id`, `section`, `file`)
-                                    VALUES                  (:servers_id , :section , :file )');
+        $file_insert = sql_prepare('INSERT INTO `cdn_files` (`servers_id`, `section`, `group`, `file`)
+                                    VALUES                  (:servers_id , :section , :group , :file )');
 
         /*
          * Register at what CDN servers the files will be uploaded, and send the
@@ -85,10 +134,11 @@ function cdn_add_files($files, $section = 'pub'){
             foreach($files as $url => $file){
                 $file_insert->execute(array(':servers_id' => $servers_id,
                                             ':section'    => $section,
+                                            ':group'      => $group,
                                             ':file'       => $url));
             }
 
-            cdn_send_files($files, $server, $section);
+            cdn_send_files($files, $server, $section, $group);
         }
 
         return count($files);
@@ -103,14 +153,14 @@ function cdn_add_files($files, $section = 'pub'){
 /*
  * Send the specified file to the specified CDN server
  */
-function cdn_send_files($files, $server, $section){
+function cdn_send_files($files, $server, $section, $group = null){
     global $_CONFIG;
 
     try{
         load_libs('api');
 
         $api_account = cdn_get_api_account($server);
-        $result      = api_call_base($api_account, '/cdn/add-files', array('project' => PROJECT, 'section' => $section), $files);
+        $result      = api_call_base($api_account, '/cdn/add-files', array('project' => PROJECT, 'section' => $section, 'group' => $group), $files);
 
         return $result;
 
@@ -122,19 +172,15 @@ function cdn_send_files($files, $server, $section){
 
 
 /*
- * Removes the specified file from all CDN servers
+ * Removes the specified files from all CDN servers
  */
-function cdn_delete_files($section = 'pub', $files){
+function cdn_delete_files($list, $column = 'file'){
     global $_CONFIG;
 
     try{
         load_libs('api');
 
-        if(!$section){
-            throw new bException(tr('cdn_delete_files(): No section specified'), 'not-specified');
-        }
-
-        if(!$files){
+        if(!$list){
             throw new bException(tr('cdn_delete_files(): No files specified'), 'not-specified');
         }
 
@@ -143,10 +189,9 @@ function cdn_delete_files($section = 'pub', $files){
          */
         $count   = 0;
         $servers = array();
-        $data    = array('project' => PROJECT,
-                         'section' => $section);
+        $files   = array();
 
-        $in      = sql_in($files);
+        $in      = sql_in($list);
         $r       = sql_query('SELECT   `cdn_servers`.`seoname` AS `server`,
                                        `cdn_files`.`file`
 
@@ -155,7 +200,7 @@ function cdn_delete_files($section = 'pub', $files){
                               JOIN     `cdn_servers`
                               ON       `cdn_servers`.`id` = `cdn_files`.`servers_id`
 
-                              WHERE    `cdn_files`.`file` IN ('.sql_in_columns($in).')
+                              WHERE    `cdn_files`.`'.$column.'` IN ('.sql_in_columns($in).')
 
                               ORDER BY `cdn_servers`.`seoname`',
 
@@ -166,6 +211,7 @@ function cdn_delete_files($section = 'pub', $files){
                 $servers[$row['server']] = array();
             }
 
+            $files[] = $row['file'];
             $servers[$row['server']]['files['.$count++.']'] = $row['file'];
         }
 
@@ -173,8 +219,10 @@ function cdn_delete_files($section = 'pub', $files){
          * Delete files from each CDN server
          */
         foreach($servers as $server => $files){
-            $api_account = cdn_get_api_account($server);
-            api_call_base($api_account, '/cdn/delete-files', array_merge($data, $files));
+            $files['project'] = PROJECT;
+            $api_account      = cdn_get_api_account($server);
+
+            api_call_base($api_account, '/cdn/delete-files', $files);
         }
 
         /*
@@ -191,6 +239,35 @@ function cdn_delete_files($section = 'pub', $files){
 
     }catch(Exception $e){
         throw new bException('cdn_delete_files(): Failed', $e);
+    }
+}
+
+
+
+/*
+ * Removes the specified groups within the specified groups from all CDN servers
+ */
+function cdn_delete_groups($groups){
+    try{
+        return cdn_delete_files($groups, 'group');
+
+    }catch(Exception $e){
+        throw new bException('cdn_delete_groups(): Failed', $e);
+    }
+}
+
+
+
+/*
+ * Removes the specified sections within the specified sections from all CDN
+ * servers
+ */
+function cdn_delete_sections($sections){
+    try{
+        return cdn_delete_files($groups, 'section');
+
+    }catch(Exception $e){
+        throw new bException('cdn_delete_sections(): Failed', $e);
     }
 }
 
