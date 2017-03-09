@@ -689,15 +689,19 @@ function file_list_tree($path = '.', $recursive = true){
  * Delete a file, weather it exists or not, without error
  */
 // :SECURITY: $pattern is NOT checked!!
-function file_delete($pattern){
+function file_delete($patterns, $clean_path = false){
     try{
-        if(!$pattern){
-            throw new bException('file_delete(): No file or pattern specified');
+        if(!$patterns){
+            throw new bException('file_delete(): No files or patterns specified');
         }
 
-        safe_exec('rm -rf '.$pattern);
+        foreach(array_force($patterns) as $pattern){
+            safe_exec('rm -rf '.$pattern);
+        }
 
-        return $pattern;
+        if($clean_path){
+            file_clear_path($clean_path);
+        }
 
     }catch(Exception $e){
         throw new bException('file_delete(): Failed', $e);
