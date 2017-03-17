@@ -601,4 +601,17 @@ function cdn_unregister_project($server){
         throw new bException('cdn_unregister_project(): Failed', $e);
     }
 }
+
+
+
+/*
+ * Update all
+ */
+function cdn_update_pub(){
+    try{
+
+    }catch(Exception $e){
+        throw new bException('cdn_update_pub(): Failed', $e);
+    }
+}
 ?>
