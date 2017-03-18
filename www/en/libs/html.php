@@ -2059,7 +2059,7 @@ $data = $params;
         die();
 
     }catch(Exception $e){
-        throw new bException(tr('page_show(): Failed to show page ":page"', array(':page' => str_log($pagename))), $e);
+        throw new bException(tr('page_show(): Failed to show page ":page"', array(':page' => $pagename)), $e);
     }
 }
 
