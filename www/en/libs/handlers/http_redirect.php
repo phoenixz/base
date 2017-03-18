@@ -82,8 +82,10 @@ try{
     }
 
     if($clear_session_redirect){
-        unset($_SESSION['redirect']);
-        unset($_SESSION['sso_referrer']);
+        if(!empty($_SESSION)){
+            unset($_SESSION['redirect']);
+            unset($_SESSION['sso_referrer']);
+        }
     }
 
     if((substr($target, 0, 1) != '/') and (substr($target, 0, 7) != 'http://') and (substr($target, 0, 8) != 'https://')){
