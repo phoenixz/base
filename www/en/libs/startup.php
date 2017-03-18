@@ -529,26 +529,24 @@ try{
      */
     try{
         if(PLATFORM_SHELL){
-        /*
-         * This is a shell,
-         */
-        $language = cli_argument('language');
-
-        if($language){
-            $_SESSION['language'] = $language;
-
-        }else{
-            $language = cli_argument('L');
+            /*
+             * This is a shell,
+             */
+            $language = cli_argument('language');
 
             if($language){
                 $_SESSION['language'] = $language;
 
             }else{
-                $_SESSION['language'] = isset_get($_CONFIG['language']['default'], 'en');
-            }
-        }
+                $language = cli_argument('L');
 
-        return $_SESSION['language'];
+                if($language){
+                    $_SESSION['language'] = $language;
+
+                }else{
+                    $_SESSION['language'] = isset_get($_CONFIG['language']['default'], 'en');
+                }
+            }
 
         }else{
             /*
