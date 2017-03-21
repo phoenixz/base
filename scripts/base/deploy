@@ -900,7 +900,7 @@ foreach($targets as $target_environment){
         }
 
         if($exitcode){
-            throw new bException('fix-permissions failed with exit code "'.str_log($exitcode).'"', 'fix-permissions');
+            throw new bException(tr('fix-permissions failed with exit code ":code" while executing command ":command"', array(':code' => $exitcode, ':command' => $command)), 'fix-permissions');
         }
 
         init_hook('deploy_post_permission', $nohooks, array('target_user'   => $deploy_config['target_user'],
