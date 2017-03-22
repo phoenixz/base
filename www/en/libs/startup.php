@@ -370,6 +370,8 @@ try{
                              * Session startup failed. Clear session and try again
                              */
                             try{
+                                session_stop();
+                                session_start();
                                 session_regenerate_id(true);
 
                             }catch(Exception $e){
