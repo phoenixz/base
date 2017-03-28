@@ -149,6 +149,7 @@ $nocacheclear        =   cli_argument('--no-cache-clear');
 $notranslate         =   cli_argument('--no-translate');
 $ignore_php          =   cli_argument('--ignore-php');
 $ignore_html         =   cli_argument('--ignore-html');
+$ignore_rsync_errors =   cli_argument('--ignore-rsync-errors');
 
 $send_content_photos =   cli_argument('--send-content-photos');
 $send_content_texts  =   cli_argument('--send-content-texts');
@@ -843,7 +844,7 @@ foreach($targets as $target_environment){
         passthru('rsync -aczvAXHS --progress -p --delete '.($deploy_config['sudo'] ? '--rsync-path="sudo rsync" ' : '').'-e "ssh -p '.$deploy_config['target_port'].'" '.ROOT.' '.$deploy_config['target_user'].'@'.$deploy_config['target_server'].':'.$deploy_config['target_dir'].' '.$exclude, $exitcode);
         exec('ssh -t -p '.$target_port.' '.$deploy_config['target_user'].'@'.$deploy_config['target_server'].' \''.$sudo.'mkdir -p '.$deploy_config['target_dir'].'/data/system 2> /dev/null; '.$sudo.'touch '.$deploy_config['target_dir'].'/data/system/last_deploy\'', $contentoutput, $return);
 
-        if($exitcode){
+        if($exitcode and !$ignore_rsync_errors){
             throw new bException('Rsync failed with exit code "'.str_log($exitcode).'"', 'rsync');
         }
 
