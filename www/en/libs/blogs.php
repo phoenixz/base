@@ -1814,6 +1814,8 @@ function blogs_photo_url($media, $size){
         load_libs('cdn');
 
         switch($size){
+            case 'original':
+                // FALLTHROUGH
             case 'large':
                 // FALLTHROUGH
             case 'medium':
