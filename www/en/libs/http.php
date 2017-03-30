@@ -40,7 +40,7 @@ function current_domain($current_url = false, $query = null, $root = null){
             $retval = $_CONFIG['protocol'].$server_name.$_SERVER['REQUEST_URI'];
 
         }else{
-            $retval = $_CONFIG['protocol'].$server_name.str_starts($root, '/').str_starts($current_url, '/');
+            $retval = $_CONFIG['protocol'].$server_name.str_ends(str_starts($root, '/'), '/').str_starts_not($current_url, '/');
         }
 
         if($query){

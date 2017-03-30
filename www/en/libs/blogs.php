@@ -1607,7 +1607,7 @@ function blogs_media_process($file, $post, $priority = null, $original = null){
                 /*
                  * If retina images are not supported, then just symlink them so that they at least are available
                  */
-                symlink(basename($prefix.$media.'-'.$type.'.jpg')  , $prefix.$media.'-'.$type.'@2x.jpg');
+                symlink(basename($prefix.$media.'-'.$type.'.jpg'), $prefix.$media.'-'.$type.'@2x.jpg');
             }
 
             $files['photos/'.$media.'-'.$type.'@2x.jpg'] = $prefix.$media.'-'.$type.'@2x.jpg';

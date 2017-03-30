@@ -24,7 +24,7 @@ function cdn_domain($file, $section = 'pub'){
                 }
             }
 
-            return current_domain(str_starts($file, '/'), null, $section);
+            return current_domain($file, null, $section);
         }
 
         if($section == 'pub'){
@@ -111,6 +111,10 @@ function cdn_add_files($files, $section = 'pub', $group = null){
     global $_CONFIG;
 
     try{
+        if(!$_CONFIG['cdn']['enabled']){
+            return false;
+        }
+
         if(!$section){
             throw new bException(tr('cdn_add_files(): No section specified'), 'not-specified');
         }
