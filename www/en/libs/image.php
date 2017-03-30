@@ -701,11 +701,18 @@ function image_fancybox($params = null){
         array_default($params, 'selector', '.fancy');
         array_default($params, 'options' , array());
 
-        array_default($params['options'], 'openEffect'   , 'fade');
-        array_default($params['options'], 'closeEffect'  , 'fade');
-        array_default($params['options'], 'arrows'       , true);
-        array_default($params['options'], 'titleShow'    , true);
-        array_default($params['options'], 'titleFromAlt' , true);
+        array_default($params['options'], 'openEffect'    , 'fade');
+        array_default($params['options'], 'closeEffect'   , 'fade');
+        array_default($params['options'], 'arrows'        , true);
+        array_default($params['options'], 'titleShow'     , true);
+        array_default($params['options'], 'titleFromAlt'  , true);
+        array_default($params['options'], 'fitToView'     , true);
+        //array_default($params['options'], 'width'         , null);
+        //array_default($params['options'], 'height'        , null);
+        array_default($params['options'], 'aspectRatio'   , false);
+        array_default($params['options'], 'autoSize'      , true);
+        array_default($params['options'], 'autoDimensions', true);
+        array_default($params['options'], 'centerOnScroll', true);
         array_default($params['options'], 'titlePosition', 'outside'); // over, outside, inside
 
         html_load_js('base/fancybox/jquery.fancybox');
