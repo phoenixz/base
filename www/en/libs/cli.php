@@ -640,7 +640,7 @@ function cli_error($e = null){
 
     if(!empty($usage)){
         echo "\n";
-        cli_show_usage($usage, 'red');
+        cli_show_usage($usage, 'white');
     }
 }
 
