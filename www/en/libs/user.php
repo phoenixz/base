@@ -1800,6 +1800,11 @@ function user_validate($user, $sections = array()){
             $execute[':email'] = $user['email'];
         }
 
+        /*
+         * Only continue testing user if there were no validation errors so far
+         */
+        $v->isValid();
+
         if(empty($user['id'])){
             $where   = ' WHERE ('.implode(' OR ', $where).')';
 
