@@ -185,10 +185,12 @@ if(PLATFORM_SHELL){
 
     }elseif(strstr($_SERVER['PHP_SELF'], '/ajax/')){
         $GLOBALS['page_is_ajax'] = true;
+        load_libs('json');
         define('ADMIN', '');
 
     }elseif(strstr($_SERVER['PHP_SELF'], '/api/')){
         $GLOBALS['page_is_api'] = true;
+        load_libs('api');
         define('ADMIN', '');
 
     }elseif(!empty($GLOBALS['page_force'])){
@@ -543,11 +545,12 @@ try{
             }else{
                 $language = cli_argument('L');
 
-                if(!$language){
-                    $language = isset_get($_CONFIG['language']['default'], 'en');
-                }
+                if($language){
+                    $_SESSION['language'] = $language;
 
-                $_SESSION['language'] = $language;
+                }else{
+                    $_SESSION['language'] = isset_get($_CONFIG['language']['default'], 'en');
+                }
             }
 
         }else{
@@ -630,7 +633,7 @@ try{
         /*
          * New session?
          */
-        if(!isset($_SESSION['client'])){
+        if(!isset($_SESSION['client']) and !$GLOBALS['page_is_api']){
             /*
              * Detect what client we are dealing with
              */
