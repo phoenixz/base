@@ -322,7 +322,7 @@ switch(cli_method()){
                     $server_message = $e->getData()['data'];
                     $code           = $e->getCode();
 
-                    throw new bException(tr('Server connection gave HTTP code ":code" with server message ":message"', array(':code' => $code, ':message' => $server_message)), 'translation_error');
+                    throw new bException(tr('Translation server gave HTTP code ":code" on URL ":url" with server message ":message"', array(':code' => $code, ':message' => $server_message, ':url' => $_CONFIG['translate']['url'])), 'translation_error');
                 }
 
                 throw new bException(tr('Error trying to connect with server : ":error"', array(':error' => $e->getMessage())), 'translation_error');
@@ -378,7 +378,7 @@ switch(cli_method()){
                     $server_message = $e->getData()['data'];
                     $code           = $e->getCode();
 
-                    throw new bException(tr('Server connection gave HTTP code ":code" with server message ":message"', array(':code' => $code, ':message' => $server_message)), 'translation_error');
+                    throw new bException(tr('Translation server gave HTTP code ":code" on URL ":url" with server message ":message"', array(':code' => $code, ':message' => $server_message, ':url' => $_CONFIG['translate']['url'])), 'translation_error');
                 }
 
                 throw new bException(tr('Error trying to connect with server : ":error"', array(':error' => $e->getMessage())), 'translation_error');
