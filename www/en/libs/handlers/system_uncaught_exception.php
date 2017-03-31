@@ -6,7 +6,13 @@ global $_CONFIG;
 static $count, $code, $messages;
 
 if(empty($_CONFIG['production'])){
-    showdie($e);
+    switch($e->getCode()){
+        case 'validation':
+            break;
+
+        default:
+            showdie($e);
+    }
 }
 
 debug(true);
