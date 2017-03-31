@@ -545,12 +545,11 @@ try{
             }else{
                 $language = cli_argument('L');
 
-                if($language){
-                    $_SESSION['language'] = $language;
-
-                }else{
-                    $_SESSION['language'] = isset_get($_CONFIG['language']['default'], 'en');
+                if(!$language){
+                    $language = isset_get($_CONFIG['language']['default'], 'en');
                 }
+
+                $_SESSION['language'] = $language;
             }
 
         }else{
