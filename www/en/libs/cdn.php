@@ -60,7 +60,9 @@ function cdn_domain($file, $section = 'pub'){
 
                         WHERE     `cdn_files`.`file` = :file
 
-                        ORDER BY  RAND()',
+                        ORDER BY  RAND()
+
+                        LIMIT     1',
 
                         array(':file' => $file));
 
