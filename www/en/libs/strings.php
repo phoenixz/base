@@ -112,7 +112,7 @@ function str_capitalize($source, $position = 0){
 function str_from($source, $needle, $more = 0){
     try{
         if(!$needle){
-            throw new bException('str_from(): No needle specified');
+            throw new bException('str_from(): No needle specified', 'not-specified');
         }
 
         $pos = mb_strpos($source, $needle);
@@ -134,7 +134,7 @@ function str_from($source, $needle, $more = 0){
 function str_until($source, $needle, $more = 0, $start = 0){
     try{
         if(!$needle){
-            throw new bException('str_until(): No needle specified');
+            throw new bException('str_until(): No needle specified', 'not-specified');
         }
 
         $pos = mb_strpos($source, $needle);
@@ -156,7 +156,7 @@ function str_until($source, $needle, $more = 0, $start = 0){
 function str_rfrom($source, $needle, $more = 0){
     try{
         if(!$needle){
-            throw new bException('str_rfrom(): No needle specified');
+            throw new bException('str_rfrom(): No needle specified', 'not-specified');
         }
 
         $pos = mb_strrpos($source, $needle);
@@ -178,7 +178,7 @@ function str_rfrom($source, $needle, $more = 0){
 function str_runtil($source, $needle, $more = 0, $start = 0){
     try{
         if(!$needle){
-            throw new bException('str_runtil(): No needle specified');
+            throw new bException('str_runtil(): No needle specified', 'not-specified');
         }
 
         $pos = mb_strrpos($source, $needle);
@@ -200,7 +200,7 @@ function str_runtil($source, $needle, $more = 0, $start = 0){
 function str_truncate($source, $length, $fill = ' ... ', $method = 'right', $on_word = false){
     try{
         if(!$length or ($length < (mb_strlen($fill) + 1))){
-            throw new bException('str_truncate(): No length or insufficient length specified. You must specify a length of minimal $fill length + 1');
+            throw new bException('str_truncate(): No length or insufficient length specified. You must specify a length of minimal $fill length + 1', 'invalid');
         }
 
         if($length >= mb_strlen($source)){
@@ -241,7 +241,7 @@ function str_truncate($source, $length, $fill = ' ... ', $method = 'right', $on_
                 return $fill.trim($retval);
 
             default:
-                throw new bException('str_truncate(): Invalid method "'.$method.'" specified, please use "left", "center", or "right" or undefined which will default to "right"');
+                throw new bException('str_truncate(): Unknown method "'.$method.'" specified, please use "left", "center", or "right" or undefined which will default to "right"', 'unknown');
         }
 
     }catch(Exception $e){
@@ -258,7 +258,7 @@ function str_random($length = 8, $unique = false, $characters = '0123456789abcde
     $charlen    = mb_strlen($characters);
 
     if($unique and ($length > $charlen)){
-        throw new bException('str_random(): Can not create unique character random string with size "'.str_log($length).'". When $unique is requested, the string length can not be larger than "'.str_log($charlen).'" because there are no more then that amount of unique characters');
+        throw new bException('str_random(): Can not create unique character random string with size "'.str_log($length).'". When $unique is requested, the string length can not be larger than "'.str_log($charlen).'" because there are no more then that amount of unique characters', 'invalid');
     }
 
     for ($i = 0; $i < $length; $i++) {
@@ -544,11 +544,11 @@ function str_explode($separator, $source){
  */
 function str_interleave($source, $interleave, $end = 0, $chunksize = 1){
     if(!$source){
-        throw new bException('str_interleave: No source specified');
+        throw new bException('str_interleave: No source specified', 'not-specified');
     }
 
     if(!$interleave){
-        throw new bException('str_interleave: No interleave specified');
+        throw new bException('str_interleave: No interleave specified', 'not-specified');
     }
 
     if($end){
