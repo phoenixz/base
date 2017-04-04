@@ -59,6 +59,7 @@ function cdn_domain($file, $section = 'pub'){
                         ON        `cdn_files`.`servers_id` = `cdn_servers`.`id`
 
                         WHERE     `cdn_files`.`file` = :file
+                        AND       `cdn_servers`.`status` IS NULL
 
                         ORDER BY  RAND()
 
