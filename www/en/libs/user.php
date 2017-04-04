@@ -371,8 +371,9 @@ function user_authenticate($username, $password, $captcha = null){
 
                          FROM   `users`
 
-                         WHERE  `email`    = :email
-                         OR     `username` = :username',
+                         WHERE  `status`   IS NULL
+                         AND   (`email`    = :email
+                         OR     `username` = :username)',
 
                          array(':email'    => $username,
                                ':username' => $username));
