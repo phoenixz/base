@@ -107,6 +107,10 @@ function image_convert($source, $destination, $params = null){
         array_params($params);
         array_default($params, 'x'               , null);
         array_default($params, 'y'               , null);
+        array_default($params, 'h'               , null);
+        array_default($params, 'w'               , null);
+        array_default($params, 'to_h'            , null);
+        array_default($params, 'to_w'            , null);
         array_default($params, 'method'          , null);
         array_default($params, 'format'          , null);
         array_default($params, 'quality'         , $imagick['quality']);
@@ -307,7 +311,7 @@ function image_convert($source, $destination, $params = null){
 
             case 'crop-resize':
                 load_libs('file');
-                safe_exec($command.' "'.$source.'" -crop '.cfi($params['w'], false).'x'.cfi($params['h'], false).'+'.cfi($params['x'], false).'+'.cfi($params['y'], false).' -resize '.cfi($params['x'], false).'x'.cfi($params['y'], false).' "'.$destination.'"'.($params['log'] ? ' >> '.$params['log'].' 2>&1' : ''), 0);
+                safe_exec($command.' "'.$source.'" -crop '.cfi($params['w'], false).'x'.cfi($params['h'], false).'+'.cfi($params['x'], false).'+'.cfi($params['y'], false).' -resize '.cfi($params['to_w'], false).'x'.cfi($params['to_h'], false).' "'.$destination.'"'.($params['log'] ? ' >> '.$params['log'].' 2>&1' : ''), 0);
                 break;
 
             case 'custom':
@@ -326,7 +330,7 @@ function image_convert($source, $destination, $params = null){
          * Verify results
          */
         if(!file_exists($destination)) {
-            throw new bException(tr('image_convert(): Destination file "%file%" not found after conversion', array('%file%' => str_log($destination))), 'notfound');
+            throw new bException(tr('image_convert(): Destination file ":file" not found after conversion', array(':file' => $destination)), 'notfound');
         }
 
         if(!empty($params['updatemode'])){
@@ -344,7 +348,7 @@ function image_convert($source, $destination, $params = null){
 
         }catch(Exception $e){
 
-            $contents = tr('image_convert(): Failed to get contents of imagemagick log file "%file%"', array('%file%' => ROOT.'data/log/imagemagic_convert.log'));
+            $contents = tr('image_convert(): Failed to get contents of imagemagick log file ":file"', array(':file' => ROOT.'data/log/imagemagic_convert.log'));
         }
 
         if(empty($contents)){
@@ -749,11 +753,11 @@ function image_watermark($params){
          */
         foreach(array('image' => $params['image'], 'watermark' => $params['watermark']) as $type => $filename){
             if(!file_exists($params['target'])){
-                throw new bException(tr('image_watermark(): The specified %type% file "%file%" does not exists', array('%type%' => $type, '%file%' => str_log($filename))), 'imagenotexists');
+                throw new bException(tr('image_watermark(): The specified %type% file ":file" does not exists', array('%type%' => $type, ':file' => str_log($filename))), 'imagenotexists');
             }
 
             if(!$size = getimagesize($filename)){
-                throw new bException(tr('image_watermark(): The specified %type% file "%file%" is not a valid image', array('%type%' => $type, '%file%' => str_log($filename))), 'imagenotvalid');
+                throw new bException(tr('image_watermark(): The specified %type% file ":file" is not a valid image', array('%type%' => $type, ':file' => str_log($filename))), 'imagenotvalid');
             }
         }
 
