@@ -145,7 +145,18 @@ function cdn_add_files($files, $section = 'pub', $group = null){
                                             ':file'       => $url));
             }
 
+            /*
+             * Send the files
+             */
             cdn_send_files($files, $server, $section, $group);
+        }
+
+        /*
+         * Now that the file has been sent to the CDN system delete the file
+         * locally
+         */
+        foreach($files as $url => $file){
+            file_delete($file, true);
         }
 
         return count($files);
