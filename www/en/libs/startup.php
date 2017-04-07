@@ -362,7 +362,45 @@ try{
                             ini_set('session.save_handler', 'mm');
                         }
 
-                        session_set_cookie_params($_CONFIG['cookie']['lifetime'], $_CONFIG['cookie']['path'], cfm($_SERVER['HTTP_HOST']), $_CONFIG['cookie']['secure'], $_CONFIG['cookie']['httponly']);
+
+                        /*
+                         *
+                         */
+                        switch(true){
+                            case ($_CONFIG['whitelabels']['enabled'] === 'all'):
+                                // FALLTHROUGH
+                            case ($_CONFIG['whitelabels']['enabled'] === false):
+                                /*
+                                 * white label domains are disabled, so the detected domain MUST match the configured domain
+                                 */
+                                session_set_cookie_params($_CONFIG['cookie']['lifetime'], $_CONFIG['cookie']['path'], cfm($_SERVER['HTTP_HOST']), $_CONFIG['cookie']['secure'], $_CONFIG['cookie']['httponly']);
+                                break;
+
+                            case ($_CONFIG['whitelabels']['enabled'] === 'sub'):
+                                /*
+                                 * white label domains are disabled, but sub domains from the $_CONFIG[domain] are allowed
+                                 */
+                                session_set_cookie_params($_CONFIG['cookie']['lifetime'], $_CONFIG['cookie']['path'], $_CONFIG['domain'], $_CONFIG['cookie']['secure'], $_CONFIG['cookie']['httponly']);
+                                break;
+
+                            default:
+                                /*
+                                 * Check the detected domain against the configured domain.
+                                 * If it doesnt match then check if its a registered whitelabel domain
+                                 */
+                                if($domain !== $_CONFIG['domain']){
+                                    $domain = sql_get('SELECT `domain` FROM `whitelabels` WHERE `domain` = :domain AND `status` IS NULL', 'domain', array(':domain' => $_SERVER['HTTP_HOST']));
+                                }
+
+                                if(!$domaim){
+                                    /*
+                                     * Either we have no domain or it is not allowed. Redirect to main domain
+                                     */
+                                    redirect($domain);
+                                }
+
+                                session_set_cookie_params($_CONFIG['cookie']['lifetime'], $_CONFIG['cookie']['path'], $domain, $_CONFIG['cookie']['secure'], $_CONFIG['cookie']['httponly']);
+                        }
 
                         try{
                             session_start();
