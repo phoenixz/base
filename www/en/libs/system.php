@@ -895,7 +895,7 @@ function get_hash($source, $algorithm, $add_meta = true){
 /*
  * Return complete domain with HTTP and all
  */
-function domain($current_url = false, $query = null, $root = null){
+function domain($current_url = false, $query = null, $root = null, $domain = null){
     global $_CONFIG;
 
     try{
@@ -903,26 +903,30 @@ function domain($current_url = false, $query = null, $root = null){
             $root = str_ends_not($_CONFIG['root'], '/');
         }
 
-        if(empty($_SESSION['domain'])){
-            if(PLATFORM_HTTP){
-                throw new bException(tr('domain(): $_SESSION[\'domain\'] is not configured'), 'not-specified');
+        if(!$domain){
+            if(empty($_SESSION['domain'])){
+                if(PLATFORM_HTTP){
+                    throw new bException(tr('domain(): $_SESSION[\'domain\'] is not configured'), 'not-specified');
+                }
+
+                $_SESSION['domain'] = $_CONFIG['domain'];
             }
 
-            $_SESSION['domain'] = $_CONFIG['domain'];
-        }
+            if($_SESSION['domain'] == 'auto'){
+                $_SESSION['domain'] = $_SERVER['SERVER_NAME'];
+            }
 
-        if($_SESSION['domain'] == 'auto'){
-            $_SESSION['domain'] = $_SERVER['SERVER_NAME'];
+            $domain = $_SESSION['domain'];
         }
 
         if(!$current_url){
-            $retval = $_CONFIG['protocol'].$_SESSION['domain'].$root;
+            $retval = $_CONFIG['protocol'].$domain.$root;
 
         }elseif($current_url === true){
-            $retval = $_CONFIG['protocol'].$_SESSION['domain'].$_SERVER['REQUEST_URI'];
+            $retval = $_CONFIG['protocol'].$domain.$_SERVER['REQUEST_URI'];
 
         }else{
-            $retval = $_CONFIG['protocol'].$_SESSION['domain'].$root.str_starts($current_url, '/');
+            $retval = $_CONFIG['protocol'].$domain.$root.str_starts($current_url, '/');
         }
 
         if($query){
