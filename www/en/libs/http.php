@@ -306,9 +306,9 @@ function http_headers($params, $content_length){
                              * Origin is allowed from all sub domains
                              */
                             $origin = str_from(isset_get($_SERVER['HTTP_ORIGIN']), '://');
-                            $length = strlen($_SESSION['domain']);
+                            $length = strlen(isset_get($_SESSION['domain']));
 
-                            if(substr($origin, -$length, $length) === $_SESSION['domain']){
+                            if(substr($origin, -$length, $length) === isset_get($_SESSION['domain'])){
                                 /*
                                  * Sub domain matches. Since CORS does
                                  * not support sub domains, just show
