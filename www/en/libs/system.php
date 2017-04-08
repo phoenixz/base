@@ -183,7 +183,7 @@ function tr($text, $replace = null, $verify = true){
             /*
              * Only on non production machines, crash when not all entries were replaced as an extra check.
              */
-            if(!$_CONFIG['production'] and $verify){
+            if(empty($_CONFIG['production']) and $verify){
                 if($count != count($replace)){
                     throw new bException('tr(): Not all specified keywords were found in text', 'notfound');
                 }
@@ -739,29 +739,48 @@ function load_libs($libraries){
 /*
  * Load specified configuration file
  */
-function load_config($files){
+function load_config($files = ' '){
     global $_CONFIG;
     static $paths;
 
     try{
         if(!$paths){
             $paths = array(ROOT.'config/base/',
-                           ROOT.'config/production_',
-                           ROOT.'config/'.ENVIRONMENT.'_');
+                           ROOT.'config/production',
+                           ROOT.'config/'.ENVIRONMENT.'');
         }
 
         $files = array_force($files);
 
         foreach($files as $file){
             $loaded = false;
+            $file   = trim($file);
 
             /*
              * Include first the default configuration file, if available, then
              * production configuration file, if available, and then, if
              * available, the environment file
              */
-            foreach($paths as $path){
-                $path .= $file.'.php';
+            foreach($paths as $id => $path){
+                if(!$file){
+                    /*
+                     * Trying to load default configuration files again
+                     */
+                    if(!$id){
+                        $path .= 'default.php';
+
+                    }else{
+                        $path .= '.php';
+                    }
+
+                }else{
+                    if($id){
+                        $path .= '_'.$file.'.php';
+
+                    }else{
+                        $path .= $file.'.php';
+                    }
+                }
 
                 if(file_exists($path)){
                     include($path);
