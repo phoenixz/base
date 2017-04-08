@@ -53,7 +53,7 @@ try{
             }
 
             $retval .= tr('DEBUG SHOW (%file%@%line%) ', array('%file%' => current_file($trace_offset), '%line%' => current_line($trace_offset)))."\n";
-            $retval .= print_r($data, true);
+            $retval .= print_r(variable_zts_safe($data), true);
             $retval .= "\n";
         }
     }

@@ -115,7 +115,7 @@ try{
             //}
             //
 
-            $retval .= '<pre>'.print_r($value, true).'</pre>';
+            $retval .= '<pre>'.print_r(variable_zts_safe($value), true).'</pre>';
 
             return '<tr>
                         <td>'.$key.'</td>

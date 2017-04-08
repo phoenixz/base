@@ -136,7 +136,7 @@ function notify($event, $message = null, $classes = null){
  * Convert all PHP errors in exceptions
  */
 function php_error_handler($errno, $errstr, $errfile, $errline, $errcontext){
-    return include(dirname(__FILE__).'/handlers/system_php_error_handler.php');
+    return include(__DIR__.'/handlers/system_php_error_handler.php');
 }
 
 
@@ -145,7 +145,7 @@ function php_error_handler($errno, $errstr, $errfile, $errline, $errcontext){
  * Display a fatal error
  */
 function uncaught_exception($e, $die = 1){
-    return include(dirname(__FILE__).'/handlers/system_uncaught_exception.php');
+    return include(__DIR__.'/handlers/system_uncaught_exception.php');
 }
 
 
@@ -812,7 +812,7 @@ function debug($class = null){
  * Execute shell commands with exception checks
  */
 function safe_exec($commands, $ok_exitcodes = null, $route_errors = true){
-    return include(dirname(__FILE__).'/handlers/system_safe_exec.php');
+    return include(__DIR__.'/handlers/system_safe_exec.php');
 }
 
 
@@ -821,7 +821,7 @@ function safe_exec($commands, $ok_exitcodes = null, $route_errors = true){
  * Execute the specified script from the ROOT/scripts directory
  */
 function script_exec($script, $arguments = null, $ok_exitcodes = null){
-    return include(dirname(__FILE__).'/handlers/system_script_exec.php');
+    return include(__DIR__.'/handlers/system_script_exec.php');
 }
 
 
@@ -1208,7 +1208,7 @@ function check_extended_session() {
  * Sets client info in $_SESSION and returns it
  */
 function detect_client(){
-    return include(dirname(__FILE__).'/handlers/system_detect_client.php');
+    return include(__DIR__.'/handlers/system_detect_client.php');
 }
 
 
@@ -1217,7 +1217,7 @@ function detect_client(){
  * Sets location info in $_SESSION and returns it
  */
 function detect_location(){
-    return include(dirname(__FILE__).'/handlers/system_detect_location.php');
+    return include(__DIR__.'/handlers/system_detect_location.php');
 }
 
 
@@ -1226,7 +1226,7 @@ function detect_location(){
  * Sets language info in $_SESSION and returns it
  */
 function detect_language(){
-    return include(dirname(__FILE__).'/handlers/system_detect_language.php');
+    return include(__DIR__.'/handlers/system_detect_language.php');
 }
 
 
@@ -1235,7 +1235,7 @@ function detect_language(){
  * Switch to specified site type, and redirect back
  */
 function switch_type($type, $redirect = ''){
-    return include(dirname(__FILE__).'/handlers/system_switch_type.php');
+    return include(__DIR__.'/handlers/system_switch_type.php');
 }
 
 
@@ -1384,7 +1384,7 @@ function get_global_data_path($section = '', $force = true){
         return $global_path;
     }
 
-    return include(dirname(__FILE__).'/handlers/system_get_global_data_path.php');
+    return include(__DIR__.'/handlers/system_get_global_data_path.php');
 }
 
 
@@ -1576,7 +1576,7 @@ function force_natural($number, $default = 1, $start = 1){
  * Show the correct HTML flash error message
  */
 function error_message($e, $messages = array(), $default = null){
-    return include(dirname(__FILE__).'/handlers/system_error_message.php');
+    return include(__DIR__.'/handlers/system_error_message.php');
 }
 
 
@@ -2247,6 +2247,15 @@ function debug_trace($filters = 'args'){
  */
 function die_in($count, $message = null){
     return include(__DIR__.'/handlers/debug_die_in.php');
+}
+
+
+
+/*
+ *
+ */
+function variable_zts_safe($variable, $level = 0){
+    return include(__DIR__.'/handlers/variable_zts_safe.php');
 }
 
 

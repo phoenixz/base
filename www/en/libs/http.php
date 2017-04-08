@@ -82,7 +82,7 @@ function get_dosubmit(){
  * Redirect
  */
 function redirect($target = '', $http_code = null, $clear_session_redirect = true){
-    return include(dirname(__FILE__).'/handlers/http_redirect.php');
+    return include(__DIR__.'/handlers/http_redirect.php');
 }
 
 
@@ -176,7 +176,7 @@ function session_redirect($method = 'http', $force = false){
  * Store post data in $_SESSION
  */
 function store_post($redirect){
-    return include(dirname(__FILE__).'/handlers/system_store_post.php');
+    return include(__DIR__.'/handlers/system_store_post.php');
 }
 
 
@@ -189,7 +189,7 @@ function restore_post(){
         return false;
     }
 
-    return include(dirname(__FILE__).'/handlers/system_restore_post.php');
+    return include(__DIR__.'/handlers/system_restore_post.php');
 }
 
 
@@ -389,7 +389,7 @@ function http_headers($params, $content_length){
  * Thanks to craig at craigfrancis dot co dot uk
  */
 if (!function_exists('http_response_code')){
-    include(dirname(__FILE__).'/handlers/http_response_code.php');
+    include(__DIR__.'/handlers/http_response_code.php');
 }
 
 

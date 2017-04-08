@@ -32,7 +32,7 @@ if(!isset($GLOBALS['quiet'])){
 /*
  * Allow for ROOT to be predefined. This may be useful when using www/404.php with www/en, www/es, etc
  */
-define('ROOT', realpath(dirname(__FILE__).'/../../..').'/');
+define('ROOT', realpath(__DIR__.'/../../..').'/');
 
 
 /*
@@ -321,7 +321,7 @@ try{
                  *
                  * Set some base parameters
                  */
-                define('PWD'    , realpath(dirname(__FILE__).'/..').'/');
+                define('PWD'    , realpath(__DIR__.'/..').'/');
                 define('TEST'   , (isset($_GET['test'])  ? $_GET['test']  : false));
                 define('FORCE'  , (isset($_GET['force']) ? $_GET['force'] : false));
                 define('VERBOSE', debug());
@@ -545,7 +545,7 @@ try{
                 break;
 
             case 'shell':
-                include(dirname(__FILE__).'/handlers/startup_platform_shell.php');
+                include(__DIR__.'/handlers/startup_platform_shell.php');
                 break;
 
             default:
@@ -660,7 +660,7 @@ try{
      * Verify project data integrity
      */
     if(!defined("SEED") or !SEED or (PROJECTCODEVERSION == '0.0.0')){
-        return include(dirname(__FILE__).'/handlers/startup_no_project_data.php');
+        return include(__DIR__.'/handlers/startup_no_project_data.php');
     }
 
     /*

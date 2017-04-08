@@ -42,7 +42,7 @@ if(is_object($e)){
          * WUT? Should be at least an exception objecth ere!
          */
         error_log(tr('*** EXCEPTION IS NOT AN EXCEPTION OBJECT ***'));
-        error_log(str_log(print_r($e, true)).PHP_EOL);
+        error_log(str_log(print_r(variable_zts_safe($e), true)).PHP_EOL);
     }
 
 }else{
@@ -53,9 +53,9 @@ if(is_object($e)){
     error_log(str_log(str_log($e)).PHP_EOL);
 }
 
-$session   = "\n\n\n<br><br>SESSION DATA<br><br>\n\n\n".htmlentities(print_r(isset_get($_SESSION), true));
-$server    = "\n\n\n<br><br>SERVER DATA<br><br>\n\n\n".htmlentities(print_r(isset_get($_SERVER), true));
-$trace     = "\n\nFUNCTION TRACE\n".htmlentities(print_r(debug_trace(''), true));
+$session   = "\n\n\n<br><br>SESSION DATA<br><br>\n\n\n".htmlentities(print_r(variable_zts_safe(isset_get($_SESSION)), true));
+$server    = "\n\n\n<br><br>SERVER DATA<br><br>\n\n\n".htmlentities(print_r(print_r(variable_zts_safe($_SERVER)), true));
+$trace     = "\n\nFUNCTION TRACE\n".htmlentities(print_r(variable_zts_safe(debug_trace('')), true));
 
 /*
  * Count the # of uncaught exceptions.
@@ -81,7 +81,7 @@ try{
 
     if(PLATFORM == 'http'){
         if(method_exists($e, 'getMessages')){
-            $exception = "\n\nEXCEPTION TRACE\n".htmlentities(print_r($e->getMessages(), true));
+            $exception = "\n\nEXCEPTION TRACE\n".htmlentities(print_r(variable_zts_safe($e->getMessages()), true));
 
             error_log(tr('Uncaught exception'));
 
@@ -92,7 +92,7 @@ try{
             error_log(SCRIPT.': Failed');
 
         }else{
-            $exception = "\n\nEXCEPTION TRACE\n".htmlentities(print_r($e->getMessage(), true));
+            $exception = "\n\nEXCEPTION TRACE\n".htmlentities(print_r(variable_zts_safe($e->getMessage()), true));
 
             error_log(tr('Uncaught exception'));
             error_log($e->getMessage());
@@ -205,7 +205,7 @@ try{
         }else{
             echo "uncaught_exception(): Failed\n";
             echo "<pre>\n";
-            print_r($e);
+            print_r(variable_zts_safe($e));
         }
 
         die();
