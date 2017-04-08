@@ -115,7 +115,7 @@ try{
             break;
 
         default:
-            throw new bException(tr('Unknown method "%method%" specified', array('%method%' => $method)));
+            throw new bException(tr('Unknown method "%method%" specified', array('%method%' => $method)), 'unknown');
     }
 
 }catch(Exception $e){
