@@ -73,7 +73,7 @@ try{
     foreach($_CONFIG['db'] as $name => &$connector){
         if($name == 'default') continue;
 
-        if($connector['init']){
+        if(!empty($connector['init'])){
             $connector['pdo_attributes'] = array(PDO::ATTR_EMULATE_PREPARES  => true,
                                                  PDO::ATTR_STRINGIFY_FETCHES => true);
         }
