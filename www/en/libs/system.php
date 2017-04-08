@@ -2086,7 +2086,7 @@ function get_boolean($value){
                 return true;
 
             case 'false':
-                return true;
+                return false;
 
             case '1':
                 return true;
