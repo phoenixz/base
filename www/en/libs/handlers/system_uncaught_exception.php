@@ -5,6 +5,8 @@
 global $_CONFIG;
 static $count, $code, $messages;
 
+$_CONFIG['cors'] = false;
+
 if(empty($_CONFIG['production'])){
     switch($e->getCode()){
         case 'validation':
