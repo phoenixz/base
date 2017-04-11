@@ -353,8 +353,8 @@ function sql_init($connector = 'core'){
             }
 
             try{
-                if(!$r->rowCount()){
-                    log_console(tr('sql_init(): No versions in versions table found, assumed empty database ":db"', array(':db' => $_CONFIG['db'][$connector]['db'])), 'warning/versions', 'yellow');
+                if(empty($r) or !$r->rowCount()){
+                    log_console(tr('sql_init(): No versions table found or no versions in versions table found, assumed empty database ":db"', array(':db' => $_CONFIG['db'][$connector]['db'])), 'warning/versions', 'yellow');
 
                     define('FRAMEWORKDBVERSION', 0);
                     define('PROJECTDBVERSION'  , 0);
