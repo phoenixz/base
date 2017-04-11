@@ -94,7 +94,7 @@ function blogs_get($blog = null){
 /*
  * Get a new or existing blog post
  */
-function blogs_post_get($blog = null, $post = null, $language = null, $columns = null){
+function blogs_post_get($blog = null, $post = null, $language = null){
     try{
         if($blog){
             /*
@@ -137,44 +137,6 @@ function blogs_post_get($blog = null, $post = null, $language = null, $columns =
         }
 
         if($post){
-            if(!$columns){
-                /*
-                 * Select default columns
-                 */
-                $columns = '`blogs_posts`.`id`,
-                            `blogs_posts`.`createdon`,
-                            `blogs_posts`.`createdby`,
-                            `blogs_posts`.`modifiedby`,
-                            `blogs_posts`.`modifiedon`,
-                            `blogs_posts`.`status`,
-                            `blogs_posts`.`blogs_id`,
-                            `blogs_posts`.`assigned_to_id`,
-                            `blogs_posts`.`seocategory1`,
-                            `blogs_posts`.`category1`,
-                            `blogs_posts`.`seocategory2`,
-                            `blogs_posts`.`category2`,
-                            `blogs_posts`.`seocategory3`,
-                            `blogs_posts`.`category3`,
-                            `blogs_posts`.`keywords`,
-                            `blogs_posts`.`seokeywords`,
-                            `blogs_posts`.`featured_until`,
-                            `blogs_posts`.`upvotes`,
-                            `blogs_posts`.`downvotes`,
-                            `blogs_posts`.`description`,
-                            `blogs_posts`.`priority`,
-                            `blogs_posts`.`views`,
-                            `blogs_posts`.`rating`,
-                            `blogs_posts`.`comments`,
-                            `blogs_posts`.`language`,
-                            `blogs_posts`.`url`,
-                            `blogs_posts`.`urlref`,
-                            `blogs_posts`.`name`,
-                            `blogs_posts`.`seoname`,
-                            `blogs_posts`.`body`,
-                            `blogs_posts`.`parents_id`,
-                            `users`.`name` AS `assigned_to`';
-            }
-
             if(is_numeric($post)){
                 if(empty($language)){
                     /*
@@ -188,19 +150,53 @@ function blogs_post_get($blog = null, $post = null, $language = null, $columns =
                      * Get the post by its masters id, and get the specified
                      * language
                      */
-                    $where   = ' WHERE `blogs_posts`.`masters_id` = :masters_id
-                                 AND   `blogs_posts`.`language`   = :language';
+                    $masters_id = $post;
+                    $where      = ' WHERE `blogs_posts`.`masters_id` = :masters_id
+                                    AND   `blogs_posts`.`language`   = :language';
 
-                    $execute = array(':masters_id' => $post,
-                                     ':language'   => $language);
+                    $execute    = array(':masters_id' => $masters_id,
+                                        ':language'   => $language);
                 }
 
             }else{
-                $where = ' WHERE `blogs_posts`.`seoname` = :seoname';
-                $execute = array(':seoname' => $post);
+                $where   = ' WHERE `blogs_posts`.`seoname`  = :seoname';
+                $execute = array(':seoname'  => $post);
             }
 
-            $retval = sql_get('SELECT    '.$columns.'
+            $retval = sql_get('SELECT    `blogs_posts`.`id`,
+                                         `blogs_posts`.`createdon`,
+                                         `blogs_posts`.`createdby`,
+                                         `blogs_posts`.`modifiedby`,
+                                         `blogs_posts`.`modifiedon`,
+                                         `blogs_posts`.`status`,
+                                         `blogs_posts`.`blogs_id`,
+                                         `blogs_posts`.`assigned_to_id`,
+                                         `blogs_posts`.`seocategory1`,
+                                         `blogs_posts`.`category1`,
+                                         `blogs_posts`.`seocategory2`,
+                                         `blogs_posts`.`category2`,
+                                         `blogs_posts`.`seocategory3`,
+                                         `blogs_posts`.`category3`,
+                                         `blogs_posts`.`keywords`,
+                                         `blogs_posts`.`seokeywords`,
+                                         `blogs_posts`.`featured_until`,
+                                         `blogs_posts`.`upvotes`,
+                                         `blogs_posts`.`downvotes`,
+                                         `blogs_posts`.`description`,
+                                         `blogs_posts`.`level`,
+                                         `blogs_posts`.`priority`,
+                                         `blogs_posts`.`views`,
+                                         `blogs_posts`.`rating`,
+                                         `blogs_posts`.`comments`,
+                                         `blogs_posts`.`language`,
+                                         `blogs_posts`.`url`,
+                                         `blogs_posts`.`urlref`,
+                                         `blogs_posts`.`name`,
+                                         `blogs_posts`.`seoname`,
+                                         `blogs_posts`.`body`,
+                                         `blogs_posts`.`parents_id`,
+                                         `blogs_posts`.`masters_id`,
+                                         `users`.`name` AS `assigned_to`
 
                                FROM      `blogs_posts`
 
@@ -208,6 +204,14 @@ function blogs_post_get($blog = null, $post = null, $language = null, $columns =
                                ON        `users`.`id` = `blogs_posts`.`assigned_to_id`'.$where, $execute);
 
             if($retval){
+                if($language and ($language !== $retval['language'])){
+                    /*
+                     * Found the blog page, but its the wrong language
+                     * Fetch the right language from the
+                     */
+                    return blogs_post_get($blog, $retval['masters_id'], $language);
+                }
+
                 return $retval;
             }
         }
@@ -215,16 +219,25 @@ function blogs_post_get($blog = null, $post = null, $language = null, $columns =
         /*
          * From here, specified blog post was not found!!! omg omg!
          */
-        sql_query('INSERT INTO `blogs_posts` (`status`, `blogs_id`, `createdby`, `language`)
-                   VALUES                    ("_new"  , :blogs_id , :createdby , :language )',
+        $priority = blogs_post_get_new_priority($blogs_id);
+
+        sql_query('INSERT INTO `blogs_posts` (`status`, `blogs_id`, `createdby`, `language`, `priority`)
+                   VALUES                    ("_new"  , :blogs_id , :createdby , :language , :priority )',
 
                    array(':createdby' => isset_get($_SESSION['user']['id']),
                          ':language'  => $language,
+                         ':priority'  => $priority,
                          ':blogs_id'  => $blogs_id));
 
-        $post = sql_insert_id();
+        $posts_id = sql_insert_id();
 
-        return blogs_post_get($blog, $post, null, $columns);
+        if(empty($masters_id)){
+            $masters_id = $posts_id;
+        }
+
+        sql_query('UPDATE `blogs_posts` SET `masters_id` = :masters_id WHERE `id` = :id', array(':id' => $posts_id, ':masters_id' => $masters_id));
+
+        return blogs_post_get($blog, $posts_id, null);
 
     }catch(Exception $e){
         throw new bException('blogs_post_get(): Failed', $e);
@@ -310,12 +323,19 @@ function blogs_post_update($post, $params = null){
 
         }else{
             /*
-             * New post? Set to default status
+             * New post? Set to default status, and set priority to default
+             * (highest of this blog + 1)
              */
             if($post['status'] === '_new'){
                 $post['status'] = $params['status_default'];
+
                 $updates[] = ' `status` = :status ';
                 $execute[':status'] = $post['status'];
+
+                $priority  = blogs_post_get_new_priority($post['blogs_id']);
+
+                $updates[] = ' `priority` = :priority ';
+                $execute[':priority'] = $priority;
             }
         }
 
@@ -332,9 +352,9 @@ function blogs_post_update($post, $params = null){
             }
         }
 
-        if($params['label_priority']){
-            $updates[] = ' `priority` = :priority ';
-            $execute[':priority'] = $post['priority'];
+        if($params['label_level']){
+            $updates[] = ' `level` = :level ';
+            $execute[':level'] = $post['level'];
         }
 
         if($params['label_language']){
@@ -800,7 +820,7 @@ function blogs_parents_select($params) {
 //        array_default($params, 'class'       , $class);
 //        array_default($params, 'disabled'    , $disabled);
 //        array_default($params, 'name'        , $name);
-//        array_default($params, 'none'        , not_empty($none, tr('Select a priority')));
+//        array_default($params, 'none'        , not_empty($none, tr('Select a level')));
 //        array_default($params, 'option_class', $option_class);
 //        array_default($params, 'filter'      , array());
 //
@@ -1174,7 +1194,7 @@ function blogs_validate_post($post, $params = null){
         array_default($params, 'label_category1'  , false);
         array_default($params, 'label_category2'  , false);
         array_default($params, 'label_category3'  , false);
-        array_default($params, 'priority'         , 1);
+        array_default($params, 'level'            , 1);
         array_default($params, 'change_frequency' , 'weekly');
         array_default($params, 'status_default'   , 'unpublished');
         array_default($params, 'object_name'      , 'blog posts');
@@ -1191,7 +1211,7 @@ function blogs_validate_post($post, $params = null){
         /*
          * Validate input
          */
-        $v = new validate_form($post, 'id,name,featured_until,assigned_to,seocategory1,seocategory2,seocategory3,category1,category2,category3,body,keywords,description,language,priority,urlref,status');
+        $v = new validate_form($post, 'id,name,featured_until,assigned_to,seocategory1,seocategory2,seocategory3,category1,category2,category3,body,keywords,description,language,level,urlref,status');
 
         /*
          * Just ensure that the specified id is a valid number
@@ -1236,7 +1256,8 @@ function blogs_validate_post($post, $params = null){
             load_libs('user');
 
             $changes = array();
-            $oldpost = sql_get('SELECT `assigned_to_id`, `priority`, `status`, `name`, `urlref`, `body` FROM `blogs_posts` WHERE `id` = :id', array(':id' => $id));
+            $oldpost = sql_get('SELECT `assigned_to_id`, `level`, `status`, `name`, `urlref`, `body` FROM `blogs_posts` WHERE `id` = :id', array(':id' => $id));
+
         }else{
             /*
              * Only if we're editing in label_append mode we don't have to check body size
@@ -1349,12 +1370,12 @@ function blogs_validate_post($post, $params = null){
             $post['language'] = 'en';
         }
 
-        if(!empty($params['label_priorities'])){
-            $v->isNotEmpty ($post['priority'], tr('Please provide a priority for your :objectname', array(':objectname' => $params['object_name'])));
+        if(!empty($params['label_levels'])){
+            $v->isNotEmpty ($post['level'], tr('Please provide a level for your :objectname', array(':objectname' => $params['object_name'])));
 
-// :TODO: Check against priority list, or min-max
-            //if(!is_numeric($post['priority']) or ($post['priority'] < 1) or ($post['priority'] > 5) or (fmod($post['priority'], 1))){
-            //    $v->setError('The specified priority "'.$post['priority']).'" is invalid, it must be one of 1, 2, 3, 4, or 5');
+// :TODO: Check against level list, or min-max
+            //if(!is_numeric($post['level']) or ($post['level'] < 1) or ($post['level'] > 5) or (fmod($post['level'], 1))){
+            //    $v->setError('The specified level "'.$post['level']).'" is invalid, it must be one of 1, 2, 3, 4, or 5');
             //}
         }
 
@@ -1389,7 +1410,7 @@ function blogs_validate_post($post, $params = null){
             load_libs('user');
 
             $changes      = array();
-            $oldpost      = sql_get('SELECT `assigned_to_id`, `priority`, `status`, `name`, `urlref`, `seocategory1`, `seocategory2`, `seocategory3`, `body` FROM `blogs_posts` WHERE `id` = :id', array(':id' => $id));
+            $oldpost      = sql_get('SELECT `assigned_to_id`, `level`, `status`, `name`, `urlref`, `seocategory1`, `seocategory2`, `seocategory3`, `body` FROM `blogs_posts` WHERE `id` = :id', array(':id' => $id));
 
             if(isset_get($oldpost['assigned_to_id']) != $post['assigned_to_id']){
                 $user = sql_get('SELECT `id`, `name`, `username`, `email` FROM `users` WHERE `id` = :id', array(':id' => $post['assigned_to_id']));
@@ -1402,8 +1423,8 @@ function blogs_validate_post($post, $params = null){
                 }
             }
 
-            if(isset_get($oldpost['priority']) != $post['priority']){
-                $changes[] = tr('Set priority to ":priority"', array(':priority' => blogs_priority($post['priority'])));
+            if(isset_get($oldpost['level']) != $post['level']){
+                $changes[] = tr('Set level to ":level"', array(':level' => blogs_level($post['level'])));
             }
 
             if(isset_get($oldpost['urlref']) != $post['urlref']){
@@ -1471,7 +1492,7 @@ function blogs_validate_post($post, $params = null){
 /*
  * Process uploaded blog post media file
  */
-function blogs_media_upload($files, $post, $priority = null){
+function blogs_media_upload($files, $post, $level = null){
     global $_CONFIG;
 
     try{
@@ -1488,7 +1509,7 @@ function blogs_media_upload($files, $post, $priority = null){
         $original = $file['name'][0];
         $file     = file_get_local($file['tmp_name'][0]);
 
-        return blogs_media_process($file, $post, $priority, $original);
+        return blogs_media_process($file, $post, $level, $original);
 
     }catch(Exception $e){
         throw new bException('blogs_media_upload(): Failed', $e);
@@ -1500,7 +1521,7 @@ function blogs_media_upload($files, $post, $priority = null){
 /*
  * Process local blog post media file
  */
-function blogs_media_add($file, $post, $priority = null){
+function blogs_media_add($file, $post, $level = null){
     global $_CONFIG;
 
     try{
@@ -1511,7 +1532,7 @@ function blogs_media_add($file, $post, $priority = null){
             throw new bException(tr('blogs_media_add(): Specified file ":file" does not exist', array(':file' => $file)), 'uploaderror');
         }
 
-        return blogs_media_process($file, $post, $priority);
+        return blogs_media_process($file, $post, $level);
 
     }catch(Exception $e){
         throw new bException('blogs_media_add(): Failed', $e);
@@ -1523,7 +1544,7 @@ function blogs_media_add($file, $post, $priority = null){
 /*
  * Process blog media file
  */
-function blogs_media_process($file, $post, $priority = null, $original = null){
+function blogs_media_process($file, $post, $level = null, $original = null){
     global $_CONFIG;
 
     try{
@@ -1614,24 +1635,24 @@ function blogs_media_process($file, $post, $priority = null, $original = null){
         }
 
         /*
-         * If no priority has been specified then get the highest one
+         * If no level has been specified then get the highest one
          */
-        if(!$priority){
-            $priority = sql_get('SELECT (COALESCE(MAX(`priority`), 0) + 1) AS `priority` FROM `blogs_media` WHERE `blogs_posts_id` = :blogs_posts_id', 'priority', array(':blogs_posts_id' => $post['id']));
+        if(!$level){
+            $level = sql_get('SELECT (COALESCE(MAX(`level`), 0) + 1) AS `level` FROM `blogs_media` WHERE `blogs_posts_id` = :blogs_posts_id', 'level', array(':blogs_posts_id' => $post['id']));
         }
 
         /*
          * Store blog post photo in database
          */
-        $res  = sql_query('INSERT INTO `blogs_media` (`createdby`, `blogs_posts_id`, `blogs_id`, `file`, `original`, `priority`)
-                           VALUES                    (:createdby , :blogs_posts_id , :blogs_id , :file , :original , :priority )',
+        $res  = sql_query('INSERT INTO `blogs_media` (`createdby`, `blogs_posts_id`, `blogs_id`, `file`, `original`, `level`)
+                           VALUES                    (:createdby , :blogs_posts_id , :blogs_id , :file , :original , :level )',
 
                            array(':createdby'      => isset_get($_SESSION['user']['id']),
                                  ':blogs_posts_id' => $post['id'],
                                  ':blogs_id'       => $post['blogs_id'],
                                  ':file'           => $media,
                                  ':original'       => $original,
-                                 ':priority'       => $priority));
+                                 ':level'       => $level));
 
         $id   = sql_insert_id();
 
@@ -1695,7 +1716,7 @@ function blogs_media_delete($blogs_posts_id){
 /*
  * Process uploaded club photo
  */
-function blogs_url_upload($files, $post, $priority = null){
+function blogs_url_upload($files, $post, $level = null){
     global $_CONFIG;
 
     try{
@@ -1719,7 +1740,7 @@ function blogs_url_upload($files, $post, $priority = null){
         $file = $files;
         $file = file_get_local($file['tmp_name'][0]);
 
-        return blogs_media_process($file, $post, $priority);
+        return blogs_media_process($file, $post, $level);
 
     }catch(Exception $e){
         throw new bException('blogs_url_upload(): Failed', $e);
@@ -1729,17 +1750,17 @@ function blogs_url_upload($files, $post, $priority = null){
 
 
 /*
- * Find and return a free priority for blog photo
+ * Find and return a free level for blog photo
  */
-function blogs_media_get_free_priority($blogs_posts_id, $insert = false){
+function blogs_media_get_free_level($blogs_posts_id, $insert = false){
     global $_CONFIG;
 
     try{
         if($insert){
             /*
-             * Insert mode, return the first possible priority, in case there is a gap (ideally should be highest though, if there are no gaps)
+             * Insert mode, return the first possible level, in case there is a gap (ideally should be highest though, if there are no gaps)
              */
-            $list = sql_list('SELECT `priority` FROM `blogs_media` WHERE `blogs_posts_id` = :blogs_posts_id ORDER BY `priority` ASC', array(':blogs_posts_id' => $blogs_posts_id));
+            $list = sql_list('SELECT `level` FROM `blogs_media` WHERE `blogs_posts_id` = :blogs_posts_id ORDER BY `level` ASC', array(':blogs_posts_id' => $blogs_posts_id));
 
             for($current = 1; ; $current++){
                 if(!in_array($current, $list)){
@@ -1752,12 +1773,12 @@ function blogs_media_get_free_priority($blogs_posts_id, $insert = false){
         }
 
         /*
-         * Highest mode, return the highest priority + 1
+         * Highest mode, return the highest level + 1
          */
-        return (integer) sql_get('SELECT MAX(`priority`) FROM `blogs_media` WHERE `blogs_posts_id` = :blogs_posts_id', array(':blogs_posts_id' => $blogs_posts_id)) + 1;
+        return (integer) sql_get('SELECT MAX(`level`) FROM `blogs_media` WHERE `blogs_posts_id` = :blogs_posts_id', array(':blogs_posts_id' => $blogs_posts_id)) + 1;
 
     }catch(Exception $e){
-        throw new bException('blogs_media_get_free_priority(): Failed', $e);
+        throw new bException('blogs_media_get_free_level(): Failed', $e);
     }
 }
 
@@ -1842,9 +1863,9 @@ function blogs_photo_url($media, $size){
 
 
 /*
- * Get a display priority for the priority ID or vice versa
+ * Get a display level for the level ID or vice versa
  */
-function blogs_priority($priority){
+function blogs_level($level){
     static $list, $rlist;
 
     try{
@@ -1856,15 +1877,15 @@ function blogs_priority($priority){
                           1 => tr('Immediate'));
         }
 
-        if(is_numeric($priority)){
-            if(isset($list[$priority])){
-                return $list[$priority];
+        if(is_numeric($level)){
+            if(isset($list[$level])){
+                return $list[$level];
             }
 
             return $list[3];
         }
 
-        if($priority === null){
+        if($level === null){
             return 'Unknown';
         }
 
@@ -1875,16 +1896,16 @@ function blogs_priority($priority){
             $rlist = array_flip($list);
         }
 
-        $priority = strtolower($priority);
+        $level = strtolower($level);
 
-        if(isset($rlist[$priority])){
-            return $rlist[$priority];
+        if(isset($rlist[$level])){
+            return $rlist[$level];
         }
 
         return 3;
 
     }catch(Exception $e){
-        throw new bException('blogs_priority(): Failed', $e);
+        throw new bException('blogs_level(): Failed', $e);
     }
 }
 
@@ -2243,7 +2264,7 @@ function blogs_post_erase($post){
 /*
  *
  */
-function blogs_regenerate_sitemap_data($blogs_id, $priority, $change_frequency, $group = '', $file = ''){
+function blogs_regenerate_sitemap_data($blogs_id, $level, $change_frequency, $group = '', $file = ''){
     try{
         load_libs('sitemap');
 
@@ -2285,7 +2306,7 @@ function blogs_regenerate_sitemap_data($blogs_id, $priority, $change_frequency, 
                                   'url'              => $post['url'],
                                   'change_frequency' => $change_frequency,
                                   'page_modifiedon'  => ($post['modifiedon'] ? $post['modifiedon'] : $post['createdon']),
-                                  'priority'         => $priority));
+                                  'level'         => $level));
         }
 
         cli_dot(false);
@@ -2293,6 +2314,152 @@ function blogs_regenerate_sitemap_data($blogs_id, $priority, $change_frequency, 
 
     }catch(Exception $e){
         throw new bException('blogs_regenerate_sitemap_data(): Failed', $e);
+    }
+}
+
+
+
+/*
+ *
+ */
+function blogs_post_up($id, $object){
+    try{
+        sql_query('START TRANSACTION');
+
+        $post = sql_get('SELECT    `blogs_posts`.`id`,
+                                   `blogs_posts`.`createdby`,
+                                   `blogs_posts`.`priority`,
+                                   `higher`.`id`       AS `higher_id`,
+                                   `higher`.`priority` AS `higher_priority`
+
+                         FROM      `blogs_posts`
+
+                         LEFT JOIN `blogs_posts` AS `higher`
+                         ON        `blogs_posts`.`blogs_id` = `higher`.`blogs_id`
+                         AND       `blogs_posts`.`priority` < `higher`.`priority`
+
+                         WHERE     `blogs_posts`.`id` = :id
+                         AND       `blogs_posts`.`status` IN("published", "unpublished")
+
+                         ORDER BY  `higher`.`priority` ASC
+                         LIMIT 1',
+
+                         array(':id' => cfi($id)));
+
+        if(empty($post['id'])){
+            throw new bException(tr('Unknown :object ":id" specified', array(':object' => $object, ':id' => $id)), 'unknown');
+        }
+
+        if(($post['createdby'] != $_SESSION['user']['id']) and !has_rights('god')){
+            throw new bException(tr('The :object ":id" does not belong to you', array(':object' => $object, ':id' => $id)), 'accessdenied');
+        }
+
+        if($post['higher_priority'] !== null){
+            /*
+             * Switch priorities
+             */
+            $update = sql_prepare('UPDATE `blogs_posts`
+
+                                   SET    `priority` = :priority
+
+                                   WHERE  `id`       = :id');
+
+            $update->execute(array(':id'       => $post['id'],
+                                   ':priority' => -$post['higher_priority']));
+
+            $update->execute(array(':id'       => $post['higher_id'],
+                                   ':priority' => $post['priority']));
+
+            $update->execute(array(':id'       => $post['id'],
+                                   ':priority' => $post['higher_priority']));
+        }
+
+        sql_query('COMMIT');
+
+    }catch(Exception $e){
+        throw new bException('blogs_post_up(): Failed', $e);
+    }
+
+}
+
+
+
+/*
+ *
+ */
+function blogs_post_down($id, $object){
+    try{
+        sql_query('START TRANSACTION');
+
+        $post = sql_get('SELECT    `blogs_posts`.`id`,
+                                   `blogs_posts`.`createdby`,
+                                   `blogs_posts`.`level`,
+                                   `lower`.`id`    AS `lower_id`,
+                                   `lower`.`level` AS `lower_level`
+
+                         FROM      `blogs_posts`
+
+                         LEFT JOIN `blogs_posts` AS `lower`
+                         ON        `blogs_posts`.`blogs_id` = `lower`.`blogs_id`
+                         AND       `blogs_posts`.`level`    > `lower`.`level`
+
+                         WHERE     `blogs_posts`.`id` = :id
+                         AND       `blogs_posts`.`status` IN("published", "unpublished")
+
+                         ORDER BY  `lower`.`level` DESC
+                         LIMIT 1',
+
+                         array(':id' => cfi($id)));
+
+        if(empty($post['id'])){
+            throw new bException(tr('Unknown :object id ":id" specified', array(':object' => $object, ':id' => $id)), 'unknown');
+        }
+
+        if(($post['createdby'] != $_SESSION['user']['id']) and !has_rights('god')){
+            throw new bException(tr('The :object ":id" does not belong to you', array(':object' => $object, ':id' => $id)), 'accessdenied');
+        }
+
+        if($post['lower_level'] !== null){
+            /*
+             * Switch priorities
+             */
+            $update = sql_prepare('UPDATE `blogs_posts`
+
+                                   SET    `level` = :level
+
+                                   WHERE  `id`    = :id');
+
+            $update->execute(array(':id'    => $post['id'],
+                                   ':level' => -$post['lower_level']));
+
+            $update->execute(array(':id'    => $post['lower_id'],
+                                   ':level' => $post['level']));
+
+            $update->execute(array(':id'    => $post['id'],
+                                   ':level' => $post['lower_level']));
+        }
+
+        sql_query('COMMIT');
+
+    }catch(Exception $e){
+        throw new bException('blogs_post_down(): Failed', $e);
+    }
+}
+
+
+
+/*
+ *
+ */
+function blogs_post_get_new_priority($blogs_id){
+    try{
+        $priority = sql_get('SELECT MAX(`priority`) FROM `blogs_posts` WHERE `blogs_id` = :blogs_id', true, array(':blogs_id' => $blogs_id));
+        $priority = (integer) isset_get($priority, 0);
+
+        return $priority + 1;
+
+    }catch(Exception $e){
+        throw new bException('blogs_post_get_new_priority(): Failed', $e);
     }
 }
 ?>
