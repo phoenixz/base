@@ -1597,6 +1597,7 @@ function blogs_media_process($file, $post, $priority = null, $original = null){
         $media  = str_runtil($file, '-');
         $types  = $_CONFIG['blogs']['images'];
         $files  = array('photos/'.$media.'-original.jpg' => $prefix.$file);
+        $hash   = hash('sha256', $prefix.$file);
 
         /*
          * Process all image types
@@ -1644,13 +1645,14 @@ function blogs_media_process($file, $post, $priority = null, $original = null){
         /*
          * Store blog post photo in database
          */
-        $res  = sql_query('INSERT INTO `blogs_media` (`createdby`, `blogs_posts_id`, `blogs_id`, `file`, `original`, `priority`)
-                           VALUES                    (:createdby , :blogs_posts_id , :blogs_id , :file , :original , :priority )',
+        $res  = sql_query('INSERT INTO `blogs_media` (`createdby`, `blogs_posts_id`, `blogs_id`, `file`, `hash`, `original`, `priority`)
+                           VALUES                    (:createdby , :blogs_posts_id , :blogs_id , :file , :hash , :original , :priority )',
 
                            array(':createdby'      => isset_get($_SESSION['user']['id']),
                                  ':blogs_posts_id' => $post['id'],
                                  ':blogs_id'       => $post['blogs_id'],
                                  ':file'           => $media,
+                                 ':hash'           => $hash,
                                  ':original'       => $original,
                                  ':priority'       => $priority));
 
