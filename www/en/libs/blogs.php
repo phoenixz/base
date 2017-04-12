@@ -1544,7 +1544,7 @@ function blogs_media_add($file, $post, $level = null){
 /*
  * Process blog media file
  */
-function blogs_media_process($file, $post, $level = null, $original = null){
+function blogs_media_process($file, $post, $priority = null, $original = null){
     global $_CONFIG;
 
     try{
@@ -1635,24 +1635,24 @@ function blogs_media_process($file, $post, $level = null, $original = null){
         }
 
         /*
-         * If no level has been specified then get the highest one
+         * If no priority has been specified then get the highest one
          */
-        if(!$level){
-            $level = sql_get('SELECT (COALESCE(MAX(`level`), 0) + 1) AS `level` FROM `blogs_media` WHERE `blogs_posts_id` = :blogs_posts_id', 'level', array(':blogs_posts_id' => $post['id']));
+        if(!$priority){
+            $priority = sql_get('SELECT (COALESCE(MAX(`priority`), 0) + 1) AS `priority` FROM `blogs_media` WHERE `blogs_posts_id` = :blogs_posts_id', true, array(':blogs_posts_id' => $post['id']));
         }
 
         /*
          * Store blog post photo in database
          */
-        $res  = sql_query('INSERT INTO `blogs_media` (`createdby`, `blogs_posts_id`, `blogs_id`, `file`, `original`, `level`)
-                           VALUES                    (:createdby , :blogs_posts_id , :blogs_id , :file , :original , :level )',
+        $res  = sql_query('INSERT INTO `blogs_media` (`createdby`, `blogs_posts_id`, `blogs_id`, `file`, `original`, `priority`)
+                           VALUES                    (:createdby , :blogs_posts_id , :blogs_id , :file , :original , :priority )',
 
                            array(':createdby'      => isset_get($_SESSION['user']['id']),
                                  ':blogs_posts_id' => $post['id'],
                                  ':blogs_id'       => $post['blogs_id'],
                                  ':file'           => $media,
                                  ':original'       => $original,
-                                 ':level'       => $level));
+                                 ':priority'       => $priority));
 
         $id   = sql_insert_id();
 
@@ -1716,7 +1716,7 @@ function blogs_media_delete($blogs_posts_id){
 /*
  * Process uploaded club photo
  */
-function blogs_url_upload($files, $post, $level = null){
+function blogs_url_upload($files, $post, $priority = null){
     global $_CONFIG;
 
     try{
@@ -1740,7 +1740,7 @@ function blogs_url_upload($files, $post, $level = null){
         $file = $files;
         $file = file_get_local($file['tmp_name'][0]);
 
-        return blogs_media_process($file, $post, $level);
+        return blogs_media_process($file, $post, $priority);
 
     }catch(Exception $e){
         throw new bException('blogs_url_upload(): Failed', $e);
@@ -1750,17 +1750,17 @@ function blogs_url_upload($files, $post, $level = null){
 
 
 /*
- * Find and return a free level for blog photo
+ * Find and return a free priority for blog photo
  */
-function blogs_media_get_free_level($blogs_posts_id, $insert = false){
+function blogs_media_get_free_priority($blogs_posts_id, $insert = false){
     global $_CONFIG;
 
     try{
         if($insert){
             /*
-             * Insert mode, return the first possible level, in case there is a gap (ideally should be highest though, if there are no gaps)
+             * Insert mode, return the first possible priority, in case there is a gap (ideally should be highest though, if there are no gaps)
              */
-            $list = sql_list('SELECT `level` FROM `blogs_media` WHERE `blogs_posts_id` = :blogs_posts_id ORDER BY `level` ASC', array(':blogs_posts_id' => $blogs_posts_id));
+            $list = sql_list('SELECT `priority` FROM `blogs_media` WHERE `blogs_posts_id` = :blogs_posts_id ORDER BY `priority` ASC', array(':blogs_posts_id' => $blogs_posts_id));
 
             for($current = 1; ; $current++){
                 if(!in_array($current, $list)){
@@ -1773,9 +1773,9 @@ function blogs_media_get_free_level($blogs_posts_id, $insert = false){
         }
 
         /*
-         * Highest mode, return the highest level + 1
+         * Highest mode, return the highest priority + 1
          */
-        return (integer) sql_get('SELECT MAX(`level`) FROM `blogs_media` WHERE `blogs_posts_id` = :blogs_posts_id', array(':blogs_posts_id' => $blogs_posts_id)) + 1;
+        return (integer) sql_get('SELECT MAX(`priority`) FROM `blogs_media` WHERE `blogs_posts_id` = :blogs_posts_id', array(':blogs_posts_id' => $blogs_posts_id)) + 1;
 
     }catch(Exception $e){
         throw new bException('blogs_media_get_free_level(): Failed', $e);
