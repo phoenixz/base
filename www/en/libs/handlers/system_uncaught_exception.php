@@ -56,7 +56,7 @@ if(is_object($e)){
 }
 
 $session   = "\n\n\n<br><br>SESSION DATA<br><br>\n\n\n".htmlentities(print_r(variable_zts_safe(isset_get($_SESSION)), true));
-$server    = "\n\n\n<br><br>SERVER DATA<br><br>\n\n\n".htmlentities(print_r(print_r(variable_zts_safe($_SERVER)), true));
+$server    = "\n\n\n<br><br>SERVER DATA<br><br>\n\n\n".htmlentities(print_r(variable_zts_safe($_SERVER), true));
 $trace     = "\n\nFUNCTION TRACE\n".htmlentities(print_r(variable_zts_safe(debug_trace('')), true));
 
 /*
