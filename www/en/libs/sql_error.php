@@ -218,9 +218,9 @@ function sql_error($e, $query, $execute, $sql = null){
                             $body .= "Session : ".print_r(isset_get($_SESSION), true)."\n";
                         }
 
-                        $body .= "POST   : ".print_r($_POST,true)."
-                                  GET    : ".print_r($_GET,true)."
-                                  SERVER : ".print_r($_SERVER,true)."\n";
+                        $body .= "POST   : ".print_r($_POST  , true)."
+                                  GET    : ".print_r($_GET   , true)."
+                                  SERVER : ".print_r($_SERVER, true)."\n";
 
                         error_log('PHP SQL_ERROR: '.str_log($error[2]).' on '.str_log($query, 4096));
 
