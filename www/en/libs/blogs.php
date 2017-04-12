@@ -2322,8 +2322,52 @@ function blogs_regenerate_sitemap_data($blogs_id, $level, $change_frequency, $gr
 /*
  *
  */
-function blogs_post_up($id, $object){
+function blogs_post_get_new_priority($blogs_id){
     try{
+        $priority = sql_get('SELECT MAX(`priority`) FROM `blogs_posts` WHERE `blogs_id` = :blogs_id', true, array(':blogs_id' => $blogs_id));
+        $priority = (integer) isset_get($priority, 0);
+
+        return $priority + 1;
+
+    }catch(Exception $e){
+        throw new bException('blogs_post_get_new_priority(): Failed', $e);
+    }
+}
+
+
+
+/*
+ *
+ */
+function blogs_post_up($id, $object, $view){
+    try{
+        /*
+         * Move post up in a list of items that are av ailable, deleted, etc?
+         */
+        switch($view){
+            case 'available':
+                $where = ' AND `blogs_posts`.`status` IN ("published", "unpublished") ';
+                $join  = ' AND `higher`.`status`      IN ("published", "unpublished") ';
+                break;
+
+            case 'all':
+                $where = ' AND `blogs_posts`.`status` != "_new" ';
+                $join  = ' AND `higher`.`status`      != "_new" ';
+                break;
+
+            case 'deleted':
+                // FALLTHROUGH
+            case 'published':
+                // FALLTHROUGH
+            case 'unpublished':
+                $where = ' AND `blogs_posts`.`status` = "'.$view.'" ';
+                $join  = ' AND `higher`.`status`      = "'.$view.'" ';
+                break;
+
+            default:
+                throw new bException(tr('blogs_post_up(): Unknown view ":view" specified', array(':view' => $view)), 'unknown');
+        }
+
         sql_query('START TRANSACTION');
 
         $post = sql_get('SELECT    `blogs_posts`.`id`,
@@ -2337,21 +2381,23 @@ function blogs_post_up($id, $object){
                          LEFT JOIN `blogs_posts` AS `higher`
                          ON        `blogs_posts`.`blogs_id` = `higher`.`blogs_id`
                          AND       `blogs_posts`.`priority` < `higher`.`priority`
+                         '.$join.'
 
                          WHERE     `blogs_posts`.`id` = :id
-                         AND       `blogs_posts`.`status` IN("published", "unpublished")
+                         '.$where.'
 
                          ORDER BY  `higher`.`priority` ASC
                          LIMIT 1',
 
                          array(':id' => cfi($id)));
+//show($post);
 
         if(empty($post['id'])){
-            throw new bException(tr('Unknown :object ":id" specified', array(':object' => $object, ':id' => $id)), 'unknown');
+            throw new bException(tr('blogs_post_up(): Unknown :object ":id" specified', array(':object' => $object, ':id' => $id)), 'unknown');
         }
 
         if(($post['createdby'] != $_SESSION['user']['id']) and !has_rights('god')){
-            throw new bException(tr('The :object ":id" does not belong to you', array(':object' => $object, ':id' => $id)), 'accessdenied');
+            throw new bException(tr('blogs_post_up(): The :object ":id" does not belong to you', array(':object' => $object, ':id' => $id)), 'accessdenied');
         }
 
         if($post['higher_priority'] !== null){
@@ -2363,6 +2409,13 @@ function blogs_post_up($id, $object){
                                    SET    `priority` = :priority
 
                                    WHERE  `id`       = :id');
+
+//show(array(':id'       => $post['id'],
+//            ':priority' => -$post['higher_priority']));
+//show(array(':id'       => $post['higher_id'],
+//            ':priority' => $post['priority']));
+//show(array(':id'       => $post['id'],
+//            ':priority' => $post['higher_priority']));
 
             $update->execute(array(':id'       => $post['id'],
                                    ':priority' => -$post['higher_priority']));
@@ -2387,79 +2440,90 @@ function blogs_post_up($id, $object){
 /*
  *
  */
-function blogs_post_down($id, $object){
+function blogs_post_down($id, $object, $view){
     try{
+        /*
+         * Move post up in a list of items that are av ailable, deleted, etc?
+         */
+        switch($view){
+            case 'available':
+                $where = ' AND `blogs_posts`.`status` IN ("published", "unpublished") ';
+                $join  = ' AND `lower`.`status`       IN ("published", "unpublished") ';
+                break;
+
+            case 'all':
+                $where = ' AND `blogs_posts`.`status` != "_new" ';
+                $join  = ' AND `lower`.`status`       != "_new" ';
+                break;
+
+            case 'deleted':
+                // FALLTHROUGH
+            case 'published':
+                // FALLTHROUGH
+            case 'unpublished':
+                $where = ' AND `blogs_posts`.`status` = "'.$view.'" ';
+                $join  = ' AND `lower`.`status`       = "'.$view.'" ';
+                break;
+
+            default:
+                throw new bException(tr('blogs_post_up(): Unknown view ":view" specified', array(':view' => $view)), 'unknown');
+        }
+
         sql_query('START TRANSACTION');
 
         $post = sql_get('SELECT    `blogs_posts`.`id`,
                                    `blogs_posts`.`createdby`,
-                                   `blogs_posts`.`level`,
-                                   `lower`.`id`    AS `lower_id`,
-                                   `lower`.`level` AS `lower_level`
+                                   `blogs_posts`.`priority`,
+                                   `lower`.`id`       AS `lower_id`,
+                                   `lower`.`priority` AS `lower_priority`
 
                          FROM      `blogs_posts`
 
                          LEFT JOIN `blogs_posts` AS `lower`
                          ON        `blogs_posts`.`blogs_id` = `lower`.`blogs_id`
-                         AND       `blogs_posts`.`level`    > `lower`.`level`
+                         AND       `blogs_posts`.`priority` > `lower`.`priority`
+                         '.$join.'
 
                          WHERE     `blogs_posts`.`id` = :id
-                         AND       `blogs_posts`.`status` IN("published", "unpublished")
+                         '.$where.'
 
-                         ORDER BY  `lower`.`level` DESC
+                         ORDER BY  `lower`.`priority` DESC
                          LIMIT 1',
 
                          array(':id' => cfi($id)));
 
         if(empty($post['id'])){
-            throw new bException(tr('Unknown :object id ":id" specified', array(':object' => $object, ':id' => $id)), 'unknown');
+            throw new bException(tr('blogs_post_up(): Unknown :object id ":id" specified', array(':object' => $object, ':id' => $id)), 'unknown');
         }
 
         if(($post['createdby'] != $_SESSION['user']['id']) and !has_rights('god')){
-            throw new bException(tr('The :object ":id" does not belong to you', array(':object' => $object, ':id' => $id)), 'accessdenied');
+            throw new bException(tr('blogs_post_up(): The :object ":id" does not belong to you', array(':object' => $object, ':id' => $id)), 'accessdenied');
         }
 
-        if($post['lower_level'] !== null){
+        if($post['lower_priority'] !== null){
             /*
              * Switch priorities
              */
             $update = sql_prepare('UPDATE `blogs_posts`
 
-                                   SET    `level` = :level
+                                   SET    `priority` = :priority
 
-                                   WHERE  `id`    = :id');
+                                   WHERE  `id`       = :id');
 
-            $update->execute(array(':id'    => $post['id'],
-                                   ':level' => -$post['lower_level']));
+            $update->execute(array(':id'       => $post['id'],
+                                   ':priority' => -$post['lower_priority']));
 
-            $update->execute(array(':id'    => $post['lower_id'],
-                                   ':level' => $post['level']));
+            $update->execute(array(':id'       => $post['lower_id'],
+                                   ':priority' => $post['priority']));
 
-            $update->execute(array(':id'    => $post['id'],
-                                   ':level' => $post['lower_level']));
+            $update->execute(array(':id'       => $post['id'],
+                                   ':priority' => $post['lower_priority']));
         }
 
         sql_query('COMMIT');
 
     }catch(Exception $e){
         throw new bException('blogs_post_down(): Failed', $e);
-    }
-}
-
-
-
-/*
- *
- */
-function blogs_post_get_new_priority($blogs_id){
-    try{
-        $priority = sql_get('SELECT MAX(`priority`) FROM `blogs_posts` WHERE `blogs_id` = :blogs_id', true, array(':blogs_id' => $blogs_id));
-        $priority = (integer) isset_get($priority, 0);
-
-        return $priority + 1;
-
-    }catch(Exception $e){
-        throw new bException('blogs_post_get_new_priority(): Failed', $e);
     }
 }
 ?>
