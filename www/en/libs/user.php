@@ -1132,15 +1132,15 @@ function user_update_password($params, $current = true){
 
         /*
          * Ensure that this new password is not the same as one of the N
-         * previous passwords
+         * previous passwords in N previous days
          */
         if($_CONFIG['security']['passwords']['unique_days']){
-            $list = sql_query('SELECT   `password`
+            $list = sql_query(' SELECT   `password`
 
                                FROM     `passwords`
 
                                WHERE    `users_id` = :users_id
-                               AND      `createdon` + INTERVAL :days DAYS > UTC_TIMESTAMP()
+                               AND      `createdon` > DATE_SUB(UTC_TIMESTAMP(), INTERVAL :days DAY)
 
                                ORDER BY `id`
 
