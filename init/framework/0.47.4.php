@@ -33,9 +33,10 @@ cli_dot(false);
 sql_column_exists('blogs_posts', 'level', '!ALTER TABLE `blogs_posts` ADD COLUMN `level` INT(11) NOT NULL AFTER `priority`');
 sql_index_exists ('blogs_posts', 'level', '!ALTER TABLE `blogs_posts` ADD INDEX  `level` (`level`)');
 
-
 sql_query('ALTER TABLE `blogs_posts` CHANGE COLUMN `priority` `priority` INT(11) NOT NULL');
 sql_index_exists ('blogs_posts', 'priority', 'ALTER TABLE `blogs_posts` DROP KEY `priority`');
+
+sql_query('UPDATE `blogs_posts` SET `level` = `priority`');
 
 /*
  * Ensure that all priorities are unique per blog
