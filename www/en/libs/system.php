@@ -2147,9 +2147,45 @@ function detect_root(){
  */
 function detect_sudo(){
     try{
-
+// :TODO: Implement function
     }catch(Exception $e){
         throw new bException(tr('detect_sudo(): Failed'), $e);
+    }
+}
+
+
+
+/*
+ *
+ */
+function language_show($language, $script = null){
+    static $checked = false;
+
+    try{
+        if($checked){
+            return false;
+        }
+
+        $checked = true;
+
+        if(LANGUAGE === $language){
+            if($script){
+                /*
+                 *
+                 */
+                page_show($script);
+            }
+
+            return true;
+        }
+
+        /*
+         * Script and language match, continue
+         */
+        page_show(404);
+
+    }catch(Exception $e){
+        throw new bException(tr('language_show(): Failed'), $e);
     }
 }
 

@@ -2009,6 +2009,7 @@ function blogs_post_url($post){
                           'createdon',
                           'blog',
                           'seoname',
+                          'language',
                           'seoparent',
                           'category1',
                           'seocategory1',
