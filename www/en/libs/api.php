@@ -174,7 +174,7 @@ function api_authenticate($apikey){
              * This is a production platform, only allow JSON API key
              * authentications over a secure connection
              */
-            if($_CONFIG['protocol'] !== 'https://'){
+            if(($_CONFIG['protocol'] !== 'https://') and !empty($_CONFIG['production'])){
                 throw new bException(tr('api_authenticate(): No API key authentication allowed on unsecure connections over non HTTPS connections'), 'not-allowed');
             }
         }
@@ -486,9 +486,9 @@ function api_call_base($account, $call, $data = array(), $files = null){
         }
 
     }catch(Exception $e){
-show(isset_get($json));
-show(isset_get($result));
-showdie($e);
+//show(isset_get($json));
+//show(isset_get($result));
+//showdie($e);
         throw new bException('api_call_base(): Failed', $e);
     }
 }
