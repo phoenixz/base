@@ -804,25 +804,30 @@ function load_config($files = ' '){
  * Returns if site is running in debug mode or not
  */
 function debug($class = null){
-    global $_CONFIG;
+    try{
+        global $_CONFIG;
 
-    if($class === null){
-        return (boolean) $_CONFIG['debug'];
+        if($class === null){
+            return (boolean) $_CONFIG['debug'];
+        }
+
+        if($class === true){
+            /*
+             * Force debug to be true. This may be useful in production situations where some bug needs quick testing.
+             */
+            $_CONFIG['debug'] = true;
+            return true;
+        }
+
+        if(!isset($_CONFIG['debug'][$class])){
+            throw new bException('debug(): Unknown debug class "'.str_log($class).'" specified', 'unknown');
+        }
+
+        return $_CONFIG['debug'][$class];
+
+    }catch(Exception $e){
+        throw new bException(tr('debug(): Failed'), $e);
     }
-
-    if($class === true){
-        /*
-         * Force debug to be true. This may be useful in production situations where some bug needs quick testing.
-         */
-        $_CONFIG['debug'] = true;
-        return true;
-    }
-
-    if(!isset($_CONFIG['debug'][$class])){
-        throw new bException('debug(): Unknown debug class "'.str_log($class).'" specified', 'unknown');
-    }
-
-    return $_CONFIG['debug'][$class];
 }
 
 
