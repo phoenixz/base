@@ -337,7 +337,9 @@ $_CONFIG['social']             = array('links'            => array('facebook'   
                                                                    'target'         => '_blank'));                                      //
 
 // SSO configuration
-$_CONFIG['sso']                = array('facebook'         => false,                                                                     //
+$_CONFIG['sso']                = array('cache_config'     => 86400,
+
+                                       'facebook'         => false,                                                                     //
 
                                        'google'           => false,                                                                     //
 
