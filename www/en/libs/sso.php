@@ -6,6 +6,11 @@
  *
  * Requires the socialmedia-oauth-login library, with a "sol" symlink pointing to it (sol for ease of use)
  *
+ * NOTE: This library requires PHP hybridauth library!
+ * NOTE: This library requires 3rd party plugins for each provider!
+ *
+ * thridparty facebook: https://github.com/facebook/php-graph-sdk
+ *
  * @license http://opensource.org/licenses/GPL-2.0 GNU Public License, Version 2
  * @copyright Sven Oostenbrink <support@ingiga.com>
  */
@@ -15,298 +20,315 @@
 /*
  * Single Sign On
  */
-function sso($provider, $redirect = true, $get_check = true){
+function sso($provider, $method, $redirect, $role = 'user'){
     global $_CONFIG;
 
     try{
-        load_libs('socialmedia_oauth_connect,array,user,json');
+        switch($provider){
+            case 'facebook':
+                // FALLTHROUGH
+            case 'twitter':
+                // FALLTHROUGH
+            case 'google':
+                break;
 
-        $provider  = strtolower($provider);
+            case '':
+                throw new bException(tr('sso(): No provider specified'), 'not-specified');
 
-        $providers = array('facebook'  => 'fb',
-                           'google'    => 'gp',
-                           'microsoft' => 'ms',
-                           'paypal'    => 'pp',
-                           'twitter'   => 'tw');
-
-        $prefix    = $providers[$provider];
-
-        /*
-         * Reset SSO referrer. This is used in case SSO fails, to redirect back to the correct origin (signup or signin page, usuallyt)
-         */
-        if(!empty($_SERVER['HTTP_REFERER'])){
-            $_SESSION['sso_referrer'] = $_SERVER['HTTP_REFERER'];
-
-        }else{
-            unset($_SESSION['sso_referrer']);
+            default:
+                throw new bException(tr('sso(): Unknown provider ":provider" specified', array(':provider' => $provider)), 'unknown');
         }
 
-        /*
-         * Check if specified provider is supported
-         */
-        if(empty($_CONFIG['sso'][$provider])){
-            throw new bException('sso(): No configuration for SSO provider "'.str_log($provider).'" available', 'config');
-        }
+        switch($method){
+            case 'authorized':
+                include_once(ROOT.'libs/external/hybridauth/Hybrid/Auth.php');
+                include_once(ROOT.'libs/external/hybridauth/Hybrid/Endpoint.php');
 
-        $oauth  = new socialmedia_oauth_connect();
-        $config = $_CONFIG['sso'][$provider];
+                if(isset($_REQUEST['hauth_start']) or isset($_REQUEST['hauth_done'])){
+                    Hybrid_Endpoint::process();
+                }
 
-        /*
-         * Validate configuration
-         */
-        foreach($_CONFIG['sso'][$provider] as $key => $value){
-            if(($key != 'scope') and !$value){
-//                throw new bException('sso(): Key "'.$key.'" of SSO provider "'.$provider.'" has not been set', 'config');
-            }
-        }
+                break;
 
-        /*
-         * Configure oauth
-         */
-        $oauth->provider      = ucfirst($provider);
-        $oauth->client_id     = $config['appid'];
-        $oauth->client_secret = $config['secret'];
-        $oauth->scope         = $config['scope'];
-        $oauth->redirect_uri  = $config['redirect'];
+            case 'signin':
+                include_once(ROOT.'libs/external/hybridauth/Hybrid/Auth.php');
 
-        $oauth->Initialize();
+                $hybridauth = new Hybrid_Auth(sso_config($provider));
+                $result     = $hybridauth->authenticate(str_capitalize($provider));
+                $profile    = $result->getUserProfile();
+                $profile    = array_from_object($profile);
+//showdie($profile);
 
-        $code = (!empty($_REQUEST['code'])) ?  ($_REQUEST['code']) : '';
+                try{
+                    $birthday = date_convert($profile['birthYear'].'-'.$profile['birthMonth'].'-'.$profile['birthDay'], 'mysql');
 
-        if(empty($code)) {
-            if($get_check and count($_GET)){
+                }catch(Exception $e){
+                    /*
+                     * Invalid birthday data available
+                     */
+                    $birthday = null;
+                }
+
+                load_libs('user');
+
                 /*
-                 * We got SOME info from an SSO login, but not the code, probably an error
+                 * Find account
+                 *
+                 * If account doesn't exist yet, then create it automatically
+                 *
+                 * If account does exist, update the account data with the
+                 * providers information
                  */
-                throw new bException('sso(): Provider "'.str_log($provider).'" redirected without code, probably an error. To avoid a redirect loop, this SSO has been canceled');
-            }
+                $user = sql_get('SELECT *
+
+                                 FROM   `users`
+
+                                 WHERE  `status` IS NULL
+                                 AND    `email`  = :email',
+
+                                 array(':email'  => $profile['email']));
+
+                if(!$user){
+                    /*
+                     * Account doesn't exist yet, create it first
+                     */
+                    $user = user_signup(array('name' => $profile['displayName'], 'email' => $profile['email']), true);
+                    $user = user_get($user);
+                }
+
+                /*
+                 * Update user account with provider profile data if local data
+                 * is not available yet
+                 */
+                sql_query('UPDATE `users` SET `phones`   = :phones   WHERE `id` = :id AND (`phones`   = "" OR `phones`   IS NULL)', array(':id' => $user['id'], ':phones'   => $profile['phone']));
+                sql_query('UPDATE `users` SET `avatar`   = :avatar   WHERE `id` = :id AND (`avatar`   = "" OR `avatar`   IS NULL)', array(':id' => $user['id'], ':avatar'   => $profile['photoURL']));
+                sql_query('UPDATE `users` SET `language` = :language WHERE `id` = :id AND (`language` = "" OR `language` IS NULL)', array(':id' => $user['id'], ':language' => $profile['language']));
+                sql_query('UPDATE `users` SET `birthday` = :birthday WHERE `id` = :id AND (`birthday` = "" OR `birthday` IS NULL)', array(':id' => $user['id'], ':birthday' => $birthday));
+                sql_query('UPDATE `users` SET `nickname` = :nickname WHERE `id` = :id AND (`nickname` = "" OR `nickname` IS NULL)', array(':id' => $user['id'], ':nickname' => $profile['displayName']));
+                sql_query('UPDATE `users` SET `name`     = :name     WHERE `id` = :id AND (`name`     = "" OR `name`     IS NULL)', array(':id' => $user['id'], ':name'     => $profile['displayName']));
+
+                /*
+                 * Store all provider profile data
+                 */
+                sql_query('INSERT INTO `users_social` (`users_id`, `provider`, `identifier`, `email`, `phones`, `avatar_url`, `profile_url`, `website_url`, `display_name`, `description`, `first_name`, `last_name`, `gender`, `language`, `age`, `birthday`, `country`, `region`, `city`, `zip`, `job`, `organization`)
+                           VALUES                     (:users_id , :provider , :identifier , :email , :phones , :avatar_url , :profile_url , :website_url , :display_name , :description , :first_name , :last_name , :gender , :language , :age , :birthday , :country , :region , :city , :zip , :job , :organization )
+
+                           ON DUPLICATE KEY UPDATE `modifiedon`   = NOW(),
+                                                   `users_id`     = :update_users_id,
+                                                   `provider`     = :update_provider,
+                                                   `identifier`   = :update_identifier,
+                                                   `email`        = :update_email,
+                                                   `phones`       = :update_phones,
+                                                   `avatar_url`   = :update_avatar_url,
+                                                   `profile_url`  = :update_profile_url,
+                                                   `website_url`  = :update_website_url,
+                                                   `display_name` = :update_display_name,
+                                                   `description`  = :update_description,
+                                                   `first_name`   = :update_first_name,
+                                                   `last_name`    = :update_last_name,
+                                                   `gender`       = :update_gender,
+                                                   `language`     = :update_language,
+                                                   `age`          = :update_age,
+                                                   `birthday`     = :update_birthday,
+                                                   `country`      = :update_country,
+                                                   `region`       = :update_region,
+                                                   `city`         = :update_city,
+                                                   `zip`          = :update_zip,
+                                                   `job`          = :update_job,
+                                                   `organization` = :update_organization',
+
+                           array(':users_id'            => $user['id'],
+                                 ':provider'            => $provider,
+                                 ':identifier'          => $profile['identifier'],
+                                 ':email'               => $profile['email'],
+                                 ':phones'              => $profile['phone'],
+                                 ':avatar_url'          => $profile['photoURL'],
+                                 ':profile_url'         => $profile['profileURL'],
+                                 ':website_url'         => $profile['webSiteURL'],
+                                 ':display_name'        => $profile['displayName'],
+                                 ':description'         => $profile['description'],
+                                 ':first_name'          => $profile['firstName'],
+                                 ':last_name'           => $profile['lastName'],
+                                 ':gender'              => $profile['gender'],
+                                 ':language'            => $profile['language'],
+                                 ':age'                 => $profile['age'],
+                                 ':birthday'            => $birthday,
+                                 ':country'             => $profile['country'],
+                                 ':region'              => $profile['region'],
+                                 ':city'                => $profile['city'],
+                                 ':zip'                 => $profile['zip'],
+                                 ':job'                 => $profile['job_title'],
+                                 ':organization'        => $profile['organization_name'],
+                                 ':update_users_id'     => $user['id'],
+                                 ':update_provider'     => $provider,
+                                 ':update_identifier'   => $profile['identifier'],
+                                 ':update_email'        => $profile['email'],
+                                 ':update_phones'       => $profile['phone'],
+                                 ':update_avatar_url'   => $profile['photoURL'],
+                                 ':update_profile_url'  => $profile['profileURL'],
+                                 ':update_website_url'  => $profile['webSiteURL'],
+                                 ':update_display_name' => $profile['displayName'],
+                                 ':update_description'  => $profile['description'],
+                                 ':update_first_name'   => $profile['firstName'],
+                                 ':update_last_name'    => $profile['lastName'],
+                                 ':update_gender'       => $profile['gender'],
+                                 ':update_language'     => $profile['language'],
+                                 ':update_age'          => $profile['age'],
+                                 ':update_birthday'     => $birthday,
+                                 ':update_country'      => $profile['country'],
+                                 ':update_region'       => $profile['region'],
+                                 ':update_city'         => $profile['city'],
+                                 ':update_zip'          => $profile['zip'],
+                                 ':update_job'          => $profile['job_title'],
+                                 ':update_organization' => $profile['organization_name']));
+
+                /*
+                 * Signin!
+                 */
+                user_signin($user, false, $redirect);
+
+                break;
+
+            case '':
+                throw new bException(tr('sso(): No method specified'), 'not-specified');
+
+            default:
+                throw new bException(tr('sso(): Unknown method ":method" specified', array(':method' => $method)), 'unknown');
+        }
+
+    }catch(Exception $e){
+showdie($e);
+        switch($e->getCode()){
+            case 0:
+                throw new bException(tr('sso(): Unspecified error'), $e);
+
+            case 1:
+                throw new bException(tr('sso(): Hybridauth configuration error'), $e);
+
+            case 2:
+                throw new bException(tr('sso(): Provider not properly configured'), $e);
+
+            case 3:
+                throw new bException(tr('sso(): Unknown or disabled provider'), $e);
+
+            case 4:
+                throw new bException(tr('sso(): Missing provider application credentials'), $e);
+
+            case 5:
+                throw new bException(tr('sso(): Authentication failed The user has canceled the authentication or the provider refused the connection'), $e);
+
+            case 6:
+                $result->logout();
+                throw new bException(tr('sso(): User profile request failed. Most likely the user is not connected to the provider and he should to authenticate again'), $e);
+
+            case 7:
+                $result->logout();
+                throw new bException(tr('sso(): User not connected to the provider'), $e);
+
+            case 8:
+                throw new bException(tr('sso(): Provider does not support this feature'), $e);
+
+            default:
+                throw new bException(tr('sso(): Failed'), $e);
+        }
+    }
+}
+
+
+
+/*
+ * Generate hybridauth configuration file, and return file name
+ */
+function sso_config($provider){
+    global $_CONFIG;
+
+    try{
+        $file = ROOT.'libs/external/hybridauth/config/'.ENVIRONMENT.'/'.$provider.'.php';
+
+        if(file_exists($file) and ($_CONFIG['sso']['cache_config'] and ((time() - filemtime($file)) > $_CONFIG['sso']['cache_config']))){
+            load_libs('file');
+            file_delete($file);
+        }
+
+        if(!file_exists($file)){
+            load_libs('file');
+
+// :DELETE: Delete this crap
+            //switch($provider){
+            //    case 'facebook':
+            //        $key    = 'id';
+            //        $secret = 'secret';
+            //        break;
+            //
+            //    case 'twitter':
+            //        $key    = 'key';
+            //        $secret = 'secret';
+            //        break;
+            //
+            //    case 'twitter':
+            //        $key    = 'key';
+            //        $secret = 'secret';
+            //        break;
+            //}
+
+            $config = array('base_url'  => $_CONFIG['sso'][$provider]['redirect'],
+                            'providers' => array(str_capitalize($provider) => array('enabled' => true,
+                                                                                    'keys'    => array()),
+
+                                                  /*
+                                                   * If you want to enable logging, set 'debug_mode' to true.
+                                                   * You can also set it to
+                                                   * - 'error' To log only error messages. Useful in production
+                                                   * - 'info' To log info and error messages (ignore debug messages)
+                                                   */
+                                                  'debug_mode'             => true,
+                                                  /*
+                                                   * Path to file writable by the web server. Required if 'debug_mode' is not false
+                                                   */
+                                                  'debug_file'             => ROOT.'data/log/sso-'.ENVIRONMENT.'-'.$provider));
 
             /*
-             * Not authenticated yet, do so now
+             * Add provider specific data
              */
             switch($provider){
-                case 'twitter':
-                    load_libs('twitter');
-                    $code = twitter_get_bearer_token();
-                    break;
-
                 case 'facebook':
-                    load_libs('facebook');
-                    facebook_signin();
+                    $config['providers'][str_capitalize($provider)]['scope']                  = $_CONFIG['sso'][$provider]['scope'];
+                    $config['providers'][str_capitalize($provider)]['keys']['id']             = $_CONFIG['sso'][$provider]['appid'];
+                    $config['providers'][str_capitalize($provider)]['keys']['secret']         = $_CONFIG['sso'][$provider]['secret'];
+                    $config['providers'][str_capitalize($provider)]['keys']['trustForwarded'] = false;
+
                     break;
 
                 case 'google':
-//                    $oauth->client_id .= '&access_type=offline';
-                    // FALLTHROUGH
+                    $config['providers'][str_capitalize($provider)]['includeEmail']   = true;
+                    $config['providers'][str_capitalize($provider)]['keys']['id']     = $_CONFIG['sso'][$provider]['appid'];
+                    $config['providers'][str_capitalize($provider)]['keys']['secret'] = $_CONFIG['sso'][$provider]['secret'];
+                    break;
+
+                case 'twitter':
+                    $config['providers'][str_capitalize($provider)]['includeEmail']   = true;
+                    $config['providers'][str_capitalize($provider)]['keys']['key']    = $_CONFIG['sso'][$provider]['appid'];
+                    $config['providers'][str_capitalize($provider)]['keys']['secret'] = $_CONFIG['sso'][$provider]['secret'];
+                    break;
 
                 default:
-                    $oauth->Authorize();
-                    die();
-            }
-        }
-
-        /*
-         * Add provider and code
-         */
-        $retval['provider'] = $provider;
-        $retval['code']     = $code;
-        $retval['data']     = array();
-
-        switch($provider){
-            case 'paypal':
-                /*
-                 * Seems like paypal "strangely" has no token.. Why not? Why do they not let me control your bank account? bunch of assholes..
-                 */
-                $retval['data']  = sso_get_profile($oauth, $code);
-                $retval['token'] = false;
-
-                break;
-
-            case 'facebook':
-                /*
-                 * Cleanup
-                 */
-                load_libs('facebook');
-
-                $retval['data']   = facebook_signin();
-                $retval['token']  = $retval['data']['token'];
-
-                if(empty($retval['data']['email'])){
-                    throw new bException('sso(): facebook_signin() data did not contain an email.', 'noemail');
-                }
-
-                unset($retval['data']['token']);
-                break;
-
-            case 'google':
-                /*
-                 * Cleanup
-                 */
-                $retval['data'] = sso_get_profile($oauth, $code);
-
-                if(!empty($retval['data']['data'])){
-                    $retval['data'] = $retval['data']['data'];
-                }
-
-// IMPLEMENT!!! Get correct grant
-                $retval['token'] = sso_get_token($oauth, $provider);
-                break;
-
-            case 'microsoft':
-                /*
-                 * Cleanup
-                 */
-                $retval['data'] = sso_get_profile($oauth, $code);
-
-                if(!empty($retval['data']['data'])){
-                    $retval['data'] = $retval['data']['data'];
-                }
-
-                if(!empty($retval['data']['emails']['data'])){
-                    $retval['data']['emails'] = $retval['data']['emails']['data'];
-                }
-
-                /*
-                 * Try to get email from the microsoft mess
-                 */
-                if(empty($retval['data']['email'])){
-                    if(!empty($retval['data']['emails']['preferred'])){
-                        $retval['data']['email'] = $retval['data']['emails']['preferred'];
-
-                    }elseif(!empty($retval['data']['emails']['account'])){
-                        $retval['data']['email'] = $retval['data']['emails']['account'];
-
-                    }elseif(!empty($retval['data']['emails']['personal'])){
-                        $retval['data']['email'] = $retval['data']['emails']['personal'];
-
-                    }elseif(!empty($retval['data']['emails']['business'])){
-                        $retval['data']['email'] = $retval['data']['emails']['business'];
-
-                    }else{
-                        $retval['data']['email'] = '';
-                    }
-                }
-
-                $retval['token'] = sso_get_token($oauth, $provider);
-                break;
-
-            default:
-                $retval['data']  = sso_get_profile($oauth, $code);
-                $retval['token'] = sso_get_token($oauth, $provider);
-        }
-
-        /*
-         * Make sure we have the user in the users table with its email address, linked to the current provider.
-         */
-        if(!$user = sql_get('SELECT `id` FROM `users` WHERE (`email` = "'.cfm($retval['data']['email']).'") OR (`'.$prefix.'_id` = '.cfi($retval['data']['id']).')')){
-            /*
-             * This user does not yet exist
-             */
-            if($provider == 'microsoft'){
-                sql_query('INSERT INTO `users`     (`email`, `name`, `'.$prefix.'_id`, `'.$prefix.'_token_authentication`, `'.$prefix.'_token_access`)
-
-                           VALUES                  ("'.$retval['data']['email'].'", "'.(empty($retval['data']['name']) ? '' : $retval['data']['name']).'", "'.$retval['data']['id'].'", "'.$retval['token']['authentication_token'].'", "'.$retval['token']['access_token'].'")');
-
-            }else{
-                sql_query('INSERT INTO `users`     (`email`, `'.$prefix.'_id`, `'.$prefix.'_token`)
-
-                           VALUES                  ("'.$retval['data']['email'].'", "'.$retval['data']['id'].'", "'.$retval['token'].'")');
+                    throw new bException(tr('sso(): Unknown provider ":provider" specified', array(':provider' => $provider)), 'unknown');
             }
 
-            /*
-             * Get the user data
-             */
-            $user = sql_get('SELECT * FROM `users` WHERE `id` = '.sql_insert_id());
+            $path = ROOT.'libs/external/hybridauth/config/'.ENVIRONMENT.'/';
 
-        }else{
-            /*
-             * This user already exists
-             */
-            if($provider == 'microsoft'){
-                sql_query('UPDATE `users`
+            file_ensure_path($path);
+            chmod($path, 0700);
 
-                           SET    `'.$prefix.'_id`                   = "'.$retval['data']['id'].'",
-                                  `'.$prefix.'_token_authentication` = "'.$retval['token']['authentication_token'].'",
-                                  `'.$prefix.'_token_access`         = "'.$retval['token']['access_token'].'"
-
-                           WHERE  `id`                               = '.cfi($user['id']));
-
-            }else{
-                sql_query('UPDATE `users`
-
-                           SET    `'.$prefix.'_id`                   = "'.$retval['data']['id'].'",
-                                  `'.$prefix.'_token`                = "'.$retval['token'].'"
-
-                           WHERE  `id`                               = '.cfi($user['id']));
-            }
-
-            /*
-             * Get the user data
-             */
-            $user = sql_get('SELECT * FROM `users` WHERE `id` = '.cfi($user['id']));
+            file_put_contents($file, '<?php return '.var_export($config, true).'; ?>');
+            chmod($file, 0440);
+            chmod($path, 0550);
         }
 
-        user_signin($user);
+        return $file;
 
     }catch(Exception $e){
-        throw new bException('sso(): Failed', $e);
-    }
-}
-
-
-
-/*
- * Get the SSO token
- */
-function sso_get_token($oauth, $provider){
-    try{
-        load_libs('json');
-        $retval = json_decode_custom($oauth->getAccessToken());
-
-        if(!empty($retval->error)){
-            if(is_object($retval->error)){
-                throw new bException('sso_get_token(): Provider "'.str_log($provider).'" returned error "'.str_log($retval->error->code).'" with message "'.str_log($retval->error->message).'"');
-            }
-
-            throw new bException('sso_get_token(): Provider "'.str_log($provider).'" returned error "'.str_log($retval->error).'"');
-        }
-
-        $retval = array_from_object($retval);
-
-        if(!empty($retval['data'])){
-            $retval = $retval['data'];
-        }
-
-        return $retval;
-
-    }catch(Exception $e){
-        throw new bException('sso_get_token(): Failed', $e);
-    }
-}
-
-
-
-/*
- * Get and return user profile
- */
-function sso_get_profile($oauth, $code){
-    try{
-        /*
-         * We are authenticated, get data
-         */
-        $oauth->code = $code;
-        $profile     = $oauth->getUserProfile();
-
-        $profile     = json_decode_custom($profile);
-
-        if(is_object($profile)){
-            return array_from_object($profile);
-        }
-
-        return $profile;
-
-    }catch(Exception $e){
-        throw new bException('sso_get_profile(): Failed', $e);
+        throw new bException(tr('sso_config(): Failed'), $e);
     }
 }
 
@@ -318,22 +340,11 @@ function sso_get_profile($oauth, $code){
 function sso_fail($message, $redirect = null){
     try{
         load_libs('html');
-
-        if(!$redirect){
-            $redirect = 'index.php';
-        }
-
         html_flash_set($message, 'error');
 
-        if(!empty($_SESSION['sso_referrer'])){
-            $referrer = $_SESSION['sso_referrer'];
-            unset($_SESSION['sso_referrer']);
-
-        }else{
-            $referrer = $redirect;
+        if(empty($redirect)){
+            page_show(500);
         }
-
-        redirect($referrer);
 
     }catch(Exception $e){
         page_show(500);
