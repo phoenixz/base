@@ -959,11 +959,11 @@ function user_create($params){
 /*
  * Add a new user
  */
-function user_signup($params){
+function user_signup($params, $no_password = false){
     global $_CONFIG;
 
     try{
-        if(empty($params['password']) and (isset_get($params['status']) !== '_new')){
+        if(empty($params['password']) and (isset_get($params['status']) !== '_new') and !$no_password){
             throw new bException(tr('user_signup(): Please specify a password'), 'not-specified');
         }
 
@@ -974,7 +974,7 @@ function user_signup($params){
                          ':username'  => get_null(isset_get($params['username'])),
                          ':status'    => isset_get($params['status']),
                          ':name'      => isset_get($params['name']),
-                         ':password'  => ((isset_get($params['status']) === '_new') ? '' : get_hash($params['password'], $_CONFIG['security']['passwords']['hash'])),
+                         ':password'  => (empty($params['password']) ? '' :((isset_get($params['status']) === '_new') ? '' : get_hash($params['password'], $_CONFIG['security']['passwords']['hash']))),
                          ':email'     => get_null(isset_get($params['email'])),
                          ':role'      => get_null(isset_get($params['role'])),
                          ':roles_id'  => get_null(isset_get($params['roles_id']))));
