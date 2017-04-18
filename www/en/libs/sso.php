@@ -243,8 +243,8 @@ function sso_config($provider){
     global $_CONFIG;
 
     try{
-        $file = ROOT.'libs/external/hybridauth/config/'.ENVIRONMENT.'/'.$provider.'.php';
-        $path = ROOT.'libs/external/hybridauth/config/'.ENVIRONMENT.'/';
+        $path = ROOT.'data/cache/sso/'.ENVIRONMENT.'/';
+        $file = $path.$provider.'.php';
 
         if(file_exists($file) and ($_CONFIG['sso']['cache_config'] and ((time() - filemtime($file)) > $_CONFIG['sso']['cache_config']))){
             chmod($path, 0700);
