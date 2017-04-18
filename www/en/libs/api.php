@@ -212,7 +212,6 @@ function api_authenticate($apikey){
             session_destroy();
         }
 
-        session_start();
         session_regenerate_id();
         session_reset_domain();
 
