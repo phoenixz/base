@@ -244,8 +244,12 @@ function sso_config($provider){
 
     try{
         $file = ROOT.'libs/external/hybridauth/config/'.ENVIRONMENT.'/'.$provider.'.php';
+        $path = ROOT.'libs/external/hybridauth/config/'.ENVIRONMENT.'/';
 
         if(file_exists($file) and ($_CONFIG['sso']['cache_config'] and ((time() - filemtime($file)) > $_CONFIG['sso']['cache_config']))){
+            chmod($path, 0700);
+            chmod($file, 0660);
+
             load_libs('file');
             file_delete($file);
         }
@@ -314,8 +318,6 @@ function sso_config($provider){
                 default:
                     throw new bException(tr('sso(): Unknown provider ":provider" specified', array(':provider' => $provider)), 'unknown');
             }
-
-            $path = ROOT.'libs/external/hybridauth/config/'.ENVIRONMENT.'/';
 
             file_ensure_path($path);
             chmod($path, 0700);
