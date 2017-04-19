@@ -85,11 +85,13 @@ switch(cli_method()){
 
                             FROM   `users`
 
-                            WHERE (`id`       = :user
-                            OR     `username` = :user
-                            OR     `email`    = :user)'.$where,
+                            WHERE (`id`       = :id
+                            OR     `username` = :username
+                            OR     `email`    = :email)'.$where,
 
-                            array(':user' => $users_id));
+                            array(':id'       => $users_id,
+                                  ':username' => $users_id,
+                                  ':email'    => $users_id));
 
         if(!$db_user){
             throw new bException(tr('Specified user ":user" does not exist', array(':user' => $users_id)), 'not-exist');
@@ -141,30 +143,39 @@ switch(cli_method()){
         /*
          * Get arguments by keyword
          */
-        $role = cli_argument('--role', true);
-        $user = cli_argument('--user', true);
+        $specified_role = cli_argument('--role', true);
+        $specified_user = cli_argument('--user', true);
 
-        if(!$role and !$user){
+        if(!$specified_role and !$specified_user){
             /*
              * Get arguments by order
              */
-            $role = cli_argument(1);
-            $user = cli_argument(2);
+            $specified_user = cli_argument(1);
+            $specified_role = cli_argument(2);
         }
 
         cli_no_arguments_left();
 
-        if(!$user){
+        if(!$specified_user){
             throw new bException(tr('No user specified'), 'not-specified');
         }
 
-        $user = user_get($user);
+        $user = user_get($specified_user);
 
-        if(!$role){
+        if(!$user){
+            throw new bException(tr('Specified user ":user" does not exist', array(':user' => $specified_user)), 'not-exist');
+        }
+
+        if(!$specified_role){
             throw new bException(tr('No role specified for user ":user"', array(':user' => $user)), 'not-specified');
         }
 
-        $role             = roles_get($role, 'id,name');
+        $role = roles_get($specified_role, 'id,name');
+
+        if(!$role){
+            throw new bException(tr('Specified role ":role" does not exist', array(':role' => $specified_role)), 'not-exist');
+        }
+
         $user['roles_id'] = $role['id'];
 
         sql_query('UPDATE `users`
@@ -222,16 +233,16 @@ switch(cli_method()){
                 cli_log(tr('#id    Username     Status     Rights'), 'cyan');
 
                 while($user = sql_fetch($r)){
-                    $rights = sql_list('SELECT    `rights`.`name`
+                    $rights = sql_list('SELECT `rights`.`name`
 
-                                        FROM      `roles_rights`
+                                        FROM   `roles_rights`
 
-                                        JOIN      `rights`
-                                        ON        `rights`.`id` = `roles_rights`.`rights_id`
+                                        JOIN   `rights`
+                                        ON     `rights`.`id` = `roles_rights`.`rights_id`
 
-                                        AND       `roles_id` = :roles_id',
+                                        AND    `roles_id`    = :roles_id',
 
-                                        array(':roles_id' => $user['roles_id']));
+                                        array(':roles_id'    => $user['roles_id']));
 
                     cli_log(str_size($user['id'], 6, ' ', true).' '.str_size($user['username'], 12).' '.str_size(status($user['status']), 10).' '.str_force($rights, ', '));
                 }
