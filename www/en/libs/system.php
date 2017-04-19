@@ -1131,6 +1131,10 @@ function rights_or_access_denied($rights){
             return $_SESSION['user'];
         }
 
+        if(in_array('admin', array_force($rights))){
+            redirect(domain($_CONFIG['redirects']['signin']));
+        }
+
         page_show($_CONFIG['redirects']['accessdenied']);
 
     }catch(Exception $e){
@@ -1553,6 +1557,10 @@ function is_natural($number, $start = 1){
  */
 function is_new($entry){
     try{
+        if(!is_array($entry)){
+            throw new bException(tr('is_new(): Specified entry is not an array'), 'invalid');
+        }
+
         if(isset_get($entry['status']) === '_new'){
             return true;
         }
