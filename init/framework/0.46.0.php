@@ -120,7 +120,4 @@ sql_query('CREATE FUNCTION BASE_DISTANCE (latA DOUBLE, lonA DOUBLE, latB DOUBLE,
                    COS(@RlatA) * COS(@RlatB) * SIN(@deltaLon / 2) * SIN(@deltaLon / 2);
                RETURN 2 * ASIN(SQRT(@d)) * 6371.01;
            END');
-
-
-
 ?>
