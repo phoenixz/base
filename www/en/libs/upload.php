@@ -378,16 +378,6 @@ function upload_check_files($max_uploads = null, $min_uploads = null){
     try{
         if(debug()){
             $errors = array(UPLOAD_ERR_OK         => tr('ok'),
-                            UPLOAD_ERR_INI_SIZE   => tr('The uploaded file is too large'),
-                            UPLOAD_ERR_FORM_SIZE  => tr('The uploaded file is too large'),
-                            UPLOAD_ERR_PARTIAL    => tr('The file upload failed, please try again'),
-                            UPLOAD_ERR_NO_FILE    => tr('The file upload failed, please try again'),
-                            UPLOAD_ERR_NO_TMP_DIR => tr('The server cannot accepts file uploads right now. Please try again later'),  // 6 This will give a notification to us!
-                            UPLOAD_ERR_CANT_WRITE => tr('The server cannot accepts file uploads right now. Please try again later'),  // 7 This will give a notification to us!
-                            UPLOAD_ERR_EXTENSION  => tr('The server cannot accepts file uploads right now. Please try again later')); // 8 This will give a notification to us!
-
-        }else{
-            $errors = array(UPLOAD_ERR_OK         => tr('ok'),
                             UPLOAD_ERR_INI_SIZE   => tr('The uploaded file exceeds the upload_max_filesize directive in php.ini'),
                             UPLOAD_ERR_FORM_SIZE  => tr('The uploaded file exceeds the MAX_FILE_SIZE directive that was specified in the HTML form'),
                             UPLOAD_ERR_PARTIAL    => tr('The uploaded file was only partially uploaded'),
@@ -395,6 +385,16 @@ function upload_check_files($max_uploads = null, $min_uploads = null){
                             UPLOAD_ERR_NO_TMP_DIR => tr('Missing a temporary folder'),               // 6 This will give a notification to us!
                             UPLOAD_ERR_CANT_WRITE => tr('Failed to write file to disk'),             // 7 This will give a notification to us!
                             UPLOAD_ERR_EXTENSION  => tr('A PHP extension stopped the file upload')); // 8 This will give a notification to us!
+
+        }else{
+            $errors = array(UPLOAD_ERR_OK         => tr('ok'),
+                            UPLOAD_ERR_INI_SIZE   => tr('The uploaded file is too large'),
+                            UPLOAD_ERR_FORM_SIZE  => tr('The uploaded file is too large'),
+                            UPLOAD_ERR_PARTIAL    => tr('The file upload failed, please try again'),
+                            UPLOAD_ERR_NO_FILE    => tr('The file upload failed, please try again'),
+                            UPLOAD_ERR_NO_TMP_DIR => tr('The server cannot accepts file uploads right now. Please try again later'),  // 6 This will give a notification to us!
+                            UPLOAD_ERR_CANT_WRITE => tr('The server cannot accepts file uploads right now. Please try again later'),  // 7 This will give a notification to us!
+                            UPLOAD_ERR_EXTENSION  => tr('The server cannot accepts file uploads right now. Please try again later')); // 8 This will give a notification to us!
         }
 
         /*
@@ -442,7 +442,7 @@ function upload_check_files($max_uploads = null, $min_uploads = null){
                 throw new bException(tr('upload_check_files(): Multiple file uploads are not allowed'), 'multiple');
             }
 
-            throw new bException(tr('upload_check_files(): $_FILES contains "%count%" which is more than the maximum of "%max%"', array('%count%' => $count, '%max%' => str_log($max_uploads))), 'toomany');
+            throw new bException(tr('upload_check_files(): $_FILES contains ":count" which is more than the maximum of ":max"', array(':count' => $count, ':max' => str_log($max_uploads))), 'toomany');
         }
 
         if($min_uploads and ($count < $min_uploads)){
@@ -450,7 +450,7 @@ function upload_check_files($max_uploads = null, $min_uploads = null){
                 throw new bException(tr('upload_check_files(): No files were uploaded'), 'none');
             }
 
-            throw new bException(tr('upload_check_files(): $_FILES contains "%count%" which less more than the minimum of "%min%"', array('%count%' => $count, '%min%' => str_log($min_uploads))), 'toofew');
+            throw new bException(tr('upload_check_files(): $_FILES contains ":count" which less more than the minimum of ":min"', array(':count' => $count, ':min' => str_log($min_uploads))), 'toofew');
         }
 
         /*
@@ -477,7 +477,7 @@ function upload_check_files($max_uploads = null, $min_uploads = null){
         }
 
         unset($value);
-        return true;
+        return false;
 
     }catch(Exception $e){
         throw new bException('upload_check_files(): Failed', $e);
