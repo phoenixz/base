@@ -3,17 +3,180 @@
 /*
  * This script can create new users
  */
-$usage = "./scripts/base/users list\n".
-         "./scripts/base/users list [--with-right RIGHT] [-r RIGHT] \n".
-         "./scripts/base/users create --username USERNAME --name REALNAME --email EMAIL --password PASSWORD [--latitude LATITUDE] [--longitude LONGITUDE] [--status STATUS] [--type TYPE] [--redirect URL] [--domain DOMAIN]\n".
-         "./scripts/base/users modify ID|USERNAME [--username USERNAME] [--name NAME] [--email EMAIL] [--latitude LATITUDE] [--longitude LONGITUDE] [--status STATUS] [--type TYPE] [--redirect URL] [--domain DOMAIN] \n".
-         "./scripts/base/users password ID|USERNAME PASSWORD\n".
-         "./scripts/base/users delete|undelete|erase ID|USERNAME ID|USERNAME ...\n".
-         "./scripts/base/users whoami\n".
-         "./scripts/base/users set-role USERID|USERNAME ROLEID|ROLENAME\n".
-         "./scripts/base/users set-role --user USERID|USERNAME --role ROLEID|ROLENAME\n";
+$usage = './scripts/base/users list
+./scripts/base/users list [--right RIGHT] [-r RIGHT]
+./scripts/base/users create --username USERNAME --name REALNAME --email EMAIL --password PASSWORD [--latitude LATITUDE] [--longitude LONGITUDE] [--status STATUS] [--type TYPE] [--redirect URL] [--domain DOMAIN]
+./scripts/base/users modify ID|USERNAME [--username USERNAME] [--name NAME] [--email EMAIL] [--latitude LATITUDE] [--longitude LONGITUDE] [--status STATUS] [--type TYPE] [--redirect URL] [--domain DOMAIN]
+./scripts/base/users password ID|USERNAME PASSWORD
+./scripts/base/users delete|undelete|erase ID|USERNAME ID|USERNAME ...
+./scripts/base/users whoami
+./scripts/base/users set-role USERID|USERNAME ROLEID|ROLENAME
+./scripts/base/users set-role --user USERID|USERNAME --role ROLEID|ROLENAME';
 
-$help  = "This is the users management script";
+$help  = 'This is the users management script
+
+METHODS
+
+list                            - List currently available users. By default the
+                                  system will only limit 200 users. It\'s
+                                  possible to filter users by id, type, name,
+                                  username, nickname, or email (See --filters).
+                                  By default, users with status not "null" are
+                                  not shown.
+
+    list specific ARGUMENTS
+
+    --show-rights               - Show the list of available rights for each
+                                  user
+
+    -f --filter --filters       - [list] General filter for the  displayed user
+                                  list, filters on id, name, username, and
+                                  nickname
+
+    -t --type                   - [list] Filter the user list by the specified
+                                  type
+
+    -s --status                 - [list] Filter the user list by the specified
+                                  status
+
+    -d --deleted                - [list] Show only deleted users
+
+    -a --all                    - [list] Show users with all possible status
+
+    -e --email                  - [list] Filter by specified (part of) email
+
+    -n --name                   - [list] Filter by specified (part of) name
+
+    -u --username               - [list] Filter by specified (part of) username
+
+    -r --right                  - [list] Filter by users that have specified
+                                  (part of) rights name
+
+    -l --limit                  - [list] Limit the amount of users to the
+                                  specified number. Must be a natural number
+                                  1-5000, defaults to 100
+
+
+
+create                          - Create a new user. It\'s possible to specify
+                                  the columns name, username, nickname, email,
+                                  password, latitude, longitude, status, type,
+                                  redirect, domain
+
+    create specific ARGUMENTS
+
+    --name                      - The real user name (e.g. John Doe)
+
+    --username                  - The user\'s username (e.g. john), cannot
+                                  contain spaces, lowercase only
+
+    --nickname                  - The user\'s nickname (e.g. Phoenixz)
+
+    --email                     - The user\'s email (e.g. info@ingiga.com)
+
+    --password                  - The user\'s password
+
+    --longitude                 - The user\'s latitude location (e.g.
+                                  19.0437505)
+
+    --latitude                  - The user\'s latitude location (e.g.
+                                  -98.1993234)
+
+    --status                    - The user\'s status. Do not specify for "null",
+                                  other options are "deleted" or any value
+                                  required for your project. NOTE: Status "null"
+                                  is normally considered "normal" and users with
+                                  this status will be available everywhere, can
+                                  login, etc. Users with status not "null" will
+                                  not be able to login, will usually not show up
+                                  on user lists, etc.
+
+    --redirect                  - URL. If specified, when the user signs in, it
+                                  will always be redirected to the specified URL
+
+    --domain                    - FQDN. Should only be used when whitelabel
+                                  system is enabled. If specified, the user will
+                                  only be able to sign in on this domain
+
+
+
+modify                          - Modify the specified user. Users can be
+                                  specified by id, username, or email. It\'s
+                                  possible to update the username, name,
+                                  nickname, email, phones, longitude, latitude,
+                                  domain or redirect.
+
+    modify specific ARGUMENTS
+
+    --name                      - The real user name (e.g. John Doe)
+
+    --username                  - The user\'s username (e.g. john), cannot
+                                  contain spaces, lowercase only
+
+    --nickname                  - The user\'s nickname (e.g. Phoenixz)
+
+    --email                     - The user\'s email (e.g. info@ingiga.com)
+
+    --password                  - The user\'s password
+
+    --longitude                 - The user\'s latitude location (e.g.
+                                  19.0437505)
+
+    --latitude                  - The user\'s latitude location (e.g.
+                                  -98.1993234)
+
+    --redirect                  - URL. If specified, when the user signs in, it
+                                  will always be redirected to the specified URL
+
+    --domain                    - FQDN. Should only be used when whitelabel
+                                  system is enabled. If specified, the user will
+                                  only be able to sign in on this domain
+
+
+
+password                        - Update the password for the specified user.
+                                  Users can be specified by id, username, or
+                                  email
+
+delete                          - Delete specified users. Users can be specified
+                                  by id, username, or email. NOTE: Deleting a
+                                  user will set the user\'s status to "deleted",
+                                  nothing more. With this status though, users
+                                  will no longer be able to sign in, nor will
+                                  they show up on most lists or be used in
+                                  automated systems like mailing lists
+
+undelete                        - Undelete specified users. Users can be
+                                  specified by id, username, or email. NOTE:
+                                  Undeleting a user will set the user\'s status
+                                  to "null", nothing more. With this status
+                                  though, userswill be able to sign in again,
+                                  show up on most lists or be used in
+                                  automated systems like mailing lists
+
+erase                           - Erase specified users. Users can be specified
+                                  by id, username, or email. NOTE: Erasing a
+                                  user will really physically remove a user from
+                                  the database. NOTE: Since the database will
+                                  usually have many table columns pointing
+                                  towards their entry with foreign keys applied,
+                                  it is usually near impossible to erase a user.
+                                  This is why, usually, it is enough to just
+                                  delete the user
+
+whoami                          -
+
+set-role                        - Set the specified rol for the specified user.
+                                  Users can be specified by id, username, or
+                                  email. Rights can be specified by id or name.
+
+
+
+
+
+GENERAL ARGUMENTS
+
+None';
 
 require_once(dirname(__FILE__).'/../../libs/startup.php');
 
@@ -21,18 +184,19 @@ load_libs('user');
 
 switch(cli_method()){
     case 'create':
-        $user = cli_arguments('--name,--email,--username,--password,--latitude,--longitude,--status,--type,--role,--type,--redirect,--domain');
+        $user = cli_arguments('--name,--email,--username,--nickname,--password,--latitude,--longitude,--status,--type,--role,--type,--redirect,--domain');
         $user = users_validate($user, array('validation_password' => false));
 
         cli_no_arguments_left();
 
-        sql_query('INSERT INTO `users` (`createdby`, `name`, `roles_id`, `role`, `email`, `username`, `password`, `latitude`, `longitude`, `status`, `type`, `validated`, `redirect`, `domain`)
-                   VALUES              (:createdby , :name , :roles_id , :role , :email , :username , :password , :latitude , :longitude , :status , :type , :validated , :redirect , :domain )',
+        sql_query('INSERT INTO `users` (`createdby`, `name`, `roles_id`, `role`, `email`, `username`, , `nickname`, `password`, `latitude`, `longitude`, `status`, `type`, `validated`, `redirect`, `domain`)
+                   VALUES              (:createdby , :name , :roles_id , :role , :email , :username , , :nickname , :password , :latitude , :longitude , :status , :type , :validated , :redirect , :domain )',
 
                    array(':createdby' => isset_get($_SESSION['user']['id']),
                          ':roles_id'  => $user['roles_id'],
                          ':role'      => $user['role'],
                          ':name'      => $user['name'],
+                         ':nickname'  => $user['nickname'],
                          ':email'     => $user['email'],
                          ':username'  => $user['username'],
                          ':password'  => get_hash($user['password'], $_CONFIG['security']['passwords']['hash']),
@@ -57,7 +221,7 @@ switch(cli_method()){
             $v->setError(tr('No user specified'));
         }
 
-        $user = cli_arguments('--name,--email,--username,--latitude,--longitude,--redirect,--domain');
+        $user = cli_arguments('--name,--email,--username,--latitude,--longitude,--redirect,--domain,--nickname');
         cli_no_arguments_left();
 
         /*
@@ -77,6 +241,7 @@ switch(cli_method()){
 
         $db_user = sql_get('SELECT `id`,
                                    `username`,
+                                   `nickname`,
                                    `name`,
                                    `email`,
                                    `status`,
@@ -110,6 +275,7 @@ switch(cli_method()){
                         SET    `name`      = :name,
                                `email`     = :email,
                                `username`  = :username,
+                               `nickname`  = :nickname,
                                `latitude`  = :latitude,
                                `longitude` = :longitude,
                                `redirect`  = :redirect,
@@ -120,6 +286,7 @@ switch(cli_method()){
                         array(':name'      => $user['name'],
                               ':email'     => $user['email'],
                               ':username'  => $user['username'],
+                              ':nickname'  => $user['nickname'],
                               ':latitude'  => $user['latitude'],
                               ':longitude' => $user['longitude'],
                               ':redirect'  => $user['redirect'],
@@ -192,45 +359,138 @@ switch(cli_method()){
         break;
 
     case 'list':
-        $show_rights = cli_argument('-r') or cli_argument('--show-rights');
+        $show_rights = cli_argument('--show-rights');
+        $deleted     = cli_argument('-d') or cli_argument('--deleted');
+        $all         = cli_argument('-a') or cli_argument('--all');
 
-        cli_no_arguments_left();
+        $type        = not_empty(cli_argument('-t', true), cli_argument('--type'    , true));
+        $status      = not_empty(cli_argument('-s', true), cli_argument('--status'  , true), null);
+        $limit       = not_empty(cli_argument('-l', true), cli_argument('--limit'   , true), 100);
+        $email       = not_empty(cli_argument('-e', true), cli_argument('--email'   , true));
+        $name        = not_empty(cli_argument('-n', true), cli_argument('--name'    , true));
+        $username    = not_empty(cli_argument('-u', true), cli_argument('--username', true));
+        $right       = cli_argument('-r') or cli_argument('--show-rights');
 
-        if($show_rights){
-            cli_log(tr('Showing rights for users'));
+        $filters     = not_empty(cli_argument('-f', true), cli_argument('--filter', true), cli_argument('--filters', true));
+        $filters     = array_merge(array_force($filters), $argv);
 
-            $limit   = 200;
+        $execute     = array();
 
-            $query   = 'SELECT    `users`.`id`,
-                                  `users`.`username`,
-                                  `users`.`email`,
-                                  `users`.`status`,
-                                  `users`.`roles_id`
+        if(!is_natural($limit) or (!$limit > 5000)){
+            throw new bException(tr('--limit must be followed by a natural number lower than 5000'), 'invalid');
+        }
 
-                        FROM      `users`';
+        if($status and $deleted and $all){
+            throw new bException(tr('--deleted, --status, and --all cannot be used together. Use only one of the three'), 'invalid');
+        }
 
-            $execute = array();
+        if($status and $deleted){
+            throw new bException(tr('--status, --deleted cannot be used together. Use only one of the two'), 'invalid');
+        }
 
+        if($status and $all){
+            throw new bException(tr('--status, --all cannot be used together. Use only one of the two'), 'invalid');
+        }
+
+        if($deleted and $all){
+            throw new bException(tr('--deleted, --all cannot be used together. Use only one of the two'), 'invalid');
+        }
+
+        if($deleted){
+            $where[] = ' `users`.`status` = "deleted" ';
+
+        }elseif($status){
+            $where[] = ' `users`.`status` = :status ';
+            $execute[':status'] = $status;
+
+        }elseif(!$all){
+            $where[] = ' `users`.`status` IS NULL ';
+        }
+
+        if($type){
+            $where[] = ' `users`.`type` = :type ';
+            $execute[':type'] = $type;
+
+        }else{
             /*
              * Consider only users with a specific type as real users?
              */
             if($_CONFIG['users']['type_filter'] !== false){
                 if($_CONFIG['users']['type_filter'] === null){
-                    $query           .= ' WHERE `users`.`type` IS NULL';
+                    $where[]         .= ' `users`.`type` IS NULL';
 
                 }else{
-                    $query           .= ' WHERE `users`.`type` = :type';
+                    $where[]         .= ' `users`.`type` = :type';
                     $execute[':type'] = $_CONFIG['users']['type_filter'];
                 }
             }
+        }
 
-            $r = sql_query($query.($limit ? ' LIMIT '.$limit : ''));
+        if($name){
+            $where[] = ' (`users`.`name` LIKE :name OR `users`.`nickname` LIKE :nickname) ';
+
+            $execute[':name']     = '%'.$name.'%';
+            $execute[':nickname'] = '%'.$name.'%';
+        }
+
+        if($username){
+            $where[] = ' `users`.`username` LIKE :username ';
+
+            $execute[':username'] = '%'.$username.'%';
+        }
+
+        if($email){
+            $where[] = ' `users`.`email` LIKE :email ';
+
+            $execute[':email'] = '%'.$email.'%';
+        }
+
+        if($filters){
+            $count = 0;
+
+            foreach($filters as $filter){
+                $list[] = ' `users`.`name`     LIKE :name'.$count.' ';
+                $list[] = ' `users`.`email`    LIKE :email'.$count.' ';
+                $list[] = ' `users`.`username` LIKE :username'.$count.' ';
+                $list[] = ' `users`.`nickname` LIKE :nickname'.$count.' ';
+
+                $execute[':name'.$count]     = '%'.$filter.'%';
+                $execute[':email'.$count]    = '%'.$filter.'%';
+                $execute[':username'.$count] = '%'.$filter.'%';
+                $execute[':nickname'.$count] = '%'.$filter.'%';
+
+                $count++;
+            }
+
+            if(!empty($list)){
+                $where[] = ' ('.implode(' OR ', $list).') ';
+            }
+        }
+
+        if($show_rights){
+            cli_log(tr('Showing rights for users'));
+
+            $query   = 'SELECT    `users`.`id`,
+                                  `users`.`username`,
+                                  `users`.`nickname`,
+                                  `users`.`email`,
+                                  `users`.`status`,
+                                  `users`.`roles_id`,
+                                  `users`.`role`
+
+                        FROM      `users`';
+
+            if(!empty($where)){
+                $where = ' WHERE '.implode(' AND ', $where);
+            }
+
+            $r = sql_query($query.$where.($limit ? ' LIMIT '.$limit : ''), $execute);
 
             if(!$r->rowCount()){
                 cli_log(tr('There are currently no users registered'), 'yellow');
 
             }else{
-                cli_log(tr('#id    Username     Status     Rights'), 'cyan');
+                cli_log(tr('#id    Username     Nickname     Status     Role       Rights'), 'cyan');
 
                 while($user = sql_fetch($r)){
                     $rights = sql_list('SELECT `rights`.`name`
@@ -244,16 +504,15 @@ switch(cli_method()){
 
                                         array(':roles_id'    => $user['roles_id']));
 
-                    cli_log(str_size($user['id'], 6, ' ', true).' '.str_size($user['username'], 12).' '.str_size(status($user['status']), 10).' '.str_force($rights, ', '));
+                    cli_log(str_size($user['id'], 6, ' ', true).' '.str_size($user['username'], 12).' '.str_size($user['nickname'], 12).' '.str_size(status($user['status']), 10).' '.str_size(not_empty($user['role'], '-'), 10).' '.not_empty(str_force($rights, ', '), '-'));
                 }
             }
 
         }else{
-            $limit   = 200;
-
             $query   = 'SELECT    `users`.`id`,
                                   `users`.`name`,
                                   `users`.`username`,
+                                  `users`.`nickname`,
                                   `users`.`email`,
                                   `users`.`status`,
                                   `users`.`type`,
@@ -271,31 +530,20 @@ switch(cli_method()){
                         ON        `users_god`.`name`       = "god"
                         AND       `users_god`.`users_id`   = `users`.`id`';
 
-            $execute = array();
-
-            /*
-             * Consider only users with a specific type as real users?
-             */
-            if($_CONFIG['users']['type_filter'] !== false){
-                if($_CONFIG['users']['type_filter'] === null){
-                    $query           .= ' WHERE `users`.`type` IS NULL';
-
-                }else{
-                    $query           .= ' WHERE `users`.`type` = :type';
-                    $execute[':type'] = $_CONFIG['users']['type_filter'];
-                }
+            if(!empty($where)){
+                $where = ' WHERE '.implode(' AND ', $where);
             }
 
-            $r = sql_query($query.($limit ? ' LIMIT '.$limit : ''));
+            $r = sql_query($query.$where.($limit ? ' LIMIT '.$limit : ''), $execute);
 
             if(!$r->rowCount()){
                 cli_log(tr('There are currently no users registered'), 'yellow');
 
             }else{
-                cli_log(tr('#id    Username     Status     Type       Role       Admin God Status     Real name                        Email                            '), 'cyan');
+                cli_log(tr('#id    Username     Nickname     Status     Type       Role       Admin God Status     Real name                        Email                            '), 'cyan');
 
                 while($user = sql_fetch($r)){
-                    cli_log(str_size($user['id'], 6, ' ', true).' '.str_size($user['username'], 12).' '.str_size(status($user['status']), 10).' '.str_size($user['type'], 10).' '.str_size($user['role'], 10).' '.str_size(($user['admin'] ? 'Yes' : ''), 5).' '.str_size(($user['god'] ? 'Yes' : ''), 3).' '.str_size(status($user['status']), 10).' '.str_size($user['name'], 32).' '.str_size($user['email'], 32));
+                    cli_log(str_size($user['id'], 6, ' ', true).' '.str_size($user['username'], 12).' '.str_size($user['nickname'], 12).' '.str_size(status($user['status']), 10).' '.str_size($user['type'], 10).' '.str_size($user['role'], 10).' '.str_size(($user['admin'] ? 'Yes' : ''), 5).' '.str_size(($user['god'] ? 'Yes' : ''), 3).' '.str_size(status($user['status']), 10).' '.str_size($user['name'], 32).' '.str_size($user['email'], 32));
                 }
             }
         }
