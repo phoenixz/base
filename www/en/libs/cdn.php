@@ -28,6 +28,10 @@ function cdn_domain($file, $section = 'pub'){
         }
 
         if($section == 'pub'){
+            if(!empty($_CONFIG['cdn']['prefix'])){
+                $file = $_CONFIG['cdn']['prefix'].$file;
+            }
+
             if(empty($_SESSION['cdn'])){
                 /*
                  * Get this URL from the CDN system
