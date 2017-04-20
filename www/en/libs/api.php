@@ -208,8 +208,14 @@ function api_authenticate($apikey){
         /*
          * Yay, auth worked, create session and send client the session token
          */
-        if($_CONFIG['api']['signin_reset_session'] and session_id()){
-            session_destroy();
+        if(session_id()){
+            if($_CONFIG['api']['signin_reset_session']){
+                session_destroy();
+                session_start();
+            }
+
+        }else{
+            session_start();
         }
 
         session_regenerate_id();
