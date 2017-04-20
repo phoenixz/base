@@ -521,7 +521,7 @@ function http_cache($params, $headers = array()){
              * Non HTTP 200 / 304 pages should NOT have cache enabled!
              * For example 404, 505, etc...
              */
-            $params['policy']     = 'private, no-store';
+            $params['policy']     = 'no-store';
             $params['expires']    = '0';
 
             $GLOBALS['etag']      = null;
@@ -539,12 +539,12 @@ function http_cache($params, $headers = array()){
             }
 
             if(!empty($GLOBALS['page_is_ajax']) or !empty($GLOBALS['page_is_api'])){
-                $params['policy'] = 'private, no-store';
+                $params['policy'] = 'no-store';
                 $expires          = '0';
 
             }else{
                 if(!empty($GLOBALS['page_is_admin']) or !empty($_SESSION['user']['id'])){
-                    array_default($params, 'policy', 'private, no-store');
+                    array_default($params, 'policy', 'no-store');
 
                 }else{
                     array_default($params, 'policy', $_CONFIG['cache']['http']['policy']);
@@ -561,11 +561,52 @@ function http_cache($params, $headers = array()){
             }
         }
 
-        $headers[] = 'Cache-Control: '.$params['policy'];
-        $headers[] = 'Expires: '.$expires;
+        if(empty($params['policy'])){
+            if($GLOBALS['page_is_admin']){
+                /*
+                 * Admin pages, never store, always private
+                 */
+                $params['policy'] = 'no-store';
 
-        if(!empty($GLOBALS['etag'])){
-            $headers[] = 'ETag: "'.$GLOBALS['etag'].'"';
+            }elseif(empty($_SESSION['user'])){
+                /*
+                 * Anonymous user, all can be stored
+                 */
+                $params['policy'] = 'public';
+
+            }else{
+                /*
+                 * User session, must always be private!
+                 */
+                $params['policy'] = 'no-cache, private';
+            }
+        }
+
+        switch($params['policy']){
+            case 'no-store':
+                $headers[] = 'Cache-Control: '.$params['policy'];
+                break;
+
+            case 'no-cache':
+                // FALLTHROUGH
+            case 'public':
+                // FALLTHROUGH
+            case 'private':
+                // FALLTHROUGH
+            case 'no-cache, public':
+                // FALLTHROUGH
+            case 'no-cache, private':
+                $headers[] = 'Cache-Control: '.$params['policy'].', max-age='.$params['max-age'];
+                $headers[] = 'Expires: '.$expires;
+
+                if(!empty($GLOBALS['etag'])){
+                    $headers[] = 'ETag: "'.$GLOBALS['etag'].'"';
+                }
+
+                break;
+
+            default:
+                throw new bException(tr('http_cache(): Unknown cache policy ":policy" detected', array(':policy' => $params['policy'])), 'unknown');
         }
 
         return $headers;

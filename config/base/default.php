@@ -48,7 +48,8 @@ $_CONFIG['cache']              = array('method'           => 'file',            
                                        'key_hash'         => 'sha256',
                                        'key_interlace'    => 3,
                                        'http'             => array('enabled'            => true,                                        // Enable HTTP cache or not
-                                                                   'policy'             => 'public, max-age=604800'));                  // Either "no-store", or "no-cache" with "public" or "private", optionally with max-age=N" where N is a natural number
+                                                                   'policy'             => null,                                        // Either "no-store", or "no-cache" with "public" or "private", optionally with max-age=N" where N is a natural number
+                                                                   'max-age'            => '604800'));                                  // Either "no-store", or "no-cache" with "public" or "private", optionally with max-age=N" where N is a natural number
 
 // CDN configuration
 $_CONFIG['cdn']                = array('min'              => true,                                                                      // If set to "true" all CSS and JS files loaded with html_load_js() and html_load_css() will be loaded as file.min.js instead of file.js. Use "true" in production environment, "false" in all other environments
