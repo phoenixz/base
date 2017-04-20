@@ -175,7 +175,7 @@ function api_authenticate($apikey){
              * authentications over a secure connection
              */
             if(($_CONFIG['protocol'] !== 'https://') and !empty($_CONFIG['production'])){
-                throw new bException(tr('api_authenticate(): No API key authentication allowed on unsecure connections over non HTTPS connections'), 'not-allowed');
+                throw new bException(tr('api_authenticate(): No API key authentication allowed on unsecure connections over non HTTPS connections'), 'ssl-required');
             }
         }
 
