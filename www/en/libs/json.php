@@ -246,11 +246,15 @@ function json_error($message, $data = null, $result = null, $http_code = 500){
 
                 switch($result){
                     case 'access-denied':
-                        $http_code = 403;
+                        $http_code = '403';
+                        break;
+
+                    case 'ssl-required':
+                        $http_code = '403.4';
                         break;
 
                     default:
-                        $http_code = 500;
+                        $http_code = '500';
                 }
 
                 if(debug()){
