@@ -609,6 +609,12 @@ function http_cache($params, $headers = array()){
                 throw new bException(tr('http_cache(): Unknown cache policy ":policy" detected', array(':policy' => $params['policy'])), 'unknown');
         }
 
+        /*
+         * Disable PHP caching stuff
+         */
+        session_cache_limiter('');
+        session_cache_expire(0);
+
         return $headers;
 
     }catch(Exception $e){
