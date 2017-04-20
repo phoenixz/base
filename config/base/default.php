@@ -48,7 +48,7 @@ $_CONFIG['cache']              = array('method'           => 'file',            
                                        'key_hash'         => 'sha256',
                                        'key_interlace'    => 3,
                                        'http'             => array('enabled'            => true,                                        // Enable HTTP cache or not
-                                                                   'policy'             => null,                                        // Either "no-store", or "no-cache" with "public" or "private", optionally with max-age=N" where N is a natural number
+                                                                   'policy'             => null,                                        // Use null for system default, which is no-store for admin, public for no user, and private, no-store for user session pages. If not, either "no-store", or "no-cache" with "public" or "private", optionally with max-age=N" where N is a natural number
                                                                    'max-age'            => '604800'));                                  // Either "no-store", or "no-cache" with "public" or "private", optionally with max-age=N" where N is a natural number
 
 // CDN configuration
