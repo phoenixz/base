@@ -1132,7 +1132,7 @@ function rights_or_access_denied($rights){
         }
 
         if(in_array('admin', array_force($rights))){
-            redirect(domain($_CONFIG['redirects']['signin']));
+            redirect($_CONFIG['redirects']['signin']);
         }
 
         page_show($_CONFIG['redirects']['accessdenied']);
