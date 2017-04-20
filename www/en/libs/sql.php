@@ -207,7 +207,7 @@ function sql_get($query, $single_column = null, $execute = null, $connector = 'c
             $result = sql_query($query, $execute, true, $connector);
 
             if($result->rowCount() > 1){
-                throw new bException(tr('sql_get(): Failed for query ":query" to fetch single row, specified query result contains not 1 but ":count" results', array(':count' => $result->rowCount(), ':query' => $result->queryString)), 'multiple');
+                throw new bException(tr('sql_get(): Failed for query ":query" to fetch single row, specified query result contains not 1 but ":count" results', array(':count' => $result->rowCount(), ':query' => debug_sql($result->queryString, $execute))), 'multiple');
             }
 
             return sql_fetch($result, $single_column);
