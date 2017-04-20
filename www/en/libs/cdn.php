@@ -134,8 +134,8 @@ function cdn_add_files($files, $section = 'pub', $group = null){
          * In what servers are we going to store these files?
          */
         $servers     = cdn_assign_servers();
-        $file_insert = sql_prepare('INSERT INTO `cdn_files` (`servers_id`, `section`, `group`, `file`)
-                                    VALUES                  (:servers_id , :section , :group , :file )');
+        $file_insert = sql_prepare('INSERT IGNORE INTO `cdn_files` (`servers_id`, `section`, `group`, `file`)
+                                    VALUES                         (:servers_id , :section , :group , :file )');
 
         /*
          * Register at what CDN servers the files will be uploaded, and send the
