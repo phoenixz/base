@@ -311,7 +311,7 @@ try{
      * Start platform specific stuff
      */
     try{
-        define('TMP'   , ROOT.'tmp/');
+        define('TMP'   , ROOT.'data/tmp/');
         define('PUBTMP', ROOT.'data/content/tmp/');
 
         switch(PLATFORM){
