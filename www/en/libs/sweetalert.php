@@ -24,9 +24,9 @@ function sweetalert_init(){
                                'checks'    => array(ROOT.'pub/js/sweetalert/sweetalert.js',
                                                     ROOT.'pub/css/sweetalert/sweetalert.css')));
 
-        load_config('sweetalert');
-        html_load_js('sweetalert/sweetalert.js');
-        html_load_css('sweetalert/sweetalert.css');
+//        load_config('sweetalert');
+        html_load_js('sweetalert/sweetalert');
+        html_load_css('sweetalert/sweetalert');
 
     }catch(Exception $e){
         throw new bException('sweetalert_load(): Failed', $e);
@@ -69,21 +69,50 @@ function sweetalert_install($params){
 
 
 /*
- * Show a sweet alert directly
+ * Return the required javascript code to show a sweet alert
  */
-function sweetalert($params, $body, $type = ''){
+function sweetalert($params, $body, $type = '', $options = array()){
     try{
-        array_params($params, 'title');
-        array_params($params, 'title', '');
-        array_params($params, 'body' , $body);
-        array_params($params, 'type' , $type);
+        array_params ($params, 'title');
+        array_default($params, 'title'  , '');
+        array_default($params, 'body'   , $body);
+        array_default($params, 'type'   , $type);
+        array_default($params, 'class'  , null);
+        array_default($params, 'options', $options);
 
-        array_params($params, 'type' , $type);
+        array_default($params['options'], 'allow_outside_click', null);
+        array_default($params['options'], 'allow_escape_key'   , null);
+        array_default($params['options'], 'class'              , $params['class']);
 
-        return 'swal("'.$params['title'].'", "'.$params['body'].'", "'.$params['type'].'")';
+        load_libs('json');
+
+        $options['title'] = $params['title'];
+        $options['body']  = $params['body'];
+        $options['type']  = $params['type'];
+
+        foreach($params['options'] as $key => $value){
+            if($value === null) continue;
+            $options[$key] = $value;
+        }
+
+        return 'swal('.json_encode_custom($options).')';
 
     }catch(Exception $e){
         throw new bException('sweetalert(): Failed', $e);
+    }
+}
+
+
+
+/*
+ * Show a sweet alert directly
+ */
+function sweetalert_script($params, $body, $type = ''){
+    try{
+        return html_script(sweetalert($params, $body, $type));
+
+    }catch(Exception $e){
+        throw new bException('sweetalert_script(): Failed', $e);
     }
 }
 ?>
