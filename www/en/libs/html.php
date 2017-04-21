@@ -929,7 +929,19 @@ function html_flash($class = null){
             /*
              * Set the indicator that we have added flash messages
              */
-            $retval .= tr($_CONFIG['flash']['html'], array(':message' => $message, ':type' => $type, ':hidden' => ''), false);
+            switch($_CONFIG['flash']['type']){
+                case 'html':
+                    $retval .= tr($_CONFIG['flash']['html'], array(':message' => $message, ':type' => $type, ':hidden' => ''), false);
+                    break;
+
+                case 'sweetalert':
+                    load_libs('sweetalert');
+                    $retval .= sweetalert_script($message, '', $type);
+                    break;
+
+                default:
+                    throw new bException(tr('html_flash(): Unknown html flash type ":type" specified. Please check your $_CONFIG[flash][type] configuration', array(':type' => $_CONFIG['flash']['type'])), 'unknown');
+            }
 
             $GLOBALS['flash'] = true;
             unset($_SESSION['flash'][$id]);
@@ -938,7 +950,12 @@ function html_flash($class = null){
         /*
          * Add an extra hidden flash message box that can respond for jsFlashMessages
          */
-        return $retval.tr($_CONFIG['flash']['html'], array(':message' => '', ':type' => '', ':hidden' => ' hidden'), false);
+        if($_CONFIG['flash']['type'] == 'html'){
+// :TODO: DONT USE tr() HERE!!!!
+            return $retval.tr($_CONFIG['flash']['html'], array(':message' => '', ':type' => '', ':hidden' => ' hidden'), false);
+        }
+
+        return $retval;
 
     }catch(Exception $e){
         throw new bException('html_flash(): Failed', $e);
@@ -958,7 +975,7 @@ function html_flash_set($messages, $type = 'info', $class = null){
             /*
              * Wut? no message?
              */
-            return false;
+            throw new bException(tr('html_flash(): No messages specified'), 'not-specified');
         }
 
         /*
