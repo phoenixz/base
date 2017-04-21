@@ -156,7 +156,8 @@ $_CONFIG['editors']            = array('imageupload'      => 'session',         
 $_CONFIG['feedback']           = array('emails'           => array('Sven Oostenbrink Support' => 'support@ingiga.com'));
 
 // Flash alert configuration
-$_CONFIG['flash']              = array('html'             => '<div class="flash:type">:message</div>');
+$_CONFIG['flash']              = array('type'             => 'html',                                                                    // The type of HTML flash message to use. Either "html" or "sweetalert"
+                                       'html'             => '<div class="flash:type">:message</div>');
 
 //
 $_CONFIG['formats']            = array('force1224'        => '24',
