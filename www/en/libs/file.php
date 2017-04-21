@@ -387,7 +387,13 @@ function file_ensure_path($path, $mode = null){
                 }
 
                 try{
-                    mkdir($path, $mode);
+                    /*
+                     * Make sure that the parent path is writable when creating
+                     * the directory
+                     */
+                    file_execute_mode(dirname($path), (is_writable(dirname($path)) ? false : 0770), function() use ($path, $mode){
+                        mkdir($path, $mode);
+                    });
 
                 }catch(Exception $e){
                     /*
@@ -697,10 +703,10 @@ function file_delete($patterns, $clean_path = false){
 
         foreach(array_force($patterns) as $pattern){
             safe_exec('rm -rf '.$pattern);
-        }
 
-        if($clean_path){
-            file_clear_path($clean_path);
+            if($clean_path){
+                file_clear_path(dirname($patterns));
+            }
         }
 
     }catch(Exception $e){
@@ -2108,17 +2114,20 @@ function file_root($path){
  */
 function file_execute_mode($path, $mode, $callback, $params = null){
     try{
-        $original_mode = fileperms($path);
-        chmod($path, $mode);
-
-        if($params === null){
-            $retval = $callback();
-
-        }else{
-            $retval = $params($callback);
+        if(!file_exists($path)){
+            throw new bException(tr('file_execute_mode(): Specified path ":path" does not exist', array(':path' => $path)), 'not-exist');
         }
 
-        chmod($path, $original_mode);
+        if($mode){
+            $original_mode = fileperms($path);
+            chmod($path, $mode);
+        }
+
+        $retval = $callback($params, $path, $mode);
+
+        if($mode){
+            chmod($path, $original_mode);
+        }
 
         return $retval;
 
