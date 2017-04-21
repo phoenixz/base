@@ -218,14 +218,14 @@ function install($params, $force = false){
                          * Set temp path, delete it first to be sure there is no
                          * garbage in the way!
                          */
-                        $path = TMP.$params['project'].'/';
-                        file_delete($path);
+                        $temp_path = TMP.$params['project'].'/';
+                        file_delete($temp_path);
 
                         /*
                          * Download the file to the specified path, and unpack it
                          */
-                        $file = file_move_to_target($instructions['url'], $path, false, true, 0);
-                        safe_exec('cd '.$path.'; '.$instructions['command']);
+                        $file = file_move_to_target($instructions['url'], $temp_path, false, true, 0);
+                        safe_exec('cd '.$temp_path.'; '.$instructions['command']);
 
                     }else{
                         /*
@@ -240,26 +240,50 @@ function install($params, $force = false){
                      * exists first to avoid crashes on missing paths.
                      */
                     foreach($instructions['locations'] as $source => $target){
-                        if($source[0] == '@'){
-                            /*
-                             * $target will be a symlink to specified source
-                             */
-                            file_delete($target);
-                            symlink(substr($source, 1), $target);
+                        $target_path = dirname($target);
+                        file_ensure_path($target_path);
 
-                        }else{
-                            file_ensure_path(dirname($target));
-                            file_delete($target);
+                        file_execute_mode($target_path, (is_writable($target_path) ? false : 0770), function($params, $path, $mode) use ($temp_path, $source, $target){
+                            global $_CONFIG;
 
-                            rename($path.$source, $target);
-                        }
+                            if(file_exists($target)){
+                                safe_exec('chmod ug+w '.$target.' -R');
+                                file_delete($target);
+                            }
+
+                            if($source[0] == '@'){
+                                /*
+                                 * $target will be a symlink to specified source
+                                 */
+                                symlink(substr($source, 1), $target);
+
+                                if($_CONFIG['production']){
+                                    /*
+                                     * On production environments, always ensure
+                                     * that all files are readonly for safety
+                                     */
+                                    safe_exec('chmod ug-w '.$target);
+                                }
+
+                            }else{
+                                rename($temp_path.$source, $target);
+
+                                if($_CONFIG['production']){
+                                    /*
+                                     * On production environments, always ensure
+                                     * that all files are readonly for safety
+                                     */
+                                    safe_exec('chmod ug-w '.$target.' -R');
+                                }
+                            }
+                        });
                     }
 
                     /*
                      * Install done! Remove temporary crap
                      */
                     $params['test'] = true;
-                    file_delete($path, true);
+                    file_delete($temp_path, true);
                     log_database(tr('Library ":name" installed successfully with method ":method", proceeding with post installation test', array(':name' => $params['name'], ':method' => $method)), 'install');
                     break;
 
