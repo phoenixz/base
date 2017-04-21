@@ -1,35 +1,15 @@
-RewriteEngine On
-
-Options -Multiviews
-
-ErrorDocument 404 /404.php
-
-# Mobile pages are not directly accessible
-RewriteRule ^mobile/(.+)$ /404.php [NC,L]
-
-# All .html pages go straight to PHP
-RewriteRule ^([a-z0-9-_]+?).html$ /$1.php [NC,L]
-
-# Remove all double slashes
-RewriteCond %{THE_REQUEST} \ (.*)//+(.*)\  [NC]
-RewriteRule .* %1/%2 [R=301,L]
-
-# Redirect html pages to the root domain
-RewriteRule ^index\.html$ / [NC,R=301,L]
-
-# Mailer access images
-RewriteRule ^logoimgs/(.+).png/$ /ajax/base/mailer_viewed.php?code=$1 [NC,L]
-
 # ----------------------------------------------------------------------
 # Apache caching
 # ----------------------------------------------------------------------
-FileETag MTime Size
+<filesMatch ".(ico|jpg|jpeg|png|gif|js|css|woff2|pdf|flv|mp4)$">
+    FileETag MTime Size
 
-# Cache exprires in a week
-Header set Cache-Control "max-age=604800, public, must-revalidate"
+    Header set Cache-Control "max-age=604800, public, must-revalidate"
 
-ExpiresActive On
-ExpiresDefault A604800
+    ExpiresActive On
+    ExpiresDefault A604800
+</filesMatch>
+
 
 
 # ----------------------------------------------------------------------
@@ -105,3 +85,57 @@ ExpiresDefault A604800
         </IfModule>
     </IfVersion>
 </IfModule>
+
+
+
+# Other Apache configuration
+Options -Multiviews -Indexes # Disable multiviews and indexes (show directory indices when directory is requested)
+
+DirectorySlash Off           # Do NOT 301 redirect /path to /path/ when paths should be 404 in the first place, wtf apache?
+DirectoryIndex disabled      # No, don't show directory contents
+
+ErrorDocument 404 /404.php   # Page not found shows as 404
+ErrorDocument 403 /404.php   # Access denied shows as 404 as well, for security reasons
+
+
+
+# Core rewrite rules
+# Send /admin to /admin/index.html
+RewriteEngine On
+RewriteRule ^admin/?$ /admin/index.html [R=301,END]
+
+# Protect against double slashes
+# All directories are unaccessible
+RewriteCond %{THE_REQUEST} \/\/ [OR]
+RewriteCond %{REQUEST_FILENAME} -d
+RewriteRule .+ 404.php [END]
+
+# pub/ and photos/ paths immediately pass through normally
+RewriteCond %{REQUEST_URI} ^/pub/ [OR]
+RewriteCond %{REQUEST_URI} ^/ajax/ [OR]
+RewriteCond %{REQUEST_URI} ^/images/ [OR]
+RewriteCond %{REQUEST_URI} ^/photos/
+RewriteRule .+ - [QSA,END]
+
+# Protect against URL's with queries
+RewriteCond %{THE_REQUEST} \?
+RewriteRule .+ 404.php [END]
+
+# No file extensions allowed below this point...
+RewriteCond %{REQUEST_URI} ^.+?\..*$
+RewriteCond %{REQUEST_URI} !^/sitemap.xml$
+RewriteCond %{REQUEST_URI} !^/robots.txt$
+RewriteCond %{REQUEST_URI} !.html$
+RewriteRule .+ 404.php [END]
+
+
+
+# Page rewrite rules
+# Redirect index.html pages to the root domain
+RewriteRule ^index\.html$ / [R=301,END]
+
+# Index page (with AMP page support built in)
+RewriteRule ^(amp/?)?$ /index.php?amp=$1 [END]
+
+# All other pages (with AMP page support built in) (Add more rules below as required)
+RewriteRule ^(amp/?)?([a-z0-9-]+)$ /$2.php?amp=$1 [END]
