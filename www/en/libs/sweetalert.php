@@ -23,7 +23,7 @@ function sweetalert_init(){
                                'callback'  => 'sweetalert_install',
                                'checks'    => array(ROOT.'pub/js/sweetalert/sweetalert.js',
                                                     ROOT.'pub/css/sweetalert/sweetalert.css')));
-showdie();
+
         load_config('sweetalert');
         html_load_js('sweetalert/sweetalert.js');
         html_load_css('sweetalert/sweetalert.css');
