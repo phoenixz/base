@@ -576,7 +576,7 @@ function log_database($messages, $type = 'unknown'){
         /*
          * Avoid endless looping if the database log fails
          */
-        if($busy){
+        if(!$busy){
             $busy = true;
 
             if(!empty($GLOBALS['no-db'])){
@@ -730,7 +730,7 @@ function load_libs($libraries){
         }
 
     }catch(Exception $e){
-        throw new bException(tr('load_libs(): Failed'), $e);
+        throw new bException(tr('load_libs(): Failed to load one or more of libraries ":libraries"', array(':libraries' => $libraries)), $e);
     }
 }
 
@@ -1971,7 +1971,13 @@ function ensure_installed($params){
         }
 
         if(!empty($fail)){
-            return include(__DIR__.'/handlers/system_ensure_installed.php');
+            load_libs('install');
+
+            if(empty($params['callback'])){
+                return install($params);
+            }
+
+            return $params['callback']($params);
         }
 
     }catch(Exception $e){
