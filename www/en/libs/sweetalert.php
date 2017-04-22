@@ -105,7 +105,7 @@ function sweetalert($params, $text = '', $type = '', $options = array()){
 /*
  * Show a sweet alert directly
  */
-function sweetalert_queue($params, $text, $type = ''){
+function sweetalert_queue($params, $text = '', $type = ''){
     try{
         return html_script(sweetalert($params, $text, $type));
 
