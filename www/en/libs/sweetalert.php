@@ -40,24 +40,22 @@ function sweetalert_init(){
  */
 function sweetalert_install($params){
     try{
-        $params['methods'] = array('bower'    => array('command'   => 'npm install sweetalert',
+        $params['methods'] = array('bower'    => array('commands'  => 'npm install sweetalert2',
                                                        'locations' => array('sweetalert-master/lib/sweetalert.js' => ROOT.'pub/js/sweetalert/sweetalert.js',
                                                                             'sweetalert-master/lib/modules'       => ROOT.'pub/js/sweetalert/modules',
                                                                             'sweetalert-master/themes'            => ROOT.'pub/css/sweetalert/themes',
                                                                             '@themes/google/google.css'           => ROOT.'pub/css/sweetalert/sweetalert.css')),
 
-                                   'bower'    => array('command'   => 'bower install sweetalert',
+                                   'bower'    => array('commands'  => 'bower install sweetalert2',
                                                        'locations' => array('sweetalert-master/lib/sweetalert.js' => ROOT.'pub/js/sweetalert/sweetalert.js',
                                                                             'sweetalert-master/lib/modules'       => ROOT.'pub/js/sweetalert/modules',
                                                                             'sweetalert-master/themes'            => ROOT.'pub/css/sweetalert/themes',
                                                                             '@themes/google/google.css'           => ROOT.'pub/css/sweetalert/sweetalert.css')),
 
-                                   'download' => array('url'       => 'https://github.com/t4t5/sweetalert/archive/master.zip',
-                                                       'command'   => 'unzip master.zip',
-                                                       'locations' => array('sweetalert-master/lib/sweetalert.js' => ROOT.'pub/js/sweetalert/sweetalert.js',
-                                                                            'sweetalert-master/lib/modules'       => ROOT.'pub/js/sweetalert/modules',
-                                                                            'sweetalert-master/themes'            => ROOT.'pub/css/sweetalert/themes',
-                                                                            '@themes/google/google.css'           => ROOT.'pub/css/sweetalert/sweetalert.css')));
+                                   'download' => array('urls'      => array('https://cdn.jsdelivr.net/sweetalert2/6.6.0/sweetalert2.css',
+                                                                            'https://cdn.jsdelivr.net/sweetalert2/6.6.0/sweetalert2.js'),
+                                                       'locations' => array('sweetalert2.js'  => ROOT.'pub/js/sweetalert/sweetalert.js',
+                                                                            'sweetalert2.css' => ROOT.'pub/css/sweetalert/sweetalert.css')));
 
         return install($params);
 
@@ -71,11 +69,11 @@ function sweetalert_install($params){
 /*
  * Return the required javascript code to show a sweet alert
  */
-function sweetalert($params, $body, $type = '', $options = array()){
+function sweetalert($params, $text = '', $type = '', $options = array()){
     try{
         array_params ($params, 'title');
         array_default($params, 'title'  , '');
-        array_default($params, 'body'   , $body);
+        array_default($params, 'text'   , $text);
         array_default($params, 'type'   , $type);
         array_default($params, 'class'  , null);
         array_default($params, 'options', $options);
@@ -87,7 +85,7 @@ function sweetalert($params, $body, $type = '', $options = array()){
         load_libs('json');
 
         $options['title'] = $params['title'];
-        $options['body']  = $params['body'];
+        $options['text']  = $params['text'];
         $options['type']  = $params['type'];
 
         foreach($params['options'] as $key => $value){
@@ -107,12 +105,12 @@ function sweetalert($params, $body, $type = '', $options = array()){
 /*
  * Show a sweet alert directly
  */
-function sweetalert_script($params, $body, $type = ''){
+function sweetalert_queue($params, $text, $type = ''){
     try{
-        return html_script(sweetalert($params, $body, $type));
+        return html_script(sweetalert($params, $text, $type));
 
     }catch(Exception $e){
-        throw new bException('sweetalert_script(): Failed', $e);
+        throw new bException('sweetalert_queue(): Failed', $e);
     }
 }
 ?>

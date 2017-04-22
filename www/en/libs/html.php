@@ -880,19 +880,14 @@ function html_flash($class = null){
 
         $retval = '';
 
-        foreach($_SESSION['flash'] as $id => $message){
-            if(($message['class'] != $class) and ($message['class'] != '*')){
+        foreach($_SESSION['flash'] as $id => $flash){
+            array_default($flash, 'class', null);
+
+            if($flash['class'] and ($flash['class'] != $class)){
                 continue;
             }
 
-            /*
-             * The message contains what type and basic (usually this comes from $_SESSION[flash]
-             */
-            $type    = $message['type'];
-            $class   = $message['class'];
-            $message = $message['message'];
-
-            switch($type = strtolower($type)){
+            switch($type = strtolower($flash['type'])){
                 case 'info':
                     break;
 
@@ -923,7 +918,7 @@ function html_flash($class = null){
                 /*
                  * Don't show "function_name(): " part of message
                  */
-                $message = trim(str_from($message, '():'));
+                $flash['message'] = trim(str_from($flash['message'], '():'));
             }
 
             /*
@@ -931,12 +926,15 @@ function html_flash($class = null){
              */
             switch($_CONFIG['flash']['type']){
                 case 'html':
-                    $retval .= tr($_CONFIG['flash']['html'], array(':message' => $message, ':type' => $type, ':hidden' => ''), false);
+                    if($flash['title']){
+                        $flash['message'] = $flash['title'].': '.$flash['message'];
+                    }
+
+                    $retval .= tr($_CONFIG['flash']['html'], array(':message' => $flash['message'], ':type' => $flash['type'], ':hidden' => ''), false);
                     break;
 
                 case 'sweetalert':
-                    load_libs('sweetalert');
-                    $retval .= sweetalert_script($message, '', $type);
+                    $sweetalerts[] = $flash;
                     break;
 
                 default:
@@ -947,15 +945,34 @@ function html_flash($class = null){
             unset($_SESSION['flash'][$id]);
         }
 
-        /*
-         * Add an extra hidden flash message box that can respond for jsFlashMessages
-         */
-        if($_CONFIG['flash']['type'] == 'html'){
+        switch($_CONFIG['flash']['type']){
+            case 'html':
 // :TODO: DONT USE tr() HERE!!!!
-            return $retval.tr($_CONFIG['flash']['html'], array(':message' => '', ':type' => '', ':hidden' => ' hidden'), false);
-        }
+                /*
+                 * Add an extra hidden flash message box that can respond for jsFlashMessages
+                 */
+                return $retval.tr($_CONFIG['flash']['html'], array(':message' => '', ':type' => '', ':hidden' => ' hidden'), false);
 
-        return $retval;
+            case 'sweetalert':
+                load_libs('sweetalert');
+
+                switch(count(isset_get($sweetalerts))){
+                    case 0:
+                        /*
+                         * No alerts
+                         */
+                        return '';
+
+                    case 1:
+                        return html_script(sweetalert(array_pop($sweetalerts)));
+
+                    default:
+                        /*
+                         * Multiple messages, show a queue
+                         */
+                        return html_script(sweetalert_queue($sweetalerts));
+                }
+        }
 
     }catch(Exception $e){
         throw new bException('html_flash(): Failed', $e);
@@ -967,11 +984,11 @@ function html_flash($class = null){
 /*
  * Show a flash message with the specified message
  */
-function html_flash_set($messages, $type = 'info', $class = null){
+function html_flash_set($flash, $type = 'info', $class = null){
     global $_CONFIG;
 
     try{
-        if(!$messages){
+        if(!$flash){
             /*
              * Wut? no message?
              */
@@ -983,98 +1000,94 @@ function html_flash_set($messages, $type = 'info', $class = null){
          */
         if(empty($_SESSION['flash'])){
             $_SESSION['flash'] = array();
-
-        }elseif(!is_array($_SESSION['flash'])){
-            $_SESSION['flash'] = array($_SESSION['flash']);
         }
 
-        if(!is_array($messages)){
-            if(is_object($messages)){
-                if($messages instanceof bException){
-                    if(debug()){
-                        $type     = 'error';
-                        $messages = array($messages->getMessages('<br>'));
+        /*
+         * Backward compatibility
+         */
+        if(!is_array($flash)){
+            $flash = array('title' => str_capitalize($type),
+                           'text'  => $flash,
+                           'type'  => $type,
+                           'class' => $class);
+        }
 
-                    }else{
-                        /*
-                         * This may or may not contain messages that are confidential.
-                         * All bExceptions thrown by functions will contain the function name like function():
-                         * If (): is detected in the primary message, assume it must be confidential
-                         * If PHP error is detected in the primary message, assume it must be confidential
-                         * Any other messages are generated by the web pages themselves and should be
-                         * considered ok to show on production sites
-                         */
-                        $code     = $messages->getCode();
-                        $messages = $messages->getMessages();
-                        $message  = current($messages);
+        if(is_object($flash)){
+            $object = $flash;
+            $flash  = array();
 
-                        if(preg_match('/^[a-z_]+\(\): /', $message) or preg_match('/PHP ERROR [\d+] /', $message)){
-                            $type     = 'error';
-                            $messages = array(tr('Something went wrong, please try again later'));
-                            notify('html_flash/bException', tr('html_flash(): Received bException ":code" with message trace ":trace"', array(':code' => $code, ':trace' => $messages)), 'developers');
-
-                        }else{
-                            /*
-                             * Show all messages until a function(): message is found, those are considered to be
-                             * confidential and should not be shown on production websites
-                             */
-                            $type = 'error';
-
-                            foreach($messages as $id => $message){
-                                if(!empty($delete) or preg_match('/^[a-z_]+\(\): /', $message) or preg_match('/PHP ERROR [\d+] /', $message)){
-                                    unset($messages[$id]);
-                                    $delete = true;
-                                }
-                            }
-
-                            unset($delete);
-                            $messages = array(implode('<br>', $messages));
-                        }
-                    }
-
-                }elseif($messages instanceof Exception){
-                    if(debug()){
-                        $type     = 'error';
-                        $messages = array($messages->getMessage());
-
-                    }else{
-                        /*
-                         * Non bExceptions basically are caused by PHP and should basically not ever happen.
-                         * These should also be considdered confidential and their info should never be
-                         * displayed in production sites
-                         */
-                        $type     = 'error';
-                        $messages = array(tr('Something went wrong, please try again later'));
-                        notify('html_flash/Exception', tr('html_flash(): Received PHP exception class ":class" with code ":code" and message ":message"', array(':class' => get_class($messages), ':code' => $messages->getCode(), ':message' => $messages->getMessage())), 'developers');
-                    }
+            if($flash instanceof bException){
+                if(debug()){
+                    $flash['type'] = 'error';
+                    $flash['text'] = $object->getMessages('<br>');
 
                 }else{
-                    if(debug()){
-                        $type     = 'error';
-                        $messages = array(tr('Something went wrong, please try again later'));
-                        notify('html_flash/object', tr('html_flash(): Received PHP object with class ":class" and content ":content"', array(':class' => get_class($messages), ':content' => print_r($messages->getMessage(), true))), 'developers');
+                    /*
+                     * This may or may not contain messages that are confidential.
+                     * All bExceptions thrown by functions will contain the function name like function():
+                     * If (): is detected in the primary message, assume it must be confidential
+                     * If PHP error is detected in the primary message, assume it must be confidential
+                     * Any other messages are generated by the web pages themselves and should be
+                     * considered ok to show on production sites
+                     */
+                    $messages      = $object->getMessages();
+                    $flash['text'] = current($messages);
+                    $flash['type'] = $object->getCode();
+
+                    if(preg_match('/^[a-z_]+\(\): /', $flash['text']) or preg_match('/PHP ERROR [\d+] /', $flash['text'])){
+                        $flash['type'] = 'error';
+                        $flash['text'] = tr('Something went wrong, please try again later');
+                        notify('html_flash/bException', tr('html_flash(): Received bException ":code" with message trace ":trace"', array(':code' => $flash['type'], ':trace' => $flash['text'])), 'developers');
 
                     }else{
-                        $type     = 'error';
-                        $messages = array(tr('Specified html flash message is invalid, it is an object. Please ensure all HTML messages are '), print_r($messages, true));
+                        /*
+                         * Show all messages until a function(): message is found, those are considered to be
+                         * confidential and should not be shown on production websites
+                         */
+                        $type = 'error';
+
+                        foreach($messages as $id => $message){
+                            if(!empty($delete) or preg_match('/^[a-z_]+\(\): /', $message) or preg_match('/PHP ERROR [\d+] /', $message)){
+                                unset($messages[$id]);
+                                $delete = true;
+                            }
+                        }
+
+                        unset($delete);
+                        $flash['text'] = implode('<br>', $messages);
                     }
                 }
 
-            }else{
-                if(is_string($messages) and (strpos($messages, "\n") !== false)){
-                    $messages = explode("\n", $messages);
+            }elseif($object instanceof Exception){
+                if(debug()){
+                    $flash['type'] = 'error';
+                    $flash['text'] = $object->getMessage();
 
                 }else{
-                    $messages = array($messages);
+                    /*
+                     * Non bExceptions basically are caused by PHP and should basically not ever happen.
+                     * These should also be considdered confidential and their info should never be
+                     * displayed in production sites
+                     */
+                    $flash['type'] = 'error';
+                    $flash['text'] = tr('Something went wrong, please try again later');
+                    notify('html_flash/Exception', tr('html_flash(): Received PHP exception class ":class" with code ":code" and message ":message"', array(':class' => get_class($object), ':code' => $object->getCode(), ':message' => $object->getMessage())), 'developers');
+                }
+
+            }else{
+                if(debug()){
+                    $flash['type'] = 'error';
+                    $flash['text'] = tr('Something went wrong, please try again later');
+                    notify('html_flash/object', tr('html_flash(): Received PHP object with class ":class" and content ":content"', array(':class' => get_class($object), ':content' => print_r($object->getMessage(), true))), 'developers');
+
+                }else{
+                    $flash['type'] = 'error';
+                    $flash['text'] = tr('Specified html flash message ":message" is invalid, it is an object of unknown class ":class"', array(':class' => get_class($object), ':message' => print_r($object, true)));
                 }
             }
         }
 
-        foreach($messages as $message){
-            $_SESSION['flash'][] = array('type'    => $type,
-                                         'class'   => $class,
-                                         'message' => $message);
-        }
+        $_SESSION['flash'][] = $flash;
 
     }catch(Exception $e){
         throw new bException('html_flash_set(): Failed', $e);
