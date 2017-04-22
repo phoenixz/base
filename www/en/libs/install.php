@@ -45,20 +45,20 @@
   * /
  function foobar_install($params){
      try{
-         $params['methods'] = array('bower'    => array('command'   => 'npm install foobar',
-                                                       'locations' => array('foobar-master/lib/foobar.js' => ROOT.'pub/js/foobar/foobar.js',
-                                                                            'foobar-master/lib/modules'   => ROOT.'pub/js/foobar/modules',
-                                                                            'foobar-master/themes'        => ROOT.'pub/css/foobar/themes',
-                                                                            '@themes/google/google.css'   => ROOT.'pub/css/foobar/foobar.css')),
-
-                                    'bower'    => array('command'   => 'bower install foobar',
+         $params['methods'] = array('bower'    => array('commands'  => 'npm install foobar',
                                                         'locations' => array('foobar-master/lib/foobar.js' => ROOT.'pub/js/foobar/foobar.js',
                                                                              'foobar-master/lib/modules'   => ROOT.'pub/js/foobar/modules',
                                                                              'foobar-master/themes'        => ROOT.'pub/css/foobar/themes',
                                                                              '@themes/google/google.css'   => ROOT.'pub/css/foobar/foobar.css')),
 
-                                    'download' => array('url'       => 'https://github.com/foobar/archive/master.zip',
-                                                        'command'   => 'unzip master.zip',
+                                    'bower'    => array('commands'  => 'bower install foobar',
+                                                        'locations' => array('foobar-master/lib/foobar.js' => ROOT.'pub/js/foobar/foobar.js',
+                                                                             'foobar-master/lib/modules'   => ROOT.'pub/js/foobar/modules',
+                                                                             'foobar-master/themes'        => ROOT.'pub/css/foobar/themes',
+                                                                             '@themes/google/google.css'   => ROOT.'pub/css/foobar/foobar.css')),
+
+                                    'download' => array('urls'      => 'https://github.com/foobar/archive/master.zip',
+                                                        'commands'  => 'unzip master.zip',
                                                         'locations' => array('foobar-master/lib/foobar.js' => ROOT.'pub/js/foobar/foobar.js',
                                                                              'foobar-master/lib/modules'   => ROOT.'pub/js/foobar/modules',
                                                                              'foobar-master/themes'        => ROOT.'pub/css/foobar/themes',
@@ -168,10 +168,6 @@ function install($params, $force = false){
                 throw new bException(tr('install(): No install locations specified for method ":method" for library ":name"', array(':name' => $params['name'], ':method' => $method)), 'not-specified');
             }
 
-            if(empty($instructions['command'])){
-                throw new bException(tr('install(): No command specified for method ":method" for library ":name"', array(':name' => $params['name'], ':method' => $method)), 'not-specified');
-            }
-
             switch($method){
                 case 'bower':
                     // FALLTHROUGH
@@ -200,44 +196,62 @@ function install($params, $force = false){
                     /*
                      * Install the required library and continue
                      */
-                    if(preg_match('/^https?:\/\/github\.com\/.+?\/.+?\.git$/i', $instructions['url'])){
-                        /*
-                         * This is a github install file. Clone it, and install from there
-                         */
-                        $project = str_rfrom($instructions['url'], '/');
-                        $project = str_until($project, '.git');
+                    $first_loop = true;
 
-                        log_database(tr('Cloning GIT project ":project"', array(':project' => $project)), 'git/clone');
+                    foreach($instructions['urls'] as $url){
+                        if(preg_match('/^https?:\/\/github\.com\/.+?\/.+?\.git$/i', $url)){
+                            /*
+                             * This is a github install file. Clone it, and install from there
+                             */
+                            $project = str_rfrom($url    , '/');
+                            $project = str_until($project, '.git');
 
-                        load_libs('git');
-                        file_delete(TMP.$project);
-                        git_clone($instructions['url'], TMP);
+                            log_database(tr('Cloning GIT project ":project"', array(':project' => $project)), 'git/clone');
 
-                    }elseif(preg_match('/^https?:\/\/.+?\.zip/i', $instructions['url'])){
-                        /*
-                         * Set temp path, delete it first to be sure there is no
-                         * garbage in the way!
-                         */
-                        $temp_path = TMP.$params['project'].'/';
-                        file_delete($temp_path);
+                            load_libs('git');
+                            file_delete(TMP.$project);
+                            git_clone($url, TMP);
 
-                        /*
-                         * Download the file to the specified path, and unpack it
-                         */
-                        $file = file_move_to_target($instructions['url'], $temp_path, false, true, 0);
-                        safe_exec('cd '.$temp_path.'; '.$instructions['command']);
+                        }elseif(preg_match('/^https?:\/\/.+/i', $url)){
+                            /*
+                             * Set temp path, delete it first to be sure there is no
+                             * garbage in the way!
+                             */
+                            $temp_path = TMP.$params['project'].'/';
 
-                    }else{
-                        /*
-                         * Errr, unknown install link, don't know how to process this..
-                         */
-                        throw new bException(tr('install(): Unknown install URL type ":url" specified, it is not known how to process this URL', array(':url' => $instructions['url'])), 'not-specified');
+                            if($first_loop){
+                                file_delete($temp_path);
+                            }
+
+                            /*
+                             * Download the file to the specified path
+                             */
+                            $file = file_move_to_target($url, $temp_path, false, true, 0);
+
+                        }else{
+                            /*
+                             * Errr, unknown install link, don't know how to process this..
+                             */
+                            throw new bException(tr('install(): Unknown install URL type ":url" specified, it is not known how to process this URL', array(':url' => $url)), 'not-specified');
+                        }
+
+                        $first_loop = false;
                     }
 
                     /*
-                     * Okay, files available, now move them to their required
-                     * locations as specified. Ensure that the target paths
-                     * exists first to avoid crashes on missing paths.
+                     * Now execute all commands
+                     */
+                    if(!empty($instructions['commands'])){
+                        foreach(array_force($instructions['commands'], ';') as $command){
+                            safe_exec('cd '.$temp_path.'; '.$command);
+                        }
+                    }
+
+                    /*
+                     * Okay, files are ready to move to their targets, now move
+                     * them to their required locations as specified. Ensure
+                     * that the target paths exists first to avoid crashes on
+                     * missing paths.
                      */
                     foreach($instructions['locations'] as $source => $target){
                         $target_path = dirname($target);
@@ -247,8 +261,15 @@ function install($params, $force = false){
                             global $_CONFIG;
 
                             if(file_exists($target)){
-                                safe_exec('chmod ug+w '.$target.' -R');
+                                if($_CONFIG['production']){
+                                    safe_exec('chmod ug+w '.$target.' -R');
+                                }
+
                                 file_delete($target);
+                            }
+
+                            if(!file_exists($temp_path.$source)){
+                                throw new bException(tr('install(): Specified location source ":source" does not exist', array(':source' => $source)), 'not-exist');
                             }
 
                             if($source[0] == '@'){
