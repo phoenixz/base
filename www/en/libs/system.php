@@ -2301,7 +2301,7 @@ function current_function($trace = 0){
 /*
  *
  */
-function debug_sql($query, $column = null, $execute = null, $return_only = false){
+function debug_sql($query, $execute = null, $return_only = false){
     return include(__DIR__.'/handlers/debug_sql.php');
 }
 
