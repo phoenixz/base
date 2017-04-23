@@ -864,9 +864,9 @@ function html_flash($class = null){
 
         if(!isset($_SESSION['flash'])){
             /*
-             * Auto create
+             * Nothing to see here!
              */
-            $_SESSION['flash'] = array();
+            return '';
         }
 
         if(!is_array($_SESSION['flash'])){
@@ -875,7 +875,7 @@ function html_flash($class = null){
              */
             $_SESSION['flash'] = array();
 // :TODO: MAKE THIS A NOTIFICATION!
-            log_error(tr('html_flash(): Invalid flash structure in $_SESSION array, it should always be an array but it is a ":type". Be sure to always use html_flash_set() to add new flash messages', array(':type' => gettype($_SESSION['flash']))), 'invalid');
+            notify('invalid $_SESSION[flash]', tr('html_flash(): Invalid flash structure in $_SESSION array, it should always be an array but it is a ":type". Be sure to always use html_flash_set() to add new flash messages', array(':type' => gettype($_SESSION['flash']))), 'developers');
         }
 
         $retval = '';
@@ -918,19 +918,19 @@ function html_flash($class = null){
                 /*
                  * Don't show "function_name(): " part of message
                  */
-                $flash['message'] = trim(str_from($flash['message'], '():'));
+                $flash['text'] = trim(str_from($flash['text'], '():'));
             }
 
             /*
-             * Set the indicator that we have added flash messages
+             * Set the indicator that we have added flash texts
              */
             switch($_CONFIG['flash']['type']){
                 case 'html':
                     if($flash['title']){
-                        $flash['message'] = $flash['title'].': '.$flash['message'];
+                        $flash['text'] = $flash['title'].': '.$flash['text'];
                     }
 
-                    $retval .= tr($_CONFIG['flash']['html'], array(':message' => $flash['message'], ':type' => $flash['type'], ':hidden' => ''), false);
+                    $retval .= tr($_CONFIG['flash']['html'], array(':message' => $flash['text'], ':type' => $flash['type'], ':hidden' => ''), false);
                     break;
 
                 case 'sweetalert':
@@ -949,7 +949,7 @@ function html_flash($class = null){
             case 'html':
 // :TODO: DONT USE tr() HERE!!!!
                 /*
-                 * Add an extra hidden flash message box that can respond for jsFlashMessages
+                 * Add an extra hidden flash text box that can respond for jsFlashMessages
                  */
                 return $retval.tr($_CONFIG['flash']['html'], array(':message' => '', ':type' => '', ':hidden' => ' hidden'), false);
 
@@ -968,9 +968,9 @@ function html_flash($class = null){
 
                     default:
                         /*
-                         * Multiple messages, show a queue
+                         * Multiple modals, show a queue
                          */
-                        return html_script(sweetalert_queue($sweetalerts));
+                        return html_script(sweetalert_queue(array('modals' => $sweetalerts)));
                 }
         }
 
@@ -992,7 +992,7 @@ function html_flash_set($flash, $type = 'info', $class = null){
             /*
              * Wut? no message?
              */
-            throw new bException(tr('html_flash(): No messages specified'), 'not-specified');
+            throw new bException(tr('html_flash_set(): No messages specified'), 'not-specified');
         }
 
         /*
@@ -1002,23 +1002,15 @@ function html_flash_set($flash, $type = 'info', $class = null){
             $_SESSION['flash'] = array();
         }
 
-        /*
-         * Backward compatibility
-         */
-        if(!is_array($flash)){
-            $flash = array('title' => str_capitalize($type),
-                           'text'  => $flash,
-                           'type'  => $type,
-                           'class' => $class);
-        }
-
         if(is_object($flash)){
             $object = $flash;
-            $flash  = array();
+            $flash  = array('type'  => 'error',
+                            'class' => $type,
+                            'title' => tr('Oops!'));
 
             if($flash instanceof bException){
-                if(debug()){
-                    $flash['type'] = 'error';
+                if(debug() and ($object->getCode() != 'validation')){
+                    show($object);
                     $flash['text'] = $object->getMessages('<br>');
 
                 }else{
@@ -1032,20 +1024,16 @@ function html_flash_set($flash, $type = 'info', $class = null){
                      */
                     $messages      = $object->getMessages();
                     $flash['text'] = current($messages);
-                    $flash['type'] = $object->getCode();
 
                     if(preg_match('/^[a-z_]+\(\): /', $flash['text']) or preg_match('/PHP ERROR [\d+] /', $flash['text'])){
-                        $flash['type'] = 'error';
                         $flash['text'] = tr('Something went wrong, please try again later');
-                        notify('html_flash/bException', tr('html_flash(): Received bException ":code" with message trace ":trace"', array(':code' => $flash['type'], ':trace' => $flash['text'])), 'developers');
+                        notify('html_flash/bException', tr('html_flash_set(): Received bException ":code" with message trace ":trace"', array(':code' => $flash['type'], ':trace' => $flash['text'])), 'developers');
 
                     }else{
                         /*
                          * Show all messages until a function(): message is found, those are considered to be
                          * confidential and should not be shown on production websites
                          */
-                        $type = 'error';
-
                         foreach($messages as $id => $message){
                             if(!empty($delete) or preg_match('/^[a-z_]+\(\): /', $message) or preg_match('/PHP ERROR [\d+] /', $message)){
                                 unset($messages[$id]);
@@ -1059,8 +1047,8 @@ function html_flash_set($flash, $type = 'info', $class = null){
                 }
 
             }elseif($object instanceof Exception){
-                if(debug()){
-                    $flash['type'] = 'error';
+                if(debug() and ($object->getCode() != 'validation')){
+                    show($object);
                     $flash['text'] = $object->getMessage();
 
                 }else{
@@ -1069,22 +1057,44 @@ function html_flash_set($flash, $type = 'info', $class = null){
                      * These should also be considdered confidential and their info should never be
                      * displayed in production sites
                      */
-                    $flash['type'] = 'error';
                     $flash['text'] = tr('Something went wrong, please try again later');
-                    notify('html_flash/Exception', tr('html_flash(): Received PHP exception class ":class" with code ":code" and message ":message"', array(':class' => get_class($object), ':code' => $object->getCode(), ':message' => $object->getMessage())), 'developers');
+                    notify('html_flash/Exception', tr('html_flash_set(): Received PHP exception class ":class" with code ":code" and message ":message"', array(':class' => get_class($object), ':code' => $object->getCode(), ':message' => $object->getMessage())), 'developers');
                 }
 
             }else{
                 if(debug()){
-                    $flash['type'] = 'error';
-                    $flash['text'] = tr('Something went wrong, please try again later');
-                    notify('html_flash/object', tr('html_flash(): Received PHP object with class ":class" and content ":content"', array(':class' => get_class($object), ':content' => print_r($object->getMessage(), true))), 'developers');
-
-                }else{
-                    $flash['type'] = 'error';
-                    $flash['text'] = tr('Specified html flash message ":message" is invalid, it is an object of unknown class ":class"', array(':class' => get_class($object), ':message' => print_r($object, true)));
+                    show($object);
                 }
+
+                $flash['text'] = tr('Something went wrong, please try again later');
+                notify('html_flash/object', tr('html_flash_set(): Received PHP object with class ":class" and content ":content"', array(':class' => get_class($object), ':content' => print_r($object->getMessage(), true))), 'developers');
             }
+        }
+
+        if(($type == 'error') and debug()){
+            show($flash);
+        }
+
+        /*
+         * Backward compatibility
+         */
+        if(!is_array($flash)){
+            $flash = array('title' => str_capitalize($type),
+                           'text'  => $flash,
+                           'type'  => $type,
+                           'class' => $class);
+        }
+
+        /*
+         * Backward compatibility as well
+         */
+        if(empty($flash['text']) and empty($flash['title'])){
+            if($_CONFIG['production']){
+                throw new bException(tr('Invalid html_flash_set() call data, should contain at least "text" or "title"!'), 'invalid');
+            }
+
+            notify('invalid html flash set', $flash, 'developers');
+            return html_flash_set(implode(',', $flash), $type, $class);
         }
 
         $_SESSION['flash'][] = $flash;
