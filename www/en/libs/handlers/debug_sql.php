@@ -1,15 +1,5 @@
 <?php
 try{
-    if(is_array($column)){
-        /*
-         * Argument shift, no columns were specified.
-         */
-        $tmp     = $execute;
-        $execute = $column;
-        $column  = $tmp;
-        unset($tmp);
-    }
-
     if(is_array($execute)){
         /*
          * Reverse key sort to ensure that there are keys that contain at least parts of other keys will not be used incorrectly
