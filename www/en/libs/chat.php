@@ -98,13 +98,14 @@ function chat_end($userid){
  */
 function chat_add_user($user){
     try{
-        sql_query('INSERT INTO `users` (`user_id`, `user_name`, `user_email`, `user_password`, `alt_name`, `user_join`)
-                   VALUES              (:user_id , :user_name , :user_email , :user_password , :alt_name , NOW()      )',
+        sql_query('INSERT INTO `users` (`user_id`, `user_name`, `user_email`, `user_password`, `alt_name`, `user_ip`, `user_join`)
+                   VALUES              (:user_id , :user_name , :user_email , :user_password , :alt_name , :user_ip , NOW()      )',
 
                    array(':user_id'       => $user['id'],
                          ':user_name'     => (empty($user['username']) ? $user['email'] : $user['username']),
                          ':alt_name'      => isset_get($user['name'], ''),
                          ':user_email'    => $user['email'],
+                         'user_ip'        => $_SERVER['REMOTE_ADDR'],
                          ':user_password' => unique_code()),
 
                    null, 'chat');
@@ -157,7 +158,7 @@ function chat_update_user($user){
              */
             if(!sql_get('SELECT `user_id` FROM `users` WHERE `user_id` = :user_id', 'user_id', array(':user_id' => $user['id']), 'chat')){
                 load_libs('user');
-                throw new bException(tr('chat_update_user(): Specified user "%user%" does not exist', array('%user%' => user_name($user))), 'not-exist');
+                throw new bException(tr('chat_update_user(): Specified user ":user" does not exist', array(':user' => user_name($user))), 'not-exist');
             }
         }
 
