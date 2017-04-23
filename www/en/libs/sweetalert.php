@@ -105,9 +105,68 @@ function sweetalert($params, $text = '', $type = '', $options = array()){
 /*
  * Show a sweet alert directly
  */
-function sweetalert_queue($params, $text = '', $type = ''){
+function sweetalert_queue($params){
     try{
-        return html_script(sweetalert($params, $text, $type));
+        array_params ($params);
+        array_default($params, 'modals'             , null);
+        array_default($params, 'show_cancel_button' , false);
+        array_default($params, 'confirm_button_text', 'Ok &rarr;');
+        array_default($params, 'animation'          , false);
+        array_default($params, 'progress_steps'     , true);
+
+        load_libs('json');
+
+        if(empty($params['modals'])){
+            throw new bException('sweetalert_queue(): No modals specified', 'not-specified');
+        }
+
+        if(!is_array($params['modals'])){
+            throw new bException('sweetalert_queue(): Specified modals list should be an array', 'invalid');
+        }
+
+        /*
+         * Translate options
+         */
+        foreach($params as $key => $value){
+            switch($key){
+                case 'modals':
+                    break;
+
+                case 'confirm_button_text':
+                    $options['confirmButtonText'] = $value;
+                    break;
+
+                case 'show_cancel_button':
+                    $options['showCancelButton'] = $value;
+                    break;
+
+                case 'animation':
+                    $options['animation'] = $value;
+                    break;
+
+                case 'progress_steps':
+                    if($value){
+                        if($value === true){
+                            $value = array_keys($params['modals']);
+
+                        }else{
+                            $options['progressSteps'] = $value;
+                        }
+                    }
+
+                    break;
+
+                default:
+                    throw new bException(tr('sweetalert_queue(): Unknown option ":option" specified', array(':option' => $key)), 'unknown');
+            }
+        }
+//show($params);
+
+        $javascript = 'swal.setDefaults('.json_encode_custom($options).');
+                       var steps = '.json_encode_custom($params['modals']).';
+                       swal.queue(steps);';
+
+        return $javascript;
 
     }catch(Exception $e){
         throw new bException('sweetalert_queue(): Failed', $e);
