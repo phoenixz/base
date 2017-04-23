@@ -111,13 +111,13 @@ function sql_error($e, $query, $execute, $sql = null){
                          */
                         if(!is_array($query)){
                             if(empty($query['db'])){
-                                throw new bException('sql_error(): "'.str_log($query, 4096).'" failed, access to databaes denied', $e);
+                                throw new bException('sql_error(): "'.str_log($query, 4096).'" failed, access to database denied', $e);
                             }
 
                             throw new bException('sql_error(): Cannot use database "'.str_log($query['db']).'", this user has no access to it', $e);
                         }
 
-                        throw new bException('sql_error(): Cannot use database with query "'.str_log($query, 4096).'", this user has no access to it', $e);
+                        throw new bException('sql_error(): Cannot use database with query "'.str_log(debug_sql($query, $execute, true), 4096).'", this user has no access to it', $e);
 
                     case 1049:
                         /*
@@ -150,25 +150,25 @@ function sql_error($e, $query, $execute, $sql = null){
                         /*
                          * Integrity constraint violation
                          */
-                        throw new bException('sql_error(): Query "'.str_log($query, 4096).'" contains an abiguous column', $e);
+                        throw new bException('sql_error(): Query "'.str_log(debug_sql($query, $execute, true), 4096).'" contains an abiguous column', $e);
 
                     case 1054:
                         /*
                          * Column not found
                          */
-                        throw new bException('sql_error(): Query "'.str_log($query, 4096).'" refers to a column that does not exist', $e);
+                        throw new bException('sql_error(): Query "'.str_log(debug_sql($query, $execute, true), 4096).'" refers to a column that does not exist', $e);
 
                     case 1064:
                         /*
                          * Syntax error or access violation
                          */
-                        throw new bException('sql_error(): Query "'.str_log($query, 4096).'" has a syntax error', $e);
+                        throw new bException('sql_error(): Query "'.str_log(debug_sql($query, $execute, true), 4096).'" has a syntax error', $e);
 
                     case 1072:
                         /*
                          * Adding index error, index probably does not exist
                          */
-                        throw new bException('sql_error(): Query "'.str_log($query, 4096).'" failed with error 1072 with the message "'.isset_get($error[2]).'"', $e);
+                        throw new bException('sql_error(): Query "'.str_log(debug_sql($query, $execute, true), 4096).'" failed with error 1072 with the message "'.isset_get($error[2]).'"', $e);
 
                     case 1005:
                         //FALLTHROUGH
@@ -186,16 +186,16 @@ function sql_error($e, $query, $execute, $sql = null){
                             $fk = str_replace("\n", ' ', $fk);
 
                         }catch(Exception $e){
-                            throw new bException('sql_error(): Query "'.str_log($query, 4096).'" failed with error 1005, but another error was encountered while trying to obtain FK error data', $e);
+                            throw new bException('sql_error(): Query "'.str_log(debug_sql($query, $execute, true), 4096).'" failed with error 1005, but another error was encountered while trying to obtain FK error data', $e);
                         }
 
-                        throw new bException('sql_error(): Query "'.str_log($query, 4096).'" failed with error 1005 with the message "'.$fk.'"', $e);
+                        throw new bException('sql_error(): Query "'.str_log(debug_sql($query, $execute, true), 4096).'" failed with error 1005 with the message "'.$fk.'"', $e);
 
                     case 1146:
                         /*
                          * Base table or view not found
                          */
-                        throw new bException('sql_error(): Query "'.str_log($query, 4096).'" refers to a base table or view that does not exist', $e);
+                        throw new bException('sql_error(): Query "'.str_log(debug_sql($query, $execute, true), 4096).'" refers to a base table or view that does not exist', $e);
 
                     default:
                         if(!is_string($query)){
@@ -206,12 +206,12 @@ function sql_error($e, $query, $execute, $sql = null){
                             $query = $query->queryString;
                         }
 
-                        throw new bException('sql_error(): Query "'.str_log(debug_sql(preg_replace('!\s+!', ' ', $query), null, $execute, true)).'" failed', $e);
+                        throw new bException('sql_error(): Query "'.str_log(debug_sql(preg_replace('!\s+!', ' ', $query), $execute, true)).'" failed', $e);
 
                         $body = "SQL STATE ERROR : \"".$error[0]."\"\n".
                                 "DRIVER ERROR    : \"".$error[1]."\"\n".
                                 "ERROR MESSAGE   : \"".$error[2]."\"\n".
-                                "query           : \"".(PLATFORM == 'http' ? "<b>".str_log($query, 4096)."</b>" : str_log($query, 4096))."\"\n".
+                                "query           : \"".(PLATFORM == 'http' ? "<b>".str_log(debug_sql($query, $execute, true), 4096)."</b>" : str_log(debug_sql($query, $execute, true), 4096))."\"\n".
                                 "date            : \"".date('d m y h:i:s')."\"\n";
 
                         if(isset($_SESSION)) {
@@ -222,7 +222,7 @@ function sql_error($e, $query, $execute, $sql = null){
                                   GET    : ".print_r($_GET   , true)."
                                   SERVER : ".print_r($_SERVER, true)."\n";
 
-                        error_log('PHP SQL_ERROR: '.str_log($error[2]).' on '.str_log($query, 4096));
+                        error_log('PHP SQL_ERROR: '.str_log($error[2]).' on '.str_log(debug_sql($query, $execute, true), 4096));
 
                         if(!$_CONFIG['production']){
                             throw new bException(nl2br($body), $e);

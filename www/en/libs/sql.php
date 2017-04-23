@@ -106,7 +106,7 @@ function sql_query($query, $execute = false, $handle_exceptions = true, $connect
 
     }catch(Exception $e){
         if(!$handle_exceptions){
-            throw new bException(tr('sql_query(:connector): Query ":query" failed', array(':connector' => $connector, ':query' => $query)), $e);
+            throw new bException(tr('sql_query(:connector): Query ":query" failed', array(':connector' => $connector, ':query' => debug_sql($query, $execute, true))), $e);
         }
 
         try{
@@ -207,7 +207,7 @@ function sql_get($query, $single_column = null, $execute = null, $connector = 'c
             $result = sql_query($query, $execute, true, $connector);
 
             if($result->rowCount() > 1){
-                throw new bException(tr('sql_get(): Failed for query ":query" to fetch single row, specified query result contains not 1 but ":count" results', array(':count' => $result->rowCount(), ':query' => debug_sql($result->queryString, $execute))), 'multiple');
+                throw new bException(tr('sql_get(): Failed for query ":query" to fetch single row, specified query result contains not 1 but ":count" results', array(':count' => $result->rowCount(), ':query' => debug_sql($result->queryString, $execute, true))), 'multiple');
             }
 
             return sql_fetch($result, $single_column);
@@ -219,7 +219,7 @@ function sql_get($query, $single_column = null, $execute = null, $connector = 'c
         }
 
         if(strtolower(substr(trim($query), 0, 6)) != 'select'){
-            throw new bException('sql_get(): Query "'.str_log($query, 4096).'" is not a select query and as such cannot return results', $e);
+            throw new bException('sql_get(): Query "'.str_log(debug_sql($query, $execute, true), 4096).'" is not a select query and as such cannot return results', $e);
         }
 
         throw new bException('sql_get(): Failed', $e);
