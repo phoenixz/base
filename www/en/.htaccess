@@ -89,13 +89,13 @@
 
 
 # Other Apache configuration
-Options -Multiviews -Indexes # Disable multiviews and indexes (show directory indices when directory is requested)
+Options -Multiviews -Indexes
 
-DirectorySlash Off           # Do NOT 301 redirect /path to /path/ when paths should be 404 in the first place, wtf apache?
-DirectoryIndex disabled      # No, don't show directory contents
+DirectorySlash Off
+DirectoryIndex disabled
 
-ErrorDocument 404 /404.php   # Page not found shows as 404
-ErrorDocument 403 /404.php   # Access denied shows as 404 as well, for security reasons
+ErrorDocument 404 /404.php
+ErrorDocument 403 /404.php
 
 
 
