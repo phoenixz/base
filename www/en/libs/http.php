@@ -516,6 +516,9 @@ function http_cache($params, $headers = array()){
     global $_CONFIG;
 
     try{
+        array_params($params);
+        array_default($params, 'max_age', $_CONFIG['cache']['http']['max_age']);
+
         if(!$_CONFIG['cache']['http']['enabled'] or (($params['http_code'] != 200) and ($params['http_code'] != 304))){
             /*
              * Non HTTP 200 / 304 pages should NOT have cache enabled!
@@ -596,7 +599,7 @@ function http_cache($params, $headers = array()){
             case 'no-cache, public':
                 // FALLTHROUGH
             case 'no-cache, private':
-                $headers[] = 'Cache-Control: '.$params['policy'].', max-age='.$params['max-age'];
+                $headers[] = 'Cache-Control: '.$params['policy'].', max-age='.$params['max_age'];
                 $headers[] = 'Expires: '.$expires;
 
                 if(!empty($GLOBALS['etag'])){
