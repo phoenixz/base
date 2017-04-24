@@ -1097,6 +1097,10 @@ function html_flash_set($flash, $type = 'info', $class = null){
             return html_flash_set(implode(',', $flash), $type, $class);
         }
 
+        if(empty($flash['title'])){
+            $flash['title'] = str_capitalize($flash['type']);
+        }
+
         $_SESSION['flash'][] = $flash;
 
     }catch(Exception $e){
