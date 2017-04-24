@@ -679,4 +679,38 @@ function http_redirect_query_url(){
         throw new bException('http_redirect_query_url(): Failed', $e);
     }
 }
+
+
+
+/*
+ * Redirect to the requested langauge
+ */
+function http_language_redirect($url, $language = null){
+    global $_CONFIG;
+
+    try{
+        /*
+         * If language wasn't specified, then detect requested language. If that
+         * is not specified, then see if the user has a current language in
+         * their session. If that isn't specified either, then just get the
+         * default language for this website
+         */
+        if(empty($language)){
+            if(!empty($_SERVER['HTTP_ACCEPT_LANGUAGE'])){
+                $language = str_cut($_SERVER['HTTP_ACCEPT_LANGUAGE'], ',', ';');
+
+            }elseif(!empty($_SESSION['language'])){
+                $language = $_SESSION['language'];
+
+            }else{
+                $language = $_CONFIG['language']['default'];
+            }
+        }
+
+        redirect(str_replace(':language', $language, $url));
+
+    }catch(Exception $e){
+        throw new bException('http_language_redirect(): Failed', $e);
+    }
+}
 ?>
