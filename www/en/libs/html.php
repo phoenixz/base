@@ -1008,6 +1008,10 @@ function html_flash_set($flash, $type = 'info', $class = null){
                             'class' => $type,
                             'title' => tr('Oops!'));
 
+            if(($type == 'error') and debug()){
+                show($object);
+            }
+
             if($flash instanceof bException){
                 if(debug() and ($object->getCode() != 'validation')){
                     show($object);
@@ -1069,10 +1073,6 @@ function html_flash_set($flash, $type = 'info', $class = null){
                 $flash['text'] = tr('Something went wrong, please try again later');
                 notify('html_flash/object', tr('html_flash_set(): Received PHP object with class ":class" and content ":content"', array(':class' => get_class($object), ':content' => print_r($object->getMessage(), true))), 'developers');
             }
-        }
-
-        if(($type == 'error') and debug()){
-            show($flash);
         }
 
         /*
