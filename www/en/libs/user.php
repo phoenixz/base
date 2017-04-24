@@ -1140,14 +1140,14 @@ function user_update_password($params, $current = true){
                                FROM     `passwords`
 
                                WHERE    `users_id` = :users_id
-                               AND      `createdon` > DATE_SUB(UTC_TIMESTAMP(), INTERVAL :days DAY)
+                               AND      `createdon` > DATE_SUB(UTC_TIMESTAMP(), INTERVAL :day DAY)
 
                                ORDER BY `id`
 
                                LIMIT    '.$_CONFIG['security']['passwords']['unique_updates'],
 
                                array(':users_id' => $_SESSION['user']['id'],
-                                     ':days'     => $_CONFIG['security']['passwords']['unique_days']));
+                                     ':day'      => $_CONFIG['security']['passwords']['unique_days']));
 
             while($previous = sql_fetch($list)){
                 if($previous == $password){
@@ -1239,7 +1239,7 @@ function user_get($user = null){
                                    ON        `modifiedby`.`id` = `users`.`modifiedby`
 
                                    WHERE     `users`.`id` = :id
-                                   AND       `users`.`status` IS NULL',
+                                   AND       (`users`.`status` IS NULL OR `users`.`status` = "locked")',
 
                                    array(':id' => $user));
 
@@ -1264,7 +1264,7 @@ function user_get($user = null){
 
                                    WHERE     `users`.`email`    = :email
                                    OR        `users`.`username` = :username
-                                   AND       `users`.`status` IS NULL',
+                                   AND       (`users`.`status` IS NULL OR `users`.`status` = "locked")',
 
                                    array(':email'    => $user,
                                          ':username' => $user));
@@ -2135,8 +2135,8 @@ function user_update_apikey($users_id = null){
 
                    WHERE  `id`      = :id',
 
-                   array(':id'     => $users_id,
-                         ':apikey' => $apikey));
+                   array(':id'     => cfi($users_id),
+                         ':apikey' => cfm($apikey)));
 
         return $apikey;
 
@@ -2145,6 +2145,19 @@ function user_update_apikey($users_id = null){
     }
 }
 
+
+
+/*
+ * Lock the specified user account
+ */
+function user_lock($users_id){
+    try{
+        sql_query('UPDATE `users` SET `status` = "locked" WHERE `id` = :id', array(':id' => cfi($users_id)));
+
+    }catch(Exception $e){
+        throw new bException(tr('user_lock(): Failed'), $e);
+    }
+}
 
 
 /*
