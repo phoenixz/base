@@ -81,6 +81,17 @@ $available_modes = array('strict',
  *
  */
 $languages = cli_argument('--languages', 'all');
+$l         = cli_argument('-l', 'all');
+
+if($l and $languages){
+    throw new bException(tr('Both l- and --languages were specified. Please specify only one or the other'), 'invalid');
+}
+
+if($l){
+    $languages = $l;
+}
+
+
 
 /*
  * Validate command line parameters
@@ -372,8 +383,9 @@ switch(cli_method()){
                                            'getheaders'  => false,
                                            'post'        => array('data' => encrypt($data, $_CONFIG['translate']['passphrase'])),
                                            'httpheaders' => false));
-
+//showdie($response);
             }catch(Exception $e){
+//show($e);
                 if(substr($e->getCode(), 0, 4) == 'HTTP'){
                     $server_message = $e->getData()['data'];
                     $code           = $e->getCode();
@@ -484,9 +496,9 @@ switch(cli_method()){
         break;
 
     case '':
-        throw new bException(tr('No method specified'), 'no-method');
+        throw new bException(tr('No method specified, please specify one of "clear", "scan", or "translate"'), 'no-method');
 
     default:
-        throw new bException(tr('Unknown method ":method" specified', array(':method' => cli_method())), 'unknown');
+        throw new bException(tr('Unknown method ":method" specified, please specify one of "clear", "scan", or "translate"', array(':method' => cli_method())), 'unknown');
 }
 ?>
