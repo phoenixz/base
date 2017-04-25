@@ -1088,9 +1088,9 @@ function html_flash_set($flash, $type = 'info', $class = null){
         /*
          * Backward compatibility as well
          */
-        if(empty($flash['html']) and empty($flash['title'])){
+        if(empty($flash['html']) and empty($flash['text']) and empty($flash['title'])){
             if($_CONFIG['production']){
-                throw new bException(tr('Invalid html_flash_set() call data ":data", should contain at least "text" or "title"!', array(':data' => $flash)), 'invalid');
+                throw new bException(tr('Invalid html_flash_set() call data ":data", should contain at least "text" or "html" or "title"!', array(':data' => $flash)), 'invalid');
             }
 
             notify('invalid html flash set', $flash, 'developers');
