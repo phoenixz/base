@@ -2178,30 +2178,44 @@ function detect_sudo(){
  *
  */
 function language_show($language, $script = null){
-    static $checked = false;
+    static $checked   = false;
+    static $incorrect = false;
 
     try{
-        if($checked){
-            return false;
+        if(is_array($script)){
+            /*
+             * Script here will contain actually a list of all scripts for
+             * each language. This can then be used to determine the name
+             * of the script in the correct language to build linksx
+             */
+            $GLOBALS['scripts'] = $script;
         }
 
-        $checked = true;
+        /*
+         *
+         */
+        if(!$checked){
+            $checked = true;
 
-        if(LANGUAGE === $language){
-            if($script){
-                /*
-                 *
-                 */
-                page_show($script);
+            if(LANGUAGE !== $language){
+                $incorrect = true;
             }
+        }
 
-            return true;
+        if(!is_array($script)){
+            /*
+             * Show the specified script, it will create the content for
+             * this SCRIPT
+             */
+            page_show($script);
         }
 
         /*
          * Script and language match, continue
          */
-        page_show(404);
+        if($incorrect){
+            page_show(404);
+        }
 
     }catch(Exception $e){
         throw new bException(tr('language_show(): Failed'), $e);
