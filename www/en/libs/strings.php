@@ -314,8 +314,19 @@ function str_escape_for_jquery($source, $replace = ''){
 /*
  * Remove double "replace" chars
  */
-function str_nodouble($source, $replace = '\1', $character = '.', $case_insensitive = true){
-    return preg_replace('/('.$character.')\\1+/u'.($case_insensitive ? 'i' : ''), $replace, $source);
+function str_nodouble($source, $replace = '\1', $character = null, $case_insensitive = true){
+    if($character){
+        /*
+         * Remove specific character
+         */
+        return preg_replace('/('.$character.')\\1+/u'.($case_insensitive ? 'i' : ''), $replace, $source);
+    }
+
+    /*
+     * Remove ALL double characters
+     */
+    return preg_replace('/(.)\\1+/u'.($case_insensitive ? 'i' : ''), $replace, $source);
+
 }
 
 
@@ -497,7 +508,7 @@ function str_log($source, $truncate = 2047, $separator = ', '){
             }
         }
 
-        return preg_replace('/[\x00-\x1F\x80-\xFF]/', '', str_replace('  ', ' ', str_replace("\n", ' ', str_truncate($source, $truncate, ' ... ', 'center'))));
+        return str_nodouble(preg_replace('/[\x00-\x1F\x80-\xFF]/', '', str_replace('  ', ' ', str_replace("\n", ' ', str_truncate($source, $truncate, ' ... ', 'center')))), '\1', ' ');
 
     }catch(Exception $e){
         throw new bException('str_log(): Failed', $e);
