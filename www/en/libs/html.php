@@ -1015,7 +1015,7 @@ function html_flash_set($flash, $type = 'info', $class = null){
             if($flash instanceof bException){
                 if(debug() and ($object->getCode() != 'validation')){
                     show($object);
-                    $flash['text'] = $object->getMessages('<br>');
+                    $flash['html'] = $object->getMessages('<br>');
 
                 }else{
                     /*
@@ -1027,11 +1027,11 @@ function html_flash_set($flash, $type = 'info', $class = null){
                      * considered ok to show on production sites
                      */
                     $messages      = $object->getMessages();
-                    $flash['text'] = current($messages);
+                    $flash['html'] = current($messages);
 
-                    if(preg_match('/^[a-z_]+\(\): /', $flash['text']) or preg_match('/PHP ERROR [\d+] /', $flash['text'])){
-                        $flash['text'] = tr('Something went wrong, please try again later');
-                        notify('html_flash/bException', tr('html_flash_set(): Received bException ":code" with message trace ":trace"', array(':code' => $flash['type'], ':trace' => $flash['text'])), 'developers');
+                    if(preg_match('/^[a-z_]+\(\): /', $flash['html']) or preg_match('/PHP ERROR [\d+] /', $flash['html'])){
+                        $flash['html'] = tr('Something went wrong, please try again later');
+                        notify('html_flash/bException', tr('html_flash_set(): Received bException ":code" with message trace ":trace"', array(':code' => $flash['type'], ':trace' => $flash['html'])), 'developers');
 
                     }else{
                         /*
@@ -1046,14 +1046,14 @@ function html_flash_set($flash, $type = 'info', $class = null){
                         }
 
                         unset($delete);
-                        $flash['text'] = implode('<br>', $messages);
+                        $flash['html'] = implode('<br>', $messages);
                     }
                 }
 
             }elseif($object instanceof Exception){
                 if(debug() and ($object->getCode() != 'validation')){
                     show($object);
-                    $flash['text'] = $object->getMessage();
+                    $flash['html'] = $object->getMessage();
 
                 }else{
                     /*
@@ -1061,7 +1061,7 @@ function html_flash_set($flash, $type = 'info', $class = null){
                      * These should also be considdered confidential and their info should never be
                      * displayed in production sites
                      */
-                    $flash['text'] = tr('Something went wrong, please try again later');
+                    $flash['html'] = tr('Something went wrong, please try again later');
                     notify('html_flash/Exception', tr('html_flash_set(): Received PHP exception class ":class" with code ":code" and message ":message"', array(':class' => get_class($object), ':code' => $object->getCode(), ':message' => $object->getMessage())), 'developers');
                 }
 
@@ -1070,7 +1070,7 @@ function html_flash_set($flash, $type = 'info', $class = null){
                     show($object);
                 }
 
-                $flash['text'] = tr('Something went wrong, please try again later');
+                $flash['html'] = tr('Something went wrong, please try again later');
                 notify('html_flash/object', tr('html_flash_set(): Received PHP object with class ":class" and content ":content"', array(':class' => get_class($object), ':content' => print_r($object->getMessage(), true))), 'developers');
             }
         }
@@ -1080,7 +1080,7 @@ function html_flash_set($flash, $type = 'info', $class = null){
          */
         if(!is_array($flash)){
             $flash = array('title' => str_capitalize($type),
-                           'text'  => $flash,
+                           'html'  => $flash,
                            'type'  => $type,
                            'class' => $class);
         }
@@ -1088,7 +1088,7 @@ function html_flash_set($flash, $type = 'info', $class = null){
         /*
          * Backward compatibility as well
          */
-        if(empty($flash['text']) and empty($flash['title'])){
+        if(empty($flash['html']) and empty($flash['title'])){
             if($_CONFIG['production']){
                 throw new bException(tr('Invalid html_flash_set() call data, should contain at least "text" or "title"!'), 'invalid');
             }

@@ -69,11 +69,11 @@ function sweetalert_install($params){
 /*
  * Return the required javascript code to show a sweet alert
  */
-function sweetalert($params, $text = '', $type = '', $options = array()){
+function sweetalert($params, $html = '', $type = '', $options = array()){
     try{
         array_params ($params, 'title');
         array_default($params, 'title'  , '');
-        array_default($params, 'text'   , $text);
+        array_default($params, 'html'   , $html);
         array_default($params, 'type'   , $type);
         array_default($params, 'class'  , null);
         array_default($params, 'options', $options);
@@ -85,7 +85,7 @@ function sweetalert($params, $text = '', $type = '', $options = array()){
         load_libs('json');
 
         $options['title'] = $params['title'];
-        $options['text']  = $params['text'];
+        $options['html']  = $params['html'];
         $options['type']  = $params['type'];
 
         foreach($params['options'] as $key => $value){
