@@ -14,5 +14,5 @@ $_CONFIG['translator']         = array('url'                 => 'https://toolkit
                                        'mode'                => 'full',
                                        'passphrase'          => 'translateplease',
                                        'api_key'             => 'something',
-                                       'allowed_tags'        => '<b><a><strong>');
+                                       'allowed_tags'        => '<a><strong><small><b><i><u>');
 ?>
