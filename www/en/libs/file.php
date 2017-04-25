@@ -2118,6 +2118,15 @@ function file_execute_mode($path, $mode, $callback, $params = null){
             throw new bException(tr('file_execute_mode(): Specified path ":path" does not exist', array(':path' => $path)), 'not-exist');
         }
 
+        if($params){
+            /*
+             * Switch parameters
+             */
+            $tmp      = $params;
+            $params   = $callback;
+            $callback = $tmp;
+        }
+
         if($mode){
             $original_mode = fileperms($path);
             chmod($path, $mode);
