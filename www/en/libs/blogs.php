@@ -2274,6 +2274,7 @@ function blogs_regenerate_sitemap_data($blogs_id, $level, $change_frequency, $gr
         $execute = array();
         $query   = 'SELECT `id`,
                            `url`,
+                           `language`,
                            `createdon`,
                            `modifiedon`
 
@@ -2305,6 +2306,7 @@ function blogs_regenerate_sitemap_data($blogs_id, $level, $change_frequency, $gr
 
             sitemap_add_url(array('file'             => $file,
                                   'group'            => $group,
+                                  'language'         => $post['language'],
                                   'url'              => $post['url'],
                                   'change_frequency' => $change_frequency,
                                   'page_modifiedon'  => ($post['modifiedon'] ? $post['modifiedon'] : $post['createdon']),
