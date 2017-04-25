@@ -61,14 +61,15 @@ function sitemap_generate($languages = null){
                  * Just generate the default sitemap.xml file and we're done!
                  */
                 cli_log(tr('Generating single sitemap file for language ":language"', array(':language' => $language)));
-                sitemap_xml();
+                sitemap_xml($language);
 
                 file_execute_mode(ROOT.'www/'.$language, 0770, array('language' => $language), function($params){
                     if(file_exists(ROOT.'www/'.$params['language'].'/sitemap.xml')){
                         chmod(ROOT.'www/'.$params['language'].'/sitemap.xml', 0660);
-                        rename(TMP.'sitemap.xml', ROOT.'www/'.$params['language'].'/sitemap.xml');
-                        chmod(ROOT.'www/'.$params['language'].'/sitemap.xml', 0440);
                     }
+
+                    rename(TMP.'sitemap.xml', ROOT.'www/'.$params['language'].'/sitemap.xml');
+                    chmod(ROOT.'www/'.$params['language'].'/sitemap.xml', 0440);
                 });
 
             }else{
@@ -98,7 +99,7 @@ function sitemap_generate($languages = null){
                     if(!$file['file']) $file['file'] = 'basic';
 
                     cli_dot(1);
-                    sitemap_xml($file['file'], $language, TMP);
+                    sitemap_xml($language, $file['file']);
                 }
 
                 file_execute_mode(ROOT.'www/'.$language, 0770, array('language' => $language), function($params){
@@ -117,14 +118,14 @@ function sitemap_generate($languages = null){
 
                     sitemap_delete_backups($params['language']);
                 });
-
-                cli_dot(false);
-
-                sql_query(' INSERT INTO `sitemaps_generated` (`language`)
-                           VALUES                           (:language )',
-
-                           array(':language' => $language));
             }
+
+            cli_dot(false);
+
+            sql_query('INSERT INTO `sitemaps_generated` (`language`)
+                       VALUES                           (:language )',
+
+                       array(':language' => $language));
         }
 
     }catch(Exception $e){
@@ -182,14 +183,10 @@ function sitemap_index(){
 /*
  * Generate the sitemap.xml file
  */
-function sitemap_xml($file = null, $language = null, $path = null){
+function sitemap_xml($language = null, $file = null){
     global $_CONFIG;
 
     try{
-        if(!$path){
-            $path = ROOT.'www/en/';
-        }
-
         $sitemap = '';
         $execute = array();
         $query   = 'SELECT    `id`,
@@ -231,7 +228,7 @@ function sitemap_xml($file = null, $language = null, $path = null){
         file_put_contents(TMP.$sitemap.'.xml', $xml);
         chmod(TMP.$sitemap.'.xml', 0440);
 
-        return $xml;
+        return TMP.$sitemap.'.xml';
 
     }catch(Exception $e){
         throw new bException('sitemap_xml(): Failed', $e);
