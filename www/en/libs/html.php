@@ -1090,7 +1090,7 @@ function html_flash_set($flash, $type = 'info', $class = null){
          */
         if(empty($flash['html']) and empty($flash['title'])){
             if($_CONFIG['production']){
-                throw new bException(tr('Invalid html_flash_set() call data, should contain at least "text" or "title"!'), 'invalid');
+                throw new bException(tr('Invalid html_flash_set() call data ":data", should contain at least "text" or "title"!', array(':data' => $flash)), 'invalid');
             }
 
             notify('invalid html flash set', $flash, 'developers');
