@@ -2177,7 +2177,7 @@ function detect_sudo(){
 /*
  *
  */
-function language_show($language, $script = null){
+function language_lock($language, $script = null){
     static $checked   = false;
     static $incorrect = false;
 
@@ -2197,7 +2197,7 @@ function language_show($language, $script = null){
         if(!$checked){
             $checked = true;
 
-            if(LANGUAGE !== $language){
+            if($language and (LANGUAGE !== $language)){
                 $incorrect = true;
             }
         }
@@ -2218,7 +2218,7 @@ function language_show($language, $script = null){
         }
 
     }catch(Exception $e){
-        throw new bException(tr('language_show(): Failed'), $e);
+        throw new bException(tr('language_lock(): Failed'), $e);
     }
 }
 
