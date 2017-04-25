@@ -257,6 +257,8 @@ switch(cli_method()){
          *
          */
         if(count($results['failed_html']) > 0){
+            $crash = false;
+
             foreach($results['failed_html'] as $string => $file){
                 if($ignore_html){
                     if(VERBOSE){
@@ -264,7 +266,7 @@ switch(cli_method()){
                     }
 
                 }else{
-                    cli_log(tr('Found HTML ":html" in ":file"', array(':html' => str_size(str_truncate(str_log($string), 80), 80), ':file' => str_from($file, ROOT))), 'red');
+                    cli_log(tr('Found HTML code ":html" in file ":file"', array(':html' => preg_replace('/<br\s*\/?>/', '.<.b.r.>. ', $string), ':file' => str_from($file, ROOT))), 'red');
                     $crash = true;
                 }
             }
@@ -282,6 +284,8 @@ switch(cli_method()){
          *
          */
         if(count($results['failed_php']) > 0){
+            $crash = false;
+
             foreach($results['failed_php'] as $string => $file){
                 if($ignore_php){
                     if(VERBOSE){
@@ -289,7 +293,7 @@ switch(cli_method()){
                     }
 
                 }else{
-                    cli_log(tr('Found PHP ":php" in ":file"', array(':php' => $string, ':file' => $file)), 'red');
+                    cli_log(tr('Found PHP code ":php" in file ":file"', array(':php' => preg_replace('/<br\s*\/?>/', '.<.b.r.>. ', $string), ':file' => str_from($file, ROOT))), 'red');
                     $crash = true;
                 }
             }
