@@ -2155,6 +2155,7 @@ function blogs_update_urls($blogs = null, $category = null){
                                `url`,
                                `name`,
                                `seoname`,
+                               `language`,
                                `createdon`,
                                `modifiedon`,
                                `createdby`,
