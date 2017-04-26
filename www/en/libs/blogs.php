@@ -94,7 +94,7 @@ function blogs_get($blog = null){
 /*
  * Get a new or existing blog post
  */
-function blogs_post_get($blog = null, $post = null, $language = null){
+function blogs_post_get($blog = null, $post = null, $language = null, $alternative_language = null){
     try{
         if($blog){
             /*
@@ -143,7 +143,7 @@ function blogs_post_get($blog = null, $post = null, $language = null){
                      * Get the post by its id
                      */
                     $where   = ' WHERE `blogs_posts`.`id` = :id';
-                    $execute = array(':id'                => $post);
+                    $execute = array(':id' => $post);
 
                 }else{
                     /*
@@ -159,8 +159,16 @@ function blogs_post_get($blog = null, $post = null, $language = null){
                 }
 
             }else{
-                $where   = ' WHERE `blogs_posts`.`seoname`  = :seoname';
-                $execute = array(':seoname'  => $post);
+                /*
+                 * Language will have to be specified!
+                 */
+                if(!$language and multilingual()){
+                    throw new bException(tr('blogs_post_get(): This is a multi-lingual system, but no language was specified for the blog post name ":post"', array(':post' => $post)), 'not-specified');
+                }
+
+                $where   = ' WHERE `blogs_posts`.`seoname`  = :seoname AND `blogs_posts`.`language` = :language';
+                $execute = array(':seoname'  => $post,
+                                 ':language' => $language);
             }
 
             $retval = sql_get('SELECT    `blogs_posts`.`id`,
@@ -218,7 +226,18 @@ function blogs_post_get($blog = null, $post = null, $language = null){
 
         /*
          * From here, specified blog post was not found!!! omg omg!
+         *
+         * Was the blog post requested by name and with language AND
+         * alternative_language? Then the alternative language should exist, and
+         * the requested name is for that alternative language. Get masters_id
+         * for that document and try fetching the document by masters_id and
+         * language
          */
+        if(!is_numeric($post) and $language and $alternative_language){
+            $masters_id = sql_get('SELECT `masters_id` FROM `blogs_posts` WHERE `seoname` = :seoname AND `language` = :language',  true, array(':seoname' => $post, ':language' => $alternative_language));
+            return blogs_post_get($blog, $masters_id, $language);
+        }
+
         $priority = blogs_post_get_new_priority($blogs_id);
 
         sql_query('INSERT INTO `blogs_posts` (`status`, `blogs_id`, `createdby`, `language`, `priority`)
@@ -1238,11 +1257,24 @@ function blogs_validate_post($post, $params = null){
         }
 
         if(empty($params['allow_duplicate_name'])){
-            if(sql_get('SELECT `id` FROM `blogs_posts` WHERE `blogs_id` = :blogs_id AND `id` != :id AND `name` = :name', array(':blogs_id' => $post['blogs_id'], ':id' => $id, ':name' => $post['name']), 'id')){
+            if(multilingual()){
                 /*
-                 * Another post with this name already exists
+                 * Multilingual site!
                  */
-                $v->setError(tr('A post with the name ":name" already exists', array(':name' => $post['name'])), $params['object_name']);
+                if(sql_get('SELECT `id` FROM `blogs_posts` WHERE `blogs_id` = :blogs_id AND `name` = :name AND `language` = :language AND `id` != :id', array(':blogs_id' => $post['blogs_id'], ':id' => $id, ':name' => $post['name'], ':language' => $post['language']), 'id')){
+                    /*
+                     * Another post with this name already exists
+                     */
+                    $v->setError(tr('A post with the name ":name" already exists for the language ":language"', array(':name' => $post['name'], ':language' => $post['language'])), $params['object_name']);
+                }
+
+            }else{
+                if(sql_get('SELECT `id` FROM `blogs_posts` WHERE `blogs_id` = :blogs_id AND `id` != :idz AND `name` = :name', array(':blogs_id' => $post['blogs_id'], ':id' => $id, ':name' => $post['name']), 'id')){
+                    /*
+                     * Another post with this name already exists
+                     */
+                    $v->setError(tr('A post with the name ":name" already exists', array(':name' => $post['name'])), $params['object_name']);
+                }
             }
         }
 
