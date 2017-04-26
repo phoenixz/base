@@ -197,43 +197,64 @@ function ensure_protocol($url, $protocol = 'http', $force = false){
 /*
  * Add specified query to the specified URL and return
  */
-function url_add_query($url, $query){
+function url_add_query($url){
     try{
-        if($query === true){
-            $query = $_SERVER['QUERY_STRING'];
+        $queries = func_get_args();
+        unset($queries[0]);
+
+        if(!$queries){
+            throw new bException('url_add_query(): No queries specified');
         }
 
-        if(!$query){
-            return $url;
+        foreach($queries as $query){
+            if(!$query) continue;
+
+            if(is_string($query) and strstr($query, '&')){
+                $query = explode('&', $query);
+            }
+
+            if(is_array($query)){
+                foreach($query as $part){
+                    $url = url_add_query($url, $part);
+                }
+
+                continue;
+            }
+
+            if($query === true){
+                $query = $_SERVER['QUERY_STRING'];
+            }
+
+            $url = str_ends_not($url, '?');
+
+            if(!preg_match('/.+?=.*?/', $query)){
+                throw new bException(tr('url_add_query(): Invalid query ":query" specified. Please ensure it has the "key=value" format', array(':query' => $query)), 'invalid');
+            }
+
+            $key = str_until($query, '=');
+
+            if(strpos($url, '?') === false){
+                /*
+                 * This URL has no query yet, begin one
+                 */
+                $url .= '?'.$query;
+
+            }elseif(strpos($url, $key.'=') !== false){
+                /*
+                 * The query already exists in the specified URL, replace it.
+                 */
+                $replace = str_cut($url, $key.'=', '&');
+                $url     = str_replace($key.'='.$replace, $key.'='.str_from($query, '='), $url);
+
+            }else{
+                /*
+                 * Append the query to the URL
+                 */
+                $url = str_ends($url, '&').$query;
+            }
         }
 
-        $url = str_ends_not($url, '?');
-
-        if(!preg_match('/.+?=.*?/', $query)){
-            throw new bException(tr('url_add_query(): Invalid query ":query" specified. Please ensure it has the "key=value" format', array(':query' => $query)), 'invalid');
-        }
-
-        $key = str_until($query, '=');
-
-        if(strpos($url, '?') === false){
-            /*
-             * This URL has no query yet, begin one
-             */
-            return $url.'?'.$query;
-        }
-
-        if(strpos($url, $key.'=') !== false){
-            /*
-             * The query already exists in the specified URL, replace it.
-             */
-            $replace = str_cut($url, $key.'=', '&');
-            return str_replace($key.'='.$replace, $key.'='.str_from($query, '='), $url);
-        }
-
-        /*
-         * Append the query to the URL
-         */
-        return str_ends($url, '&').$query;
+        return $url;
 
     }catch(Exception $e){
         throw new bException('url_add_query(): Failed', $e);
