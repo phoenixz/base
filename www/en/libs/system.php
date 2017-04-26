@@ -2177,6 +2177,22 @@ function detect_sudo(){
 /*
  *
  */
+function multilingual(){
+    global $_CONFIG;
+
+    try{
+        return count($_CONFIG['language']['supported']) > 1;
+
+    }catch(Exception $e){
+        throw new bException(tr('multilingual(): Failed'), $e);
+    }
+}
+
+
+
+/*
+ *
+ */
 function language_lock($language, $script = null){
     static $checked   = false;
     static $incorrect = false;
