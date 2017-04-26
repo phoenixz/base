@@ -7,63 +7,57 @@ static $count, $code, $messages;
 
 $_CONFIG['cors'] = false;
 
-if(empty($_CONFIG['production'])){
-    switch($e->getCode()){
-        case 'validation':
-            break;
-
-        default:
-            showdie($e);
-    }
-}
-
-debug(true);
-//showdie($e);
-
-/*
- * Log data to apache logs
- */
-error_log(tr('*** UNCAUGHT EXCEPTION ***'));
-
-if(is_object($e)){
-    if($e instanceof Exception){
-        if($e instanceof bException){
-            foreach($e->getMessages() as $message){
-                error_log(str_log($message).PHP_EOL);
-            }
-
-        }else{
-            /*
-             * Non bException exception, will only have one message to log
-             */
-            error_log(str_log($e->getMessage()).PHP_EOL);
-        }
-
-    }else{
-        /*
-         * WUT? Should be at least an exception objecth ere!
-         */
-        error_log(tr('*** EXCEPTION IS NOT AN EXCEPTION OBJECT ***'));
-        error_log(str_log(print_r(variable_zts_safe($e), true)).PHP_EOL);
-    }
-
-}else{
-    /*
-     * WUT? We should have an object here
-     */
-    error_log(tr('*** EXCEPTION IS NOT AN OBJECT ***'));
-    error_log(str_log(str_log($e)).PHP_EOL);
-}
-
-$session   = "\n\n\n<br><br>SESSION DATA<br><br>\n\n\n".htmlentities(print_r(variable_zts_safe(isset_get($_SESSION)), true));
-$server    = "\n\n\n<br><br>SERVER DATA<br><br>\n\n\n".htmlentities(print_r(variable_zts_safe($_SERVER), true));
-$trace     = "\n\nFUNCTION TRACE\n".htmlentities(print_r(variable_zts_safe(debug_trace('')), true));
-
 /*
  * Count the # of uncaught exceptions.
  * A second one would be caused by the handling of a previous uncaught exception
  */
 $count++;
+
+try{
+    /*
+     * Log data to apache logs
+     */
+    error_log(tr('*** UNCAUGHT EXCEPTION ***'));
+
+    if(is_object($e)){
+        if($e instanceof Exception){
+            if($e instanceof bException){
+                foreach($e->getMessages() as $message){
+                    error_log(str_log($message).PHP_EOL);
+                }
+
+            }else{
+                /*
+                 * Non bException exception, will only have one message to log
+                 */
+                error_log(str_log($e->getMessage()).PHP_EOL);
+            }
+
+        }else{
+            /*
+             * WUT? Should be at least an exception objecth ere!
+             */
+            error_log(tr('*** EXCEPTION IS NOT AN EXCEPTION OBJECT ***'));
+            error_log(str_log(print_r(variable_zts_safe($e), true)).PHP_EOL);
+        }
+
+    }else{
+        /*
+         * WUT? We should have an object here
+         */
+        error_log(tr('*** EXCEPTION IS NOT AN OBJECT ***'));
+        error_log(str_log(str_log($e)).PHP_EOL);
+    }
+
+}catch(Exception $e){
+    /*
+     * Apache logging failed!
+     */
+}
+
+if(!debug()){
+    page_show(500);
+}
 
 try{
     if(!defined('PLATFORM') or !defined('ENVIRONMENT')){
@@ -115,21 +109,24 @@ try{
         die();
     }
 
+    $session = "\n\n\n<br><br>SESSION DATA<br><br>\n\n\n".htmlentities(print_r(variable_zts_safe(isset_get($_SESSION)), true));
+    $server  = "\n\n\n<br><br>SERVER DATA<br><br>\n\n\n".htmlentities(print_r(variable_zts_safe($_SERVER), true));
+    $trace   = "\n\nFUNCTION TRACE\n".htmlentities(print_r(variable_zts_safe(debug_trace('')), true));
+
     if($count > 1){
-        if($_CONFIG['production']){
+        if(debug()){
             notify('error', "UNCAUGHT EXCEPTION [".$code."]\n".implode("\n", $messages).$server.$session.$trace.$exception);
         }
     }
 
 // :TODO:SVEN:20130717: Add notifications!
-    if((PLATFORM != 'shell') and $_CONFIG['production']){
-        page_show(500, array('exception' => $e));
-        die();
+    if(PLATFORM != 'shell'){
+        showdie($e);
 
     }else{
         log_screen('* '.tr('Uncaught exception').' *', $code);
 
-                try{
+        try{
             load_libs('audio');
             audio_play('exception');
 
