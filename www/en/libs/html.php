@@ -887,6 +887,11 @@ function html_flash($class = null){
                 continue;
             }
 
+            array_default($flash, 'title', null);
+            array_default($flash, 'type' , null);
+            array_default($flash, 'html' , null);
+            array_default($flash, 'text' , null);
+
             switch($type = strtolower($flash['type'])){
                 case 'info':
                     break;
@@ -918,6 +923,7 @@ function html_flash($class = null){
                 /*
                  * Don't show "function_name(): " part of message
                  */
+                $flash['html'] = trim(str_from($flash['html'], '():'));
                 $flash['text'] = trim(str_from($flash['text'], '():'));
             }
 
@@ -926,15 +932,37 @@ function html_flash($class = null){
              */
             switch($_CONFIG['flash']['type']){
                 case 'html':
-                    if($flash['title']){
-                        $flash['text'] = $flash['title'].': '.$flash['text'];
+                    /*
+                     * Either text or html could have been specified, or both
+                     * In case both are specified, show both!
+                     */
+                    foreach(array('html', 'text') as $type){
+                        if($flash[$type]){
+                            if($flash['title']){
+                                $flash[$type] = $flash['title'].': '.$flash[$type];
+                            }
+
+                            $retval .= tr($_CONFIG['flash'][$type], array(':message' => $flash[$type], ':type' => $flash['type'], ':hidden' => ''), false);
+                        }
                     }
 
-                    $retval .= tr($_CONFIG['flash']['html'], array(':message' => $flash['text'], ':type' => $flash['type'], ':hidden' => ''), false);
                     break;
 
                 case 'sweetalert':
-                    $sweetalerts[] = $flash;
+                    if($flash['html']){
+                        /*
+                         * Show specified html
+                         */
+                        $sweetalerts[] = array_remove($flash, 'text');
+                    }
+
+                    if($flash['text']){
+                        /*
+                         * Show specified text
+                         */
+                        $sweetalerts[] = array_remove($flash, 'html');
+                    }
+
                     break;
 
                 default:
@@ -1005,16 +1033,15 @@ function html_flash_set($flash, $type = 'info', $class = null){
         if(is_object($flash)){
             $object = $flash;
             $flash  = array('type'  => 'error',
-                            'class' => $type,
-                            'title' => tr('Oops!'));
+                            'class' => ($class ? $class : $type), // Done for backward compatibility
+                            'title' => tr('Oops'));
 
-            if(($type == 'error') and debug()){
+            if(($type == 'error') and debug() and ($object->getCode() != 'validation')){
                 show($object);
             }
 
             if($flash instanceof bException){
-                if(debug() and ($object->getCode() != 'validation')){
-                    show($object);
+                if(debug() or ($object->getCode() == 'validation')){
                     $flash['html'] = $object->getMessages('<br>');
 
                 }else{
@@ -1051,8 +1078,7 @@ function html_flash_set($flash, $type = 'info', $class = null){
                 }
 
             }elseif($object instanceof Exception){
-                if(debug() and ($object->getCode() != 'validation')){
-                    show($object);
+                if(debug()){
                     $flash['html'] = $object->getMessage();
 
                 }else{
@@ -1066,10 +1092,6 @@ function html_flash_set($flash, $type = 'info', $class = null){
                 }
 
             }else{
-                if(debug()){
-                    show($object);
-                }
-
                 $flash['html'] = tr('Something went wrong, please try again later');
                 notify('html_flash/object', tr('html_flash_set(): Received PHP object with class ":class" and content ":content"', array(':class' => get_class($object), ':content' => print_r($object->getMessage(), true))), 'developers');
             }
