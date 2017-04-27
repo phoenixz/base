@@ -225,6 +225,7 @@ function sitemap_xml($language = null, $file = null){
 
         $xml .= "</urlset>\n";
 
+        file_ensure_path(dirname(TMP.$sitemap.'.xml'));
         file_put_contents(TMP.$sitemap.'.xml', $xml);
         chmod(TMP.$sitemap.'.xml', 0440);
 
