@@ -44,6 +44,8 @@ function paging_generate($params){
         array_default($params, 'hide_single'   , $_CONFIG['paging']['hide_single']);
         array_default($params, 'hide_ends'     , $_CONFIG['paging']['hide_ends']);
         array_default($params, 'disabled'      , '');
+        array_default($params, 'first'         , null);
+        array_default($params, 'last'          , null);
 
         array_key_check($params, 'show_pages,count,html,page,url'.($params['prev_next'] ? ',prev,next' : '').($params['first_last'] ? ',first,last' : ''));
 
