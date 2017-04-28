@@ -1261,7 +1261,9 @@ function blogs_validate_post($post, $params = null){
                 /*
                  * Multilingual site!
                  */
-                if(sql_get('SELECT `id` FROM `blogs_posts` WHERE `blogs_id` = :blogs_id AND `name` = :name AND `language` = :language AND `id` != :id', array(':blogs_id' => $post['blogs_id'], ':id' => $id, ':name' => $post['name'], ':language' => $post['language']), 'id')){
+                $exists = sql_get('SELECT `id` FROM `blogs_posts` WHERE `blogs_id` = :blogs_id AND `name` = :name AND `language` = :language AND `id` != :id', array(':blogs_id' => $post['blogs_id'], ':id' => $id, ':name' => $post['name'], ':language' => $post['language']), 'id');
+
+                if($exists){
                     /*
                      * Another post with this name already exists
                      */
@@ -1269,7 +1271,9 @@ function blogs_validate_post($post, $params = null){
                 }
 
             }else{
-                if(sql_get('SELECT `id` FROM `blogs_posts` WHERE `blogs_id` = :blogs_id AND `id` != :idz AND `name` = :name', array(':blogs_id' => $post['blogs_id'], ':id' => $id, ':name' => $post['name']), 'id')){
+                $exists = sql_get('SELECT `id` FROM `blogs_posts` WHERE `blogs_id` = :blogs_id AND `id` != :id AND `name` = :name', array(':blogs_id' => $post['blogs_id'], ':id' => $id, ':name' => $post['name']), 'id');
+
+                if($exists){
                     /*
                      * Another post with this name already exists
                      */
