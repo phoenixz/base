@@ -439,12 +439,14 @@ function email_get_conversation($email){
 
                                  FROM   `email_conversations`
 
-                                 WHERE ((`us`      LIKE :us      AND `them`    LIKE :them)
-                                 OR     (`us`      LIKE :them    AND `them`    LIKE :us)
+                                 WHERE ((`us`      LIKE :us1     AND `them`    LIKE :them1)
+                                 OR     (`us`      LIKE :them2   AND `them`    LIKE :us2)
                                  AND    (`subject` =    :subject OR  `subject` =    :resubject))',
 
-                                 array(':us'        => '%'.$email['to'].'%',
-                                       ':them'      => '%'.$email['from'].'%',
+                                 array(':us1'       => '%'.$email['to'].'%',
+                                       ':them1'     => '%'.$email['from'].'%',
+                                       ':us2'       => '%'.$email['to'].'%',
+                                       ':them2'     => '%'.$email['from'].'%',
                                        ':subject'   => mb_trim(str_starts_not($email['subject'], 'RE:')),
                                        ':resubject' => str_starts($email['subject'], 'RE:')));
 
