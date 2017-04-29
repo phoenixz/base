@@ -453,10 +453,10 @@ function email_get_conversation($email){
              * This is a new conversation
              */
             if(empty($email['email_accounts_id'])){
-                $email['email_accounts_id'] = sql_get('SELECT `id` FROM `email_accounts` WHERE `email` = :email', 'id', array(':email' => $email['from']));
+                $email['email_accounts_id'] = sql_get('SELECT `id` FROM `email_client_accounts` WHERE `email` = :email', 'id', array(':email' => $email['from']));
 
                 if(!$email['email_accounts_id']){
-                    $email['email_accounts_id'] = sql_get('SELECT `id` FROM `email_accounts` WHERE `email` = :email', 'id', array(':email' => $email['to']));
+                    $email['email_accounts_id'] = sql_get('SELECT `id` FROM `email_client_accounts` WHERE `email` = :email', 'id', array(':email' => $email['to']));
                 }
             }
 
@@ -864,7 +864,7 @@ function email_get_accounts_id($email){
             return $email['email_accounts_id'];
         }
 
-        $r = sql_query('SELECT `id` FROM `email_accounts` WHERE `email` = :from OR `email` = :to', array(':from' => $email['from'], ':to' => $email['to']));
+        $r = sql_query('SELECT `id` FROM `email_client_accounts` WHERE `email` = :from OR `email` = :to', array(':from' => $email['from'], ':to' => $email['to']));
 
         switch($r->rowCount()){
             case 0:
@@ -877,7 +877,7 @@ function email_get_accounts_id($email){
         /*
          * This is a mail between two local accounts, yay!
          */
-        return sql_get('SELECT `id` FROM `email_accounts` WHERE `email` = :from', 'id', array(':from' => $email['from']));
+        return sql_get('SELECT `id` FROM `email_client_accounts` WHERE `email` = :from', 'id', array(':from' => $email['from']));
 
     }catch(Exception $e){
         throw new bException(tr('email_get_accounts_id(): Failed'), $e);
@@ -1041,7 +1041,7 @@ function email_from_exists($email){
             /*
              * Get list from database
              */
-            $account = sql_get('SELECT `id`, `email`, `status` FROM `email_accounts` WHERE `email` = :email', array(':email' => $email));
+            $account = sql_get('SELECT `id`, `email`, `status` FROM `email_client_accounts` WHERE `email` = :email', array(':email' => $email));
 
             if(!$account){
 // :DELETE: _exists() functions should just return true or false, the entry exists or not
@@ -1301,23 +1301,23 @@ function email_get_account($email, $columns = null){
         }
 
         if(!$columns){
-            $columns = '`email_accounts`.`id`,
-                        `email_accounts`.`createdby`,
-                        `email_accounts`.`createdon`,
-                        `email_accounts`.`modifiedby`,
-                        `email_accounts`.`modifiedon`,
-                        `email_accounts`.`status`,
-                        `email_accounts`.`domains_id`,
-                        `email_accounts`.`users_id`,
-                        `email_accounts`.`id` AS `email_accounts_id`,
-                        `email_accounts`.`name`,
-                        `email_accounts`.`email`,
-                        `email_accounts`.`password`,
-                        `email_accounts`.`poll_interval`,
-                        `email_accounts`.`last_poll`,
-                        `email_accounts`.`header`,
-                        `email_accounts`.`footer`,
-                        `email_accounts`.`description`,
+            $columns = '`email_client_accounts`.`id`,
+                        `email_client_accounts`.`createdby`,
+                        `email_client_accounts`.`createdon`,
+                        `email_client_accounts`.`modifiedby`,
+                        `email_client_accounts`.`modifiedon`,
+                        `email_client_accounts`.`status`,
+                        `email_client_accounts`.`domains_id`,
+                        `email_client_accounts`.`users_id`,
+                        `email_client_accounts`.`id` AS `email_accounts_id`,
+                        `email_client_accounts`.`name`,
+                        `email_client_accounts`.`email`,
+                        `email_client_accounts`.`password`,
+                        `email_client_accounts`.`poll_interval`,
+                        `email_client_accounts`.`last_poll`,
+                        `email_client_accounts`.`header`,
+                        `email_client_accounts`.`footer`,
+                        `email_client_accounts`.`description`,
 
                         `email_domains`.`domain`        AS `domain`,
                         `email_domains`.`header`        AS `domain_header`,
@@ -1331,10 +1331,10 @@ function email_get_account($email, $columns = null){
 
         $retval = sql_get('SELECT    '.$columns.'
 
-                           FROM      `email_accounts`
+                           FROM      `email_client_accounts`
 
                            LEFT JOIN `email_domains`
-                           ON        `email_domains`.`id` = `email_accounts`.`domains_id`
+                           ON        `email_domains`.`id` = `email_client_accounts`.`domains_id`
 
                            WHERE  `email` = :email',
 
