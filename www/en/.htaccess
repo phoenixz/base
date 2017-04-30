@@ -1,7 +1,7 @@
 # ----------------------------------------------------------------------
 # Apache caching
 # ----------------------------------------------------------------------
-<filesMatch ".(ico|jpg|jpeg|png|gif|js|css|woff2|pdf|flv|mp4)$">
+<filesMatch ".(ico|png|gif|js|css|woff2|pdf)$">
     FileETag MTime Size
 
     Header set Cache-Control "max-age=604800, public, must-revalidate"
