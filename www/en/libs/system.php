@@ -233,10 +233,10 @@ function cfm($string, $utf8 = true){
 
     if($utf8){
         load_libs('utf8');
-        return addslashes(mb_trim(html_entity_decode(utf8_unescape(strip_tags(utf8_escape($string))))));
+        return mb_trim(html_entity_decode(utf8_unescape(strip_tags(utf8_escape($string)))));
     }
 
-    return addslashes(mb_trim(html_entity_decode(strip_tags($string))));
+    return mb_trim(html_entity_decode(strip_tags($string)));
 
 // :TODO:SVEN:20130709: Check if we should be using mysqli_escape_string() or addslashes(), since the former requires SQL connection, but the latter does NOT have correct UTF8 support!!
 //    return mysqli_escape_string(trim(decode_entities(mb_strip_tags($str))));
