@@ -5,5 +5,5 @@ if(!isset($backtrace[$trace + 2])){
     return 'no_current_file';
 }
 
-return $backtrace[$trace + 2]['file'];
+return isset_get($backtrace[$trace + 2]['file']);
 ?>
