@@ -5,5 +5,5 @@ if(!isset($backtrace[$trace + 2])){
     return -1;
 }
 
-return $backtrace[$trace + 2]['line'];
+return isset_get($backtrace[$trace + 2]['line']);
 ?>
