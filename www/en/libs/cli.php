@@ -14,6 +14,7 @@
  * Ensure that the posix extension is available.
  */
 $GLOBALS['posix'] = true;
+
 if(!function_exists('posix_getuid')){
     log_error('WARNING: The POSIX extension seems to be unavailable, this may cause some functionalities to fail or give unexpected results', 'noposix');
     $GLOBALS['posix'] = false;
@@ -163,7 +164,7 @@ function cli_die($exitcode, $message = '', $color = ''){
 
 
 /*
- * Returns the shell console to return the cursor to the beginning of the line
+ * ?
  */
 function cli_code_back($count){
     $retval = '';
