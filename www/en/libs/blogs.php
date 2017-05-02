@@ -1866,7 +1866,7 @@ function blogs_photo_description($user, $media_id, $description){
 /*
  * Get a full URL of the photo
  */
-function blogs_photo_url($media, $size){
+function blogs_photo_url($media, $size, $section = 'blogs'){
     try{
         load_libs('cdn');
 
@@ -1885,7 +1885,7 @@ function blogs_photo_url($media, $size){
                 /*
                  * Valid
                  */
-                return cdn_domain('/photos/'.$media.'-'.$size.'.jpg', 'blogs');
+                return cdn_domain('/photos/'.$media.'-'.$size.'.jpg', $section);
 
             default:
                 throw new bException(tr('blogs_photo_url(): Unknown size ":size" specified', array(':size' => $size)), 'unknown');
