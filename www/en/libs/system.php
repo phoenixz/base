@@ -928,19 +928,19 @@ function domain($current_url = false, $query = null, $root = null, $domain = nul
         }
 
         if(!$domain){
-            if(empty($_SESSION['domain'])){
-                if(PLATFORM_HTTP){
-                    throw new bException(tr('domain(): $_SESSION[\'domain\'] is not configured'), 'not-specified');
-                }
+            //if(empty($_SESSION['domain'])){
+            //    if(PLATFORM_HTTP){
+            //        throw new bException(tr('domain(): $_SESSION[\'domain\'] is not configured'), 'not-specified');
+            //    }
+            //
+            //    $_SESSION['domain'] = $_CONFIG['domain'];
+            //}
+            //
+            //if($_SESSION['domain'] == 'auto'){
+            //    $_SESSION['domain'] = $_SERVER['SERVER_NAME'];
+            //}
 
-                $_SESSION['domain'] = $_CONFIG['domain'];
-            }
-
-            if($_SESSION['domain'] == 'auto'){
-                $_SESSION['domain'] = $_SERVER['SERVER_NAME'];
-            }
-
-            $domain = $_SESSION['domain'];
+            $domain = $_CONFIG['domain'];
         }
 
         if(!$current_url){
