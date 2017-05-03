@@ -1032,7 +1032,7 @@ function html_flash_set($flash, $type = 'info', $class = null){
 
         if(is_object($flash)){
             $object = $flash;
-            $flash  = array('type'  => 'error',
+            $flash  = array('type'  => (($type == 'info') ? 'error' : $type),
                             'class' => ($class ? $class : $type), // Done for backward compatibility
                             'title' => tr('Oops'));
 
@@ -1041,7 +1041,7 @@ function html_flash_set($flash, $type = 'info', $class = null){
             }
 
             if($flash instanceof bException){
-                if(debug() or ($object->getCode() == 'validation')){
+                if(debug() or ($object->getCode() == 'validation') or ($flash != 'error')){
                     $flash['html'] = $object->getMessages('<br>');
 
                 }else{
@@ -1078,7 +1078,7 @@ function html_flash_set($flash, $type = 'info', $class = null){
                 }
 
             }elseif($object instanceof Exception){
-                if(debug()){
+                if(debug() or ($object->getCode() == 'validation') or ($flash != 'error')){
                     $flash['html'] = $object->getMessage();
 
                 }else{
