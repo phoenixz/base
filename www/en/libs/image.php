@@ -113,6 +113,7 @@ function image_convert($source, $destination, $params = null){
         array_default($params, 'to_w'            , null);
         array_default($params, 'method'          , null);
         array_default($params, 'format'          , null);
+        array_default($params, 'background'      , 'none');
         array_default($params, 'quality'         , $imagick['quality']);
         array_default($params, 'interlace'       , $imagick['interlace']);
         array_default($params, 'strip'           , $imagick['strip']);
@@ -172,11 +173,19 @@ function image_convert($source, $destination, $params = null){
                     $command .= ' -strip ';
                     break;
 
+                case 'background':
+                    if($value){
+                        $command .= ' -background '.$value;
+                    }
+
+                    break;
+
                 case 'interlace':
                     if($value){
                         $value    = image_interlace_valid(strtolower($value));
                         $command .= ' -interlace '.$value;
                     }
+
                     break;
 
                 case 'updatemode':
