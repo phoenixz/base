@@ -29,10 +29,12 @@ if(!isset($GLOBALS['quiet'])){
 }
 
 
+
 /*
  * Allow for ROOT to be predefined. This may be useful when using www/404.php with www/en, www/es, etc
  */
 define('ROOT', realpath(__DIR__.'/../../..').'/');
+
 
 
 /*
@@ -41,10 +43,12 @@ define('ROOT', realpath(__DIR__.'/../../..').'/');
 error_reporting(E_ALL);
 
 
+
 /*
- * Include project file
+ * Include project configuration file
  */
 include_once(ROOT.'config/project.php');
+
 
 
 /*
@@ -64,6 +68,7 @@ if(PLATFORM == 'shell'){
     define('PLATFORM_HTTP' , true);
     define('PLATFORM_SHELL', false);
 }
+
 
 
 try{
@@ -647,6 +652,8 @@ try{
 
         $e = new bException('startup(): Language selection failed', $e);
     }
+
+
 
     /*
      * Delayed exception throwing for
