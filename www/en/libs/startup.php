@@ -219,6 +219,7 @@ $GLOBALS['system']['olderrorhandler'] = set_error_handler('php_error_handler');
 set_exception_handler('uncaught_exception');
 
 
+
 /*
  * Load configuration of product environment, then overwrite with current environment
  */
@@ -299,13 +300,11 @@ try{
 
     unset($file);
 
-
     /*
      * Set timezone
      * See http://www.php.net/manual/en/timezones.php for more info
      */
     date_default_timezone_set($_CONFIG['timezone']);
-
 
     /*
      * Start platform specific stuff
@@ -702,6 +701,15 @@ try{
          * Check for URL's with queries. Depending on configuration, 301 direct to URL without query
          */
         http_redirect_query_url();
+
+        /*
+         * Set CDN project name
+         */
+        if($_CONFIG['cdn']['enabled']){
+            if(empty($_CONFIG['cdn']['project'])){
+                $_CONFIG['cdn']['project'] = PROJECT;
+            }
+        }
 
     }else{
         /*
