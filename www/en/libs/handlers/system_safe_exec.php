@@ -39,6 +39,12 @@ try{
         $lastline = exec($command.($route_errors ? ' 2>&1' : ''), $output, $exitcode);
     }
 
+    if(VERBOSE){
+        foreach($output as $line){
+            cli_log($output);
+        }
+    }
+
     if($exitcode){
         if(!is_array($ok_exitcodes)){
             if(!$ok_exitcodes){
