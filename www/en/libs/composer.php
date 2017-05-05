@@ -19,137 +19,68 @@ if(version_compare(PHP_VERSION, '5.3.2') < 0){
 
 
 
+composer_init();
+
+
+
+/*
+ * Load the composer library and its CSS requirements
+ */
+function composer_init(){
+    try{
+        ensure_installed(array('name'      => 'composer',
+                               'project'   => 'composer',
+                               'callback'  => 'composer_install',
+                               'checks'    => array(ROOT.'www/en/libs/external/composer.phar')));
+
+        if(!file_exists(ROOT.'/composer.json')){
+            composer_init_file();
+        }
+
+    }catch(Exception $e){
+        throw new bException('composer_load(): Failed', $e);
+    }
+}
+
+
+
 /*
  *
  */
-function composer_phar_path($global){
-    if($global){
-        /*
-         * Global path
-         */
-        return '/usr/bin/';
-
-    }else{
-        /*
-         * Local path
-         */
-        return ROOT.'data/bin/';
-    }
-}
-
-
-
-/*
- * Check if composer is installed, and return its location. False if no location was found
- */
-function composer_phar_location(){
+function composer_init_file(){
     try{
-        /*
-         * Check both local and global paths
-         */
-        if(file_exists($file = ROOT.'data/bin/composer.phar')){
-            return $file;
-        }
-
-        if(file_exists($file = '/usr/bin/composer.phar')){
-            return $file;
-        }
-        /*
-         * Composer not found
-         */
-        return false;
+        file_put_contents(ROOT.'composer.json', "{\n}");
 
     }catch(Exception $e){
-        throw new bException('composer_phar_location(): Failed', $e);
+        throw new bException('composer_init_file(): Failed', $e);
     }
 }
 
 
 
 /*
- * Install composer
- * @$path If TRUE, will do a global install in /usr/bin. If set to FALSE will do a local install for this project only in ROOT/data/bin.
+ * Install the composer library
  */
-function composer_phar_install($global = null){
-    global $_CONFIG;
-
+function composer_install($params){
     try{
-        if($global === null){
-            /*
-             * Get global from configuration, default to local
-             */
-            $global = isset_get($_CONFIG['composer']['global'], false);
-        }
+        $params['methods'] = array('download' => array('commands'  => function($hash){
+                                                                        load_libs('file');
+                                                                        file_ensure_path(ROOT.'data/tmp/composer');
+                                                                        safe_exec('wget -O '.ROOT.'data/tmp/composer-setup.php https://getcomposer.org/installer');
 
-        $path = composer_phar_path($global);
+                                                                        $file_hash     = hash_file('SHA384', ROOT.'data/tmp/composer-setup.php');
+                                                                        $required_hash = safe_exec('wget -q -O - https://composer.github.io/installer.sig');
+                                                                        $required_hash = $required_hash[0];
 
-        /*
-         * Ensure that the path is okay and writable
-         */
-        load_libs('file');
-        file_check_dir($path, true);
+                                                                        if($file_hash != $required_hash){
+                                                                            throw new bException(tr('composer_install(): File hash check failed for composer-setup.php'), 'hash-fail');
+                                                                        }
 
-        /*
-         * Get the composer installer and run it to get the composer.phar file
-         */
-        $data = file_get_contents('https://getcomposer.org/installer');
-        file_put_contents(TMP.'composer_phar_installer', $data);
+                                                                        safe_exec('php '.ROOT.'data/tmp/composer-setup.php --install-dir '.ROOT.'libs/external/'.(VERBOSE ? '' : ' --quiet'));
+                                                                        file_delete(ROOT.'data/tmp/composer-setup.php');
+                                                                      }));
 
-        if(PLATFORM == 'shell'){
-            passthru(TMP.'composer_phar_installer');
-
-        }else{
-            safe_exec(TMP.'composer_phar_installer');
-        }
-
-        /*
-         * Move composer phar file to target and cleanup installer
-         */
-        rename(TMP.'composer.phar', $path);
-        ulink(TMP.'composer_phar_installer');
-
-        return $path;
-
-    }catch(Exception $e){
-        throw new bException('composer_phar_install(): Failed', $e);
-    }
-}
-
-
-
-/*
- * Ensure that composer is installed, and return its path
- * @$path If not specified, will search in global path /usr/bin, and local path ROOT/data/bin/. If set to string value, it will install in the specified path
- */
-function composer_phar_ensure($global = null){
-    try{
-        if($phar = composer_phar_location()){
-            return $phar;
-        }
-
-        return composer_phar_install($global);
-
-    }catch(Exception $e){
-        throw new bException('composer_phar_ensure(): Failed', $e);
-    }
-}
-
-
-
-/*
- * Run php composer.phar install
- */
-function composer_install($arguments, $global = null){
-    try{
-        $phar    = composer_phar_ensure();
-        $command = 'php '.$phar.' install';
-
-        if(PLATFORM == 'shell'){
-            passthru($command);
-
-        }else{
-            safe_exec($command);
-        }
+        return install($params);
 
     }catch(Exception $e){
         throw new bException('composer_install(): Failed', $e);
