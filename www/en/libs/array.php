@@ -335,10 +335,6 @@ function array_force($source, $separator = ','){
 
         if(!is_array($source)){
             if(!is_string($source)){
-                if(!is_numeric($source)){
-                    throw new bException(tr('array_force(): Specified source is neither array or string or numeric'), 'invalid');
-                }
-
                 return array($source);
             }
 
