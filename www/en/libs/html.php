@@ -942,7 +942,7 @@ function html_flash($class = null){
                                 $flash[$type] = $flash['title'].': '.$flash[$type];
                             }
 
-                            $retval .= tr($_CONFIG['flash'][$type], array(':message' => $flash[$type], ':type' => $flash['type'], ':hidden' => ''), false);
+                            $retval .= tr($_CONFIG['flash']['html'], array(':message' => $flash[$type], ':type' => $flash['type'], ':hidden' => ''), false);
                         }
                     }
 
