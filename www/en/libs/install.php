@@ -83,11 +83,11 @@
  */
 function install($params, $force = false){
     try{
-        array_default($params, 'method'   , null); // download, npm, bower
-        array_default($params, 'methods'  , null); // 'download,npm,bower'
-        array_default($params, 'name'     , null);
-        array_default($params, 'project'  , null);
-        array_default($params, 'force'    , $force);
+        array_default($params, 'method' , null); // download, npm, bower
+        array_default($params, 'methods', null); // download, npm, bower
+        array_default($params, 'name'   , null);
+        array_default($params, 'project', null);
+        array_default($params, 'force'  , $force);
 
         load_libs('file');
         file_ensure_path(ROOT.'pub/vendor');
@@ -150,6 +150,10 @@ function install($params, $force = false){
                  * Yes, we still have alternative installation methods
                  * available, try those first!
                  */
+                if(VERBOSE){
+                    cli_log(tr('Library ":name" failed to install, check ":check" failed. Retrying with different methods', array(':name' => $params['name'], ':check' => $path)));
+                }
+
                 log_database(tr('Library ":name" failed to install, check ":check" failed. Retrying with different methods', array(':name' => $params['name'], ':check' => $path)), 'install');
                 return install($params);
             }
@@ -162,21 +166,49 @@ function install($params, $force = false){
              * Remove the current method as we're trying this now
              */
             unset($params['method'][$method]);
+            $temp_path = TMP.$params['project'].'/';
+
+            file_ensure_path($temp_path);
             log_database(tr('Library ":name" not found, auto installing now with method ":method"', array(':name' => $params['name'], ':method' => $method)), 'install');
 
-            if(empty($instructions['locations'])){
-                throw new bException(tr('install(): No install locations specified for method ":method" for library ":name"', array(':name' => $params['name'], ':method' => $method)), 'not-specified');
+            if(VERBOSE){
+                log_database(tr('Library ":name" not found, auto installing now with method ":method"', array(':name' => $params['name'], ':method' => $method)));
             }
 
             switch($method){
                 case 'bower':
+                    // FALLTHROUGH
+                case 'composer':
+                    load_libs('composer');
                     // FALLTHROUGH
                 case 'npm':
                     /*
                      * Try installation using npm
                      */
                     try{
-                        safe_exec($instructions['command']);
+                        if(!empty($instructions['commands'])){
+                            /*
+                             * For the first run there will be no previous results
+                             * because there was no previous command
+                             */
+                            $result = '';
+
+                            foreach(array_force($instructions['commands'], ';') as $command){
+                                if(is_callable($command)){
+                                    /*
+                                     * This is a PHP function
+                                     */
+                                    $result = $command($result);
+
+                                }else{
+                                    /*
+                                     * This is a bash command
+                                     */
+                                    $result = safe_exec('cd '.$temp_path.'; '.$command);
+                                }
+                            }
+                        }
+
                         $params['test'] = true;
 
                     }catch(Exception $e){
@@ -198,52 +230,71 @@ function install($params, $force = false){
                      */
                     $first_loop = true;
 
-                    foreach($instructions['urls'] as $url){
-                        if(preg_match('/^https?:\/\/github\.com\/.+?\/.+?\.git$/i', $url)){
-                            /*
-                             * This is a github install file. Clone it, and install from there
-                             */
-                            $project = str_rfrom($url    , '/');
-                            $project = str_until($project, '.git');
+                    if(!empty($instructions['urls'])){
+                        foreach($instructions['urls'] as $url){
+                            if(preg_match('/^https?:\/\/github\.com\/.+?\/.+?\.git$/i', $url)){
+                                /*
+                                 * This is a github install file. Clone it, and install from there
+                                 */
+                                $project = str_rfrom($url    , '/');
+                                $project = str_until($project, '.git');
 
-                            log_database(tr('Cloning GIT project ":project"', array(':project' => $project)), 'git/clone');
+                                log_database(tr('Cloning GIT project ":project"', array(':project' => $project)), 'git/clone');
 
-                            load_libs('git');
-                            file_delete(TMP.$project);
-                            git_clone($url, TMP);
+                                load_libs('git');
+                                file_delete(TMP.$project);
+                                git_clone($url, TMP);
 
-                        }elseif(preg_match('/^https?:\/\/.+/i', $url)){
-                            /*
-                             * Set temp path, delete it first to be sure there is no
-                             * garbage in the way!
-                             */
-                            $temp_path = TMP.$params['project'].'/';
+                            }elseif(preg_match('/^https?:\/\/.+/i', $url)){
+                                /*
+                                 * Set temp path, delete it first to be sure there is no
+                                 * garbage in the way!
+                                 */
+                                if($first_loop){
+                                    file_delete($temp_path);
+                                }
 
-                            if($first_loop){
-                                file_delete($temp_path);
+                                /*
+                                 * Download the file to the specified path
+                                 */
+                                $file = file_move_to_target($url, $temp_path, false, true, 0);
+
+                            }else{
+                                /*
+                                 * Errr, unknown install link, don't know how to process this..
+                                 */
+                                throw new bException(tr('install(): Unknown install URL type ":url" specified, it is not known how to process this URL', array(':url' => $url)), 'not-specified');
                             }
 
-                            /*
-                             * Download the file to the specified path
-                             */
-                            $file = file_move_to_target($url, $temp_path, false, true, 0);
-
-                        }else{
-                            /*
-                             * Errr, unknown install link, don't know how to process this..
-                             */
-                            throw new bException(tr('install(): Unknown install URL type ":url" specified, it is not known how to process this URL', array(':url' => $url)), 'not-specified');
+                            $first_loop = false;
                         }
-
-                        $first_loop = false;
                     }
 
                     /*
-                     * Now execute all commands
+                     * Now execute all commands.
+                     * Each subsequent command will receive the results from the
+                     * previous command
                      */
                     if(!empty($instructions['commands'])){
+                        /*
+                         * For the first run there will be no previous results
+                         * because there was no previous command
+                         */
+                        $result = '';
+
                         foreach(array_force($instructions['commands'], ';') as $command){
-                            safe_exec('cd '.$temp_path.'; '.$command);
+                            if(is_callable($command)){
+                                /*
+                                 * This is a PHP function
+                                 */
+                                $result = $command($result);
+
+                            }else{
+                                /*
+                                 * This is a bash command
+                                 */
+                                $result = safe_exec('cd '.$temp_path.'; '.$command);
+                            }
                         }
                     }
 
@@ -253,51 +304,53 @@ function install($params, $force = false){
                      * that the target paths exists first to avoid crashes on
                      * missing paths.
                      */
-                    foreach($instructions['locations'] as $source => $target){
-                        $target_path = dirname($target);
-                        file_ensure_path($target_path);
+                    if(!empty($instructions['locations'])){
+                        foreach($instructions['locations'] as $source => $target){
+                            $target_path = dirname($target);
+                            file_ensure_path($target_path);
 
-                        file_execute_mode($target_path, (is_writable($target_path) ? false : 0770), function($params, $path, $mode) use ($temp_path, $source, $target){
-                            global $_CONFIG;
+                            file_execute_mode($target_path, (is_writable($target_path) ? false : 0770), function($params, $path, $mode) use ($temp_path, $source, $target){
+                                global $_CONFIG;
 
-                            if(file_exists($target)){
-                                if($_CONFIG['production']){
-                                    safe_exec('chmod ug+w '.$target.' -R');
+                                if(file_exists($target)){
+                                    if($_CONFIG['production']){
+                                        safe_exec('chmod ug+w '.$target.' -R');
+                                    }
+
+                                    file_delete($target);
                                 }
 
-                                file_delete($target);
-                            }
+                                if(!file_exists($temp_path.$source)){
+                                    throw new bException(tr('install(): Specified location source ":source" does not exist', array(':source' => $source)), 'not-exist');
+                                }
 
-                            if(!file_exists($temp_path.$source)){
-                                throw new bException(tr('install(): Specified location source ":source" does not exist', array(':source' => $source)), 'not-exist');
-                            }
-
-                            if($source[0] == '@'){
-                                /*
-                                 * $target will be a symlink to specified source
-                                 */
-                                symlink(substr($source, 1), $target);
-
-                                if($_CONFIG['production']){
+                                if($source[0] == '@'){
                                     /*
-                                     * On production environments, always ensure
-                                     * that all files are readonly for safety
+                                     * $target will be a symlink to specified source
                                      */
-                                    safe_exec('chmod ug-w '.$target);
-                                }
+                                    symlink(substr($source, 1), $target);
 
-                            }else{
-                                rename($temp_path.$source, $target);
+                                    if($_CONFIG['production']){
+                                        /*
+                                         * On production environments, always ensure
+                                         * that all files are readonly for safety
+                                         */
+                                        safe_exec('chmod ug-w '.$target);
+                                    }
 
-                                if($_CONFIG['production']){
-                                    /*
-                                     * On production environments, always ensure
-                                     * that all files are readonly for safety
-                                     */
-                                    safe_exec('chmod ug-w '.$target.' -R');
+                                }else{
+                                    rename($temp_path.$source, $target);
+
+                                    if($_CONFIG['production']){
+                                        /*
+                                         * On production environments, always ensure
+                                         * that all files are readonly for safety
+                                         */
+                                        safe_exec('chmod ug-w '.$target.' -R');
+                                    }
                                 }
-                            }
-                        });
+                            });
+                        }
                     }
 
                     /*
