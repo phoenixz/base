@@ -169,6 +169,8 @@ function install($params, $force = false){
             $temp_path = TMP.$params['project'].'/';
 
             file_ensure_path($temp_path);
+            file_ensure_path(ROOT.'www/en/libs/external');
+
             log_database(tr('Library ":name" not found, auto installing now with method ":method"', array(':name' => $params['name'], ':method' => $method)), 'install');
 
             if(VERBOSE){
