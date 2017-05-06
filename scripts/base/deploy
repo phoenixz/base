@@ -227,14 +227,18 @@ if(!$targets){
      */
     foreach(array_force($categories) as $category){
         foreach($_CONFIG['deploy'] as $target => $deploy){
-            if(isset_get($deploy['categories']) == $category){
+            if(empty($deploy['categories'])) continue;
+
+            $deploy['categories'] = array_force($deploy['categories']);
+
+            if(in_array($category, $deploy['categories'])){
                 $targets[] = $target;
             }
         }
     }
 
     if(empty($targets)){
-        throw new bException(tr('The specified categories ":categories" contain no deploy targets', array(':categories' => str_force($categories, ', '))), 'empty');
+        throw new bException(tr('The specified categories or targets ":categories" contain no configured deploy targets', array(':categories' => str_force($categories, ', '))), 'empty');
     }
 }
 
