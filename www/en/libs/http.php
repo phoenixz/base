@@ -710,6 +710,16 @@ function http_language_redirect($url, $language = null){
             }
         }
 
+        /*
+         * Is the requested language supported?
+         */
+        if(empty($_CONFIG['language']['supported'][$language])){
+            /*
+             * Nop, redirect to default language
+             */
+            $language = $_CONFIG['language']['default'];
+        }
+
         redirect(str_replace(':language', $language, $url));
 
     }catch(Exception $e){
