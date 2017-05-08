@@ -54,7 +54,7 @@ function cdn_domain($file, $section = 'pub'){
                     return cdn_domain($file, $section);
 
                 }else{
-                    $_SESSION['cdn'] = slash($_SESSION['cdn']).strtolower(str_replace('_', '-', PROJECT)).'/pub/';
+                    $_SESSION['cdn'] = slash($_SESSION['cdn']).strtolower(str_replace('_', '-', $_CONFIG['cdn']['project'])).'/pub/';
                 }
             }
 
@@ -86,7 +86,7 @@ function cdn_domain($file, $section = 'pub'){
             /*
              * Yay, found the file in the CDN database!
              */
-            return slash($url['baseurl']).strtolower(str_replace('_', '-', PROJECT)).$url['file'];
+            return slash($url['baseurl']).strtolower(str_replace('_', '-', $_CONFIG['cdn']['project'])).$url['file'];
         }
 
         /*
