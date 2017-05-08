@@ -379,11 +379,22 @@ function file_ensure_path($path, $mode = null){
                          * Some normal file is in the way. Delete the file, and
                          * retry
                          */
-                        file_delete($path);
+                        file_execute_mode(dirname($path), (is_writable(dirname($path)) ? false : 0770), function() use ($path, $mode){
+                            file_delete($path);
+                        });
+
                         return file_ensure_path($path, $mode);
                     }
 
                     continue;
+
+                }elseif(is_link($path)){
+                    /*
+                     * This is a dead symlink, delete it
+                     */
+                    file_execute_mode(dirname($path), (is_writable(dirname($path)) ? false : 0770), function() use ($path, $mode){
+                        file_delete($path);
+                    });
                 }
 
                 try{
