@@ -178,10 +178,10 @@ function install($params, $force = false){
             }
 
             switch($method){
-                case 'bower':
-                    // FALLTHROUGH
                 case 'composer':
                     load_libs('composer');
+                    // FALLTHROUGH
+                case 'bower':
                     // FALLTHROUGH
                 case 'npm':
                     /*
