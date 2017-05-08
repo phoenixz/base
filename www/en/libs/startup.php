@@ -328,7 +328,7 @@ try{
                 define('PWD'    , realpath(__DIR__.'/..').'/');
                 define('TEST'   , (isset($_GET['test'])  ? $_GET['test']  : false));
                 define('FORCE'  , (isset($_GET['force']) ? $_GET['force'] : false));
-                define('VERBOSE', debug());
+                define('VERBOSE', false);
 
                 if($_CONFIG['maintenance']){
                     /*
