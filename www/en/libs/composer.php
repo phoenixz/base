@@ -76,7 +76,9 @@ function composer_install($params){
                                                                             throw new bException(tr('composer_install(): File hash check failed for composer-setup.php'), 'hash-fail');
                                                                         }
 
-                                                                        safe_exec('php '.ROOT.'data/tmp/composer-setup.php --install-dir '.ROOT.'libs/external/'.(VERBOSE ? '' : ' --quiet'));
+                                                                        chmod(ROOT.'www/en/libs/external', 0770);
+                                                                        safe_exec('php '.ROOT.'data/tmp/composer-setup.php --install-dir '.ROOT.'www/en/libs/external/'.(VERBOSE ? '' : ' --quiet'));
+                                                                        chmod(ROOT.'www/en/libs/external', 0550);
                                                                         file_delete(ROOT.'data/tmp/composer-setup.php');
                                                                       }));
 
