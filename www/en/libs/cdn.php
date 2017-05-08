@@ -44,7 +44,18 @@ function cdn_domain($file, $section = 'pub'){
 
                                             ORDER BY  RAND() LIMIT 1', true);
 
-                $_SESSION['cdn'] = slash($_SESSION['cdn']).strtolower(str_replace('_', '-', PROJECT)).'/pub/';
+                if(empty($_SESSION['cdn'])){
+                    /*
+                     * There are no CDN servers available!
+                     * Switch to working without CDN servers
+                     */
+                    notify('configuration-missing', tr('CDN system is enabled but there are no CDN servers configuraed'), 'developers');
+                    $_CONFIG['cdn']['enabled'] = false;
+                    return cdn_domain($file, $section);
+
+                }else{
+                    $_SESSION['cdn'] = slash($_SESSION['cdn']).strtolower(str_replace('_', '-', PROJECT)).'/pub/';
+                }
             }
 
             return $_SESSION['cdn'].str_starts_not($file, '/');
