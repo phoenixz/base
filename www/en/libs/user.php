@@ -1135,7 +1135,7 @@ function user_update_password($params, $current = true){
          * previous passwords in N previous days
          */
         if($_CONFIG['security']['passwords']['unique_days']){
-            $list = sql_query(' SELECT   `password`
+            $list = sql_query('SELECT   `password`
 
                                FROM     `passwords`
 
