@@ -28,10 +28,6 @@ function cdn_domain($file, $section = 'pub'){
         }
 
         if($section == 'pub'){
-            if(!empty($_CONFIG['cdn']['prefix'])){
-                $file = $_CONFIG['cdn']['prefix'].$file;
-            }
-
             if(empty($_SESSION['cdn'])){
                 /*
                  * Get this URL from the CDN system
@@ -56,6 +52,10 @@ function cdn_domain($file, $section = 'pub'){
                 }else{
                     $_SESSION['cdn'] = slash($_SESSION['cdn']).strtolower(str_replace('_', '-', $_CONFIG['cdn']['project'])).'/pub/';
                 }
+            }
+
+            if(!empty($_CONFIG['cdn']['prefix'])){
+                $file = $_CONFIG['cdn']['prefix'].$file;
             }
 
             return $_SESSION['cdn'].str_starts_not($file, '/');

@@ -377,7 +377,7 @@ function html_generate_css(){
 
         html_bundler('css');
 
-        foreach($GLOBALS['css'] as $file => $meta) {
+        foreach($GLOBALS['css'] as $file => $meta){
             if(!$file) continue;
 
             $html = '<link rel="stylesheet" type="text/css" href="'.cdn_domain((($_CONFIG['whitelabels']['enabled'] === true) ? $_SESSION['domain'].'/' : '').'css/'.$file.($min ? '.min.css' : '.css')).'">';
