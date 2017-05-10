@@ -1808,10 +1808,22 @@ function get_config($file, $environment = null){
 
         if($file){
             $file = '_'.$file;
+
+            if(file_exists(ROOT.'config/'.$file.'.php')){
+                include(ROOT.'config/'.$file.'.php');
+            }
+
+        }else{
+            include(ROOT.'config/default.php');
         }
 
-        include(ROOT.'config/production'.$file.'.php');
-        include(ROOT.'config/'.$environment.$file.'.php');
+        if(file_exists(ROOT.'config/production'.$file.'.php')){
+            include(ROOT.'config/production'.$file.'.php');
+        }
+
+        if(file_exists(ROOT.'config/'.$environment.$file.'.php')){
+            include(ROOT.'config/'.$environment.$file.'.php');
+        }
 
         return $_CONFIG;
 

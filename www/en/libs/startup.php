@@ -670,6 +670,15 @@ try{
     }
 
     /*
+     * Set CDN project name
+     */
+    if($_CONFIG['cdn']['enabled']){
+        if(empty($_CONFIG['cdn']['project'])){
+            $_CONFIG['cdn']['project'] = PROJECT;
+        }
+    }
+
+    /*
      * Shell and HTTP specific post processing
      */
     if(PLATFORM_HTTP){
@@ -708,15 +717,6 @@ try{
          * Check for URL's with queries. Depending on configuration, 301 direct to URL without query
          */
         http_redirect_query_url();
-
-        /*
-         * Set CDN project name
-         */
-        if($_CONFIG['cdn']['enabled']){
-            if(empty($_CONFIG['cdn']['project'])){
-                $_CONFIG['cdn']['project'] = PROJECT;
-            }
-        }
 
     }else{
         /*
