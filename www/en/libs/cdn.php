@@ -137,6 +137,10 @@ function cdn_add_files($files, $section = 'pub', $group = null){
             return false;
         }
 
+        if(debug()){
+            log_database(tr('cdn_add_files(): Adding files ":files"', array(':files' => $files)), 'cdn/debug');
+        }
+
         if(!$section){
             throw new bException(tr('cdn_add_files(): No section specified'), 'not-specified');
         }
@@ -158,6 +162,10 @@ function cdn_add_files($files, $section = 'pub', $group = null){
          */
         foreach($servers as $servers_id => $server){
             foreach($files as $url => $file){
+                if(debug()){
+                    log_database(tr('cdn_add_files(): Added file ":file" with url ":url" to CDN server ":server"', array(':file' => $file, ':url' => $url, ':server' => $server)), 'cdn/debug');
+                }
+
                 $file_insert->execute(array(':servers_id' => $servers_id,
                                             ':section'    => $section,
                                             ':group'      => $group,
