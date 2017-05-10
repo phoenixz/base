@@ -672,10 +672,8 @@ try{
     /*
      * Set CDN project name
      */
-    if($_CONFIG['cdn']['enabled']){
-        if(empty($_CONFIG['cdn']['project'])){
-            $_CONFIG['cdn']['project'] = PROJECT;
-        }
+    if(empty($_CONFIG['cdn']['project'])){
+        $_CONFIG['cdn']['project'] = PROJECT;
     }
 
     /*
