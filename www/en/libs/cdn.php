@@ -587,6 +587,8 @@ function cdn_test_server($server){
  * Register this project at the specified CDN server
  */
 function cdn_register_project($server){
+    global $_CONFIG;
+
     try{
         load_libs('api');
 
