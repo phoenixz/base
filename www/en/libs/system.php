@@ -1814,7 +1814,7 @@ function get_config($file = null, $environment = null){
             }
 
         }else{
-            include(ROOT.'config/default.php');
+            include(ROOT.'config/base/default.php');
         }
 
         if(file_exists(ROOT.'config/production'.$file.'.php')){
