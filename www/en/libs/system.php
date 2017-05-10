@@ -1798,7 +1798,7 @@ function unique_code($hash = 'sha512'){
 /*
  * Return deploy configuration for the specified environment
  */
-function get_config($file, $environment = null){
+function get_config($file = null, $environment = null){
     try{
         if(!$environment){
             $environment = ENVIRONMENT;
