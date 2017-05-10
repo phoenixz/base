@@ -28,9 +28,13 @@ function cdn_domain($file, $section = 'pub'){
         }
 
         if($section == 'pub'){
-            if(empty($_SESSION['cdn'])){
+            /*
+             * Process pub files, "system" files like .css, .js, static website
+             * images ,etc
+             */
+            if(!isset($_SESSION['cdn'])){
                 /*
-                 * Get this URL from the CDN system
+                 * Get a CDN server for this session
                  */
                 $_SESSION['cdn'] = sql_get('SELECT    `baseurl`
 
