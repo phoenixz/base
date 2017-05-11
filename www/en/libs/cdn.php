@@ -129,7 +129,7 @@ function cdn_domain($file, $section = 'pub'){
 /*
  * Adds the required amount of copies of the specified file to random CDN servers
  */
-function cdn_add_files($files, $section = 'pub', $group = null){
+function cdn_add_files($files, $section = 'pub', $group = null, $delete = true){
     global $_CONFIG;
 
     try{
@@ -182,8 +182,10 @@ function cdn_add_files($files, $section = 'pub', $group = null){
          * Now that the file has been sent to the CDN system delete the file
          * locally
          */
-        foreach($files as $url => $file){
-            file_delete($file, true);
+        if($delete){
+            foreach($files as $url => $file){
+                file_delete($file, true);
+            }
         }
 
         return count($files);
