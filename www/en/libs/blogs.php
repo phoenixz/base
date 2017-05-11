@@ -1243,8 +1243,8 @@ function blogs_validate_post($post, $params = null){
             throw new bException(tr('Blog post name can not be numeric'), 'invalid');
         }
 
-        $v->isNotEmpty($post['name']    , tr('Please provide a name for your :objectname', array(':objectname' => $params['object_name'])));
-        $v->isNotEmpty($post['blogs_id'], tr('Please provide a blog for your :objectname', array(':objectname' => $params['object_name'])));
+        $v->isNotEmpty($post['name']    , tr('Please provide a name for your :objectname'      , array(':objectname' => $params['object_name'])));
+        $v->isNotEmpty($post['blogs_id'], tr('Please provide a blog for your :objectname'      , array(':objectname' => $params['object_name'])));
         $v->isNumeric ($post['blogs_id'], tr('Please provide a valid blog for your :objectname', array(':objectname' => $params['object_name'])));
 
         $id = sql_get('SELECT `id` FROM `blogs_posts` WHERE `blogs_id` = :blogs_id AND `id` = :id', 'id', array(':blogs_id' => $post['blogs_id'], ':id' => $post['id']));
