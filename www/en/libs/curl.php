@@ -203,7 +203,9 @@ function curl_get($params, $referer = null, $post = false, $options = array()){
 
         if($params['httpheaders'] === true){
             /*
-             * Send headers that hide cURL
+             * Send default headers
+             *
+             * Check if we're sending files. If so, use multipart
              */
             if(is_array($params['post'])){
                 foreach($params['post'] as $post){
@@ -219,6 +221,7 @@ function curl_get($params, $referer = null, $post = false, $options = array()){
                                                'Cache-Control: max-age=0',
                                                'Connection: keep-alive',
                                                'Keep-Alive: 300',
+                                               'Expect:',
                                                'Accept-Charset: utf-8,ISO-8859-1;q=0.7,*;q=0.7',
                                                'Accept-Language: en-us,en;q=0.5');
 
@@ -229,6 +232,7 @@ function curl_get($params, $referer = null, $post = false, $options = array()){
                                                'Cache-Control: max-age=0',
                                                'Connection: keep-alive',
                                                'Keep-Alive: 300',
+                                               'Expect:',
                                                'Accept-Charset: utf-8,ISO-8859-1;q=0.7,*;q=0.7',
                                                'Accept-Language: en-us,en;q=0.5');
             }
