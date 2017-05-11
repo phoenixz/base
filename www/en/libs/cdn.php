@@ -209,6 +209,10 @@ function cdn_send_files($files, $server, $section, $group = null){
         $api_account = cdn_get_api_account($server);
         $result      = api_call_base($api_account, '/cdn/add-files', array('project' => $_CONFIG['cdn']['project'], 'section' => $section, 'group' => $group), $files);
 
+        if(debug()){
+            log_database(tr('cdn_send_files(): Successfully sent files ":files" to server ":server" using api account ":account"', array(':files' => $files, ':server' => $server, ':account' => $api_account)), 'cdn/debug');
+        }
+
         return $result;
 
     }catch(Exception $e){
