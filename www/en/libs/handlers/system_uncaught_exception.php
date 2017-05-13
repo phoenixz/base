@@ -14,39 +14,53 @@ $_CONFIG['cors'] = false;
 $count++;
 
 try{
-    /*
-     * Log data to apache logs
-     */
-    error_log(tr('*** UNCAUGHT EXCEPTION ***'));
+    if(PLATFORM_HTTP){
+        /*
+         * Log data to apache logs
+         */
+        error_log(tr('*** UNCAUGHT EXCEPTION ***'));
 
-    if(is_object($e)){
-        if($e instanceof Exception){
-            if($e instanceof bException){
-                foreach($e->getMessages() as $message){
-                    error_log(str_log($message).PHP_EOL);
+        if(is_object($e)){
+            if($e instanceof Exception){
+                if($e instanceof bException){
+                    foreach($e->getMessages() as $message){
+                        error_log(str_log($message).PHP_EOL);
+                    }
+
+                }else{
+                    /*
+                     * Non bException exception, will only have one message to log
+                     */
+                    error_log(str_log($e->getMessage()).PHP_EOL);
                 }
 
             }else{
                 /*
-                 * Non bException exception, will only have one message to log
+                 * WUT? Should be at least an exception objecth ere!
                  */
-                error_log(str_log($e->getMessage()).PHP_EOL);
+                error_log(tr('*** EXCEPTION IS NOT AN EXCEPTION OBJECT ***'));
+                error_log(str_log(print_r(variable_zts_safe($e), true)).PHP_EOL);
             }
 
         }else{
             /*
-             * WUT? Should be at least an exception objecth ere!
+             * WUT? We should have an object here
              */
-            error_log(tr('*** EXCEPTION IS NOT AN EXCEPTION OBJECT ***'));
-            error_log(str_log(print_r(variable_zts_safe($e), true)).PHP_EOL);
+            error_log(tr('*** EXCEPTION IS NOT AN OBJECT ***'));
+            error_log(str_log(str_log($e)).PHP_EOL);
         }
 
     }else{
         /*
-         * WUT? We should have an object here
+         * Command line interface
          */
-        error_log(tr('*** EXCEPTION IS NOT AN OBJECT ***'));
-        error_log(str_log(str_log($e)).PHP_EOL);
+        switch($e->getCode()){
+            case 'already-running':
+                die($e->getMessage());
+                break;
+
+            default:
+        }
     }
 
 }catch(Exception $e){
