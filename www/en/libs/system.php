@@ -1667,18 +1667,18 @@ function run_background($cmd, $log = true, $single = true){
         }
 
         load_libs('file');
-        file_ensure_path(ROOT.'data/run');
+        file_ensure_path(ROOT.'data/run-background');
         file_ensure_path(ROOT.'data/log');
 
-//showdie(sprintf('nohup %s >> '.ROOT.'data/log/%s 2>&1 & echo $! > %s', $path.$cmd.' '.$args, $log, ROOT.'data/run/'.$cmd));
+//showdie(sprintf('nohup %s >> '.ROOT.'data/log/%s 2>&1 & echo $! > %s', $path.$cmd.' '.$args, $log, ROOT.'data/run-background/'.$cmd));
         if($log){
-            exec(sprintf('nohup %s >> '.ROOT.'data/log/%s 2>&1 & echo $! > %s', $path.$cmd.' '.$args, $log, ROOT.'data/run/'.$cmd));
+            exec(sprintf('nohup %s >> '.ROOT.'data/log/%s 2>&1 & echo $! > %s', $path.$cmd.' '.$args, $log, ROOT.'data/run-background/'.$cmd));
 
         }else{
-            exec(sprintf('nohup %s > /dev/null 2>&1 & echo $! > %s', $path.$cmd.' '.$args, ROOT.'data/run/'.$cmd));
+            exec(sprintf('nohup %s > /dev/null 2>&1 & echo $! > %s', $path.$cmd.' '.$args, ROOT.'data/run-background/'.$cmd));
         }
 
-        return exec(sprintf('cat %s', ROOT.'data/run/'.$cmd));
+        return exec(sprintf('cat %s; rm %s', ROOT.'data/run-background/'.$cmd, ROOT.'data/run-background/'.$cmd));
 
     }catch(Exception $e){
         throw new bException('run_background(): Failed', $e);
