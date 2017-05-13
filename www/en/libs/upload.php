@@ -408,9 +408,12 @@ function upload_check_files($max_uploads = null, $min_uploads = null){
              * Apparently no files were uploaded?
              */
             $_FILES = array();
-            return false;
+            $error_list[0] = array(UPLOAD_ERR_NO_FILE => $errors[UPLOAD_ERR_NO_FILE]);
         }
 
+        /*
+         * Reorder the $_FILES array to make sense
+         */
         foreach($_FILES as $formname => $filedata){
             if(is_array($filedata['name'])){
                 foreach($filedata as $section => $data){
@@ -437,6 +440,9 @@ function upload_check_files($max_uploads = null, $min_uploads = null){
         $_FILES = $files;
         unset($files);
 
+        /*
+         * Basic validations
+         */
         if($max_uploads and ($count > $max_uploads)){
             if($max_uploads == 1){
                 throw new bException(tr('upload_check_files(): Multiple file uploads are not allowed'), 'multiple');
@@ -456,28 +462,41 @@ function upload_check_files($max_uploads = null, $min_uploads = null){
         /*
          * Check for errors and add error messages where needed
          */
-        foreach($_FILES as $key => &$value){
-            switch(!empty($value['error'])){
-                case 0:
-                    continue;
+        foreach($_FILES as &$file){
+            foreach($file as $key => &$value){
+                switch(isset_get($value['error'])){
+                    case 0:
+                        continue;
 
-                case 6: // UPLOAD_ERR_NO_TMP_DIR
-                    // FALLTHROUGH
-                case 7: // UPLOAD_ERR_CANT_WRITE
-                    // FALLTHROUGH
-                case 8: // UPLOAD_ERR_EXTENSION
-                    if(!debug()){
-                        notify('upload_check_files()', tr('Encountered file upload error "%error%" which indicates a server or configuration error', array('%error%' => $value['error'])), 'log,developers');
-                        break;
-                    }
-                    // FALLTHROUGH
-                default:
-                    $value['error_message'] = $errors[$value['error']];
+                    case 6: // UPLOAD_ERR_NO_TMP_DIR
+                        // FALLTHROUGH
+                    case 7: // UPLOAD_ERR_CANT_WRITE
+                        // FALLTHROUGH
+                    case 8: // UPLOAD_ERR_EXTENSION
+                        if(!debug()){
+                            notify('upload_check_files()', tr('Encountered file upload error "%error%" which indicates a server or configuration error', array('%error%' => $value['error'])), 'log,developers');
+                            break;
+                        }
+
+                        // FALLTHROUGH
+                    default:
+                        $value['error_message'] = $errors[$value['error']];
+                        $error_list[$key]       = array($value['error'] => $errors[$value['error']]);
+
+                        /*
+                         * Ensure this file is removed!
+                         */
+                        if(file_exists($value['tmp_name'])){
+                            load_libs('file');
+                            file_delete($value['tmp_name']);
+                        }
+                }
             }
         }
 
+        unset($file);
         unset($value);
-        return false;
+        return isset_get($error_list);
 
     }catch(Exception $e){
         throw new bException('upload_check_files(): Failed', $e);
