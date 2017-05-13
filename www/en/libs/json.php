@@ -173,6 +173,9 @@ function json_error($message, $data = null, $result = null, $http_code = 500){
         if(!$message){
             $message = tr('json_error(): No exception specified in json_error() array');
 
+        }elseif(is_scalar($message)){
+
+
         }elseif(is_array($message)){
             if(empty($message['default'])){
                 $default = tr('Something went wrong, please try again later');
@@ -276,10 +279,13 @@ function json_error($message, $data = null, $result = null, $http_code = 500){
                     $data = implode("\n", $messages);
 
                 }elseif(!empty($default)){
-                    $data = $default;
+                    $message = $default;
                 }
             }
         }
+
+        $data            = array_force($data);
+        $data['message'] = $message;
 
         json_reply(array_force($data), ($result ? $result : 'ERROR'), $http_code);
 
