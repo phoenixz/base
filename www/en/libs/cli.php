@@ -639,9 +639,16 @@ function cli_init_color(){
 function cli_error($e = null){
     global $usage;
 
-    if(!empty($usage)){
-        echo "\n";
-        cli_show_usage($usage, 'white');
+    switch($e->getCode()){
+        case 'already-running':
+            break;
+
+        default:
+            if(!empty($usage)){
+                echo "\n";
+                cli_show_usage($usage, 'white');
+            }
+
     }
 }
 
