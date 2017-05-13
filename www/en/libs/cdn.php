@@ -13,7 +13,7 @@
 /*
  *
  */
-function cdn_domain($file, $section = 'pub'){
+function cdn_domain($file, $section = 'pub', $false_on_not_exist = false){
     global $_CONFIG;
 
     try{
@@ -96,6 +96,10 @@ function cdn_domain($file, $section = 'pub'){
         /*
          * The specified file is not found in the CDN system
          */
+        if($false_on_not_exist){
+            return false;
+        }
+
         return domain($file);
 
         ///*
