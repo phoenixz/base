@@ -182,7 +182,7 @@ function curl_get($params, $referer = null, $post = false, $options = array()){
         array_default($params, 'httpheaders'    , true);
         array_default($params, 'content-type'   , false);
         array_default($params, 'cache'          , false);
-        array_default($params, 'verbose'        , null);
+        array_default($params, 'verbose'        , debug());
         array_default($params, 'method'         , null);
         array_default($params, 'dns_cache'      , true);
         array_default($params, 'verify_ssl'     , true);
@@ -192,6 +192,7 @@ function curl_get($params, $referer = null, $post = false, $options = array()){
         array_default($params, 'retries'        , 5);       // Retry howmany time on HTTP0 failures
         array_default($params, 'timeout'        , $_CONFIG['curl']['timeout']);         // # of seconds for cURL functions to execute
         array_default($params, 'connect_timeout', $_CONFIG['curl']['connect_timeout']); // # of seconds before connection try will fail
+        array_default($params, 'log'            , $_CONFIG['curl']['log']); // # of seconds before connection try will fail
 
         if(VERBOSE and (PLATFORM == 'shell')){
             cli_log(tr('Connecting with ":url"', array(':url' => $params['url'])));
@@ -286,6 +287,24 @@ function curl_get($params, $referer = null, $post = false, $options = array()){
             curl_setopt($ch, CURLOPT_CONNECTTIMEOUT,  $params['connect_timeout']);
             curl_setopt($ch, CURLOPT_SSL_VERIFYHOST, ($params['verify_ssl'] ? 2 : 0));
             curl_setopt($ch, CURLOPT_SSL_VERIFYPEER,  $params['verify_ssl']);
+
+            if($params['log']){
+                if($params['log'] === true){
+                    $params['log'] = ROOT.'data/log/curl';
+                }
+
+                load_libs('file');
+                file_ensure_path(dirname($params['log']));
+
+                curl_setopt($ch, CURLOPT_STDERR, fopen($params['log'], 'a'));
+
+                if($params['post']){
+                    log_database(tr('curl_get(): POST ":url" with data ":data"', array(':url' => $params['url'], ':data' => $params['post'])), 'curl/debug');
+
+                }else{
+                    log_database(tr('curl_get(): GET ":url"', array(':url' => $params['url'])), 'curl/debug');
+                }
+            }
 
             if($params['method']){
                 $params['method'] = strtoupper($params['method']);
