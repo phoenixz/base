@@ -10,7 +10,7 @@ try{
     }
 
     if(!$_CONFIG['location']['detect']){
-        $_SESSION['location'] = false;
+        $_SESSION['location'] = array();
         return false;
     }
 
