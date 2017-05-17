@@ -284,8 +284,11 @@ function json_error($message, $data = null, $result = null, $http_code = 500){
             }
         }
 
-        $data            = array_force($data);
-        $data['message'] = $message;
+        $data = array_force($data);
+
+        if(!empty($message)){
+            $data['message'] = $message;
+        }
 
         json_reply(array_force($data), ($result ? $result : 'ERROR'), $http_code);
 
