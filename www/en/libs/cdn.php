@@ -245,8 +245,8 @@ function cdn_delete_files($list, $column = 'file'){
         $count   = 0;
         $servers = array();
         $files   = array();
-
         $in      = sql_in($list);
+
         $r       = sql_query('SELECT   `cdn_servers`.`seoname` AS `server`,
                                        `cdn_files`.`file`
 

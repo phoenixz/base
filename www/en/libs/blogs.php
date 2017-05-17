@@ -1620,17 +1620,17 @@ function blogs_media_process($file, $post, $priority = null, $original = null){
         }
 
         if((PLATFORM == 'http') and ($post['createdby'] != $_SESSION['user']['id']) and !has_rights('god')){
-            throw new bException('blogs_media_process(): Cannot upload photos, this post is not yours', 'accessdenied');
+            throw new bException('blogs_media_process(): Cannot upload media, this post is not yours', 'accessdenied');
         }
 
         /*
          *
          */
-        $prefix = ROOT.'data/content/photos/';
+        $prefix = ROOT.'data/content/blogs/media/';
         $file   = $post['blog_name'].'/'.file_move_to_target($file, $prefix.$post['blog_name'].'/', '-original.jpg', false, 4);
         $media  = str_runtil($file, '-');
         $types  = $_CONFIG['blogs']['images'];
-        $files  = array('photos/'.$media.'-original.jpg' => $prefix.$file);
+        $files  = array('media/'.$media.'-original.jpg' => $prefix.$file);
         $hash   = hash('sha256', $prefix.$file);
 
         /*
@@ -1642,7 +1642,7 @@ function blogs_media_process($file, $post, $priority = null, $original = null){
                 $params['y'] = $post[$type.'_y'];
 
                 image_convert($prefix.$file, $prefix.$media.'-'.$type.'.jpg', $params);
-                $files['photos/'.$media.'-'.$type.'.jpg'] = $prefix.$media.'-'.$type.'.jpg';
+                $files['media/'.$media.'-'.$type.'.jpg'] = $prefix.$media.'-'.$type.'.jpg';
 
             }else{
                 copy($prefix.$file, $prefix.$media.'-'.$type.'.jpg');
@@ -1666,7 +1666,7 @@ function blogs_media_process($file, $post, $priority = null, $original = null){
                 symlink(basename($prefix.$media.'-'.$type.'.jpg'), $prefix.$media.'-'.$type.'@2x.jpg');
             }
 
-            $files['photos/'.$media.'-'.$type.'@2x.jpg'] = $prefix.$media.'-'.$type.'@2x.jpg';
+            $files['media/'.$media.'-'.$type.'@2x.jpg'] = $prefix.$media.'-'.$type.'@2x.jpg';
         }
 
         /*
@@ -1690,25 +1690,26 @@ function blogs_media_process($file, $post, $priority = null, $original = null){
                                  ':original'       => $original,
                                  ':priority'       => $priority));
 
-        $id   = sql_insert_id();
+        cdn_add_files($files, 'blogs');
 
-        if(cdn_add_files($files, 'blogs')){
-            /*
-             * Files have been added to the CDN system, delete the local versions
-             */
-            foreach($files as $file){
-                file_delete($file);
-            }
-        }
+// :DELETE: cdn_add_files() now already automatically deletes files.
+        //if(cdn_add_files($files, 'blogs')){
+        //    /*
+        //     * Files have been added to the CDN system, delete the local versions
+        //     */
+        //    foreach($files as $file){
+        //        file_delete($file);
+        //    }
+        //}
 
 // :DELETE: This block is replaced by the code below. Only left here in case it contains something usefull still
 //    $html = '<li style="display:none;" id="photo'.$id.'" class="myclub photo">
-//                <img style="width:219px;height:130px;" src="/photos/'.$media.'-small.jpg" />
+//                <img style="width:219px;height:130px;" src="/media/'.$media.'-small.jpg" />
 //                <a class="myclub photo delete">'.tr('Delete this photo').'</a>
 //                <textarea placeholder="'.tr('Description of this photo').'" class="myclub photo description"></textarea>
 //            </li>';
 
-        return array('id'          => $id,
+        return array('id'          => sql_insert_id(),
                      'file'        => $media,
                      'description' => '');
 
@@ -1736,8 +1737,8 @@ function blogs_media_delete($blogs_posts_id){
         }
 
         while($file = sql_fetch($media)){
-            file_delete_tree(dirname(ROOT.'data/content/photos/'.$file['file']));
-            file_clear_path(dirname(ROOT.'data/content/photos/'.$file['file']));
+            file_delete_tree(dirname(ROOT.'data/content/blogs/media/'.$file['file']));
+            file_clear_path(dirname(ROOT.'data/content/blogs/media/'.$file['file']));
         }
 
         sql_query('DELETE FROM `blogs_media` WHERE `blogs_posts_id` = :blogs_posts_id', array(':blogs_posts_id' => $blogs_posts_id));
@@ -1844,7 +1845,7 @@ function blogs_photo_description($user, $media_id, $description){
         }
 
         if(($media['createdby'] != $_SESSION['user']['id']) and !has_rights('god')){
-            throw new bException('blogs_photo_description(): Cannot upload photos, this post is not yours', 'accessdenied');
+            throw new bException('blogs_photo_description(): Cannot upload media, this post is not yours', 'accessdenied');
         }
 
         sql_query('UPDATE `blogs_media`
@@ -1885,7 +1886,7 @@ function blogs_photo_url($media, $size, $section = 'blogs'){
                 /*
                  * Valid
                  */
-                return cdn_domain('/photos/'.$media.'-'.$size.'.jpg', $section);
+                return cdn_domain('/media/'.$media.'-'.$size.'.jpg', $section);
 
             default:
                 throw new bException(tr('blogs_photo_url(): Unknown size ":size" specified', array(':size' => $size)), 'unknown');
@@ -2279,11 +2280,11 @@ function blogs_post_erase($post){
 
         while($media = sql_fetch($r)){
             foreach($_CONFIG['blogs']['images'] as $type => $config){
-                file_delete(ROOT.'data/content/photos/'.$media['file'].'-'.$type.'.jpg');
+                file_delete(ROOT.'data/content/blogs/media/'.$media['file'].'-'.$type.'.jpg');
             }
         }
 
-        file_clear_path(ROOT.'data/content/photos/'.$media['file']);
+        file_clear_path(ROOT.'data/content/blogs/media/'.$media['file']);
 
         sql_query('DELETE FROM `blogs_media`      WHERE `blogs_posts_id` = :blogs_posts_id', array(':blogs_posts_id' => $post));
         sql_query('DELETE FROM `blogs_keywords`   WHERE `blogs_posts_id` = :blogs_posts_id', array(':blogs_posts_id' => $post));
