@@ -136,18 +136,18 @@ function chat_update_user($user){
 
         $r = sql_query('UPDATE `users`
 
-                        SET    `user_name`  = :user_name,
-                               `user_email` = :user_email,
-                               `alt_name`   = :alt_name,
-                               `user_rank`  = :user_rank
+                        SET    `user_name`   = :user_name,
+                               `user_email`  = :user_email,
+                               `alt_name`    = :alt_name,
+                               `user_rank`   = :user_rank
 
-                        WHERE  `user_id`    = :user_id',
+                        WHERE  `user_id`     = :user_id',
 
-                        array(':user_id'    => $user['id'],
-                              ':user_name'  => (empty($user['username']) ? $user['email'] : $user['username']),
-                              ':alt_name'   => isset_get($user['name'], ''),
-                              ':user_email' => $user['email'],
-                              ':user_rank'  => $rank),
+                        array(':user_id'     => $user['id'],
+                              ':user_name'   => (empty($user['username']) ? $user['email'] : $user['username']),
+                              ':alt_name'    => isset_get($user['name'], ''),
+                              ':user_email'  => $user['email'],
+                              ':user_rank'   => $rank),
 
                         null, 'chat');
 
@@ -253,12 +253,14 @@ function chat_update_avatar($user, $avatar){
     try{
         $r = sql_query('UPDATE `users`
 
-                        SET    `avatar`  = :avatar
+                        SET    `user_avatar` = :user_avatar,
+                               `avatar`      = :avatar
 
-                        WHERE  `user_id` = :user_id',
+                        WHERE  `user_id`     = :user_id',
 
-                        array(':user_id' => $user['id'],
-                              ':avatar'  => $avatar), null, 'chat');
+                        array(':user_id'     => $user['id'],
+                              ':avatar'      => $avatar,
+                              ':user_avatar' => $avatar), null, 'chat');
 
     }catch(Exception $e){
         throw new bException(tr('chat_update_avatar(): Failed'), $e);
