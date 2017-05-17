@@ -94,6 +94,8 @@ function upload_ocupload($selector = 'input[name=upload]', $url = '/ajax/upload.
  * Jquery File Upload, supports multiple files at once
  *
  * WARNING! With iframe option, cross domain uploads will NOT work!
+ *
+ * See https://github.com/blueimp/jQuery-File-Upload/wiki for documentation
  */
 function upload_multi($params){
     try{
