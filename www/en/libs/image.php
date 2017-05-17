@@ -296,36 +296,47 @@ function image_convert($source, $destination, $params = null){
          */
         switch($params['method']){
             case 'thumb':
-                safe_exec($command.' -thumbnail '.$params['x'].'x'.$params['y'].'^ -gravity center -extent '.$params['x'].'x'.$params['y'].' -flatten "'.$source.'" "'.$destination.'"'.($params['log'] ? ' >> '.$params['log'].' 2>&1' : ''), 0);
+                $complete_command = $command.' -thumbnail '.$params['x'].'x'.$params['y'].'^ -gravity center -extent '.$params['x'].'x'.$params['y'].' -flatten "'.$source.'" "'.$destination.'"'.($params['log'] ? ' >> '.$params['log'].' 2>&1' : '');
+                safe_exec($complete_command, 0);
+                file_put_contents($params['log'], $complete_command, FILE_APPEND);
                 break;
 
             case 'resize-w':
-                safe_exec($command.' -resize '.$params['x'].'x\> -flatten "'.$source.'" "'.$destination.'"'.($params['log'] ? ' >> '.$params['log'].' 2>&1' : ''), 0);
+                $complete_command = $command.' -resize '.$params['x'].'x\> -flatten "'.$source.'" "'.$destination.'"'.($params['log'] ? ' >> '.$params['log'].' 2>&1' : '');
+                safe_exec($complete_command, 0);
+                file_put_contents($params['log'], $complete_command, FILE_APPEND);
                 break;
 
             case 'resize':
-                safe_exec($command.' -resize '.$params['x'].'x'.$params['y'].'^ -flatten "'.$source.'" "'.$destination.'"'.($params['log'] ? ' >> '.$params['log'].' 2>&1' : ''), 0);
+                $complete_command = $command.' -resize '.$params['x'].'x'.$params['y'].'^ -flatten "'.$source.'" "'.$destination.'"'.($params['log'] ? ' >> '.$params['log'].' 2>&1' : '');
+                safe_exec($complete_command, 0);
+                file_put_contents($params['log'], $complete_command, FILE_APPEND);
                 break;
 
             case 'thumb-circle':
                 load_libs('file');
 
-                $tmpfname = tempnam("/tmp", "CVRT_");
+                $tmpfname         = tempnam("/tmp", "CVRT_");
+                $complete_command = $command.' -thumbnail '.$params['x'].'x'.$params['y'].'^ -gravity center -extent '.$params['x'].'x'.$params['y'].' -background white -flatten "'.$source.'" "'.$tmpfname.'"'.($params['log'] ? ' >> '.$params['log'].' 2>&1' : '');
+                safe_exec($complete_command, 0);
+                file_put_contents($params['log'], $complete_command, FILE_APPEND);
 
-                safe_exec($command.' -thumbnail '.$params['x'].'x'.$params['y'].'^ -gravity center -extent '.$params['x'].'x'.$params['y'].' -background white -flatten "'.$source.'" "'.$tmpfname.'"'.($params['log'] ? ' >> '.$params['log'].' 2>&1' : ''), 0);
-                safe_exec($command.' -size '.$params['x'].'x'.$params['y'].' xc:none -fill "'.$tmpfname.'" -draw "circle '.(floor($params['x'] / 2) - 1).','.(floor($params['y'] / 2) - 1).' '.($params['x']/2).',0" "'.$destination.'"'.($params['log'] ? ' >> '.$params['log'].' 2>&1' : ''), 0);
-
+                $complete_command = $command.' -size '.$params['x'].'x'.$params['y'].' xc:none -fill "'.$tmpfname.'" -draw "circle '.(floor($params['x'] / 2) - 1).','.(floor($params['y'] / 2) - 1).' '.($params['x']/2).',0" "'.$destination.'"'.($params['log'] ? ' >> '.$params['log'].' 2>&1' : '');
+                safe_exec($complete_command, 0);
+                file_put_contents($params['log'], $complete_command, FILE_APPEND);
                 file_delete($tmpfname);
                 break;
 
             case 'crop-resize':
-                load_libs('file');
-                safe_exec($command.' "'.$source.'" -crop '.cfi($params['w'], false).'x'.cfi($params['h'], false).'+'.cfi($params['x'], false).'+'.cfi($params['y'], false).' -resize '.cfi($params['to_w'], false).'x'.cfi($params['to_h'], false).' "'.$destination.'"'.($params['log'] ? ' >> '.$params['log'].' 2>&1' : ''), 0);
+                $complete_command = $command.' "'.$source.'" -crop '.cfi($params['w'], false).'x'.cfi($params['h'], false).'+'.cfi($params['x'], false).'+'.cfi($params['y'], false).' -resize '.cfi($params['to_w'], false).'x'.cfi($params['to_h'], false).' "'.$destination.'"'.($params['log'] ? ' >> '.$params['log'].' 2>&1' : '');
+                safe_exec($complete_command, 0);
+                file_put_contents($params['log'], $complete_command, FILE_APPEND);
                 break;
 
             case 'custom':
-                load_libs('file');
-                safe_exec($command.' "'.$source.'" '.isset_get($params['custom']).' "'.$destination.'"'.($params['log'] ? ' >> '.$params['log'].' 2>&1' : ''), 0);
+                $complete_command = $command.' "'.$source.'" '.isset_get($params['custom']).' "'.$destination.'"'.($params['log'] ? ' >> '.$params['log'].' 2>&1' : '');
+                safe_exec($complete_command, 0);
+                file_put_contents($params['log'], $complete_command, FILE_APPEND);
                 break;
 
             case '':
@@ -350,13 +361,11 @@ function image_convert($source, $destination, $params = null){
 
     }catch(Exception $e){
         try{
-
             if(file_exists(ROOT.'data/log/imagemagic_convert.log')){
-                $contents = file_get_contents(ROOT.'data/log/imagemagic_convert.log');
+                $contents = safe_exec('tail -n 3 '.ROOT.'data/log/imagemagic_convert.log');
             }
 
         }catch(Exception $e){
-
             $contents = tr('image_convert(): Failed to get contents of imagemagick log file ":file"', array(':file' => ROOT.'data/log/imagemagic_convert.log'));
         }
 
