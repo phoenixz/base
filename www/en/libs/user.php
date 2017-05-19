@@ -884,7 +884,7 @@ function user_create_extended_session($users_id) {
 /*
  * Set a users verification code
  */
-function user_set_verification_code($user){
+function user_set_verify_code($user){
     try{
         if(is_array($user)){
             if(!empty($user['id'])){
@@ -904,12 +904,12 @@ function user_set_verification_code($user){
          * Update user validation with that code
          */
         if(is_numeric($user)){
-            sql_query('UPDATE `users` SET `validated` = :code WHERE `id` = :id', array(':id'   => cfi($user),
-                                                                                       ':code' => cfm($code)));
+            sql_query('UPDATE `users` SET `verify_code` = :code WHERE `id` = :id', array(':id'   => cfi($user),
+                                                                                         ':code' => cfm($code)));
 
         }elseif(is_string($user)){
-            sql_query('UPDATE `users` SET `validated` = :code WHERE `email` = :email', array(':email' => cfm($user),
-                                                                                             ':code'  => cfm($code)));
+            sql_query('UPDATE `users` SET `verify_code` = :code WHERE `email` = :email', array(':email' => cfm($user),
+                                                                                               ':code'  => cfm($code)));
 
         }else{
             throw new bException('user_set_verification_code(): Invalid user specified');
@@ -922,7 +922,45 @@ function user_set_verification_code($user){
         return $code;
 
     }catch(Exception $e){
-        throw new bException('user_set_verification_code(): Failed', $e);
+        throw new bException('user_set_verify_code(): Failed', $e);
+    }
+}
+
+
+
+/*
+ * Set a users verification code
+ */
+function user_verify($code){
+    try{
+        $user = sql_get('SELECT `id`, `name`, `email`, `nickname`, `username` FROM `users` WHERE `verify_code` = :verify_code', array(':verify_code' => cfm($code)));
+
+        if(!$user){
+            throw new bException(tr('The specified verify code ":code" does not exist', array(':code' => $code)), 'not-exist');
+        }
+
+        /*
+         * This code exists, yay! Register the user as verified
+         */
+        sql_query('UPDATE `users`
+
+                   SET    `verify_code` = NULL,
+                          `verifiedon`  = NOW()
+
+                   WHERE  `id`          = :id', array(':id' => cfi($user['id'])));
+
+        if(isset_get($_SESSION['user']['id']) == $user['id']){
+            /*
+             * Hey, the currently logged in user is the user being verified!
+             */
+            $_SESSION['user']['verifiedon']  = date_convert(null, 'mysql');
+            $_SESSION['user']['verify_code'] = null;
+        }
+
+        return $user;
+
+    }catch(Exception $e){
+        throw new bException('user_verify(): Failed', $e);
     }
 }
 
