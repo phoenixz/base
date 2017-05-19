@@ -1572,11 +1572,14 @@ function email_send_unsent(){
          * Prepare to send each email and then
          * update the `status` to "sent" and also update the `senton` date
          */
+        $count = 0;
+
         while($email = sql_fetch($r)){
             /*
              * Don't delay again, its already stored!
              * Don't validate again, its already processed and valid!
              */
+            $count++;
             $email['delayed']  = false;
             $email['validate'] = false;
 
@@ -1608,6 +1611,8 @@ function email_send_unsent(){
              */
             usleep(500);
         }
+
+        return $count;
 
     }catch(Exception $e){
         throw new bException(tr('email_send_unsent(): Failed'), $e);

@@ -196,8 +196,8 @@ switch(cli_method()){
         cli_no_arguments_left();
         cli_log(tr('Sending unsent emails'), 'white');
 
-        email_send_unsent();
-        cli_log(tr('Sent emails'), 'green');
+        $count = email_send_unsent();
+        cli_log(tr('Sent ":count" emails', array(':count' => $count)), 'green');
         break;
 
     case 'list':
@@ -588,4 +588,6 @@ switch(cli_method()){
     default:
         throw new bException(tr('Unknown method ":method" specified', array(':method' => cli_method())), 'unknown');
 }
+
+cli_run_once_local(true);
 ?>
