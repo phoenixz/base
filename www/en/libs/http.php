@@ -710,6 +710,8 @@ function http_language_redirect($url, $language = null){
             }
         }
 
+        $language = substr($language, 0, 2);
+
         /*
          * Is the requested language supported?
          */
