@@ -1128,10 +1128,10 @@ function email_validate($email){
 
         $v = new validate_form($email, 'body,subject,to,from');
 
-        $v->isNotEmpty('to'     , tr('Please specify an email destination'));
-        $v->isNotEmpty('from'   , tr('Please specify an email source'));
-        $v->isNotEmpty('subject', tr('Please specify an email subject'));
-        $v->isNotEmpty('subject', tr('Please write something in the email'));
+        $v->isNotEmpty($email['to']     , tr('Please specify an email destination'));
+        $v->isNotEmpty($email['from']   , tr('Please specify an email source'));
+        $v->isNotEmpty($email['subject'], tr('Please specify an email subject'));
+        $v->isNotEmpty($email['subject'], tr('Please write something in the email'));
 
         if(!email_from_exists($email['from'])){
             $v->setError(tr('Specified source email ":email" does not exist', array(':email' => $email['from'])));
