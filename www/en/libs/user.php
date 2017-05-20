@@ -886,6 +886,8 @@ function user_create_extended_session($users_id) {
  */
 function user_set_verify_code($user, $email_type = false){
     try{
+        load_libs('email');
+
         if(!is_array($user)){
             throw new bException('user_set_verify_code(): Invalid user specified', 'invalid');
         }
