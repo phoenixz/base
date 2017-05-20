@@ -886,13 +886,8 @@ function user_create_extended_session($users_id) {
  */
 function user_set_verify_code($user, $email_type = false){
     try{
-        if(is_array($user)){
-            if(!empty($user['id'])){
-                $user = $user['id'];
-
-            }elseif(!empty($user['email'])){
-                $user = $user['email'];
-            }
+        if(!is_array($user)){
+            throw new bException('user_set_verify_code(): Invalid user specified', 'invalid');
         }
 
         /*
@@ -903,34 +898,18 @@ function user_set_verify_code($user, $email_type = false){
         /*
          * Update user validation with that code
          */
-        if(is_numeric($user)){
-            $r = sql_query('UPDATE `users`
+        $r = sql_query('UPDATE `users`
 
-                           SET    `verify_code` = :code,
-                                  `verifiedon`  = NULL
+                       SET    `verify_code` = :code,
+                              `verifiedon`  = NULL
 
-                           WHERE  `id`          = :id',
+                       WHERE  `id`          = :id',
 
-                           array(':id'          => cfi($user),
-                                 ':code'        => cfm($code)));
-
-        }elseif(is_string($user)){
-            $r = sql_query('UPDATE `users`
-
-                            SET    `verify_code` = :code,
-                                   `verifiedon`  = NULL
-
-                            WHERE  `email`       = :email',
-
-                            array(':email'       => cfm($user),
-                                  ':code'        => cfm($code)));
-
-        }else{
-            throw new bException('user_set_verify_code(): Invalid user specified', 'invalid');
-        }
+                       array(':id'          => cfi($user['id']),
+                             ':code'        => cfm($code)));
 
         if(!sql_affected_rows($r)){
-            throw new bException(tr('user_set_verify_code(): Specified user ":user" does not exist', array(':user' => $user)), 'not-exist');
+            throw new bException(tr('user_set_verify_code(): Specified user ":user" does not exist', array(':user' => $user['id'])), 'not-exist');
         }
 
         switch($email_type){
@@ -946,6 +925,7 @@ function user_set_verify_code($user, $email_type = false){
                                  'body'     => ' <a href="'.domain('/verify/'.$code).'" style="border: none; color: #333333; background-color: #FFB108; border-color: #cccccc; padding: 8px 15px; font-weight: bold; text-decoration: none; border-radius: 3px;">
                                                      '.tr('Click Here').'
                                                  </a>'));
+                break;
 
             case 'update':
                 email_send(array('template' => 'email-update',
@@ -956,6 +936,7 @@ function user_set_verify_code($user, $email_type = false){
                                  'body'     => ' <a href="'.domain('/verify/'.$code).'" style="border: none; color: #333333; background-color: #FFB108; border-color: #cccccc; padding: 8px 15px; font-weight: bold; text-decoration: none; border-radius: 3px;">
                                                      '.tr('Click Here').'
                                                  </a>'));
+                break;
 
             default:
                 throw new bException(tr('user_set_verify_code(): Specified email type ":type" does not exist', array(':type' => $email_type)), 'not-exist');
@@ -978,7 +959,7 @@ function user_verify($code){
         $user = sql_get('SELECT `id`, `name`, `email`, `nickname`, `username` FROM `users` WHERE `verify_code` = :verify_code', array(':verify_code' => cfm($code)));
 
         if(!$user){
-            throw new bException(tr('The specified verify code ":code" does not exist', array(':code' => $code)), 'not-exist');
+            throw new bException(tr('user_verify(): The specified verify code ":code" does not exist', array(':code' => $code)), 'not-exist');
         }
 
         /*
