@@ -884,7 +884,7 @@ function user_create_extended_session($users_id) {
 /*
  * Set a users verification code
  */
-function user_set_verify_code($user){
+function user_set_verify_code($user, $email_type = false){
     try{
         if(is_array($user)){
             if(!empty($user['id'])){
@@ -898,25 +898,67 @@ function user_set_verify_code($user){
         /*
          * Create a unique code.
          */
-        $code = uniqid(ENVIRONMENT, true);
+        $code = unique_code();
 
         /*
          * Update user validation with that code
          */
         if(is_numeric($user)){
-            sql_query('UPDATE `users` SET `verify_code` = :code WHERE `id` = :id', array(':id'   => cfi($user),
-                                                                                         ':code' => cfm($code)));
+            $r = sql_query('UPDATE `users`
+
+                           SET    `verify_code` = :code,
+                                  `verifiedon`  = NULL
+
+                           WHERE  `id`          = :id',
+
+                           array(':id'          => cfi($user),
+                                 ':code'        => cfm($code)));
 
         }elseif(is_string($user)){
-            sql_query('UPDATE `users` SET `verify_code` = :code WHERE `email` = :email', array(':email' => cfm($user),
-                                                                                               ':code'  => cfm($code)));
+            $r = sql_query('UPDATE `users`
+
+                            SET    `verify_code` = :code,
+                                   `verifiedon`  = NULL
+
+                            WHERE  `email`       = :email',
+
+                            array(':email'       => cfm($user),
+                                  ':code'        => cfm($code)));
 
         }else{
-            throw new bException('user_set_verification_code(): Invalid user specified');
+            throw new bException('user_set_verify_code(): Invalid user specified', 'invalid');
         }
 
-        if(!sql_affected_rows()){
-            throw new bException(tr('user_set_verification_code(): Specified user ":user" does not exist', array(':user' => $user)));
+        if(!sql_affected_rows($r)){
+            throw new bException(tr('user_set_verify_code(): Specified user ":user" does not exist', array(':user' => $user)), 'not-exist');
+        }
+
+        switch($email_type){
+            case '':
+                break;
+
+            case 'signup':
+                email_send(array('template' => 'signup',
+                                 'format'   => 'html',
+                                 'subject'  => 'Welcome to igotit.com! Please verify your email address',
+                                 'to'       => $user['email'],
+                                 'from'     => 'noreply@igotit.com',
+                                 'body'     => ' <a href="'.domain('/verify/'.$code).'" style="border: none; color: #333333; background-color: #FFB108; border-color: #cccccc; padding: 8px 15px; font-weight: bold; text-decoration: none; border-radius: 3px;">
+                                                     '.tr('Click Here').'
+                                                 </a>'));
+
+            case 'update':
+                email_send(array('template' => 'email-update',
+                                 'format'   => 'html',
+                                 'subject'  => 'You updated your email address, pelase verify it!',
+                                 'to'       => $user['email'],
+                                 'from'     => 'noreply@igotit.com',
+                                 'body'     => ' <a href="'.domain('/verify/'.$code).'" style="border: none; color: #333333; background-color: #FFB108; border-color: #cccccc; padding: 8px 15px; font-weight: bold; text-decoration: none; border-radius: 3px;">
+                                                     '.tr('Click Here').'
+                                                 </a>'));
+
+            default:
+                throw new bException(tr('user_set_verify_code(): Specified email type ":type" does not exist', array(':type' => $email_type)), 'not-exist');
         }
 
         return $code;
@@ -997,11 +1039,11 @@ function user_create($params){
 /*
  * Add a new user
  */
-function user_signup($params, $no_password = false){
+function user_signup($user, $no_password = false){
     global $_CONFIG;
 
     try{
-        if(empty($params['password']) and (isset_get($params['status']) !== '_new') and !$no_password){
+        if(empty($user['password']) and (isset_get($user['status']) !== '_new') and !$no_password){
             throw new bException(tr('user_signup(): Please specify a password'), 'not-specified');
         }
 
@@ -1009,102 +1051,28 @@ function user_signup($params, $no_password = false){
                    VALUES              (:status , :createdby , :username , :password , :name , :email , :roles_id , :role )',
 
                    array(':createdby' => isset_get($_SESSION['user']['id']),
-                         ':username'  => get_null(isset_get($params['username'])),
-                         ':status'    => isset_get($params['status']),
-                         ':name'      => isset_get($params['name']),
-                         ':password'  => (empty($params['password']) ? '' :((isset_get($params['status']) === '_new') ? '' : get_hash($params['password'], $_CONFIG['security']['passwords']['hash']))),
-                         ':email'     => get_null(isset_get($params['email'])),
-                         ':role'      => get_null(isset_get($params['role'])),
-                         ':roles_id'  => get_null(isset_get($params['roles_id']))));
+                         ':username'  => get_null(isset_get($user['username'])),
+                         ':status'    => isset_get($user['status']),
+                         ':name'      => isset_get($user['name']),
+                         ':password'  => (empty($user['password']) ? '' :((isset_get($user['status']) === '_new') ? '' : get_hash($user['password'], $_CONFIG['security']['passwords']['hash']))),
+                         ':email'     => get_null(isset_get($user['email'])),
+                         ':role'      => get_null(isset_get($user['role'])),
+                         ':roles_id'  => get_null(isset_get($user['roles_id']))));
 
-        return sql_insert_id();
+        /*
+         * Return data from database with the given $user merged over it.
+         *
+         * NOTE: This is done on purpose! The `users` table may contain extra
+         * columns that are not yet filled in by user_signup(), and would be
+         * lost with the data we return if we don't copy the given $user over
+         * the database data.
+         */
+        return sql_merge(user_get(sql_insert_id()), $user);
 
     }catch(Exception $e){
         throw new bException('user_signup(): Failed', $e);
     }
 }
-
-
-// :DELETE: There should not be an update function for tables!!!! This should be implemented in the pages directly
-///*
-// * Update specified user
-// */
-//function user_update($params){
-//    try{
-//        array_params($params);
-//        array_default($params, 'validated', false);
-//
-//        if(!is_array($params)){
-//            throw new bException('user_update(): Invalid params specified', 'invalid');
-//        }
-//
-//        if(empty($params['email'])){
-//            throw new bException('user_update(): No email specified', 'not-specified');
-//        }
-//
-//        if(empty($params['id'])){
-//            throw new bException('user_update(): No users id specified', 'not-specified');
-//        }
-//
-//        if(empty($params['name'])){
-//            if(!empty($params['username'])){
-//                $params['name'] = isset_get($params['username']);
-//
-//            }else{
-//                $params['name'] = isset_get($params['email']);
-//            }
-//        }
-//
-//        if(!$user = user_get($params['id'])){
-//            throw new bException('user_update(): User with id "'.str_log($params['id']).'" does not exists', 'not-exist');
-//        }
-//
-//        $exists = sql_get('SELECT `id`, `email`, `username`
-//                           FROM   `users`
-//                           WHERE  `id`      != :id
-//                           AND   (`email`    = :email
-//                           OR     `username` = :username )',
-//
-//                           array(':id'       => $params['id'],
-//                                 ':email'    => $params['email'],
-//                                 ':username' => $params['username']));
-//
-//        if($exists){
-//            if($exists['username'] == $params['username']){
-//                throw new bException('user_update(): Another user already has the username "'.str_log($params['username']).'"', 'exists');
-//
-//            }else{
-//                throw new bException('user_update(): Another user already has the email "'.str_log($params['email']).'"', 'exists');
-//            }
-//        }
-//
-//        $r = sql_query('UPDATE `users`
-//                        SET    `username`  = :username,
-//                               `name`      = :name,
-//                               `email`     = :email,
-//                               `language`  = :language,
-//                               `gender`    = :gender,
-//                               `latitude`  = :latitude,
-//                               `longitude` = :longitude,
-//                               `country`   = :country
-//                        WHERE  `id`        = :id',
-//
-//                        array(':id'        => isset_get($params['id']),
-//                              ':username'  => isset_get($params['username']),
-//                              ':name'      => $params['name'],
-//                              ':email'     => $params['email'],
-//                              ':language'  => isset_get($params['language']),
-//                              ':gender'    => isset_get($params['gender']),
-//                              ':latitude'  => isset_get($params['latitude']),
-//                              ':longitude' => isset_get($params['longitude']),
-//                              ':country'   => isset_get($params['country'])));
-//
-//        return $r->rowCount();
-//
-//    }catch(Exception $e){
-//        throw new bException('user_update(): Failed', $e);
-//    }
-//}
 
 
 
@@ -1957,10 +1925,10 @@ function user_get_key($user = null, $force = false){
         }
 
         if(is_numeric($user)){
-            $dbuser = sql_get('SELECT `id`, `username`, `key` FROM `users` WHERE `id`       = :id       AND `status` IS NULL', array(':id' => $user));
+            $dbuser = sql_get('SELECT `id`, `email`, `key` FROM `users` WHERE `id`    = :id    AND `status` IS NULL', array(':id'    => $user));
 
         }else{
-            $dbuser = sql_get('SELECT `id`, `username`, `key` FROM `users` WHERE (`username` = :username OR `email` = :email) AND `status` IS NULL', array(':username' => $user, ':email' => $user));
+            $dbuser = sql_get('SELECT `id`, `email`, `key` FROM `users` WHERE `email` = :email AND `status` IS NULL', array(':email' => $user));
         }
 
         if(!$dbuser){
@@ -1983,7 +1951,7 @@ function user_get_key($user = null, $force = false){
 
         $timestamp = microtime(true);
 
-        return array('user'      => $dbuser['username'],
+        return array('user'      => $dbuser['email'],
                      'timestamp' => $timestamp,
                      'key'       => hash('sha256', $dbuser['key'].SEED.$timestamp));
 
@@ -2004,10 +1972,10 @@ function user_check_key($user, $key, $timestamp){
         $past   = 1800;
 
         if(is_numeric($user)){
-            $dbkey = sql_get('SELECT `key` FROM `users` WHERE `id`        = :id'      , 'key', array(':id' => $user));
+            $dbkey = sql_get('SELECT `key` FROM `users` WHERE `id`    = :id'   , 'key', array(':id'    => $user));
 
         }elseif(is_string($user)){
-            $dbkey = sql_get('SELECT `key` FROM `users` WHERE `username` = :username', 'key', array(':username' => $user));
+            $dbkey = sql_get('SELECT `key` FROM `users` WHERE `email` = :email', 'key', array(':email' => $user));
 
         }else{
             /*
@@ -2058,7 +2026,7 @@ function user_check_key($user, $key, $timestamp){
 function user_key_form_fields($user = null, $prefix = ''){
     try{
         if(!$user){
-            $user = $_SESSION['user']['username'];
+            $user = $_SESSION['user']['email'];
         }
 
         $key    = user_get_key($user);
