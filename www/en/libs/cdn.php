@@ -13,11 +13,15 @@
 /*
  *
  */
-function cdn_domain($file, $section = 'pub', $false_on_not_exist = false){
+function cdn_domain($file, $section = 'pub', $false_on_not_exist = false, $cdn_status = null){
     global $_CONFIG;
 
     try{
-        if(!$_CONFIG['cdn']['enabled']){
+        if($cdn_status === null){
+            $cdn_status = $_CONFIG['cdn']['enabled'];
+        }
+
+        if(!$cdn_status){
             if($section == 'pub'){
                 if(!empty($_CONFIG['cdn']['prefix'])){
                     $section = $_CONFIG['cdn']['prefix'];
