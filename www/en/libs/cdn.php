@@ -13,15 +13,11 @@
 /*
  *
  */
-function cdn_domain($file, $section = 'pub', $false_on_not_exist = false, $cdn_status = null){
+function cdn_domain($file, $section = 'pub', $false_on_not_exist = false){
     global $_CONFIG;
 
     try{
-        if($cdn_status === null){
-            $cdn_status = $_CONFIG['cdn']['enabled'];
-        }
-
-        if(!$cdn_status){
+        if(!$_CONFIG['cdn']['enabled']){
             if($section == 'pub'){
                 if(!empty($_CONFIG['cdn']['prefix'])){
                     $section = $_CONFIG['cdn']['prefix'];
@@ -177,7 +173,7 @@ function cdn_add_files($files, $section = 'pub', $group = null, $delete = true){
                 $file_insert->execute(array(':servers_id' => $servers_id,
                                             ':section'    => $section,
                                             ':group'      => $group,
-                                            ':file'       => $url));
+                                            ':file'       => str_starts($url, '/')));
             }
 
             /*
