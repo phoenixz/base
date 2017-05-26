@@ -1205,7 +1205,11 @@ function user_get($user = null){
     try{
         if($user){
             if(!is_scalar($user)){
-                throw new bException(tr('user_get(): Specified user data ":data" is not scalar', array(':data' => $user)), 'invalid');
+                if(!is_array($user)){
+                    throw new bException(tr('user_get(): Specified user data ":data" is not scalar or array', array(':data' => $user)), 'invalid');
+                }
+
+                $user = $user['id'];
             }
 
             if(is_numeric($user)){
