@@ -56,6 +56,7 @@ function sweetalert_install($params){
 
                                    'download' => array('urls'      => array('https://cdn.jsdelivr.net/sweetalert2/6.6.0/sweetalert2.css',
                                                                             'https://cdn.jsdelivr.net/sweetalert2/6.6.0/sweetalert2.js'),
+
                                                        'locations' => array('sweetalert2.js'  => ROOT.'pub/js/sweetalert/sweetalert.js',
                                                                             'sweetalert2.css' => ROOT.'pub/css/sweetalert/sweetalert.css')));
 
@@ -80,9 +81,23 @@ function sweetalert($params, $html = '', $type = '', $options = array()){
         array_default($params, 'class'  , null);
         array_default($params, 'options', $options);
 
-        array_default($params['options'], 'allow_outside_click', null);
-        array_default($params['options'], 'allow_escape_key'   , null);
-        array_default($params['options'], 'class'              , $params['class']);
+        array_default($params, 'confirm_action', null);
+        array_default($params, 'cancel_action' , null);
+
+        array_default($params['options'], 'allowOutsideClick' , null);
+        array_default($params['options'], 'allowEscapeKey'    , null);
+        array_default($params['options'], 'class'             , $params['class']);
+
+        array_default($params['options'], 'confirmButtonColor', null);
+        array_default($params['options'], 'confirmButtonText' , null);
+        array_default($params['options'], 'confirmButtonClass', null);
+
+        array_default($params['options'], 'showCancelButton'  , null);
+        array_default($params['options'], 'cancelButtonColor' , null);
+        array_default($params['options'], 'cancelButtonText'  , null);
+        array_default($params['options'], 'cancelButtonClass' , null);
+
+        array_default($params['options'], 'buttonsStyling'    , null);
 
         load_libs('json');
 
@@ -95,7 +110,21 @@ function sweetalert($params, $html = '', $type = '', $options = array()){
             $options[$key] = $value;
         }
 
-        return 'swal('.json_encode_custom($options).')';
+        $retval = 'swal('.json_encode_custom($options).')';
+
+        if($params['confirm_action']){
+            $then[] = 'function () {'.$params['confirm_action'].'}';
+        }
+
+        if($params['cancel_action']){
+            $then[] = 'function (dismiss) {'.$params['cancel_action'].'}';
+        }
+
+        if(!empty($then)){
+            $retval .= '.then('.implode(',', $then).')';
+        }
+
+        return $retval.';';
 
     }catch(Exception $e){
         throw new bException('sweetalert(): Failed', $e);
@@ -139,11 +168,11 @@ function sweetalert_queue($params){
                     break;
 
                 case 'show_cancel_button':
-                    $options['showCancelButton'] = $value;
+                    $options['showCancelButton']  = $value;
                     break;
 
                 case 'animation':
-                    $options['animation'] = $value;
+                    $options['animation']         = $value;
                     break;
 
                 case 'progress_steps':
