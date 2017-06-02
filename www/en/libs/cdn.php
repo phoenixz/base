@@ -287,7 +287,7 @@ function cdn_delete_files($list, $column = 'file'){
 
         foreach($files as $file){
             /*
-             * What CDN servers is this file stored?
+             * Delete this file from the cdn_files table
              */
             $delete->execute(array(':file' => $file));
         }

@@ -40,10 +40,10 @@ function image_get_text($image) {
 
     }catch(Exception $e){
         if(!safe_exec('which tesseract')){
-            throw new bException('image_get_text(): Failed to find the "tesseract" command, is it installed?', $e);
+            throw new bException('image_get_text(): Failed to find the "tesseract" command, is it installed? On Ubuntu, use "sudo apt-get install tesseract-ocr" to install the required command', $e);
         }
 
-        throw new bException('image_get_text(): Failed to get text from image "'.str_log($image).'"', $e);
+        throw new bException(tr('image_get_text(): Failed to get text from image ":image"', array(':image' => $image)), $e);
     }
 }
 
