@@ -380,7 +380,7 @@ function user_authenticate($username, $password, $captcha = null){
 
         if(!$user){
             log_database(tr('user_authenticate(): Specified user account ":username" not found', array(':username' => $username)), 'authentication/notfound');
-            throw new bException(tr('user_authenticate(): Specified user account ":username" not found', array(':username' => $username)), 'notfound');
+            throw new bException(tr('user_authenticate(): Specified user account ":username" not found', array(':username' => $username)), 'not-found');
         }
 
         if($user['status'] !== null){
