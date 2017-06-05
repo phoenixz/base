@@ -84,9 +84,14 @@ function sweetalert($params, $html = '', $type = '', $options = array()){
         array_default($params, 'confirm_action', null);
         array_default($params, 'cancel_action' , null);
 
-        array_default($params['options'], 'allowOutsideClick' , null);
-        array_default($params['options'], 'allowEscapeKey'    , null);
-        array_default($params['options'], 'class'             , $params['class']);
+        array_default($params['options'], 'input'              , null);
+        array_default($params['options'], 'allowOutsideClick'  , null);
+        array_default($params['options'], 'allowEscapeKey'     , null);
+        array_default($params['options'], 'class'              , $params['class']);
+        array_default($params['options'], 'buttonsStyling'     , null);
+        array_default($params['options'], 'allowOutsideClick'  , null);
+        array_default($params['options'], 'showLoaderOnConfirm', null);
+        array_default($params['options'], 'preConfirm'         , null);
 
         array_default($params['options'], 'confirmButtonColor', null);
         array_default($params['options'], 'confirmButtonText' , null);
@@ -96,8 +101,6 @@ function sweetalert($params, $html = '', $type = '', $options = array()){
         array_default($params['options'], 'cancelButtonColor' , null);
         array_default($params['options'], 'cancelButtonText'  , null);
         array_default($params['options'], 'cancelButtonClass' , null);
-
-        array_default($params['options'], 'buttonsStyling'    , null);
 
         load_libs('json');
 
@@ -113,15 +116,15 @@ function sweetalert($params, $html = '', $type = '', $options = array()){
         $retval = 'swal('.json_encode_custom($options).')';
 
         if($params['confirm_action']){
-            $then[] = 'function () {'.$params['confirm_action'].'}';
+            $then['confirm'] = $params['confirm_action'];
         }
 
         if($params['cancel_action']){
-            $then[] = 'function (dismiss) {'.$params['cancel_action'].'}';
+            $then['cancel'] = $params['cancel_action'];
         }
 
         if(!empty($then)){
-            $retval .= '.then('.implode(',', $then).')';
+            $retval .= '.then('.isset_get($then['confirm'], 'undefined').', '.isset_get($then['cancel'], 'undefined').')';
         }
 
         return $retval.';';
