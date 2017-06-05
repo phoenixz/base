@@ -283,7 +283,7 @@ function init($projectfrom = null, $frameworkfrom = null){
                 /*
                  * Finished one init part (either type framework or type project)
                  */
-                log_console('Finished init', 'init/'.$type, 'white');
+                cli_log('Finished init', 'green');
             }
         }
 
@@ -294,10 +294,10 @@ function init($projectfrom = null, $frameworkfrom = null){
                 file_delete(ROOT.'www/'.substr($language, 0, 2).'/data');
             }
 
-            log_console('Finished data symlink cleanup', 'init/cleanup');
+            log_console('Finished data symlink cleanup', 'green');
         }
 
-        log_console('Finished all', 'init/finished', 'white');
+        cli_log('Finished all', 'green');
 
     }catch(Exception $e){
         if($e->getCode() === 'invalidforce'){
