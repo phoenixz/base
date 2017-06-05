@@ -21,6 +21,9 @@ try{
             }elseif(is_null($value)){
                 $query = str_replace($key, ' '.tr('NULL').' ', $query);
 
+            }elseif(is_bool($value)){
+                $query = str_replace($key, str_boolean($value), $query);
+
             }else{
                 if(!is_scalar($value)){
                     throw new bException(tr('debug_sql(): Specified key ":key" has non-scalar value ":value"', array(':key' => $key, ':value' => $value)), 'invalid');
