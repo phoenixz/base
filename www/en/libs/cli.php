@@ -254,7 +254,7 @@ function cli_run_once_local($close = false){
             $pid = trim($pid);
 
             if(!is_numeric($pid) or !is_natural($pid) or ($pid > 65536)){
-                cli_log(tr('cli_run_once_local(): The run file ":file" contains invalid information, ignoring', array(':file' => $run_dir.$script)), 'invalid');
+                cli_log(tr('cli_run_once_local(): The run file ":file" contains invalid information, ignoring', array(':file' => $run_dir.$script)), 'yellow');
 
             }else{
                 $name = safe_exec('ps -p '.$pid.' | tail -n 1');
