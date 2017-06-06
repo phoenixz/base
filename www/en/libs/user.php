@@ -780,8 +780,14 @@ function user_signin($user, $extended = false, $redirect = null, $html_flash = n
             }
         }
 
-        $_SESSION['user']         = $user;
-        $_SESSION['user']['role'] = sql_get('SELECT `roles`.`name` FROM `roles` WHERE `id` = :id', 'name', array(':id' => $_SESSION['user']['roles_id']));
+        $_SESSION['user'] = $user;
+
+        if(empty($_SESSION['user']['roles_id'])){
+            $_SESSION['user']['role'] = null;
+
+        }else{
+            $_SESSION['user']['role'] = sql_get('SELECT `roles`.`name` FROM `roles` WHERE `id` = :id', 'name', array(':id' => $_SESSION['user']['roles_id']));
+        }
 
         if($html_flash){
             html_flash_set(isset_get($html_flash['text']), isset_get($html_flash['type']), isset_get($html_flash['class']));
@@ -902,13 +908,13 @@ function user_set_verify_code($user, $email_type = false){
          */
         $r = sql_query('UPDATE `users`
 
-                       SET    `verify_code` = :code,
-                              `verifiedon`  = NULL
+                        SET    `verify_code` = :code,
+                               `verifiedon`  = NULL
 
-                       WHERE  `id`          = :id',
+                        WHERE  `id`          = :id',
 
-                       array(':id'          => cfi($user['id']),
-                             ':code'        => cfm($code)));
+                        array(':id'          => cfi($user['id']),
+                              ':code'        => cfm($code)));
 
         if(!sql_affected_rows($r)){
             throw new bException(tr('user_set_verify_code(): Specified user ":user" does not exist', array(':user' => $user['id'])), 'not-exist');
