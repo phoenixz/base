@@ -463,7 +463,7 @@ function user_authenticate($username, $password, $captcha = null){
             $failures = 0;
         }
 
-        $captcha_required = user_authentication_requires_captcha($failures);
+        $captcha_required = ($captcha or user_authentication_requires_captcha($failures));
 
         if($captcha_required){
 // :TODO: There might be a configuration issue where $_CONFIG['captcha']['type'] is disabled, but $captcha_required does require captcha..
