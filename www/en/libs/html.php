@@ -892,6 +892,8 @@ function html_flash($class = null){
             array_default($flash, 'html' , null);
             array_default($flash, 'text' , null);
 
+            unset($flash['class']);
+
             switch($type = strtolower($flash['type'])){
                 case 'info':
                     break;
@@ -992,7 +994,7 @@ function html_flash($class = null){
                         return '';
 
                     case 1:
-                        return html_script(sweetalert(array_remove(array_pop($sweetalerts), 'class')));
+                        return html_script(sweetalert(array_pop($sweetalerts)));
 
                     default:
                         /*
