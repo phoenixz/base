@@ -84,6 +84,9 @@ function sweetalert($params, $html = '', $type = '', $options = array()){
         array_default($params, 'confirm_action', null);
         array_default($params, 'cancel_action' , null);
 
+        array_default($params['options'], 'confirmAction'      , null);
+        array_default($params['options'], 'cancelAction'       , null);
+
         array_default($params['options'], 'input'              , null);
         array_default($params['options'], 'allowOutsideClick'  , null);
         array_default($params['options'], 'allowEscapeKey'     , null);
@@ -108,20 +111,22 @@ function sweetalert($params, $html = '', $type = '', $options = array()){
         $options['html']  = $params['html'];
         $options['type']  = $params['type'];
 
+        if($params['options']['confirmAction']){
+            $then['confirm'] = $params['options']['confirmAction'];
+            unset($params['options']['confirmAction']);
+        }
+
+        if($params['options']['cancelAction']){
+            $then['cancel'] = $params['options']['cancelAction'];
+            unset($params['options']['cancelAction']);
+        }
+
         foreach($params['options'] as $key => $value){
             if($value === null) continue;
             $options[$key] = $value;
         }
 
         $retval = 'swal('.json_encode_custom($options).')';
-
-        if($params['confirm_action']){
-            $then['confirm'] = $params['confirm_action'];
-        }
-
-        if($params['cancel_action']){
-            $then['cancel'] = $params['cancel_action'];
-        }
 
         if(!empty($then)){
             $retval .= '.then('.isset_get($then['confirm'], 'undefined').', '.isset_get($then['cancel'], 'undefined').')';
