@@ -482,7 +482,9 @@ function file_clear_path($path){
              * Remove this entry and continue;
              */
             try{
-                rmdir($path);
+                file_execute_mode(dirname($path), (is_writable(dirname($path)) ? false : 0770), function() use ($path){
+                    file_delete($path);
+                });
 
             }catch(Exception $e){
                 /*
