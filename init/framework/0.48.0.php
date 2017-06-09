@@ -45,5 +45,5 @@ sql_query('CREATE TABLE `users_social` (`id`           INT(11)       NOT NULL AU
 
                                        ) ENGINE=InnoDB AUTO_INCREMENT='.$_CONFIG['db']['core']['autoincrement'].' DEFAULT CHARSET="'.$_CONFIG['db']['core']['charset'].'" COLLATE="'.$_CONFIG['db']['core']['collate'].'";');
 
-sql_column_exists('users', 'locale', 'ALTER TABLE `users` ADD COLUMN `locale` VHARCHAR(6)');
+sql_column_exists('users', 'locale', 'ALTER TABLE `users` ADD COLUMN `locale` VARCHAR(6)');
 ?>
