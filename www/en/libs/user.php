@@ -1672,7 +1672,7 @@ function user_validate($user, $sections = array()){
         array_default($sections, 'role'               , true);
 
         load_libs('validate');
-        $v = new validate_form($user, 'name,username,nickname,email,password,password2,redirect,description,role,roles_id,commentary,gender,latitude,longitude,language,country,fb_id,fb_token,gp_id,gp_token,ms_id,ms_token_authentication,ms_token_access,tw_id,tw_token,yh_id,yh_token,status,validated,avatar,phones,type,domain');
+        $v = new validate_form($user, 'name,username,nickname,email,password,password2,redirect,description,role,roles_id,commentary,gender,latitude,longitude,language,country,fb_id,fb_token,gp_id,gp_token,ms_id,ms_token_authentication,ms_token_access,tw_id,tw_token,yh_id,yh_token,status,validated,avatar,phones,type,domain,title,priority');
 
         $user['email2'] = $user['email'];
         $user['terms']  = true;
@@ -1709,6 +1709,15 @@ function user_validate($user, $sections = array()){
 
         if($user['name']){
             $v->hasMinChars($user['name'], 2, tr('Please ensure that the users name has a minimum of 2 characters'));
+        }
+
+        if($user['title']){
+            $v->hasMinChars($user['title'],  2, tr('Please ensure that the users title has a minimum of 2 characters'));
+            $v->hasMaxChars($user['title'], 24, tr('Please ensure that the users title has a minimum of 24 characters'));
+        }
+
+        if($user['priority']){
+            $v->isNumeric($user['priority'],  tr('Please ensure that the users priority is numeric'));
         }
 
         if($sections['role']){
