@@ -17,6 +17,76 @@
 
 
 
+sso_init();
+
+
+
+/*
+ * Ensure all required dependancies are available. If not, run the auto installer
+ */
+function sso_init(){
+   try{
+        ensure_installed(array('name'      => 'hybridauth',
+                               'project'   => 'hybridauth',
+                               'callback'  => 'sso_install',
+                               'checks'    => array(ROOT.'libs/external/hybridauth/Hybrid/Auth.php',
+                                                    ROOT.'libs/external/hybridauth/Hybrid/Auth.php')));
+
+    }catch(Exception $e){
+showdie($e);
+        throw new bException(tr('sso_init(): Failed'), $e);
+    }
+}
+
+
+
+
+
+/*
+ * Download and install the required hybridauth library
+ */
+function sso_install($params){
+   try{
+        $params['methods'] = array('download' => array('commands'  => function($hash){
+                                                                        /*
+                                                                         * Download the hybridauth v2 library, and install it in the external libraries path
+                                                                         */
+                                                                        load_libs('file');
+                                                                        file_delete(ROOT.'data/tmp/hybridauth');
+                                                                        file_ensure_path(ROOT.'data/tmp/hybridauth');
+                                                                        safe_exec('wget -O '.ROOT.'data/tmp/hybridauth/hybridauth.zip https://github.com/hybridauth/hybridauth/archive/v2.zip');
+                                                                        safe_exec('cd '.ROOT.'data/tmp/hybridauth/; unzip '.ROOT.'data/tmp/hybridauth/hybridauth.zip');
+
+                                                                        /*
+                                                                         * Install facebook adapter
+                                                                         */
+                                                                        safe_exec('wget -O '.ROOT.'data/tmp/hybridauth/facebook-graph.zip https://github.com/facebook/php-graph-sdk/archive/5.5.zip');
+                                                                        safe_exec('cd '.ROOT.'data/tmp/hybridauth/; unzip '.ROOT.'data/tmp/hybridauth/facebook-graph.zip');
+                                                                        file_delete(ROOT.'data/tmp/hybridauth/hybridauth-2/hybridauth/Hybrid/thirdparty/Facebook/');
+                                                                        rename(ROOT.'data/tmp/hybridauth/php-graph-sdk-5.5/src/Facebook/', ROOT.'data/tmp/hybridauth/hybridauth-2/hybridauth/Hybrid/thirdparty/Facebook/');
+
+                                                                        /*
+                                                                         * Install library and clean up
+                                                                         */
+                                                                        file_execute_mode(ROOT.'www/en/libs/external', 0770, function(){
+                                                                            file_delete(ROOT.'www/en/libs/external/hybridauth');
+                                                                            rename(ROOT.'data/tmp/hybridauth/hybridauth-2/hybridauth', ROOT.'www/en/libs/external/hybridauth');
+                                                                        });
+
+                                                                        file_delete(ROOT.'data/tmp/hybridauth');
+                                                                      }));
+
+        return install($params);
+
+    }catch(Exception $e){
+        throw new bException(tr('sso_install(): Failed'), $e);
+    }
+}
+
+
+
+
+
 /*
  * Single Sign On
  */
@@ -197,7 +267,6 @@ function sso($provider, $method, $redirect, $role = 'user'){
         }
 
     }catch(Exception $e){
-showdie($e);
         switch($e->getCode()){
             case 0:
                 throw new bException(tr('sso(): Unspecified error'), $e);
