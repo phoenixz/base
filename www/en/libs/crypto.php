@@ -71,17 +71,17 @@ function crypto_get_rates($coin = null){
 /*
  * Get information about our account
  */
-function crypto_get_coin_balances($coin = null){
+function crypto_get_balances($coin = null){
     global $_CONFIG;
 
     try{
         switch($_CONFIG['crypto']['backend']){
             case 'coinpayments':
-                return coinpayments_get_coin_balances($coin);
+                return coinpayments_get_balances($coin);
         }
 
     }catch(Exception $e){
-        throw new bException('crypto_get_coin_balances(): Failed', $e);
+        throw new bException('crypto_get_balances(): Failed', $e);
     }
 }
 ?>

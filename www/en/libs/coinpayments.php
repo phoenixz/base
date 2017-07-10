@@ -63,14 +63,61 @@ function coinpayments_call($command, $post = array()){
          */
         $results = json_decode_custom($results['data']);
 
-        if($results['error']){
-            throw new bException(tr('coinpayments_call(): Coinpayments sent error ":error"', array(':error' => $results['error'])), 'remote-error');
+        switch(isset_get($results['error'])){
+            case '':
+                // FALLTHROUGH
+            case 'ok':
+                break;
+
+            case 'error':
+                throw new bException(tr('coinpayments_call(): Coinpayments sent error ":error"', array(':error' => $results['error'])), 'remote-error');
+
+            default:
+                throw new bException(tr('coinpayments_call(): Coinpayments sent unknown error status ":error"', array(':error' => $results['error'])), 'remote-error');
         }
 
-        return $results['error'];
+        return $results['result'];
 
     }catch(Exception $e){
         throw new bException('coinpayments_call(): Failed', $e);
+    }
+}
+
+
+
+/*
+ * Validate IPN calls coming from coinpayments
+ */
+function coinpayments_ipn_validate(){
+    global $_CONFIG;
+
+    try{
+        if(empty($_SERVER['HTTP_HMAC']) or empty($_SERVER['HTTP_HMAC'])){
+            throw new bException(tr('coinpayments_ipn_validate(): No HMAC sent'), 'not-specified');
+        }
+
+        $post = file_get_contents('php://input');
+
+        if(empty($post)){
+            throw new bException(tr('coinpayments_ipn_validate(): Error reading POST data'), 'failed');
+        }
+
+        if(empty($_POST['merchant'])){
+            throw new bException(tr('coinpayments_ipn_validate(): No Merchant ID specified'), 'not-specified');
+        }
+
+        if($_POST['merchant'] != $_CONFIG['coinpayments']['api']['merchants_id']){
+            throw new bException(tr('coinpayments_ipn_validate(): Specified merchant ID ":id" is invalid', array(':id' => $_POST['merchant'])), 'invalid');
+        }
+
+        $hmac = hash_hmac('sha512', $post, $_CONFIG['coinpayments']['api']['merchant_id']);
+
+        if($hmac !== $_SERVER['HTTP_HMAC']){
+            throw new bException(tr('coinpayments_ipn_validate(): Specified HMAC ":hmac" is invalid', array(':hmac' => $_SERVER['HTTP_HMAC'])), 'invalid');
+        }
+
+    }catch(Exception $e){
+        throw new bException('coinpayments_ipn_validate(): Failed', $e);
     }
 }
 
@@ -95,13 +142,13 @@ function coinpayments_get_account_info($coin = null){
 /*
  * Make the call to the coinpayment system
  */
-function coinpayments_get_exchange_rates($coin = null){
+function coinpayments_get_rates($coin = null){
     try{
         $results = coinpayments_call('rates');
 
         if($coin){
             if(empty($results[$coin])){
-                throw new bException(tr('coinpayments_get_exchange_rates(): Specified coin ":coin" was not found', array(':coin' => $coin)), 'not-found');
+                throw new bException(tr('coinpayments_get_rates(): Specified coin ":coin" was not found', array(':coin' => $coin)), 'not-found');
             }
 
             $results = $results[$coin];
@@ -110,7 +157,7 @@ function coinpayments_get_exchange_rates($coin = null){
         return $results;
 
     }catch(Exception $e){
-        throw new bException('coinpayments_get_account_info(): Failed', $e);
+        throw new bException('coinpayments_get_rates(): Failed', $e);
     }
 }
 
@@ -119,7 +166,7 @@ function coinpayments_get_exchange_rates($coin = null){
 /*
  * Get balances (for specified coin, if needed)
  */
-function coinpayments_get_coin_balances($coin = null){
+function coinpayments_get_balances($coin = true){
     try{
         if($coin === true){
             $results = coinpayments_call('balances', array('all' => 1));
@@ -129,7 +176,7 @@ function coinpayments_get_coin_balances($coin = null){
 
             if($coin){
                 if(empty($results[$coin])){
-                    throw new bException(tr('coinpayments_get_coin_balances(): Specified coin ":coin" was not found', array(':coin' => $coin)), 'not-found');
+                    throw new bException(tr('coinpayments_get_balances(): Specified coin ":coin" was not found', array(':coin' => $coin)), 'not-found');
                 }
 
                 $results = $results[$coin];
@@ -139,7 +186,7 @@ function coinpayments_get_coin_balances($coin = null){
         return $results;
 
     }catch(Exception $e){
-        throw new bException('coinpayments_get_coin_balances(): Failed', $e);
+        throw new bException('coinpayments_get_balances(): Failed', $e);
     }
 }
 ?>
