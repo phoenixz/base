@@ -13,7 +13,7 @@
 load_config('curl');
 
 if(!function_exists('curl_init')){
-    throw new bException('PHP CURL module is not installed. Install PHP CURL on Ubuntu with "sudo apt-get install php5-curl", or on Redhat with "sudo yum install php-curl"');
+    throw new bException('PHP CURL module is not installed. Install PHP CURL on Ubuntu with "sudo apt-get install php5-curl", or on Redhat with "sudo yum install php-curl"', 'not-installed');
 }
 
 
@@ -91,17 +91,17 @@ function curl_get_random_ip($allowipv6 = false) {
         $result = implode("\n", safe_exec('/sbin/ifconfig'));
 
         if(!preg_match_all('/(?:addr|inet):(\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}) /', $result, $matches)){
-            throw new bException('curl_get_random_ip(): ifconfig returned no IPs');
+            throw new bException('curl_get_random_ip(): ifconfig returned no IPs', 'not-found');
         }
 
         if(!$matches or empty($matches[1])) {
-            throw new bException('curl_get_random_ip(): No IP data found');
+            throw new bException('curl_get_random_ip(): No IP data found', 'not-found');
         }
 
         foreach($matches[1] as $ip){
 //            if(!preg_match('/\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}/', $ip)){
 //                if($allowipv6){
-//throw new bException('curl_get_random_ip(): IPv6 support is not yet supported');
+//throw new bException('curl_get_random_ip(): IPv6 support is not yet supported', 'not-supported');
 //                }
 //
 //                continue;
@@ -120,7 +120,7 @@ function curl_get_random_ip($allowipv6 = false) {
         unset($matches);
 
         if(empty($ips)) {
-            throw new bException('curl_get_random_ip(): No IPs found');
+            throw new bException('curl_get_random_ip(): No IPs found', 'not-found');
         }
 
         return $ips[array_rand($ips)];
@@ -239,11 +239,11 @@ function curl_get($params, $referer = null, $post = false, $options = array()){
             }
 
         }elseif($params['httpheaders'] and !is_array($params['httpheaders'])){
-                throw new bException('curl_get(): Invalid headers specified');
+            throw new bException('curl_get(): Invalid headers specified', 'not-specified');
         }
 
         if(empty($params['url'])){
-            throw new bException('curl_get(): No URL specified');
+            throw new bException('curl_get(): No URL specified', 'not-specified');
         }
 
         /*
