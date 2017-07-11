@@ -126,7 +126,7 @@ function coinpayments_ipn_validate(){
 /*
  * Make the call to the coinpayment system
  */
-function coinpayments_get_account_info($coin = null){
+function coinpayments_get_account_info(){
     try{
         $results = coinpayments_call('get_basic_info');
 
@@ -142,16 +142,20 @@ function coinpayments_get_account_info($coin = null){
 /*
  * Make the call to the coinpayment system
  */
-function coinpayments_get_rates($coin = null){
+function coinpayments_get_rates($currencies = null){
     try{
         $results = coinpayments_call('rates');
 
-        if($coin){
-            if(empty($results[$coin])){
-                throw new bException(tr('coinpayments_get_rates(): Specified coin ":coin" was not found', array(':coin' => $coin)), 'not-found');
+        if($currencies){
+            foreach(array_force($currencies) as $currency){
+                if(empty($results[$currency])){
+                    throw new bException(tr('coinpayments_get_rates(): Specified coin ":coin" was not found', array(':coin' => $currency)), 'not-found');
+                }
+
+                $filtered[$currency] = $results[$currency];
             }
 
-            $results = $results[$coin];
+            return $filtered;
         }
 
         return $results;
@@ -166,20 +170,24 @@ function coinpayments_get_rates($coin = null){
 /*
  * Get balances (for specified coin, if needed)
  */
-function coinpayments_get_balances($coin = true){
+function coinpayments_get_balances($currencies = true){
     try{
-        if($coin === true){
+        if($currency === true){
             $results = coinpayments_call('balances', array('all' => 1));
 
         }else{
             $results = coinpayments_call('balances');
 
-            if($coin){
-                if(empty($results[$coin])){
-                    throw new bException(tr('coinpayments_get_balances(): Specified coin ":coin" was not found', array(':coin' => $coin)), 'not-found');
+            if($currencies){
+                foreach(array_force($currencies) as $currency){
+                    if(empty($results[$currency])){
+                        throw new bException(tr('coinpayments_get_balances(): Specified coin ":coin" was not found', array(':coin' => $currency)), 'not-found');
+                    }
+
+                    $filtered[$currency] = $results[$currency];
                 }
 
-                $results = $results[$coin];
+                return $filtered;
             }
         }
 
@@ -187,6 +195,42 @@ function coinpayments_get_balances($coin = true){
 
     }catch(Exception $e){
         throw new bException('coinpayments_get_balances(): Failed', $e);
+    }
+}
+
+
+
+/*
+ * Get balances (for specified coin, if needed)
+ */
+function coinpayments_get_address($currency){
+    try{
+        $results = coinpayments_call('get_deposit_address', array('currency' => $currency));
+
+        return $results;
+
+    }catch(Exception $e){
+        throw new bException('coinpayments_get_address(): Failed', $e);
+    }
+}
+
+
+
+/*
+ * Get balances (for specified coin, if needed)
+ */
+function coinpayments_get_deposit_address($currency, $callback_url = null){
+    try{
+        if(!$callback_url){
+            $callback_url = domain('/api/coinpayments');
+        }
+
+        $results = coinpayments_call('get_callback_address', array('currency' => $currency, 'ipn_url' => $callback_url));
+
+        return $results;
+
+    }catch(Exception $e){
+        throw new bException('coinpayments_get_deposit_address(): Failed', $e);
     }
 }
 ?>
