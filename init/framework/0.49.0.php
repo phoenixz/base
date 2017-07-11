@@ -56,7 +56,7 @@ sql_query('CREATE TABLE `crypto_transactions` (`id`                  INT(11)    
                                                 INDEX (`api_transactions_id`),
                                                 INDEX (`tx_id`),
 
-                                                CONSTRAINT `fk_crypto_transactions_users_id` FOREIGN KEY (`createdby`) REFERENCES `users` (`id`) ON DELETE RESTRICT
+                                                CONSTRAINT `fk_crypto_transactions_users_id` FOREIGN KEY (`users_id`) REFERENCES `users` (`id`) ON DELETE RESTRICT
 
                                                ) ENGINE=InnoDB AUTO_INCREMENT='.$_CONFIG['db']['core']['autoincrement'].' DEFAULT CHARSET="'.$_CONFIG['db']['core']['charset'].'" COLLATE="'.$_CONFIG['db']['core']['collate'].'";');
 
