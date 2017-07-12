@@ -88,36 +88,40 @@ function coinpayments_call($command, $post = array()){
 /*
  * Validate IPN calls coming from coinpayments
  */
-function coinpayments_ipn_validate(){
+function coinpayments_get_ipn_transaction(){
     global $_CONFIG;
 
     try{
         if(empty($_SERVER['HTTP_HMAC']) or empty($_SERVER['HTTP_HMAC'])){
-            throw new bException(tr('coinpayments_ipn_validate(): No HMAC sent'), 'not-specified');
+            throw new bException(tr('coinpayments_get_ipn_transaction(): No HMAC sent'), 'not-specified');
         }
 
         $post = file_get_contents('php://input');
 
+        log_file(tr('Starting transaction for address ":address"', array(':address' => isset_get($post['address']))), 'coinpayments');
+
         if(empty($post)){
-            throw new bException(tr('coinpayments_ipn_validate(): Error reading POST data'), 'failed');
+            throw new bException(tr('coinpayments_get_ipn_transaction(): Error reading POST data'), 'failed');
         }
 
-        if(empty($_POST['merchant'])){
-            throw new bException(tr('coinpayments_ipn_validate(): No Merchant ID specified'), 'not-specified');
+        if(empty($post['merchant'])){
+            throw new bException(tr('coinpayments_get_ipn_transaction(): No Merchant ID specified'), 'not-specified');
         }
 
-        if($_POST['merchant'] != $_CONFIG['coinpayments']['api']['merchants_id']){
-            throw new bException(tr('coinpayments_ipn_validate(): Specified merchant ID ":id" is invalid', array(':id' => $_POST['merchant'])), 'invalid');
+        if($post['merchant'] != $_CONFIG['coinpayments']['api']['merchants_id']){
+            throw new bException(tr('coinpayments_get_ipn_transaction(): Specified merchant ID ":id" is invalid', array(':id' => $post['merchant'])), 'invalid');
         }
 
         $hmac = hash_hmac('sha512', $post, $_CONFIG['coinpayments']['api']['merchant_id']);
 
         if($hmac !== $_SERVER['HTTP_HMAC']){
-            throw new bException(tr('coinpayments_ipn_validate(): Specified HMAC ":hmac" is invalid', array(':hmac' => $_SERVER['HTTP_HMAC'])), 'invalid');
+            throw new bException(tr('coinpayments_get_ipn_transaction(): Specified HMAC ":hmac" is invalid', array(':hmac' => $_SERVER['HTTP_HMAC'])), 'invalid');
         }
 
+        return $post;
+
     }catch(Exception $e){
-        throw new bException('coinpayments_ipn_validate(): Failed', $e);
+        throw new bException('coinpayments_get_ipn_transaction(): Failed', $e);
     }
 }
 

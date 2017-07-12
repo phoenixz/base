@@ -6,14 +6,15 @@ cli_log('Adding support for crypto wallets');
 
 sql_query('DROP TABLE IF EXISTS `crypto_transactions`');
 sql_query('DROP TABLE IF EXISTS `crypto_addresses`');
+sql_query('DROP TABLE IF EXISTS `crypto_rates`');
 
 sql_query('CREATE TABLE `crypto_addresses` (`id`        INT(11)       NOT NULL AUTO_INCREMENT PRIMARY KEY,
                                             `createdon` TIMESTAMP     NOT NULL DEFAULT CURRENT_TIMESTAMP,
                                             `createdby` INT(11)       NOT NULL,
                                             `status`    VARCHAR(16)       NULL,
                                             `users_id`  INT(11)       NOT NULL,
-                                            `currency`  ENUM("BTC", "LTC", "ETC", "USD", "CAD", "MXN") NOT NULL,
-                                            `provider`  ENUM("coinpayments", "coinbase", "local")      NOT NULL,
+                                            `currency`  ENUM("BTC", "LTC", "USD", "CAD", "EUR", "XRP", "ADC", "AUD", "BITB", "BLK", "BRK", "BRL", "BSD", "BTC.Bitstamp", "BTC.SnapSwap", "CAD.RippleUnion", "CHF", "CLOAK", "CNY", "COP", "CRB", "CRW", "CURE", "CZK", "DASH", "DBIX", "DCR", "DOGE", "ETC", "ETH", "EUR.Bitstamp", "EXP", "FLC", "GAME", "GBP", "GBP.Bitstamp", "GCR", "GLD", "GNT", "GRC", "GRS", "HKD", "IDR", "INR", "INSANE", "ISK", "JPY", "KRW", "LAK", "LEO", "LEO.Old", "MAID", "MCAP", "MUE", "MUE.Old", "MXN", "MYR", "NAV", "NMC", "NXS", "NXT", "NZD", "OMNI", "PEN", "PHP", "PINK", "PIVX", "PKR", "PLN", "POSW", "POT", "PPC", "PROC", "PSB", "QRK", "RUB", "SBD", "SEK", "SGD", "STEEM", "STRAT", "SYS", "THB", "TKN", "TOR", "TTKN", "TWD", "USD.Bitstamp", "USD.SnapSwap", "USDT", "VOX", "VTC", "WAVES", "XAUR", "XMR", "XPM", "XSPEC", "XVG", "ZAR", "ZEC", "LTCT", "MXN", "CAD") NOT NULL,
+                                            `provider`  ENUM("coinpayments", "coinbase", "local") NOT NULL,
                                             `address`   VARCHAR(64)   NOT NULL,
 
                                              INDEX                      (`createdon`),
@@ -29,23 +30,25 @@ sql_query('CREATE TABLE `crypto_addresses` (`id`        INT(11)       NOT NULL A
 
                                             ) ENGINE=InnoDB AUTO_INCREMENT='.$_CONFIG['db']['core']['autoincrement'].' DEFAULT CHARSET="'.$_CONFIG['db']['core']['charset'].'" COLLATE="'.$_CONFIG['db']['core']['collate'].'";');
 
-sql_query('CREATE TABLE `crypto_transactions` (`id`                  INT(11)       NOT NULL AUTO_INCREMENT PRIMARY KEY,
-                                               `createdon`           TIMESTAMP     NOT NULL DEFAULT CURRENT_TIMESTAMP,
-                                               `users_id`            INT(11)       NOT NULL,
-                                               `status`              VARCHAR(16)       NULL,
-                                               `status_text`         VARCHAR(32)       NULL,
+sql_query('CREATE TABLE `crypto_transactions` (`id`                  INT(11)     NOT NULL AUTO_INCREMENT PRIMARY KEY,
+                                               `createdon`           TIMESTAMP   NOT NULL DEFAULT CURRENT_TIMESTAMP,
+                                               `modifieon`           DATETIME        NULL,
+                                               `users_id`            INT(11)     NOT NULL,
+                                               `status`              VARCHAR(16)     NULL,
+                                               `status_text`         VARCHAR(32)     NULL,
                                                `type`                ENUM("simple", "button", "cart", "donation", "deposit", "api", "withdrawal") NOT NULL,
                                                `mode`                ENUM("httpauth", "hmac")                                                     NOT NULL,
-                                               `currency`            ENUM("BTC", "LTC", "ETC")                                                    NOT NULL,
-                                               `confirms`            INT(11)       NOT NULL,
-                                               `api_transactions_id` BIGINT        NOT NULL,
-                                               `tx_id`               BIGINT        NOT NULL,
-                                               `address`             VARCHAR(64)   NOT NULL,
-                                               `amount`              BIGINT        NOT NULL,
-                                               `amounti`             BIGINT        NOT NULL,
-                                               `fee`                 BIGINT        NOT NULL,
-                                               `feei`                BIGINT        NOT NULL,
-                                               `exchange_rate`       FLOAT         NOT NULL,
+                                               `currency`            ENUM("BTC", "LTC", "USD", "CAD", "EUR", "XRP", "ADC", "AUD", "BITB", "BLK", "BRK", "BRL", "BSD", "BTC.Bitstamp", "BTC.SnapSwap", "CAD.RippleUnion", "CHF", "CLOAK", "CNY", "COP", "CRB", "CRW", "CURE", "CZK", "DASH", "DBIX", "DCR", "DOGE", "ETC", "ETH", "EUR.Bitstamp", "EXP", "FLC", "GAME", "GBP", "GBP.Bitstamp", "GCR", "GLD", "GNT", "GRC", "GRS", "HKD", "IDR", "INR", "INSANE", "ISK", "JPY", "KRW", "LAK", "LEO", "LEO.Old", "MAID", "MCAP", "MUE", "MUE.Old", "MXN", "MYR", "NAV", "NMC", "NXS", "NXT", "NZD", "OMNI", "PEN", "PHP", "PINK", "PIVX", "PKR", "PLN", "POSW", "POT", "PPC", "PROC", "PSB", "QRK", "RUB", "SBD", "SEK", "SGD", "STEEM", "STRAT", "SYS", "THB", "TKN", "TOR", "TTKN", "TWD", "USD.Bitstamp", "USD.SnapSwap", "USDT", "VOX", "VTC", "WAVES", "XAUR", "XMR", "XPM", "XSPEC", "XVG", "ZAR", "ZEC", "LTCT", "MXN", "CAD") NOT NULL,
+                                               `confirms`            INT(11)     NOT NULL,
+                                               `api_transactions_id` BIGINT      NOT NULL,
+                                               `tx_id`               BIGINT      NOT NULL,
+                                               `address`             VARCHAR(64) NOT NULL,
+                                               `amount`              BIGINT      NOT NULL,
+                                               `amounti`             BIGINT      NOT NULL,
+                                               `amountusd`           BIGINT      NOT NULL,
+                                               `fee`                 BIGINT      NOT NULL,
+                                               `feei`                BIGINT      NOT NULL,
+                                               `exchange_rate`       FLOAT       NOT NULL,
 
                                                 INDEX (`createdon`),
                                                 INDEX (`users_id`),
@@ -53,10 +56,23 @@ sql_query('CREATE TABLE `crypto_transactions` (`id`                  INT(11)    
                                                 INDEX (`type`),
                                                 INDEX (`mode`),
                                                 INDEX (`currency`),
-                                                INDEX (`api_transactions_id`),
-                                                INDEX (`tx_id`),
+                                                UNIQUE(`api_transactions_id`),
+                                                UNIQUE(`tx_id`),
 
                                                 CONSTRAINT `fk_crypto_transactions_users_id` FOREIGN KEY (`users_id`) REFERENCES `users` (`id`) ON DELETE RESTRICT
+
+                                               ) ENGINE=InnoDB AUTO_INCREMENT='.$_CONFIG['db']['core']['autoincrement'].' DEFAULT CHARSET="'.$_CONFIG['db']['core']['charset'].'" COLLATE="'.$_CONFIG['db']['core']['collate'].'";');
+
+sql_query('CREATE TABLE `crypto_rates`        (`id`        INT(11)     NOT NULL AUTO_INCREMENT PRIMARY KEY,
+                                               `createdon` TIMESTAMP   NOT NULL DEFAULT CURRENT_TIMESTAMP,
+                                               `status`    VARCHAR(16)     NULL,
+                                               `provider`  ENUM("coinpayments", "coinbase", "local") NOT NULL,
+                                               `currency`  ENUM("BTC", "LTC", "USD", "CAD", "EUR", "XRP", "ADC", "AUD", "BITB", "BLK", "BRK", "BRL", "BSD", "BTC.Bitstamp", "BTC.SnapSwap", "CAD.RippleUnion", "CHF", "CLOAK", "CNY", "COP", "CRB", "CRW", "CURE", "CZK", "DASH", "DBIX", "DCR", "DOGE", "ETC", "ETH", "EUR.Bitstamp", "EXP", "FLC", "GAME", "GBP", "GBP.Bitstamp", "GCR", "GLD", "GNT", "GRC", "GRS", "HKD", "IDR", "INR", "INSANE", "ISK", "JPY", "KRW", "LAK", "LEO", "LEO.Old", "MAID", "MCAP", "MUE", "MUE.Old", "MXN", "MYR", "NAV", "NMC", "NXS", "NXT", "NZD", "OMNI", "PEN", "PHP", "PINK", "PIVX", "PKR", "PLN", "POSW", "POT", "PPC", "PROC", "PSB", "QRK", "RUB", "SBD", "SEK", "SGD", "STEEM", "STRAT", "SYS", "THB", "TKN", "TOR", "TTKN", "TWD", "USD.Bitstamp", "USD.SnapSwap", "USDT", "VOX", "VTC", "WAVES", "XAUR", "XMR", "XPM", "XSPEC", "XVG", "ZAR", "ZEC", "LTCT", "MXN", "CAD") NOT NULL,
+                                               `rate_btc`  BIGINT      NOT NULL,
+                                               `fee`       BIGINT      NOT NULL,
+
+                                                INDEX (`createdon`),
+                                                INDEX (`currency`)
 
                                                ) ENGINE=InnoDB AUTO_INCREMENT='.$_CONFIG['db']['core']['autoincrement'].' DEFAULT CHARSET="'.$_CONFIG['db']['core']['charset'].'" COLLATE="'.$_CONFIG['db']['core']['collate'].'";');
 

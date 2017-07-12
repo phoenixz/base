@@ -8,6 +8,10 @@
  * @license http://opensource.org/licenses/GPL-2.0 GNU Public License, Version 2
  * @copyright Sven Oostenbrink <support@ingiga.com>, Johan Geuze
  */
-$_CONFIG['crypto']                              = array('backend'       => 'coinpayments',   // Select what backend to use for crypto payments. Use either "coinpayments", "coinbase" (not supported yet!), or "local" for local wallets (not supported yet!)
-                                                        'currencies'    => array('BTC', 'LTC', 'ETC'));
+$_CONFIG['crypto']                                                              = array('backend'    => 'coinpayments',                 // Select what backend to use for crypto payments. Use either "coinpayments", "coinbase" (not supported yet!), or "local" for local wallets (not supported yet!)
+
+                                                                                        'currencies' => array('BTC', 'LTC', 'ETC'),     // The currencies that are supported by this system
+
+                                                                                        'rates'      => array('cache'       => 60));    // The amount of seconds that exchange rates can be cached locally
+
 ?>
