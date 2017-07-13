@@ -96,29 +96,33 @@ function coinpayments_get_ipn_transaction(){
             throw new bException(tr('coinpayments_get_ipn_transaction(): No HMAC sent'), 'not-specified');
         }
 
-        $post = file_get_contents('php://input');
+        $request = file_get_contents('php://input');
 
-        log_file(tr('Starting transaction for address ":address"', array(':address' => isset_get($post['address']))), 'coinpayments');
+        if(empty($_POST['address'])){
+            log_file(tr('Received invalid request, missing "address"'), 'coinpayments');
+        }
 
-        if(empty($post)){
+        log_file(tr('Starting transaction for address ":address"', array(':address' => isset_get($_POST['address']))), 'coinpayments');
+
+        if(empty($_POST)){
             throw new bException(tr('coinpayments_get_ipn_transaction(): Error reading POST data'), 'failed');
         }
 
-        if(empty($post['merchant'])){
+        if(empty($_POST['merchant'])){
             throw new bException(tr('coinpayments_get_ipn_transaction(): No Merchant ID specified'), 'not-specified');
         }
 
-        if($post['merchant'] != $_CONFIG['coinpayments']['api']['merchants_id']){
-            throw new bException(tr('coinpayments_get_ipn_transaction(): Specified merchant ID ":id" is invalid', array(':id' => $post['merchant'])), 'invalid');
+        if($_POST['merchant'] != $_CONFIG['coinpayments']['ipn']['merchants_id']){
+            throw new bException(tr('coinpayments_get_ipn_transaction(): Specified merchant ID ":id" is invalid', array(':id' => $_POST['merchant'])), 'invalid');
         }
 
-        $hmac = hash_hmac('sha512', $post, $_CONFIG['coinpayments']['api']['merchant_id']);
+        $hmac = hash_hmac('sha512', $request, $_CONFIG['coinpayments']['ipn']['secret']);
 
         if($hmac !== $_SERVER['HTTP_HMAC']){
             throw new bException(tr('coinpayments_get_ipn_transaction(): Specified HMAC ":hmac" is invalid', array(':hmac' => $_SERVER['HTTP_HMAC'])), 'invalid');
         }
 
-        return $post;
+        return $_POST;
 
     }catch(Exception $e){
         throw new bException('coinpayments_get_ipn_transaction(): Failed', $e);
