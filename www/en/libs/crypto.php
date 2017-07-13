@@ -234,7 +234,7 @@ function crypto_get_usd($amount){
 
     try{
         $usd = crypto_get_exchange_rate('USD');
-        $usd = ($amount * 100000000) / $usd;
+        $usd = ((($amount * 100000000) / $usd) / 100000000);
 
         return $usd;
 
