@@ -32,7 +32,7 @@ sql_query('CREATE TABLE `crypto_addresses` (`id`        INT(11)       NOT NULL A
 
 sql_query('CREATE TABLE `crypto_transactions` (`id`                  INT(11)     NOT NULL AUTO_INCREMENT PRIMARY KEY,
                                                `createdon`           TIMESTAMP   NOT NULL DEFAULT CURRENT_TIMESTAMP,
-                                               `modifieon`           DATETIME        NULL,
+                                               `modifiedon`          DATETIME        NULL,
                                                `users_id`            INT(11)     NOT NULL,
                                                `status`              VARCHAR(16)     NULL,
                                                `status_text`         VARCHAR(32)     NULL,
