@@ -102,7 +102,7 @@ function coinpayments_get_ipn_transaction(){
             log_file(tr('Received invalid request, missing "address"'), 'coinpayments');
         }
 
-        log_file(tr('Starting transaction for address ":address"', array(':address' => isset_get($_POST['address']))), 'coinpayments');
+        log_file(tr('Starting transaction for address ":address"', array(':address' => isset_get($_POST['address']))), 'crypto');
 
         if(empty($_POST)){
             throw new bException(tr('coinpayments_get_ipn_transaction(): Error reading POST data'), 'failed');
@@ -122,9 +122,11 @@ function coinpayments_get_ipn_transaction(){
             throw new bException(tr('coinpayments_get_ipn_transaction(): Specified HMAC ":hmac" is invalid', array(':hmac' => $_SERVER['HTTP_HMAC'])), 'invalid');
         }
 
+        log_file(tr('Authenticated IPN transaction for address ":address"', array(':address' => isset_get($_POST['address']))), 'crypto');
         return $_POST;
 
     }catch(Exception $e){
+        log_file(tr('IPN transaction for address ":address" failed with ":e"', array(':address' => isset_get($_POST['address']), ':e' => $e->getMessages())), 'crypto');
         throw new bException('coinpayments_get_ipn_transaction(): Failed', $e);
     }
 }
