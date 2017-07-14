@@ -99,11 +99,11 @@ function crypto_add_transaction($transaction, $provider){
     try{
         $transaction   = crypto_validate_transaction($transaction, $provider);
         $exchange_rate = crypto_get_exchange_rate($transaction['currency']);
-        $users_id      = sql_get('SELECT `users_id` FROM `crypto_addresses` WHERE `address` = :address', true, array(':address' => $transaction['address']));
 
+        $transaction['users_id']  = sql_get('SELECT `users_id` FROM `crypto_addresses` WHERE `address` = :address', true, array(':address' => $transaction['address']));
         $transaction['amountusd'] = crypto_get_usd($transaction['amounti']);
 
-        if(!$users_id){
+        if(!$transaction['users_id']){
             throw new bException(tr('crypto_add_transaction(): specified address ":address" does not exist', array(':address' => $transaction['address'])), 'invalid');
         }
 
@@ -117,7 +117,7 @@ function crypto_add_transaction($transaction, $provider){
                                            `fee`         = :mod_fee,
                                            `feei`        = :mod_feei',
 
-                   array(':users_id'            => $users_id,
+                   array(':users_id'            => $transaction['users_id'],
                          ':status'              => $transaction['status'],
                          ':status_text'         => $transaction['status_text'],
                          ':type'                => $transaction['ipn_type'],
