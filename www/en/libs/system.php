@@ -644,7 +644,7 @@ function log_database($messages, $type = 'unknown'){
 /*
  * Log specified message to file.
  */
-function log_file($messages, $class = 'messages', $type = 'unknown'){
+function log_file($messages, $class = 'messages', $type = null){
     global $_CONFIG;
     static $h = array(), $last;
 
@@ -688,8 +688,18 @@ function log_file($messages, $class = 'messages', $type = 'unknown'){
             $h[$class] = fopen(slash(ROOT.$_CONFIG['log']['path']).$class, 'a+');
         }
 
-        foreach(array_force($messages, "\n") as $key => $message){
-            fwrite($h[$class], '['.$type.'] '.$key.' => '.$message."\n");
+        $messages = array_force($messages, "\n");
+        $date     = date_convert(null, 'human_datetime');
+
+        foreach($messages as $key => $message){
+            $type = ($type ? '['.$type.'] ' : '');
+
+            if($key and (count($messages) > 1)){
+                fwrite($h[$class], $date.' '.$type.$key.' => '.$message."\n");
+
+            }else{
+                fwrite($h[$class], $date.' '.$type.$message."\n");
+            }
         }
 
         return $messages;
