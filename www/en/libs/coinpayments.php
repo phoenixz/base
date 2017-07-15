@@ -126,7 +126,7 @@ function coinpayments_get_ipn_transaction(){
         return $_POST;
 
     }catch(Exception $e){
-        if(ENVIRONMENT !== 'production'){
+        if(!$_CONFIG['production']){
             /*
              * Ignore all issues, we're testing!
              */

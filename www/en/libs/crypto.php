@@ -22,8 +22,8 @@ switch($_CONFIG['crypto']['backend']){
     case 'coinbase':
         throw new bException(tr('crypto: Backend "coinbase" is not yet supported'), 'unsupported');
 
-    case 'local':
-        throw new bException(tr('crypto: Backend "local" is not yet supported'), 'unsupported');
+    case 'internal':
+        break;
 
     default:
         throw new bException(tr('crypto: Unknown backend ":backend" specified', array(':backend' => $_CONFIG['crypto']['backend'])), 'unknown');
@@ -57,27 +57,30 @@ function crypto_validate_transaction($transaction, $provider){
     global $_CONFIG;
 
     try{
+        load_libs('validate');
+        $v = new validate_form($transaction, 'users_id,status,status_text,type,mode,currency,confirms,api_transactions_id,tx_id,address,amount,amount_btc,amount_usd,fee,fee_btc,exchange_rate,description');
+
+        crypto_currencies_supported($transaction['currency']);
+
         switch($provider){
             case 'coinpayments':
+                $transaction['amount_btc']          = $transaction['amounti'];
+                $transaction['fee_btc']             = $transaction['feei'];
+                $transaction['tx_id']               = $transaction['txn_id'];
+                $transaction['type']                = $transaction['ipn_type'];
+                $transaction['mode']                = $transaction['ipn_mode'];
+                $transaction['api_transactions_id'] = $transaction['ipn_id'];
                 break;
 
             case 'coinbase':
                 throw new bException(tr('crypto_validate_transaction(): Backend "coinbase" is not yet supported'), 'unsupported');
 
-            case 'local':
-                throw new bException(tr('crypto_validate_transaction(): Backend "local" is not yet supported'), 'unsupported');
+            case 'internal':
+                break;
 
             default:
-                throw new bException(tr('crypto_validate_transaction(): Unknown backend ":backend" specified', array(':backend' => $_CONFIG['crypto']['backend'])), 'unknown');
+                throw new bException(tr('crypto_validate_transaction(): Unknown backend ":backend" specified', array(':backend' => $provider)), 'unknown');
         }
-
-        load_libs('validate');
-        $v = new validate_form($transaction, 'users_id,status,status_text,type,mode,currency,confirms,api_transactions_id,tx_id,address,amount,:amounti,amount_usd,fee,feei,exchange_rate');
-
-        crypto_currencies_supported($transaction['currency']);
-
-        $transaction['amount_btc'] = $transaction['amounti'];
-        $transaction['fee_btc']    = $transaction['feei'];
 
         return $transaction;
 
@@ -95,50 +98,76 @@ function crypto_add_transaction($transaction, $provider){
     global $_CONFIG;
 
     try{
-        $transaction                       = crypto_validate_transaction($transaction, $provider);
-        $transaction['exchange_rate']      = crypto_get_exchange_rate($transaction['currency']);
-        $transaction['amount_usd']         = crypto_get_usd($transaction['amount_btc']);
-        $transaction['amount_usd_rounded'] = floor($transaction['amount_usd'] * 100) / 100;
+        $transaction = crypto_validate_transaction($transaction, $provider);
 
-        if(ENVIRONMENT === 'production'){
-            $transaction['users_id'] = sql_get('SELECT `users_id` FROM `crypto_addresses` WHERE `address` = :address', true, array(':address' => $transaction['address']));
+        if($provider == 'internal'){
+            $transaction['currency'] = 'internal';
+
+        }else{
+            $transaction['exchange_rate']      = crypto_get_exchange_rate($transaction['currency']);
+            $transaction['amount_usd']         = crypto_get_usd($transaction['amount_btc']);
+            $transaction['amount_usd_rounded'] = floor($transaction['amount_usd'] * 100) / 100;
+        }
+
+        if($_CONFIG['production']){
+            /*
+             * Internal transactions will always have users_id specified
+             */
+            if($provider == 'internal'){
+                if(empty($transaction['users_id'])){
+                    throw new bException('crypto_add_transaction(): No users_id specified', 'not-specified');
+                }
+
+            }else{
+                $transaction['users_id'] = sql_get('SELECT `users_id` FROM `crypto_addresses` WHERE `address` = :address', true, array(':address' => $transaction['address']));
+            }
 
         }else{
             $transaction['users_id'] = 1;
         }
 
-        sql_query('INSERT INTO `crypto_transactions` (`users_id`, `status`, `status_text`, `type`, `mode`, `currency`, `confirms`, `api_transactions_id`, `tx_id`, `address`, `amount`, `amount_btc`, `amount_usd`, `amount_usd_rounded`, `fee`, `fee_btc`, `exchange_rate`)
-                   VALUES                            (:users_id , :status , :status_text , :type , :mode , :currency , :confirms , :api_transactions_id , :tx_id , :address , :amount , :amount_btc , :amount_usd , :amount_usd_rounded , :fee , :fee_btc , :exchange_rate )
+        sql_query('INSERT INTO `crypto_transactions` (`id`, `users_id`, `status`, `status_text`, `type`, `mode`, `currency`, `confirms`, `api_transactions_id`, `tx_id`, `address`, `amount`, `amount_btc`, `amount_usd`, `amount_usd_rounded`, `fee`, `fee_btc`, `exchange_rate`, `description`)
+                   VALUES                            (:id , :users_id , :status , :status_text , :type , :mode , :currency , :confirms , :api_transactions_id , :tx_id , :address , :amount , :amount_btc , :amount_usd , :amount_usd_rounded , :fee , :fee_btc , :exchange_rate , :description )
 
-                   ON DUPLICATE KEY UPDATE `modifiedon`  = NOW(),
-                                           `status`      = :mod_status,
-                                           `status_text` = :mod_status_text,
-                                           `confirms`    = :mod_confirms,
-                                           `fee`         = :mod_fee,
-                                           `fee_btc`     = :mod_fee_btc',
+                   ON DUPLICATE KEY UPDATE `modifiedon`             = NOW(),
+                                           `status`                 = :mod_status,
+                                           `status_text`            = :mod_status_text,
+                                           `confirms`               = :mod_confirms,
+                                           `fee`                    = :mod_fee,
+                                           `fee_btc`                = :mod_fee_btc
+                                           `mod_amount_btc`         = :mod_fee,
+                                           `mod_amount_usd`         = :mod_fee_btc
+                                           `mod_amount_usd_rounded` = :mod_fee,
+                                           `mod_exchange_rate`      = :mod_exchange_rate',
 
-                   array(':users_id'            =>  $transaction['users_id'],
-                         ':status'              =>  $transaction['status'],
-                         ':status_text'         =>  $transaction['status_text'],
-                         ':type'                =>  $transaction['ipn_type'],
-                         ':mode'                =>  $transaction['ipn_mode'],
-                         ':currency'            =>  $transaction['currency'],
-                         ':confirms'            =>  $transaction['confirms'],
-                         ':api_transactions_id' =>  $transaction['ipn_id'],
-                         ':tx_id'               =>  $transaction['txn_id'],
-                         ':address'             =>  $transaction['address'],
-                         ':amount'              => ($transaction['amount']             ? ($transaction['amount']             * 100000000) : 0),
-                         ':amount_btc'          => ($transaction['amount_btc']         ? ($transaction['amount_btc']         * 100000000) : 0),
-                         ':amount_usd'          => ($transaction['amount_usd']         ? ($transaction['amount_usd']         * 100000000) : 0),
-                         ':amount_usd_rounded'  => ($transaction['amount_usd_rounded'] ? ($transaction['amount_usd_rounded'] * 100000000) : 0),
-                         ':fee'                 => ($transaction['fee']                ? ($transaction['fee']                * 100000000) : 0),
-                         ':fee_btc'             => ($transaction['fee_btc']            ? ($transaction['fee_btc']            * 100000000) : 0),
-                         ':exchange_rate'       => ($transaction['exchange_rate']      ? ($transaction['exchange_rate']      * 100000000) : 0),
-                         ':mod_status'          =>  $transaction['status'],
-                         ':mod_status_text'     =>  $transaction['status_text'],
-                         ':mod_confirms'        =>  $transaction['confirms'],
-                         ':mod_fee'             => ($transaction['fee']                ? ($transaction['fee']                * 100000000) : 0),
-                         ':mod_fee_btc'         => ($transaction['fee_btc']            ? ($transaction['fee_btc']            * 100000000) : 0)));
+                   array(':id'                     =>  isset_get($transaction['id']),
+                         ':users_id'               =>  $transaction['users_id'],
+                         ':status'                 =>  $transaction['status'],
+                         ':status_text'            =>  $transaction['status_text'],
+                         ':type'                   =>  $transaction['type'],
+                         ':mode'                   =>  $transaction['mode'],
+                         ':currency'               =>  $transaction['currency'],
+                         ':confirms'               =>  $transaction['confirms'],
+                         ':api_transactions_id'    =>  $transaction['api_transactions_id'],
+                         ':tx_id'                  =>  $transaction['tx_id'],
+                         ':address'                =>  $transaction['address'],
+                         ':description'            =>  $transaction['description'],
+                         ':amount'                 => ($transaction['amount']             ? ($transaction['amount']             * 100000000) : $transaction['amount']),
+                         ':amount_btc'             => ($transaction['amount_btc']         ? ($transaction['amount_btc']         * 100000000) : $transaction['amount_btc']),
+                         ':amount_usd'             => ($transaction['amount_usd']         ? ($transaction['amount_usd']         * 100000000) : $transaction['amount_usd']),
+                         ':amount_usd_rounded'     => ($transaction['amount_usd_rounded'] ? ($transaction['amount_usd_rounded'] * 100000000) : $transaction['amount_usd_rounded']),
+                         ':fee'                    => ($transaction['fee']                ? ($transaction['fee']                * 100000000) : $transaction['fee']),
+                         ':fee_btc'                => ($transaction['fee_btc']            ? ($transaction['fee_btc']            * 100000000) : $transaction['fee_btc']),
+                         ':exchange_rate'          => ($transaction['exchange_rate']      ? ($transaction['exchange_rate']      * 100000000) : $transaction['exchange_rate']),
+                         ':mod_amount_btc'         => ($transaction['amount_btc']         ? ($transaction['amount_btc']         * 100000000) : $transaction['amount_btc']),
+                         ':mod_amount_usd'         => ($transaction['amount_usd']         ? ($transaction['amount_usd']         * 100000000) : $transaction['amount_usd']),
+                         ':mod_amount_usd_rounded' => ($transaction['amount_usd_rounded'] ? ($transaction['amount_usd_rounded'] * 100000000) : $transaction['amount_usd_rounded']),
+                         ':mod_exchange_rate'      => ($transaction['exchange_rate']      ? ($transaction['exchange_rate']      * 100000000) : $transaction['exchange_rate']),
+                         ':mod_confirms'           => ($transaction['confirms']           ?  $transaction['confirms']                        : $transaction['confirms']),
+                         ':mod_fee'                => ($transaction['fee']                ? ($transaction['fee']                * 100000000) : $transaction['fee']),
+                         ':mod_fee_btc'            => ($transaction['fee_btc']            ? ($transaction['fee_btc']            * 100000000) : $transaction['fee_btc']),
+                         ':mod_status_text'        =>  $transaction['status_text'],
+                         ':mod_status'             =>  $transaction['status']));
 
         /*
          * Set amounts back to correct amounts
@@ -384,6 +413,10 @@ function crypto_get_deposit_address($currency, $callback_url = null, $force = fa
  */
 function crypto_display($amount, $currency){
     try{
+        if($currency == 'internal'){
+            return '';
+        }
+
         if(($amount * 1000000) < 1){
             return ($amount * 1000000).' u'.strtoupper($currency);
         }
