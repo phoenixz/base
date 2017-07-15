@@ -44,11 +44,11 @@ sql_query('CREATE TABLE `crypto_transactions` (`id`                  INT(11)    
                                                `tx_id`               BIGINT             NULL,
                                                `address`             VARCHAR(64)        NULL,
                                                `amount`              BIGINT             NULL,
-                                               `amount_btc`          BIGINT             NULL,
+                                               `amounti`             BIGINT             NULL,
                                                `amount_usd`          BIGINT             NULL,
                                                `amount_usd_rounded`  BIGINT             NULL,
                                                `fee`                 BIGINT             NULL,
-                                               `fee_btc`             BIGINT             NULL,
+                                               `feei`                BIGINT             NULL,
                                                `exchange_rate`       BIGINT             NULL,
                                                `description`         VARCHAR(32)        NULL,
 
