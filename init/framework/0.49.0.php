@@ -4,6 +4,7 @@
  */
 cli_log('Adding support for crypto wallets');
 
+sql_query('UPDATE `users` SET `credits` = 0');
 sql_query('DROP TABLE IF EXISTS `crypto_transactions`');
 sql_query('DROP TABLE IF EXISTS `crypto_addresses`');
 sql_query('DROP TABLE IF EXISTS `crypto_rates`');
@@ -40,11 +41,13 @@ sql_query('CREATE TABLE `crypto_transactions` (`id`                  INT(11)    
                                                `mode`                ENUM("httpauth", "hmac", "internal")                                                    NOT NULL,
                                                `currency`            ENUM("internal", "BTC", "LTC", "USD", "CAD", "EUR", "XRP", "ADC", "AUD", "BITB", "BLK", "BRK", "BRL", "BSD", "BTC.Bitstamp", "BTC.SnapSwap", "CAD.RippleUnion", "CHF", "CLOAK", "CNY", "COP", "CRB", "CRW", "CURE", "CZK", "DASH", "DBIX", "DCR", "DOGE", "ETC", "ETH", "EUR.Bitstamp", "EXP", "FLC", "GAME", "GBP", "GBP.Bitstamp", "GCR", "GLD", "GNT", "GRC", "GRS", "HKD", "IDR", "INR", "INSANE", "ISK", "JPY", "KRW", "LAK", "LEO", "LEO.Old", "MAID", "MCAP", "MUE", "MUE.Old", "MXN", "MYR", "NAV", "NMC", "NXS", "NXT", "NZD", "OMNI", "PEN", "PHP", "PINK", "PIVX", "PKR", "PLN", "POSW", "POT", "PPC", "PROC", "PSB", "QRK", "RUB", "SBD", "SEK", "SGD", "STEEM", "STRAT", "SYS", "THB", "TKN", "TOR", "TTKN", "TWD", "USD.Bitstamp", "USD.SnapSwap", "USDT", "VOX", "VTC", "WAVES", "XAUR", "XMR", "XPM", "XSPEC", "XVG", "ZAR", "ZEC", "LTCT", "MXN", "CAD") NOT NULL,
                                                `confirms`            INT(11)            NULL,
-                                               `api_transactions_id` BIGINT             NULL,
-                                               `tx_id`               BIGINT             NULL,
+                                               `api_transactions_id` VARCHAR(32)        NULL,
+                                               `tx_id`               VARCHAR(64)        NULL,
+                                               `merchant`            VARCHAR(32)        NULL,
                                                `address`             VARCHAR(64)        NULL,
                                                `amount`              BIGINT             NULL,
                                                `amounti`             BIGINT             NULL,
+                                               `amount_btc`          BIGINT             NULL,
                                                `amount_usd`          BIGINT             NULL,
                                                `amount_usd_rounded`  BIGINT             NULL,
                                                `fee`                 BIGINT             NULL,
