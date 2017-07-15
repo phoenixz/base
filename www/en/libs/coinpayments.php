@@ -102,7 +102,7 @@ function coinpayments_get_ipn_transaction(){
             log_file(tr('Received invalid request, missing "address"'), 'coinpayments');
         }
 
-        log_file(tr('Starting transaction for address ":address"', array(':address' => isset_get($_POST['address']))), 'crypto');
+        log_file(tr('Starting ":type" transaction for address ":address"', array(':type' => isset_get($_POST['ipn_type']), ':address' => isset_get($_POST['address']))), 'crypto');
 
         if(empty($_POST)){
             throw new bException(tr('coinpayments_get_ipn_transaction(): Error reading POST data'), 'failed');
@@ -126,6 +126,13 @@ function coinpayments_get_ipn_transaction(){
         return $_POST;
 
     }catch(Exception $e){
+        if(ENVIRONMENT !== 'production'){
+            /*
+             * Ignore all issues, we're testing!
+             */
+            return $_POST;
+        }
+
         log_file(tr('IPN transaction for address ":address" failed with ":e"', array(':address' => isset_get($_POST['address']), ':e' => $e->getMessages())), 'crypto');
         throw new bException('coinpayments_get_ipn_transaction(): Failed', $e);
     }
