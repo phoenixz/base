@@ -72,14 +72,9 @@ function crypto_validate_transaction($transaction, $provider){
         }
 
         load_libs('validate');
-        $v = new validate_form($transaction, 'users_id,status,status_text,type,mode,currency,confirms,api_transactions_id,tx_id,address,amount,amounti,amountusd,fee,feei,exchange_rate');
+        $v = new validate_form($transaction, 'users_id,status,status_text,type,mode,currency,confirms,api_transactions_id,tx_id,address,amount,amount_btc,amount_usd,fee,fee_btc,exchange_rate');
 
         crypto_currencies_supported($transaction['currency']);
-
-        $transaction['amount']  *= 100000000;
-        $transaction['amounti'] *= 100000000;
-        $transaction['fee']     *= 100000000;
-        $transaction['feei']    *= 100000000;
 
         return $transaction;
 
@@ -100,22 +95,23 @@ function crypto_add_transaction($transaction, $provider){
         $transaction   = crypto_validate_transaction($transaction, $provider);
         $exchange_rate = crypto_get_exchange_rate($transaction['currency']);
 
-        $transaction['users_id']  = sql_get('SELECT `users_id` FROM `crypto_addresses` WHERE `address` = :address', true, array(':address' => $transaction['address']));
-        $transaction['amountusd'] = crypto_get_usd($transaction['amounti']);
+        $transaction['users_id']           = sql_get('SELECT `users_id` FROM `crypto_addresses` WHERE `address` = :address', true, array(':address' => $transaction['address']));
+        $transaction['amount_usd']         = crypto_get_usd($transaction['amount_btc']);
+        $transaction['amount_usd_rounded'] = floor($transaction['amount_usd'] * 100) / 100;
 
         if(!$transaction['users_id']){
             throw new bException(tr('crypto_add_transaction(): specified address ":address" does not exist', array(':address' => $transaction['address'])), 'invalid');
         }
 
-        sql_query('INSERT INTO `crypto_transactions` (`users_id`, `status`, `status_text`, `type`, `mode`, `currency`, `confirms`, `api_transactions_id`, `tx_id`, `address`, `amount`, `amounti`, `amountusd`, `fee`, `feei`, `exchange_rate`)
-                   VALUES                            (:users_id , :status , :status_text , :type , :mode , :currency , :confirms , :api_transactions_id , :tx_id , :address , :amount , :amounti , :amountusd , :fee , :feei , :exchange_rate )
+        sql_query('INSERT INTO `crypto_transactions` (`users_id`, `status`, `status_text`, `type`, `mode`, `currency`, `confirms`, `api_transactions_id`, `tx_id`, `address`, `amount`, `amount_btc`, `amount_usd`, `amount_usd_rounded`, `fee`, `fee_btc`, `exchange_rate`)
+                   VALUES                            (:users_id , :status , :status_text , :type , :mode , :currency , :confirms , :api_transactions_id , :tx_id , :address , :amount , :amount_btc , :amount_usd , :amount_usd_rounded , :fee , :fee_btc , :exchange_rate )
 
                    ON DUPLICATE KEY UPDATE `modifiedon`  = NOW(),
                                            `status`      = :mod_status,
                                            `status_text` = :mod_status_text,
                                            `confirms`    = :mod_confirms,
                                            `fee`         = :mod_fee,
-                                           `feei`        = :mod_feei',
+                                           `fee_btc` = :mod_fee_btc',
 
                    array(':users_id'            => $transaction['users_id'],
                          ':status'              => $transaction['status'],
@@ -128,17 +124,21 @@ function crypto_add_transaction($transaction, $provider){
                          ':tx_id'               => $transaction['txn_id'],
                          ':address'             => $transaction['address'],
                          ':amount'              => $transaction['amount'],
-                         ':amounti'             => $transaction['amounti'],
-                         ':amountusd'           => $transaction['amountusd'],
+                         ':amount_btc'      => $transaction['amount_btc'],
+                         ':amount_usd'          => $transaction['amount_usd'],
+                         ':amount_usd_rounded'  => $transaction['amount_usd_rounded'],
                          ':fee'                 => $transaction['fee'],
-                         ':feei'                => $transaction['feei'],
+                         ':fee_btc'         => $transaction['fee_btc'],
                          ':exchange_rate'       => $exchange_rate,
                          ':mod_status'          => $transaction['status'],
                          ':mod_status_text'     => $transaction['status_text'],
                          ':mod_confirms'        => $transaction['confirms'],
                          ':mod_fee'             => $transaction['fee'],
-                         ':mod_feei'            => $transaction['feei']));
+                         ':mod_fee_btc'     => $transaction['fee_btc']));
 
+        /*
+         * Set amounts back to correct amounts
+         */
         return $transaction;
 
     }catch(Exception $e){
@@ -162,12 +162,9 @@ function crypto_update_exchange_rates(){
                                    VALUES                     (:createdon , :status , :currency , :provider , :rate_btc , :fee )');
 
         foreach($currencies as $code => $currency){
-            $currency['rate_btc'] *= 100000000;
-            $currency['tx_fee']   *= 100000000;
-
             $insert->execute(array(':createdon' => $createdon,
                                    ':status'    => $currency['status'],
-                                   ':provider'  =>  $_CONFIG['crypto']['backend'],
+                                   ':provider'  => $_CONFIG['crypto']['backend'],
                                    ':currency'  => $code,
                                    ':rate_btc'  => $currency['rate_btc'],
                                    ':fee'       => $currency['tx_fee']));
@@ -234,7 +231,7 @@ function crypto_get_usd($amount){
 
     try{
         $usd = crypto_get_exchange_rate('USD');
-        $usd = (($amount * 100000000) / $usd);
+        $usd = $amount / $usd;
 
         return $usd;
 
