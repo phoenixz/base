@@ -443,6 +443,10 @@ function crypto_display($amount, $currency){
             return '';
         }
 
+        if(!$amount){
+            return '0 '.strtoupper($currency);
+        }
+
         if(($amount * 10000) < 1){
             return ($amount * 1000000).' u'.strtoupper($currency);
         }
