@@ -58,9 +58,12 @@ function crypto_validate_transaction($transaction, $provider){
 
     try{
         load_libs('validate');
-        $v = new validate_form($transaction, 'users_id,status,status_text,type,mode,currency,confirms,api_transactions_id,tx_id,address,amount,amounti,amount_usd,fee,feei,exchange_rate,description');
+//        $v = new validate_form($transaction, 'users_id,status,status_text,type,mode,currency,confirms,api_transactions_id,tx_id,address,amount,amounti,amount_usd,fee,feei,exchange_rate,merchant,description');
+        $v = new validate_form($transaction, 'createdon,modifiedon,users_id,status,status_text,type,mode,currency,confirms,api_transactions_id,tx_id,merchant,address,amount,amounti,amount_btc,amount_usd,amount_usd_rounded,fee,feei,exchange_rate,description,data');
 
-        crypto_currencies_supported($transaction['currency']);
+        if($transaction['currency'] != 'internal'){
+            crypto_currencies_supported($transaction['currency']);
+        }
 
         switch($provider){
             case 'coinpayments':
@@ -94,14 +97,98 @@ function crypto_validate_transaction($transaction, $provider){
 /*
  *
  */
-function crypto_add_transaction($transaction, $provider){
+function crypto_get_transaction($transactions_id){
+    try{
+        $transaction = sql_get('SELECT `id`,
+                                       `createdon`,
+                                       `modifiedon`,
+                                       `users_id`,
+                                       `status`,
+                                       `status`,
+                                       `status_text`,
+                                       `type`,
+                                       `mode`,
+                                       `currency`,
+                                       `confirms`,
+                                       `api_transactions_id`,
+                                       `tx_id`,
+                                       `merchant`,
+                                       `address`,
+                                       `amount`,
+                                       `amounti`,
+                                       `amount_btc`,
+                                       `amount_usd`,
+                                       `amount_usd_rounded`,
+                                       `fee`,
+                                       `feei`,
+                                       `exchange_rate`,
+                                       `description`,
+                                       `data`
+
+                                FROM   `crypto_transactions`
+
+                                WHERE  `id` = :id',
+
+                                array(':id' => $transactions_id));
+
+
+        if(empty($transaction)){
+            throw new bException(tr('crypto_get_transaction(): Specified transaction ":transaction" does not exist', array(':transaction' => $transactions_id)), 'not-exist');
+        }
+
+        return $transaction;
+
+    }catch(Exception $e){
+        throw new bException('crypto_get_transaction(): Failed', $e);
+    }
+}
+
+
+
+/*
+ *
+ */
+function crypto_write_transaction($transaction, $provider){
     global $_CONFIG;
 
     try{
-        $transaction = crypto_validate_transaction($transaction, $provider);
+        load_libs('json');
+
+        if(empty($transaction['id'])){
+            /*
+             *
+             */
+            $transaction         = crypto_validate_transaction($transaction, $provider);
+            $transaction['data'] = json_encode_custom($transaction['data']);
+
+        }else{
+            /*
+             * Update an already existing transaction
+             */
+            $dbtransaction = crypto_get_transaction($transaction['id']);
+
+            if(empty($dbtransaction)){
+                throw new bException(tr('crypto_write_transaction(): Specified transaction ":transaction" does not exist', array(':transaction' => $transaction['id'])), 'not-exist');
+            }
+
+            if(isset($transaction['data'])){
+                $data = $transaction['data'];
+            }
+
+            $transaction = sql_merge($dbtransaction, $transaction, 'id');
+            $transaction = crypto_validate_transaction($transaction, $provider);
+
+            if(!empty($data)){
+                $transaction['data'] = json_encode_custom($data);
+            }
+        }
 
         if($provider == 'internal'){
-            $transaction['currency'] = 'internal';
+            $transaction['currency']           = 'internal';
+            $transaction['exchange_rate']      = 0;
+            $transaction['amount_usd']         = 0;
+            $transaction['amount_btc']         = 0;
+            $transaction['amount_usd_rounded'] = 0;
 
         }else{
             $transaction['exchange_rate']      = crypto_get_exchange_rate($transaction['currency']);
@@ -116,7 +203,7 @@ function crypto_add_transaction($transaction, $provider){
              */
             if($provider == 'internal'){
                 if(empty($transaction['users_id'])){
-                    throw new bException('crypto_add_transaction(): No users_id specified', 'not-specified');
+                    throw new bException('crypto_write_transaction(): No users_id specified', 'not-specified');
                 }
 
             }else{
@@ -128,11 +215,9 @@ function crypto_add_transaction($transaction, $provider){
         }
 
         log_file(tr('Adding / updating transaction ":tx_id" from address ":address" with ":credits" credits for user ":users_id"', array(':credits' => isset_get($transaction['amount_usd_rounded']), ':users_id' => isset_get($transaction['users_id']), ':tx_id' => isset_get($transaction['txn_id']), ':address' => isset_get($transaction['address']))), 'crypto');
-show($transaction['amount_btc']);
-show(($transaction['amount_btc']         * 100000000));
-show(($transaction['amount_btc']         ? ($transaction['amount_btc']         * 100000000) : $transaction['amount_btc']));
-        sql_query(' INSERT INTO `crypto_transactions` (`id`, `users_id`, `status`, `status_text`, `type`, `mode`, `currency`, `confirms`, `api_transactions_id`, `tx_id`, `merchant`, `address`, `amount`, `amounti`, `amount_usd`, `amount_btc`, `amount_usd_rounded`, `fee`, `feei`, `exchange_rate`, `description`)
-                   VALUES                            (:id , :users_id , :status , :status_text , :type , :mode , :currency , :confirms , :api_transactions_id , :tx_id , :merchant , :address , :amount , :amounti , :amount_usd , :amount_btc , :amount_usd_rounded , :fee , :feei , :exchange_rate , :description )
+
+        sql_query(' INSERT INTO `crypto_transactions` (`id`, `users_id`, `status`, `status_text`, `type`, `mode`, `currency`, `confirms`, `api_transactions_id`, `tx_id`, `merchant`, `address`, `amount`, `amounti`, `amount_usd`, `amount_btc`, `amount_usd_rounded`, `fee`, `feei`, `exchange_rate`, `description`, `data`)
+                   VALUES                            (:id , :users_id , :status , :status_text , :type , :mode , :currency , :confirms , :api_transactions_id , :tx_id , :merchant , :address , :amount , :amounti , :amount_usd , :amount_btc , :amount_usd_rounded , :fee , :feei , :exchange_rate , :description , :data )
 
                    ON DUPLICATE KEY UPDATE `modifiedon`         = NOW(),
                                            `status`             = :mod_status,
@@ -140,6 +225,7 @@ show(($transaction['amount_btc']         ? ($transaction['amount_btc']         *
                                            `confirms`           = :mod_confirms,
                                            `fee`                = :mod_fee,
                                            `feei`               = :mod_feei,
+                                           `data`               = :mod_data,
                                            `amounti`            = :mod_amounti,
                                            `amount_btc`         = :mod_amount_btc,
                                            `amount_usd`         = :mod_amount_usd,
@@ -159,6 +245,7 @@ show(($transaction['amount_btc']         ? ($transaction['amount_btc']         *
                          ':merchant'               =>  $transaction['merchant'],
                          ':address'                =>  $transaction['address'],
                          ':description'            =>  $transaction['description'],
+                         ':data'                   =>  $transaction['data'],
                          ':amount'                 => ($transaction['amount']             ? ($transaction['amount']             * 100000000) : $transaction['amount']),
                          ':amounti'                =>  $transaction['amounti'],
                          ':amount_btc'             => ($transaction['amount_btc']         ? ($transaction['amount_btc']         * 100000000) : $transaction['amount_btc']),
@@ -167,6 +254,7 @@ show(($transaction['amount_btc']         ? ($transaction['amount_btc']         *
                          ':fee'                    => ($transaction['fee']                ? ($transaction['fee']                * 100000000) : $transaction['fee']),
                          ':feei'                   =>  $transaction['feei'],
                          ':exchange_rate'          => ($transaction['exchange_rate']      ? ($transaction['exchange_rate']      * 100000000) : $transaction['exchange_rate']),
+                         ':mod_data'               =>  $transaction['data'],
                          ':mod_amounti'            =>  $transaction['amounti'],
                          ':mod_amount_btc'         => ($transaction['amount_btc']         ? ($transaction['amount_btc']         * 100000000) : $transaction['amount_btc']),
                          ':mod_amount_usd'         => ($transaction['amount_usd']         ? ($transaction['amount_usd']         * 100000000) : $transaction['amount_usd']),
@@ -178,6 +266,10 @@ show(($transaction['amount_btc']         ? ($transaction['amount_btc']         *
                          ':mod_status_text'        =>  $transaction['status_text'],
                          ':mod_status'             =>  $transaction['status']));
 
+        if(!$transaction['id']){
+            $transaction['id'] = sql_insert_id();
+        }
+
         /*
          * Set amounts back to correct amounts
          */
@@ -185,7 +277,7 @@ show(($transaction['amount_btc']         ? ($transaction['amount_btc']         *
 
     }catch(Exception $e){
         log_file(tr('Crypto transaction for address ":address" failed with ":e"', array(':address' => isset_get($_POST['address']), ':e' => $e->getMessages())), 'crypto');
-        throw new bException('crypto_add_transaction(): Failed', $e);
+        throw new bException('crypto_write_transaction(): Failed', $e);
     }
 }
 
@@ -233,7 +325,7 @@ function crypto_get_exchange_rate($currency){
             throw new bException('crypto_get_exchange_rate(): No currency specified', 'not-specified');
         }
 
-        $exchange_rate = sql_get(' SELECT   `rate_btc`
+        $exchange_rate = sql_get('SELECT   `rate_btc`
 
                                   FROM     `crypto_rates`
 
