@@ -92,6 +92,9 @@ function coinpayments_get_ipn_transaction(){
     global $_CONFIG;
 
     try{
+        load_libs('validate');
+        $v = new validate_form($_POST, 'createdon,modifiedon,users_id,status,status_text,type,mode,currency,confirms,api_transactions_id,tx_id,merchant,address,amount,amounti,amount_btc,amount_usd,amount_usd_rounded,fee,feei,exchange_rate,description,data');
+
         if(empty($_SERVER['HTTP_HMAC']) or empty($_SERVER['HTTP_HMAC'])){
             throw new bException(tr('coinpayments_get_ipn_transaction(): No HMAC sent'), 'not-specified');
         }

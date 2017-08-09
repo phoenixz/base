@@ -473,7 +473,7 @@ function user_authenticate($username, $password, $captcha = null){
                 captcha_verify_response($captcha);
 
             }catch(Exception $e){
-                throw new bException(tr('user_authenticate(): CAPTCHA test failed'), 'captcha');
+                throw new bException(tr('user_authenticate(): CAPTCHA test failed for ":id"', array(':user' => $user['id'])), 'captcha');
             }
         }
 
