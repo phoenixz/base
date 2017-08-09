@@ -14,7 +14,7 @@ if(is_resource($variable)){
     return '*** Variable is resource ***';
 }
 
-if(is_array($variable) or is_object($variable)){
+if(is_array($variable)){
     foreach($variable as $key => &$value){
         if($key === 'object'){
             return '*** Not showing objects due to possible segfaults ***';
@@ -23,6 +23,9 @@ if(is_array($variable) or is_object($variable)){
             $value = variable_zts_safe($value, $level);
         }
     }
+
+}elseif(is_object($variable)){
+    return '*** Not showing objects due to possible segfaults ***';
 }
 
 unset($value);
