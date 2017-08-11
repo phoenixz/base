@@ -123,6 +123,8 @@ function chat_add_user($user){
  *
  */
 function chat_update_user($user){
+    static $fail = false;
+
     try{
         if(has_rights('admin', $user)){
             $rank = 5;
@@ -136,18 +138,18 @@ function chat_update_user($user){
 
         $r = sql_query('UPDATE `users`
 
-                        SET    `user_name`   = :user_name,
-                               `user_email`  = :user_email,
-                               `alt_name`    = :alt_name,
-                               `user_rank`   = :user_rank
+                        SET    `user_name`  = :user_name,
+                               `user_email` = :user_email,
+                               `alt_name`   = :alt_name,
+                               `user_rank`  = :user_rank
 
-                        WHERE  `user_id`     = :user_id',
+                        WHERE  `user_id`    = :user_id',
 
-                        array(':user_id'     => $user['id'],
-                              ':user_name'   => (empty($user['username']) ? $user['email'] : $user['username']),
-                              ':alt_name'    => isset_get($user['name'], ''),
-                              ':user_email'  => $user['email'],
-                              ':user_rank'   => $rank),
+                        array(':user_id'    => $user['id'],
+                              ':user_name'  => (empty($user['username']) ? $user['email'] : $user['username']),
+                              ':alt_name'   => isset_get($user['name'], ''),
+                              ':user_email' => $user['email'],
+                              ':user_rank'  => $rank),
 
                         null, 'chat');
 
@@ -157,8 +159,22 @@ function chat_update_user($user){
              * The former is okay, the latter should never happen.
              */
             if(!sql_get('SELECT `user_id` FROM `users` WHERE `user_id` = :user_id', 'user_id', array(':user_id' => $user['id']), 'chat')){
-                load_libs('user');
-                throw new bException(tr('chat_update_user(): Specified user ":user" does not exist', array(':user' => user_name($user))), 'not-exist');
+                if($fail){
+                    /*
+                     * > first failure, notify of failure
+                     */
+                    load_libs('user');
+                    notify('not-found', tr('chat_update_user(): Specified user ":user" does not exist', array(':user' => user_name($user))), 'developers');
+
+                }else{
+                    /*
+                     * First failure, user doesnt exist. Try adding it and try
+                     * update again
+                     */
+                    $fail = true;
+                    chat_add_user($user);
+                    return chat_update_user($user);
+                }
             }
         }
 
