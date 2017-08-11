@@ -52,11 +52,36 @@ load_config('chat');
 | email_count      | int(1)       | NO   |     | 0                       |                |
 | user_friends     | text         | NO   |     | NULL                    |                |
  */
+
+
+
+/*
+ *
+ */
+function chat_get_user($user){
+    try{
+        return sql_get('SELECT `user_name`, `user_password` FROM `users` WHERE `user_id` = :user_id', array(':user_id' => $user['id']), null, 'chat');
+
+    }catch(Exception $e){
+        throw new bException(tr('chat_get_user(): Failed'), $e);
+    }
+}
+
+
+
+/*
+ *
+ */
 function chat_start($user){
     global $_CONFIG;
 
     try{
-        $user = sql_get('SELECT `user_name`, `user_password` FROM `users` WHERE `user_id` = :user_id', array(':user_id' => $user['id']), null, 'chat');
+        if(!$user){
+            /*
+             * This user doesnt exist yet
+             */
+            throw new bException(tr('chat_start(): Specified user ":user" doesn\'t exist in the chat database', array(':user' => $user['id'])), 'not-exist');
+        }
 
         setcookie('username', $user['user_name']    , time() + 86400, '/', ''.str_starts($_SESSION['domain'], '.'));
         setcookie('password', $user['user_password'], time() + 86400, '/', ''.str_starts($_SESSION['domain'], '.'));
