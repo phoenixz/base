@@ -1433,7 +1433,7 @@ function get_global_data_path($section = '', $force = true){
 function in_source($source, $key, $return = true){
     try{
         if(!is_array($source)){
-            throw new bException('in_source(): Specified source should be an array', 'invalid');
+            throw new bException(tr('in_source(): Specified source ":source" should be an array', array(':source' => $source)), 'invalid');
         }
 
         if(isset_get($source[$key])){
