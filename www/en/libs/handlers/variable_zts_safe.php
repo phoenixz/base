@@ -14,7 +14,7 @@ if(is_resource($variable)){
     return '*** Variable is resource ***';
 }
 
-if(is_array($variable)){
+if(is_array($variable) or (is_object($variable) and ($variable instanceof Exception))){
     foreach($variable as $key => &$value){
         if($key === 'object'){
             return '*** Not showing objects due to possible segfaults ***';
