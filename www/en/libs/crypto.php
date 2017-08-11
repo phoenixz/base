@@ -216,7 +216,7 @@ function crypto_write_transaction($transaction, $provider){
 
         log_file(tr('Adding / updating transaction ":tx_id" from address ":address" with ":credits" credits for user ":users_id"', array(':credits' => isset_get($transaction['amount_usd_rounded']), ':users_id' => isset_get($transaction['users_id']), ':tx_id' => isset_get($transaction['txn_id']), ':address' => isset_get($transaction['address']))), 'crypto');
 
-        sql_query(' INSERT INTO `crypto_transactions` (`id`, `users_id`, `status`, `status_text`, `type`, `mode`, `currency`, `confirms`, `api_transactions_id`, `tx_id`, `merchant`, `address`, `amount`, `amounti`, `amount_usd`, `amount_btc`, `amount_usd_rounded`, `fee`, `feei`, `exchange_rate`, `description`, `data`)
+        sql_query('INSERT INTO `crypto_transactions` (`id`, `users_id`, `status`, `status_text`, `type`, `mode`, `currency`, `confirms`, `api_transactions_id`, `tx_id`, `merchant`, `address`, `amount`, `amounti`, `amount_usd`, `amount_btc`, `amount_usd_rounded`, `fee`, `feei`, `exchange_rate`, `description`, `data`)
                    VALUES                            (:id , :users_id , :status , :status_text , :type , :mode , :currency , :confirms , :api_transactions_id , :tx_id , :merchant , :address , :amount , :amounti , :amount_usd , :amount_btc , :amount_usd_rounded , :fee , :feei , :exchange_rate , :description , :data )
 
                    ON DUPLICATE KEY UPDATE `modifiedon`         = NOW(),
