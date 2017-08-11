@@ -255,8 +255,8 @@ function sso($provider, $method, $redirect, $role = 'user'){
                 /*
                  * Signin!
                  */
+                $user['avatar'] = $profile['photoURL'];
                 user_signin($user, false, $redirect);
-
                 break;
 
             case '':
