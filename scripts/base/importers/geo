@@ -3,14 +3,15 @@
 /*
  * This script can be used to import geo data from the geodata project
  */
-$usage   = "./scripts/base/importers/geo\n".
-           "./scripts/base/importers/geo clear\n".
-           "./scripts/base/importers/geo download\n".
-           "./scripts/base/importers/geo loaddata [username USERNAME] [password PASSWORD] [database DATABASE] \n".
-           "./scripts/base/importers/geo fixdata\n".
-           "./scripts/base/importers/geo import countries&|states&|counties&|cities | all country (COUNTRY,COUNTRYCODE,etc...)";
+$usage   = './scripts/base/importers/geo
+./scripts/base/importers/geo clear
+./scripts/base/importers/geo download
+./scripts/base/importers/geo loaddata [username USERNAME] [password PASSWORD] [database DATABASE]
+./scripts/base/importers/geo fixdata
+./scripts/base/importers/geo import countries&|states&|counties&|cities | all country (COUNTRY,COUNTRYCODE,etc...)
+./scripts/base/importers/geo fixerrors';
 
-$help    = "The geo importer script can import geo data like countries, states, counties and cities from the geoname database repository";
+$help    = 'The geo importer script can import geo data like countries, states, counties and cities from the geoname database repository';
 
 $nologin = true;
 
@@ -436,11 +437,11 @@ switch(cli_argument(0)){
 // :DELETE: Delete following 2 lines. States will no longer be deleted. Before insert, a check will be done if the state already exists, and if so, it will be skipped
                 //log_console('Clearing old states...', '', '');
                 //sql_query('DELETE FROM `geo_states` WHERE `countries_id` IN ('.str_force($country_idlist).');');
-                $state_exists_statement = sql_prepare(' SELECT `id`
-                                                        FROM    `geo_states`
-                                                        WHERE   `geonames_id`  = :geonames_id
-                                                        OR     (`countries_id` = :countries_id
-                                                        AND     `name`         = :name)');
+                $state_exists_statement = sql_prepare('SELECT `id`
+                                                       FROM   `geo_states`
+                                                       WHERE  `geonames_id`  = :geonames_id
+                                                       OR    (`countries_id` = :countries_id
+                                                       AND    `name`         = :name)');
 
 
                 foreach($countries as $id => $country_data){
@@ -470,7 +471,7 @@ switch(cli_argument(0)){
                                          ':countries_id'    => $id,
                                          ':country_code'    => $country_data['code'],
                                          ':timezones_id'    => isset_get($timezones[$row['timezone']]),
-                                         ':code'            => $row['cc2'],
+                                         ':code'            => (is_numeric($row['admin1']) ? '' : $row['admin1']),
                                          ':name'            => $row['name'],
                                          ':seoname'         => seo_unique_string($row['name'], 'geo_states'),
                                          ':alternate_names' => $row['alternatenames'],
@@ -855,6 +856,28 @@ switch(cli_argument(0)){
             }
         }
 
+        break;
+
+    case 'fixerrors':
+        /*
+         * Fix possible
+         */
+        $states = sql_query('SELECT `id`, `geonames_id`, `admin1` FROM `geo_states`');
+        $update = sql_prepare('UPDATE `geo_states` SET `code` = :code WHERE `id` = :id');
+
+        cli_log('Fixing geo_states missing state codes');
+        sql_query('UPDATE `geo_states` SET `code` = ""');
+
+        while($state = sql_fetch($states)){
+            if(!is_numeric($state['admin1'])){
+                $update->execute(array(':id'   => $state['id'],
+                                       ':code' => $state['admin1']));
+            }
+
+            cli_dot(1);
+        }
+
+        cli_dot(false);
         break;
 
     case '':
