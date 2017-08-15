@@ -1138,7 +1138,7 @@ function user_update_password($params, $current = true){
 
                                FROM     `passwords`
 
-                               WHERE    `users_id` = :users_id
+                               WHERE    `users_id`  = :users_id
                                AND      `createdon` > DATE_SUB(UTC_TIMESTAMP(), INTERVAL :day DAY)
 
                                ORDER BY `id`
