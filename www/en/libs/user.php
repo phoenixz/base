@@ -898,26 +898,30 @@ function user_set_verify_code($user, $email_type = false){
             throw new bException('user_set_verify_code(): Invalid user specified', 'invalid');
         }
 
-        /*
-         * Create a unique code.
-         */
-        $code = unique_code();
+        $code = sql_get('SELECT `code` FROM `users` WHERE `id` = :id', array(':id' => cfi($user['id'])));
 
-        /*
-         * Update user validation with that code
-         */
-        $r = sql_query('UPDATE `users`
+        if(!$code){
+            /*
+             * Create a unique code.
+             */
+            $code = unique_code();
 
-                        SET    `verify_code` = :code,
-                               `verifiedon`  = NULL
+            /*
+             * Update user validation with that code
+             */
+            $r = sql_query('UPDATE `users`
 
-                        WHERE  `id`          = :id',
+                            SET    `verify_code` = :code,
+                                   `verifiedon`  = NULL
 
-                        array(':id'          => cfi($user['id']),
-                              ':code'        => cfm($code)));
+                            WHERE  `id`          = :id',
 
-        if(!sql_affected_rows($r)){
-            throw new bException(tr('user_set_verify_code(): Specified user ":user" does not exist', array(':user' => $user['id'])), 'not-exist');
+                            array(':id'          => cfi($user['id']),
+                                  ':code'        => cfm($code)));
+
+            if(!sql_affected_rows($r)){
+                throw new bException(tr('user_set_verify_code(): Specified user ":user" does not exist', array(':user' => $user['id'])), 'not-exist');
+            }
         }
 
         switch($email_type){
