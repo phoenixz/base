@@ -898,7 +898,7 @@ function user_set_verify_code($user, $email_type = false){
             throw new bException('user_set_verify_code(): Invalid user specified', 'invalid');
         }
 
-        $code = sql_get('SELECT `code` FROM `users` WHERE `id` = :id', array(':id' => cfi($user['id'])));
+        $code = sql_get('SELECT `code` FROM `users` WHERE `id` = :id', true, array(':id' => cfi($user['id'])));
 
         if(!$code){
             /*
