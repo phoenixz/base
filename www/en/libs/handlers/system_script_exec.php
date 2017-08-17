@@ -5,7 +5,7 @@
  *
  */
 // :TODO: This will fail for PLATFORM apache since $arguments will not be defined! Implement fix for that
-global $_CONFIG;
+global $_CONFIG, $argv, $argc;
 
 try{
     load_libs('file');
@@ -67,9 +67,7 @@ try{
         /*
          * Execute the script (by its tempfile)
          */
-        global $argv;
-        cli_method(null, false);
-
+//        cli_method(null, false);
         include($_script_exec_file);
         array_pop($GLOBALS['scripts']);
 
@@ -119,6 +117,6 @@ try{
 
 }catch(Exception $e){
     $GLOBALS['argv'] = $argv;
-    throw new bException('script_exec(): Failed to execute "'.str_log($script).'"', $e);
+    throw new bException(tr('script_exec(): Failed to execute ":script"', array(':script' => $script)), $e);
 }
 ?>
