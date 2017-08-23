@@ -4,6 +4,8 @@
  */
 cli_log('Adding support for crypto wallets');
 
+sql_column_exists('users', 'credits', '!ALTER TABLE `users` ADD COLUMN `credits` DOUBLE NOT NULL');
+
 sql_query('UPDATE `users` SET `credits` = 0');
 sql_query('DROP TABLE IF EXISTS `crypto_transactions`');
 sql_query('DROP TABLE IF EXISTS `crypto_addresses`');
