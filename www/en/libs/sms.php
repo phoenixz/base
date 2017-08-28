@@ -58,19 +58,23 @@ function sms_get_conversation($phone_local, $phone_remote, $type, $repliedon_now
         /*
          * Determine the local and remote phones
          */
-        foreach($_CONFIG['twilio']['accounts'] as $account => $data){
-            if(!empty($data['sources'][$phone_local])){
-                $nochange = true;
-                break;
+        if(twilio_numbers_get($phone_remote)){
+            if(twilio_numbers_get($phone_local)){
+                /*
+                 * The remote number and local numbers are both locally known
+                 * numbers. We can onlyh assume the order is correct, so don't
+                 * do anything
+                 */
+            }else{
+                /*
+                 * The remote number is actually a locally known number
+                 */
+                $tmp          = $phone_remote;
+                $phone_remote = $phone_local;
+                $phone_local  = $tmp;
+
+                unset($tmp);
             }
-        }
-
-        if(empty($nochange)){
-            $tmp          = $phone_remote;
-            $phone_remote = $phone_local;
-            $phone_local  = $tmp;
-
-            unset($tmp);
         }
 
         /*

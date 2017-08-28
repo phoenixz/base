@@ -538,9 +538,11 @@ function twilio_numbers_get($number){
 
                            FROM     `twilio_numbers`
 
-                           WHERE    `twilio_numbers`.`name` = :twilio',
+                           WHERE    `twilio_numbers`.`name`   = :name
+                           OR       `twilio_numbers`.`number` = :number',
 
-                           array(':twilio' => $number));
+                           array(':name'   => $number,
+                                 ':number' => $number));
 
         return $retval;
 
