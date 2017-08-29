@@ -92,7 +92,6 @@ function sweetalert($params, $html = '', $type = '', $options = array()){
         array_default($params['options'], 'allowEscapeKey'     , null);
         array_default($params['options'], 'class'              , $params['class']);
         array_default($params['options'], 'buttonsStyling'     , null);
-        array_default($params['options'], 'allowOutsideClick'  , null);
         array_default($params['options'], 'showLoaderOnConfirm', null);
         array_default($params['options'], 'preConfirm'         , null);
 
