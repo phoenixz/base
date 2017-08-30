@@ -1888,7 +1888,15 @@ function html_img($src, $alt, $width = null, $height = null, $more = ''){
             /*
              * Try to get width / height from image.
              */
-            if($image = sql_get('SELECT `width`, `height` FROM `html_img` WHERE `url` = :url AND `createdon` > NOW() - INTERVAL 1 DAY AND `status` IS NULL', array(':url' => $src))){
+            try{
+                $image = sql_get('SELECT `width`, `height` FROM `html_img` WHERE `url` = :url AND `createdon` > NOW() - INTERVAL 1 DAY AND `status` IS NULL', array(':url' => $src));
+
+            }catch(Exception $e){
+                notify($e);
+                $image = null;
+            }
+
+            if($image){
                 /*
                  * We have that information cached, yay!
                  */
@@ -1972,16 +1980,21 @@ function html_img($src, $alt, $width = null, $height = null, $more = ''){
                     log_error(tr('html_img(): image ":src" has invalid dimensions with width ":width" and height ":height"', array(':src' => $src, ':width' => $width, ':height' => $height)), 'invalid');
 
                 }else{
-                    sql_query('INSERT INTO `html_img` (`status`, `url`, `width`, `height`)
-                               VALUES                 (:status , :url , :width , :height )
+                    try{
+                        sql_query('INSERT INTO `html_img` (`status`, `url`, `width`, `height`)
+                                   VALUES                 (:status , :url , :width , :height )
 
-                               ON DUPLICATE KEY UPDATE `status`    = NULL,
-                                                       `createdon` = NOW()',
+                                   ON DUPLICATE KEY UPDATE `status`    = NULL,
+                                                           `createdon` = NOW()',
 
-                               array(':url'    => $src,
-                                     ':width'  => $width,
-                                     ':height' => $height,
-                                     ':status' => $status));
+                                   array(':url'    => $src,
+                                         ':width'  => $width,
+                                         ':height' => $height,
+                                         ':status' => $status));
+
+                    }catch(Exception $e){
+                        notify($e);
+                    }
                 }
             }
         }
