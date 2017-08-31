@@ -171,7 +171,7 @@ function chat_update_user($user){
                         WHERE  `user_id`    = :user_id',
 
                         array(':user_id'    => $user['id'],
-                              ':user_name'  => (empty($user['username']) ? $user['email'] : $user['username']),
+                              ':user_name'  => (empty($user['nickname']) ? $user['nickname'] : $user['name']),
                               ':alt_name'   => isset_get($user['name'], ''),
                               ':user_email' => $user['email'],
                               ':user_rank'  => $rank),
