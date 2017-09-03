@@ -1061,9 +1061,9 @@ function has_rights($rights, &$user = null){
             //}
 
             if(empty($user['rights'][$right]) or !empty($user['rights']['devil']) or !empty($fail)){
-                if(PLATFORM == 'shell'){
+                if((PLATFORM == 'shell') and VERBOSE){
                     load_libs('user');
-                    log_message('has_rights(): Access denied for user "'.str_log(user_name($_SESSION['user'])).'" in page "'.str_log($_SERVER['PHP_SELF']).'" for missing right "'.str_log($right).'"', 'accessdenied', 'yellow');
+                    log_message(tr('has_rights(): Access denied for user ":user" in page ":page" for missing right ":right"', array(':user' => name($_SESSION['user']), ':page' => $_SERVER['PHP_SELF'], ':right' => $right)), 'accessdenied', 'yellow');
                 }
 
                 return false;
