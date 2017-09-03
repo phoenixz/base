@@ -127,10 +127,10 @@ function chat_add_user($user){
                    VALUES              (:user_id , :user_name , :user_email , :user_password , :alt_name , :user_ip , NOW()      )',
 
                    array(':user_id'       => $user['id'],
-                         ':user_name'     => (empty($user['username']) ? $user['email'] : $user['username']),
-                         ':alt_name'      => isset_get($user['name'], ''),
+                         ':user_name'     => name($user['name']),
+                         ':alt_name'      => isset_get($user['username'], ''),
                          ':user_email'    => $user['email'],
-                         'user_ip'        => $_SERVER['REMOTE_ADDR'],
+                         'user_ip'        => isset_get($_SERVER['REMOTE_ADDR'], '127.0.0.1'),
                          ':user_password' => unique_code()),
 
                    null, 'chat');
@@ -171,8 +171,8 @@ function chat_update_user($user){
                         WHERE  `user_id`    = :user_id',
 
                         array(':user_id'    => $user['id'],
-                              ':user_name'  => (empty($user['nickname']) ? $user['nickname'] : $user['name']),
-                              ':alt_name'   => isset_get($user['name'], ''),
+                              ':user_name'  => name($user['name']),
+                              ':alt_name'   => isset_get($user['username'], ''),
                               ':user_email' => $user['email'],
                               ':user_rank'  => $rank),
 
