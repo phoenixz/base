@@ -372,6 +372,9 @@ $_CONFIG['title']              = 'Base';                                        
 // Temporary path location, either "local" (ROOT/tmp/) or "global" (/tmp/)
 $_CONFIG['tmp']                = 'local';                                                                                               // Either "local" or "global". "local" will save all temporary files in ROOT/tmp, "global" will save all temporary files in /tmp/PROJECT/
 
+// What webservice this is.
+$_CONFIG['type']               = 'core';                                                                                                // core, api, cdn
+
 // User configuration
 $_CONFIG['users']              = array('type_filter'      => null);
 
