@@ -127,7 +127,7 @@ function chat_add_user($user){
                    VALUES              (:user_id , :user_name , :user_email , :user_password , :alt_name , :user_ip , NOW()      )',
 
                    array(':user_id'       => $user['id'],
-                         ':user_name'     => name($user['name']),
+                         ':user_name'     => name($user),
                          ':alt_name'      => isset_get($user['username'], ''),
                          ':user_email'    => $user['email'],
                          'user_ip'        => isset_get($_SERVER['REMOTE_ADDR'], '127.0.0.1'),
@@ -171,7 +171,7 @@ function chat_update_user($user){
                         WHERE  `user_id`    = :user_id',
 
                         array(':user_id'    => $user['id'],
-                              ':user_name'  => name($user['name']),
+                              ':user_name'  => name($user),
                               ':alt_name'   => isset_get($user['username'], ''),
                               ':user_email' => $user['email'],
                               ':user_rank'  => $rank),
@@ -189,7 +189,7 @@ function chat_update_user($user){
                      * > first failure, notify of failure
                      */
                     load_libs('user');
-                    notify('not-found', tr('chat_update_user(): Specified user ":user" does not exist', array(':user' => user_name($user))), 'developers');
+                    notify('not-found', tr('chat_update_user(): Specified user ":user" does not exist', array(':user' => name($user))), 'developers');
 
                 }else{
                     /*
@@ -241,7 +241,7 @@ function chat_update_rank($user){
              */
             if(!sql_get('SELECT `user_id` FROM `users` WHERE `user_id` = :user_id', 'user_id', array(':user_id' => $user['id']))){
                 load_libs('user');
-                throw new bException(tr('chat_update_rank(): Specified user "%user%" does not exist', array('%user%' => user_name($user))), 'not-exist');
+                throw new bException(tr('chat_update_rank(): Specified user ":user" does not exist', array(':user' => name($user))), 'not-exist');
             }
         }
 
@@ -276,7 +276,7 @@ function chat_sync_users($user, $log_console = false){
                 }
 
             }catch(Exception $e){
-                throw new bException(tr('chat_sync_users(): Failed to process user "%user%"', array('%user%' => user_name($user))), $e);
+                throw new bException(tr('chat_sync_users(): Failed to process user ":user"', array(':user' => name($user))), $e);
             }
         }
 
