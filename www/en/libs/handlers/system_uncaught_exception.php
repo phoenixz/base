@@ -135,6 +135,9 @@ try{
 
 // :TODO:SVEN:20130717: Add notifications!
     if(PLATFORM != 'shell'){
+        show(SCRIPT);
+        show($_GET);
+        show($_POST);
         showdie($e);
 
     }else{

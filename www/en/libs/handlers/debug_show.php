@@ -42,7 +42,7 @@ try{
 
     }else{
         if(is_scalar($data)){
-            $retval .= tr('DEBUG SHOW (%file%@%line%) ', array('%file%' => current_file($trace_offset), '%line%' => current_line($trace_offset))).$data."\n";
+            $retval .= tr('DEBUG SHOW (:file@:line) ', array(':file' => current_file($trace_offset), ':line' => current_line($trace_offset))).$data."\n";
 
         }else{
             /*
@@ -52,7 +52,7 @@ try{
                 ksort($data);
             }
 
-            $retval .= tr('DEBUG SHOW (%file%@%line%) ', array('%file%' => current_file($trace_offset), '%line%' => current_line($trace_offset)))."\n";
+            $retval .= tr('DEBUG SHOW (:file@:line) ', array(':file' => current_file($trace_offset), ':line' => current_line($trace_offset)))."\n";
             $retval .= print_r(variable_zts_safe($data), true);
             $retval .= "\n";
         }
