@@ -63,6 +63,7 @@
 
         } catch(e) {
             return $.handleFail({result  : 'EXCEPTION',
+                                 e       : e,
                                  message : data}, cbe);
         }
     };
@@ -109,7 +110,7 @@ console.log(data.result + ' > ' + data.redirect);
                         }
 
                         result = data.result;
-                        data = data.message;
+                        data   = data.message;
                 }
 
             }else{
@@ -145,8 +146,10 @@ console.log(data.result + ' > ' + data.redirect);
 
         $.getScript(cdnprefix+"js/base/flash.js")
             .done(function( ){ $.flashMessage(message, type, autoClose, selector, opacity); })
-            .fail(function(e){ alert("The JS flash message system seems not to be working because of \"" + e + "\", sorry for the alerts!");
-                               alert(message);});
+            .fail(function(e){
+                alert("The JS flash message system seems not to be working because of \"" + e + "\", sorry for the alerts!");
+                alert(message);
+            });
     }
 
     // Redirect in the correct way
@@ -186,15 +189,6 @@ console.log(data.result + ' > ' + data.redirect);
         document.cookie = escape(name) + "=" + escape(value) + expires + "; path=/";
     };
 
-    $.urlQuery = function(obj) {
-      var str = [];
-      for(var p in obj)
-        if (obj.hasOwnProperty(p)) {
-          str.push(encodeURIComponent(p) + "=" + encodeURIComponent(obj[p]));
-        }
-      return str.join("&");
-    }
-
     $.readCookie = function(name) {
         var nameEQ = escape(name) + "=",
             ca     = document.cookie.split(';'),
@@ -217,6 +211,12 @@ console.log(data.result + ' > ' + data.redirect);
 
     $.eraseCookie = function(name) {
         createCookie(name, "", -1);
+    };
+
+    $.getCSS = function(url) {
+        $('<link/>', {rel: 'stylesheet',
+                      type: 'text/css',
+                      href: url}).appendTo('head');
     };
 
     $.geoLocation = function(cb, cbe){
@@ -285,7 +285,7 @@ $(document).ready(function(){
 
 
     // Allow that I can click anywhere on the row to select the link
-    $("table.base-link tr")
+    $("table.link tr")
         .click(function(e){
             if (e.target.nodeName != 'TD') {
                 return true;
@@ -293,7 +293,7 @@ $(document).ready(function(){
 
             e.stopPropagation();
 
-            if ($(e.target).hasClass("base-select")) {
+            if ($(e.target).hasClass("select")) {
                 // This is a select box, (un) check it
                 $(e.target).find("input[type=\"checkbox\"]").trigger("click");
                 return false;
@@ -306,7 +306,7 @@ $(document).ready(function(){
 
 
     // Allow the (de)select all checkbox
-    $("table.base-select input[type=\"checkbox\"].all")
+    $("table.select input[type=\"checkbox\"].all")
         .click(function(){
             $(this).closest("table").find("input[type=\"checkbox\"][name=\"" + $(this).prop("name") + "\"]").prop("checked", $(this).is(':checked'));
         });
@@ -324,4 +324,15 @@ $(document).ready(function(){
 // Translation marker
 function tr(text){
     return text;
+}
+
+
+
+//
+function isFunction(variable) {
+    if(typeof variable === "function") {
+        return true;
+    }
+
+    return false;
 }

@@ -45,7 +45,30 @@ console.log(type);
             /*
              * There is no flash message element with the specified selector. Use alert() as alternative
              */
-            alert(message);
+            console.log("****************************************************************");
+            console.log(message);
+            console.log("****************************************************************");
+
+            if(!isFunction("swal")){
+                $.getScript(cdnprefix+"js/sweetalert/sweetalert.js")
+                    .done(function(){
+                        $.getCSS(cdnprefix+"css/sweetalert/sweetalert.css");
+
+                        swal({title: "Notice",
+                              type: type,
+                              html: message});
+                    })
+                    .fail(function(e){
+                        console.log("****************************************************************");
+                        console.log(e);
+                        console.log("****************************************************************");
+                    });
+
+            }else{
+                swal({title: "Notice",
+                      type: type,
+                      html: message});
+            }
 
         }else{
             $selector
