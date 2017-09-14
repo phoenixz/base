@@ -169,12 +169,6 @@ if(PLATFORM_SHELL){
         $GLOBALS['page_is_404'] = true;
     }
 
-    $_CONFIG['cdn']['prefix'] = slash($_CONFIG['cdn']['prefix']);
-
-    if($_CONFIG['cdn']['prefix'] != '/pub/'){
-        $GLOBALS['header'] = html_script('var cdnprefix="'.$_CONFIG['cdn']['prefix'].'";', false);
-    }
-
     if(substr($_SERVER['REQUEST_URI'], 0, 7) == '/admin/'){
         /*
          * This is an admin page
@@ -715,6 +709,18 @@ try{
          * Check for URL's with queries. Depending on configuration, 301 direct to URL without query
          */
         http_redirect_query_url();
+
+        $_CONFIG['cdn']['prefix'] = slash($_CONFIG['cdn']['prefix']);
+
+        if($_CONFIG['cdn']['prefix'] != '/pub/'){
+            if($_CONFIG['cdn']['enabled']){
+                load_libs('cdn');
+                $GLOBALS['header'] = html_script('var cdnprefix="'.cdn_domain($_CONFIG['cdn']['prefix']).'";', false);
+
+            }else{
+                $GLOBALS['header'] = html_script('var cdnprefix="'.$_CONFIG['cdn']['prefix'].'";', false);
+            }
+        }
 
     }else{
         /*
