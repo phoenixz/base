@@ -945,7 +945,7 @@ function email_send($email, $smtp = null){
                     break;
 
                 default:
-                    throw new bException(tr('email_send(): Unknown global SMTP secure setting "%value%" for host "%host%". Use either false, "tls", or "ssl"', array('%value%' => $_CONFIG['email']['smtp']['secure'], '%host%' => $_CONFIG['email']['smtp']['host'])), 'unknow');
+                    throw new bException(tr('email_send(): Unknown global SMTP secure setting ":value" for host "%host%". Use either false, "tls", or "ssl"', array(':value' => $_CONFIG['email']['smtp']['secure'], '%host%' => $_CONFIG['email']['smtp']['host'])), 'unknow');
             }
 
         }else{

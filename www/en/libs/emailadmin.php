@@ -151,7 +151,7 @@ function emailadmin_get_domain($domain){
             return emailadmin_get('SELECT `id`   FROM `virtual_domains` WHERE `name` = :name', 'id'  , array(':name' => $domain));
 
         }else{
-            throw new bException(tr('emailadmin_get_domain(): Invalid domain name or id type "%value%" specified, please specify either string (domain name) or integer (domain id)', array('%value%' => gettype($domain))), 'invalid');
+            throw new bException(tr('emailadmin_get_domain(): Invalid domain name or id type ":value" specified, please specify either string (domain name) or integer (domain id)', array(':value' => gettype($domain))), 'invalid');
         }
 
     }catch(Exception $e){
@@ -232,7 +232,7 @@ function emailadmin_remove_domains($domain){
                               $in);
 
         }else{
-            throw new bException(tr('emailadmin_remove_domains(): Invalid domain name or id type "%value%" specified, please specify either string (domain name) or integer (domain id) or an array with both mixed', array('%value%' => gettype($domain))), 'invalid');
+            throw new bException(tr('emailadmin_remove_domains(): Invalid domain name or id type ":value" specified, please specify either string (domain name) or integer (domain id) or an array with both mixed', array(':value' => gettype($domain))), 'invalid');
         }
 
         return $GLOBALS['emailsql']->rowCount();
@@ -256,7 +256,7 @@ function emailadmin_get_user($user){
             return emailadmin_get('SELECT `id`    FROM `virtual_users` WHERE `email` = :email', 'id'  , array(':email' => $user));
 
         }else{
-            throw new bException(tr('emailadmin_get_user(): Invalid user name or id type "%value%" specified, please specify either string (user name) or integer (user id)', array('%value%' => gettype($user))), 'invalid');
+            throw new bException(tr('emailadmin_get_user(): Invalid user name or id type ":value" specified, please specify either string (user name) or integer (user id)', array(':value' => gettype($user))), 'invalid');
         }
 
     }catch(Exception $e){
@@ -361,7 +361,7 @@ function emailadmin_remove_users($user){
                               $in);
 
         }else{
-            throw new bException(tr('emailadmin_remove_users(): Invalid user name or id type "%value%" specified, please specify either string (user name) or integer (user id) or an array with both mixed', array('%value%' => gettype($user))), 'invalid');
+            throw new bException(tr('emailadmin_remove_users(): Invalid user name or id type ":value" specified, please specify either string (user name) or integer (user id) or an array with both mixed', array(':value' => gettype($user))), 'invalid');
         }
 
         return $GLOBALS['emailsql']->rowCount();
@@ -385,7 +385,7 @@ function emailadmin_get_alias($alias){
             return emailadmin_get('SELECT `id`    FROM `virtual_aliases` WHERE `email` = :email', 'id'  , array(':email' => $alias));
 
         }else{
-            throw new bException(tr('emailadmin_get_alias(): Invalid alias name or id type "%value%" specified, please specify either string (alias name) or integer (alias id)', array('%value%' => gettype($alias))), 'invalid');
+            throw new bException(tr('emailadmin_get_alias(): Invalid alias name or id type ":value" specified, please specify either string (alias name) or integer (alias id)', array(':value' => gettype($alias))), 'invalid');
         }
 
     }catch(Exception $e){
@@ -492,7 +492,7 @@ function emailadmin_remove_aliases($alias){
                               $in);
 
         }else{
-            throw new bException(tr('emailadmin_remove_aliases(): Invalid alias name or id type "%value%" specified, please specify either string (alias name) or integer (alias id) or an array with both mixed', array('%value%' => gettype($alias))), 'invalid');
+            throw new bException(tr('emailadmin_remove_aliases(): Invalid alias name or id type ":value" specified, please specify either string (alias name) or integer (alias id) or an array with both mixed', array(':value' => gettype($alias))), 'invalid');
         }
 
         return $GLOBALS['emailsql']->rowCount();
