@@ -180,8 +180,8 @@ function sso($provider, $method, $redirect, $role = 'user'){
                 /*
                  * Store all provider profile data
                  */
-                sql_query('INSERT INTO `users_social` (`users_id`, `provider`, `identifier`, `email`, `phones`, `avatar_url`, `profile_url`, `website_url`, `display_name`, `description`, `first_name`, `last_name`, `gender`, `language`, `age`, `birthday`, `country`, `region`, `city`, `zip`, `job`, `organization`)
-                           VALUES                     (:users_id , :provider , :identifier , :email , :phones , :avatar_url , :profile_url , :website_url , :display_name , :description , :first_name , :last_name , :gender , :language , :age , :birthday , :country , :region , :city , :zip , :job , :organization )
+                sql_query('INSERT INTO `users_sso` (`users_id`, `provider`, `identifier`, `email`, `phones`, `avatar_url`, `profile_url`, `website_url`, `display_name`, `description`, `first_name`, `last_name`, `gender`, `language`, `age`, `birthday`, `country`, `region`, `city`, `zip`, `job`, `organization`)
+                           VALUES                  (:users_id , :provider , :identifier , :email , :phones , :avatar_url , :profile_url , :website_url , :display_name , :description , :first_name , :last_name , :gender , :language , :age , :birthday , :country , :region , :city , :zip , :job , :organization )
 
                            ON DUPLICATE KEY UPDATE `modifiedon`   = NOW(),
                                                    `users_id`     = :update_users_id,
