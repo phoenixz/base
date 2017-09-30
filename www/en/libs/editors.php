@@ -114,35 +114,119 @@ function editors_tinymce($params){
 function editors_summernote($params = null){
     try{
         array_params($params, 'name');
-        array_default($params, 'name'          , 'editor');
-        array_default($params, 'class'         , 'summernote editor');
-        array_default($params, 'extra'         , '');
-        array_default($params, 'value'         , '');
-        array_default($params, 'height'        , 500);
-        array_default($params, 'focus'         , false);
-        array_default($params, 'onImageUpload' , '');
-        array_default($params, 'toolbar'       , '');
+        array_default($params, 'name'            , 'editor');
+        array_default($params, 'class'           , 'summernote editor');
+        array_default($params, 'extra'           , '');
+        array_default($params, 'value'           , '');
+        array_default($params, 'height'          , 500);
+        array_default($params, 'focus'           , false);
+        array_default($params, 'on_image_upload' , '');
+        array_default($params, 'toolbar'         , null);
+        array_default($params, 'tooltips'        , false);
+        array_default($params, 'placeholder'     , '');
+        array_default($params, 'on_init'         , '');
 
+//        html_load_css('bootstrap/bootstrap,summernote/summernote');
+        html_load_css('bootstrap/bootstrap');
+        html_load_css('summernote');
         html_load_js('plugins/summernote/summernote');
         html_load_js('plugins/summernote/summernote_custom');
 
-        if($params['height'])        $options['height'] = $params['height'];
-        if($params['focus'])         $options['focus'] = $params['focus'];
-        if($params['onImageUpload']) $options['onImageUpload'] = $params['onImageUpload'];
-        if($params['toolbar'])       $options['toolbar'] = $params['toolbar'];
+        if(!$params['tooltips']){
+            $params['on_init'] .= ' alert("YAY"); $(".note-editor [data-name=\"ul\"]").tooltip("disable");';
+        }
 
-        $value_arr = array();
+        if($params['height'])          $options['height']        = $params['height'];
+        if($params['focus'])           $options['focus']         = $params['focus'];
+        if($params['on_image_upload']) $options['onImageUpload'] = $params['on_image_upload'];
+        if($params['placeholder'])     $options['placeholder']   = $params['placeholder'];
+
+        if($params['on_init']){
+            $options['onInit'] = 'function(){'.$params['on_init'].'}';
+        }
+
+        if($params['toolbar']){
+            /*
+             * Validate the toolbar
+             */
+            if(!is_array($params['toolbar'])){
+                throw new bException('editors_summernote(): Specified toolbar option is invalid, must be an array', 'invalid');
+            }
+
+            $available = array('picture',
+                               'link',
+                               'video',
+                               'table',
+                               'hr',
+                               'fontname',
+                               'fontsize',
+                               'color',
+                               'bold',
+                               'italic',
+                               'underline',
+                               'strikethrough',
+                               'superscript',
+                               'subscript',
+                               'clear',
+                               'style',
+                               'ol',
+                               'ul',
+                               'paragraph',
+                               'height',
+                               'fullscreen',
+                               'codeview',
+                               'undo',
+                               'redo',
+                               'help');
+
+            foreach($params['toolbar'] as $group => $buttons){
+                $entry = array($group);
+
+                if(!is_array($buttons)){
+                    throw new bException(tr('editors_summernote(): Specified toolbar group ":group" is invalid, must be an array', array(':group' => $group)), 'invalid');
+                }
+
+                foreach($buttons as $button){
+                    if(!is_scalar($button)){
+                        throw new bException(tr('editors_summernote(): Specified toolbar group ":group" contains an invalid button. Button name should be scalar', array(':group' => $group)), 'invalid');
+                    }
+
+                    if(!in_array($button, $available)){
+                        throw new bException(tr('editors_summernote(): Specified toolbar group ":group" contains unknown button ":button". Buttons should be one of ""', array(':group' => $group, ':button' => $button)), 'unknown');
+                    }
+                }
+
+                $entry[]              = $buttons;
+                $options['toolbar'][] = $entry;
+            }
+        }
+
+        $value_arr    = array();
         $replace_keys = array();
+
+        /*
+         * Move all functions out of the way so we won't break them with json
+         */
         foreach($options as $key => &$value){
-          // Look for values starting with 'function('
-          if(strpos($value, 'function(') === 0 or strpos($value, '(function(') === 0){
-            // Store function string.
-            $value_arr[] = $value;
-            // Replace function string in $foo with a ‘unique’ special key.
-            $value = '%' . $key . '%';
-            // Later on, we’ll look for the value, and replace it.
-            $replace_keys[] = '"' . $value . '"';
-          }
+            if(is_scalar($value)){
+                /*
+                 * Look for values starting with 'function('
+                 */
+                if((strpos($value, 'function(') === 0) or (strpos($value, '(function(') === 0)){
+                    /*
+                     * Store function string.
+                     */
+                    $value_arr[] = $value;
+                    /*
+                     * Replace function string in $foo with a ‘unique’ special key.
+                     */
+                    $value = '%' . $key . '%';
+                    /*
+                     * Later on, we’ll look for the value, and replace it.
+                     */
+                    $replace_keys[$key] = '"' . $value . '"';
+                }
+            }
         }
 
         /*
