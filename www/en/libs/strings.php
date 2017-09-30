@@ -1092,34 +1092,66 @@ function str_trim_array($source, $recurse = true){
 
 
 
+// :DELETE: This is not working
+///*
+// *
+// * Taken from https://github.com/paulgb/simplediff/blob/5bfe1d2a8f967c7901ace50f04ac2d9308ed3169/simplediff.php
+// * Originally written by https://github.com/paulgb
+// * Adapted by Sven Oostnbrink support@ingiga.com for use in BASE project
+// */
+//function str_diff(){
+//    try{
+//        foreach($old as $oindex => $ovalue){
+//            $nkeys = array_keys($new, $ovalue);
+//
+//            foreach($nkeys as $nindex){
+//                $matrix[$oindex][$nindex] = isset($matrix[$oindex - 1][$nindex - 1]) ? $matrix[$oindex - 1][$nindex - 1] + 1 : 1;
+//
+//                if($matrix[$oindex][$nindex] > $maxlen){
+//                    $maxlen = $matrix[$oindex][$nindex];
+//                    $omax   = $oindex + 1 - $maxlen;
+//                    $nmax   = $nindex + 1 - $maxlen;
+//                }
+//            }
+//        }
+//
+//        if($maxlen == 0) return array(array('d' => $old, 'i' => $new));
+//
+//        return array_merge(diff(array_slice($old, 0, $omax), array_slice($new, 0, $nmax)), array_slice($new, $nmax, $maxlen), diff(array_slice($old, $omax + $maxlen), array_slice($new, $nmax + $maxlen)));
+//
+//    }catch(Exception $e){
+//        throw new bException('str_diff(): Failed', $e);
+//    }
+//}
+
+
+
 /*
- *
- * Taken from https://github.com/paulgb/simplediff/blob/5bfe1d2a8f967c7901ace50f04ac2d9308ed3169/simplediff.php
- * Originally written by https://github.com/paulgb
- * Adapted by Sven Oostnbrink support@ingiga.com for use in BASE project
+ * Taken from https://coderwall.com/p/3j2hxq/find-and-format-difference-between-two-strings-in-php
+ * Cleaned up for use in base by Sven Oostenbrink
  */
-function str_diff(){
+function str_diff($old, $new){
     try{
-        foreach($old as $oindex => $ovalue){
-            $nkeys = array_keys($new, $ovalue);
+        $from_start = strspn($old ^ $new, "\0");
+        $from_end   = strspn(strrev($old) ^ strrev($new), "\0");
 
-            foreach($nkeys as $nindex){
-                $matrix[$oindex][$nindex] = isset($matrix[$oindex - 1][$nindex - 1]) ? $matrix[$oindex - 1][$nindex - 1] + 1 : 1;
+        $old_end    = strlen($old) - $from_end;
+        $new_end    = strlen($new) - $from_end;
 
-                if($matrix[$oindex][$nindex] > $maxlen){
-                    $maxlen = $matrix[$oindex][$nindex];
-                    $omax   = $oindex + 1 - $maxlen;
-                    $nmax   = $nindex + 1 - $maxlen;
-                }
-            }
-        }
+        $start      = substr($new, 0, $from_start);
+        $end        = substr($new, $new_end);
 
-        if($maxlen == 0) return array(array('d' => $old, 'i' => $new));
+        $new_diff   = substr($new, $from_start, $new_end - $from_start);
+        $old_diff   = substr($old, $from_start, $old_end - $from_start);
 
-        return array_merge(diff(array_slice($old, 0, $omax), array_slice($new, 0, $nmax)), array_slice($new, $nmax, $maxlen), diff(array_slice($old, $omax + $maxlen), array_slice($new, $nmax + $maxlen)));
+        $new        = $start.'<ins style="background-color:#ccffcc">'.$new_diff.'</ins>'.$end;
+        $old        = $start.'<del style="background-color:#ffcccc">'.$old_diff.'</del>'.$end;
+
+        return array('old' => $old,
+                     'new' => $new);
 
     }catch(Exception $e){
-        throw new bException('str_diff(): Failed', $e);
+        throw new bException(tr('str_diff(): Failed'), $e);
     }
 }
 
