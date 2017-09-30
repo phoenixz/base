@@ -31,7 +31,7 @@ function sweetalert_init(){
         html_load_css('sweetalert/sweetalert');
 
     }catch(Exception $e){
-        throw new bException('sweetalert_load(): Failed', $e);
+        throw new bException('sweetalert_init(): Failed', $e);
     }
 }
 
