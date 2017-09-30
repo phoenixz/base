@@ -2,12 +2,12 @@
 /*
  *
  */
-sql_query('DROP TABLE IF EXISTS `ratings`');
 sql_query('DROP TABLE IF EXISTS `ratings_votes`');
+sql_query('DROP TABLE IF EXISTS `ratings`');
 
 sql_query('CREATE TABLE `ratings` (`id`         INT(11)   NOT NULL AUTO_INCREMENT,
                                    `createdon`  TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
-                                   `modifiedon` TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+                                   `modifiedon` DATETIME      NULL,
                                    `rating`     INT(11)   NOT NULL,
 
                                    PRIMARY KEY `id`         (`id`),
