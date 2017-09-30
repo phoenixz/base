@@ -22,6 +22,25 @@ function html_only(){
 /*
  *
  */
+function html_echo($html){
+    try{
+        if(ob_get_contents()){
+            throw new bException(tr('html_echo(): Output buffer is not empty'), 'not-empty');
+        }
+
+        echo $html;
+        die();
+
+    }catch(Exception $e){
+        throw new bException('html_echo(): Failed', $e);
+    }
+}
+
+
+
+/*
+ *
+ */
 function html_safe($html){
     try{
         return htmlentities($html);
