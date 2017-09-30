@@ -40,7 +40,7 @@ try{
                         <td>'.$key.'</td>
                         <td>'.$type.'</td>
                         <td>'.strlen((string) $value).'</td>
-                        <td>'.htmlentities($value).'</td>
+                        <td class="value">'.htmlentities($value).'</td>
                     </tr>';
 
         case 'boolean':
@@ -48,7 +48,7 @@ try{
                         <td>'.$key.'</td>
                         <td>'.$type.'</td>
                         <td>1</td>
-                        <td>'.($value ? tr('true') : tr('false')).'</td>
+                        <td class="value">'.($value ? tr('true') : tr('false')).'</td>
                     </tr>';
 
         case 'NULL':
@@ -56,14 +56,14 @@ try{
                         <td>'.$key.'</td>
                         <td>'.$type.'</td>
                         <td>0</td>
-                        <td>'.htmlentities($value).'</td>
+                        <td class="value">'.htmlentities($value).'</td>
                     </tr>';
 
         case 'resource':
             return '<tr><td>'.$key.'</td>
                         <td>'.$type.'</td>
                         <td>?</td>
-                        <td>'.$value.'</td>
+                        <td class="value">'.$value.'</td>
                     </tr>';
 
         case 'method':
@@ -73,7 +73,7 @@ try{
             return '<tr><td>'.$key.'</td>
                         <td>'.$type.'</td>
                         <td>'.strlen($value).'</td>
-                        <td>'.$value.'</td>
+                        <td class="value">'.$value.'</td>
                     </tr>';
 
         case 'array':
@@ -133,7 +133,7 @@ try{
                         <td>'.$key.'</td>
                         <td>'.tr('Unknown').'</td>
                         <td>???</td>
-                        <td>'.htmlentities($value).'</td>
+                        <td class="value">'.htmlentities($value).'</td>
                     </tr>';
     }
 

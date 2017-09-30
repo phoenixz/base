@@ -25,7 +25,10 @@ try{
 
                     table.debug td{
                         border: 1px solid black;
-                        padding: 2px;
+                        padding: 5px;
+                    }
+                    table.debug td.value{
+                        word-break: break-all;
                     }
                    </style>';
     }else{
