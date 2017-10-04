@@ -23,9 +23,15 @@ function html_only(){
  *
  */
 function html_echo($html){
+    global $_CONFIG;
+
     try{
         if(ob_get_contents()){
-            throw new bException(tr('html_echo(): Output buffer is not empty'), 'not-empty');
+            if($_CONFIG['production']){
+                throw new bException(tr('html_echo(): Output buffer is not empty'), 'not-empty');
+            }
+
+            log_error(tr('html_echo(): Output buffer is not empty'), 'invalid');
         }
 
         echo $html;
