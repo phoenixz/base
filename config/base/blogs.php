@@ -16,7 +16,7 @@ $_CONFIG['blogs']               = array('enabled'         => false,
                                         //
                                         //                                                     'images'        => array('x' => false,
                                         //                                                                              'y' => false)),
-                                        'url'             => '/%category%/%date%/%seoname%.html',
+                                        'url'             => '/%category1%/%date%/%seoname%.html',
 
                                         'images'          => array('thumb'  => array('method'           => 'thumb',
                                                                                      'strip'            => true,
