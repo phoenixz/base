@@ -532,7 +532,7 @@ function crypto_get_deposit_address($currency, $callback_url = null, $force = fa
 function crypto_display($amount, $currency){
     try{
         if($currency == 'internal'){
-            return '';
+            return $amount;
         }
 
         if(!$amount){
