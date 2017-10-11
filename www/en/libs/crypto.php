@@ -186,7 +186,7 @@ function crypto_write_transaction($transaction, $provider){
         if($provider == 'internal'){
             $transaction['currency']           = 'internal';
             $transaction['exchange_rate']      = 0;
-            $transaction['amount_usd']         = 0;
+//            $transaction['amount_usd']         = 0;
             $transaction['amount_btc']         = 0;
             $transaction['amount_usd_rounded'] = 0;
 
@@ -532,7 +532,7 @@ function crypto_get_deposit_address($currency, $callback_url = null, $force = fa
 function crypto_display($amount, $currency){
     try{
         if($currency == 'internal'){
-            return $amount;
+            return $amount.tr(' Credits');
         }
 
         if(!$amount){
