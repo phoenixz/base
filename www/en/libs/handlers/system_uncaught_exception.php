@@ -70,7 +70,12 @@ try{
 }
 
 if(!debug()){
-    page_show(500);
+    if(PLATFORM_HTTP){
+        page_show(500);
+
+    }else{
+        die("An error occured. Not running debug mode, so no information will be displayed\n");
+    }
 }
 
 try{
