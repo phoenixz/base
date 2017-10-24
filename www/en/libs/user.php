@@ -492,6 +492,10 @@ function user_authenticate($username, $password, $captcha = null){
             $algorithm = str_cut($user['password'], '*', '*');
         }
 
+        if(strlen($password) > 256){
+            throw new bException(tr('user_authenticate(): Specified password too long, should be less than 256 characters'), 'invalid');
+        }
+
         try{
             $password = get_hash($password, $algorithm, false);
 
