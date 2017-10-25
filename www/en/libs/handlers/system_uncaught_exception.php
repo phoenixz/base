@@ -74,7 +74,7 @@ if(!debug()){
         page_show(500);
 
     }else{
-        die("An error occured. Not running debug mode, so no information will be displayed\n");
+        die('Uncaught exception! System not running in debug mode so no more information will be shown');
     }
 }
 
@@ -140,9 +140,6 @@ try{
 
 // :TODO:SVEN:20130717: Add notifications!
     if(PLATFORM != 'shell'){
-        show(SCRIPT);
-        show($_GET);
-        show($_POST);
         showdie($e);
 
     }else{
