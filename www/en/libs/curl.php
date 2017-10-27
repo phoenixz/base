@@ -424,7 +424,7 @@ function curl_get($params, $referer = null, $post = false, $options = array()){
         }
 
         if($params['cache']){
-            if($retval = sql_get('SELECT `data` FROM `curl_cache` WHERE `url` = :url', 'data', array(':url' => $params['url']))){
+            if($retval = sql_get('SELECT `data` FROM `curl_cache` WHERE `url` = :url', true, array(':url' => $params['url']))){
                 $retry = 0;
 
                 load_libs('json');
@@ -440,7 +440,7 @@ function curl_get($params, $referer = null, $post = false, $options = array()){
                 $retval['data'] = $params['simulation'];
 
             }else{
-                throw new bException('curl_get(): Unknown simulation type "'.str_log($params['simulation']).'" specified. Please use either false, "partial" or "full"', 'unknown');
+                throw new bException(tr('curl_get(): Unknown simulation type ":simulation" specified. Please use either false, "partial" or "full"', array(':simulation' => $params['simulation'])), 'unknown');
             }
         }
 
@@ -517,7 +517,7 @@ function curl_get($params, $referer = null, $post = false, $options = array()){
 
             default:
                 load_libs('http');
-                throw new bException('curl_get(): URL "'.str_log($params['url']).'" gave HTTP "'.str_log($retval['status']['http_code']).'"', 'HTTP'.$retval['status']['http_code'], $retval);
+                throw new bException(tr('curl_get(): URL ":url" gave HTTP ":httpcode"', array(':url' => $params['url'], ':httpcode' => $retval['status']['http_code'])), 'HTTP'.$retval['status']['http_code'], $retval);
         }
 
         if($params['file']){
@@ -537,11 +537,11 @@ function curl_get($params, $referer = null, $post = false, $options = array()){
              *
              */
             usleep($params['sleep']);
-            log_error('curl_get(): Got HTTP0 for url "'.str_log($params['url']).'", retry "'.str_log($retry).'"', 'HTTP0');
+            log_error(tr('curl_get(): Got HTTP0 for url ":url", retry ":retry"', array(':url' => $params['url'], ':retry' => $retry)), 'HTTP0');
             return curl_get($params, $referer, $post, $options);
         }
 
-        throw new bException('curl_get(): Failed to get url "'.str_log($params['url']).'"', $e);
+        throw new bException(tr('curl_get(): Failed to get url ":url"', array(':url' => $params['url'])), $e);
     }
 }
 
