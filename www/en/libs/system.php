@@ -1469,6 +1469,10 @@ function date_convert($date = null, $requested_format = 'human_datetime', $to_ti
             $date = date('Y-m-d H:i:s', $date);
         }
 
+        if(!$from_timezone){
+            $from_timezone = $_CONFIG['timezone'];
+        }
+
         /*
          * Ensure we have a valid format
          */
@@ -2422,6 +2426,7 @@ function force_natural_number($number, $default = 1){
 function system_date_format($date = null, $requested_format = 'human_datetime', $to_timezone = null, $from_timezone = null){
     try{
         return date_convert($date, $requested_format, $to_timezone, $from_timezone);
+
     }catch(Exception $e){
         throw new bException('system_date_format(): Failed', $e);
     }
