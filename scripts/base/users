@@ -189,24 +189,24 @@ switch(cli_method()){
 
         cli_no_arguments_left();
 
-        sql_query('INSERT INTO `users` (`createdby`, `name`, `roles_id`, `role`, `email`, `username`, , `nickname`, `password`, `latitude`, `longitude`, `status`, `type`, `validated`, `redirect`, `domain`)
-                   VALUES              (:createdby , :name , :roles_id , :role , :email , :username , , :nickname , :password , :latitude , :longitude , :status , :type , :validated , :redirect , :domain )',
+        sql_query('INSERT INTO `users` (`createdby`, `name`, `roles_id`, `role`, `email`, `username`, `nickname`, `password`, `latitude`, `longitude`, `status`, `type`, `verifiedon`, `redirect`, `domain`)
+                   VALUES              (:createdby , :name , :roles_id , :role , :email , :username , :nickname , :password , :latitude , :longitude , :status , :type , :verifiedon , :redirect , :domain )',
 
-                   array(':createdby' => isset_get($_SESSION['user']['id']),
-                         ':roles_id'  => $user['roles_id'],
-                         ':role'      => $user['role'],
-                         ':name'      => $user['name'],
-                         ':nickname'  => $user['nickname'],
-                         ':email'     => $user['email'],
-                         ':username'  => $user['username'],
-                         ':password'  => get_hash($user['password'], $_CONFIG['security']['passwords']['hash']),
-                         ':latitude'  => $user['latitude'],
-                         ':longitude' => $user['longitude'],
-                         ':status'    => $user['status'],
-                         ':type'      => $user['type'],
-                         ':redirect'  => $user['redirect'],
-                         ':domain'    => $user['domain'],
-                         ':validated' => isset_get($user['validated'])));
+                   array(':createdby'  => isset_get($_SESSION['user']['id']),
+                         ':roles_id'   => $user['roles_id'],
+                         ':role'       => $user['role'],
+                         ':name'       => $user['name'],
+                         ':nickname'   => $user['nickname'],
+                         ':email'      => $user['email'],
+                         ':username'   => $user['username'],
+                         ':password'   => get_hash($user['password'], $_CONFIG['security']['passwords']['hash']),
+                         ':latitude'   => $user['latitude'],
+                         ':longitude'  => $user['longitude'],
+                         ':status'     => $user['status'],
+                         ':type'       => $user['type'],
+                         ':redirect'   => $user['redirect'],
+                         ':domain'     => $user['domain'],
+                         ':verifiedon' => isset_get($user['verifiedon'])));
 
         user_update_rights(array('id'       => sql_insert_id(),
                                  'roles_id' => $user['roles_id']));
