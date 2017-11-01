@@ -386,18 +386,21 @@ try{
                                  * Check the detected domain against the configured domain.
                                  * If it doesnt match then check if its a registered whitelabel domain
                                  */
-                                if($domain !== $_CONFIG['domain']){
+                                if($_SERVER['SERVER_NAME'] === $_CONFIG['domain']){
+                                    session_set_cookie_params($_CONFIG['cookie']['lifetime'], $_CONFIG['cookie']['path'], $_SERVER['SERVER_NAME'], $_CONFIG['cookie']['secure'], $_CONFIG['cookie']['httponly']);
+
+                                }else{
                                     $domain = sql_get('SELECT `domain` FROM `whitelabels` WHERE `domain` = :domain AND `status` IS NULL', 'domain', array(':domain' => $_SERVER['HTTP_HOST']));
-                                }
 
-                                if(!$domaim){
-                                    /*
-                                     * Either we have no domain or it is not allowed. Redirect to main domain
-                                     */
-                                    redirect($domain);
-                                }
+                                    if(empty($domain)){
+                                        /*
+                                         * Either we have no domain or it is not allowed. Redirect to main domain
+                                         */
+                                        redirect();
+                                    }
 
-                                session_set_cookie_params($_CONFIG['cookie']['lifetime'], $_CONFIG['cookie']['path'], $domain, $_CONFIG['cookie']['secure'], $_CONFIG['cookie']['httponly']);
+                                    session_set_cookie_params($_CONFIG['cookie']['lifetime'], $_CONFIG['cookie']['path'], $domain, $_CONFIG['cookie']['secure'], $_CONFIG['cookie']['httponly']);
+                                }
                         }
 
                         try{
