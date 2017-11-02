@@ -361,6 +361,8 @@ function html_load_css($files = '', $media = null){
 
 /*
  * Display libs in header
+ *
+ * Allows force loading of .min files (ie style.min instead of style), when 'min' is configured on, it won't duplicate the .min
  */
 function html_generate_css(){
     global $_CONFIG;
@@ -405,7 +407,7 @@ function html_generate_css(){
         foreach($GLOBALS['css'] as $file => $meta){
             if(!$file) continue;
 
-            $html = '<link rel="stylesheet" type="text/css" href="'.cdn_domain((($_CONFIG['whitelabels']['enabled'] === true) ? $_SESSION['domain'].'/' : '').'css/'.$file.($min ? '.min.css' : '.css')).'">';
+            $html = '<link rel="stylesheet" type="text/css" href="'.cdn_domain((($_CONFIG['whitelabels']['enabled'] === true) ? $_SESSION['domain'].'/' : '').'css/'.($min ? str_until($file, '.min').'.min.css' : $file.'.css')).'">';
 
             if(substr($file, 0, 2) == 'ie'){
                 $retval .= html_iefilter($html, str_until(str_from($file, 'ie'), '.'));
@@ -493,6 +495,8 @@ function html_load_js($files = '', $option = null, $ie = null){
 
 /*
  * Display libs in header and or footer
+ *
+ * Allows force loading of .min files (ie script.min instead of script), when 'min' is configured on, it won't duplicate the .min
  */
 function html_generate_js(){
     global $_CONFIG;
@@ -591,7 +595,7 @@ throw new bException('WARNING: $_CONFIG[js][default_libs] CONFIGURATION FOUND! T
                     if($skip) continue;
                 }
 
-                $html = '<script'.(!empty($data['option']) ? ' '.$data['option'] : '').' type="text/javascript" src="'.cdn_domain((($_CONFIG['whitelabels']['enabled'] === true) ? $_SESSION['domain'].'/' : '').'js/'.$file.$min.'.js').'"></script>';
+                $html = '<script'.(!empty($data['option']) ? ' '.$data['option'] : '').' type="text/javascript" src="'.cdn_domain((($_CONFIG['whitelabels']['enabled'] === true) ? $_SESSION['domain'].'/' : '').'js/'.($min ? $file.$min : str_until($file, '.min').$min).'.js').'"></script>';
             }
 
             ///*
