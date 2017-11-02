@@ -258,6 +258,8 @@ function jqueryui_date_range($from_selector, $to_selector, $params = null){
         array_default($params, 'auto_submit'     , true);
         array_default($params, 'separator'       , '');
         array_default($params, 'extra'           , '');
+        array_default($params, 'class'           , '');
+        array_default($params, 'label_class'     , '');
         array_default($params, 'time'            , false);
 
         if($params['auto_submit']){
@@ -287,10 +289,10 @@ function jqueryui_date_range($from_selector, $to_selector, $params = null){
             $until_t['default_time'] = isset_get($params['until_t']);
 
             if($params['labels']){
-                $html = '   <label class="'.$params['class'].'" for="'.$from_selector.'">'.$params['labels']['from'].'</label>
+                $html = '   <label class="'.$params['label_class'].'" for="'.$from_selector.'">'.$params['labels']['from'].'</label>
                             <input class="'.$params['class'].'" type="text" id="'.$from_selector.'" name="'.$from_selector.'" value="'.substr(cfm(isset_get($params['from'], '')), 0, 10).'" placeholder="'.isset_get($params['placeholders']['from']).'"'.($params['extra'] ? ' '.$params['extra'] : '').'>
                             '.jqueryui_time($from_selector.'_t', $from_t).' '.$params['separator'].'
-                            <label class="'.$params['class'].'" for="'.$to_selector.'">'.$params['labels']['until'].'</label>
+                            <label class="'.$params['label_class'].'" for="'.$to_selector.'">'.$params['labels']['until'].'</label>
                             <input class="'.$params['class'].'" type="text" id="'.$to_selector.'" name="'.$to_selector.'" value="'.substr(cfm(isset_get($params['until'], '')), 0, 10).'" placeholder="'.isset_get($params['placeholders']['until']).'"'.($params['extra'] ? ' '.$params['extra'] : '').'>
                             '.jqueryui_time($to_selector.'_t', $until_t);
 
@@ -303,10 +305,10 @@ function jqueryui_date_range($from_selector, $to_selector, $params = null){
 
         }else{
             if($params['labels']){
-                $html = '   <label class="'.$params['class'].'" for="'.$from_selector.'">'.$params['labels']['from'].'</label>
+                $html = '   <label class="'.$params['label_class'].'" for="'.$from_selector.'">'.$params['labels']['from'].'</label>
                             <input class="'.$params['class'].'" type="text" id="'.$from_selector.'" name="'.$from_selector.'" value="'.substr(cfm(isset_get($params['from'], '')), 0, 10).'" placeholder="'.isset_get($params['placeholders']['from']).'"'.($params['extra'] ? ' '.$params['extra'] : '').'>
                             '.$params['separator'].'
-                            <label class="'.$params['class'].'" for="'.$to_selector.'">'.$params['labels']['until'].'</label>
+                            <label class="'.$params['label_class'].'" for="'.$to_selector.'">'.$params['labels']['until'].'</label>
                             <input class="'.$params['class'].'" type="text" id="'.$to_selector.'" name="'.$to_selector.'" value="'.substr(cfm(isset_get($params['until'], '')), 0, 10).'" placeholder="'.isset_get($params['placeholders']['until']).'"'.($params['extra'] ? ' '.$params['extra'] : '').'>';
 
             }else{
