@@ -1095,6 +1095,17 @@ function sql_count($table, $where = '', $execute = null, $column = '`id`'){
 
 
 /*
+ * Returns what database currently is selected
+ */
+function sql_current_database(){
+    try{
+        return sql_get('SELECT DATABASE() AS `database` FROM DUAL;');
+
+    }catch(Exception $e){
+        throw new bException('sql_current_database(): Failed', $e);
+    }
+}
+/*
  * COMPATIBILITY FUNCTIONS
  *
  * These functions below exist only for compatibility between pdo.php and mysqli.php
