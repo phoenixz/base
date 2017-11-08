@@ -1323,7 +1323,7 @@ function html_select($params){
     static $count = 0;
 
     try{
-        array_params ($params, 'resource');
+        array_params ($params);
         array_default($params, 'class'       , '');
         array_default($params, 'option_class', '');
         array_default($params, 'disabled'    , false);
@@ -1459,7 +1459,7 @@ function html_select_body($params) {
     global $_CONFIG;
 
     try{
-        array_params ($params, 'resource');
+        array_params ($params);
         array_default($params, 'class'         , '');
         array_default($params, 'none'          , tr('None selected'));
         array_default($params, 'empty'         , tr('None available'));
