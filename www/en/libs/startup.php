@@ -24,7 +24,7 @@ define('FRAMEWORKCODEVERSION', '0.52.1');
 /*
  * This constant can be used to measure time used to render page or process script
  */
-define(STARTTIME, microtime());
+define('STARTTIME', microtime());
 
 
 
