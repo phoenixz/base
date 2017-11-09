@@ -306,4 +306,35 @@ function date_relative($timestamp, $now = null, $periods = null){
         throw new bException(tr('date_relative(): Failed'), $e);
     }
 }
+
+
+
+/*
+ * Return a random date
+ */
+function date_random($min = null, $max = null){
+    try{
+        if($min){
+            $min = new DateTime(date_convert($min, 'y-m-d'));
+            $min = $min->getTimestamp();
+
+        }else{
+            $min = 1;
+        }
+
+        if($max){
+            $max = new DateTime(date_convert($max, 'y-m-d'));
+            $max = $max->getTimestamp();
+
+        }else{
+            $max = 2147483647;
+        }
+
+        $timestamp  = mt_rand($min, $max);
+        return date("Y-m-d", $timestamp);
+
+    }catch(Exception $e){
+        throw new bException(tr('date_random(): Failed'), $e);
+    }
+}
 ?>
