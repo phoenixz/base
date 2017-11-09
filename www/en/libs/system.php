@@ -1323,7 +1323,7 @@ function pick_random($count){
     }
 
     if(($count < 1) or ($count > count($args))){
-        throw new bException('pick_random(): Invalid count "'.str_log($count).'" specified for "'.count($args).'" arguments');
+        throw new bException(tr('pick_random(): Invalid count ":count" specified for ":args" arguments', array(':count' => $count, ':args' => count($args))), 'invalid');
 
     }elseif($count == 1){
         if(empty($array)){
@@ -1517,8 +1517,23 @@ function date_convert($date = null, $requested_format = 'human_datetime', $to_ti
         /*
          * Create date in specified timezone (if specifed)
          * Return formatted date
+         *
+         * If specified date is already a DateTime object, then from_timezone will not work
          */
-        $date = new DateTime($date, ($from_timezone ? new DateTimeZone($from_timezone) : null));
+        if(is_scalar($date)){
+            $date = new DateTime($date, ($from_timezone ? new DateTimeZone($from_timezone) : null));
+
+        }elseif(is_object($date) and ($date instanceof DateTime)){
+            /*
+             *
+             */
+            if($from_timezone and ($from_timezone != $_CONFIG['timezone'])){
+                throw new bException(tr('date_convert(): Specified date is a DateTime object, which cannot be used together with $from_timezone'), 'invalid');
+            }
+
+        }else{
+            throw new bException(tr('date_convert(): Specified date variable is a ":type" which is invalid. Should be either scalar or a DateTime object', array(':type' => gettype($date))), 'invalid');
+        }
 
         if($to_timezone){
             /*
@@ -1527,14 +1542,43 @@ function date_convert($date = null, $requested_format = 'human_datetime', $to_ti
             $date->setTimezone(new DateTimeZone($to_timezone));
         }
 
-        return $date->format($format);
+        try{
+            return $date->format($format);
 
-    }catch(Exception $e){
-        if(isset($format)){
-            throw new bException(tr('date_convert(): Either :error, or Invalid format ":format" specified', array(':error' => $e->getMessage(), ':format' => str_log($format))), 'invalid');
+        }catch(Exception $e){
+            throw new bException(tr('date_convert(): Invalid format ":format" specified', array(':format' => $format)), 'invalid');
         }
 
+    }catch(Exception $e){
         throw new bException('date_convert(): Failed', $e);
+    }
+}
+
+
+
+/*
+ * Return the specified $date with the specified $interval applied.
+ * If $date is null, the default date from date_convert() will be used
+ * $interval must be a valid ISO 8601 specification (see http://php.net/manual/en/dateinterval.construct.php)
+ * If $interval is "negative", i.e. preceded by a - sign, the interval will be subtraced. Else the interval will be added
+ * Return date will be formatted according to date_convert() $format
+ */
+function date_interval($date, $interval, $format = null){
+    try{
+        $date = date_convert($date, 'd-m-Y');
+        $date = new DateTime($date);
+
+        if(substr($interval, 0, 1) == '-'){
+            $date->sub(new DateInterval(substr($interval, 1)));
+
+        }else{
+            $date->add(new DateInterval($interval));
+        }
+
+        return date_convert($date, $format);
+
+    }catch(Exception $e){
+        throw new bException('date_interval(): Failed', $e);
     }
 }
 
