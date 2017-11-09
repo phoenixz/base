@@ -13,6 +13,7 @@
  * Load the required jquery-ui JS libraries
  * Set the jQuery UI theme
  */
+load_config('jqueryui');
 html_load_js('jquery-ui/jquery-ui');
 html_load_css('jquery/jquery-ui');
 
@@ -51,6 +52,8 @@ function jqueryui_accordeon($selector, $options = 'collapsible: true,heightStyle
  * Creates HTML for a jquery-ui date object
  */
 function jqueryui_date($selector, $params = null){
+    global $_CONFIG;
+
     try{
         html_load_css('jquery.ui/jquery.ui.datepicker');
 
@@ -61,7 +64,8 @@ function jqueryui_date($selector, $params = null){
         array_default($params, 'default_date'    , '+1w');
         array_default($params, 'auto_submit'     , true);
         array_default($params, 'extra'           , '');
-        array_default($params, 'date_format'     , 'Y/m/d');
+        array_default($params, 'date_format'     , $_CONFIG['jqueryui']['date_format']);
+        array_default($params, 'jq_date_format'  , $_CONFIG['jqueryui']['jq_date_format']);
 
         if($params['auto_submit']){
             array_default($params, 'on_select', '   function (date) {
@@ -80,10 +84,11 @@ function jqueryui_date($selector, $params = null){
                 defaultDate: "'.$params['default_date'].'",
                 changeMonth: '.($params['change_month'] ? 'true' : 'false').',
                 numberOfMonths: '.$params['number_of_months'].',
-                '.(isset_get($params['from'])      ? 'minDate:  "'.$params['from'].'",'     : '').'
-                '.(isset_get($params['until'])     ? 'maxDate:  "'.$params['until'].'",'    : '').'
-                '.(isset_get($params['on_close'])  ? 'onClose:   '.$params['on_close'].','  : '').'
-                '.(isset_get($params['on_select']) ? 'onSelect:  '.$params['on_select'].',' : '').'
+                '.(isset_get($params['jq_date_format']) ? 'dateFormat: "'.$params['jq_date_format'].'",' : '').'
+                '.(isset_get($params['from'])           ? 'minDate:    "'.$params['from'].'",'           : '').'
+                '.(isset_get($params['until'])          ? 'maxDate:    "'.$params['until'].'",'          : '').'
+                '.(isset_get($params['on_close'])       ? 'onClose:     '.$params['on_close'].','        : '').'
+                '.(isset_get($params['on_select'])      ? 'onSelect:    '.$params['on_select'].','       : '').'
             });
         });');
 
@@ -248,12 +253,20 @@ throw new bException('jqueryui_datepair(): This function is not yet implemented'
  * Creates HTML for a jquery-ui date object
  */
 function jqueryui_date_range($from_selector, $to_selector, $params = null){
+    global $_CONFIG;
+
     try{
         array_params($params);
-        array_default($params, 'labels'          , array('from' => tr('From'), 'until' => tr('Until')));
-        array_default($params, 'placeholders'    , array('from' => tr('From'), 'until' => tr('Until'), 't_from' => tr('From'), 't_until' => tr('Until')));
+        array_default($params, 'labels'          , array('from'    => tr('From'),
+                                                         'until'   => tr('Until')));
+
+        array_default($params, 'placeholders'    , array('from'    => tr('From'),
+                                                         'until'   => tr('Until'),
+                                                         't_from'  => tr('From'),
+                                                         't_until' => tr('Until')));
         array_default($params, 'number_of_months', 1);
         array_default($params, 'change_month'    , true);
+        array_default($params, 'change_year'     , true);
         array_default($params, 'default_date'    , '+1w');
         array_default($params, 'auto_submit'     , true);
         array_default($params, 'separator'       , '');
@@ -261,6 +274,8 @@ function jqueryui_date_range($from_selector, $to_selector, $params = null){
         array_default($params, 'class'           , '');
         array_default($params, 'label_class'     , '');
         array_default($params, 'time'            , false);
+        array_default($params, 'date_format'     , $_CONFIG['jqueryui']['date_format']);
+        array_default($params, 'jq_date_format'  , $_CONFIG['jqueryui']['jq_date_format']);
 
         if($params['auto_submit']){
             array_default($params, 'on_select', '   function (date) {
@@ -306,25 +321,26 @@ function jqueryui_date_range($from_selector, $to_selector, $params = null){
         }else{
             if($params['labels']){
                 $html = '   <label class="'.$params['label_class'].'" for="'.$from_selector.'">'.$params['labels']['from'].'</label>
-                            <input class="'.$params['class'].'" type="text" id="'.$from_selector.'" name="'.$from_selector.'" value="'.substr(cfm(isset_get($params['from'], '')), 0, 10).'" placeholder="'.isset_get($params['placeholders']['from']).'"'.($params['extra'] ? ' '.$params['extra'] : '').'>
+                            <input class="'.$params['class'].'" type="text" id="'.$from_selector.'" name="'.$from_selector.'" value="'.date_convert(cfm(isset_get($params['from'], '')), $params['date_format']).'" placeholder="'.isset_get($params['placeholders']['from']).'"'.($params['extra'] ? ' '.$params['extra'] : '').'>
                             '.$params['separator'].'
                             <label class="'.$params['label_class'].'" for="'.$to_selector.'">'.$params['labels']['until'].'</label>
-                            <input class="'.$params['class'].'" type="text" id="'.$to_selector.'" name="'.$to_selector.'" value="'.substr(cfm(isset_get($params['until'], '')), 0, 10).'" placeholder="'.isset_get($params['placeholders']['until']).'"'.($params['extra'] ? ' '.$params['extra'] : '').'>';
+                            <input class="'.$params['class'].'" type="text" id="'.$to_selector.'" name="'.$to_selector.'" value="'.date_convert(cfm(isset_get($params['until'], '')), $params['date_format']).'" placeholder="'.isset_get($params['placeholders']['until']).'"'.($params['extra'] ? ' '.$params['extra'] : '').'>';
 
             }else{
-                $html = '   <input class="'.$params['class'].'" type="text" id="'.$from_selector.'" name="'.$from_selector.'" value="'.substr(cfm(isset_get($params['from'], '')), 0, 10).'" placeholder="'.isset_get($params['placeholders']['from']).'"'.($params['extra'] ? ' '.$params['extra'] : '').'>
+                $html = '   <input class="'.$params['class'].'" type="text" id="'.$from_selector.'" name="'.$from_selector.'" value="'.date_convert(cfm(isset_get($params['from'], '')), $params['date_format']).'" placeholder="'.isset_get($params['placeholders']['from']).'"'.($params['extra'] ? ' '.$params['extra'] : '').'>
                             '.$params['separator'].'
-                            <input class="'.$params['class'].'" type="text" id="'.$to_selector.'" name="'.$to_selector.'" value="'.substr(cfm(isset_get($params['until'], '')), 0, 10).'" placeholder="'.isset_get($params['placeholders']['until']).'"'.($params['extra'] ? ' '.$params['extra'] : '').'>';
+                            <input class="'.$params['class'].'" type="text" id="'.$to_selector.'" name="'.$to_selector.'" value="'.date_convert(cfm(isset_get($params['until'], '')), $params['date_format']).'" placeholder="'.isset_get($params['placeholders']['until']).'"'.($params['extra'] ? ' '.$params['extra'] : '').'>';
             }
         }
 
-
         return $html.html_script('$(function() {
             $( "#'.$from_selector.'" ).datepicker({
-                defaultDate: "'.(isset_get($params['until']) ? $params['until'] : $params['default_date']).'",
+                defaultDate: "'.date_convert(isset_get($params['until'], $params['default_date']), $params['date_format']).'",
                 changeMonth: '.($params['change_month'] ? 'true' : 'false').',
+                changeYear : '.($params['change_year']  ? 'true' : 'false').',
                 numberOfMonths: '.$params['number_of_months'].',
-                '.(isset_get($params['until']) ? 'maxDate: "'.$params['until'].'",' : '').'
+                '.(isset_get($params['until'])          ? 'maxDate   : "'.date_convert($params['until'], $params['date_format']).'",' : '').'
+                '.(isset_get($params['jq_date_format']) ? 'dateFormat: "'.$params['jq_date_format'].'",'                              : '').'
                 onClose: function( selectedDate ) {
                     $("#'.$to_selector.'").datepicker( "option", "minDate", selectedDate );
                 },
@@ -332,10 +348,11 @@ function jqueryui_date_range($from_selector, $to_selector, $params = null){
             });
 
             $( "#'.$to_selector.'" ).datepicker({
-                defaultDate: "'.(isset_get($params['from']) ? $params['from'] : $params['default_date']).'",
+                defaultDate: "'.date_convert(isset_get($params['from'], $params['default_date']), $params['date_format']).'",
                 changeMonth: '.($params['change_month'] ? 'true' : 'false').',
                 numberOfMonths: '.$params['number_of_months'].',
-                '.(isset_get($params['from']) ? 'minDate: "'.$params['from'].'",' : '').'
+                '.(isset_get($params['from'])           ? 'minDate   : "'.date_convert($params['from'], $params['date_format']).'",' : '').'
+                '.(isset_get($params['jq_date_format']) ? 'dateFormat: "'.$params['jq_date_format'].'",'                             : '').'
                 onClose: function( selectedDate ) {
                     $("#'.$from_selector.'").datepicker( "option", "maxDate", selectedDate );
                 },
