@@ -111,4 +111,25 @@ function postman_get_headers($headers){
         throw new bException('postman_get_headers(): Failed', $e);
     }
 }
+
+
+
+/*
+ *
+ */
+function postman_get_urlencoded($data){
+    try{
+        load_libs('inet');
+        $url = '';
+
+        foreach($data as $value){
+            $url = url_add_query($url, $value['key'].'='.$value['value']);
+        }
+
+        return $url;
+
+    }catch(Exception $e){
+        throw new bException('postman_get_urlencoded(): Failed', $e);
+    }
+}
 ?>
