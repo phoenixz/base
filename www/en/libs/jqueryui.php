@@ -74,7 +74,7 @@ function jqueryui_date($selector, $params = null){
         }
 
         if(isset_get($params['value'])){
-            $params['value'] = system_date_format($params['value'], $params['date_format']);
+            $params['value'] = date_convert($params['value'], $params['date_format']);
         }
 
         $html = '<input type="text" class="'.$params['class'].' date" id="'.$selector.'" name="'.$selector.'" placeholder="'.$params['placeholder'].'" value="'.isset_get($params['value']).'"'.($params['extra'] ? ' '.$params['extra'] : '').'>';

@@ -17,7 +17,7 @@
 /*
  * Framework version
  */
-define('FRAMEWORKCODEVERSION', '0.52.1');
+define('FRAMEWORKCODEVERSION', '0.52.2');
 
 
 
@@ -310,7 +310,7 @@ try{
      * Set timezone
      * See http://www.php.net/manual/en/timezones.php for more info
      */
-    date_default_timezone_set($_CONFIG['timezone']);
+    date_default_timezone_set($_CONFIG['timezone']['system']);
 
     /*
      * Start platform specific stuff

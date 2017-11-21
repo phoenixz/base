@@ -285,10 +285,10 @@ function http_headers($params, $content_length){
 
         if($params['http_code'] == 200){
             if(empty($params['last_modified'])){
-                $headers[] = 'Last-Modified: '.system_date_format(filemtime($_SERVER['SCRIPT_FILENAME']), 'D, d M Y H:i:s', 'GMT').' GMT';
+                $headers[] = 'Last-Modified: '.date_convert(filemtime($_SERVER['SCRIPT_FILENAME']), 'D, d M Y H:i:s', 'GMT').' GMT';
 
             }else{
-                $headers[] = 'Last-Modified: '.system_date_format($params['last_modified'], 'D, d M Y H:i:s', 'GMT').' GMT';
+                $headers[] = 'Last-Modified: '.date_convert($params['last_modified'], 'D, d M Y H:i:s', 'GMT').' GMT';
             }
         }
 

@@ -1374,7 +1374,7 @@ function blogs_validate_post($post, $params = null){
 
         if(!empty($params['label_featured'])){
             if($post['featured_until']){
-                $post['featured_until'] = system_date_format($post['featured_until'], 'mysql');
+                $post['featured_until'] = date_convert($post['featured_until'], 'mysql');
 
             }else{
                 $post['featured_until'] = null;
@@ -1487,7 +1487,7 @@ function blogs_validate_post($post, $params = null){
                 throw new bException('blogs_validate_post(): No changes were made', 'nochanges');
             }
 
-            $post['body'] = '<h3>'.user_name($_SESSION['user']).' <small>['.system_date_format().']</small></h3><p><small>'.implode('<br>', $changes).'</small></p><p>'.$post['body'].'</p><hr>'.isset_get($oldpost['body'], '');
+            $post['body'] = '<h3>'.user_name($_SESSION['user']).' <small>['.date_convert().']</small></h3><p><small>'.implode('<br>', $changes).'</small></p><p>'.$post['body'].'</p><hr>'.isset_get($oldpost['body'], '');
         }
 
         $post['body'] = str_replace('&nbsp;', ' ', $post['body']);

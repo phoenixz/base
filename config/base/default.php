@@ -364,7 +364,8 @@ $_CONFIG['sync']               = array();                                       
 $_CONFIG['statistics']         = array('enabled'          => true);                                                                     //
 
 // Timezone configuration. See http://www.php.net/manual/en/timezones.php for more info
-$_CONFIG['timezone']           = 'America/Mexico_City';                                                                                 //
+$_CONFIG['timezone']           = array('display'          => 'America/Mexico_City',                                                     // Default timezone to be used to display date/time
+                                       'system'           => 'UTC');                                                                    // Default system timezone to be used when dates are stored
 
 // Default title configuration
 $_CONFIG['title']              = 'Base';                                                                                                //

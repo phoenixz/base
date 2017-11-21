@@ -169,7 +169,7 @@ function sms_update_conversation($conversation, $messages_id, $direction, $messa
          * Add message timestamp to each message?
          */
         if($_CONFIG['twilio']['conversations']['message_dates']){
-            $message = str_replace('%datetime%', system_date_format($datetime), $_CONFIG['twilio']['conversations']['message_dates']).$message;
+            $message = str_replace('%datetime%', date_convert($datetime), $_CONFIG['twilio']['conversations']['message_dates']).$message;
         }
 
         /*

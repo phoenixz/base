@@ -1469,8 +1469,17 @@ function date_convert($date = null, $requested_format = 'human_datetime', $to_ti
             $date = date('Y-m-d H:i:s', $date);
         }
 
+        if(!$to_timezone){
+            if(empty($_SESSION['user']['timezone'])){
+                $to_timezone = $_CONFIG['timezone']['display'];
+
+            }else{
+                $to_timezone = $_SESSION['user']['timezone'];
+            }
+        }
+
         if(!$from_timezone){
-            $from_timezone = $_CONFIG['timezone'];
+            $from_timezone = $_CONFIG['timezone']['system'];
         }
 
         /*
@@ -1503,7 +1512,17 @@ function date_convert($date = null, $requested_format = 'human_datetime', $to_ti
                 break;
 
             case '12':
-                $format = str_replace('g', 'H', $format).' a';
+                /*
+                 * Only add AM/PM in case original spec has 24H and no AM/PM
+                 */
+                if(($requested_format != 'mysql') and strstr($format, 'g')){
+                    $format = str_replace('g', 'H', $format);
+
+                    if(!strstr($format, 'a')){
+                        $format .= ' a';
+                    }
+                }
+
                 break;
 
             case '24':
@@ -1522,14 +1541,6 @@ function date_convert($date = null, $requested_format = 'human_datetime', $to_ti
          */
         if(is_scalar($date)){
             $date = new DateTime($date, ($from_timezone ? new DateTimeZone($from_timezone) : null));
-
-        }elseif(is_object($date) and ($date instanceof DateTime)){
-            /*
-             *
-             */
-            if($from_timezone and ($from_timezone != $_CONFIG['timezone'])){
-                throw new bException(tr('date_convert(): Specified date is a DateTime object, which cannot be used together with $from_timezone'), 'invalid');
-            }
 
         }else{
             throw new bException(tr('date_convert(): Specified date variable is a ":type" which is invalid. Should be either scalar or a DateTime object', array(':type' => gettype($date))), 'invalid');

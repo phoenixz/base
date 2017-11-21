@@ -549,7 +549,7 @@ function email_update_conversation($email, $direction){
          * Add message timestamp to each message?
          */
         if($_CONFIG['email']['conversations']['message_dates']){
-            $email['text'] = str_replace('%datetime%', system_date_format($email['date']), $_CONFIG['email']['conversations']['message_dates']).$email['text'];
+            $email['text'] = str_replace('%datetime%', date_convert($email['date']), $_CONFIG['email']['conversations']['message_dates']).$email['text'];
         }
 
         /*
@@ -649,7 +649,7 @@ function email_update_message($email, $direction){
                                      ':to'                => isset_get($email['to']),
                                      ':users_id'          => isset_get($email['users_id']),
                                      ':email_accounts_id' => isset_get($email['email_accounts_id']),
-                                     ':date'              => isset_get($email['date'], system_date_format(null, 'mysql')),
+                                     ':date'              => isset_get($email['date'], date_convert(null, 'mysql')),
                                      ':subject'           => (string) isset_get($email['subject']),
                                      ':text'              => isset_get($email['text']),
                                      ':html'              => isset_get($email['html'])));
@@ -666,7 +666,7 @@ function email_update_message($email, $direction){
                                      ':to'                => isset_get($email['to']),
                                      ':users_id'          => isset_get($email['users_id']),
                                      ':email_accounts_id' => isset_get($email['email_accounts_id']),
-                                     ':date'              => isset_get($email['date'], system_date_format(null, 'mysql')),
+                                     ':date'              => isset_get($email['date'], date_convert(null, 'mysql')),
                                      ':message_id'        => isset_get($email['message_id']),
                                      ':size'              => isset_get($email['size']),
                                      ':uid'               => isset_get($email['uid']),
@@ -716,11 +716,11 @@ function email_update_message($email, $direction){
                              ':to'                => $email['to'],
                              ':users_id'          => $email['users_id'],
                              ':email_accounts_id' => $email['email_accounts_id'],
-                             ':date'              => isset_get($email['date'], system_date_format(null, 'mysql')),
+                             ':date'              => isset_get($email['date'], date_convert(null, 'mysql')),
                              ':subject'           => $email['subject'],
                              ':text'              => $email['text'],
                              ':html'              => $email['html'],
-                             ':sent'              => (empty($email['sent']) ? null : system_date_format($email['sent'], 'mysql'))));
+                             ':sent'              => (empty($email['sent']) ? null : date_convert($email['sent'], 'mysql'))));
         }
 
         return $email;
@@ -1005,10 +1005,10 @@ function email_send($email, $smtp = null){
         }
 
         if(!$mail->Send()){
-            throw new bException(tr('email_send(): Failed because "%error%"',  array('%error%' => $mail->ErrorInfo)), 'mailfail');
+            throw new bException(tr('email_send(): Failed because ":error"',  array(':error' => $mail->ErrorInfo)), 'mailfail');
         }
 
-        $email['sent'] = system_date_format(null, 'mysql');
+        $email['sent'] = date_convert(null, 'mysql');
 
         if($email['conversation']){
             email_update_conversation($email, 'sent');
