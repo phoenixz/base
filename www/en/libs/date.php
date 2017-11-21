@@ -337,4 +337,23 @@ function date_random($min = null, $max = null){
         throw new bException(tr('date_random(): Failed'), $e);
     }
 }
+
+
+
+/*
+ * Returns the HTML for a timezone selection HTML select
+ */
+function date_timezones_select($params = null){
+    try{
+        array_params($params);
+        array_default($params, 'name', 'timezone');
+
+        $params['resource'] = sql_query('SELECT UCASE(SUBSTR(Name, 7)) AS `id`, SUBSTR(Name, 7) AS `name` FROM `mysql`.`time_zone_name` WHERE Name LIKE "posix%" ORDER BY `id`');
+
+        return html_select($params);
+
+    }catch(Exception $e){
+        throw new bException(tr('date_timezones_select(): Failed'), $e);
+    }
+}
 ?>
