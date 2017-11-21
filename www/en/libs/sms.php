@@ -111,7 +111,7 @@ function sms_get_conversation($phone_local, $phone_remote, $type, $repliedon_now
         return $conversation;
 
     }catch(Exception $e){
-        throw new bException('sms_get_conversation(): Failed', $e);
+        throw new bException(tr('sms_get_conversation(): Failed for numbers local ":local", remote ":remote"', array(':local' => $phone_local, ':remote' => $phone_remote)), $e);
     }
 }
 
