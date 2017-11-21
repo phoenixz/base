@@ -1469,17 +1469,39 @@ function date_convert($date = null, $requested_format = 'human_datetime', $to_ti
             $date = date('Y-m-d H:i:s', $date);
         }
 
-        if(!$to_timezone){
-            if(empty($_SESSION['user']['timezone'])){
-                $to_timezone = $_CONFIG['timezone']['display'];
+        /*
+         * Compatibility check!
+         * Older systems will still have the timezone specified as a single string, newer as an array
+         * The difference between these two can result in systems no longer starting up after an update
+         */
+        if(!isset($_CONFIG['timezone']['display'])){
+// :DELETE: This section is only for compatbility and should be removed in a few months after 2017/11/21
+            if(!$to_timezone){
+                if(empty($_SESSION['user']['timezone'])){
+                    $to_timezone = $_CONFIG['timezone'];
 
-            }else{
-                $to_timezone = $_SESSION['user']['timezone'];
+                }else{
+                    $to_timezone = $_SESSION['user']['timezone'];
+                }
             }
-        }
 
-        if(!$from_timezone){
-            $from_timezone = $_CONFIG['timezone']['system'];
+            if(!$from_timezone){
+                $from_timezone = $_CONFIG['timezone'];
+            }
+
+        }else{
+            if(!$to_timezone){
+                if(empty($_SESSION['user']['timezone'])){
+                    $to_timezone = $_CONFIG['timezone']['display'];
+
+                }else{
+                    $to_timezone = $_SESSION['user']['timezone'];
+                }
+            }
+
+            if(!$from_timezone){
+                $from_timezone = $_CONFIG['timezone']['system'];
+            }
         }
 
         /*
