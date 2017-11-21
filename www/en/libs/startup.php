@@ -310,7 +310,19 @@ try{
      * Set timezone
      * See http://www.php.net/manual/en/timezones.php for more info
      */
-    date_default_timezone_set($_CONFIG['timezone']['system']);
+// :DELETE: Remove support for obsolete timezone configuration format
+    if(is_string($_CONFIG['timezone'])){
+        /*
+         * Old format
+         */
+        date_default_timezone_set($_CONFIG['timezone']);
+
+    }else{
+        /*
+         * New format
+         */
+        date_default_timezone_set($_CONFIG['timezone']['system']);
+    }
 
     /*
      * Start platform specific stuff
