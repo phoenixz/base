@@ -547,7 +547,6 @@ function twilio_numbers_get($number){
         return $retval;
 
     }catch(Exception $e){
-showdie($e);
         throw new bException('twilio_numbers_get(): Failed', $e);
     }
 }
