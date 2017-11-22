@@ -348,12 +348,33 @@ function date_timezones_select($params = null){
         array_params($params);
         array_default($params, 'name', 'timezone');
 
-        $params['resource'] = sql_query('SELECT UCASE(SUBSTR(Name, 7)) AS `id`, SUBSTR(Name, 7) AS `name` FROM `mysql`.`time_zone_name` WHERE Name LIKE "posix%" ORDER BY `id`');
+        $params['resource'] = sql_query('SELECT   LCASE(SUBSTR(`Name`, 7)) AS `id`,
+                                                        SUBSTR(`Name`, 7)  AS `name`
+
+                                         FROM     `mysql`.`time_zone_name`
+
+                                         WHERE    `Name` LIKE "posix%"
+
+                                         ORDER BY `id`');
 
         return html_select($params);
 
     }catch(Exception $e){
         throw new bException(tr('date_timezones_select(): Failed'), $e);
+    }
+}
+
+
+
+/*
+ * Returns true if the specified timezone exists, false if not
+ */
+function date_timezones_exists($timezone){
+    try{
+        return sql_get('SELECT `Time_zone_id` FROM `mysql`.`time_zone_name` WHERE LCASE(`Name`) = :Name', array(':Name' => 'posix/'.strtolower($timezone)));
+
+    }catch(Exception $e){
+        throw new bException(tr('date_timezones_exists(): Failed'), $e);
     }
 }
 ?>
