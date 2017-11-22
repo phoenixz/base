@@ -555,6 +555,7 @@ function user_authenticate($username, $password, $captcha = null){
         }
 
 
+
         /*
          * Wait a random little bit so the authentication failure cannot be
          * timed (timing attacks will be harder), and library attacks will be
@@ -565,6 +566,13 @@ function user_authenticate($username, $password, $captcha = null){
 
         log_database(tr('user_authenticate(): Authenticated user account ":username"', array(':username' => $username)), 'authentication/success');
         user_log_authentication($username, $user['id'], $captcha_required);
+
+        /*
+         * Set users timezone
+         */
+        if(empty($user['timezone'])){
+            $user['timezone'] = $_CONFIG['timezone']['display'];
+        }
 
         $user['authenticated'] = true;
         return $user;

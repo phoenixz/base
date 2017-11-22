@@ -310,19 +310,9 @@ try{
      * Set timezone
      * See http://www.php.net/manual/en/timezones.php for more info
      */
-// :DELETE: Remove support for obsolete timezone configuration format
-    if(is_string($_CONFIG['timezone'])){
-        /*
-         * Old format
-         */
-        date_default_timezone_set($_CONFIG['timezone']);
+    date_default_timezone_set($_CONFIG['timezone']['system']);
 
-    }else{
-        /*
-         * New format
-         */
-        date_default_timezone_set($_CONFIG['timezone']['system']);
-    }
+
 
     /*
      * Start platform specific stuff
@@ -506,6 +496,13 @@ try{
                         $_SESSION['last_activity'] = time();
 
                         check_extended_session();
+
+                        /*
+                         * Set users timezone
+                         */
+                        if(empty($_SESSION['user']['timezone'])){
+                            $_SESSION['user']['timezone'] = $_CONFIG['timezone']['display'];
+                        }
 
                     }catch(Exception $e){
                         if(!is_writable(session_save_path())){
