@@ -1728,6 +1728,8 @@ function user_validate($user, $sections = array()){
             $v->isNumeric($user['priority'],  tr('Please ensure that the users priority is numeric'));
         }
 
+        $user['timezone'] = $v->isValidTimezone($user['timezone'], tr('Please specify a valid timezone'));
+
         if($sections['role']){
             if(!empty($user['role'])){
                 /*
