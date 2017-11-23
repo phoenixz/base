@@ -1988,6 +1988,7 @@ function name($user = null, $key_prefix = '', $default = null){
             }
 
             $user = not_empty(isset_get($user[$key_prefix.'nickname']), isset_get($user[$key_prefix.'name']), isset_get($user[$key_prefix.'username']), isset_get($user[$key_prefix.'email']));
+            $user = trim($user);
 
             if($user){
                 return $user;
