@@ -2210,7 +2210,7 @@ function user_update_reference_codes($user, $allow_duplicate_reference_codes = n
          * Allow duplicate reference codes? Default to configured value
          */
         if($allow_duplicate_reference_codes === null){
-            $allow_duplicate_reference_codes = $_CONFIG['users']['duplicate_reference_numbers'];
+            $allow_duplicate_reference_codes = $_CONFIG['users']['duplicate_reference_codes'];
         }
 
         $fail   = array();

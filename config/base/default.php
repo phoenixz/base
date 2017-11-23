@@ -378,7 +378,7 @@ $_CONFIG['type']               = 'core';                                        
 
 // User configuration
 $_CONFIG['users']              = array('type_filter'                        => null,
-                                       'duplicate_reference_numbers'        => false);
+                                       'duplicate_reference_codes'        => false);
 
 //Xapian search
 $_CONFIG['xapian']             = array('dir'                                => ROOT.'data/xapian/');                                    // Base path for Xapian databases
