@@ -35,6 +35,8 @@ if(VERBOSE){
 
 array_shift($argv);
 
+$_SESSION['user']['timezone'] = $_CONFIG['timezone']['display'];
+
 ///*
 // * Check current shell environment username and try to
 // * signin with the shells username (no authentication required,
