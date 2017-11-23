@@ -878,6 +878,20 @@ function cli_arguments_none_left(){
 
 
 /*
+ *
+ */
+function cli_done(){
+    try{
+        cli_log(tr('Finished ":script" in ":time"', array(':script' => SCRIPT, ':time' => time_difference(STARTTIME, microtime_float()))), 'green');
+
+    }catch(Exception $e){
+        throw new bException('cli_done(): Failed', $e);
+    }
+}
+
+
+
+/*
  * WARNING! BELOW HERE BE OBSOLETE FUNCTIONS AND OBSOLETE-BUT-WE-WANT-TO-BE-BACKWARD-COMPATIBLE WRAPPERS
  */
 function this_script_already_runs($action = 'exception', $force = false){
