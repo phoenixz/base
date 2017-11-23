@@ -32,8 +32,8 @@ info                         - Shows information about the specified image, or
                                all images in the specified path (optionally
                                tree, if --recursive is specified)
 
-clear-cache                  - Clear the `html_img` cache table that contains
-                               image sizes used by html_img()
+clear-cache                  - Clear the `html_img_cache` cache table that
+                               contains image sizes used by html_img()
 
 
 
@@ -534,7 +534,7 @@ switch(cli_method()){
             break;
         }
 
-        sql_query('TRUNCATE `html_img`');
+        sql_query('TRUNCATE `html_img_cache`');
         cli_log(tr('Cleared html_img cache'), 'green');
         break;
 

@@ -1918,7 +1918,16 @@ function html_img($src, $alt, $width = null, $height = null, $more = ''){
              * Try to get width / height from image.
              */
             try{
-                $image = sql_get('SELECT `width`, `height` FROM `html_img` WHERE `url` = :url AND `createdon` > NOW() - INTERVAL 1 DAY AND `status` IS NULL', array(':url' => $src));
+                $image = sql_get('SELECT `width`,
+                                         `height`
+
+                                  FROM   `html_img_cache`
+
+                                  WHERE  `url`       = :url
+                                  AND    `createdon` > NOW() - INTERVAL 1 DAY
+                                  AND    `status`    IS NULL',
+
+                                  array(':url' => $src));
 
             }catch(Exception $e){
                 notify($e);
@@ -2010,8 +2019,8 @@ function html_img($src, $alt, $width = null, $height = null, $more = ''){
 
                 }else{
                     try{
-                        sql_query('INSERT INTO `html_img` (`status`, `url`, `width`, `height`)
-                                   VALUES                 (:status , :url , :width , :height )
+                        sql_query('INSERT INTO `html_img_cache` (`status`, `url`, `width`, `height`)
+                                   VALUES                       (:status , :url , :width , :height )
 
                                    ON DUPLICATE KEY UPDATE `status`    = NULL,
                                                            `createdon` = NOW()',

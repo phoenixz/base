@@ -197,7 +197,7 @@ switch(cli_method()){
             cli_dot(false);
         }
 
-        sql_query('TRUNCATE `html_img`');
+        sql_query('TRUNCATE `html_img_cache`');
         cli_log(tr('Cleared html_img cache'), 'green');
         cli_log(tr('Done!'), 'green');
 
