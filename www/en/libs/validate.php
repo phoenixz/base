@@ -815,8 +815,8 @@ class validate_form {
                 return false;
             }
 
-            load_libs('date');
-            $value = date_time_validate($value);
+            load_libs('time');
+            $value = time_validate($value);
 
             return $value['time'];
 
