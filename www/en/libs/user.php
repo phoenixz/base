@@ -1688,7 +1688,7 @@ function user_validate($user, $sections = array()){
         array_default($sections, 'role'               , true);
 
         load_libs('validate');
-        $v = new validate_form($user, 'name,username,nickname,email,password,password2,redirect,description,role,roles_id,commentary,gender,latitude,longitude,language,country,fb_id,fb_token,gp_id,gp_token,ms_id,ms_token_authentication,ms_token_access,tw_id,tw_token,yh_id,yh_token,status,validated,avatar,phones,type,domain,title,priority');
+        $v = new validate_form($user, 'name,username,nickname,email,password,password2,redirect,description,role,roles_id,commentary,gender,latitude,longitude,language,country,fb_id,fb_token,gp_id,gp_token,ms_id,ms_token_authentication,ms_token_access,tw_id,tw_token,yh_id,yh_token,status,validated,avatar,phones,type,domain,title,priority,reference_codes');
 
         $user['email2'] = $user['email'];
         $user['terms']  = true;
@@ -1734,6 +1734,12 @@ function user_validate($user, $sections = array()){
 
         if($user['priority']){
             $v->isNumeric($user['priority'],  tr('Please ensure that the users priority is numeric'));
+        }
+
+        if(!empty($user['reference_codes'])){
+            if(!is_scalar($user['reference_codes'])){
+                $v->setError(tr('Please ensure that the reference number is a scalar value'));
+            }
         }
 
         $user['timezone'] = $v->isValidTimezone($user['timezone'], tr('Please specify a valid timezone'));
@@ -2184,6 +2190,70 @@ function user_lock($users_id){
         throw new bException(tr('user_lock(): Failed'), $e);
     }
 }
+
+
+
+/*
+ * Update all reference codes for the specified user
+ */
+function user_update_reference_codes($user, $allow_duplicate_reference_codes = null){
+    global $_CONFIG;
+
+    try{
+        sql_query('DELETE FROM `users_reference_codes` WHERE `users_id` = :users_id', array(':users_id' => cfi($user['id'])));
+
+        if(empty($user['reference_codes'])){
+            return false;
+        }
+
+        /*
+         * Allow duplicate reference codes? Default to configured value
+         */
+        if($allow_duplicate_reference_codes === null){
+            $allow_duplicate_reference_codes = $_CONFIG['users']['duplicate_reference_numbers'];
+        }
+
+        $fail   = array();
+        $codes  = preg_split('/[^0-9]/', $user['reference_codes']);
+        $codes  = array_unique($codes);
+        $insert = sql_prepare('INSERT INTO `users_reference_codes` (`users_id`, `code`)
+                               VALUES                              (:users_id , :code )');
+
+        foreach($codes as $code){
+            if(empty($code)) continue;
+
+            if($allow_duplicate_reference_codes){
+                $exists = false;
+
+            }else{
+                $exists = sql_get('SELECT `users_id` FROM `users_reference_codes` WHERE `code` = :code', true, array(':code' => $code));
+            }
+
+            if($exists){
+                $user        = sql_get('SELECT `id`, `username`, `email`, `name`, `nickname` FROM `users` WHERE `id` = :id', array(':id' => $exists));
+                $fail[$code] = tr('Users reference code ":code" is already in use by user ":user", and has been removed from the list of reference codes', array(':code' => $code, ':user' => name($user)));
+
+            }else{
+                $insert->execute(array(':users_id' => cfi($user['id']),
+                                       ':code'     => cfm($code)));
+            }
+        }
+
+        if($fail){
+            /*
+             * One or multiple reference codes failed to be added because they
+             * were already in use.
+             */
+            throw new bException($fail, 'exists', array_keys($fail));
+        }
+
+        return count($codes);
+
+    }catch(Exception $e){
+        throw new bException(tr('user_update_reference_codes(): Failed'), $e);
+    }
+}
+
 
 
 /*
