@@ -1516,7 +1516,7 @@ function date_convert($date = null, $requested_format = 'human_datetime', $to_ti
                  * Only add AM/PM in case original spec has 24H and no AM/PM
                  */
                 if(($requested_format != 'mysql') and strstr($format, 'g')){
-                    $format = str_replace('g', 'H', $format);
+                    $format = str_replace('H', 'g', $format);
 
                     if(!strstr($format, 'a')){
                         $format .= ' a';
@@ -1526,7 +1526,8 @@ function date_convert($date = null, $requested_format = 'human_datetime', $to_ti
                 break;
 
             case '24':
-                $format = str_replace('H', 'g', $format);
+                $format = str_replace('g', 'H', $format);
+                $format = trim(str_replace('a', '', $format));
                 break;
 
             default:
