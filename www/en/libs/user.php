@@ -805,6 +805,10 @@ function user_signin($user, $extended = false, $redirect = null, $html_flash = n
             html_flash_set(isset_get($html_flash['text']), isset_get($html_flash['type']), isset_get($html_flash['class']));
         }
 
+        if(empty($_SESSION['user']['language'])){
+            $_SESSION['user']['language'] = $_CONFIG['language']['default'];
+        }
+
         if($redirect and (PLATFORM == 'http')){
             /*
              * Do not redirect to signin page
