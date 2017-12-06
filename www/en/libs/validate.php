@@ -856,12 +856,13 @@ class validate_form {
     function isValidTimezone($value, $msg = null){
         load_libs('date');
 
+        if(!$value) return null;
+
         if(!$this->isScalar($value, $msg)){
             return false;
         }
 
         $value = cfm($value);
-        if(!$value) return null;
 
         if(!date_timezones_exists($value)){
             $this->setError($msg);
