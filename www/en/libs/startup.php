@@ -306,20 +306,13 @@ try{
 
     unset($file);
 
-    /*
-     * Set timezone
-     * See http://www.php.net/manual/en/timezones.php for more info
-     */
-    date_default_timezone_set($_CONFIG['timezone']['system']);
-
-
 
     /*
      * Start platform specific stuff
      */
     try{
-        define('TMP'   , ROOT.'data/tmp/');
-        define('PUBTMP', ROOT.'data/content/tmp/');
+        define('TMP'     , ROOT.'data/tmp/');
+        define('PUBTMP'  , ROOT.'data/content/tmp/');
 
         switch(PLATFORM){
             case 'http':
@@ -550,7 +543,7 @@ try{
                                 $length = strlen($test);
 
                                 if(substr($_SERVER['SERVER_NAME'], -$length, $length) != $test){
-                                    throw new bException('startup(): Specified cookie domain "'.str_log($_CONFIG['cookie']['domain']).'" is invalid for current domain "'.str_log($_SERVER['SERVER_NAME']).'"', 'cookiedomain');
+                                    throw new bException(tr('startup(): Specified cookie domain ":cookie_domain" is invalid for current domain ":current_domain"', array(':cookie_domain' => $_CONFIG['cookie']['domain'], ':current_domain' => $_SERVER['SERVER_NAME'])), 'cookiedomain');
                                 }
 
                                 unset($test);
@@ -559,6 +552,13 @@ try{
                     }
                 }
 
+
+                /*
+                 * Set timezone
+                 * See http://www.php.net/manual/en/timezones.php for more info
+                 */
+                define('TIMEZONE', isset_get($_SESSION['user']['timezone'], $_CONFIG['timezone']['system']));
+                date_default_timezone_set(TIMEZONE);
                 break;
 
             case 'shell':
@@ -566,7 +566,7 @@ try{
                 break;
 
             default:
-                throw new bException('startup(): Unknown platform "'.str_log(PLATFORM).'" detected', 'unknownplatform');
+                throw new bException(tr('startup(): Unknown platform ":platform" detected', array(':platform' => PLATFORM)), 'unknownplatform');
         }
 
     }catch(Exception $e){

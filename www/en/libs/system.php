@@ -1475,7 +1475,7 @@ function date_convert($date = null, $requested_format = 'human_datetime', $to_ti
          * The difference between these two can result in systems no longer starting up after an update
          */
         if(!$to_timezone){
-            $to_timezone = $_SESSION['user']['timezone'];
+            $to_timezone = TIMEZONE;
         }
 
         if(!$from_timezone){
