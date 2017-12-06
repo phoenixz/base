@@ -81,6 +81,27 @@ try{
                 unset($argv[$argid + 1]);
                 break;
 
+            case '-T':
+                // FALLTHROUGH
+            case '--timezone':
+                /*
+                 * Set timezone
+                 */
+                if(isset($timezone)){
+                    throw new Exception('Timezone specified twice');
+                }
+
+                if(!isset($argv[$argid + 1])){
+                    throw new Exception('startup: The "timezone" argument requires an existing environment name right after it');
+
+                }else{
+                    $timezone = $argv[$argid + 1];
+                }
+
+                unset($argv[$argid]);
+                unset($argv[$argid + 1]);
+                break;
+
             default:
                 /*
                  * We can ignore this parameter

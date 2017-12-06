@@ -17,6 +17,10 @@ define('TEST'    , cli_argument('-T', false, cli_argument('--test')));
 define('VERBOSE' , empty($GLOBALS['quiet']) or cli_argument('-V', false, cli_argument('--verbose')));
 define('LIMIT'   , cli_argument('--limit', true));
 define('STARTDIR', slash(getcwd()));
+define('TIMEZONE', isset_get($timezone, $_CONFIG['timezone']['display']));
+
+date_default_timezone_set(TIMEZONE);
+
 //define('NOLOGIN' , cli_argument('-L') or isset_get($nologin));
 
 if(cli_argument('-v') or cli_argument('--version')){
