@@ -33,7 +33,7 @@ load_libs('file');
 cli_log(tr('Updating project file permissions'), 'white');
 
 if(empty($_CONFIG['deploy'][$target])){
-    throw new bException(tr('Selected environment ":env" does not exist', array(':env' => $target)), 'not-exist');
+    throw new bException(tr('Specified environment ":env" does not exist', array(':env' => $target)), 'not-exist');
 }
 
 $deploy_config = $_CONFIG['deploy'][$target];
