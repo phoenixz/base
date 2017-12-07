@@ -1,7 +1,7 @@
 <?php
 require_once(dirname(__FILE__).'/../libs/startup.php');
 
-rights_or_redirect('admin,groups,modify');
+rights_or_access_denied('admin,groups,modify');
 load_libs('user,validate');
 
 $group = array();

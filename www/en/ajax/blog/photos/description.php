@@ -8,7 +8,7 @@ try{
         throw new bException(tr('No photo specified'));
     }
 
-    $user = rights_or_redirect('admin', '/admin/signin.php', 'json');
+    $user = rights_or_access_denied('admin', '/admin/signin.php', 'json');
 
     blogs_photo_description($user, $_POST['id'], isset_get($_POST['desc'], ''));
     json_reply();

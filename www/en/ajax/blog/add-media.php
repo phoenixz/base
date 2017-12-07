@@ -4,7 +4,7 @@ include_once(dirname(__FILE__).'/../../../libs/startup.php');
 try{
     load_libs('admin,json,file,image,upload,blogs');
 
-    $user  = rights_or_redirect('admin', '/admin/signin.php', 'json');
+    $user  = rights_or_access_denied('admin', '/admin/signin.php', 'json');
     $photo = blogs_url_upload($_POST);
 
     json_reply(array('html' => '<div class="form-group photo" id="photo'.$photo['id'].'">

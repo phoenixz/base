@@ -2468,10 +2468,6 @@ function is_natural_number($number){
     return is_natural($number);
 }
 
-function rights_or_redirect($rights, $no_user_url = null, $no_rights_page = null, $method = 'http'){
-    return rights_or_access_denied($rights, $no_user_url, $no_rights_page, $method);
-}
-
 function user_or_redirect($url = null, $method = 'http'){
     return user_or_signin($url, $method);
 }

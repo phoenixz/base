@@ -7,7 +7,7 @@ try{
     /*
      * User has access?
      */
-    $user = rights_or_redirect('admin', '/admin/signin.php', 'json');
+    $user = rights_or_access_denied('admin', '/admin/signin.php', 'json');
 
     if(empty($_POST['id'])){
         throw new bException('ajax/blog/photos/delete: No photo specified', 'notspecified');

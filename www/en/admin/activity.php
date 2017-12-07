@@ -1,7 +1,7 @@
 <?php
 require_once(dirname(__FILE__).'/../libs/startup.php');
 
-rights_or_redirect('admin,activity');
+rights_or_access_denied('admin,activity');
 
 $std_limit = 500;
 

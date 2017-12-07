@@ -2,7 +2,7 @@
 require_once(dirname(__FILE__).'/../libs/startup.php');
 
 if(empty($profile)){
-    rights_or_redirect('admin,users,modify');
+    rights_or_access_denied('admin,users,modify');
 }
 
 load_libs('user,validate');

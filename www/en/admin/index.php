@@ -1,7 +1,7 @@
 <?php
 require_once(dirname(__FILE__).'/../libs/startup.php');
 
-rights_or_redirect('admin');
+rights_or_access_denied('admin');
 
 html_load_js('flot/jquery.flot,flot-tooltip/jquery.flot.tooltip,flot/jquery.flot.pie,flot/jquery.flot.time');
 html_load_js('flot/jquery.flot.categories,flot/jquery.flot.resize,ui-elements/charts.js');

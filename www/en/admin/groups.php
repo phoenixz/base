@@ -1,7 +1,7 @@
 <?php
 require_once(dirname(__FILE__).'/../libs/startup.php');
 
-rights_or_redirect('admin,groups');
+rights_or_access_denied('admin,groups');
 load_libs('paging');
 
 
