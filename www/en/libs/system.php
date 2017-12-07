@@ -1631,7 +1631,9 @@ function date_convert($date = null, $requested_format = 'human_datetime', $to_ti
             $date = new DateTime($date, ($from_timezone ? new DateTimeZone($from_timezone) : null));
 
         }else{
-            throw new bException(tr('date_convert(): Specified date variable is a ":type" which is invalid. Should be either scalar or a DateTime object', array(':type' => gettype($date))), 'invalid');
+            if(!($date instanceof DateTime)){
+                throw new bException(tr('date_convert(): Specified date variable is a ":type" which is invalid. Should be either scalar or a DateTime object', array(':type' => gettype($date))), 'invalid');
+            }
         }
 
         if($to_timezone){
