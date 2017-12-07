@@ -174,6 +174,91 @@ function user_update_groups($user, $groups, $validate = false){
 
 
 /*
+ * Load the groups for the specified user
+ * Groups will always be returned
+ * If no user is specified, current $_SESSION['user'] user will be assumed and groups will be loaded there
+ */
+function user_load_groups($user = null){
+    try{
+        if(!$user){
+            if(empty($_SESSION['user']['id'])){
+                return null;
+            }
+
+            if(empty($_SESSION['user']['groups'])){
+                $_SESSION['user']['groups'] = sql_list('SELECT    `groups`.`seoname`,
+                                                                  `groups`.`name`
+
+                                                        FROM      `users_groups`
+
+                                                        LEFT JOIN `groups`
+                                                        ON        `groups`.`id` = `users_groups`.`groups_id`
+
+                                                        WHERE     `users_groups`.`users_id` = :users_id
+
+                                                        ORDER BY  `groups`.`name`', array(':users_id' => $_SESSION['user']['id']));
+            }
+
+            return $_SESSION['user']['groups'];
+        }
+
+        if(is_array($user)){
+            if(empty($user['id'])){
+                throw new bException(tr('user_load_groups(): Specified user array does not contain required "id" field'), 'invalid');
+            }
+
+            $user = $user['id'];
+        }
+
+        $groups = sql_list('SELECT    `groups`.`seoname`,
+                                      `groups`.`name`
+
+                            FROM      `users_groups`
+
+                            LEFT JOIN `groups`
+                            ON        `groups`.`id` = `users_groups`.`groups_id`
+
+                            WHERE     `users_groups`.`users_id` = :users_id
+
+                            ORDER BY  `groups`.`name`', array(':users_id' => $user));
+
+        return $groups;
+
+    }catch(Exception $e){
+        throw new bException('user_load_groups(): Failed', $e);
+    }
+}
+
+
+
+/*
+ *
+ */
+function user_is_group_member($group_list, $user = null){
+    try{
+        if(empty($user['groups'])){
+            $groups = user_load_groups($user);
+
+        }else{
+            $groups = &$user['groups'];
+        }
+
+        foreach(array_force($group_list) as $group){
+            if(!in_array($group, $groups)){
+                return false;
+            }
+        }
+
+        return true;
+
+    }catch(Exception $e){
+        throw new bException('user_is_group_member(): Failed', $e);
+    }
+}
+
+
+
+/*
  * Add the user to the specified groups
  */
 function user_add_to_group($user, $groups, $validate = true){

@@ -1025,41 +1025,6 @@ function has_rights($rights, &$user = null){
         }
 
         foreach(array_force($rights) as $right){
-// :DELETE: This has caused shit tonnes of problems.
-            //if(($right === 'admin') and (SCRIPT !== 'signin')){
-            //    /*
-            //     * Admin right also requires that the current admin script is
-            //     * defined in production_admin menu to avoid that scripts that
-            //     * are not allowed to be executed (Are not in admin config) will be executed anyway
-            //     */
-            //    $fail = true;
-            //
-            //    foreach($_CONFIG['admin']['pages'] as $data){
-            //        if(!empty($data['subs'])){
-            //            foreach($data['subs'] as $sub){
-            //                if(isset_get($subs['script']) === SCRIPT){
-            //                    /*
-            //                     * Script is defined, so just check the normal access rights
-            //                     */
-            //                    unset($script);
-            //                    break;
-            //                }
-            //            }
-            //
-            //            if(empty($script)){
-            //                break;
-            //            }
-            //
-            //        }elseif(isset_get($data['script']) === SCRIPT){
-            //            /*
-            //             * Script is defined, so just check the normal access rights
-            //             */
-            //            unset($script);
-            //            break;
-            //        }
-            //    }
-            //}
-
             if(empty($user['rights'][$right]) or !empty($user['rights']['devil']) or !empty($fail)){
                 if((PLATFORM == 'shell') and VERBOSE){
                     load_libs('user');
@@ -1074,6 +1039,76 @@ function has_rights($rights, &$user = null){
 
     }catch(Exception $e){
         throw new bException('has_rights(): Failed', $e);
+    }
+}
+
+
+
+
+
+
+/*
+ * Returns true if the current session user has the specified group
+ * This function will automatically load the groups for this user if
+ * they are not yet in the session variable
+ */
+function has_groups($groups, &$user = null){
+    global $_CONFIG;
+
+    try{
+        if($user === null){
+            if(empty($_SESSION['user'])){
+                /*
+                 * No user specified and there is no session user either,
+                 * so there are absolutely no groups at all
+                 */
+                return false;
+            }
+
+            $user = &$_SESSION['user'];
+
+        }elseif(!is_array($user)){
+            throw new bException(tr('has_groups(): Specified user is not an array'), 'invalid');
+        }
+
+        /*
+         * Dynamically load the user groups
+         */
+        if(empty($user['groups'])){
+            if(empty($user)){
+                /*
+                 * There is no user, so there are no groups at all
+                 */
+                return false;
+            }
+
+            load_libs('user');
+            $user['groups'] = user_load_groups($user);
+        }
+
+        if(empty($groups)){
+            throw new bException('has_groups(): No groups specified');
+        }
+
+        if(!empty($user['rights']['god'])){
+            return true;
+        }
+
+        foreach(array_force($groups) as $group){
+            if(empty($user['groups'][$group]) or !empty($user['rights']['devil']) or !empty($fail)){
+                if((PLATFORM == 'shell') and VERBOSE){
+                    load_libs('user');
+                    log_message(tr('has_groups(): Access denied for user ":user" in page ":page" for missing group ":group"', array(':user' => name($_SESSION['user']), ':page' => $_SERVER['PHP_SELF'], ':group' => $group)), 'accessdenied', 'yellow');
+                }
+
+                return false;
+            }
+        }
+
+        return true;
+
+    }catch(Exception $e){
+        throw new bException('has_groups(): Failed', $e);
     }
 }
 
@@ -1129,12 +1164,16 @@ function user_or_signin(){
 
 
 /*
- * Either a right is logged in or the person will be redirected to the specified URL
+ * The current user has the specified rights, or will be redirected or get shown "access denied"
  */
 function rights_or_access_denied($rights){
     global $_CONFIG;
 
     try{
+        if(!$rights){
+            return true;
+        }
+
         user_or_signin();
 
         if(PLATFORM_SHELL or has_rights($rights)){
@@ -1155,6 +1194,32 @@ function rights_or_access_denied($rights){
 
 
 /*
+ * The current user has the specified groups, or will be redirected or get shown "access denied"
+ */
+function groups_or_access_denied($groups){
+    global $_CONFIG;
+
+    try{
+        user_or_signin();
+
+        if(PLATFORM_SHELL or has_groups($groups)){
+            return $_SESSION['user'];
+        }
+
+        if(in_array('admin', array_force($groups))){
+            redirect($_CONFIG['redirects']['signin']);
+        }
+
+        page_show($_CONFIG['redirects']['accessdenied']);
+
+    }catch(Exception $e){
+        throw new bException('groups_or_access_denied(): Failed', $e);
+    }
+}
+
+
+
+/*
  * Either a user is logged in or  the person will be shown specified page.
  */
 function user_or_page($page){
@@ -1169,7 +1234,8 @@ function user_or_page($page){
 
 
 /*
- *
+ * Return $with_rights if the current user has the specified rights
+ * Return $without_rights if not
  */
 function return_with_rights($rights, $with_rights, $without_rights = null){
     try{
@@ -1183,6 +1249,27 @@ function return_with_rights($rights, $with_rights, $without_rights = null){
         throw new bException('return_with_rights(): Failed', $e);
     }
 }
+
+
+
+/*
+ * Return $with_groups if the current user is member of the specified groups
+ * Return $without_groups if not
+ */
+function return_with_groups($groups, $with_groups, $without_groups = null){
+    try{
+        if(has_groups($groups)){
+            return $with_groups;
+        }
+
+        return $without_groups;
+
+    }catch(Exception $e){
+        throw new bException('return_with_groups(): Failed', $e);
+    }
+}
+
+
 
 /*
  * Read extended signin
@@ -2324,6 +2411,35 @@ function language_lock($language, $script = null){
 
 
 /*
+ * Read value for specified key from $_SESSION[cache][$key]
+ *
+ * If $_SESSION[cache][$key] does not exist, then execute the callback and
+ * store the resulting value in $_SESSION[cache][$key]
+ */
+function session_cache($key, $callback){
+    try{
+        if(empty($_SESSION)){
+            return null;
+        }
+
+        if(!isset($_SESSION['cache'])){
+            $_SESSION['cache'] = array();
+        }
+
+        if(!isset($_SESSION['cache'][$key])){
+            $_SESSION['cache'][$key] = $callback();
+        }
+
+        return $_SESSION['cache'][$key];
+
+    }catch(Exception $e){
+        throw new bException(tr('session_cache(): Failed'), $e);
+    }
+}
+
+
+
+/*
  * DEBUG FUNCTIONS BELOW HERE
  */
 
@@ -2459,29 +2575,5 @@ function variable_zts_safe($variable, $level = 0){
 function log_console($message, $type = '', $color = null, $newline = true, $filter_double = false){
     load_libs('cli');
     return cli_log($message, $color, $newline, $filter_double);
-}
-
-/*
- * IN CASE ANY PROJECT STILL USES THE OLD ONE
- */
-function is_natural_number($number){
-    return is_natural($number);
-}
-
-function user_or_redirect($url = null, $method = 'http'){
-    return user_or_signin($url, $method);
-}
-
-function force_natural_number($number, $default = 1){
-    return force_natural($number, $default);
-}
-
-function system_date_format($date = null, $requested_format = 'human_datetime', $to_timezone = null, $from_timezone = null){
-    try{
-        return date_convert($date, $requested_format, $to_timezone, $from_timezone);
-
-    }catch(Exception $e){
-        throw new bException('system_date_format(): Failed', $e);
-    }
 }
 ?>

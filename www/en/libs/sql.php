@@ -880,7 +880,7 @@ function sql_valid_limit($limit, $connector = null){
     global $_CONFIG;
 
     try{
-        $limit     = force_natural_number($limit);
+        $limit     = force_natural($limit);
         $connector = sql_connector_name($connector);
 
         if($limit > $_CONFIG['db'][$connector]['limit_max']){
