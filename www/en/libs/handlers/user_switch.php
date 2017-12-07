@@ -57,7 +57,7 @@ try{
         log_database(tr('Executing user switch from ":from" to ":to"', array(':from' => name($from), ':to' => name($_SESSION['user']))), 'user/switch');
 
         html_flash_set(tr('You are now the user ":user"', array(':user' => name($user))), 'success');
-        html_flash_set(tr('NOTICE: You will now be limited to the access level of user ":user"', array(':user' => name($user))), 'warning');
+        html_flash_set(tr('You will now be limited to the access level of user ":user"', array(':user' => name($user))), 'warning');
 
         if($redirect){
             redirect($redirect);
