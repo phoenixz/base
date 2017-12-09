@@ -71,12 +71,12 @@ try{
      * Now check if the specified section exists
      */
     if($section and !file_exists($path.$section)){
-        if(!$force){
-            throw new bException('get_global_data_path(): The specified section "'.str_log($section).'" does not exist in the found global data path "'.str_log($path).'"', 'notfound');
-        }
-
         load_libs('file');
         file_ensure_path($path.$section);
+    }
+
+    if($writable and !is_writable($path.$section)){
+        throw new bException(tr('The global path ":path" is not writable', array(':path' => $path.$section)), 'not-writable');
     }
 
     if(!$global_path = realpath($path.$section)){
