@@ -1499,16 +1499,7 @@ function session_request_register($key, $valid = null){
 /*
  *
  */
-function get_global_data_path($section = '', $force = true){
-    static $global_path;
-
-    /*
-     * Cached value
-     */
-    if(!empty($global_path)){
-        return $global_path;
-    }
-
+function get_global_data_path($section = '', $writable = true){
     return include(__DIR__.'/handlers/system_get_global_data_path.php');
 }
 
