@@ -6,12 +6,43 @@
 $usage   = './scripts/base/importers/geo
 ./scripts/base/importers/geo clear
 ./scripts/base/importers/geo download
-./scripts/base/importers/geo loaddata [username USERNAME] [password PASSWORD] [database DATABASE]
-./scripts/base/importers/geo fixdata
+./scripts/base/importers/geo load-data [username USERNAME] [password PASSWORD] [database DATABASE]
+./scripts/base/importers/geo fix-data
 ./scripts/base/importers/geo import countries&|states&|counties&|cities | all country (COUNTRY,COUNTRYCODE,etc...)
-./scripts/base/importers/geo fixerrors';
+./scripts/base/importers/geo fix-errors';
 
-$help    = 'The geo importer script can import geo data like countries, states, counties and cities from the geoname database repository';
+$help    = 'The geo importer script can import geo data like countries, states, counties and cities from the geoname database repository
+
+METHODS
+
+clear
+
+
+
+download
+
+Will download the geoname data files from the geonames website
+
+--no-check-certificate       - When using https://, do not check the SSL
+                               certificates
+
+--no-ssl                     - Force use of http:// over https://
+
+
+
+load-data
+
+
+
+fix-data
+
+
+
+import
+
+
+
+fix-errors';
 
 $nologin = true;
 
@@ -37,29 +68,50 @@ $skipcounties = cli_argument('nocounties');
  */
 $threshold = cli_argument('threshold', true, 100);
 
-switch(cli_argument(0)){
+switch(cli_method()){
     case 'clear':
-        log_console('Clearing all GEO data', '', 'white');
+        switch(cli_method(1)){
+            case 'geonames':
+                log_console('Clearing all data from "geonames" database', '', 'white');
 
-        sql_query('SET autocommit         = 1;');
-        sql_query('SET unique_checks      = 1;');
-        sql_query('SET foreign_key_checks = 1;');
+                sql_query('SET autocommit         = 1;');
+                sql_query('SET unique_checks      = 1;');
+                sql_query('SET foreign_key_checks = 1;');
 
-        log_console('Clearing cities', '', '');
-        sql_query('DELETE FROM geo_cities;');
+                log_console('Clearing cities', '', '');
+                sql_query('DELETE FROM geo_cities;');
 
-        log_console('Clearing counties', '', '');
-        sql_query('DELETE FROM geo_counties;');
+                log_console('Clearing counties', '', '');
+                sql_query('DELETE FROM geo_counties;');
 
-        log_console('Clearing states', '', '');
-        sql_query('DELETE FROM geo_states;');
+                log_console('Clearing states', '', '');
+                sql_query('DELETE FROM geo_states;');
 
-        if(cli_argument('all')){
-            log_console('Clearing countries', '', '');
-            sql_query('DELETE FROM geo_countries;');
+                if(cli_argument('all')){
+                    log_console('Clearing countries', '', '');
+                    sql_query('DELETE FROM geo_countries;');
 
-            log_console('Clearing continents', '', '');
-            sql_query('DELETE FROM geo_continents;');
+                    log_console('Clearing continents', '', '');
+                    sql_query('DELETE FROM geo_continents;');
+                }
+
+                break;
+
+            case 'geotables':
+                log_console(tr('Clearing all data from ":database" database, geo_* tabkes', array(':database' => $_CONFIG['db']['core']['db'])), '', 'white');
+
+                sql_query('DELETE FROM `geo_cities`');
+                sql_query('DELETE FROM `geo_counties`');
+                sql_query('DELETE FROM `geo_states`');
+                sql_query('DELETE FROM `geo_countries`');
+                sql_query('DELETE FROM `geo_timezones`');
+                break;
+
+            case '':
+                throw new bException('No "clear" sub method specified. Please specify one of "geonames", or "geotables"', 'not-specified');
+
+            default:
+                throw new bException(tr('Unknown "clear" sub method ":method" specified. Please specify one of "geonames", or "geotables"', array(':method' => cli_method())), 'unknown');
         }
 
         break;
@@ -70,13 +122,59 @@ switch(cli_argument(0)){
         log_console('DOWNLOAD', '', 'white');
         log_console('Deleting old data...');
 
+        $no_check_certificate = cli_argument('--no-check-certificate');
+        $no_ssl               = cli_argument('--no-ssl');
+
         /*
          * Get the global data path where the geonames data is stored
          */
         $geoimport_path = get_global_data_path('geonames');
+        $files          = array('allCountries',
+                                'admin1CodesASCII',
+                                'admin2Codes',
+                                'allCountries',
+                                'alternateNames',
+                                'countryInfo',
+                                'featureCodes_en',
+                                'hierarchy',
+                                'iso-languagecodes',
+                                'timeZones');
 
-        foreach(array('allCountries', 'admin1CodesASCII', 'admin2Codes', 'allCountries', 'alternateNames', 'countryInfo', 'featureCodes_en', 'hierarchy', 'iso-languagecodes', 'timeZones') as $file){
+        foreach($files as $file){
             file_delete($geoimport_path.$file.'*');
+        }
+
+        if($no_check_certificate){
+            if($no_ssl){
+                throw new bException(tr('The --no-check-certificate and --no-ssl options are mutually exclusive. Please choose one or the other'), 'invalid');
+            }
+
+            /*
+             * Change the wget commands in geonames_importer.sh to not check SSL certificates
+             */
+            $data = file_get_contents($geoimport_path.'geonames_importer.sh');
+            $data = str_replace('wget http', 'wget --no-check-certificate http', $data);
+
+            file_put_contents($geoimport_path.'geonames_importer.sh', $data);
+
+        }else{
+            /*
+             * Change the wget commands in geonames_importer.sh to check SSL certificates
+             */
+            $data = file_get_contents($geoimport_path.'geonames_importer.sh');
+            $data = str_replace('wget --no-check-certificate http', 'wget http', $data);
+
+            file_put_contents($geoimport_path.'geonames_importer.sh', $data);
+
+            if($no_ssl){
+                /*
+                 * Change the wget commands in geonames_importer.sh to check SSL certificates
+                 */
+                $data = file_get_contents($geoimport_path.'geonames_importer.sh');
+                $data = str_replace('wget https', 'wget http', $data);
+
+                file_put_contents($geoimport_path.'geonames_importer.sh', $data);
+            }
         }
 
         log_console('Downloading data, this may take a while...');
@@ -88,7 +186,7 @@ switch(cli_argument(0)){
 
         break;
 
-    case 'loaddata':
+    case 'load-data':
         log_console('LOADDATA', '', 'white');
 
         /*
@@ -113,6 +211,7 @@ switch(cli_argument(0)){
         $data = file_get_contents($geoimport_path.'geonames_importer.sh');
         $data = str_replace('echo "Password: "', '#echo "Password: "', $data);
         $data = str_replace('echo "[FAILED]"', 'echo "[GEONAMES_IMPORTER FAILED]"; exit 1', $data);
+
         file_put_contents($geoimport_path.'geonames_importer.sh', $data);
 
         /*
@@ -188,7 +287,7 @@ switch(cli_argument(0)){
 
         break;
 
-    case 'fixdata':
+    case 'fix-data':
         log_console('FIXDATA', '', 'white');
 
         $geosql = new PDO('mysql:dbname='.$database.';host=localhost', $username, $password);
@@ -213,28 +312,25 @@ switch(cli_argument(0)){
 
         log_console('Applying hierarchy', '');
 
-        $r     = $geosql->query('SELECT * FROM `hierarchy`;');
+        $r     = $geosql->query('SELECT * FROM `hierarchy` ORDER BY `type`;');
         $p     = $geosql->prepare('UPDATE `geonames` SET `parents_id` = :parents_id WHERE `geonameid` = :childs_id');
         $count = 0;
 
         while($row = $r->fetch(PDO::FETCH_ASSOC)){
-            if(!fmod($count++, 100)){
-                $message = 'Applied "'.($count - 1).'" hierarchy entries';
-
-                log_console($message, '', '', false);
-                echo cli_code_back(strlen($message));
-            }
-
+            cli_dot(1000);
             $p->execute(array(':parents_id' => $row['parentId'],
                               ':childs_id'  => $row['childId']));
         }
 
+        cli_dot(false);
         log_console('Applying indices', '', 'white');
 
         foreach(array('geonameid', 'parents_id', 'name', 'country', 'admin1', 'admin2', 'moddate', 'latitude', 'longitude') as $column){
-            $geosql->query('ALTER TABLE `geonames` ADD INDEX (`geonameid`);');
+            $geosql->query('ALTER TABLE `geonames` ADD INDEX (`'.$column.'`);');
             log_console(tr('Applied index for ":column"', array(':column' => $column)), '', 'green');
         }
+
+        cli_dot(false);
 
         ///*
         // * Remove double entries
@@ -438,7 +534,9 @@ switch(cli_argument(0)){
                 //log_console('Clearing old states...', '', '');
                 //sql_query('DELETE FROM `geo_states` WHERE `countries_id` IN ('.str_force($country_idlist).');');
                 $state_exists_statement = sql_prepare('SELECT `id`
+
                                                        FROM   `geo_states`
+
                                                        WHERE  `geonames_id`  = :geonames_id
                                                        OR    (`countries_id` = :countries_id
                                                        AND    `name`         = :name)');
@@ -858,7 +956,7 @@ switch(cli_argument(0)){
 
         break;
 
-    case 'fixerrors':
+    case 'fix-errors':
         /*
          * Fix possible
          */
@@ -881,10 +979,10 @@ switch(cli_argument(0)){
         break;
 
     case '':
-        throw new bException('No command specified. Please specify one of "clear", "download", "loaddata", "fixdata", "import"', 'not-specified');
+        throw new bException('No method specified. Please specify one of "clear", "download", "load-data", "fix-data", "fix-errors", "import"', 'not-specified');
 
     default:
-        throw new bException('Unknown do "'.str_log(cli_argument(0)).'" specified. Please specify one of "clear", "download", "loaddata", "fixdata", "import"', 'unknown');
+        throw new bException(tr('Unknown  method ":method" specified. Please specify one of "clear", "download", "load-data", "fix-data", "fix-errors", "import"', array(':method' => cli_method())), 'unknown');
 }
 
 sql_query('SET autocommit         = 1;');
