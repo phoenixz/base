@@ -1692,23 +1692,6 @@ function blogs_media_process($file, $post, $priority = null, $original = null){
 
         cdn_add_files($files, 'blogs');
 
-// :DELETE: cdn_add_files() now already automatically deletes files.
-        //if(cdn_add_files($files, 'blogs')){
-        //    /*
-        //     * Files have been added to the CDN system, delete the local versions
-        //     */
-        //    foreach($files as $file){
-        //        file_delete($file);
-        //    }
-        //}
-
-// :DELETE: This block is replaced by the code below. Only left here in case it contains something usefull still
-//    $html = '<li style="display:none;" id="photo'.$id.'" class="myclub photo">
-//                <img style="width:219px;height:130px;" src="/media/'.$media.'-small.jpg" />
-//                <a class="myclub photo delete">'.tr('Delete this photo').'</a>
-//                <textarea placeholder="'.tr('Description of this photo').'" class="myclub photo description"></textarea>
-//            </li>';
-
         return array('id'          => sql_insert_id(),
                      'file'        => $media,
                      'description' => '');
