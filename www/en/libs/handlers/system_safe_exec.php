@@ -29,6 +29,10 @@ try{
     /*
      *
      */
+    if(VERBOSE){
+        cli_log(tr('Executing command ":command"', array(':command' => $command)), 'cyan');
+    }
+
     if(substr($command, -1, 1) == '&'){
         /*
          * Background commands cannot use "exec()" because that one will always wait for the exit code
