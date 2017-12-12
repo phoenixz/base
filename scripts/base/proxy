@@ -41,18 +41,23 @@ switch(cli_method()){
         break;
 
     case 'test':
-        $url = cli_argument(1);
+        $url     = cli_argument(1);
+        $proxies = cli_argument('--proxies', 'all');
         cli_no_arguments_left();
 
         if(!$url){
             throw new bException(tr('No url specified'), 'not-specified');
         }
 
-        if(empty($_CONFIG['curl']['proxies'])){
-            throw new bException(tr('No proxies have been configured, please check $_CONFIG[curl][proxies]'), 'not-configured');
+        if(empty($proxies)){
+            if(empty($_CONFIG['curl']['proxies'])){
+                throw new bException(tr('No proxies have been configured, please check $_CONFIG[curl][proxies], or specify --proxies'), 'not-configured');
+            }
+
+            $proxies = $_CONFIG['curl']['proxies'];
         }
 
-        foreach($_CONFIG['curl']['proxies'] as $proxy){
+        foreach(array_force($proxies) as $proxy){
             try{
                 $data  = curl_get_proxy($url, null, $proxy);
                 cli_log(tr('Proxy ":proxy" works correctly', array(':proxy' => $proxy)), 'green');
