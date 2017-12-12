@@ -87,7 +87,7 @@ switch(cli_method()){
             cli_log(tr('Tested ":count" proxies, found ":errors" errors', array(':count' => count($proxies), ':errors' => $errors)), 'yellow');
 
         }else{
-            cli_log(tr('Tested ":count" proxies, no errors found', array(':count' => count($proxies), ':errors' => $errors)), 'green');
+            cli_log(tr('Tested ":count" proxies, no errors found', array(':count' => count($proxies))), 'green');
         }
 
         break;
