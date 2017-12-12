@@ -182,7 +182,7 @@ function curl_get($params, $referer = null, $post = false, $options = array()){
         array_default($params, 'httpheaders'    , true);
         array_default($params, 'content-type'   , false);
         array_default($params, 'cache'          , false);
-        array_default($params, 'verbose'        , debug());
+        array_default($params, 'verbose'        , VERBOSE);
         array_default($params, 'method'         , null);
         array_default($params, 'dns_cache'      , true);
         array_default($params, 'verify_ssl'     , true);
