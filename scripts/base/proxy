@@ -41,6 +41,7 @@ switch(cli_method()){
         break;
 
     case 'test':
+        $errors  = 0;
         $url     = cli_argument(1);
         $proxies = cli_argument('--proxies', 'all');
         cli_no_arguments_left();
@@ -55,16 +56,27 @@ switch(cli_method()){
             }
 
             $proxies = $_CONFIG['curl']['proxies'];
+
+        }else{
+            $proxies = array_force($proxies);
         }
 
-        foreach(array_force($proxies) as $proxy){
+        foreach($proxies as $proxy){
             try{
                 $data  = curl_get_proxy($url, null, $proxy);
                 cli_log(tr('Proxy ":proxy" works correctly', array(':proxy' => $proxy)), 'green');
 
             }catch(Exception $e){
+                $errors++;
                 cli_log(tr('Proxy ":proxy" failed with ":e"', array(':proxy' => $proxy, ':e' => $e)), 'red');
             }
+        }
+
+        if($errors){
+            cli_log(tr('Tested ":count" proxies, found ":errors" errors', array(':count' => count($proxies), ':errors' => $errors)), 'yellow');
+
+        }else{
+            cli_log(tr('Tested ":count" proxies, no errors found', array(':count' => count($proxies), ':errors' => $errors)), 'green');
         }
 
         break;
