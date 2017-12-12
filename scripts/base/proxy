@@ -3,22 +3,79 @@
 /*
  * This is script can       be used to tesst the proxy system
  */
-$usage = "./scripts/base/proxy\n".
-         "./scripts/base/proxy --url URL --proxy PROXY\n";
+$usage = "./scripts/base/proxy
+./scripts/base/proxy list
+./scripts/base/proxy test URL
+./scripts/base/proxy dump URL [ --proxy PROXY ]";
 
-$help  = "This is a test script for the curl proxy interface";
+$help  = "This is a test script for the curl proxy interface
+
+METHODS
+
+list                            - List configured and available proxy servers
+
+dump                            - Get data from the specified URL over a random
+                                  proxy from the list of configured proxy
+                                  servers
+
+    --proxy                     - Use the specified proxy instead of a random
+                                  proxy servers
+
+test                            - Test all configured proxy machines";
 
 require_once(dirname(__FILE__).'/../../libs/startup.php');
-
-$url   = cli_argument('--url');
-$proxy = cli_argument('--proxy');
-cli_no_arguments_left();
-
 load_libs('curl');
 
-//$data = curl_get_proxy('http://test.com', null, 'http://localhost/toolkit/www/en/proxy.php?url=');
+switch(cli_method()){
+    case 'list':
+        cli_no_arguments_left();
 
-$data = curl_get_proxy($url, null, $proxy);
+        if(empty($_CONFIG['curl']['proxies'])){
+            throw new bException(tr('No proxies have been configured, please check $_CONFIG[curl][proxies]'), 'not-configured');
+        }
 
-showdie($data['data']);
+        foreach($_CONFIG['curl']['proxies'] as $proxy){
+            cli_log($proxy);
+        }
+
+        break;
+
+    case 'test':
+        $url = cli_argument(1);
+        cli_no_arguments_left();
+
+        if(!$url){
+            throw new bException(tr('No url specified'), 'not-specified');
+        }
+
+        if(empty($_CONFIG['curl']['proxies'])){
+            throw new bException(tr('No proxies have been configured, please check $_CONFIG[curl][proxies]'), 'not-configured');
+        }
+
+        foreach($_CONFIG['curl']['proxies'] as $proxy){
+            try{
+                $data  = curl_get_proxy($url, null, $proxy);
+                cli_log(tr('Proxy ":proxy" works correctly', array(':proxy' => $proxy)), 'green');
+
+            }catch(Exception $e){
+                cli_log(tr('Proxy ":proxy" failed with ":e"', array(':proxy' => $proxy, ':e' => $e)), 'red');
+            }
+        }
+
+        break;
+
+    case 'dump':
+        $proxy = cli_argument('--proxy');
+        $url   = cli_argument(0);
+        cli_no_arguments_left();
+
+        $data  = curl_get_proxy($url, null, $proxy);
+        showdie($data['data']);
+
+    case '':
+        throw new bException(tr('No method specified'), 'not-specified');
+
+    default:
+        throw new bException(tr('Unknown method ":method" specified', array(':method' => cli_method())), 'unknown');
+}
 ?>
