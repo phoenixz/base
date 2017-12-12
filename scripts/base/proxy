@@ -5,7 +5,7 @@
  */
 $usage = "./scripts/base/proxy
 ./scripts/base/proxy list
-./scripts/base/proxy test URL
+./scripts/base/proxy test URL [ --proxies PROXIES ]
 ./scripts/base/proxy dump URL [ --proxy PROXY ]";
 
 $help  = "This is a test script for the curl proxy interface
@@ -14,14 +14,25 @@ METHODS
 
 list                            - List configured and available proxy servers
 
+
+
 dump                            - Get data from the specified URL over a random
                                   proxy from the list of configured proxy
                                   servers
 
-    --proxy                     - Use the specified proxy instead of a random
+    [--proxy PROXY]             - Use the specified proxy instead of a random
                                   proxy servers
 
-test                            - Test all configured proxy machines";
+    URL                         - The URL who'se contents should be dumped
+
+
+
+test                            - Test all configured proxy machines
+
+    [--proxies PROXIES]         - Specify a CSV list of proxy servers to be
+                                  tested
+
+    URL                         - The URL that should be used for the test";
 
 require_once(dirname(__FILE__).'/../../libs/startup.php');
 load_libs('curl');
@@ -83,7 +94,7 @@ switch(cli_method()){
 
     case 'dump':
         $proxy = cli_argument('--proxy');
-        $url   = cli_argument(0);
+        $url   = cli_argument(1);
         cli_no_arguments_left();
 
         $data  = curl_get_proxy($url, null, $proxy);
