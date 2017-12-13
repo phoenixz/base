@@ -552,7 +552,7 @@ function file_temp($create = true){
  * Kindly taken from http://lixlpixel.org/recursive_function/php/recursive_directory_delete/
  * Slightly rewritten and cleaned up by Sven Oostenbrink
  */
-function file_delete_tree($directory, $empty = false){
+function file_delete_tree($directory){
     try{
         $directory = unslash($directory);
 
@@ -582,18 +582,22 @@ function file_delete_tree($directory, $empty = false){
                     file_delete_tree($path);
 
                 }else{
-                    unlink($path);
+                    try{
+                        unlink($path);
+
+                    }catch(Exception $e){
+                        /*
+                         * Failed, very very likely access denied, so ATTEMPT to make writable and try again. If fails again, just exception
+                         */
+                        file_chmod_tree(dirname($path), 0660, 0770);
+                        unlink($path);
+                    }
                 }
             }
         }
 
         closedir($handle);
-
-        if(!$empty){
-            if(!rmdir($directory)){
-                throw new bException('file_delete_tree(): Specified path "'.str_log($directory).'" could not be deleted');
-            }
-        }
+        file_delete($directory);
 
     }catch(Exception $e){
         throw new bException('file_delete_tree(): Failed', $e);
@@ -1135,10 +1139,6 @@ function file_temp_dir($prefix = '', $system = null, $mode = null){
  * chmod an entire directory, recursively
  * Copied from http://www.php.net/manual/en/function.chmod.php#84273
  */
-function file_chmod_directory($path, $filemode, $dirmode = 0770){
-    file_chmod_tree($path, $filemode, $dirmode);
-}
-
 function file_chmod_tree($path, $filemode, $dirmode = 0770){
     try{
         if(!is_dir($path)){
@@ -1159,7 +1159,7 @@ function file_chmod_tree($path, $filemode, $dirmode = 0770){
 
             }elseif(!is_dir($fullpath)){
                 if(!chmod($fullpath, $filemode)){
-                    throw new bException('file_chmod_tree(): Failed to chmod file "'.str_log($fullpath).'" to mode "'.str_log($filemode).'"', 'failed');
+                    throw new bException(tr('file_chmod_tree(): Failed to chmod file ":fullpath" to mode ":filemode"', array(':fullpath' => $fullpath, ':filemode' => $filemode)), 'failed');
                 }
 
             }else{
@@ -1173,7 +1173,7 @@ function file_chmod_tree($path, $filemode, $dirmode = 0770){
         closedir($dh);
 
         if(!chmod($path, $dirmode)){
-            throw new bException('file_chmod_tree(): Failed to chmod directory "'.str_log($path).'" to mode "'.str_log($dirmode).'"', 'failed');
+            throw new bException(tr('file_chmod_tree(): Failed to chmod directory ":path" to mode ":mode"', array(':path' => $path, ':mode' => $dirmode)), 'failed');
         }
 
         return true;
