@@ -24,16 +24,22 @@ function scanimage($params){
 
     try{
         array_params($params);
+        array_default($params, 'resolution'     , $_CONFIG['scanimage']['resolution']);
+        array_default($params, 'contrast'       , $_CONFIG['scanimage']['contrast']);
+        array_default($params, 'brightness'     , $_CONFIG['scanimage']['brightness']);
+        array_default($params, 'gamma'          , $_CONFIG['scanimage']['gamma']);
+        array_default($params, 'jpeg_quality'   , $_CONFIG['scanimage']['jpeg_quality']);
+        array_default($params, 'transfer_format', $_CONFIG['scanimage']['transfer_format']);
+        array_default($params, 'mode'           , $_CONFIG['scanimage']['mode']);
+        array_default($params, 'format'         , $_CONFIG['scanimage']['format']);
         array_default($params, 'file'           , file_temp());
-        array_default($params, 'contrast'       , 50);
-        array_default($params, 'brightness'     , 50);
-        array_default($params, 'gamma'          , 1.0);
-        array_default($params, 'jpeg_quality'   , 70);
-        array_default($params, 'transfer_format', 'JPEG');
         array_default($params, 'device'         , null);
 
         $command = 'scanimage';
 
+        /*
+         * Validate parameters and apply them to $command
+         */
         if($params['contrast']){
             if(!is_natural($params['contrast']) or ($params['contrast']) > 100){
                 throw new bException(tr('scanimage(): Specified contrast ":value" is invalid. Please ensure the contrast is in between 0 and 100', array(':value' => $params['contrast'])), 'invalid');
@@ -76,24 +82,40 @@ function scanimage($params){
 
         if($params['transfer_format']){
             switch($params['transfer_format']){
-                case '75':
-                case '150':
-                case '300':
-                case '600':
-                case '1200':
+                case 'jpeg':
+                case 'tiff':
                     break;
 
                 default:
                     throw new bException(tr('scanimage(): Specified transfer_format ":value" is invalid. Please ensure transfer_format is one of JPEG or TIFF', array(':value' => $params['transfer_format'])), 'invalid');
             }
 
-            $command .= ' --transfer-format '.$params['transfer_format'];
+            $command .= ' --transfer-format '.strtoupper($params['transfer_format']);
+        }
+
+        if($params['format']){
+            switch($params['format']){
+                case 'jpeg':
+                    $extension = '.jpg';
+                    break;
+
+                case 'tiff':
+                    $extension = '.tiff';
+                    break;
+
+                default:
+                    throw new bException(tr('scanimage(): Specified format ":value" is invalid. Please ensure transfer_format is one of JPEG or TIFF', array(':value' => $params['format'])), 'invalid');
+            }
+
+            $command .= ' --format '.$params['transfer_format'];
         }
 
         if($params['mode']){
             switch($params['mode']){
                 case 'lineart':
+                    // FALLTHROUGH
                 case 'gray':
+                    // FALLTHROUGH
                 case 'color':
                     break;
 
@@ -104,12 +126,29 @@ function scanimage($params){
             $command .= ' --mode '.str_capitalize($params['mode']);
         }
 
+        if(!$params['file']){
+            throw new bException(tr('scanimage(): No file specified'), 'invalid');
+        }
+
+        /*
+         * Ensure file ends with correct extension
+         */
+        $len = strlen($extension);
+
+        if(substr($params['file'], -$len, $len) != $extension){
+            $params['file'] .= $extension;
+        }
+
+        /*
+         * Finish scan command and execute it
+         */
         try{
-            $result = safe_exec($command);
+            $command .= ' > '.$params['file'];
+            $result   = safe_exec($command);
 
         }catch(Exception $e){
             $data = $e->getData();
-            $line = array_unshift($data);
+            $line = array_shift($data);
 
             switch(substr($line, 0, 33)){
                 case 'scanimage: open of device images':
@@ -123,6 +162,9 @@ function scanimage($params){
                      * No scanner found
                      */
                     throw new bException(tr('scanimage(): No scanner found'), 'not-found');
+
+                default:
+                    throw new bException(tr('scanimage(): Unknown error ":e"', array(':e' => $e->getData())), $e);
             }
         }
 
