@@ -17,7 +17,7 @@ load_config('sane');
 /*
  * Find available scanners
  */
-function sane_find_scanners($params){
+function sane_find_scanners(){
     global $_CONFIG;
 
     try{
@@ -43,7 +43,7 @@ function sane_find_scanners($params){
                     $retval['unknown'][] = $result;
                 }
 
-            }elseif(substr($result, 0, 17) == 'found SCSI scanner'){
+            }elseif(substr($result, 0, 18) == 'found SCSI scanner'){
 // :TEST: This has not been tested due to a lack of parrallel scanners. Do these still exist?
                 /*
                  * Found a SCSI scanner
@@ -59,7 +59,7 @@ function sane_find_scanners($params){
                     $retval['unknown'][] = $result;
                 }
 
-            }elseif(substr($result, 0, 17) == 'found parrallel scanner'){
+            }elseif(substr($result, 0, 23) == 'found parrallel scanner'){
 // :TEST: This has not been tested due to a lack of parrallel scanners. Do these still exist?
                 /*
                  * Found a parrallel scanner
@@ -74,6 +74,11 @@ function sane_find_scanners($params){
                 }else{
                     $retval['unknown'][] = $result;
                 }
+
+            }elseif(substr($result, 0, 25) == 'could not open USB device'){
+                /*
+                 * Skip, this is not a scanner
+                 */
 
             }else{
                 $retval['unknown'][] = $result;
