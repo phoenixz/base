@@ -689,7 +689,8 @@ function log_file($messages, $class = 'messages', $type = null){
         }
 
         $messages = array_force($messages, "\n");
-        $date     = date_convert(null, 'human_datetime');
+        $date     = new DateTime();
+        $date     = $date->format('Y/m/d H:i:s');
 
         foreach($messages as $key => $message){
             $type = ($type ? '['.$type.'] ' : '');
