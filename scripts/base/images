@@ -123,7 +123,7 @@ $params['backup']           = not_empty(cli_argument('--backup-original'), cli_a
 $params['x']                = not_empty(cli_argument('--width' , true)   , cli_argument('-x', true));
 $params['y']                = not_empty(cli_argument('--height', true)   , cli_argument('-y', true));
 
-$now = system_date_format(null, 'Ymd-His');
+$now = date_convert(null, 'Ymd-His');
 
 switch(cli_method()){
     case 'retina':

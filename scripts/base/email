@@ -552,7 +552,7 @@ switch(cli_method()){
                      * Build the conversations
                      */
                     if($_CONFIG['email']['conversations']['message_dates']){
-                        $message['text'] = str_replace('%datetime%', system_date_format($message['createdon']), $_CONFIG['email']['conversations']['message_dates']).$message['text'];
+                        $message['text'] = str_replace('%datetime%', date_convert($message['createdon']), $_CONFIG['email']['conversations']['message_dates']).$message['text'];
                     }
 
                     $conversation['last_messages'][] = array('id'        => $id,

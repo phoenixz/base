@@ -38,7 +38,7 @@ cli_no_arguments_left();
 
 $params['date'] = new DateTime();
 
-cli_log(tr('Started backup with datetime stamp ":date"', array(':date' => system_date_format($params['date']))), 'start', 'white');
+cli_log(tr('Started backup with datetime stamp ":date"', array(':date' => date_convert($params['date']))), 'start', 'white');
 
 if($mysql){
     $do     = true;
