@@ -67,6 +67,12 @@ OPTIONS
                                   production code. This option disables the
                                   BOM check.
 
+--no-backup                     - Do NOT execute a site / database backup, even
+                                  though by default, a backup should be done
+
+--do-backup                     - Execute a site / database backup, even though
+                                  by default, a backup should not be done
+
 --stash                         - Execute a \"git stash\" before and \"git
                                   stash pop\" after deploy, in case the WT
                                   contained changes
@@ -170,6 +176,7 @@ $continuersync       =   cli_argument('--continuer-sync', true);
 $targets             =   cli_argument('--target'        , 'all', cli_argument('--targets', 'all'));
 $nobomcheck          =   cli_argument('--no-bom-check');
 $nobackup            =   cli_argument('--no-backup');
+$dobackup            =   cli_argument('--do-backup');
 
 $tilde               = '~'.date('Ymd-His');
 $categories          =   cli_arguments();
@@ -725,7 +732,15 @@ foreach($targets as $target_environment){
     /*
      *
      */
-    if(empty($deploy_config['auto_backup']) or $nobackup){
+    if($nobackup and $dobackup){
+        throw new bException(tr('The options --do-backup and --no-backup cannot be used together'), 'invalid');
+    }
+
+    if(!isset($deploy_config['auto_backup'])){
+        $deploy_config['auto_backup'] = true;
+    }
+
+    if((!$deploy_config['auto_backup'] and !$dobackup) or $nobackup){
         cli_log(tr('Not executing auto site backup, due to either configuration or --no-backup option'), 'yellow');
 
     }else{
