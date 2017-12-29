@@ -11,14 +11,15 @@
 /*
  * Returns the diference in times with the pointed precision
  */
-function time_difference($start, $end, $precision = 'auto', $decimals = 2){
+function time_difference($start, $stop, $precision = 'auto', $decimals = 2){
     try{
-        $time  = cfi($end) - cfi($start);
+        $time  = cf($stop) - cf($start);
 
         switch($precision){
             case 'second':
                 // FALLTHROUGH
             case 'seconds':
+                $time = number_format($time, $decimals);
                 return str_plural($time, tr(':time second', array(':time' => $time)), tr(':time seconds', array(':time' => $time)));
 
             case 'minute':
@@ -68,48 +69,48 @@ function time_difference($start, $end, $precision = 'auto', $decimals = 2){
                     /*
                      * Seconds
                      */
-                    return time_difference($start, $end, 'seconds', $decimals);
+                    return time_difference($start, $stop, 'seconds', $decimals);
                 }
 
                 if($time / 60 < 60){
                     /*
                      * Minutes
                      */
-                    return time_difference($start, $end, 'minutes', $decimals);
+                    return time_difference($start, $stop, 'minutes', $decimals);
                 }
 
                 if($time / 3600 < 24){
                     /*
                      * Hours
                      */
-                    return time_difference($start, $end, 'hours', $decimals);
+                    return time_difference($start, $stop, 'hours', $decimals);
                 }
 
                 if($time / 86400 < 7){
                     /*
                      * Days
                      */
-                    return time_difference($start, $end, 'days', $decimals);
+                    return time_difference($start, $stop, 'days', $decimals);
                 }
 
                 if($time / 604800 < 52){
                     /*
                      * Weeks
                      */
-                    return time_difference($start, $end, 'weeks', $decimals);
+                    return time_difference($start, $stop, 'weeks', $decimals);
                 }
 
                 if($time / 2592000 < 12){
                     /*
                      * Months
                      */
-                    return time_difference($start, $end, 'months', $decimals);
+                    return time_difference($start, $stop, 'months', $decimals);
                 }
 
                 /*
                  * Years
                  */
-                return time_difference($start, $end, 'years', $decimals);
+                return time_difference($start, $stop, 'years', $decimals);
 
             default:
                 throw new bException(tr('time_difference(): Unknown precision ":precision" specified', array(':precision' => $precision)), 'unknown');
