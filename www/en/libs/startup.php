@@ -17,14 +17,7 @@
 /*
  * Framework version
  */
-define('FRAMEWORKCODEVERSION', '0.53.0');
-
-
-
-/*
- * This constant can be used to measure time used to render page or process script
- */
-define('STARTTIME', microtime());
+define('FRAMEWORKCODEVERSION', '0.54.0');
 
 
 
@@ -107,6 +100,7 @@ try{
      */
     unset($env);
     unset($environment);
+    $G['query_count'] = 0;
 
     /*
      * Load basic required libraries
@@ -129,6 +123,13 @@ try{
      */
     throw new bException('startup(): Failed to load system library "'.$library.'"', $e);
 }
+
+
+
+/*
+ * This constant can be used to measure time used to render page or process script
+ */
+define('STARTTIME', microtime_float());
 
 
 
