@@ -2228,6 +2228,38 @@ function file_search_replace($source, $target, $replaces){
 
 
 /*
+ * Return line count for this file
+ */
+function file_line_count($source){
+    try{
+        if(!file_exists($source)){
+            throw new bException(tr('file_line_count(): Specified source file ":source" does not exist', array(':source' => $source)), 'not-exist');
+        }
+
+    }catch(Exception $e){
+        throw new bException('file_line_count(): Failed', $e);
+    }
+}
+
+
+
+/*
+ * Return word count for this file
+ */
+function file_word_count($source){
+    try{
+        if(!file_exists($source)){
+            throw new bException(tr('file_word_count(): Specified source file ":source" does not exist', array(':source' => $source)), 'not-exist');
+        }
+
+    }catch(Exception $e){
+        throw new bException('file_word_count(): Failed', $e);
+    }
+}
+
+
+
+/*
  * OBSOLETE
  * WARNING: FROM HERE BE OBSOLETE FUNCTIONS
  */
