@@ -32,6 +32,8 @@ function sql_query($query, $execute = false, $handle_exceptions = true, $connect
 
         sql_init($connector);
 
+        $G['query_count']++;
+
         if(is_string($query)){
             if(substr($query, 0, 1) == ' '){
                 debug_sql($query, $execute);
@@ -369,10 +371,7 @@ function sql_init($connector = 'core'){
                         if(!empty($versions['offline_until'])){
                             if(PLATFORM_HTTP){
                                 page_show(503, array('offline_until' => $versions['offline_until']));
-
                             }
-
-                            throw new bException(tr('The system is offline until ":until"', array(':until' => $versions['offline_until'])), 'offline');
                         }
 
                         define('FRAMEWORKDBVERSION', $versions['framework']);
