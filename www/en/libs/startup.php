@@ -100,7 +100,7 @@ try{
      */
     unset($env);
     unset($environment);
-    $G['query_count'] = 0;
+    $GLOBALS['query_count'] = 0;
 
     /*
      * Load basic required libraries
@@ -117,6 +117,8 @@ try{
     unset($libraries);
 
 }catch(Exception $e){
+    
+    
     /*
      * NOTE! Do not use tr() here! If the system library is not yet loaded, this
      * function will not be available
