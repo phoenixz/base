@@ -21,7 +21,7 @@ define('TIMEZONE', isset_get($timezone, $_CONFIG['timezone']['display']));
 
 date_default_timezone_set(TIMEZONE);
 
-//define('NOLOGIN' , cli_argument('-L') or isset_get($nologin));
+register_shutdown_function('cli_done');
 
 if(cli_argument('-v') or cli_argument('--version')){
     log_console(tr('BASE framework code version ":fv", project code version ":pv"', array(':fv' => FRAMEWORKCODEVERSION, ':pv' => PROJECTCODEVERSION)));

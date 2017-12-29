@@ -868,6 +868,8 @@ function cli_log($messages = '', $color = null, $newline = true, $filter_double 
     }
 }
 
+
+
 /*
  *
  */
@@ -882,7 +884,8 @@ function cli_arguments_none_left(){
  */
 function cli_done(){
     try{
-        cli_log(tr('Finished ":script" in ":time"', array(':script' => SCRIPT, ':time' => time_difference(STARTTIME, microtime_float()))), 'green');
+        load_libs('time,numbers');
+        cli_log(tr('Finished ":script" script in :time with ":usage" peak memory usage', array(':script' => SCRIPT, ':time' => time_difference(STARTTIME, microtime_float(), 'auto', 5), ':usage' => bytes(memory_get_peak_usage()))), 'green');
 
     }catch(Exception $e){
         throw new bException('cli_done(): Failed', $e);
