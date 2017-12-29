@@ -38,4 +38,30 @@ function config_get_for_environment($environment){
         throw new bException(tr('config_get_for_environment(): Failed'), $e);
     }
 }
+
+
+
+/*
+ *
+ */
+function config_read($section, $environment){
+    try{
+
+    }catch(Exception $e){
+        throw new bException(tr('config_read(): Failed'), $e);
+    }
+}
+
+
+
+/*
+ *
+ */
+function config_write($section, $environment, $data){
+    try{
+
+    }catch(Exception $e){
+        throw new bException(tr('config_write(): Failed'), $e);
+    }
+}
 ?>
