@@ -224,20 +224,24 @@ function tr($text, $replace = null, $verify = true){
 /*
  * Cleanup string
  */
-function cfm($string, $utf8 = true){
-    if(!is_scalar($string)){
-        if(!is_null($string)){
-            throw new bException(tr('cfm(): Specified variable ":variable" from ":location" should be datatype "string" but has datatype ":datatype"', array(':variable' => $string, ':datatype' => gettype($string), ':location' => current_file(1).'@'.current_line(1))), 'invalid');
+function cfm($source, $utf8 = true){
+    try{
+        if(!is_scalar($source)){
+            if(!is_null($source)){
+                throw new bException(tr('cfm(): Specified source ":source" from ":location" should be datatype "string" but has datatype ":datatype"', array(':source' => $source, ':datatype' => gettype($source), ':location' => current_file(1).'@'.current_line(1))), 'invalid');
+            }
         }
+
+        if($utf8){
+            load_libs('utf8');
+            return mb_trim(html_entity_decode(utf8_unescape(strip_tags(utf8_escape($source)))));
+        }
+
+        return mb_trim(html_entity_decode(strip_tags($source)));
+
+    }catch(Exception $e){
+        throw new bException(tr('cfm(): Failed with string ":string"', array(':string' => $source)), $e);
     }
-
-    if($utf8){
-        load_libs('utf8');
-        return mb_trim(html_entity_decode(utf8_unescape(strip_tags(utf8_escape($string)))));
-    }
-
-    return mb_trim(html_entity_decode(strip_tags($string)));
-
 // :TODO:SVEN:20130709: Check if we should be using mysqli_escape_string() or addslashes(), since the former requires SQL connection, but the latter does NOT have correct UTF8 support!!
 //    return mysqli_escape_string(trim(decode_entities(mb_strip_tags($str))));
 }
@@ -248,11 +252,34 @@ function cfm($string, $utf8 = true){
  * Force integer
  */
 function cfi($source, $allow_null = true){
-    if(!$source and $allow_null){
-        return null;
-    }
+    try{
+        if(!$source and $allow_null){
+            return null;
+        }
 
-    return (integer) $source;
+        return (integer) $source;
+
+    }catch(Exception $e){
+        throw new bException(tr('cfi(): Failed with source ":source"', array(':source' => $source)), $e);
+    }
+}
+
+
+
+/*
+ * Force float
+ */
+function cf($source, $allow_null = true){
+    try{
+        if(!$source and $allow_null){
+            return null;
+        }
+
+        return (float) $source;
+
+    }catch(Exception $e){
+
+    }
 }
 
 
