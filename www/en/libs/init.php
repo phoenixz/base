@@ -52,10 +52,10 @@ function init($projectfrom = null, $frameworkfrom = null){
         /*
          * Determine framework DB version (either from DB, or from command line)
          */
-        if($frameworkfrom === null){
-            $codeversions['FRAMEWORK'] = FRAMEWORKDBVERSION;
+        $codeversions = array('PROJECT'   => PROJECTDBVERSION,
+                              'FRAMEWORK' => FRAMEWORKDBVERSION);
 
-        }else{
+        if($frameworkfrom){
             /*
              * We're (probably) redoing earlier versions, so remove registrations from earlier versions
              */
@@ -66,10 +66,7 @@ function init($projectfrom = null, $frameworkfrom = null){
         /*
          * Determine project DB version (either from DB, or from command line)
          */
-        if($projectfrom === null){
-            $codeversions['PROJECT'] = PROJECTDBVERSION;
-
-        }else{
+        if($projectfrom){
             /*
              * We're (probably) doing earlier versions, so remove registrations from earlier versions
              */
