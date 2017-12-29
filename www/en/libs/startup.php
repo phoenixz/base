@@ -117,8 +117,6 @@ try{
     unset($libraries);
 
 }catch(Exception $e){
-    
-    
     /*
      * NOTE! Do not use tr() here! If the system library is not yet loaded, this
      * function will not be available
