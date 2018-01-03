@@ -170,6 +170,4 @@ unset($file);
 if(!VERBOSE){
     log_dot(false);
 }
-
-cli_log(tr('Finished!'), 'green');
 ?>

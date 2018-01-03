@@ -1080,5 +1080,4 @@ init_hook('deploy_finish', $nohooks, array('target_user'    => $deploy_config['t
                                            'target_server'  => $deploy_config['target_server'],
                                            'target_dir'     => $deploy_config['target_dir']));
 cli_run_once_local(true);
-cli_log(tr('Finished deploy sequence'), 'green');
 ?>

@@ -159,7 +159,7 @@ try{
      */
     safe_exec('rm -f '.$import_path.'*.txt');
 
-    log_console('All done, added "'.str_log($count).'" entries', 'finished', 'green');
+    cli_log(tr('All done, added ":count" entries', array(':count' => $count)), 'green');
 
 }catch(Exception $e){
     cli_error('scripts/base/importers/persons_names: Failed', $e);

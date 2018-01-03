@@ -418,5 +418,4 @@ if(!$nobadgescached){
  */
 script_exec('base/fix-permissions');
 cli_run_once_local(true);
-cli_log(tr('Finished!'), 'green');
 ?>

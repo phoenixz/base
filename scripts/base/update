@@ -259,5 +259,4 @@ if(!empty($stashed)){
 }
 
 cli_run_once_local(true);
-cli_log(tr('Finished'), 'green');
 ?>

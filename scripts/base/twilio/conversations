@@ -204,8 +204,6 @@ switch(cli_method()){
             }
         }
 
-        log_console('Done'     , '', 'green');
-        log_console('Finished!', '', 'green');
         break;
 
     case '':
