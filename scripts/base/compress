@@ -59,4 +59,4 @@ if(TEST){
         cli_log(tr('Finished compressing javascript files'), 'green');
     }
 }
->
+?>
