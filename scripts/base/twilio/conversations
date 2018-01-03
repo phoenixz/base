@@ -178,7 +178,7 @@ switch(cli_method()){
                      * Build the conversations
                      */
                     if($_CONFIG['twilio']['conversations']['message_dates']){
-                        $message['body'] = str_replace('%datetime%', system_date_format($message['createdon']), $_CONFIG['twilio']['conversations']['message_dates']).$message['body'];
+                        $message['body'] = str_replace('%datetime%', date_convert($message['createdon']), $_CONFIG['twilio']['conversations']['message_dates']).$message['body'];
                     }
 
                     $conversation['last_messages'][] = array('id'        => $id,

@@ -231,7 +231,7 @@ if(empty($_GET['post'])){
                              ':body'           => $post['body']);
 
             if($params['use_createdon']){
-                $execute[':createdon'] = system_date_format($post['createdon'], 'mysql');
+                $execute[':createdon'] = date_convert($post['createdon'], 'mysql');
             }
 
             $r = sql_query($query, $execute);
