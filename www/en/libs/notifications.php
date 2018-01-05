@@ -341,7 +341,7 @@ function notifications_classes_insert($params){
     try{
         array_params($params);
 
-        user_or_redirect();
+        user_or_signin();
 
         if(empty($params['name'])){
             throw new bException('notifications_classes_insert(): No name specified', 'not-specified');
@@ -386,7 +386,7 @@ function notifications_members_insert($params){
     try{
         array_params($params);
 
-        user_or_redirect();
+        user_or_signin();
 
         if(empty($params['classes_id'])){
             if(empty($params['name'])){

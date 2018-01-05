@@ -608,7 +608,7 @@ function blogs_post($blog){
         /*
          * Only users may post blogs
          */
-        user_or_redirect();
+        user_or_signin();
 
         if(is_array($blog)){
             $blog = isset_get($blog['id']);

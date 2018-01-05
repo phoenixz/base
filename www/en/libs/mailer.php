@@ -286,7 +286,7 @@ function mailer_get($params, $columns = false){
  */
 function mailer_list($status = null, $columns = '`id`, `name`'){
     try{
-        user_or_redirect();
+        user_or_signin();
 
         switch($status){
             case '':

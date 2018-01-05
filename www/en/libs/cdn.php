@@ -36,13 +36,13 @@ function cdn_domain($file, $section = 'pub', $false_on_not_exist = false, $force
                 /*
                  * Get a CDN server for this session
                  */
-                $_SESSION['cdn'] = sql_get('SELECT    `baseurl`
+                $_SESSION['cdn'] = sql_get('SELECT   `baseurl`
 
-                                            FROM      `cdn_servers`
+                                            FROM     `cdn_servers`
 
-                                            WHERE     `status` IS NULL
+                                            WHERE    `status` IS NULL
 
-                                            ORDER BY  RAND() LIMIT 1', true);
+                                            ORDER BY RAND() LIMIT 1', true);
 
                 if(empty($_SESSION['cdn'])){
                     /*
