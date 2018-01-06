@@ -431,7 +431,22 @@ function api_call_base($account, $call, $data = array(), $files = null){
                 $signin = true;
 
             }catch(Exception $e){
-                throw new bException(tr('api_call_base(): Failed to authenticate'), $e);
+                switch($e->getCode()){
+                    case 'HTTP403':
+                        throw new bException(tr('api_call_base(): [403] API URL gave access denied'), $e);
+
+                    case 'HTTP404':
+                        throw new bException(tr('api_call_base(): [404] API URL ":url" was not found'. array(':url' => str_starts_not($account_data['baseurl'], '/').'/authenticate')), $e);
+
+                    case 'HTTP500':
+                        throw new bException(tr('api_call_base(): [500] API server encountered an internal server error'), $e);
+
+                    case 'HTTP503':
+                        throw new bException(tr('api_call_base(): [503] API server is in maintenance mode'), $e);
+
+                    default:
+                        throw new bException(tr('api_call_base(): [:code] Failed to authenticate', array(':code' => $e->getCode())), $e);
+                }
             }
         }
 
@@ -491,6 +506,7 @@ function api_call_base($account, $call, $data = array(), $files = null){
         }
 
     }catch(Exception $e){
+//showdie($e);
         if($account_data){
             sql_query('UPDATE `api_accounts` SET `last_error` = :last_error WHERE `id` = :id', array(':id' => $account_data['id'], ':last_error' => print_r($e, true)));
         }
