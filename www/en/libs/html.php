@@ -1190,7 +1190,7 @@ function html_flash_class($class = null){
     try{
         if(isset($_SESSION['flash'])){
             foreach($_SESSION['flash'] as $message){
-                if(($message['class'] == $class) or ($message['class'] == '*')){
+                if((isset_get($message['class']) == $class) or ($message['class'] == '*')){
                     return true;
                 }
             }
