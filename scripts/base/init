@@ -27,7 +27,22 @@ $usage = "./scripts/base/init\n".
          "./scripts/base/init -f | --frameworkversion VERSION\n".
          "./scripts/base/init -p | --projectversion VERSION\n";
 
-$help  = "This script will initialize the database and system files to leave your data structures up to date with the current code version";
+$help  = "This script will initialize the database and system files to leave your data structures up to date with the current code version
+
+ARGUMENTS
+
+[-p VERSION]                    - Run init from project version VERSION
+
+[-f VERSION]                    - Run init from framework version VERSION
+
+[-d]                            - DROP, will drop the core database. Usually
+                                  used on production systems in case the
+                                  database needs to be dropped
+
+[-F]                            - FORCE, will drop the core database and start
+                                  init from version 0. NOTE: For safety against
+                                  accidents, this will NOT work on production
+                                  systems";
 
 require_once(dirname(__FILE__).'/../../libs/startup.php');
 
