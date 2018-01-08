@@ -822,10 +822,60 @@ class validate_form {
 
         }catch(Exception $e){
             if($e->getCode() == 'invalid'){
-                throw new bException('validate_form->is_time(): Specified time "'.str_log($value).'" is invalid', $e);
+                throw new bException(tr('validate_form->isTime(): Specified time ":value" is invalid', array(':value' => $value)), $e);
             }
 
-            throw new bException('validate_form->is_time(): Failed', $e);
+            throw new bException('validate_form->isTime(): Failed', $e);
+        }
+    }
+
+
+
+    /*
+     *
+     */
+    function isLatitude($value, $msg = null){
+        try{
+            if(!$this->isNumeric($value, $msg)){
+                return false;
+            }
+
+            if(($value < -90) or ($value > 90)){
+                $this->setError($msg);
+                return false;
+            }
+
+        }catch(Exception $e){
+            if($e->getCode() == 'invalid'){
+                throw new bException(tr('validate_form->isLatitude(): Specified latitude ":value" is invalid', array(':value' => $value)), $e);
+            }
+
+            throw new bException('validate_form->isLatitude(): Failed', $e);
+        }
+    }
+
+
+
+    /*
+     *
+     */
+    function isLongitude($value, $msg = null){
+        try{
+            if(!$this->isNumeric($value, $msg)){
+                return false;
+            }
+
+            if(($value < -180) or ($value > 180)){
+                $this->setError($msg);
+                return false;
+            }
+
+        }catch(Exception $e){
+            if($e->getCode() == 'invalid'){
+                throw new bException(tr('validate_form->isLongitude(): Specified longitude ":value" is invalid', array(':value' => $value)), $e);
+            }
+
+            throw new bException('validate_form->isLongitude(): Failed', $e);
         }
     }
 
