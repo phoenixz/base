@@ -189,7 +189,7 @@ function file_move_to_target($file, $path, $extension = false, $singledir = fals
         }
 
         if(isset($upload) and $copy){
-            throw new bException(tr('file_move_to_target(): Copy option has been set, but specified file ":file" is an uploaded file, and uploaded files cannot be copied, only moved', array(':file' => str_log($file))));
+            throw new bException(tr('file_move_to_target(): Copy option has been set, but specified file ":file" is an uploaded file, and uploaded files cannot be copied, only moved', array(':file' => $file)));
         }
 
         $path     = file_ensure_path($path);
