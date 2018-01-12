@@ -75,8 +75,8 @@ console.log(type);
                 .hide()
                 .css("opacity", 0)
                 .removeClass()
-                .addClass("sys_msg")
-                .addClass("sys_" + type)
+                .addClass("alert")
+                .addClass("alert-" + type)
                 .html(message)
                 .show();
 
