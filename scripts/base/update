@@ -156,6 +156,11 @@ if(empty($test)){
     cli_log(tr('Copying ajax files'), 'purple');
     passthru('rsync -e "ssh -p '.$base['port'].'" -aczvAXHS '.$no_times.' --no-perms '.$base['host'].':'.$base['path'].'/www/en/ajax/base '.ROOT.'www/en/ajax/', $exitcodes['www/en/ajax']);
 
+    // BAse AJAX files for admin section
+    if(file_exists(ROOT.'www/en/admin/ajax/')){
+        passthru('rsync -e "ssh -p '.$base['port'].'" -aczvAXHS '.$no_times.' --no-perms '.$base['host'].':'.$base['path'].'/www/en/ajax/base '.ROOT.'www/en/admin/ajax/', $exitcodes['www/en/admin/ajax']);
+    }
+
     // Scripts
     cli_log(tr('Copying base scripts'), 'purple');
     passthru('rsync -e "ssh -p '.$base['port'].'" -aczvAXHS '.$no_times.' --no-perms --delete '.$base['host'].':'.$base['path'].'/scripts/base/* '.ROOT.'scripts/base/', $exitcodes['scripts/base']);
@@ -169,25 +174,17 @@ if(empty($test)){
     cli_log(tr('Config base configuration'), 'purple');
     passthru('rsync -e "ssh -p '.$base['port'].'" -aczvAXHS '.$no_times.' --no-perms --delete '.$base['host'].':'.$base['path'].'/config/base/* '.ROOT.'config/base/', $exitcodes['config/base']);
 
-    //// Javascript
-    //cli_log(tr('Copying javascript files'), 'purple');
-    //passthru('rsync -e "ssh -p '.$base['port'].'" -aczvAXHS '.$no_times.' --no-perms --delete '.$base['host'].':'.$base['path'].'/www/en/pub/js/base/* '.ROOT.'www/en/pub/js/base/', $exitcodes['www/en/pub/js/base']);
-    //
-    //// CSS
-    //cli_log(tr('Copying style sheets'), 'purple');
-    //passthru('rsync -e "ssh -p '.$base['port'].'" -aczvAXHS '.$no_times.' --no-perms --delete '.$base['host'].':'.$base['path'].'/www/en/pub/css/base/* '.ROOT.'www/en/pub/css/base/', $exitcodes['www/en/pub/css/base']);
-    //
-    //// Images
-    //cli_log(tr('Copying images'), 'purple');
-    //passthru('rsync -e "ssh -p '.$base['port'].'" -aczvAXHS '.$no_times.' --no-perms --delete '.$base['host'].':'.$base['path'].'/www/en/pub/img/base/* '.ROOT.'www/en/pub/img/base/', $exitcodes['www/en/pub/img/base']);
+    // Javascript
+    cli_log(tr('Copying javascript files'), 'purple');
+    passthru('rsync -e "ssh -p '.$base['port'].'" -aczvAXHS '.$no_times.' --no-perms --delete '.$base['host'].':'.$base['path'].'/www/en/pub/js/base/* '.ROOT.'www/en/pub/js/base/', $exitcodes['www/en/pub/js/base']);
+
+    if(file_exists(ROOT.'www/en/admin/pub/js/')){
+        passthru('rsync -e "ssh -p '.$base['port'].'" -aczvAXHS '.$no_times.' --no-perms --delete '.$base['host'].':'.$base['path'].'/www/en/pub/js/base/* '.ROOT.'www/en/admin/pub/js/base/', $exitcodes['www/en/admin/pub/js/base']);
+    }
 
     // Documentation
     cli_log(tr('Copying documentation'), 'purple');
     passthru('rsync -e "ssh -p '.$base['port'].'" -aczvAXHS '.$no_times.' --no-perms '.$base['host'].':'.$base['path'].'/data/doc/* '.ROOT.'data/doc/', $exitcodes['data/doc']);
-
-    //// Sources
-    //cli_log(tr('Copying data sources'), 'purple');
-    //passthru('rsync -e "ssh -p '.$base['port'].'" -aczvAXHS '.$no_times.' --no-perms '.$base['host'].':'.$base['path'].'/data/sources/* '.ROOT.'data/sources/', $exitcodes['data/sources']);
 
     // Audio files
     cli_log(tr('Copying audio files'), 'purple');
