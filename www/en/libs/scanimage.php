@@ -86,6 +86,7 @@ function scanimage($params){
         if($params['transfer_format']){
             switch($params['transfer_format']){
                 case 'jpeg':
+                    // FALLTHROUGH
                 case 'tiff':
                     break;
 
@@ -98,19 +99,25 @@ function scanimage($params){
 
         if($params['format']){
             switch($params['format']){
-                case 'jpeg':
-                    $extension = '.jpg';
+                case 'pnm':
+                    $extension = '.pnm';
                     break;
 
                 case 'tiff':
                     $extension = '.tiff';
                     break;
 
+                case 'jpeg':
+                    $params['format'] = 'tiff';
+                    $extension = '.jpg';
+                    $jpg = true;
+                    break;
+
                 default:
                     throw new bException(tr('scanimage(): Specified format ":value" is invalid. Please ensure transfer_format is one of JPEG or TIFF', array(':value' => $params['format'])), 'invalid');
             }
 
-            $command .= ' --format '.$params['transfer_format'];
+            $command .= ' --format '.$params['format'];
         }
 
         if($params['mode']){
@@ -146,8 +153,14 @@ function scanimage($params){
          * Finish scan command and execute it
          */
         try{
-            $command .= ' > '.$params['file'];
-            $result   = safe_exec($command);
+            if(empty($jpg)){
+                $command .= ' > '.$params['file'];
+                $result   = safe_exec($command);
+
+            }else{
+                $command .= ' | convert tiff:- '.$params['file'];
+                $result   = safe_exec($command);
+            }
 
         }catch(Exception $e){
             $data = $e->getData();
