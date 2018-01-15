@@ -151,6 +151,9 @@ class core{
             require('handlers/startup-'.$this->call_type.'.php');
 
         }catch(Exception $e){
+//print_r($e);
+//die();
+
             throw new bException(tr('core::startup(): Failed'), $e);
         }
     }
