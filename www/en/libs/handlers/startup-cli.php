@@ -195,10 +195,12 @@ try{
 
 }catch(Exception $e){
     echo "startup-cli: Command line parser failed with \"".$e->getMessage()."\"\n";
+    $core->register['exit_code'] = 1;
     die(1);
 }
 
 if(isset($die)){
+    $core->register['exit_code'] = $die;
     die($die);
 }
 
@@ -215,6 +217,7 @@ $env = getenv(PROJECT.'_ENVIRONMENT');
 if(empty($env)){
     if(empty($environment)){
         echo "\033[0;31mstartup: No required environment specified for project \"".PROJECT."\"\033[0m\n";
+        $core->register['exit_code'] = 2;
         die(2);
     }
 
@@ -223,6 +226,7 @@ if(empty($env)){
 
 if(strstr($env, '_')){
     echo "\033[0;31mstartup: Specified environment \"$env\" is invalid, environment names cannot contain the underscore character\033[0m\n";
+    $core->register['exit_code'] = 4;
     die(4);
 }
 

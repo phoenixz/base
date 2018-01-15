@@ -71,7 +71,7 @@ class Colors {
             return $string;
         }
 
-        if(!isset($this->foreground_colors[$foreground_color]) or !isset($this->background_colors[$background_color])){
+        if(!is_string($foreground_color) or !is_string($background_color) or !isset($this->foreground_colors[$foreground_color]) or !isset($this->background_colors[$background_color])){
             /*
              * If requested colors do not exist, return no
              */
@@ -155,31 +155,37 @@ function cli_only($exclusive = false){
 
 
 
+// :OBSOLETE: Now use cli_done();
 /*
  * Die correctly on commandline
  *
  * ALWAYS USE return cli_die(); in case script_exec() was used!
  */
 function cli_die($exitcode, $message = '', $color = ''){
-    log_console($message, ($exitcode ? 'red' : $color));
+    try{
+        log_console($message, ($exitcode ? 'red' : $color));
 
-    /*
-     * Make sure we're not in a script_exec(), where die should NOT happen!
-     */
-    foreach(debug_backtrace() as $trace){
-        if($trace['function'] == 'script_exec'){
-            /*
-             * Do NOT die!!
-             */
-            if($exitcode){
-                throw new bException(tr('cli_die(): Script failed with exit code ":code"', array(':code' => str_log($exitcode))), $exitcode);
+        /*
+         * Make sure we're not in a script_exec(), where die should NOT happen!
+         */
+        foreach(debug_backtrace() as $trace){
+            if($trace['function'] == 'script_exec'){
+                /*
+                 * Do NOT die!!
+                 */
+                if($exitcode){
+                    throw new bException(tr('cli_die(): Script failed with exit code ":code"', array(':code' => str_log($exitcode))), $exitcode);
+                }
+
+                return $exitcode;
             }
-
-            return $exitcode;
         }
-    }
 
-    die($exitcode);
+        die($exitcode);
+
+    }catch(Exception $e){
+        throw new bException('cli_die(): Failed', $e);
+    }
 }
 
 
@@ -188,13 +194,18 @@ function cli_die($exitcode, $message = '', $color = ''){
  * ?
  */
 function cli_code_back($count){
-    $retval = '';
+    try{
+        $retval = '';
 
-    for($i = 1; $i <= $count; $i++){
-        $retval .= "\033[D";
+        for($i = 1; $i <= $count; $i++){
+            $retval .= "\033[D";
+        }
+
+        return $retval;
+
+    }catch(Exception $e){
+        throw new bException('cli_code_back(): Failed', $e);
     }
-
-    return $retval;
 }
 
 
@@ -204,6 +215,52 @@ function cli_code_back($count){
  */
 function cli_code_begin(){
     return "\033[D";
+}
+
+
+
+/*
+ * Hide anything printed to screen
+ */
+function cli_hide(){
+    echo "\033[30;40m";
+    echo "\e[?25l";
+}
+
+
+
+/*
+ * Restore screen printing
+ */
+function cli_restore(){
+    echo "\033[0m";
+    echo "\e[?25h";
+}
+
+
+
+/*
+ * Read input from the command line
+ */
+function cli_readline($prompt = '', $hidden = false){
+    try{
+        if($prompt) echo $prompt;
+
+        if($hidden){
+            cli_hide();
+        }
+
+        $retval = rtrim(fgets(STDIN), "\n");
+
+        if($hidden){
+            cli_restore();
+        }
+
+        return $retval;
+
+    }catch(Exception $e){
+        throw new bException('cli_readline(): Failed', $e);
+    }
 }
 
 
@@ -775,7 +832,17 @@ function cli_arguments_none_left(){
  *
  */
 function cli_done(){
+    global $core;
+
     try{
+        if(empty($core)){
+            echo tr("pre config exception\n");
+            die(1);
+
+        }
+
+        $exit_code = isset_get($core->register['exit_code'], 0);
+
         if(!defined('ENVIRONMENT')){
             /*
              * Oh crap.. Environment hasn't been defined, so we died VERY soon.
@@ -788,7 +855,21 @@ function cli_done(){
         }
 
         load_libs('time,numbers');
-        log_console(tr('Finished ":script" script in :time with ":usage" peak memory usage', array(':script' => SCRIPT, ':time' => time_difference(STARTTIME, microtime(true), 'auto', 5), ':usage' => bytes(memory_get_peak_usage()))), 'green');
+
+        if($exit_code){
+            if($exit_code === 255){
+                /*
+                 * Script ended with warning
+                 */
+                log_console(tr('Script ":script" ended with warning in :time with ":usage" peak memory usage', array(':script' => SCRIPT, ':time' => time_difference(STARTTIME, microtime(true), 'auto', 5), ':usage' => bytes(memory_get_peak_usage()))), 'yellow');
+
+            }else{
+                log_console(tr('Script ":script" failed in :time with ":usage" peak memory usage', array(':script' => SCRIPT, ':time' => time_difference(STARTTIME, microtime(true), 'auto', 5), ':usage' => bytes(memory_get_peak_usage()))), 'red');
+            }
+
+        }else{
+            log_console(tr('Finished ":script" script in :time with ":usage" peak memory usage', array(':script' => SCRIPT, ':time' => time_difference(STARTTIME, microtime(true), 'auto', 5), ':usage' => bytes(memory_get_peak_usage()))), 'green');
+        }
 
     }catch(Exception $e){
         throw new bException('cli_done(): Failed', $e);

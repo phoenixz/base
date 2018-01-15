@@ -39,31 +39,47 @@ try{
              * Command line script crashed.
              * Try to give nice error messages for known issues
              */
+            if(str_until($e->getCode(), '/') == 'warning'){
+                /*
+                 * This is just a simple warning, no backtrace and such needed, only show the principal message
+                 */
+                log_console(trim(str_from($e->getMessage(), '():')), 'yellow');
+                $core->register['exit_code'] = 255;
+                die(255);
+            }
+
             switch((string) $e->getCode()){
                 case 'already-running':
                     log_console($e->getMessage(), 'yellow');
-                    die(1);
+                    $core->register['exit_code'] = 4;
+                    die(4);
 
                 case 'no-method':
                     log_console($e->getMessage(), 'yellow');
                     cli_show_usage(isset_get($GLOBALS['usage']), 'white');
-                    die(2);
+                    $core->register['exit_code'] = 5;
+                    die(5);
 
                 case 'unknown-method':
                     log_console($e->getMessage(), 'yellow');
                     cli_show_usage(isset_get($GLOBALS['usage']), 'white');
-                    die(4);
+                    $core->register['exit_code'] = 6;
+                    die(6);
 
                 case 'invalid_arguments':
                     log_console($e->getMessage(), 'yellow');
                     cli_show_usage(isset_get($GLOBALS['usage']), 'white');
-                    die(8);
+                    $core->register['exit_code'] = 7;
+                    die(7);
 
                 default:
                     log_console('*** UNCAUGHT EXCEPTION ***', 'red');
 
                     debug(true);
-                    showdie($e);
+                    show($e);
+
+                    $core->register['exit_code'] = 8;
+                    die(8);
             }
 
         case 'http':
