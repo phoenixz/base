@@ -1,13 +1,13 @@
 <?php
-global $_CONFIG;
+global $_CONFIG, $core;
 
 try{
     if($trace_offset === null){
         if(PLATFORM_HTTP){
-            $trace_offset = 2;
+            $trace_offset = 3;
 
         }else{
-            $trace_offset = 1;
+            $trace_offset = 2;
         }
     }
 
@@ -17,7 +17,7 @@ try{
 
     $retval = '';
 
-    if(PLATFORM == 'http'){
+    if(PLATFORM_HTTP){
         http_headers(200, 0);
     }
 
@@ -29,11 +29,11 @@ try{
 // :TODO:SVEN:20130430: This should NEVER happen, send notification!
     }
 
-    if((PLATFORM == 'http') and empty($GLOBALS['debug_plain'])){
+    if(PLATFORM_HTTP and !$core->callIs('ajax') and !$core->callIs('api') and empty($core->register['debug_plain'])){
         /*
          * If JSON, CORS requests require correct headers!
          */
-        if(!empty($GLOBALS['page_is_ajax'])){
+        if(!empty($core->callIs('ajax'))){
             load_libs('http');
             http_headers(null, 0);
         }

@@ -174,7 +174,7 @@ switch(cli_method()){
             sql_query('DELETE FROM `email_conversations`');
             sql_query('DELETE FROM `email_client_accounts`');
 
-            cli_log(tr('Finished wiping ALL email data, messages, conversations, accounts, etc...'), 'green');
+            log_console(tr('Finished wiping ALL email data, messages, conversations, accounts, etc...'), 'green');
 
         }else{
             if(!FORCE){
@@ -184,7 +184,7 @@ switch(cli_method()){
             sql_query('DELETE FROM `email_messages`');
             sql_query('DELETE FROM `email_conversations`');
 
-            cli_log(tr('Finished wiping email messages and conversations'), 'green');
+            log_console(tr('Finished wiping email messages and conversations'), 'green');
         }
 
         break;
@@ -194,20 +194,20 @@ switch(cli_method()){
          * Send the emails that are still on DB with `status` = "new"
          */
         cli_no_arguments_left();
-        cli_log(tr('Sending unsent emails'), 'white');
+        log_console(tr('Sending unsent emails'), 'white');
 
         $count = email_send_unsent();
-        cli_log(tr('Sent ":count" emails', array(':count' => $count)), 'green');
+        log_console(tr('Sent ":count" emails', array(':count' => $count)), 'green');
         break;
 
     case 'list':
         $all = cli_argument('--all');
         cli_no_arguments_left();
 
-        cli_log(str_size(tr('Email'), 32).str_size(tr('User'), 32), 'cyan');
+        log_console(str_size(tr('Email'), 32).str_size(tr('User'), 32), 'cyan');
 
         while($email = sql_fetch($r)){
-            cli_log(str_size($email['email'], 32).str_size($email['user'], 32));
+            log_console(str_size($email['email'], 32).str_size($email['user'], 32));
         }
 
         break;
@@ -226,27 +226,27 @@ switch(cli_method()){
                 load_libs('numbers');
 
                 while($account = sql_fetch($r)){
-                    cli_log(tr('Fetching information for email ":email"', array(':email' => $account['email'])), 'white');
+                    log_console(tr('Fetching information for email ":email"', array(':email' => $account['email'])), 'white');
                     $userdata = email_get_user($account['email']);
 
                     $userdata['imap'] = str_until($userdata['imap'], '}').'}';
                     $imap             = email_connect($userdata);
                     $info             = imap_mailboxmsginfo($imap);
 
-                    cli_log(tr('Account: :account'       , array(':account' => $account['email'])), 'cyan');
-                    cli_log(tr('Linked user: :user'      , array(':user'    => $account['user'])));
-                    cli_log(tr('Mailbox: :mailbox'       , array(':mailbox' => $info->Mailbox)));
-                    cli_log(tr('Last change: :date'      , array(':date'    => $info->Date)));
-                    cli_log(tr('Total messages: :count'  , array(':count'   => (integer) $info->Nmsgs)));
-                    cli_log(tr('Recent messages: :count' , array(':count'   => (integer) $info->Recent)));
-                    cli_log(tr('Unread messages: :count' , array(':count'   => (integer) $info->Unread)));
-                    cli_log(tr('Deleted messages: :count', array(':count'   => (integer) $info->Deleted)));
-                    cli_log(tr('Mailbox size: :size'     , array(':size'    => bytes((integer) $info->Size))));
+                    log_console(tr('Account: :account'       , array(':account' => $account['email'])), 'cyan');
+                    log_console(tr('Linked user: :user'      , array(':user'    => $account['user'])));
+                    log_console(tr('Mailbox: :mailbox'       , array(':mailbox' => $info->Mailbox)));
+                    log_console(tr('Last change: :date'      , array(':date'    => $info->Date)));
+                    log_console(tr('Total messages: :count'  , array(':count'   => (integer) $info->Nmsgs)));
+                    log_console(tr('Recent messages: :count' , array(':count'   => (integer) $info->Recent)));
+                    log_console(tr('Unread messages: :count' , array(':count'   => (integer) $info->Unread)));
+                    log_console(tr('Deleted messages: :count', array(':count'   => (integer) $info->Deleted)));
+                    log_console(tr('Mailbox size: :size'     , array(':size'    => bytes((integer) $info->Size))));
 
                     $count++;
                 }
 
-                cli_log(tr('Finished listing all mail boxes for ":count" emails', array(':count' => $count)), 'green');
+                log_console(tr('Finished listing all mail boxes for ":count" emails', array(':count' => $count)), 'green');
 
                 break;
 
@@ -259,23 +259,23 @@ switch(cli_method()){
                 $count = 0;
 
                 while($account = sql_fetch($r, 'email')){
-                    cli_log(tr('Fetching mail boxes for email ":email"', array(':email' => $account)), 'white');
+                    log_console(tr('Fetching mail boxes for email ":email"', array(':email' => $account)), 'white');
                     $userdata = email_get_user($account);
 
                     $userdata['imap'] = str_until($userdata['imap'], '}').'}';
                     $imap             = email_connect($userdata);
                     $boxes            = imap_list($imap, $userdata['imap'], '*');
 
-                    cli_log(tr('Found ":count" boxes', array(':count' => count($boxes))), 'cyan');
+                    log_console(tr('Found ":count" boxes', array(':count' => count($boxes))), 'cyan');
 
                     foreach($boxes as $box){
-                        cli_log($box);
+                        log_console($box);
                     }
 
                     $count++;
                 }
 
-                cli_log(tr('Finished listing all mail boxes for ":count" accounts', array(':count' => $count)), 'green');
+                log_console(tr('Finished listing all mail boxes for ":count" accounts', array(':count' => $count)), 'green');
 
                 break;
 
@@ -293,7 +293,7 @@ switch(cli_method()){
                 $total      = 0;
 
                 while($account = sql_fetch($r, 'email')){
-                    cli_log(tr('Deleting emails for account ":account"', array(':account' => $account)), 'white');
+                    log_console(tr('Deleting emails for account ":account"', array(':account' => $account)), 'white');
 
                     foreach($mail_boxes as $mail_box){
                         $count = email_delete(array('account'  => $account,
@@ -304,10 +304,10 @@ switch(cli_method()){
                     }
 
                     $total += $count;
-                    cli_log(tr('Deleted ":count" emails', array(':count' => $count)), 'green');
+                    log_console(tr('Deleted ":count" emails', array(':count' => $count)), 'green');
                 }
 
-                cli_log(tr('Finished deleting ":total" mails in ":count" accounts', array(':count' => $count, ':total' => $total)), 'green');
+                log_console(tr('Finished deleting ":total" mails in ":count" accounts', array(':count' => $count, ':total' => $total)), 'green');
                 break;
 
             case '':
@@ -349,24 +349,24 @@ switch(cli_method()){
 
         while($loops-- or $first){
             if($loops){
-                cli_log(tr('Executing poll loop ":loop"', array(':loop' => abs($loops))), 'white');
+                log_console(tr('Executing poll loop ":loop"', array(':loop' => abs($loops))), 'white');
 
             }elseif(!$first){
-                cli_log(tr('Executing final poll loop'), 'white');
+                log_console(tr('Executing final poll loop'), 'white');
             }
 
-            cli_log(tr('Polling ":count" email accounts', array(':count' => $r->rowCount())), 'white');
+            log_console(tr('Polling ":count" email accounts', array(':count' => $r->rowCount())), 'white');
 
             $first = false;
 
             while($account = sql_fetch($r, 'email')){
                 if(VERBOSE){
-                    cli_log(tr('Processing account ":account"', array(':account' => $account)));
+                    log_console(tr('Processing account ":account"', array(':account' => $account)));
                 }
 
                 foreach($mail_boxes as $mail_box){
                     if(VERBOSE){
-                        cli_log(tr('Processing mail box ":mailbox"', array(':mailbox' => $mail_box)));
+                        log_console(tr('Processing mail box ":mailbox"', array(':mailbox' => $mail_box)));
                     }
 
                     try{
@@ -380,7 +380,7 @@ switch(cli_method()){
                         $count += count($results);
 
                     }catch(Exception $e){
-                        log_error($e);
+                        log_console($e);
                     }
 
                     usleep($usleep);
@@ -398,15 +398,15 @@ switch(cli_method()){
 
         switch($count){
             case 0:
-                cli_log(tr('Added no new emails'), 'yellow');
+                log_console(tr('Added no new emails'), 'yellow');
                 break;
 
             case 1:
-                cli_log(tr('Added "1" new email'), 'green');
+                log_console(tr('Added "1" new email'), 'green');
                 break;
 
             default:
-                cli_log(tr('Added ":count" new emails', array(':count' => $count)), 'green');
+                log_console(tr('Added ":count" new emails', array(':count' => $count)), 'green');
         }
 
         break;
@@ -419,7 +419,7 @@ switch(cli_method()){
 
         cli_no_arguments_left();
 
-        cli_log(tr('Rebuilding email conversations'), 'white');
+        log_console(tr('Rebuilding email conversations'), 'white');
 
         sql_query('UPDATE `email_messages` SET `conversations_id` = NULL;');
         sql_query('DELETE FROM `email_conversations`;');
@@ -439,7 +439,7 @@ switch(cli_method()){
                             ORDER BY `createdon`');
 
         if($r->rowCount()){
-            cli_log(tr('Creating conversations for ":count" messages', array(':count' => $r->rowCount())));
+            log_console(tr('Creating conversations for ":count" messages', array(':count' => $r->rowCount())));
 
             $p = sql_prepare('UPDATE `email_messages`
 
@@ -469,7 +469,7 @@ switch(cli_method()){
         /*
          * First clean all last_messages from conversations and rebuild them from scratch
          */
-        cli_log(tr('Rebuilding all email conversations'), 'white');
+        log_console(tr('Rebuilding all email conversations'), 'white');
 
         sql_query('UPDATE `email_conversations` SET `last_messages` = ""');
 
@@ -579,14 +579,14 @@ switch(cli_method()){
         }
 
         cli_dot(false);
-        cli_log(tr('Finished!'), 'green');
+        log_console(tr('Finished!'), 'green');
         break;
 
     case '':
-        throw new bException(tr('No method specified'), 'unknown');
+        throw new bException(tr('No method specified'), 'no-method');
 
     default:
-        throw new bException(tr('Unknown method ":method" specified', array(':method' => cli_method())), 'unknown');
+        throw new bException(tr('Invalid method ":method" specified', array(':method' => cli_method())), 'unknown-method');
 }
 
 cli_run_once_local(true);

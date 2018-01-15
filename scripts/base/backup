@@ -38,13 +38,13 @@ cli_no_arguments_left();
 
 $params['date'] = new DateTime();
 
-cli_log(tr('Started backup with datetime stamp ":date"', array(':date' => date_convert($params['date']))), 'start', 'white');
+log_console(tr('Started backup with datetime stamp ":date"', array(':date' => date_convert($params['date']))), 'start', 'white');
 
 if($mysql){
     $do     = true;
     $target = backup_mysql($params);
 
-    cli_log(tr('Finished MySQL backup to ":target"', array(':target' => $target)), 'green');
+    log_console(tr('Finished MySQL backup to ":target"', array(':target' => $target)), 'green');
 }
 
 if($params['path'] = $path){
@@ -54,7 +54,7 @@ if($params['path'] = $path){
     $do     = true;
     $target = backup_path($params);
 
-    cli_log(tr('Finished path backup'), 'green');
+    log_console(tr('Finished path backup'), 'green');
 }
 
 if($sync){
@@ -67,7 +67,7 @@ if($sync){
     $do     = true;
     $target = backup_sync($params);
 
-    cli_log(tr('Finished backup sync from ":source" to ":destination"', array(':source' => $params['source'], ':destination' => $params['destination'])), 'green');
+    log_console(tr('Finished backup sync from ":source" to ":destination"', array(':source' => $params['source'], ':destination' => $params['destination'])), 'green');
 }
 
 if($clear){
@@ -77,7 +77,7 @@ if($clear){
     $do     = true;
     $target = backups_cleanup(array());
 
-    cli_log(tr('Finished backup clear on ":target"', array(':target' => $target)), 'green');
+    log_console(tr('Finished backup clear on ":target"', array(':target' => $target)), 'green');
 }
 
 if(empty($do)){

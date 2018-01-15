@@ -79,7 +79,7 @@ function verify_js($params){
 class validate_jquery {
     var $validations = array();
 
-    function validate($element, $rule, $value, $msg = null){
+    function validate($element, $rule, $value, $message){
         switch($rule){
             case 'required':
                 // FALLTHROUGH
@@ -102,7 +102,7 @@ class validate_jquery {
 
         $this->validations[$element][] = array('rule'  => $rule,
                                                'value' => $value,
-                                               'msg'   => addslashes($msg));
+                                               'msg'   => addslashes($message));
     }
 
     function output_validation($params, $script = ''){
@@ -304,13 +304,21 @@ class validate_form {
     /*
      *
      */
-    function isScalar($value, $msg = null){
-        if(!is_scalar($value)){
-            $this->setError($msg);
-            return false;
-        }
+    function isScalar(&$value, $message){
+        try{
+            if(!is_scalar($value)){
+                return $this->setError($message);
+            }
 
-        return $value;
+            if(is_string($value)){
+                $value = trim($value);
+            }
+
+            return true;
+
+        }catch(Exception $e){
+            throw new bException('validate_form->isScalar(): Failed', $e);
+        }
     }
 
 
@@ -318,35 +326,21 @@ class validate_form {
     /*
      *
      */
-    function isNotEmpty($value, $msg = null){
-        if(!$this->isScalar($value, $msg)){
-            return false;
+    function isNotEmpty(&$value, $message){
+        try{
+            if(!$this->isScalar($value, $message)){
+                return false;
+            }
+
+            if(!$value){
+                return $this->setError($message);
+            }
+
+            return true;
+
+        }catch(Exception $e){
+            throw new bException('validate_form->isNotEmpty(): Failed', $e);
         }
-
-        $value = trim($value);
-
-        if(!$value){
-            $this->setError($msg);
-            return false;
-        }
-
-        return cfm($value);
-    }
-
-
-
-    /*
-     *
-     */
-    function isValidName($value, $msg = null){
-        if(!$value) return '';
-
-        if(!is_string($value) and strlen($value) <= 64){
-            $this->setError($msg);
-            return false;
-        }
-
-        return cfm($value);
     }
 
 
@@ -354,15 +348,25 @@ class validate_form {
     /*
      * Only allow alpha numeric characters
      */
-    function isAlphaNumeric($value, $msg = null){
-        if(!$value) return '';
+    function isAlphaNumeric(&$value, $message, $allow_empty = 'no'){
+        try{
+            if(!$this->allowEmpty($value, $message, $allow_empty)){
+                return true;
+            }
 
-        if(!ctype_alnum($value)){
-            $this->setError($msg);
-            return false;
+            if(!$this->isScalar($value, $message)){
+                return false;
+            }
+
+            if(!ctype_alnum($value)){
+                return $this->setError($message);
+            }
+
+            return true;
+
+        }catch(Exception $e){
+            throw new bException('validate_form->isAlphaNumeric(): Failed', $e);
         }
-
-        return cfm($value);
     }
 
 
@@ -370,20 +374,67 @@ class validate_form {
     /*
      * Only allow a valid (unverified!) email address
      */
-    function isValidEmail($value, $msg = null){
-        if(!$this->isScalar($value, $msg)){
-            return false;
+    function isEmail(&$value, $message, $allow_empty = 'no'){
+        try{
+            return $this->isFilter($value, FILTER_VALIDATE_EMAIL, $empty);
+
+        }catch(Exception $e){
+            throw new bException('validate_form->isEmail(): Failed', $e);
         }
+    }
 
-        $value = cfm($value);
-        if(!$value) return '';
 
-        if(!filter_var($value, FILTER_VALIDATE_EMAIL)){
-            $this->setError($msg);
-            return false;
+
+    /*
+     *
+     */
+    function isUrl(&$value, $message, $allow_empty = 'no'){
+        try{
+            return $this->isFilter($value, FILTER_VALIDATE_URL, $message, $empty);
+
+        }catch(Exception $e){
+            throw new bException('validate_form->isUrl(): Failed', $e);
         }
+    }
 
-        return cfm($value);
+
+
+    /*
+     * Apply specified filter
+     *
+     * See http://php.net/manual/en/filter.filters.validate.php
+     *
+     * Valid filters (with optional flags):
+     * FILTER_VALIDATE_BOOLEAN
+     *      FILTER_NULL_ON_FAILURE
+     * FILTER_VALIDATE_EMAIL
+     *      FILTER_FLAG_EMAIL_UNICODE
+     * FILTER_VALIDATE_FLOAT
+     *      FILTER_FLAG_ALLOW_THOUSAND
+     * FILTER_VALIDATE_INT
+     *      FILTER_FLAG_ALLOW_OCTAL, FILTER_FLAG_ALLOW_HEX
+     * FILTER_VALIDATE_IP
+     *      FILTER_FLAG_IPV4, FILTER_FLAG_IPV6, FILTER_FLAG_NO_PRIV_RANGE, FILTER_FLAG_NO_RES_RANGE
+     * FILTER_VALIDATE_MAC
+     * FILTER_VALIDATE_REGEXP
+     * FILTER_VALIDATE_URL
+     *      FILTER_FLAG_SCHEME_REQUIRED, FILTER_FLAG_HOST_REQUIRED, FILTER_FLAG_PATH_REQUIRED, FILTER_FLAG_QUERY_REQUIRED
+     */
+    function isFilter(&$value, $filter, $message, $allow_empty = 'no'){
+        try{
+            if(!$this->allowEmpty($value, $message, $allow_empty)){
+                return true;
+            }
+
+            if(!filter_var($value, $filter)){
+                return $this->setError($message);
+            }
+
+            return true;
+
+        }catch(Exception $e){
+            throw new bException('validate_form->isFilter(): Failed', $e);
+        }
     }
 
 
@@ -391,13 +442,21 @@ class validate_form {
     /*
      * Only allow numeric values (integers, floats, strings with numbers)
      */
-    function isNumeric($value, $msg = null){
-        if(!is_numeric($value)){
-            $this->setError($msg);
-            return false;
-        }
+    function isNumeric(&$value, $message, $allow_empty = 'no'){
+        try{
+            if(!$this->allowEmpty($value, $message, $allow_empty)){
+                return true;
+            }
 
-        return cfm($value);
+            if(!is_numeric($value)){
+                return $this->setError($message);
+            }
+
+            return true;
+
+        }catch(Exception $e){
+            throw new bException('validate_form->isNumeric(): Failed', $e);
+        }
     }
 
 
@@ -405,13 +464,21 @@ class validate_form {
     /*
      * Only allow integer numbers 1 and up
      */
-    function isNatural($value, $msg = null, $start = 1){
-        if(!is_natural($value, $start)){
-            $this->setError($msg);
-            return false;
-        }
+    function isNatural(&$value, $message, $start = 1, $allow_empty = 'no'){
+        try{
+            if(!$this->allowEmpty($value, $message, $allow_empty)){
+                return true;
+            }
 
-        return cfi($value);
+            if(!is_natural($value, $start)){
+                return $this->setError($message);
+            }
+
+            return true;
+
+        }catch(Exception $e){
+            throw new bException('validate_form->isNatural(): Failed', $e);
+        }
     }
 
 
@@ -419,319 +486,24 @@ class validate_form {
     /*
      *
      */
-    function isValidPhonenumber($value, $msg = null){
-        if(!$this->isScalar($value, $msg)){
-            return false;
-        }
+    function isPhonenumber(&$value, $message, $allow_empty = 'no'){
+        try{
+            if(!$this->allowEmpty($value, $message, $allow_empty)){
+                return true;
+            }
 
-        $value = strtolower(cfm($value));
-        if(!$value) return '';
-
-//      if(!preg_match('^(?:(?:\+?1\s*(?:[.-]\s*)?)?(?:\(\s*([2-9]1[02-9]|[2-9][02-8]1|[2-9][02-8][02-9])\s*\)|([2-9]1[02-9]|[2-9][02-8]1|[2-9][02-8][02-9]))\s*(?:[.-]\s*)?)?([2-9]1[02-9]|[2-9][02-9]1|[2-9][02-9]{2})\s*(?:[.-]\s*)?([0-9]{4})(?:\s*(?:#|x\.?|ext\.?|extension)\s*(\d+))?$', $value)){
-//        if(!preg_match('/^(?:(?:\+|00)[1-9]{1,5}\s*)?(?:\(?[0-9]{1,4}\)?\s*)?[0-9]{2,4}(?:\s|-)?[0-9]{3,5}(?:x|ext[0-9]{1,5})?$/', $value)){
-        if(!preg_match('/\(?([0-9]{3})\)?(?:[ .-]{1,5})?([0-9]{3})(?:[ .-]{1,5})?([0-9]{4})/', $value)){
-            $this->setError($msg);
-            return false;
-        }
-
-        return str_replace(array(' ', '.', '-', '(', ')'), '', $value);
-    }
-
-
-
-    /*
-     *
-     */
-    function isEqual($value, $value2, $msg = null){
-        $this->isScalar($value , $msg);
-        $this->isScalar($value2, $msg);
-
-        $value  = trim($value);
-        $value2 = trim($value2);
-
-        if($value != $value2){
-            $this->setError($msg);
-            return false;
-        }
-
-        return cfm($value);
-    }
-
-
-
-    /*
-     *
-     */
-    function isNotEqual($value, $value2, $msg = null){
-        $this->isScalar($value , $msg);
-        $this->isScalar($value2, $msg);
-
-        $value  = trim($value);
-        $value2 = trim($value2);
-
-        if($value == $value2){
-            $this->setError($msg);
-            return false;
-        }
-
-        return cfm($value);
-    }
-
-
-
-    /*
-     *
-     */
-    function isBetween($value, $min, $max, $msg = null){
-        if(!$this->isScalar($value, $msg)){
-            return false;
-        }
-
-        if($value < $min and $value > $max){
-            $this->setError($msg);
-            return false;
-        }
-
-        return cfm($value);
-    }
-
-
-
-    /*
-     *
-     */
-    function isEnabled($value, $msg = null){
-        if(!$this->isScalar($value, $msg)){
-            return false;
-        }
-
-        $value = cfm($value);
-
-        if(!$value){
-            $this->setError($msg);
-            return false;
-        }
-
-        return cfm($value);
-    }
-
-
-
-    /*
-     *
-     */
-    function hasNoChars($value, $chars, $msg = null){
-        if(!$this->isScalar($value, $msg)){
-            return false;
-        }
-
-        $value = trim($value);
-
-        foreach(array_force($chars) as $char){
-            if(strpos($value, $char)){
-                $this->setError($msg);
+            if(!$this->isScalar($value, $message)){
                 return false;
             }
-        }
 
-        return cfm($value);
-    }
+            if(!preg_match('/\(?([0-9]{3})\)?(?:[ .-]{1,5})?([0-9]{3})(?:[ .-]{1,5})?([0-9]{4})/', $value)){
+                return $this->setError($message);
+            }
 
+            return true;
 
-
-    /*
-     *
-     */
-    function hasMinChars($value, $limit, $msg = null){
-        if(!$this->isScalar($value, $msg)){
-            return false;
-        }
-
-        $value = trim($value);
-
-        if(strlen($value) < $limit){
-            $this->setError($msg);
-            return false;
-        }
-
-        return cfm($value);
-    }
-
-
-
-    /*
-     *
-     */
-    function hasMaxChars($value, $limit, $msg = null){
-        if(!$this->isScalar($value, $msg)){
-            return false;
-        }
-
-        $value = trim($value);
-
-        if(strlen($value) > $limit){
-            $this->setError($msg);
-            return false;
-        }
-
-        return cfm($value);
-    }
-
-
-
-    /*
-     *
-     */
-    function hasChars($value, $limit, $msg = null){
-        if(!$this->isScalar($value, $msg)){
-            return false;
-        }
-
-        $value = trim($value);
-
-        if(strlen($value) != $limit){
-            $this->setError($msg);
-            return false;
-        }
-
-        return cfm($value);
-    }
-
-
-
-    /*
-     *
-     */
-    function isValidUrl($value, $msg = null){
-        if(!$this->isScalar($value, $msg)){
-            return false;
-        }
-
-        if(!$value) return '';
-
-        if(filter_var($value, FILTER_VALIDATE_URL) === FALSE){
-            $this->setError($msg);
-            return false;
-
-        }
-
-        return $value;
-    }
-
-
-
-    /*
-     *
-     */
-    function isValidFacebookUserpage($value, $msg = null){
-        if(!$this->isScalar($value, $msg)){
-            return false;
-        }
-
-        $value  = cfm($value);
-        if(!$value) return '';
-
-        if(!preg_match('/^(?:https?:\/\/)(?:www\.)?facebook\.com\/(.+)$/', $value)){
-            $this->setError($msg);
-            return false;
-        }
-
-        return cfm($value);
-    }
-
-
-
-    /*
-     *
-     */
-    function isValidTwitterUserpage($value, $msg = null){
-        if(!$this->isScalar($value, $msg)){
-            return false;
-        }
-
-        $value  = cfm($value);
-        if(!$value) return '';
-
-        if(!preg_match('/^(?:https?:\/\/)(?:www\.)?twitter\.com\/(.+)$/', $value)){
-            $this->setError($msg);
-            return false;
-        }
-
-        return cfm($value);
-    }
-
-
-
-    /*
-     *
-     */
-    function isValidGoogleplusUserpage($value, $msg = null){
-        if(!$this->isScalar($value, $msg)){
-            return false;
-        }
-
-        $value = cfm($value);
-        if(!$value) return '';
-
-        if(!preg_match('/^(?:(?:https?:\/\/)?plus\.google\.com\/)(\d{21,})(?:\/posts)?$/', $value, $matches)){
-            $this->setError($msg);
-            return false;
-        }
-
-        return $matches[1];
-    }
-
-
-
-    /*
-     *
-     */
-    function isValidYoutubeUserpage($value, $msg = null){
-        if(!$this->isScalar($value, $msg)){
-            return false;
-        }
-
-        $value = cfm($value);
-        if(!$value) return '';
-
-        if(preg_match('/^(?:https?:\/\/)(?:www\.)?youtube\.com\/user\/(.+)$/', $value)){
-            $this->setError($msg);
-            return false;
-        }
-
-        return cfm($value);
-    }
-
-
-
-    /*
-     *
-     */
-    function isValidLinkedinUserpage($value, $msg = null){
-        if(!$this->isScalar($value, $msg)){
-            return false;
-        }
-
-        $value = cfm($value);
-        if(!$value) return '';
-
-        if(preg_match('/^(?:https?:\/\/)(?:www\.)?linkedin\.com\/(.+)$/', $value)){
-            $this->setError($msg);
-            return false;
-        }
-
-        return cfm($value);
-    }
-
-
-
-    /*
-     *
-     */
-    function isChecked($value, $msg = null){
-        if(!$value){
-            $this->setError($msg);
-            return false;
+        }catch(Exception $e){
+            throw new bException('validate_form->isPhonenumber(): Failed', $e);
         }
     }
 
@@ -740,17 +512,23 @@ class validate_form {
     /*
      *
      */
-    function isValidPassword($value, $msg = null){
-        if(!$this->isScalar($value, $msg)){
-            return false;
-        }
+    function isEqual(&$value, $value2, $message){
+        try{
+            $this->isScalar($value , $message);
+            $this->isScalar($value2, $message);
 
-        if(strlen($value) >= 8){
-            $this->setError($msg);
-            return false;
-        }
+            $value  = trim($value);
+            $value2 = trim($value2);
 
-        return cfm($value);
+            if($value != $value2){
+                return $this->setError($message);
+            }
+
+            return true;
+
+        }catch(Exception $e){
+            throw new bException('validate_form->isEqual(): Failed', $e);
+        }
     }
 
 
@@ -758,18 +536,389 @@ class validate_form {
     /*
      *
      */
-    function isRegex($value, $regex, $msg = null){
+    function isNotEqual(&$value, $value2, $message){
+        try{
+            $this->isScalar($value , $message);
+            $this->isScalar($value2, $message);
+
+            $value  = trim($value);
+            $value2 = trim($value2);
+
+            if($value == $value2){
+                return $this->setError($message);
+            }
+
+            return true;
+
+        }catch(Exception $e){
+            throw new bException('validate_form->isNotEqual(): Failed', $e);
+        }
+    }
+
+
+
+    /*
+     *
+     */
+    function isBetween(&$value, $min, $max, $message, $allow_empty = 'no'){
+        try{
+            if(!$this->allowEmpty($value, $message, $allow_empty)){
+                return true;
+            }
+
+            if(!$this->isScalar($value, $message)){
+                return false;
+            }
+
+            if(($value < $min) and ($value > $max)){
+                return $this->setError($message);
+            }
+
+            return true;
+
+        }catch(Exception $e){
+            throw new bException('validate_form->isBetween(): Failed', $e);
+        }
+    }
+
+
+
+    /*
+     *
+     */
+    function isInRange(&$value, $min, $max, $message, $allow_empty = 'no'){
+        try{
+            if(!$this->allowEmpty($value, $message, $allow_empty)){
+                return true;
+            }
+
+            if(!$this->isScalar($value, $message)){
+                return false;
+            }
+
+            if(!is_numeric($value) or ($value < $min) or ($value > $max)){
+                return $this->setError($message);
+            }
+
+            return true;
+
+        }catch(Exception $e){
+            throw new bException('validate_form->isInRange(): Failed', $e);
+        }
+    }
+
+
+
+    /*
+     *
+     */
+    function isEnabled(&$value, $message){
+        try{
+            if(!$this->isScalar($value, $message)){
+                return false;
+            }
+
+            if(!$value){
+                return $this->setError($message);
+            }
+
+            return true;
+
+        }catch(Exception $e){
+            throw new bException('validate_form->isEnabled(): Failed', $e);
+        }
+    }
+
+
+
+    /*
+     *
+     */
+    function hasNoChars(&$value, $chars, $message, $allow_empty = 'no'){
+        try{
+            if(!$this->allowEmpty($value, $message, $allow_empty)){
+                return true;
+            }
+
+            if(!$this->isScalar($value, $message)){
+                return false;
+            }
+
+            foreach(array_force($chars) as $char){
+                if(strpos($value, $char)){
+                    return $this->setError($message);
+                }
+            }
+
+            return true;
+
+        }catch(Exception $e){
+            throw new bException('validate_form->hasNoChars(): Failed', $e);
+        }
+    }
+
+
+
+    /*
+     *
+     */
+    function hasMinChars(&$value, $limit, $message, $allow_empty = 'no'){
+        try{
+            if(!$this->allowEmpty($value, $message, $allow_empty)){
+                return true;
+            }
+
+            if(!$this->isScalar($value, $message)){
+                return false;
+            }
+
+            if(strlen($value) < $limit){
+                return $this->setError($message);
+            }
+
+            return true;
+
+        }catch(Exception $e){
+            throw new bException('validate_form->hasMinChars(): Failed', $e);
+        }
+    }
+
+
+
+    /*
+     *
+     */
+    function hasMaxChars(&$value, $limit, $message, $allow_empty = 'no'){
+        try{
+            if(!$this->allowEmpty($value, $message, $allow_empty)){
+                return true;
+            }
+
+            if(!$this->isScalar($value, $message)){
+                return false;
+            }
+
+            if(strlen($value) > $limit){
+                return $this->setError($message);
+            }
+
+            return true;
+
+        }catch(Exception $e){
+            throw new bException('validate_form->hasMaxChars(): Failed', $e);
+        }
+    }
+
+
+
+    /*
+     *
+     */
+    function hasChars(&$value, $limit, $message, $allow_empty = 'no'){
+        try{
+            if(!$this->allowEmpty($value, $message, $allow_empty)){
+                return true;
+            }
+
+            if(!$this->isScalar($value, $message)){
+                return false;
+            }
+
+            if(strlen($value) != $limit){
+                return $this->setError($message);
+            }
+
+            return true;
+
+        }catch(Exception $e){
+            throw new bException('validate_form->hasChars(): Failed', $e);
+        }
+    }
+
+
+
+    /*
+     *
+     */
+    function isFacebookUserpage(&$value, $message, $allow_empty = 'no'){
+        try{
+            if(!$this->allowEmpty($value, $message, $allow_empty)){
+                return true;
+            }
+
+            if(!$this->isScalar($value, $message)){
+                return false;
+            }
+
+            if(!$this->isUrl($value, $message, $empty)){
+                return false;
+            }
+
+            if(!preg_match('/^(?:https?:\/\/)(?:www\.)?facebook\.com\/(.+)$/', $value)){
+                return $this->setError($message);
+            }
+
+            return true;
+
+        }catch(Exception $e){
+            throw new bException('validate_form->isFacebookUserpage(): Failed', $e);
+        }
+    }
+
+
+
+    /*
+     *
+     */
+    function isTwitterUserpage(&$value, $message, $allow_empty = 'no'){
+        try{
+            if(!$this->allowEmpty($value, $message, $allow_empty)){
+                return true;
+            }
+
+            if(!$this->isScalar($value, $message)){
+                return false;
+            }
+
+            if(!$this->isUrl($value, $message, $empty)){
+                return false;
+            }
+
+            if(!preg_match('/^(?:https?:\/\/)(?:www\.)?twitter\.com\/(.+)$/', $value)){
+                return $this->setError($message);
+            }
+
+            return true;
+
+        }catch(Exception $e){
+            throw new bException('validate_form->isTwitterUserpage(): Failed', $e);
+        }
+    }
+
+
+
+    /*
+     *
+     */
+    function isGoogleplusUserpage(&$value, $message, $allow_empty = 'no'){
+        try{
+            if(!$this->allowEmpty($value, $message, $allow_empty)){
+                return true;
+            }
+
+            if(!$this->isScalar($value, $message)){
+                return false;
+            }
+
+            if(!$this->isUrl($value, $message, $empty)){
+                return false;
+            }
+
+            if(!preg_match('/^(?:(?:https?:\/\/)?plus\.google\.com\/)(\d{21,})(?:\/posts)?$/', $value, $matches)){
+                return $this->setError($message);
+            }
+
+            return $matches[1];
+
+        }catch(Exception $e){
+            throw new bException('validate_form->isGoogleplusUserpage(): Failed', $e);
+        }
+    }
+
+
+
+    /*
+     *
+     */
+    function isYoutubeUserpage(&$value, $message, $allow_empty = 'no'){
+        try{
+            if(!$this->allowEmpty($value, $message, $allow_empty)){
+                return true;
+            }
+
+            if(!$this->isScalar($value, $message)){
+                return false;
+            }
+
+            if(!$this->isUrl($value, $message, $empty)){
+                return false;
+            }
+
+            if(preg_match('/^(?:https?:\/\/)(?:www\.)?youtube\.com\/user\/(.+)$/', $value)){
+                return $this->setError($message);
+            }
+
+            return true;
+
+        }catch(Exception $e){
+            throw new bException('validate_form->isYoutubeUserpage(): Failed', $e);
+        }
+    }
+
+
+
+    /*
+     *
+     */
+    function isLinkedinUserpage(&$value, $message, $allow_empty = 'no'){
+        try{
+            if(!$this->allowEmpty($value, $message, $allow_empty)){
+                return true;
+            }
+
+            if(!$this->isScalar($value, $message)){
+                return false;
+            }
+
+            if(!$this->isUrl($value, $message, $empty)){
+                return false;
+            }
+
+            if(preg_match('/^(?:https?:\/\/)(?:www\.)?linkedin\.com\/(.+)$/', $value)){
+                return $this->setError($message);
+            }
+
+            return true;
+
+        }catch(Exception $e){
+            throw new bException('validate_form->isLinkedinUserpage(): Failed', $e);
+        }
+    }
+
+
+
+    /*
+     *
+     */
+    function isChecked(&$value, $message){
+        try{
+            if(!$value){
+                return $this->setError($message);
+            }
+
+            return true;
+
+        }catch(Exception $e){
+            throw new bException('validate_form->isChecked(): Failed', $e);
+        }
+    }
+
+
+
+    /*
+     *
+     */
+    function isRegex(&$value, $regex, $message){
          try{
-            if(!$this->isScalar($value, $msg)){
+            if(!$this->isScalar($value, $message)){
                 return false;
             }
 
             if(!preg_match($regex, $value)){
-               $this->setError($msg);
-               return false;
+               return $this->setError($message);
             }
 
-            return cfm($value);
+            return true;
 
          }catch(Exception $e){
             throw new bException(tr('validate_form::isRegex(): failed (possibly invalid regex?)'), $e);
@@ -781,44 +930,54 @@ class validate_form {
     /*
      *
      */
-    function isInRange($value, $min, $max, $msg = null){
-        if(!$this->isScalar($value, $msg)){
-            return false;
-        }
-
-        if(!is_numeric($value) or ($value < $min) or ($value > $max)){
-            $this->setError($msg);
-            return false;
-        }
-
-        return cfm($value);
-    }
-
-
-
-    /*
-     *
-     */
-    function isDate($value, $msg = null){
-// :TODO: IMPLEMENT
-        return $value;
-    }
-
-
-
-    /*
-     *
-     */
-    function isTime($value, $msg = null){
+    function isDate(&$value, $message, $allow_empty = 'no'){
         try{
-            if(!$this->isScalar($value, $msg)){
+// :TODO: IMPLEMENT
+
+        }catch(Exception $e){
+            throw new bException('validate_form->isTime(): Failed', $e);
+        }
+    }
+
+
+
+    /*
+     *
+     */
+    function isDateTime(&$value, $message, $allow_empty = 'no'){
+        try{
+// :TODO: IMPLEMENT
+
+        }catch(Exception $e){
+            throw new bException('validate_form->isTime(): Failed', $e);
+        }
+    }
+
+
+
+    /*
+     *
+     */
+    function isTime(&$value, $message, $allow_empty = 'no'){
+        try{
+            if(!$this->allowEmpty($value, $message, $allow_empty)){
+                return true;
+            }
+
+            if(!$this->isScalar($value, $message)){
                 return false;
             }
 
             load_libs('time');
-            $value = time_validate($value);
 
-            return $value['time'];
+            try{
+                time_validate($value);
+
+            }catch(Exception $e){
+                return $this->setError($message);
+            }
+
+            return true;
 
         }catch(Exception $e){
             if($e->getCode() == 'invalid'){
@@ -834,16 +993,21 @@ class validate_form {
     /*
      *
      */
-    function isLatitude($value, $msg = null){
+    function isLatitude(&$value, $message, $allow_empty = 'no'){
         try{
-            if(!$this->isNumeric($value, $msg)){
+            if(!$this->allowEmpty($value, $message, $allow_empty)){
+                return true;
+            }
+
+            if(!$this->isNumeric($value, $message)){
                 return false;
             }
 
             if(($value < -90) or ($value > 90)){
-                $this->setError($msg);
-                return false;
+                return $this->setError($message);
             }
+
+            return true;
 
         }catch(Exception $e){
             if($e->getCode() == 'invalid'){
@@ -859,16 +1023,21 @@ class validate_form {
     /*
      *
      */
-    function isLongitude($value, $msg = null){
+    function isLongitude(&$value, $message, $allow_empty = 'no'){
         try{
-            if(!$this->isNumeric($value, $msg)){
+            if(!$this->allowEmpty($value, $message, $allow_empty)){
+                return true;
+            }
+
+            if(!$this->isNumeric($value, $message)){
                 return false;
             }
 
             if(($value < -180) or ($value > 180)){
-                $this->setError($msg);
-                return false;
+                return $this->setError($message);
             }
+
+            return true;
 
         }catch(Exception $e){
             if($e->getCode() == 'invalid'){
@@ -882,57 +1051,51 @@ class validate_form {
 
 
     /*
+     *
+     */
+    function isTimezone(&$value, $message, $allow_empty = 'no'){
+        try{
+            if(!$this->isEmpty($value, $message, $empty)){
+                return true;
+            }
+
+            load_libs('date');
+
+            if(!$this->isScalar($value, $message)){
+                return false;
+            }
+
+            if(!date_timezones_exists($value)){
+                return $this->setError($message);
+            }
+
+            return true;
+
+        }catch(Exception $e){
+            throw new bException('validate_form->isTimezone(): Failed', $e);
+        }
+    }
+
+
+
+    /*
      * Ensure that the specified value is in the specified array values
      * Basically this is an enum check
      */
-    function inArray($value, $array, $msg = null){
-        if(!$this->isScalar($value, $msg)){
-            return false;
-        }
+    function inArray(&$value, $array, $message){
+        try{
+            if(!$this->isScalar($value, $message)){
+                return false;
+            }
 
-        if(!in_array($value, $array)){
-            $this->setError($msg);
-            return false;
-        }
+            if(!in_array($value, $array)){
+                return $this->setError($message);
+            }
 
-        return $value;
-    }
+            return true;
 
-
-
-    /*
-     *
-     */
-    function isValidTimezone($value, $msg = null){
-        load_libs('date');
-
-        if(!$value) return null;
-
-        if(!$this->isScalar($value, $msg)){
-            return false;
-        }
-
-        $value = cfm($value);
-
-        if(!date_timezones_exists($value)){
-            $this->setError($msg);
-            return false;
-        }
-
-        return cfm($value);
-    }
-
-
-
-    /*
-     *
-     */
-    function sqlQuery($sql, $result, $msg = null){
-        $res = sql_get($sql);
-
-        if($res['result'] != $result){
-            $this->setError($msg);
-            return false;
+        }catch(Exception $e){
+            throw new bException('validate_form->inArray(): Failed', $e);
         }
     }
 
@@ -941,17 +1104,67 @@ class validate_form {
     /*
      *
      */
-    function setError($msg){
-        if(is_object($msg) and $msg instanceof bException){
-            $msg = str_from($msg->getMessage(), '():');
-        }
+    function allowEmpty(&$value, $message, $allowEmpty = 'no'){
+        try{
+            if(!empty($value)){
+                return true;
+            }
 
-        if(!$msg){
-            $msg = tr('Unkown validation error');
-        }
+            if($allowEmpty){
+                /*
+                 * This is contradictory, but being here it means that $value
+                 * is empty, but $empty is not, so $value is NOT allowed to
+                 * be empty
+                 */
+                return $this->setError($message);
+            }
 
-        $this->errors[] = $msg;
-        return false;
+            /*
+             * $value may be empty, ensure it has the right data type
+             */
+            $value = $allowEmpty;
+            return false;
+
+        }catch(Exception $e){
+            throw new bException('validate_form->allowEmpty(): Failed', $e);
+        }
+    }
+
+
+
+// :DELETE: WTF Who thought this up? Probably me, but still.. Get rid of this crap
+    ///*
+    // *
+    // */
+    //function sqlQuery($sql, $result, $message){
+    //    $res = sql_get($sql);
+    //
+    //    if($res['result'] != $result){
+    //        return $this->setError($message);
+    //    }
+    //}
+
+
+
+    /*
+     *
+     */
+    function setError($message){
+        try{
+            if(is_object($message) and $message instanceof bException){
+                $message = str_from($message->getMessage(), '():');
+            }
+
+            if(!$message){
+                $message = tr('Unkown validation error');
+            }
+
+            $this->errors[] = $message;
+            return false;
+
+        }catch(Exception $e){
+            throw new bException('validate_form->setError(): Failed', $e);
+        }
     }
 
 
@@ -960,11 +1173,16 @@ class validate_form {
      *
      */
     function isValid($throw_exception = true){
-        if($this->errors and $throw_exception){
-            throw new bException($this->errors, 'validation');
-        }
+        try{
+            if($this->errors and $throw_exception){
+                throw new bException($this->errors, 'validation');
+            }
 
-        return ! (boolean) $this->errors;
+            return ! (boolean) $this->errors;
+
+        }catch(Exception $e){
+            throw new bException('validate_form->isValid(): Failed', $e);
+        }
     }
 
 
@@ -973,40 +1191,35 @@ class validate_form {
      *
      */
     function getErrors($separator = null){
-        if(!count($this->errors)){
-            throw new bException('validate->getErrors(): There are no errors', 'noerrors');
-        }
+        try{
+            if(!count($this->errors)){
+                throw new bException('validate->getErrors(): There are no errors', 'noerrors');
+            }
 
-        if($separator){
-            if($separator === true){
-                if(PLATFORM == 'http'){
-                    $separator = '<br />';
+            if($separator){
+                if($separator === true){
+                    if(PLATFORM_HTTP){
+                        $separator = '<br />';
 
-                }else{
-                    $separator = "\n";
+                    }else{
+                        $separator = "\n";
+                    }
                 }
+
+                $retval = '';
+
+                foreach($this->errors as $key => $value){
+                    $retval .= $value.$separator;
+                }
+
+                return $retval;
             }
 
-            $retval = '';
+            return $this->errors;
 
-            foreach($this->errors as $key => $value){
-                $retval .= $value.$separator;
-            }
-
-            return $retval;
+        }catch(Exception $e){
+            throw new bException('validate_form->getErrors(): Failed', $e);
         }
-
-        return $this->errors;
     }
-
-
-
-    /*
-     * OBSOLETE WRAPPER METHODS
-     */
-    function isAlphanum($value, $msg = null){
-        return isAlphaNumeric($value, $msg);
-    }
-
 }
 ?>

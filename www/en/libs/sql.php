@@ -26,13 +26,14 @@ function sql_in_columns($in){
  * Execute specified query
  */
 function sql_query($query, $execute = false, $handle_exceptions = true, $connector = 'core'){
+    global $core;
+
     try{
-        $G         = &$GLOBALS;
         $connector = sql_connector_name($connector);
 
         sql_init($connector);
 
-        $G['query_count']++;
+        $core->executedQuery();
 
         if(is_string($query)){
             if(substr($query, 0, 1) == ' '){
@@ -44,13 +45,13 @@ function sql_query($query, $execute = false, $handle_exceptions = true, $connect
                 /*
                  * Just execute plain SQL query string.
                  */
-                return $G['sql_'.$connector]->query($query);
+                return $core->sql[$connector]->query($query);
             }
 
             /*
              * Query was specified as a SQL query.
              */
-            $p = $G['sql_'.$connector]->prepare($query);
+            $p = $core->sql[$connector]->prepare($query);
 
         }else{
             /*
@@ -114,7 +115,7 @@ function sql_query($query, $execute = false, $handle_exceptions = true, $connect
 
         try{
             load_libs('sql_error');
-            sql_error($e, $query, $execute, isset_get($G['sql_'.$connector]));
+            sql_error($e, $query, $execute, isset_get($core->sql[$connector]));
 
         }catch(Exception $e){
             throw new bException(tr('sql_query(:connector): Query ":query" failed', array(':connector' => $connector, ':query' => $query)), $e);
@@ -128,9 +129,11 @@ function sql_query($query, $execute = false, $handle_exceptions = true, $connect
  * Prepare specified query
  */
 function sql_prepare($query, $connector = 'core'){
+    global $core;
+
     try{
         sql_init($connector);
-        return $GLOBALS['sql_'.sql_connector_name($connector)]->prepare($query);
+        return $core->sql[$connector]->prepare($query);
 
     }catch(Exception $e){
         throw new bException('sql_prepare(): Failed', $e);
@@ -286,7 +289,7 @@ function sql_list($query, $execute = null, $numerical_array = false, $connector 
  * Connect with the main database
  */
 function sql_init($connector = 'core'){
-    global $_CONFIG;
+    global $_CONFIG, $core;
 
     try{
         if(empty($connector)){
@@ -299,7 +302,7 @@ function sql_init($connector = 'core'){
 
         $connector = sql_connector_name($connector);
 
-        if(!empty($GLOBALS['sql_'.$connector])){
+        if(!empty($core->sql[$connector])){
             /*
              * Already connected to core DB
              */
@@ -321,12 +324,12 @@ function sql_init($connector = 'core'){
         /*
          * Connect to database
          */
-        $GLOBALS['sql_'.$connector] = sql_connect($db);
+        $core->sql[$connector] = sql_connect($db);
 
         /*
          * This is only required for the system connection
          */
-        if((PLATFORM == 'shell') and (SCRIPT == 'init') and FORCE and !empty($_CONFIG['db'][$connector]['init'])){
+        if((PLATFORM_CLI) and (SCRIPT == 'init') and FORCE and !empty($_CONFIG['db'][$connector]['init'])){
             include(__DIR__.'/handlers/sql_init_force.php');
         }
 
@@ -338,12 +341,12 @@ function sql_init($connector = 'core'){
              */
             if(!empty($_CONFIG['db'][$connector]['init'])){
                 try{
-                    $r = $GLOBALS['sql_'.$connector]->query('SELECT `project`, `framework`, `offline_until` FROM `versions` ORDER BY `id` DESC LIMIT 1;');
+                    $r = $core->sql[$connector]->query('SELECT `project`, `framework`, `offline_until` FROM `versions` ORDER BY `id` DESC LIMIT 1;');
 
                 }catch(Exception $e){
                     if($e->getCode() !== '42S02'){
                         if($e->getMessage() === 'SQLSTATE[42S22]: Column not found: 1054 Unknown column \'offline_until\' in \'field list\''){
-                            $r = $GLOBALS['sql_'.$connector]->query('SELECT `project`, `framework` FROM `versions` ORDER BY `id` DESC LIMIT 1;');
+                            $r = $core->sql[$connector]->query('SELECT `project`, `framework` FROM `versions` ORDER BY `id` DESC LIMIT 1;');
 
                         }else{
                             /*
@@ -358,12 +361,12 @@ function sql_init($connector = 'core'){
 
                 try{
                     if(empty($r) or !$r->rowCount()){
-                        log_console(tr('sql_init(): No versions table found or no versions in versions table found, assumed empty database ":db"', array(':db' => $_CONFIG['db'][$connector]['db'])), 'warning/versions', 'yellow');
+                        log_console(tr('sql_init(): No versions table found or no versions in versions table found, assumed empty database ":db"', array(':db' => $_CONFIG['db'][$connector]['db'])), 'yellow');
 
                         define('FRAMEWORKDBVERSION', 0);
                         define('PROJECTDBVERSION'  , 0);
 
-                        $GLOBALS['no-db'] = true;
+                        $core->register['no-db'] = true;
 
                     }else{
                         $versions = $r->fetch(PDO::FETCH_ASSOC);
@@ -378,7 +381,7 @@ function sql_init($connector = 'core'){
                         define('PROJECTDBVERSION'  , $versions['project']);
 
                         if(version_compare(FRAMEWORKDBVERSION, '0.1.0') === -1){
-                            $GLOBALS['no-db'] = true;
+                            $core->register['no-db'] = true;
                         }
                     }
 
@@ -395,9 +398,9 @@ function sql_init($connector = 'core'){
                 /*
                  * On console, show current versions
                  */
-                if((PLATFORM == 'shell') and VERBOSE){
-                    log_console('sql_init(): Found framework code version "'.str_log(FRAMEWORKCODEVERSION).'" and framework database version "'.str_log(FRAMEWORKDBVERSION).'"');
-                    log_console('sql_init(): Found project code version "'.str_log(PROJECTCODEVERSION).'" and project database version "'.str_log(PROJECTDBVERSION).'"');
+                if((PLATFORM_CLI) and VERBOSE){
+                    log_console(tr('sql_init(): Found framework code version ":frameworkcodeversion" and framework database version ":frameworkdbversion"', array(':frameworkcodeversion' => FRAMEWORKCODEVERSION, ':frameworkdbversion' => FRAMEWORKDBVERSION)));
+                    log_console(tr('sql_init(): Found project code version ":projectcodeversion" and project database version ":projectdbversion"'        , array(':projectcodeversion'   => PROJECTCODEVERSION  , ':projectdbversion'   => PROJECTDBVERSION)));
                 }
 
 
@@ -487,11 +490,13 @@ function sql_connect($connector, $use_database = true){
  * Import data from specified file
  */
 function sql_import($file, $connector = 'core'){
+    global $core;
+
     try {
         $connector = sql_connector_name($connector);
 
         if(!file_exists($file)){
-            throw new bException('sql_import(): Specified file "'.str_log($file).'" does not exist', 'not-exist');
+            throw new bException(tr('sql_import(): Specified file ":file" does not exist', array(':file' =>$file)), 'not-exist');
         }
 
         $tel    = 0;
@@ -505,7 +510,7 @@ function sql_import($file, $connector = 'core'){
             $buffer = trim($buffer);
 
             if(!empty($buffer)){
-                $GLOBALS['sql_'.$connector]->query(trim($buffer));
+                $core->sql[$connector]->query(trim($buffer));
 
                 $tel++;
 // :TODO:SVEN:20130717: Right now it updates the display for each record. This may actually slow down import. Make display update only every 10 records or so
@@ -518,13 +523,13 @@ function sql_import($file, $connector = 'core'){
         echo "\nDone\n";
 
         if(!feof($handle)){
-            throw new isException('sql_import(): Unexpected EOF', '');
+            throw new isException(tr('sql_import(): Unexpected EOF'), 'invalid');
         }
 
         fclose($handle);
 
     }catch(Exception $e){
-        throw new bException('sql_import(): Failed to import file "'.$file.'"', $e);
+        throw new bException(tr('sql_import(): Failed to import file ":file"', array(':file' => $file)), $e);
     }
 }
 
@@ -634,7 +639,14 @@ function sql_values($source, $columns, $prefix = ':'){
  *
  */
 function sql_insert_id($connector = 'core'){
-    return $GLOBALS['sql_'.sql_connector_name($connector)]->lastInsertId();
+    global $core;
+
+    try{
+        return $core->sql[sql_connector_name($connector)]->lastInsertId();
+
+    }catch(Exception $e){
+        throw new bException(tr('sql_insert_id(): Failed for connector ":connector"', array(':connector' => $connector)), $e);
+    }
 }
 
 
@@ -1033,7 +1045,7 @@ function sql_exists($table, $column, $value, $id = null){
 /*
  *
  */
-function sql_null($value){
+function sql_is($value){
     if($value === null){
         return ' IS ';
     }

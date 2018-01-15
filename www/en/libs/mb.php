@@ -312,3 +312,28 @@ function mb_utf8replacer($captures){
         throw new bException(tr('mb_utf8replacer(): Failed'), $e);
     }
 }
+
+
+
+/*
+ * Taken from https://stackoverflow.com/questions/10199017/how-to-solve-json-error-utf8-error-in-php-json-decode
+ * Rewritten by Sven Oostenbrink
+ */
+function mb_utf8ize($source){
+    try{
+        if(is_array($source)){
+            foreach ($source as $key => $value){
+                $source[$key] = mb_utf8ize($value);
+            }
+
+        }elseif(is_string($source)){
+            return utf8_encode($source);
+        }
+
+        return $source;
+
+    }catch(Exception $e){
+        throw new bException(tr('mb_utf8ize(): Failed'), $e);
+    }
+}
+?>

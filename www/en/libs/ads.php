@@ -300,7 +300,7 @@ function ads_image_process($ad, $file, $original = null){
             throw new bException(tr('ads_image_process(): Unknown ad campaign ":campaign" specified', array(':campaign' => $ad['campaign'])), 'unknown');
         }
 
-        if((PLATFORM == 'http') and ($campaign['createdby'] != $_SESSION['user']['id']) and !has_rights('god')){
+        if((PLATFORM_HTTP) and ($campaign['createdby'] != $_SESSION['user']['id']) and !has_rights('god')){
             throw new bException('ads_image_process(): Cannot upload images, this campaign is not yours', 'accessdenied');
         }
 

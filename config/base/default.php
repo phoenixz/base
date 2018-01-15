@@ -178,7 +178,7 @@ $_CONFIG['fs']                 = array('system_tempdir'                     => t
 $_CONFIG['google-map-api-key'] = '';                                                                                                    // The google maps API key
 
 // Init configuration
-$_CONFIG['init']               = array('shell'                              => true,                                                    // Sets if system init can be executed by shell
+$_CONFIG['init']               = array('cli'                                => true,                                                    // Sets if system init can be executed by shell
                                        'http'                               => false);                                                  // Sets if system init can be executed by http (IMPORTANT: This is not supported yet!)
 
 // JS configuration
@@ -207,8 +207,7 @@ $_CONFIG['locale']             = array(LC_ALL                               => '
 $_CONFIG['location']           = array('detect'                             => false);                                                  // Attempt auto location detect if current session doesn't have location information
 
 //Log configuration
-$_CONFIG['log']                = array('default'                            => 'db',                                                    // Where entries will be logged. Either "db", "file", or "both"
-                                       'path'                               => 'data/log/');                                            // In case log is "file" or "both", sets the path for the log file
+$_CONFIG['log']                = array('default'                            => 'db');                                                   // Where entries will be logged. Either "db", "file", or "both"
 
 // Mailer configuration
 $_CONFIG['mailer']             = array('sender'                             => array('wait'               => 5,

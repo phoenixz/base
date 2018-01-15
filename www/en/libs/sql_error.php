@@ -15,7 +15,7 @@
  * Handle the PDO error
  */
 function sql_error($e, $query, $execute, $sql = null){
-    global $_CONFIG;
+    global $_CONFIG, $core;
 
     if(!$e instanceof PDOException){
         switch($e->getCode()){
@@ -32,11 +32,11 @@ function sql_error($e, $query, $execute, $sql = null){
 
     try{
         if(!is_object($sql)){
-            if(empty($GLOBALS['sql_core'])){
+            if(empty($core->sql['core'])){
                 throw new bException('sql_error(): The $sql is not an object, cannot get more info from there', $e);
             }
 
-            $sql = $GLOBALS['sql_core'];
+            $sql = $core->sql['core'];
         }
 
         if($execute){
@@ -72,7 +72,7 @@ function sql_error($e, $query, $execute, $sql = null){
                  * Some database operation has failed
                  */
                 foreach($e->getMessages() as $message){
-                    log_screen($message, '', 'red');
+                    log_console($message, 'red');
                 }
 
                 die(1);
@@ -138,7 +138,7 @@ function sql_error($e, $query, $execute, $sql = null){
                              * We're doing an init, try to automatically create the database
                              */
                             $retry = true;
-                            log_screen('Database "'.$query['db'].'" does not exist, attempting to create it automatically', 'warning/database', 'yellow');
+                            log_console('Database "'.$query['db'].'" does not exist, attempting to create it automatically', 'yellow');
 
                             $sql->query('CREATE DATABASE `'.$query['db'].'` DEFAULT CHARSET="'.$connector['charset'].'" COLLATE="'.$connector['collate'].'";');
                             return sql_connect($query);
@@ -211,7 +211,7 @@ function sql_error($e, $query, $execute, $sql = null){
                         $body = "SQL STATE ERROR : \"".$error[0]."\"\n".
                                 "DRIVER ERROR    : \"".$error[1]."\"\n".
                                 "ERROR MESSAGE   : \"".$error[2]."\"\n".
-                                "query           : \"".(PLATFORM == 'http' ? "<b>".str_log(debug_sql($query, $execute, true), 4096)."</b>" : str_log(debug_sql($query, $execute, true), 4096))."\"\n".
+                                "query           : \"".(PLATFORM_HTTP ? "<b>".str_log(debug_sql($query, $execute, true), 4096)."</b>" : str_log(debug_sql($query, $execute, true), 4096))."\"\n".
                                 "date            : \"".date('d m y h:i:s')."\"\n";
 
                         if(isset($_SESSION)) {

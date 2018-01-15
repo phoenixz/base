@@ -80,7 +80,7 @@ sql_query('CREATE TABLE `twilio_numbers` (`id`          INT(11)      NOT NULL AU
 
 if(!empty($_CONFIG['twilio']['accounts'])){
     load_config('twilio');
-    cli_log(tr('Copying twilio configuration...'), 'white');
+    log_console(tr('Copying twilio configuration...'), 'white');
 
     $r_account = sql_prepare('INSERT INTO `twilio_accounts` (`email`, `accounts_id`, `accounts_token`)
                               VALUES                        (:email , :accounts_id , :accounts_token )');

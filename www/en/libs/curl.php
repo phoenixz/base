@@ -41,8 +41,8 @@ function curl_get_proxy($url, $file = '', $serverurl = null) {
             throw new bException(tr('curl_get_proxy(): No proxy server URL(s) specified'), 'not-specified');
         }
 
-        if(VERBOSE and (PLATFORM == 'shell')){
-            cli_log(tr('Using proxy ":proxy"', array(':proxy' => str_cut(str_log($serverurl), '://', '/'))));
+        if(VERBOSE and (PLATFORM_CLI)){
+            log_console(tr('Using proxy ":proxy"', array(':proxy' => str_cut(str_log($serverurl), '://', '/'))));
         }
 
         $data = curl_get(array('url'        => str_ends($serverurl, '?apikey='.$_CONFIG['curl']['apikey'].'&url=').urlencode($url),
@@ -194,8 +194,8 @@ function curl_get($params, $referer = null, $post = false, $options = array()){
         array_default($params, 'connect_timeout', $_CONFIG['curl']['connect_timeout']); // # of seconds before connection try will fail
         array_default($params, 'log'            , $_CONFIG['curl']['log']); // # of seconds before connection try will fail
 
-        if(VERBOSE and (PLATFORM == 'shell')){
-            cli_log(tr('Connecting with ":url"', array(':url' => $params['url'])));
+        if(VERBOSE and (PLATFORM_CLI)){
+            log_console(tr('Connecting with ":url"', array(':url' => $params['url'])));
         }
 
         if($params['proxies']){
@@ -537,7 +537,7 @@ function curl_get($params, $referer = null, $post = false, $options = array()){
              *
              */
             usleep($params['sleep']);
-            log_error(tr('curl_get(): Got HTTP0 for url ":url", retry ":retry"', array(':url' => $params['url'], ':retry' => $retry)), 'HTTP0');
+            log_console(tr('curl_get(): Got HTTP0 for url ":url", retry ":retry"', array(':url' => $params['url'], ':retry' => $retry)), 'yellow');
             return curl_get($params, $referer, $post, $options);
         }
 

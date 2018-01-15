@@ -40,13 +40,13 @@ function uglify_css_install(){
 
     try{
         if(VERBOSE){
-            log_console('uglify_css_install(): Installing uglifycss', 'uglify', 'white');
+            log_console('uglify_css_install(): Installing uglifycss', 'white');
         }
 
         passthru($npm.' install uglifycss');
 
         if(VERBOSE){
-            log_console('uglify_css_install(): Finished installing uglifycss', 'uglify', 'green');
+            log_console('uglify_css_install(): Finished installing uglifycss', 'green');
         }
 
     }catch(Exception $e){
@@ -66,7 +66,7 @@ function uglify_css_check(){
         uglify_check();
 
         if(VERBOSE){
-            log_console('uglify_css_check(): Checking uglifycss availability', 'uglify', 'white');
+            log_console('uglify_css_check(): Checking uglifycss availability', 'white');
         }
 
         $result = safe_exec($npm.' list uglifycss', 1);
@@ -80,17 +80,17 @@ function uglify_css_check(){
              * uglifycss is not available, install it now.
              */
             if(VERBOSE){
-                log_console('uglify_css_check(): No uglifycss found, trying to install now', 'uglify', 'yellow');
+                log_console('uglify_css_check(): No uglifycss found, trying to install now', 'yellow');
             }
             uglify_css_install($npm);
         }
 
-        $result[1] = 'uglify'.str_from($result[1], 'uglify');
+        $result[1] = 'uglify'.str_from($result[1]);
 
         $node_modules = node_check_modules();
 
         if(VERBOSE){
-            log_console('uglify_css_check(): Using uglifycss "'.str_log($result[1]).'"', 'uglify', 'green');
+            log_console('uglify_css_check(): Using uglifycss "'.str_log($result[1]).'"', 'green');
         }
 
     }catch(Exception $e){
@@ -113,7 +113,7 @@ function uglify_css($paths = null){
             uglify_css_check($npm);
 
             if(VERBOSE){
-                log_console('uglify_css(): Compressing all CSS files using uglifycss', 'uglify');
+                log_console('uglify_css(): Compressing all CSS files using uglifycss');
             }
         }
 
@@ -127,13 +127,13 @@ function uglify_css($paths = null){
         foreach(array_force($paths) as $path){
             if(!file_exists($path)) continue;
 
-            log_console(tr('uglify_css(): Compressing all CSS files in ":path"', array(':path' => $path)), 'uglify');
+            log_console(tr('uglify_css(): Compressing all CSS files in ":path"', array(':path' => $path)));
 
             if(is_dir($path)){
                 $path = slash($path);
 
                 if(VERBOSE){
-                    log_console('uglify_css(): Compressing all CSS files in directory "'.str_log($path).'"', 'uglify');
+                    log_console('uglify_css(): Compressing all CSS files in directory "'.str_log($path).'"');
                 }
 
                 load_libs('file');
@@ -141,7 +141,7 @@ function uglify_css($paths = null){
 
             }elseif(is_file($path)){
                 if(VERBOSE){
-                    log_console('uglify_css(): Compressing CSS file "'.str_log($path).'"', 'uglify');
+                    log_console('uglify_css(): Compressing CSS file "'.str_log($path).'"');
 
                 }else{
                     cli_dot();
@@ -212,7 +212,7 @@ function uglify_css($paths = null){
                 //         */
                 //        if(!file_exists($path.$target)){
                 //            if(VERBOSE){
-                //                log_console('uglify_css(): Ignorning symlink "'.str_log($file).'" with non existing target "'.str_log($path.$target).'"', 'uglify', 'yellow');
+                //                log_console('uglify_css(): Ignorning symlink "'.str_log($file).'" with non existing target "'.str_log($path.$target).'"', 'yellow');
                 //            }
                 //
                 //            $processed[str_rfrom($file, '/')] = true;
@@ -224,7 +224,7 @@ function uglify_css($paths = null){
                 //         */
                 //        if(!strstr($path.$target, str_runtil($file, '/'))){
                 //            if(VERBOSE){
-                //                log_console('uglify_css(): Found symlink "'.str_log($file).'" with target "'.str_log($target).'" that points to location outside symlink path, ensuring minimized version pointing to the same file', 'uglify', 'yellow');
+                //                log_console('uglify_css(): Found symlink "'.str_log($file).'" with target "'.str_log($target).'" that points to location outside symlink path, ensuring minimized version pointing to the same file', 'yellow');
                 //            }
                 //
                 //            if(file_exists(substr($file, 0, -4).'.min.css')){
@@ -243,7 +243,7 @@ function uglify_css($paths = null){
                 //             * and make a minimized version
                 //             */
                 //            if(VERBOSE){
-                //                log_console('uglify_css(): Found symlink "'.str_log($file).'" pointing to its minimized version. Switching files', 'uglify', 'yellow');
+                //                log_console('uglify_css(): Found symlink "'.str_log($file).'" pointing to its minimized version. Switching files', 'yellow');
                 //            }
                 //
                 //            file_delete($file);
@@ -265,7 +265,7 @@ function uglify_css($paths = null){
                 //        }
                 //
                 //        if(VERBOSE){
-                //            log_console('uglify_css(): Created minimized symlink for file "'.str_log($file).'"', 'uglify');
+                //            log_console('uglify_css(): Created minimized symlink for file "'.str_log($file).'"');
                 //        }
                 //        file_delete(substr($file, 0, -4).'.min.css');
                 //        symlink($target, substr($file, 0, -4).'.min.css');
@@ -275,7 +275,7 @@ function uglify_css($paths = null){
                 //
                 //    }else{
                 //        if(VERBOSE){
-                //            log_console('uglify_css(): Ignorning non css symlink "'.str_log($file).'"', 'uglify', 'yellow');
+                //            log_console('uglify_css(): Ignorning non css symlink "'.str_log($file).'"', 'yellow');
                 //        }
                 //
                 //        $processed[str_rfrom($file, '/')] = true;
@@ -285,7 +285,7 @@ function uglify_css($paths = null){
 
                 if(!is_file($file)){
                     if(VERBOSE){
-                        log_console('uglify_css(): Ignorning unknown type file "'.str_log($file).'"', 'uglify', 'yellow');
+                        log_console('uglify_css(): Ignorning unknown type file "'.str_log($file).'"', 'yellow');
                     }
 
                     $processed[str_rfrom($file, '/')] = true;
@@ -301,13 +301,13 @@ function uglify_css($paths = null){
                      */
                     if(file_exists(substr($file, 0, -8).'.css') and !is_link(substr($file, 0, -8).'.css')){
                         if(VERBOSE){
-                            log_console('uglify_css(): Ignoring minified file "'.str_log($file).'" as a source is available', 'uglify');
+                            log_console('uglify_css(): Ignoring minified file "'.str_log($file).'" as a source is available');
                         }
     //                    file_delete($file);
 
                     }else{
                         if(VERBOSE){
-                            log_console('uglify_css(): Using minified file "'.str_log($file).'" as source is available', 'uglify');
+                            log_console('uglify_css(): Using minified file "'.str_log($file).'" as source is available');
                         }
                         rename($file, substr($file, 0, -8).'.css');
                     }
@@ -321,7 +321,7 @@ function uglify_css($paths = null){
                          * Found a js file in the CSS path
                          */
                         if(VERBOSE){
-                            log_console('uglify_css(): Found js file "'.str_log($file).'" in CSS path, switching to uglifyjs', 'uglify', 'yellow');
+                            log_console('uglify_css(): Found js file "'.str_log($file).'" in CSS path, switching to uglifyjs', 'yellow');
                         }
                         uglify_js($file);
 
@@ -330,7 +330,7 @@ function uglify_css($paths = null){
                     }
 
                     if(VERBOSE){
-                        log_console('uglify_css(): Ignorning non CSS file "'.str_log($file).'"', 'uglify', 'yellow');
+                        log_console('uglify_css(): Ignorning non CSS file "'.str_log($file).'"', 'yellow');
                     }
 
                     $processed[str_rfrom($file, '/')] = true;
@@ -353,7 +353,7 @@ function uglify_css($paths = null){
                              * Do not compress, just continue with next file
                              */
                             if(VERBOSE){
-                                log_console('uglify_css(): NOT Compressing CSS file "'.str_log($file).'", file has not changed', 'uglify', 'yellow');
+                                log_console('uglify_css(): NOT Compressing CSS file "'.str_log($file).'", file has not changed', 'yellow');
                             }
 
                             continue;
@@ -364,7 +364,7 @@ function uglify_css($paths = null){
                      * Compress file
                      */
                     if(VERBOSE){
-                        log_console('uglify_css(): Compressing CSS file "'.str_log($file).'"', 'uglify');
+                        log_console('uglify_css(): Compressing CSS file "'.str_log($file).'"');
 
                     }else{
                         cli_dot();
@@ -401,7 +401,7 @@ function uglify_css($paths = null){
                     }
 
                 }catch(Exception $e){
-                    log_error('Failed to compress CSS file "'.str_log($file).'"', 'error/uglify');
+                    log_console('Failed to compress CSS file "'.str_log($file).'"', 'yellow');
                 }
             }
         }
@@ -421,11 +421,11 @@ function uglify_js_install(){
 
     try{
         if(VERBOSE){
-            log_console('uglify_js_install(): Installing uglify-js', 'uglify', 'white');
+            log_console('uglify_js_install(): Installing uglify-js', 'white');
         }
         passthru($npm.' install uglify-js');
         if(VERBOSE){
-            log_console('uglify_js_install(): Finished installing uglify-js', 'uglify', 'green');
+            log_console('uglify_js_install(): Finished installing uglify-js', 'green');
         }
 
     }catch(Exception $e){
@@ -445,7 +445,7 @@ function uglify_js_check(){
         uglify_check();
 
         if(VERBOSE){
-            log_console('uglify_js_check(): Checking uglify-js availability', 'uglify', 'white');
+            log_console('uglify_js_check(): Checking uglify-js availability', 'white');
         }
 
         $result = safe_exec($npm.' list uglify-js', 1);
@@ -459,17 +459,17 @@ function uglify_js_check(){
              * uglify-js is not available, install it now.
              */
             if(VERBOSE){
-                log_console('uglify_js_check(): No uglify-js found, trying to install now', 'uglify', 'yellow');
+                log_console('uglify_js_check(): No uglify-js found, trying to install now', 'yellow');
             }
             uglify_js_install($npm);
         }
 
-        $result[1] = 'uglify'.str_from($result[1], 'uglify');
+        $result[1] = 'uglify'.str_from($result[1]);
 
         $node_modules = node_check_modules();
 
         if(VERBOSE){
-            log_console('uglify_js_check(): Using uglify-js "'.str_log($result[1]).'"', 'uglify', 'green');
+            log_console('uglify_js_check(): Using uglify-js "'.str_log($result[1]).'"', 'green');
         }
 
     }catch(Exception $e){
@@ -492,7 +492,7 @@ function uglify_js($paths = null){
             uglify_js_check($npm);
 
             if(VERBOSE){
-                log_console('uglify_js(): Compressing all javascript files using uglifyjs', 'uglify');
+                log_console('uglify_js(): Compressing all javascript files using uglifyjs');
             }
         }
 
@@ -506,12 +506,12 @@ function uglify_js($paths = null){
         foreach(array_force($paths) as $path){
             if(!file_exists($path)) continue;
 
-            log_console(tr('uglify_js(): Compressing all javascript files in ":path"', array(':path' => $path)), 'uglify');
+            log_console(tr('uglify_js(): Compressing all javascript files in ":path"', array(':path' => $path)));
 
             if(is_dir($path)){
                 $path = slash($path);
                 if(VERBOSE){
-                    log_console('uglify_js(): Compressing all javascript files in directory "'.str_log($path).'"', 'uglify');
+                    log_console('uglify_js(): Compressing all javascript files in directory "'.str_log($path).'"');
                 }
 
                 load_libs('file');
@@ -519,7 +519,7 @@ function uglify_js($paths = null){
 
             }elseif(is_file($path)){
                 if(VERBOSE){
-                    log_console('uglify_js(): Compressing javascript file "'.str_log($path).'"', 'uglify');
+                    log_console('uglify_js(): Compressing javascript file "'.str_log($path).'"');
 
                 }else{
                     cli_dot();
@@ -591,7 +591,7 @@ function uglify_js($paths = null){
     //                     */
     //                    if(!file_exists($path.$target)){
     //                        if(VERBOSE){
-    //                            log_console('uglify_js(): Ignorning symlink "'.str_log($file).'" with non existing target "'.str_log($path.$target).'"', 'uglify', 'yellow');
+    //                            log_console('uglify_js(): Ignorning symlink "'.str_log($file).'" with non existing target "'.str_log($path.$target).'"', 'yellow');
     //                        }
     //
     //                        $processed[str_rfrom($file, '/')] = true;
@@ -603,7 +603,7 @@ function uglify_js($paths = null){
     //                     */
     //                    if(!strstr($path.$target, str_runtil($file, '/'))){
     //                        if(VERBOSE){
-    //                            log_console('uglify_js(): Found symlink "'.str_log($file).'" with target "'.str_log($target).'" that points to location outside symlink path, ensuring minimized version pointing to the same file', 'uglify', 'yellow');
+    //                            log_console('uglify_js(): Found symlink "'.str_log($file).'" with target "'.str_log($target).'" that points to location outside symlink path, ensuring minimized version pointing to the same file', 'yellow');
     //                        }
     //
     //                        if(file_exists(substr($file, 0, -3).'.min.js')){
@@ -622,7 +622,7 @@ function uglify_js($paths = null){
     //                         * and make a minimized version
     //                         */
     //                        if(VERBOSE){
-    //                            log_console('uglify_js(): Found symlink "'.str_log($file).'" pointing to its minimized version. Switching files', 'uglify', 'yellow');
+    //                            log_console('uglify_js(): Found symlink "'.str_log($file).'" pointing to its minimized version. Switching files', 'yellow');
     //                        }
     //
     //                        file_delete($file);
@@ -644,7 +644,7 @@ function uglify_js($paths = null){
     //                    }
     //
     //                    if(VERBOSE){
-    //                        log_console('uglify_js(): Created minimized symlink for file "'.str_log($file).'"', 'uglify');
+    //                        log_console('uglify_js(): Created minimized symlink for file "'.str_log($file).'"');
     //                    }
     //                    file_delete(substr($file, 0, -3).'.min.js');
     //                    symlink($target, substr($file, 0, -3).'.min.js');
@@ -654,7 +654,7 @@ function uglify_js($paths = null){
     //
     //                }else{
     //                    if(VERBOSE){
-    //                        log_console('uglify_js(): Ignorning non js symlink "'.str_log($file).'"', 'uglify', 'yellow');
+    //                        log_console('uglify_js(): Ignorning non js symlink "'.str_log($file).'"', 'yellow');
     //                    }
     //
     //                    $processed[str_rfrom($file, '/')] = true;
@@ -664,7 +664,7 @@ function uglify_js($paths = null){
 
                 if(!is_file($file)){
                     if(VERBOSE){
-                        log_console('uglify_js(): Ignorning unknown type file "'.str_log($file).'"', 'uglify', 'yellow');
+                        log_console('uglify_js(): Ignorning unknown type file "'.str_log($file).'"', 'yellow');
                     }
 
                     $processed[str_rfrom($file, '/')] = true;
@@ -680,13 +680,13 @@ function uglify_js($paths = null){
                      */
                     if(file_exists(substr($file, 0, -7).'.js') and !is_link(substr($file, 0, -7).'.js')){
                         if(VERBOSE){
-                            log_console('uglify_js(): Ignoring minified file "'.str_log($file).'" as a source is available', 'uglify');
+                            log_console('uglify_js(): Ignoring minified file "'.str_log($file).'" as a source is available');
                         }
     //                    file_delete($file);
 
                     }else{
                         if(VERBOSE){
-                            log_console('uglify_js(): Using minified file "'.str_log($file).'" as source is available', 'uglify');
+                            log_console('uglify_js(): Using minified file "'.str_log($file).'" as source is available');
                         }
                         rename($file, substr($file, 0, -7).'.js');
                     }
@@ -700,7 +700,7 @@ function uglify_js($paths = null){
                          * Found a CSS file in the javascript path
                          */
                         if(VERBOSE){
-                            log_console('uglify_js(): Found CSS file "'.str_log($file).'" in javascript path, switching to uglifycss', 'uglify', 'yellow');
+                            log_console('uglify_js(): Found CSS file "'.str_log($file).'" in javascript path, switching to uglifycss', 'yellow');
                         }
                         uglify_css($file);
 
@@ -709,7 +709,7 @@ function uglify_js($paths = null){
                     }
 
                     if(VERBOSE){
-                        log_console('uglify_js(): Ignorning non javascript file "'.str_log($file).'"', 'uglify', 'yellow');
+                        log_console('uglify_js(): Ignorning non javascript file "'.str_log($file).'"', 'yellow');
                     }
 
                     $processed[str_rfrom($file, '/')] = true;
@@ -732,7 +732,7 @@ function uglify_js($paths = null){
                              * Do not compress, just continue with next file
                              */
                             if(VERBOSE){
-                                log_console('uglify_js(): NOT Compressing javascript file "'.str_log($file).'", file has not changed', 'uglify', 'yellow');
+                                log_console('uglify_js(): NOT Compressing javascript file "'.str_log($file).'", file has not changed', 'yellow');
                             }
 
                             continue;
@@ -743,7 +743,7 @@ function uglify_js($paths = null){
                      * Compress file
                      */
                     if(VERBOSE){
-                        log_console('uglify_js(): Compressing javascript file "'.str_log($file).'"', 'uglify');
+                        log_console('uglify_js(): Compressing javascript file "'.str_log($file).'"');
 
                     }else{
                         cli_dot();
@@ -780,7 +780,7 @@ function uglify_js($paths = null){
                     }
 
                 }catch(Exception $e){
-                    log_error('Failed to compress javascript file "'.str_log($file).'"', 'error/uglify');
+                    log_console('Failed to compress javascript file "'.str_log($file).'"', 'yellow');
 
                 }
             }

@@ -35,24 +35,24 @@ switch(cli_method()){
         break;
 
     case 'version':
-        cli_log(safe_exec('cd '.ROOT.'; php '.$composer.' -V'));
+        log_console(safe_exec('cd '.ROOT.'; php '.$composer.' -V'));
         break;
 
     case 'install':
-        cli_log(safe_exec('cd '.ROOT.'; php '.$composer.' install'));
+        log_console(safe_exec('cd '.ROOT.'; php '.$composer.' install'));
         break;
 
     case 'require':
-        cli_log(safe_exec('cd '.ROOT.'; php '.$composer.' require'));
+        log_console(safe_exec('cd '.ROOT.'; php '.$composer.' require'));
         break;
 
     case 'explain':
         $query = str_force(cli_arguments());
-        cli_log(safe_exec('cd '.ROOT.'; php '.$composer.' help '.$query));
+        log_console(safe_exec('cd '.ROOT.'; php '.$composer.' help '.$query));
         break;
 
     case 'list':
-        cli_log(safe_exec('cd '.ROOT.'; php '.$composer.' list'));
+        log_console(safe_exec('cd '.ROOT.'; php '.$composer.' list'));
         break;
 
     case 'search':
@@ -62,7 +62,7 @@ switch(cli_method()){
             throw new bException(tr('No query specified'), 'not-specified');
         }
 
-        cli_log(safe_exec('cd '.ROOT.'; php '.$composer.' search '.$query));
+        log_console(safe_exec('cd '.ROOT.'; php '.$composer.' search '.$query));
         break;
 
     case 'show':
@@ -72,7 +72,7 @@ switch(cli_method()){
             throw new bException(tr('No query specified'), 'not-specified');
         }
 
-        cli_log(safe_exec('cd '.ROOT.'; php '.$composer.' show '.$query.' --all'));
+        log_console(safe_exec('cd '.ROOT.'; php '.$composer.' show '.$query.' --all'));
         break;
 
     case '':

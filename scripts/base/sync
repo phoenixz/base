@@ -169,10 +169,10 @@ if(empty($deploy_config)){
  * SQL dump of source DB
  */
 if($nodump){
-    cli_log(tr('Skipping creating SQL dump file on remote server due to "--no-dump" command line parameters'), 'yellow');
+    log_console(tr('Skipping creating SQL dump file on remote server due to "--no-dump" command line parameters'), 'yellow');
 
 }else{
-    cli_log(tr('Creating SQL dump file on remote server'), 'white');
+    log_console(tr('Creating SQL dump file on remote server'), 'white');
     passthru($command = 'ssh -p '.$deploy_config['target_port'].' -t '.($deploy_config['target_user'] ? $deploy_config['target_user'].'@' : '').$deploy_config['target_server'].' \''.($deploy_config['sudo'] ? ' sudo ' : '').'rm /tmp/'.$project.'_'.$source_config['db']['core']['db'].'.sql* -f; '.($deploy_config['sudo'] ? ' sudo ' : '').'mysqldump --single-transaction -n -e '.(cli_argument('nofunctions') ? '' : '-R ').'--dump-date --no-autocommit --add-drop-database -u '.$source_config['db']['core']['user'].' -p'.escapeshellcmd($source_config['db']['core']['pass']).' -B '.$source_config['db']['core']['db'].' > /tmp/'.$project.'_'.$source_config['db']['core']['db'].'.sql; '.($deploy_config['sudo'] ? ' sudo ' : '').'gzip -q /tmp/'.$project.'_'.$source_config['db']['core']['db'].'.sql \'', $exitcode);
 
     if($exitcode){
@@ -186,10 +186,10 @@ if($nodump){
  * SCP SQL dump to local server
  */
 if($nocopy){
-    cli_log(tr('Skipping copying remote SQL file locally due to "--no-copy" command line parameters'), 'yellow');
+    log_console(tr('Skipping copying remote SQL file locally due to "--no-copy" command line parameters'), 'yellow');
 
 }else{
-    cli_log(tr('Copying remote SQL file locally'), 'white');
+    log_console(tr('Copying remote SQL file locally'), 'white');
 
     passthru('rm /tmp/'.$project.'_'.$source_config['db']['core']['db'].'.sql /tmp/'.$project.'_'.$source_config['db']['core']['db'].'.sql.gz -f');
     passthru($command = 'scp -P '.$deploy_config['target_port'].' '.($deploy_config['target_user'] ? $deploy_config['target_user'].'@' : '').$deploy_config['target_server'].':/tmp/'.$project.'_'.$source_config['db']['core']['db'].'.sql.gz /tmp/'.$project.'_'.$source_config['db']['core']['db'].'.sql.gz', $exitcode);
@@ -205,21 +205,21 @@ if($nocopy){
  * Import SQL file to local database
  */
 if($noimport){
-    cli_log(tr('Skipping importing remote SQL dump file in local MySQL server due to "--no-import" command line parameters'), 'yellow');
+    log_console(tr('Skipping importing remote SQL dump file in local MySQL server due to "--no-import" command line parameters'), 'yellow');
 
 }else{
     /*
      * mysqldump always adds a "USE databasename" which is horrifyingly anoying, because the dump will be imported in the wrong database!
      * Remove it first!
      */
-    cli_log(tr('Preparing remote SQL dump file ":file"', array(':file' => '/tmp/'.$project.'_'.$source_config['db']['core']['db'].'.sql')), 'white');
+    log_console(tr('Preparing remote SQL dump file ":file"', array(':file' => '/tmp/'.$project.'_'.$source_config['db']['core']['db'].'.sql')), 'white');
     passthru($command = 'cd /tmp/; rm /tmp/'.$project.'_'.$source_config['db']['core']['db'].'.sql -f; gunzip /tmp/'.$project.'_'.$source_config['db']['core']['db'].'.sql.gz', $exitcode);
 
     if($exitcode){
         throw new bException(tr('Gunzip of mysqldump file failed with exit code ":code"', array(':code' => $exitcode)), 'gunzip');
     }
 
-    cli_log(tr('Importing remote SQL dump file ":file" in local MySQL server', array(':file' => '/tmp/'.$project.'_'.$source_config['db']['core']['db'].'.sql')), 'white');
+    log_console(tr('Importing remote SQL dump file ":file" in local MySQL server', array(':file' => '/tmp/'.$project.'_'.$source_config['db']['core']['db'].'.sql')), 'white');
     passthru($command = 'cd /tmp/; sed -i -e"s/USE \`'.$source_config['db']['core']['db'].'\`;/USE \`'.$_CONFIG['db']['core']['db'].'\`;/" /tmp/'.$project.'_'.$source_config['db']['core']['db'].'.sql', $exitcode);
 
     if($exitcode){
@@ -244,10 +244,10 @@ if($noimport){
  * Remove temporary SQL dump file on source
  */
 if($nodelete){
-    cli_log(tr('NOT removing temporary remote SQL dump file from local and remote server due to "--no-delete" command line parameters'), 'yellow');
+    log_console(tr('NOT removing temporary remote SQL dump file from local and remote server due to "--no-delete" command line parameters'), 'yellow');
 
 }else{
-    cli_log(tr('Removing temporary remote SQL dump file from local and remote server'), 'white');
+    log_console(tr('Removing temporary remote SQL dump file from local and remote server'), 'white');
 
     passthru($command = 'ssh -p '.$deploy_config['target_port'].' -t '.($deploy_config['target_user'] ? $deploy_config['target_user'].'@' : '').$deploy_config['target_server'].' \''.($deploy_config['sudo'] ? ' sudo ' : '').'rm -f /tmp/'.$project.'_'.$source_config['db']['core']['db'].'.sql*\'', $exitcode);
 
@@ -269,7 +269,7 @@ if($nodelete){
  * just work with clean data from the target environment
  */
 if($cleardata){
-    cli_log(tr('Clearing local content data due to "--clear-data" command line parameter'), 'white');
+    log_console(tr('Clearing local content data due to "--clear-data" command line parameter'), 'white');
 
     load_libs('file');
     file_delete_tree(ROOT.'data/content');
@@ -281,10 +281,10 @@ if($cleardata){
  * Sync all
  */
 if($nofiles){
-    cli_log(tr('Skipping syncing remote paths with local server due to "--no-files" command line parameters'), 'yellow');
+    log_console(tr('Skipping syncing remote paths with local server due to "--no-files" command line parameters'), 'yellow');
 
 }else{
-    cli_log(tr('Syncing remote paths with local server'), 'white');
+    log_console(tr('Syncing remote paths with local server'), 'white');
 
     array_params($_CONFIG['sync']);
 
@@ -301,10 +301,10 @@ if($nofiles){
         try{
             if(!$path) continue;
 
-            cli_log(tr('Syncing path ":path"', array(':path' => $path)), 'white');
+            log_console(tr('Syncing path ":path"', array(':path' => $path)), 'white');
 
             if($deletesync){
-                cli_log(tr('Deleting local path ":path"', array(':path' => $path)), 'white');
+                log_console(tr('Deleting local path ":path"', array(':path' => $path)), 'white');
                 passthru($command = 'rm '.ROOT.$path.' -rf', $exitcode);
 
                 if($exitcode){
@@ -320,11 +320,11 @@ if($nofiles){
                 }
 
             }catch(Exception $e){
-                cli_log(tr('Failed to get path ":path" from environment ":environment"', array(':path' => $path, ':environment' => $environment)), 'yellow');
+                log_console(tr('Failed to get path ":path" from environment ":environment"', array(':path' => $path, ':environment' => $environment)), 'yellow');
             }
 
         }catch(Exception $e){
-            cli_log($e);
+            log_console($e);
         }
     }
 }
@@ -335,10 +335,10 @@ if($nofiles){
  * Fix definer
  */
 if($nodefinerfix){
-    cli_log(tr('Skpping running definer fix due to "--no-definerfix" command line parameter'), 'yellow');
+    log_console(tr('Skpping running definer fix due to "--no-definerfix" command line parameter'), 'yellow');
 
 }else{
-    cli_log(tr('Fixing function definers'));
+    log_console(tr('Fixing function definers'));
 
     sql_query('UPDATE mysql.proc
 
@@ -358,7 +358,7 @@ if($nodefinerfix){
  *
  */
 if($noinit){
-    cli_log(tr('Skipping running init due to "--no-init" command line parameter'), 'yellow');
+    log_console(tr('Skipping running init due to "--no-init" command line parameter'), 'yellow');
 
 }else{
     /*
@@ -367,7 +367,7 @@ if($noinit){
      * only be done in a separate process, so dont execute the init with script_exec() but passthru() so that its
      * executed in a completely separate PHP process, while still dumping output on command line
      */
-    cli_log(tr('Executing init script to ensure that database will be up to date'), 'white');
+    log_console(tr('Executing init script to ensure that database will be up to date'), 'white');
     passthru(ROOT.'scripts/base/init', $exitcode);
 
     if($exitcode){
@@ -383,7 +383,7 @@ if($noinit){
 if(!$nocacheclear){
     load_libs('cache');
     cache_clear();
-    cli_log(tr('Cleared cache'), 'green');
+    log_console(tr('Cleared cache'), 'green');
 }
 
 
@@ -393,7 +393,7 @@ if(!$nocacheclear){
  * but not the local environment, update them
  */
 if($noinit or $noblogupdateurl){
-    cli_log(tr('Skipping blog url update due to "--no-init" or "--no-blog-update-url" command line parameter'), 'yellow');
+    log_console(tr('Skipping blog url update due to "--no-init" or "--no-blog-update-url" command line parameter'), 'yellow');
 
 }else{
     load_libs('blogs');

@@ -126,7 +126,7 @@ if(is_string($files)){
 /*
  * Ensure that all files exist
  */
-cli_log(tr('Checking source files'));
+log_console(tr('Checking source files'));
 
 foreach($files as $key => &$file){
     $file = trim($file);
@@ -147,7 +147,7 @@ foreach($files as $key => &$file){
 
 unset($file);
 
-cli_log(tr('Converting ":count" images', array(':count' => count($files))), 'white');
+log_console(tr('Converting ":count" images', array(':count' => count($files))), 'white');
 
 
 /*

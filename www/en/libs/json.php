@@ -9,75 +9,10 @@
  * @license http://opensource.org/licenses/GPL-2.0 GNU Public License, Version 2
  * @copyright Sven Oostenbrink <support@ingiga.com>, Johan Geuze
  */
+
+
+
 load_config('json');
-
-
-
-/*
- * Custom JSON encoding function
- */
-function json_encode_custom($source = false){
-    try{
-        if(is_null($source)){
-            return 'null';
-        }
-
-        if($source === false){
-            return 'false';
-        }
-
-        if($source === true){
-            return 'true';
-        }
-
-        if(is_scalar($source)){
-            if(is_numeric($source)){
-                if(is_float($source)){
-                    // Always use "." for floats.
-                    $source = floatval(str_replace(',', '.', strval($source)));
-                }
-
-                // Always use "" for numerics.
-                return '"'.strval($source).'"';
-            }
-
-            if(is_string($source)){
-                static $json_replaces = array(array("\\", "/", "\n", "\t", "\r", "\b", "\f", '"'), array('\\\\', '\\/', '\\n', '\\t', '\\r', '\\b', '\\f', '\"'));
-                return '"'.str_replace($json_replaces[0], $json_replaces[1], $source).'"';
-            }
-
-            return $source;
-        }
-
-        $is_list = true;
-
-        for($i = 0, reset($source); $i < count($source); $i++, next($source)){
-            if(key($source) !== $i){
-                $is_list = false;
-                break;
-            }
-        }
-
-        $result = array();
-
-        if($is_list){
-            foreach ($source as $v){
-                $result[] = json_encode_custom($v);
-            }
-
-            return '['.join(',', $result).']';
-        }
-
-        foreach ($source as $k => $v){
-            $result[] = json_encode_custom($k).':'.json_encode_custom($v);
-        }
-
-        return '{'.join(',', $result).'}';
-
-    }catch(Exception $e){
-        throw new bException('json_encode_custom(): Failed', $e);
-    }
-}
 
 
 
@@ -175,7 +110,6 @@ function json_error($message, $data = null, $result = null, $http_code = 500){
 
         }elseif(is_scalar($message)){
 
-
         }elseif(is_array($message)){
             if(empty($message['default'])){
                 $default = tr('Something went wrong, please try again later');
@@ -188,8 +122,8 @@ function json_error($message, $data = null, $result = null, $http_code = 500){
             if(empty($message['e'])){
                 if($_CONFIG['production']){
                     $message = $default;
-                    log_error('json_error(): No exception object specified for following error');
-                    log_error($message);
+                    log_console('json_error(): No exception object specified for following error', 'yellow');
+                    log_console($message, 'yellow');
 
                 }else{
                     if(count($message) == 1){
@@ -199,7 +133,7 @@ function json_error($message, $data = null, $result = null, $http_code = 500){
 
             }else{
                 if($_CONFIG['production']){
-                    log_error($message['e']);
+                    log_console($message['e']);
 
                     $code = $message['e']->getCode();
 
@@ -300,10 +234,116 @@ function json_error($message, $data = null, $result = null, $http_code = 500){
 
 
 /*
+ * Custom JSON encoding function
+ */
+function json_encode_custom($source = false, $internal = true){
+    try{
+        if($internal){
+            $source = json_encode($source);
+
+            switch(json_last_error()){
+                case JSON_ERROR_NONE:
+                    break;
+
+                case JSON_ERROR_DEPTH:
+                    throw new bException('json_decode_custom(): Maximum stack depth exceeded', 'invalid');
+
+                case JSON_ERROR_STATE_MISMATCH:
+                    throw new bException('json_decode_custom(): Underflow or the modes mismatch', 'invalid');
+
+                case JSON_ERROR_CTRL_CHAR:
+                    throw new bException('json_decode_custom(): Unexpected control character found', 'invalid');
+
+                case JSON_ERROR_SYNTAX:
+                    throw new bException('json_decode_custom(): Syntax error, malformed JSON', 'invalid', $json);
+
+                case JSON_ERROR_UTF8:
+                    /*
+                     * PHP and UTF, yay!
+                     */
+                    load_libs('mb');
+                    return json_encode_custom(mb_utf8ize($source), true);
+
+                default:
+                    throw new bException('json_decode_custom(): Unknown JSON error occured', 'error');
+            }
+
+            return $source;
+
+        }else{
+            if(is_null($source)){
+                return 'null';
+            }
+
+            if($source === false){
+                return 'false';
+            }
+
+            if($source === true){
+                return 'true';
+            }
+
+            if(is_scalar($source)){
+                if(is_numeric($source)){
+                    if(is_float($source)){
+                        // Always use "." for floats.
+                        $source = floatval(str_replace(',', '.', strval($source)));
+                    }
+
+                    // Always use "" for numerics.
+                    return '"'.strval($source).'"';
+                }
+
+                if(is_string($source)){
+                    static $json_replaces = array(array("\\", "/", "\n", "\t", "\r", "\b", "\f", '"'), array('\\\\', '\\/', '\\n', '\\t', '\\r', '\\b', '\\f', '\"'));
+                    return '"'.str_replace($json_replaces[0], $json_replaces[1], $source).'"';
+                }
+
+                return $source;
+            }
+
+            $is_list = true;
+
+            for($i = 0, reset($source); $i < count($source); $i++, next($source)){
+                if(key($source) !== $i){
+                    $is_list = false;
+                    break;
+                }
+            }
+
+            $result = array();
+
+            if($is_list){
+                foreach ($source as $v){
+                    $result[] = json_encode_custom($v);
+                }
+
+                return '['.join(',', $result).']';
+            }
+
+            foreach ($source as $k => $v){
+                $result[] = json_encode_custom($k).':'.json_encode_custom($v);
+            }
+
+            return '{'.join(',', $result).'}';
+        }
+
+    }catch(Exception $e){
+        throw new bException('json_encode_custom(): Failed', $e);
+    }
+}
+
+
+
+/*
  * Validate the given JSON string
  */
 function json_decode_custom($json, $as_array = true){
     try{
+        if($json === null){
+            return null;
+        }
+
         /*
          * Decode the JSON data
          */
@@ -329,10 +369,7 @@ function json_decode_custom($json, $as_array = true){
                 throw new bException('json_decode_custom(): Syntax error, malformed JSON', 'invalid', $json);
 
             case JSON_ERROR_UTF8:
-                /*
-                 * Only PHP 5.3+
-                 */
-                throw new bException('json_decode_custom(): Malformed UTF-8 characters, possibly incorrectly encoded', 'invalid');
+                throw new bException('json_decode_custom(): Syntax error, UTF8 issue', 'invalid', $json);
 
             default:
                 throw new bException('json_decode_custom(): Unknown JSON error occured', 'error');

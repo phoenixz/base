@@ -14,9 +14,9 @@ load_config('notifications');
 /*
  * Do notifications
  */
-function notifications_do($event, $message, $classes = null){
+function notifications_send($event, $message, $classes = null){
     static $count = 0;
-    global $_CONFIG;
+    global $_CONFIG, $core;
 
     if(empty($message) and is_object($event) and ($event instanceof Exception)){
         /*
@@ -76,7 +76,7 @@ return false;
          */
         array_unique($classes);
 
-        if(!isset_get($GLOBALS['sql_core'])){
+        if(!isset_get($core->sql['core'])){
             /*
              * WHOOPS! No database available, we're effed in the A here...
              *
@@ -107,13 +107,13 @@ return false;
             /*
              * No classes found to send notifications to
              */
-            throw new bException('notifications_do(): No classes found for specified classes "'.str_log($classes).'"');
+            throw new bException('notifications_send(): No classes found for specified classes "'.str_log($classes).'"');
         }
 
         foreach($list as $id => $methods){
             $methods = explode(',', $methods);
 
-            if(!isset_get($GLOBALS['sql_core'])){
+            if(!isset_get($core->sql['core'])){
                 /*
                  * WHOOPS! No database available, we're effed in the A here...
                  *
@@ -144,7 +144,7 @@ return false;
                 /*
                  * No classes found to send notifications to
                  */
-                log_error('notifications_do(): No members found for class id "'.str_log($id).'"');
+                log_console('notifications_send(): No members found for class id "'.str_log($id).'"');
                 continue;
             }
 
@@ -167,7 +167,7 @@ return false;
                         break;
 
                     default:
-                        throw new bException(tr('notifications_do(): Unknown method ":method" specified', array(':method' => $method)));
+                        throw new bException(tr('notifications_send(): Unknown method ":method" specified', array(':method' => $method)));
                 }
             }
         }
@@ -175,19 +175,19 @@ return false;
         return true;
 
     }catch(Exception $e){
-        log_error(tr('notifications_do(): Notification system failed with ":exception"', array(':exception' => $e->getMessage())), 'error', false);
+        log_error(tr('notifications_send(): Notification system failed with ":exception"', array(':exception' => $e->getMessage())), 'error', false);
 
         if(SCRIPT != 'init'){
             if(empty($_CONFIG['mail']['developer'])){
-                log_error('[notifications_do() FAILED : '.strtoupper($_SESSION['domain']).' / '.strtoupper(php_uname('n')).' / '.strtoupper(ENVIRONMENT).']', "notifications_do() failed with: ".implode("\n", $e->getMessages())."\n\nOriginal notification event was:\nEvent: \"".cfm($event)."\"\nMessage: \"".cfm($message)."\"");
+                log_error('[notifications_send() FAILED : '.strtoupper($_SESSION['domain']).' / '.strtoupper(php_uname('n')).' / '.strtoupper(ENVIRONMENT).']', "notifications_send() failed with: ".implode("\n", $e->getMessages())."\n\nOriginal notification event was:\nEvent: \"".cfm($event)."\"\nMessage: \"".cfm($message)."\"");
                 log_error('WARNING! $_CONFIG[mail][developer] IS NOT SET, NOTIFICATIONS CANNOT BE SENT!');
 
             }else{
-                mail($_CONFIG['mail']['developer'], '[notifications_do() FAILED : '.strtoupper($_SESSION['domain']).' / '.strtoupper(php_uname('n')).' / '.strtoupper(ENVIRONMENT).']', "notifications_do() failed with: ".implode("\n", $e->getMessages())."\n\nOriginal notification event was:\nEvent: \"".cfm($event)."\"\nMessage: \"".cfm($message)."\"");
+                mail($_CONFIG['mail']['developer'], '[notifications_send() FAILED : '.strtoupper($_SESSION['domain']).' / '.strtoupper(php_uname('n')).' / '.strtoupper(ENVIRONMENT).']', "notifications_send() failed with: ".implode("\n", $e->getMessages())."\n\nOriginal notification event was:\nEvent: \"".cfm($event)."\"\nMessage: \"".cfm($message)."\"");
             }
         }
 
-        throw new bException('notifications_do(): Failed', $e);
+        throw new bException('notifications_send(): Failed', $e);
     }
 }
 

@@ -71,6 +71,9 @@ function scanimage($params){
                 case '300':
                 case '600':
                 case '1200':
+                case '2400':
+                case '4800':
+                case '9600':
                     break;
 
                 default:
@@ -182,22 +185,24 @@ function scanimage($params){
  */
 function scanimage_list(){
     try{
-        $results = safe_exec('scanimage -L -q');
-        $retval  = array('usb'       => array(),
-                         'scsi'      => array(),
-                         'parrallel' => array(),
-                         'unknown'   => array());
+        $scanners = safe_exec('scanimage -L -q');
+        $retval   = array('usb'       => array(),
+                          'scsi'      => array(),
+                          'parrallel' => array(),
+                          'unknown'   => array());
 
-        foreach($results as $result){
-            if(preg_match_all('/device `imagescan:esci:([usb|scsi|parrallel]):([a-z0-9/:.-]\' is a (a-z0-9_- )/i', $result, $matches)){
+        foreach($scanners as $scanner){
+            $found = preg_match_all('/device `imagescan:esci:(usb|scsi|parrallel):(\/sys\/devices\/.+?)\' is a (.+)/i', $scanner, $matches);
+
+            if($found){
                 /*
                  * Found a scanner
                  */
-                $retval[$matches[0]][] = array('product' => $matches[2],
-                                               'url'     => $matches[1]);
+                $retval[$matches[1][0]][] = array('name' => $matches[3][0],
+                                                  'url'  => $matches[2][0]);
 
             }else{
-                $retval['unknown'][] = $result;
+                $retval['unknown'][] = $scanner;
             }
         }
 

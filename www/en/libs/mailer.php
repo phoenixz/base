@@ -187,12 +187,12 @@ function mailer_add_users($users, $mailing, $validate_mailing = true){
                                       ':username' => $users_id));
 
             if(!$users_id){
-                log_error('mailer_add_users(): User "'.str_log($name).'" not found', 'warning');
+                log_console('mailer_add_users(): User "'.str_log($name).'" not found', 'yellow');
                 continue;
             }
 
             if(!$users_id['mailings']){
-                log_error('mailer_add_users(): User "'.str_log($name).'" does not allow mailings', 'warning');
+                log_console('mailer_add_users(): User "'.str_log($name).'" does not allow mailings', 'yellow');
                 continue;
             }
 
@@ -492,7 +492,7 @@ $mailing['language'] = 'en';
                         /*
                          * Mark this recipient as having failed
                          */
-                        log_error('Mailer recipient "'.$mailing['id'].'" of mailing "'.$mailing['id'].'" failed with "'.$e->getMessage().'"');
+                        log_console('Mailer recipient "'.$mailing['id'].'" of mailing "'.$mailing['id'].'" failed with "'.$e->getMessage().'"', 'yellow');
 
                         sql_query('UPDATE `mailer_recipients`
                                    SET    `status`    = "failed",
@@ -505,7 +505,7 @@ $mailing['language'] = 'en';
                 /*
                  * Mark this recipient as having failed
                  */
-                log_error('Mailer "'.$mailing['id'].'" failed with "'.$e->getMessage().'"');
+                log_console('Mailer "'.$mailing['id'].'" failed with "'.$e->getMessage().'"', 'yellow');
 
                 sql_query('UPDATE `mailer_mailings`
                            SET    `status`    = "failed",

@@ -107,150 +107,6 @@ function str_capitalize($source, $position = 0){
 
 
 /*
- * Return the given string from the specified needle
- */
-function str_from($source, $needle, $more = 0){
-    try{
-        if(!$needle){
-            throw new bException('str_from(): No needle specified', 'not-specified');
-        }
-
-        $pos = mb_strpos($source, $needle);
-
-        if($pos === false) return $source;
-
-        return mb_substr($source, $pos + mb_strlen($needle) - $more);
-
-    }catch(Exception $e){
-        throw new bException('str_from(): Failed for "'.str_log($source).'"', $e);
-    }
-}
-
-
-
-/*
- * Return the given string from 0 until the specified needle
- */
-function str_until($source, $needle, $more = 0, $start = 0){
-    try{
-        if(!$needle){
-            throw new bException('str_until(): No needle specified', 'not-specified');
-        }
-
-        $pos = mb_strpos($source, $needle);
-
-        if($pos === false) return $source;
-
-        return mb_substr($source, $start, $pos + $more);
-
-    }catch(Exception $e){
-        throw new bException('str_until(): Failed for "'.str_log($source).'"', $e);
-    }
-}
-
-
-
-/*
- * Return the given string from the specified needle, starting from the end
- */
-function str_rfrom($source, $needle, $more = 0){
-    try{
-        if(!$needle){
-            throw new bException('str_rfrom(): No needle specified', 'not-specified');
-        }
-
-        $pos = mb_strrpos($source, $needle);
-
-        if($pos === false) return $source;
-
-        return mb_substr($source, $pos + mb_strlen($needle) - $more);
-
-    }catch(Exception $e){
-        throw new bException('str_rfrom(): Failed for "'.str_log($source).'"', $e);
-    }
-}
-
-
-
-/*
- * Return the given string from 0 until the specified needle, starting from the end
- */
-function str_runtil($source, $needle, $more = 0, $start = 0){
-    try{
-        if(!$needle){
-            throw new bException('str_runtil(): No needle specified', 'not-specified');
-        }
-
-        $pos = mb_strrpos($source, $needle);
-
-        if($pos === false) return $source;
-
-        return mb_substr($source, $start, $pos + $more);
-
-    }catch(Exception $e){
-        throw new bException('str_runtil(): Failed for "'.str_log($source).'"', $e);
-    }
-}
-
-
-
-/*
- * Truncate string using the specified fill and method
- */
-function str_truncate($source, $length, $fill = ' ... ', $method = 'right', $on_word = false){
-    try{
-        if(!$length or ($length < (mb_strlen($fill) + 1))){
-            throw new bException('str_truncate(): No length or insufficient length specified. You must specify a length of minimal $fill length + 1', 'invalid');
-        }
-
-        if($length >= mb_strlen($source)){
-            /*
-             * No need to truncate, the string is short enough
-             */
-            return $source;
-        }
-
-        /*
-         * Correct length
-         */
-        $length -= mb_strlen($fill);
-
-        switch($method){
-            case 'right':
-                $retval = mb_substr($source, 0, $length);
-                if($on_word and (strpos(substr($source, $length, 2), ' ') === false)){
-                    if($pos = strrpos($retval, ' ')){
-                        $retval = substr($retval, 0, $pos);
-                    }
-                }
-
-                return trim($retval).$fill;
-
-            case 'center':
-                return mb_substr($source, 0, floor($length / 2)).$fill.mb_substr($source, -ceil($length / 2));
-
-            case 'left':
-                $retval = mb_substr($source, -$length, $length);
-
-                if($on_word and substr($retval)){
-                    if($pos = strpos($retval, ' ')){
-                        $retval = substr($retval, $pos);
-                    }
-                }
-
-                return $fill.trim($retval);
-
-            default:
-                throw new bException('str_truncate(): Unknown method "'.$method.'" specified, please use "left", "center", or "right" or undefined which will default to "right"', 'unknown');
-        }
-
-    }catch(Exception $e){
-        throw new bException(tr('str_truncate(): Failed for ":source"', array(':source' => $source)), $e);
-    }
-}
-
-
-/*
  * Return a random string
  */
 function str_random($length = 8, $unique = false, $characters = '0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ') {
@@ -312,123 +168,10 @@ function str_escape_for_jquery($source, $replace = ''){
 
 
 /*
- * Remove double "replace" chars
- */
-function str_nodouble($source, $replace = '\1', $character = null, $case_insensitive = true){
-    if($character){
-        /*
-         * Remove specific character
-         */
-        return preg_replace('/('.$character.')\\1+/u'.($case_insensitive ? 'i' : ''), $replace, $source);
-    }
-
-    /*
-     * Remove ALL double characters
-     */
-    return preg_replace('/(.)\\1+/u'.($case_insensitive ? 'i' : ''), $replace, $source);
-
-}
-
-
-
-/*
  *
  */
 function str_strip_function($string){
     return trim(str_from($string, '():'));
-}
-
-
-
-/*
- * Ensure that specified source string starts with specified string
- */
-function str_starts($source, $string){
-    if(mb_substr($source, 0, mb_strlen($string)) == $string){
-        return $source;
-    }
-
-    return $string.$source;
-}
-
-
-
-/*
- * Ensure that specified source string starts NOT with specified string
- */
-function str_starts_not($source, $string){
-    while(mb_substr($source, 0, mb_strlen($string)) == $string){
-        $source = mb_substr($source, mb_strlen($string));
-    }
-
-    return $source;
-}
-
-
-
-/*
- * Ensure that specified string ends with specified character
- */
-function str_ends($source, $string){
-    try{
-        $length = mb_strlen($string);
-
-        if(mb_substr($source, -$length, $length) == $string){
-            return $source;
-        }
-
-        return $source.$string;
-
-    }catch(Exception $e){
-        throw new bException('str_ends(): Failed', $e);
-    }
-}
-
-
-
-/*
- * Ensure that specified string ends NOT with specified character
- */
-function str_ends_not($source, $strings, $loop = true){
-    try{
-        if(is_array($strings)){
-            /*
-             * For array test, we always loop
-             */
-            $redo = true;
-
-            while($redo){
-                $redo = false;
-
-                foreach($strings as $string){
-                    $new = str_ends_not($source, $string, true);
-
-                    if($new != $source){
-                        // A change was made, we have to rerun over it.
-                        $redo = true;
-                    }
-
-                    $source = $new;
-                }
-            }
-
-        }else{
-            /*
-             * Check for only one character
-             */
-            $length = mb_strlen($strings);
-
-            while(mb_substr($source, -$length, $length) == $strings){
-                $source = mb_substr($source, 0, -$length);
-                if(!$loop) break;
-            }
-        }
-
-        return $source;
-
-    }catch(Exception $e){
-        throw new bException('str_ends_not(): Failed', $e);
-    }
 }
 
 
@@ -471,48 +214,6 @@ function str_safe($source, $maxsize = 50){
  */
 function str_hex($source){
     return bin2hex($source);
-}
-
-
-
-/*
- * Return a string that is suitable for logging.
- */
-function str_log($source, $truncate = 2047, $separator = ', '){
-    try{
-        load_libs('json');
-
-        if(!$source){
-            if(is_numeric($source)){
-                return 0;
-            }
-
-            return '';
-        }
-
-        if(!is_scalar($source)){
-            if(is_array($source)){
-                try{
-                    $source = mb_trim(json_encode_custom($source));
-
-                }catch(Exception $e){
-                    /*
-                     * Most likely (basically only) reason for this would be that implode failed on imploding an array with sub arrays.
-                     * Use json_encode_custom() instead
-                     */
-                    $source = mb_trim(json_encode_custom($source));
-                }
-
-            }else{
-                $source = mb_trim(json_encode_custom($source));
-            }
-        }
-
-        return str_nodouble(preg_replace('/[\x00-\x1F\x80-\xFF]/', '', str_replace('  ', ' ', str_replace("\n", ' ', str_truncate($source, $truncate, ' ... ', 'center')))), '\1', ' ');
-
-    }catch(Exception $e){
-        throw new bException('str_log(): Failed', $e);
-    }
 }
 
 
@@ -695,34 +396,6 @@ function mb_str_split($source, $l = 0) {
 
     }catch(Exception $e){
         throw new bException('mb_str_split(): Failed', $e);
-    }
-}
-
-
-
-/*
- * Ensure that specified string ends with slash
- */
-function slash($string){
-    try{
-        return str_ends($string, '/');
-
-    }catch(Exception $e){
-        throw new bException('slash(): Failed', $e);
-    }
-}
-
-
-
-/*
- * Ensure that specified string ends NOT with slash
- */
-function unslash($string, $loop = true){
-    try{
-        return str_ends_not($string, '/', $loop);
-
-    }catch(Exception $e){
-        throw new bException('unslash(): Failed', $e);
     }
 }
 
@@ -996,7 +669,8 @@ function str_force($source, $separator = ','){
  */
 function str_size($source, $size, $add = ' ', $prefix = false){
     try{
-        $strlen = mb_strlen($source);
+        load_libs('cli');
+        $strlen = mb_strlen(cli_strip_color($source));
 
         if($strlen == $size){
             return $source;

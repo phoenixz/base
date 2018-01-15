@@ -17,7 +17,7 @@ load_libs('user,rights');
 
 switch(cli_method()){
     case 'list':
-        cli_log('Showing currently available rights', 'white');
+        log_console('Showing currently available rights', 'white');
 
         $limit   = 200;
 
@@ -27,10 +27,10 @@ switch(cli_method()){
 
                               FROM   `rights`'.($limit ? ' LIMIT '.$limit : ''));
 
-        cli_log(str_size('Name', 20).' '.str_size('Status', 16).' Description', 'cyan');
+        log_console(str_size('Name', 20).' '.str_size('Status', 16).' Description', 'cyan');
 
         while($right = sql_fetch($r)){
-            cli_log(str_size($right['name'], 20).' '.str_size(status($right['status']), 16).' '.$right['description']);
+            log_console(str_size($right['name'], 20).' '.str_size(status($right['status']), 16).' '.$right['description']);
         }
 
         break;
@@ -58,7 +58,7 @@ switch(cli_method()){
             throw new bException(tr('Specified user ":user" does not exist', array(':user' => $users_id)), 'not-exist');
         }
 
-        cli_log(tr('Showing rights for user ":user"', array(':user' => name($user))), 'white');
+        log_console(tr('Showing rights for user ":user"', array(':user' => name($user))), 'white');
 
         $list = sql_list('SELECT    `rights`.`name`,
                                     `rights`.`description`
@@ -73,13 +73,13 @@ switch(cli_method()){
                           array(':users_id' => $user['id']));
 
         if(!$list){
-            cli_log(tr('This user has no rights assigned'), 'yellow');
+            log_console(tr('This user has no rights assigned'), 'yellow');
 
         }else{
-            cli_log(str_size('Name', 16).'Description', 'cyan');
+            log_console(str_size('Name', 16).'Description', 'cyan');
 
             foreach($list as $name => $description){
-                cli_log(str_size($name, 16).$description);
+                log_console(str_size($name, 16).$description);
             }
         }
 
@@ -99,7 +99,7 @@ switch(cli_method()){
                              ':name'        => $right['name'],
                              ':description' => $right['description']));
 
-            cli_log(tr('Created new right ":right"', array(':right' => $right['name'])), 'green');
+            log_console(tr('Created new right ":right"', array(':right' => $right['name'])), 'green');
             break;
 
         }catch(Exception $e){
@@ -162,7 +162,7 @@ switch(cli_method()){
                        array(':id'   => $right['id'],
                              ':name' => $right['name']));
 
-            cli_log(tr('Modified right ":right"', array(':right' => $right['name'])), 'green');
+            log_console(tr('Modified right ":right"', array(':right' => $right['name'])), 'green');
             break;
 
         }catch(Exception $e){
@@ -199,15 +199,15 @@ switch(cli_method()){
 
         switch(!$r->rowCount()){
             case 0:
-                cli_log(tr('Not deleted any rights'), 'error');
+                log_console(tr('Not deleted any rights'), 'error');
                 break;
 
             case count($rights):
-                cli_log(tr('Deleted only ":count" rights from the specified ":specified" rights', array(':count' => $r->rowCount(), ':specified' => count($rights))), 'yellow');
+                log_console(tr('Deleted only ":count" rights from the specified ":specified" rights', array(':count' => $r->rowCount(), ':specified' => count($rights))), 'yellow');
                 break;
 
             default:
-                cli_log(tr('Deleted ":count" rights', array(':count' => $r->rowCount())), 'green');
+                log_console(tr('Deleted ":count" rights', array(':count' => $r->rowCount())), 'green');
         }
 
         break;
@@ -240,15 +240,15 @@ switch(cli_method()){
 
         switch(!$r->rowCount()){
             case 0:
-                cli_log(tr('Not undeleted any rights'), 'error');
+                log_console(tr('Not undeleted any rights'), 'error');
                 break;
 
             case count($rights):
-                cli_log(tr('Undeleted only ":count" rights from the specified ":specified" rights', array(':count' => $r->rowCount(), ':specified' => count($rights))), 'yellow');
+                log_console(tr('Undeleted only ":count" rights from the specified ":specified" rights', array(':count' => $r->rowCount(), ':specified' => count($rights))), 'yellow');
                 break;
 
             default:
-                cli_log(tr('Undeleted ":count" rights', array(':count' => $r->rowCount())), 'green');
+                log_console(tr('Undeleted ":count" rights', array(':count' => $r->rowCount())), 'green');
         }
 
         break;
@@ -295,7 +295,7 @@ switch(cli_method()){
                          $in);
 
         if(!$r->rowCount()){
-            cli_log(tr('Not erased any rights'), 'error');
+            log_console(tr('Not erased any rights'), 'error');
 
         }else{
             switch($r->rowCount()){
@@ -303,11 +303,11 @@ switch(cli_method()){
                     break;
 
                 case count($rights):
-                    cli_log(tr('Erased only ":count" rights from the specified ":specified" rights', array(':count' => $r->rowCount(), ':specified' => count($rights))), 'yellow');
+                    log_console(tr('Erased only ":count" rights from the specified ":specified" rights', array(':count' => $r->rowCount(), ':specified' => count($rights))), 'yellow');
                     break;
 
                 default:
-                    cli_log(tr('Erased ":count" rights', array(':count' => $r->rowCount())), 'green');
+                    log_console(tr('Erased ":count" rights', array(':count' => $r->rowCount())), 'green');
             }
 
             /*
@@ -319,7 +319,7 @@ switch(cli_method()){
 
                              $in);
 
-            cli_log(tr('Removed ":count" user assigned rights', array(':count' => $r->rowCount())), 'green');
+            log_console(tr('Removed ":count" user assigned rights', array(':count' => $r->rowCount())), 'green');
 
             $r  = sql_query('DELETE FROM `roles_rights`
 
@@ -327,15 +327,15 @@ switch(cli_method()){
 
                              $in);
 
-            cli_log(tr('Removed ":count" user assigned rights', array(':count' => $r->rowCount())), 'green');
+            log_console(tr('Removed ":count" user assigned rights', array(':count' => $r->rowCount())), 'green');
         }
 
         break;
 
     case '':
-        throw new bException(tr('No option specified'), 'not-specified');
+        throw new bException(tr('No method specified'), 'no-method');
 
     default:
-        throw new bException(tr('Invalid option ":method" specified', array(':method' => cli_method())), 'unknown');
+        throw new bException(tr('Invalid method ":method" specified', array(':method' => cli_method())), 'unknown-method');
 }
 ?>

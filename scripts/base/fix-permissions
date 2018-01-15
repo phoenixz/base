@@ -30,7 +30,7 @@ cli_only(true);
 cli_no_arguments_left();
 
 load_libs('file');
-cli_log(tr('Updating project file permissions'), 'white');
+log_console(tr('Updating project file permissions'), 'white');
 
 if(empty($_CONFIG['deploy'][$target])){
     throw new bException(tr('Specified environment ":env" does not exist', array(':env' => $target)), 'not-exist');
@@ -94,7 +94,7 @@ if($sudo and !empty($deploy_config['target_server'])){
         throw new bException('Failed to update target directory tree user/group ownership', 'update-ownership');
     }
 
-    cli_log(tr('Updated owner:\group permissions to ":owner::group" for entire project', array(':owner' => $deploy_config['user'], ':group' => $deploy_config['group'])), 'green');
+    log_console(tr('Updated owner:\group permissions to ":owner::group" for entire project', array(':owner' => $deploy_config['user'], ':group' => $deploy_config['group'])), 'green');
 }
 
 
@@ -161,7 +161,7 @@ foreach($deploy_config['modes'] as $type => $modes){
                  * script should only care about that which exists
                  */
                 if(VERBOSE){
-                    cli_log(tr('Updated directories mode for ":path"', array(':path' => $path)));
+                    log_console(tr('Updated directories mode for ":path"', array(':path' => $path)));
                 }
 
                 if(file_exists(unslash(ROOT).$path)){
@@ -173,7 +173,7 @@ foreach($deploy_config['modes'] as $type => $modes){
                 }
             }
 
-            cli_log(tr('Updated directories mode'), 'green');
+            log_console(tr('Updated directories mode'), 'green');
             break;
 
         case 'files':
@@ -186,7 +186,7 @@ foreach($deploy_config['modes'] as $type => $modes){
                  * script should only care about that which exists
                  */
                 if(VERBOSE){
-                    cli_log(tr('Updated directories mode for ":path"', array(':path' => $path)));
+                    log_console(tr('Updated directories mode for ":path"', array(':path' => $path)));
                 }
 
                 if(file_exists(unslash(ROOT).$path)){
@@ -198,7 +198,7 @@ foreach($deploy_config['modes'] as $type => $modes){
                 }
             }
 
-            cli_log(tr('Updated files mode'), 'green');
+            log_console(tr('Updated files mode'), 'green');
             break;
 
         default:

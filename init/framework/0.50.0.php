@@ -2,7 +2,7 @@
 /*
  * Fix social media storage structure
  */
-cli_log('Fixing users - social media accounts storage structure');
+log_console('Fixing users - social media accounts storage structure');
 
 sql_index_exists('users', 'fb_id', 'ALTER TABLE `users` DROP INDEX `fb_id`');
 sql_index_exists('users', 'gp_id', 'ALTER TABLE `users` DROP INDEX `gp_id`');

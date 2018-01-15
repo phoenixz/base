@@ -27,7 +27,7 @@ define('TESTPATH', ROOT.'data/tests/content/');
  */
 function test($name, $description, $function){
     try{
-        log_console($name.' [TEST] '.$description, '', '', false);
+        log_console($name.' [TEST] '.$description);
 
         if(!is_callable($function)){
             throw new bException('test(): Specified function is not a function but a "'.gettype($function).'"');
@@ -35,10 +35,10 @@ function test($name, $description, $function){
 
         $function();
 
-        log_console(' [ OK ]', '', 'green');
+        log_console(' [ OK ]', 'green');
 
     }catch(Exception $e){
-        log_console(' [ FAIL ]', '', 'red');
+        log_console(' [ FAIL ]', 'red');
 
         $e = array('name'        => $name,
                    'description' => $description,
@@ -63,7 +63,7 @@ function test($name, $description, $function){
  * Show if the specified test completed with errors or not
  */
 function test_completed($name, $type = 'test'){
-    log_console($name.' ['.$type.' COMPLETED] ', '', 'white', false);
+    log_console($name.' ['.$type.' COMPLETED] ', 'white');
 
     if(!isset($GLOBALS['tests']['errors'][$type])){
         throw new bException('test_completed(): Invalid type "" specified. Specify one of "test", "library" or "all"');
@@ -87,10 +87,10 @@ function test_completed($name, $type = 'test'){
     }
 
     if($errors){
-        log_console(' [ FAIL ]', '', 'red');
+        log_console(' [ FAIL ]', 'red');
 
     }else{
-        log_console(' [ OK ]'  , '', 'green');
+        log_console(' [ OK ]'  , 'green');
     }
 
     /*

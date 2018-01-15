@@ -544,7 +544,7 @@ function image_info($file, $no_exif = false){
                     $retval['compression'] = array_shift($retval['compression']);
 
                 }catch(Exception $e){
-                    cli_log(tr('Failed to get compression information for file ":file" because ":e"', array(':e' => $e->getMessage(), ':file' => $file)), 'red');
+                    log_console(tr('Failed to get compression information for file ":file" because ":e"', array(':e' => $e->getMessage(), ':file' => $file)), 'red');
                 }
 
                 if(!$no_exif){

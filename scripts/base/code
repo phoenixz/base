@@ -55,7 +55,7 @@ switch(cli_method()){
             /*
              * This is a specific file, ignore filter, if specified
              */
-            cli_log(tr('Specified path ":path" is a normal file, ignoring filter (if specified)', array(':path' => $path)), 'yellow');
+            log_console(tr('Specified path ":path" is a normal file, ignoring filter (if specified)', array(':path' => $path)), 'yellow');
             $filter = '';
         }
 
@@ -67,10 +67,10 @@ switch(cli_method()){
 
         if($count){
             cli_dot(false);
-            cli_log(tr('Processed ":count" files', array(':count' => $count)), 'green');
+            log_console(tr('Processed ":count" files', array(':count' => $count)), 'green');
 
         }else{
-            cli_log(tr('No files processed'), 'yellow');
+            log_console(tr('No files processed'), 'yellow');
         }
 
         break;

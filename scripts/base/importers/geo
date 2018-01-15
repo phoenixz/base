@@ -963,7 +963,7 @@ switch(cli_method()){
         $states = sql_query('SELECT `id`, `geonames_id`, `admin1` FROM `geo_states`');
         $update = sql_prepare('UPDATE `geo_states` SET `code` = :code WHERE `id` = :id');
 
-        cli_log('Fixing geo_states missing state codes');
+        log_console('Fixing geo_states missing state codes');
         sql_query('UPDATE `geo_states` SET `code` = ""');
 
         while($state = sql_fetch($states)){

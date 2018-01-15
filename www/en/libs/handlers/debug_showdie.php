@@ -2,10 +2,10 @@
 try{
     if($trace_offset === null){
         if(PLATFORM_HTTP){
-            $trace_offset = 4;
+            $trace_offset = 5;
 
         }else{
-            $trace_offset = 3;
+            $trace_offset = 4;
         }
     }
 

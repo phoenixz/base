@@ -166,7 +166,7 @@ switch(cli_method()){
                      * Create the target link
                      */
                     if(VERBOSE){
-                        cli_log(tr('Creating symlink for file ":file"', array(':file' => $file)));
+                        log_console(tr('Creating symlink for file ":file"', array(':file' => $file)));
                     }
 
                     $count++;
@@ -174,7 +174,7 @@ switch(cli_method()){
                 }
             }
 
-            cli_log(tr('Created ":count" symlinks for missing retina images', array(':count' => $count)), 'green');
+            log_console(tr('Created ":count" symlinks for missing retina images', array(':count' => $count)), 'green');
 
         }else{
             /*
@@ -191,7 +191,7 @@ switch(cli_method()){
                  *
                  */
                 if(VERBOSE){
-                    cli_log(tr('Creating symlink for file ":file"', array(':file' => $file)));
+                    log_console(tr('Creating symlink for file ":file"', array(':file' => $file)));
                 }
 
                 $count++;
@@ -212,17 +212,17 @@ switch(cli_method()){
         foreach($params as $key => $value){
             if(is_array($value)){
                 foreach($value as $subkey => $subvalue){
-                    cli_log(str_size($key   , 20), 'cyan', false);
+                    log_console(str_size($key   , 20), 'cyan', false);
 
                     if(!is_numeric($subkey)){
-                        cli_log(str_size($subkey, 20), 'cyan', false);
+                        log_console(str_size($subkey, 20), 'cyan', false);
                     }
 
                     if(($key === 'blur') and (!$value)){
                         $value = tr('No');
                     }
 
-                    cli_log(str_force($subvalue), 'white');
+                    log_console(str_force($subvalue), 'white');
                 }
 
                 continue;
@@ -237,8 +237,8 @@ switch(cli_method()){
                 }
             }
 
-            cli_log(str_size($key, 20), 'cyan', false);
-            cli_log(str_force($value) , 'white');
+            log_console(str_size($key, 20), 'cyan', false);
+            log_console(str_force($value) , 'white');
         }
 
         break;
@@ -288,7 +288,7 @@ switch(cli_method()){
                                 'callback'  => function($file) use ($params, $no_exif){
                                                     if(!is_image($file)){
                                                         if(VERBOSE){
-                                                            cli_log(tr('Skipping file ":image", it is not an image', array(':image' => $file)), 'yellow');
+                                                            log_console(tr('Skipping file ":image", it is not an image', array(':image' => $file)), 'yellow');
                                                         }
 
                                                         return;
@@ -299,7 +299,7 @@ switch(cli_method()){
                                                         s_display_info($info);
 
                                                     }catch(Exception $e){
-                                                        cli_log(tr('Skipping file ":image", failed with ":error"', array(':image' => $file, ':error' => $e->getMessage())), 'yellow');
+                                                        log_console(tr('Skipping file ":image", failed with ":error"', array(':image' => $file, ':error' => $e->getMessage())), 'yellow');
                                                     }
                                                }));
         break;
@@ -325,7 +325,7 @@ switch(cli_method()){
 
             if($params['backup']){
                 $params['backup'] = false;
-                cli_log(tr('Both backup and test options were specified, disabled "backup" since test will not change the original file'), 'yellow');
+                log_console(tr('Both backup and test options were specified, disabled "backup" since test will not change the original file'), 'yellow');
             }
 
             $display_diff = true;
@@ -398,7 +398,7 @@ switch(cli_method()){
         /*
          * Execute the conversion on the specified path
          */
-        cli_log(tr('Starting image converting'), 'white');
+        log_console(tr('Starting image converting'), 'white');
 
         $count = file_tree_execute(array('path'      => $source,
                                          'recursive' => $recursive,
@@ -407,7 +407,7 @@ switch(cli_method()){
 
                                                     if(!is_image($file)){
                                                         if(VERBOSE){
-                                                            cli_log(tr('Skipping file ":image", it is not an image', array(':image' => $file)), 'yellow');
+                                                            log_console(tr('Skipping file ":image", it is not an image', array(':image' => $file)), 'yellow');
                                                         }
 
                                                         return;
@@ -446,10 +446,10 @@ switch(cli_method()){
                                                         $target = image_convert($file, $target, $params);
 
                                                         if($display_diff){
-                                                            cli_log(tr('Before:'), 'white');
+                                                            log_console(tr('Before:'), 'white');
                                                             s_display_info($before);
 
-                                                            cli_log(tr('After:'), 'white');
+                                                            log_console(tr('After:'), 'white');
                                                             s_display_info(image_info($target, $no_exif));
                                                         }
 
@@ -484,7 +484,7 @@ switch(cli_method()){
                                                         }
 
                                                     }catch(Exception $e){
-                                                        cli_log(tr('Skipping file ":image", failed with ":error"', array(':image' => $file, ':error' => $e->getMessage())), 'yellow');
+                                                        log_console(tr('Skipping file ":image", failed with ":error"', array(':image' => $file, ':error' => $e->getMessage())), 'yellow');
                                                     }
                                                }));
 
@@ -492,7 +492,7 @@ switch(cli_method()){
             cli_dot(false);
         }
 
-        cli_log(tr('Finished converting ":count" images', array(':count' => $count)), 'green');
+        log_console(tr('Finished converting ":count" images', array(':count' => $count)), 'green');
         break;
 
     case 'view':
@@ -535,14 +535,14 @@ switch(cli_method()){
         }
 
         sql_query('TRUNCATE `html_img_cache`');
-        cli_log(tr('Cleared html_img cache'), 'green');
+        log_console(tr('Cleared html_img cache'), 'green');
         break;
 
     case '':
-        throw new bException(tr('No method specified'), 'unknown');
+        throw new bException(tr('No method specified'), 'no-method');
 
     default:
-        throw new bException(tr('Unknown method ":method" specified', array(':method' => cli_method())), 'unknown');
+        throw new bException(tr('Invalid method ":method" specified', array(':method' => cli_method())), 'unknown-method');
 }
 
 
@@ -552,56 +552,56 @@ switch(cli_method()){
  */
 function s_display_info($info){
     try{
-        cli_log(str_size(tr('File'), 20), 'cyan', false);
-        cli_log($info['path'].$info['file'], 'white');
-        cli_log(str_size(tr('Path'), 20), 'cyan', false);
-        cli_log($info['path'], 'white');
-        cli_log(str_size(tr('Filename'), 20), 'cyan', false);
-        cli_log($info['file'], 'white');
-        cli_log(str_size(tr('File size'), 20), 'cyan', false);
-        cli_log(bytes($info['size']) , 'white');
-        cli_log(str_size(tr('Mimetype'), 20), 'cyan', false);
-        cli_log($info['mime'], 'white');
-        cli_log(str_size(tr('Width'), 20), 'cyan', false);
-        cli_log($info['x'], 'white');
-        cli_log(str_size(tr('Height'), 20), 'cyan', false);
-        cli_log($info['y'], 'white');
-        cli_log(str_size(tr('Bits'), 20), 'cyan', false);
-        cli_log($info['bits'], 'white');
+        log_console(str_size(tr('File'), 20), 'cyan', false);
+        log_console($info['path'].$info['file'], 'white');
+        log_console(str_size(tr('Path'), 20), 'cyan', false);
+        log_console($info['path'], 'white');
+        log_console(str_size(tr('Filename'), 20), 'cyan', false);
+        log_console($info['file'], 'white');
+        log_console(str_size(tr('File size'), 20), 'cyan', false);
+        log_console(bytes($info['size']) , 'white');
+        log_console(str_size(tr('Mimetype'), 20), 'cyan', false);
+        log_console($info['mime'], 'white');
+        log_console(str_size(tr('Width'), 20), 'cyan', false);
+        log_console($info['x'], 'white');
+        log_console(str_size(tr('Height'), 20), 'cyan', false);
+        log_console($info['y'], 'white');
+        log_console(str_size(tr('Bits'), 20), 'cyan', false);
+        log_console($info['bits'], 'white');
 
         if(!empty($info['compression'])){
-            cli_log(str_size(tr('Compression'), 20), 'cyan', false);
-            cli_log(str_force($info['compression']) , 'white');
+            log_console(str_size(tr('Compression'), 20), 'cyan', false);
+            log_console(str_force($info['compression']) , 'white');
         }
 
         if(!empty($info['exif'])){
-            cli_log(str_size(tr('EXIF INFORMATION:'), 20), 'cyan');
+            log_console(str_size(tr('EXIF INFORMATION:'), 20), 'cyan');
 
             foreach($info['exif'] as $key => $value){
                 if(is_array($value)){
                     foreach($value as $subkey => $subvalue){
-                        cli_log(str_size($key   , 30), 'cyan', false);
+                        log_console(str_size($key   , 30), 'cyan', false);
 
                         if(!is_numeric($subkey)){
-                            cli_log(str_size($subkey, 30), 'cyan', false);
+                            log_console(str_size($subkey, 30), 'cyan', false);
                         }
 
                         if($key === 'THUMBNAIL'){
                             $subvalue = tr('YES');
                         }
 
-                        cli_log(str_force($subvalue), 'white');
+                        log_console(str_force($subvalue), 'white');
                     }
 
                     continue;
                 }
 
-                cli_log(str_size($key, 30), 'cyan', false);
-                cli_log(str_force($value) , 'white');
+                log_console(str_size($key, 30), 'cyan', false);
+                log_console(str_force($value) , 'white');
             }
         }
 
-        cli_log();
+        log_console();
 
     }catch(Exception $e){
         throw new bException('s_display_info(): Failed', $e);

@@ -64,8 +64,8 @@ try{
                                                         'table'    => $table));
 
         }catch(Exception $e){
-            log_error($e);
-            log_error('Failed to fix db.table "'.$name.'"');
+            log_console($e);
+            log_console('Failed to fix db.table "'.$name.'"');
         }
     }
 

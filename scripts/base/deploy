@@ -127,7 +127,7 @@ require_once(dirname(__FILE__).'/../../libs/startup.php');
 cli_only(true);
 load_libs('init,deploy');
 
-cli_log(tr('Starting deploy of project ":project"', array(':project' => PROJECT)), 'white');
+log_console(tr('Starting deploy of project ":project"', array(':project' => PROJECT)), 'white');
 
 /*
  * Ensure we're not running on the production environment.
@@ -265,13 +265,13 @@ if($targets == 'all'){
      * Get all deployment targets
      */
     $targets = array_keys($_CONFIG['deploy']);
-    cli_log(tr('Deploying to ALL target environments ":targets"', array(':targets' => $targets)), 'yellow');
+    log_console(tr('Deploying to ALL target environments ":targets"', array(':targets' => $targets)), 'yellow');
 
 }elseif(is_array($targets)){
-    cli_log(tr('Deploying to specified target environments ":targets"', array(':targets' => str_force($targets, ', '))), 'yellow');
+    log_console(tr('Deploying to specified target environments ":targets"', array(':targets' => str_force($targets, ', '))), 'yellow');
 
 }else{
-    cli_log(tr('Deploying to specified target environment ":target"', array(':target' => str_force($targets))), 'yellow');
+    log_console(tr('Deploying to specified target environment ":target"', array(':target' => str_force($targets))), 'yellow');
     $targets = array($targets);
 }
 
@@ -291,7 +291,7 @@ if(!$ignore){
                 throw new bException('Git commit pending', 'COMMITFIRST');
             }
 
-            cli_log(tr('Changes detected, git stashing changes before comming'), 'yellow');
+            log_console(tr('Changes detected, git stashing changes before comming'), 'yellow');
             safe_exec('git stash');
         }
 
@@ -329,10 +329,10 @@ if(in_array('production', $targets)){
  * Do project BOM check
  */
 if($nobomcheck){
-    cli_log(tr('Skipping BOM check due to "--no-bom-check" option'), 'yellow');
+    log_console(tr('Skipping BOM check due to "--no-bom-check" option'), 'yellow');
 
 }else{
-    cli_log(tr('Executing BOM check'), 'white');
+    log_console(tr('Executing BOM check'), 'white');
     script_exec('base/clearbom');
 }
 
@@ -342,10 +342,10 @@ if($nobomcheck){
  * Do a PHP syntax check on the entire project
  */
 if($nosyntax){
-    cli_log(tr('Skipping PHP syntax check due to no "--do-syntax" command line parameter'), 'yellow');
+    log_console(tr('Skipping PHP syntax check due to no "--do-syntax" command line parameter'), 'yellow');
 
 }else{
-    cli_log(tr('Executing PHP syntax check'), 'white');
+    log_console(tr('Executing PHP syntax check'), 'white');
 
     exec('find . -type f -name "*.php"', $output);
 
@@ -385,10 +385,10 @@ if($nosyntax){
  * Do a project version revision upgrade
  */
 if($noversion){
-    cli_log(tr('Skipping PHP version update due to no "--do-version" command line parameter'), 'yellow');
+    log_console(tr('Skipping PHP version update due to no "--do-version" command line parameter'), 'yellow');
 
 }else{
-    cli_log(tr('Executing PHP version update'), 'white');
+    log_console(tr('Executing PHP version update'), 'white');
 
     /*
      * Get version data
@@ -417,10 +417,10 @@ if($noversion){
  * Do system tag with the new version
  */
 if($noversion or $notag){
-    cli_log(tr('Skipping git version tagging due to either no "--do-version" or no "--do-tag" command line parameters'), 'yellow');
+    log_console(tr('Skipping git version tagging due to either no "--do-version" or no "--do-tag" command line parameters'), 'yellow');
 
 }else{
-    cli_log(tr('Executing git version tagging'), 'white');
+    log_console(tr('Executing git version tagging'), 'white');
 
     passthru('cd '.ROOT.'; git tag -am "['.PROJECT.' / '.$newversion.'] '.$message.'" '.$newversion.';', $exitcode);
 
@@ -437,10 +437,10 @@ if($noversion or $notag){
  * Do git push all changes and tags
  */
 if($nopush){
-    cli_log(tr('Skipping git push for changes and tags due to no "--do-version" or no "--do-tag" or no "--do-push" command line parameters'), 'yellow');
+    log_console(tr('Skipping git push for changes and tags due to no "--do-version" or no "--do-tag" or no "--do-push" command line parameters'), 'yellow');
 
 }else{
-    cli_log(tr('Executing git push'), 'white');
+    log_console(tr('Executing git push'), 'white');
 
     /*
      * Get current branch
@@ -462,7 +462,7 @@ if($nopush){
  * If version was upgraded, execute an init to avoid leaving the dev site inoperable
  */
 if(!$noversion){
-    cli_log(tr('Project version revision was updated, executing init script to update project database'), 'white');
+    log_console(tr('Project version revision was updated, executing init script to update project database'), 'white');
     passthru(ROOT.'script/base/init -E '.$target_environment, $exitcode);
 
     if($exitcode){
@@ -476,10 +476,10 @@ if(!$noversion){
  * Run compress script
  */
 if($nocompress){
-    cli_log(tr('Skipping file compress due to "--no-compress" command line parameter'), 'yellow');
+    log_console(tr('Skipping file compress due to "--no-compress" command line parameter'), 'yellow');
 
 }else{
-    cli_log(tr('Executing file compress script'), 'white');
+    log_console(tr('Executing file compress script'), 'white');
 
     $option = '';
 
@@ -487,7 +487,7 @@ if($nocompress){
         /*
          * Compress script should be run with -f option
          */
-        cli_log(tr('Executing file compress script with force mode'), 'white');
+        log_console(tr('Executing file compress script with force mode'), 'white');
         $option = ' -f';
     }
 
@@ -503,7 +503,7 @@ if($nocompress){
      * so we must do a git commit for those files.
      */
     if(!trim(shell_exec('git status | grep "nothing to commit" | wc -l'))){
-        cli_log(tr('Changes detected from the compression script script, committing to git'), 'white');
+        log_console(tr('Changes detected from the compression script script, committing to git'), 'white');
         safe_exec('cd '.ROOT.'; git add www/cdn; git add www/en/pub; git add www/en/admin/pub; ');
         safe_exec('git commit -m "Deploy commit: compressed files changed"');
 
@@ -519,10 +519,10 @@ if($nocompress){
  * Do code translation
  */
 if($notranslate){
-    cli_log(tr('Skipping translations due to "--no-translate" option'), 'yellow');
+    log_console(tr('Skipping translations due to "--no-translate" option'), 'yellow');
 
 }else{
-    cli_log(tr('Executing translations'), 'white');
+    log_console(tr('Executing translations'), 'white');
 
     if($_CONFIG['language']['supported']){
         $options[] = 'translate';
@@ -546,10 +546,10 @@ if($notranslate){
  * Update the mtime of the entire project tree to ensure caching wont happen and the webserver will send out the new files
  */
 if($notouch){
-    cli_log(tr('Skipping touch mtime update due to no "--no-touch" command line parameters'), 'yellow');
+    log_console(tr('Skipping touch mtime update due to no "--no-touch" command line parameters'), 'yellow');
 
 }else{
-    cli_log(tr('Executing touch on entire project tree updating all mtimes (Excluding ROOT/data/content/)'), 'white');
+    log_console(tr('Executing touch on entire project tree updating all mtimes (Excluding ROOT/data/content/)'), 'white');
 
     passthru('cd '.ROOT.'; find . ! -path "./data/content/*" -exec touch {} \;', $exitcode);
 
@@ -585,10 +585,11 @@ foreach($targets as $target_environment){
         /*
          * No target user specified, use the current process user
          */
-        $deploy_config['target_user'] = get_process_user();
+        load_libs('process');
+        $deploy_config['target_user'] = process_get_user();
     }
 
-    cli_log(tr('Deploying to target environment ":target" on server ":server"', array(':target' => $target_environment, ':server' => $deploy_config['target_server'])), 'white');
+    log_console(tr('Deploying to target environment ":target" on server ":server"', array(':target' => $target_environment, ':server' => $deploy_config['target_server'])), 'white');
 
     init_hook('deploy_pre', $nohooks, array('target_user'   => $deploy_config['target_user'],
                                             'target_port'   => $deploy_config['target_port'],
@@ -624,10 +625,10 @@ foreach($targets as $target_environment){
      * Do a content file check on the entire project
      */
     if($nocontent){
-        cli_log(tr('Skipping content file check due to "--no-content" command line parameter'), 'yellow');
+        log_console(tr('Skipping content file check due to "--no-content" command line parameter'), 'yellow');
 
     }else{
-        cli_log(tr('Executing content file check'), 'white');
+        log_console(tr('Executing content file check'), 'white');
 
         exec('grep load_content  www scripts -R', $output);
 
@@ -670,7 +671,7 @@ foreach($targets as $target_environment){
 
             if($_CONFIG['language']['supported']){
                 foreach($_CONFIG['language']['supported'] as $language){
-                    cli_log(tr('Searching for file ":file" on ":target"', array(':file' => $file, ':target' => $deploy_config['target_server'])));
+                    log_console(tr('Searching for file ":file" on ":target"', array(':file' => $file, ':target' => $deploy_config['target_server'])));
 
                     exec('ssh -t -p '.$target_port.' '.$deploy_config['target_user'].'@'.$deploy_config['target_server'].' \''.$sudo.'ls '.($file = $deploy_config['target_dir'].'data/content/'.$language.'/'.$file.'.html').' 2>&1 /dev/null\'', $contentoutput, $return);
 
@@ -689,7 +690,7 @@ foreach($targets as $target_environment){
     /*
      * Load environment specific configuration and override current config
      */
-    cli_log(tr('Starting deploy on ":date"', array(':date' => date('d M Y h:i'))), 'white');
+    log_console(tr('Starting deploy on ":date"', array(':date' => date('d M Y h:i'))), 'white');
 
     init_hook('deploy_pre_deploy', $nohooks, array('target_user'    => $deploy_config['target_user'],
                                                    'target_port'    => $deploy_config['target_port'],
@@ -702,7 +703,7 @@ foreach($targets as $target_environment){
      * In case of rsync_parrallel option, copy the target dir and use the copy for the rsync and file permissions update
      */
     if($noparrallel){
-        cli_log(tr('Deploying in non rsync parrallel mode due to "--no-parrallel" option'), 'yellow');
+        log_console(tr('Deploying in non rsync parrallel mode due to "--no-parrallel" option'), 'yellow');
         $deploy_config['rsync_parrallel'] = false;
     }
 
@@ -741,13 +742,13 @@ foreach($targets as $target_environment){
     }
 
     if((!$deploy_config['auto_backup'] and !$dobackup) or $nobackup){
-        cli_log(tr('Not executing auto site backup, due to either configuration or --no-backup option'), 'yellow');
+        log_console(tr('Not executing auto site backup, due to either configuration or --no-backup option'), 'yellow');
 
     }else{
         /*
          * Make a backup of website files and database
          */
-        cli_log(tr('Generating auto site and database backup'), 'white');
+        log_console(tr('Generating auto site and database backup'), 'white');
 
         load_libs('config');
         $config = config_get_for_environment($target_environment);
@@ -783,7 +784,7 @@ foreach($targets as $target_environment){
         /*
          * Make a copy on the server, rsync that copy, then move that copy in place of the current version. This will cause less down time due to version differences
          */
-        cli_log(tr('Deploying in rsync to parrallel mode'), 'white');
+        log_console(tr('Deploying in rsync to parrallel mode'), 'white');
 
         if($continuersync){
             /*
@@ -797,10 +798,10 @@ foreach($targets as $target_environment){
             }
 
             $tilde = '~'.$continuersync;
-            cli_log(tr('Continuing with specified copy ":copy" of current version', array(':copy' => $deploy_config['target_dir'].$tilde)), 'white');
+            log_console(tr('Continuing with specified copy ":copy" of current version', array(':copy' => $deploy_config['target_dir'].$tilde)), 'white');
 
         }else{
-            cli_log(tr('Creating copy of current version to ":target"', array(':target' => $deploy_config['target_dir'].$tilde)), 'white');
+            log_console(tr('Creating copy of current version to ":target"', array(':target' => $deploy_config['target_dir'].$tilde)), 'white');
 
             /*
              * Does the project exist at all? or is it an initial deploy?
@@ -830,7 +831,7 @@ foreach($targets as $target_environment){
      * Do the deploy
      */
     if($nodeploy){
-        cli_log(tr('NOT deploying, due to "--no-deploy" or "--test" command line parameter'), 'yellow');
+        log_console(tr('NOT deploying, due to "--no-deploy" or "--test" command line parameter'), 'yellow');
 
     }else{
         $exclude = ' --exclude="data/cdn" --exclude="data/log" --exclude="data/ssh_keys/" --exclude=*~ --exclude="data/mocks" --exclude="data/templates" --exclude="tmp" --exclude="data/mock*" --exclude="data/uploads" --exclude="data/packages" --exclude=".git*" --exclude="/data/system"  --exclude="/data/tmp" --exclude="sitemaps" --exclude="sitemap.xml" ';
@@ -859,7 +860,7 @@ foreach($targets as $target_environment){
             }
         }
 
-        cli_log(tr('Deploying project to target server ":server" on path ":path"', array(':server' => $deploy_config['target_server'], ':path' => $deploy_config['target_dir'])), 'white');
+        log_console(tr('Deploying project to target server ":server" on path ":path"', array(':server' => $deploy_config['target_server'], ':path' => $deploy_config['target_dir'])), 'white');
         passthru('rsync -aczvAXHS --progress -p --delete '.($deploy_config['sudo'] ? '--rsync-path="sudo rsync" ' : '').'-e "ssh -p '.$deploy_config['target_port'].'" '.ROOT.' '.$deploy_config['target_user'].'@'.$deploy_config['target_server'].':'.$deploy_config['target_dir'].' '.$exclude, $exitcode);
         exec('ssh -t -p '.$target_port.' '.$deploy_config['target_user'].'@'.$deploy_config['target_server'].' \''.$sudo.'mkdir -p '.$deploy_config['target_dir'].'/data/system 2> /dev/null; '.$sudo.'touch '.$deploy_config['target_dir'].'/data/system/last_deploy\'', $contentoutput, $return);
 
@@ -879,10 +880,10 @@ foreach($targets as $target_environment){
      * Fix structure
      */
     if($nofixstructure){
-        cli_log(tr('Skipping structure fix due to "--no-fix-structure" command line parameter'), 'yellow');
+        log_console(tr('Skipping structure fix due to "--no-fix-structure" command line parameter'), 'yellow');
 
     }else{
-        cli_log(tr('Executing structure fix'), 'white');
+        log_console(tr('Executing structure fix'), 'white');
 
         if(!empty($deploy_config['rsync_parrallel'])){
             passthru($command = 'ssh -t -p '.$target_port.' '.$deploy_config['target_user'].'@'.$deploy_config['target_server'].' \''.$sudo.$deploy_config['target_dir'].'/scripts/base/fix-structure -E '.$target_environment.' \'', $exitcode);
@@ -907,10 +908,10 @@ foreach($targets as $target_environment){
      * Fix permissions
      */
     if($nofixperms){
-        cli_log(tr('Skipping file permission fix due to "--no-fix-permissions" command line parameter'), 'yellow');
+        log_console(tr('Skipping file permission fix due to "--no-fix-permissions" command line parameter'), 'yellow');
 
     }else{
-        cli_log(tr('Executing file permission fix'), 'white');
+        log_console(tr('Executing file permission fix'), 'white');
 
         if(!empty($deploy_config['rsync_parrallel'])){
             passthru($command = 'ssh -t -p '.$target_port.' '.$deploy_config['target_user'].'@'.$deploy_config['target_server'].' \''.$sudo.$deploy_config['target_dir'].'/scripts/base/fix-permissions -E '.$target_environment.' \'', $exitcode);
@@ -942,14 +943,14 @@ foreach($targets as $target_environment){
      * In case of rsync_parrallel option, move the copy back in place, and remove the original
      */
     if(!empty($deploy_config['rsync_parrallel'])){
-        cli_log(tr('Moving new version in place'), 'white');
+        log_console(tr('Moving new version in place'), 'white');
         passthru('ssh -t -p '.$target_port.' '.$deploy_config['target_user'].'@'.$deploy_config['target_server'].' \''.$sudo.'mv '.$deploy_config['target_dir'].' '.$deploy_config['target_dir'].$tilde.'_old; '.$sudo.'mv '.$deploy_config['target_dir'].$tilde.' '.$deploy_config['target_dir'].'\'', $exitcode);
 
         if($exitcode){
             throw new bException('Moving new version in place failed with exit code "'.str_log($exitcode).'"', 'rsync_parrallel_move');
         }
 
-        cli_log(tr('Deleting old version'), 'white');
+        log_console(tr('Deleting old version'), 'white');
         passthru('ssh -t -p '.$target_port.' '.$deploy_config['target_user'].'@'.$deploy_config['target_server'].' \''.$sudo.'rm '.$deploy_config['target_dir'].$tilde.'_old -rf\'', $exitcode);
 
         if($exitcode){
@@ -963,10 +964,10 @@ foreach($targets as $target_environment){
      * Execute init on target
      */
     if($noinit){
-        cli_log(tr('Skipping target init due to "--no-init" command line parameter'), 'yellow');
+        log_console(tr('Skipping target init due to "--no-init" command line parameter'), 'yellow');
 
     }else{
-        cli_log(tr('Executing init on target server with environment ":env"', array(':env' => $target_environment)), 'white');
+        log_console(tr('Executing init on target server with environment ":env"', array(':env' => $target_environment)), 'white');
         passthru($command = 'ssh -t -p '.$target_port.' '.$deploy_config['target_user'].'@'.$deploy_config['target_server'].' \''.$sudo.$deploy_config['target_dir'].'/scripts/base/init -E '.$target_environment.' \'', $exitcode);
 
         if($exitcode){
@@ -985,10 +986,10 @@ foreach($targets as $target_environment){
     // * Auto rebuild the sitemap?
     // */
     //if($nositemap){
-    //    cli_log(tr('Skipping auto sitemap deploy due to "--no-sitemap" command line parameter'), 'yellow');
+    //    log_console(tr('Skipping auto sitemap deploy due to "--no-sitemap" command line parameter'), 'yellow');
     //
     //}else{
-    //    cli_log(tr('Executing sitemap scan and deploy on target server'), 'white');
+    //    log_console(tr('Executing sitemap scan and deploy on target server'), 'white');
     //
     //    passthru($command = 'ssh -t -p '.$target_port.' '.$deploy_config['target_user'].'@'.$deploy_config['target_server'].' \''.$sudo_user.$deploy_config['target_dir'].'/scripts/base/sitemap scan -E '.$target_environment.' \'', $exitcode);
     //
@@ -1025,10 +1026,10 @@ foreach($targets as $target_environment){
      * Send notifications
      */
     if($nonotify){
-        cli_log(tr('Skipping deploy notifications due to "--no-notify" command line parameter'), 'yellow');
+        log_console(tr('Skipping deploy notifications due to "--no-notify" command line parameter'), 'yellow');
 
     }else{
-        cli_log(tr('Executing deploy notifications'), 'white');
+        log_console(tr('Executing deploy notifications'), 'white');
 
         notify('deploy', 'Deployed project "'.PROJECT.'" with languages "'.str_log(implode(', ', array_force($_CONFIG['language']['supported']))).'"');
 
@@ -1042,10 +1043,10 @@ foreach($targets as $target_environment){
      * Cache clear
      */
     if($nocacheclear){
-        cli_log(tr('Skipping cache clear due to "--no-cache-clear" command line parameter'), 'yellow');
+        log_console(tr('Skipping cache clear due to "--no-cache-clear" command line parameter'), 'yellow');
 
     }else{
-        cli_log(tr('Executing cache clear'), 'white');
+        log_console(tr('Executing cache clear'), 'white');
 
         passthru('ssh -t -p '.$target_port.' '.$deploy_config['target_user'].'@'.$deploy_config['target_server'].' \''.$sudo.$deploy_config['target_dir'].'/scripts/base/cache clear -E '.$target_environment.'\'', $exitcode);
 
@@ -1055,7 +1056,7 @@ foreach($targets as $target_environment){
     }
 
     if($stash){
-        cli_log(tr('Git stashed changes detected, unstashing'), 'yellow');
+        log_console(tr('Git stashed changes detected, unstashing'), 'yellow');
         safe_exec('git stash pop');
     }
 
@@ -1063,7 +1064,7 @@ foreach($targets as $target_environment){
     /*
      * Done!
      */
-    cli_log(tr('Finished deploy for project ":project" environment ":env"', array(':project' => PROJECT, ':env' => $target_environment)), 'green');
+    log_console(tr('Finished deploy for project ":project" environment ":env"', array(':project' => PROJECT, ':env' => $target_environment)), 'green');
 
     init_hook('post_deploy', $nohooks, array('target_user'   => $deploy_config['target_user'],
                                              'target_port'   => $deploy_config['target_port'],

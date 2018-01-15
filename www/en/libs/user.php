@@ -604,7 +604,7 @@ function user_authenticate($username, $password, $captcha = null){
         /*
          * Apply IP locking system
          */
-        if($_CONFIG['security']['signin']['ip_lock'] and (PLATFORM == 'http')){
+        if($_CONFIG['security']['signin']['ip_lock'] and (PLATFORM_HTTP)){
             include(__DIR__.'/handlers/user_ip_lock.php');
         }
 
@@ -842,7 +842,7 @@ function user_signin($user, $extended = false, $redirect = null, $html_flash = n
          * HTTP signin requires cookie support and an already active session!
          * Shell signin requires neither
          */
-        if((PLATFORM == 'http') and (empty($_COOKIE) or !session_id())){
+        if((PLATFORM_HTTP) and (empty($_COOKIE) or !session_id())){
             throw new bException('user_signin(): This user has no active session or no session id, so probably has no cookies', 'cookies-required');
         }
 
@@ -873,7 +873,7 @@ function user_signin($user, $extended = false, $redirect = null, $html_flash = n
 
             }catch(Exception $e){
 // :TODO: Add notifications somewhere?
-                log_error($e, 'avatar');
+                log_console($e);
             }
         }
 
@@ -894,7 +894,7 @@ function user_signin($user, $extended = false, $redirect = null, $html_flash = n
             $_SESSION['user']['language'] = $_CONFIG['language']['default'];
         }
 
-        if($redirect and (PLATFORM == 'http')){
+        if($redirect and (PLATFORM_HTTP)){
             /*
              * Do not redirect to signin page
              */
@@ -1863,7 +1863,7 @@ function user_validate($user, $sections = array()){
                  * command line users!
                  */
                 if($role['name'] === 'god'){
-                    if((PLATFORM == 'http') and !has_rights('god')){
+                    if((PLATFORM_HTTP) and !has_rights('god')){
                         $v->setError(tr('The god role can only be assigned or changed by users with god role themselves'));
                     }
                 }

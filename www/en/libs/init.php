@@ -14,7 +14,7 @@
  * Execute the init
  */
 function init($projectfrom = null, $frameworkfrom = null){
-    global $_CONFIG;
+    global $_CONFIG, $core;
 
     try{
         /*
@@ -42,7 +42,7 @@ function init($projectfrom = null, $frameworkfrom = null){
             throw new bException(tr('init(): Core database init system has been disabled in %init%', array('%init%' => '$_CONFIG[db][core][init]')), 'noinit');
         }
 
-        if(!empty($GLOBALS['time_zone_fail'])){
+        if(!empty($core->register['time_zone_fail'])){
             /*
              * MySQL has no time_zone data, first initialize that, then reconnect
              */
@@ -94,7 +94,7 @@ function init($projectfrom = null, $frameworkfrom = null){
             /*
              * Fetch me a pizza, all is just fine!
              */
-            log_message('The framework code and project code versions matches the database versions, so all is fine!', 'init/ok', 'white');
+            log_console('The framework code and project code versions matches the database versions, so all is fine!', 'white');
             $noinit = true;
         }
 
@@ -130,10 +130,10 @@ function init($projectfrom = null, $frameworkfrom = null){
 
         if(empty($noinit)){
             if(FORCE){
-                log_console('Starting '.$init.' FORCED from version "'.FORCE.'" for "'.$_CONFIG['name'].'" using PHP "'.phpversion().'"', 'init', 'white');
+                log_console('Starting '.$init.' FORCED from version "'.FORCE.'" for "'.$_CONFIG['name'].'" using PHP "'.phpversion().'"', 'white');
 
             }else{
-                log_console('Starting '.$init.' for "'.$_CONFIG['name'].'" using PHP "'.phpversion().'"', 'init', 'white');
+                log_console('Starting '.$init.' for "'.$_CONFIG['name'].'" using PHP "'.phpversion().'"', 'white');
             }
 
             /*
@@ -141,7 +141,7 @@ function init($projectfrom = null, $frameworkfrom = null){
              */
             load_libs('cache');
             cache_clear();
-            log_console(tr('Cleared cache'), 'clear', 'green');
+            log_console(tr('Cleared cache'), 'green');
 
             define('INITPATH', slash(realpath(ROOT.'init')));
 
@@ -152,7 +152,7 @@ function init($projectfrom = null, $frameworkfrom = null){
              * ALWAYS First init framework, then project
              */
             foreach(array('framework', 'project') as $type){
-                cli_log(tr('Starting ":type" init', array(':type' => $type)));
+                log_console(tr('Starting ":type" init', array(':type' => $type)));
 
                 /*
                  * Get path for the init type (either init/framework or init/project)
@@ -177,7 +177,7 @@ function init($projectfrom = null, $frameworkfrom = null){
                     }
 
                     if((file_extension($file) != 'php') or !str_is_version(str_until($file, '.php'))) {
-                        cli_log(tr('Skipping unknown file ":file"', array(':file' => $file)), 'yellow');
+                        log_console(tr('Skipping unknown file ":file"', array(':file' => $file)), 'yellow');
                         unset($files[$key]);
                         continue;
                     }
@@ -209,7 +209,7 @@ function init($projectfrom = null, $frameworkfrom = null){
                              */
                             try{
                                 if(file_exists($hook = $initpath.'hooks/pre_'.$file)){
-                                    log_console('Executing newer init "pre" hook file with version "'.$version.'"', 'init/'.$type,'green');
+                                    log_console('Executing newer init "pre" hook file with version "'.$version.'"', 'init/'.$type, 'green');
                                     include_once($hook);
                                 }
 
@@ -221,7 +221,7 @@ function init($projectfrom = null, $frameworkfrom = null){
                             }
 
                             try{
-                                log_console('Executing newer init file with version "'.$version.'"', 'init/'.$type,'green');
+                                log_console('Executing newer init file with version "'.$version.'"', 'green');
                                 init_include($initpath.$file);
 
                             }catch(Exception $e){
@@ -233,7 +233,7 @@ function init($projectfrom = null, $frameworkfrom = null){
 
                             try{
                                 if(file_exists($hook = $initpath.'hooks/post_'.$file)){
-                                    log_console('Executing newer init "post" hook file with version "'.$version.'"', 'init/'.$type,'green');
+                                    log_console('Executing newer init "post" hook file with version "'.$version.'"', 'init/'.$type, 'green');
                                     include_once($hook);
                                 }
 
@@ -246,9 +246,9 @@ function init($projectfrom = null, $frameworkfrom = null){
 
                             $versions[$type] = $version;
 
-                            $GLOBALS['sql_core']->query('INSERT INTO `versions` (`framework`, `project`) VALUES ("'.cfm($versions['framework']).'", "'.cfm($versions['project']).'")');
+                            $core->sql['core']->query('INSERT INTO `versions` (`framework`, `project`) VALUES ("'.cfm($versions['framework']).'", "'.cfm($versions['project']).'")');
 
-                            log_console('Finished init version "'.$version.'"', 'init/'.$type);
+                            log_console('Finished init version "'.$version.'"', 'green');
 
                         }else{
                             /*
@@ -269,23 +269,23 @@ function init($projectfrom = null, $frameworkfrom = null){
                  * This way, the code version can be upped without having to add empty init files.
                  */
                 if(version_compare(constant($utype.'CODEVERSION'), $versions[$type]) > 0){
-                    log_console('Last init file was "'.$versions[$type].'" while code version is still higher at "'.constant($utype.'CODEVERSION').'"', 'init/'.$type, 'yellow');
-                    log_console('Updating database version to code version manually'                                                                  , 'init/'.$type, 'yellow');
+                    log_console('Last init file was "'.$versions[$type].'" while code version is still higher at "'.constant($utype.'CODEVERSION').'"', 'yellow');
+                    log_console('Updating database version to code version manually'                                                                  , 'yellow');
 
                     $versions[$type] = constant($utype.'CODEVERSION');
 
-                    $GLOBALS['sql_core']->query('INSERT INTO `versions` (`framework`, `project`) VALUES ("'.cfm((string) $versions['framework']).'", "'.cfm((string) $versions['project']).'")');
+                    $core->sql['core']->query('INSERT INTO `versions` (`framework`, `project`) VALUES ("'.cfm((string) $versions['framework']).'", "'.cfm((string) $versions['project']).'")');
                 }
 
                 /*
                  * Finished one init part (either type framework or type project)
                  */
-                cli_log('Finished init', 'green');
+                log_console('Finished init', 'green');
             }
         }
 
         if($_CONFIG['production']){
-            log_console('Removing data symlink in all languages', 'init/cleanup');
+            log_console('Removing data symlink in all languages');
 
             foreach($_CONFIG['language']['supported'] as $language => $name){
                 file_delete(ROOT.'www/'.substr($language, 0, 2).'/data');
@@ -294,12 +294,12 @@ function init($projectfrom = null, $frameworkfrom = null){
             log_console('Finished data symlink cleanup', 'green');
         }
 
-        cli_log('Finished all', 'green');
+        log_console('Finished all', 'green');
 
     }catch(Exception $e){
         if($e->getCode() === 'invalidforce'){
             foreach($e->getMessages() as $message){
-                log_screen($message);
+                log_console($message);
             }
 
             die(1);
@@ -325,7 +325,7 @@ function init($projectfrom = null, $frameworkfrom = null){
  *
  */
 function init_process_version_diff(){
-    global $_CONFIG;
+    global $_CONFIG, $core;
 
     try{
         if((SCRIPT == 'init') or (SCRIPT == 'update') or (SCRIPT == 'sync')){
@@ -337,7 +337,7 @@ function init_process_version_diff(){
 
         if(PROJECTDBVERSION === 0){
             $versionerror     = 'Database is empty';
-            $GLOBALS['no-db'] = true;
+            $core->register['no-db'] = true;
 
         }else{
             if($compare_framework > 0){
@@ -375,10 +375,10 @@ function init_process_version_diff(){
  * safely continue with system init
  */
 function init_process_version_fail($e){
-    global $_CONFIG;
+    global $_CONFIG, $core;
 
     try{
-        $r = $GLOBALS['sql_core']->query('SHOW TABLES WHERE `Tables_in_'.$_CONFIG['db']['core']['db'].'` = "versions";');
+        $r = $core->sql['core']->query('SHOW TABLES WHERE `Tables_in_'.$_CONFIG['db']['core']['db'].'` = "versions";');
 
         if($r->rowCount($r)){
             throw new bException('init_process_version_fail(): Failed version detection', $e);
@@ -387,10 +387,10 @@ function init_process_version_fail($e){
         define('FRAMEWORKDBVERSION', 0);
         define('PROJECTDBVERSION'  , 0);
 
-        $GLOBALS['no-db'] = true;
+        $core->register['no-db'] = true;
 
-        if(PLATFORM == 'shell'){
-            log_console('init_process_version_fail(): No versions table found, assumed empty database', 'warning/versions', 'yellow');
+        if(PLATFORM_CLI){
+            log_console('init_process_version_fail(): No versions table found, assumed empty database', 'yellow');
         }
 
     }catch(Exception $e){

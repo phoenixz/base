@@ -41,14 +41,14 @@ switch(cli_method()){
         cli_no_arguments_left();
 
         cache_clear($key, $namespace);
-        cli_log('Cleared caches', 'green');
+        log_console('Cleared caches', 'green');
         break;
 
     case 'size':
         cli_no_arguments_left();
 
         $size = cache_size();
-        cli_log(tr('The cache is ":size" large', array(':size' => bytes($size))), 'white');
+        log_console(tr('The cache is ":size" large', array(':size' => bytes($size))), 'white');
         break;
 
     case 'count':
@@ -57,7 +57,7 @@ switch(cli_method()){
         cli_no_arguments_left();
 
         $count = cache_count();
-        cli_log(tr('The cache contains ":count" objects', array(':count' => $count)), 'white');
+        log_console(tr('The cache contains ":count" objects', array(':count' => $count)), 'white');
         break;
 
     case 'info':
@@ -67,16 +67,16 @@ switch(cli_method()){
         $count  = cache_count();
         $method = $_CONFIG['cache']['method'];
 
-        cli_log(tr('The cache contains ":count" objects, and is ":size" large', array(':count' => $count, ':size' => bytes($size))), '', 'white');
+        log_console(tr('The cache contains ":count" objects, and is ":size" large', array(':count' => $count, ':size' => bytes($size))), '', 'white');
 
         switch($method){
             case 'file':
-                cli_log(tr('The cache is using the filesystem for storage')                   , 'white');
-                cli_log(tr('The cache directory is ":ROOTdata/cache"', array(':ROOT' => ROOT)), 'white');
+                log_console(tr('The cache is using the filesystem for storage')                   , 'white');
+                log_console(tr('The cache directory is ":ROOTdata/cache"', array(':ROOT' => ROOT)), 'white');
                 break;
 
             case 'memcached':
-                cli_log(tr('The cache is using memcached for storage'), '', 'white');
+                log_console(tr('The cache is using memcached for storage'), '', 'white');
                 break;
 
             default:

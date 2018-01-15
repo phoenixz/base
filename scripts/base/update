@@ -46,7 +46,7 @@ if($local){
      * Get the data from the local base repository instead of the centralized one
      */
     $base = $_CONFIG['update']['local'];
-    cli_log(tr('Running in "local" mode, getting all base data from ":path" for faster update', array(':path' => $base['path'])), 'yellow');
+    log_console(tr('Running in "local" mode, getting all base data from ":path" for faster update', array(':path' => $base['path'])), 'yellow');
 
 }else{
     $base = $_CONFIG['update']['local'];
@@ -57,11 +57,11 @@ if(!$branch){
 }
 
 if(TEST){
-    cli_log(tr('scripts/update: Running update script in test mode, NOT REALLY UPDATING!'), 'yellow');
+    log_console(tr('scripts/update: Running update script in test mode, NOT REALLY UPDATING!'), 'yellow');
 }
 
 if(FORCE){
-    cli_log(tr('scripts/update: Running update script in forced mode, WILL UPDATE EVEN IF GIT CHANGES AND / OR MINOR PROBLEMS ARE FOUND!'), 'yellow');
+    log_console(tr('scripts/update: Running update script in forced mode, WILL UPDATE EVEN IF GIT CHANGES AND / OR MINOR PROBLEMS ARE FOUND!'), 'yellow');
 }
 
 
@@ -90,7 +90,7 @@ if(!trim(shell_exec('git status | grep "nothing to commit" | wc -l'))){
 
     if(FORCE){
         shell_exec('git add .; git stash');
-        cli_log(tr('scripts/update: Stashed git changes because of -F or --force option specified'), 'yellow');
+        log_console(tr('scripts/update: Stashed git changes because of -F or --force option specified'), 'yellow');
         $stashed = true;
     }
 }
@@ -118,11 +118,11 @@ if($local){
         throw new bException(tr('Git commit pending on your local base project'), 'COMMITFIRST');
     }
 
-    cli_log(tr('Updating base project, branch ":branch"', array(':branch' => $branch)), 'white');
+    log_console(tr('Updating base project, branch ":branch"', array(':branch' => $branch)), 'white');
     passthru('cd '.$base['path'].'; git checkout '.$branch.'; git pull origin '.$branch.'');
 
 }else{
-    cli_log(tr('Updating base project, branch ":branch"', array(':branch' => $branch)), 'white');
+    log_console(tr('Updating base project, branch ":branch"', array(':branch' => $branch)), 'white');
     passthru('ssh -t '.$base['host'].' -p '.$base['port'].' "cd '.$base['path'].'; git reset --hard; git checkout '.$branch.'; git pull origin '.$branch.'"');
 }
 
@@ -142,18 +142,18 @@ if($no_times or !empty($_CONFIG['deploy'][ENVIRONMENT]['no_times'])){
 /*
  * Copy from base
  */
-cli_log(tr('Copying from base'), 'white');
+log_console(tr('Copying from base'), 'white');
 
 if(empty($test)){
     /*
      * Libraries
      */
-    cli_log(tr('Copying libraries'), 'purple');
+    log_console(tr('Copying libraries'), 'purple');
     passthru('rsync -e "ssh -p '.$base['port'].'" -aczvAXHS '.$no_times.' --no-perms '.$base['host'].':'.$base['path'].'/www/en/libs '.ROOT.'www/en/', $exitcodes['www/en/libs']);
     passthru('rsync -e "ssh -p '.$base['port'].'" -aczvAXHS '.$no_times.' --no-perms '.$base['host'].':'.$base['path'].'/www/en/tests '.ROOT.'www/en/', $exitcodes['www/en']);
 
     // Base AJAX files
-    cli_log(tr('Copying ajax files'), 'purple');
+    log_console(tr('Copying ajax files'), 'purple');
     passthru('rsync -e "ssh -p '.$base['port'].'" -aczvAXHS '.$no_times.' --no-perms '.$base['host'].':'.$base['path'].'/www/en/ajax/base '.ROOT.'www/en/ajax/', $exitcodes['www/en/ajax']);
 
     // BAse AJAX files for admin section
@@ -162,20 +162,20 @@ if(empty($test)){
     }
 
     // Scripts
-    cli_log(tr('Copying base scripts'), 'purple');
+    log_console(tr('Copying base scripts'), 'purple');
     passthru('rsync -e "ssh -p '.$base['port'].'" -aczvAXHS '.$no_times.' --no-perms --delete '.$base['host'].':'.$base['path'].'/scripts/base/* '.ROOT.'scripts/base/', $exitcodes['scripts/base']);
     passthru('rsync -e "ssh -p '.$base['port'].'" -aczvAXHS '.$no_times.' --no-perms --delete '.$base['host'].':'.$base['path'].'/scripts/tests/* '.ROOT.'scripts/tests/', $exitcodes['libs']);
 
     // Framework init files
-    cli_log(tr('Copying framework init files'), 'purple');
+    log_console(tr('Copying framework init files'), 'purple');
     passthru('rsync -e "ssh -p '.$base['port'].'" -aczvAXHS '.$no_times.' --no-perms --delete '.$base['host'].':'.$base['path'].'/init/framework/* '.ROOT.'init/framework/', $exitcodes['init/framework']);
 
     // Base configuration
-    cli_log(tr('Config base configuration'), 'purple');
+    log_console(tr('Config base configuration'), 'purple');
     passthru('rsync -e "ssh -p '.$base['port'].'" -aczvAXHS '.$no_times.' --no-perms --delete '.$base['host'].':'.$base['path'].'/config/base/* '.ROOT.'config/base/', $exitcodes['config/base']);
 
     // Javascript
-    cli_log(tr('Copying javascript files'), 'purple');
+    log_console(tr('Copying javascript files'), 'purple');
     passthru('rsync -e "ssh -p '.$base['port'].'" -aczvAXHS '.$no_times.' --no-perms --delete '.$base['host'].':'.$base['path'].'/www/en/pub/js/base/* '.ROOT.'www/en/pub/js/base/', $exitcodes['www/en/pub/js/base']);
 
     if(file_exists(ROOT.'www/en/admin/pub/js/')){
@@ -183,17 +183,17 @@ if(empty($test)){
     }
 
     // Documentation
-    cli_log(tr('Copying documentation'), 'purple');
+    log_console(tr('Copying documentation'), 'purple');
     passthru('rsync -e "ssh -p '.$base['port'].'" -aczvAXHS '.$no_times.' --no-perms '.$base['host'].':'.$base['path'].'/data/doc/* '.ROOT.'data/doc/', $exitcodes['data/doc']);
 
     // Audio files
-    cli_log(tr('Copying audio files'), 'purple');
+    log_console(tr('Copying audio files'), 'purple');
     passthru('rsync -e "ssh -p '.$base['port'].'" -aczvAXHS '.$no_times.' --no-perms '.$base['host'].':'.$base['path'].'/data/audio/* '.ROOT.'data/audio/', $exitcodes['data/audio']);
 }
 
 foreach($exitcodes as $path => $exitcode){
     if($exitcode){
-        log_error(tr('Rsync of ":path" failed with exit code ":code"', array(':path' => $path, ':code' => $exitcode)));
+        log_console(tr('Rsync of ":path" failed with exit code ":code"', array(':path' => $path, ':code' => $exitcode)));
         $e = true;
     }
 }
@@ -210,10 +210,10 @@ unset($exitcode);
  * Execute init script
  */
 if($noinit){
-    cli_log(tr('Skipping system init due to "--no-init" option'), 'yellow');
+    log_console(tr('Skipping system init due to "--no-init" option'), 'yellow');
 
 }else{
-    cli_log(tr('Excuting system init'), 'white');
+    log_console(tr('Excuting system init'), 'white');
     passthru('cd '.ROOT.'scripts/base/;export '.PROJECT.'_ENVIRONMENT='.ENVIRONMENT.'; php init', $exitcode);
 
     if($exitcode){
@@ -227,11 +227,11 @@ if($noinit){
  * Done
  */
 if($nocommit){
-    cli_log(tr('Skipping git commit due to "--no-commit" option'), 'yellow');
+    log_console(tr('Skipping git commit due to "--no-commit" option'), 'yellow');
 
 }else{
     if(!trim(shell_exec('git status | grep "nothing to commit" | wc -l'))){
-        cli_log(tr('Git commit updates'), 'white');
+        log_console(tr('Git commit updates'), 'white');
         passthru('cd '.ROOT.';git add .;git commit -am "Update from base"', $exitcode);
 
         if($exitcode){
@@ -252,7 +252,7 @@ if(!empty($stashed)){
         throw new bException(tr('Git commit of updates failed with exit code ":code"', array(':code' => $exitcode)), 'git');
     }
 
-    cli_log(tr('scripts/update: Found stashed git changes, popping them back'), 'yellow');
+    log_console(tr('scripts/update: Found stashed git changes, popping them back'), 'yellow');
 }
 
 cli_run_once_local(true);

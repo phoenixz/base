@@ -330,8 +330,8 @@ function file_ensure_file($file, $mode = null){
             /*
              * Create the file
              */
-            if(VERBOSE and PLATFORM_SHELL){
-                cli_log('file_ensure_file(): Warning: file "'.str_log($file).'" did not existed and was created empty to ensure system stability, but information may be missing', 'yellow');
+            if(VERBOSE and PLATFORM_CLI){
+                log_console('file_ensure_file(): Warning: file "'.str_log($file).'" did not existed and was created empty to ensure system stability, but information may be missing', 'yellow');
             }
 
             touch($file);
@@ -494,7 +494,7 @@ function file_clear_path($path){
                  * in this directory, so it's no longer empty. Just register
                  * the event and leave it be.
                  */
-                cli_log(tr('file_clear_path(): Failed to remove empty path ":path" with exception ":e"', array(':path' => $path, ':e' => $e)), 'failed');
+                log_console(tr('file_clear_path(): Failed to remove empty path ":path" with exception ":e"', array(':path' => $path, ':e' => $e)), 'failed');
                 return true;
             }
         }
@@ -805,18 +805,18 @@ function file_copy_tree($source, $destination, $search = null, $replace = null, 
             }
 
             if(!file_exists($source)){
-                throw new bException('file_copy_tree(): Specified source "'.str_log($source).'" does not exist', 'sourcenoexist');
+                throw new bException('file_copy_tree(): Specified source "'.str_log($source).'" does not exist', 'not-exist');
             }
 
             $destination = unslash($destination);
 
             if(!file_exists($destination)){
                 if(!file_exists(dirname($destination))){
-                    throw new bException('file_copy_tree(): Specified destination "'.str_log(dirname($destination)).'" does not exist', 'destinationnoexist');
+                    throw new bException('file_copy_tree(): Specified destination "'.str_log(dirname($destination)).'" does not exist', 'not-exist');
                 }
 
                 if(!is_dir(dirname($destination))){
-                    throw new bException('file_copy_tree(): Specified destination "'.str_log(dirname($destination)).'" is not a directory', 'notadirectory');
+                    throw new bException('file_copy_tree(): Specified destination "'.str_log(dirname($destination)).'" is not a directory', 'not-directory');
                 }
 
                 if(is_dir($source)){
@@ -923,7 +923,7 @@ function file_copy_tree($source, $destination, $search = null, $replace = null, 
                     /*
                      * This symlink points to no file, its dead
                      */
-                    log_message('file_copy_tree(): Encountered dead symlink "'.$source.'", copying anyway...', 'warning');
+                    log_console('file_copy_tree(): Encountered dead symlink "'.$source.'", copying anyway...', 'warning');
                 }
 
                 /*
@@ -1900,8 +1900,8 @@ function file_tree_execute($params){
         }
 
         if((substr(basename($params['path']), 0, 1) == '.') and !$params['follow_hidden']){
-            if(VERBOSE and PLATFORM_SHELL){
-                cli_log(tr('file_tree_execute(): Skipping file ":file" because its hidden', array(':file' => $params['path'])), 'yellow');
+            if(VERBOSE and PLATFORM_CLI){
+                log_console(tr('file_tree_execute(): Skipping file ":file" because its hidden', array(':file' => $params['path'])), 'yellow');
             }
 
             return 0;
@@ -1913,8 +1913,8 @@ function file_tree_execute($params){
         switch($type){
             case 'regular file':
                 if($params['filter'] and !preg_match($params['filter'], $params['path'])){
-                    if(VERBOSE and PLATFORM_SHELL){
-                        cli_log(tr('file_tree_execute(): Skipping file ":file" because of filter ":filter"', array(':file' => $params['path'], ':filter' => $params['filter'])), 'yellow');
+                    if(VERBOSE and PLATFORM_CLI){
+                        log_console(tr('file_tree_execute(): Skipping file ":file" because of filter ":filter"', array(':file' => $params['path'], ':filter' => $params['filter'])), 'yellow');
                     }
 
                     return 0;
@@ -1923,9 +1923,9 @@ function file_tree_execute($params){
                 $params['callback']($params['path']);
                 $count++;
 
-                if(PLATFORM_SHELL){
+                if(PLATFORM_CLI){
                     if(VERBOSE){
-                        cli_log(tr('file_tree_execute(): Executed code for file ":file"', array(':file' => $params['path'])), 'green');
+                        log_console(tr('file_tree_execute(): Executed code for file ":file"', array(':file' => $params['path'])), 'green');
 
                     }else{
                         cli_dot();
@@ -1951,8 +1951,8 @@ function file_tree_execute($params){
                         if(($file == '.') or ($file == '..')) continue;
 
                         if((substr(basename($file), 0, 1) == '.') and !$params['follow_hidden']){
-                            if(VERBOSE and PLATFORM_SHELL){
-                                cli_log(tr('file_tree_execute(): Skipping file ":file" because its hidden', array(':file' => $file)), 'yellow');
+                            if(VERBOSE and PLATFORM_CLI){
+                                log_console(tr('file_tree_execute(): Skipping file ":file" because its hidden', array(':file' => $file)), 'yellow');
                             }
 
                             continue;
@@ -1986,8 +1986,8 @@ function file_tree_execute($params){
                             case 'regular file':
                                 if(($type != 'directory') or $params['execute_directory']){
                                     if($params['filter'] and !preg_match($params['filter'], $file)){
-                                        if(VERBOSE and PLATFORM_SHELL){
-                                            cli_log(tr('file_tree_execute(): Skipping file ":file" because of filter ":filter"', array(':file' => $file, ':filter' => $params['filter'])), 'yellow');
+                                        if(VERBOSE and PLATFORM_CLI){
+                                            log_console(tr('file_tree_execute(): Skipping file ":file" because of filter ":filter"', array(':file' => $file, ':filter' => $params['filter'])), 'yellow');
                                         }
 
                                         continue;
@@ -2000,13 +2000,13 @@ function file_tree_execute($params){
                                         /*
                                          * When the callback returned boolean false, cancel all other files
                                          */
-                                        cli_log(tr('file_tree_execute(): callback returned FALSE for file ":file", skipping rest of directory contents!', array(':file' => $file)), 'yellow');
+                                        log_console(tr('file_tree_execute(): callback returned FALSE for file ":file", skipping rest of directory contents!', array(':file' => $file)), 'yellow');
                                         goto end;
                                     }
 
-                                    if(PLATFORM_SHELL){
+                                    if(PLATFORM_CLI){
                                         if(VERBOSE){
-                                            cli_log(tr('file_tree_execute(): Executed code for file ":file"', array(':file' => $file)), 'green');
+                                            log_console(tr('file_tree_execute(): Executed code for file ":file"', array(':file' => $file)), 'green');
 
                                         }else{
                                             cli_dot();
@@ -2025,8 +2025,8 @@ function file_tree_execute($params){
                                 /*
                                  * Skip this unsupported file type
                                  */
-                                if(VERBOSE and PLATFORM_SHELL){
-                                    cli_log(tr('file_tree_execute(): Skipping file ":file" with unsupported file type ":type"', array(':file' => $file, ':type' => $type)), 'yellow');
+                                if(VERBOSE and PLATFORM_CLI){
+                                    log_console(tr('file_tree_execute(): Skipping file ":file" with unsupported file type ":type"', array(':file' => $file, ':type' => $type)), 'yellow');
                                 }
                         }
 
@@ -2036,12 +2036,12 @@ function file_tree_execute($params){
                         }
 
                         if($e->getCode() === 'file-not-exist'){
-                            if(VERBOSE and PLATFORM_SHELL){
-                                cli_log(tr('file_tree_execute(): Skipping file ":file", it does not exist (in case of a symlink, it may be that the target does not exist)', array(':file' => $file)), 'yellow');
+                            if(VERBOSE and PLATFORM_CLI){
+                                log_console(tr('file_tree_execute(): Skipping file ":file", it does not exist (in case of a symlink, it may be that the target does not exist)', array(':file' => $file)), 'yellow');
                             }
 
                         }else{
-                            log_error($e);
+                            log_console($e);
                         }
                     }
                 }
@@ -2055,8 +2055,8 @@ function file_tree_execute($params){
                 /*
                  * Skip this unsupported file type
                  */
-                if(VERBOSE and PLATFORM_SHELL){
-                    cli_log(tr('file_tree_execute(): Skipping file ":file" with unsupported file type ":type"', array(':file' => $file, ':type' => $params['path'])), 'yellow');
+                if(VERBOSE and PLATFORM_CLI){
+                    log_console(tr('file_tree_execute(): Skipping file ":file" with unsupported file type ":type"', array(':file' => $file, ':type' => $params['path'])), 'yellow');
                 }
         }
 

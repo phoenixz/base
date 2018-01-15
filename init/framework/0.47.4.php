@@ -8,7 +8,7 @@ sql_query('ALTER TABLE `blogs_media` CHANGE COLUMN `hash` `hash` VARCHAR(64) NOT
 $medias = sql_query('SELECT `id`, `file` FROM `blogs_media`');
 $update = sql_prepare('UPDATE `blogs_media` SET `hash` = :hash WHERE `id` = :id');
 
-cli_log(tr('Updating all blog media hash values. This might take a little while. NOTE: Each following dot represents one file'));
+log_console(tr('Updating all blog media hash values. This might take a little while. NOTE: Each following dot represents one file'));
 
 while($media = sql_fetch($medias)){
     if(empty($media['file'])) continue;
@@ -45,7 +45,7 @@ $blogs  = sql_query('SELECT `id`, `name` FROM `blogs`');
 $update = sql_prepare('UPDATE `blogs_posts` SET `priority` = :priority WHERE `id` = :id');
 
 while($blog = sql_fetch($blogs)){
-    cli_log(tr('Updating priorities for blog ":blog"', array(':blog' => $blog['name'])));
+    log_console(tr('Updating priorities for blog ":blog"', array(':blog' => $blog['name'])));
 
     $priority = 1;
     $posts    = sql_query('SELECT `id`, `name` FROM `blogs_posts` WHERE `blogs_id` = :blogs_id ORDER BY `createdon` ASC', array(':blogs_id' => $blog['id']));

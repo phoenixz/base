@@ -22,7 +22,7 @@ cli_only(true);
 load_libs('sitemap');
 
 if(empty($_CONFIG['sitemap']['enabled'])){
-    cli_log(tr('Sitemap has been disabled in the configuration'), 'yellow');
+    log_console(tr('Sitemap has been disabled in the configuration'), 'yellow');
     cli_die(0);
 }
 
@@ -32,16 +32,16 @@ switch(cli_method()){
          * Clear sitemap database.
          */
         if(cli_method(1)){
-            cli_log(tr('Clearing sitemap data for group ":group"', array(':group' => cli_method(1))), 'white');
+            log_console(tr('Clearing sitemap data for group ":group"', array(':group' => cli_method(1))), 'white');
 
         }else{
-            cli_log(tr('Clearing sitemap data'), 'white');
+            log_console(tr('Clearing sitemap data'), 'white');
         }
 
         cli_no_arguments_left();
         sitemap_clear(cli_method(1));
 
-        cli_log(tr('Sitemap data has been cleared'), 'green');
+        log_console(tr('Sitemap data has been cleared'), 'green');
 
         break;
 
@@ -49,7 +49,7 @@ switch(cli_method()){
         $generated = sql_get('SELECT COUNT(*) AS `count` FROM `sitemaps_generated`', 'count');
 
         if(!$generated){
-            cli_log(tr('No sitemap data has been generated ever before. Generating all sitemap files now'), 'yellow');
+            log_console(tr('No sitemap data has been generated ever before. Generating all sitemap files now'), 'yellow');
 
         }else{
             foreach($_CONFIG['language']['supported'] as $language_code => $language_name){
@@ -71,15 +71,15 @@ switch(cli_method()){
                                      true, array(':language' => $language_code));
 
                 if($modified){
-                    cli_log(tr('Sitemap data for language ":language" has been modified, regenerating all sitemap files', array(':language' => $language_name)), 'green');
+                    log_console(tr('Sitemap data for language ":language" has been modified, regenerating all sitemap files', array(':language' => $language_name)), 'green');
 
                 }else{
                     if(file_exists(ROOT.'www/en/sitemap.xml')){
-                        cli_log(tr('Sitemap files for language ":language" exists and sitemap data has not been modified, not regenerating sitemap files', array(':language' => $language_name)), 'green');
+                        log_console(tr('Sitemap files for language ":language" exists and sitemap data has not been modified, not regenerating sitemap files', array(':language' => $language_name)), 'green');
                         continue;
                     }
 
-                    cli_log(tr('Sitemap data for language ":language" has not been modified, but sitemap file was not found. Regenerating all sitemap files', array(':language' => $language_name)), 'yellow');
+                    log_console(tr('Sitemap data for language ":language" has not been modified, but sitemap file was not found. Regenerating all sitemap files', array(':language' => $language_name)), 'yellow');
                 }
 
                 sitemap_generate($language_code);
@@ -91,9 +91,8 @@ switch(cli_method()){
         // FALLTHROUGH
     case 'generate':
         cli_no_arguments_left();
-        cli_log(tr('Regenerating sitemap files'), 'white');
+        log_console(tr('Regenerating sitemap files'), 'white');
         sitemap_generate();
-        log_error('Done!', 'finished', 'green');
         break;
 
     case '':

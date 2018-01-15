@@ -33,12 +33,12 @@ load_config('blogs');
 switch(cli_method()){
     case 'rebuild-post-urls':
         cli_no_arguments_left();
-        cli_log(tr('Updating all blog post URLs'), 'white');
+        log_console(tr('Updating all blog post URLs'), 'white');
 
         load_libs('blogs');
         blogs_update_urls(isset_get($argv));
 
-        cli_log(tr('Updated all blog posts with the URL configuration ":url"', array(':url' => $_CONFIG['blogs']['url'])), 'green');
+        log_console(tr('Updated all blog posts with the URL configuration ":url"', array(':url' => $_CONFIG['blogs']['url'])), 'green');
         break;
 
     case 'reprocess-images':
@@ -94,7 +94,7 @@ switch(cli_method()){
         $blogs = sql_query($query, $execute);
 
         while($blog = sql_fetch($blogs)){
-            cli_log(tr('Processing photos for blog ":blog"', array(':blog' => $blog['name'])), 'white');
+            log_console(tr('Processing photos for blog ":blog"', array(':blog' => $blog['name'])), 'white');
 
             $path   = ROOT.'data/content/photos/';
 
@@ -117,7 +117,7 @@ switch(cli_method()){
              */
             while($photo = sql_fetch($photos)){
                 if(VERBOSE){
-                    cli_log(tr('Processing photo file group ":file"', array(':file' => $photo['file'])));
+                    log_console(tr('Processing photo file group ":file"', array(':file' => $photo['file'])));
 
                 }else{
                     cli_dot(1);
@@ -149,7 +149,7 @@ switch(cli_method()){
                     file_delete_tree($photo_path);
                     file_clear_path($photo_path);
                     sql_query('DELETE FROM `blogs_images` WHERE `id` = :id', array(':id' => $photo['id']));
-                    cli_log(tr('Failed to find source file (-origin or -large) for photo ":photo", removed all files and database references to cleanup', array(':photo' => $photo['file'])), 'yellow');
+                    log_console(tr('Failed to find source file (-origin or -large) for photo ":photo", removed all files and database references to cleanup', array(':photo' => $photo['file'])), 'yellow');
                     continue;
                 }
 
@@ -198,8 +198,8 @@ switch(cli_method()){
         }
 
         sql_query('TRUNCATE `html_img_cache`');
-        cli_log(tr('Cleared html_img cache'), 'green');
-        cli_log(tr('Done!'), 'green');
+        log_console(tr('Cleared html_img cache'), 'green');
+        log_console(tr('Done!'), 'green');
 
         break;
 

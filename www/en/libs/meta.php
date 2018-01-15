@@ -13,13 +13,20 @@
 /*
  * Add specified action to meta history for the specified meta_id
  */
-function meta_action($meta_id, $action, $data = null){
+function meta_action($meta_id = null, $action = null, $data = null){
     try{
         if(!$meta_id){
-            sql_query('INSERT INTO `meta` VALUES (`id`),
-                       VALUES                    (null)');
+            $action = 'create';
+
+            sql_query('INSERT INTO `meta` (`id`)
+                       VALUES             (null)');
 
             $meta_id = sql_insert_id();
+
+        }else{
+            if(!is_numeric($meta_id)){
+                throw new bException(tr('meta_action(): Invalid meta_id ":meta_id" specified', array(':meta_id' => $meta_id)), 'invalid');
+            }
         }
 
         return meta_add_history($meta_id, $action, $data);
@@ -36,8 +43,8 @@ function meta_action($meta_id, $action, $data = null){
  */
 function meta_add_history($meta_id, $action, $data = null){
     try{
-        sql_query('INSERT INTO `meta_history` VALUES (`createdby`, `meta_id`, `action`, `data`)
-                   VALUES                            (:createdby , :meta_id , :action , :data )',
+        sql_query('INSERT INTO `meta_history` (`createdby`, `meta_id`, `action`, `data`)
+                   VALUES                     (:createdby , :meta_id , :action , :data )',
 
                    array(':createdby' => isset_get($_SESSION['user']['id']),
                          ':meta_id'   => $meta_id,
@@ -47,7 +54,7 @@ function meta_add_history($meta_id, $action, $data = null){
         return $meta_id;
 
     }catch(Exception $e){
-        throw new bException('meta_action(): Failed', $e);
+        throw new bException('meta_add_history(): Failed', $e);
     }
 }
 

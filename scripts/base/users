@@ -211,7 +211,7 @@ switch(cli_method()){
         user_update_rights(array('id'       => sql_insert_id(),
                                  'roles_id' => $user['roles_id']));
 
-        cli_log(tr('Created user ":user" with email ":email"', array(':user' => user_name($user), ':email' => $user['email'])), 'green');
+        log_console(tr('Created user ":user" with email ":email"', array(':user' => user_name($user), ':email' => $user['email'])), 'green');
         break;
 
     case 'modify':
@@ -294,10 +294,10 @@ switch(cli_method()){
                               ':id'        => $db_user['id']));
 
         if(!$r->rowCount()){
-            cli_log(tr('Not modified anything for user ":user"', array(':user' => user_name($user))), 'yellow');
+            log_console(tr('Not modified anything for user ":user"', array(':user' => user_name($user))), 'yellow');
 
         }else{
-            cli_log(tr('Modified user ":user"', array(':user' => user_name($user))), 'green');
+            log_console(tr('Modified user ":user"', array(':user' => user_name($user))), 'green');
         }
 
         break;
@@ -355,7 +355,7 @@ switch(cli_method()){
                          ':roles_id' => $role['id']));
 
         user_update_rights($user);
-        cli_log(tr('Gave role ":role" to user ":user"', array(':role' => $role['name'], ':user' => user_name($user))), 'green');
+        log_console(tr('Gave role ":role" to user ":user"', array(':role' => $role['name'], ':user' => user_name($user))), 'green');
         break;
 
     case 'list':
@@ -468,7 +468,7 @@ switch(cli_method()){
         }
 
         if($show_rights){
-            cli_log(tr('Showing rights for users'));
+            log_console(tr('Showing rights for users'));
 
             $query   = 'SELECT    `users`.`id`,
                                   `users`.`username`,
@@ -487,10 +487,10 @@ switch(cli_method()){
             $r = sql_query($query.$where.($limit ? ' LIMIT '.$limit : ''), $execute);
 
             if(!$r->rowCount()){
-                cli_log(tr('There are currently no users registered'), 'yellow');
+                log_console(tr('There are currently no users registered'), 'yellow');
 
             }else{
-                cli_log(tr('#id    Username     Nickname     Status     Role       Rights'), 'cyan');
+                log_console(tr('#id    Username     Nickname     Status     Role       Rights'), 'cyan');
 
                 while($user = sql_fetch($r)){
                     $rights = sql_list('SELECT `rights`.`name`
@@ -504,7 +504,7 @@ switch(cli_method()){
 
                                         array(':roles_id'    => $user['roles_id']));
 
-                    cli_log(str_size($user['id'], 6, ' ', true).' '.str_size($user['username'], 12).' '.str_size($user['nickname'], 12).' '.str_size(status($user['status']), 10).' '.str_size(not_empty($user['role'], '-'), 10).' '.not_empty(str_force($rights, ', '), '-'));
+                    log_console(str_size($user['id'], 6, ' ', true).' '.str_size($user['username'], 12).' '.str_size($user['nickname'], 12).' '.str_size(status($user['status']), 10).' '.str_size(not_empty($user['role'], '-'), 10).' '.not_empty(str_force($rights, ', '), '-'));
                 }
             }
 
@@ -537,13 +537,13 @@ switch(cli_method()){
             $r = sql_query($query.$where.($limit ? ' LIMIT '.$limit : ''), $execute);
 
             if(!$r->rowCount()){
-                cli_log(tr('There are currently no users registered'), 'yellow');
+                log_console(tr('There are currently no users registered'), 'yellow');
 
             }else{
-                cli_log(tr('#id    Username     Nickname     Status     Type       Role       Admin God Status     Real name                        Email                            '), 'cyan');
+                log_console(tr('#id    Username     Nickname     Status     Type       Role       Admin God Status     Real name                        Email                            '), 'cyan');
 
                 while($user = sql_fetch($r)){
-                    cli_log(str_size($user['id'], 6, ' ', true).' '.str_size($user['username'], 12).' '.str_size($user['nickname'], 12).' '.str_size(status($user['status']), 10).' '.str_size($user['type'], 10).' '.str_size($user['role'], 10).' '.str_size(($user['admin'] ? 'Yes' : ''), 5).' '.str_size(($user['god'] ? 'Yes' : ''), 3).' '.str_size(status($user['status']), 10).' '.str_size($user['name'], 32).' '.str_size($user['email'], 32));
+                    log_console(str_size($user['id'], 6, ' ', true).' '.str_size($user['username'], 12).' '.str_size($user['nickname'], 12).' '.str_size(status($user['status']), 10).' '.str_size($user['type'], 10).' '.str_size($user['role'], 10).' '.str_size(($user['admin'] ? 'Yes' : ''), 5).' '.str_size(($user['god'] ? 'Yes' : ''), 3).' '.str_size(status($user['status']), 10).' '.str_size($user['name'], 32).' '.str_size($user['email'], 32));
                 }
             }
         }
@@ -578,15 +578,15 @@ switch(cli_method()){
 
         switch(!$r->rowCount()){
             case 0:
-                cli_log(tr('Not deleted any users'), 'error');
+                log_console(tr('Not deleted any users'), 'error');
                 break;
 
             case count($argv):
-                cli_log(tr('Deleted only ":deleted" users from the specified ":specified" users', array(':count' => $r->rowCount(), ':specified' => count($argv))), 'yellow');
+                log_console(tr('Deleted only ":deleted" users from the specified ":specified" users', array(':count' => $r->rowCount(), ':specified' => count($argv))), 'yellow');
                 break;
 
             default:
-                cli_log(tr('Deleted ":count" users', array(':count' => $r->rowCount())), 'green');
+                log_console(tr('Deleted ":count" users', array(':count' => $r->rowCount())), 'green');
         }
 
         break;
@@ -619,15 +619,15 @@ switch(cli_method()){
 
         switch(!$r->rowCount()){
             case 0:
-                cli_log(tr('Not undeleted any users'), 'error');
+                log_console(tr('Not undeleted any users'), 'error');
                 break;
 
             case count($argv):
-                cli_log(tr('Undeleted only ":deleted" users from the specified ":specified" users', array(':count' => $r->rowCount(), ':specified' => count($argv))), 'yellow');
+                log_console(tr('Undeleted only ":deleted" users from the specified ":specified" users', array(':count' => $r->rowCount(), ':specified' => count($argv))), 'yellow');
                 break;
 
             default:
-                cli_log(tr('Undeleted ":count" users', array(':count' => $r->rowCount())), 'green');
+                log_console(tr('Undeleted ":count" users', array(':count' => $r->rowCount())), 'green');
         }
 
         break;
@@ -658,15 +658,15 @@ switch(cli_method()){
 
         switch(!$r->rowCount()){
             case 0:
-                cli_log(tr('Not erased any users'), 'error');
+                log_console(tr('Not erased any users'), 'error');
                 break;
 
             case count($argv):
-                cli_log(tr('Erased only ":deleted" users from the specified ":specified" users', array(':count' => $r->rowCount(), ':specified' => count($argv))), 'yellow');
+                log_console(tr('Erased only ":deleted" users from the specified ":specified" users', array(':count' => $r->rowCount(), ':specified' => count($argv))), 'yellow');
                 break;
 
             default:
-                cli_log(tr('Erased ":count" users', array(':count' => $r->rowCount())), 'green');
+                log_console(tr('Erased ":count" users', array(':count' => $r->rowCount())), 'green');
         }
 
         break;
@@ -703,7 +703,7 @@ switch(cli_method()){
                                  ':email'    => $user));
 
         if($r->rowCount()){
-            cli_log(tr('Updated password for user ":user"', array(':user' => $user)), 'green');
+            log_console(tr('Updated password for user ":user"', array(':user' => $user)), 'green');
 
         }else{
             $userdata = sql_get('SELECT `id`,
@@ -723,7 +723,7 @@ switch(cli_method()){
                 throw new bException(tr('User ":user" does not exist', array(':user' => $user)), 'not-exist');
             }
 
-            cli_log(tr('User ":user" has the same password, so it is not updated', array(':user' => $user)), 'yellow');
+            log_console(tr('User ":user" has the same password, so it is not updated', array(':user' => $user)), 'yellow');
         }
 
         break;
@@ -732,18 +732,18 @@ switch(cli_method()){
         cli_no_arguments_left();
 
         if(empty($_SESSION['user']['id'])){
-            cli_log(tr('0 Nobody'));
+            log_console(tr('0 Nobody'));
 
         }else{
-            cli_log($_SESSION['user']['id'].' '.$_SESSION['user']['email'].' '.$_SESSION['user']['username'].' '.$_SESSION['user']['name']);
+            log_console($_SESSION['user']['id'].' '.$_SESSION['user']['email'].' '.$_SESSION['user']['username'].' '.$_SESSION['user']['name']);
         }
 
         break;
 
     case '':
-        throw new bException(tr('No method specified'), 'unknown');
+        throw new bException(tr('No method specified'), 'no-method');
 
     default:
-        throw new bException(tr('Unknown method ":method" specified', array(':method' => cli_method())), 'unknown');
+        throw new bException(tr('Invalid method ":method" specified', array(':method' => cli_method())), 'unknown-method');
 }
 ?>

@@ -77,7 +77,7 @@ try{
 
 }catch(Exception $e){
     notify('cache-clear/failed', $e);
-    log_error($e);
+    log_console($e);
 }
 
 
@@ -95,7 +95,7 @@ try{
 
 }catch(Exception $e){
     notify('cache-clear/failed', $e);
-    log_error($e);
+    log_console($e);
 }
 
 log_database('Cleared all caches', 'clearcache');

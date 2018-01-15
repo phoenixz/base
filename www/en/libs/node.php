@@ -15,7 +15,7 @@
  */
 function node_check(){
     try{
-        log_console('node_check(): Checking NodeJS availability', 'node', 'white');
+        log_console('node_check(): Checking NodeJS availability', 'white');
 
         try{
             $result = safe_exec('which nodejs');
@@ -26,7 +26,7 @@ function node_check(){
             $result = array_shift($result);
         }
 
-        log_console('node_check(): Using NodeJS "'.str_log($result).'"', 'node', 'green');
+        log_console(tr('node_check(): Using NodeJS ":result"', array(':result' => $result)), 'green');
 
         return $result;
 
@@ -50,7 +50,7 @@ function node_check(){
  */
 function node_check_modules(){
     try{
-        log_console('node_check_modules(): Checking node_modules availability', 'node', 'white');
+        log_console('node_check_modules(): Checking node_modules availability', 'white');
 
         /*
          * Find node_modules path
@@ -82,7 +82,7 @@ function node_check_modules(){
             throw new bException('node_check_modules(): node_modules path not found', 'path_not_found');
         }
 
-        log_console(tr('node_check_modules(): Using node_modules "%path%"', array('%path%' => $home)), 'node', 'green');
+        log_console(tr('node_check_modules(): Using node_modules ":path"', array(':path' => $home)), 'green');
         return slash($found);
 
     }catch(Exception $e){
@@ -105,12 +105,12 @@ function node_check_modules(){
  */
 function node_check_npm(){
     try{
-        log_console('node_check_npm(): Checking NodeJS npm availability', 'node', 'white');
+        log_console('node_check_npm(): Checking NodeJS npm availability', 'white');
 
         $result = safe_exec('which npm');
         $result = array_shift($result);
 
-        log_console('node_check_npm(): Using npm "'.str_log($result).'"', 'node', 'green');
+        log_console(tr('node_check_npm(): Using npm ":result"', array(':result' => $result)), 'green');
 
         return $result;
 

@@ -151,7 +151,7 @@ function install($params, $force = false){
                  * available, try those first!
                  */
                 if(VERBOSE){
-                    cli_log(tr('Library ":name" failed to install, check ":check" failed. Retrying with different methods', array(':name' => $params['name'], ':check' => $path)));
+                    log_console(tr('Library ":name" failed to install, check ":check" failed. Retrying with different methods', array(':name' => $params['name'], ':check' => $path)));
                 }
 
                 log_database(tr('Library ":name" failed to install, check ":check" failed. Retrying with different methods', array(':name' => $params['name'], ':check' => $path)), 'install');

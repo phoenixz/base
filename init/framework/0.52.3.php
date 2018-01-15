@@ -33,7 +33,7 @@ if(sql_column_exists('users', 'reference_numbers')){
             cli_dot();
 
         }catch(Exception $e){
-            cli_log($e);
+            log_console($e);
         }
     }
 

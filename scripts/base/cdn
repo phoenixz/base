@@ -179,7 +179,7 @@ switch(cli_method()){
             $r = sql_query('SELECT `id`, `status`, `cdn` FROM `listings`');
         }
 
-        cli_log(tr('Listings id Status           cdn Result'), 'cyan');
+        log_console(tr('Listings id Status           cdn Result'), 'cyan');
 
         $count = $r->rowCount();
 
@@ -229,10 +229,10 @@ switch(cli_method()){
                 $result = '[ '.str_size($success, 2, ' ', true).' / '.str_size($fail, 2, ' ', true).' ] '.implode(', ', $result);
             }
 
-            cli_log(str_size($listing['id'], 11, ' ', true).' '.str_size($listing['status'], 17).str_size($listing['cdn'], 3, ' ', true).' '.$result, $color);
+            log_console(str_size($listing['id'], 11, ' ', true).' '.str_size($listing['status'], 17).str_size($listing['cdn'], 3, ' ', true).' '.$result, $color);
         }
 
-        cli_log(tr('Processed ":count" listings', array(':count' => $count)), 'green');
+        log_console(tr('Processed ":count" listings', array(':count' => $count)), 'green');
         break;
 
     case 'move':
@@ -279,6 +279,6 @@ switch(cli_method()){
         throw new bException(tr('No method specified'), 'not-specified');
 
     default:
-        throw new bException(tr('Unknown method ":method" specified', array(':method' => cli_method())), 'unknown');
+        throw new bException(tr('Invalid method ":method" specified', array(':method' => cli_method())), 'unknown-method');
 }
 ?>

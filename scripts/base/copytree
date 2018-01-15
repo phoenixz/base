@@ -41,12 +41,12 @@ foreach($argv as $id => $arg){
 }
 
 if(empty($source)){
-    log_error('No source specified', 'copytree');
+    log_console('No source specified', 'red');
     $error = 2;
 }
 
 if(empty($destination)){
-    log_error('No destination specified', 'copytree');
+    log_console('No destination specified', 'red');
     $error = 3;
 }
 

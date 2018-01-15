@@ -24,7 +24,7 @@ $target = cli_argument('target', true, ENVIRONMENT);
 cli_no_arguments_left();
 
 load_libs('file');
-cli_log('Ensuring site structure', 'white');
+log_console('Ensuring site structure', 'white');
 
 if(empty($_CONFIG['deploy'][$target])){
     throw new bException(tr('Specified environment ":env" does not exist', array(':env' => $target)), 'not-exist');
@@ -47,9 +47,9 @@ foreach($paths as $name => $path){
     }
 
     if(VERBOSE){
-        cli_log(tr('Ensured ":name" path ":path"', array(':name' => $name, ':path' => $path)), 'green');
+        log_console(tr('Ensured ":name" path ":path"', array(':name' => $name, ':path' => $path)), 'green');
     }
 }
 
-cli_log('Fixed structure', 'green');
+log_console('Fixed structure', 'green');
 ?>

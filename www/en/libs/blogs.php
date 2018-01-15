@@ -1619,7 +1619,7 @@ function blogs_media_process($file, $post, $priority = null, $original = null){
             throw new bException('blogs_media_process(): Unknown blog post specified', 'unknown');
         }
 
-        if((PLATFORM == 'http') and ($post['createdby'] != $_SESSION['user']['id']) and !has_rights('god')){
+        if((PLATFORM_HTTP) and ($post['createdby'] != $_SESSION['user']['id']) and !has_rights('god')){
             throw new bException('blogs_media_process(): Cannot upload media, this post is not yours', 'accessdenied');
         }
 
@@ -1978,9 +1978,9 @@ function blogs_validate_parent($blog_post_id, $blogs_id){
 
         }else{
             $id = sql_get('SELECT `id` FROM `blogs_posts` WHERE `seoname` = :seoname AND `blogs_id` = :blogs_id', true, array(':blogs_id' => $blogs_id,
-                                                                                                                              ':seoname'  => cfm($blog_post_id)));           
+                                                                                                                              ':seoname'  => cfm($blog_post_id)));
         }
-    
+
 
         if(!$id){
             throw new bException(tr('blogs_validate_parent(): Blog ":blog" does not contain a blog post named ":post"', array(':blog' => $blogs_id, ':post' => $blog_post_id)), 'notmember');
@@ -2089,8 +2089,8 @@ function blogs_update_url($post){
     try{
         $url = blogs_post_url($post);
 
-        if((PLATFORM == 'shell') and VERBOSE){
-            cli_log(tr('blogs_update_url(): Updating blog post :post to URL ":url"', array(':url' => $url, ':post' => str_size('"'.str_truncate($post['seoname'], 40).'"', 42, ' '))));
+        if((PLATFORM_CLI) and VERBOSE){
+            log_console(tr('blogs_update_url(): Updating blog post :post to URL ":url"', array(':url' => $url, ':post' => str_size('"'.str_truncate($post['seoname'], 40).'"', 42, ' '))));
         }
 
         sql_query('UPDATE `blogs_posts`
@@ -2141,7 +2141,7 @@ function blogs_update_urls($blogs = null, $category = null){
              */
             $r = sql_query('SELECT `id` FROM `blogs`');
 
-            cli_log(tr('blogs_update_urls(): Updating posts for all blogs'));
+            log_console(tr('blogs_update_urls(): Updating posts for all blogs'));
 
             while($blog = sql_fetch($r)){
                 blogs_update_urls($blog['id'], $category);
@@ -2162,15 +2162,15 @@ function blogs_update_urls($blogs = null, $category = null){
             }
 
             if(!$blog){
-                if(PLATFORM == 'shell'){
-                    cli_log(tr('blogs_update_urls(): Specified blog ":blog" does not exist, skipping', array(':blog' => $blogname)), 'yellow');
+                if(PLATFORM_CLI){
+                    log_console(tr('blogs_update_urls(): Specified blog ":blog" does not exist, skipping', array(':blog' => $blogname)), 'yellow');
                 }
 
                 continue;
             }
 
-            if(PLATFORM == 'shell'){
-                cli_log(tr('blogs_update_urls(): Updating posts for blog :blog', array(':blog' => str_size('"'.str_truncate($blog['name'], 40).'"', 42, ' '))), 'white');
+            if(PLATFORM_CLI){
+                log_console(tr('blogs_update_urls(): Updating posts for blog :blog', array(':blog' => str_size('"'.str_truncate($blog['name'], 40).'"', 42, ' '))), 'white');
             }
 
             /*
@@ -2206,8 +2206,8 @@ function blogs_update_urls($blogs = null, $category = null){
                  * that this category is available within the blog
                  */
                 if($category['blogs_id'] != $blog['id']){
-                    if(PLATFORM == 'shell'){
-                        cli_log(tr('blogs_update_urls(): The category ":category" does not exist for the blog ":blog", skipping', array(':category' => $category['name'], ':blog' => $blog['name'])), 'yellow');
+                    if(PLATFORM_CLI){
+                        log_console(tr('blogs_update_urls(): The category ":category" does not exist for the blog ":blog", skipping', array(':category' => $category['name'], ':blog' => $blog['name'])), 'yellow');
                     }
 
                     continue;

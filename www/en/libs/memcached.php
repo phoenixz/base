@@ -57,7 +57,7 @@ function mc_connect(){
                              */
                             $failed++;
                             notify('nomemcachedserver', 'Failed to connect to memcached server "'.str_log($server).'"');
-                            log_error('Failed to connect to memcached server "'.str_log($server).'"', 'memcachedconnectfail');
+                            log_console(tr('Failed to connect to memcached server ":server"', array(':server' => $server)), 'yellow');
                         }
                     }
 

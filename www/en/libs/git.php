@@ -30,25 +30,25 @@ function git_clone($repository, $path){
 /*
  * Get or set the current GIT branch
  */
-function git_branch($branch = null){
+function git_branch($branch = null, $path = ROOT){
     try{
         if($branch){
             /*
              * Set the branch
              */
-            safe_exec('cd '.ROOT.'; git branch '.$branch);
+            safe_exec('cd '.$path.'; git branch '.$branch);
 
         }else{
             /*
              * Get and return the branch
              */
-            foreach(safe_exec('cd '.ROOT.'; git branch') as $branch){
+            foreach(safe_exec('cd '.$path.'; git branch') as $branch){
                 if(substr(trim($branch), 0, 1) == '*'){
                     return trim(substr(trim($branch), 1));
                 }
             }
 
-            throw new bException(tr('git_branch(): Could not find current branch for "'.ROOT.'"'), 'branchnotfound');
+            throw new bException(tr('git_branch(): Could not find current branch for ":path"', array(':path' => $path)), 'branchnotfound');
         }
 
     }catch(Exception $e){

@@ -16,7 +16,7 @@
 $GLOBALS['posix'] = true;
 
 if(!function_exists('posix_getuid')){
-    log_error('WARNING: The POSIX extension seems to be unavailable, this may cause some functionalities to fail or give unexpected results', 'noposix');
+    log_console('WARNING: The POSIX extension seems to be unavailable, this may cause some functionalities to fail or give unexpected results', 'yellow');
     $GLOBALS['posix'] = false;
 }
 
@@ -40,11 +40,13 @@ class Colors {
         $this->foreground_colors['cyan']         = '0;36';
         $this->foreground_colors['light_cyan']   = '1;36';
         $this->foreground_colors['red']          = '0;31';
+        $this->foreground_colors['error']        = '0;31';
         $this->foreground_colors['light_red']    = '1;31';
         $this->foreground_colors['purple']       = '0;35';
         $this->foreground_colors['light_purple'] = '1;35';
         $this->foreground_colors['brown']        = '0;33';
         $this->foreground_colors['yellow']       = '1;33';
+        $this->foreground_colors['warning']      = '1;33';
         $this->foreground_colors['light_gray']   = '0;37';
         $this->foreground_colors['white']        = '1;37';
 
@@ -59,17 +61,32 @@ class Colors {
     }
 
     // Returns colored string
-    public function getColoredString($string, $foreground_color = null, $background_color = null) {
-        $colored_string = "";
+    public function getColoredString($string, $foreground_color, $background_color = 'black') {
+        $colored_string = '';
+
+        if(NOCOLOR){
+            /*
+             * Do NOT apply color
+             */
+            return $string;
+        }
+
+        if(!isset($this->foreground_colors[$foreground_color]) or !isset($this->background_colors[$background_color])){
+            /*
+             * If requested colors do not exist, return no
+             */
+            log_console(tr('<LOG WARNING> specified foreground/background color combination ":fore/:back" for the next line does not exist. The line will be displayed without colors', array(':fore' => $foreground_color, ':back' => $background_color)));
+            return $string;
+        }
 
         // Check if given foreground color found
         if(isset($this->foreground_colors[$foreground_color])) {
-            $colored_string .= "\033[" . $this->foreground_colors[$foreground_color] . "m";
+            $colored_string .= "\033[".$this->foreground_colors[$foreground_color].'m';
         }
 
         // Check if given background color found
         if(isset($this->background_colors[$background_color])) {
-            $colored_string .= "\033[" . $this->background_colors[$background_color] . "m";
+            $colored_string .= "\033[".$this->background_colors[$background_color].'m';
         }
 
         // Add string and end coloring
@@ -87,33 +104,37 @@ class Colors {
     public function getBackgroundColors() {
         return array_keys($this->background_colors);
     }
+}
 
-    public function white($string) {
-        return $this->getColoredString($string, 'white' , 'black');
+
+
+/*
+ * Return the specified string in the specified color
+ */
+function cli_color($string, $fore_color, $back_color = 'black'){
+    static $color;
+
+    if(!$color){
+        $color = new Colors();
     }
 
-    public function red($string) {
-        return $this->getColoredString($string, 'red'   , 'black');
-    }
+    return $color->getColoredString($string, $fore_color, $back_color);
+}
 
-    public function error($string) {
-        return $this->red($string);
-    }
 
-    public function yellow($string) {
-        return $this->getColoredString($string, 'yellow', 'black');
-    }
 
-    public function green($string) {
-        return $this->getColoredString($string, 'green' , 'black');
-    }
+/*
+ * Return the specified string without color information
+ */
+function cli_strip_color($string){
+    try{
+        return preg_replace('/\x1B\[([0-9]{1,2}(;[0-9]{1,2})?)?[mGK]/', '',  $string);
+// :DELETE:
+//        return preg_replace('/\[([0-9]{1,2}(;[0-9]{1,2})?)?[mGK]/', '',  $string);
+//        return preg_replace('/\033\[([0-9]{1,2}(;[0-9]{1,2})?)?[mGK]/', '',  $string);
 
-    public function purple($string) {
-        return $this->getColoredString($string, 'purple', 'black');
-    }
-
-    public function cyan($string) {
-        return $this->getColoredString($string, 'cyan', 'black');
+    }catch(Exception $e){
+        throw new bException('cli_strip_color(): Failed', $e);
     }
 }
 
@@ -123,7 +144,7 @@ class Colors {
  * Only allow execution on shell scripts
  */
 function cli_only($exclusive = false){
-    if(PLATFORM != 'shell'){
+    if(!PLATFORM_CLI){
         throw new bException('cli_only(): This can only be done from command line', 'clionly');
     }
 
@@ -140,7 +161,7 @@ function cli_only($exclusive = false){
  * ALWAYS USE return cli_die(); in case script_exec() was used!
  */
 function cli_die($exitcode, $message = '', $color = ''){
-    cli_log($message, ($exitcode ? 'red' : $color));
+    log_console($message, ($exitcode ? 'red' : $color));
 
     /*
      * Make sure we're not in a script_exec(), where die should NOT happen!
@@ -254,7 +275,7 @@ function cli_run_once_local($close = false){
             $pid = trim($pid);
 
             if(!is_numeric($pid) or !is_natural($pid) or ($pid > 65536)){
-                cli_log(tr('cli_run_once_local(): The run file ":file" contains invalid information, ignoring', array(':file' => $run_dir.$script)), 'yellow');
+                log_console(tr('cli_run_once_local(): The run file ":file" contains invalid information, ignoring', array(':file' => $run_dir.$script)), 'yellow');
 
             }else{
                 $name = safe_exec('ps -p '.$pid.' | tail -n 1');
@@ -273,7 +294,7 @@ function cli_run_once_local($close = false){
              * File exists, or contains invalid data, but PID either doesn't
              * exist, or is used by a different process. Remove the PID file
              */
-            cli_log(tr('cli_run_once_local(): Cleaning up stale run file ":file"', array(':file' => $run_dir.$script)), 'yellow');
+            log_console(tr('cli_run_once_local(): Cleaning up stale run file ":file"', array(':file' => $run_dir.$script)), 'yellow');
             file_delete($run_dir.$script);
         }
 
@@ -302,7 +323,7 @@ function cli_run_once_local($close = false){
  */
 function cli_run_once($action = 'exception', $force = false){
     try{
-        if(PLATFORM != 'shell'){
+        if(!PLATFORM_CLI){
             throw new bException('cli_run_once(): This function does not work for platform "'.PLATFORM.'", it is only for "shell" usage');
         }
 
@@ -593,12 +614,16 @@ function cli_no_arguments_left(){
 /*
  * Mark the specified keywords in the specified string with the specified color
  */
-function cli_highlight($string, $keywords, $color){
+function cli_highlight($string, $keywords, $fore_color, $back_color = 'black'){
+    static $color;
+
     try{
-        $c = cli_init_color();
+        if(!$color){
+            $color = new Colors();
+        }
 
         foreach(array_force($keywords) as $keyword){
-            $string = str_replace($keyword, $c->$color($keyword), $string);
+            $string = str_replace($keyword, $color->getColoredString($string, $fore_color, $back_color), $string);
         }
 
         return $string;
@@ -606,29 +631,6 @@ function cli_highlight($string, $keywords, $color){
     }catch(Exception $e){
         throw new bException('cli_highlight(): Failed', $e);
     }
-}
-
-
-
-/*
- * Return the specified string in the specified color
- */
-function cli_color($string, $color){
-    $c = cli_init_color();
-    return $c->$color($string);
-}
-
-
-
-/*
- * Initialize one global color object
- */
-function cli_init_color(){
-    if(empty($GLOBALS['c'])){
-        $GLOBALS['c'] = new Colors();
-    }
-
-    return $GLOBALS['c'];
 }
 
 
@@ -648,48 +650,6 @@ function cli_error($e = null){
                 echo "\n";
                 cli_show_usage($usage, 'white');
             }
-
-    }
-}
-
-
-
-/*
- * Process basic arguments, if possible
- */
-function cli_basic_arguments(){
-    global $usage, $help;
-
-    try{
-        if(cli_argument('usage') or cli_argument('-u') or cli_argument('--usage')){
-            cli_show_usage($usage, 'white');
-            die(0);
-        }
-
-        if(cli_argument('help') or cli_argument('-h') or cli_argument('--help')){
-            if(!$help){
-                cli_log(tr('Sorry, this script has no help text defined yet'), 'yellow');
-
-            }else{
-                $help = array_force($help, "\n");
-
-                if(count($help) == 1){
-                    cli_log(array_shift($help), 'white');
-
-                }else{
-                    foreach(array_force($help, "\n") as $line){
-                        cli_log($line, 'white');
-                    }
-
-                    cli_log();
-                }
-            }
-
-            die(0);
-        }
-
-    }catch(Exception $e){
-        throw new bException('cli_basic_arguments(): Failed', $e);
     }
 }
 
@@ -701,23 +661,23 @@ function cli_basic_arguments(){
 function cli_show_usage($usage, $color){
     try{
         if(!$usage){
-            cli_log(tr('Sorry, this script has no usage description defined yet'), 'yellow');
+            log_console(tr('Sorry, this script has no usage description defined yet'), 'yellow');
 
         }else{
             $usage = array_force(trim($usage), "\n");
 
             if(count($usage) == 1){
-                cli_log(tr('Usage:')       , $color);
-                cli_log(array_shift($usage), $color);
+                log_console(tr('Usage:')       , $color);
+                log_console(array_shift($usage), $color);
 
             }else{
-                cli_log(tr('Usage:'), $color);
+                log_console(tr('Usage:'), $color);
 
                 foreach(array_force($usage, "\n") as $line){
-                    cli_log($line, $color);
+                    log_console($line, $color);
                 }
 
-                cli_log();
+                log_console();
             }
         }
 
@@ -778,7 +738,7 @@ function cli_dot($each = 10, $color = 'green', $dot = '.'){
 
     try{
         if($each === false){
-            cli_log(tr('Done'), $color);
+            log_console(tr('Done'), $color);
             $l_each = 0;
             $count  = 0;
             return true;
@@ -791,80 +751,12 @@ function cli_dot($each = 10, $color = 'green', $dot = '.'){
 
         if(++$count >= $l_each){
             $count = 0;
-            cli_log($dot, $color, false);
+            log_console($dot, $color, false);
             return true;
         }
 
     }catch(Exception $e){
         throw new bException('cli_dot(): Failed', $e);
-    }
-}
-
-
-
-/*
- * Log specified message to console, but only if we are in console mode!
- */
-function cli_log($messages = '', $color = null, $newline = true, $filter_double = false){
-    static $c, $fh, $last;
-
-    try{
-        if(PLATFORM != 'shell') return false;
-
-        if(($filter_double == true) and ($messages == $last)){
-            /*
-            * We already displayed this message, skip!
-            */
-            return;
-        }
-
-        $last = $messages;
-
-        if($color and defined('NOCOLOR') and !NOCOLOR){
-            $c = cli_init_color();
-        }
-
-        if(is_object($messages)){
-            if($messages instanceof bException){
-                $messages = $messages->getMessages();
-
-            }elseif($messages instanceof Exception){
-                $messages = array($messages->getMessage());
-
-            }else{
-                $messages = $messages->__toString();
-            }
-
-        }elseif(!is_array($messages)){
-            $messages = array($messages);
-        }
-
-        foreach($messages as $message){
-            if($color and defined('NOCOLOR') and !NOCOLOR){
-                $message = $c->$color($message);
-            }
-
-            $message = stripslashes(br2nl($message)).($newline ? "\n" : '');
-
-            if(empty($error)){
-                echo $message;
-
-            }else{
-                /*
-                 * Log to STDERR instead of STDOUT
-                 */
-                if(empty($fh)){
-                    $fh = fopen('php://stderr','w');
-                }
-
-                fwrite($fh, $message);
-            }
-        }
-
-        return true;
-
-    }catch(Exception $e){
-        throw new bException('cli_log(): Failed', $e, array('message' => $message));
     }
 }
 
@@ -884,8 +776,19 @@ function cli_arguments_none_left(){
  */
 function cli_done(){
     try{
+        if(!defined('ENVIRONMENT')){
+            /*
+             * Oh crap.. Environment hasn't been defined, so we died VERY soon.
+             */
+            return false;
+        }
+
+        if(QUIET){
+            return false;
+        }
+
         load_libs('time,numbers');
-        cli_log(tr('Finished ":script" script in :time with ":usage" peak memory usage', array(':script' => SCRIPT, ':time' => time_difference(STARTTIME, microtime_float(), 'auto', 5), ':usage' => bytes(memory_get_peak_usage()))), 'green');
+        log_console(tr('Finished ":script" script in :time with ":usage" peak memory usage', array(':script' => SCRIPT, ':time' => time_difference(STARTTIME, microtime(true), 'auto', 5), ':usage' => bytes(memory_get_peak_usage()))), 'green');
 
     }catch(Exception $e){
         throw new bException('cli_done(): Failed', $e);

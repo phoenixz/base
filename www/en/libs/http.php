@@ -182,19 +182,6 @@ function store_post($redirect){
 
 
 /*
- * Restore post data from $_SESSION IF available
- */
-function restore_post(){
-    if(empty($_SESSION['post'])){
-        return false;
-    }
-
-    return include(__DIR__.'/handlers/system_restore_post.php');
-}
-
-
-
-/*
  * Ensure that the $_GET values with the specied keys are also available in $_POST
  */
 function http_get_to_post($keys, $overwrite = true){
@@ -466,7 +453,7 @@ function http_build_url($url, $query){
  * and https://developers.google.com/web/fundamentals/performance/optimizing-content-efficiency/http-caching
  */
 function http_cache_test($etag = null){
-    global $_CONFIG;
+    global $_CONFIG, $core;
 
     try{
         $GLOBALS['etag'] = md5(PROJECT.$_SERVER['SCRIPT_FILENAME'].filemtime($_SERVER['SCRIPT_FILENAME']).$etag);
@@ -475,7 +462,7 @@ function http_cache_test($etag = null){
             return false;
         }
 
-        if($GLOBALS['page_is_ajax'] or $GLOBALS['page_is_api']){
+        if($core->callIs('ajax') or $core->callIs('api')){
             return false;
         }
 
@@ -513,7 +500,7 @@ function http_cache_test($etag = null){
  * and https://developers.google.com/web/fundamentals/performance/optimizing-content-efficiency/http-caching
  */
 function http_cache($params, $headers = array()){
-    global $_CONFIG;
+    global $_CONFIG, $core;
 
     try{
         array_params($params);
@@ -541,12 +528,12 @@ function http_cache($params, $headers = array()){
                 }
             }
 
-            if(!empty($GLOBALS['page_is_ajax']) or !empty($GLOBALS['page_is_api'])){
+            if(!empty($core->callIs('ajax')) or !empty($core->callIs('api'))){
                 $params['policy'] = 'no-store';
                 $expires          = '0';
 
             }else{
-                if(!empty($GLOBALS['page_is_admin']) or !empty($_SESSION['user']['id'])){
+                if(!empty($core->callIs('admin')) or !empty($_SESSION['user']['id'])){
                     array_default($params, 'policy', 'no-store');
 
                 }else{
@@ -565,7 +552,7 @@ function http_cache($params, $headers = array()){
         }
 
         if(empty($params['policy'])){
-            if($GLOBALS['page_is_admin']){
+            if($core->callIs('admin')){
                 /*
                  * Admin pages, never store, always private
                  */
@@ -645,14 +632,14 @@ function requested_url(){
  * Check for URL's with queries. Depending on configuration, 301 direct to URL without query
  */
 function http_redirect_query_url(){
-    global $_CONFIG;
+    global $_CONFIG, $core;
 
     try{
-        if(!empty($GLOBALS['page_is_ajax']) or !empty($GLOBALS['page_is_admin']) or !empty($GLOBALS['no_query_url_redirect']) or !empty($GLOBALS['no_redirect_http_queries'])){
+        if(!empty($core->callIs('ajax')) or !empty($core->callIs('admin')) or !empty($GLOBALS['no_query_url_redirect']) or !empty($GLOBALS['no_redirect_http_queries'])){
             return true;
         }
 
-        if($GLOBALS['page_is_admin']){
+        if($core->callIs('admin')){
             if(!$_CONFIG['redirects']['query']){
                 /*
                  * No need to auto redirect URL's with queries

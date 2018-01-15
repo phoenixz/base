@@ -103,10 +103,10 @@ if(empty($languages)){
         throw new bException(tr('No languages specified, no languages configured'), 'not-specified');
     }
 
-    cli_log(tr('Translating to configured languages ":languages"', array(':languages' => implode(', ', $languages))), 'white');
+    log_console(tr('Translating to configured languages ":languages"', array(':languages' => implode(', ', $languages))), 'white');
 
 }else{
-    cli_log(tr('Translating to requested languages ":languages"', array(':languages' => implode(', ', $languages))), 'white');
+    log_console(tr('Translating to requested languages ":languages"', array(':languages' => implode(', ', $languages))), 'white');
 }
 
 
@@ -123,7 +123,7 @@ switch(cli_method()){
                 continue;
             }
 
-            cli_log(tr('Deleting ":language"', array(':language' => $language)));
+            log_console(tr('Deleting ":language"', array(':language' => $language)));
             file_delete_tree(ROOT.'www/'.$language);
         }
 
@@ -146,13 +146,13 @@ switch(cli_method()){
         }else{
             $noutf8check = (cli_argument('--no-utf') or cli_argument('--no-utf8')   or cli_argument('--no-utf8-check'));
 
-            cli_log(tr('Scanning for translatable strings'), 'white');
+            log_console(tr('Scanning for translatable strings'), 'white');
         }
 
         cli_no_arguments_left();
 
         if($noutf8check){
-            cli_log(tr('Skipping UTF8 check due to "noutf8check" command line parameter'), 'yellow');
+            log_console(tr('Skipping UTF8 check due to "noutf8check" command line parameter'), 'yellow');
         }
 
         foreach($languages as $id => $language){
@@ -162,7 +162,7 @@ switch(cli_method()){
 
             if($language == 'en'){
                 unset($languages[$id]);
-                cli_log(tr('Ignoring language "en - English"'), 'yellow');
+                log_console(tr('Ignoring language "en - English"'), 'yellow');
             }
         }
 
@@ -189,7 +189,7 @@ switch(cli_method()){
             }
 
             if(VERBOSE){
-                cli_log(tr('Scanning file ":file"', array(':file' => $file)));
+                log_console(tr('Scanning file ":file"', array(':file' => $file)));
 
             }else{
                 cli_dot();
@@ -248,7 +248,7 @@ switch(cli_method()){
         cli_dot(false);
 
         if(VERBOSE){
-            cli_log(tr('Found :count strings', array(':count' => number_format($count))), 'white');
+            log_console(tr('Found :count strings', array(':count' => number_format($count))), 'white');
         }
 
 
@@ -262,11 +262,11 @@ switch(cli_method()){
             foreach($results['failed_html'] as $string => $file){
                 if($ignore_html){
                     if(VERBOSE){
-                        cli_log(tr('Ignoring file ":file" because of HTML', array(':file' => str_from($file, ROOT))), 'yellow');
+                        log_console(tr('Ignoring file ":file" because of HTML', array(':file' => str_from($file, ROOT))), 'yellow');
                     }
 
                 }else{
-                    cli_log(tr('Found HTML code ":html" in file ":file"', array(':html' => preg_replace('/<br\s*\/?>/', '.<.b.r.>. ', $string), ':file' => str_from($file, ROOT))), 'red');
+                    log_console(tr('Found HTML code ":html" in file ":file"', array(':html' => preg_replace('/<br\s*\/?>/', '.<.b.r.>. ', $string), ':file' => str_from($file, ROOT))), 'red');
                     $crash = true;
                 }
             }
@@ -275,7 +275,7 @@ switch(cli_method()){
                 throw new bException(tr('Translatable strings with disallowed HTML tags found'), 'translation-error');
             }
 
-            cli_log(tr('Ignored ":count" files because of HTML', array(':count' => count($results['failed_html']))), 'yellow');
+            log_console(tr('Ignored ":count" files because of HTML', array(':count' => count($results['failed_html']))), 'yellow');
         }
 
 
@@ -289,11 +289,11 @@ switch(cli_method()){
             foreach($results['failed_php'] as $string => $file){
                 if($ignore_php){
                     if(VERBOSE){
-                        cli_log(tr('Ignoring file ":file" because of PHP', array(':file' => str_from($file, ROOT))), 'yellow');
+                        log_console(tr('Ignoring file ":file" because of PHP', array(':file' => str_from($file, ROOT))), 'yellow');
                     }
 
                 }else{
-                    cli_log(tr('Found PHP code ":php" in file ":file"', array(':php' => preg_replace('/<br\s*\/?>/', '.<.b.r.>. ', $string), ':file' => str_from($file, ROOT))), 'red');
+                    log_console(tr('Found PHP code ":php" in file ":file"', array(':php' => preg_replace('/<br\s*\/?>/', '.<.b.r.>. ', $string), ':file' => str_from($file, ROOT))), 'red');
                     $crash = true;
                 }
             }
@@ -302,7 +302,7 @@ switch(cli_method()){
                 throw new bException(tr('Translatable strings with PHP code found'), 'translation-error');
             }
 
-            cli_log(tr('Ignored ":count" files because of PHP', array(':count' => count($results['failed_php']))), 'yellow');
+            log_console(tr('Ignored ":count" files because of PHP', array(':count' => count($results['failed_php']))), 'yellow');
         }
 
 
@@ -311,7 +311,7 @@ switch(cli_method()){
          *
          */
         if(cli_method() == 'scan'){
-            cli_log(tr('Sending translatable strings to server ":server"', array(':server' => $_CONFIG['translate']['url'])), 'green');
+            log_console(tr('Sending translatable strings to server ":server"', array(':server' => $_CONFIG['translate']['url'])), 'green');
 
             /*
              * Construct data for sending
@@ -354,7 +354,7 @@ switch(cli_method()){
                 throw new bException(tr('Failed to send translatable strings'), $result['status'], $result);
             }
 
-            cli_log('Sent translatable strings', 'green');
+            log_console('Sent translatable strings', 'green');
             die();
         }
 
@@ -367,8 +367,8 @@ switch(cli_method()){
             $source_dir = ROOT.'www/en';
             $target_dir = ROOT.'www/'.$language;
 
-            cli_log(tr('Translating language ":language"', array(':language' => $language)), 'white');
-            cli_log(tr('Requesting translations from server url":url"', array(':url' => $_CONFIG['translate']['url'])));
+            log_console(tr('Translating language ":language"', array(':language' => $language)), 'white');
+            log_console(tr('Requesting translations from server url":url"', array(':url' => $_CONFIG['translate']['url'])));
 
             /*
              * Construct data for sending
@@ -416,7 +416,7 @@ switch(cli_method()){
                 $count += count($translations);
             }
 
-            cli_log(tr('Received ":count" translations for ":files" files from translation server', array(':count' => $count, ':files' => count($returned_data['translations']))), 'green');
+            log_console(tr('Received ":count" translations for ":files" files from translation server', array(':count' => $count, ':files' => count($returned_data['translations']))), 'green');
 
 
 
@@ -426,13 +426,13 @@ switch(cli_method()){
              */
             try{
                 // if(VERBOSE){
-                //     cli_log('Deleting target dir '.$target_dir, 'translate', '', true);
+                //     log_console('Deleting target dir '.$target_dir, 'translate', '', true);
                 // }
 
                 shell_exec('rm -rf '.$target_dir);
 
                 // Copy english to target dir
-                cli_log(tr('Copying ":source" to ":target"', array(':source' => $source_dir, ':target' => $target_dir)));
+                log_console(tr('Copying ":source" to ":target"', array(':source' => $source_dir, ':target' => $target_dir)));
                 shell_exec('cp -a '.$source_dir.' '.$target_dir);
 
                 // :DELETE: Its not going to save too much space, and doesnt make sense
@@ -441,11 +441,11 @@ switch(cli_method()){
                 // file_delete_tree(slash($target_dir).'pub/css');
                 // symlink('../../en/pub/css', slash($target_dir).'pub/css');
 
-                cli_log(tr('Applying translations'), '', true);
+                log_console(tr('Applying translations'), '', true);
 
                 foreach($returned_data['translations'] as $short_file => $data){
                     if(VERBOSE){
-                        cli_log(tr('Translating ":file"', array(':file' => $short_file)), '', false);
+                        log_console(tr('Translating ":file"', array(':file' => $short_file)), '', false);
 
                     }else{
                         cli_dot();
@@ -453,12 +453,12 @@ switch(cli_method()){
 
                     if(!empty($forcedutf8[$short_file])){
                         if(VERBOSE){
-                            cli_log(tr('*FORCED-UTF8* '), 'yellow', false);
+                            log_console(tr('*FORCED-UTF8* '), 'yellow', false);
                         }
                     }
 
                     if(!file_exists(ROOT.$short_file)){
-                        cli_log(tr(' File ":file" not found', array(':file' => ROOT.$short_file)), 'red');
+                        log_console(tr(' File ":file" not found', array(':file' => ROOT.$short_file)), 'red');
 
                     }else{
                         //store new file
@@ -479,7 +479,7 @@ switch(cli_method()){
                         file_put_contents($target_file, $filedata);
 
                         if(VERBOSE){
-                            cli_log('Saved', 'green');
+                            log_console('Saved', 'green');
                         }
                     }
                 }
@@ -487,10 +487,10 @@ switch(cli_method()){
                 cli_dot(false);
 
                 if($returned_data['stats']['translations_missing'] > 0){
-                    cli_log(tr('Missing ":count" translations', array(':count' => number_format($returned_data['stats']['translations_missing']))), 'yellow');
+                    log_console(tr('Missing ":count" translations', array(':count' => number_format($returned_data['stats']['translations_missing']))), 'yellow');
                 }
 
-                cli_log(tr('Successfully translated ":count" sections', array(':count' => number_format($returned_data['stats']['translations_done']))), 'green');
+                log_console(tr('Successfully translated ":count" sections', array(':count' => number_format($returned_data['stats']['translations_done']))), 'green');
 
             }catch(Exception $e){
                 throw new bException(tr('Error applying ":lang" translations', array(':lang' => $language)), $e);

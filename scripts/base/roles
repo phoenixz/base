@@ -22,7 +22,7 @@ switch(cli_method()){
         cli_no_arguments_left();
 
         if($rights){
-            cli_log(tr('Showing rights for currently available roles'));
+            log_console(tr('Showing rights for currently available roles'));
 
             $limit   = 200;
             $r       = sql_query('SELECT    `id`,
@@ -31,7 +31,7 @@ switch(cli_method()){
 
                                   FROM      `roles`'.($limit ? ' LIMIT '.$limit : ''));
 
-            cli_log(str_size('#id', 6).' '.str_size('Name', 20).' '.str_size('Status', 16).' Rights', 'white');
+            log_console(str_size('#id', 6).' '.str_size('Name', 20).' '.str_size('Status', 16).' Rights', 'white');
 
             while($role = sql_fetch($r)){
                 $rights = sql_list('SELECT    `rights`.`name`
@@ -45,11 +45,11 @@ switch(cli_method()){
 
                                     array(':roles_id' => $role['id']));
 
-                cli_log(str_size($role['id'], 6, ' ', true).' '.str_size($role['name'], 20).' '.str_size(status($role['status']), 16).' '.str_force($rights, ', '));
+                log_console(str_size($role['id'], 6, ' ', true).' '.str_size($role['name'], 20).' '.str_size(status($role['status']), 16).' '.str_force($rights, ', '));
             }
 
         }else{
-            cli_log('Showing currently available roles');
+            log_console('Showing currently available roles');
 
             $limit   = 200;
 
@@ -60,10 +60,10 @@ switch(cli_method()){
 
                                   FROM      `roles`'.($limit ? ' LIMIT '.$limit : ''));
 
-            cli_log(str_size('#id', 6).' '.str_size('Name', 20).' '.str_size('Status', 16).' Description', 'cyan');
+            log_console(str_size('#id', 6).' '.str_size('Name', 20).' '.str_size('Status', 16).' Description', 'cyan');
 
             while($role = sql_fetch($r)){
-                cli_log(str_size($role['id'], 6, ' ', true).' '.str_size($role['name'], 20).' '.str_size(status($role['status']), 16).' '.$role['description']);
+                log_console(str_size($role['id'], 6, ' ', true).' '.str_size($role['name'], 20).' '.str_size(status($role['status']), 16).' '.$role['description']);
             }
         }
 
@@ -83,7 +83,7 @@ switch(cli_method()){
                              ':name'        => $role['name'],
                              ':description' => $role['description']));
 
-            cli_log(tr('Created new role ":role"', array(':role' => str_log($role['name']))), 'green');
+            log_console(tr('Created new role ":role"', array(':role' => str_log($role['name']))), 'green');
             break;
 
         }catch(Exception $e){
@@ -137,7 +137,7 @@ switch(cli_method()){
                        array(':id'   => $old_role['id'],
                              ':name' => $role['name']));
 
-            cli_log(tr('Modified role ":role"', array(':role' => $role['name'])), 'green');
+            log_console(tr('Modified role ":role"', array(':role' => $role['name'])), 'green');
             break;
 
         }catch(Exception $e){
@@ -175,15 +175,15 @@ switch(cli_method()){
 
         switch(!$r->rowCount()){
             case 0:
-                cli_log(tr('Not deleted any roles'), 'error');
+                log_console(tr('Not deleted any roles'), 'error');
                 break;
 
             case count($roles):
-                cli_log(tr('Deleted only ":count" roles from the specified ":specified" roles', array(':count' => $r->rowCount(), ':specified' => count($roles))), 'yellow');
+                log_console(tr('Deleted only ":count" roles from the specified ":specified" roles', array(':count' => $r->rowCount(), ':specified' => count($roles))), 'yellow');
                 break;
 
             default:
-                cli_log(tr('Deleted ":count" roles', array(':count' => $r->rowCount())), 'green');
+                log_console(tr('Deleted ":count" roles', array(':count' => $r->rowCount())), 'green');
         }
 
         break;
@@ -218,15 +218,15 @@ switch(cli_method()){
 
         switch(!$r->rowCount()){
             case 0:
-                cli_log(tr('Not undeleted any roles'), 'error');
+                log_console(tr('Not undeleted any roles'), 'error');
                 break;
 
             case count($roles):
-                cli_log(tr('Undeleted only ":count" roles from the specified ":specified" roles', array(':count' => $r->rowCount(), ':specified' => count($roles))), 'yellow');
+                log_console(tr('Undeleted only ":count" roles from the specified ":specified" roles', array(':count' => $r->rowCount(), ':specified' => count($roles))), 'yellow');
                 break;
 
             default:
-                cli_log(tr('Undeleted ":count" roles', array(':count' => $r->rowCount())), 'green');
+                log_console(tr('Undeleted ":count" roles', array(':count' => $r->rowCount())), 'green');
         }
 
         break;
@@ -258,15 +258,15 @@ switch(cli_method()){
 
         switch(!$r->rowCount()){
             case 0:
-                cli_log(tr('Not erased any roles'), 'error');
+                log_console(tr('Not erased any roles'), 'error');
                 break;
 
             case count($roles):
-                cli_log(tr('Erased only ":count" roles from the specified ":specified" roles', array(':count' => $r->rowCount(), ':specified' => count($roles))), 'yellow');
+                log_console(tr('Erased only ":count" roles from the specified ":specified" roles', array(':count' => $r->rowCount(), ':specified' => count($roles))), 'yellow');
                 break;
 
             default:
-                cli_log(tr('Erased ":count" roles', array(':count' => $r->rowCount())), 'green');
+                log_console(tr('Erased ":count" roles', array(':count' => $r->rowCount())), 'green');
         }
 
         break;
@@ -307,7 +307,7 @@ switch(cli_method()){
             }
         }
 
-        cli_log(tr('Added rights ":rights" to role ":role"', array(':rights' => array_keys($rights), ':role' => $role)), 'white');
+        log_console(tr('Added rights ":rights" to role ":role"', array(':rights' => array_keys($rights), ':role' => $role)), 'white');
         break;
 
     case 'remove':
@@ -337,13 +337,13 @@ switch(cli_method()){
                              ':rights_id' => $right['id']));
         }
 
-        cli_log(tr('Removed rights ":rights" from role ":role"', array(':role' => $role, ':rights' => $rights)), 'white');
+        log_console(tr('Removed rights ":rights" from role ":role"', array(':role' => $role, ':rights' => $rights)), 'white');
         break;
 
     case '':
-        throw new bException(tr('No option specified'), 'not-specified');
+        throw new bException(tr('No method specified'), 'no-method');
 
     default:
-        throw new bException(tr('Invalid option ":method" specified', array(':method' => cli_method())), 'unknown');
+        throw new bException(tr('Invalid method ":method" specified', array(':method' => cli_method())), 'unknown-method');
 }
 ?>

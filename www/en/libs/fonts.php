@@ -14,6 +14,7 @@
  */
 function fonts_convert_ufpdf($params){
     try{
+under_construction();
         array_params($params);
         ensure_key($params, 'font'	 , '');
         ensure_key($params, 'unicode', true);

@@ -68,7 +68,7 @@ if(!function_exists('clear_files')){
 
         try{
             if(VERBOSE){
-                cli_log('Checking path ":path"', array(':path' => $path));
+                log_console('Checking path ":path"', array(':path' => $path));
             }
 
             $count = 0;
@@ -99,7 +99,7 @@ if(!function_exists('clear_files')){
                         /*
                          * Found a twitcher! Gotta shootem in the head!
                          */
-                        cli_log(tr('Found (and removed) BOM in file ":file"', array(':file' => $file)), 'yellow');
+                        log_console(tr('Found (and removed) BOM in file ":file"', array(':file' => $file)), 'yellow');
 
                         $count++;
                         $data = substr($data, 3);
@@ -123,7 +123,7 @@ if(!function_exists('clear_files')){
  */
 $path = cli_argument('path', true, ROOT);
 
-cli_log(tr('Searching ":path" for PHP files with BOM signatures', array(':path' => $path)), 'white');
+log_console(tr('Searching ":path" for PHP files with BOM signatures', array(':path' => $path)), 'white');
 
 if(!file_exists($path)){
     throw new bException(tr('The specified path ":path" does not exist', array(':path' => $path)), 'not-exist');
@@ -140,5 +140,5 @@ if($setdate){
     touch($cachefile, $setdate);
 }
 
-cli_log(tr('Processed all files, found ":count" files wtih BOM', array(':count' => $count)), 'green');
+log_console(tr('Processed all files, found ":count" files wtih BOM', array(':count' => $count)), 'green');
 ?>

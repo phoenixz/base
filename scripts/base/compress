@@ -42,21 +42,21 @@ if(TEST){
         throw new bException('No test path specified.', 'not_specified');
     }
 
-    cli_log(tr('Running compression test'), 'white');
+    log_console(tr('Running compression test'), 'white');
     uglify_js($path);
-    cli_log(tr('Finished compression test'), 'green');
+    log_console(tr('Finished compression test'), 'green');
 
 }else{
     if($css or $all){
-        cli_log(tr('Compressing only CSS files'), 'white');
+        log_console(tr('Compressing only CSS files'), 'white');
         uglify_css();
-        cli_log(tr('Finished compressing CSS files'), 'green');
+        log_console(tr('Finished compressing CSS files'), 'green');
     }
 
     if($js or $all){
-        cli_log(tr('Compressing only javascript files'), 'white');
+        log_console(tr('Compressing only javascript files'), 'white');
         uglify_js();
-        cli_log(tr('Finished compressing javascript files'), 'green');
+        log_console(tr('Finished compressing javascript files'), 'green');
     }
 }
 ?>

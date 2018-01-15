@@ -38,7 +38,7 @@ function sitemap_generate($languages = null){
 
         foreach(array_force($languages) as $language){
             if(!file_exists(ROOT.'www/'.$language)){
-                cli_log(tr('Skipped sitemap generation for language ":language1", the "www/:language2" directory does not exist', array(':language1' => $language, ':language2' => $language)), 'yellow');
+                log_console(tr('Skipped sitemap generation for language ":language1", the "www/:language2" directory does not exist', array(':language1' => $language, ':language2' => $language)), 'yellow');
                 continue;
             }
 
@@ -60,7 +60,7 @@ function sitemap_generate($languages = null){
                  * There are no sitemap entries that require extra sitemap files
                  * Just generate the default sitemap.xml file and we're done!
                  */
-                cli_log(tr('Generating single sitemap file for language ":language"', array(':language' => $language)));
+                log_console(tr('Generating single sitemap file for language ":language"', array(':language' => $language)));
                 sitemap_xml($language);
 
                 file_execute_mode(ROOT.'www/'.$language, 0770, array('language' => $language), function($params){
@@ -76,7 +76,7 @@ function sitemap_generate($languages = null){
                 /*
                  * Generate multiple sitemap files
                  */
-                cli_log(tr('Generating sitemap files for language ":language"', array(':language' => $language)));
+                log_console(tr('Generating sitemap files for language ":language"', array(':language' => $language)));
                 sitemap_index();
 
                 $files = sql_query('SELECT   `file`
@@ -91,7 +91,7 @@ function sitemap_generate($languages = null){
                  * Generate the sitemap files in a temp dir which we'll then move
                  * into place
                  */
-                cli_log(tr('Generating ":count" sitemap files', array(':count' => $count)));
+                log_console(tr('Generating ":count" sitemap files', array(':count' => $count)));
                 file_ensure_path(ROOT.'tmp/sitemaps');
                 chmod(ROOT.'tmp/sitemaps', $_CONFIG['fs']['dir_mode']);
 
@@ -156,7 +156,7 @@ function sitemap_index(){
                 "    <sitemapindex xmlns=\"http://www.sitemaps.org/schemas/sitemap/0.9\">\n".
                 sitemap_file('basic');
 
-        cli_log(tr('Generating sitemap index file'));
+        log_console(tr('Generating sitemap index file'));
 
         while($file = sql_fetch($files, true)){
             cli_dot(1);

@@ -286,7 +286,7 @@ show($retval['curl']['data']);
              *
              */
             sleep($params['sleep']);
-            log_error('wp_admin_post(): Got postid error for post "'.str_log($params['title']).'", retry "'.str_log($retry).'"', 'postid');
+            log_console('wp_admin_post(): Got postid error for post "'.str_log($params['title']).'", retry "'.str_log($retry).'"', 'yellow');
             return wp_admin_post($params, $force_new);
         }
 

@@ -56,8 +56,8 @@ function email_connect($userdata, $mail_box = null){
             /*
              * Return cached connection
              */
-            if(VERBOSE and PLATFORM_SHELL){
-                cli_log(tr('Using cached IMAP connection for account ":email" mailbox ":mailbox"', array(':email' => $userdata['email'], ':mailbox' => $mail_box)));
+            if(VERBOSE and PLATFORM_CLI){
+                log_console(tr('Using cached IMAP connection for account ":email" mailbox ":mailbox"', array(':email' => $userdata['email'], ':mailbox' => $mail_box)));
             }
 
             return $connections[$userdata['email'].$mail_box];
@@ -69,8 +69,8 @@ function email_connect($userdata, $mail_box = null){
 // :TODO: array('DISABLE_AUTHENTICATOR' => array('NTLM', 'GSSAPI')) is hard coded, make this configurable as well!
         $connection = imap_open($imap, $userdata['email'], $userdata['password'], null, 1, array('DISABLE_AUTHENTICATOR' => array('NTLM', 'GSSAPI')));
 
-        if(VERBOSE and PLATFORM_SHELL){
-            cli_log(tr('Created IMAP connection for account  ":email" mailbox ":mailbox"', array(':email' => $userdata['email'], ':mailbox' => $mail_box)));
+        if(VERBOSE and PLATFORM_CLI){
+            log_console(tr('Created IMAP connection for account  ":email" mailbox ":mailbox"', array(':email' => $userdata['email'], ':mailbox' => $mail_box)));
         }
 
         /*
@@ -117,11 +117,11 @@ function email_poll($params){
             throw new bException(tr('email_poll(): Both peek and delete were specified, though they are mutually exclusive. Please specify one or the other'), 'conflict');
         }
 
-        if(PLATFORM_SHELL){
-            cli_log(tr('Polling email account ":account"', array(':account' => $params['account'])));
+        if(PLATFORM_CLI){
+            log_console(tr('Polling email account ":account"', array(':account' => $params['account'])));
 
             if($params['peek']){
-                cli_log(tr('Using peek flag'));
+                log_console(tr('Using peek flag'));
             }
         }
 
@@ -142,18 +142,18 @@ function email_poll($params){
         $mails = execute_callback(isset_get($params['post_search']), $mails);
 
         if(!$mails){
-            if(PLATFORM_SHELL){
-                cli_log(tr('No emails found for account ":email"', array(':email' => $userdata['email'])), 'yellow');
+            if(PLATFORM_CLI){
+                log_console(tr('No emails found for account ":email"', array(':email' => $userdata['email'])), 'yellow');
             }
 
         }else{
             if(!$mails){
-                cli_log(tr('Callback "post_search" canceled email_poll'), 'yellow');
+                log_console(tr('Callback "post_search" canceled email_poll'), 'yellow');
                 return false;
             }
 
-            if(PLATFORM_SHELL){
-                cli_log(tr('Found ":count" mails for account ":email"', array(':count' => count($mails), ':email' => $userdata['email'])), 'green');
+            if(PLATFORM_CLI){
+                log_console(tr('Found ":count" mails for account ":email"', array(':count' => count($mails), ':email' => $userdata['email'])), 'green');
             }
 
             rsort($mails);
@@ -173,7 +173,7 @@ function email_poll($params){
                 $mail = execute_callback(isset_get($params['callbacks']['pre_fetch']), $mails_id);
 
                 if(!$mail){
-                    cli_log(tr('Callback "pre_fetch" canceled processing of email ":mails_id"', array(':mails_id' => $mails_id)), 'yellow');
+                    log_console(tr('Callback "pre_fetch" canceled processing of email ":mails_id"', array(':mails_id' => $mails_id)), 'yellow');
                     continue;
                 }
 
@@ -181,8 +181,8 @@ function email_poll($params){
                 $data = array_shift($data);
                 $data = array_from_object($data);
 
-                if(VERBOSE and PLATFORM_SHELL){
-                    cli_log(tr('Found mail ":subject"', array(':subject' => isset_get($data['subject']))));
+                if(VERBOSE and PLATFORM_CLI){
+                    log_console(tr('Found mail ":subject"', array(':subject' => isset_get($data['subject']))));
                 }
 
 
@@ -199,7 +199,7 @@ function email_poll($params){
                         /*
                          * Apparently this is not an email
                          */
-                        cli_log(tr('Warning: email ":mail" appears not to be an email, skipping. Mail contains data ":data"', array(':mail' => $mail, ':data' => $data)), 'yellow');
+                        log_console(tr('Warning: email ":mail" appears not to be an email, skipping. Mail contains data ":data"', array(':mail' => $mail, ':data' => $data)), 'yellow');
                         /*
                          * This is likely and email we don't want so we manually mark it for deliton
                          */
@@ -266,14 +266,14 @@ function email_poll($params){
                     $data = execute_callback(isset_get($params['callbacks']['post_fetch']), $data);
 
                     if(!$data){
-                        cli_log(tr('Callback "post_fetch" canceled processing of email ":mails_id"', array(':mails_id' => $mails_id)), 'yellow');
+                        log_console(tr('Callback "post_fetch" canceled processing of email ":mails_id"', array(':mails_id' => $mails_id)), 'yellow');
                         continue;
                     }
 
                     if($params['store']){
                         try{
-                            if(VERBOSE AND PLATFORM_SHELL){
-                                cli_log(tr('Processing email ":subject"', array(':subject' => $mail['subject'])));
+                            if(VERBOSE AND PLATFORM_CLI){
+                                log_console(tr('Processing email ":subject"', array(':subject' => $mail['subject'])));
                             }
 
                             $data                      = email_cleanup($data);
@@ -284,7 +284,7 @@ function email_poll($params){
                             $data = execute_callback(isset_get($params['callbacks']['post_update']), $data);
 
                             if(!$data){
-                                cli_log(tr('Callback "post_update" canceled processing of email ":mails_id"', array(':mails_id' => $mails_id)), 'yellow');
+                                log_console(tr('Callback "post_update" canceled processing of email ":mails_id"', array(':mails_id' => $mails_id)), 'yellow');
                                 continue;
                             }
 
@@ -293,7 +293,7 @@ function email_poll($params){
                              * Continue working on the next mail
                              */
                             notify($e);
-                            log_error(tr('Failed polling process'));
+                            log_console(tr('Failed polling process'), 'yellow');
                         }
                     }
 
@@ -318,8 +318,8 @@ function email_poll($params){
 
             execute_callback(isset_get($params['callbacks']['post_expunge']), $mails);
 
-            if(VERBOSE and PLATFORM_SHELL){
-                cli_log(tr('Processed ":count" new mails for account ":account"', array(':count' => count($mails), ':account' => $params['account'])));
+            if(VERBOSE and PLATFORM_CLI){
+                log_console(tr('Processed ":count" new mails for account ":account"', array(':count' => count($mails), ':account' => $params['account'])));
             }
 
             sql_query('UPDATE `email_client_accounts` SET `last_poll` = NOW() WHERE `id` = :id', array(':id' => $userdata['id']));
@@ -328,7 +328,7 @@ function email_poll($params){
         return $retval;
 
     }catch(Exception $e){
-        log_error(tr('Failed to poll email data for account ":account" because ":e"', array(':account' => $params['account'], ':e' => $e->getMessages())));
+        log_console(tr('Failed to poll email data for account ":account" because ":e"', array(':account' => $params['account'], ':e' => $e->getMessages())), 'yellow');
         throw new bException(tr('email_poll(): Failed'), $e);
     }
 }
@@ -1084,8 +1084,8 @@ function email_load_phpmailer(){
     try{
         if(!file_exists(ROOT.'/libs/ext/PHPMailer/PHPMailerAutoload.php')){
 
-            if(PLATFORM_SHELL){
-                cli_log('email_load_phpmailer(): phpmailer not found, installing now');
+            if(PLATFORM_CLI){
+                log_console('email_load_phpmailer(): phpmailer not found, installing now');
             }
 
             /*
@@ -1593,8 +1593,8 @@ function email_send_unsent(){
                 /*
                  * Error ocurred ! ... Notify and continue sending emails
                  */
-                if(PLATFORM == 'shell'){
-                    cli_log(tr('Failed to send email to user ":user" because ":e"', array(':user' => $email['to'], ':e' => $e->getMessage())), 'error');
+                if(PLATFORM_CLI){
+                    log_console(tr('Failed to send email to user ":user" because ":e"', array(':user' => $email['to'], ':e' => $e->getMessage())), 'error');
                 }
 
                 log_database(tr('Failed to send email to user ":user" because ":e"', array(':user' => $email['to'], ':e' => $e->getMessage())), 'error');
@@ -1773,8 +1773,8 @@ function email_delete($params){
             throw new bException(tr('email_delete(): No filters specified'), 'not-specified');
         }
 
-        if(PLATFORM_SHELL){
-            cli_log(tr('Polling email account ":account"', array(':account' => $params['account'])));
+        if(PLATFORM_CLI){
+            log_console(tr('Polling email account ":account"', array(':account' => $params['account'])));
         }
 
         if($params['filters']['old']){
@@ -1803,13 +1803,13 @@ function email_delete($params){
         $retval   = array();
 
         if(!$mails){
-            if(PLATFORM_SHELL){
-                cli_log(tr('No emails found for account ":email"', array(':email' => $userdata['email'])), 'yellow');
+            if(PLATFORM_CLI){
+                log_console(tr('No emails found for account ":email"', array(':email' => $userdata['email'])), 'yellow');
             }
 
         }else{
-            if(PLATFORM_SHELL){
-                cli_log(tr('Found ":count" mails for account ":email"', array(':count' => count($mails), ':email' => $userdata['email'])), 'green');
+            if(PLATFORM_CLI){
+                log_console(tr('Found ":count" mails for account ":email"', array(':count' => count($mails), ':email' => $userdata['email'])), 'green');
             }
 
             rsort($mails);
@@ -1850,8 +1850,8 @@ function email_delete($params){
                 }
 
                 if($delete){
-                    if(VERBOSE and PLATFORM_SHELL){
-                        cli_log(tr('Marked mail ":subject" for deletion', array(':subject' => $data['subject'])));
+                    if(VERBOSE and PLATFORM_CLI){
+                        log_console(tr('Marked mail ":subject" for deletion', array(':subject' => $data['subject'])));
                     }
 
                     imap_delete($imap, $mail);
@@ -1863,8 +1863,8 @@ function email_delete($params){
                 imap_expunge($imap);
             }
 
-            if(VERBOSE and PLATFORM_SHELL){
-                cli_log(tr('Deleted ":count" new mails for account ":account"', array(':count' => $count, ':account' => $params['account'])));
+            if(VERBOSE and PLATFORM_CLI){
+                log_console(tr('Deleted ":count" new mails for account ":account"', array(':count' => $count, ':account' => $params['account'])));
             }
         }
 

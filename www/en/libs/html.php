@@ -31,7 +31,7 @@ function html_echo($html){
                 throw new bException(tr('html_echo(): Output buffer is not empty'), 'not-empty');
             }
 
-            log_error(tr('html_echo(): Output buffer is not empty'), 'invalid');
+            log_console(tr('html_echo(): Output buffer is not empty'), 'yellow');
         }
 
         echo $html;
@@ -87,7 +87,7 @@ function html_iefilter($html, $filter){
  * Bundles CSS or JS files togueter, gives them a md5 substr to 16 chacarter name
  */
 function html_bundler($type){
-    global $_CONFIG;
+    global $_CONFIG, $core;
 
     if(!$_CONFIG['cdn']['bundler']['enabled']) return false;
 
@@ -155,7 +155,7 @@ function html_bundler($type){
          */
         $ext         = ($_CONFIG['cdn']['min'] ? '.min.'.$type : '.'.$type);
         $bundle      =  substr(md5(str_force($GLOBALS[$realtype])), 1, 16);
-        $admin_path  = ($GLOBALS['page_is_admin'] ? 'admin/' : '');
+        $admin_path  = ($core->callIs('admin') ? 'admin/' : '');
         $path        =  ROOT.'www/en/'.$admin_path.'pub/'.$type.'/';
         $bundle_file =  $path.'bundle-'.$bundle.$ext;
 
@@ -365,7 +365,7 @@ function html_load_css($files = '', $media = null){
  * Allows force loading of .min files (ie style.min instead of style), when 'min' is configured on, it won't duplicate the .min
  */
 function html_generate_css(){
-    global $_CONFIG;
+    global $_CONFIG, $core;
 
     try{
 //        if(empty($GLOBALS['css'])){
@@ -373,13 +373,13 @@ function html_generate_css(){
 //        }
 //
 //// :DELETE: admin pages and mobile pages are no longer supported
-//        if($GLOBALS['page_is_admin']){
+//        if($core->callIs('admin')){
 //            /*
 //             * Use normal admin CSS
 //             */
 //            $GLOBALS['css']['admin'] = array('media' => null);
 //
-//        }elseif($GLOBALS['page_is_mobile'] or empty($_CONFIG['bootstrap']['enabled'])){
+//        }elseif($core->callIs('mobile') or empty($_CONFIG['bootstrap']['enabled'])){
 //            /*
 //             * Use normal, default CSS
 //             */
@@ -1664,7 +1664,7 @@ function html_script($script, $jquery_ready = true, $option = null, $type = null
  * Return favicon HTML
  */
 function html_favicon($icon = null, $mobile_icon = null, $sizes = null, $precomposed = false){
-    global $_CONFIG;
+    global $_CONFIG, $core;
 
     try{
         array_params($params, 'icon');
@@ -1680,7 +1680,7 @@ function html_favicon($icon = null, $mobile_icon = null, $sizes = null, $precomp
         }
 
         foreach($params['sizes'] as $sizes){
-            if($GLOBALS['page_is_mobile']){
+            if($core->callIs('mobile')){
                 if(!$params['mobile_icon']){
                     $params['mobile_icon'] = cdn_domain('img/mobile/favicon.png');
                 }
@@ -1996,7 +1996,7 @@ function html_img($src, $alt, $width = null, $height = null, $more = ''){
                             /*
                              * Image doesn't exist.
                              */
-                            log_error(tr('html_img(): image ":src" does not exist', array(':src' => $file_src, ':width' => $width, ':height' => $height)), 'invalid');
+                            log_console(tr('html_img(): image ":src" does not exist', array(':src' => $file_src, ':width' => $width, ':height' => $height)), 'yellow');
                             $image[0] = -1;
                             $image[1] = -1;
                         }
@@ -2015,7 +2015,7 @@ function html_img($src, $alt, $width = null, $height = null, $more = ''){
                 }
 
                 if(!$height or !$width){
-                    log_error(tr('html_img(): image ":src" has invalid dimensions with width ":width" and height ":height"', array(':src' => $src, ':width' => $width, ':height' => $height)), 'invalid');
+                    log_console(tr('html_img(): image ":src" has invalid dimensions with width ":width" and height ":height"', array(':src' => $src, ':width' => $width, ':height' => $height)), 'yellow');
 
                 }else{
                     try{
@@ -2138,7 +2138,7 @@ function html_video($src, $type = null, $height = 0, $width = 0, $more = ''){
             $height = 'height="'.$height.'"';
 
         }else{
-            log_error(tr('html_video(): Specified height "%height%" is not numeric', array('%height%' => $height)), 'not_numeric');
+            log_console(tr('html_video(): Specified height ":height" is not numeric', array(':height' => $height)), 'yellow');
         }
 
         /*
@@ -2152,7 +2152,7 @@ function html_video($src, $type = null, $height = 0, $width = 0, $more = ''){
             $width = 'width="'.$width.'"';
 
         }else{
-            log_error(tr('html_video(): Specified width "%width%" is not numeric', array('%width%' => $width)), 'not_numeric');
+            log_console(tr('html_video(): Specified width ":width" is not numeric', array(':width' => $width)), 'yellow');
         }
 
         /*
@@ -2178,14 +2178,14 @@ function html_video($src, $type = null, $height = 0, $width = 0, $more = ''){
  * Show the specified page
  */
 function page_show($pagename, $params = null){
-    global $_CONFIG;
+    global $_CONFIG, $core;
 
     try{
-        if(!empty($GLOBALS['page_is_ajax'])){
+        if(!empty($core->callIs('ajax'))){
             // Execute ajax page
             return include(ROOT.'www/'.LANGUAGE.'/ajax/'.$pagename.'.php');
 
-        }elseif(!empty($GLOBALS['page_is_admin'])){
+        }elseif(!empty($core->callIs('admin'))){
             $prefix = 'admin/';
 
         }else{

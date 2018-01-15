@@ -5,7 +5,7 @@ $trace     = "\n\nFUNCTION TRACE\n".htmlentities(var_export(variable_zts_safe(de
 
 notify('error', '<pre> PHP ERROR ['.$errno.'] "'.$errstr.'" in "'.$errfile.'@'.$errline.'"'.$server.$session.$trace.'</pre>');
 
-if(PLATFORM == 'http'){
+if(PLATFORM_HTTP){
     error_log('PHP ERROR ['.$errno.'] "'.$errstr.'" in "'.$errfile.'@'.$errline.'"');
 }
 

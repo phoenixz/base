@@ -6,39 +6,30 @@
 $quiet = true;
 require_once(dirname(__FILE__).'/../../../libs/startup.php');
 
-try{
-    cli_only();
-    cli_exclusive();
+cli_only();
+cli_exclusive();
 
-    $mailing = cli_argument('mailing', true, cli_argument('mailer', true));
-    $users   = cli_argument('users'  , true);
+$mailing = cli_argument('mailing', true, cli_argument('mailer', true));
+$users   = cli_argument('users'  , true);
 
-    load_libs('mailer');
+load_libs('mailer');
 
-    if(!$mailings_id = mailer_get($mailing)){
-        throw new bException('Mailing "'.$mailing.'" does not exist', 'not-exist');
-    }
+if(!$mailings_id = mailer_get($mailing)){
+    throw new bException('Mailing "'.$mailing.'" does not exist', 'not-exist');
+}
 
-    if(!$users){
-        throw new bException('No users specified', 'not-specified');
-    }
+if(!$users){
+    throw new bException('No users specified', 'not-specified');
+}
 
-    $mailings_id = $mailings_id['id'];
+$mailings_id = $mailings_id['id'];
 
-    if($count = mailer_add_users($users, $mailings_id)){
-        log_console('Added "'.$count.'" users to mailing "'.$mailing.'"', '', 'white');
-        log_console('If the amount of added users is less than specifiend, then probably some of these users were already recipients of the mailing, and not added again', '');
+if($count = mailer_add_users($users, $mailings_id)){
+    log_console('Added "'.$count.'" users to mailing "'.$mailing.'"', 'white');
+    log_console('If the amount of added users is less than specifiend, then probably some of these users were already recipients of the mailing, and not added again');
 
-    }else{
-        log_console('No users added to mailing "'.$mailing.'"', '', 'yellow');
-        log_console('Maybe the specified users are already recipients of the mailing, and so not added again?', '');
-    }
-
-}catch(Exception $e){
-    log_error($e);
-    log_console('addusers failed', '', 'error');
-    log_console('USAGE: ', '', 'white', false);
-    log_console('addusers mailing mailername|mailerid users email,username|all', '');
-    die();
+}else{
+    log_console('No users added to mailing "'.$mailing.'"', 'yellow');
+    log_console('Maybe the specified users are already recipients of the mailing, and so not added again?');
 }
 ?>

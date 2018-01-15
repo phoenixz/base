@@ -77,7 +77,7 @@ try{
             break;
 
         case '':
-            throw new bException(tr('No option specified. Please specify one of "import", or "repair"'), 'not-specified');
+            throw new bException(tr('No method specified. Please specify one of "import", or "repair"'), 'not-specified');
 
         default:
             throw new bException(tr('Unknown option "'.str_log(cli_argument(0)).'" specified'), 'unknown');

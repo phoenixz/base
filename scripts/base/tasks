@@ -1,0 +1,466 @@
+#!/usr/bin/php
+<?php
+/*
+ * This is the tasks manager script
+ */
+$usage = './scripts/base/tasks
+./scripts/base/tasks add TASK JSON_DATA
+./scripts/base/tasks list [options]
+./scripts/base/tasks execute';
+
+$help  = "This is the tasks manager script
+
+This script can be used to manage programmed tasks
+
+
+
+METHODS
+
+
+
+add TASK JSON_DATA              - Add a new task. TASK is the name of the
+                                  script that should execute, and JSON_DATA
+                                  should be a valid JSON string
+
+    --after                     - Do not execute this task until after the
+                                  specified date
+
+    --method METHOD             - Execute this task using the specified METHOD.
+                                  Must be one of \"normal\" (default),
+                                  \"internal\", or \"background\"
+
+    --time_limit LIMIT          - Max amount of time that can be spent on
+                                  executing this task (does not count for
+                                  background tasks). Must be between 1 and 600,
+                                  defaults to 30
+
+
+
+execute                         - Try to execute all tasks that have status
+                                  \"new\"
+
+
+
+delete ID                       - Delete the task with the specified ID
+
+
+
+clear                           - Clear a group of tasks from the tasks table.
+                                  By default all tasks with status \"completed\"
+                                  and \"failed\" will be cleared
+
+    --all                       - Clear ALL tasks. Required FORCE mode
+
+    --only-data                 - Clear only the \"data\" and \"results\" fields
+
+    --status STATUS, ...        - Clear tasks with the specified statusses.
+                                  Requires FORCE mode
+
+
+
+list                            - List all tasks. By default, only open tasks
+                                  (tasks with status \"new\" and \"executing\")
+                                  are shown
+
+    --closed                    - List only closed tasks
+
+    --all                       - List all tasks
+
+    --limit LIMIT               - Limit list to LIMIT entries (defaults to 100)
+
+    --page PAGE                 - Start list on PAGE * LIMIT entries (defaults
+                                  to 0)
+
+
+
+show ID                         - Show detailed information about the specified
+                                  task id. The extra data shown will be the
+                                  \"data\" and \"results\" JSON fields decoded";
+
+require_once(dirname(__FILE__).'/../../libs/startup.php');
+
+cli_only();
+load_libs('tasks,json');
+
+switch(cli_method()){
+    case 'add':
+under_construction('add');
+
+        $after = cli_argument('--after');
+        cli_no_arguments_left();
+        break;
+
+    case 'delete':
+        /*
+         * Delete the specified task
+         */
+        $id = cli_argument();
+        cli_no_arguments_left();
+
+        if(empty($id)){
+            throw new bException(tr('No task specified'), 'not-specified');
+        }
+
+        if(!is_natural($id)){
+            throw new bException(tr('The specified task ":id" is invalid', array(':id' => $id)), 'invalid');
+        }
+
+        $task = sql_get('SELECT `id`, `status` FROM `tasks` WHERE `id` = :id', array(':id' => $id));
+
+        if(!$task){
+            throw new bException(tr('The specified task ":id" does not exist', array(':id' => $id)), 'not-exist');
+        }
+
+        if($task['status'] === 'processing'){
+            /*
+             * This task is running!
+             */
+            if(!FORCE){
+                throw new bException(tr('Task ":id" is currently in process! Use FORCE to delete it', array(':id' => $id)), 'not-authorized');
+            }
+        }
+
+        $r = sql_query('DELETE FROM `tasks` WHERE `id` = :id', array(':id' => $id));
+
+        if(!$r->rowCount()){
+            log_console(tr('No tasks were deleted'), 'yellow');
+
+        }else{
+            log_console(tr('Deleted task ":id"', array(':id' => $id)), 'green');
+        }
+
+        break;
+
+    case 'clear':
+        /*
+         * Clear all tasks
+         */
+        $all       = (cli_argument('--all')   or cli_argument('-a'));
+        $limit     = (cli_argument('--limit') or cli_argument('-l'));
+        $page      = (cli_argument('--page')  or cli_argument('-p'));
+        $status    = cli_argument('--status', true);
+        $only_data = cli_argument('--only-data');
+
+        cli_no_arguments_left();
+
+        if($all){
+            if($status){
+                throw new bException(tr('--status cannot be used with --all'), 'invalid');
+            }
+
+            if(!FORCE){
+                throw new bException(tr('In order to clear non "completed" tasks, use the FORCE option'), 'not-authorized');
+            }
+
+            log_console(tr('Clearing all tasks'), 'white');
+
+        }else{
+            if(!$status){
+                $status = 'completed,failed';
+
+            }else{
+                if(!FORCE){
+                    throw new bException(tr('In order to clear non "completed" tasks, use the FORCE option'), 'not-authorized');
+                }
+            }
+
+            log_console(tr('Clearing tasks with status ":status"', array(':status' => $status)), 'white');
+        }
+
+        if($all){
+            if($only_data){
+                /*
+                 * Only clear data and results fields
+                 */
+                $r = sql_query('UPDATE `tasks` SET `data` = null, `results` = null');
+
+            }else{
+                $r = sql_query('DELETE FROM `tasks`');
+            }
+
+        }else{
+            $status = sql_in(array_force($status));
+
+            if($only_data){
+                /*
+                 * Only clear data and results fields
+                 */
+                $r = sql_query('UPDATE `tasks` WHERE `data` = null, `results` = null `status` IN ('.implode(', ', array_keys($status)).')', $status);
+
+            }else{
+                $r = sql_query('DELETE FROM `tasks` WHERE `status` IN ('.implode(', ', array_keys($status)).')', $status);
+            }
+        }
+
+        if(!$r->rowCount()){
+            log_console(tr('No tasks were cleared'), 'yellow');
+
+        }else{
+            log_console(tr('Cleared ":count" entries', array(':count' => $r->rowCount())), 'green');
+        }
+
+        break;
+
+    case 'list':
+        $all    = (cli_argument('--all')   or cli_argument('-a'));
+        $limit  = (cli_argument('--limit') or cli_argument('-l'));
+        $page   = (cli_argument('--page')  or cli_argument('-p'));
+        $status = cli_argument('--status', true);
+        cli_no_arguments_left();
+
+        if(!$limit){
+            $limit = 100;
+        }
+
+        if($all){
+            if($status){
+                throw new bException(tr('--status cannot be used with --all'), 'invalid');
+            }
+
+            if(!QUIET){
+                log_console(tr('Showing all tasks'), 'white');
+            }
+
+        }else{
+            if(!$status){
+                $status = 'new,processing';
+            }
+
+            if(!QUIET){
+                log_console(tr('Showing tasks with status ":status"', array(':status' => $status)), 'white');
+            }
+        }
+
+        if(!QUIET){
+            log_console(str_size('#id', 6).str_size('Meta id', 8).str_size('User', 32).str_size('Parent task id', 18).str_size('Command', 32).str_size('Status', 12).str_size('Description', 32).str_size('Execution method', 20).str_size('Time limit', 12).str_size('Time spent', 12), 'cyan');
+        }
+
+        $tasks = tasks_list($status, $limit);
+
+        while($task = sql_fetch($tasks)){
+            switch($task['status']){
+                case 'processing':
+                    $task['status'] = cli_color($task['status'], 'light_blue');
+                    break;
+
+                case 'completed':
+                    $task['status'] = cli_color($task['status'], 'green');
+                    break;
+
+                case 'failed':
+                    $task['status'] = cli_color($task['status'], 'red');
+                    break;
+            }
+
+            log_console(str_size($task['id'], 6).str_size($task['meta_id'], 8).str_size(name($task), 32).str_size(not_empty($task['parents_id'], '-'), 18).str_size($task['command'], 32).str_size($task['status'], 12).str_size($task['description'], 32).str_size($task['method'], 20).str_size(($task['time_limit'] ? $task['time_limit'] : '-'), 12).($task['time_spent'] ? $task['time_spent'] : '-'));
+        }
+
+        break;
+
+    case 'show':
+        $id = cli_argument();
+        cli_no_arguments_left();
+
+        if(!is_natural($id)){
+            throw new bException(tr('The specified task ":id" is not valid', array(':id' => $id)), 'invalid');
+        }
+
+        $task = tasks_get($id);
+
+        if(!$task){
+            throw new bException(tr('The specified task ":id" does not exist', array(':id' => $id)), 'not-exist');
+        }
+
+        $data        = json_decode_custom($task['data']);
+        $results     = json_decode_custom($task['results']);
+        $description = $task['description'];
+
+        unset($task['data']);
+        unset($task['results']);
+        unset($task['description']);
+
+        foreach($task as $key => $value){
+            log_console(cli_color(str_capitalize($key).':', 'white').' '.$value);
+        }
+
+        log_console(cli_color('Description:', 'white').' '.$description);
+        log_console(cli_color('Data:', 'white'));
+
+        if(empty($data)){
+            log_console(tr('This task has no data'), 'yellow');
+
+        }else{
+            print_r($data)."\n";
+        }
+
+        log_console();
+        log_console(cli_color('Results:', 'white'));
+
+        if(empty($results)){
+            log_console(tr('This task has no results'), 'yellow');
+
+        }else{
+            print_r(stripslashes(print_r($results, true)))."\n";
+        }
+
+        break;
+
+    case 'reset':
+        $id = cli_argument();
+        cli_no_arguments_left();
+
+        if(!is_natural($id)){
+            throw new bException(tr('The specified task ":id" is not valid', array(':id' => $id)), 'invalid');
+        }
+
+        $task = tasks_get($id);
+
+        if(!$task){
+            throw new bException(tr('The specified task ":id" does not exist', array(':id' => $id)), 'not-exist');
+        }
+
+        if(($task['status'] !== 'failed') and !FORCE){
+            throw new bException(tr('Cannot reset task ":id", it has status ":status" instead of "failed". Use FORCE to reset the task anyway', array(':id' => $task['id'], ':status' => $task['status'])), 'invalid');
+        }
+
+        sql_query('UPDATE `tasks` SET `status` = "new", `results` = null WHERE `id` = :id', array(':id' => $task['id']));
+        log_console(tr('Reset task ":id"', array(':id' => $task['id'])), 'green');
+        break;
+
+    case 'execute':
+        cli_no_arguments_left();
+        load_libs('time');
+        $count = 0;
+
+        log_console(tr('Started task execution...'), 'white');
+
+        while(true){
+            if($count > 50){
+                log_console(tr('Passed the maximum amount of task cycles, restarting'));
+                run_background('base/tasks execute');
+            }
+
+            $task = tasks_get('new', 'processing');
+
+            if(!$task){
+                log_console(tr('No new tasks found, quitting'), 'yellow');
+                break;
+            }
+
+            $count++;
+
+            try{
+                log_console(tr('Executing task ":task" with description ":description"', array(':task' => $task['id'], ':description' => $task['description'])));
+                log_file(tr('Executing task ":task" with description ":description"'   , array(':task' => $task['id'], ':description' => $task['description'])), 'tasks');
+
+                $task['results'] = json_decode_custom($task['results']);
+                $task['data']    = json_decode_custom($task['data']);
+                $task['data'][]  = '--no-color';
+
+                if($task['time_limit']){
+                    set_time_limit($task['time_limit']);
+                }
+
+                $start   = microtime(true);
+                $command = $task['command'];
+                $options = '';
+
+                if(!empty($task['data']['method'])){
+                    $options .= ' '.$task['data']['method'];
+                    unset($task['data']['method']);
+                }
+
+                foreach($task['data'] as $key => $value){
+                    if(empty($value)) continue;
+
+                    if(is_integer($key)){
+                        $options .= ' '.$value;
+
+                    }else{
+                        $options .= ' '.$key.' '.$value;
+                    }
+                }
+
+                switch($task['method']){
+                    case 'background':
+                        /*
+                         * Execute this task in the background
+                         */
+                        run_background($command.' '.$options);
+                        break;
+
+                    case 'internal':
+                        /*
+                         * Execute this task as an internal script
+                         */
+                        $task['result'] = script_exec($command, $task['data']);
+                        break;
+
+                    case 'normal':
+                        /*
+                         * Execute this task as a normal task
+                         */
+                        $task['result'] = safe_exec(ROOT.'scripts/'.$command.' '.$options);
+                        break;
+
+                    case 'function':
+                        /*
+                         * Execute this task as an internal function
+                         */
+                        if(isset($task['load_libs'])){
+                            load_libs($task['load_libs']);
+                            unset($task['load_libs']);
+                        }
+
+                        $task['result'] = $task['command']($task['data']);
+                        break;
+
+                    default:
+                        throw new bException(tr('Unknown task execution method ":method" specified for task ":id" in ":time"', array(':method' => $task['method'], ':id' => $task['id'], ':time' => time_difference($start, $end, 'auto', 5))), 'unknown');
+                }
+
+                $end = microtime(true);
+
+                $task['status']     = 'completed';
+                $task['time_spent'] = $end - $start;
+
+                tasks_update($task, true);
+                set_time_limit(0);
+
+                log_console(tr('Task ":task" executed successfully in ":time"', array(':task' => $task['id'], ':time' => time_difference($start, $end, 'auto', 5))), 'green');
+                log_file(tr('Task ":task" executed successfully in ":time"'   , array(':task' => $task['id'], ':time' => time_difference($start, $end, 'auto', 5))), 'tasks');
+
+            }catch(Exception $e){
+                try{
+                    log_console(tr('Task ":task" failed with ":e" in ":time"', array(':task' => $task['id'], ':e' => $e, ':time' => time_difference($start, $end, 'auto', 5))), 'red');
+                    log_file(tr('Task ":task" failed with ":e" in ":time"'   , array(':task' => $task['id'], ':e' => $e, ':time' => time_difference($start, $end, 'auto', 5))), 'tasks');
+
+                    $task['status']     = 'failed';
+                    $task['results']    = $e->getMessages();
+                    $task['time_spent'] = microtime(true) - $start;
+
+                    array_unshift($task['results'], tr('Task executed command ":command"'   , array(':command' => $command.' '.$options))."\n");
+                    array_unshift($task['results'], tr('Task ":id" encountered an exception', array(':id' => $task['id']))."\n");
+                    tasks_update($task);
+
+                }catch(Exception $e){
+                    notify('task-exception-failed', 'developers', $e);
+                    log_console(tr('Exception handling for task ":task" failed with ":e"', array(':task' => $task['id'], ':e' => $e)), 'red');
+                    log_file(tr('Exception handling for task ":task" failed with ":e"'   , array(':task' => $task['id'], ':e' => $e)), 'tasks');
+                }
+            }
+        }
+
+        if($count){
+            log_console(tr('Executed ":count" tasks', array(':count' => $count)), 'green');
+        }
+
+        break;
+
+    case '':
+        throw new bException(tr('No method specified'), 'no-method');
+
+    default:
+        throw new bException(tr('Invalid method ":method" specified', array(':method' => cli_method())), 'unknown-method');
+}
+?>

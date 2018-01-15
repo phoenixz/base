@@ -13,7 +13,7 @@
 /*
  * On the command line we can only run this as root user
  */
-if(PLATFORM == 'shell'){
+if(PLATFORM_CLI){
     cli_root_only();
 }
 

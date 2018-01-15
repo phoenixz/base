@@ -128,16 +128,16 @@ switch(cli_method()){
                 $tables = s_get_tables($tables, $databases);
 
                 if($all){
-                    cli_log(tr('Changing default charset for tables (:count) for connector/host/database ":connector/:host/all databases"', array(':connector' => $connector, ':host' => $_CONFIG['db'][$connector]['host'], ':count' => $tables->rowCount())), 'white');
+                    log_console(tr('Changing default charset for tables (:count) for connector/host/database ":connector/:host/all databases"', array(':connector' => $connector, ':host' => $_CONFIG['db'][$connector]['host'], ':count' => $tables->rowCount())), 'white');
 
                 }else{
-                    cli_log(tr('Changing default charset for tables (:count) in connector/host/database ":connector/:host/:database"', array(':connector' => $connector, ':host' => $_CONFIG['db'][$connector]['host'], ':database' => $database, ':count' => $tables->rowCount())), 'white');
+                    log_console(tr('Changing default charset for tables (:count) in connector/host/database ":connector/:host/:database"', array(':connector' => $connector, ':host' => $_CONFIG['db'][$connector]['host'], ':database' => $database, ':count' => $tables->rowCount())), 'white');
                 }
 
-                cli_log(str_size(tr('Database'), 40).tr('Table'), 'cyan');
+                log_console(str_size(tr('Database'), 40).tr('Table'), 'cyan');
 
                 while($table = sql_fetch($tables)){
-                    cli_log(str_size($table['TABLE_SCHEMA'], 40).$table['TABLE_NAME']);
+                    log_console(str_size($table['TABLE_SCHEMA'], 40).$table['TABLE_NAME']);
                     sql_query('ALTER TABLE `'.$table['TABLE_SCHEMA'].'`.`'.$table['TABLE_NAME'].'` CONVERT TO CHARACTER SET "'.$charset.'"', null, null, $connector);
                 }
         }
@@ -156,13 +156,13 @@ switch(cli_method()){
                 cli_no_arguments_left();
 
                 if(VERBOSE){
-                    cli_log(tr('Databases (:count) for connector/host ":connector/:host"', array(':connector' => $connector, ':host' => $_CONFIG['db'][$connector]['host'], ':count' => $databases->rowCount())), 'white');
+                    log_console(tr('Databases (:count) for connector/host ":connector/:host"', array(':connector' => $connector, ':host' => $_CONFIG['db'][$connector]['host'], ':count' => $databases->rowCount())), 'white');
                 }
 
-                cli_log(tr('Database'), 'cyan');
+                log_console(tr('Database'), 'cyan');
 
                 foreach($databases as $database){
-                    cli_log($database);
+                    log_console($database);
                 }
 
                 break;
@@ -181,17 +181,17 @@ switch(cli_method()){
 
                 if(VERBOSE){
                     if($all){
-                        cli_log(tr('Tables (:count) for connector/host/database ":connector/:host/all databases"', array(':connector' => $connector, ':host' => $_CONFIG['db'][$connector]['host'], ':count' => $tables->rowCount())), 'white');
+                        log_console(tr('Tables (:count) for connector/host/database ":connector/:host/all databases"', array(':connector' => $connector, ':host' => $_CONFIG['db'][$connector]['host'], ':count' => $tables->rowCount())), 'white');
 
                     }else{
-                        cli_log(tr('Tables (:count) for connector/host/database ":connector/:host/:database"', array(':connector' => $connector, ':host' => $_CONFIG['db'][$connector]['host'], ':database' => $database, ':count' => $tables->rowCount())), 'white');
+                        log_console(tr('Tables (:count) for connector/host/database ":connector/:host/:database"', array(':connector' => $connector, ':host' => $_CONFIG['db'][$connector]['host'], ':database' => $database, ':count' => $tables->rowCount())), 'white');
                     }
                 }
 
-                cli_log(str_size(tr('Database'), 40).tr('Table'), 'cyan');
+                log_console(str_size(tr('Database'), 40).tr('Table'), 'cyan');
 
                 while($table = sql_fetch($tables)){
-                    cli_log(str_size($table['TABLE_SCHEMA'], 40).$table['TABLE_NAME']);
+                    log_console(str_size($table['TABLE_SCHEMA'], 40).$table['TABLE_NAME']);
                 }
 
                 break;
@@ -240,19 +240,19 @@ switch(cli_method()){
                                 FROM   `information_schema`.`key_column_usage` '.$where.(empty($having) ? '' : ' HAVING '.implode(' AND ', $having)), $execute);
 
                 if($r->rowCount()){
-                    cli_log(tr('Listing ":count" foreign key references', array(':count' => $r->rowCount())), 'white');
-                    cli_log(tr('Database           Constraint name                          Foreign key                              References'), 'cyan');
+                    log_console(tr('Listing ":count" foreign key references', array(':count' => $r->rowCount())), 'white');
+                    log_console(tr('Database           Constraint name                          Foreign key                              References'), 'cyan');
 
                     while($row = sql_fetch($r)){
                         $row = str_size($row['database'], 18, ' ').' '.str_size($row['constraint'], 40, ' ').' '.str_size($row['foreign_key'], 40, ' ').' '.$row['references'];
 
                         if(!$filter or strstr($row, $filter)){
-                            cli_log($row);
+                            log_console($row);
                         }
                     }
 
                 }else{
-                    cli_log(tr('No foreign key references found'), 'white');
+                    log_console(tr('No foreign key references found'), 'white');
                 }
 
                 break;
@@ -270,7 +270,7 @@ switch(cli_method()){
         throw new bException(tr('No method specified'), 'not-specified');
 
     default:
-        throw new bException(tr('Unknown method ":method" specified', array(':method' => cli_method())), 'unknown');
+        throw new bException(tr('Invalid method ":method" specified', array(':method' => cli_method())), 'unknown-method');
 }
 
 

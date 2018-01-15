@@ -325,32 +325,6 @@ function array_merge_complete(){
 
 
 /*
- * Specified variable may be either string or array, but ensure that its returned as an array.
- */
-function array_force($source, $separator = ','){
-    try{
-        if(!$source){
-            return array();
-        }
-
-        if(!is_array($source)){
-            if(!is_string($source)){
-                return array($source);
-            }
-
-            return explode($separator, $source);
-        }
-
-        return $source;
-
-    }catch(Exception $e){
-        throw new bException('array_force(): Failed', $e);
-    }
-}
-
-
-
-/*
  * If specified params is not an array, then make it an array with the current value under the specified string_key
  * If numeric_key is set, and params is numeric, then use the numeric key instead
  */

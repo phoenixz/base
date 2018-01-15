@@ -2,7 +2,7 @@
 /*
  * Add crypto walllet support
  */
-cli_log('Adding support for crypto wallets');
+log_console('Adding support for crypto wallets');
 
 sql_column_exists('users', 'credits', '!ALTER TABLE `users` ADD COLUMN `credits` DOUBLE NOT NULL');
 

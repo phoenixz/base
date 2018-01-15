@@ -1,0 +1,129 @@
+#!/usr/bin/php
+<?php
+/*
+ * This is the scanner manager script
+ */
+$usage = "./scripts/base/scanner\n".
+         "./scripts/base/scanner execute [option]\n";
+
+$help  = "This is the scanner manager script
+
+This script can manage connected scanners (USB or network)
+
+
+
+METHODS
+
+
+
+list                            - List availabe scanners (USB or network)
+
+
+
+scan FILE                       - Scan to the specified FILE. If the path for
+                                  the specified file does not exist, it will be
+                                  created if possible. If no device was
+                                  specified, the first device available will be
+                                  used
+
+    --device DEVICE             - Scan using the specified device. Specify the
+                                  device using the URL from the \"list\" method
+
+    --resolution RESOLUTION     - Scan using the specified resolution. Should
+                                  be one of 75, 150, 300, 600, 1200, 2400, 4800
+                                  or 9600. Defaults to
+                                  \$_CONFIG[scanimage][resolution]
+
+    --contrast CONTRAST         - Scan using the specified contrast in the
+                                  range 0 - 100. Defaults to
+                                  \$_CONFIG[scanimage][contrast]
+
+    --brightness BRIGHTNESS     - Scan using the specified brightness in the
+                                  range 0 - 100. Defaults to
+                                  \$_CONFIG[scanimage][brightness]
+
+    --gamma GAMMA               - Scan using the specified gamma in the range
+                                  0 - 100. Defaults to
+                                  \$_CONFIG[scanimage][gamma]
+
+    --jpeg_quality QUALITY      - When scanning to JPEG, use the specified
+                                  quality in the range 0 - 100. Defaults to
+                                  \$_CONFIG[scanimage][jpeg_quality]
+
+    --transfer_format FORMAT    - Transfer the scanned file in the specified
+                                  format. Supported formats are \"jpeg\", or
+                                  \"tiff\". Defaults to
+                                  \$_CONFIG[scanimage][transfer_format]
+
+    --mode MODE                 - Scan using the specified mode. Supported
+                                  modes are \"lineart\", \"grey\", or \"color\"
+
+    --format FORMAT             - Save the scanned file in the specified
+                                  format. Supported formats are \"jpeg\", or
+                                  \"tiff\". Defaults to
+                                  \$_CONFIG[scanimage][format]
+
+    --clear-exif                - Clear the EXIF information from the resulting
+                                  file";
+
+require_once(dirname(__FILE__).'/../../libs/startup.php');
+
+cli_only();
+load_libs('scanimage,sane');
+
+switch(cli_method()){
+    case 'list':
+        cli_no_arguments_left();
+
+        log_console(tr('Showing found SANE scanners'), 'white');
+        log_console(str_size('#id', 6).str_size('Type', 12).str_size('Name', 24).' URL', 'cyan');
+
+        $count = 0;
+
+        foreach(scanimage_list() as $type => $devices){
+            foreach($devices as $device ){
+                log_console(str_size($count++, 6).str_size($type, 12).str_size($device['name'], 24).$device['url']);
+            }
+        }
+
+        break;
+
+    case 'scan':
+        $scanimage['device']         = cli_argument('--device', true);
+        $scanimage['resolution']     = not_empty(cli_argument('--resolution'     , true), $_CONFIG['scanimage']['resolution']);
+        $scanimage['contrast']       = not_empty(cli_argument('--contrast'       , true), $_CONFIG['scanimage']['contrast']);
+        $scanimage['brightness']     = not_empty(cli_argument('--brightness'     , true), $_CONFIG['scanimage']['brightness']);
+        $scanimage['gamma']          = not_empty(cli_argument('--gamma, true'    , true), $_CONFIG['scanimage']['gamma']);
+        $scanimage['jpeg_quality']   = not_empty(cli_argument('--jpeg-quality'   , true), $_CONFIG['scanimage']['jpeg_quality']);
+        $scanimage['trasfer_format'] = not_empty(cli_argument('--transfer-format', true), $_CONFIG['scanimage']['transfer_format']);
+        $scanimage['mode']           = not_empty(cli_argument('--mode'           , true), $_CONFIG['scanimage']['mode']);
+        $scanimage['format']         = not_empty(cli_argument('--format'         , true), $_CONFIG['scanimage']['format']);
+        $scanimage['clear_exif']     = not_empty(cli_argument('--clear-exif'     , true), $_CONFIG['scanimage']['clear_exif']);
+        $scanimage['file']           = cli_argument();
+
+        cli_no_arguments_left();
+
+        if(!$scanimage['file']){
+            throw new bException(tr('No target file specified'), 'not-specified');
+        }
+
+        $scanimage['file'] = file_absolute($scanimage['file']);
+        $scanimage['path'] = dirname($scanimage['file']);
+
+        file_ensure_path($scanimage['path']);
+        scanimage($scanimage);
+
+        if(!file_exists($scanimage['file'])){
+            throw new bException(tr('Sane reported scan was saved to target file ":file", but the file was not found', array(':file' => $scanimage['file'])), 'not-found');
+        }
+
+        log_console(tr('Scanned image to file ":file"', array(':file' => $scanimage['file'])));
+        break;
+
+    case '':
+        throw new bException(tr('No method specified'), 'no-method');
+
+    default:
+        throw new bException(tr('Invalid method ":method" specified', array(':method' => cli_method())), 'unknown-method');
+}
+?>

@@ -137,4 +137,32 @@ function date_timezones_list(){
         throw new bException(tr('date_timezones_list(): Failed'), $e);
     }
 }
+
+
+
+/*
+ * Return the specified $date with the specified $interval applied.
+ * If $date is null, the default date from date_convert() will be used
+ * $interval must be a valid ISO 8601 specification (see http://php.net/manual/en/dateinterval.construct.php)
+ * If $interval is "negative", i.e. preceded by a - sign, the interval will be subtraced. Else the interval will be added
+ * Return date will be formatted according to date_convert() $format
+ */
+function date_interval($date, $interval, $format = null){
+    try{
+        $date = date_convert($date, 'd-m-Y');
+        $date = new DateTime($date);
+
+        if(substr($interval, 0, 1) == '-'){
+            $date->sub(new DateInterval(substr($interval, 1)));
+
+        }else{
+            $date->add(new DateInterval($interval));
+        }
+
+        return date_convert($date, $format);
+
+    }catch(Exception $e){
+        throw new bException('date_interval(): Failed', $e);
+    }
+}
 ?>

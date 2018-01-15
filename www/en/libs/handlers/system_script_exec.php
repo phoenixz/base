@@ -50,7 +50,7 @@ try{
     $_script_exec_file = file_assign_target(TMP, false, false, $length);
     $_script_exec_file = file_copy_tree(ROOT.'scripts/'.$script, TMP.$_script_exec_file, "#!/usr/bin/php\n", '', '.php');
 
-    log_console('Executing script "'.str_log($script).'" as "'.$_script_exec_file.'"', 'script_exec', 'white');
+    log_console(tr('Executing script ":script" as ":as"', array(':script' => $script, ':as' => $_script_exec_file)), 'white');
 
     /*
      * Store the list of scripts being executed, just in case script_exec() is
@@ -106,7 +106,7 @@ try{
         /*
          * This is a minor problem, really..
          */
-        log_message('script_exec(): Failed to clean up executed temporary script copy path "'.$_script_exec_file.'", probably a parrallel process added new content there?', 'error/failed', 'yellow');
+        log_console('script_exec(): Failed to clean up executed temporary script copy path "'.$_script_exec_file.'", probably a parrallel process added new content there?', 'yellow');
     }
 
     $GLOBALS['argv'] = $argv;

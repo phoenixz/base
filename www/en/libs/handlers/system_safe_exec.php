@@ -30,7 +30,7 @@ try{
      *
      */
     if(VERBOSE){
-        cli_log(tr('Executing command ":command"', array(':command' => $command)), 'cyan');
+        log_console(tr('Executing command ":command"', array(':command' => $command)), 'cyan');
     }
 
     if(substr($command, -1, 1) == '&'){
@@ -45,7 +45,7 @@ try{
 
     if(VERBOSE){
         foreach($output as $line){
-            cli_log($output);
+            log_console($output);
         }
     }
 

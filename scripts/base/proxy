@@ -46,7 +46,7 @@ switch(cli_method()){
         }
 
         foreach($_CONFIG['curl']['proxies'] as $proxy){
-            cli_log($proxy);
+            log_console($proxy);
         }
 
         break;
@@ -75,19 +75,19 @@ switch(cli_method()){
         foreach($proxies as $proxy){
             try{
                 $data  = curl_get_proxy($url, null, $proxy);
-                cli_log(tr('Proxy ":proxy" works correctly', array(':proxy' => $proxy)), 'green');
+                log_console(tr('Proxy ":proxy" works correctly', array(':proxy' => $proxy)), 'green');
 
             }catch(Exception $e){
                 $errors++;
-                cli_log(tr('Proxy ":proxy" failed with ":e"', array(':proxy' => $proxy, ':e' => $e)), 'red');
+                log_console(tr('Proxy ":proxy" failed with ":e"', array(':proxy' => $proxy, ':e' => $e)), 'red');
             }
         }
 
         if($errors){
-            cli_log(tr('Tested ":count" proxies, found ":errors" errors', array(':count' => count($proxies), ':errors' => $errors)), 'yellow');
+            log_console(tr('Tested ":count" proxies, found ":errors" errors', array(':count' => count($proxies), ':errors' => $errors)), 'yellow');
 
         }else{
-            cli_log(tr('Tested ":count" proxies, no errors found', array(':count' => count($proxies))), 'green');
+            log_console(tr('Tested ":count" proxies, no errors found', array(':count' => count($proxies))), 'green');
         }
 
         break;
@@ -104,6 +104,6 @@ switch(cli_method()){
         throw new bException(tr('No method specified'), 'not-specified');
 
     default:
-        throw new bException(tr('Unknown method ":method" specified', array(':method' => cli_method())), 'unknown');
+        throw new bException(tr('Invalid method ":method" specified', array(':method' => cli_method())), 'unknown-method');
 }
 ?>

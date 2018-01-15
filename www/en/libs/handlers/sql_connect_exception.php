@@ -4,7 +4,7 @@
         throw new bException('sql_connect(): Failed to connect with "'.str_log($connector['driver']).'" driver, it looks like its not available', 'driverfail');
     }
 
-    log_console(tr('Encountered exception ":e" while connecting to database server, attempting to resolve', array(':e' => $e->getMessage())), '', 'yellow');
+    log_console(tr('Encountered exception ":e" while connecting to database server, attempting to resolve', array(':e' => $e->getMessage())), 'yellow');
 
     /*
      * Check that all connector values have been set!
@@ -23,13 +23,13 @@
         /*
          * Database not found!
          */
-        $GLOBALS['no-db'] = true;
+        $core->register['no-db'] = true;
 
-        if(!((PLATFORM == 'shell') and (SCRIPT == 'init'))){
+        if(!((PLATFORM_CLI) and (SCRIPT == 'init'))){
             throw $e;
         }
 
-        log_console(tr('Database base server conntection failed because database "%db%" does not exist. Attempting to connect without using a database to correct issue', array('%db%' => $connector['db'])), '', 'yellow');
+        log_console(tr('Database base server conntection failed because database ":db" does not exist. Attempting to connect without using a database to correct issue', array(':db' => $connector['db'])), 'yellow');
 
         /*
          * We're running the init script, so go ahead and create the DB already!
@@ -38,11 +38,11 @@
         unset($connector['db']);
         $pdo = sql_connect($connector);
 
-        log_console(tr('Successfully connected to database server. Attempting to create database "%db%"', array('%db%' => $db)), '', 'yellow');
+        log_console(tr('Successfully connected to database server. Attempting to create database ":db"', array(':db' => $db)), 'yellow');
 
         $pdo->query('CREATE DATABASE `'.$db.'`');
 
-        log_console(tr('Reconnecting to database server with database "%db%"', array('%db%' => $db)), '', 'yellow');
+        log_console(tr('Reconnecting to database server with database ":db"', array(':db' => $db)), 'yellow');
 
         $connector['db'] = $db;
         $pdo = sql_connect($connector);

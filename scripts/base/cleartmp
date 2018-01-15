@@ -7,7 +7,7 @@ require_once(dirname(__FILE__).'/../../libs/startup.php');
 
 try{
     cli_no_arguments_left();
-    cli_log('Clearing configured tmp path ":tmp"', array(':tmp' => TMP), 'white');
+    log_console('Clearing configured tmp path ":tmp"', array(':tmp' => TMP), 'white');
 
     rename(TMP, $delete = unslash(TMP).'~delete');
     mkdir(TMP, $_CONFIG['fs']['dir_mode'], true);
@@ -15,7 +15,7 @@ try{
     load_libs('file');
     file_delete_tree($delete);
 
-    cli_log(tr('Done!'), 'green');
+    log_console(tr('Done!'), 'green');
 
 }catch(Exception $e){
     throw new bException('scripts/base/cleartmp: Failed', $e);
