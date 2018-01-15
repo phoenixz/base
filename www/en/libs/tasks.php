@@ -67,6 +67,7 @@ function tasks_update($task, $executed = false){
 
                    SET    `after`      = :after,
          '.($executed ? ' `executedon` = NOW(), ' : '').'
+                          `executed`   = :executed,
                           `status`     = :status,
                           `results`    = :results
 
@@ -75,6 +76,7 @@ function tasks_update($task, $executed = false){
                    array(':id'         => $task['id'],
                          ':after'      => $task['after'],
                          ':status'     => $task['status'],
+                         ':executed'   => get_null($task['executed']),
                          ':results'    => json_encode_custom($task['results'])));
 
         return $task;
@@ -204,6 +206,7 @@ function tasks_get($filter, $set_status = false){
                                   `results`,
                                   `time_limit`,
                                   `time_spent`,
+                                  `executed`,
                                   `description`,
                                   `method`
 
@@ -269,6 +272,7 @@ function tasks_list($status, $limit = 10){
                                      `tasks`.`method`,
                                      `tasks`.`time_limit`,
                                      `tasks`.`time_spent`,
+                                     `tasks`.`executed`,
                                      `tasks`.`description`,
 
                                      `users`.`name`,
