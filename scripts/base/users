@@ -7,7 +7,7 @@ $usage = './scripts/base/users list
 ./scripts/base/users list [--right RIGHT] [-r RIGHT]
 ./scripts/base/users create --username USERNAME --name REALNAME --email EMAIL --password PASSWORD [--latitude LATITUDE] [--longitude LONGITUDE] [--status STATUS] [--type TYPE] [--redirect URL] [--domain DOMAIN]
 ./scripts/base/users modify ID|USERNAME [--username USERNAME] [--name NAME] [--email EMAIL] [--latitude LATITUDE] [--longitude LONGITUDE] [--status STATUS] [--type TYPE] [--redirect URL] [--domain DOMAIN]
-./scripts/base/users password ID|USERNAME PASSWORD
+./scripts/base/users password ID|USERNAME
 ./scripts/base/users delete|undelete|erase ID|USERNAME ID|USERNAME ...
 ./scripts/base/users whoami
 ./scripts/base/users set-role USERID|USERNAME ROLEID|ROLENAME
@@ -15,7 +15,11 @@ $usage = './scripts/base/users list
 
 $help  = 'This is the users management script
 
+
+
 METHODS
+
+
 
 list                            - List currently available users. By default the
                                   system will only limit 200 users. It\'s
@@ -24,10 +28,43 @@ list                            - List currently available users. By default the
                                   By default, users with status not "null" are
                                   not shown.
 
-    list specific ARGUMENTS
 
-    --show-rights               - Show the list of available rights for each
-                                  user
+    -f --filter --filters       - [list] General filter for the  displayed user
+                                  list, filters on id, name, username, and
+                                  nickname
+
+    -t --type                   - [list] Filter the user list by the specified
+                                  type
+
+    -s --status                 - [list] Filter the user list by the specified
+                                  status
+
+    -d --deleted                - [list] Show only deleted users
+
+    -a --all                    - [list] Show users with all possible status
+
+    -e --email                  - [list] Filter by specified (part of) email
+
+    -n --name                   - [list] Filter by specified (part of) name
+
+    -u --username               - [list] Filter by specified (part of) username
+
+    -r --right                  - [list] Filter by users that have specified
+                                  (part of) rights name
+
+    -l --limit                  - [list] Limit the amount of users to the
+                                  specified number. Must be a natural number
+                                  1-5000, defaults to 100
+
+
+
+rights                          - List the rights for the users. By default the
+                                  system will only limit 200 users. It\'s
+                                  possible to filter users by id, type, name,
+                                  username, nickname, or email (See --filters).
+                                  By default, users with status not "null" are
+                                  not shown.
+
 
     -f --filter --filters       - [list] General filter for the  displayed user
                                   list, filters on id, name, username, and
@@ -63,8 +100,6 @@ create                          - Create a new user. It\'s possible to specify
                                   password, latitude, longitude, status, type,
                                   redirect, domain
 
-    create specific ARGUMENTS
-
     --name                      - The real user name (e.g. John Doe)
 
     --username                  - The user\'s username (e.g. john), cannot
@@ -82,31 +117,31 @@ create                          - Create a new user. It\'s possible to specify
     --latitude                  - The user\'s latitude location (e.g.
                                   -98.1993234)
 
-    --status                    - The user\'s status. Do not specify for "null",
-                                  other options are "deleted" or any value
-                                  required for your project. NOTE: Status "null"
-                                  is normally considered "normal" and users with
-                                  this status will be available everywhere, can
-                                  login, etc. Users with status not "null" will
-                                  not be able to login, will usually not show up
-                                  on user lists, etc.
+    --status                    - The user\'s status. Do not specify for
+                                  "null", other options are "deleted" or any
+                                  value required for your project. NOTE: Status
+                                  "null" is normally considered "normal" and
+                                  users with this status will be available
+                                  everywhere, can login, etc. Users with status
+                                  not "null" will not be able to login, will
+                                  usually not show up on user lists, etc.
 
     --redirect                  - URL. If specified, when the user signs in, it
-                                  will always be redirected to the specified URL
+                                  will always be redirected to the specified
+                                  URL
 
     --domain                    - FQDN. Should only be used when whitelabel
-                                  system is enabled. If specified, the user will
-                                  only be able to sign in on this domain
+                                  system is enabled. If specified, the user
+                                  will only be able to sign in on this domain
 
 
 
-modify                          - Modify the specified user. Users can be
+modify USER                     - Modify the specified user. USER can be
                                   specified by id, username, or email. It\'s
                                   possible to update the username, name,
                                   nickname, email, phones, longitude, latitude,
-                                  domain or redirect.
-
-    modify specific ARGUMENTS
+                                  domain or redirect. The following items can
+                                  be updated:
 
     --name                      - The real user name (e.g. John Doe)
 
@@ -126,57 +161,73 @@ modify                          - Modify the specified user. Users can be
                                   -98.1993234)
 
     --redirect                  - URL. If specified, when the user signs in, it
-                                  will always be redirected to the specified URL
+                                  will always be redirected to the specified
+                                  URL
 
     --domain                    - FQDN. Should only be used when whitelabel
-                                  system is enabled. If specified, the user will
-                                  only be able to sign in on this domain
+                                  system is enabled. If specified, the user
+                                  will only be able to sign in on this domain
 
 
 
-password                        - Update the password for the specified user.
-                                  Users can be specified by id, username, or
-                                  email
+show USER                       - Show all details for the specified USER
 
-delete                          - Delete specified users. Users can be specified
-                                  by id, username, or email. NOTE: Deleting a
-                                  user will set the user\'s status to "deleted",
+
+
+password USER                   - Update the password for the specified user.
+                                  USER can be specified by id, username, or
+                                  email.
+
+
+
+delete USER                     - Delete specified users. USERS is a space
+                                  separated list, and can be specified by id,
+                                  username, or email. NOTE: Deleting a user
+                                  will set the user\'s status to "deleted",
                                   nothing more. With this status though, users
                                   will no longer be able to sign in, nor will
                                   they show up on most lists or be used in
-                                  automated systems like mailing lists
+                                  automated systems like mailing lists.
 
-undelete                        - Undelete specified users. Users can be
-                                  specified by id, username, or email. NOTE:
-                                  Undeleting a user will set the user\'s status
-                                  to "null", nothing more. With this status
-                                  though, userswill be able to sign in again,
-                                  show up on most lists or be used in
-                                  automated systems like mailing lists
 
-erase                           - Erase specified users. Users can be specified
-                                  by id, username, or email. NOTE: Erasing a
-                                  user will really physically remove a user from
-                                  the database. NOTE: Since the database will
+
+undelete USERS                  - Undelete specified users. USERS is a space
+                                  separated list, and can be specified by id,
+                                  username, or email. NOTE: Undeleting a user
+                                  will set the user\'s status to "null",
+                                  nothing more. With this status though, users
+                                  will be able to sign in again, show up on
+                                  most lists or be used in automated systems
+                                  like mailing lists.
+
+
+
+erase USERS                     - Erase specified users. USERS is a space
+                                  separated list, and can be specified by id,
+                                  username, or email. NOTE: Erasing a user will
+                                  really physically remove a user from the
+                                  database. NOTE: Since the database will
                                   usually have many table columns pointing
                                   towards their entry with foreign keys applied,
                                   it is usually near impossible to erase a user.
                                   This is why, usually, it is enough to just
-                                  delete the user
+                                  delete the user.
+
+
 
 whoami                          -
 
-set-role                        - Set the specified rol for the specified user.
-                                  Users can be specified by id, username, or
-                                  email. Rights can be specified by id or name.
+
+
+unlock USERS                    - Unlock the specified users. USERS is a space
+                                  separated list, and can be specified by id,
+                                  username, or email.
 
 
 
-
-
-GENERAL ARGUMENTS
-
-None';
+set-role USER ROLE              - Set the specified rol for the specified user.
+                                  USER can be specified by id, username, or
+                                  email. ROLE can be specified by id or name.';
 
 require_once(dirname(__FILE__).'/../../libs/startup.php');
 
@@ -259,7 +310,7 @@ switch(cli_method()){
                                   ':email'    => $users_id));
 
         if(!$db_user){
-            throw new bException(tr('Specified user ":user" does not exist', array(':user' => $users_id)), 'not-exist');
+            throw new bException(tr('Specified user ":user" does not exist', array(':user' => $users_id)), 'warning/not-exist');
         }
 
         $user = sql_merge($db_user, $user);
@@ -324,23 +375,23 @@ switch(cli_method()){
         cli_no_arguments_left();
 
         if(!$specified_user){
-            throw new bException(tr('No user specified'), 'not-specified');
+            throw new bException(tr('No user specified'), 'warning/not-specified');
         }
 
         $user = user_get($specified_user);
 
         if(!$user){
-            throw new bException(tr('Specified user ":user" does not exist', array(':user' => $specified_user)), 'not-exist');
+            throw new bException(tr('Specified user ":user" does not exist', array(':user' => $specified_user)), 'warning/not-exist');
         }
 
         if(!$specified_role){
-            throw new bException(tr('No role specified for user ":user"', array(':user' => $user)), 'not-specified');
+            throw new bException(tr('No role specified for user ":user"', array(':user' => $user)), 'warning/not-specified');
         }
 
         $role = roles_get($specified_role, 'id,name');
 
         if(!$role){
-            throw new bException(tr('Specified role ":role" does not exist', array(':role' => $specified_role)), 'not-exist');
+            throw new bException(tr('Specified role ":role" does not exist', array(':role' => $specified_role)), 'warning/not-exist');
         }
 
         $user['roles_id'] = $role['id'];
@@ -358,8 +409,7 @@ switch(cli_method()){
         log_console(tr('Gave role ":role" to user ":user"', array(':role' => $role['name'], ':user' => user_name($user))), 'green');
         break;
 
-    case 'list':
-        $show_rights = cli_argument('--show-rights');
+    case 'rights':
         $deleted     = cli_argument('-d') or cli_argument('--deleted');
         $all         = cli_argument('-a') or cli_argument('--all');
 
@@ -377,23 +427,23 @@ switch(cli_method()){
         $execute     = array();
 
         if(!is_natural($limit) or (!$limit > 5000)){
-            throw new bException(tr('--limit must be followed by a natural number lower than 5000'), 'invalid');
+            throw new bException(tr('--limit must be followed by a natural number lower than 5000'), 'warning/invalid');
         }
 
         if($status and $deleted and $all){
-            throw new bException(tr('--deleted, --status, and --all cannot be used together. Use only one of the three'), 'invalid');
+            throw new bException(tr('--deleted, --status, and --all cannot be used together. Use only one of the three'), 'warning/invalid');
         }
 
         if($status and $deleted){
-            throw new bException(tr('--status, --deleted cannot be used together. Use only one of the two'), 'invalid');
+            throw new bException(tr('--status, --deleted cannot be used together. Use only one of the two'), 'warning/invalid');
         }
 
         if($status and $all){
-            throw new bException(tr('--status, --all cannot be used together. Use only one of the two'), 'invalid');
+            throw new bException(tr('--status, --all cannot be used together. Use only one of the two'), 'warning/invalid');
         }
 
         if($deleted and $all){
-            throw new bException(tr('--deleted, --all cannot be used together. Use only one of the two'), 'invalid');
+            throw new bException(tr('--deleted, --all cannot be used together. Use only one of the two'), 'warning/invalid');
         }
 
         if($deleted){
@@ -417,10 +467,11 @@ switch(cli_method()){
              */
             if($_CONFIG['users']['type_filter'] !== false){
                 if($_CONFIG['users']['type_filter'] === null){
-                    $where[]         .= ' `users`.`type` IS NULL';
+                    $where[] .= ' `users`.`type` IS NULL';
 
                 }else{
-                    $where[]         .= ' `users`.`type` = :type';
+                    $where[] .= ' `users`.`type` = :type';
+
                     $execute[':type'] = $_CONFIG['users']['type_filter'];
                 }
             }
@@ -467,206 +518,431 @@ switch(cli_method()){
             }
         }
 
-        if($show_rights){
-            log_console(tr('Showing rights for users'));
+        if(!QUIET){
+            log_console(tr('Showing rights for users'), 'white');
+        }
 
-            $query   = 'SELECT    `users`.`id`,
-                                  `users`.`username`,
-                                  `users`.`nickname`,
-                                  `users`.`email`,
-                                  `users`.`status`,
-                                  `users`.`roles_id`,
-                                  `users`.`role`
+        $query   = 'SELECT    `users`.`id`,
+                              `users`.`username`,
+                              `users`.`nickname`,
+                              `users`.`email`,
+                              `users`.`status`,
+                              `users`.`roles_id`,
+                              `users`.`locked_until`,
+                              `users`.`auth_fails`,
+                              `users`.`signin_count`,
+                              `users`.`role`
 
-                        FROM      `users`';
+                    FROM      `users`';
 
-            if(!empty($where)){
-                $where = ' WHERE '.implode(' AND ', $where);
-            }
+        if(!empty($where)){
+            $where = ' WHERE '.implode(' AND ', $where);
+        }
 
-            $r = sql_query($query.$where.($limit ? ' LIMIT '.$limit : ''), $execute);
+        $r = sql_query($query.$where.($limit ? ' LIMIT '.$limit : ''), $execute);
 
-            if(!$r->rowCount()){
+        if(!$r->rowCount()){
+            if(!QUIET){
                 log_console(tr('There are currently no users registered'), 'yellow');
-
-            }else{
-                log_console(tr('#id    Username     Nickname     Status     Role       Rights'), 'cyan');
-
-                while($user = sql_fetch($r)){
-                    $rights = sql_list('SELECT `rights`.`name`
-
-                                        FROM   `roles_rights`
-
-                                        JOIN   `rights`
-                                        ON     `rights`.`id` = `roles_rights`.`rights_id`
-
-                                        AND    `roles_id`    = :roles_id',
-
-                                        array(':roles_id'    => $user['roles_id']));
-
-                    log_console(str_size($user['id'], 6, ' ', true).' '.str_size($user['username'], 12).' '.str_size($user['nickname'], 12).' '.str_size(status($user['status']), 10).' '.str_size(not_empty($user['role'], '-'), 10).' '.not_empty(str_force($rights, ', '), '-'));
-                }
             }
 
         }else{
-            $query   = 'SELECT    `users`.`id`,
-                                  `users`.`name`,
-                                  `users`.`username`,
-                                  `users`.`nickname`,
-                                  `users`.`email`,
-                                  `users`.`status`,
-                                  `users`.`type`,
-                                  `users`.`role`,
-                                  `users_admin`.`name` IS NOT NULL AS `admin`,
-                                  `users_god`.`name`   IS NOT NULL AS `god`
-
-                        FROM      `users`
-
-                        LEFT JOIN `users_rights` AS `users_admin`
-                        ON        `users_admin`.`name`     = "admin"
-                        AND       `users_admin`.`users_id` = `users`.`id`
-
-                        LEFT JOIN `users_rights` AS `users_god`
-                        ON        `users_god`.`name`       = "god"
-                        AND       `users_god`.`users_id`   = `users`.`id`';
-
-            if(!empty($where)){
-                $where = ' WHERE '.implode(' AND ', $where);
+            if(!QUIET){
+                log_console(str_size(tr('#id'), 7).str_size(tr('Username'), 13).str_size(tr('Nickname'), 13).str_size(tr('Status'), 11).str_size(tr('Role'), 11).tr('Rights'), 'cyan');
             }
 
-            $r = sql_query($query.$where.($limit ? ' LIMIT '.$limit : ''), $execute);
+            while($user = sql_fetch($r)){
+                $rights = sql_list('SELECT `rights`.`name`
 
-            if(!$r->rowCount()){
-                log_console(tr('There are currently no users registered'), 'yellow');
+                                    FROM   `roles_rights`
 
-            }else{
-                log_console(tr('#id    Username     Nickname     Status     Type       Role       Admin God Status     Real name                        Email                            '), 'cyan');
+                                    JOIN   `rights`
+                                    ON     `rights`.`id` = `roles_rights`.`rights_id`
 
-                while($user = sql_fetch($r)){
-                    log_console(str_size($user['id'], 6, ' ', true).' '.str_size($user['username'], 12).' '.str_size($user['nickname'], 12).' '.str_size(status($user['status']), 10).' '.str_size($user['type'], 10).' '.str_size($user['role'], 10).' '.str_size(($user['admin'] ? 'Yes' : ''), 5).' '.str_size(($user['god'] ? 'Yes' : ''), 3).' '.str_size(status($user['status']), 10).' '.str_size($user['name'], 32).' '.str_size($user['email'], 32));
+                                    AND    `roles_id`    = :roles_id',
+
+                                    array(':roles_id'    => $user['roles_id']));
+
+                log_console(str_size($user['id'], 6, ' ', true).' '.str_size($user['username'], 12).' '.str_size($user['nickname'], 12).' '.str_size(status($user['status']), 10).' '.str_size(not_empty($user['role'], '-'), 10).' '.not_empty(str_force($rights, ', '), '-'));
+            }
+        }
+
+        break;
+
+    case 'list':
+        $deleted     = cli_argument('-d') or cli_argument('--deleted');
+        $all         = cli_argument('-a') or cli_argument('--all');
+
+        $type        = not_empty(cli_argument('-t', true), cli_argument('--type'    , true));
+        $status      = not_empty(cli_argument('-s', true), cli_argument('--status'  , true), null);
+        $limit       = not_empty(cli_argument('-l', true), cli_argument('--limit'   , true), 100);
+        $email       = not_empty(cli_argument('-e', true), cli_argument('--email'   , true));
+        $name        = not_empty(cli_argument('-n', true), cli_argument('--name'    , true));
+        $username    = not_empty(cli_argument('-u', true), cli_argument('--username', true));
+        $right       = cli_argument('-r') or cli_argument('--show-rights');
+
+        $filters     = not_empty(cli_argument('-f', true), cli_argument('--filter', true), cli_argument('--filters', true));
+        $filters     = array_merge(array_force($filters), $argv);
+
+        $execute     = array();
+
+        if(!is_natural($limit) or (!$limit > 5000)){
+            throw new bException(tr('--limit must be followed by a natural number lower than 5000'), 'warning/invalid');
+        }
+
+        if($status and $deleted and $all){
+            throw new bException(tr('--deleted, --status, and --all cannot be used together. Use only one of the three'), 'warning/invalid');
+        }
+
+        if($status and $deleted){
+            throw new bException(tr('--status, --deleted cannot be used together. Use only one of the two'), 'warning/invalid');
+        }
+
+        if($status and $all){
+            throw new bException(tr('--status, --all cannot be used together. Use only one of the two'), 'warning/invalid');
+        }
+
+        if($deleted and $all){
+            throw new bException(tr('--deleted, --all cannot be used together. Use only one of the two'), 'warning/invalid');
+        }
+
+        if($deleted){
+            $where[] = ' `users`.`status` = "deleted" ';
+
+        }elseif($status){
+            $where[] = ' `users`.`status` = :status ';
+            $execute[':status'] = $status;
+
+        }elseif(!$all){
+            $where[] = ' `users`.`status` IS NULL ';
+        }
+
+        if($type){
+            $where[] = ' `users`.`type` = :type ';
+            $execute[':type'] = $type;
+
+        }else{
+            /*
+             * Consider only users with a specific type as real users?
+             */
+            if($_CONFIG['users']['type_filter'] !== false){
+                if($_CONFIG['users']['type_filter'] === null){
+                    $where[] .= ' `users`.`type` IS NULL';
+
+                }else{
+                    $where[] .= ' `users`.`type` = :type';
+
+                    $execute[':type'] = $_CONFIG['users']['type_filter'];
                 }
             }
+        }
+
+        if($name){
+            $where[] = ' (`users`.`name` LIKE :name OR `users`.`nickname` LIKE :nickname) ';
+
+            $execute[':name']     = '%'.$name.'%';
+            $execute[':nickname'] = '%'.$name.'%';
+        }
+
+        if($username){
+            $where[] = ' `users`.`username` LIKE :username ';
+
+            $execute[':username'] = '%'.$username.'%';
+        }
+
+        if($email){
+            $where[] = ' `users`.`email` LIKE :email ';
+
+            $execute[':email'] = '%'.$email.'%';
+        }
+
+        if($filters){
+            $count = 0;
+
+            foreach($filters as $filter){
+                $list[] = ' `users`.`name`     LIKE :name'.$count.' ';
+                $list[] = ' `users`.`email`    LIKE :email'.$count.' ';
+                $list[] = ' `users`.`username` LIKE :username'.$count.' ';
+                $list[] = ' `users`.`nickname` LIKE :nickname'.$count.' ';
+
+                $execute[':name'.$count]     = '%'.$filter.'%';
+                $execute[':email'.$count]    = '%'.$filter.'%';
+                $execute[':username'.$count] = '%'.$filter.'%';
+                $execute[':nickname'.$count] = '%'.$filter.'%';
+
+                $count++;
+            }
+
+            if(!empty($list)){
+                $where[] = ' ('.implode(' OR ', $list).') ';
+            }
+        }
+
+        $query   = 'SELECT    `users`.`id`,
+                              `users`.`name`,
+                              `users`.`username`,
+                              `users`.`nickname`,
+                              `users`.`email`,
+                              `users`.`status`,
+                              `users`.`type`,
+                              `users`.`role`,
+                              `users`.`locked_until`,
+                              `users`.`auth_fails`,
+                              `users`.`signin_count`,
+                              `users_admin`.`name` IS NOT NULL AS `admin`,
+                              `users_god`.`name`   IS NOT NULL AS `god`
+
+                    FROM      `users`
+
+                    LEFT JOIN `users_rights` AS `users_admin`
+                    ON        `users_admin`.`name`     = "admin"
+                    AND       `users_admin`.`users_id` = `users`.`id`
+
+                    LEFT JOIN `users_rights` AS `users_god`
+                    ON        `users_god`.`name`       = "god"
+                    AND       `users_god`.`users_id`   = `users`.`id`';
+
+        if(!empty($where)){
+            $where = ' WHERE '.implode(' AND ', $where);
+        }
+
+        $r = sql_query($query.$where.($limit ? ' LIMIT '.$limit : ''), $execute);
+
+        if(!$r->rowCount()){
+            if(!QUIET){
+                log_console(tr('There are currently no users registered'), 'yellow');
+            }
+
+        }else{
+            if(!QUIET){
+                log_console(str_size(tr('#id'), 7).str_size(tr('Username'), 13).str_size(tr('Nickname'), 13).str_size(tr('Status'), 11).str_size(tr('Type'), 11).str_size(tr('Role'), 11).str_size(tr('Admin'), 6).str_size(tr('God'), 4).str_size(tr('Status'), 11).str_size(tr('Signin count'), 13).str_size(tr('Locked until'), 21).str_size(tr('Auth failures'), 14).str_size(tr('Real name'), 33).str_size(tr('Email'), 33), 'cyan');
+            }
+
+            while($user = sql_fetch($r)){
+                log_console(str_size($user['id'], 6, ' ', true).' '.str_size($user['username'], 12).' '.str_size($user['nickname'], 12).' '.str_size(status($user['status']), 10).' '.str_size($user['type'], 10).' '.str_size($user['role'], 10).' '.str_size(($user['admin'] ? 'Yes' : ''), 5).' '.str_size(($user['god'] ? 'Yes' : ''), 3).' '.str_size(status($user['status']), 10).' '.str_size($user['signin_count'], 12, ' ', true).' '.str_size($user['locked_until'] ? $user['locked_until'] : '-', 20).' '.str_size($user['auth_fails'] ? $user['auth_fails'] : '-', 13, ' ', true).' '.str_size($user['name'], 32).' '.str_size($user['email'], 32));
+            }
+        }
+
+        break;
+
+    case 'show':
+        $requested = cli_argument();
+
+        if(!$requested){
+            throw new bException(tr('Specified user is invalid'), 'warning/not-specified');
+        }
+
+        if(is_numeric($requested)){
+            $where = ' WHERE `id` = :id ';
+
+            $execute = array(':id' => $requested);
+
+        }elseif(is_string($requested)){
+            $where = ' WHERE `username` = :username OR `email` = :email ';
+
+            $execute = array(':username' => $requested,
+                             ':email'    => $requested);
+
+        }else{
+            throw new bException(tr('Specified user is invalid'), 'warning/invalid');
+        }
+
+        $user = sql_get('SELECT * FROM `users` '.$where, $execute);
+
+        if(!$user){
+            throw new bException(tr('Specified user ":user" does not exist', array(':user' => $requested)), 'warning/not-exist');
+        }
+
+        foreach($user as $key => $value){
+            if($key == 'password') continue;
+            log_console(cli_color(str_capitalize($key).':', 'white').' '.$value);
+        }
+
+        break;
+
+    case 'unlock':
+        $users = cli_arguments();
+
+        if(empty($users)){
+            throw new bException(tr('No users specified'), 'warning/not-specified');
+        }
+
+        /*
+         * Build a list of ids and names / emails
+         */
+        $execute = array();
+        $name    = array();
+        $id      = array();
+        $where   = array();
+
+        foreach($users as $user){
+            if(is_numeric($user)){
+                $id[] = $user;
+
+            }else{
+                $name[] = $user;
+            }
+        }
+
+        if($name){
+            $email = sql_in($name, ':name');
+            $name  = sql_in($name, ':email');
+
+            $execute = array_merge($execute, $email);
+            $execute = array_merge($execute, $name);
+
+            $in[] = ' `name`  IN ('.implode(',', array_keys($name)).') ';
+            $in[] = ' `email` IN ('.implode(',', array_keys($email)).') ';
+        }
+
+        if($id){
+            $id      = sql_in($id, ':id');
+            $execute = array_merge($execute, $id);
+
+            $in[] = ' `id`  IN ('.implode(',', array_keys($id)).') ';
+        }
+
+        $where[] = implode(' OR ', $in);
+
+        $r  = sql_query('UPDATE `users`
+
+                         SET    `locked_until` = NULL
+
+                         WHERE  '.implode(' AND ', $where),
+
+                         $execute);
+
+        switch($r->rowCount()){
+            case 0:
+                throw new bException (tr('Not unlocked any users'), 'warning/no-change');
+
+            case count($users):
+                log_console(tr('Unlocked ":count" users', array(':count' => $r->rowCount())), 'green');
+                break;
+
+            default:
+                throw new bException(tr('Unlocked only ":count" users from the specified ":specified" users', array(':count' => $r->rowCount(), ':specified' => count($users))), 'warning/partial-change');
         }
 
         break;
 
     case 'delete':
-        $users = cli_arguments();
-
-        if(empty($users)){
-            throw new bException(tr('No users specified'), 'not-specified');
-        }
-
-        $in_name = sql_in($users, 'name');
-        $in_id   = sql_in($users, 'id');
-
-        if(FORCE){
-            $status = '';
-
-        }else{
-            $status = ' AND `status` IS NULL ';
-        }
-
-        $r  = sql_query('UPDATE `users`
-
-                         SET    `status` = "deleted"
-
-                         WHERE  `name` IN ('.implode(',', array_keys($in_name)).')
-                         OR     `id`   IN ('.implode(',', array_keys($in_id)).')'.$status,
-
-                         array_merge($in_name, $in_id));
-
-        switch(!$r->rowCount()){
-            case 0:
-                log_console(tr('Not deleted any users'), 'error');
-                break;
-
-            case count($argv):
-                log_console(tr('Deleted only ":deleted" users from the specified ":specified" users', array(':count' => $r->rowCount(), ':specified' => count($argv))), 'yellow');
-                break;
-
-            default:
-                log_console(tr('Deleted ":count" users', array(':count' => $r->rowCount())), 'green');
-        }
-
-        break;
-
+        // FALLTRGOUGH
     case 'undelete':
         $users = cli_arguments();
 
         if(empty($users)){
-            throw new bException(tr('No users specified'), 'not-specified');
+            throw new bException(tr('No users specified'), 'warning/not-specified');
         }
 
-        $in_name = sql_in($users, 'name');
-        $in_id   = sql_in($users, 'id');
+        /*
+         * Build a list of ids and names / emails
+         */
+        $execute = array();
+        $name    = array();
+        $id      = array();
+        $where   = array(' `role` != "god" ');
 
-        if(FORCE){
-            $status = '';
+        foreach($users as $user){
+            if(is_numeric($user)){
+                $id[] = $user;
 
-        }else{
-            $status = ' AND `status` = "deleted" ';
+            }else{
+                $name[] = $user;
+            }
         }
 
-        $r  = sql_query('UPDATE `users`
+        if($name){
+            $email = sql_in($name, ':name');
+            $name  = sql_in($name, ':email');
 
-                         SET    `status` = NULL
+            $execute = array_merge($execute, $email);
+            $execute = array_merge($execute, $name);
 
-                         WHERE  `name` IN ('.implode(',', array_keys($in_name)).')
-                         OR     `id`   IN ('.implode(',', array_keys($in_id)).')'.$status,
+            $in[] = ' `name`  IN ('.implode(',', array_keys($name)).') ';
+            $in[] = ' `email` IN ('.implode(',', array_keys($email)).') ';
+        }
 
-                         array_merge($in_name, $in_id));
+        if($id){
+            $id      = sql_in($id, ':id');
+            $execute = array_merge($execute, $id);
 
-        switch(!$r->rowCount()){
-            case 0:
-                log_console(tr('Not undeleted any users'), 'error');
+            $in[] = ' `id`  IN ('.implode(',', array_keys($id)).') ';
+        }
+
+        $where[] = implode(' OR ', $in);
+
+        switch(cli_method()){
+            case 'erase':
+                $query = 'DELETE FROM UPDATE users` WHERE  '.implode(' AND ', $where);
+
+            case 'undelete':
+                $query = ' UPDATE `users`
+
+                          SET    `status` = null
+
+                          WHERE  '.implode(' AND ', $where);
                 break;
 
-            case count($argv):
-                log_console(tr('Undeleted only ":deleted" users from the specified ":specified" users', array(':count' => $r->rowCount(), ':specified' => count($argv))), 'yellow');
-                break;
+            case 'delete':
+                $query = ' UPDATE `users`
 
-            default:
-                log_console(tr('Undeleted ":count" users', array(':count' => $r->rowCount())), 'green');
+                          SET    `status` = "deleted"
+
+                          WHERE  '.implode(' AND ', $where);
+                break;
         }
 
-        break;
+        $r = sql_query($query, $execute);
 
-    case 'erase':
-        $users = cli_arguments();
+        switch(cli_method()){
+            case 'erase':
+                switch($r->rowCount()){
+                    case 0:
+                        log_console(tr('Not erased any users'), 'yellow');
+                        break;
 
-        if(empty($users)){
-            throw new bException(tr('No users specified'), 'not-specified');
-        }
+                    case count($users):
+                        log_console(tr('Erased ":count" users', array(':count' => $r->rowCount())), 'green');
+                        break;
 
-        $in_name = sql_in($users, 'name');
-        $in_id   = sql_in($users, 'id');
+                    default:
+                        throw new bException(tr('Erased only ":deleted" users from the specified ":specified" users', array(':count' => $r->rowCount(), ':specified' => count($users))), 'warning/partial-change');
+                }
 
-        if(FORCE){
-            $status = '';
-
-        }else{
-            $status = ' AND `status` = "deleted" ';
-        }
-
-        $r  = sql_query('DELETE FROM `users`
-
-                         WHERE       `name` IN ('.implode(',', array_keys($in_name)).')
-                         OR          `id`   IN ('.implode(',', array_keys($in_id)).')'.$status,
-
-                         array_merge($in_name, $in_id));
-
-        switch(!$r->rowCount()){
-            case 0:
-                log_console(tr('Not erased any users'), 'error');
                 break;
 
-            case count($argv):
-                log_console(tr('Erased only ":deleted" users from the specified ":specified" users', array(':count' => $r->rowCount(), ':specified' => count($argv))), 'yellow');
+            case 'undelete':
+                switch($r->rowCount()){
+                    case 0:
+                        log_console(tr('Not undeleted any users'), 'yellow');
+                        break;
+
+                    case count($users):
+                        log_console(tr('Undeleted ":count" users', array(':count' => $r->rowCount())), 'green');
+                        break;
+
+                    default:
+                        throw new bException(tr('Undeleted only ":deleted" users from the specified ":specified" users', array(':count' => $r->rowCount(), ':specified' => count($users))), 'warning/partial-change');
+                }
+
                 break;
 
-            default:
-                log_console(tr('Erased ":count" users', array(':count' => $r->rowCount())), 'green');
+            case 'delete':
+                switch($r->rowCount()){
+                    case 0:
+                        log_console(tr('Not deleted any users'), 'yellow');
+                        break;
+
+                    case count($users):
+                        log_console(tr('Deleted ":count" users', array(':count' => $r->rowCount())), 'green');
+                        break;
+
+                    default:
+                        throw new bException(tr('Deleted only ":deleted" users from the specified ":specified" users', array(':count' => $r->rowCount(), ':specified' => count($users))), 'warning/partial-change');
+                }
+
+                break;
         }
 
         break;
@@ -675,57 +951,87 @@ switch(cli_method()){
         /*
          * Get arguments by keyword
          */
-        $user = cli_argument('--user', true);
-        $pass = not_empty(cli_argument('--pass', true), cli_argument('--password', true));
-
-        if(!$user and !$pass){
-            /*
-             * Get arguments by order
-             */
-            $user = cli_argument(1);
-            $pass = cli_argument(2);
-        }
-
+        $requested = cli_argument();
         cli_no_arguments_left();
 
-        $pass = user_test_password($pass);
-        $pass = get_hash($pass, $_CONFIG['security']['passwords']['hash']);
-
-        $r    = sql_query('UPDATE `users`
-
-                           SET    `password` = :password
-
-                           WHERE  `username` = :username
-                           OR     `email`    = :email',
-
-                           array(':password' => $pass,
-                                 ':username' => $user,
-                                 ':email'    => $user));
-
-        if($r->rowCount()){
-            log_console(tr('Updated password for user ":user"', array(':user' => $user)), 'green');
-
-        }else{
-            $userdata = sql_get('SELECT `id`,
-                                        `name`,
-                                        `email`,
-                                        `username`
-
-                                 FROM    `users`
-
-                                 WHERE  `username` = :username
-                                 OR     `email`    = :email',
-
-                                 array(':username' => $user,
-                                       ':email'    => $user));
-
-            if(!$userdata){
-                throw new bException(tr('User ":user" does not exist', array(':user' => $user)), 'not-exist');
-            }
-
-            log_console(tr('User ":user" has the same password, so it is not updated', array(':user' => $user)), 'yellow');
+        if(!$requested){
+            throw new bException(tr('No user specified'), 'warning/not-specified');
         }
 
+        if(is_numeric($requested)){
+            $user = sql_get('SELECT `id`, `name`, `nickname`, `email`, `username` FROM `users` WHERE `id` = :id', array(':id' => $requested));
+
+        }elseif(is_string($requested)){
+            $user = sql_get('SELECT `id`, `name`, `nickname`, `email`, `username`  FROM `users` WHERE `username` = :username OR `email` = :email', array(':username' => $requested, ':email' => $requested));
+
+        }else{
+            throw new bException(tr('Specified user is invalid'), 'warning/invalid');
+        }
+
+        if(!$user){
+            throw new bException(tr('Specified user ":user" does not exist'), 'warning/not-exist');
+        }
+
+        $password = cli_readline(tr('Password: ')       , true);
+
+        if((strlen($password) < 8) and !FORCE){
+            /*
+             * This will fail later anyway
+             */
+            throw new bException(tr('Specified password is too short'), 'warning/validation');
+        }
+
+        $verify   = cli_readline(tr('Verify password: '), true);
+
+        if($password != $verify){
+            throw new bException(tr('Specified password does not match the verification'), 'warning/verification');
+        }
+
+        try{
+            user_password_strength($password);
+
+        }catch(Exception $e){
+            switch($e->getCode()){
+                case 'used-before':
+                    if(!FORCE){
+                       throw $e->setCode('warning/used-before');
+                    }
+
+                    break;
+
+                case 'validation':
+                    if(!FORCE){
+                       throw $e->setCode('warning/validation');
+                    }
+
+                    break;
+
+                case 'not-specified':
+                    if(!FORCE){
+                       throw $e->setCode('warning/not-specified');
+                    }
+
+                    break;
+
+                default:
+                    /*
+                     * Erw, something went really wrong!
+                     */
+                    throw $e;
+             }
+        }
+
+        $updated = user_update_password(array('id'        => $user['id'],
+                                              'validated' => true,
+                                              'password'  => $password,
+                                              'password2' => $password), false);
+
+
+        if(!$updated){
+            throw new bException(tr('Password is the same, not updated', array(':user' => $user)), 'not-updated');
+        }
+
+        log_console(tr('Updated password for user ":user"', array(':user' => name($user))), 'green');
         break;
 
     case 'whoami':

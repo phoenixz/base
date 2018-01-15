@@ -1179,6 +1179,8 @@ function user_update_password($params, $current = true){
 
     try{
         array_params($params);
+        array_ensure($params, 'id,password,password2,cpassword');
+
         array_default($params, 'validated'             , false);
         array_default($params, 'check_banned_passwords', true);
 
@@ -1220,10 +1222,12 @@ function user_update_password($params, $current = true){
             user_authenticate($_SESSION['user']['email'], $params['cpassword']);
         }
 
-        /*
-         * Check password strength
-         */
-        $strength = user_password_strength($params['password'], $params['check_banned_passwords']);
+        if(!$params['validated']){
+            /*
+             * Check password strength
+             */
+            $strength = user_password_strength($params['password'], $params['check_banned_passwords']);
+        }
 
         /*
          * Prepare new password
@@ -1246,7 +1250,7 @@ function user_update_password($params, $current = true){
 
                                LIMIT    '.$_CONFIG['security']['passwords']['unique_updates'],
 
-                               array(':users_id' => $_SESSION['user']['id'],
+                               array(':users_id' => $params['id'],
                                      ':day'      => $_CONFIG['security']['passwords']['unique_days']));
 
             while($previous = sql_fetch($list)){
@@ -1254,7 +1258,7 @@ function user_update_password($params, $current = true){
                     /*
                      * This password has been used before
                      */
-                    throw new bException(tr('user_update_password(): The specified password has already been used before'), 'not-specified');
+                    throw new bException(tr('user_update_password(): The specified password has already been used before'), 'used-before');
                 }
             }
         }
@@ -1294,11 +1298,11 @@ function user_update_password($params, $current = true){
         sql_query('INSERT INTO `passwords` (`createdby`, `users_id`, `password`)
                    VALUES                  (:createdby , :users_id , :password )',
 
-                   array(':createdby' => $_SESSION['user']['id'],
+                   array(':createdby' => isset_get($_SESSION['user']['id']),
                          ':users_id'  => $params['id'],
                          ':password'  => $password));
 
-        return $strength;
+        return $r->rowCount();
 
     }catch(Exception $e){
         throw new bException('user_update_password(): Failed', $e);
@@ -1647,10 +1651,10 @@ function user_password_strength($password, $check_banned = true){
 
         if($length < 8){
             if(!$length){
-                throw new bException(tr('user_password_strength(): No password specified'), 'no-password');
+                throw new bException(tr('user_password_strength(): No password specified'), 'not-specified');
             }
 
-            throw new bException(tr('user_password_strength(): Specified password is too short'), 'short-password');
+            throw new bException(tr('user_password_strength(): Specified password is too short'), 'validation');
         }
 
         /*
@@ -1677,33 +1681,19 @@ function user_password_strength($password, $check_banned = true){
         /*
          * Bonus for long passwords
          */
-        if($length >= 40){
-            $strength += 40;
+        $strength += ($length - 8);
 
-        }elseif($length >= 30){
-            $strength += 30;
+        /*
+         * Get the upper case letters in the password
+         */
+        preg_match_all('/[A-Z]/', $password, $matches);
+        $strength += (count($matches[0]) / 2);
 
-        }elseif($length >= 20){
-            $strength += 20;
-
-        }elseif($length >= 12){
-            $strength += 15;
-
-        }elseif($length >= 8){
-            $strength += 10;
-        }
-
-        ///*
-        // * Get the upper case letters in the password
-        // */
-        //preg_match_all('/[A-Z]/', $password, $matches);
-        //$strength += (count($matches[0]) / 2);
-        //
-        ///*
-        // * Get the lower case letters in the password
-        // */
-        //preg_match_all('/[a-z]/', $password, $matches);
-        //$strength += (count($matches[0]) / 2);
+        /*
+         * Get the lower case letters in the password
+         */
+        preg_match_all('/[a-z]/', $password, $matches);
+        $strength += (count($matches[0]) / 2);
 
         /*
          * Get the numbers in the password
@@ -1726,13 +1716,39 @@ function user_password_strength($password, $check_banned = true){
         $strength += $num_unique_chars * 2;
 
         /*
+         * Test for same character repeats
+         */
+        $counts = array();
+
+        for($i = 0; $i < $length; $i++){
+            if(empty($counts[$password[$i]])){
+                $counts[$password[$i]] = substr_count($password, $password[$i]);
+            }
+        }
+
+        sort($counts);
+
+        $count = (array_pop($counts) + array_pop($counts) + array_pop($counts));
+
+        if(($count / ($length + 3) * 10) >= 3){
+            $strength = $strength - ($strength * ($count / $length));
+
+        }else{
+            $strength = $strength + ($strength * ($count / $length));
+        }
+
+        /*
          * Strength is a number 1-10;
          */
         $strength = (($strength > 99) ? 99 : $strength);
         $strength = floor(($strength / 10) + 1);
 
+        if(VERBOSE){
+            log_console(tr('Password strength is ":strength"', array(':strength' => number_format($strength, 2))));
+        }
+
         if($strength < 4){
-            throw new bException(tr('user_password_strength(): The specified password is too weak, please use a better password. Use more characters, add numbers, special characters, caps characters, etc. On a scale of 1-10, current strength is ":strength"', array(':strength' => $strength)), 'weak');
+            throw new bException(tr('user_password_strength(): The specified password is too weak, please use a better password. Use more characters, add numbers, special characters, caps characters, etc. On a scale of 1-10, current strength is ":strength"', array(':strength' => $strength)), 'validation');
         }
 
         return $strength;
@@ -1751,7 +1767,7 @@ function user_password_banned($password){
     global $_CONFIG;
 
     try{
-        if(($password == $_SESSION['domain']) or ($password == str_until($_SESSION['domain'], '.'))){
+        if(($password == $_CONFIG['domain']) or ($password == str_until($_CONFIG['domain'], '.'))){
             throw new bException(tr('user_password_banned(): The default password is not allowed to be used'), 'short-password');
         }
 

@@ -39,4 +39,6 @@ sql_query('CREATE TABLE `tasks` (`id`          INT(11)                          
                                  CONSTRAINT `fk_tasks_parents_id` FOREIGN KEY (`parents_id`) REFERENCES `tasks` (`id`) ON DELETE CASCADE
 
                                 ) ENGINE=InnoDB AUTO_INCREMENT='.$_CONFIG['db']['core']['autoincrement'].' DEFAULT CHARSET="'.$_CONFIG['db']['core']['charset'].'" COLLATE="'.$_CONFIG['db']['core']['collate'].'";');
+
+sql_query('ALTER TABLE `passwords` MODIFY COLUMN `createdby` INT(11) NULL');
 ?>
