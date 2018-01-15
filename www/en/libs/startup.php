@@ -280,11 +280,6 @@ class bException extends Exception{
         if($messages){
             foreach($messages as $id => $message){
                 $this->messages[] = $message;
-
-// :DELETE: No longer do this. Exceptions can be as simple as "Could not delete users, no users spoecified". We don't want those messages in the apache log. We DO want uncaught exceptions though!
-                //if(PLATFORM_HTTP){
-                //    error_log('Exception ['.$id.']: '.$message);
-                //}
             }
         }
     }
@@ -295,7 +290,7 @@ class bException extends Exception{
     }
 
     public function setCode($code){
-        $this->$code = $code;
+        $this->code = $code;
         return $this;
     }
 
@@ -1084,25 +1079,28 @@ function domain($current_url = false, $query = null, $root = null, $domain = nul
             $domain = $_CONFIG['domain'];
         }
 
-        if(!empty($_CONFIG['language']['supported'])){
+        if(empty($language)){
+            $language = LANGUAGE;
+        }
+
+        if(empty($_CONFIG['language']['supported'])){
+            $language = '';
+
+        }else{
             /*
              * This is a multilingual website, add language selection to the URL.
              */
-            if(empty($language)){
-                $language = LANGUAGE;
-            }
-
-            $domain = $domain.'/'.$language;
+            $language = '/'.$language;
         }
 
         if(!$current_url){
-            $retval = $_CONFIG['protocol'].$domain.$root;
+            $retval = $_CONFIG['protocol'].$domain.$language.$root;
 
         }elseif($current_url === true){
             $retval = $_CONFIG['protocol'].$domain.$_SERVER['REQUEST_URI'];
 
         }else{
-            $retval = $_CONFIG['protocol'].$domain.$root.str_starts($current_url, '/');
+            $retval = $_CONFIG['protocol'].$domain.$language.$root.str_starts($current_url, '/');
         }
 
         if($query){
