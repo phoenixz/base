@@ -381,6 +381,8 @@ under_construction('add');
                     }
                 }
 
+                $task['executed'] = $command.' '.$options;
+
                 switch($task['method']){
                     case 'background':
                         /*
@@ -431,6 +433,8 @@ under_construction('add');
                 log_file(tr('Task ":task" executed successfully in ":time"'   , array(':task' => $task['id'], ':time' => time_difference($start, $end, 'auto', 5))), 'tasks');
 
             }catch(Exception $e){
+                $end = microtime(true);
+
                 try{
                     log_console(tr('Task ":task" failed with ":e" in ":time"', array(':task' => $task['id'], ':e' => $e, ':time' => time_difference($start, $end, 'auto', 5))), 'red');
                     log_file(tr('Task ":task" failed with ":e" in ":time"'   , array(':task' => $task['id'], ':e' => $e, ':time' => time_difference($start, $end, 'auto', 5))), 'tasks');
