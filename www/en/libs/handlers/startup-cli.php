@@ -202,24 +202,6 @@ if(isset($die)){
     die($die);
 }
 
-
-
-if(VERBOSE){
-    log_console(tr('Running in VERBOSE mode, started @ ":datetime"', array(':datetime' => date_convert(STARTTIME, 'human_datetime'))), 'white');
-}
-
-if(FORCE){
-    if(TEST){
-        throw new bException(tr('Both FORCE and TEST modes where specified, these modes are mutually exclusive'), 'invalid');
-    }
-
-    log_console(tr('Running in FORCE mode'), 'yellow');
-}
-
-if(TEST){
-    log_console(tr('Running in TEST mode'), 'yellow');
-}
-
 // :TODO: Check what this does, either delete it or comment it!
 array_shift($GLOBALS['argv']);
 
@@ -321,6 +303,27 @@ define('LANGUAGE', $language);
 define('LOCALE'  , $language.(empty($_SESSION['location']['country']['code']) ? '' : '_'.$_SESSION['location']['country']['code']));
 
 $_SESSION['language'] = $language;
+
+
+
+/*
+ * Give some startup messages, if needed
+ */
+if(VERBOSE){
+    log_console(tr('Running in VERBOSE mode, started @ ":datetime"', array(':datetime' => date_convert(STARTTIME, 'human_datetime'))), 'white');
+}
+
+if(FORCE){
+    if(TEST){
+        throw new bException(tr('Both FORCE and TEST modes where specified, these modes are mutually exclusive'), 'invalid');
+    }
+
+    log_console(tr('Running in FORCE mode'), 'yellow');
+}
+
+if(TEST){
+    log_console(tr('Running in TEST mode'), 'yellow');
+}
 
 
 
