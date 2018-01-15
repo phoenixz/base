@@ -108,6 +108,10 @@ $_CONFIG['cookie']             = array('lifetime'                           => 0
                                        'secure'                             => false,
                                        'httponly'                           => false);
 
+//
+$_CONFIG['copyright']          = array('name'                               => 'Ingiga',                                                // Name to be displayed for the copyright
+                                       'url'                                => 'https://ingiga.com/copyright.html');                    // URL used for the copyright
+
 // Access-Control-Allow-Origin configuration. comma delimeted list of sites to allow with CORS
 $_CONFIG['cors']               = array('origin'                             => '*.',
                                        'methods'                            => 'GET, POST',
