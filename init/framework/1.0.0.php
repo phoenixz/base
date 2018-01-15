@@ -18,6 +18,7 @@ sql_query('CREATE TABLE `tasks` (`id`          INT(11)                          
                                  `time_limit`  INT(11)                                                  NULL,
                                  `time_spent`  DOUBLE(6, 6)                                             NULL,
                                  `command`     VARCHAR(32)                                              NULL,
+                                 `executed`    VARCHAR(255)                                             NULL,
                                  `description` VARCHAR(2047)                                            NULL,
                                  `data`        BLOB                                                     NULL,
                                  `results`     BLOB                                                     NULL,
