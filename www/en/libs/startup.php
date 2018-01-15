@@ -114,7 +114,7 @@ class core{
                         $this->call_type = 'amp';
 
                     }elseif(substr($_SERVER['PHP_SELF'], -7, 7) == '404.php'){
-                        $this->call_type = '404';
+                        $this->call_type = 'system';
 
                     }else{
                         $this->call_type = 'http';
@@ -1060,7 +1060,7 @@ function get_hash($source, $algorithm, $add_meta = true){
 /*
  * Return complete domain with HTTP and all
  */
-function domain($current_url = false, $query = null, $root = null, $domain = null){
+function domain($current_url = false, $query = null, $root = null, $domain = null, $language = null){
     global $_CONFIG;
 
     try{
@@ -1082,6 +1082,17 @@ function domain($current_url = false, $query = null, $root = null, $domain = nul
             //}
 
             $domain = $_CONFIG['domain'];
+        }
+
+        if(!empty($_CONFIG['language']['supported'])){
+            /*
+             * This is a multilingual website, add language selection to the URL.
+             */
+            if(empty($language)){
+                $language = LANGUAGE;
+            }
+
+            $domain = $domain.'/'.$language;
         }
 
         if(!$current_url){

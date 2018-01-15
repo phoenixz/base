@@ -409,7 +409,7 @@ try{
     /*
      * Language is defined by the www/LANGUAGE dir that is used.
      */
-    $language = substr(__DIR__, -7, 2);
+    $language = substr(__DIR__, -16, 2);
 
     define('LANGUAGE', $language);
     define('LOCALE'  , $language.(empty($_SESSION['location']['country']['code']) ? '' : '_'.$_SESSION['location']['country']['code']));
