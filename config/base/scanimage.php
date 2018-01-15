@@ -9,5 +9,6 @@ $_CONFIG['scanimage'] = array('gamma'                                           
                               'jpeg_quality'                                    => 70,          // n 1 - 100
                               'transfer_format'                                 => 'jpeg',      // JPEG | TIFF
                               'format'                                          => 'jpeg',      // jpeg | tiff
-                              'mode'                                            => 'color');    // color, grey, lineart
+                              'mode'                                            => 'color',     // color, grey, lineart
+                              'clear_exif'                                      => true);        // true | false
 ?>
