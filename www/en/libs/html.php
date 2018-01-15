@@ -1066,12 +1066,16 @@ function html_flash_set($params, $type = 'info', $class = null){
             $params = array('class' => $class, // Done for backward compatibility
                             'title' => tr('Oops'));
 
-            if($params instanceof bException){
+            if($object instanceof bException){
                 if(!$class){
                     $class = $type;
                 }
 
-                if($object->getCode() == 'validation'){
+                if(str_until($object->getCode(), '/') == 'warning'){
+                    $params['type'] = 'warning';
+                    $params['html'] = $object->getMessage();
+
+                }elseif($object->getCode() == 'validation'){
                     $params['type'] = 'warning';
                     $params['html'] = $object->getMessage();
 
