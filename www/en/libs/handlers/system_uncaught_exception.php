@@ -1,4 +1,5 @@
 <?php
+global $_CONFIG, $core;
 static $executed = false;
 
 try{
