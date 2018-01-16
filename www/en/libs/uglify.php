@@ -85,7 +85,7 @@ function uglify_css_check(){
             uglify_css_install($npm);
         }
 
-        $result[1] = 'uglify'.str_from($result[1]);
+        $result[1] = 'uglify'.str_from($result[1], 'uglifycss');
 
         $node_modules = node_check_modules();
 
