@@ -212,15 +212,16 @@ array_shift($GLOBALS['argv']);
 /*
  * Check what environment we're in
  */
-$env = getenv(PROJECT.'_ENVIRONMENT');
+if(empty($environment)){
+    $env = getenv(PROJECT.'_ENVIRONMENT');
 
-if(empty($env)){
-    if(empty($environment)){
+    if(empty($env)){
         echo "\033[0;31mstartup: No required environment specified for project \"".PROJECT."\"\033[0m\n";
         $core->register['exit_code'] = 2;
         die(2);
     }
 
+}else{
     $env = $environment;
 }
 
