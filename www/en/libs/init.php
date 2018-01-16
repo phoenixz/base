@@ -255,7 +255,7 @@ function init($projectfrom = null, $frameworkfrom = null){
                              * This init file has already been executed so we can skip it.
                              */
                             if(VERBOSE){
-                                log_console('Skipped older init file "'.$version.'"', 'init/'.$type);
+                                log_console('Skipped older init file "'.$version.'"', 'yellow');
                             }
                         }
                     }
