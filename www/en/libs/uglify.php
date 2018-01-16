@@ -464,7 +464,7 @@ function uglify_js_check(){
             uglify_js_install($npm);
         }
 
-        $result[1] = 'uglify'.str_from($result[1]);
+        $result[1] = 'uglify'.str_from($result[1], 'ugliyfyjs');
 
         $node_modules = node_check_modules();
 
