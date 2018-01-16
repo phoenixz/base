@@ -320,16 +320,16 @@ if(empty($_SESSION['init'])){
 
 
     /*
-     * Detect what language client wants. Redirect if needed
+     * Detect at what location client is
      */
-    detect_language();
+    detect_location();
 
 
 
     /*
-     * Detect at what location client is
+     * Detect what language client wants. Redirect if needed
      */
-    detect_location();
+    detect_language();
 
 
 

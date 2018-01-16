@@ -164,8 +164,17 @@ function detect_location(){
  * Sets language info in $_SESSION and returns it
  */
 function detect_language(){
+    global $_CONFIG;
+
     try{
-        global $_CONFIG;
+        /*
+         * Validate that the default configured language is supported by the system
+         */
+        if($_CONFIG['language']['supported']){
+            if(empty($_CONFIG['language']['supported'][$_CONFIG['language']['default']])){
+                throw new bException(tr('detect_language(): Invalid language ":language" specified as default language, see $_CONFIG[language][default]', array(':language' => $_CONFIG['language']['default'])), 'invalid');
+            }
+        }
 
         if(PLATFORM_CLI){
             /*
@@ -183,22 +192,14 @@ function detect_language(){
             if(empty($_SERVER['HTTP_ACCEPT_LANGUAGE'])){
                 if(empty($_CONFIG['location'])){
                     /*
-                     * Location information is not available, detect location information
-                     * first
+                     * Location has not been detected, so language cannot be detected either!
                      */
-                    detect_location();
-                }
-
-                if(empty($_CONFIG['location'])){
-                    /*
-                     * Location could not be detected, so language cannot be detected either!
-                     */
-                    notify('language-detect-failed', tr('Failed to detect langugage because the clients location could not be detected. This might be a configuration issue prohibiting the detection of the client location', 'developers'));
+                    notify('language-detect-failed', 'developers', tr('Failed to detect langugage because the clients location could not be detected. This might be a configuration issue prohibiting the detection of the client location'));
                     $_SESSION['language'] = $_CONFIG['language']['default'];
                     return $_SESSION['language'];
                 }
 
-               $language = sql_get(' SELECT `languages` FROM `geo_countries` WHERE `id` = :id', true, array(':id' => $_SESSION['location']['country']['id']));
+               $language = sql_get('SELECT `languages` FROM `geo_countries` WHERE `id` = :id', true, array(':id' => $_SESSION['location']['country']['id']));
 
             }else{
                 $language = $_SERVER['HTTP_ACCEPT_LANGUAGE'];
@@ -208,14 +209,13 @@ function detect_language(){
             $language = trim(str_until($language, '-'));
 
             /*
-             * Is the requested language available?
+             * Is the requested language supported?
              */
             if(empty($_CONFIG['language']['supported'][$language])){
+                /*
+                 * Not supported, fall back on default
+                 */
                 $language = $_CONFIG['language']['default'];
-
-                if(empty($_CONFIG['language']['supported'][$language])){
-                    throw new bException(tr('detect_language(): Invalid language ":language" specified as default language, see $_CONFIG[language][default]', array(':language' => $language)), 'invalid');
-                }
             }
 
             $_SESSION['language'] = $language;
