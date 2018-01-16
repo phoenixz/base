@@ -162,7 +162,7 @@ function blogs_post_get($blog = null, $post = null, $language = null, $alternati
                 /*
                  * Language will have to be specified!
                  */
-                if(!$language and multilingual()){
+                if(!$language and $_CONFIG['language']['supported']){
                     throw new bException(tr('blogs_post_get(): This is a multi-lingual system, but no language was specified for the blog post name ":post"', array(':post' => $post)), 'not-specified');
                 }
 
@@ -1257,7 +1257,7 @@ function blogs_validate_post($post, $params = null){
         }
 
         if(empty($params['allow_duplicate_name'])){
-            if(multilingual()){
+            if($_CONFIG['language']['supported']){
                 /*
                  * Multilingual site!
                  */
