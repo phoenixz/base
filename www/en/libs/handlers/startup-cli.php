@@ -300,7 +300,7 @@ $_SESSION['user']['timezone'] = $_CONFIG['timezone']['display'];
  */
 $language = not_empty(cli_argument('--language'), cli_argument('L'), $_CONFIG['language']['default']);
 
-if($_CONFIG['language']['supported'] && !isset($_CONFIG['language']['supported'][$language])){
+if($_CONFIG['language']['supported'] and !isset($_CONFIG['language']['supported'][$language])){
     throw new bException(tr('startup-cli: Unknown language ":language" specified', array(':language' => $language)), 'unknown');
 }
 
