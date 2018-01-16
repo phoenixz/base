@@ -166,7 +166,7 @@ class core{
         return $this->query_count;
     }
 
-    public function getCall(){
+    public function getCallType(){
         return $this->call_type;
     }
 
@@ -657,7 +657,7 @@ function load_content($file, $replace = false, $language = null, $autocreate = n
          * Set default values
          */
         if($language === null){
-            if($core->getCall() == 'cli'){
+            if($core->getCallType() == 'cli'){
                 $language = '';
 
             }else{
