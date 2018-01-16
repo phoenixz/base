@@ -298,7 +298,7 @@ $_SESSION['user']['timezone'] = $_CONFIG['timezone']['display'];
 /*
  * Get required language.
  */
-$language = not_empty(cli_argument('language'), cli_argument('L'), $_CONFIG['language']['default']);
+$language = not_empty(cli_argument('--language'), cli_argument('L'), $_CONFIG['language']['default']);
 
 if(!isset($_CONFIG['language']['supported'][$language])){
     throw new bException(tr('startup-cli: Unknown language ":language" specified', array(':language' => $language)), 'unknown');
