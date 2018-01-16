@@ -400,6 +400,9 @@ function tr($text, $replace = null, $verify = true){
         return $text;
 
     }catch(Exception $e){
+        /*
+         * Do NOT use tr() here for obvious reasons!
+         */
         throw new bException('tr(): Failed with text "'.str_log($text).'". Very likely issue with $replace not containing all keywords, or one of the $replace values is non-scalar', $e);
     }
 }
