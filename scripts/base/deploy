@@ -841,17 +841,21 @@ foreach($targets as $target_environment){
         }
 
         if(!$send_content_texts){
-            foreach($_CONFIG['language']['supported'] as $code => $language){
-                $exclude .= ' --exclude="data/content/'.$code.'" ';
+            if($_CONFIG['language']['supported']){
+                foreach($_CONFIG['language']['supported'] as $code => $language){
+                    $exclude .= ' --exclude="data/content/'.$code.'" ';
+                }
             }
         }
 
-        foreach($_CONFIG['language']['supported'] as $code => $language){
-            if(!$send_sitemap){
-                $exclude .= ' --exclude="www/'.$code.'/sitemap*" ';
-            }
+        if($_CONFIG['language']['supported']){
+            foreach($_CONFIG['language']['supported'] as $code => $language){
+                if(!$send_sitemap){
+                    $exclude .= ' --exclude="www/'.$code.'/sitemap*" ';
+                }
 
-            $exclude .= ' --exclude="www/'.$code.'/mock" ';
+                $exclude .= ' --exclude="www/'.$code.'/mock" ';
+            }
         }
 
         if(count($deploy_config['exclude_dirs'])) {
