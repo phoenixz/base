@@ -457,5 +457,6 @@ http_redirect_query_url();
 /*
  * Load custom library, if available
  */
+load_config('admin');
 load_libs('custom_admin');
 ?>
