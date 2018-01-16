@@ -120,7 +120,7 @@ if($_CONFIG['maintenance']){
     /*
      * We are in maintenance mode, have to show mainenance page.
      */
-    page_show(500);
+    page_show(503);
 }
 
 
