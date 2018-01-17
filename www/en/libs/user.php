@@ -1817,7 +1817,7 @@ function user_validate($user, $sections = array()){
                 $v->setError(tr('Please provide at least an email or username'));
 
             }else{
-                $v->isValidEmail($user['email'], tr('Please provide a valid email address'));
+                $v->isEmail($user['email'], tr('Please provide a valid email address'));
             }
 
         }else{
@@ -1847,7 +1847,7 @@ function user_validate($user, $sections = array()){
             }
         }
 
-        $user['timezone'] = $v->isValidTimezone($user['timezone'], tr('Please specify a valid timezone'));
+        $user['timezone'] = $v->isTimezone($user['timezone'], tr('Please specify a valid timezone'), null);
 
         if($sections['role']){
             if(!empty($user['role'])){
