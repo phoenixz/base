@@ -1328,7 +1328,7 @@ function rights_or_access_denied($rights){
             redirect($_CONFIG['redirects']['signin']);
         }
 
-        page_show($_CONFIG['redirects']['accessdenied']);
+        page_show(403);
 
     }catch(Exception $e){
         throw new bException('rights_or_access_denied(): Failed', $e);
