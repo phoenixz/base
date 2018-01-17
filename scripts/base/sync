@@ -10,7 +10,11 @@ $usage = "./scripts/base/sync ENVIRONMENT [OPTIONS]\n";
 
 $help  = "The sync script can sync the target environment (for example production) database, images, etc. locally so that bug testing can be done with real data.
 
-Possible arguments:
+
+
+ARGUMENTS
+
+
 
 --no-init                      - Do not do execute a system init after the sync
                                  process has finished
@@ -91,7 +95,7 @@ cli_no_arguments_left();
  * Check environment
  */
 if(empty($environment)){
-    throw new bException(tr('No source environment specified, please use "-e ENVIRONMENT"'), 'not-specified');
+    throw new bException(tr('No source environment specified to sync from'), 'not-specified');
 }
 
 if($environment == ENVIRONMENT){
