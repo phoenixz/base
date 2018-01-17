@@ -1872,13 +1872,16 @@ function file_tree_execute($params){
         array_params($params);
         array_default($params, 'ignore_exceptions', true);
         array_default($params, 'path'             , null);
-        array_default($params, 'filter'           , null);
+        array_default($params, 'filters'          , null);
         array_default($params, 'follow_symlinks'  , false);
         array_default($params, 'follow_hidden'    , false);
         array_default($params, 'recursive'        , false);
         array_default($params, 'execute_directory', false);
         array_default($params, 'params'           , null);
 
+        /*
+         * Validate data
+         */
         if(empty($params['callback'])){
             throw new bException(tr('file_tree_execute(): No callback function specified'), 'not-specified');
         }
@@ -1899,6 +1902,9 @@ function file_tree_execute($params){
             throw new bException(tr('file_tree_execute(): Specified path ":path" does not exist', array(':path' => $params['path'])), 'not-exist');
         }
 
+        /*
+         * Follow hidden files?
+         */
         if((substr(basename($params['path']), 0, 1) == '.') and !$params['follow_hidden']){
             if(VERBOSE and PLATFORM_CLI){
                 log_console(tr('file_tree_execute(): Skipping file ":file" because its hidden', array(':file' => $params['path'])), 'yellow');
@@ -1907,19 +1913,24 @@ function file_tree_execute($params){
             return 0;
         }
 
+        /*
+         * Filter this path?
+         */
+        foreach(array_force($params['filters']) as $filter){
+            if(preg_match($filter, $params['path'])){
+                if(VERBOSE and PLATFORM_CLI){
+                    log_console(tr('file_tree_execute(): Skipping file ":file" because of filter ":filter"', array(':file' => $params['path'], ':filter' => $filter)), 'yellow');
+                }
+
+                return 0;
+            }
+        }
+
         $count = 0;
         $type  = file_type($params['path']);
 
         switch($type){
             case 'regular file':
-                if($params['filter'] and !preg_match($params['filter'], $params['path'])){
-                    if(VERBOSE and PLATFORM_CLI){
-                        log_console(tr('file_tree_execute(): Skipping file ":file" because of filter ":filter"', array(':file' => $params['path'], ':filter' => $params['filter'])), 'yellow');
-                    }
-
-                    return 0;
-                }
-
                 $params['callback']($params['path']);
                 $count++;
 
@@ -1961,7 +1972,7 @@ function file_tree_execute($params){
                         $file = $path.$file;
 
                         if(!file_exists($file)){
-                            throw new bException(tr('file_tree_execute(): Specified path ":path" does not exist', array(':path' => $file)), 'file-not-exist');
+                            throw new bException(tr('file_tree_execute(): Specified path ":path" does not exist', array(':path' => $file)), 'not-exist');
                         }
 
                         $type = file_type($file);
@@ -1985,31 +1996,40 @@ function file_tree_execute($params){
                                 // FALLTHROUGH
                             case 'regular file':
                                 if(($type != 'directory') or $params['execute_directory']){
-                                    if($params['filter'] and !preg_match($params['filter'], $file)){
-                                        if(VERBOSE and PLATFORM_CLI){
-                                            log_console(tr('file_tree_execute(): Skipping file ":file" because of filter ":filter"', array(':file' => $file, ':filter' => $params['filter'])), 'yellow');
+                                    /*
+                                     * Filter this path?
+                                     */
+                                    $skip = false;
+
+                                    foreach(array_force($params['filters']) as $filter){
+                                        if(preg_match($filter, $file)){
+                                            if(VERBOSE and PLATFORM_CLI){
+                                                log_console(tr('file_tree_execute(): Skipping file ":file" because of filter ":filter"', array(':file' => $params['path'], ':filter' => $filter)), 'yellow');
+                                            }
+
+                                            $skip = true;
+                                        }
+                                    }
+
+                                    if(!$skip){
+                                        $result = $params['callback']($file, $type, $params['params']);
+                                        $count++;
+
+                                        if($result === false){
+                                            /*
+                                             * When the callback returned boolean false, cancel all other files
+                                             */
+                                            log_console(tr('file_tree_execute(): callback returned FALSE for file ":file", skipping rest of directory contents!', array(':file' => $file)), 'yellow');
+                                            goto end;
                                         }
 
-                                        continue;
-                                    }
+                                        if(PLATFORM_CLI){
+                                            if(VERBOSE){
+                                                log_console(tr('file_tree_execute(): Executed code for file ":file"', array(':file' => $file)), 'green');
 
-                                    $result = $params['callback']($file, $type, $params['params']);
-                                    $count++;
-
-                                    if($result === false){
-                                        /*
-                                         * When the callback returned boolean false, cancel all other files
-                                         */
-                                        log_console(tr('file_tree_execute(): callback returned FALSE for file ":file", skipping rest of directory contents!', array(':file' => $file)), 'yellow');
-                                        goto end;
-                                    }
-
-                                    if(PLATFORM_CLI){
-                                        if(VERBOSE){
-                                            log_console(tr('file_tree_execute(): Executed code for file ":file"', array(':file' => $file)), 'green');
-
-                                        }else{
-                                            cli_dot();
+                                            }else{
+                                                cli_dot();
+                                            }
                                         }
                                     }
                                 }
