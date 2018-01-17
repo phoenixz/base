@@ -285,7 +285,7 @@ $(document).ready(function(){
 
 
     // Allow that I can click anywhere on the row to select the link
-    $("table.link tr")
+    $("table.base-link tr")
         .click(function(e){
             if (e.target.nodeName != 'TD') {
                 return true;
@@ -306,7 +306,7 @@ $(document).ready(function(){
 
 
     // Allow the (de)select all checkbox
-    $("table.select input[type=\"checkbox\"].all")
+    $("table.base-select input[type=\"checkbox\"].all")
         .click(function(){
             $(this).closest("table").find("input[type=\"checkbox\"][name=\"" + $(this).prop("name") + "\"]").prop("checked", $(this).is(':checked'));
         });
