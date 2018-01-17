@@ -507,7 +507,7 @@ function debug($class = null){
 /*
  * Send notifications of the specified event to the specified class
  */
-function notify($event, $classes, $message = null){
+function notify($event, $classes = null, $message = null){
     try{
         load_libs('notifications');
         return notifications_send($event, $classes, $message);
@@ -518,6 +518,7 @@ function notify($event, $classes, $message = null){
          *
          * Do NOT cause exception, because it its not caught, it might cause another notification, that will fail, cause exception and an endless loop!
          */
+        log_file(tr('Failed to notify event ":event" for classes ":classes" with message ":message"', array(':event' => $event, ':classes' => $classes, ':message' => $message)), 'notification-failed');
         return false;
     }
 }
