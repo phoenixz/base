@@ -3,40 +3,20 @@
 /*
  * This is an empty test script template
  */
-$usage = "./scripts/base/empty\n".
-         "./scripts/base/empty option [option]\n";
+$usage = './scripts/base/empty
+./scripts/base/empty option [option]';
 
-$help  = "No help available";
-
-//$quiet = false;
+$help  = 'No help available';
 
 require_once(dirname(__FILE__).'/../../libs/startup.php');
-
 cli_only();
 load_libs('test');
 
-foreach($argv as $arg){
-    switch($arg){
-        case 'all':
-// :TODO: Implement
-            break;
-    }
+switch(cli_method()){
+    case '':
+        throw new bException(tr('No method specified'), 'no-method');
+
+    default:
+        throw new bException(tr('Invalid method ":method" specified', array(':method' => cli_method())), 'unknown-method');
 }
-
-test('emptyfunction()', 'Function call which should do blah blah', function(){
-    try{
-        if(emptyfunction('lkjerlkfwejf', 127)){
-            throw new bException('Did not do blah blah');
-        }
-
-    }catch(Exception $e){
-showdie($e);
-    }
-});
-
-test_completed('empty()');
-
-
-// Completed system tests
-test_completed('empty', 'library');
 ?>
