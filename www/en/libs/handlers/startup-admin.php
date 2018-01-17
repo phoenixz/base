@@ -383,7 +383,7 @@ if(empty($_SESSION['init'])){
  * See http://www.php.net/manual/en/timezones.php for more info
  */
 try{
-    $timezone = isset_get($_SESSION['user']['timezone'], $_CONFIG['timezone']['system']);
+    $timezone = isset_get($_SESSION['user']['timezone'], $_CONFIG['timezone']['system']['display']);
     define('TIMEZONE', $timezone);
     date_default_timezone_set($timezone);
 
@@ -392,7 +392,7 @@ try{
      * Users timezone failed, use the configured one
      */
     notify($e);
-    date_default_timezone_set($_CONFIG['timezone']['system']);
+    date_default_timezone_set($_CONFIG['timezone']['system']['display']);
 }
 
 
