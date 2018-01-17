@@ -11,6 +11,26 @@
 
 
 /*
+ * Ensure the path is specified and exists
+ */
+function git_check_path($path){
+    try{
+        if(!$path){
+            throw new bException('git_check_path(): No path specified');
+        }
+
+        if(!file_exists($path)){
+            throw new bException('git_check_path(): Specified path ":path" does not exist', array(':path' => $path));
+        }
+
+    }catch(Exception $e){
+        throw new bException('git_check_path(): Failed', $e);
+    }
+}
+
+
+
+/*
  * Clone the specified git repository to the specified path
  */
 function git_clone($repository, $path){
@@ -30,13 +50,15 @@ function git_clone($repository, $path){
 /*
  * Get or set the current GIT branch
  */
-function git_branch($branch = null, $path = ROOT){
+function git_branch($branch = null, $path = ROOT, $create = false){
     try{
+        git_check_path($path);
+
         if($branch){
             /*
              * Set the branch
              */
-            safe_exec('cd '.$path.'; git branch '.$branch);
+            safe_exec('cd '.$path.'; git branch '.($create ? ' -B ' : '').$branch);
 
         }else{
             /*
@@ -61,27 +83,54 @@ function git_branch($branch = null, $path = ROOT){
 /*
  *
  */
-function git_has_changes($path = ROOT){
+function git_status($path = ROOT){
     try{
-        if(!$path){
-            throw new bException('git_has_changes(): No path specified');
-        }
-
-        if(!file_exists($path)){
-            throw new bException('git_has_changes(): Specified path ":path" does not exist', array(':path' => $path));
-        }
+        git_check_path($path);
 
         /*
          * Check if we dont have any changes that should be committed first
          */
-        if(trim(shell_exec('cd '.$path.'; git status | grep "nothing to commit" | wc -l'))){
-            return false;
+        $retval  = array();
+        $results = shell_exec('cd '.$path.'; git status --porcelain');
+        $results = explode("\n", $results);
+
+        foreach($results as $line){
+            if(!$line) continue;
+
+            $status = substr($line, 0, 2);
+
+            switch($status){
+                case 'D ':
+                    $status = 'deleted';
+                    break;
+
+                case ' D':
+                    $status = 'deleted';
+                    break;
+
+                case 'AM':
+                    $status = 'new file';
+                    break;
+
+                case ' M':
+                    $status = 'modified';
+                    break;
+
+                case '??':
+                    $status = 'not tracked';
+                    break;
+
+                default:
+                    throw new bException(tr('git_status(): Unknown git status ":status" encountered', array(':status' => $status)), 'unknown');
+            }
+
+            $retval[substr($line, 3)] = $status;
         }
 
-        return true;
+        return $retval;
 
     }catch(Exception $e){
-        throw new bException('git_has_changes(): Failed', $e);
+        throw new bException('git_status(): Failed', $e);
     }
 }
 
@@ -90,29 +139,16 @@ function git_has_changes($path = ROOT){
 /*
  *
  */
-function git_status($path = ROOT){
+function git_has_changes($path = ROOT){
     try{
-        if(!$path){
-            throw new bException('git_status(): No path specified');
+        if(git_status($path)){
+            return true;
         }
 
-        if(!file_exists($path)){
-            throw new bException('git_status(): Specified path ":path" does not exist', array(':path' => $path));
-        }
-
-        /*
-         * Check if we dont have any changes that should be committed first
-         */
-        $results = safe_exec('cd '.$path.'; git status | grep "   "');
-
-        foreach($results as &$result){
-            $result = trim(str_from($result, ':'));
-        }
-
-        return $results;
+        return false;
 
     }catch(Exception $e){
-        throw new bException('git_status(): Failed', $e);
+        throw new bException('git_has_changes(): Failed', $e);
     }
 }
 
@@ -127,13 +163,7 @@ function git_fetch($params = null){
         array_default($params, 'all' , true);
         array_default($params, 'path', ROOT);
 
-        if(!$params['path']){
-            throw new bException('git_fetch(): No path specified');
-        }
-
-        if(!file_exists($params['path'])){
-            throw new bException('git_fetch(): Specified path ":path" does not exist', array(':path' => $path));
-        }
+        git_check_path($params['path']);
 
         $options = array();
 
@@ -148,6 +178,118 @@ function git_fetch($params = null){
 
     }catch(Exception $e){
         throw new bException('git_fetch(): Failed', $e);
+    }
+}
+
+
+
+/*
+ *
+ */
+function git_stash($path = ROOT){
+    try{
+        git_check_path($path);
+
+        $result = safe_exec('cd '.$path.'; git stash');
+
+        return $result;
+
+    }catch(Exception $e){
+        throw new bException('git_stash(): Failed', $e);
+    }
+}
+
+
+
+/*
+ *
+ */
+function git_stash_pop($path = ROOT){
+    try{
+        git_check_path($path);
+
+        $result = safe_exec('cd '.$path.'; git stash pop');
+
+        return $result;
+
+    }catch(Exception $e){
+        throw new bException('git_stash_pop(): Failed', $e);
+    }
+}
+
+
+
+/*
+ * Make a patch for the specified file
+ */
+function git_diff($file){
+    try{
+        $path = dirname($file);
+        git_check_path($path);
+
+        $result = shell_exec('cd '.$path.'; git diff --no-color '.basename($file));
+
+        return $result;
+
+    }catch(Exception $e){
+        throw new bException('git_format_patch(): Failed', $e);
+    }
+}
+
+
+
+/*
+ * Apply a git patch file
+ */
+function git_apply($file){
+    try{
+        $path = dirname($file);
+        git_check_path($path);
+
+        $result = safe_exec('cd '.$path.'; git apply '.basename($file));
+
+        return $result;
+
+    }catch(Exception $e){
+        throw new bException('git_apply(): Failed', $e);
+    }
+}
+
+
+
+/*
+ *
+ */
+function git_am($file, $patch_file){
+    try{
+        $path = dirname($file);
+        git_check_path($path);
+
+        $result = safe_exec('cd '.$path.'; git apply '.basename($file),' <');
+
+        return $result;
+
+    }catch(Exception $e){
+        throw new bException('git_am(): Failed', $e);
+    }
+}
+
+
+
+/*
+ * Make a patch for the specified file
+ */
+function git_format_patch($file){
+    try{
+        $path = dirname($file);
+        git_check_path($path);
+under_construction();
+        $result = safe_exec('cd '.$path.'; git format-patch ');
+
+        return $result;
+
+    }catch(Exception $e){
+        throw new bException('git_format_patch(): Failed', $e);
     }
 }
 ?>
