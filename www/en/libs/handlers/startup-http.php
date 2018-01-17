@@ -376,7 +376,6 @@ if(empty($_SESSION['init'])){
  */
 try{
     $timezone = isset_get($_SESSION['user']['timezone'], $_CONFIG['timezone']['display']);
-    define('TIMEZONE', $timezone);
     date_default_timezone_set($timezone);
 
 }catch(Exception $e){
@@ -384,8 +383,11 @@ try{
      * Users timezone failed, use the configured one
      */
     notify($e);
-    date_default_timezone_set($_CONFIG['timezone']['display']);
+    $timezone = $_CONFIG['timezone']['display'];
+    date_default_timezone_set($timezone);
 }
+
+define('TIMEZONE', $timezone);
 
 
 
