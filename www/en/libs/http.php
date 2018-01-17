@@ -679,6 +679,10 @@ function http_language_redirect($url, $language = null){
     global $_CONFIG;
 
     try{
+        if(!$_CONFIG['language']['supported']){
+            throw new bException(tr('http_language_redirect(): Multiple languages is not supported by configuration'), 'not-supported');
+        }
+
         /*
          * If language wasn't specified, then detect requested language. If that
          * is not specified, then see if the user has a current language in
