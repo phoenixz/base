@@ -267,12 +267,12 @@ switch(cli_method()){
 
     case 'modify':
         $users_id = cli_argument(1);
+        $user     = cli_arguments('--name,--email,--username,--latitude,--longitude,--redirect,--domain,--nickname');
 
         if(!$users_id){
             $v->setError(tr('No user specified'));
         }
 
-        $user = cli_arguments('--name,--email,--username,--latitude,--longitude,--redirect,--domain,--nickname');
         cli_no_arguments_left();
 
         /*
@@ -423,6 +423,8 @@ switch(cli_method()){
 
         $filters     = not_empty(cli_argument('-f', true), cli_argument('--filter', true), cli_argument('--filters', true));
         $filters     = array_merge(array_force($filters), $argv);
+
+        cli_no_arguments_left();
 
         $execute     = array();
 
