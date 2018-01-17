@@ -442,12 +442,8 @@ class validate_form {
     /*
      * Only allow numeric values (integers, floats, strings with numbers)
      */
-    function isNumeric(&$value, $message, $allow_empty = 'no'){
+    function isNumeric(&$value, $message){
         try{
-            if(!$this->allowEmpty($value, $message, $allow_empty)){
-                return true;
-            }
-
             if(!is_numeric($value)){
                 return $this->setError($message);
             }
