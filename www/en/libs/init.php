@@ -287,8 +287,10 @@ function init($projectfrom = null, $frameworkfrom = null){
         if($_CONFIG['production']){
             log_console('Removing data symlink in all languages');
 
-            foreach($_CONFIG['language']['supported'] as $language => $name){
-                file_delete(ROOT.'www/'.substr($language, 0, 2).'/data');
+            if($_CONFIG['language']['supported']){
+                foreach($_CONFIG['language']['supported'] as $language => $name){
+                    file_delete(ROOT.'www/'.substr($language, 0, 2).'/data');
+                }
             }
 
             log_console('Finished data symlink cleanup', 'green');
