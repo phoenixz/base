@@ -994,16 +994,26 @@ switch(cli_method()){
             switch($e->getCode()){
                 case 'used-before':
                     if(!FORCE){
-                       throw $e->setCode('warning/used-before');
+                        throw $e->setCode('warning/used-before');
                     }
 
+                    log_console(tr('Warning: Password update gave error ":e" which is ignored due to FORCE mode', array(':e' => trim(str_from($e->getMessage(), '():')))), 'yellow');
+                    break;
+
+                case 'banned':
+                    if(!FORCE){
+                        throw $e->setCode('warning/banned');
+                    }
+
+                    log_console(tr('Warning: Password update gave error ":e" which is ignored due to FORCE mode', array(':e' => trim(str_from($e->getMessage(), '():')))), 'yellow');
                     break;
 
                 case 'validation':
                     if(!FORCE){
-                       throw $e->setCode('warning/validation');
+                        throw $e->setCode('warning/validation');
                     }
 
+                    log_console(tr('Warning: Password update gave error ":e" which is ignored due to FORCE mode', array(':e' => trim(str_from($e->getMessage(), '():')))), 'yellow');
                     break;
 
                 case 'not-specified':
@@ -1011,6 +1021,7 @@ switch(cli_method()){
                        throw $e->setCode('warning/not-specified');
                     }
 
+                    log_console(tr('Warning: Password update gave error ":e" which is ignored due to FORCE mode', array(':e' => trim(str_from($e->getMessage(), '():')))), 'yellow');
                     break;
 
                 default:

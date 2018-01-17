@@ -1768,7 +1768,7 @@ function user_password_banned($password){
 
     try{
         if(($password == $_CONFIG['domain']) or ($password == str_until($_CONFIG['domain'], '.'))){
-            throw new bException(tr('user_password_banned(): The default password is not allowed to be used'), 'short-password');
+            throw new bException(tr('user_password_banned(): The default password is not allowed to be used'), 'banned');
         }
 
 // :TODO: Add more checks
