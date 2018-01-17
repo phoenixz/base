@@ -86,17 +86,29 @@ function twilio_load($phone, $auto_install = true){
         /*
          * Get Twilio object with account data for the specified phone number
          */
-        $account = sql_get('SELECT `twilio_accounts`.`accounts_id`,
-                                   `twilio_accounts`.`accounts_token`
+        if(filter_var($phone, FILTER_VALIDATE_EMAIL)){
+            $account = sql_get('SELECT `twilio_accounts`.`accounts_id`,
+                                       `twilio_accounts`.`accounts_token`
 
-                            FROM   `twilio_numbers`
+                                FROM   `twilio_accounts`
 
-                            JOIN   `twilio_accounts`
-                            ON     `twilio_accounts`.`id` = `twilio_numbers`.`accounts_id`
+                                WHERE  `twilio_accounts`.`email` = :email',
 
-                            WHERE  `twilio_numbers`.`number` = :number',
+                                array(':email' => $phone));
 
-                            array(':number' => $phone));
+        }else{
+            $account = sql_get('SELECT `twilio_accounts`.`accounts_id`,
+                                       `twilio_accounts`.`accounts_token`
+
+                                FROM   `twilio_numbers`
+
+                                JOIN   `twilio_accounts`
+                                ON     `twilio_accounts`.`id` = `twilio_numbers`.`accounts_id`
+
+                                WHERE  `twilio_numbers`.`number` = :number',
+
+                                array(':number' => $phone));
+        }
 
         if(!$account){
             throw new bException(tr('twilio_load(): No Twilio account found for phone number ":phone"', array(':phone' => $phone)), 'not-exist');
