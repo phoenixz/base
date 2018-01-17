@@ -376,7 +376,7 @@ class validate_form {
      */
     function isEmail(&$value, $message, $allow_empty = 'no'){
         try{
-            return $this->isFilter($value, FILTER_VALIDATE_EMAIL, $empty);
+            return $this->isFilter($value, FILTER_VALIDATE_EMAIL, $allow_empty);
 
         }catch(Exception $e){
             throw new bException('validate_form->isEmail(): Failed', $e);
@@ -1055,7 +1055,7 @@ class validate_form {
      */
     function isTimezone(&$value, $message, $allow_empty = 'no'){
         try{
-            if(!$this->isEmpty($value, $message, $empty)){
+            if(!$this->allowEmpty($value, $message, $allow_empty)){
                 return true;
             }
 
