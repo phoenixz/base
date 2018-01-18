@@ -76,7 +76,17 @@ try{
                     log_console('*** UNCAUGHT EXCEPTION ***', 'red');
 
                     debug(true);
-                    show($e);
+
+                    if($e->getCode() == 'no-trace'){
+                        $messages = $e->getMessages();
+                        log_console(array_pop($messages), 'red');
+
+                    }else{
+                        /*
+                         * Show the entire exception
+                         */
+                        show($e);
+                    }
 
                     $core->register['exit_code'] = 8;
                     die(8);
