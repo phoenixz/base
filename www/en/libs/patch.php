@@ -32,6 +32,8 @@ function patch_get_base_location(){
                      * Found the base default configuration file, we're good
                      */
                     $path .= 'base/';
+
+                    log_console(tr('Using base location ":path"', array(':path' => $path)));
                     return $path;
                 }
             }
@@ -81,6 +83,8 @@ function patch_get_toolkit_location(){
                 }
 
                 $path .= 'ingiga/toolkit.ingiga.com/';
+
+                log_console(tr('Using toolkit location ":path"', array(':path' => $path)));
                 return $path;
             }
 
@@ -166,14 +170,20 @@ function patch_file_diff_with_toolkit($file){
 /*
  * Get diff for the specified file and try to apply it in base or toolkit version
  */
-function patch($file, $path){
+function patch($file, $path, $show_only = false){
     try{
-        $patch      = git_diff($file);
-        $patch_file = $path.sha1($file).'.patch';
+        if($show_only){
+            log_console(tr('Showing diff patch for file ":file"', array(':file' => $file)), 'white');
+            echo git_diff($file, !NOCOLOR);
 
-        file_put_contents($patch_file, $patch);
-        git_apply($patch_file);
-        file_delete($patch_file);
+        }else{
+            $patch      = git_diff($file);
+            $patch_file = $path.sha1($file).'.patch';
+
+            file_put_contents($patch_file, $patch);
+            git_apply($patch_file);
+            file_delete($patch_file);
+        }
 
     }catch(Exception $e){
         throw new bException('patch(): Failed', $e);
