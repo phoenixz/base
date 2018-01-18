@@ -212,8 +212,7 @@ switch(cli_method()){
             foreach($files as $file => $status){
                 if($status !== true){
                     log_console(tr('Cleaning up file ":file"', array(':file' => $file)));
-
-        //            git_checkout($file);
+                    git_checkout($file);
                 }
             }
         }
