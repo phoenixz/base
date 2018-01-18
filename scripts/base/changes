@@ -3,11 +3,11 @@
 /*
  * This is an empty test script template
  */
-$usage = './scripts/base/patch [option]';
+$usage = './scripts/base/changes [option]';
 
-$help  = 'This is the base / toolkit patch script. This script will check all
-base and toolkit files available on this project for changes, and those
-changes found will be converted into patches which will be transported
+$help  = 'This is the base / toolkit changes patche script. This script will
+check all base and toolkit files available on this project for changes, and
+those changes found will be converted into patches which will be transported
 automatically to your local base and toolkit installations for further
 processing
 
@@ -17,141 +17,213 @@ When run on toolkit, it will only execute the work on base files
 
 
 
-ARGUMENTS
+METHODS
 
 
 
---stat                          - Will only show status of applied diffs';
+status                          - Will show status of applied diffs. Implies
+                                  --no-clean
+
+patch                           - Will apply the diff patches to both base and toolkit. If either base or toolkit has changes,
+
+  --no-clean                    - Do NOT clean up local base / toolkit changes
+                                  after all patches have applied successfully';
 
 require_once(dirname(__FILE__).'/../../libs/startup.php');
 
 cli_only();
 load_libs('git,patch,file');
 
-$stat = cli_argument('--stat');
-cli_no_arguments_left();
+switch(cli_method()){
+    case 'status':
+        $show_status = true;
+        // FALLTHROUGH
+
+    case 'patch':
+        $no_clean = ($show_status or cli_argument('--no-clean'));
+        cli_no_arguments_left();
+
+        if($show_status){
+            log_console(tr('Showing diff patches for base and toolkit files...'), 'white');
+
+        }else{
+            log_console(tr('Creating and applying diff patches for base and toolkit files...'), 'white');
+        }
 
 
 
-/*
- *
- */
-if(!PROJECT){
-    throw new bException(tr('This project has no project name!'), 'invalid');
-}
+        /*
+         *
+         */
+        if(!PROJECT){
+            throw new bException(tr('This project has no project name!'), 'invalid');
+        }
 
-if(PROJECT == 'INGIGA_TOOLKIT'){
-    $base_only = true;
-}
-
-
-
-/*
- * Determine what type of project this is
- */
-if(file_exists(ROOT.'www/en/role.php') and file_exists(ROOT.'www/en/roles.php')){
-    $type = 'admin';
-
-}elseif(file_exists(ROOT.'www/en/role.php') and file_exists(ROOT.'www/en/roles.php')){
-    $type = 'normal';
-
-}else{
-    throw new bException(tr('Failed to find role.php and roles.php files to identify website type'), 'not-exist');
-}
+        if(PROJECT == 'INGIGA_TOOLKIT'){
+            $base_only = true;
+        }
 
 
 
-/*
- * Prepare patch paths, must exist and be empty
- */
-$base_path    = patch_get_base_location();
-$toolkit_path = patch_get_toolkit_location();
+        /*
+         * Determine what type of project this is
+         */
+        if(file_exists(ROOT.'www/en/role.php') and file_exists(ROOT.'www/en/roles.php')){
+            $type = 'admin';
+
+        }elseif(file_exists(ROOT.'www/en/admin/role.php') and file_exists(ROOT.'www/en/admin/roles.php')){
+            $type = 'normal';
+
+        }else{
+            throw new bException(tr('Failed to find role.php and roles.php files to identify website type'), 'warning/not-exist');
+        }
 
 
 
-/*
- * Ensure that base and toolkit have no pending changes
- */
-if(git_status($base_path)){
-    throw new bException(tr('The base project has pending git changes'), 'has-changes');
-}
-
-if(!$base_only){
-    if(git_status($toolkit_path)){
-        throw new bException(tr('The toolkit project has pending git changes'), 'has-changes');
-    }
-}
+        /*
+         * Prepare patch paths, must exist and be empty
+         */
+        $base_path    = patch_get_base_location();
+        $toolkit_path = patch_get_toolkit_location();
 
 
 
-/*
- *
- */
-$files = git_status(ROOT);
+        /*
+         * Ensure that base and toolkit have no pending changes
+         */
+        if(!FORCE and !$show_status){
+            if(git_status($base_path)){
+                throw new bException(tr('The base project has pending git changes'), 'warning/has-changes');
+            }
 
-foreach($files as $file => $status){
-    if($status != 'modified') continue;
-    $changed = false;
-
-    log_console(tr('Checking file ":file"', array(':file' => $file)));
-
-    ///*
-    // * Check if file is possibly base
-    // */
-    //if(preg_match('/www\/[a-z-_]+\.php/', $file)){
-    //    /*
-    //     * Files for multilingual websites
-    //     */
-    //
-    //}
-
-    if(preg_match_all('/www\/[a-z]{2}\/(admin\/)?[a-z-_]+\.php/', $file, $matches)){
-        if($type == 'admin'){
-            /*
-             * These are toolkit UI files
-             */
-            if(patch_file_exists_in_base($file)){
-                log_console('Identified file as toolkit');
-
+            if(empty($base_only)){
+                if(git_status($toolkit_path)){
+                    throw new bException(tr('The toolkit project has pending git changes'), 'warning/has-changes');
+                }
             }
         }
-    }
 
-    if(preg_match('/libs\/[a-z-_]+\.php/', $file)){
+
+
         /*
-         * These are library files, most likely base, possibly toolkit
+         * Get the file changes in this project and pass over each file
          */
-        if(patch_file_exists_in_base($file)){
-            log_console('Identified file as base');
-            patch($file, $base_path);
-        }
-    }
+        $files = git_status(ROOT);
 
-    if(preg_match('/libs\/handlers\/[a-z-_]+\.php/', $file)){
+        foreach($files as $file => $status){
+            try{
+                if($status != 'modified') continue;
+                $changed = false;
+
+                if(VERBOSE){
+                    log_console(tr('Checking file ":file"', array(':file' => $file)));
+                }
+
+                ///*
+                // * Check if file is possibly base
+                // */
+                //if(preg_match('/www\/[a-z-_]+\.php/', $file)){
+                //    /*
+                //     * Files for multilingual websites
+                //     */
+                //
+                //}
+
+                if(preg_match_all('/www\/[a-z]{2}\/(admin\/)?[a-z-_]+\.php/', $file, $matches)){
+                    if(($type == 'admin') or (isset_get($matches[1][0]) == 'admin/')){
+                        /*
+                         * These are toolkit UI files
+                         */
+                        if(patch_file_exists_in_toolkit($file)){
+                            log_console(tr('Identified file ":file" as toolkit', array(':file' => $file)));
+                            patch($file, $toolkit_path, $show_status);
+                        }
+                    }
+                }
+
+                if(preg_match('/libs\/[a-z-_]+\.php/', $file)){
+                    /*
+                     * These are library files, most likely base, possibly toolkit
+                     */
+                    if(patch_file_exists_in_base($file)){
+                        log_console(tr('Identified file ":file" as base', array(':file' => $file)));
+                        patch($file, $base_path, $show_status);
+                    }
+                }
+
+                if(preg_match('/libs\/handlers\/[a-z-_]+\.php/', $file)){
+                    /*
+                     * These are library files, most likely base, possibly toolkit
+                     */
+                    if(patch_file_exists_in_base($file)){
+                        log_console(tr('Identified file ":file" as base', array(':file' => $file)));
+                        patch($file, $base_path, $show_status);
+                    }
+                }
+
+                if(preg_match('/scripts\/base\/[a-z-]+/', $file)){
+                    log_console(tr('Identified file ":file" as base', array(':file' => $file)));
+                    patch($file, $base_path, $show_status);
+                }
+
+                if(preg_match('/config\/base\/[a-z-]+/', $file)){
+                    log_console(tr('Identified file ":file" as base', array(':file' => $file)));
+                    patch($file, $base_path, $show_status);
+                }
+
+                if(VERBOSE){
+                    log_console(tr('Processing file ":file"', array(':file' => $file)), ($changed ? 'green' : ''));
+
+                }else{
+                    cli_dot(10, '.', ($changed ? 'green' : ''));
+                }
+
+            }catch(Exception $e){
+                switch($e->getCode()){
+                    case 'failed':
+                        /*
+                         * git patching failed. Cleanup base and toolkit paths
+                         */
+                        git_clean($base_path   , true, true);
+                        git_clean($toolkit_path, true, true);
+
+                        git_checkout($base_path   , true, true);
+                        git_checkout($toolkit_path, true, true);
+
+                        $e = new bException(tr('Patching failed for file ":file", halting process, check base and toolkit projects!', array(':file' => $file)), $e);
+                        $e->setCode('no-trace');
+                        throw $e;
+
+                    default:
+                        throw $e;
+                }
+            }
+        }
+
+
         /*
-         * These are library files, most likely base, possibly toolkit
+         * Patching was applied correctly! Delete changes for base and toolkit that have been sent
          */
-        if(patch_file_exists_in_base($file)){
-            log_console('Identified file as base');
-            patch($file, $base_path);
+        if($no_clean){
+
+        }else{
+            log_console('All files patched successfully. Cleaning local changes', 'white');
+
+            foreach($files as $file => $status){
+                if($status !== true){
+                    log_console(tr('Cleaning up file ":file"', array(':file' => $file)));
+
+        //            git_checkout($file);
+                }
+            }
         }
-    }
 
-    if(preg_match('/scripts\/base\/[a-z-]+/', $file)){
-        log_console('Identified file as base');
-        patch($file, $base_path);
-    }
+        break;
 
-    if(preg_match('/config\/base\/[a-z-]+/', $file)){
-        log_console('Identified file as base');
-        patch($file, $base_path);
-    }
+    case '':
+        throw new bException(tr('No method specified'), 'no-method');
 
-    if(VERBOSE){
-        log_console(tr('Processing file ":file"', array(':file' => $file)), ($changed ? 'green' : ''));
-
-    }else{
-        cli_dot(10, '.', ($changed ? 'green' : ''));
-    }
+    default:
+        throw new bException(tr('Invalid method ":method" specified', array(':method' => cli_method())), 'unknown-method');
 }
 ?>
