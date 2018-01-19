@@ -53,7 +53,7 @@ $_SESSION['user']['timezone'] = $_CONFIG['timezone']['display'];
 //    try{
 //        load_libs('user');
 //        $_SESSION['user'] = user_authenticate($user, $password);
-//        log_console('startup: Signed in as user "'.user_name($_SESSION['user']).'"', 'white');
+//        log_console('startup: Signed in as user "'.name($_SESSION['user']).'"', 'white');
 //
 //        unset($user);
 //        unset($password);

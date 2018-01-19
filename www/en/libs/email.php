@@ -1267,7 +1267,7 @@ function email_prepare($email){
             switch(gettype($email['replace'])){
                 case 'boolean':
                     $email['replace'] = array(//':toname' => (empty($email['user_name']) ? $email['user_username'] : $email['user_name']),
-                                              ':user'   => user_name($_SESSION['user']),
+                                              ':user'   => name($_SESSION['user']),
                                               ':email'  => isset_get($_SESSION['user']['email']),
                                               ':domain' => domain());
                 case 'array':

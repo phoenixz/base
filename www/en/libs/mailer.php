@@ -419,7 +419,7 @@ $mailing['language'] = 'en';
                 foreach($recipients as $recipients_id => $recipient){
                     try{
                         $mailing['to'][] = $recipient['code'];
-                        $mailing['to'][] = user_name($recipient);
+                        $mailing['to'][] = name($recipient);
                         $mailing['to'][] = $recipient['username'];
                         $mailing['to'][] = $recipient['email'];
 
@@ -432,7 +432,7 @@ $mailing['language'] = 'en';
                          * Send the email
                          */
                         $mail = array('mailer_code' => str_random(16),
-                                      'to_name'     => user_name($recipient),
+                                      'to_name'     => name($recipient),
                                       'to_email'    => $recipient['email'],
                                       'from_name'   => $mailing['from_name'],
                                       'from_email'  => $mailing['from_email']);

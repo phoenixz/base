@@ -905,10 +905,10 @@ function user_signin($user, $extended = false, $redirect = null, $html_flash = n
             session_redirect('http', $redirect);
         }
 
-        log_database(tr('user_signin(): Signed in user ":user"', array(':user' => user_name($user))), 'signin/success');
+        log_database(tr('user_signin(): Signed in user ":user"', array(':user' => name($user))), 'signin/success');
 
     }catch(Exception $e){
-        log_database(tr('user_signin(): User sign in failed for user ":user" because ":message"', array(':user' => user_name($user), ':message' => $e->getMessage())), 'signin/failed');
+        log_database(tr('user_signin(): User sign in failed for user ":user" because ":message"', array(':user' => name($user), ':message' => $e->getMessage())), 'signin/failed');
         throw new bException('user_signin(): Failed', $e);
     }
 }
@@ -1421,82 +1421,6 @@ function user_get($user = null){
 
 
 /*
- * Return either (in chronological order) name, username, or email for the user
- */
-function user_name($user = null, $key_prefix = ''){
-    try{
-        /*
-         * Compatibility
-         */
-        if($key_prefix === null){
-            throw new bException('user_name(): WARNING! user_name() ARGUMENTS HAVE CHANGED, $guest is no longer supported, and has been removed. Adjust your function call accordingly');
-        }
-
-        if($user){
-            if(is_scalar($user)){
-                if(!is_numeric($user)){
-                    /*
-                     * String, assume its a username
-                     */
-                    return $user;
-                }
-
-                /*
-                 * This is not a user assoc array, but a user ID.
-                 * Fetch user data from DB, then treat it as an array
-                 */
-                if(!$user = sql_get('SELECT `name` `username`, `email` FROM `users` WHERE `id` = :id', array(':id' => $user))){
-                   throw new bException('user_name(): Specified user id "'.str_log($user).'" does not exist', 'not-exist');
-                }
-            }
-
-            if(!is_array($user)){
-                throw new bException(tr('user_name(): Invalid data specified, please specify either user id, name, or an array containing username, email and or id'), 'invalid');
-            }
-
-            $user = not_empty(isset_get($user[$key_prefix.'name']), isset_get($user[$key_prefix.'username']), isset_get($user[$key_prefix.'email']), isset_get($user[$key_prefix.'id']));
-
-            if($user){
-                return $user;
-            }
-        }
-
-        /*
-         * No user data found, assume guest user.
-         */
-        return tr('Guest');
-
-    }catch(Exception $e){
-        throw new bException(tr('user_name(): Failed'), $e);
-    }
-}
-
-
-
-// :DELETE: has_rights() can now perform the same functionality
-///*
-// * Returns true either if the user has the specified right and not the devil right, or the "god" right
-// */
-//function user_has_rights($user, $right) {
-//    try{
-//        if(!isset($user['rights'])){
-//            $user['rights'] = user_load_rights($user);
-//        }
-//
-//        if(!empty($user['rights']['god'])){
-//            return true;
-//        }
-//
-//        return !empty($user['rights'][$right]) and empty($user['rights']['devil']);
-//
-//    }catch(Exception $e){
-//        throw new bException('user_has_rights(): Failed', $e);
-//    }
-//}
-
-
-
-/*
  * Load the rights for the specified user
  */
 function user_load_rights($user){
@@ -1822,10 +1746,25 @@ function user_validate($user, $sections = array()){
 
         }else{
             $v->isAlphaNumeric($user['username'], tr('Please provide a valid username, it can only contain letters and numbers'));
+
+            if($v->isNumeric($user['username'])){
+                $v->setError(tr('Please provide a non numeric username'));
+            }
         }
 
         if($user['nickname']){
-            $v->hasMinChars($user['name'], 2, tr('Please ensure that the users nick name has a minimum of 2 characters'));
+            $v->hasMinChars($user['nickname'], 2, tr('Please ensure that the users nick name has a minimum of 2 characters'));
+
+            if($_CONFIG['users']['unique_nicknames']){
+                /*
+                 * Double nicknames are NOT allowed
+                 */
+                $exists = sql_get('SELECT `id` FROM `users` WHERE `nickname` = :nickname', true, array(':nickname' => $user['nickname']));
+
+                if($exists){
+                    $v->setError(tr('The nickname ":nickname" is already in use', array(':nickname' => $user['nickname'])));
+                }
+            }
         }
 
         if($user['name']){

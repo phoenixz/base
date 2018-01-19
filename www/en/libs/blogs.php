@@ -1450,10 +1450,10 @@ function blogs_validate_post($post, $params = null){
                 $user = sql_get('SELECT `id`, `name`, `username`, `email` FROM `users` WHERE `id` = :id', array(':id' => $post['assigned_to_id']));
 
                 if(isset_get($oldpost['assigned_to_id'])){
-                    $changes[] = tr('Re-assigned post to ":user"', array(':user' => user_name($user)));
+                    $changes[] = tr('Re-assigned post to ":user"', array(':user' => name($user)));
 
                 }else{
-                    $changes[] = tr('Assigned post to ":user"', array(':user' => user_name($user)));
+                    $changes[] = tr('Assigned post to ":user"', array(':user' => name($user)));
                 }
             }
 
@@ -1487,7 +1487,7 @@ function blogs_validate_post($post, $params = null){
                 throw new bException('blogs_validate_post(): No changes were made', 'nochanges');
             }
 
-            $post['body'] = '<h3>'.user_name($_SESSION['user']).' <small>['.date_convert().']</small></h3><p><small>'.implode('<br>', $changes).'</small></p><p>'.$post['body'].'</p><hr>'.isset_get($oldpost['body'], '');
+            $post['body'] = '<h3>'.name($_SESSION['user']).' <small>['.date_convert().']</small></h3><p><small>'.implode('<br>', $changes).'</small></p><p>'.$post['body'].'</p><hr>'.isset_get($oldpost['body'], '');
         }
 
         $post['body'] = str_replace('&nbsp;', ' ', $post['body']);
