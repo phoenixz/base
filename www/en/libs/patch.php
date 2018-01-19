@@ -186,6 +186,10 @@ function patch($file, $path, $method = 'apply', $replaces = null){
                 $patch      = git_diff($file);
                 $patch_file = $path.sha1($file).'.patch';
 
+                if(empty($patch)){
+                    throw new bException(tr('patch(): git_diff() returned empty patch data for file ":file"', array(':file' => $file)), 'empty');
+                }
+
                 if($replaces){
                     /*
                      * Perform a search / replace on the patch data
