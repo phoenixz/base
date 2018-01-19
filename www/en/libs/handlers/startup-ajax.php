@@ -300,9 +300,20 @@ if(empty($_CONFIG['cookie']['domain'])){
  * Set timezone
  * See http://www.php.net/manual/en/timezones.php for more info
  */
+try{
+    $timezone = isset_get($_SESSION['user']['timezone'], $_CONFIG['timezone']['display']);
+    date_default_timezone_set($timezone);
 
-define('TIMEZONE', isset_get($_SESSION['user']['timezone'], $_CONFIG['timezone']['system']));
-date_default_timezone_set(TIMEZONE);
+}catch(Exception $e){
+    /*
+     * Users timezone failed, use the configured one
+     */
+    notify($e);
+    $timezone = $_CONFIG['timezone']['display'];
+    date_default_timezone_set($timezone);
+}
+
+define('TIMEZONE', $timezone);
 
 
 
