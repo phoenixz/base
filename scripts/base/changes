@@ -1,7 +1,8 @@
 #!/usr/bin/php
 <?php
 /*
- * This is an empty test script template
+ * This is the changes management script. This script can copy changes meant
+ * for base or toolkit directly to the project so they can be committed there
  */
 $usage = './scripts/base/changes [option]';
 
@@ -26,7 +27,7 @@ status                          - Will show status of applied diffs. Implies
 
 patch                           - Will apply the diff patches to both base and toolkit. If either base or toolkit has changes,
 
-  --only-create                 - Only create the patch files, do not apply
+  --create-only                 - Only create the patch files, do not apply
                                   them
 
   --no-clean                    - Do NOT clean up local base / toolkit changes
@@ -40,15 +41,25 @@ load_libs('git,patch,file');
 
 
 /*
- * Test if we're on base or toolkit
+ * Define a list of files that should be skipped because they will very likely
+ * be changed on the project level. List should be regex strings
+ */
+$skip = array('base'    => array(),
+              'toolkit' => array('/www\/en\/(admin\/)?index\.php/',  // Admin index file
+                                 '/logo.+?.(png|jpg)/'               // Site logos
+                                 ));
+
+
+
+/*
+ * Test if we're on base or toolkit. This script cannot be used on base, and
+ * if we're on toolkit, only check for base changes
  */
 if(!PROJECT){
-    throw new bException(tr('This project has no project name!'), 'invalid');
+    throw new bException(tr('This project has no project name, perhaps you are trying to run this on the base project?'), 'invalid');
 }
 
-if(PROJECT == 'INGIGA_TOOLKIT'){
-    $base_only = true;
-}
+$base_only = (PROJECT == 'INGIGA_TOOLKIT');
 
 
 
@@ -64,15 +75,13 @@ switch($method){
 
     case 'diff':
         cli_no_arguments_left();
-        log_console(tr('Showing diff patches for base and toolkit files...'), 'white');
         break;
 
     case 'patch':
-        $only_create = cli_argument('--only-create');
+        $create_only = cli_argument('--create-only');
         $no_clean    = cli_argument('--no-clean');
 
         cli_no_arguments_left();
-        log_console(tr('Creating and applying diff patches for base and toolkit files...'), 'white');
         break;
 
     case '':
@@ -88,12 +97,12 @@ switch($method){
  * Determine what type of project this is
  */
 if(file_exists(ROOT.'www/en/role.php') and file_exists(ROOT.'www/en/roles.php')){
-    $type = 'admin';
-
-    log_console(tr('Showing diff patches for base and toolkit files...'), 'VERBOSE');
+    $type = 'intranet';
+    log_console(tr('Detected that this website is intranet site...'), 'VERBOSE');
 
 }elseif(file_exists(ROOT.'www/en/admin/role.php') and file_exists(ROOT.'www/en/admin/roles.php')){
     $type = 'normal';
+    log_console(tr('Detected that this website is a normal site...'), 'VERBOSE');
 
 }else{
     throw new bException(tr('Failed to find role.php and roles.php files to identify website type'), 'warning/not-exist');
@@ -133,6 +142,19 @@ $files    = git_status(ROOT);
 $sections = array('base'    => array(),
                   'toolkit' => array());
 
+switch($method){
+    case 'status':
+        break;
+
+    case 'diff':
+        log_console(tr('Gathering file changes'), 'QUIET/white', false);
+        break;
+
+    case 'patch':
+        log_console(tr('Gathering file changes'), 'QUIET/white', false);
+        break;
+}
+
 foreach($files as $file => &$status){
     try{
         if($status != 'modified') continue;
@@ -149,63 +171,97 @@ foreach($files as $file => &$status){
         //
         //}
 
-        if(preg_match_all('/www\/[a-z]{2}\/(admin\/)?[a-z-_]+\.php/', $file, $matches)){
-            if(($type == 'admin') or (isset_get($matches[1][0]) == 'admin/')){
-                /*
-                 * These are toolkit UI files
-                 */
+        if(preg_match_all('/www\/[a-z]{2}\/admin\/[a-z-_]+\.php/', $file)){
+            /*
+             * This is an admin UI file
+             */
+            if(!$base_only){
                 if(patch_file_exists_in_toolkit(str_replace('admin/', '', $file))){
                     log_console(tr('Identified file as toolkit'), 'VERBOSE');
                     $sections['toolkit'][$file] = $status;
-                    continue;
                 }
             }
-        }
 
-        if(preg_match('/libs\/[a-z-_]+\.php/', $file)){
+        }elseif(preg_match_all('/www\/[a-z]{2}\/[a-z-_]+\.php/', $file)){
+            /*
+             * This is an admin UI file
+             */
+            if($type == 'intranet'){
+                if(patch_file_exists_in_toolkit(str_replace('admin/', '', $file))){
+                    log_console(tr('Identified file as toolkit'), 'VERBOSE');
+                    $sections['toolkit'][$file] = $status;
+                }
+            }
+
+        }elseif(preg_match_all('/www\/[a-z]{2}\/pub\/.+/', $file, $matches)){
+            /*
+             * This is an admin UI pub file for an intranet site
+             */
+            if($type == 'intranet'){
+                if(!$base_only){
+                    if(patch_file_exists_in_toolkit(str_replace('admin/', '', $file))){
+                        log_console(tr('Identified file as toolkit'), 'VERBOSE');
+                        $sections['toolkit'][$file] = $status;
+                    }
+                }
+            }
+
+        }elseif(preg_match_all('/www\/[a-z]{2}\/pub\/admin\/.+/', $file, $matches)){
+            /*
+             * These are admin pub files (very likely toolkit)
+             */
+            if(!$base_only){
+                if(patch_file_exists_in_toolkit(str_replace('admin/', '', $file))){
+                    log_console(tr('Identified file as toolkit'), 'VERBOSE');
+                    $sections['toolkit'][$file] = $status;
+                }
+            }
+
+        }elseif(preg_match('/libs\/[a-z-_]+\.php/', $file)){
             /*
              * These are library files, most likely base, possibly toolkit
              */
             if(patch_file_exists_in_base($file)){
                 log_console(tr('Identified file as base'), 'VERBOSE');
                 $sections['base'][$file] = $status;
-                continue;
             }
-        }
 
-        if(preg_match('/libs\/handlers\/[a-z-_]+\.php/', $file)){
+        }elseif(preg_match('/libs\/handlers\/[a-z-_]+\.php/', $file)){
             /*
              * These are library files, most likely base, possibly toolkit
              */
             if(patch_file_exists_in_base($file)){
                 log_console(tr('Identified file as base'), 'VERBOSE');
                 $sections['base'][$file] = $status;
-                continue;
             }
-        }
 
-        if(preg_match('/scripts\/base\/[a-z-]+/', $file)){
+        }elseif(preg_match('/scripts\/base\/[a-z-]+/', $file)){
             log_console(tr('Identified file as base'), 'VERBOSE');
             $sections['base'][$file] = $status;
-            continue;
-        }
 
-        if(preg_match('/config\/base\/[a-z-]+/', $file)){
+        }elseif(preg_match('/config\/base\/[a-z-]+/', $file)){
             log_console(tr('Identified file as base'), 'VERBOSE');
             $sections['base'][$file] = $status;
-            continue;
         }
+
+        cli_dot(1);
 
     }catch(Exception $e){
         throw new bException(tr('Failed to build sections list'), $e);
     }
 }
 
+cli_dot(false);
+
 
 
 /*
  * Get the file changes in this project and pass over each file
  */
+if(!$sections){
+    log_console(tr('No base or toolkit files with changes were found!'), 'QUIET/green');
+}
+
 foreach($sections as $section => $list){
     switch($method){
         case 'status':
@@ -217,11 +273,25 @@ foreach($sections as $section => $list){
             break;
 
         case 'patch':
+            log_console(tr('Applying patches for ":section"', array(':section' => $section)), 'QUIET/white', false);
     }
 
     foreach($list as $file => &$status){
         try{
-            $changed = false;
+            $changed   = false;
+            $skip_file = false;
+
+            if($skip[$section]){
+                foreach($skip[$section] as $regex){
+                    if(preg_match($regex, $file)){
+                        $skip_file = true;
+                    }
+                }
+            }
+
+            if($skip_file){
+                continue;
+            }
 
             switch($method){
                 case 'status':
@@ -235,7 +305,12 @@ foreach($sections as $section => $list){
             /*
              * Patch or show diff
              */
-            patch($file, $paths[$section], ((($method == 'patch') and $only_create) ? 'create' : $method));
+            if($section == 'base'){
+                patch($file, $paths[$section], ((($method == 'patch') and $create_only) ? 'create' : $method));
+
+            }else{
+                patch($file, $paths[$section], ((($method == 'patch') and $create_only) ? 'create' : $method), array($file => str_replace('admin/', '', $file)));
+            }
 
             if($method == 'patch'){
                 cli_dot(1, 'green');
@@ -262,6 +337,8 @@ foreach($sections as $section => $list){
             }
         }
     }
+
+    cli_dot(false);
 }
 
 unset($status);
@@ -276,7 +353,7 @@ if($method == 'patch'){
         log_console('Not cleaning local changes due to --no-clean option', 'yellow');
 
     }else{
-        log_console('All files patched successfully. Cleaning local changes', 'white');
+        log_console('All files patched successfully. Cleaning local changes', 'white', false);
 
         foreach($files as $file => $status){
             if($status !== true){
@@ -285,6 +362,8 @@ if($method == 'patch'){
 //                git_checkout($file);
             }
         }
+
+        cli_dot(false);
     }
 }
 ?>
