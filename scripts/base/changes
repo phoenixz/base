@@ -182,6 +182,17 @@ foreach($files as $file => &$status){
                 }
             }
 
+        }elseif(preg_match_all('/www\/[a-z]{2}\/ajax\/blogs\/[a-z-_]+\.php/', $file)){
+            /*
+             * This is a blog management system file, managedd by toolkit
+             */
+            if(!$base_only){
+                if(patch_file_exists_in_toolkit($file)){
+                    log_console(tr('Identified file as toolkit'), 'VERBOSE');
+                    $sections['toolkit'][$file] = $status;
+                }
+            }
+
         }elseif(preg_match_all('/www\/[a-z]{2}\/[a-z-_]+\.php/', $file)){
             /*
              * This is an admin UI file
