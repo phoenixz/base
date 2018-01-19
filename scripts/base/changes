@@ -251,6 +251,7 @@ foreach($files as $file => &$status){
     }
 }
 
+unset($status);
 cli_dot(false, 'green', '.', true);
 
 
@@ -262,7 +263,7 @@ if(!$sections){
     log_console(tr('No base or toolkit files with changes were found!'), 'QUIET/green');
 }
 
-foreach($sections as $section => $list){
+foreach($sections as $section => &$list){
     switch($method){
         case 'status':
             log_console(tr('Showing modified files for section ":section"', array(':section' => $section)), 'QUIET/white');
@@ -344,10 +345,11 @@ foreach($sections as $section => $list){
         }
     }
 
+    unset($status);
     cli_dot(false, 'green', '.', true);
 }
 
-unset($status);
+unset($list);
 
 
 
@@ -359,13 +361,15 @@ if($method == 'patch'){
         log_console(tr('Not cleaning local changes due to --no-clean or --create-only option'), 'yellow');
 
     }else{
-        log_console(tr('All files patched successfully. Cleaning local changes'), 'white', false);
+        log_console(tr('All files patched successfully, cleaning up'), 'white', false);
 
-        foreach($files as $file => $status){
-            if($status === 'patched'){
-                log_console(tr('Cleaning up file ":file"', array(':file' => $file)), 'VERBOSE');
-                cli_dot(1, 'green', '.', true);
-                git_checkout($file);
+        foreach($sections as $section => $list){
+            foreach($list as $file => $status){
+                if($status === 'patched'){
+                    log_console(tr('Cleaning up file ":file"', array(':file' => $file)), 'VERBOSE');
+                    cli_dot(1, 'green', '.', true);
+                    git_checkout($file);
+                }
             }
         }
 
