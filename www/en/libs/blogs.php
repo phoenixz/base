@@ -1591,7 +1591,7 @@ function blogs_media_process($file, $post, $priority = null, $original = null){
         $post = sql_get('SELECT `blogs_posts`.`id`,
                                 `blogs_posts`.`blogs_id`,
                                 `blogs_posts`.`createdby`,
-                                `blogs_posts`.`assigned_to`,
+                                `blogs_posts`.`assigned_to_id`,
                                 `blogs_posts`.`name`,
                                 `blogs_posts`.`seoname`,
 
@@ -1621,7 +1621,7 @@ function blogs_media_process($file, $post, $priority = null, $original = null){
             throw new bException('blogs_media_process(): Unknown blog post specified', 'unknown');
         }
 
-        if((PLATFORM_HTTP) and ($post['createdby'] != $_SESSION['user']['id']) and ($post['assigned_to'] != $_SESSION['user']['id']) and !has_rights('god')){
+        if((PLATFORM_HTTP) and ($post['createdby'] != $_SESSION['user']['id']) and ($post['assigned_to_id'] != $_SESSION['user']['id']) and !has_rights('god')){
             /*
              * User is not post creator, is not assigned. Check if the user has group access (ie, has a group with the posts seoname)
              */
