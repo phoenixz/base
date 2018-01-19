@@ -351,11 +351,11 @@ unset($status);
  * Patching was applied correctly! Delete changes for base and toolkit that have been sent
  */
 if($method == 'patch'){
-    if($no_clean){
-        log_console('Not cleaning local changes due to --no-clean option', 'yellow');
+    if($no_clean or $create_only){
+        log_console(tr('Not cleaning local changes due to --no-clean or --create-only option'), 'yellow');
 
     }else{
-        log_console('All files patched successfully. Cleaning local changes', 'white', false);
+        log_console(tr('All files patched successfully. Cleaning local changes'), 'white', false);
 
         foreach($files as $file => $status){
             if($status === 'patched'){
