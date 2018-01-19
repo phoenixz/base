@@ -170,7 +170,7 @@ function git_diff($file, $color = false){
         $path = dirname($file);
         git_check_path($path);
 
-        $result = shell_exec('cd '.$path.'; git diff '.($color ? '' : '--no-color ').basename($file));
+        $result = shell_exec('cd '.$path.'; git diff '.($color ? '' : '--no-color ').' -- '.basename($file));
 
         return $result;
 
