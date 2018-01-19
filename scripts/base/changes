@@ -182,7 +182,7 @@ foreach($files as $file => &$status){
                 }
             }
 
-        }elseif(preg_match_all('/www\/[a-z]{2}\/ajax\/blogs\/[a-z-_]+\.php/', $file)){
+        }elseif(preg_match_all('/www\/[a-z]{2}\/ajax\/blog\/.+?\.php/', $file)){
             /*
              * This is a blog management system file, managedd by toolkit
              */
