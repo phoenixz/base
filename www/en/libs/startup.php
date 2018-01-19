@@ -135,7 +135,7 @@ class core{
             /*
              * Verify project data integrity
              */
-            if(!defined("SEED") or !SEED or (PROJECTCODEVERSION == '0.0.0')){
+            if(!defined('SEED') or !SEED or (PROJECTCODEVERSION == '0.0.0')){
                 return include(__DIR__.'/handlers/startup_no_project_data.php');
             }
 
@@ -773,11 +773,40 @@ function log_console($messages = '', $color = null, $newline = true, $filter_dou
             return log_file($messages, SCRIPT);
         }
 
+        switch(str_until($color, '/')){
+            case 'VERBOSE':
+                if(!VERBOSE){
+                    /*
+                     * Only log this if we're in verbose mode
+                     */
+                    return false;
+                }
+
+                /*
+                 * Remove the VERBOSE
+                 */
+                $color = str_replace('/', '', str_replace('VERBOSE', '', $color));
+                break;
+
+            case 'QUIET':
+                if(QUIET){
+                    /*
+                     * Only log this if we're in verbose mode
+                     */
+                    return false;
+                }
+
+                /*
+                 * Remove the QUIET
+                 */
+                $color = str_replace('/', '', str_replace('QUIET', '', $color));
+        }
+
         if(($filter_double == true) and ($messages == $last)){
             /*
             * We already displayed this message, skip!
             */
-            return;
+            return false;
         }
 
         $last = $messages;
@@ -817,6 +846,10 @@ function log_console($messages = '', $color = null, $newline = true, $filter_dou
                 $message = $c->getColoredString($message, $color);
             }
 
+            if(QUIET){
+                $message = trim($message);
+            }
+
             $message = stripslashes(br2nl($message)).($newline ? "\n" : '');
 
             if(empty($error)){
@@ -834,7 +867,7 @@ function log_console($messages = '', $color = null, $newline = true, $filter_dou
             }
         }
 
-        return true;
+        return $message;
 
     }catch(Exception $e){
         throw new bException('log_console(): Failed', $e, array('message' => $message));
@@ -2649,7 +2682,7 @@ function value($format, $size = null){
 /*
  * Show data, function results and variables in a readable format
  */
-function show($data = null, $trace_offset = null){
+function show($data = null, $trace_offset = null, $quiet = false){
     return include(__DIR__.'/handlers/debug_show.php');
 }
 
