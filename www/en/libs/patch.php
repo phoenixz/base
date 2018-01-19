@@ -33,7 +33,7 @@ function patch_get_base_location(){
                      */
                     $path .= 'base/';
 
-                    log_console(tr('Using base location ":path"', array(':path' => $path)));
+                    log_console(tr('Using base location ":path"', array(':path' => $path)), 'VERBOSE');
                     return $path;
                 }
             }
@@ -84,7 +84,7 @@ function patch_get_toolkit_location(){
 
                 $path .= 'ingiga/toolkit.ingiga.com/';
 
-                log_console(tr('Using toolkit location ":path"', array(':path' => $path)));
+                log_console(tr('Using toolkit location ":path"', array(':path' => $path)), 'VERBOSE');
                 return $path;
             }
 
@@ -170,19 +170,47 @@ function patch_file_diff_with_toolkit($file){
 /*
  * Get diff for the specified file and try to apply it in base or toolkit version
  */
-function patch($file, $path, $show_only = false){
+function patch($file, $path, $method = 'apply', $replaces = null){
     try{
-        if($show_only){
-            log_console(tr('Showing diff patch for file ":file"', array(':file' => $file)), 'white');
-            echo git_diff($file, !NOCOLOR);
+        switch($method){
+            case 'diff':
+                log_console(tr('Showing diff patch for file ":file"', array(':file' => $file)), 'white');
+                echo git_diff($file, !NOCOLOR);
+                break;
 
-        }else{
-            $patch      = git_diff($file);
-            $patch_file = $path.sha1($file).'.patch';
+            case 'create':
+                // FALLTHROUGH
+            case 'apply':
+                // FALLTHROUGH
+            case 'patch':
+                $patch      = git_diff($file);
+                $patch_file = $path.sha1($file).'.patch';
 
-            file_put_contents($patch_file, $patch);
-            git_apply($patch_file);
-            file_delete($patch_file);
+                if($replaces){
+                    /*
+                     * Perform a search / replace on the patch data
+                     */
+                    foreach($replaces as $search => $replace){
+                        $patch = str_replace($search, $replace, $patch);
+                    }
+                }
+
+                file_put_contents($patch_file, $patch);
+
+                if($method == 'create'){
+                    /*
+                     * Don't actually apply the patch
+                     */
+
+                }else{
+                    git_apply($patch_file);
+                    file_delete($patch_file);
+                }
+
+                break;
+
+            default:
+                throw new bException(tr('patch(): Unknown method ":method" specified', array(':method' => $method)), 'unknown');
         }
 
     }catch(Exception $e){
