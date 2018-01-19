@@ -1924,7 +1924,7 @@ function user_validate($user, $sections = array()){
             $execute        = sql_in($user['phones'], ':phone');
 
             foreach($execute as &$phone){
-                if($v->isValidPhonenumber($phone, tr('The phone number ":phone" is not valid', array(':phone' => $phone)))){
+                if($v->isPhonenumber($phone, tr('The phone number ":phone" is not valid', array(':phone' => $phone)))){
                     $phone = '%'.$phone.'%';
                 }
             }
