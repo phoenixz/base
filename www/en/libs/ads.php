@@ -301,7 +301,7 @@ function ads_image_process($ad, $file, $original = null){
         }
 
         if((PLATFORM_HTTP) and ($campaign['createdby'] != $_SESSION['user']['id']) and !has_rights('god')){
-            throw new bException('ads_image_process(): Cannot upload images, this campaign is not yours', 'accessdenied');
+            throw new bException('ads_image_process(): Cannot upload images, this campaign is not yours', 'access-denied');
         }
 
 
@@ -383,7 +383,7 @@ function ads_update_image_description($user, $image_id, $description){
         }
 
         if(($image['createdby'] != $_SESSION['user']['id']) and !has_rights('god')){
-            throw new bException('ads_update_image_description(): Cannot upload images, this campaign is not yours', 'accessdenied');
+            throw new bException('ads_update_image_description(): Cannot upload images, this campaign is not yours', 'access-denied');
         }
 
         sql_query('UPDATE `ads_images`
@@ -423,7 +423,7 @@ function ads_update_image_cluster($user, $cluster, $image){
         }
 
         if(($clusters['createdby'] != $_SESSION['user']['id']) and !has_rights('god')){
-            throw new bException('ads_update_image_cluster(): Cannot upload images, this cluster is not yours', 'accessdenied');
+            throw new bException('ads_update_image_cluster(): Cannot upload images, this cluster is not yours', 'access-denied');
         }
 
         sql_query('UPDATE `ads_images`

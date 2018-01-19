@@ -1387,7 +1387,7 @@ function groups_or_access_denied($groups){
             redirect($_CONFIG['redirects']['signin']);
         }
 
-        page_show($_CONFIG['redirects']['accessdenied']);
+        page_show($_CONFIG['redirects']['access-denied']);
 
     }catch(Exception $e){
         throw new bException('groups_or_access_denied(): Failed', $e);

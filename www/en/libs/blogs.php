@@ -1591,6 +1591,7 @@ function blogs_media_process($file, $post, $priority = null, $original = null){
         $post = sql_get('SELECT `blogs_posts`.`id`,
                                 `blogs_posts`.`blogs_id`,
                                 `blogs_posts`.`createdby`,
+                                `blogs_posts`.`name`,
                                 `blogs_posts`.`seoname`,
 
                                 `blogs`.`seoname` AS blog_name,
@@ -1620,7 +1621,7 @@ function blogs_media_process($file, $post, $priority = null, $original = null){
         }
 
         if((PLATFORM_HTTP) and ($post['createdby'] != $_SESSION['user']['id']) and !has_rights('god')){
-            throw new bException('blogs_media_process(): Cannot upload media, this post is not yours', 'accessdenied');
+            throw new bException(tr('blogs_media_process(): Cannot upload media, post ":post" is not yours', array(':post' => $post['name'])), 'access-denied');
         }
 
         /*
@@ -1828,7 +1829,7 @@ function blogs_photo_description($user, $media_id, $description){
         }
 
         if(($media['createdby'] != $_SESSION['user']['id']) and !has_rights('god')){
-            throw new bException('blogs_photo_description(): Cannot upload media, this post is not yours', 'accessdenied');
+            throw new bException('blogs_photo_description(): Cannot upload media, this post is not yours', 'access-denied');
         }
 
         sql_query('UPDATE `blogs_media`
@@ -2428,7 +2429,7 @@ function blogs_post_up($id, $object, $view){
         }
 
         if(($post['createdby'] != $_SESSION['user']['id']) and !has_rights('god')){
-            throw new bException(tr('blogs_post_up(): The :object ":id" does not belong to you', array(':object' => $object, ':id' => $id)), 'accessdenied');
+            throw new bException(tr('blogs_post_up(): The :object ":id" does not belong to you', array(':object' => $object, ':id' => $id)), 'access-denied');
         }
 
         if($post['higher_priority'] !== null){
@@ -2528,7 +2529,7 @@ function blogs_post_down($id, $object, $view){
         }
 
         if(($post['createdby'] != $_SESSION['user']['id']) and !has_rights('god')){
-            throw new bException(tr('blogs_post_up(): The :object ":id" does not belong to you', array(':object' => $object, ':id' => $id)), 'accessdenied');
+            throw new bException(tr('blogs_post_up(): The :object ":id" does not belong to you', array(':object' => $object, ':id' => $id)), 'access-denied');
         }
 
         if($post['lower_priority'] !== null){
