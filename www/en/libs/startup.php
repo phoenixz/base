@@ -1343,7 +1343,7 @@ function user_or_signin(){
 /*
  * The current user has the specified rights, or will be redirected or get shown "access denied"
  */
-function rights_or_access_denied($rights){
+function rights_or_access_denied($rights, $url = null){
     global $_CONFIG;
 
     try{
@@ -1358,7 +1358,7 @@ function rights_or_access_denied($rights){
         }
 
         if(in_array('admin', array_force($rights))){
-            redirect($_CONFIG['redirects']['signin']);
+            redirect(isset_get($url, $_CONFIG['redirects']['signin']));
         }
 
         page_show(403);
@@ -1847,6 +1847,36 @@ function name($user = null, $key_prefix = '', $default = null){
 
     }catch(Exception $e){
         throw new bException(tr('name(): Failed'), $e);
+    }
+}
+
+
+
+/*
+ * Show the specified page
+ */
+function page_show($pagename, $params = null){
+    global $_CONFIG, $core;
+
+    try{
+        if(!empty($core->callIs('ajax'))){
+            // Execute ajax page
+            return include(ROOT.'www/'.LANGUAGE.'/ajax/'.$pagename.'.php');
+
+        }elseif(!empty($core->callIs('admin'))){
+            $prefix = 'admin/';
+
+        }else{
+            $prefix = '';
+        }
+
+// :COMPATIBILITY: $data only is added here for compatibility purposes. This should be removed after 20170601
+$data = $params;
+        include(ROOT.'www/'.LANGUAGE.'/'.$prefix.$pagename.'.php');
+        die();
+
+    }catch(Exception $e){
+        throw new bException(tr('page_show(): Failed to show page ":page"', array(':page' => $pagename)), $e);
     }
 }
 

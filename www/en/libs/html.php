@@ -12,7 +12,7 @@
  * Only allow execution on shell scripts
  */
 function html_only(){
-    if(PLATFORM != 'http'){
+    if(!PLATFORM_HTTP){
         throw new bException('html_only(): This can only be done over HTML', 'htmlonly');
     }
 }
@@ -2173,36 +2173,6 @@ function html_video($src, $type = null, $height = 0, $width = 0, $more = ''){
 
     }catch(Exception $e){
         throw new bException('html_video(): Failed', $e);
-    }
-}
-
-
-
-/*
- * Show the specified page
- */
-function page_show($pagename, $params = null){
-    global $_CONFIG, $core;
-
-    try{
-        if(!empty($core->callIs('ajax'))){
-            // Execute ajax page
-            return include(ROOT.'www/'.LANGUAGE.'/ajax/'.$pagename.'.php');
-
-        }elseif(!empty($core->callIs('admin'))){
-            $prefix = 'admin/';
-
-        }else{
-            $prefix = '';
-        }
-
-// :COMPATIBILITY: $data only is added here for compatibility purposes. This should be removed after 20170601
-$data = $params;
-        include(ROOT.'www/'.LANGUAGE.'/'.$prefix.$pagename.'.php');
-        die();
-
-    }catch(Exception $e){
-        throw new bException(tr('page_show(): Failed to show page ":page"', array(':page' => $pagename)), $e);
     }
 }
 
