@@ -856,8 +856,8 @@ function cli_done(){
 
         load_libs('time,numbers');
 
-        if($exit_code){
-            if($exit_code === 255){
+        if($exit_code and is_numeric($exit_code)){
+            if($exit_code > 200){
                 /*
                  * Script ended with warning
                  */
@@ -873,6 +873,36 @@ function cli_done(){
 
     }catch(Exception $e){
         throw new bException('cli_done(): Failed', $e);
+    }
+}
+
+
+
+/*
+ *
+ */
+function cli_status_color($status){
+    try{
+        $status = status($status);
+
+        switch(strtolower($status)){
+            case 'ok':
+                return cli_color($status, 'green');
+
+            case 'failed':
+                return cli_color($status, 'red');
+
+            case 'deleted':
+                return cli_color($status, 'yellow');
+
+            default:
+
+        }
+
+        return $status;
+
+    }catch(Exception $e){
+        throw new bException('cli_status_color(): Failed', $e);
     }
 }
 
