@@ -789,11 +789,18 @@ function cli_not_root(){
  * if $each is false, "DONE" will be printed, with next line
  * Internal counter will reset if a different $each is received.
  */
-function cli_dot($each = 10, $color = 'green', $dot = '.'){
+function cli_dot($each = 10, $color = 'green', $dot = '.', $quiet = false){
     static $count  = 0,
            $l_each = 0;
 
     try{
+        if($quiet and QUIET){
+            /*
+             * Don't show this in QUIET mode
+             */
+            return false;
+        }
+
         if($each === false){
             log_console(tr('Done'), $color);
             $l_each = 0;

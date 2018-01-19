@@ -244,14 +244,14 @@ foreach($files as $file => &$status){
             $sections['base'][$file] = $status;
         }
 
-        cli_dot(1);
+        cli_dot(1, 'green', '.', true);
 
     }catch(Exception $e){
         throw new bException(tr('Failed to build sections list'), $e);
     }
 }
 
-cli_dot(false);
+cli_dot(false, 'green', '.', true);
 
 
 
@@ -296,10 +296,14 @@ foreach($sections as $section => $list){
             switch($method){
                 case 'status':
                     log_console(tr('  :file', array(':file' => $file)));
-                    continue;
+                    $skip_file = true;
 
                 case 'diff':
                     log_console(tr('Showing diff for file ":file"', array(':file' => $file)), 'QUIET/white');
+            }
+
+            if($skip_file){
+                continue;
             }
 
             /*
@@ -315,7 +319,7 @@ foreach($sections as $section => $list){
             }
 
             if($method == 'patch'){
-                cli_dot(1, 'green');
+                cli_dot(1, 'green', '.', true);
             }
 
         }catch(Exception $e){
@@ -340,7 +344,7 @@ foreach($sections as $section => $list){
         }
     }
 
-    cli_dot(false);
+    cli_dot(false, 'green', '.', true);
 }
 
 unset($status);
@@ -360,12 +364,12 @@ if($method == 'patch'){
         foreach($files as $file => $status){
             if($status === 'patched'){
                 log_console(tr('Cleaning up file ":file"', array(':file' => $file)), 'VERBOSE');
-                cli_dot(1);
+                cli_dot(1, 'green', '.', true);
                 git_checkout($file);
             }
         }
 
-        cli_dot(false);
+        cli_dot(false, 'green', '.', true);
     }
 }
 ?>
