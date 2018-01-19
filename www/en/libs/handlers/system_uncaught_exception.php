@@ -41,35 +41,47 @@ try{
              */
             if(str_until($e->getCode(), '/') == 'warning'){
                 /*
-                 * This is just a simple warning, no backtrace and such needed, only show the principal message
+                 * This is just a simple general warning, no backtrace and
+                 * such needed, only show the principal message
                  */
-                log_console(trim(str_from($e->getMessage(), '():')), 'yellow');
+                log_console(tr('Warning: :warning', array(':warning' => trim(str_from($e->getMessage(), '():')))), 'yellow');
                 $core->register['exit_code'] = 255;
                 die(255);
             }
 
             switch((string) $e->getCode()){
                 case 'already-running':
-                    log_console($e->getMessage(), 'yellow');
-                    $core->register['exit_code'] = 4;
+                    log_console(tr('Failed: :message', array(':message' => trim(str_from($e->getMessage(), '():')))), 'yellow');
+                    $core->register['exit_code'] = 254;
                     die(4);
 
                 case 'no-method':
-                    log_console($e->getMessage(), 'yellow');
+                    log_console(tr('Failed: :message', array(':message' => trim(str_from($e->getMessage(), '():')))), 'yellow');
                     cli_show_usage(isset_get($GLOBALS['usage']), 'white');
-                    $core->register['exit_code'] = 5;
+                    $core->register['exit_code'] = 253;
                     die(5);
 
                 case 'unknown-method':
-                    log_console($e->getMessage(), 'yellow');
+                    log_console(tr('Failed: :message', array(':message' => trim(str_from($e->getMessage(), '():')))), 'yellow');
                     cli_show_usage(isset_get($GLOBALS['usage']), 'white');
-                    $core->register['exit_code'] = 6;
+                    $core->register['exit_code'] = 252;
                     die(6);
 
                 case 'invalid_arguments':
-                    log_console($e->getMessage(), 'yellow');
+                    log_console(tr('Failed: :message', array(':message' => trim(str_from($e->getMessage(), '():')))), 'yellow');
                     cli_show_usage(isset_get($GLOBALS['usage']), 'white');
-                    $core->register['exit_code'] = 7;
+                    $core->register['exit_code'] = 251;
+                    die(7);
+
+                case 'validation':
+                    $messages = $e->getMessages();
+                    array_pop($messages);
+                    array_pop($messages);
+
+                    log_console(tr('Validation failed'), 'yellow');
+                    log_console($messages, 'yellow');
+                    cli_show_usage(isset_get($GLOBALS['usage']), 'white');
+                    $core->register['exit_code'] = 250;
                     die(7);
 
                 default:
@@ -85,7 +97,7 @@ try{
                         /*
                          * Show the entire exception
                          */
-                        show($e);
+                        show($e, null, true);
                     }
 
                     $core->register['exit_code'] = 8;
