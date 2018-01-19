@@ -115,7 +115,7 @@ function tasks_validate($task){
         $v->inArray($task['status'], array('new', 'processing', 'completed', 'failed', 'timeout', 'deleted'), tr('Please specify a valid status'));
         $v->isNatural($task['time_limit'], 1, tr('Please specify a valid time limit'), null);
         $v->isBetween($task['time_limit'], 1, 600, tr('Please specify a valid time limit (between 0 and 600 seconds)'), null);
-        $v->isNumeric($task['time_spent'], tr('Please specify a valid time spent'), null);
+        $v->isNumeric($task['time_spent'], tr('Please specify a valid time spent'));
         $v->isNatural($task['parents_id'], 1, tr('Please specify a valid parents id'), null);
         $v->hasMinChars($task['description'], 8, tr('Please use more than 8 characters for the description'), null);
         $v->hasMaxChars($task['description'], 2047, tr('Please use more than 8 characters for the description'), null);
