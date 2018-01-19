@@ -329,13 +329,23 @@ foreach($sections as $section => &$list){
                     /*
                      * git patching failed. Cleanup base and toolkit paths
                      */
-                    git_clean($paths['base']   , true, true);
-                    git_clean($paths['toolkit'], true, true);
+                    try{
+                        git_clean($paths['base']   , true, true);
+                        git_clean($paths['toolkit'], true, true);
 
-                    git_checkout($paths['base']   , true, true);
-                    git_checkout($paths['toolkit'], true, true);
+                        git_checkout($paths['base']   , true, true);
+                        git_checkout($paths['toolkit'], true, true);
 
-                    $e = new bException(tr('Patching failed for file ":file", halting process, cleaned base and toolkit projects! Apply this file manually!', array(':file' => $file)), $e);
+                    }catch(Exception $f){
+                        /*
+                         * Seriously? Two exceptions in a row?
+                         */
+                        log_console(tr('Crap! Patching failed and then cleanup failed as well! Showing exceptions for both the patch fail and git cleanup fail'), 'red');
+                        show($e);
+                        showdie($f);
+                    }
+
+                    $e = new bException(tr('Patching failed for section ":section" file ":file", halting process, cleaned base and toolkit projects! Apply this file manually!', array(':section' => $section, ':file' => $file)), $e);
                     $e->setCode('no-trace');
                     throw $e;
 
