@@ -22,10 +22,16 @@ METHODS
 
 
 
-status                          - Will show status of applied diffs. Implies
-                                  --no-clean
+status                          - Will show list of base and toolkit files that
+                                  have changes
 
-patch                           - Will apply the diff patches to both base and toolkit. If either base or toolkit has changes,
+diff                            - Will show diffs for each base and toolkit
+                                  file
+
+patch                           - Will apply the diff patches to both base and
+                                  toolkit. If either base or toolkit has
+                                  changes, the diff patches will be copied to
+                                  either base or toolkit, and applied
 
   --create-only                 - Only create the patch files, do not apply
                                   them
