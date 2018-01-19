@@ -113,8 +113,11 @@ if(file_exists(ROOT.'www/en/role.php') and file_exists(ROOT.'www/en/roles.php'))
 /*
  * Prepare patch paths, must exist and be empty
  */
-$paths['base']    = patch_get_base_location();
-$paths['toolkit'] = patch_get_toolkit_location();
+$paths['base'] = patch_get_base_location();
+
+if(!$base_only){
+    $paths['toolkit'] = patch_get_toolkit_location();
+}
 
 
 
@@ -197,11 +200,22 @@ foreach($files as $file => &$status){
             /*
              * This is an admin UI file
              */
-            if($type == 'intranet'){
-                if(patch_file_exists_in_toolkit(str_replace('admin/', '', $file))){
-                    log_console(tr('Identified file as toolkit'), 'VERBOSE');
-                    $sections['toolkit'][$file] = $status;
+            if(!$base_only){
+                if($type == 'intranet'){
+                    if(patch_file_exists_in_toolkit(str_replace('admin/', '', $file))){
+                        log_console(tr('Identified file as toolkit'), 'VERBOSE');
+                        $sections['toolkit'][$file] = $status;
+                    }
                 }
+            }
+
+        }elseif(preg_match_all('/www\/[a-z]{2}\/(admin\/)?pub\/js\/base\/.+/', $file, $matches)){
+            /*
+             * This is a base javascript file
+             */
+            if(patch_file_exists_in_base(str_replace('admin/', '', $file))){
+                log_console(tr('Identified file as base'), 'VERBOSE');
+                $sections['base'][$file] = $status;
             }
 
         }elseif(preg_match_all('/www\/[a-z]{2}\/pub\/.+/', $file, $matches)){
@@ -217,7 +231,7 @@ foreach($files as $file => &$status){
                 }
             }
 
-        }elseif(preg_match_all('/www\/[a-z]{2}\/pub\/admin\/.+/', $file, $matches)){
+        }elseif(preg_match_all('/www\/[a-z]{2}\/admin\/pub\/.+/', $file, $matches)){
             /*
              * These are admin pub files (very likely toolkit)
              */
@@ -342,10 +356,12 @@ foreach($sections as $section => &$list){
                      */
                     try{
                         git_clean($paths['base']   , true, true);
-                        git_clean($paths['toolkit'], true, true);
+                        git_checkout($paths['base'], true, true);
 
-                        git_checkout($paths['base']   , true, true);
-                        git_checkout($paths['toolkit'], true, true);
+                        if(!$base_only){
+                            git_clean($paths['toolkit']   , true, true);
+                            git_checkout($paths['toolkit'], true, true);
+                        }
 
                     }catch(Exception $f){
                         /*
