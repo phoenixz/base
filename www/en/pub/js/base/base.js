@@ -293,7 +293,7 @@ $(document).ready(function(){
 
             e.stopPropagation();
 
-            if ($(e.target).hasClass("select")) {
+            if ($(e.target).hasClass("base-select")) {
                 // This is a select box, (un) check it
                 $(e.target).find("input[type=\"checkbox\"]").trigger("click");
                 return false;
