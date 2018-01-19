@@ -586,7 +586,7 @@ switch(cli_method()){
         throw new bException(tr('No method specified'), 'no-method');
 
     default:
-        throw new bException(tr('Invalid method ":method" specified', array(':method' => cli_method())), 'unknown-method');
+        throw new bException(tr('Unknown method ":method" specified', array(':method' => cli_method())), 'unknown-method');
 }
 
 cli_run_once_local(true);

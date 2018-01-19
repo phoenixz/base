@@ -3,20 +3,25 @@
 /*
  * This is the chat management script
  */
-$usage = "./scripts/base/chat\n".
-         "./scripts/base/chat option [option]\n";
-         "./scripts/base/chat sync\n";
+$usage = './scripts/base/chat sync';
 
-$help  = "This is the chat management script";
+$help  = 'This is the chat management script
 
-//$quiet = false;
+
+
+METHODS
+
+
+
+sync                            - Syncs the core database user accounts with
+                                  the chat database';
 
 require_once(dirname(__FILE__).'/../../libs/startup.php');
 
 cli_only();
 load_libs('chat');
 
-switch(cli_argument(0)){
+switch(cli_method()){
     case 'sync':
         log_console(tr('Syncing user accounts with chat database'), '', 'white');
 
@@ -28,13 +33,10 @@ switch(cli_argument(0)){
                                                       `user_email` = :user_email', 'chat');
         $count = 0;
 
-        log_console(tr('Updating "%count%" user accounts', array('%count%' => $users->rowCount())));
+        log_console(tr('Updating ":count" user accounts', array(':count' => $users->rowCount())));
 
         while($user = sql_fetch($users)){
-            if($count++ > 10){
-                $count = 0;
-                log_console('.', '', 'green', false);
-            }
+            cli_dot();
 
             $chat->execute(array(':user_id'       => $user['id'],
                                  ':user_password' => sha1(uniqid()),
@@ -42,11 +44,14 @@ switch(cli_argument(0)){
                                  ':user_email'    => not_empty($user['email'], 'noemail')));
         }
 
-        log_console(tr('Done'), '', 'green');
+        cli_dot(false);
         break;
 
+    case '':
+        throw new bException(tr('No method specified'), 'no-method');
+
     default:
-        throw new bException(tr('Unknown action "%action%" specified', array('%action%' => cli_argument(0))), 'unknown');
+        throw new bException(tr('Unknown method ":method" specified', array(':method' => cli_method())), 'unknown-method');
 }
 
 log_console(tr('Done'), '', 'green');
