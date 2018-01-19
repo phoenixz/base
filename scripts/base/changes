@@ -359,7 +359,7 @@ if($method == 'patch'){
             if($status !== true){
                 log_console(tr('Cleaning up file ":file"', array(':file' => $file)), 'VERBOSE');
                 cli_dot(1);
-//                git_checkout($file);
+                git_checkout($file);
             }
         }
 
