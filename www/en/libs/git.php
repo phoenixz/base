@@ -113,16 +113,16 @@ function git_check_path($path){
  */
 function git_checkout($file){
     try{
+        git_check_path($file);
+
         if(is_dir($file)){
-            $path = $file;
+            $path   = $file;
+            $retval = safe_exec('cd '.$path.'; git checkout -- '.$file);
 
         }else{
-            $path = dirname($file);
+            $path   = dirname($file);
+            $retval = safe_exec('cd '.$path.'; git checkout -- '.basename($file));
         }
-
-        git_check_path($path);
-
-        $retval = safe_exec('cd '.$path.'; git checkout -- '.basename($file));
 
     }catch(Exception $e){
         throw new bException('git_checkout(): Failed', $e);
