@@ -1870,8 +1870,8 @@ function page_show($pagename, $params = null){
             $prefix = '';
         }
 
-// :COMPATIBILITY: $data only is added here for compatibility purposes. This should be removed after 20170601
-$data = $params;
+        array_params($param, 'message');
+
         include(ROOT.'www/'.LANGUAGE.'/'.$prefix.$pagename.'.php');
         die();
 
