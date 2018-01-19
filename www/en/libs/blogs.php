@@ -1591,6 +1591,7 @@ function blogs_media_process($file, $post, $priority = null, $original = null){
         $post = sql_get('SELECT `blogs_posts`.`id`,
                                 `blogs_posts`.`blogs_id`,
                                 `blogs_posts`.`createdby`,
+                                `blogs_posts`.`assigned_to`,
                                 `blogs_posts`.`name`,
                                 `blogs_posts`.`seoname`,
 
@@ -1620,8 +1621,13 @@ function blogs_media_process($file, $post, $priority = null, $original = null){
             throw new bException('blogs_media_process(): Unknown blog post specified', 'unknown');
         }
 
-        if((PLATFORM_HTTP) and ($post['createdby'] != $_SESSION['user']['id']) and !has_rights('god')){
-            throw new bException(tr('blogs_media_process(): Cannot upload media, post ":post" is not yours', array(':post' => $post['name'])), 'access-denied');
+        if((PLATFORM_HTTP) and ($post['createdby'] != $_SESSION['user']['id']) and ($post['assigned_to'] != $_SESSION['user']['id']) and !has_rights('god')){
+            /*
+             * User is not post creator, is not assigned. Check if the user has group access (ie, has a group with the posts seoname)
+             */
+            if(!has_groups($post['seoname'])){
+                throw new bException(tr('blogs_media_process(): Cannot upload media, post ":post" is not yours', array(':post' => $post['name'])), 'access-denied');
+            }
         }
 
         /*
