@@ -307,9 +307,11 @@ foreach($sections as $section => $list){
              */
             if($section == 'base'){
                 patch($file, $paths[$section], ((($method == 'patch') and $create_only) ? 'create' : $method));
+                $status = 'patched';
 
             }else{
                 patch($file, $paths[$section], ((($method == 'patch') and $create_only) ? 'create' : $method), array($file => str_replace('admin/', '', $file)));
+                $status = 'patched';
             }
 
             if($method == 'patch'){
@@ -356,7 +358,7 @@ if($method == 'patch'){
         log_console('All files patched successfully. Cleaning local changes', 'white', false);
 
         foreach($files as $file => $status){
-            if($status !== true){
+            if($status === 'patched'){
                 log_console(tr('Cleaning up file ":file"', array(':file' => $file)), 'VERBOSE');
                 cli_dot(1);
                 git_checkout($file);
