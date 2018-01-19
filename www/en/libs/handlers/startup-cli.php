@@ -26,7 +26,7 @@ define('PWD'     , slash(isset_get($_SERVER['PWD'])));
 define('FORCE'   , cli_argument('-F', false, cli_argument('--force')));
 define('NOCOLOR' , cli_argument('-C', false, cli_argument('--no-color')));
 define('TEST'    , cli_argument('-T', false, cli_argument('--test')));
-define('VERBOSE' , empty($this->register['quiet']) or cli_argument('-V', false, cli_argument('--verbose')));
+define('VERBOSE' , ((empty($this->register['quiet']) or cli_argument('-V', false, cli_argument('--verbose'))) ? 'VERBOSE' : ''));
 define('QUIET'   , cli_argument('-Q', false, cli_argument('--quiet')));
 define('LIMIT'   , cli_argument('--limit', true));
 define('STARTDIR', slash(getcwd()));
@@ -315,6 +315,10 @@ $_SESSION['language'] = $language;
  * Give some startup messages, if needed
  */
 if(VERBOSE){
+    if(QUIET){
+        throw new bException(tr('Both QUIET and VERBOSE have been specified but these options are mutually exclusive. Please specify either one or the other'), 'warning/invalid');
+    }
+
     log_console(tr('Running in VERBOSE mode, started @ ":datetime"', array(':datetime' => date_convert(STARTTIME, 'human_datetime'))), 'white');
 }
 
