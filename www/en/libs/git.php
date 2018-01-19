@@ -122,7 +122,7 @@ function git_checkout($file){
 
         git_check_path($path);
 
-        $retval = safe_exec('cd '.$path.'; git checkout '.$file);
+        $retval = safe_exec('cd '.$path.'; git checkout -- '.basename($file));
 
     }catch(Exception $e){
         throw new bException('git_checkout(): Failed', $e);
