@@ -175,12 +175,13 @@ return false;
         return true;
 
     }catch(Exception $e){
-        log_error(tr('notifications_send(): Notification system failed with ":exception"', array(':exception' => $e->getMessage())), 'error', false);
+        log_console(tr('notifications_send(): Notification system failed with ":exception"', array(':exception' => $e->getMessage())), 'error');
 
         if(SCRIPT != 'init'){
             if(empty($_CONFIG['mail']['developer'])){
-                log_error('[notifications_send() FAILED : '.strtoupper($_SESSION['domain']).' / '.strtoupper(php_uname('n')).' / '.strtoupper(ENVIRONMENT).']', "notifications_send() failed with: ".implode("\n", $e->getMessages())."\n\nOriginal notification event was:\nEvent: \"".cfm($event)."\"\nMessage: \"".cfm($message)."\"");
-                log_error('WARNING! $_CONFIG[mail][developer] IS NOT SET, NOTIFICATIONS CANNOT BE SENT!');
+                log_console('[notifications_send() FAILED : '.strtoupper($_SESSION['domain']).' / '.strtoupper(php_uname('n')).' / '.strtoupper(ENVIRONMENT).']');
+                log_console("notifications_send() failed with: ".implode("\n", $e->getMessages())."\n\nOriginal notification event was:\nEvent: \"".cfm($event)."\"\nMessage: \"".cfm($message)."\"");
+                log_console('WARNING! $_CONFIG[mail][developer] IS NOT SET, NOTIFICATIONS CANNOT BE SENT!');
 
             }else{
                 mail($_CONFIG['mail']['developer'], '[notifications_send() FAILED : '.strtoupper($_SESSION['domain']).' / '.strtoupper(php_uname('n')).' / '.strtoupper(ENVIRONMENT).']', "notifications_send() failed with: ".implode("\n", $e->getMessages())."\n\nOriginal notification event was:\nEvent: \"".cfm($event)."\"\nMessage: \"".cfm($message)."\"");
@@ -222,7 +223,7 @@ function notifications_email($event, $message, $users){
                  * Users are specified from DB, or in emergencies, the $_CONFIG
                  * array, which may contain invalid configuration (should be )
                  */
-                log_error('notifications_email(): Invalid user "'.str_log($user).'" specified. Should have been an array');
+                log_console('notifications_email(): Invalid user "'.str_log($user).'" specified. Should have been an array');
                 continue;
             }
 
@@ -243,7 +244,7 @@ function notifications_email($event, $message, $users){
                  * Since this error occurs in the notification system itself, this makes it
                  * rather hard to notify for, so for now, just log the problem in the database
                  */
-                log_error('notifications_email(): The PHP mail() command took "'.(microtime(true) - $start).'" seconds to send the message "'.str_log($message).'". This usually is caused by a misconfiguration of /etc/hosts, where one (or multiples) of localhost, localhost.localdomain, or the machines hostname will be missing. Also might be needed to have a FQD in the form of host.domain.com, like laptop.mydomain.com, which then in /etc/hosts may be configured to point to 127.0.1.1. See http://superuser.com/questions/626205/sendmail-very-slow-etc-hosts-configuration/626219#626219 and http://google.com for more information', 'mailslow');
+                log_console('notifications_email(): The PHP mail() command took "'.(microtime(true) - $start).'" seconds to send the message "'.str_log($message).'". This usually is caused by a misconfiguration of /etc/hosts, where one (or multiples) of localhost, localhost.localdomain, or the machines hostname will be missing. Also might be needed to have a FQD in the form of host.domain.com, like laptop.mydomain.com, which then in /etc/hosts may be configured to point to 127.0.1.1. See http://superuser.com/questions/626205/sendmail-very-slow-etc-hosts-configuration/626219#626219 and http://google.com for more information', 'yellow');
             }
         }
 
@@ -283,7 +284,7 @@ function notifications_twilio($event, $message, $users){
                  * Users are specified from DB, or in emergencies, the $_CONFIG
                  * array, which may contain invalid configuration (should be )
                  */
-                log_error('notifications_twilio(): Invalid user ":user" specified. Should have been an array', array(':user' => $user));
+                log_console(tr('notifications_twilio(): Invalid user ":user" specified. Should have been an array', array(':user' => $user)));
                 continue;
             }
 
@@ -421,7 +422,7 @@ function notifications_members_insert($params){
 
         foreach(array_force($params['members']) as $member){
             if(!$users_id = user_get($member, 'id')){
-                log_error(tr('notifications_members_insert(): Specified member ":member" does not exist', array(':member' => $member)), 'yellow');
+                log_console(tr('notifications_members_insert(): Specified member ":member" does not exist', array(':member' => $member)), 'yellow');
                 continue;
             }
 
@@ -432,7 +433,7 @@ function notifications_members_insert($params){
 
                         array(':classes_id' => $params['classes_id'],
                               ':users_id'   => $users_id))){
-                log_error('notifications_members_insert(): Specified member "'.str_log($member).'" is aleady member of class "'.$params['classes_id'].'"', 'notexists', 'yellow');
+                log_console('notifications_members_insert(): Specified member "'.str_log($member).'" is aleady member of class "'.$params['classes_id'].'"', 'yellow');
                 continue;
             }
 
