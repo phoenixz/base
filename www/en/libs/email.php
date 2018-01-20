@@ -1700,18 +1700,18 @@ function email_validate_account($account, $client){
         }
 
         $v = new validate_form($account, 'name,email,password,description,header,footer,poll_interval');
-        $v->isValidEmail($account['email']   , tr('Please provide a valid email'));
-        $v->isNotEmpty  ($account['name']    , tr('Please provide a name'));
-        $v->hasMinChars ($account['name']    , 1, tr('Please ensure that the name has a minimum of 1 character'));
-        $v->isNotEmpty  ($account['password'], tr('Please provide a password'));
+        $v->isEmail($account['email']      , tr('Please provide a valid email'));
+        $v->isNotEmpty($account['name']    , tr('Please provide a name'));
+        $v->hasMinChars($account['name']   , 1, tr('Please ensure that the name has a minimum of 1 character'));
+        $v->isNotEmpty($account['password'], tr('Please provide a password'));
 
         if(empty($account['domain'])){
             $v->setError(tr('Please specify a domain from the list'));
         }
 
-        $v->hasMaxChars ($account['description'], 4096, tr('Please ensure that the description has a maximum of 4K characters'));
-        $v->hasMaxChars ($account['header']     , 4096, tr('Please ensure that the header has a maximum of 4K characters'));
-        $v->hasMaxChars ($account['footer']     , 4096, tr('Please ensure that the footer has a maximum of 4K characters'));
+        $v->hasMaxChars($account['description'], 4096, tr('Please ensure that the description has a maximum of 4K characters'));
+        $v->hasMaxChars($account['header']     , 4096, tr('Please ensure that the header has a maximum of 4K characters'));
+        $v->hasMaxChars($account['footer']     , 4096, tr('Please ensure that the footer has a maximum of 4K characters'));
 
         $domain = sql_get('SELECT `id`, `status` FROM `email'.$client.'_domains` WHERE `seoname` = :seoname', array(':seoname' => $account['domain']));
 

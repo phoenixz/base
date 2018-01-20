@@ -166,6 +166,10 @@ class core{
         return $this->query_count;
     }
 
+    public function callType($type){
+        return $this->call_type === $type;
+    }
+
     public function getCallType(){
         return $this->call_type;
     }

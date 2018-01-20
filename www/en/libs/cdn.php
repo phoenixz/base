@@ -54,7 +54,7 @@ function cdn_domain($file, $section = 'pub', $false_on_not_exist = false, $force
                     return cdn_domain($file, $section);
 
                 }else{
-                    $_SESSION['cdn'] = slash($_SESSION['cdn']).strtolower(str_replace('_', '-', $_CONFIG['cdn']['project'])).'/pub/';
+                    $_SESSION['cdn'] = slash($_SESSION['cdn']).strtolower(str_replace('_', '-', PROJECT)).'/pub/';
                 }
             }
 
@@ -90,7 +90,7 @@ function cdn_domain($file, $section = 'pub', $false_on_not_exist = false, $force
             /*
              * Yay, found the file in the CDN database!
              */
-            return slash($url['baseurl']).strtolower(str_replace('_', '-', $_CONFIG['cdn']['project'])).$url['file'];
+            return slash($url['baseurl']).strtolower(str_replace('_', '-', PROJECT)).$url['file'];
         }
 
         /*
@@ -118,7 +118,7 @@ function cdn_domain($file, $section = 'pub', $false_on_not_exist = false, $force
         //        return current_domain($current_url, $query, $root);
         //    }
         //
-        //    $_SESSION['cdn'] = slash($server).strtolower(str_replace('_', '-', $_CONFIG['cdn']['project']));
+        //    $_SESSION['cdn'] = slash($server).strtolower(str_replace('_', '-', PROJECT));
         //}
         //
         //return $_SESSION['cdn'].$current_url;
@@ -211,7 +211,7 @@ function cdn_send_files($files, $server, $section, $group = null){
         load_libs('api');
 
         $api_account = cdn_get_api_account($server);
-        $result      = api_call_base($api_account, '/cdn/add-files', array('project' => $_CONFIG['cdn']['project'], 'section' => $section, 'group' => $group), $files);
+        $result      = api_call_base($api_account, '/cdn/add-files', array('project' => PROJECT, 'section' => $section, 'group' => $group), $files);
 
         if(debug()){
             log_database(tr('cdn_send_files(): Successfully sent files ":files" to server ":server" using api account ":account"', array(':files' => $files, ':server' => $server, ':account' => $api_account)), 'cdn/debug');
@@ -274,7 +274,7 @@ function cdn_delete_files($list, $column = 'file'){
          * Delete files from each CDN server
          */
         foreach($servers as $server => $files){
-            $files['project'] = $_CONFIG['cdn']['project'];
+            $files['project'] = PROJECT;
             $api_account      = cdn_get_api_account($server);
 
             api_call_base($api_account, '/cdn/delete-files', $files);
@@ -611,11 +611,11 @@ function cdn_register_project($server){
         load_libs('api');
 
         $api_account = cdn_get_api_account($server);
-        $result      = api_call_base($api_account, '/cdn/project-exists', array('project' => $_CONFIG['cdn']['project']));
+        $result      = api_call_base($api_account, '/cdn/project-exists', array('project' => PROJECT));
 
         if(empty($result['exists'])){
             sql_query('UPDATE `cdn_servers` SET `status` = "registering" WHERE `seoname` = :seoname', array(':seoname' => $server));
-            $result = api_call_base($api_account, '/cdn/create-project', array('name' => $_CONFIG['cdn']['project']));
+            $result = api_call_base($api_account, '/cdn/create-project', array('name' => PROJECT));
 
             sql_query('UPDATE `cdn_servers` SET `status` = NULL WHERE `seoname` = :seoname', array(':seoname' => $server));
             return $result;
@@ -641,7 +641,7 @@ function cdn_unregister_project($server){
         load_libs('api');
 
         $api_account = cdn_get_api_account($server);
-        $result      = api_call_base($api_account, '/cdn/project-exists', array('project' => $_CONFIG['cdn']['project']));
+        $result      = api_call_base($api_account, '/cdn/project-exists', array('project' => PROJECT));
 
         if(!empty($result['exists'])){
             /*
@@ -651,7 +651,7 @@ function cdn_unregister_project($server){
         }
 
         sql_query('UPDATE `cdn_servers` SET `status` = "unregistering" WHERE `seoname` = :seoname', array(':seoname' => $server));
-        $result = api_call_base($api_account, '/cdn/delete-project', array('name' => $_CONFIG['cdn']['project']));
+        $result = api_call_base($api_account, '/cdn/delete-project', array('name' => PROJECT));
         return $result;
 
     }catch(Exception $e){

@@ -369,14 +369,14 @@ function twilio_accounts_validate($account){
         load_libs('validate');
 
         $v = new validate_form($account, 'email,accounts_id,accounts_token');
-        $v->isNotEmpty   ($account['email']    , tr('No twilios name specified'));
-        $v->isValidEmail ($account['email'],  2, tr('Please ensure the twilio name has at least 2 characters'));
+        $v->isNotEmpty($account['email'], tr('No twilios name specified'));
+        $v->isEmail($account['email']   ,  2, tr('Please ensure the twilio name has at least 2 characters'));
 
-        $v->isNotEmpty ($account['accounts_id']    , tr('No twilio account description specified'));
+        $v->isNotEmpty($account['accounts_id']     , tr('No twilio account description specified'));
         $v->hasMinChars($account['accounts_id'], 32, tr('Please ensure the twilio description has at least 2 characters'));
         $v->hasMaxChars($account['accounts_id'], 40, tr('Please ensure the twilio description has less than 2047 characters'));
 
-        $v->isNotEmpty ($account['accounts_token']    , tr('No Account token specified'));
+        $v->isNotEmpty($account['accounts_token']     , tr('No Account token specified'));
         $v->hasMinChars($account['accounts_token'], 32, tr('Please ensure the account\'s description has at least 2 characters'));
         $v->hasMaxChars($account['accounts_token'], 40, tr('Please ensure the twilio description has less than 2047 characters'));
 
@@ -467,9 +467,9 @@ function twilio_numbers_validate($number, $old_twilio = null){
         $v->isNotEmpty  ($number['name']    , tr('No name specified'));
         $v->hasMinChars ($number['name'],  2, tr('Please ensure the number name has at least 2 characters'));
 
-        $v->isNotEmpty ($number['number']       , tr('No number description specified'));
-        $v->hasMinChars($number['number']   , 12, tr('Please ensure the number has at least 12 digits'));
-        $v->isValidPhonenumber($number['number'], tr('Please ensure the number is telphone number valid'));
+        $v->isNotEmpty ($number['number']    , tr('No number description specified'));
+        $v->hasMinChars($number['number'], 12, tr('Please ensure the number has at least 12 digits'));
+        $v->isPhonenumber($number['number']  , tr('Please ensure the number is telphone number valid'));
 
         $v->isNotEmpty($number['accounts_id'], tr('No account specified'));
         $v->isNumeric ($number['accounts_id'], tr('Invalid account specified'));
