@@ -3,12 +3,63 @@
 /*
  * This script can clear the contents of the tmp directory
  */
+$usage = './script/base/clear METHOD';
+
+$help = 'The clear script can clear temporary data
+
+
+
+METHODS
+
+
+
+all                             - Clear all temporary data
+
+tmp                             - Clear only the TMP directory
+
+cache                           - Clear the cache directory';
+
 require_once(dirname(__FILE__).'/../../libs/startup.php');
 
-try{
-    cli_no_arguments_left();
-    log_console('Clearing configured tmp path ":tmp"', array(':tmp' => TMP), 'white');
+$tmp   = false;
+$cache = false;
 
+switch(cli_method()){
+    case 'cache':
+        cli_no_arguments_left();
+        log_console('Clearing cache', 'white');
+        $cache = true;
+        break;
+
+    case 'tmp':
+        cli_no_arguments_left();
+        log_console(tr('Clearing tmp path ":tmp"', array(':tmp' => TMP)), 'white');
+        $tmp = true;
+        break;
+
+    case 'all':
+        log_console(tr('Clearing botch cache and tmp path ":tmp"', array(':tmp' => TMP)), 'white');
+        cli_no_arguments_left();
+        $tmp   = false;
+        $cache = false;
+        break;
+
+    case '':
+        throw new bException(tr('No method specified'), 'no-method');
+
+    default:
+        throw new bException(tr('Unknown method ":method" specified', array(':method' => cli_method())), 'unknown-method');
+}
+
+
+
+/*
+ * Clear the TMP directory
+ */
+if($tmp){
+    /*
+     * Move TMP out of the way, then delete it
+     */
     rename(TMP, $delete = unslash(TMP).'~delete');
     mkdir(TMP, $_CONFIG['fs']['dir_mode'], true);
 
@@ -16,8 +67,14 @@ try{
     file_delete_tree($delete);
 
     log_console(tr('Done!'), 'green');
+}
 
-}catch(Exception $e){
-    throw new bException('scripts/base/cleartmp: Failed', $e);
+
+
+/*
+ * Clear the cache directory
+ */
+if($cache){
+    safe_script('base/cache', '--clear');
 }
 ?>
