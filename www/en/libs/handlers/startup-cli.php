@@ -240,7 +240,7 @@ define('ENVIRONMENT', $env);
  * Load cache libraries (done until here since these need configuration @ load time)
  */
 load_config(' ');
-load_libs('cache'.(empty($_CONFIG['memcached']) ? '' : ',memcached'));
+load_libs('cache'.(empty($_CONFIG['memcached']) ? '' : ',memcached').(empty($_CONFIG['cdn']['enabled']) ? '' : ',cdn'));
 
 
 
