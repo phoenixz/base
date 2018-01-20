@@ -17,13 +17,6 @@ $_CONFIG['cache']['http']['enabled'] = false;
 
 
 /*
- * Load basic libraries
- */
-load_libs('strings,array,sql,mb');
-
-
-
-/*
  * Define basic platform constants
  */
 define('ADMIN'   , '_admin');

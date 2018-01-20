@@ -148,6 +148,15 @@ class core{
         global $_CONFIG, $core;
 
         try{
+            /*
+             * Load basic libraries
+             */
+            load_libs('strings,array,sql,mb');
+
+
+            /*
+             * Start the call type dependant startup script
+             */
             require('handlers/startup-'.$this->call_type.'.php');
 
         }catch(Exception $e){

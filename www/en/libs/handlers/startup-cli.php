@@ -9,10 +9,9 @@
 
 
 /*
- * Load basic libraries
  * All scripts will execute cli_done() automatically once done
  */
-load_libs('strings,array,sql,mb,cli');
+load_libs('cli');
 register_shutdown_function('cli_done');
 
 
