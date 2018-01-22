@@ -400,12 +400,14 @@ switch(cli_method()){
 
         sql_query('UPDATE `users`
 
-                   SET    `roles_id` = :roles_id
+                   SET    `roles_id` = :roles_id,
+                          `role`     = :role_name
 
                    WHERE  `id`       = :users_id',
 
-                   array(':users_id' => $user['id'],
-                         ':roles_id' => $role['id']));
+                   array(':users_id'  => $user['id'],
+                         ':roles_id'  => $role['id'],
+                         ':role_name' => $role['name']));
 
         user_update_rights($user);
         log_console(tr('Gave role ":role" to user ":user"', array(':role' => $role['name'], ':user' => name($user))), 'green');
