@@ -1109,10 +1109,6 @@ function domain($current_url = false, $query = null, $root = null, $domain = nul
     global $_CONFIG;
 
     try{
-        if($root === null){
-            $root = str_ends_not($_CONFIG['root'], '/');
-        }
-
         if(!$domain){
             //if(empty($_SESSION['domain'])){
             //    if(PLATFORM_HTTP){
@@ -1143,6 +1139,12 @@ function domain($current_url = false, $query = null, $root = null, $domain = nul
             $language = '/'.$language;
         }
 
+        if($root === null){
+            $root = $_CONFIG['root'];
+        }
+
+        $root = str_ends_not($root, '/');
+
         if(!$current_url){
             $retval = $_CONFIG['protocol'].$domain.$language.$root;
 
@@ -1162,6 +1164,126 @@ function domain($current_url = false, $query = null, $root = null, $domain = nul
 
     }catch(Exception $e){
         throw new bException('domain(): Failed', $e);
+    }
+}
+
+
+
+/*
+ *
+ */
+function cdn_domain($file, $section = 'pub', $false_on_not_exist = false, $force_cdn = false){
+    global $_CONFIG;
+
+    try{
+        if(!$_CONFIG['cdn']['enabled'] and !$force_cdn){
+            if($section == 'pub'){
+                if(!empty($_CONFIG['cdn']['prefix'])){
+                    $section = $_CONFIG['cdn']['prefix'];
+                }
+            }
+
+            return domain($file, null, $section);
+        }
+
+        if($section == 'pub'){
+            /*
+             * Process pub files, "system" files like .css, .js, static website
+             * images ,etc
+             */
+            if(!isset($_SESSION['cdn'])){
+                /*
+                 * Get a CDN server for this session
+                 */
+                $_SESSION['cdn'] = sql_get('SELECT   `baseurl`
+
+                                            FROM     `cdn_servers`
+
+                                            WHERE    `status` IS NULL
+
+                                            ORDER BY RAND() LIMIT 1', true);
+
+                if(empty($_SESSION['cdn'])){
+                    /*
+                     * There are no CDN servers available!
+                     * Switch to working without CDN servers
+                     */
+                    notify('configuration-missing', tr('CDN system is enabled but there are no CDN servers configuraed'), 'developers');
+                    $_CONFIG['cdn']['enabled'] = false;
+                    return cdn_domain($file, $section);
+
+                }else{
+                    $_SESSION['cdn'] = slash($_SESSION['cdn']).strtolower(str_replace('_', '-', PROJECT)).'/pub/';
+                }
+            }
+
+            if(!empty($_CONFIG['cdn']['prefix'])){
+                $file = $_CONFIG['cdn']['prefix'].$file;
+            }
+
+            return $_SESSION['cdn'].str_starts_not($file, '/');
+        }
+
+        /*
+         * Get this URL from the CDN system
+         */
+        $url = sql_get('SELECT    `cdn_files`.`file`,
+                                  `cdn_files`.`servers_id`,
+                                  `cdn_servers`.`baseurl`
+
+                        FROM      `cdn_files`
+
+                        LEFT JOIN `cdn_servers`
+                        ON        `cdn_files`.`servers_id` = `cdn_servers`.`id`
+
+                        WHERE     `cdn_files`.`file` = :file
+                        AND       `cdn_servers`.`status` IS NULL
+
+                        ORDER BY  RAND()
+
+                        LIMIT     1',
+
+                        array(':file' => $file));
+
+        if($url){
+            /*
+             * Yay, found the file in the CDN database!
+             */
+            return slash($url['baseurl']).strtolower(str_replace('_', '-', PROJECT)).$url['file'];
+        }
+
+        /*
+         * The specified file is not found in the CDN system
+         */
+        if($false_on_not_exist){
+            return false;
+        }
+
+        return domain($file);
+
+        ///*
+        // * We have a CDN server in session? If not, get one.
+        // */
+        //if(isset_get($_SESSION['cdn']) === null){
+        //    $server = sql_get('SELECT `baseurl` FROM `cdn_servers` WHERE `status` IS NULL ORDER BY RAND() LIMIT 1', true);
+        //
+        //    if(!$server){
+        //        /*
+        //         * Err we have no CDN servers, though CDN is configured.. Just
+        //         * continue locally?
+        //         */
+        //        notify('no-cdn-servers', tr('CDN system is enabled, but no availabe CDN servers were found'), 'developers');
+        //        $_SESSION['cdn'] = false;
+        //        return current_domain($current_url, $query, $root);
+        //    }
+        //
+        //    $_SESSION['cdn'] = slash($server).strtolower(str_replace('_', '-', PROJECT));
+        //}
+        //
+        //return $_SESSION['cdn'].$current_url;
+
+    }catch(Exception $e){
+        throw new bException('cdn_domain(): Failed', $e);
     }
 }
 
