@@ -180,7 +180,7 @@ foreach($files as $file => &$status){
         //
         //}
 
-        if(preg_match_all('/www\/[a-z]{2}\/admin\/[a-z-_]+\.php/', $file)){
+        if(preg_match_all('/www\/[a-z]{2}\/admin\/[a-z0-9-_]+\.php/', $file)){
             /*
              * This is an admin UI file
              */
@@ -202,7 +202,7 @@ foreach($files as $file => &$status){
                 }
             }
 
-        }elseif(preg_match_all('/www\/[a-z]{2}\/[a-z-_]+\.php/', $file)){
+        }elseif(preg_match_all('/www\/[a-z]{2}\/[a-z0-9-_]+\.php/', $file)){
             /*
              * This is an admin UI file
              */
@@ -248,7 +248,20 @@ foreach($files as $file => &$status){
                 }
             }
 
-        }elseif(preg_match('/libs\/[a-z-_]+\.php/', $file)){
+        }elseif(preg_match('/libs\/[a-z0-9-_]+\.php/', $file)){
+            /*
+             * These are library files, most likely base, possibly toolkit
+             */
+            if(patch_file_exists_in_base($file)){
+                log_console(tr('Identified file as base'), 'VERBOSE');
+                $sections['base'][$file] = $status;
+
+            }elseif(patch_file_exists_in_toolkit($file)){
+                log_console(tr('Identified file as toolkit'), 'VERBOSE');
+                $sections['toolkit'][$file] = $status;
+            }
+
+        }elseif(preg_match('/libs\/handlers\/[a-z0-9-_]+\.php/', $file)){
             /*
              * These are library files, most likely base, possibly toolkit
              */
@@ -257,20 +270,20 @@ foreach($files as $file => &$status){
                 $sections['base'][$file] = $status;
             }
 
-        }elseif(preg_match('/libs\/handlers\/[a-z-_]+\.php/', $file)){
+        }elseif(preg_match('/init\/framework\/[0-9.]+\.php/', $file)){
             /*
-             * These are library files, most likely base, possibly toolkit
+             * These are framework init files
              */
             if(patch_file_exists_in_base($file)){
                 log_console(tr('Identified file as base'), 'VERBOSE');
                 $sections['base'][$file] = $status;
             }
 
-        }elseif(preg_match('/scripts\/base\/[a-z-]+/', $file)){
+        }elseif(preg_match('/scripts\/base\/[a-z0-9-]+/', $file)){
             log_console(tr('Identified file as base'), 'VERBOSE');
             $sections['base'][$file] = $status;
 
-        }elseif(preg_match('/config\/base\/[a-z-]+/', $file)){
+        }elseif(preg_match('/config\/base\/.+/', $file)){
             log_console(tr('Identified file as base'), 'VERBOSE');
             $sections['base'][$file] = $status;
         }
@@ -376,6 +389,27 @@ foreach($sections as $section => &$list){
                         log_console(tr('Crap! Patching failed and then cleanup failed as well! Showing exceptions for both the patch fail and git cleanup fail'), 'red');
                         show($e);
                         showdie($f);
+                    }
+
+                    /*
+                     * Patching mostly fails when for some reason the target
+                     * base (or toolkit) file already was updated and the files
+                     * are the same.
+                     *
+                     * If this is so, we can simply act as if the file was
+                     * patched
+                     */
+                    if($section == 'base'){
+                        if(!safe_exec('diff '.$file.' '.$paths[$section].$file)){
+                            $status = 'patched';
+                            break;
+                        }
+
+                    }else{
+                        if(!safe_exec('diff '.$file.' '.$paths[$section].str_replace('admin/', '', $file))){
+                            $status = 'patched';
+                            break;
+                        }
                     }
 
                     $e = new bException(tr('Patching failed for section ":section" file ":file", halting process, cleaned base and toolkit projects! Apply this file manually!', array(':section' => $section, ':file' => $file)), $e);
