@@ -141,16 +141,16 @@ sql_query('CREATE TABLE `storage_documents` (`id`             INT(11)     NOT NU
 
 
 
-sql_query('CREATE TABLE `storage_pages` (`id`           INT(11)     NOT NULL AUTO_INCREMENT,
-                                         `meta_id`      INT(11)     NOT NULL,
-                                         `storage_id`   INT(11)     NOT NULL,
-                                         `documents_id` INT(11)     NOT NULL,
-                                         `status`       VARCHAR(16)     NULL,
-                                         `language`     VARCHAR(2)      NULL,
-                                         `name`         VARCHAR(64)     NULL,
-                                         `seoname`      VARCHAR(64)     NULL,
-                                         `description`  VARCHAR(255)    NULL,
-                                         `body`         MEDIUMTEXT      NULL,
+sql_query('CREATE TABLE `storage_pages` (`id`           INT(11)      NOT NULL AUTO_INCREMENT,
+                                         `meta_id`      INT(11)      NOT NULL,
+                                         `storage_id`   INT(11)      NOT NULL,
+                                         `documents_id` INT(11)      NOT NULL,
+                                         `status`       VARCHAR(16)      NULL,
+                                         `language`     VARCHAR(2)       NULL,
+                                         `name`         VARCHAR(64)      NULL,
+                                         `seoname`      VARCHAR(64)      NULL,
+                                         `description`  VARCHAR(255)     NULL,
+                                         `body`         MEDIUMTEXT       NULL,
 
                                           PRIMARY KEY `id`           (`id`),
                                                   KEY `meta_id`      (`meta_id`),
