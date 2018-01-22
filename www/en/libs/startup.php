@@ -11,7 +11,7 @@
 /*
  * Framework version
  */
-define('FRAMEWORKCODEVERSION', '1.0.0');
+define('FRAMEWORKCODEVERSION', '1.1.0');
 
 
 
@@ -101,7 +101,7 @@ class core{
                     /*
                      * Detect what http platform we're on
                      */
-                    if(substr($_SERVER['REQUEST_URI'], 0, 7) == '/admin/'){
+                    if((substr($_SERVER['REQUEST_URI'], 0, 7) == '/admin/') or (substr($_SERVER['REQUEST_URI'], 3, 7) == '/admin/')){
                         $this->call_type = 'admin';
 
                     }elseif(strstr($_SERVER['PHP_SELF'], '/ajax/')){
