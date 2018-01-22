@@ -63,12 +63,18 @@ function meta_add_history($meta_id, $action, $data = null){
 /*
  * Return array with all the history for the specified meta_id
  */
-function meta_list_history($meta_id){
+function meta_history($meta_id){
     try{
-        return sql_list('SELECT `action`, `data` FROM `meta_history` WHERE `meta_id` = :meta_id', array(':meta_id' => $meta_id));
+        $history = sql_query('SELECT `action`, `data` FROM `meta_history` WHERE `meta_id` = :meta_id', array(':meta_id' => $meta_id));
+
+        if(!$history->rowCount()){
+            throw new bException(tr('meta_history(): The specified meta_id ":meta_id" does not exist', array(':meta_id' => $meta_id)), 'not-exist');
+        }
+
+        return $history;
 
     }catch(Exception $e){
-        throw new bException('meta_list_history(): Failed', $e);
+        throw new bException('meta_history(): Failed', $e);
     }
 }
 ?>
