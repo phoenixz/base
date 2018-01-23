@@ -181,7 +181,7 @@ switch(cli_method()){
              * This must be a single file specification
              */
             if(!file_exists($file)){
-                throw new bException(tr('Specified file ":file" does not exist', array(':file' => cli_argument(1))), 'not-exist');
+                throw new bException(tr('Specified file ":file" does not exist', array(':file' => cli_argument(1))), 'warning/not-exist');
             }
 
             $link = str_replace('.'.$extension, '@2x.'.$extension, $file);
@@ -264,7 +264,7 @@ switch(cli_method()){
          */
         if($all){
             if($recursive){
-                throw new bException(tr('Both --all and --recursive have been specified. These options are mutually exclusive, please specify one or the other'), 'invalid');
+                throw new bException(tr('Both --all and --recursive have been specified. These options are mutually exclusive, please specify one or the other'), 'warning/invalid');
             }
 
             $source = ROOT;
@@ -277,7 +277,7 @@ switch(cli_method()){
         }
 
         if(!$source){
-            throw new bException(tr('No path specified'), 'not-specified');
+            throw new bException(tr('No path specified'), 'warning/not-specified');
         }
 
         /*
@@ -337,7 +337,7 @@ switch(cli_method()){
 
         if($show_images){
             if($recursive){
-                throw new bException(tr('Both --show-images and --recursive have been specified. These options are mutually exclusive, please specify one or the other'), 'invalid');
+                throw new bException(tr('Both --show-images and --recursive have been specified. These options are mutually exclusive, please specify one or the other'), 'warning/invalid');
             }
 
             /*
@@ -347,7 +347,7 @@ switch(cli_method()){
             $viewer = array_shift($viewer);
 
             if(!$viewer){
-                throw new bException(tr('Configured vierwer ":viewer" could not be found', array(':viewer' => $_CONFIG['images']['viewer'])), 'invalid');
+                throw new bException(tr('Configured vierwer ":viewer" could not be found', array(':viewer' => $_CONFIG['images']['viewer'])), 'warning/invalid');
             }
 
             if(TEST){
@@ -378,7 +378,7 @@ switch(cli_method()){
          */
         if($all){
             if($recursive){
-                throw new bException(tr('Both --all and --recursive have been specified. These options are mutually exclusive (--all implies --recursive), please specify one or the other'), 'invalid');
+                throw new bException(tr('Both --all and --recursive have been specified. These options are mutually exclusive (--all implies --recursive), please specify one or the other'), 'warning/invalid');
             }
 
             $source    = ROOT;
@@ -392,7 +392,7 @@ switch(cli_method()){
         }
 
         if(!$source){
-            throw new bException(tr('No path specified'), 'not-specified');
+            throw new bException(tr('No path specified'), 'warning/not-specified');
         }
 
         /*
@@ -507,11 +507,11 @@ switch(cli_method()){
         load_libs('image');
 
         if(!$image){
-            throw new bException(tr('No image specified'), 'not-specified');
+            throw new bException(tr('No image specified'), 'warning/not-specified');
         }
 
         if(!is_image($image)){
-            throw new bException(tr('Specified file ":file" is not an image', array(':file' => $image)), 'invalid');
+            throw new bException(tr('Specified file ":file" is not an image', array(':file' => $image)), 'warning/invalid');
         }
 
         try{
@@ -520,10 +520,10 @@ switch(cli_method()){
 
         }catch(Exception $e){
             if(substr($_CONFIG['images']['viewer'], -3, 3) === 'feh'){
-                throw new bException(tr('You have "feh" configured as viewer (See $_CONFIG[images][viewer], but it is not yet installed. Please install it first to continue. On ubuntu and debian platforms, use "apt-get install -y feh", on Redhat and fedora platforms, use "yum install -y feh"'), 'not-installed');
+                throw new bException(tr('You have "feh" configured as viewer (See $_CONFIG[images][viewer], but it is not yet installed. Please install it first to continue. On ubuntu and debian platforms, use "apt-get install -y feh", on Redhat and fedora platforms, use "yum install -y feh"'), 'warning/not-installed');
             }
 
-            throw new bException(tr('Configured viewer ":viewer" could not be found', array(':viewer' => $_CONFIG['images']['viewer'])), 'invalid');
+            throw new bException(tr('Configured viewer ":viewer" could not be found', array(':viewer' => $_CONFIG['images']['viewer'])), 'warning/invalid');
         }
 
         safe_exec(array($_CONFIG['images']['viewer'], $image));

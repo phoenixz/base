@@ -17,7 +17,7 @@ load_libs('user,rights');
 
 switch(cli_method()){
     case 'list':
-        log_console('Showing currently available rights', 'white');
+        log_console(tr('Showing currently available rights'), 'QUIET/white');
 
         $limit   = 200;
 
@@ -40,7 +40,7 @@ switch(cli_method()){
         cli_no_arguments_left();
 
         if(!$users_id){
-            throw new bException(tr('No user specified'), 'not-specified');
+            throw new bException(tr('No user specified'), 'warning/not-specified');
         }
 
         $user = sql_get('SELECT `id`,
@@ -55,10 +55,10 @@ switch(cli_method()){
                                                        ':name' => $users_id));
 
         if(!$user){
-            throw new bException(tr('Specified user ":user" does not exist', array(':user' => $users_id)), 'not-exist');
+            throw new bException(tr('Specified user ":user" does not exist', array(':user' => $users_id)), 'warning/not-exist');
         }
 
-        log_console(tr('Showing rights for user ":user"', array(':user' => name($user))), 'white');
+        log_console(tr('Showing rights for user ":user"', array(':user' => name($user))), 'QUIET/white');
 
         $list = sql_list('SELECT    `rights`.`name`,
                                     `rights`.`description`
@@ -113,7 +113,7 @@ switch(cli_method()){
             $old_right = cli_argument(1);
 
             if(!$old_right){
-                throw new bException(tr('No right specified'), 'not-specified');
+                throw new bException(tr('No right specified'), 'warning/not-specified');
             }
 
             $right = cli_arguments('name,description');
@@ -131,7 +131,7 @@ switch(cli_method()){
                                                                 ':name' => $old_right));
 
             if(!$old_right){
-                throw new bException(tr('Specified right ":right" does not exist', array(':right' => $old_right)), 'not-specified');
+                throw new bException(tr('Specified right ":right" does not exist', array(':right' => $old_right)), 'warning/not-specified');
             }
 
             $right = rights_validate($right, $old_right);
@@ -175,7 +175,7 @@ switch(cli_method()){
         $rights = arguments();
 
         if(empty($rights)){
-            throw new bException(tr('No rights specified'), 'not-specified');
+            throw new bException(tr('No rights specified'), 'warning/not-specified');
         }
 
         $in_name = sql_in($rights, 'name');
@@ -216,7 +216,7 @@ switch(cli_method()){
         $rights = arguments();
 
         if(empty($rights)){
-            throw new bException(tr('No rights specified'), 'not-specified');
+            throw new bException(tr('No rights specified'), 'warning/not-specified');
         }
 
         $in_name = sql_in($rights, 'name');
@@ -257,7 +257,7 @@ switch(cli_method()){
         $rights = arguments();
 
         if(empty($rights)){
-            throw new bException(tr('No rights specified'), 'not-specified');
+            throw new bException(tr('No rights specified'), 'warning/not-specified');
         }
 
         $in_name = sql_in($rights, 'name');

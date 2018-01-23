@@ -31,7 +31,7 @@ $do_merge = cli_argument('--do-merge');
  */
 if(git_has_changes()){
     if(!FORCE){
-        throw new bException(tr('merge-prepare: GIT changes detected, cannot continue. Either git commit your changes, or use -f or --force to force merge prepare.'), 'git-changes');
+        throw new bException(tr('merge-prepare: GIT changes detected, cannot continue. Either git commit your changes, or use -f or --force to force merge prepare.'), 'warning/git');
     }
 
     log_console(tr('WARNING: GIT Changes detected, continuing because of -f option'), 'yellow');
@@ -77,11 +77,11 @@ foreach($argv as $branch){
 }
 
 if(!empty($fail)){
-    throw new bException(tr('merge-prepare: Specified branche(s) ":fail" do not exist', array(':fail' => implode(' ', $fail))), 'not_exists');
+    throw new bException(tr('merge-prepare: Specified branche(s) ":fail" do not exist', array(':fail' => implode(' ', $fail))), 'warning/not-exists');
 }
 
 if(empty($argv)){
-    throw new bException(tr('merge-prepare: No source branches specified'), 'not-specified');
+    throw new bException(tr('merge-prepare: No source branches specified'), 'warning/not-specified');
 }
 
 log_console(tr('Requested branches verified'));
@@ -93,7 +93,7 @@ log_console(tr('Requested branches verified'));
 log_console(tr('Preparing merging to target branch ":target"', array(':target' => $target)), 'white');
 
 if(!in_array($target, $branches)){
-    throw new bException(tr('merge-prepare: Specified target branch ":target" do not exist', array(':target' => $target)), 'not_exists');
+    throw new bException(tr('merge-prepare: Specified target branch ":target" do not exist', array(':target' => $target)), 'warning/not-exists');
 }
 
 $branches = $argv;

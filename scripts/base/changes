@@ -62,7 +62,7 @@ $skip = array('base'    => array(),
  * if we're on toolkit, only check for base changes
  */
 if(!PROJECT){
-    throw new bException(tr('This project has no project name, perhaps you are trying to run this on the base project?'), 'invalid');
+    throw new bException(tr('This project has no project name, perhaps you are trying to run this on the base project?'), 'warning/invalid');
 }
 
 $base_only = (PROJECT == 'INGIGA_TOOLKIT');

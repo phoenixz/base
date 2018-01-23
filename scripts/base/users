@@ -1035,7 +1035,7 @@ switch(cli_method()){
 
 
         if(!$updated){
-            throw new bException(tr('Password is the same, not updated', array(':user' => $user)), 'not-updated');
+            throw new bException(tr('Password is the same, not updated', array(':user' => $user)), 'warning/not-updated');
         }
 
         log_console(tr('Updated password for user ":user"', array(':user' => name($user))), 'green');

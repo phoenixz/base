@@ -8,9 +8,9 @@
  *
  * @copyright Sven Oostenbrink <support@ingiga.com>
  */
-$usage = "./scripts/base/ensure-structure\n";
+$usage = './scripts/base/ensure-structure';
 
-$help  = "The ensure-structure script will ensure that all required files and directories are available. If directories are missing they will be created; if files are missing, a clear error will be shown";
+$help  = 'The ensure-structure script will ensure that all required files and directories are available. If directories are missing they will be created; if files are missing, a clear error will be shown';
 
 require_once(dirname(__FILE__).'/../../libs/startup.php');
 
@@ -27,7 +27,7 @@ load_libs('file');
 log_console('Ensuring site structure', 'white');
 
 if(empty($_CONFIG['deploy'][$target])){
-    throw new bException(tr('Specified environment ":env" does not exist', array(':env' => $target)), 'not-exist');
+    throw new bException(tr('Specified environment ":env" does not exist', array(':env' => $target)), 'warning/not-exist');
 }
 
 $deploy_config = $_CONFIG['deploy'][$target];
@@ -46,9 +46,7 @@ foreach($paths as $name => $path){
         throw new bException(tr('Failed to create ":name" path ":path"', array(':name' => $name, ':path' => $path)), 'create-path');
     }
 
-    if(VERBOSE){
-        log_console(tr('Ensured ":name" path ":path"', array(':name' => $name, ':path' => $path)), 'green');
-    }
+    log_console(tr('Ensured ":name" path ":path"', array(':name' => $name, ':path' => $path)), 'VERBOSE/green');
 }
 
 log_console('Fixed structure', 'green');

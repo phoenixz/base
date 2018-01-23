@@ -71,13 +71,13 @@ try{
 
     if($pfrom = $fromprojectversion){
         if(!str_is_version($pfrom)){
-            throw new bException(tr('The specified fromprojectversion ":version" is not a valid version format. Please supply a version in format "n.n.n"', array(':version' => $pfrom)), 'invalid');
+            throw new bException(tr('The specified fromprojectversion ":version" is not a valid version format. Please supply a version in format "n.n.n"', array(':version' => $pfrom)), 'warning/invalid');
         }
     }
 
     if($ffrom = $fromframeworkversion){
         if(!str_is_version($ffrom)){
-            throw new bException(tr('The specified fromframeworkversion ":version" is not a valid version format. Please supply a version in format "n.n.n"', array(':version' => $ffrom)), 'invalid');
+            throw new bException(tr('The specified fromframeworkversion ":version" is not a valid version format. Please supply a version in format "n.n.n"', array(':version' => $ffrom)), 'warning/invalid');
         }
     }
 

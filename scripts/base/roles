@@ -22,7 +22,7 @@ switch(cli_method()){
         cli_no_arguments_left();
 
         if($rights){
-            log_console(tr('Showing rights for currently available roles'));
+            log_console(tr('Showing rights for currently available roles'), 'QUIET/white');
 
             $limit   = 200;
             $r       = sql_query('SELECT    `id`,
@@ -31,7 +31,7 @@ switch(cli_method()){
 
                                   FROM      `roles`'.($limit ? ' LIMIT '.$limit : ''));
 
-            log_console(str_size('#id', 6).' '.str_size('Name', 20).' '.str_size('Status', 16).' Rights', 'white');
+            log_console(str_size('#id', 6).' '.str_size('Name', 20).' '.str_size('Status', 16).' Rights', 'cyan');
 
             while($role = sql_fetch($r)){
                 $rights = sql_list('SELECT    `rights`.`name`
@@ -49,7 +49,7 @@ switch(cli_method()){
             }
 
         }else{
-            log_console('Showing currently available roles');
+            log_console(tr('Showing currently available roles'), 'QUIET/white');
 
             $limit   = 200;
 
@@ -100,13 +100,13 @@ switch(cli_method()){
             cli_no_arguments_left();
 
             if(!$role){
-                throw new bException(tr('No role specified'), 'not-specified');
+                throw new bException(tr('No role specified'), 'warning/not-specified');
             }
 
             $old_role = sql_get('SELECT `id`, `name`, `description` FROM `roles` WHERE `id` = :role OR `name` = :role', array(':role' => $old_role_id));
 
             if(!$old_role){
-                throw new bException(tr('Specified role ":role" does not exist', array(':role' => $old_role_id)), 'not-specified');
+                throw new bException(tr('Specified role ":role" does not exist', array(':role' => $old_role_id)), 'warning/not-specified');
             }
 
             $role = roles_validate($role, $old_role);
@@ -151,7 +151,7 @@ switch(cli_method()){
         $roles = cli_arguments();
 
         if(empty($roles)){
-            throw new bException(tr('No roles specified'), 'not-specified');
+            throw new bException(tr('No roles specified'), 'warning/not-specified');
         }
 
         $in_name = sql_in($roles, 'name');
@@ -193,7 +193,7 @@ switch(cli_method()){
         $roles = cli_arguments();
 
         if(empty($roles)){
-            throw new bException(tr('No roles specified'), 'not-specified');
+            throw new bException(tr('No roles specified'), 'warning/not-specified');
         }
 
         $in_name = sql_in($roles, 'name');
@@ -236,7 +236,7 @@ switch(cli_method()){
         $roles = cli_arguments();
 
         if(empty($roles)){
-            throw new bException(tr('No roles specified'), 'not-specified');
+            throw new bException(tr('No roles specified'), 'warning/not-specified');
         }
 
         $in_name = sql_in($roles, 'name');

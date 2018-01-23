@@ -84,7 +84,7 @@ $languages = cli_argument('--languages', 'all');
 $l         = cli_argument('-l', 'all');
 
 if($l and $languages){
-    throw new bException(tr('Both l- and --languages were specified. Please specify only one or the other'), 'invalid');
+    throw new bException(tr('Both l- and --languages were specified. Please specify only one or the other'), 'warning/invalid');
 }
 
 if($l){
@@ -100,7 +100,7 @@ if(empty($languages)){
     $languages = array_keys($_CONFIG['language']['supported']);
 
     if(empty($languages)){
-        throw new bException(tr('No languages specified, no languages configured'), 'not-specified');
+        throw new bException(tr('No languages specified, no languages configured'), 'warning/not-specified');
     }
 
     log_console(tr('Translating to configured languages ":languages"', array(':languages' => implode(', ', $languages))), 'white');
@@ -140,7 +140,7 @@ switch(cli_method()){
             $noutf8check = (cli_argument('--no-utf') or cli_argument('--no-utf8')   or cli_argument('--no-utf8-check'));
 
             if(!in_array($mode, $available_modes)){
-                throw new bException(tr('Unknown mode ":mode" specified', array(':mode' => $mode)), 'unknown');
+                throw new bException(tr('Unknown mode ":mode" specified', array(':mode' => $mode)), 'warning/unknown');
             }
 
         }else{
@@ -157,7 +157,7 @@ switch(cli_method()){
 
         foreach($languages as $id => $language){
             if(!preg_match('/\w{2}/', $language)){
-                throw new bException(tr('Invalid language ":language" specified', array(':language' => $language)), 'invalid');
+                throw new bException(tr('Invalid language ":language" specified', array(':language' => $language)), 'warning/invalid');
             }
 
             if($language == 'en'){
@@ -272,7 +272,7 @@ switch(cli_method()){
             }
 
             if(!empty($crash)){
-                throw new bException(tr('Translatable strings with disallowed HTML tags found'), 'translation-error');
+                throw new bException(tr('Translatable strings with disallowed HTML tags found'), 'warning/not-allowed');
             }
 
             log_console(tr('Ignored ":count" files because of HTML', array(':count' => count($results['failed_html']))), 'yellow');
@@ -299,7 +299,7 @@ switch(cli_method()){
             }
 
             if(!empty($crash)){
-                throw new bException(tr('Translatable strings with PHP code found'), 'translation-error');
+                throw new bException(tr('Translatable strings with PHP code found'), 'warning/not-allowed');
             }
 
             log_console(tr('Ignored ":count" files because of PHP', array(':count' => count($results['failed_php']))), 'yellow');
@@ -337,10 +337,10 @@ switch(cli_method()){
                     $server_message = $e->getData()['data'];
                     $code           = $e->getCode();
 
-                    throw new bException(tr('Translation server gave HTTP code ":code" on URL ":url" with server message ":message"', array(':code' => $code, ':message' => $server_message, ':url' => $_CONFIG['translate']['url'])), 'translation_error');
+                    throw new bException(tr('Translation server gave HTTP code ":code" on URL ":url" with server message ":message"', array(':code' => $code, ':message' => $server_message, ':url' => $_CONFIG['translate']['url'])), 'failed');
                 }
 
-                throw new bException(tr('Error trying to connect with server : ":error"', array(':error' => $e->getMessage())), 'translation_error');
+                throw new bException(tr('Error trying to connect with server : ":error"', array(':error' => $e->getMessage())), 'failed');
             }
 
             if(empty($response['status'])){

@@ -95,11 +95,11 @@ cli_no_arguments_left();
  * Check environment
  */
 if(empty($environment)){
-    throw new bException(tr('No source environment specified to sync from'), 'not-specified');
+    throw new bException(tr('No source environment specified to sync from'), 'warning/not-specified');
 }
 
 if($environment == ENVIRONMENT){
-    throw new bException(tr('Cannot sync from own environment ":env"', array(':env' => ENVIRONMENT)), 'same-environment');
+    throw new bException(tr('Cannot sync from own environment ":env"', array(':env' => ENVIRONMENT)), 'warning/invalid');
 }
 
 
@@ -117,7 +117,7 @@ include(ROOT.'config/sync.php');
 $source_config = array_merge_complete(config_get_for_environment('production'), config_get_for_environment($environment));
 
 if(!isset($source_config['deploy'][$environment])){
-    throw new bException(tr('The specified environment ":env" does not exist', array(':env' => $environment)), 'not-exist');
+    throw new bException(tr('The specified environment ":env" does not exist', array(':env' => $environment)), 'warning/not-exist');
 }
 
 $deploy_config = $source_config['deploy'][$environment];
@@ -164,7 +164,7 @@ if(empty($deploy_config['sudo'])){
  * Environment exists?
  */
 if(empty($deploy_config)){
-    throw new bException(tr('The specified environment ":env" does not exist', array(':env' => $environment)), 'not-exist');
+    throw new bException(tr('The specified environment ":env" does not exist', array(':env' => $environment)), 'warning/not-exist');
 }
 
 
