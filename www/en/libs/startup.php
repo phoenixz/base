@@ -813,6 +813,20 @@ function log_console($messages = '', $color = null, $newline = true, $filter_dou
                  * Remove the QUIET
                  */
                 $color = str_replace('/', '', str_replace('QUIET', '', $color));
+                break;
+
+            case 'DEBUG':
+                if(!debug()){
+                    /*
+                     * Only log this if we're in debug mode
+                     */
+                    return false;
+                }
+
+                /*
+                 * Remove the QUIET
+                 */
+                $color = str_replace('/', '', str_replace('DEBUG', '', $color));
         }
 
         if(($filter_double == true) and ($messages == $last)){
@@ -897,6 +911,49 @@ function log_database($messages, $type = 'unknown'){
     global $core;
 
     try{
+        switch(str_until($type, '/')){
+            case 'VERBOSE':
+                if(!VERBOSE){
+                    /*
+                     * Only log this if we're in verbose mode
+                     */
+                    return false;
+                }
+
+                /*
+                 * Remove the VERBOSE
+                 */
+                $type = str_replace('/', '', str_replace('VERBOSE', '', $type));
+                break;
+
+            case 'QUIET':
+                if(QUIET){
+                    /*
+                     * Only log this if we're in verbose mode
+                     */
+                    return false;
+                }
+
+                /*
+                 * Remove the QUIET
+                 */
+                $type = str_replace('/', '', str_replace('QUIET', '', $type));
+                break;
+
+            case 'DEBUG':
+                if(!debug()){
+                    /*
+                     * Only log this if we're in debug mode
+                     */
+                    return false;
+                }
+
+                /*
+                 * Remove the QUIET
+                 */
+                $type = str_replace('/', '', str_replace('DEBUG', '', $type));
+        }
+
         /*
          * Avoid endless looping if the database log fails
          */
@@ -932,7 +989,7 @@ function log_database($messages, $type = 'unknown'){
             $last = $messages;
 
             if(is_numeric($type)){
-                throw new bException('log_database(): Type cannot be numeric');
+                throw new bException(tr('log_database(): Type is ":type" for message ":message" is numeric but should not be numeric', array(':type' => $type, ':message' => $message)));
             }
 
             foreach(array_force($messages, "\n") as $message){
@@ -973,6 +1030,49 @@ function log_file($messages, $class = 'messages', $type = null){
     static $h = array(), $last;
 
     try{
+        switch(str_until($class, '/')){
+            case 'VERBOSE':
+                if(!VERBOSE){
+                    /*
+                     * Only log this if we're in verbose mode
+                     */
+                    return false;
+                }
+
+                /*
+                 * Remove the VERBOSE
+                 */
+                $class = str_replace('/', '', str_replace('VERBOSE', '', $class));
+                break;
+
+            case 'QUIET':
+                if(QUIET){
+                    /*
+                     * Only log this if we're in verbose mode
+                     */
+                    return false;
+                }
+
+                /*
+                 * Remove the QUIET
+                 */
+                $class = str_replace('/', '', str_replace('QUIET', '', $class));
+                break;
+
+            case 'DEBUG':
+                if(!debug()){
+                    /*
+                     * Only log this if we're in debug mode
+                     */
+                    return false;
+                }
+
+                /*
+                 * Remove the QUIET
+                 */
+                $class = str_replace('/', '', str_replace('DEBUG', '', $class));
+        }
+
         if($messages == $last){
             /*
             * We already displayed this message, skip!
