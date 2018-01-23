@@ -14,7 +14,8 @@ load_config('notifications');
 /*
  * Do notifications
  */
-function notifications_send($event, $message, $classes = null){
+function notifications_send($params){
+return false;
     static $count = 0;
     global $_CONFIG, $core;
 
@@ -31,7 +32,6 @@ function notifications_send($event, $message, $classes = null){
         throw new bException($message, $event);
     }
 
-return false;
     if(++$count > 15){
         /*
          * Endless loop protection
@@ -47,6 +47,16 @@ return false;
     }
 
     try{
+        array_params($params);
+        array_ensure($params, 'title,url,description,class,user');
+
+        if($params['class']){
+            /*
+             *
+             */
+        }
+
+
         $message = str_force($message);
         $n       = $_CONFIG['notifications'];
 

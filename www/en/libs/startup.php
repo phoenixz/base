@@ -520,10 +520,10 @@ function debug($class = null){
 /*
  * Send notifications of the specified event to the specified class
  */
-function notify($event, $classes = null, $message = null){
+function notify($params){
     try{
         load_libs('notifications');
-        return notifications_send($event, $classes, $message);
+        return notifications_send($params);
 
     }catch(Exception $e){
         /*
@@ -1125,14 +1125,17 @@ function domain($current_url = false, $query = null, $root = null, $domain = nul
             $domain = $_CONFIG['domain'];
         }
 
-        if(empty($language)){
-            $language = LANGUAGE;
-        }
+        if(!$language){
+            if($language === null){
+                $language = LANGUAGE;
+            }
 
-        if(empty($_CONFIG['language']['supported'])){
+        }elseif(empty($_CONFIG['language']['supported'])){
             $language = '';
 
-        }else{
+        }
+
+        if($language){
             /*
              * This is a multilingual website, add language selection to the URL.
              */
@@ -1152,7 +1155,7 @@ function domain($current_url = false, $query = null, $root = null, $domain = nul
             $retval = $_CONFIG['protocol'].slash($domain).$language.$root;
 
         }elseif($current_url === true){
-            $retval = $_CONFIG['protocol'].slash($domain).$_SERVER['REQUEST_URI'];
+            $retval = $_CONFIG['protocol'].$domain.$_SERVER['REQUEST_URI'];
 
         }else{
             if($root){
@@ -1190,7 +1193,7 @@ function cdn_domain($file, $section = 'pub', $false_on_not_exist = false, $force
                 }
             }
 
-            return domain($file, null, $section);
+            return domain($file, null, $section, null, '');
         }
 
         if($section == 'pub'){
