@@ -1136,23 +1136,30 @@ function domain($current_url = false, $query = null, $root = null, $domain = nul
             /*
              * This is a multilingual website, add language selection to the URL.
              */
-            $language = '/'.$language;
+            if(empty($_CONFIG['language']['supported'][$language])){
+                $language = $_CONFIG['language']['default'];
+                notify('unsupported-language-specified', 'developers', 'domain(): The specified language ":language" is not supported', array(':language' => $languag));
+            }
+
+            $language .= '/';
         }
 
         if($root === null){
             $root = $_CONFIG['root'];
         }
 
-        $root = str_ends_not($root, '/');
-
         if(!$current_url){
-            $retval = $_CONFIG['protocol'].$domain.$language.$root;
+            $retval = $_CONFIG['protocol'].slash($domain).$language.$root;
 
         }elseif($current_url === true){
-            $retval = $_CONFIG['protocol'].$domain.$_SERVER['REQUEST_URI'];
+            $retval = $_CONFIG['protocol'].slash($domain).$_SERVER['REQUEST_URI'];
 
         }else{
-            $retval = $_CONFIG['protocol'].$domain.$language.$root.str_starts($current_url, '/');
+            if($root){
+                $root = str_starts_not(str_ends($root, '/'), '/');
+            }
+
+            $retval = $_CONFIG['protocol'].slash($domain).$language.$root.str_starts_not($current_url, '/');
         }
 
         if($query){
