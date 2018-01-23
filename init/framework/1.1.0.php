@@ -1,8 +1,8 @@
 <?php
 /*
- * Add tables for the messaging library (Inter website user messaging system)
+ * Upgrade the notifications library
  *
- * Add tables for the alerts library (generic user alerts system)
+ * Add tables for the messaging library (Inter website user messaging system)
  *
  * Add tables for the files library (generic files storage system)
  *
@@ -10,25 +10,26 @@
  *
  * Fix missing columns and indices in storage tables
  */
-sql_query('DROP TABLE IF EXISTS `alerts`');
+sql_foreignkey_exists ('notifications', 'fk_notifications_createdby' , 'ALTER TABLE `notifications` DROP FOREIGN KEY `fk_notifications_createdby`');
+sql_foreignkey_exists ('notifications', 'fk_notifications_classes_id', 'ALTER TABLE `notifications` DROP FOREIGN KEY `fk_notifications_classes_id`');
 
-sql_query('CREATE TABLE `alerts` (`id`       INT(11)      NOT NULL AUTO_INCREMENT,
-                                  `meta_id`  INT(11)          NULL,
-                                  `status`   VARCHAR(16)      NULL,
-                                  `users_id` INT(11)          NULL,
-                                  `name`     VARCHAR(255)     NULL,
-                                  `url`      VARCHAR(255)     NULL,
-                                  `body`     TEXT             NULL,
+sql_index_exists('notifications', 'createdon' , 'ALTER TABLE `notifications` DROP INDEX `createdon`');
+sql_index_exists('notifications', 'createdby' , 'ALTER TABLE `notifications` DROP INDEX `createdby`');
+sql_index_exists('notifications', 'classes_id', 'ALTER TABLE `notifications` DROP INDEX `classes_id`');
+sql_index_exists('notifications', 'classes_id', 'ALTER TABLE `notifications` DROP INDEX `classes_id`');
 
-                                  PRIMARY KEY `id`       (`id`),
-                                          KEY `meta_id`  (`meta_id`),
-                                          KEY `users_id` (`users_id`),
-                                          KEY `name`     (`name`),
+sql_column_exists('notifications', 'classes_id',  'ALTER TABLE `notifications` DROP COLUMN `classes_id`');
+sql_column_exists('notifications', 'createdon' ,  'ALTER TABLE `notifications` DROP COLUMN `createdon`');
+sql_column_exists('notifications', 'createdby' ,  'ALTER TABLE `notifications` CHANGE COLUMN `createdby` `meta_id` INT(11) NOT NULL');
+sql_column_exists('notifications', 'url'       , '!ALTER TABLE `notifications` ADD COLUMN  `url`    VARCHAR(255) NULL AFTER `event`');
+sql_column_exists('notifications', 'status'    , '!ALTER TABLE `notifications` ADD COLUMN  `status` VARCHAR(16)  NULL AFTER `meta_id`');
 
-                                  CONSTRAINT `fk_alerts_meta_id`  FOREIGN KEY (`meta_id`)  REFERENCES `meta`  (`id`) ON DELETE RESTRICT,
-                                  CONSTRAINT `fk_alerts_users_id` FOREIGN KEY (`users_id`) REFERENCES `users` (`id`) ON DELETE RESTRICT
+sql_index_exists('notifications', 'meta_id', '!ALTER TABLE `notifications` ADD KEY `meta_id` (`meta_id`)');
+sql_index_exists('notifications', 'status' , '!ALTER TABLE `notifications` ADD KEY `status`  (`status`)');
 
-                                 ) ENGINE=InnoDB AUTO_INCREMENT='.$_CONFIG['db']['core']['autoincrement'].' DEFAULT CHARSET="'.$_CONFIG['db']['core']['charset'].'" COLLATE="'.$_CONFIG['db']['core']['collate'].'";');
+sql_foreignkey_exists('notifications', 'fk_notifications_meta_id' , '!ALTER TABLE `notifications` ADD CONSTRAINT `fk_notifications_meta_id` FOREIGN KEY (`meta_id`) REFERENCES `meta` (`id`) ON DELETE RESTRICT;');
+sql_query('ALTER TABLE `notifications` MODIFY COLUMN `description` TEXT NULL');
+
 
 
 
