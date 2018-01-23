@@ -17,69 +17,75 @@ load_libs('user,rights');
 
 switch(cli_method()){
     case 'list':
-        log_console(tr('Showing currently available rights'), 'QUIET/white');
+        $rights = sql_query('SELECT `name`,
+                                    `status`,
+                                    `description`
 
-        $limit   = 200;
+                             FROM   `rights`'.(LIMIT ? ' LIMIT '.LIMIT : ''));
 
-        $r       = sql_query('SELECT `name`,
-                                     `status`,
-                                     `description`
+        if(!$rights->rowCount()){
+            log_console(tr('There are currently no rights available'), 'QUIET/yellow');
 
-                              FROM   `rights`'.($limit ? ' LIMIT '.$limit : ''));
+        }else{
+            log_console(tr('Showing currently available rights'), 'QUIET/white');
+            log_console(str_size('Name', 20).' '.str_size('Status', 16).' Description', 'QUIET/cyan');
 
-        log_console(str_size('Name', 20).' '.str_size('Status', 16).' Description', 'cyan');
-
-        while($right = sql_fetch($r)){
-            log_console(str_size($right['name'], 20).' '.str_size(status($right['status']), 16).' '.$right['description']);
+            while($right = sql_fetch($rights)){
+                log_console(str_size($right['name'], 20).' '.str_size(status($right['status']), 16).' '.$right['description']);
+            }
         }
 
         break;
 
     case 'for':
-        $users_id = cli_argument(1);
+        $requested = cli_argument(1);
         cli_no_arguments_left();
 
-        if(!$users_id){
+        if(!$requested){
             throw new bException(tr('No user specified'), 'warning/not-specified');
         }
 
         $user = sql_get('SELECT `id`,
                                 `name`,
+                                `email`,
                                 `username`,
-                                `email`
+                                `nickname`
 
                          FROM   `users`
 
-                         WHERE  `id`   = :id
-                         OR     `name` = :name', array(':id'   => $users_id,
-                                                       ':name' => $users_id));
+                         WHERE  `id`       = :id
+                         OR     `email`    = :email
+                         OR     `username` = :username',
+
+                         array(':id'       => $requested,
+                               ':email'    => $requested,
+                               ':username' => $requested));
 
         if(!$user){
-            throw new bException(tr('Specified user ":user" does not exist', array(':user' => $users_id)), 'warning/not-exist');
+            throw new bException(tr('Specified user ":user" does not exist', array(':user' => $requested)), 'warning/not-exist');
         }
 
-        log_console(tr('Showing rights for user ":user"', array(':user' => name($user))), 'QUIET/white');
+        $rights = sql_query('SELECT    `rights`.`name`,
+                                       `rights`.`description`
 
-        $list = sql_list('SELECT    `rights`.`name`,
-                                    `rights`.`description`
+                             FROM      `users_rights`
 
-                          FROM      `users_rights`
+                             LEFT JOIN `rights`
+                             ON        `rights`.`id`             = `users_rights`.`rights_id`
 
-                          LEFT JOIN `rights`
-                          ON        `rights`.`id`             = `users_rights`.`rights_id`
+                             WHERE     `users_rights`.`users_id` = :users_id',
 
-                          WHERE     `users_rights`.`users_id` = :users_id',
+                             array(':users_id' => $user['id']));
 
-                          array(':users_id' => $user['id']));
-
-        if(!$list){
-            log_console(tr('This user has no rights assigned'), 'yellow');
+        if(!$rights->rowCount()){
+            log_console(tr('This user has no rights assigned'), 'QUIET/yellow');
 
         }else{
-            log_console(str_size('Name', 16).'Description', 'cyan');
+            log_console(tr('Showing rights for user ":user"', array(':user' => name($user))), 'QUIET/white');
+            log_console(str_size('Name', 16).'Description', 'QUIET/cyan');
 
-            foreach($list as $name => $description){
-                log_console(str_size($name, 16).$description);
+            while($right = sql_fetch($rights)){
+                log_console(str_size($right['name'], 16).$right['description']);
             }
         }
 

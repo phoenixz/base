@@ -31,7 +31,7 @@ switch(cli_method()){
 
                                   FROM      `roles`'.($limit ? ' LIMIT '.$limit : ''));
 
-            log_console(str_size('#id', 6).' '.str_size('Name', 20).' '.str_size('Status', 16).' Rights', 'cyan');
+            log_console(str_size('#id', 6).' '.str_size('Name', 20).' '.str_size('Status', 16).' Rights', 'QUIET/cyan');
 
             while($role = sql_fetch($r)){
                 $rights = sql_list('SELECT    `rights`.`name`
@@ -60,7 +60,7 @@ switch(cli_method()){
 
                                   FROM      `roles`'.($limit ? ' LIMIT '.$limit : ''));
 
-            log_console(str_size('#id', 6).' '.str_size('Name', 20).' '.str_size('Status', 16).' Description', 'cyan');
+            log_console(str_size('#id', 6).' '.str_size('Name', 20).' '.str_size('Status', 16).' Description', 'QUIET/cyan');
 
             while($role = sql_fetch($r)){
                 log_console(str_size($role['id'], 6, ' ', true).' '.str_size($role['name'], 20).' '.str_size(status($role['status']), 16).' '.$role['description']);
