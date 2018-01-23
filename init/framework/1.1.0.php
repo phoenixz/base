@@ -52,9 +52,9 @@ sql_query('CREATE TABLE `messages_users` (`id`         INT(11)      NOT NULL AUT
                                                   KEY `username`   (`username`),
                                                   KEY `email`      (`email`),
 
-                                          CONSTRAINT `fk_messages_meta_id`    FOREIGN KEY (`meta_id`)    REFERENCES `meta`    (`id`) ON DELETE RESTRICT,
-                                          CONSTRAINT `fk_messages_users_id`   FOREIGN KEY (`users_id`)   REFERENCES `users`   (`id`) ON DELETE RESTRICT,
-                                          CONSTRAINT `fk_messages_servers_id` FOREIGN KEY (`servers_id`) REFERENCES `servers` (`id`) ON DELETE RESTRICT
+                                          CONSTRAINT `fk_messages_users_meta_id`    FOREIGN KEY (`meta_id`)    REFERENCES `meta`    (`id`) ON DELETE RESTRICT,
+                                          CONSTRAINT `fk_messages_users_users_id`   FOREIGN KEY (`users_id`)   REFERENCES `users`   (`id`) ON DELETE RESTRICT,
+                                          CONSTRAINT `fk_messages_users_servers_id` FOREIGN KEY (`servers_id`) REFERENCES `servers` (`id`) ON DELETE RESTRICT
 
                                          ) ENGINE=InnoDB AUTO_INCREMENT='.$_CONFIG['db']['core']['autoincrement'].' DEFAULT CHARSET="'.$_CONFIG['db']['core']['charset'].'" COLLATE="'.$_CONFIG['db']['core']['collate'].'";');
 
