@@ -1030,4 +1030,17 @@ function fontawesome_array(){
                  'wheelchair'                          => 'wheelchair',
                  'wheelchair-alt'                      => 'wheelchair-alt');
 }
+
+
+
+/*
+ * Update the fontawesome installation
+ */
+function fontawesome_update(){
+    try{
+
+    }catch(Exception $e){
+        throw new bException('fontawesome_update(): Failed', $e);
+    }
+}
 ?>
