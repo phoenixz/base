@@ -232,7 +232,7 @@ under_construction();
 /*
  *
  */
-function git_reset($file){
+function git_reset($file, $commit = null){
     try{
         if(is_dir($file)){
             $path = $file;
@@ -243,7 +243,7 @@ function git_reset($file){
 
         git_check_path($path);
 
-        $retval = safe_exec('cd '.$path.'; git reset '.$file);
+        $retval = safe_exec('cd '.$path.'; git reset '.($commit ? $commit.' ' : '').$file);
 
     }catch(Exception $e){
         throw new bException('git_reset(): Failed', $e);
@@ -301,6 +301,10 @@ function git_status($path = ROOT, $filters = false){
 
                 case ' M':
                     $status = 'modified';
+                    break;
+
+                case 'M ':
+                    $status = 'modified indexed';
                     break;
 
                 case '??':
