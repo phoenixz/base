@@ -20,7 +20,8 @@ sql_index_exists('notifications', 'classes_id', 'ALTER TABLE `notifications` DRO
 
 sql_column_exists('notifications', 'classes_id',  'ALTER TABLE `notifications` DROP COLUMN `classes_id`');
 sql_column_exists('notifications', 'createdon' ,  'ALTER TABLE `notifications` DROP COLUMN `createdon`');
-sql_column_exists('notifications', 'createdby' ,  'ALTER TABLE `notifications` CHANGE COLUMN `createdby` `meta_id` INT(11) NOT NULL');
+sql_column_exists('notifications', 'createdby' ,  'ALTER TABLE `notifications` CHANGE COLUMN `createdby` `meta_id` INT(11)      NOT NULL');
+sql_column_exists('notifications', 'event'     ,  'ALTER TABLE `notifications` CHANGE COLUMN `event`     `title`   VARCHAR(255) NOT NULL');
 sql_column_exists('notifications', 'url'       , '!ALTER TABLE `notifications` ADD COLUMN  `url`    VARCHAR(255) NULL AFTER `event`');
 sql_column_exists('notifications', 'status'    , '!ALTER TABLE `notifications` ADD COLUMN  `status` VARCHAR(16)  NULL AFTER `meta_id`');
 
