@@ -1,9 +1,87 @@
 <?php
 /*
+ * Add tables for the messaging library (Inter website user messaging system)
+ *
+ * Add tables for the alerts library (generic user alerts system)
+ *
  * Add tables for the files library (generic files storage system)
+ *
  * Update storage library to use the generic files management library
+ *
  * Fix missing columns and indices in storage tables
  */
+sql_query('DROP TABLE IF EXISTS `alerts`');
+
+sql_query('CREATE TABLE `alerts` (`id`       INT(11)      NOT NULL AUTO_INCREMENT,
+                                  `meta_id`  INT(11)          NULL,
+                                  `status`   VARCHAR(16)      NULL,
+                                  `users_id` INT(11)          NULL,
+                                  `name`     VARCHAR(255)     NULL,
+                                  `url`      VARCHAR(255)     NULL,
+                                  `body`     TEXT             NULL,
+
+                                  PRIMARY KEY `id`       (`id`),
+                                          KEY `meta_id`  (`meta_id`),
+                                          KEY `users_id` (`users_id`),
+                                          KEY `name`     (`name`),
+
+                                  CONSTRAINT `fk_alerts_meta_id`  FOREIGN KEY (`meta_id`)  REFERENCES `meta`  (`id`) ON DELETE RESTRICT,
+                                  CONSTRAINT `fk_alerts_users_id` FOREIGN KEY (`users_id`) REFERENCES `users` (`id`) ON DELETE RESTRICT
+
+                                 ) ENGINE=InnoDB AUTO_INCREMENT='.$_CONFIG['db']['core']['autoincrement'].' DEFAULT CHARSET="'.$_CONFIG['db']['core']['charset'].'" COLLATE="'.$_CONFIG['db']['core']['collate'].'";');
+
+
+
+sql_query('DROP TABLE IF EXISTS `messages`');
+sql_query('DROP TABLE IF EXISTS `messages_users`');
+
+sql_query('CREATE TABLE `messages_users` (`id`         INT(11)      NOT NULL AUTO_INCREMENT,
+                                          `meta_id`    INT(11)          NULL,
+                                          `status`     VARCHAR(16)      NULL,
+                                          `users_id`   INT(11)          NULL,
+                                          `servers_id` INT(11)          NULL,
+                                          `username`   VARCHAR(64)      NULL,
+                                          `nickname`   VARCHAR(64)      NULL,
+                                          `email`      VARCHAR(64)      NULL,
+                                          `avatar`     VARCHAR(128)     NULL,
+
+                                          PRIMARY KEY `id`         (`id`),
+                                                  KEY `meta_id`    (`meta_id`),
+                                                  KEY `servers_id` (`servers_id`),
+                                                  KEY `users_id`   (`users_id`),
+                                                  KEY `username`   (`username`),
+                                                  KEY `email`      (`email`),
+
+                                          CONSTRAINT `fk_messages_meta_id`    FOREIGN KEY (`meta_id`)    REFERENCES `meta`    (`id`) ON DELETE RESTRICT,
+                                          CONSTRAINT `fk_messages_users_id`   FOREIGN KEY (`users_id`)   REFERENCES `users`   (`id`) ON DELETE RESTRICT,
+                                          CONSTRAINT `fk_messages_servers_id` FOREIGN KEY (`servers_id`) REFERENCES `servers` (`id`) ON DELETE RESTRICT
+
+                                         ) ENGINE=InnoDB AUTO_INCREMENT='.$_CONFIG['db']['core']['autoincrement'].' DEFAULT CHARSET="'.$_CONFIG['db']['core']['charset'].'" COLLATE="'.$_CONFIG['db']['core']['collate'].'";');
+
+
+
+sql_query('CREATE TABLE `messages` (`id`      INT(11)      NOT NULL AUTO_INCREMENT,
+                                    `meta_id` INT(11)          NULL,
+                                    `status`  VARCHAR(16)      NULL,
+                                    `from_id` INT(11)          NULL,
+                                    `to_id`   INT(11)          NULL,
+                                    `name`    VARCHAR(255)     NULL,
+                                    `body`    TEXT             NULL,
+
+                                    PRIMARY KEY `id`      (`id`),
+                                            KEY `meta_id` (`meta_id`),
+                                            KEY `to_id`   (`to_id`),
+                                            KEY `from_id` (`from_id`),
+                                            KEY `name`    (`name`),
+
+                                    CONSTRAINT `fk_messages_meta_id` FOREIGN KEY (`meta_id`) REFERENCES `meta`           (`id`) ON DELETE RESTRICT,
+                                    CONSTRAINT `fk_messages_to_id`   FOREIGN KEY (`to_id`)   REFERENCES `messages_users` (`id`) ON DELETE RESTRICT,
+                                    CONSTRAINT `fk_messages_from_id` FOREIGN KEY (`from_id`) REFERENCES `messages_users` (`id`) ON DELETE RESTRICT
+
+                                   ) ENGINE=InnoDB AUTO_INCREMENT='.$_CONFIG['db']['core']['autoincrement'].' DEFAULT CHARSET="'.$_CONFIG['db']['core']['charset'].'" COLLATE="'.$_CONFIG['db']['core']['collate'].'";');
+
+
+
 sql_query('DROP TABLE IF EXISTS `files`');
 
 sql_query('CREATE TABLE `files` (`id`          INT(11)       NOT NULL AUTO_INCREMENT,
