@@ -358,7 +358,7 @@ foreach($sections as $section => &$list){
                 patch($file, $paths[$section], ((($method == 'patch') and $create_only) ? 'create' : $method));
                 $status = 'patched';
 
-            }else{
+            }elseif(!$base_only){
                 patch($file, $paths[$section], ((($method == 'patch') and $create_only) ? 'create' : $method), array($file => str_replace('admin/', '', $file)));
                 $status = 'patched';
             }
