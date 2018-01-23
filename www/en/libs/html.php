@@ -887,7 +887,7 @@ function html_flash($class = null){
     global $_CONFIG;
 
     try{
-        if(PLATFORM != 'http'){
+        if(!PLATFORM_HTTP){
             throw new bException('html_flash(): This function can only be executed on a webserver!');
         }
 
@@ -1047,6 +1047,10 @@ function html_flash_set($params, $type = 'info', $class = null){
     global $_CONFIG;
 
     try{
+        if(!PLATFORM_HTTP){
+            throw new bException('html_flash_set(): This function can only be executed on a webserver!');
+        }
+
         if(!$params){
             /*
              * Wut? no message?
@@ -1074,8 +1078,13 @@ function html_flash_set($params, $type = 'info', $class = null){
                 if(str_until($object->getCode(), '/') == 'warning'){
                     $params['type'] = 'warning';
                     $params['html'] = $object->getMessage();
+                    $object->setCode(str_replace('/', '', str_replace('warning', '', $object->getCode())));
 
                 }elseif($object->getCode() == 'validation'){
+                    $params['type'] = 'warning';
+                    $params['html'] = $object->getMessage();
+
+                }elseif($object->getCode() == 'unknown'){
                     $params['type'] = 'warning';
                     $params['html'] = $object->getMessage();
 
