@@ -21,9 +21,7 @@ function cdn_add_files($files, $section = 'pub', $group = null, $delete = true){
             return false;
         }
 
-        if(debug()){
-            log_database(tr('cdn_add_files(): Adding files ":files"', array(':files' => $files)), 'cdn/debug');
-        }
+        log_file(tr('cdn_add_files(): Adding files ":files"', array(':files' => $files)), 'DEBUG/cdn');
 
         if(!$section){
             throw new bException(tr('cdn_add_files(): No section specified'), 'not-specified');
@@ -46,9 +44,7 @@ function cdn_add_files($files, $section = 'pub', $group = null, $delete = true){
          */
         foreach($servers as $servers_id => $server){
             foreach($files as $url => $file){
-                if(debug()){
-                    log_database(tr('cdn_add_files(): Added file ":file" with url ":url" to CDN server ":server"', array(':file' => $file, ':url' => $url, ':server' => $server)), 'cdn/debug');
-                }
+                log_file(tr('cdn_add_files(): Added file ":file" with url ":url" to CDN server ":server"', array(':file' => $file, ':url' => $url, ':server' => $server)), 'DEBUG/cdn');
 
                 $file_insert->execute(array(':servers_id' => $servers_id,
                                             ':section'    => $section,
@@ -93,9 +89,7 @@ function cdn_send_files($files, $server, $section, $group = null){
         $api_account = cdn_get_api_account($server);
         $result      = api_call_base($api_account, '/cdn/add-files', array('project' => PROJECT, 'section' => $section, 'group' => $group), $files);
 
-        if(debug()){
-            log_database(tr('cdn_send_files(): Successfully sent files ":files" to server ":server" using api account ":account"', array(':files' => $files, ':server' => $server, ':account' => $api_account)), 'cdn/debug');
-        }
+        log_file(tr('cdn_send_files(): Successfully sent files ":files" to server ":server" using api account ":account"', array(':files' => $files, ':server' => $server, ':account' => $api_account)), 'DEBUG/cdn');
 
         return $result;
 
