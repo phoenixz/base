@@ -76,7 +76,7 @@ class core{
     public $sql          = array();
     public $register     = array('quiet' => true);
 
-    private $call_type   = null;
+    private $callType    = null;
     private $query_count = 0;
 
     function __construct(){
@@ -102,22 +102,22 @@ class core{
                      * Detect what http platform we're on
                      */
                     if((substr($_SERVER['REQUEST_URI'], 0, 7) == '/admin/') or (substr($_SERVER['REQUEST_URI'], 3, 7) == '/admin/')){
-                        $this->call_type = 'admin';
+                        $this->callType = 'admin';
 
                     }elseif(strstr($_SERVER['PHP_SELF'], '/ajax/')){
-                        $this->call_type = 'ajax';
+                        $this->callType = 'ajax';
 
                     }elseif(strstr($_SERVER['PHP_SELF'], '/api/')){
-                        $this->call_type = 'api';
+                        $this->callType = 'api';
 
                     }elseif($_CONFIG['amp']['enabled'] and !empty($_GET['amp'])){
-                        $this->call_type = 'amp';
+                        $this->callType = 'amp';
 
                     }elseif(substr($_SERVER['PHP_SELF'], -7, 7) == '404.php'){
-                        $this->call_type = 'system';
+                        $this->callType = 'system';
 
                     }else{
-                        $this->call_type = 'http';
+                        $this->callType = 'http';
                     }
 
                     break;
@@ -126,7 +126,7 @@ class core{
                     define('PLATFORM_HTTP', false);
                     define('PLATFORM_CLI' , true);
 
-                    $this->call_type = 'cli';
+                    $this->callType = 'cli';
                     break;
             }
 
@@ -157,7 +157,7 @@ class core{
             /*
              * Start the call type dependant startup script
              */
-            require('handlers/startup-'.$this->call_type.'.php');
+            require('handlers/startup-'.$this->callType.'.php');
 
         }catch(Exception $e){
 //print_r($e);
@@ -175,16 +175,16 @@ class core{
         return $this->query_count;
     }
 
-    public function callType($type){
-        return $this->call_type === $type;
-    }
+    public function callType($type = null){
+        if($type){
+            return $this->callType === $type;
+        }
 
-    public function getCallType(){
-        return $this->call_type;
+        return $this->callType;
     }
 
     public function callIs($type){
-        if($this->call_type === $type){
+        if($this->callType === $type){
              return true;
         }
 
@@ -671,7 +671,7 @@ function load_content($file, $replace = false, $language = null, $autocreate = n
          * Set default values
          */
         if($language === null){
-            if($core->getCallType() == 'cli'){
+            if($core->callType('cli')){
                 $language = '';
 
             }else{
