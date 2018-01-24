@@ -1240,18 +1240,22 @@ function domain($current_url = false, $query = null, $root = null, $domain = nul
             $domain = $_SERVER['SERVER_NAME'];
         }
 
-        if(!$language){
-            if($language === null){
+        if(empty($_CONFIG['language']['supported'])){
+            $language = '';
+
+        }else{
+            /*
+             * Multilingual site
+             */
+            if(!$language){
                 $language = LANGUAGE;
             }
-
-        }elseif(empty($_CONFIG['language']['supported'])){
-            $language = '';
         }
 
         if($language){
             /*
-             * This is a multilingual website, add language selection to the URL.
+             * This is a multilingual website. Ensure language is supported and
+             * add language selection to the URL.
              */
             if(empty($_CONFIG['language']['supported'][$language])){
                 $language = $_CONFIG['language']['default'];
