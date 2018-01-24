@@ -531,7 +531,7 @@ function notify($params){
          *
          * Do NOT cause exception, because it its not caught, it might cause another notification, that will fail, cause exception and an endless loop!
          */
-        log_file(tr('Failed to notify event ":event" for classes ":classes" with message ":message"', array(':event' => $event, ':classes' => $classes, ':message' => $message)), 'notification-failed');
+        log_file(tr('Failed to notify event ":event" for classes ":classes" with message ":message"', array(':event' => $event, ':classes' => $classes, ':message' => $message)), 'failed');
         return false;
     }
 }
@@ -776,7 +776,7 @@ function load_content($file, $replace = false, $language = null, $autocreate = n
  * Log specified message to console, but only if we are in console mode!
  */
 function log_console($messages = '', $color = null, $newline = true, $filter_double = false){
-    static $c, $fh, $last;
+    static $c, $last;
 
     try{
         if(!PLATFORM_CLI){
@@ -838,18 +838,31 @@ function log_console($messages = '', $color = null, $newline = true, $filter_dou
 
         $last = $messages;
 
-        if($color and defined('NOCOLOR') and !NOCOLOR){
-            if(empty($c)){
-                if(!class_exists('Colors')){
-                    /*
-                     * This log_console() was called before the "cli" library
-                     * was loaded. Show the line without color
-                     */
-                    $color = '';
+        if($color){
+            if(defined('NOCOLOR') and !NOCOLOR){
+                if(empty($c)){
+                    if(!class_exists('Colors')){
+                        /*
+                         * This log_console() was called before the "cli" library
+                         * was loaded. Show the line without color
+                         */
+                        $color = '';
 
-                }else{
-                    $c = new Colors();
+                    }else{
+                        $c = new Colors();
+                    }
                 }
+            }
+
+            switch($color){
+                case 'yellow':
+                    // FALLTHROUGH
+                case 'warning':
+                    // FALLTHROUGH
+                case 'red':
+                    // FALLTHROUGH
+                case 'error':
+                    $error = true;
             }
         }
 
@@ -886,11 +899,7 @@ function log_console($messages = '', $color = null, $newline = true, $filter_dou
                 /*
                  * Log to STDERR instead of STDOUT
                  */
-                if(empty($fh)){
-                    $fh = fopen('php://stderr','w');
-                }
-
-                fwrite($fh, $message);
+                fwrite(STDERR, $message);
             }
         }
 
@@ -1384,7 +1393,7 @@ function cdn_domain($file, $section = 'pub', $false_on_not_exist = false, $force
         //         */
         //        notify('no-cdn-servers', tr('CDN system is enabled, but no availabe CDN servers were found'), 'developers');
         //        $_SESSION['cdn'] = false;
-        //        return current_domain($current_url, $query, $root);
+        //        return domain($current_url, $query, $root);
         //    }
         //
         //    $_SESSION['cdn'] = slash($server).strtolower(str_replace('_', '-', PROJECT));
