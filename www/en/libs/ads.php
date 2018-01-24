@@ -460,8 +460,8 @@ function ads_update_image_cluster($user, $cluster, $image){
 //                /*
 //                 * Valid
 //                 */
-//                //return current_domain('/photos/'.$media.'-'.$size.'.jpg', null, '');
-//                return current_domain('/photos/'.$media.'-original.jpg', null, '');
+//                //return domain('/photos/'.$media.'-'.$size.'.jpg');
+//                return domain('/photos/'.$media.'-original.jpg');
 //
 //            default:
 //                throw new bException(tr('ads_photo_url(): Unknown size ":size" specified', array(':size' => $size)), 'unknown');
@@ -577,11 +577,11 @@ function ads_get(){
 
                 if($image['keyword']){
                     $html .= '  <li>
-                                    <a href="'.str_replace(':keyword', $image['keyword'], $url).'">'.html_img(current_domain('/photos/'.$image['file'].'-original.jpg', null), $image['description']).'</a>
+                                    <a href="'.str_replace(':keyword', $image['keyword'], $url).'">'.html_img(domain('/photos/'.$image['file'].'-original.jpg'), $image['description']).'</a>
                                 </li>';
                 }else{
                     $html .= '  <li>
-                                    '.html_img(current_domain('/photos/'.$image['file'].'-original.jpg', null), $image['description']).'
+                                    '.html_img(domain('/photos/'.$image['file'].'-original.jpg'), $image['description']).'
                                 </li>';
                 }
             }
@@ -711,10 +711,10 @@ function amp_ads_get(){
 
                 if($image['keyword']){
                     $html .= '  <a href="'.str_replace(':keyword', $image['keyword'], $url).'">
-                                    '.amp_img(current_domain('/photos/'.$image['file'].'-original.jpg', null), $image['description'], 720, 90).'
+                                    '.amp_img(domain('/photos/'.$image['file'].'-original.jpg'), $image['description'], 720, 90).'
                                 </a>';
                 }else{
-                    $html .= '  '.amp_img(current_domain('/photos/'.$image['file'].'-original.jpg', null), $image['description'], 720, 90);
+                    $html .= '  '.amp_img(domain('/photos/'.$image['file'].'-original.jpg'), $image['description'], 720, 90);
                 }
             }
         }

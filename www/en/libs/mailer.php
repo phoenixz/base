@@ -756,7 +756,7 @@ function mailer_status($mailers, $status){
  * Returns HTML <img> tag pointing towards an image with the specified code
  */
 function mailer_access_image($code, $alt = 'Logo'){
-    return html_img(current_domain('/logoimgs/'.$code.'.jpg'), $alt);
+    return html_img(domain('/logoimgs/'.$code.'.jpg'), $alt);
 }
 
 

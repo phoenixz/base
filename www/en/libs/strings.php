@@ -649,7 +649,7 @@ function str_force($source, $separator = ','){
                     return '';
                 }
 
-                throw new bException('str_force(): Specified source is neither array or string');
+                return print_r($source, true);
             }
 
             return implode($separator, $source);

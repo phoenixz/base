@@ -9,55 +9,6 @@
 
 
 /*
- * Return complete current domain with HTTP and all
- */
-function current_domain($current_url = false, $query = null, $root = null){
-    global $_CONFIG;
-
-    try{
-        if($root === null){
-            $root = $_CONFIG['root'];
-        }
-
-        $root = unslash($root);
-
-        if(PLATFORM_HTTP){
-            if(empty($_SERVER['SERVER_NAME'])){
-                $server_name = $_SESSION['domain'];
-
-            }else{
-                $server_name = $_SERVER['SERVER_NAME'];
-            }
-
-        }else{
-            $server_name = $_CONFIG['domain'];
-        }
-
-        if(!$current_url){
-            $retval = $_CONFIG['protocol'].$server_name.$root;
-
-        }elseif($current_url === true){
-            $retval = $_CONFIG['protocol'].$server_name.$_SERVER['REQUEST_URI'];
-
-        }else{
-            $retval = $_CONFIG['protocol'].$server_name.str_ends(str_starts($root, '/'), '/').str_starts_not($current_url, '/');
-        }
-
-        if($query){
-            load_libs('inet');
-            $retval = url_add_query($retval, $query);
-        }
-
-        return $retval;
-
-    }catch(Exception $e){
-        throw new bException('current_domain(): Failed', $e);
-    }
-}
-
-
-
-/*
  * Return $_POST[dosubmit] value, and reset it to be sure it won't be applied twice
  */
 function get_dosubmit(){
@@ -663,7 +614,7 @@ function http_redirect_query_url(){
             return true;
         }
 
-        redirect(current_domain(substr($_SERVER['REQUEST_URI'], 0, $pos)));
+        redirect(domain(substr($_SERVER['REQUEST_URI'], 0, $pos), null, null, true));
 
     }catch(Exception $e){
         throw new bException('http_redirect_query_url(): Failed', $e);
