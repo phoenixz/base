@@ -1232,6 +1232,12 @@ function domain($current_url = false, $query = null, $root = null, $domain = nul
             //}
 
             $domain = $_CONFIG['domain'];
+
+        }elseif($domain === true){
+            /*
+             * Use current domain name
+             */
+            $domain = $_SERVER['SERVER_NAME'];
         }
 
         if(!$language){
@@ -1241,7 +1247,6 @@ function domain($current_url = false, $query = null, $root = null, $domain = nul
 
         }elseif(empty($_CONFIG['language']['supported'])){
             $language = '';
-
         }
 
         if($language){
