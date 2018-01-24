@@ -19,48 +19,39 @@ return false;
     static $count = 0;
     global $_CONFIG, $core;
 
-    if(empty($message) and is_object($event) and ($event instanceof Exception)){
-        /*
-         * Notify about an exception
-         */
-        $message = $event;
-        $event   = 'exception';
-        $group   = 'developers';
-    }
-
-    if(empty($_CONFIG['production'])){
-        throw new bException($message, $event);
-    }
-
-    if(++$count > 15){
-        /*
-         * Endless loop protection
-         */
-        if(!debug()){
-            return false;
+    try{
+        if(is_object($params) and ($params instanceof Exception)){
+            /*
+             * Notify about an exception
+             */
+            $params = array('title'       => tr('Exception'),
+                            'url'         => (PLATFORM_HTTP ? $_SERVER['REQUEST_URI'] : null),
+                            'description' => $e,
+                            'class'       => 'exception');
         }
 
-        show($count);
-        show($event);
-        show($message);
-        showdie(debug_trace());
-    }
-
-    try{
         array_params($params);
         array_ensure($params, 'title,url,description,class,user');
 
-        if($params['class']){
-            /*
-             *
-             */
+        if($params['exception'] and !debug()){
+            throw new bException($message, $event);
         }
 
+        if(++$count > 15){
+            /*
+             * Endless loop protection
+             */
+            if(!debug()){
+                log_file(tr('notifications_send(): Stopped nofity_send endless loop for ":event" for classes ":classes" with message ":message"', array(':event' => $params['event'], ':classes' => $params['classes'], ':message' => $params['message'])), 'loop');
+                return false;
+            }
 
-        $message = str_force($message);
-        $n       = $_CONFIG['notifications'];
+            throw new bException(tr('notifications_send(): Stopped nofity_send endless loop for ":event" for classes ":classes" with message ":message"', array(':event' => $params['event'], ':classes' => $params['classes'], ':message' => $params['message'])), 'loop');
+        }
 
-        if(!$_CONFIG['production'] and (strtolower($event) != 'deploy') and empty($n['force'])){
+        $config = $_CONFIG['notifications'];
+
+        if(!$_CONFIG['production'] and (strtolower($event) != 'deploy') and empty($config['force'])){
             /*
              * Events are only sent on production, or during deploys, OR if forced
              */
@@ -71,22 +62,22 @@ return false;
          * Validate classes
          * By default, the event will be regarded as an class as well. If its not defined, it will later on simply be skipped
          */
-        $classes   = array_force($classes);
-        $classes[] = $event;
+        $params['classes'] = array_force($params['classes']);
 
-        if(strtolower($event) == 'error'){
+        if(strtolower($event) == 'exception'){
             /*
              * For errors we always notify the developers
              */
-            $classes[] = 'developers';
+            $params['classes'][] = 'developers';
         }
 
         /*
          * Dont send the same notification twice to the same class
          */
-        array_unique($classes);
+        array_unique($params['classes']);
+        $params['description'] = str_force($params['description']);
 
-        if(!isset_get($core->sql['core'])){
+        if(empty($core->sql['core'])){
             /*
              * WHOOPS! No database available, we're effed in the A here...
              *
@@ -98,8 +89,8 @@ return false;
             /*
              * Send notifications for each class
              */
-            $name_in = sql_in($classes);
-            $id_in   = sql_in($classes, ':id');
+            $name_in = sql_in($params['classes']);
+            $id_in   = sql_in($params['classes'], ':id');
 
             $list    = sql_list('SELECT `id`,
                                         `methods`
@@ -117,13 +108,13 @@ return false;
             /*
              * No classes found to send notifications to
              */
-            throw new bException('notifications_send(): No classes found for specified classes "'.str_log($classes).'"');
+            throw new bException(tr('notifications_send(): No classes found for specified classes ":classes"', array(':classes' => $params['classes'])));
         }
 
         foreach($list as $id => $methods){
             $methods = explode(',', $methods);
 
-            if(!isset_get($core->sql['core'])){
+            if(empty($core->sql['core'])){
                 /*
                  * WHOOPS! No database available, we're effed in the A here...
                  *
@@ -160,6 +151,10 @@ return false;
 
             foreach($methods as $method){
                 switch($method){
+                    case 'internal':
+                        notifications_internal($event, $message, $members);
+                        break;
+
                     case 'sms':
                         notifications_twilio($event, $message, $members);
                         break;
@@ -333,135 +328,13 @@ function notifications_prowl($event, $message, $users){
          * Send notifications for each class
          */
         foreach($users as $user){
-            foreach($n['classes'] as $c_class => $c_config){
+            foreach($config['classes'] as $c_class => $c_config){
 // :TODO: Implement
             }
         }
 
     }catch(Exception $e){
         throw new bException('notifications_prowl(): Failed', $e);
-    }
-}
-
-
-
-/*
- *
- */
-function notifications_classes_insert($params){
-    try{
-        array_params($params);
-
-        user_or_signin();
-
-        if(empty($params['name'])){
-            throw new bException('notifications_classes_insert(): No name specified', 'not-specified');
-        }
-
-        if(empty($params['methods'])){
-            throw new bException('notifications_classes_insert(): No methods specified', 'not-specified');
-        }
-
-        if(!is_array($params['methods'])){
-            $params['methods'] = explode(',', $params['methods']);
-        }
-
-        foreach($params['methods'] as $method){
-            if(!in_array($method, array('email', 'prowl'))){
-                throw new bException('notifications_classes_insert(): Unknown method "'.str_log($method).'" specified', 'unknown');
-            }
-        }
-
-        sql_query('INSERT INTO `notifications_classes` (`addedby`, `name`, `methods`, `description`, `status`)
-                   VALUES                              (:addedby , :name , :methods , :description , :status )',
-
-                   array(':addedby'     => $_SESSION['user']['id'],
-                         ':name'        => $params['name'],
-                         ':methods'     => implode(',', $params['methods']),
-                         ':description' => isset_get($params['description']),
-                         ':status'      => isset_get($params['status'])));
-
-        return sql_insert_id();
-
-    }catch(Exception $e){
-        throw new bException('notifications_classes_insert(): Failed', $e);
-    }
-}
-
-
-
-/*
- *
- */
-function notifications_members_insert($params){
-    try{
-        array_params($params);
-
-        user_or_signin();
-
-        if(empty($params['classes_id'])){
-            if(empty($params['name'])){
-                throw new bException('notifications_members_insert(): No notification class specified', 'not-specified');
-            }
-
-            $class = sql_get('SELECT `id`,
-                                     `name`
-
-                              FROM   `notifications_classes`
-
-                              WHERE  `id`   = :id
-                              OR     `name` = :name',
-
-                              array(':id'   => $params['name'],
-                                    ':name' => $params['name']));
-
-            if(!$class){
-                throw new bException(tr('notifications_members_insert(): Specified notification class ":class" does not exist', array(':class' => $params['classes_id'])), 'yellow');
-            }
-
-            $params['classes_id'] = $class['id'];
-        }
-
-        if(empty($params['members'])){
-            throw new bException('notifications_members_insert(): No members specified', 'not-specified');
-        }
-
-        load_libs('user');
-
-        $count = 0;
-
-        foreach(array_force($params['members']) as $member){
-            if(!$users_id = user_get($member, 'id')){
-                log_console(tr('notifications_members_insert(): Specified member ":member" does not exist', array(':member' => $member)), 'yellow');
-                continue;
-            }
-
-            if(sql_get('SELECT `id`
-                        FROM   `notifications_members`
-                        WHERE  `classes_id` = :classes_id
-                        AND    `users_id`   = :users_id',
-
-                        array(':classes_id' => $params['classes_id'],
-                              ':users_id'   => $users_id))){
-                log_console('notifications_members_insert(): Specified member "'.str_log($member).'" is aleady member of class "'.$params['classes_id'].'"', 'yellow');
-                continue;
-            }
-
-            sql_query('INSERT INTO `notifications_members` (`addedby`, `classes_id`, `users_id`, `status`)
-                       VALUES                              (:addedby , :classes_id , :users_id , :status )',
-
-                       array(':addedby'    => $_SESSION['user']['id'],
-                             ':classes_id' => $params['classes_id'],
-                             ':users_id'   => $users_id,
-                             ':status'     => isset_get($params['status'])));
-
-            $count++;
-        }
-
-        return $count;
-
-    }catch(Exception $e){
-        throw new bException('notifications_members_insert(): Failed', $e);
     }
 }
 
@@ -502,57 +375,88 @@ function notifications_desktop($params){
 /*
  *
  */
-function notifications_validate_class($class){
-    load_libs('validate');
+function notifications_class_validate($class){
+    try{
+        load_libs('validate');
+        $v = new validate_form($class, 'name,methods,description');
 
-    $v = new validate_form($class, 'name,methods,description');
+        $v->hasMinChars($class['name']       ,  2, tr('Please ensure that the notifications class name has more than 2 characters'));
+        $v->hasMaxChars($class['name']       ,  32, tr('Please ensure that the notifications class name has less than 32 characters'));
+        $v->hasMaxChars($class['description'], 255, tr('Please ensure that the notifications class description has less than 255 characters'));
 
-    $v->hasMinChars($class['name']       ,  2, tr('Please ensure that the notifications class name has more than 2 characters'));
-    $v->hasMaxChars($class['name']       ,  32, tr('Please ensure that the notifications class name has less than 32 characters'));
-    $v->hasMaxChars($class['description'], 255, tr('Please ensure that the notifications class description has less than 255 characters'));
+        $class['methods'] = explode(',', $class['methods']);
+        $class['methods'] = array_unique($class['methods']);
 
-    $class['methods'] = explode(',', $class['methods']);
+        if(!count($class['methods'])){
+            $v->setError(tr('Please ensure you have at least one method specified'));
 
-    if(!count($class['methods'])){
-        $v->setError(tr('Please ensure you have at least one method specified'));
-
-    }elseif(count($class['methods']) > 3){
-        $v->setError(tr('Please ensure you have less than three methods specified'));
-    }
-
-    foreach($class['methods'] as &$method){
-        $method = trim($method);
-
-        switch($method){
-            case 'sms':
-            case 'email':
-                /*
-                 * These are valid methods
-                 */
-                break;
-
-            default:
-                $v->setError(tr('Unknown notifications method "%method%" specified', array('%method%' => $method)));
-        }
-    }
-
-    unset($method);
-
-    $class['methods'] = implode(',', $class['methods']);
-
-    if($class['id']){
-        if($id = sql_get('SELECT `id` FROM `notifications_classes` WHERE `name` = :name AND `id` != :id', 'id', array(':id' => $class['id'], ':name' => $class['name']))){
-            $v->setError(tr('Another notifications class with the name "%name%" already exists under the id "%id%"', array('%id%' => $id, '%name%' => $class['name'])));
+        }elseif(count($class['methods']) > 6){
+            $v->setError(tr('Please ensure you have less than six methods specified'));
         }
 
-    }else{
-        if($id = sql_get('SELECT `id` FROM `notifications_classes` WHERE `name` = :name', 'id', array(':name' => $class['name']))){
-            $v->setError(tr('Another notifications class with the name "%name%" already exists under the id "%id%"', array('%id%' => $id, '%name%' => $class['name'])));
+        foreach($class['methods'] as &$method){
+            $method = trim($method);
+
+            switch($method){
+                case 'log':
+                    // FALLTHROUGH
+                case 'sms':
+                    // FALLTHROUGH
+                case 'email':
+                    // FALLTHROUGH
+                case 'prowl':
+                    // FALLTHROUGH
+                case 'desktop':
+                    // FALLTHROUGH
+                case 'internal':
+                    /*
+                     * These are valid methods
+                     */
+                    break;
+
+                default:
+                    $v->setError(tr('Unknown notification method ":method" specified', array(':method' => $method)));
+            }
         }
+
+        unset($method);
+
+        $class['methods'] = implode(',', $class['methods']);
+
+        if($class['id']){
+            $exists = sql_get('SELECT `id` FROM `notifications_classes` WHERE `name` = :name AND `id` != :id', 'id', array(':id' => $class['id'], ':name' => $class['name']));
+
+            if($exists){
+                $v->setError(tr('Another notifications class with the name "%name%" already exists under the id "%id%"', array('%id%' => $id, '%name%' => $class['name'])));
+            }
+
+        }else{
+            $exists = sql_get('SELECT `id` FROM `notifications_classes` WHERE `name` = :name', 'id', array(':name' => $class['name']));
+
+            if($exists){
+                $v->setError(tr('Another notifications class with the name "%name%" already exists under the id "%id%"', array('%id%' => $id, '%name%' => $class['name'])));
+            }
+        }
+
+        $v->isValid();
+
+    }catch(Exception $e){
+        throw new bException('notifications_class_validate(): Failed', $e);
     }
+}
 
-    $v->isValid();
 
-    return $class;
+
+/*
+ *
+ */
+function notifications_member_validate($member){
+    try{
+        load_libs('validate');
+        $v = new validate_form($member, 'name,methods,description');
+
+    }catch(Exception $e){
+        throw new bException('notifications_member_validate(): Failed', $e);
+    }
 }
 ?>
