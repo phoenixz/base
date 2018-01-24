@@ -75,7 +75,7 @@ class Colors {
             /*
              * If requested colors do not exist, return no
              */
-            log_console(tr('<LOG WARNING> specified foreground/background color combination ":fore/:back" for the next line does not exist. The line will be displayed without colors', array(':fore' => $foreground_color, ':back' => $background_color)));
+            log_console(tr('[LOG WARNING] specified foreground/background color combination ":fore/:back" for the next line does not exist. The line will be displayed without colors', array(':fore' => $foreground_color, ':back' => $background_color)));
             return $string;
         }
 
