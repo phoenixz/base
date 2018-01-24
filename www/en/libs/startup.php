@@ -1247,8 +1247,14 @@ function domain($current_url = false, $query = null, $root = null, $domain = nul
             /*
              * Multilingual site
              */
-            if(!$language){
+            if($language === null){
                 $language = LANGUAGE;
+
+            }else{
+                /*
+                 * Ensure language is an empty string
+                 */
+                $language = '';
             }
         }
 
