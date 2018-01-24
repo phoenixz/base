@@ -514,7 +514,7 @@ function api_call_base($account, $call, $data = array(), $files = null){
 //show(isset_get($json));
 //show(isset_get($result));
 //showdie($e);
-        throw new bException('api_call_base(): Failed', $e);
+        throw new bException(tr('api_call_base(): Failed for account ":account"', array(':account' => $account)), $e);
     }
 }
 ?>
