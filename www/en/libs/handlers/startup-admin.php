@@ -57,6 +57,7 @@ define('ENVIRONMENT', $env);
  * Load cache libraries (done until here since these need configuration @ load time)
  */
 load_config(' ');
+load_config('admin');
 load_libs('http,html,inet,atlant,cache'.(empty($_CONFIG['memcached']) ? '' : ',memcached').(empty($_CONFIG['cdn']['enabled']) ? '' : ',cdn'));
 
 
@@ -461,6 +462,5 @@ http_redirect_query_url();
 /*
  * Load custom library, if available
  */
-load_config('admin');
 load_libs('custom_admin');
 ?>

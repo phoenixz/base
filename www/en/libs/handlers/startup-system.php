@@ -314,6 +314,7 @@ if(empty($_CONFIG['cookie']['domain'])){
  */
 if(empty($_SESSION['init'])){
     $_SESSION['init'] = time();
+    load_libs('detect');
 
 
 
