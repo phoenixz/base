@@ -303,6 +303,10 @@ function git_status($path = ROOT, $filters = false){
                     $status = 'modified';
                     break;
 
+                case 'RM':
+                    $status = 'renamed modified';
+                    break;
+
                 case 'M ':
                     $status = 'modified indexed';
                     break;
@@ -312,7 +316,7 @@ function git_status($path = ROOT, $filters = false){
                     break;
 
                 default:
-                    throw new bException(tr('git_status(): Unknown git status ":status" encountered', array(':status' => $status)), 'unknown');
+                    throw new bException(tr('git_status(): Unknown git status ":status" encountered for file ":file"', array(':status' => $status, ':file' => substr($line, 3))), 'unknown');
             }
 
             $retval[substr($line, 3)] = $status;
