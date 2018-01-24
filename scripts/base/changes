@@ -173,6 +173,7 @@ switch($method){
 
 foreach($files as $file => &$status){
     try{
+        $marked = false;
         if($status != 'modified') continue;
 
         log_console(tr('Checking file ":file"', array(':file' => $file)), 'VERBOSE');
@@ -195,6 +196,7 @@ foreach($files as $file => &$status){
                 if(patch_file_exists_in_toolkit(str_replace('admin/', '', $file))){
                     log_console(tr('Identified file as toolkit'), 'VERBOSE');
                     $sections['toolkit'][$file] = $status;
+                    $marked = true;
                 }
             }
 
@@ -206,6 +208,7 @@ foreach($files as $file => &$status){
                 if(patch_file_exists_in_toolkit($file)){
                     log_console(tr('Identified file as toolkit'), 'VERBOSE');
                     $sections['toolkit'][$file] = $status;
+                    $marked = true;
                 }
             }
 
@@ -218,6 +221,7 @@ foreach($files as $file => &$status){
                     if(patch_file_exists_in_toolkit(str_replace('admin/', '', $file))){
                         log_console(tr('Identified file as toolkit'), 'VERBOSE');
                         $sections['toolkit'][$file] = $status;
+                        $marked = true;
                     }
                 }
             }
@@ -229,6 +233,7 @@ foreach($files as $file => &$status){
             if(patch_file_exists_in_base(str_replace('admin/', '', $file))){
                 log_console(tr('Identified file as base'), 'VERBOSE');
                 $sections['base'][$file] = $status;
+                $marked = true;
             }
 
         }elseif(preg_match_all('/www\/[a-z]{2}\/pub\/.+/', $file, $matches)){
@@ -240,6 +245,7 @@ foreach($files as $file => &$status){
                     if(patch_file_exists_in_toolkit(str_replace('admin/', '', $file))){
                         log_console(tr('Identified file as toolkit'), 'VERBOSE');
                         $sections['toolkit'][$file] = $status;
+                        $marked = true;
                     }
                 }
             }
@@ -252,6 +258,7 @@ foreach($files as $file => &$status){
                 if(patch_file_exists_in_toolkit(str_replace('admin/', '', $file))){
                     log_console(tr('Identified file as toolkit'), 'VERBOSE');
                     $sections['toolkit'][$file] = $status;
+                    $marked = true;
                 }
             }
 
@@ -259,13 +266,23 @@ foreach($files as $file => &$status){
             /*
              * These are library files, most likely base, possibly toolkit
              */
-            if(patch_file_exists_in_base($file)){
-                log_console(tr('Identified file as base'), 'VERBOSE');
-                $sections['base'][$file] = $status;
+            if(substr($file, -10, 10) == 'custom.php'){
+                /*
+                 * This is the custom library. Do NOT copy this library since
+                 * its unique to every project!
+                 */
 
-            }elseif(patch_file_exists_in_toolkit($file)){
-                log_console(tr('Identified file as toolkit'), 'VERBOSE');
-                $sections['toolkit'][$file] = $status;
+            }else{
+                if(patch_file_exists_in_base($file)){
+                    log_console(tr('Identified file as base'), 'VERBOSE');
+                    $sections['base'][$file] = $status;
+                    $marked = true;
+
+                }elseif(patch_file_exists_in_toolkit($file)){
+                    log_console(tr('Identified file as toolkit'), 'VERBOSE');
+                    $sections['toolkit'][$file] = $status;
+                    $marked = true;
+                }
             }
 
         }elseif(preg_match('/libs\/handlers\/[a-z0-9-_]+\.php/', $file)){
@@ -275,6 +292,7 @@ foreach($files as $file => &$status){
             if(patch_file_exists_in_base($file)){
                 log_console(tr('Identified file as base'), 'VERBOSE');
                 $sections['base'][$file] = $status;
+                $marked = true;
             }
 
         }elseif(preg_match('/init\/framework\/[0-9.]+\.php/', $file)){
@@ -284,18 +302,26 @@ foreach($files as $file => &$status){
             if(patch_file_exists_in_base($file)){
                 log_console(tr('Identified file as base'), 'VERBOSE');
                 $sections['base'][$file] = $status;
+                $marked = true;
             }
 
         }elseif(preg_match('/scripts\/base\/[a-z0-9-]+/', $file)){
             log_console(tr('Identified file as base'), 'VERBOSE');
             $sections['base'][$file] = $status;
+            $marked = true;
 
         }elseif(preg_match('/config\/base\/.+/', $file)){
             log_console(tr('Identified file as base'), 'VERBOSE');
             $sections['base'][$file] = $status;
+            $marked = true;
         }
 
-        cli_dot(1, 'green', '.', true);
+        if($marked){
+            cli_dot(1, 'green', '.', true);
+
+        }else{
+            cli_dot(1, '', '.', true);
+        }
 
     }catch(Exception $e){
         throw new bException(tr('Failed to build sections list'), $e);
