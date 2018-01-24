@@ -1255,7 +1255,7 @@ function domain($current_url = false, $query = null, $root = null, $domain = nul
              */
             if(empty($_CONFIG['language']['supported'][$language])){
                 $language = $_CONFIG['language']['default'];
-                notify('unsupported-language-specified', 'developers', 'domain(): The specified language ":language" is not supported', array(':language' => $languag));
+                notify('unsupported-language-specified', 'developers', 'domain(): The specified language ":language" is not supported', array(':language' => $language));
             }
 
             $language .= '/';
