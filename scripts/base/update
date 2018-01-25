@@ -207,24 +207,7 @@ unset($exitcode);
 
 
 /*
- * Execute init script
- */
-if($noinit){
-    log_console(tr('Skipping system init due to "--no-init" option'), 'yellow');
-
-}else{
-    log_console(tr('Excuting system init'), 'white');
-    passthru('cd '.ROOT.'scripts/base/;export '.PROJECT.'_ENVIRONMENT='.ENVIRONMENT.'; php init', $exitcode);
-
-    if($exitcode){
-        throw new bException(tr('System init failed with exit code ":code"', array(':code' => $exitcode)), 'warning/init');
-    }
-}
-
-
-
-/*
- * Done
+ * Auto commit all updated base files
  */
 if($nocommit){
     log_console(tr('Skipping git commit due to "--no-commit" option'), 'yellow');
@@ -237,6 +220,23 @@ if($nocommit){
         if($exitcode){
             throw new bException(tr('Git commit of updates failed with exit code ":code"', array(':code' => $exitcode)), 'warning/git');
         }
+    }
+}
+
+
+
+/*
+ * Execute init script
+ */
+if($noinit){
+    log_console(tr('Skipping system init due to "--no-init" option'), 'yellow');
+
+}else{
+    log_console(tr('Excuting system init'), 'white');
+    passthru('cd '.ROOT.'scripts/base/;export '.PROJECT.'_ENVIRONMENT='.ENVIRONMENT.'; php init', $exitcode);
+
+    if($exitcode){
+        throw new bException(tr('System init failed with exit code ":code"', array(':code' => $exitcode)), 'warning/init');
     }
 }
 
