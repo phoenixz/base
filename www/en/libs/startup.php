@@ -1139,7 +1139,7 @@ function log_file($messages, $class = 'messages', $type = null){
         return $messages;
 
     }catch(Exception $e){
-        throw new bException('log_file: Failed', $e, array('message' => $messages));
+        throw new bException('log_file(): Failed', $e, array('message' => $messages));
     }
 }
 
