@@ -257,8 +257,17 @@ function git_get_branch($branch = null){
     try{
         git_check_path($path);
 
-        $retval = safe_exec('cd '.$path.'; git branch --no-color');
-showdie($retval);
+        $branches = safe_exec('cd '.$path.'; git branch --no-color');
+
+        foreach($branches as $line){
+            $current = trim(substr($line, 0, 2));
+
+            if($current){
+                return trim(substr($line, 2));
+            }
+        }
+
+        return null;
 
     }catch(Exception $e){
         throw new bException('git_get_branch(): Failed', $e);
