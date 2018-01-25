@@ -2068,7 +2068,18 @@ function blogs_post_url($post){
                     $post[$section] = str_from(isset_get($post['createdon']), ' ');
             }
 
-            $url = str_replace('%'.$section.'%', isset_get($post[$section]), $url);
+            if(strstr($url, '%'.$section.'%')){
+                if(trim(isset_get($post[$section]))){
+                    $url = str_replace('%'.$section.'%', isset_get($post[$section]), $url);
+
+                }else{
+                    /*
+                     * This post does not have all required sections available. Disable post and notify
+                     */
+                    sql_query('UPDATE `blogs_posts` SET `status` = "incomplete" WHERE `id` = :id', array(':id' => $post['id']));
+                    throw new bException(tr('blogs_post_url(): Blog post ":post" is incomplete, a URL cannot be generated', array(':post' => $post['id'])), 'incomplete');
+                }
+            }
         }
 
         $url = trim($url);
