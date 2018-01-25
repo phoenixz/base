@@ -2280,10 +2280,33 @@ function file_word_count($source){
 
 
 /*
- * OBSOLETE
- * WARNING: FROM HERE BE OBSOLETE FUNCTIONS
+ * Scan the entire file path upward for the specified file.
+ * If the specified file doesn't exist in the specified path, go one dir up,
+ * all the way to root /
  */
-function file_is($file){
-    return is_file($file);
+function file_scan($path, $file){
+    try{
+        if(!file_exists($path)){
+            throw new bException(tr('file_scan(): Specified path ":path" does not exist', array(':path' => $path)), 'not-exist');
+        }
+
+        while(strlen($path) > 1){
+            $path = slash($path);
+
+            if(file_exists($path.$file)){
+                /*
+                 * The requested file is found! Return the path where it was found
+                 */
+                return $path;
+            }
+
+            $path = dirname($path);
+        }
+
+        return false;
+
+    }catch(Exception $e){
+        throw new bException('file_word_count(): Failed', $e);
+    }
 }
 ?>
