@@ -36,6 +36,11 @@ function sql_query($query, $execute = false, $handle_exceptions = true, $connect
         $core->executedQuery();
 
         if(is_string($query)){
+            if(!empty($core->register['sql_debug_queries'])){
+                $core->register['sql_debug_queries']--;
+                $query = ' '.$query;
+            }
+
             if(substr($query, 0, 1) == ' '){
                 debug_sql($query, $execute);
                 $query = substr($query, 1);
