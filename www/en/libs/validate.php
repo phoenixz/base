@@ -376,7 +376,7 @@ class validate_form {
      */
     function isEmail(&$value, $message = null, $allow_empty = 'no'){
         try{
-            return $this->isFilter($value, FILTER_VALIDATE_EMAIL, $allow_empty);
+            return $this->isFilter($value, FILTER_VALIDATE_EMAIL, $message, $allow_empty);
 
         }catch(Exception $e){
             throw new bException('validate_form->isEmail(): Failed', $e);
