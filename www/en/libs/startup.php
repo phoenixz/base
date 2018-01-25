@@ -2008,8 +2008,17 @@ function page_show($pagename, $params = null){
     global $_CONFIG, $core;
 
     try{
+        array_params($params, 'message');
+        array_default($params, 'exists', false);
+
         if(!empty($core->callIs('ajax'))){
-            // Execute ajax page
+            if($params['exists']){
+                return file_exists(ROOT.'www/'.LANGUAGE.'/ajax/'.$pagename.'.php');
+            }
+
+            /*
+             * Execute ajax page
+             */
             return include(ROOT.'www/'.LANGUAGE.'/ajax/'.$pagename.'.php');
 
         }elseif(!empty($core->callIs('admin'))){
@@ -2019,7 +2028,9 @@ function page_show($pagename, $params = null){
             $prefix = '';
         }
 
-        array_params($param, 'message');
+        if($params['exists']){
+            return file_exists(ROOT.'www/'.LANGUAGE.'/'.$prefix.$pagename.'.php');
+        }
 
         include(ROOT.'www/'.LANGUAGE.'/'.$prefix.$pagename.'.php');
         die();
