@@ -2157,7 +2157,7 @@ function blogs_update_urls($blogs = null, $category = null){
             /*
              * No specific blog was specified? process the posts for all blogs
              */
-            $r = sql_query('SELECT `id` FROM `blogs`');
+            $r = sql_query('SELECT `id` FROM `blogs` WHERE `status` IS NULL');
 
             log_console(tr('blogs_update_urls(): Updating posts for all blogs'));
 
@@ -2169,82 +2169,86 @@ function blogs_update_urls($blogs = null, $category = null){
         }
 
         foreach(array_force($blogs) as $blogname){
-            /*
-             * Get blog data either from ID or seoname
-             */
-            if(is_numeric($blogname)){
-                $blog = sql_get('SELECT `id`, `name`, `seoname`, `url_template` FROM `blogs` WHERE `id`      = :id'     , array(':id'      => $blogname));
+            try{
+                /*
+                 * Get blog data either from ID or seoname
+                 */
+                if(is_numeric($blogname)){
+                    $blog = sql_get('SELECT `id`, `name`, `seoname`, `url_template` FROM `blogs` WHERE `id`      = :id'     , array(':id'      => $blogname));
 
-            }else{
-                $blog = sql_get('SELECT `id`, `name`, `seoname`, `url_template` FROM `blogs` WHERE `seoname` = :seoname', array(':seoname' => $blogname));
-            }
-
-            if(!$blog){
-                if(PLATFORM_CLI){
-                    log_console(tr('blogs_update_urls(): Specified blog ":blog" does not exist, skipping', array(':blog' => $blogname)), 'yellow');
+                }else{
+                    $blog = sql_get('SELECT `id`, `name`, `seoname`, `url_template` FROM `blogs` WHERE `seoname` = :seoname', array(':seoname' => $blogname));
                 }
 
-                continue;
-            }
-
-            if(PLATFORM_CLI){
-                log_console(tr('blogs_update_urls(): Updating posts for blog :blog', array(':blog' => str_size('"'.str_truncate($blog['name'], 40).'"', 42, ' '))), 'white');
-            }
-
-            /*
-             * Walk over all posts of the specified blog
-             */
-            $query   = 'SELECT `id`,
-                               `blogs_id`,
-                               `parents_id`,
-                               `url`,
-                               `name`,
-                               `seoname`,
-                               `language`,
-                               `createdon`,
-                               `modifiedon`,
-                               `createdby`,
-                               `category1`,
-                               `seocategory1`,
-                               `category2`,
-                               `seocategory2`,
-                               `category3`,
-                               `seocategory3`
-
-                        FROM   `blogs_posts`
-
-                        WHERE  `blogs_id` = :id';
-
-            $execute = array(':id' => $blog['id']);
-
-            if($category){
-                /*
-                 * Add category filter
-                 * Since categories are limited to specific blogs, ensure
-                 * that this category is available within the blog
-                 */
-                if($category['blogs_id'] != $blog['id']){
-                    if(PLATFORM_CLI){
-                        log_console(tr('blogs_update_urls(): The category ":category" does not exist for the blog ":blog", skipping', array(':category' => $category['name'], ':blog' => $blog['name'])), 'yellow');
-                    }
-
+                if(!$blog){
+                    log_console(tr('blogs_update_urls(): Specified blog ":blog" does not exist, skipping', array(':blog' => $blogname)), 'yellow');
                     continue;
                 }
 
-                $query              .= ' AND (`seocategory1` = :seocategory1 OR `seocategory2` = :seocategory2 OR `seocategory3` = :seocategory3) ';
-                $execute[':seocategory1'] = $category['seoname'];
-                $execute[':seocategory2'] = $category['seoname'];
-                $execute[':seocategory3'] = $category['seoname'];
-            }
+                log_console(tr('blogs_update_urls(): Updating posts for blog :blog', array(':blog' => str_size('"'.str_truncate($blog['name'], 40).'"', 42, ' '))));
 
-            /*
-             * Walk over all posts in the selected filter, and update the URL's
-             */
-            $r = sql_query($query, $execute);
+                /*
+                 * Walk over all posts of the specified blog
+                 */
+                $query   = 'SELECT `id`,
+                                   `blogs_id`,
+                                   `parents_id`,
+                                   `url`,
+                                   `name`,
+                                   `seoname`,
+                                   `language`,
+                                   `createdon`,
+                                   `modifiedon`,
+                                   `createdby`,
+                                   `category1`,
+                                   `seocategory1`,
+                                   `category2`,
+                                   `seocategory2`,
+                                   `category3`,
+                                   `seocategory3`
 
-            while($post = sql_fetch($r)){
-                $post['url_template'] = $blog['url_template'];
-                blogs_update_url($post);
+                            FROM   `blogs_posts`
+
+                            WHERE  `blogs_id` = :id';
+
+                $execute = array(':id' => $blog['id']);
+
+                if($category){
+                    /*
+                     * Add category filter
+                     * Since categories are limited to specific blogs, ensure
+                     * that this category is available within the blog
+                     */
+                    if($category['blogs_id'] != $blog['id']){
+                        if(PLATFORM_CLI){
+                            log_console(tr('blogs_update_urls(): The category ":category" does not exist for the blog ":blog", skipping', array(':category' => $category['name'], ':blog' => $blog['name'])), 'yellow');
+                        }
+
+                        continue;
+                    }
+
+                    $query              .= ' AND (`seocategory1` = :seocategory1 OR `seocategory2` = :seocategory2 OR `seocategory3` = :seocategory3) ';
+                    $execute[':seocategory1'] = $category['seoname'];
+                    $execute[':seocategory2'] = $category['seoname'];
+                    $execute[':seocategory3'] = $category['seoname'];
+                }
+
+                /*
+                 * Walk over all posts in the selected filter, and update the URL's
+                 */
+                $r = sql_query($query, $execute);
+
+                while($post = sql_fetch($r)){
+                    $post['url_template'] = $blog['url_template'];
+                    blogs_update_url($post);
+                }
+
+            }catch(Exception $e){
+                /*
+                 * URL generation failed for this blog post
+                 */
+                notify($e);
+                log_console(tr('blogs_update_urls(): URL update failed for blog post ":post" in blog ":blog" with error ":e". Its status has been updated to "incomplete"', array(':post' => $post['id'].' / '.$post['seoname'], ':blog' => $blog['seoname'], ':e' => $e)), 'yellow');
             }
         }
 
