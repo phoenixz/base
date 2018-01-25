@@ -2837,6 +2837,9 @@ function str_log($source, $truncate = 2047, $separator = ', '){
                     $source = mb_trim(json_encode_custom($source));
                 }
 
+            }elseif(is_object($source) and ($source instanceof bException)){
+                $source = $source->getCode().' / '.$source->getMessage();
+
             }else{
                 $source = mb_trim(json_encode_custom($source));
             }
