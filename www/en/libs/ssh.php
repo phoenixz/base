@@ -179,10 +179,9 @@ function ssh_stop_control_master($socket = null){
  *
  */
 function ssh_exec($server, $commands = null){
-
     try{
-
         array_params($server);
+        array_default($server, 'server'       , '');
         array_default($server, 'hostname'     , '');
         array_default($server, 'ssh_key'      , '');
         array_default($server, 'port'         , 22);
@@ -191,6 +190,31 @@ function ssh_exec($server, $commands = null){
 
         if(!$server['hostkey_check']){
             $server['arguments'] .= ' -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null ';
+        }
+
+        /*
+         * If server was specified by just name, then lookup the server data in
+         * the database
+         */
+        if($server['server']){
+            $dbserver = sql_get('SELECT    `ssh_accounts`.`username`,
+                                           `ssh_accounts`.`ssh_key`,
+                                           `servers`.`id`,
+                                           `servers`.`hostname`,
+                                           `servers`.`port`
+
+                                 FROM      `servers`
+
+                                 LEFT JOIN `ssh_accounts`
+                                 ON        `ssh_accounts`.`id` = `servers`.`ssh_accounts_id`
+
+                                 WHERE     `servers`.`seohostname` = :seohostname', array(':seohostname' => $server['server']));
+
+            if(!$dbserver){
+                throw new bException(tr('ssh_exec(): Specified server ":server" does not exist', array(':server' => $server['server'])), 'not-exist');
+            }
+
+            $server = sql_merge($server, $dbserver);
         }
 
         /*
@@ -214,7 +238,7 @@ function ssh_exec($server, $commands = null){
          * Execute command on remote server
          */
 //show('ssh '.$server['arguments'].' -p '.$server['port'].' -i '.$keyfile.' '.$server['username'].'@'.$server['hostname'].' '.$commands);
-        $result = safe_exec('ssh '.$server['arguments'].' -p '.$server['port'].' -i '.$keyfile.' '.$server['username'].'@'.$server['hostname'].' '.$commands);
+        $result = safe_exec('ssh '.$server['arguments'].' -p '.$server['port'].' -i '.$keyfile.' '.$server['username'].'@'.$server['hostname'].' "'.$commands.'"');
 
         chmod($keyfile, 0600);
         file_delete($keyfile);
@@ -222,7 +246,7 @@ function ssh_exec($server, $commands = null){
         return $result;
 
     }catch(Exception $e){
-//showdie($e);
+showdie($e);
         notify(tr('ssh_exec() exception'), $e, 'developers');
 
         /*
