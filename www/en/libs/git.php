@@ -91,15 +91,30 @@ function git_branch($branch = null, $path = ROOT, $create = false){
 /*
  * Ensure the path is specified and exists
  */
-function git_check_path($path){
+function git_check_path(&$path){
+    static $paths;
+
     try{
+        if(isset($paths[$path])){
+            return $paths[$path];
+        }
+
+        load_libs('file');
+
         if(!$path){
-            throw new bException('git_check_path(): No path specified');
+            $path = ROOT;
         }
 
         if(!file_exists($path)){
-            throw new bException('git_check_path(): Specified path ":path" does not exist', array(':path' => $path));
+            throw new bException(tr('git_check_path(): Specified path ":path" does not exist', array(':path' => $path)), 'not-exist');
         }
+
+        if(!file_scan($path, '.git')){
+            throw new bException(tr('git_check_path(): Specified path ":path" is not a git repository', array(':path' => $path)), 'git');
+        }
+
+        $paths[$path] = true;
+        return true;
 
     }catch(Exception $e){
         throw new bException('git_check_path(): Failed', $e);
@@ -111,17 +126,23 @@ function git_check_path($path){
 /*
  * Checkout the specified file, resetting its changes
  */
-function git_checkout($file){
+function git_checkout($path, $branch = null){
     try{
-        git_check_path($file);
-
-        if(is_dir($file)){
-            $path   = $file;
-            $retval = safe_exec('cd '.$path.'; git checkout -- '.$file);
+        if($branch){
+            safe_exec('cd '.$path.'; git checkout '.$branch);
 
         }else{
-            $path   = dirname($file);
-            $retval = safe_exec('cd '.$path.'; git checkout -- '.basename($file));
+            if(is_dir($path)){
+                git_check_path($path);
+                safe_exec('cd '.$path.'; git checkout -- '.$path);
+
+            }else{
+                $file = basename($path);
+                $path = dirname($path);
+
+                git_check_path($path);
+                safe_exec('cd '.$path.'; git checkout -- '.$file);
+            }
         }
 
     }catch(Exception $e){
@@ -227,6 +248,37 @@ under_construction();
     }
 }
 
+
+
+/*
+ * Return the current branch for the specified git repository
+ */
+function git_get_branch($branch = null){
+    try{
+        git_check_path($path);
+
+        $retval = safe_exec('cd '.$path.'; git branch --no-color');
+showdie($retval);
+
+    }catch(Exception $e){
+        throw new bException('git_get_branch(): Failed', $e);
+    }
+}
+
+
+
+/*
+ *
+ */
+function git_pull($path, $remote, $branch){
+    try{
+        git_check_path($path);
+        safe_exec('cd '.$path.'; git pull '.$remote.' '.$branch);
+
+    }catch(Exception $e){
+        throw new bException('git_pull(): Failed', $e);
+    }
+}
 
 
 /*
