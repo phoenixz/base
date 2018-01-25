@@ -33,12 +33,9 @@ function sso_init(){
                                                     ROOT.'libs/external/hybridauth/Hybrid/Auth.php')));
 
     }catch(Exception $e){
-showdie($e);
         throw new bException(tr('sso_init(): Failed'), $e);
     }
 }
-
-
 
 
 
@@ -85,8 +82,6 @@ function sso_install($params){
 
 
 
-
-
 /*
  * Single Sign On
  */
@@ -116,6 +111,12 @@ function sso($provider, $method, $redirect, $role = 'user'){
 
                 if(isset($_REQUEST['hauth_start']) or isset($_REQUEST['hauth_done'])){
                     Hybrid_Endpoint::process();
+
+                }else{
+                    /*
+                     * Invalid request!
+                     */
+                    throw new bException(tr('sso(): Neither one of required hauth_start or hauth_done has been specified'), 'invalid');
                 }
 
                 break;
@@ -281,9 +282,11 @@ function sso($provider, $method, $redirect, $role = 'user'){
                 throw new bException(tr('sso(): Unknown or disabled provider'), $e);
 
             case 4:
+                $e->setCode(400);
                 throw new bException(tr('sso(): Missing provider application credentials'), $e);
 
             case 5:
+                $e->setCode(400);
                 throw new bException(tr('sso(): Authentication failed The user has canceled the authentication or the provider refused the connection'), $e);
 
             case 6:
@@ -295,6 +298,7 @@ function sso($provider, $method, $redirect, $role = 'user'){
                 throw new bException(tr('sso(): User not connected to the provider'), $e);
 
             case 8:
+                $e->setCode(400);
                 throw new bException(tr('sso(): Provider does not support this feature'), $e);
 
             default:
