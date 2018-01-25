@@ -388,11 +388,11 @@ foreach($sections as $section => &$list){
              * Patch or show diff
              */
             if($section == 'base'){
-                patch($file, $paths[$section], ((($method == 'patch') and $create_only) ? 'create' : $method));
+                patch(ROOT.$file, $paths[$section], ((($method == 'patch') and $create_only) ? 'create' : $method));
                 $status = 'patched';
 
             }elseif(!$base_only){
-                patch($file, $paths[$section], ((($method == 'patch') and $create_only) ? 'create' : $method), array($file => str_replace('admin/', '', $file)));
+                patch(ROOT.$file, $paths[$section], ((($method == 'patch') and $create_only) ? 'create' : $method), array($file => str_replace('admin/', '', $file)));
                 $status = 'patched';
             }
 
@@ -473,12 +473,21 @@ if($method == 'patch'){
     }else{
         log_console(tr('All files patched successfully, cleaning up'), 'white', false);
 
+        if(VERBOSE){
+            log_console('');
+        }
+
         foreach($sections as $section => $list){
             foreach($list as $file => $status){
                 if($status === 'patched'){
-                    log_console(tr('Cleaning up file ":file"', array(':file' => $file)), 'VERBOSE');
-                    cli_dot(1, 'green', '.', true);
-                    git_checkout($file);
+                    if(VERBOSE){
+                        log_console(tr('Cleaning up file ":file"', array(':file' => $file)));
+
+                    }else{
+                        cli_dot(1, 'green', '.', true);
+                    }
+
+                    git_checkout(ROOT.$file);
                 }
             }
         }
