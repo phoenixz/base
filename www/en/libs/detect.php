@@ -199,7 +199,7 @@ function detect_language(){
                     return $_SESSION['language'];
                 }
 
-                if(!empty($_SESSION['location']['country']['id'])){
+                if(empty($_SESSION['location']['country']['id'])){
                     $language = $_CONFIG['language']['default'];
 
                 }else{
