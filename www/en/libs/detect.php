@@ -199,7 +199,12 @@ function detect_language(){
                     return $_SESSION['language'];
                 }
 
-               $language = sql_get('SELECT `languages` FROM `geo_countries` WHERE `id` = :id', true, array(':id' => $_SESSION['location']['country']['id']));
+                if(empty($_SESSION['location']['country']['id'])){
+                    $language = $_CONFIG['language']['default'];
+
+                }else{
+                    $language = sql_get('SELECT `languages` FROM `geo_countries` WHERE `id` = :id', true, array(':id' => $_SESSION['location']['country']['id']));
+                }
 
             }else{
                 $language = $_SERVER['HTTP_ACCEPT_LANGUAGE'];
@@ -222,6 +227,10 @@ function detect_language(){
 
         }catch(Exception $e){
             notify($e);
+
+            if(empty($_SESSION['language'])){
+                $_SESSION['language'] = $_CONFIG['language']['default'];
+            }
         }
 
         return $_SESSION['language'];
