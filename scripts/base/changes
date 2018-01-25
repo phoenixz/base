@@ -242,10 +242,17 @@ foreach($files as $file => &$status){
              */
             if($type == 'intranet'){
                 if(!$base_only){
-                    if(patch_file_exists_in_toolkit(str_replace('admin/', '', $file))){
-                        log_console(tr('Identified file as toolkit'), 'VERBOSE');
-                        $sections['toolkit'][$file] = $status;
-                        $marked = true;
+                    if(substr($file, -10, 10) == 'style.css'){
+                        /*
+                         * This is the custom style.css which is unique to each
+                         * project. Do NOT patch this!
+                         */
+                    }else{
+                        if(patch_file_exists_in_toolkit(str_replace('admin/', '', $file))){
+                            log_console(tr('Identified file as toolkit'), 'VERBOSE');
+                            $sections['toolkit'][$file] = $status;
+                            $marked = true;
+                        }
                     }
                 }
             }
@@ -255,10 +262,18 @@ foreach($files as $file => &$status){
              * These are admin pub files (very likely toolkit)
              */
             if(!$base_only){
-                if(patch_file_exists_in_toolkit(str_replace('admin/', '', $file))){
-                    log_console(tr('Identified file as toolkit'), 'VERBOSE');
-                    $sections['toolkit'][$file] = $status;
-                    $marked = true;
+                if(substr($file, -9, 10) == 'style.css'){
+                    /*
+                     * This is the custom style.css which is unique to each
+                     * project. Do NOT patch this!
+                     */
+
+                }else{
+                    if(patch_file_exists_in_toolkit(str_replace('admin/', '', $file))){
+                        log_console(tr('Identified file as toolkit'), 'VERBOSE');
+                        $sections['toolkit'][$file] = $status;
+                        $marked = true;
+                    }
                 }
             }
 
