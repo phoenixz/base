@@ -113,8 +113,12 @@ try{
                 die('pre config exception');
             }
 
+            if(is_numeric($e->getCode()) and page_show($e->getCode(), array('exists' => true))){
+                page_show($e->getCode());
+            }
+
             if(!debug()){
-                notify('uncaught-exception', 'developers', $e);
+                notify($e);
                 page_show(500);
             }
 
@@ -141,8 +145,8 @@ try{
 
         case 'http':
             if(!debug()){
-                notify('uncaught-exception-crash', 'developers', $f);
-                notify('uncaught-exception'      , 'developers', $e);
+                notify($f);
+                notify($e);
                 page_show(500);
             }
 
