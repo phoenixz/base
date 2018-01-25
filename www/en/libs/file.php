@@ -98,7 +98,7 @@ function file_get_uploaded($source){
         }
 
 
-        file_is($source);
+        is_file($source);
         file_ensure_path($destination);
 
         /*
