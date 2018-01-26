@@ -998,12 +998,25 @@ function sql_connector_name($connector){
 /*
  * Use correct SQL in case NULL is used in queries
  */
-function sql_isnull($parameter, $value){
-    if($value === null){
-        return ' IS '.$parameter;
-    }
+function sql_is($value, $not = false){
+    try{
+        if($not){
+            if($value === null){
+                return ' IS NOT ';
+            }
 
-    return ' = '.$parameter;
+            return ' != ';
+        }
+
+        if($value === null){
+            return ' IS ';
+        }
+
+        return ' = ';
+
+    }catch(Exception $e){
+        throw new bException('sql_is(): Failed', $e);
+    }
 }
 
 
@@ -1043,19 +1056,6 @@ function sql_exists($table, $column, $value, $id = null){
     }catch(Exception $e){
         throw new bException(tr('sql_exists(): Failed'), $e);
     }
-}
-
-
-
-/*
- *
- */
-function sql_is($value){
-    if($value === null){
-        return ' IS ';
-    }
-
-    return ' = ';
 }
 
 
@@ -1121,8 +1121,11 @@ function sql_current_database(){
         throw new bException('sql_current_database(): Failed', $e);
     }
 }
+
+
+
 /*
- * COMPATIBILITY FUNCTIONS
+ * OBSOLETE / COMPATIBILITY FUNCTIONS
  *
  * These functions below exist only for compatibility between pdo.php and mysqli.php
  *
