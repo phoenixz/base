@@ -1722,6 +1722,9 @@ function user_validate($user, $sections = array()){
         $user['email2'] = $user['email'];
         $user['terms']  = true;
 
+        /*
+         * Validate domain
+         */
         if($user['domain']){
             $user['domain'] = trim(strtolower($user['domain']));
             if($v->isRegex($user['domain'], '/[a-z.]/', tr('Please provide a valid domain name')));
@@ -1736,22 +1739,56 @@ function user_validate($user, $sections = array()){
             }
         }
 
-        if(!$user['username']){
-            if(!$user['email']){
-                $v->setError(tr('Please provide at least an email or username'));
-
-            }else{
-                $v->isEmail($user['email'], tr('Please provide a valid email address'));
-            }
-
-        }else{
+        /*
+         * Validate username
+         */
+        if($user['username']){
             $v->isAlphaNumeric($user['username'], tr('Please provide a valid username, it can only contain letters and numbers'));
 
             if($v->isNumeric($user['username'])){
                 $v->setError(tr('Please provide a non numeric username'));
             }
+
+            if($v->isNumeric(substr($user['username'], 0, 1))){
+                $v->setError(tr('Please provide a username that does not start with a number'));
+            }
+
+            $exists = sql_query('SELECT `id` FROM `users` WHERE `username` = :username AND `id` != :id', true, array(':id'       => $user['id'],
+                                                                                                                     ':username' => $user['username']));
+
+            if($exists){
+                $v->setError(tr('The username ":username" is already taken by another user', array(':username' => $user['username'])));
+            }
+
+        }else{
+            $user['username'] = null;
+
+            if(!$user['email']){
+                $v->setError(tr('Please provide at least an email or username'));
+            }
         }
 
+        /*
+         * Validate email address
+         */
+        if($user['email']){
+            $v->isEmail($user['email'], tr('Please ensure that the specified email is valid'));
+
+            /*
+             * Double emails are NOT allowed
+             */
+            $exists = sql_get('SELECT `id` FROM `users` WHERE `email` = :email', true, array(':email' => $user['email']));
+
+            if($exists){
+                $v->setError(tr('The email address ":email" is already taken by another user', array(':email' => $user['email'])));
+            }
+        }else{
+            $user['email'] = null;
+        }
+
+        /*
+         * Validate nickname
+         */
         if($user['nickname']){
             $v->hasMinChars($user['nickname'], 2, tr('Please ensure that the users nick name has a minimum of 2 characters'));
 
@@ -1762,7 +1799,7 @@ function user_validate($user, $sections = array()){
                 $exists = sql_get('SELECT `id` FROM `users` WHERE `nickname` = :nickname', true, array(':nickname' => $user['nickname']));
 
                 if($exists){
-                    $v->setError(tr('The nickname ":nickname" is already in use', array(':nickname' => $user['nickname'])));
+                    $v->setError(tr('The nickname ":nickname" is already taken by another user', array(':nickname' => $user['nickname'])));
                 }
             }
         }
@@ -1857,52 +1894,9 @@ function user_validate($user, $sections = array()){
         }
 
         /*
-         * Ensure that the username and or email are not in use
-         */
-        $query   = 'SELECT `email`,
-                           `username`
-
-                    FROM   `users`';
-
-        $where   = array();
-        $execute = array();
-
-        if($user['username']){
-            $where[] = ' `username` = :username ';
-            $execute[':username'] = $user['username'];
-        }
-
-        if($user['email']){
-            $where[] = ' `email` = :email ';
-            $execute[':email'] = $user['email'];
-        }
-
-        /*
          * Only continue testing user if there were no validation errors so far
          */
         $v->isValid();
-
-        if(empty($user['id'])){
-            $where   = ' WHERE ('.implode(' OR ', $where).')';
-
-        }else{
-            $where   = ' WHERE  `id`      != :id
-                         AND   ('.implode(' OR ', $where).')';
-
-            $execute[':id'] = $user['id'];
-        }
-
-        $exists = sql_get($query.$where, $execute);
-
-        if($exists){
-            if($user['username'] and ($exists['username'] == $user['username'])){
-                $v->setError(tr('The username ":username" is already in use by another user', array(':username' => str_log($user['username']))));
-            }
-
-            if($user['email'] and ($exists['email'] == $user['email'])){
-                $v->setError(tr('The email ":email" is already in use by another user', array(':email' => str_log($user['email']))));
-            }
-        }
 
         if(!$user['type']){
             $user['type'] = null;
