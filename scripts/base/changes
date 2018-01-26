@@ -37,7 +37,12 @@ patch                           - Will apply the diff patches to both base and
                                   them
 
   --no-clean                    - Do NOT clean up local base / toolkit changes
-                                  after all patches have applied successfully';
+                                  after all patches have applied successfully
+
+  --reverse                     - Will get the current open changes from base
+                                  and toolkit and try to apply them on this
+                                  project (and then remove them from base and
+                                  toolkit)';
 
 require_once(dirname(__FILE__).'/../../libs/startup.php');
 
@@ -86,6 +91,7 @@ switch($method){
     case 'patch':
         $create_only = cli_argument('--create-only');
         $no_clean    = cli_argument('--no-clean');
+        $reverse     = cli_argument('--reverse');
 
         cli_no_arguments_left();
         break;
@@ -137,7 +143,7 @@ git_reset(ROOT, 'HEAD');
 /*
  * Ensure that base and toolkit have no pending changes
  */
-if(($method == 'patch') and !FORCE){
+if(($method == 'patch') and !FORCE and !$reverse){
     if(git_status($paths['base'])){
         throw new bException(tr('The base project has pending git changes'), 'warning/has-changes');
     }
@@ -167,6 +173,10 @@ switch($method){
         break;
 
     case 'patch':
+        if($reverse){
+            under_construction();
+        }
+
         log_console(tr('Gathering file changes'), 'QUIET/white', false);
         break;
 }
