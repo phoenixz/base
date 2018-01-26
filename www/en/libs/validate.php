@@ -29,6 +29,19 @@ $html .= $vj->output_validation($params);
 */
 
 
+
+/*
+ * Basic validation defines
+ */
+define('VALIDATE_NOT'                ,  1);
+define('VALIDATE_ALLOW_EMPTY_NULL'   ,  2);
+define('VALIDATE_ALLOW_EMPTY_INTEGER',  4);
+define('VALIDATE_ALLOW_EMPTY_BOOLEAN',  8);
+define('VALIDATE_ALLOW_EMPTY_STRING' , 16);
+
+
+
+
 /*
 *
 */
@@ -97,7 +110,7 @@ class validate_jquery {
                 break;
 
             default:
-                throw new bException('validate_jquery->validate(): Unknown rule "'.str_log($rule).'" specified', 'unknown');
+                throw new bException(tr('validate_jquery->validate(): Unknown rule ":rule" specified', array(':rule' => $rule)), 'unknown');
         }
 
         $this->validations[$element][] = array('rule'  => $rule,
@@ -272,6 +285,87 @@ class validate_form {
     public  $errors = array();
     private $source = array();
 
+    private $allowEmpty;
+    private $not;
+
+
+
+    /*
+     * Parse the flags given with the validation
+     */
+    private function parseFlags(&$value, $message, $flags, $allowEmpty = true){
+        try{
+            $this->allowEmpty = 'no';
+            $this->not        = false;
+
+            if($flags){
+                if($flags & VALIDATE_NOT){
+                    $this->not = true;
+                }
+
+                if($flags & VALIDATE_ALLOW_EMPTY_NULL){
+                    $this->allowEmpty = null;
+
+                }elseif($flags & VALIDATE_ALLOW_EMPTY_INTEGER){
+                    $this->allowEmpty = 0;
+
+                }elseif($flags & VALIDATE_ALLOW_EMPTY_BOOLEAN){
+                    $this->allowEmpty = false;
+
+                }elseif($flags & VALIDATE_ALLOW_EMPTY_STRING){
+                    $this->allowEmpty = '';
+                }
+            }
+
+            if(!$allowEmpty and ($this->allowEmpty !== 'no')){
+                /*
+                 * The function executing this validation says its okay for a
+                 * variable to be empty, even though this variable can never
+                 * ever be empty!
+                 */
+                throw new bException(tr('validate_form::parseFlags(): Some VALIDATE_ALLOW_EMPTY flag was specified while this validation method does not allow these flags'), 'invalid');
+            }
+
+            return $this->allowEmpty($value, $message);
+
+        }catch(Exception $e){
+            throw new bException(tr('validate_form::parseFlags(): Failed'), $e);
+        }
+    }
+
+
+
+    /*
+     * Process value and determine if empty is allowed or not. If it is empty
+     * and empty is allowed, then enfore the empty value to be the allowed
+     * data type
+     */
+    private function allowEmpty(&$value, $message = null){
+        try{
+            if(!empty($value)){
+                return true;
+            }
+
+            if($this->allowEmpty){
+                /*
+                 * This is contradictory, but being here it means that $value
+                 * is empty, but $empty is not, so $value is NOT allowed to
+                 * be empty
+                 */
+                return $this->setError($message);
+            }
+
+            /*
+             * $value may be empty, ensure it has the right data type
+             */
+            $value = $this->allowEmpty;
+            return false;
+
+        }catch(Exception $e){
+            throw new bException('validate_form->allowEmpty(): Failed', $e);
+        }
+    }
+
 
 
     /*
@@ -304,14 +398,14 @@ class validate_form {
     /*
      *
      */
-    function isScalar(&$value, $message = null){
+    function isScalar(&$value, $message = null, $flags = null){
         try{
-            if(!is_scalar($value)){
-                return $this->setError($message);
+            if(!$this->parseFlags($value, $message, $flags)){
+                return true;
             }
 
-            if(is_string($value)){
-                $value = trim($value);
+            if($this->not xor !is_scalar($value)){
+                return $this->setError($message);
             }
 
             return true;
@@ -326,13 +420,17 @@ class validate_form {
     /*
      *
      */
-    function isNotEmpty(&$value, $message = null){
+    function isNotEmpty(&$value, $message = null, $flags = null){
         try{
+            if(!$this->parseFlags($value, $message, $flags, false)){
+                return true;
+            }
+
             if(!$this->isScalar($value, $message)){
                 return false;
             }
 
-            if(!$value){
+            if($this->not xor !$value){
                 return $this->setError($message);
             }
 
@@ -348,9 +446,9 @@ class validate_form {
     /*
      * Only allow alpha numeric characters
      */
-    function isAlphaNumeric(&$value, $message = null, $allow_empty = 'no'){
+    function isAlphaNumeric(&$value, $message = null, $flags = null){
         try{
-            if(!$this->allowEmpty($value, $message, $allow_empty)){
+            if(!$this->parseFlags($value, $message, $flags)){
                 return true;
             }
 
@@ -358,7 +456,7 @@ class validate_form {
                 return false;
             }
 
-            if(!ctype_alnum($value)){
+            if($this->not xor !ctype_alnum($value)){
                 return $this->setError($message);
             }
 
@@ -374,9 +472,9 @@ class validate_form {
     /*
      * Only allow a valid (unverified!) email address
      */
-    function isEmail(&$value, $message = null, $allow_empty = 'no'){
+    function isEmail(&$value, $message = null, $flags = null){
         try{
-            return $this->isFilter($value, FILTER_VALIDATE_EMAIL, $message, $allow_empty);
+            return $this->isFilter($value, FILTER_VALIDATE_EMAIL, $message, $flags);
 
         }catch(Exception $e){
             throw new bException('validate_form->isEmail(): Failed', $e);
@@ -388,9 +486,9 @@ class validate_form {
     /*
      *
      */
-    function isUrl(&$value, $message = null, $allow_empty = 'no'){
+    function isUrl(&$value, $message = null, $flags = null){
         try{
-            return $this->isFilter($value, FILTER_VALIDATE_URL, $message, $empty);
+            return $this->isFilter($value, FILTER_VALIDATE_URL, $message, $flags);
 
         }catch(Exception $e){
             throw new bException('validate_form->isUrl(): Failed', $e);
@@ -420,13 +518,13 @@ class validate_form {
      * FILTER_VALIDATE_URL
      *      FILTER_FLAG_SCHEME_REQUIRED, FILTER_FLAG_HOST_REQUIRED, FILTER_FLAG_PATH_REQUIRED, FILTER_FLAG_QUERY_REQUIRED
      */
-    function isFilter(&$value, $filter, $message = null, $allow_empty = 'no'){
+    function isFilter(&$value, $filter_flags, $message = null, $flags = null){
         try{
-            if(!$this->allowEmpty($value, $message, $allow_empty)){
+            if(!$this->parseFlags($value, $message, $flags)){
                 return true;
             }
 
-            if(!filter_var($value, $filter)){
+            if($this->not xor !filter_var($value, $filter_flags)){
                 return $this->setError($message);
             }
 
@@ -442,13 +540,17 @@ class validate_form {
     /*
      * Only allow numeric values (integers, floats, strings with numbers)
      */
-    function isNumeric(&$value, $message = null){
+    function isNumeric(&$value, $message = null, $flags = null){
         try{
+            if(!$this->parseFlags($value, $message, $flags)){
+                return true;
+            }
+
             if(!$value){
                 $value = 0;
             }
 
-            if(!is_numeric($value)){
+            if($this->not xor !is_numeric($value)){
                 return $this->setError($message);
             }
 
@@ -464,13 +566,13 @@ class validate_form {
     /*
      * Only allow integer numbers 1 and up
      */
-    function isNatural(&$value, $message = null, $start = 1, $allow_empty = 'no'){
+    function isNatural(&$value, $message = null, $start = 1, $flags = null){
         try{
-            if(!$this->allowEmpty($value, $message, $allow_empty)){
+            if(!$this->parseFlags($value, $message, $flags)){
                 return true;
             }
 
-            if(!is_natural($value, $start)){
+            if($this->not xor !is_natural($value, $start)){
                 return $this->setError($message);
             }
 
@@ -486,9 +588,9 @@ class validate_form {
     /*
      *
      */
-    function isPhonenumber(&$value, $message = null, $allow_empty = 'no'){
+    function isPhonenumber(&$value, $message = null, $flags = null){
         try{
-            if(!$this->allowEmpty($value, $message, $allow_empty)){
+            if(!$this->parseFlags($value, $message, $flags)){
                 return true;
             }
 
@@ -496,7 +598,7 @@ class validate_form {
                 return false;
             }
 
-            if(!preg_match('/\(?([0-9]{3})\)?(?:[ .-]{1,5})?([0-9]{3})(?:[ .-]{1,5})?([0-9]{4})/', $value)){
+            if($this->not xor !preg_match('/\(?([0-9]{3})\)?(?:[ .-]{1,5})?([0-9]{3})(?:[ .-]{1,5})?([0-9]{4})/', $value)){
                 return $this->setError($message);
             }
 
@@ -512,15 +614,19 @@ class validate_form {
     /*
      *
      */
-    function isEqual(&$value, $value2, $message = null){
+    function isEqual(&$value, $value2, $message = null, $flags = null){
         try{
+            if(!$this->parseFlags($value, $message, $flags, false)){
+                return true;
+            }
+
             $this->isScalar($value , $message);
             $this->isScalar($value2, $message);
 
             $value  = trim($value);
             $value2 = trim($value2);
 
-            if($value != $value2){
+            if($this->not xor $value != $value2){
                 return $this->setError($message);
             }
 
@@ -536,15 +642,19 @@ class validate_form {
     /*
      *
      */
-    function isNotEqual(&$value, $value2, $message = null){
+    function isNotEqual(&$value, $value2, $message = null, $flags = null){
         try{
+            if(!$this->parseFlags($value, $message, $flags, false)){
+                return true;
+            }
+
             $this->isScalar($value , $message);
             $this->isScalar($value2, $message);
 
             $value  = trim($value);
             $value2 = trim($value2);
 
-            if($value == $value2){
+            if($this->not xor $value == $value2){
                 return $this->setError($message);
             }
 
@@ -560,9 +670,13 @@ class validate_form {
     /*
      *
      */
-    function isBetween(&$value, $min, $max, $message = null, $allow_empty = 'no'){
+    function isBetween(&$value, $min, $max, $message = null, $flags = null){
         try{
-            if(!$this->allowEmpty($value, $message, $allow_empty)){
+            if(!$this->parseFlags($value, $message, $flags, false)){
+                return true;
+            }
+
+            if(!$this->parseFlags($value, $message, $flags)){
                 return true;
             }
 
@@ -570,7 +684,7 @@ class validate_form {
                 return false;
             }
 
-            if(($value < $min) and ($value > $max)){
+            if($this->not xor (($value < $min) and ($value > $max))){
                 return $this->setError($message);
             }
 
@@ -586,9 +700,9 @@ class validate_form {
     /*
      *
      */
-    function isInRange(&$value, $min, $max, $message = null, $allow_empty = 'no'){
+    function isInRange(&$value, $min, $max, $message = null, $flags = null){
         try{
-            if(!$this->allowEmpty($value, $message, $allow_empty)){
+            if(!$this->parseFlags($value, $message, $flags, false)){
                 return true;
             }
 
@@ -596,7 +710,7 @@ class validate_form {
                 return false;
             }
 
-            if(!is_numeric($value) or ($value < $min) or ($value > $max)){
+            if($this->not xor (!is_numeric($value) or ($value < $min) or ($value > $max))){
                 return $this->setError($message);
             }
 
@@ -612,13 +726,17 @@ class validate_form {
     /*
      *
      */
-    function isEnabled(&$value, $message = null){
+    function isEnabled(&$value, $message = null, $flags = null){
         try{
+            if(!$this->parseFlags($value, $message, $flags, false)){
+                return true;
+            }
+
             if(!$this->isScalar($value, $message)){
                 return false;
             }
 
-            if(!$value){
+            if($this->not xor !$value){
                 return $this->setError($message);
             }
 
@@ -634,9 +752,9 @@ class validate_form {
     /*
      *
      */
-    function hasNoChars(&$value, $chars, $message = null, $allow_empty = 'no'){
+    function hasChars(&$value, $chars, $message = null, $flags = null){
         try{
-            if(!$this->allowEmpty($value, $message, $allow_empty)){
+            if(!$this->parseFlags($value, $message, $flags)){
                 return true;
             }
 
@@ -645,7 +763,7 @@ class validate_form {
             }
 
             foreach(array_force($chars) as $char){
-                if(strpos($value, $char)){
+                if($this->not xor !strpos($value, $char)){
                     return $this->setError($message);
                 }
             }
@@ -662,9 +780,9 @@ class validate_form {
     /*
      *
      */
-    function hasMinChars(&$value, $limit, $message = null, $allow_empty = 'no'){
+    function hasMinChars(&$value, $limit, $message = null, $flags = null){
         try{
-            if(!$this->allowEmpty($value, $message, $allow_empty)){
+            if(!$this->parseFlags($value, $message, $flags)){
                 return true;
             }
 
@@ -672,7 +790,7 @@ class validate_form {
                 return false;
             }
 
-            if(strlen($value) < $limit){
+            if($this->not xor (strlen($value) < $limit)){
                 return $this->setError($message);
             }
 
@@ -688,9 +806,9 @@ class validate_form {
     /*
      *
      */
-    function hasMaxChars(&$value, $limit, $message = null, $allow_empty = 'no'){
+    function hasMaxChars(&$value, $limit, $message = null, $flags = null){
         try{
-            if(!$this->allowEmpty($value, $message, $allow_empty)){
+            if(!$this->parseFlags($value, $message, $flags)){
                 return true;
             }
 
@@ -698,7 +816,7 @@ class validate_form {
                 return false;
             }
 
-            if(strlen($value) > $limit){
+            if($this->not xor (strlen($value) > $limit)){
                 return $this->setError($message);
             }
 
@@ -714,35 +832,9 @@ class validate_form {
     /*
      *
      */
-    function hasChars(&$value, $limit, $message = null, $allow_empty = 'no'){
+    function isFacebookUserpage(&$value, $message = null, $flags = null){
         try{
-            if(!$this->allowEmpty($value, $message, $allow_empty)){
-                return true;
-            }
-
-            if(!$this->isScalar($value, $message)){
-                return false;
-            }
-
-            if(strlen($value) != $limit){
-                return $this->setError($message);
-            }
-
-            return true;
-
-        }catch(Exception $e){
-            throw new bException('validate_form->hasChars(): Failed', $e);
-        }
-    }
-
-
-
-    /*
-     *
-     */
-    function isFacebookUserpage(&$value, $message = null, $allow_empty = 'no'){
-        try{
-            if(!$this->allowEmpty($value, $message, $allow_empty)){
+            if(!$this->parseFlags($value, $message, $flags)){
                 return true;
             }
 
@@ -754,7 +846,7 @@ class validate_form {
                 return false;
             }
 
-            if(!preg_match('/^(?:https?:\/\/)(?:www\.)?facebook\.com\/(.+)$/', $value)){
+            if($this->not xor !preg_match('/^(?:https?:\/\/)(?:www\.)?facebook\.com\/(.+)$/', $value)){
                 return $this->setError($message);
             }
 
@@ -770,9 +862,9 @@ class validate_form {
     /*
      *
      */
-    function isTwitterUserpage(&$value, $message = null, $allow_empty = 'no'){
+    function isTwitterUserpage(&$value, $message = null, $flags = null){
         try{
-            if(!$this->allowEmpty($value, $message, $allow_empty)){
+            if(!$this->parseFlags($value, $message, $flags)){
                 return true;
             }
 
@@ -784,7 +876,7 @@ class validate_form {
                 return false;
             }
 
-            if(!preg_match('/^(?:https?:\/\/)(?:www\.)?twitter\.com\/(.+)$/', $value)){
+            if($this->not xor !preg_match('/^(?:https?:\/\/)(?:www\.)?twitter\.com\/(.+)$/', $value)){
                 return $this->setError($message);
             }
 
@@ -800,9 +892,9 @@ class validate_form {
     /*
      *
      */
-    function isGoogleplusUserpage(&$value, $message = null, $allow_empty = 'no'){
+    function isGoogleplusUserpage(&$value, $message = null, $flags = null){
         try{
-            if(!$this->allowEmpty($value, $message, $allow_empty)){
+            if(!$this->parseFlags($value, $message, $flags)){
                 return true;
             }
 
@@ -814,7 +906,7 @@ class validate_form {
                 return false;
             }
 
-            if(!preg_match('/^(?:(?:https?:\/\/)?plus\.google\.com\/)(\d{21,})(?:\/posts)?$/', $value, $matches)){
+            if($this->not xor !preg_match('/^(?:(?:https?:\/\/)?plus\.google\.com\/)(\d{21,})(?:\/posts)?$/', $value, $matches)){
                 return $this->setError($message);
             }
 
@@ -830,9 +922,9 @@ class validate_form {
     /*
      *
      */
-    function isYoutubeUserpage(&$value, $message = null, $allow_empty = 'no'){
+    function isYoutubeUserpage(&$value, $message = null, $flags = null){
         try{
-            if(!$this->allowEmpty($value, $message, $allow_empty)){
+            if(!$this->parseFlags($value, $message, $flags)){
                 return true;
             }
 
@@ -844,7 +936,7 @@ class validate_form {
                 return false;
             }
 
-            if(preg_match('/^(?:https?:\/\/)(?:www\.)?youtube\.com\/user\/(.+)$/', $value)){
+            if($this->not xor preg_match('/^(?:https?:\/\/)(?:www\.)?youtube\.com\/user\/(.+)$/', $value)){
                 return $this->setError($message);
             }
 
@@ -860,9 +952,9 @@ class validate_form {
     /*
      *
      */
-    function isLinkedinUserpage(&$value, $message = null, $allow_empty = 'no'){
+    function isLinkedinUserpage(&$value, $message = null, $flags = null){
         try{
-            if(!$this->allowEmpty($value, $message, $allow_empty)){
+            if(!$this->parseFlags($value, $message, $flags)){
                 return true;
             }
 
@@ -874,7 +966,7 @@ class validate_form {
                 return false;
             }
 
-            if(preg_match('/^(?:https?:\/\/)(?:www\.)?linkedin\.com\/(.+)$/', $value)){
+            if($this->not xor !preg_match('/^(?:https?:\/\/)(?:www\.)?linkedin\.com\/(.+)$/', $value)){
                 return $this->setError($message);
             }
 
@@ -890,9 +982,13 @@ class validate_form {
     /*
      *
      */
-    function isChecked(&$value, $message = null){
+    function isChecked(&$value, $message = null, $flags = null){
         try{
-            if(!$value){
+            if(!$this->parseFlags($value, $message, $flags, false)){
+                return true;
+            }
+
+            if($this->not xor !$value){
                 return $this->setError($message);
             }
 
@@ -908,13 +1004,13 @@ class validate_form {
     /*
      *
      */
-    function isRegex(&$value, $regex, $message = null){
+    function isRegex(&$value, $regex, $message = null, $flags = null){
          try{
-            if(!$this->isScalar($value, $message)){
+            if(!$this->isScalar($value, $message, $flags)){
                 return false;
             }
 
-            if(!preg_match($regex, $value)){
+            if($this->not xor !preg_match($regex, $value)){
                return $this->setError($message);
             }
 
@@ -930,7 +1026,7 @@ class validate_form {
     /*
      *
      */
-    function isDate(&$value, $message = null, $allow_empty = 'no'){
+    function isDate(&$value, $message = null, $flags = null){
         try{
 // :TODO: IMPLEMENT
 
@@ -944,7 +1040,7 @@ class validate_form {
     /*
      *
      */
-    function isDateTime(&$value, $message = null, $allow_empty = 'no'){
+    function isDateTime(&$value, $message = null, $flags = null){
         try{
 // :TODO: IMPLEMENT
 
@@ -958,9 +1054,9 @@ class validate_form {
     /*
      *
      */
-    function isTime(&$value, $message = null, $allow_empty = 'no'){
+    function isTime(&$value, $message = null, $flags = null){
         try{
-            if(!$this->allowEmpty($value, $message, $allow_empty)){
+            if(!$this->parseFlags($value, $message, $flags)){
                 return true;
             }
 
@@ -974,6 +1070,14 @@ class validate_form {
                 time_validate($value);
 
             }catch(Exception $e){
+                if($this->not){
+                    return true;
+                }
+
+                return $this->setError($message);
+            }
+
+            if($this->not){
                 return $this->setError($message);
             }
 
@@ -993,9 +1097,9 @@ class validate_form {
     /*
      *
      */
-    function isLatitude(&$value, $message = null, $allow_empty = 'no'){
+    function isLatitude(&$value, $message = null, $flags = null){
         try{
-            if(!$this->allowEmpty($value, $message, $allow_empty)){
+            if(!$this->parseFlags($value, $message, $flags)){
                 return true;
             }
 
@@ -1003,7 +1107,7 @@ class validate_form {
                 return false;
             }
 
-            if(($value < -90) or ($value > 90)){
+            if($this->not xor (($value < -90) or ($value > 90))){
                 return $this->setError($message);
             }
 
@@ -1023,9 +1127,9 @@ class validate_form {
     /*
      *
      */
-    function isLongitude(&$value, $message = null, $allow_empty = 'no'){
+    function isLongitude(&$value, $message = null, $flags = null){
         try{
-            if(!$this->allowEmpty($value, $message, $allow_empty)){
+            if(!$this->parseFlags($value, $message, $flags)){
                 return true;
             }
 
@@ -1033,7 +1137,7 @@ class validate_form {
                 return false;
             }
 
-            if(($value < -180) or ($value > 180)){
+            if($this->not xor (($value < -180) or ($value > 180))){
                 return $this->setError($message);
             }
 
@@ -1053,9 +1157,9 @@ class validate_form {
     /*
      *
      */
-    function isTimezone(&$value, $message = null, $allow_empty = 'no'){
+    function isTimezone(&$value, $message = null, $flags = null){
         try{
-            if(!$this->allowEmpty($value, $message, $allow_empty)){
+            if(!$this->parseFlags($value, $message, $flags)){
                 return true;
             }
 
@@ -1065,7 +1169,7 @@ class validate_form {
                 return false;
             }
 
-            if(!date_timezones_exists($value)){
+            if($this->not xor !date_timezones_exists($value)){
                 return $this->setError($message);
             }
 
@@ -1082,13 +1186,13 @@ class validate_form {
      * Ensure that the specified value is in the specified array values
      * Basically this is an enum check
      */
-    function inArray(&$value, $array, $message = null){
+    function inArray(&$value, $array, $message = null, $flags = null){
         try{
-            if(!$this->isScalar($value, $message)){
+            if(!$this->isScalar($value, $message, $flags)){
                 return false;
             }
 
-            if(!in_array($value, $array)){
+            if($this->not xor !in_array($value, $array)){
                 return $this->setError($message);
             }
 
@@ -1098,51 +1202,6 @@ class validate_form {
             throw new bException('validate_form->inArray(): Failed', $e);
         }
     }
-
-
-
-    /*
-     *
-     */
-    function allowEmpty(&$value, $message = null, $allowEmpty = 'no'){
-        try{
-            if(!empty($value)){
-                return true;
-            }
-
-            if($allowEmpty){
-                /*
-                 * This is contradictory, but being here it means that $value
-                 * is empty, but $empty is not, so $value is NOT allowed to
-                 * be empty
-                 */
-                return $this->setError($message);
-            }
-
-            /*
-             * $value may be empty, ensure it has the right data type
-             */
-            $value = $allowEmpty;
-            return false;
-
-        }catch(Exception $e){
-            throw new bException('validate_form->allowEmpty(): Failed', $e);
-        }
-    }
-
-
-
-// :DELETE: WTF Who thought this up? Probably me, but still.. Get rid of this crap
-    ///*
-    // *
-    // */
-    //function sqlQuery($sql, $result, $message){
-    //    $res = sql_get($sql);
-    //
-    //    if($res['result'] != $result){
-    //        return $this->setError($message);
-    //    }
-    //}
 
 
 
