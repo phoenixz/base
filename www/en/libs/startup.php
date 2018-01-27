@@ -2447,7 +2447,7 @@ function cdn_domain($file, $section = 'pub', $false_on_not_exist = false, $force
                     return cdn_domain($file, $section);
 
                 }else{
-                    $_SESSION['cdn'] = slash($_SESSION['cdn']).strtolower(str_replace('_', '-', PROJECT)).'/pub/';
+                    $_SESSION['cdn'] = slash($_SESSION['cdn']).'pub/'.strtolower(str_replace('_', '-', PROJECT).'/');
                 }
             }
 
