@@ -38,22 +38,24 @@ switch($_CONFIG['cache']['method']){
  * Read from cache
  */
 function cache_read($key = null, $namespace = null){
-    global $_CONFIG;
+    global $_CONFIG, $core;
 
     try{
-        $key = SCRIPT.'_'.LANGUAGE.isset_get($_SESSION['user']['id']).'_'.$key;
+//        $key = SCRIPT.'_'.LANGUAGE.isset_get($_SESSION['user']['id']).'_'.$key;
 
         switch($_CONFIG['cache']['method']){
             case 'file':
-                $key = cache_key_hash($key);
-                return cache_read_file($key, $namespace);
+                $key  = cache_key_hash($key);
+                $data = cache_read_file($key, $namespace);
+                break;
 
             case 'memcached':
                 if($namespace){
                     $namespace = unslash($namespace);
                 }
 
-                return mc_get($key, $namespace);
+                $data = mc_get($key, $namespace);
+                break;
 
             case false:
                 /*
@@ -64,6 +66,12 @@ function cache_read($key = null, $namespace = null){
             default:
                 throw new bException(tr('cache_read(): Unknown cache method ":method" specified', array(':method' => $_CONFIG['cache']['method'])), 'unknown');
         }
+
+        if(debug()){
+            $data = str_replace(':query_count', $core->register('query_count'), $data);
+        }
+
+        return $data;
 
     }catch(Exception $e){
         throw new bException('cache_read(): Failed', $e);
@@ -106,11 +114,13 @@ function cache_read_file($key, $namespace = null){
 /*
  * Read to cache
  */
-function cache_write($value, $key = null, $namespace = null){
+function cache_write($value, $key = null, $namespace = null, $max_age = null){
     global $_CONFIG, $core;
 
     try{
-        $key = SCRIPT.'_'.LANGUAGE.isset_get($_SESSION['user']['id']).'_'.$key;
+        if(!$max_age){
+            $max_age = $_CONFIG['cache']['max_age'];
+        }
 
         switch($_CONFIG['cache']['method']){
             case 'file':
@@ -119,7 +129,7 @@ function cache_write($value, $key = null, $namespace = null){
                 break;
 
             case 'memcached':
-                mc_put($value, $key, $namespace, $_CONFIG['cache']['max_age']);
+                mc_put($value, $key, $namespace, $max_age);
                 break;
 
             case false:
@@ -212,7 +222,7 @@ function cache_showpage($key = null, $namespace = 'htmlpage', $etag = null){
     global $_CONFIG, $core;
 
     try{
-        $core->register('cache_key', $key);
+        $core->register('page_cache_key', $key);
 
         if($_CONFIG['cache']['method']){
             /*
