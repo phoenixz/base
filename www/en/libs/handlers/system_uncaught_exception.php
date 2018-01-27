@@ -2,6 +2,8 @@
 global $_CONFIG, $core;
 static $executed = false;
 
+//echo '<pre>'; print_r($e); die();
+
 try{
     if($executed){
         /*
