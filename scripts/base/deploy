@@ -836,7 +836,7 @@ foreach($targets as $target_environment){
         log_console(tr('NOT deploying, due to "--no-deploy" or "--test" command line parameter'), 'yellow');
 
     }else{
-        $exclude = ' --exclude="data/cdn" --exclude="data/log" --exclude="data/ssh_keys/" --exclude=*~ --exclude="data/mocks" --exclude="data/templates" --exclude="tmp" --exclude="data/mock*" --exclude="data/uploads" --exclude="data/packages" --exclude=".git*" --exclude="/data/system"  --exclude="/data/tmp" --exclude="sitemaps" --exclude="sitemap.xml" ';
+        $exclude = ' --exclude="data/log" --exclude="data/ssh_keys/" --exclude=*~ --exclude="data/mocks" --exclude="data/templates" --exclude="tmp" --exclude="data/mock*" --exclude="data/uploads" --exclude="data/packages" --exclude=".git*" --exclude="/data/system"  --exclude="/data/tmp" --exclude="sitemaps" --exclude="sitemap.xml" ';
         $include = '';
 
         if(!$send_content_photos){
