@@ -1823,7 +1823,7 @@ function user_validate($user, $sections = array()){
             }
         }
 
-        $user['timezone'] = $v->isTimezone($user['timezone'], tr('Please specify a valid timezone'), null);
+        $user['timezone'] = $v->isTimezone($user['timezone'], tr('Please specify a valid timezone'), VALIDATE_ALLOW_EMPTY_NULL);
 
         if($sections['role']){
             if(!empty($user['role'])){
