@@ -29,7 +29,7 @@ switch($_CONFIG['cache']['method']){
         return false;
 
     default:
-        throw new bException('cache library: Unknown cache method "'.str_log($_CONFIG['cache']['method']).'" configured', 'unknown');
+        throw new bException(tr('Unknown cache method ":method" specified', array(':method' => $_CONFIG['cache']['method'])), 'unknown');
 }
 
 
@@ -37,26 +37,23 @@ switch($_CONFIG['cache']['method']){
 /*
  * Read from cache
  */
-function cache_read($key = null, $group = null){
+function cache_read($key = null, $namespace = null){
     global $_CONFIG;
 
     try{
-        if(!$key){
-            $key = $_SERVER['REQUEST_URI'].(empty($_SESSION['mobile']['device']) ? '' : '_m');
-        }
-
-        $key = LANGUAGE.cache_key_hash($key);
+        $key = SCRIPT.'_'.LANGUAGE.isset_get($_SESSION['user']['id']).'_'.$key;
 
         switch($_CONFIG['cache']['method']){
             case 'file':
-                return cache_read_file($key, $group);
+                $key = cache_key_hash($key);
+                return cache_read_file($key, $namespace);
 
             case 'memcached':
-                if($group){
-                    $group = unslash($group);
+                if($namespace){
+                    $namespace = unslash($namespace);
                 }
 
-                return mc_get($key, $group);
+                return mc_get($key, $namespace);
 
             case false:
                 /*
@@ -65,7 +62,7 @@ function cache_read($key = null, $group = null){
                 return false;
 
             default:
-                throw new bException('cache_read(): Unknown cache method "'.str_log($_CONFIG['cache']['method']).'" specified', 'unknown');
+                throw new bException(tr('cache_read(): Unknown cache method ":method" specified', array(':method' => $_CONFIG['cache']['method'])), 'unknown');
         }
 
     }catch(Exception $e){
@@ -79,15 +76,15 @@ function cache_read($key = null, $group = null){
  * Read from cache file.
  * File must exist and not have filemtime + max_age > now
  */
-function cache_read_file($key, $group = null){
+function cache_read_file($key, $namespace = null){
     global $_CONFIG;
 
     try{
-        if($group){
-            $group = slash($group);
+        if($namespace){
+            $namespace = slash($namespace);
         }
 
-        if(!file_exists($file = ROOT.'data/cache/'.$group.$key)){
+        if(!file_exists($file = ROOT.'data/cache/'.$namespace.$key)){
             return false;
         }
 
@@ -109,22 +106,21 @@ function cache_read_file($key, $group = null){
 /*
  * Read to cache
  */
-function cache_write($value, $key = null, $group = null){
-    global $_CONFIG;
+function cache_write($value, $key = null, $namespace = null){
+    global $_CONFIG, $core;
 
     try{
-        if(!$key){
-            $key = $_SERVER['REQUEST_URI'].(empty($_SESSION['mobile']['device']) ? '' : '_m');
-        }
-
-        $key = LANGUAGE.cache_key_hash($key);
+        $key = SCRIPT.'_'.LANGUAGE.isset_get($_SESSION['user']['id']).'_'.$key;
 
         switch($_CONFIG['cache']['method']){
             case 'file':
-                return cache_write_file($value, $key, $group);
+                $key = cache_key_hash($key);
+                cache_write_file($value, $key, $namespace);
+                break;
 
             case 'memcached':
-                return mc_put($value, $key, $group, $_CONFIG['cache']['max_age']);
+                mc_put($value, $key, $namespace, $_CONFIG['cache']['max_age']);
+                break;
 
             case false:
                 /*
@@ -133,8 +129,14 @@ function cache_write($value, $key = null, $group = null){
                 return $value;
 
             default:
-                throw new bException('cache_write(): Unknown cache method "'.str_log($_CONFIG['cache']['method']).'" configured in $_CONFIG[cache][method]', 'unknown');
+                throw new bException(tr('cache_write(): Unknown cache method ":method" specified', array(':method' => $_CONFIG['cache']['method'])), 'unknown');
         }
+
+        if(debug()){
+            $value = str_replace(':query_count', $core->register('query_count'), $value);
+        }
+
+        return $value;
 
     }catch(Exception $e){
         /*
@@ -152,13 +154,13 @@ function cache_write($value, $key = null, $group = null){
 /*
  * Write to cache file
  */
-function cache_write_file($value, $key, $group = null){
+function cache_write_file($value, $key, $namespace = null){
     try{
-        if($group){
-            $group = slash($group);
+        if($namespace){
+            $namespace = slash($namespace);
         }
 
-        $file = ROOT.'data/cache/'.$group.$key;
+        $file = ROOT.'data/cache/'.$namespace.$key;
 
         file_ensure_path(dirname($file), 0770);
         file_put_contents($file, $value);
@@ -207,26 +209,25 @@ function cache_key_hash($key){
  *
  */
 function cache_showpage($key = null, $namespace = 'htmlpage', $etag = null){
-    global $_CONFIG;
+    global $_CONFIG, $core;
 
     try{
-        if($key === 'index'){
-            $key = SCRIPT;
-        }
+        $core->register('cache_key', $key);
 
-        if(true or $_CONFIG['cache']['method']){
-            if(!$key){
-                $key = $_SERVER['REQUEST_URI'].(empty($_SESSION['mobile']['device']) ? '' : '_m');
-            }
-
+        if($_CONFIG['cache']['method']){
             /*
              * First try to apply HTTP ETag cache test
              */
             http_cache_test($etag);
 
-            if($page = cache_read($key, $namespace)){
-                http_headers(null, strlen($page));
-                echo $page;
+            if($value = cache_read($key, $namespace)){
+                http_headers(null, strlen($value));
+
+                if(debug()){
+                    $value = str_replace(':query_count', $core->register('query_count'), $value);
+                }
+
+                echo $value;
                 die();
             }
         }
@@ -243,7 +244,7 @@ function cache_showpage($key = null, $namespace = 'htmlpage', $etag = null){
 /*
  * Clear the entire cache
  */
-function cache_clear($key = null, $group = null){
+function cache_clear($key = null, $namespace = null){
     include('handlers/cache_clear.php');
 }
 
