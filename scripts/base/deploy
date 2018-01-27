@@ -581,6 +581,8 @@ foreach($targets as $target_environment){
     $deploy_config               = $_CONFIG['deploy'][$target_environment];
     $deploy_config['target_dir'] = unslash($deploy_config['target_dir']);
 
+    array_ensure($deploy_config, 'target_user,target_server,target_port,target_dir,categories,modes,include_dirs,exclude_dirs,rsync_parrallel,sudo,user,group,dir_mode,file_mode,www_mode');
+
     if(!$deploy_config['target_user']){
         /*
          * No target user specified, use the current process user
@@ -835,9 +837,16 @@ foreach($targets as $target_environment){
 
     }else{
         $exclude = ' --exclude="data/cdn" --exclude="data/log" --exclude="data/ssh_keys/" --exclude=*~ --exclude="data/mocks" --exclude="data/templates" --exclude="tmp" --exclude="data/mock*" --exclude="data/uploads" --exclude="data/packages" --exclude=".git*" --exclude="/data/system"  --exclude="/data/tmp" --exclude="sitemaps" --exclude="sitemap.xml" ';
+        $include = '';
 
         if(!$send_content_photos){
             $exclude .= ' --exclude="data/content/photos" ';
+        }
+
+        if($deploy_config['include_dirs']){
+            foreach($deploy_config['include_dirs'] as $key => $dir) {
+                $include .= ' --include="'.$dir.'" ';
+            }
         }
 
         if(!$send_content_texts){
@@ -858,14 +867,14 @@ foreach($targets as $target_environment){
             }
         }
 
-        if(count($deploy_config['exclude_dirs'])) {
+        if($deploy_config['exclude_dirs']){
             foreach($deploy_config['exclude_dirs'] as $key => $dir) {
                 $exclude .= ' --exclude="'.$dir.'" ';
             }
         }
 
         log_console(tr('Deploying project to target server ":server" on path ":path"', array(':server' => $deploy_config['target_server'], ':path' => $deploy_config['target_dir'])), 'white');
-        passthru('rsync -aczvAXHS --progress -p --delete '.($deploy_config['sudo'] ? '--rsync-path="sudo rsync" ' : '').'-e "ssh -p '.$deploy_config['target_port'].'" '.ROOT.' '.$deploy_config['target_user'].'@'.$deploy_config['target_server'].':'.$deploy_config['target_dir'].' '.$exclude, $exitcode);
+        passthru('rsync -aczvAXHS --progress -p --delete '.($deploy_config['sudo'] ? '--rsync-path="sudo rsync" ' : '').'-e "ssh -p '.$deploy_config['target_port'].'" '.ROOT.' '.$deploy_config['target_user'].'@'.$deploy_config['target_server'].':'.$deploy_config['target_dir'].' '.$include.' '.$exclude, $exitcode);
         exec('ssh -t -p '.$target_port.' '.$deploy_config['target_user'].'@'.$deploy_config['target_server'].' \''.$sudo.'mkdir -p '.$deploy_config['target_dir'].'/data/system 2> /dev/null; '.$sudo.'touch '.$deploy_config['target_dir'].'/data/system/last_deploy\'', $contentoutput, $return);
 
         if($exitcode and !$ignore_rsync_errors){
