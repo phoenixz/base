@@ -22,26 +22,26 @@ if(!class_exists('Memcached')){
  * Connect to the memcached server
  */
 function mc_connect(){
-    global $_CONFIG;
+    global $_CONFIG, $core;
 
-    try {
-        if(empty($GLOBALS['memcached'])){
+    try{
+        if(empty($core->register['memcached'])){
             /*
              * Memcached disabled?
              */
             if(!$_CONFIG['memcached']){
-                $GLOBALS['memcached'] = false;
+                $core->register['memcached'] = false;
 
             }else{
-                $failed               = 0;
-                $GLOBALS['memcached'] = new Memcached;
+                $failed                      = 0;
+                $core->register['memcached'] = new Memcached;
 
                 /*
                  * Connect to all memcached servers, but only if no servers were added yet
                  * (this should normally be the case)
                  */
-                if(!$GLOBALS['memcached']->getServerList()){
-                    $GLOBALS['memcached']->addServers($_CONFIG['memcached']['servers']);
+                if(!$core->register['memcached']->getServerList()){
+                    $core->register['memcached']->addServers($_CONFIG['memcached']['servers']);
                 }
 
                 /*
@@ -50,7 +50,7 @@ function mc_connect(){
                  */
         //:TODO: Maybe we should check this just once every 10 connects or so? is it really needed?
                 try{
-                    foreach($GLOBALS['memcached']->getStats() as $server => $server_data){
+                    foreach($core->register['memcached']->getStats() as $server => $server_data){
                         if($server_data['pid'] < 0){
                             /*
                              * Could not connect to this memcached server. Notify, and remove from the connections list
@@ -82,7 +82,7 @@ function mc_connect(){
             }
         }
 
-        return $GLOBALS['memcached'];
+        return $core->register['memcached'];
 
     }catch(Exception $e){
         throw new bException('mc_connect(): failed', $e);
@@ -95,9 +95,9 @@ function mc_connect(){
  *
  */
 function mc_put($value, $key, $namespace = null, $expiration_time = null){
-    global $_CONFIG;
+    global $_CONFIG, $core;
 
-    try {
+    try{
         mc_connect();
 
         if($namespace){
@@ -111,7 +111,7 @@ function mc_put($value, $key, $namespace = null, $expiration_time = null){
             $expiration_time = $_CONFIG['memcached']['expire_time'];
         }
 
-        $GLOBALS['memcached']->set($_CONFIG['memcached']['prefix'].mc_namespace($namespace).$key, $value, $expiration_time);
+        $core->register['memcached']->set($_CONFIG['memcached']['prefix'].mc_namespace($namespace).$key, $value, $expiration_time);
 
         return $value;
 
@@ -126,9 +126,9 @@ function mc_put($value, $key, $namespace = null, $expiration_time = null){
  *
  */
 function mc_add($value, $key, $namespace = null, $expiration_time = null){
-    global $_CONFIG;
+    global $_CONFIG, $core;
 
-    try {
+    try{
         mc_connect();
 
         if($namespace){
@@ -142,7 +142,8 @@ function mc_add($value, $key, $namespace = null, $expiration_time = null){
             $expiration_time = $_CONFIG['memcached']['expire_time'];
         }
 
-        if(!$GLOBALS['memcached']->add($_CONFIG['memcached']['prefix'].mc_namespace($namespace).$key, $value, $expiration_time)){
+        if(!$core->register['memcached']->add($_CONFIG['memcached']['prefix'].mc_namespace($namespace).$key, $value, $expiration_time)){
+
         }
 
         return $value;
@@ -158,9 +159,9 @@ function mc_add($value, $key, $namespace = null, $expiration_time = null){
  *
  */
 function mc_replace($value, $key, $namespace = null, $expiration_time = null){
-    global $_CONFIG;
+    global $_CONFIG, $core;
 
-    try {
+    try{
         mc_connect();
 
         if($namespace){
@@ -174,7 +175,7 @@ function mc_replace($value, $key, $namespace = null, $expiration_time = null){
             $expiration_time = $_CONFIG['memcached']['expire_time'];
         }
 
-        if(!$GLOBALS['memcached']->replace($_CONFIG['memcached']['prefix'].mc_namespace($namespace).$key, $value, $expiration_time)){
+        if(!$core->register['memcached']->replace($_CONFIG['memcached']['prefix'].mc_namespace($namespace).$key, $value, $expiration_time)){
 
         }
 
@@ -191,11 +192,11 @@ function mc_replace($value, $key, $namespace = null, $expiration_time = null){
  *
  */
 function mc_get($key, $namespace = null){
-    global $_CONFIG;
+    global $_CONFIG, $core;
 
-    try {
+    try{
         mc_connect();
-        return $GLOBALS['memcached']->get($_CONFIG['memcached']['prefix'].mc_namespace($namespace).$key);
+        return $core->register['memcached']->get($_CONFIG['memcached']['prefix'].mc_namespace($namespace).$key);
 
     }catch(Exception $e){
         throw new bException('mc_get(): Failed', $e);
@@ -208,9 +209,9 @@ function mc_get($key, $namespace = null){
  * Delete the specified key or namespace
  */
 function mc_delete($key, $namespace = null){
-    global $_CONFIG;
+    global $_CONFIG, $core;
 
-    try {
+    try{
         mc_connect();
 
         if(!$key){
@@ -224,7 +225,7 @@ function mc_delete($key, $namespace = null){
             return mc_namespace($namespace, true);
         }
 
-        return $GLOBALS['memcached']->delete($_CONFIG['memcached']['prefix'].mc_namespace($namespace).$key);
+        return $core->register['memcached']->delete($_CONFIG['memcached']['prefix'].mc_namespace($namespace).$key);
 
     }catch(Exception $e){
         throw new bException('mc_delete(): Failed', $e);
@@ -237,11 +238,11 @@ function mc_delete($key, $namespace = null){
  * clear the entire memcache
  */
 function mc_clear($delay = 0){
-    global $_CONFIG;
+    global $_CONFIG, $core;
 
-    try {
+    try{
         mc_connect();
-        $GLOBALS['memcached']->flush($delay);
+        $core->register['memcached']->flush($delay);
 
     }catch(Exception $e){
         throw new bException('mc_clear(): Failed', $e);
@@ -254,11 +255,11 @@ function mc_clear($delay = 0){
  * Increment the value of the specified key
  */
 function mc_increment($key, $namespace = null){
-    global $_CONFIG;
+    global $_CONFIG, $core;
 
-    try {
+    try{
         mc_connect();
-        $GLOBALS['memcached']->increment($_CONFIG['memcached']['prefix'].mc_namespace($namespace).$key);
+        $core->register['memcached']->increment($_CONFIG['memcached']['prefix'].mc_namespace($namespace).$key);
 
     }catch(Exception $e){
         throw new bException('mc_increment(): Failed', $e);
@@ -273,8 +274,10 @@ function mc_increment($key, $namespace = null){
  * value to the namespace key
  */
 function mc_namespace($namespace, $delete = false){
+    global $_CONFIG;
+
     try{
-        if(!$namespace){
+        if(!$namespace or !$_CONFIG['memcached']['namespaces']){
             return '';
         }
 

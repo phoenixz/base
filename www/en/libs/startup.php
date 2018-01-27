@@ -74,10 +74,11 @@ $core->startup();
  */
 class core{
     public $sql          = array();
-    public $register     = array('quiet' => true);
+    public $mc           = array();
+    public $register     = array('quiet'       => true,
+                                 'query_count' => 0);
 
     private $callType    = null;
-    private $query_count = 0;
 
     function __construct(){
         global $_CONFIG;
@@ -168,11 +169,15 @@ class core{
     }
 
     public function executedQuery(){
-        return ++$this->query_count;
+        return ++$this->register['query_count'];
     }
 
-    public function queryCount(){
-        return $this->query_count;
+    public function register($key, $value = null){
+        if($value === null){
+            return isset_get($this->register[$key]);
+        }
+
+        return $this->register[$key] = $value;
     }
 
     public function callType($type = null){

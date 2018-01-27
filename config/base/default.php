@@ -226,7 +226,8 @@ $_CONFIG['maintenance']        = false;                                         
 // Memcached configuration. If NOT set to false, the memcached library will automatically be loaded!
 $_CONFIG['memcached']          = array('servers'                            => array(array('localhost', 11211, 20)),                    // Array of multiple memcached servers. If set to false, no memcached will be done.
                                        'expire_time'                        => 86400,                                                   // Default memcached object expire time (after this time memcached will drop them automatically)
-                                       'prefix'                             => PROJECT.'-');                                            // Default memcached object key prefix (in case multiple projects use the same memcached server)
+                                       'prefix'                             => PROJECT.'-',                                             // Default memcached object key prefix (in case multiple projects use the same memcached server)
+                                       'namespaces'                         => true);                                                   // Use namespaces to store the data. This will require extra lookups on memcached to determine namespaces contents, but allows for more flexibility
 
 //Meta configuration
 $_CONFIG['meta']               = array('author'                             => '');                                                     // Set default meta tags for this site which may be overruled by parameters for the function html_header(). See libs/html.php
