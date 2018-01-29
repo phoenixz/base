@@ -45,7 +45,8 @@ function mysql_dump($params){
 function mysql_master_replication_setup($server){
     try{
         load_libs('ssh');
-        ssh_exec($server, 'uptime');
+        $result = ssh_exec($server, 'uptime');
+print_r($result);
 
     }catch(Exception $e){
         throw new bException(tr('mysql_master_replication_setup(): Failed'), $e);

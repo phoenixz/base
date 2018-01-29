@@ -208,7 +208,7 @@ function ssh_exec($server, $commands = null){
                                  LEFT JOIN `ssh_accounts`
                                  ON        `ssh_accounts`.`id` = `servers`.`ssh_accounts_id`
 
-                                 WHERE     `servers`.`seohostname` = :seohostname', array(':seohostname' => $server['server']));
+                                 WHERE     `servers`.`hostname` = :hostname', array(':hostname' => $server['server']));
 
             if(!$dbserver){
                 throw new bException(tr('ssh_exec(): Specified server ":server" does not exist', array(':server' => $server['server'])), 'not-exist');
@@ -246,7 +246,6 @@ function ssh_exec($server, $commands = null){
         return $result;
 
     }catch(Exception $e){
-showdie($e);
         notify(tr('ssh_exec() exception'), $e, 'developers');
 
         /*
