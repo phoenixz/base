@@ -10,7 +10,7 @@ $usage = "./scripts/base/sms send PHONE MESSAGE\n".
 
 $help  = "This SMS script allows you to send out SMS messages using either twilio or crmtext as a provider, depending on the configuration";
 
-require_once(dirname(__FILE__).'/../../libs/startup.php');
+require_once(__DIR__.'/../../libs/startup.php');
 
 cli_only();
 load_libs('sms,twilio');

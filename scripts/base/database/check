@@ -3,7 +3,7 @@
 /*
  * This script can check and optionally repair database tables
  */
-include_once(dirname(__FILE__).'/../../../libs/startup.php');
+include_once(__DIR__.'/../../../libs/startup.php');
 
 try{
     $repair = cli_argument('repair');

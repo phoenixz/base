@@ -34,7 +34,7 @@ test                            - Test all configured proxy machines
 
     URL                         - The URL that should be used for the test";
 
-require_once(dirname(__FILE__).'/../../libs/startup.php');
+require_once(__DIR__.'/../../libs/startup.php');
 load_libs('curl');
 
 switch(cli_method()){

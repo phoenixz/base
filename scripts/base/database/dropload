@@ -4,7 +4,7 @@
  * This script will backup a table or database, then drop it,
  * and then reload it from the SQL backup.
  */
-require_once(dirname(__FILE__).'/../../../libs/startup.php');
+require_once(__DIR__.'/../../../libs/startup.php');
 
 try{
     $noclean  = cli_argument('noclean', false, cli_argument('nocleanup', false));

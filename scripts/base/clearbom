@@ -24,7 +24,7 @@ The clearbom script uses the cache file ROOT/data/cache/system/clearbom to store
 -c --cache-mtime                       Set the mtime of the cache for
                                        subsequent scans";
 
-require_once(dirname(__FILE__).'/../../libs/startup.php');
+require_once(__DIR__.'/../../libs/startup.php');
 
 
 

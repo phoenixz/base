@@ -7,7 +7,7 @@ $usage = "./scripts/base/init_global_data_path [PATH]\n";
 
 $help  = "This script will initialize the global data path where data that can be shared between multiple projects (Like geodata data files) is stored";
 
-require_once(dirname(__FILE__).'/../../libs/startup.php');
+require_once(__DIR__.'/../../libs/startup.php');
 
 log_console('Initializing global data path', '', 'white');
 

@@ -29,7 +29,7 @@ files                       - Alias for count
 info                        - Return both size and count information
 ";
 
-require_once(dirname(__FILE__).'/../../libs/startup.php');
+require_once(__DIR__.'/../../libs/startup.php');
 
 switch(cli_method()){
     case 'clear':

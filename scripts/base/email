@@ -102,7 +102,7 @@ OPTIONS
                                    [string]
     UNSEEN                       - Match messages which have not been read yet';
 
-require_once(dirname(__FILE__).'/../../libs/startup.php');
+require_once(__DIR__.'/../../libs/startup.php');
 
 cli_only(true);
 load_libs('email');

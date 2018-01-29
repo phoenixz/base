@@ -4,7 +4,7 @@
  * This script will try to send mails from all mailers that have been set to "running"
  */
 $quiet = true;
-require_once(dirname(__FILE__).'/../../../libs/startup.php');
+require_once(__DIR__.'/../../../libs/startup.php');
 
 try{
     cli_only();

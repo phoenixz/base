@@ -17,7 +17,7 @@ $usage = "./scripts/base/fix-permissions\n";
 
 $help  = "The fix-permissions script will ensure that all files and directories have the configured file permissions, ensuring a safe site installation";
 
-require_once(dirname(__FILE__).'/../../libs/startup.php');
+require_once(__DIR__.'/../../libs/startup.php');
 
 /*
  * Load deployment configuration

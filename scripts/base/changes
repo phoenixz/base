@@ -44,7 +44,7 @@ patch                           - Will apply the diff patches to both base and
                                   project (and then remove them from base and
                                   toolkit)';
 
-require_once(dirname(__FILE__).'/../../libs/startup.php');
+require_once(__DIR__.'/../../libs/startup.php');
 
 cli_only();
 load_libs('git,patch,file');

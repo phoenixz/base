@@ -12,7 +12,7 @@ $usage = "./scripts/base/roles list [ --rights | -r ]\n".
 
 $help  = "This is the roles management script";
 
-require_once(dirname(__FILE__).'/../../libs/startup.php');
+require_once(__DIR__.'/../../libs/startup.php');
 
 load_libs('user,roles');
 

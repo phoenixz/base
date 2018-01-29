@@ -9,7 +9,7 @@ $usage = "./scripts/base/session command OPTIONS\n".
 
 $help  = "This script manages sessions. The \"list\" command can list all currently active sessions, and the  \"take\" command can take over the specified session id. Do note that with \"take\" you will have access to the session, but the original session owner will still also have session access";
 
-require_once(dirname(__FILE__).'/../../../libs/startup.php');
+require_once(__DIR__.'/../../../libs/startup.php');
 
 try{
     load_libs('session');

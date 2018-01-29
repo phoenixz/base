@@ -4,7 +4,7 @@
  * This script will import synonym data from data/sources/synonyms,
  * and populate the synonyms table.
  */
-require_once(dirname(__FILE__).'/../../../libs/startup.php');
+require_once(__DIR__.'/../../../libs/startup.php');
 
 if(!$language = cli_argument(0)){
     throw new bException('No language specified, please specify one of "en"', 'not-specified');

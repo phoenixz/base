@@ -44,7 +44,7 @@ notlocal                   - Due to a fucked up MySQL \"security feature\" that
 nostructures               - Do not fix the data structures for correct use
                              with the PHP base framework";
 
-require_once(dirname(__FILE__).'/../../../libs/startup.php');
+require_once(__DIR__.'/../../../libs/startup.php');
 
 try{
     log_console('Updating GEOIP data', 'geoip', 'white');
