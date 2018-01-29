@@ -29,7 +29,7 @@
 
     try{
         load_libs('sql_error');
-        return sql_error($e, $_CONFIG['db'][$connector], null, isset_get($GLOBALS['sql_'.$connector]));
+        return sql_error($e, $_CONFIG['db'][$connector], null, isset_get($core->sql[$connector]));
 
     }catch(Exception $e){
         throw new bException('sql_init(): Failed', $e);

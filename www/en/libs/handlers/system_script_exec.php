@@ -56,11 +56,11 @@ try{
      * Store the list of scripts being executed, just in case script_exec() is
      * executed by multiple scripts
      */
-    if(empty($GLOBALS['scripts'])){
-        $GLOBALS['scripts'] = array(SCRIPT, $script);
+    if(empty($core->register['scripts'])){
+        $core->register['scripts'] = array(SCRIPT, $script);
 
     }else{
-        $GLOBALS['scripts'][] = $script;
+        $core->register['scripts'][] = $script;
     }
 
     try{
@@ -69,7 +69,7 @@ try{
          */
 //        cli_method(null, false);
         include($_script_exec_file);
-        array_pop($GLOBALS['scripts']);
+        array_pop($core->register['scripts']);
 
     }catch(Exception $e){
         if(!$e->getCode()){

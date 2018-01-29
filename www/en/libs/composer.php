@@ -65,10 +65,10 @@ function composer_install($params){
     try{
         $params['methods'] = array('download' => array('commands'  => function($hash){
                                                                         load_libs('file');
-                                                                        file_ensure_path(ROOT.'data/tmp/composer');
-                                                                        safe_exec('wget -O '.ROOT.'data/tmp/composer-setup.php https://getcomposer.org/installer');
+                                                                        file_ensure_path(TMP.'composer');
+                                                                        safe_exec('wget -O '.TMP.'composer-setup.php https://getcomposer.org/installer');
 
-                                                                        $file_hash     = hash_file('SHA384', ROOT.'data/tmp/composer-setup.php');
+                                                                        $file_hash     = hash_file('SHA384', TMP.'composer-setup.php');
                                                                         $required_hash = safe_exec('wget -q -O - https://composer.github.io/installer.sig');
                                                                         $required_hash = $required_hash[0];
 
@@ -77,9 +77,9 @@ function composer_install($params){
                                                                         }
 
                                                                         chmod(ROOT.'www/en/libs/external', 0770);
-                                                                        safe_exec('php '.ROOT.'data/tmp/composer-setup.php --install-dir '.ROOT.'www/en/libs/external/'.(VERBOSE ? '' : ' --quiet'));
+                                                                        safe_exec('php '.TMP.'composer-setup.php --install-dir '.ROOT.'www/en/libs/external/'.(VERBOSE ? '' : ' --quiet'));
                                                                         chmod(ROOT.'www/en/libs/external', 0550);
-                                                                        file_delete(ROOT.'data/tmp/composer-setup.php');
+                                                                        file_delete(TMP.'composer-setup.php');
                                                                       }));
 
         return install($params);

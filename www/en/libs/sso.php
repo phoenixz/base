@@ -49,28 +49,28 @@ function sso_install($params){
                                                                          * Download the hybridauth v2 library, and install it in the external libraries path
                                                                          */
                                                                         load_libs('file');
-                                                                        file_delete(ROOT.'data/tmp/hybridauth');
-                                                                        file_ensure_path(ROOT.'data/tmp/hybridauth');
-                                                                        safe_exec('wget -O '.ROOT.'data/tmp/hybridauth/hybridauth.zip https://github.com/hybridauth/hybridauth/archive/v2.zip');
-                                                                        safe_exec('cd '.ROOT.'data/tmp/hybridauth/; unzip '.ROOT.'data/tmp/hybridauth/hybridauth.zip');
+                                                                        file_delete(TMP.'hybridauth');
+                                                                        file_ensure_path(TMP.'hybridauth');
+                                                                        safe_exec('wget -O '.TMP.'hybridauth/hybridauth.zip https://github.com/hybridauth/hybridauth/archive/v2.zip');
+                                                                        safe_exec('cd '.TMP.'hybridauth/; unzip '.TMP.'hybridauth/hybridauth.zip');
 
                                                                         /*
                                                                          * Install facebook adapter
                                                                          */
-                                                                        safe_exec('wget -O '.ROOT.'data/tmp/hybridauth/facebook-graph.zip https://github.com/facebook/php-graph-sdk/archive/5.5.zip');
-                                                                        safe_exec('cd '.ROOT.'data/tmp/hybridauth/; unzip '.ROOT.'data/tmp/hybridauth/facebook-graph.zip');
-                                                                        file_delete(ROOT.'data/tmp/hybridauth/hybridauth-2/hybridauth/Hybrid/thirdparty/Facebook/');
-                                                                        rename(ROOT.'data/tmp/hybridauth/php-graph-sdk-5.5/src/Facebook/', ROOT.'data/tmp/hybridauth/hybridauth-2/hybridauth/Hybrid/thirdparty/Facebook/');
+                                                                        safe_exec('wget -O '.TMP.'hybridauth/facebook-graph.zip https://github.com/facebook/php-graph-sdk/archive/5.5.zip');
+                                                                        safe_exec('cd '.TMP.'hybridauth/; unzip '.TMP.'hybridauth/facebook-graph.zip');
+                                                                        file_delete(TMP.'hybridauth/hybridauth-2/hybridauth/Hybrid/thirdparty/Facebook/');
+                                                                        rename(TMP.'hybridauth/php-graph-sdk-5.5/src/Facebook/', TMP.'hybridauth/hybridauth-2/hybridauth/Hybrid/thirdparty/Facebook/');
 
                                                                         /*
                                                                          * Install library and clean up
                                                                          */
                                                                         file_execute_mode(ROOT.'www/en/libs/external', 0770, function(){
                                                                             file_delete(ROOT.'www/en/libs/external/hybridauth');
-                                                                            rename(ROOT.'data/tmp/hybridauth/hybridauth-2/hybridauth', ROOT.'www/en/libs/external/hybridauth');
+                                                                            rename(TMP.'hybridauth/hybridauth-2/hybridauth', ROOT.'www/en/libs/external/hybridauth');
                                                                         });
 
-                                                                        file_delete(ROOT.'data/tmp/hybridauth');
+                                                                        file_delete(TMP.'hybridauth');
                                                                       }));
 
         return install($params);

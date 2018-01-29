@@ -288,7 +288,7 @@ if($_CONFIG['charset'] = 'UTF-8'){
  * Set timezone information
  * See http://www.php.net/manual/en/timezones.php for more info
  */
-define('TIMEZONE', isset_get($GLOBALS['timezone'], $_CONFIG['timezone']['display']));
+define('TIMEZONE', isset_get($timezone, $_CONFIG['timezone']['display']));
 date_default_timezone_set(TIMEZONE);
 $_SESSION['user']['timezone'] = $_CONFIG['timezone']['display'];
 

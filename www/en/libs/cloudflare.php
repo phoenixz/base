@@ -20,12 +20,12 @@ function cf_init(){
     global $_CONFIG;
 
     try{
-        if(!empty($GLOBALS['cf_connector'])){
+        if(!empty($core->register['cf_connector'])){
             return null;
         }
 
         $cf = new cloudflare_api($_CONFIG['cloudflare']['email'], $_CONFIG['cloudflare']['API-key']);
-        $GLOBALS['cf_connector'] = $cf;
+        $core->register['cf_connector'] = $cf;
 
     }catch(Exception $e){
         throw new bException('cf_init(): Failed', $e);
@@ -40,7 +40,7 @@ function cf_init(){
 function cf_zone_list(){
     try{
         cf_init();
-        $response = $GLOBALS['cf_connector']->zone_load_multi();
+        $response = $core->register['cf_connector']->zone_load_multi();
 
         if($response->result != 'success'){
             throw new bException('cf_zone_list(): Response from CloudFlare was unsuccessfull. MessaMessage : "'.$response->msg.'"');
@@ -69,7 +69,7 @@ function cf_zone_list(){
 function cf_whitelist($ip, $domain=null){
     try{
         cf_init();
-        $response = $GLOBALS['cf_connector']->wl($ip);
+        $response = $core->register['cf_connector']->wl($ip);
 
         if($response->result != 'success'){
             throw new bException('cf_whitelist(): Response from CloudFlare was unsuccessfull. MessaMessage : "'.$response->msg.'"');
@@ -90,7 +90,7 @@ function cf_whitelist($ip, $domain=null){
 function cf_blacklist($ip, $domain=null){
     try{
         cf_init();
-        $response = $GLOBALS['cf_connector']->ban($ip);
+        $response = $core->register['cf_connector']->ban($ip);
 
         if($response->result != 'success'){
             throw new bException('cf_blacklist(): Response from CloudFlare was unsuccessfull. Message : '.$response->msg);
@@ -110,7 +110,7 @@ function cf_blacklist($ip, $domain=null){
 function cf_unwhitelist($ip, $domain=null){
     try{
         cf_init();
-        $response = $GLOBALS['cf_connector']->nul($ip);
+        $response = $core->register['cf_connector']->nul($ip);
 
         if($response->result != 'success'){
             throw new bException('cf_unwhitelist(): Response from CloudFlare was unsuccessfull. MessaMessage : "'.$response->msg.'"');
@@ -130,7 +130,7 @@ function cf_unwhitelist($ip, $domain=null){
 function cf_unblacklist($ip, $domain=null){
     try{
         cf_init();
-        $response = $GLOBALS['cf_connector']->nul($ip);
+        $response = $core->register['cf_connector']->nul($ip);
 
         if($response->result != 'success'){
             throw new bException('cf_unblacklist(): Response from CloudFlare was unsuccessfull. Message : "'.$response->msg.'"');
@@ -149,7 +149,7 @@ function cf_unblacklist($ip, $domain=null){
 function cf_clear_cache($domain){
     try{
         cf_init();
-        $response = $GLOBALS['cf_connector']->fpurge_ts($domain);
+        $response = $core->register['cf_connector']->fpurge_ts($domain);
 
         if($response->result != 'success'){
             throw new bException('cf_clear_cache(): Response from CloudFlare was unsuccessfull. Message : "'.$response->msg.'"');
@@ -170,10 +170,10 @@ function cf_install_apache_module(){
         passthru('sudo apt-get update && sudo apt-get -y install libtool apache2-dev', $return);
 
         if($return == 0){
-            passthru('wget -O /tmp/mod_cloudflare.c https://www.cloudflare.com/static/misc/mod_cloudflare/mod_cloudflare.c', $return);
+            passthru('wget -O '.TMP.'mod_cloudflare.c https://www.cloudflare.com/static/misc/mod_cloudflare/mod_cloudflare.c', $return);
 
             if($return == 0){
-                passthru('sudo apxs -a -i -c /tmp/mod_cloudflare.c', $return);
+                passthru('sudo apxs -a -i -c '.TMP.'mod_cloudflare.c', $return);
 
                 if($return == 0){
                     passthru('sudo service apache2 restart');

@@ -92,8 +92,8 @@ function html_bundler($type){
     if(!$_CONFIG['cdn']['bundler']['enabled']) return false;
 
     try{
-        $realtype           = $type;
-        $GLOBALS[$realtype] = array_keys($GLOBALS[$realtype]);
+        $realtype                  = $type;
+        $core->register[$realtype] = array_keys($core->register[$realtype]);
 
         switch($type){
             case 'css':
@@ -113,49 +113,49 @@ function html_bundler($type){
             case 'js':
                 $default = ($_CONFIG['cdn']['js']['load_delayed'] ? 'js_footer' : 'js_header');
 
-                foreach($GLOBALS[$type] as &$file){
+                foreach($core->register[$type] as &$file){
                     switch($file[0]){
                         case '<':
                             /*
                              * Header
                              */
-                            $GLOBALS['js_header'][substr($file, 1)] = substr($file, 1);
+                            $core->register['js_header'][substr($file, 1)] = substr($file, 1);
                             break;
 
                         case '>':
                             /*
                              * Footer
                              */
-                            $GLOBALS['js_footer'][substr($file, 1)] = substr($file, 1);
+                            $core->register['js_footer'][substr($file, 1)] = substr($file, 1);
                             break;
 
                         default:
                             /*
                              * Default
                              */
-                            $GLOBALS[$default][$file] = $file;
+                            $core->register[$default][$file] = $file;
                     }
                 }
 
-                $GLOBALS['js'] = array();
+                $core->register['js'] = array();
 
                 /*
                  * Bundle header and footer javascript files separately
                  */
-                if(!empty($GLOBALS['js_header'])) html_bundler('js_header');
-                if(!empty($GLOBALS['js_footer'])) html_bundler('js_footer');
-                return;
+                if(!empty($core->register['js_header'])) html_bundler('js_header');
+                if(!empty($core->register['js_footer'])) html_bundler('js_footer');
+                return null;
 
             default:
-                throw new bException(tr('html_bundler(): Unknown type ":type" specified', array()), 'unknown');
+                throw new bException(tr('html_bundler(): Unknown type ":type" specified', array(':type' => $type)), 'unknown');
         }
 
         /*
          * Prepare bundle information
          */
         $ext         = ($_CONFIG['cdn']['min'] ? '.min.'.$type : '.'.$type);
-        $bundle      =  substr(md5(str_force($GLOBALS[$realtype])), 1, 16);
-        $admin_path  = ($core->callIs('admin') ? 'admin/' : '');
+        $bundle      =  substr(md5(str_force($core->register[$realtype])), 1, 16);
+        $admin_path  = ($core->callType('admin') ? 'admin/' : '');
         $path        =  ROOT.'www/en/'.$admin_path.'pub/'.$type.'/';
         $bundle_file =  $path.'bundle-'.$bundle.$ext;
 
@@ -171,7 +171,7 @@ function html_bundler($type){
                 return html_bundler($type);
             }
 
-            $GLOBALS[$type] = array();
+            $core->register[$type] = array();
 
         }else{
             /*
@@ -180,7 +180,7 @@ function html_bundler($type){
             load_libs('file');
             file_ensure_path($path.'bundle-');
 
-            foreach($GLOBALS[$realtype] as $key => &$file){
+            foreach($core->register[$realtype] as $key => &$file){
                 /*
                  * Check for @imports
                  */
@@ -193,7 +193,7 @@ function html_bundler($type){
                 }
 
                 $data = file_get_contents($file);
-                unset($GLOBALS[$realtype][$key]);
+                unset($core->register[$realtype][$key]);
 
                 switch($type){
                     case 'js':
@@ -305,7 +305,7 @@ function html_bundler($type){
             }
 
             unset($file);
-            $GLOBALS[$realtype] = array();
+            $core->register[$realtype] = array();
 
             if($_CONFIG['cdn']['network']['enabled']){
                 load_libs('cdn');
@@ -313,7 +313,7 @@ function html_bundler($type){
             }
         }
 
-        $GLOBALS[$type][$prefix.'bundle-'.$bundle] = true;
+        $core->register[$type][$prefix.'bundle-'.$bundle] = true;
 
     }catch(Exception $e){
         throw new bException('html_bundler(): Failed', $e);
@@ -326,7 +326,7 @@ function html_bundler($type){
  * Store libs for later loading
  */
 function html_load_css($files = '', $media = null){
-    global $_CONFIG;
+    global $_CONFIG, $core;
 
     try{
         if(!$files){
@@ -343,13 +343,9 @@ function html_load_css($files = '', $media = null){
 
         $min = $_CONFIG['cdn']['min'];
 
-        if(empty($GLOBALS['css'])){
-            $GLOBALS['css'] = array();
-        }
-
         foreach($files as $file){
-            $GLOBALS['css'][$file] = array('min'   => $min,
-                                           'media' => $media);
+            $core->register['css'][$file] = array('min'   => $min,
+                                                  'media' => $media);
         }
 
 }catch(Exception $e){
@@ -368,35 +364,9 @@ function html_generate_css(){
     global $_CONFIG, $core;
 
     try{
-//        if(empty($GLOBALS['css'])){
-//            $GLOBALS['css'] = array();
-//        }
-//
-//// :DELETE: admin pages and mobile pages are no longer supported
-//        if($core->callIs('admin')){
-//            /*
-//             * Use normal admin CSS
-//             */
-//            $GLOBALS['css']['admin'] = array('media' => null);
-//
-//        }elseif($core->callIs('mobile') or empty($_CONFIG['bootstrap']['enabled'])){
-//            /*
-//             * Use normal, default CSS
-//             */
-//////            $GLOBALS['css']['style'] = array('media' => null);
-//
-//        }else{
-//            /*
-//             * Use bootstrap CSS
-//             */
-//////            $GLOBALS['css'][$_CONFIG['bootstrap']['css']] = array('media' => null);
-//////            $GLOBALS['css']['style']                      = array('media' => null);
-//////            $GLOBALS['css'][''bootstrap-theme']           => array('media' => null),
-//        }
-
-
         if(!empty($_CONFIG['cdn']['css']['post'])){
-            $GLOBALS['css']['post'] = array('min' => $_CONFIG['cdn']['min'], 'media' => (is_string($_CONFIG['cdn']['css']['post']) ? $_CONFIG['cdn']['css']['post'] : ''));
+            $core->register['css']['post'] = array('min'   => $_CONFIG['cdn']['min'],
+                                                   'media' => (is_string($_CONFIG['cdn']['css']['post']) ? $_CONFIG['cdn']['css']['post'] : ''));
         }
 
         $retval = '';
@@ -404,7 +374,7 @@ function html_generate_css(){
 
         html_bundler('css');
 
-        foreach($GLOBALS['css'] as $file => $meta){
+        foreach($core->register['css'] as $file => $meta){
             if(!$file) continue;
 
             $html = '<link rel="stylesheet" type="text/css" href="'.cdn_domain((($_CONFIG['whitelabels']['enabled'] === true) ? $_SESSION['domain'].'/' : '').'css/'.($min ? str_until($file, '.min').'.min.css' : $file.'.css')).'">';
@@ -435,7 +405,7 @@ function html_generate_css(){
  * $option may be either "async" or "defer", see http://www.w3schools.com/tags/att_script_async.asp
  */
 function html_load_js($files = '', $option = null, $ie = null){
-    global $_CONFIG;
+    global $_CONFIG, $core;
 
     try{
         if(!$files){
@@ -453,10 +423,6 @@ function html_load_js($files = '', $option = null, $ie = null){
         //if($min === null){
         //    $min = $_CONFIG['cdn']['min'];
         //}
-
-        if(!isset($GLOBALS['js'])){
-            $GLOBALS['js'] = array();
-        }
 
         foreach($files as $file){
             if(substr($file, 0, 4) != 'http') {
@@ -483,7 +449,7 @@ function html_load_js($files = '', $option = null, $ie = null){
                 $data['ie'] = $ie;
             }
 
-            $GLOBALS['js'][$file] = $data;
+            $core->register['js'][$file] = $data;
         }
 
     }catch(Exception $e){
@@ -499,20 +465,23 @@ function html_load_js($files = '', $option = null, $ie = null){
  * Allows force loading of .min files (ie script.min instead of script), when 'min' is configured on, it won't duplicate the .min
  */
 function html_generate_js(){
-    global $_CONFIG;
+    global $_CONFIG, $core;
 
     try{
         /*
          * Shortcut to JS configuration
          */
-        $js     = $_CONFIG['cdn']['js'];
+        $js     =  $_CONFIG['cdn']['js'];
         $min    = ($_CONFIG['cdn']['min'] ? '.min' : '');
-
-        $libs   = array();
         $retval = '';
         $footer = '';
 
         html_bundler('js');
+
+        /*
+         * Set load_delayed javascript from this point on to add directly to the $core->register[footer]
+         */
+        $_CONFIG['cdn']['js']['load_delayed'] = false;
 
         /*
          * Set to load default JS libraries
@@ -521,13 +490,7 @@ if(isset($js['default_libs']) and empty($_CONFIG['production'])){
 throw new bException('WARNING: $_CONFIG[js][default_libs] CONFIGURATION FOUND! THIS IS NO LONGER SUPPORTED! JS LIBRARIES SHOULD ALWAYS BE LOADED USING html_load_js() AND JS SCRIPT ADDED THROUGH html_script()', 'obsolete');
 }
 
-        if(!empty($GLOBALS['js'])){
-            $libs = array_merge($libs, $GLOBALS['js']);
-        }
-
-        $GLOBALS['js'] = $libs;
-
-        if(empty($libs)){
+        if(empty($core->register['js'])){
             /*
              * There are no libraries to load
              */
@@ -537,7 +500,7 @@ throw new bException('WARNING: $_CONFIG[js][default_libs] CONFIGURATION FOUND! T
         /*
          * Load JS libraries
          */
-        foreach($libs as $file => $data) {
+        foreach($core->register['js'] as $file => $data){
             if(!$file) continue;
 
             $check = str_rfrom(str_starts($file, '/'), '/');
@@ -622,12 +585,14 @@ throw new bException('WARNING: $_CONFIG[js][default_libs] CONFIGURATION FOUND! T
             }
         }
 
+        $core->register['js'] = array();
+
         /*
          * Should all JS scripts be loaded at the end (right before the </body> tag)?
          * This may be useful for site startup speedups
          */
         if(!empty($footer)){
-            $GLOBALS['footer'] = $footer.isset_get($GLOBALS['footer'], '').isset_get($GLOBALS['script_delayed'], '');
+            $core->register['footer'] = $footer.$core->register['footer'].$core->register('script_delayed');
         }
 
         return $retval;
@@ -643,7 +608,7 @@ throw new bException('WARNING: $_CONFIG[js][default_libs] CONFIGURATION FOUND! T
  * Generate and return the HTML header
  */
 function html_header($params = null, $meta = array()){
-    global $_CONFIG;
+    global $_CONFIG, $core;
 
     try{
         array_params($meta);
@@ -771,8 +736,8 @@ function html_header($params = null, $meta = array()){
 
         unset($prefetch);
 
-        if(!empty($GLOBALS['header'])){
-            $retval .= $GLOBALS['header'];
+        if(!empty($core->register['header'])){
+            $retval .= $core->register['header'];
         }
 
         $retval .= html_generate_css().
@@ -821,14 +786,14 @@ throw new bException('WARNING: $_CONFIG[cdn][fonts] CONFIGURATION FOUND! THIS IS
  * Generate and return the HTML footer
  */
 function html_footer(){
-    global $_CONFIG;
+    global $_CONFIG, $core;
 
     try{
-        if(empty($GLOBALS['footer'])){
-            return '</body></html>';
+        if($core->register['footer']){
+            return $core->register['footer'].'</body></html>';
         }
 
-        return $GLOBALS['footer'].'</body></html>';
+        return '</body></html>';
 
     }catch(Exception $e){
         throw new bException('html_footer(): Failed', $e);
@@ -884,7 +849,7 @@ function html_title($params){
  * Show a flash message with the specified message
  */
 function html_flash($class = null){
-    global $_CONFIG;
+    global $_CONFIG, $core;
 
     try{
         if(!PLATFORM_HTTP){
@@ -1000,7 +965,7 @@ function html_flash($class = null){
                     throw new bException(tr('html_flash(): Unknown html flash type ":type" specified. Please check your $_CONFIG[flash][type] configuration', array(':type' => $_CONFIG['flash']['type'])), 'unknown');
             }
 
-            $GLOBALS['flash'] = true;
+            $core->register['flash'] = true;
             unset($_SESSION['flash'][$id]);
         }
 
@@ -1609,7 +1574,7 @@ function html_select_body($params) {
  * $option maybe either "async" or "defer", see http://www.w3schools.com/tags/att_script_async.asp
  */
 function html_script($script, $jquery_ready = true, $option = null, $type = null, $ie = false){
-    global $_CONFIG;
+    global $_CONFIG, $core;
 
     try{
         if(is_bool($type)){
@@ -1649,7 +1614,7 @@ function html_script($script, $jquery_ready = true, $option = null, $type = null
             $retval = html_iefilter($retval, $ie);
         }
 
-        if(empty($_CONFIG['cdn']['js']['load_delayed'])){
+        if(!$_CONFIG['cdn']['js']['load_delayed']){
             return $retval;
         }
 
@@ -1657,11 +1622,11 @@ function html_script($script, $jquery_ready = true, $option = null, $type = null
          * SCRIPT tags are added all at the end of the page for faster loading
          * (and to avoid problems with jQuery not yet being available)
          */
-        if(empty($GLOBALS['script_delayed'])){
-            $GLOBALS['script_delayed']  = $retval;
+        if(empty($core->register('script_delayed'))){
+            $core->register['script_delayed']  = $retval;
 
         }else{
-            $GLOBALS['script_delayed'] .= $retval;
+            $core->register['script_delayed'] .= $retval;
         }
 
         return '';
@@ -1693,7 +1658,7 @@ function html_favicon($icon = null, $mobile_icon = null, $sizes = null, $precomp
         }
 
         foreach($params['sizes'] as $sizes){
-            if($core->callIs('mobile')){
+            if($core->callType('mobile')){
                 if(!$params['mobile_icon']){
                     $params['mobile_icon'] = cdn_domain('img/mobile/favicon.png');
                 }

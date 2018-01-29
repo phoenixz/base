@@ -441,10 +441,10 @@ http_redirect_query_url();
 //if($_CONFIG['cdn']['prefix'] != '/pub/'){
 //    if($_CONFIG['cdn']['enabled']){
 //        load_libs('cdn');
-//        $GLOBALS['header'] = html_script('var cdnprefix="'.cdn_domain($_CONFIG['cdn']['prefix']).'";', false);
+//        $core->register['header'] = html_script('var cdnprefix="'.cdn_domain($_CONFIG['cdn']['prefix']).'";', false);
 //
 //    }else{
-//        $GLOBALS['header'] = html_script('var cdnprefix="'.$_CONFIG['cdn']['prefix'].'";', false);
+//        $core->register['header'] = html_script('var cdnprefix="'.$_CONFIG['cdn']['prefix'].'";', false);
 //    }
 //}
 

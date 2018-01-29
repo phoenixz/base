@@ -29,11 +29,11 @@ try{
 // :TODO:SVEN:20130430: This should NEVER happen, send notification!
     }
 
-    if(PLATFORM_HTTP and !$core->callIs('ajax') and !$core->callIs('api') and empty($core->register['debug_plain'])){
+    if(PLATFORM_HTTP and !$core->callType('ajax') and !$core->callType('api') and empty($core->register['debug_plain'])){
         /*
          * If JSON, CORS requests require correct headers!
          */
-        if(!empty($core->callIs('ajax'))){
+        if(!empty($core->callType('ajax'))){
             load_libs('http');
             http_headers(null, 0);
         }

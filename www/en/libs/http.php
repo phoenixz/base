@@ -50,11 +50,11 @@ function redirect_url($url = null){
             $url = domain(true);
         }
 
-        if(empty($GLOBALS['redirect'])){
+        if(empty($core->register['redirect'])){
             return $url;
         }
 
-        return url_add_query($url, 'redirect='.urlencode($GLOBALS['redirect']));
+        return url_add_query($url, 'redirect='.urlencode($core->register['redirect']));
 
     }catch(Exception $e){
         throw new bException('redirect_url(): Failed', $e);
@@ -407,18 +407,18 @@ function http_cache_test($etag = null){
     global $_CONFIG, $core;
 
     try{
-        $GLOBALS['etag'] = md5(PROJECT.$_SERVER['SCRIPT_FILENAME'].filemtime($_SERVER['SCRIPT_FILENAME']).$etag);
+        $core->register['etag'] = md5(PROJECT.$_SERVER['SCRIPT_FILENAME'].filemtime($_SERVER['SCRIPT_FILENAME']).$etag);
 
         if(!$_CONFIG['cache']['http']['enabled']){
             return false;
         }
 
-        if($core->callIs('ajax') or $core->callIs('api')){
+        if($core->callType('ajax') or $core->callType('api')){
             return false;
         }
 
-        if((strtotime(isset_get($_SERVER['HTTP_IF_MODIFIED_SINCE'])) == filemtime($_SERVER['SCRIPT_FILENAME'])) or trim(isset_get($_SERVER['HTTP_IF_NONE_MATCH']), '') == $GLOBALS['etag']){
-            if(empty($GLOBALS['flash'])){
+        if((strtotime(isset_get($_SERVER['HTTP_IF_MODIFIED_SINCE'])) == filemtime($_SERVER['SCRIPT_FILENAME'])) or trim(isset_get($_SERVER['HTTP_IF_NONE_MATCH']), '') == $core->register['etag']){
+            if(empty($core->register['flash'])){
                 /*
                  * The client sent an etag which is still valid, no body (or anything else) necesary
                  */
@@ -427,7 +427,7 @@ function http_cache_test($etag = null){
 
 // :TODO: Should the next lines be deleted or not? Investigate if 304 should again return the etag or not
 //                header('Cache-Control: '.$params['policy']);
-//                header('ETag: "'.$GLOBALS['etag'].'"');
+//                header('ETag: "'.$core->register['etag'].'"');
                 http_response_code(304);
                 die();
             }
@@ -462,29 +462,29 @@ function http_cache($params, $headers = array()){
              * Non HTTP 200 / 304 pages should NOT have cache enabled!
              * For example 404, 505, etc...
              */
-            $params['policy']     = 'no-store';
-            $params['expires']    = '0';
+            $params['policy']       = 'no-store';
+            $params['expires']      = '0';
 
-            $GLOBALS['etag']      = null;
-            $expires              = 0;
+            $core->register['etag'] = null;
+            $expires                = 0;
 
         }else{
-            if(empty($GLOBALS['etag'])){
-                if(!empty($GLOBALS['flash'])){
-                    $GLOBALS['etag']  = md5(str_random());
-                    $params['policy'] = 'no-store';
+            if(empty($core->register['etag'])){
+                if(!empty($core->register['flash'])){
+                    $core->register['etag'] = md5(str_random());
+                    $params['policy']       = 'no-store';
 
                 }else{
-                    $GLOBALS['etag'] = md5(PROJECT.$_SERVER['SCRIPT_FILENAME'].filemtime($_SERVER['SCRIPT_FILENAME']).isset_get($params['etag']));
+                    $core->register['etag'] = md5(PROJECT.$_SERVER['SCRIPT_FILENAME'].filemtime($_SERVER['SCRIPT_FILENAME']).isset_get($params['etag']));
                 }
             }
 
-            if(!empty($core->callIs('ajax')) or !empty($core->callIs('api'))){
+            if(!empty($core->callType('ajax')) or !empty($core->callType('api'))){
                 $params['policy'] = 'no-store';
                 $expires          = '0';
 
             }else{
-                if(!empty($core->callIs('admin')) or !empty($_SESSION['user']['id'])){
+                if(!empty($core->callType('admin')) or !empty($_SESSION['user']['id'])){
                     array_default($params, 'policy', 'no-store');
 
                 }else{
@@ -503,7 +503,7 @@ function http_cache($params, $headers = array()){
         }
 
         if(empty($params['policy'])){
-            if($core->callIs('admin')){
+            if($core->callType('admin')){
                 /*
                  * Admin pages, never store, always private
                  */
@@ -540,8 +540,8 @@ function http_cache($params, $headers = array()){
                 $headers[] = 'Cache-Control: '.$params['policy'].', max-age='.$params['max_age'];
                 $headers[] = 'Expires: '.$expires;
 
-                if(!empty($GLOBALS['etag'])){
-                    $headers[] = 'ETag: "'.$GLOBALS['etag'].'"';
+                if(!empty($core->register['etag'])){
+                    $headers[] = 'ETag: "'.$core->register['etag'].'"';
                 }
 
                 break;
@@ -586,11 +586,11 @@ function http_redirect_query_url(){
     global $_CONFIG, $core;
 
     try{
-        if(!empty($core->callIs('ajax')) or !empty($core->callIs('admin')) or !empty($GLOBALS['no_query_url_redirect']) or !empty($GLOBALS['no_redirect_http_queries'])){
+        if(!empty($core->callType('ajax')) or !empty($core->callType('admin')) or !empty($core->register['no_query_url_redirect']) or !empty($core->register['no_redirect_http_queries'])){
             return true;
         }
 
-        if($core->callIs('admin')){
+        if($core->callType('admin')){
             if(!$_CONFIG['redirects']['query']){
                 /*
                  * No need to auto redirect URL's with queries
