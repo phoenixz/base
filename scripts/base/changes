@@ -331,14 +331,18 @@ foreach($files as $file => &$status){
             }
 
         }elseif(preg_match('/scripts\/base\/[a-z0-9-]+/', $file)){
-            log_console(tr('Identified file as base'), 'VERBOSE');
-            $sections['base'][$file] = $status;
-            $marked = true;
+            if(patch_file_exists_in_base($file)){
+                log_console(tr('Identified file as base'), 'VERBOSE');
+                $sections['base'][$file] = $status;
+                $marked = true;
+            }
 
         }elseif(preg_match('/config\/base\/.+/', $file)){
-            log_console(tr('Identified file as base'), 'VERBOSE');
-            $sections['base'][$file] = $status;
-            $marked = true;
+            if(patch_file_exists_in_base($file)){
+                log_console(tr('Identified file as base'), 'VERBOSE');
+                $sections['base'][$file] = $status;
+                $marked = true;
+            }
         }
 
         if($marked){
