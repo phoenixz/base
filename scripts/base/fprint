@@ -1,0 +1,167 @@
+#!/usr/bin/php
+<?php
+/*
+ * This is the fprint finger print scanner front-end script
+ */
+$usage = './scripts/base/fprint
+./scripts/base/fprint enroll USER [FINGER]
+./scripts/base/fprint verify USER [FINGER]
+./scripts/base/fprint list USERS
+./scripts/base/fprint delete USER [FINGER]';
+
+$help  = 'This is the fprintd finger print reader front-end script
+
+This script can be used to authenticate base users using a finger print
+scanner. Refer to man fprintd and google for more information on fprintd.
+Supported FINGER options are left-thumb, left-index-finger, left-middle-finger,
+left-ring-finger, left-little-finger, right-thumb, right-index-finger,
+right-middle-finger, right-ring-finger, right-little-finger.
+
+
+
+METHODS
+
+
+
+enroll USER [FINGER]            - Add a (optionally specified) finger for the
+                                  specified user to the database. If no FINGER
+                                  was specified, "auto" will be used
+
+
+
+authenticate USER [FINGER]      - Verify the specified user using the
+                                  (optionally) specified finger. If no vinger
+                                  was specified, then "auto" will be used
+
+
+
+list [USERS]                    - List the available finger print records for
+                                  the specified users
+
+
+
+delete [USERS]                  - Delete the finger print data for the
+                                  specified USERS';
+
+require_once(__DIR__.'/../../libs/startup.php');
+cli_only();
+load_libs('fprint');
+
+switch(cli_method()){
+    case 'enroll':
+        $requested = cli_argument(1);
+        $finger    = cli_argument(2);
+
+        if(!$requested){
+            throw new bException(tr('No user specified'), 'warning/not-specified');
+        }
+
+        $user = sql_get('SELECT `id` FROM `users` WHERE `id` = :id OR `username` = :username OR `email` = :email', true, array(':id' => $requested, ':username' => $requested, ':email' => $requested));
+
+        if(!$user){
+            throw new bException(tr('The user ":user" does not exist', array(':user' => $requested)), 'warning/not-exist');
+        }
+
+        fprint_enroll($user);
+        break;
+
+    case 'authenticate':
+        $requested = cli_argument(1);
+        $finger    = cli_argument(2);
+
+        if(!$requested){
+            throw new bException(tr('No user specified'), 'warning/not-specified');
+        }
+
+        $user = sql_get('SELECT `id` FROM `users` WHERE `id` = :id OR `username` = :username OR `email` = :email', true, array(':id' => $requested, ':username' => $requested, ':email' => $requested));
+
+        if(!$user){
+            throw new bException(tr('The user ":user" does not exist', array(':user' => $requested)), 'warning/not-exist');
+        }
+
+        if(fprint_verify($user)){
+            log_console(tr('User ":user" authenticated!', array(':user' => $requested)), 'green');
+
+        }else{
+            log_console(tr('User ":user" not authenticated!', array(':user' => $requested)), 'yellow');
+        }
+
+        break;
+
+    case 'list':
+under_construction();
+        $requested = cli_arguments();
+
+        if(!$requested){
+            /*
+             * List all available users
+             */
+            $users = fprint_list_users();
+        }else{
+            /*
+             *
+             */
+            $user = sql_get('SELECT `id` FROM `users` WHERE `id` = :id OR `username` = :username OR `email` = :email', true, array(':id' => $requested, ':username' => $requested, ':email' => $requested));
+
+            if(!$user){
+                throw new bException(tr('The user ":user" does not exist', array(':user' => $requested)), 'not-exist');
+            }
+
+        }
+
+        break;
+
+    case 'delete':
+        $requested = cli_arguments();
+        $users     = array();
+        $deleted   = 0;
+
+        foreach($requested as $request){
+            $user = sql_get('SELECT `id` FROM `users` WHERE `id` = :id OR `username` = :username OR `email` = :email', true, array(':id' => $request, ':username' => $request, ':email' => $request));
+
+            if(!$user){
+                throw new bException(tr('The user ":user" does not exist', array(':user' => $request)), 'warning/not-exist');
+            }
+
+            $users[] = $user;
+        }
+
+        foreach($users as $user){
+            try{
+                fprint_delete($user);
+                $deleted++;
+
+            }catch(Exception $e){
+                if($e->getCode() !== 'not-exist'){
+                    /*
+                     * Oops, a real error!
+                     */
+                    throw $e;
+                }
+
+                log_console($e, 'warning/not-exist');
+            }
+        }
+
+        switch($deleted){
+            case 0:
+                log_console(tr('No users were deleted'), 'yellow');
+                break;
+
+            case count($requested):
+                log_console(tr('Deleted all ":count" users', array(':count' => $deleted)), 'green');
+                break;
+
+            default:
+                log_console(tr('Deleted only ":count" users', array(':count' => $deleted)), 'green');
+        }
+
+        break;
+
+    case '':
+        throw new bException(tr('No method specified'), 'no-method');
+
+    default:
+        throw new bException(tr('Unknown method ":method" specified', array(':method' => cli_method())), 'unknown-method');
+}
+?>
