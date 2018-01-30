@@ -840,6 +840,32 @@ function log_console($messages = '', $color = null, $newline = true, $filter_dou
 
         $last = $messages;
 
+        if(is_object($messages)){
+            if($color){
+                $messages->setCode($color);
+            }
+
+            if($messages instanceof bException){
+                if(str_until($messages->getCode(), '/') === 'warning'){
+                    $messages = array($messages->getMessage());
+                    $color    = 'warning';
+
+                }else{
+                    $messages = $messages->getMessages();
+                    $color    = 'error';
+                }
+
+            }elseif($messages instanceof Exception){
+                $messages = array($messages->getMessage());
+
+            }else{
+                $messages = $messages->__toString();
+            }
+
+        }elseif(!is_array($messages)){
+            $messages = array($messages);
+        }
+
         if($color){
             if(defined('NOCOLOR') and !NOCOLOR){
                 if(empty($c)){
@@ -866,21 +892,6 @@ function log_console($messages = '', $color = null, $newline = true, $filter_dou
                 case 'error':
                     $error = true;
             }
-        }
-
-        if(is_object($messages)){
-            if($messages instanceof bException){
-                $messages = $messages->getMessages();
-
-            }elseif($messages instanceof Exception){
-                $messages = array($messages->getMessage());
-
-            }else{
-                $messages = $messages->__toString();
-            }
-
-        }elseif(!is_array($messages)){
-            $messages = array($messages);
         }
 
         foreach($messages as $message){
