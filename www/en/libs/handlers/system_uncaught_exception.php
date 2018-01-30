@@ -119,13 +119,15 @@ try{
                 page_show($e->getCode());
             }
 
-            if(!debug()){
-                notify($e);
-                page_show(500);
+            if(debug()){
+                header($_SERVER['SERVER_PROTOCOL'] . ' 500 Internal Server Error', true, 500);
+                show('*** UNCAUGHT EXCEPTION ***');
+                show(array('SCRIPT' => SCRIPT));
+                showdie($e);
             }
 
-            show('*** UNCAUGHT EXCEPTION ***');
-            showdie($e);
+            notify($e);
+            page_show(500);
     }
 
 }catch(Exception $f){
