@@ -3,6 +3,6 @@ $_CONFIG['admin'] = array('signin' => array('contactus'  => '<a href="mailto:sup
                                             'copyright'  => '© 2018 <a href="https://:domain/copyright.html">:domain</a>',
                                             'rememberme' => tr('Remember me'),
                                             'recover'    => tr('Recover password'),
-                                            'signup'     => tr('Sign up'),
+                                            'signup'     => tr(''),
                                             'welcome'    => tr('<strong>Welcome!</strong> Please sign in first.')));
 ?>
