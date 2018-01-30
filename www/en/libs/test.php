@@ -12,9 +12,9 @@
 
 load_libs('file');
 
-$GLOBALS['tests']['errors'] = array('all'     => array(),
-                                    'test'    => array(),
-                                    'library' => array());
+$core->register['timers']['tests']['errors'] = array('all'     => array(),
+                                                     'test'    => array(),
+                                                     'library' => array());
 
 file_ensure_path(ROOT.'data/tests/contents');
 
@@ -48,9 +48,9 @@ function test($name, $description, $function){
 
         array_shift($e['trace']);
 
-        $GLOBALS['tests']['errors']['all'][]     = $e;
-        $GLOBALS['tests']['errors']['test'][]    = $e;
-        $GLOBALS['tests']['errors']['library'][] = $e;
+        $core->register['timers']['tests']['errors']['all'][]     = $e;
+        $core->register['timers']['tests']['errors']['test'][]    = $e;
+        $core->register['timers']['tests']['errors']['library'][] = $e;
 
 //showdie($e);
         return $e;
@@ -65,11 +65,11 @@ function test($name, $description, $function){
 function test_completed($name, $type = 'test'){
     log_console($name.' ['.$type.' COMPLETED] ', 'white');
 
-    if(!isset($GLOBALS['tests']['errors'][$type])){
+    if(!isset($core->register['timers']['tests']['errors'][$type])){
         throw new bException('test_completed(): Invalid type "" specified. Specify one of "test", "library" or "all"');
     }
 
-    $errors = $GLOBALS['tests']['errors'][$type];
+    $errors = $core->register['timers']['tests']['errors'][$type];
 
     if(!is_array($errors)){
         throw new bException('test_completed(): The specified error list should have datatype array but has datatype "'.gettype($errors).'"');
@@ -98,15 +98,15 @@ function test_completed($name, $type = 'test'){
      */
     switch($type){
         case 'all':
-            $GLOBALS['tests']['errors']['all'] = array();
+            $core->register['timers']['tests']['errors']['all'] = array();
             // FALLTHROUGH
 
         case 'library':
-            $GLOBALS['tests']['errors']['library'] = array();
+            $core->register['timers']['tests']['errors']['library'] = array();
             // FALLTHROUGH
 
         case 'test':
-            $GLOBALS['tests']['errors']['test'] = array();
+            $core->register['timers']['tests']['errors']['test'] = array();
             // FALLTHROUGH
 
     }

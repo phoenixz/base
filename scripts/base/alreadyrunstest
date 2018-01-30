@@ -3,7 +3,7 @@
 /*
  * This is a test interface that lets the admin do some diagnostics
  */
-require_once(dirname(__FILE__).'/../../libs/startup.php');
+require_once(__DIR__.'/../../libs/startup.php');
 
 cli_no_arguments_left();
 

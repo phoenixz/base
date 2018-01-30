@@ -19,7 +19,7 @@ OPTIONS
 --repliedon-now                 - (Only for "rebuild" method) set the column
                                   "repliedon" to NOW() instead of NULL';
 
-require_once(dirname(__FILE__).'/../../../libs/startup.php');
+require_once(__DIR__.'/../../../libs/startup.php');
 
 load_libs('json,twilio,sms');
 

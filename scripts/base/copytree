@@ -10,7 +10,7 @@ $usage = "./scripts/base/copytree source target\n".
 
 $help  = "The copytree command can recursively copy an entire tree while performing a search / replace on all files in that tree";
 
-require_once(dirname(__FILE__).'/../../libs/startup.php');
+require_once(__DIR__.'/../../libs/startup.php');
 
 foreach($argv as $id => $arg){
     switch($id){

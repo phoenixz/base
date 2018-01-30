@@ -33,7 +33,12 @@ function sitemap_generate($languages = null){
         load_libs('file');
 
         if(empty($languages)){
-            $languages = array_keys($_CONFIG['language']['supported']);
+            if($_CONFIG['language']['supported']){
+                $languages = array_keys($_CONFIG['language']['supported']);
+
+            }else{
+                $languages = array($_CONFIG['language']['default']);
+            }
         }
 
         foreach(array_force($languages) as $language){
@@ -92,8 +97,8 @@ function sitemap_generate($languages = null){
                  * into place
                  */
                 log_console(tr('Generating ":count" sitemap files', array(':count' => $count)));
-                file_ensure_path(ROOT.'tmp/sitemaps');
-                chmod(ROOT.'tmp/sitemaps', $_CONFIG['fs']['dir_mode']);
+                file_ensure_path(TMP.'sitemaps');
+                chmod(TMP.'sitemaps', $_CONFIG['fs']['dir_mode']);
 
                 while($file = sql_fetch($files)){
                     if(!$file['file']) $file['file'] = 'basic';

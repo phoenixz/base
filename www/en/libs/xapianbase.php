@@ -52,11 +52,17 @@ class xapianbase {
         array_default($params, 'language', not_empty($language, LANGUAGE));
         array_default($params, 'name'    , 'default');
 
-        if(empty($_CONFIG['language']['supported'][$params['language']])){
-            throw new bException('xapianbase->__construct(): Specified language "'.str_log($params['language']).'" is not supported');
+        if($_CONFIG['language']['supported']){
+            if(empty($_CONFIG['language']['supported'][$params['language']])){
+                throw new bException('xapianbase->__construct(): Specified language "'.str_log($params['language']).'" is not supported');
+            }
+
+            $this->language = strtolower($_CONFIG['language']['supported'][$params['language']]);
+
+        }else{
+            $this->language = LANGUAGE;
         }
 
-        $this->language = strtolower($_CONFIG['language']['supported'][$params['language']]);
         $this->target   = slash($_CONFIG['xapian']['dir']).$params['name'].'/';
         $this->name     = $params['name'];
 

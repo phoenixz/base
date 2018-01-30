@@ -2,11 +2,15 @@
 /*
  * Timer library
  *
- * This is an empty template library file
+ * This library...
  *
  * @license http://opensource.org/licenses/GPL-2.0 GNU Public License, Version 2
  * @copyright Sven Oostenbrink <support@ingiga.com>
  */
+
+
+
+$core->register['timers'] = array();
 
 
 
@@ -22,8 +26,7 @@ function timer_start($process){
                          ':process'   => $process));
 
         $id = sql_insert_id();
-
-        $GLOBALS['timers'][$id] = microtime(true);
+        $core->register['timers'][$id] = microtime(true);
 
         return $id;
 
@@ -39,12 +42,11 @@ function timer_start($process){
  */
 function timer_stop($id){
     try{
-        if(empty($GLOBALS['timers'][$id])){
+        if(empty($core->register['timers'][$id])){
             throw new bException(tr('timer_stop(): Specified timers id %id%" is not registered as a timer', array('%id%' => $id)), 'not-exist');
         }
 
-        $time = (integer) round((microtime(true) - $GLOBALS['timers'][$id]) * 1000, 0);
-
+        $time = (integer) round((microtime(true) - $core->register['timers'][$id]) * 1000, 0);
         $r    = sql_query('UPDATE `timers`
 
                            SET `stop`   = NOW(),
@@ -59,7 +61,7 @@ function timer_stop($id){
             throw new bException(tr('timer_stop(): Specified id %id%" exist in memory, but not in the database', array('%id%' => $id)), 'not-exist');
         }
 
-        unset($GLOBALS['timers'][$id]);
+        unset($core->register['timers'][$id]);
 
         return $time;
 

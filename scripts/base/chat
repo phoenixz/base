@@ -16,7 +16,7 @@ METHODS
 sync                            - Syncs the core database user accounts with
                                   the chat database';
 
-require_once(dirname(__FILE__).'/../../libs/startup.php');
+require_once(__DIR__.'/../../libs/startup.php');
 
 cli_only();
 load_libs('chat');

@@ -14,14 +14,13 @@
  * Set the jQuery UI theme
  */
 load_config('jqueryui');
-html_load_js('jquery-ui/jquery-ui');
-html_load_css('jquery/jquery-ui');
 
 if(empty($_CONFIG['jquery-ui']['theme'])){
     throw new bException(tr('jqueryui(): No jquery-ui theme specified, please check $_CONFIG[jquery-ui][theme]'), 'not-exist');
 }
 
-html_load_css('base/jquery-ui/themes/'.$_CONFIG['jquery-ui']['theme'].'/jquery-ui');
+html_load_js('jquery-ui/jquery-ui');
+html_load_css('jquery/jquery-ui,base/jquery-ui/themes/'.$_CONFIG['jquery-ui']['theme'].'/jquery-ui');
 
 
 

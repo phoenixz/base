@@ -12,7 +12,7 @@ $usage = './scripts/base/ensure-structure';
 
 $help  = 'The ensure-structure script will ensure that all required files and directories are available. If directories are missing they will be created; if files are missing, a clear error will be shown';
 
-require_once(dirname(__FILE__).'/../../libs/startup.php');
+require_once(__DIR__.'/../../libs/startup.php');
 
 /*
  * Load deployment configuration

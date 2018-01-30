@@ -77,7 +77,7 @@ show ID                         - Show detailed information about the specified
                                   task id. The extra data shown will be the
                                   \"data\" and \"results\" JSON fields decoded";
 
-require_once(dirname(__FILE__).'/../../libs/startup.php');
+require_once(__DIR__.'/../../libs/startup.php');
 
 cli_only();
 load_libs('tasks,json');

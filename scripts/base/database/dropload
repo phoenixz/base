@@ -4,7 +4,7 @@
  * This script will backup a table or database, then drop it,
  * and then reload it from the SQL backup.
  */
-require_once(dirname(__FILE__).'/../../../libs/startup.php');
+require_once(__DIR__.'/../../../libs/startup.php');
 
 try{
     $noclean  = cli_argument('noclean', false, cli_argument('nocleanup', false));
@@ -27,14 +27,14 @@ try{
     }
 
     load_libs('file');
-    file_ensure_path(ROOT.'data/tmp/dropload');
+    file_ensure_path(TMP.'dropload');
     file_ensure_path(ROOT.'data/backups/databases');
 
     if($table){
         /*
          * Dump a temp from the table, and a complete backup of the entire database
          */
-        file_delete($file = ROOT.'data/tmp/dropload/'.$database.'.'.$table.'.sql');
+        file_delete($file = TMP.'dropload/'.$database.'.'.$table.'.sql');
 
         log_console('Dumping table "'.str_log($table).'" from database "'.str_log($database).'"', 'dropload');
         safe_exec('mysqldump -u '.$user.' -p'.$password.' --database '.$database.' --table '.$table.' > '.$file.' 2> /dev/null', null, false);
@@ -43,7 +43,7 @@ try{
         /*
          * Dump a temp from the table, and a complete backup of the entire database
          */
-        file_delete($file = ROOT.'data/tmp/tables/'.$database.'.sql');
+        file_delete($file = TMP.'tables/'.$database.'.sql');
 
         log_console('Dumping database "'.str_log($database).'"', 'dropload');
         safe_exec('mysqldump -u '.$user.' -p'.$password.' --database '.$database.' --table '.$table.' > '.$file, null, false);

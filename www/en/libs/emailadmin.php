@@ -194,7 +194,7 @@ function emailadmin_add_domain($domain){
 
                           array(':name' => $domain));
 
-        return $GLOBALS['emailsql']->lastInsertId();
+        return $core->register['emailsql']->lastInsertId();
 
     }catch(Exception $e){
         throw new bException('emailadmin_add_domain(): Failed', $e);
@@ -235,7 +235,7 @@ function emailadmin_remove_domains($domain){
             throw new bException(tr('emailadmin_remove_domains(): Invalid domain name or id type ":value" specified, please specify either string (domain name) or integer (domain id) or an array with both mixed', array(':value' => gettype($domain))), 'invalid');
         }
 
-        return $GLOBALS['emailsql']->rowCount();
+        return $core->register['emailsql']->rowCount();
 
     }catch(Exception $e){
         throw new bException('emailadmin_remove_domains(): Failed', $e);
@@ -323,7 +323,7 @@ function emailadmin_add_user($email, $password){
                                 ':domains_id' => $domains_id,
                                 ':password'   => $password));
 
-        return $GLOBALS['emailsql']->lastInsertId();
+        return $core->register['emailsql']->lastInsertId();
 
     }catch(Exception $e){
         throw new bException('emailadmin_add_user(): Failed', $e);
@@ -364,7 +364,7 @@ function emailadmin_remove_users($user){
             throw new bException(tr('emailadmin_remove_users(): Invalid user name or id type ":value" specified, please specify either string (user name) or integer (user id) or an array with both mixed', array(':value' => gettype($user))), 'invalid');
         }
 
-        return $GLOBALS['emailsql']->rowCount();
+        return $core->register['emailsql']->rowCount();
 
     }catch(Exception $e){
         throw new bException('emailadmin_remove_users(): Failed', $e);
@@ -452,7 +452,7 @@ function emailadmin_add_alias($source, $destination){
                                 ':source'      => $source,
                                 ':destination' => $destination));
 
-        return $GLOBALS['emailsql']->lastInsertId();
+        return $core->register['emailsql']->lastInsertId();
 
     }catch(Exception $e){
         throw new bException('emailadmin_add_alias(): Failed', $e);
@@ -495,7 +495,7 @@ function emailadmin_remove_aliases($alias){
             throw new bException(tr('emailadmin_remove_aliases(): Invalid alias name or id type ":value" specified, please specify either string (alias name) or integer (alias id) or an array with both mixed', array(':value' => gettype($alias))), 'invalid');
         }
 
-        return $GLOBALS['emailsql']->rowCount();
+        return $core->register['emailsql']->rowCount();
 
     }catch(Exception $e){
         throw new bException('emailadmin_remove_aliass(): Failed', $e);

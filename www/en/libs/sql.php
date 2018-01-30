@@ -33,85 +33,64 @@ function sql_query($query, $execute = false, $handle_exceptions = true, $connect
 
         sql_init($connector);
 
-        $core->executedQuery();
+        $query_start = microtime(true);
 
-        if(is_string($query)){
-            if(!empty($core->register['sql_debug_queries'])){
-                $core->register['sql_debug_queries']--;
-                $query = ' '.$query;
-            }
+        if(!is_string($query)){
+            throw new bException(tr('sql_query(): Specified query ":query" is not a string', array(':query' => $query)), 'invalid');
+        }
 
-            if(substr($query, 0, 1) == ' '){
-                debug_sql($query, $execute);
-                $query = substr($query, 1);
-            }
+        if(!empty($core->register['sql_debug_queries'])){
+            $core->register['sql_debug_queries']--;
+            $query = ' '.$query;
+        }
 
-            if(!$execute){
-                /*
-                 * Just execute plain SQL query string.
-                 */
-                return $core->sql[$connector]->query($query);
-            }
+        if(substr($query, 0, 1) == ' '){
+            debug_sql($query, $execute);
+        }
 
+        if(!$execute){
             /*
-             * Query was specified as a SQL query.
+             * Just execute plain SQL query string.
              */
-            $p = $core->sql[$connector]->prepare($query);
+            $pdo_statement = $core->sql[$connector]->query($query);
 
         }else{
             /*
-             * It's quietly assumed that a
-             * PDOStatement object was specified
+             * Execute the query with the specified $execute variables
              */
-// :TODO: Don't quietly assume, test!
-            $p = $query;
-        }
+            $pdo_statement = $core->sql[$connector]->prepare($query);
 
-        try{
-            $p->execute($execute);
-            return $p;
+            try{
+                $pdo_statement->execute($execute);
 
-        }catch(Exception $e){
-            /*
-             * Failure is probably that one of the the $execute array values is not scalar
-             */
-// :TODO: Move all of this to sql_error()
-            if(!is_array($execute)){
-                throw new bException('sql_query(): Specified $execute is not an array!', 'invalid');
-            }
-
-            /*
-             * Check execute array
-             */
-            if(empty($execute['allow_html'])){
+            }catch(Exception $e){
                 /*
-                 * Auto filter HTML
+                 * Failure is probably that one of the the $execute array values is not scalar
+                 */
+// :TODO: Move all of this to sql_error()
+                if(!is_array($execute)){
+                    throw new bException('sql_query(): Specified $execute is not an array!', 'invalid');
+                }
+
+                /*
+                 * Check execute array for possible problems
                  */
                 foreach($execute as $key => &$value){
                     if(!is_scalar($value) and !is_null($value)){
                         throw new bException(tr('sql_query(): Specified key ":value" in the execute array for query ":query" is NOT scalar! Value is ":value"', array(':key' => str_replace(':', '.', $key), ':query' => str_replace(':', '.', $query), ':value' => str_replace(':', '.', $value))), 'invalid');
                     }
-
-                    if($value and !is_numeric($value)){
-                        $value = cfm($value);
-                    }
                 }
 
-            }else{
-                /*
-                 * Only simple content check
-                 */
-                unset($execute['allow_html']);
-
-                foreach($execute as $key => $value){
-                    if(!is_scalar($value) and !is_null($value)){
-                        throw new bException('sql_query(): Specified key "'.str_log($key).'" in the execute array for query "'.str_log($query, 4096).'" is NOT scalar!', 'invalid');
-                    }
-                }
+                throw $e;
             }
-
-            throw $e;
         }
+
+        if(debug()){
+            $core->executedQuery(microtime(true) - $query_start, $query);
+        }
+
+        return $pdo_statement;
+
 
     }catch(Exception $e){
         if(!$handle_exceptions){
@@ -119,6 +98,9 @@ function sql_query($query, $execute = false, $handle_exceptions = true, $connect
         }
 
         try{
+            /*
+             * Let sql_error() try and generate more understandable errors
+             */
             load_libs('sql_error');
             sql_error($e, $query, $execute, isset_get($core->sql[$connector]));
 

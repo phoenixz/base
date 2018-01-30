@@ -23,7 +23,7 @@ Possible arguments:
 --branch BRANCH               - Get the BASE updates from branch BRANCH instead
                                 of the standard production branch";
 
-require_once(dirname(__FILE__).'/../../libs/startup.php');
+require_once(__DIR__.'/../../libs/startup.php');
 
 $branch   =  cli_argument('--branch', true, 'production');
 $noinit   =  cli_argument('--no-init');

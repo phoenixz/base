@@ -3,7 +3,7 @@
 /*
  * This script will import person names from persons data source.
  */
-require_once(dirname(__FILE__).'/../../../libs/startup.php');
+require_once(__DIR__.'/../../../libs/startup.php');
 
 try{
     if(!$language = cli_argument(0)){

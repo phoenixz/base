@@ -4,7 +4,7 @@
  * This script can create new mailings
  */
 $quiet = true;
-require_once(dirname(__FILE__).'/../../../libs/startup.php');
+require_once(__DIR__.'/../../../libs/startup.php');
 
 try{
     cli_only();

@@ -75,8 +75,11 @@ $core->startup();
 class core{
     public $sql          = array();
     public $mc           = array();
-    public $register     = array('quiet'       => true,
-                                 'query_count' => 0);
+    public $register     = array('js'            => array(),
+                                 'css'           => array(),
+                                 'quiet'         => true,
+                                 'footer'        => '',
+                                 'debug_queries' => array());
 
     private $callType    = null;
 
@@ -161,15 +164,23 @@ class core{
             require('handlers/startup-'.$this->callType.'.php');
 
         }catch(Exception $e){
-//print_r($e);
-//die();
-
             throw new bException(tr('core::startup(): Failed'), $e);
         }
     }
 
-    public function executedQuery(){
-        return ++$this->register['query_count'];
+    public function executedQuery($time, $query){
+        if(!$query){
+            /*
+             * When not in debug mode, query won't be specified, and
+             * core::executedQuery() will be disabled
+             */
+            return null;
+        }
+
+        $this->register['debug_queries'][] = array('query' => $query,
+                                                   'time'  => $time);
+
+        return count($this->register['debug_queries']);
     }
 
     public function register($key, $value = null){
@@ -182,38 +193,32 @@ class core{
 
     public function callType($type = null){
         if($type){
-            return $this->callType === $type;
+            switch($type){
+                case 'http':
+                    // FALLTHROUGH
+                case 'admin':
+                    // FALLTHROUGH
+                case 'cli':
+                    // FALLTHROUGH
+                case 'mobile':
+                    // FALLTHROUGH
+                case 'ajax':
+                    // FALLTHROUGH
+                case 'api':
+                    // FALLTHROUGH
+                case 'amp':
+                    // FALLTHROUGH
+                case 404:
+                    return false;
+
+                default:
+                    throw new bException(tr('core::callType(): Unknown call type ":type" specified', array(':type' => $type)), 'unknown');
+            }
+
+            return ($this->callType === $type);
         }
 
         return $this->callType;
-    }
-
-    public function callIs($type){
-        if($this->callType === $type){
-             return true;
-        }
-
-        switch($type){
-            case 'http':
-                // FALLTHROUGH
-            case 'admin':
-                // FALLTHROUGH
-            case 'cli':
-                // FALLTHROUGH
-            case 'mobile':
-                // FALLTHROUGH
-            case 'ajax':
-                // FALLTHROUGH
-            case 'api':
-                // FALLTHROUGH
-            case 'amp':
-                // FALLTHROUGH
-            case 404:
-                return false;
-
-            default:
-                throw new bException(tr('core::callIs(): Unknown page type ":type" specified', array(':type' => $type)), 'unknown');
-        }
     }
 }
 
@@ -229,6 +234,8 @@ class bException extends Exception{
     public  $code     = null;
 
     function __construct($messages, $code, $data = null){
+        global $core;
+
         $messages = array_force($messages, "\n");
 
         if(is_object($code)){
@@ -498,19 +505,19 @@ function debug($class = null){
 
     try{
         if($class === null){
-            return (boolean) $_CONFIG['debug'];
+            return (boolean) $_CONFIG['debug']['enabled'];
         }
 
         if($class === true){
             /*
              * Force debug to be true. This may be useful in production situations where some bug needs quick testing.
              */
-            $_CONFIG['debug'] = true;
+            $_CONFIG['debug']['enabled'] = true;
             return true;
         }
 
         if(!isset($_CONFIG['debug'][$class])){
-            throw new bException('debug(): Unknown debug class "'.str_log($class).'" specified', 'unknown');
+            throw new bException(tr('debug(): Unknown debug class ":class" specified', array(':class' => $class)), 'unknown');
         }
 
         return $_CONFIG['debug'][$class];
@@ -921,8 +928,8 @@ function log_console($messages = '', $color = null, $newline = true, $filter_dou
  * Log specified message to database, but only if we are in console mode!
  */
 function log_database($messages, $type = 'unknown'){
-    static $q, $last, $busy;
     global $core;
+    static $q, $last, $busy;
 
     try{
         switch(str_until($type, '/')){
@@ -1457,7 +1464,7 @@ function user_or_signin(){
                 /*
                  * No session
                  */
-                if($core->callIs('api')){
+                if($core->callType('api')){
                     json_reply(tr('api_start_session(): Specified token ":token" has no session', array(':token' => $_POST['PHPSESSID'])), 'signin');
 
                 }else{
@@ -2016,7 +2023,7 @@ function page_show($pagename, $params = null){
         array_params($params, 'message');
         array_default($params, 'exists', false);
 
-        if(!empty($core->callIs('ajax'))){
+        if(!empty($core->callType('ajax'))){
             if($params['exists']){
                 return file_exists(ROOT.'www/'.LANGUAGE.'/ajax/'.$pagename.'.php');
             }
@@ -2026,7 +2033,7 @@ function page_show($pagename, $params = null){
              */
             return include(ROOT.'www/'.LANGUAGE.'/ajax/'.$pagename.'.php');
 
-        }elseif(!empty($core->callIs('admin'))){
+        }elseif(!empty($core->callType('admin'))){
             $prefix = 'admin/';
 
         }else{
@@ -2260,6 +2267,7 @@ function get_boolean($value){
  *
  */
 function language_lock($language, $script = null){
+    global $core;
     static $checked   = false;
     static $incorrect = false;
 
@@ -2270,7 +2278,7 @@ function language_lock($language, $script = null){
              * each language. This can then be used to determine the name
              * of the script in the correct language to build linksx
              */
-            $GLOBALS['scripts'] = $script;
+            $core->register['scripts'] = $script;
         }
 
         /*
@@ -3055,6 +3063,33 @@ function run_background($cmd, $log = true, $single = true){
 
 
 /*
+ * Return the file where this call was made
+ */
+function current_file($trace = 0){
+    return include(__DIR__.'/handlers/debug_current_file.php');
+}
+
+
+
+/*
+ * Return the line number where this call was made
+ */
+function current_line($trace = 0){
+    return include(__DIR__.'/handlers/debug_current_line.php');
+}
+
+
+
+/*
+ * Return the function where this call was made
+ */
+function current_function($trace = 0){
+    return include(__DIR__.'/handlers/debug_current_function.php');
+}
+
+
+
+/*
  * Auto fill in values (very useful for debugging and testing)
  */
 function value($format, $size = null){
@@ -3110,33 +3145,6 @@ function debug_html_row($value, $key = null, $type = null){
 
 
 /*
- * Return the file where this call was made
- */
-function current_file($trace = 0){
-    return include(__DIR__.'/handlers/debug_current_file.php');
-}
-
-
-
-/*
- * Return the line number where this call was made
- */
-function current_line($trace = 0){
-    return include(__DIR__.'/handlers/debug_current_line.php');
-}
-
-
-
-/*
- * Return the function where this call was made
- */
-function current_function($trace = 0){
-    return include(__DIR__.'/handlers/debug_current_function.php');
-}
-
-
-
-/*
  *
  */
 function debug_sql($query, $execute = null, $return_only = false){
@@ -3150,6 +3158,15 @@ function debug_sql($query, $execute = null, $return_only = false){
  */
 function debug_trace($filters = 'args'){
     return include(__DIR__.'/handlers/debug_trace.php');
+}
+
+
+
+/*
+ * Return an HTML bar with debug information that can be used to monitor site and fix issues
+ */
+function debug_bar(){
+    return include(__DIR__.'/handlers/debug_bar.php');
 }
 
 

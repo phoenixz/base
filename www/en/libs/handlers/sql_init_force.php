@@ -19,8 +19,8 @@
         /*
          * Dump database, and recreate it
          */
-        $GLOBALS['sql_'.$connector]->query('DROP   DATABASE IF EXISTS `'.$_CONFIG['db'][$connector]['db'].'`');
-        $GLOBALS['sql_'.$connector]->query('CREATE DATABASE           `'.$_CONFIG['db'][$connector]['db'].'` DEFAULT CHARSET="'.$_CONFIG['db'][$connector]['charset'].'" COLLATE="'.$_CONFIG['db'][$connector]['collate'].'";');
-        $GLOBALS['sql_'.$connector]->query('USE                       `'.$_CONFIG['db'][$connector]['db'].'`');
+        $core->sql[$connector]->query('DROP   DATABASE IF EXISTS `'.$_CONFIG['db'][$connector]['db'].'`');
+        $core->sql[$connector]->query('CREATE DATABASE           `'.$_CONFIG['db'][$connector]['db'].'` DEFAULT CHARSET="'.$_CONFIG['db'][$connector]['charset'].'" COLLATE="'.$_CONFIG['db'][$connector]['collate'].'";');
+        $core->sql[$connector]->query('USE                       `'.$_CONFIG['db'][$connector]['db'].'`');
     }
 ?>

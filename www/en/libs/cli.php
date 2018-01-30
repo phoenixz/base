@@ -13,11 +13,11 @@
 /*
  * Ensure that the posix extension is available.
  */
-$GLOBALS['posix'] = true;
+$core->register['posix'] = true;
 
 if(!function_exists('posix_getuid')){
     log_console('WARNING: The POSIX extension seems to be unavailable, this may cause some functionalities to fail or give unexpected results', 'yellow');
-    $GLOBALS['posix'] = false;
+    $core->register['posix'] = false;
 }
 
 
@@ -272,11 +272,11 @@ function cli_readline($prompt = '', $hidden = false){
  */
 function cli_current_script(){
     try{
-        if(empty($GLOBALS['scripts'])){
+        if(empty($core->register['scripts'])){
             return SCRIPT;
         }
 
-        return str_rfrom(end($GLOBALS['scripts']), '/');
+        return str_rfrom(end($core->register['scripts']), '/');
 
     }catch(Exception $e){
         throw new bException('cli_current_script(): Failed', $e);
@@ -839,7 +839,7 @@ function cli_show_usage($usage, $color){
  * Exception if this script is not being run as root user
  */
 function cli_is_root(){
-    if($GLOBALS['posix']){
+    if($core->register['posix']){
         return posix_getuid() == 0;
     }
 

@@ -44,7 +44,7 @@ patch                           - Will apply the diff patches to both base and
                                   project (and then remove them from base and
                                   toolkit)';
 
-require_once(dirname(__FILE__).'/../../libs/startup.php');
+require_once(__DIR__.'/../../libs/startup.php');
 
 cli_only();
 load_libs('git,patch,file');
@@ -331,14 +331,18 @@ foreach($files as $file => &$status){
             }
 
         }elseif(preg_match('/scripts\/base\/[a-z0-9-]+/', $file)){
-            log_console(tr('Identified file as base'), 'VERBOSE');
-            $sections['base'][$file] = $status;
-            $marked = true;
+            if(patch_file_exists_in_base($file)){
+                log_console(tr('Identified file as base'), 'VERBOSE');
+                $sections['base'][$file] = $status;
+                $marked = true;
+            }
 
         }elseif(preg_match('/config\/base\/.+/', $file)){
-            log_console(tr('Identified file as base'), 'VERBOSE');
-            $sections['base'][$file] = $status;
-            $marked = true;
+            if(patch_file_exists_in_base($file)){
+                log_console(tr('Identified file as base'), 'VERBOSE');
+                $sections['base'][$file] = $status;
+                $marked = true;
+            }
         }
 
         if($marked){

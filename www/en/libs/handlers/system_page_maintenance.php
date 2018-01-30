@@ -5,7 +5,7 @@ try{
     error_log('['.PROJECT.']['.(SUBENVIRONMENT ? SUBENVIRONMENT : 'NOSUBENVIRONMENT').'][MAINTENANCE] '.$reason);
     log_database('['.PROJECT.']['.(SUBENVIRONMENT ? SUBENVIRONMENT : 'NOSUBENVIRONMENT').'][MAINTENANCE] '.$reason, 'MAINTENANCE');
 
-    if($core->callIs('admin')){
+    if($core->callType('admin')){
         page_show('admin/maintenance', true, $force, $data);
 
     }else{

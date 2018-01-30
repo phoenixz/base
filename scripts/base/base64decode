@@ -8,7 +8,7 @@ $usage = "./scripts/base/base64decode\n".
 
 $help  = "This script will decode base64 strings and show the contents.";
 
-require_once(dirname(__FILE__).'/../../libs/startup.php');
+require_once(__DIR__.'/../../libs/startup.php');
 
 $string = cli_argument(0);
 cli_no_arguments_left();

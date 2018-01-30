@@ -8,7 +8,7 @@ $usage = "./scripts/base/notifications/send CLASSNAME|CLASSID EVENT MESSAGE \n";
 $help  = "Send event notifications to the specified classes";
 
 $quiet = true;
-require_once(dirname(__FILE__).'/../../../libs/startup.php');
+require_once(__DIR__.'/../../../libs/startup.php');
 
 try{
     cli_only();

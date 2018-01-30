@@ -246,9 +246,9 @@ function sql_error_init($e, $connector, $sql){
     global $_CONFIG;
 
     try{
-        $GLOBALS['sql_'.$sql]->query('DROP DATABASE IF EXISTS `'.$connector['db'].'`;');
-        $GLOBALS['sql_'.$sql]->query('CREATE DATABASE         `'.$connector['db'].'` DEFAULT CHARSET="'.$connector['charset'].'" COLLATE="'.$connector['collate'].'";');
-        $GLOBALS['sql_'.$sql]->query('USE                     `'.$connector['db'].'`');
+        $core->sql['core']->query('DROP DATABASE IF EXISTS `'.$connector['db'].'`;');
+        $core->sql['core']->query('CREATE DATABASE         `'.$connector['db'].'` DEFAULT CHARSET="'.$connector['charset'].'" COLLATE="'.$connector['collate'].'";');
+        $core->sql['core']->query('USE                     `'.$connector['db'].'`');
         return true;
 
     }catch(Exception $e){

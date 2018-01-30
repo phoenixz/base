@@ -4,7 +4,7 @@
  * This script will try to add the specified users to the specified mailing
  */
 $quiet = true;
-require_once(dirname(__FILE__).'/../../../libs/startup.php');
+require_once(__DIR__.'/../../../libs/startup.php');
 
 try{
     cli_only();

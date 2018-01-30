@@ -1392,7 +1392,7 @@ function blogs_validate_post($post, $params = null){
             }
         }
 
-        if(!empty($params['label_language'])){
+        if(!empty($params['label_language']) and $_CONFIG['language']['supported']){
             $v->isNotEmpty($post['language'],    tr('Please select a language for your :objectname', array(':objectname' => $params['object_name'])));
             $v->hasChars($post['language']  , 2, tr('Please provide a valid language'));
 

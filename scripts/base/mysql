@@ -46,7 +46,7 @@ OPTIONS
                               database found in the used connector will be
                               used';
 
-require_once(dirname(__FILE__).'/../../libs/startup.php');
+require_once(__DIR__.'/../../libs/startup.php');
 
 cli_only();
 

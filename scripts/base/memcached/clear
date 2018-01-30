@@ -3,7 +3,7 @@
 /*
  * This script can invalidate all cached objects on the connected servers
  */
-require_once(dirname(__FILE__).'/../../../libs/startup.php');
+require_once(__DIR__.'/../../../libs/startup.php');
 
 try{
     if(!mc_connect()){

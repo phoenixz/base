@@ -41,8 +41,6 @@ function cache_read($key = null, $namespace = null){
     global $_CONFIG, $core;
 
     try{
-//        $key = SCRIPT.'_'.LANGUAGE.isset_get($_SESSION['user']['id']).'_'.$key;
-
         switch($_CONFIG['cache']['method']){
             case 'file':
                 $key  = cache_key_hash($key);
@@ -68,7 +66,7 @@ function cache_read($key = null, $namespace = null){
         }
 
         if(debug()){
-            $data = str_replace(':query_count', $core->register('query_count'), $data);
+            debug_set_variables($data);
         }
 
         return $data;
@@ -143,7 +141,7 @@ function cache_write($value, $key = null, $namespace = null, $max_age = null){
         }
 
         if(debug()){
-            $value = str_replace(':query_count', $core->register('query_count'), $value);
+            debug_set_variables($data);
         }
 
         return $value;
@@ -234,7 +232,7 @@ function cache_showpage($key = null, $namespace = 'htmlpage', $etag = null){
                 http_headers(null, strlen($value));
 
                 if(debug()){
-                    $value = str_replace(':query_count', $core->register('query_count'), $value);
+                    debug_set_variables($data);
                 }
 
                 echo $value;

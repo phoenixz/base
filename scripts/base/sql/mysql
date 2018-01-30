@@ -13,7 +13,7 @@ $help  = "This is the help contents";
  */
 $no_time_zone = true;
 
-require_once(dirname(__FILE__).'/../../../libs/startup.php');
+require_once(__DIR__.'/../../../libs/startup.php');
 
 try{
     switch(strtolower(cli_argument(0))){

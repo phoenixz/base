@@ -16,7 +16,7 @@ $usage = "sitemap clear\n".
 
 $help  = "This sitemap script can create new sitemap files";
 
-require_once(dirname(__FILE__).'/../../libs/startup.php');
+require_once(__DIR__.'/../../libs/startup.php');
 
 cli_only(true);
 load_libs('sitemap');
@@ -52,7 +52,14 @@ switch(cli_method()){
             log_console(tr('No sitemap data has been generated ever before. Generating all sitemap files now'), 'yellow');
 
         }else{
-            foreach($_CONFIG['language']['supported'] as $language_code => $language_name){
+            if($_CONFIG['language']['supported']){
+                $languages = $_CONFIG['language']['supported'];
+
+            }else{
+                $languages = array(LANGUAGE => LANGUAGE);
+            }
+
+            foreach($languages as $language_code => $language_name){
                 /*
                  * Check if there are updates for each language
                  */

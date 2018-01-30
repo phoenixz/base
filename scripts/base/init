@@ -44,7 +44,7 @@ ARGUMENTS
                                   accidents, this will NOT work on production
                                   systems";
 
-require_once(dirname(__FILE__).'/../../libs/startup.php');
+require_once(__DIR__.'/../../libs/startup.php');
 
 $drop                 = cli_argument('--drop') or cli_argument('-d');
 $fromprojectversion   = not_empty(cli_argument('--from-project-version'  , true, null), cli_argument('-p', true, null));

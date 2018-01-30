@@ -8,7 +8,7 @@ $usage = "./scripts/base/version\n".
 
 $help  = "The version script will supply you with version information about this copy of the base framework";
 
-require_once(dirname(__FILE__).'/../../libs/startup.php');
+require_once(__DIR__.'/../../libs/startup.php');
 
 switch(cli_method()){
     case 'php':
