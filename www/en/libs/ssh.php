@@ -178,7 +178,7 @@ function ssh_stop_control_master($socket = null){
 /*
  *
  */
-function ssh_exec($server, $commands = null){
+function ssh_exec($server, $commands = null, $background = false, $local = false){
     try{
         array_params($server);
         array_default($server, 'server'       , '');
@@ -187,6 +187,21 @@ function ssh_exec($server, $commands = null){
         array_default($server, 'port'         , 22);
         array_default($server, 'hostkey_check', false);
         array_default($server, 'arguments'    , '-T');
+
+        /*
+         * Validate commands
+         */
+        if(empty($commands)){
+            throw new bException(tr('No commmands specified'), 'invalid');
+        }
+
+        /*
+         * If local just use safe_exec
+         */
+        if($local){
+            $result = safe_exec('"'.$commands.'"'.($background ? ' &; echo $1' : ''));
+            return $result;
+        }
 
         if(!$server['hostkey_check']){
             $server['arguments'] .= ' -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null ';
@@ -238,7 +253,7 @@ function ssh_exec($server, $commands = null){
          * Execute command on remote server
          */
 //show('ssh '.$server['arguments'].' -p '.$server['port'].' -i '.$keyfile.' '.$server['username'].'@'.$server['hostname'].' '.$commands);
-        $result = safe_exec('ssh '.$server['arguments'].' -p '.$server['port'].' -i '.$keyfile.' '.$server['username'].'@'.$server['hostname'].' "'.$commands.'"');
+        $result = safe_exec('ssh '.$server['arguments'].' -p '.$server['port'].' -i '.$keyfile.' '.$server['username'].'@'.$server['hostname'].' "'.$commands.'"'.($background ? ' &; echo $1' : ''));
 
         chmod($keyfile, 0600);
         file_delete($keyfile);
