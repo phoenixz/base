@@ -86,7 +86,7 @@ function sql_query($query, $execute = false, $handle_exceptions = true, $connect
         }
 
         if(debug()){
-            $core->executedQuery(microtime(true) - $query_start, $query);
+            $core->executedQuery(microtime(true) - $query_start, debug_sql($query, $execute, true));
         }
 
         return $pdo_statement;
