@@ -65,10 +65,6 @@ function cache_read($key = null, $namespace = null){
                 throw new bException(tr('cache_read(): Unknown cache method ":method" specified', array(':method' => $_CONFIG['cache']['method'])), 'unknown');
         }
 
-        if(debug()){
-            debug_set_variables($data);
-        }
-
         return $data;
 
     }catch(Exception $e){
@@ -138,10 +134,6 @@ function cache_write($value, $key = null, $namespace = null, $max_age = null){
 
             default:
                 throw new bException(tr('cache_write(): Unknown cache method ":method" specified', array(':method' => $_CONFIG['cache']['method'])), 'unknown');
-        }
-
-        if(debug()){
-            debug_set_variables($data);
         }
 
         return $value;
@@ -230,10 +222,6 @@ function cache_showpage($key = null, $namespace = 'htmlpage', $etag = null){
 
             if($value = cache_read($key, $namespace)){
                 http_headers(null, strlen($value));
-
-                if(debug()){
-                    debug_set_variables($data);
-                }
 
                 echo $value;
                 die();
