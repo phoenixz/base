@@ -29,16 +29,28 @@ try{
 // :TODO:SVEN:20130430: This should NEVER happen, send notification!
     }
 
-    if(PLATFORM_HTTP and !$core->callType('ajax') and !$core->callType('api') and empty($core->register['debug_plain'])){
-        /*
-         * If JSON, CORS requests require correct headers!
-         */
-        if(!empty($core->callType('ajax'))){
-            load_libs('http');
-            http_headers(null, 0);
-        }
+    if(PLATFORM_HTTP){
+        if(empty($core->register['debug_plain'])){
+            switch($core->callType()){
+                case 'ajax':
+                    /*
+                     * If JSON, CORS requests require correct headers!
+                     */
+                    load_libs('http');
+                    http_headers(null, 0);
 
-        echo debug_html($data, tr('Unknown'), $trace_offset);
+                    echo "\n".tr('DEBUG SHOW (:file@:line) ', array(':file' => current_file($trace_offset), ':line' => current_line($trace_offset)))."\n";
+                    print_r($data)."\n";
+                    break;
+
+                default:
+                    echo debug_html($data, tr('Unknown'), $trace_offset);
+            }
+
+        }else{
+            echo "\n".tr('DEBUG SHOW (:file@:line) ', array(':file' => current_file($trace_offset), ':line' => current_line($trace_offset)))."\n";
+            print_r($data)."\n";
+        }
 
     }else{
         if(is_scalar($data)){
