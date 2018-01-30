@@ -712,14 +712,14 @@ function file_list_tree($path = '.', $recursive = true){
  * Delete a file, weather it exists or not, without error
  */
 // :SECURITY: $pattern is NOT checked!!
-function file_delete($patterns, $clean_path = false){
+function file_delete($patterns, $clean_path = false, $sudo = false){
     try{
         if(!$patterns){
             throw new bException('file_delete(): No files or patterns specified');
         }
 
         foreach(array_force($patterns) as $pattern){
-            safe_exec('rm -rf '.$pattern);
+            safe_exec(($sudo ? 'sudo ' : '').'rm -rf '.$pattern);
 
             if($clean_path){
                 file_clear_path(dirname($patterns));
