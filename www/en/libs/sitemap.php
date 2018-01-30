@@ -33,7 +33,12 @@ function sitemap_generate($languages = null){
         load_libs('file');
 
         if(empty($languages)){
-            $languages = array_keys($_CONFIG['language']['supported']);
+            if($_CONFIG['language']['supported']){
+                $languages = array_keys($_CONFIG['language']['supported']);
+
+            }else{
+                $languages = array($_CONFIG['language']['default']);
+            }
         }
 
         foreach(array_force($languages) as $language){

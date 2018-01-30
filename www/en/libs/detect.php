@@ -216,9 +216,17 @@ function detect_language(){
             /*
              * Is the requested language supported?
              */
-            if(empty($_CONFIG['language']['supported'][$language])){
+            if($_CONFIG['language']['supported']){
+                if(empty($_CONFIG['language']['supported'][$language])){
+                    /*
+                     * Not supported, fall back on default
+                     */
+                    $language = $_CONFIG['language']['default'];
+                }
+
+            }else{
                 /*
-                 * Not supported, fall back on default
+                 * Not a multilingual system, use default
                  */
                 $language = $_CONFIG['language']['default'];
             }

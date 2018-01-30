@@ -522,9 +522,9 @@ if($notranslate){
     log_console(tr('Skipping translations due to "--no-translate" option'), 'yellow');
 
 }else{
-    log_console(tr('Executing translations'), 'white');
-
     if($_CONFIG['language']['supported']){
+        log_console(tr('Executing translations'), 'white');
+
         $options[] = 'translate';
 
         if($ignore_php){
@@ -537,6 +537,9 @@ if($notranslate){
 
         script_exec('base/translate', $options);
         init_hook('deploy_post_translation', $nohooks, array('languages' => $_CONFIG['language']['supported']));
+
+    }else{
+        log_console(tr('Not translating, not a multilingual site'), 'yellow');
     }
 }
 
@@ -672,10 +675,10 @@ foreach($targets as $target_environment){
             }
 
             if($_CONFIG['language']['supported']){
-                foreach($_CONFIG['language']['supported'] as $language){
+                foreach($_CONFIG['language']['supported'] as $code => $language){
                     log_console(tr('Searching for file ":file" on ":target"', array(':file' => $file, ':target' => $deploy_config['target_server'])));
 
-                    exec('ssh -t -p '.$target_port.' '.$deploy_config['target_user'].'@'.$deploy_config['target_server'].' \''.$sudo.'ls '.($file = $deploy_config['target_dir'].'data/content/'.$language.'/'.$file.'.html').' 2>&1 /dev/null\'', $contentoutput, $return);
+                    exec('ssh -t -p '.$target_port.' '.$deploy_config['target_user'].'@'.$deploy_config['target_server'].' \''.$sudo.'ls '.($file = $deploy_config['target_dir'].'data/content/'.$code.'/'.$file.'.html').' 2>&1 /dev/null\'', $contentoutput, $return);
 
                     if($return){
                         throw new bException('Missing content file "'.str_log($file).'" for language "'.str_log($language).'", defined in "'.$definedin.'"', 'warning/validation');
