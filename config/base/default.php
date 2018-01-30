@@ -286,7 +286,6 @@ $_CONFIG['protocol']           = 'http://';                                     
 
 // Redirects configuration (This ususally would not require changes unless you want to have other file names for certain actions like signin, etc)
 $_CONFIG['redirects']          = array('auto'                               => 'get',                                                   // Auto redirects (usually because of user or right required) done by "session" or "get"
-                                                                               'query'            => false,                             // If URL contains a query ? redirect to URL without query, see http_redirect_query_url() and startup
                                                                                'index'            => 'index.php',                       // What is the default index page for this site
                                                                                'accessdenied'     => '403',                             // Usually won't redirect, but just show
                                                                                'signin'           => 'signin.php',                      // What is the default signin page for this site

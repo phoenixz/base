@@ -580,50 +580,6 @@ function requested_url(){
 
 
 /*
- * Check for URL's with queries. Depending on configuration, 301 direct to URL without query
- */
-function http_redirect_query_url(){
-    global $_CONFIG, $core;
-
-    try{
-        if(!empty($core->callType('ajax')) or !empty($core->callType('admin')) or !empty($core->register['no_query_url_redirect']) or !empty($core->register['no_redirect_http_queries'])){
-            return true;
-        }
-
-        if($core->callType('admin')){
-            if(!$_CONFIG['redirects']['query']){
-                /*
-                 * No need to auto redirect URL's with queries
-                 */
-                return true;
-            }
-
-        }else{
-            if(!$_CONFIG['redirects']['query']){
-                /*
-                 * No need to auto redirect URL's with queries
-                 */
-                return true;
-            }
-        }
-
-        if(($pos = strpos($_SERVER['REQUEST_URI'], '?')) === false){
-            /*
-             * URL contains no ? query mark
-             */
-            return true;
-        }
-
-        redirect(domain(substr($_SERVER['REQUEST_URI'], 0, $pos), null, null, true));
-
-    }catch(Exception $e){
-        throw new bException('http_redirect_query_url(): Failed', $e);
-    }
-}
-
-
-
-/*
  * Redirect to the requested langauge
  */
 function http_language_redirect($url, $language = null){

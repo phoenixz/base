@@ -448,13 +448,6 @@ if(isset($_GET['redirect'])){
 
 
 
-/*
- * Check for URL's with queries. Depending on configuration, 301 direct to URL without query
- */
-http_redirect_query_url();
-
-
-
 // :TODO: What to do with this?
 //$_CONFIG['cdn']['prefix'] = slash($_CONFIG['cdn']['prefix']);
 //
