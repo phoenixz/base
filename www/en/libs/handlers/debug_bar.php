@@ -14,6 +14,7 @@ try{
                         <thead>
                             <tr>
                                 <th>'.tr('Time').'</th>
+                                <th>'.tr('Function').'</th>
                                 <th>'.tr('Query').'</th>
                             </tr>
                         </thead>
@@ -24,6 +25,7 @@ try{
     foreach($core->register['debug_queries'] as $query){
         $html .= '      <tr>
                             <td>'.number_format($query['time'], 6).'</td>
+                            <td>'.$query['function'].'</td>
                             <td>'.$query['query'].'</td>
                         </tr>';
     }

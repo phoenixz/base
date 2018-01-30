@@ -168,18 +168,8 @@ class core{
         }
     }
 
-    public function executedQuery($time, $query){
-        if(!$query){
-            /*
-             * When not in debug mode, query won't be specified, and
-             * core::executedQuery() will be disabled
-             */
-            return null;
-        }
-
-        $this->register['debug_queries'][] = array('query' => $query,
-                                                   'time'  => $time);
-
+    public function executedQuery($query_data){
+        $this->register['debug_queries'][] = $query_data;
         return count($this->register['debug_queries']);
     }
 
