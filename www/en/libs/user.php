@@ -1565,7 +1565,7 @@ function user_update_rights($user){
  * Rewritten for use in BASE project by Sven Oostenbrink
  */
 // :TODO: Improve. This function uses some bad algorithms that could cause false high ranking passwords
-function user_password_strength($password, $check_banned = true){
+function user_password_strength($password, $check_banned = true, $exception = true){
     try{
         /*
          * Get the length of the password
@@ -1672,7 +1672,11 @@ function user_password_strength($password, $check_banned = true){
         }
 
         if($strength < 4){
-            throw new bException(tr('user_password_strength(): The specified password is too weak, please use a better password. Use more characters, add numbers, special characters, caps characters, etc. On a scale of 1-10, current strength is ":strength"', array(':strength' => $strength)), 'validation');
+            if($exception){
+                throw new bException(tr('user_password_strength(): The specified password is too weak, please use a better password. Use more characters, add numbers, special characters, caps characters, etc. On a scale of 1-10, current strength is ":strength"', array(':strength' => $strength)), 'validation');
+            }
+
+            return false;
         }
 
         return $strength;
