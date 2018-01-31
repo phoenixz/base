@@ -20,10 +20,17 @@ function mysql_exec($server, $query){
     try{
         load_libs('servers');
 
-        mysql_create_password_file($password, $user, $server);
-        servers_exec($server, 'mysql ""');
+        $query = addslashes($query);
+
+        if(!is_array($server)){
+            $server = servers_get($server);
+        }
+
+        mysql_create_password_file($server['db_username'], $server['db_password'], $server);
+        $results = servers_exec($server, 'mysql -e \"'.$query.';\"');
         mysql_delete_password_file($server);
 
+        return $results;
 
     }catch(Exception $e){
         /*
@@ -45,11 +52,11 @@ function mysql_exec($server, $query){
 /*
  *
  */
-function mysql_create_password_file($password, $user, $server = null){
+function mysql_create_password_file($user, $password, $server = null){
     try{
-        load_libs('server');
+        load_libs('servers');
         mysql_delete_password_file($server);
-        server_exec("rm ~/.my.cnf -f; touch ~/.my.cnf; chmod 0400 ~/.my.cnf; echo [client]\nuser=\"".$user."\"\npassword=\"".$password."\" >> ~/.my.cnf");
+        servers_exec($server, "rm ~/.my.cnf -f; touch ~/.my.cnf; chmod 0600 ~/.my.cnf; echo '[client]\nuser=\\\"".$user."\\\"\npassword=\\\"".$password."\\\"\n\n[mysql]\nuser=\\\"".$user."\\\"\npassword=\\\"".$password."\\\"\n\n[mysqldump]\nuser=\\\"".$user."\\\"\npassword=\\\"".$password."\\\"\n\n[mysqldiff]\nuser=\\\"".$user."\\\"\npassword=\\\"".$password."\\\"\n\n' >> ~/.my.cnf");
 
     }catch(Exception $e){
         throw new bException(tr('mysql_create_password_file(): Failed'), $e);
@@ -63,8 +70,8 @@ function mysql_create_password_file($password, $user, $server = null){
  */
 function mysql_delete_password_file($server = null){
     try{
-        load_libs('server');
-        server_exec("rm ~/.my.cnf -f", $server);
+        load_libs('servers');
+        servers_exec($server, 'rm ~/.my.cnf -f');
 
     }catch(Exception $e){
         throw new bException(tr('mysql_delete_password_file(): Failed'), $e);
