@@ -110,7 +110,7 @@ function mysql_master_replication_setup($server){
         /*
          * Validate params
          */
-        array_ensure($server, 'server,root_db_user,root_db_password,database,replication_user,replication_db_password');
+        array_ensure($server, 'server,root_db_user,root_db_password,database,replication_db_password');
 
 // :TODO: Store in DB, get unique from UNIQUE indexed column! perhaps the `databases`.`id` column?
         $server['id']   = mt_rand() - 1;
