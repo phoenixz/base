@@ -18,7 +18,7 @@ function servers_validate($server, $password_strength = true){
     try{
         load_libs('validate,file,seo');
 
-        $v = new validate_form($server, 'port,hostname,provider,customer,ssh_account,description');
+        $v = new validate_form($server, 'port,hostname,provider,customer,ssh_account,description,database_accounts_id');
         $v->isNotEmpty($server['ssh_account'], tr('Please specifiy an SSH account'));
         $v->isNotEmpty($server['hostname']   , tr('Please specifiy a hostnames'));
         $v->isNotEmpty($server['port']       , tr('Please specifiy a port'));
@@ -29,8 +29,15 @@ function servers_validate($server, $password_strength = true){
             $v->isPassword($server['db_password'], tr('Please specifiy a strong password'), '');
         }
 
-        if($server['db_username'] xor $server['db_username']){
-            $v->setError(tr('Please specify both database username and password, or neither'));
+        if($server['database_accounts_id']){
+            $exists = sql_get('SELECT `id` FROM `database_accounts` WHERE `id` = :id', true, array(':id' => $server['database_accounts_id']));
+
+            if(!$exists){
+                $v->setError(tr('The specified database account does not exist'));
+            }
+
+        }else{
+            $server['database_accounts_id'] = null;
         }
 
         /*
