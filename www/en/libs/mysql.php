@@ -59,7 +59,7 @@ function mysql_master_replication_setup($server){
          * Check for mysqld.cnf file
          */
         log_console(tr('Checking existance of mysql configuration file on remote server'), 'white');
-        $mysql_cnf = servers_exec($server, 'test -f '.$mysql_cnf_path.' && echo "1" || echo "0"');
+        $mysql_cnf = servers_exec($server['hostname'], 'test -f '.$mysql_cnf_path.' && echo "1" || echo "0"');
 
         /*
          * Mysql conf file does not exist
@@ -69,7 +69,7 @@ function mysql_master_replication_setup($server){
              * Try with other possible configuration file
              */
             $mysql_cnf_path = '/etc/mysql/my.cnf';
-            $mysql_cnf      = servers_exec($server, 'test -f '.$mysql_cnf_path.' && echo "1" || echo "0"');
+            $mysql_cnf      = servers_exec($server['hostname'], 'test -f '.$mysql_cnf_path.' && echo "1" || echo "0"');
 
             if(!$mysql_cnf[0]){
                 throw new bException(tr('mysql_master_replication_setup(): MySQL configuration file :file does not exist on remote server', array(':file' => $mysql_cnf_path)), 'not-exist');
@@ -93,14 +93,14 @@ function mysql_master_replication_setup($server){
          * kill ssh pid after dumping db
          */
         log_console(tr('Making grant replication on remote server and locking tables'));
-        $ssh_mysql_pid = servers_exec($server, 'mysql \"-u'.$server['root_db_user'].'\" \"-p'.$server['root_db_password'].'\" -e \"GRANT REPLICATION SLAVE ON *.* TO \''.$server['replication_db_user'].'\'@\'localhost\' IDENTIFIED BY \''.$server['replication_db_password'].'\'; FLUSH PRIVILEGES; FLUSH TABLES WITH READ LOCK; DO SLEEP(5); \"', null, true, false);
-showdie($ssh_mysql_pid);
+        $ssh_mysql_pid = servers_exec($server['hostname'], 'mysql \"-u'.$server['root_db_user'].'\" \"-p'.$server['root_db_password'].'\" -e \"GRANT REPLICATION SLAVE ON *.* TO \''.$server['replication_db_user'].'\'@\'localhost\' IDENTIFIED BY \''.$server['replication_db_password'].'\'; FLUSH PRIVILEGES; USE \''.$server['database'].'\'; FLUSH TABLES WITH READ LOCK; DO SLEEP(35); \"', null, true, false);
+
         /*
          * Dump database
          */
         servers_exec($server, 'rm /tmp/'.$server['database'].'.sql -f;');
-        servers_exec($server, 'mysqldump "-u'.$server['root_db_user'].'" "-p'.$server['root_db_password'].'" -K -R -n -e --dump-date --comments -B '.$server['database'].' > /tmp/ '.$server['database'].'.sql');
-
+        servers_exec($server, 'mysqldump \"-u'.$server['root_db_user'].'\" \"-p'.$server['root_db_password'].'\" -K -R -n -e --dump-date --comments -B '.$server['database'].' > /tmp/ '.$server['database'].'.sql');
+showdie("aaaaa");
         /*
          * KILL LOCAL SSH process
          */
