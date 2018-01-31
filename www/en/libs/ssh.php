@@ -207,7 +207,7 @@ function ssh_exec($server, $commands = null, $local = false, $background = false
         if(empty($server['ssh_key'])){
             throw new bException(tr('No ssh key specified'), 'not-specified');
         }
-=
+
         /*
          * If local is specified, then don't execute this command on a remote
          * server, just use safe_exec and execute it locally
