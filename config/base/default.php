@@ -11,7 +11,7 @@
 
 //Debug or not?
 $_CONFIG['debug']              = array('enabled'                            => false,      // If set to true, the system will run in debug mode, the debug.php library will be loaded, and debug functions will be available.
-                                       'bar'                                => true);      // If set to true, base will display a debug bar that with CSS can be positioned @ the bottom of the screen
+                                       'bar'                                => 'limited'); // true|false|"limited" If set to true, base will display a debug bar that with CSS can be positioned @ the bottom of the screen. When set to limited, only authenticated users with the right "debug" will be able to see the debug bar
 
 // AJAX configuration
 $_CONFIG['ajax']               = array('autosuggest'                        => array('min_characters'     => 2,
