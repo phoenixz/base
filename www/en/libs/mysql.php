@@ -13,24 +13,87 @@
 
 
 /*
+ * Execute a query on a remote SSH server.
+ * NOTE: This does NOT support bound variables!
+ */
+function mysql_exec($server, $query){
+    try{
+        load_libs('servers');
+
+        mysql_create_password_file($password, $user, $server);
+        servers_exec($server, 'mysql ""');
+        mysql_delete_password_file($server);
+
+
+    }catch(Exception $e){
+        /*
+         * Make sure the password file gets removed!
+         */
+        try{
+            mysql_delete_password_file($server);
+
+        }catch(Exception $e){
+
+        }
+
+        throw new bException(tr('mysql_dump(): Failed'), $e);
+    }
+}
+
+
+
+/*
  *
+ */
+function mysql_create_password_file($password, $user, $server = null){
+    try{
+        load_libs('server');
+        mysql_delete_password_file($server);
+        server_exec("rm ~/.my.cnf -f; touch ~/.my.cnf; chmod 0400 ~/.my.cnf; echo [client]\nuser=\"".$user."\"\npassword=\"".$password."\" >> ~/.my.cnf");
+
+    }catch(Exception $e){
+        throw new bException(tr('mysql_create_password_file(): Failed'), $e);
+    }
+}
+
+
+
+/*
+ * Ensure
+ */
+function mysql_delete_password_file($server = null){
+    try{
+        load_libs('server');
+        server_exec("rm ~/.my.cnf -f", $server);
+
+    }catch(Exception $e){
+        throw new bException(tr('mysql_delete_password_file(): Failed'), $e);
+    }
+}
+
+
+
+/*
+ * Make a dump of the specified database on the specified server and copy the file locally.
  */
 function mysql_dump($params){
     try{
-        array_ensure($params, 'host,user,pass,ssh_server');
+        array_params($params);
+        arary_default($params, 'database', '');
+        arary_default($params, 'file'    , $params['database'].'.sql.gz');
 
-        if($params['ssh_server']){
-            /*
-             * Execute this over SSH on a remote server
-             */
-            load_libs('ssh');
+        load_libs('servers');
 
-        }else{
-            /*
-             * Execute this directly on localhost
-             */
-
+        if(!$params['database']){
+            throw new bException(tr('mysql_dump(): No database specified'), 'not-specified');
         }
+
+// :TOO: Implement optoins through $params
+        $optoins = '-p -K -R -n -e --dump-date --comments -B';
+
+        mysql_create_password_file($password, $user, $server);
+        servers_exec($server, 'mysqldump '.$options.' '.$database.' | gzip > '.$file);
+        mysql_delete_password_file($server);
 
     }catch(Exception $e){
         throw new bException(tr('mysql_dump(): Failed'), $e);

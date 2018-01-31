@@ -17,18 +17,18 @@ try{
     switch($_CONFIG['cache']['method']){
         case 'file':
 
-            if($group){
+            if($namespace){
                 if($key){
                     /*
                      * Delete only one cache file, and attempt to clear empty directories as possible
                      */
-                    file_clear_path(ROOT.'data/cache/'.slash($group).$key);
+                    file_clear_path(ROOT.'data/cache/'.slash($namespace).$key);
 
                 }else{
                     /*
                      * Delete specified group
                      */
-                    file_delete_tree(ROOT.'data/cache/'.$group);
+                    file_delete_tree(ROOT.'data/cache/'.$namespace);
                 }
 
             }elseif($key){
@@ -52,11 +52,11 @@ try{
             /*
              * Clear all keys from memcached
              */
-            if($group){
-                mc_delete(null, $group);
+            if($namespace){
+                mc_delete(null, $namespace);
 
             }elseif($key){
-                mc_delete($key, $group);
+                mc_delete($key, $namespace);
 
             }else{
                 mc_clear();

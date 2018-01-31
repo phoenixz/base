@@ -10,8 +10,15 @@
 
 
 
-if(!function_exists('mcrypt_module_open')){
-    throw new bException(tr('crypt: php module "mcrypt" appears not to be installed. Please install the module first. On Ubuntu and alikes, use "sudo apt-get -y install php5-mcrypt; sudo php5enmod mcrypt" to install and enable the module., on Redhat and alikes use ""sudo yum -y install php5-mcrypt" to install the module. After this, a restart of your webserver or php-fpm server might be needed'), 'not_available');
+if(!function_exists('openssl_encrypt')){
+    if(!function_exists('mcrypt_module_open')){
+        throw new bException(tr('crypt: Neither php module "mcrypt" nor "openssl" appears not to be installed. Please install the module first. On Ubuntu and alikes, use "sudo apt-get -y install php-mcrypt; sudo phpenmod mcrypt" to install and enable the module. On Redhat and alikes use "sudo yum -y install php-mcrypt" to install mcrytpt (OBSOLETE!) ot "sudo yum -y install php-openssl" to install openssl. After this, a restart of your webserver or php-fpm server might be needed'), 'not-exists');
+    }
+
+    $core->register('backend', 'mcrypt');
+
+}else{
+    $core->register('backend', 'openssl');
 }
 
 
@@ -19,7 +26,7 @@ if(!function_exists('mcrypt_module_open')){
 /*
  *
  */
-function encrypt($data, $key) {
+function encrypt($data, $key, $method = null){
     try{
         load_libs('json');
 
@@ -47,7 +54,7 @@ function encrypt($data, $key) {
 /*
  *
  */
-function decrypt($data, $key){
+function decrypt($data, $key, $method = null){
     try{
         load_libs('json');
 
