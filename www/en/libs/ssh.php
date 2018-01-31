@@ -213,7 +213,7 @@ function ssh_exec($server, $commands = null, $local = false, $background = false
          * server, just use safe_exec and execute it locally
          */
         if($server['local']){
-            $result = safe_exec('"'.$server['commands'].'"'.($server['background'] ? ' &' : ''));
+            $result = safe_exec($server['commands'].($server['background'] ? ' &' : ''));
             return $result;
         }
 
@@ -247,8 +247,16 @@ function ssh_exec($server, $commands = null, $local = false, $background = false
 
         $results = safe_exec($command);
 
-        chmod($keyfile, 0600);
-        file_delete($keyfile);
+        if($server['background']){
+            /*
+             * Delete key file in background process
+             */
+            safe_exec('{ sleep 5; sudo chmod 0600 '.$keyfile.' ; sudo rm -rf '.$keyfile.' ; } &');
+
+        }else{
+            chmod($keyfile, 0600);
+            file_delete($keyfile);
+        }
 
         if(preg_match('/Warning: Permanently added \'\[.+?\]:\d{1,5}\' \(\w+\) to the list of known hosts\./', isset_get($results[0]))){
             /*
@@ -311,17 +319,10 @@ function ssh_cp($server, $source, $destnation, $from_server = false){
         array_default($server, 'arguments'    , '-T');
 
         /*
-         * Validate commands
-         */
-        if(empty($commands)){
-            throw new bException(tr('No commmands specified'), 'invalid');
-        }
-
-        /*
          * If server was specified by just name, then lookup the server data in
          * the database
          */
-        if($server['server']){
+        if($server['hostname']){
             $dbserver = sql_get('SELECT    `ssh_accounts`.`username`,
                                            `ssh_accounts`.`ssh_key`,
                                            `servers`.`id`,
@@ -333,7 +334,7 @@ function ssh_cp($server, $source, $destnation, $from_server = false){
                                  LEFT JOIN `ssh_accounts`
                                  ON        `ssh_accounts`.`id` = `servers`.`ssh_accounts_id`
 
-                                 WHERE     `servers`.`hostname` = :hostname', array(':hostname' => $server['server']));
+                                 WHERE     `servers`.`hostname` = :hostname', array(':hostname' => $server['hostname']));
 
             if(!$dbserver){
                 throw new bException(tr('ssh_exec(): Specified server ":server" does not exist', array(':server' => $server['server'])), 'not-exist');
