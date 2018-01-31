@@ -120,7 +120,10 @@ try{
             }
 
             if(debug()){
-                header($_SERVER['SERVER_PROTOCOL'] . ' 500 Internal Server Error', true, 500);
+                if(!headers_sent()){
+                    header($_SERVER['SERVER_PROTOCOL'] . ' 500 Internal Server Error', true, 500);
+                }
+
                 show('*** UNCAUGHT EXCEPTION ***');
                 show(array('SCRIPT' => SCRIPT));
                 showdie($e);
