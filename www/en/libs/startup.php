@@ -817,6 +817,22 @@ function log_console($messages = '', $color = null, $newline = true, $filter_dou
                 $color = str_replace('/', '', str_replace('QUIET', '', $color));
                 break;
 
+            case 'DOT':
+                if(!VERBOSE){
+                    if(PLATFORM_CLI){
+                        /*
+                         * Only show a dot instead of the text
+                         */
+                        return cli_dot('.', str_replace('DOT', '', $color));
+                    }
+                }
+
+                /*
+                 * Remove the VERBOSE
+                 */
+                $color = str_replace('/', '', str_replace('VERBOSE', '', $color));
+                break;
+
             case 'DEBUG':
                 if(!debug()){
                     /*
