@@ -50,20 +50,7 @@ try{
     }
 
     if($exitcode){
-        if(!is_array($ok_exitcodes)){
-            if(!$ok_exitcodes){
-                $ok_exitcodes = array();
-
-            }else{
-                if(!is_string($ok_exitcodes) and !is_numeric($ok_exitcodes)){
-                    throw new bException('safe_exec(): Invalid ok_exitcodes specified, should be either CSV string or array');
-                }
-
-                $ok_exitcodes = explode(',', $ok_exitcodes);
-            }
-        }
-
-        if(!in_array($exitcode, $ok_exitcodes)){
+        if(!in_array($exitcode, array_force($ok_exitcodes))){
             load_libs('json');
 
             $e =  new bException(json_encode_custom($output), $exitcode, null, $output);
