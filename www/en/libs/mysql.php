@@ -27,7 +27,7 @@ function mysql_exec($server, $query){
         }
 
         mysql_create_password_file($server['db_username'], $server['db_password'], $server);
-        $results = servers_exec($server, 'mysql -e \"'.$query.';\"');
+        $results = servers_exec($server, 'mysql -e \"'.str_ends($query, ';').'\"');
         mysql_delete_password_file($server);
 
         return $results;
