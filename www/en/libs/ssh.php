@@ -213,7 +213,7 @@ function ssh_exec($server, $commands = null, $local = false, $background = false
          * server, just use safe_exec and execute it locally
          */
         if($server['local']){
-            $result = safe_exec('"'.$server['commands'].'"'.($server['background'] ? ' &; echo $1' : ''));
+            $result = safe_exec('"'.$server['commands'].'"'.($server['background'] ? ' &' : ''));
             return $result;
         }
 
@@ -241,7 +241,7 @@ function ssh_exec($server, $commands = null, $local = false, $background = false
         /*
          * Execute command on remote server
          */
-        $command = 'ssh '.$server['arguments'].' -p '.$server['port'].' -i '.$keyfile.' '.$server['username'].'@'.$server['hostname'].' "'.$server['commands'].'"'.($server['background'] ? ' &; echo $1' : '');
+        $command = 'ssh '.$server['arguments'].' -p '.$server['port'].' -i '.$keyfile.' '.$server['username'].'@'.$server['hostname'].' "'.$server['commands'].'"'.($server['background'] ? ' &' : '');
 
         log_console($command, 'VERBOSE/cyan');
 
