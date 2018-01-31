@@ -132,7 +132,7 @@ function mysql_master_replication_setup($server){
         /*
          * Check for mysqld.cnf file
          */
-        log_console(tr('Checking existance of mysql configuration file on remote server'), 'white');
+        log_console(tr('Checking existance of mysql configuration file on remote server'));
         $mysql_cnf = servers_exec($server['hostname'], 'test -f '.$mysql_cnf_path.' && echo "1" || echo "0"');
 
         /*
@@ -236,7 +236,7 @@ function mysql_slave_replication_setup($server){
         /*
          * Check for mysqld.cnf file
          */
-        log_console(tr('Checking existance of mysql configuration file on local server'), 'white');
+        log_console(tr('Checking existance of mysql configuration file on local server'));
         $mysql_cnf = servers_exec($server['hostname'], 'test -f '.$mysql_cnf_path.' && echo "1" || echo "0"', null, false, true);
 
         /*
@@ -273,11 +273,15 @@ function mysql_slave_replication_setup($server){
          */
         log_console(tr('Creating ssh tunneling user on local server'));
         ssh_mysql_slave_tunnel($server);
-showdie("aaaaaaaaaaaaaaaaaaaaaa");
 
-// :TODO: Check how to restart local mysql service and recover connection object
+
+// :TODO: HOW local mysql service and recover connection object
         log_console(tr('Restarting local MySQL service'));
-        servers_exec($server['hostname'], 'sudo service mysql restart', null, false, true);
+        servers_exec($server['hostname'], 'sudo service mysql reload', null, false, true);
+
+        log_console(tr('WAITING'), 'white');
+        sleep(2);
+        log_console(tr('CONTINUE!'), 'white');
 
         /*
          * Import LOCAL db
@@ -286,7 +290,7 @@ showdie("aaaaaaaaaaaaaaaaaaaaaa");
         sql_query('CREATE DATABASE `'.$server['database'].'`');
         servers_exec($server['hostname'], 'sudo rm /tmp/'.$server['database'].'.sql -f', null, false, true);
         servers_exec($server['hostname'], 'gzip -d /tmp/'.$server['database'].'.sql.gz', null, false, true);
-        servers_exec($server['hostname'], 'mysql "-u'.$server['root_db_user'].'" "-p'.$server['root_db_password'].'" -B '.$server['database'].' < '.$server['database'].'.sql', null, false, true);
+        servers_exec($server['hostname'], 'mysql "-u'.$server['root_db_user'].'" "-p'.$server['root_db_password'].'" -B '.$server['database'].' < /tmp/'.$server['database'].'.sql', null, false, true);
         servers_exec($server['hostname'], 'sudo rm /tmp/'.$server['database'].'.sql -f', null, false, true);
 
         /*
@@ -302,18 +306,18 @@ showdie("aaaaaaaaaaaaaaaaaaaaaa");
         $slave_setup .= 'CHANGE MASTER TO MASTER_HOST=\''.$server['hostname'].'\', ';
         $slave_setup .= 'MASTER_USER=\''.$server['replication_db_user'].'\', ';
         $slave_setup .= 'MASTER_PASSWORD=\''.$server['replication_db_password'].'\', ';
+        $slave_setup .= 'MASTER_PORT='.$server['slave_ssh_port'].', ';
         $slave_setup .= 'MASTER_LOG_FILE=\''.$server['log_file'].'\', ';
-        $slave_setup .= 'MASTER_LOG_POS=\''.$server['log_pos'].'\', ';
-        $slave_setup .= 'MASTER_PORT=\''.$server['slave_ssh_port'].'\' ';
-        $slave_setup .= 'FOR_CHANNEL \''.$server['hostname'].'\'; ';
-        $slave_setup .= 'START SLAVE FOR CHANNEL \''.$server['hostname'].'\';';
+        $slave_setup .= 'MASTER_LOG_POS='.$server['log_pos'].' ';
+        $slave_setup .= 'FOR CHANNEL \'127.0.0.1\'; ';
+        $slave_setup .= 'START SLAVE FOR CHANNEL \'127.0.0.1\';';
         servers_exec($server['hostname'], 'mysql "-u'.$server['root_db_user'].'" "-p'.$server['root_db_password'].'" -e "'.$slave_setup.'"', null, false, true);
 
         /*
          * Final step check for SLAVE status
          */
         $slave_status = servers_exec($server['hostname'], 'mysql "-u'.$server['root_db_user'].'" "-p'.$server['root_db_password'].'" -ANe "SHOW SLAVE STATUS;"', null, false, true);
-
+showdie($slave_status);
     }catch(Exception $e){
         throw new bException(tr('mysql_slave_replication_setup(): Failed'), $e);
     }
