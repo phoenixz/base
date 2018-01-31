@@ -135,10 +135,18 @@ function servers_test($hostname){
 /*
  *
  */
-function servers_exec($hostname, $commands, $options = null){
+function servers_exec($hostname, $commands, $options = null, $background = false, $local = false){
     try{
-        $server = sql_get('SELECT    `servers`.`ssh_accounts_id`,
+        array_params($options);
+        array_default($options, 'hostkey_check', false);
+        array_default($options, 'arguments'    , '-T');
+        array_default($options, 'background'   , $background);
+        array_default($options, 'local'        , $local);
+        array_default($options, 'commands'     , $commands);
+
+        $server = sql_get('SELECT    `servers`.`hostname`,
                                      `servers`.`port`,
+                                     `servers`.`ssh_accounts_id`,
 
                                      `ssh_accounts`.`username`,
                                      `ssh_accounts`.`ssh_key`
@@ -161,7 +169,7 @@ function servers_exec($hostname, $commands, $options = null){
         /*
          * Ensure that ssk_keys directory exists and that its safe
          */
-        load_libs('file');
+        load_libs('file,ssh');
         file_ensure_path(ROOT.'data/ssh_keys');
         chmod(ROOT.'data/ssh_keys', 0770);
 
@@ -179,30 +187,18 @@ function servers_exec($hostname, $commands, $options = null){
         /*
          * Execute command on remote server
          */
-        $result = safe_exec($command = 'ssh '.$options.' -Tp '.$server['port'].' -i '.$filepath.' '.$server['username'].'@'.$hostname.' '.$commands);
-//show($command);
-
-        chmod($filepath, 0600);
-        file_delete($filepath);
-
-        if(preg_match('/Warning: Permanently added \'\[.+?\]:\d{1,5}\' \(\w+\) to the list of known hosts\./', isset_get($result[0]))){
-            /*
-             * Remove known host warning from results
-             */
-            array_shift($result);
-        }
+        $options = array_merge($options, $server);
+        $result  = ssh_exec($options);
 
         return $result;
 
     }catch(Exception $e){
-        notify(tr('servers_exec() exception'), $e, 'developers');
-
         /*
          * Try deleting the keyfile anyway!
          */
         try{
             if(!empty($filepath)){
-                safe_exec(chmod($filepath, 0600));
+                chmod($filepath, 0600);
                 file_delete($filepath);
             }
 
@@ -213,6 +209,7 @@ function servers_exec($hostname, $commands, $options = null){
             notify(tr('servers_exec() cannot delete key'), $e, 'developers');
         }
 
+        notify(tr('servers_exec() exception'), $e, 'developers');
         throw new bException('servers_exec(): Failed', $e);
     }
 }

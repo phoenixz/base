@@ -180,56 +180,45 @@ function ssh_stop_control_master($socket = null){
  */
 function ssh_exec($server, $commands = null, $background = false, $local = false){
     try{
-        array_params($server);
-        array_default($server, 'server'       , '');
         array_default($server, 'hostname'     , '');
         array_default($server, 'ssh_key'      , '');
         array_default($server, 'port'         , 22);
         array_default($server, 'hostkey_check', false);
         array_default($server, 'arguments'    , '-T');
-
+        array_default($server, 'commands'     , $commands);
+        array_default($server, 'background'   , $background);
+        array_default($server, 'local'        , $local);
+show($server);
         /*
          * Validate commands
          */
-        if(empty($commands)){
-            throw new bException(tr('No commmands specified'), 'invalid');
+        if(empty($server['commands'])){
+            throw new bException(tr('No commmands specified'), 'not-specified');
+        }
+
+        if(empty($server['hostname'])){
+            throw new bException(tr('No hostname specified'), 'not-specified');
+        }
+
+        if(empty($server['username'])){
+            throw new bException(tr('No username specified'), 'not-specified');
+        }
+
+        if(empty($server['ssh_key'])){
+            throw new bException(tr('No ssh key specified'), 'not-specified');
         }
 
         /*
-         * If local just use safe_exec
+         * If local is specified, then don't execute this command on a remote
+         * server, just use safe_exec and execute it locally
          */
-        if($local){
-            $result = safe_exec('"'.$commands.'"'.($background ? ' &; echo $1' : ''));
+        if($server['local']){
+            $result = safe_exec('"'.$server['commands'].'"'.($server['background'] ? ' &; echo $1' : ''));
             return $result;
         }
 
         if(!$server['hostkey_check']){
             $server['arguments'] .= ' -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null ';
-        }
-
-        /*
-         * If server was specified by just name, then lookup the server data in
-         * the database
-         */
-        if($server['server']){
-            $dbserver = sql_get('SELECT    `ssh_accounts`.`username`,
-                                           `ssh_accounts`.`ssh_key`,
-                                           `servers`.`id`,
-                                           `servers`.`hostname`,
-                                           `servers`.`port`
-
-                                 FROM      `servers`
-
-                                 LEFT JOIN `ssh_accounts`
-                                 ON        `ssh_accounts`.`id` = `servers`.`ssh_accounts_id`
-
-                                 WHERE     `servers`.`hostname` = :hostname', array(':hostname' => $server['server']));
-
-            if(!$dbserver){
-                throw new bException(tr('ssh_exec(): Specified server ":server" does not exist', array(':server' => $server['server'])), 'not-exist');
-            }
-
-            $server = sql_merge($server, $dbserver);
         }
 
         /*
@@ -252,13 +241,23 @@ function ssh_exec($server, $commands = null, $background = false, $local = false
         /*
          * Execute command on remote server
          */
-//show('ssh '.$server['arguments'].' -p '.$server['port'].' -i '.$keyfile.' '.$server['username'].'@'.$server['hostname'].' '.$commands);
-        $result = safe_exec('ssh '.$server['arguments'].' -p '.$server['port'].' -i '.$keyfile.' '.$server['username'].'@'.$server['hostname'].' "'.$commands.'"'.($background ? ' &; echo $1' : ''));
+        $command = 'ssh '.$server['arguments'].' -p '.$server['port'].' -i '.$keyfile.' '.$server['username'].'@'.$server['hostname'].' "'.$server['commands'].'"'.($server['background'] ? ' &; echo $1' : '');
+
+        log_console($command, 'VERBOSE/cyan');
+
+        $results = safe_exec($command);
 
         chmod($keyfile, 0600);
         file_delete($keyfile);
 
-        return $result;
+        if(preg_match('/Warning: Permanently added \'\[.+?\]:\d{1,5}\' \(\w+\) to the list of known hosts\./', isset_get($results[0]))){
+            /*
+             * Remove known host warning from results
+             */
+            array_shift($results);
+        }
+
+        return $results;
 
     }catch(Exception $e){
         notify(tr('ssh_exec() exception'), $e, 'developers');
@@ -268,7 +267,7 @@ function ssh_exec($server, $commands = null, $background = false, $local = false
          */
         try{
             if(!empty($keyfile)){
-                safe_exec(chmod($keyfile, 0600));
+                chmod($keyfile, 0600);
                 file_delete($keyfile);
             }
 
