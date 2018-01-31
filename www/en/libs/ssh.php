@@ -353,7 +353,7 @@ function ssh_cp($server, $source, $destnation, $from_server = false){
                                  WHERE     `servers`.`hostname` = :hostname', array(':hostname' => $server['hostname']));
 
             if(!$dbserver){
-                throw new bException(tr('ssh_exec(): Specified server ":server" does not exist', array(':server' => $server['server'])), 'not-exist');
+                throw new bException(tr('ssh_cp(): Specified server ":server" does not exist', array(':server' => $server['server'])), 'not-exist');
             }
 
             $server = sql_merge($server, $dbserver);
@@ -412,6 +412,94 @@ function ssh_cp($server, $source, $destnation, $from_server = false){
         }
 
         throw new bException(tr('ssh_cp(): Failed'), $e);
+    }
+}
+
+
+
+/*
+ *
+ */
+function ssh_mysql_slave_tunnel($server){
+    try{
+        array_params($server);
+        array_default($server, 'server'       , '');
+        array_default($server, 'hostname'     , '');
+        array_default($server, 'ssh_key'      , '');
+        array_default($server, 'port'         , 22);
+        array_default($server, 'arguments'    , '-T');
+
+        /*
+         * If server was specified by just name, then lookup the server data in
+         * the database
+         */
+        if($server['hostname']){
+            $dbserver = sql_get('SELECT    `ssh_accounts`.`username`,
+                                           `ssh_accounts`.`ssh_key`,
+                                           `servers`.`id`,
+                                           `servers`.`hostname`,
+                                           `servers`.`port`
+
+                                 FROM      `servers`
+
+                                 LEFT JOIN `ssh_accounts`
+                                 ON        `ssh_accounts`.`id` = `servers`.`ssh_accounts_id`
+
+                                 WHERE     `servers`.`hostname` = :hostname', array(':hostname' => $server['hostname']));
+
+            if(!$dbserver){
+                throw new bException(tr('ssh_mysql_slave_tunnel(): Specified server ":server" does not exist', array(':server' => $server['server'])), 'not-exist');
+            }
+
+            $server = sql_merge($server, $dbserver);
+        }
+
+        /*
+         * Ensure that ssh_keys directory exists and that its safe
+         */
+        load_libs('file');
+        file_ensure_path(ROOT.'data/ssh_keys');
+        chmod(ROOT.'data/ssh_keys', 0770);
+
+        /*
+         * Safely create SSH key file
+         */
+        $keyfile = ROOT.'data/ssh_keys/'.str_random(8);
+
+        touch($keyfile);
+        chmod($keyfile, 0600);
+        file_put_contents($keyfile, $server['ssh_key'], FILE_APPEND);
+        chmod($keyfile, 0400);
+
+        /*
+         * Execute command
+         */
+        $result = safe_exec('ssh -p '.$server['port'].' -i '.$keyfile.' -L '.$server['slave_ssh_port'].':localhost:3306 '.$server['username'].'@'.$server['hostname'].' -f -N');
+        chmod($keyfile, 0600);
+        file_delete($keyfile);
+
+        return $result;
+
+    }catch(Exception $e){
+        notify(tr('ssh_mysql_slave_tunnel() exception'), $e, 'developers');
+
+                /*
+         * Try deleting the keyfile anyway!
+         */
+        try{
+            if(!empty($keyfile)){
+                safe_exec(chmod($keyfile, 0600));
+                file_delete($keyfile);
+            }
+
+        }catch(Exception $e){
+            /*
+             * Cannot be deleted, just ignore and notify
+             */
+            notify(tr('ssh_mysql_slave_tunnel() cannot delete key'), $e, 'developers');
+        }
+
+        throw new bException(tr('ssh_mysql_slave_tunnel(): Failed'), $e);
     }
 }
 ?>
