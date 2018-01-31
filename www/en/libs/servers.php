@@ -12,7 +12,7 @@
 /*
  *
  */
-function servers_validate($server){
+function servers_validate($server, $password_strength = true){
     global $_CONFIG;
 
     try{
@@ -24,6 +24,14 @@ function servers_validate($server){
         $v->isNotEmpty($server['port']       , tr('Please specifiy a port'));
         $v->isNotEmpty($server['provider']   , tr('Please specifiy a provider'));
         $v->isNotEmpty($server['customer']   , tr('Please specifiy a customer'));
+
+        if($password_strength){
+            $v->isPassword($server['db_password'], tr('Please specifiy a strong password'), '');
+        }
+
+        if($server['db_username'] xor $server['db_username']){
+            $v->setError(tr('Please specify both database username and password, or neither'));
+        }
 
         /*
          * Hostname
@@ -135,7 +143,7 @@ function servers_test($hostname){
 /*
  *
  */
-function servers_exec($hostname, $commands, $options = null, $background = false, $local = false){
+function servers_exec($host, $commands, $options = null, $background = false, $local = false){
     try{
         array_params($options);
         array_default($options, 'hostkey_check', false);
@@ -144,45 +152,25 @@ function servers_exec($hostname, $commands, $options = null, $background = false
         array_default($options, 'local'        , $local);
         array_default($options, 'commands'     , $commands);
 
-        $server = sql_get('SELECT    `servers`.`hostname`,
-                                     `servers`.`port`,
-                                     `servers`.`ssh_accounts_id`,
+        if(is_array($host)){
+            $server = $host;
 
-                                     `ssh_accounts`.`username`,
-                                     `ssh_accounts`.`ssh_key`
-
-                           FROM      `servers`
-
-                           LEFT JOIN `ssh_accounts`
-                           ON        `servers`.`ssh_accounts_id` = `ssh_accounts`.`id`
-
-                           WHERE     `servers`.`hostname` = :hostname', array(':hostname' => $hostname));
+        }else{
+            $server = servers_get($host);
+        }
 
         if(!$server){
-            throw new bException(tr('servers_exec(): Specified hostname ":hostname" does not exist', array(':hostname' => $hostname)), 'not-exists');
+            throw new bException(tr('servers_exec(): Specified hostname ":hostname" does not exist', array(':hostname' => $host)), 'not-exists');
         }
 
         if(!$options){
-            $options = '-o UserKnownHostsFile=/dev/null -o StrictHostKeyChecking=no';
+            $options = ' -o UserKnownHostsFile=/dev/null -o StrictHostKeyChecking=no ';
         }
 
         /*
          * Ensure that ssk_keys directory exists and that its safe
          */
-        load_libs('file,ssh');
-        file_ensure_path(ROOT.'data/ssh_keys');
-        chmod(ROOT.'data/ssh_keys', 0770);
-
-        /*
-         * Safely create SSH key file
-         */
-        $key_file = str_random(8);
-        $filepath = ROOT.'data/ssh_keys/'.$key_file;
-
-        touch($filepath);
-        chmod($filepath, 0600);
-        file_put_contents($filepath, $server['ssh_key'], FILE_APPEND);
-        chmod($filepath, 0400);
+        load_libs('ssh');
 
         /*
          * Execute command on remote server
@@ -211,6 +199,40 @@ function servers_exec($hostname, $commands, $options = null, $background = false
 
         notify(tr('servers_exec() exception'), $e, 'developers');
         throw new bException('servers_exec(): Failed', $e);
+    }
+}
+
+
+
+/*
+ *
+ */
+function servers_get($host){
+    try{
+        $server = sql_get('SELECT    `servers`.`hostname`,
+                                     `servers`.`port`,
+                                     `servers`.`ssh_accounts_id`,
+                                     `servers`.`db_username`,
+                                     `servers`.`db_password`,
+
+                                     `ssh_accounts`.`username`,
+                                     `ssh_accounts`.`ssh_key`
+
+                           FROM      `servers`
+
+                           LEFT JOIN `ssh_accounts`
+                           ON        `servers`.`ssh_accounts_id` = `ssh_accounts`.`id`
+
+                           WHERE     `servers`.`id`       = :id
+                           OR        `servers`.`hostname` = :hostname',
+
+                           array(':id'       => $host,
+                                 ':hostname' => $host));
+
+        return $server;
+
+    }catch(Exception $e){
+        throw new bException('servers_get(): Failed', $e);
     }
 }
 ?>
