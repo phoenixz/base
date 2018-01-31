@@ -474,16 +474,19 @@ function ssh_mysql_slave_tunnel($server){
         /*
          * Execute command
          */
-        $result = safe_exec('ssh -p '.$server['port'].' -i '.$keyfile.' -L '.$server['slave_ssh_port'].':localhost:3306 '.$server['username'].'@'.$server['hostname'].' -f -N');
-        chmod($keyfile, 0600);
-        file_delete($keyfile);
+        $result = safe_exec('ssh -f -p '.$server['port'].' -i '.$keyfile.' -L '.$server['slave_ssh_port'].':127.0.0.1:3306 '.$server['username'].'@'.$server['hostname'].' -N &');
+
+        /*
+         * Delete key file in background process
+         */
+        safe_exec('{ sleep 5; sudo chmod 0600 '.$keyfile.' ; sudo rm -rf '.$keyfile.' ; } &');
 
         return $result;
 
     }catch(Exception $e){
         notify(tr('ssh_mysql_slave_tunnel() exception'), $e, 'developers');
 
-                /*
+        /*
          * Try deleting the keyfile anyway!
          */
         try{

@@ -258,38 +258,42 @@ function mysql_slave_replication_setup($server){
          * MySQL SETUP
          */
         log_console(tr('Making slave setup for MySQL configuration file'));
-        servers_exec($server['hostname'], 'sudo sed -i \"s/#server-id[[:space:]]*=[[:space:]]*1/server-id = '.$server['id'].'/\" '.$mysql_cnf_path, null, false, true);
-        servers_exec($server['hostname'], 'sudo sed -i \"s/#log_bin/log_bin/\" '.$mysql_cnf_path, null, false, true);
+        servers_exec($server['hostname'], 'sudo sed -i "s/#server-id[[:space:]]*=[[:space:]]*1/server-id = '.$server['id'].'/" '.$mysql_cnf_path, null, false, true);
+        servers_exec($server['hostname'], 'sudo sed -i "s/#log_bin/log_bin/" '.$mysql_cnf_path, null, false, true);
 
         /*
          * The next 2 lines just have to be added one time!
          */
 // :TODO: CHECK IF THE FOLLOWING 2 LINES ALREADY EXIST
-        servers_exec($server['hostname'], 'echo \"relay-log = /var/log/mysql/mysql-relay-bin.log" | sudo tee -a '.$mysql_cnf_path, null, false, true);
-        servers_exec($server['hostname'], 'echo \"binlog_do_db = '.$server['database'].'\" | sudo tee -a '.$mysql_cnf_path, null, false, true);
-
-        log_console(tr('Restarting local MySQL service'));
-        servers_exec($server['hostname'], 'sudo service mysql restart', null, false, true);
+        servers_exec($server['hostname'], 'echo "relay-log = /var/log/mysql/mysql-relay-bin.log" | sudo tee -a '.$mysql_cnf_path, null, false, true);
+        servers_exec($server['hostname'], 'echo "binlog_do_db = '.$server['database'].'" | sudo tee -a '.$mysql_cnf_path, null, false, true);
 
         /*
          * Create SSH tunneling user
          */
         log_console(tr('Creating ssh tunneling user on local server'));
-        ssh_make_mysql_tunnel($server);
+        ssh_mysql_slave_tunnel($server);
+showdie("aaaaaaaaaaaaaaaaaaaaaa");
+
+// :TODO: Check how to restart local mysql service and recover connection object
+        log_console(tr('Restarting local MySQL service'));
+        servers_exec($server['hostname'], 'sudo service mysql restart', null, false, true);
 
         /*
          * Import LOCAL db
          */
         sql_query('DROP   DATABASE IF EXISTS `'.$server['database'].'`');
         sql_query('CREATE DATABASE `'.$server['database'].'`');
+        servers_exec($server['hostname'], 'sudo rm /tmp/'.$server['database'].'.sql -f', null, false, true);
         servers_exec($server['hostname'], 'gzip -d /tmp/'.$server['database'].'.sql.gz', null, false, true);
-        servers_exec($server['hostname'], 'mysql \"-u'.$server['root_db_user'].'\" \"-p'.$server['root_db_password'].'\" -B '.$server['database'].' < '.$server['database'].'.sql', null, false, true);
+        servers_exec($server['hostname'], 'mysql "-u'.$server['root_db_user'].'" "-p'.$server['root_db_password'].'" -B '.$server['database'].' < '.$server['database'].'.sql', null, false, true);
+        servers_exec($server['hostname'], 'sudo rm /tmp/'.$server['database'].'.sql -f', null, false, true);
 
         /*
          * Setup global configurations to support multiple channels
          */
-        servers_exec($server['hostname'], 'mysql \"-u'.$server['root_db_user'].'\" \"-p'.$server['root_db_password'].'\" -e \"SET GLOBAL master_info_repository = \'TABLE\';\"', null, false, true);
-        servers_exec($server['hostname'], 'mysql \"-u'.$server['root_db_user'].'\" \"-p'.$server['root_db_password'].'\" -e \"SET GLOBAL relay_log_info_repository = \'TABLE\';\"', null, false, true);
+        servers_exec($server['hostname'], 'mysql "-u'.$server['root_db_user'].'" "-p'.$server['root_db_password'].'" -e "SET GLOBAL master_info_repository = \'TABLE\';"', null, false, true);
+        servers_exec($server['hostname'], 'mysql "-u'.$server['root_db_user'].'" "-p'.$server['root_db_password'].'" -e "SET GLOBAL relay_log_info_repository = \'TABLE\';"', null, false, true);
 
         /*
          * Setup slave replication
@@ -303,12 +307,12 @@ function mysql_slave_replication_setup($server){
         $slave_setup .= 'MASTER_PORT=\''.$server['slave_ssh_port'].'\' ';
         $slave_setup .= 'FOR_CHANNEL \''.$server['hostname'].'\'; ';
         $slave_setup .= 'START SLAVE FOR CHANNEL \''.$server['hostname'].'\';';
-        servers_exec($server['hostname'], 'mysql \"-u'.$server['root_db_user'].'\" \"-p'.$server['root_db_password'].'\" -e \"'.$slave_setup.'\"', null, false, true);
+        servers_exec($server['hostname'], 'mysql "-u'.$server['root_db_user'].'" "-p'.$server['root_db_password'].'" -e "'.$slave_setup.'"', null, false, true);
 
         /*
          * Final step check for SLAVE status
          */
-        $slave_status = servers_exec($server['hostname'], 'mysql \"-u'.$server['root_db_user'].'\" \"-p'.$server['root_db_password'].'\" -ANe \"SHOW SLAVE STATUS;\"', null, false, true);
+        $slave_status = servers_exec($server['hostname'], 'mysql "-u'.$server['root_db_user'].'" "-p'.$server['root_db_password'].'" -ANe "SHOW SLAVE STATUS;"', null, false, true);
 
     }catch(Exception $e){
         throw new bException(tr('mysql_slave_replication_setup(): Failed'), $e);
