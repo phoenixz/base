@@ -110,7 +110,11 @@ function mysql_dump($params){
 
 
 /*
- *
+ * This function can setup a master
+ * 1) MODIFY MASTER MYSQL CONFIG FILE
+ * 2) CREATE REPLICATION USER ON MASTER MYSQL
+ * 3) DUMP MYSQL DB
+ * 4) ON OTHER SHELL GET MYSQL LOG_FILE AND LOG_POS
  */
 function mysql_master_replication_setup($server){
     try{
@@ -152,6 +156,11 @@ function mysql_master_replication_setup($server){
         log_console(tr('Making master setup for MySQL configuration file'));
         servers_exec($server['hostname'], 'sudo sed -i \"s/#server-id[[:space:]]*=[[:space:]]*1/server-id = '.$server['id'].'/\" '.$mysql_cnf_path);
         servers_exec($server['hostname'], 'sudo sed -i \"s/#log_bin/log_bin/\" '.$mysql_cnf_path);
+
+        /*
+         * The next line just have to be added one time!
+         */
+// :TODO: CHECK IF THE FOLLOWING LINE ALREADY EXISTS
         servers_exec($server['hostname'], 'echo \"binlog_do_db = '.$server['database'].'\" | sudo tee -a '.$mysql_cnf_path);
 
         log_console(tr('Restarting remote MySQL service'));
@@ -204,16 +213,102 @@ function mysql_master_replication_setup($server){
 
 
 /*
- *
+ * This function can setup a slave
+ * 1) MODIFY SLAVE MYSQL CONFIG FILE
+ * 2) CREATE A SSH TUNNELING USER ON A SPECIFIC PORT
+ * 3) IMPORT MYSQL MASTER DB on SLAVE
+ * 4) SETUP SLAVE REPLICATION ON A SPECIFIC PORT AND CHANNEL
+ * 5) CHECK FOR SLAVE STATUS
  */
 function mysql_slave_replication_setup($server){
     try{
+        /*
+         * Validate params
+         */
+        array_ensure($server, 'server,root_db_user,root_db_password,database,replication_db_password');
+
+// :TODO: Store in DB, get unique from UNIQUE indexed column! perhaps the `databases`.`id` column?
+        $server['id']   = mt_rand() - 1;
+        $mysql_cnf_path = '/etc/mysql/mysql.conf.d/mysqld.cnf';
+
+        load_libs('ssh,servers');
+
+        /*
+         * Check for mysqld.cnf file
+         */
+        log_console(tr('Checking existance of mysql configuration file on local server'), 'white');
+        $mysql_cnf = servers_exec($server['hostname'], 'test -f '.$mysql_cnf_path.' && echo "1" || echo "0"', null, false, true);
+
+        /*
+         * Mysql conf file does not exist
+         */
+        if(!$mysql_cnf[0]){
+            /*
+             * Try with other possible configuration file
+             */
+            $mysql_cnf_path = '/etc/mysql/my.cnf';
+            $mysql_cnf      = servers_exec($server['hostname'], 'test -f '.$mysql_cnf_path.' && echo "1" || echo "0"', null, false, true);
+
+            if(!$mysql_cnf[0]){
+                throw new bException(tr('mysql_master_replication_setup(): MySQL configuration file :file does not exist on local server', array(':file' => $mysql_cnf_path)), 'not-exist');
+            }
+        }
+
+        /*
+         * MySQL SETUP
+         */
+        log_console(tr('Making slave setup for MySQL configuration file'));
+        servers_exec($server['hostname'], 'sudo sed -i \"s/#server-id[[:space:]]*=[[:space:]]*1/server-id = '.$server['id'].'/\" '.$mysql_cnf_path, null, false, true);
+        servers_exec($server['hostname'], 'sudo sed -i \"s/#log_bin/log_bin/\" '.$mysql_cnf_path, null, false, true);
+
+        /*
+         * The next 2 lines just have to be added one time!
+         */
+// :TODO: CHECK IF THE FOLLOWING 2 LINES ALREADY EXIST
+        servers_exec($server['hostname'], 'echo \"relay-log = /var/log/mysql/mysql-relay-bin.log" | sudo tee -a '.$mysql_cnf_path, null, false, true);
+        servers_exec($server['hostname'], 'echo \"binlog_do_db = '.$server['database'].'\" | sudo tee -a '.$mysql_cnf_path, null, false, true);
+
+        log_console(tr('Restarting local MySQL service'));
+        servers_exec($server['hostname'], 'sudo service mysql restart', null, false, true);
+
+        /*
+         * Create SSH tunneling user
+         */
+        log_console(tr('Creating ssh tunneling user on local server'));
+        ssh_make_mysql_tunnel($server);
+
         /*
          * Import LOCAL db
          */
         sql_query('DROP   DATABASE IF EXISTS `'.$server['database'].'`');
         sql_query('CREATE DATABASE `'.$server['database'].'`');
-        ssh_exec('cat /tmp/'.$server['database'].'.sql | mysql -u '.$server['root_db_user'].' -p"'.$server['root_db_password'].'" -B '.$server['database']);
+        servers_exec($server['hostname'], 'gzip -d /tmp/'.$server['database'].'.sql.gz', null, false, true);
+        servers_exec($server['hostname'], 'mysql \"-u'.$server['root_db_user'].'\" \"-p'.$server['root_db_password'].'\" -B '.$server['database'].' < '.$server['database'].'.sql', null, false, true);
+
+        /*
+         * Setup global configurations to support multiple channels
+         */
+        servers_exec($server['hostname'], 'mysql \"-u'.$server['root_db_user'].'\" \"-p'.$server['root_db_password'].'\" -e \"SET GLOBAL master_info_repository = \'TABLE\';\"', null, false, true);
+        servers_exec($server['hostname'], 'mysql \"-u'.$server['root_db_user'].'\" \"-p'.$server['root_db_password'].'\" -e \"SET GLOBAL relay_log_info_repository = \'TABLE\';\"', null, false, true);
+
+        /*
+         * Setup slave replication
+         */
+        $slave_setup  = 'STOP SLAVE; ';
+        $slave_setup .= 'CHANGE MASTER TO MASTER_HOST=\''.$server['hostname'].'\', ';
+        $slave_setup .= 'MASTER_USER=\''.$server['replication_db_user'].'\', ';
+        $slave_setup .= 'MASTER_PASSWORD=\''.$server['replication_db_password'].'\', ';
+        $slave_setup .= 'MASTER_LOG_FILE=\''.$server['log_file'].'\', ';
+        $slave_setup .= 'MASTER_LOG_POS=\''.$server['log_pos'].'\', ';
+        $slave_setup .= 'MASTER_PORT=\''.$server['slave_ssh_port'].'\' ';
+        $slave_setup .= 'FOR_CHANNEL \''.$server['hostname'].'\'; ';
+        $slave_setup .= 'START SLAVE FOR CHANNEL \''.$server['hostname'].'\';';
+        servers_exec($server['hostname'], 'mysql \"-u'.$server['root_db_user'].'\" \"-p'.$server['root_db_password'].'\" -e \"'.$slave_setup.'\"', null, false, true);
+
+        /*
+         * Final step check for SLAVE status
+         */
+        $slave_status = servers_exec($server['hostname'], 'mysql \"-u'.$server['root_db_user'].'\" \"-p'.$server['root_db_password'].'\" -ANe \"SHOW SLAVE STATUS;\"', null, false, true);
 
     }catch(Exception $e){
         throw new bException(tr('mysql_slave_replication_setup(): Failed'), $e);
