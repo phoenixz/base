@@ -178,7 +178,7 @@ function ssh_stop_control_master($socket = null){
 /*
  *
  */
-function ssh_exec($server, $commands = null, $background = false, $local = false){
+function ssh_exec($server, $commands = null, $local = false, $background = false){
     try{
         array_params($server);
         array_default($server, 'server'       , '');
@@ -196,10 +196,18 @@ function ssh_exec($server, $commands = null, $background = false, $local = false
         }
 
         /*
+         * If it gonna run in background
+         * we must return the pid
+         */
+        if($background){
+            $commands .= ' &; echo \$\!';
+        }
+
+        /*
          * If local just use safe_exec
          */
         if($local){
-            $result = safe_exec('"'.$commands.'"'.($background ? ' &; echo $1' : ''));
+            $result = safe_exec('"'.$commands.'"');
             return $result;
         }
 
@@ -252,8 +260,8 @@ function ssh_exec($server, $commands = null, $background = false, $local = false
         /*
          * Execute command on remote server
          */
-//show('ssh '.$server['arguments'].' -p '.$server['port'].' -i '.$keyfile.' '.$server['username'].'@'.$server['hostname'].' '.$commands);
-        $result = safe_exec('ssh '.$server['arguments'].' -p '.$server['port'].' -i '.$keyfile.' '.$server['username'].'@'.$server['hostname'].' "'.$commands.'"'.($background ? ' &; echo $1' : ''));
+//show('ssh '.$server['arguments'].' -p '.$server['port'].' -i '.$keyfile.' '.$server['username'].'@'.$server['hostname'].' "'.$commands.'"');
+        $result = safe_exec('ssh '.$server['arguments'].' -p '.$server['port'].' -i '.$keyfile.' '.$server['username'].'@'.$server['hostname'].' "'.$commands.'"');
 
         chmod($keyfile, 0600);
         file_delete($keyfile);
@@ -261,6 +269,7 @@ function ssh_exec($server, $commands = null, $background = false, $local = false
         return $result;
 
     }catch(Exception $e){
+showdie($e);
         notify(tr('ssh_exec() exception'), $e, 'developers');
 
         /*
@@ -294,6 +303,108 @@ function ssh_get_key($username){
 
     }catch(Exception $e){
         throw new bException('ssh_get_key(): Failed', $e);
+    }
+}
+
+
+
+/*
+ *
+ */
+function ssh_cp($server, $source, $destnation, $from_server = false){
+    try{
+        array_params($server);
+        array_default($server, 'server'       , '');
+        array_default($server, 'hostname'     , '');
+        array_default($server, 'ssh_key'      , '');
+        array_default($server, 'port'         , 22);
+        array_default($server, 'arguments'    , '-T');
+
+        /*
+         * Validate commands
+         */
+        if(empty($commands)){
+            throw new bException(tr('No commmands specified'), 'invalid');
+        }
+
+        /*
+         * If server was specified by just name, then lookup the server data in
+         * the database
+         */
+        if($server['server']){
+            $dbserver = sql_get('SELECT    `ssh_accounts`.`username`,
+                                           `ssh_accounts`.`ssh_key`,
+                                           `servers`.`id`,
+                                           `servers`.`hostname`,
+                                           `servers`.`port`
+
+                                 FROM      `servers`
+
+                                 LEFT JOIN `ssh_accounts`
+                                 ON        `ssh_accounts`.`id` = `servers`.`ssh_accounts_id`
+
+                                 WHERE     `servers`.`hostname` = :hostname', array(':hostname' => $server['server']));
+
+            if(!$dbserver){
+                throw new bException(tr('ssh_exec(): Specified server ":server" does not exist', array(':server' => $server['server'])), 'not-exist');
+            }
+
+            $server = sql_merge($server, $dbserver);
+        }
+
+        /*
+         * Ensure that ssh_keys directory exists and that its safe
+         */
+        load_libs('file');
+        file_ensure_path(ROOT.'data/ssh_keys');
+        chmod(ROOT.'data/ssh_keys', 0770);
+
+        /*
+         * Safely create SSH key file
+         */
+        $keyfile = ROOT.'data/ssh_keys/'.str_random(8);
+
+        touch($keyfile);
+        chmod($keyfile, 0600);
+        file_put_contents($keyfile, $server['ssh_key'], FILE_APPEND);
+        chmod($keyfile, 0400);
+
+        if($from_server){
+            $command = $server['username'].'@'.$server['hostname'].':'.$source.' '.$destnation;
+
+        }else{
+            $command = $source.' '.$server['username'].'@'.$server['hostname'].':'.$destnation;
+        }
+
+        /*
+         * Execute command
+         */
+        $result = safe_exec('scp '.$server['arguments'].' -P '.$server['port'].' -i '.$keyfile.' '.$command.'');
+        chmod($keyfile, 0600);
+        file_delete($keyfile);
+
+        return $result;
+
+    }catch(Exception $e){
+        notify(tr('ssh_cp() exception'), $e, 'developers');
+
+                /*
+         * Try deleting the keyfile anyway!
+         */
+        try{
+            if(!empty($keyfile)){
+                safe_exec(chmod($keyfile, 0600));
+                file_delete($keyfile);
+            }
+
+        }catch(Exception $e){
+            /*
+             * Cannot be deleted, just ignore and notify
+             */
+            notify(tr('ssh_cp() cannot delete key'), $e, 'developers');
+        }
+
+        throw new bException(tr('ssh_cp(): Failed'), $e);
     }
 }
 ?>
