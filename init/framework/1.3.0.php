@@ -48,23 +48,6 @@ sql_query('DROP TABLE IF EXISTS `libraries_documents`');
 sql_query('DROP TABLE IF EXISTS `libraries_categories`');
 sql_query('DROP TABLE IF EXISTS `libraries`');
 
-sql_query('CREATE TABLE `meta_history` (`id`         INT(11)       NOT NULL AUTO_INCREMENT,
-                                        `createdon`  TIMESTAMP     NOT NULL DEFAULT CURRENT_TIMESTAMP,
-                                        `createdby`  INT(11)           NULL,
-                                        `meta_id`    INT(11)           NULL,
-                                        `action`     VARCHAR(16)       NULL,
-                                        `data`       VARCHAR(1023) NOT NULL,
-
-                                        PRIMARY KEY `id`        (`id`),
-                                                KEY `createdon` (`createdon`),
-                                                KEY `createdby` (`createdby`),
-                                                KEY `action`    (`action`),
-
-                                        CONSTRAINT `fk_meta_history_id`        FOREIGN KEY (`meta_id`)   REFERENCES `meta`  (`id`) ON DELETE CASCADE,
-                                        CONSTRAINT `fk_meta_history_createdby` FOREIGN KEY (`createdby`) REFERENCES `users` (`id`) ON DELETE CASCADE
-
-                                       ) ENGINE=InnoDB AUTO_INCREMENT='.$_CONFIG['db']['core']['autoincrement'].' DEFAULT CHARSET="'.$_CONFIG['db']['core']['charset'].'" COLLATE="'.$_CONFIG['db']['core']['collate'].'";');
-
 
 
 sql_query('CREATE TABLE `libraries` (`id`                  INT(11)     NOT NULL AUTO_INCREMENT,
