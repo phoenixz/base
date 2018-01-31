@@ -519,7 +519,7 @@ function cli_run_once($action = 'exception', $force = false){
                                     continue;
                                 }
 
-                                safe_exec('kill '.($force ? '-9 ' : '').$pid);
+                                cli_kill($pid, ($force ? 9 : 15));
                             }
 
                             return false;
@@ -985,6 +985,48 @@ function cli_done(){
 
     }catch(Exception $e){
         throw new bException('cli_done(): Failed', $e);
+    }
+}
+
+
+
+/*
+ *
+ */
+function cli_kill($pid, $signal = null, $sudo = false){
+    try{
+        if(!$signal){
+            $signal = 15;
+        }
+
+        /*
+         * kill returns 1 if process wasn't found, we can ignore that
+         */
+        safe_exec(($sudo ? 'sudo ' : '').'kill -'.$signal.' '.$pid, 1);
+
+    }catch(Exception $e){
+        throw new bException('cli_kill(): Failed', $e);
+    }
+}
+
+
+
+/*
+ *
+ */
+function cli_pkill($process, $signal = null, $sudo = false){
+    try{
+        if(!$signal){
+            $signal = 15;
+        }
+
+        /*
+         * pkill returns 1 if process wasn't found, we can ignore that
+         */
+        safe_exec(($sudo ? 'sudo ' : '').'pkill -'.$signal.' '.$process, 1);
+
+    }catch(Exception $e){
+        throw new bException('cli_pkill(): Failed', $e);
     }
 }
 
