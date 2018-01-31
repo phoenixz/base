@@ -37,7 +37,7 @@ try{
         /*
          * Background commands cannot use "exec()" because that one will always wait for the exit code
          */
-        $lastline = exec('> /dev/null '.substr($command, 0, -1).' 2>/dev/null & echo $!', $output, $exitcode);
+        $lastline = exec(substr($command, 0, -1).' > /dev/null 2>&1 & echo $!', $output, $exitcode);
 
     }else{
         $lastline = exec($command.($route_errors ? ' 2>&1' : ''), $output, $exitcode);

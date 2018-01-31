@@ -117,7 +117,7 @@ function mysql_master_replication_setup($server){
         /*
          * Validate params
          */
-        array_ensure($server, 'server,root_db_user,root_db_password,database,replication_user,replication_db_password');
+        array_ensure($server, 'server,root_db_user,root_db_password,database,replication_db_password');
 
 // :TODO: Store in DB, get unique from UNIQUE indexed column! perhaps the `databases`.`id` column?
         $server['id']   = mt_rand() - 1;
@@ -149,13 +149,13 @@ function mysql_master_replication_setup($server){
         /*
          * MySQL SETUP
          */
-        //log_console(tr('Making master setup for MySQL configuration file'));
-        //servers_exec($server, 'sudo sed -i \"s/#server-id[[:space:]]*=[[:space:]]*1/server-id = '.$server['id'].'/\" '.$mysql_cnf_path);
-        //servers_exec($server, 'sudo sed -i \"s/#log_bin/log_bin/\" '.$mysql_cnf_path);
-        //servers_exec($server, 'echo \"binlog_do_db = '.$server['database'].'\" | sudo tee -a '.$mysql_cnf_path);
-        //
-        //log_console(tr('Restarting remote MySQL service'));
-        //servers_exec($server, 'sudo service mysql restart');
+        log_console(tr('Making master setup for MySQL configuration file'));
+        servers_exec($server['hostname'], 'sudo sed -i \"s/#server-id[[:space:]]*=[[:space:]]*1/server-id = '.$server['id'].'/\" '.$mysql_cnf_path);
+        servers_exec($server['hostname'], 'sudo sed -i \"s/#log_bin/log_bin/\" '.$mysql_cnf_path);
+        servers_exec($server['hostname'], 'echo \"binlog_do_db = '.$server['database'].'\" | sudo tee -a '.$mysql_cnf_path);
+
+        log_console(tr('Restarting remote MySQL service'));
+        servers_exec($server['hostname'], 'sudo service mysql restart');
 
         /*
          * LOCK MySQL database
@@ -163,38 +163,37 @@ function mysql_master_replication_setup($server){
          * kill ssh pid after dumping db
          */
         log_console(tr('Making grant replication on remote server and locking tables'));
-        $ssh_mysql_pid = servers_exec($server['hostname'], 'mysql \"-u'.$server['root_db_user'].'\" \"-p'.$server['root_db_password'].'\" -e \"GRANT REPLICATION SLAVE ON *.* TO \''.$server['replication_db_user'].'\'@\'localhost\' IDENTIFIED BY \''.$server['replication_db_password'].'\'; FLUSH PRIVILEGES; USE \''.$server['database'].'\'; FLUSH TABLES WITH READ LOCK; DO SLEEP(35); \"', null, true, false);
+        $ssh_mysql_pid = servers_exec($server['hostname'], 'mysql \"-u'.$server['root_db_user'].'\" \"-p'.$server['root_db_password'].'\" -e \"GRANT REPLICATION SLAVE ON *.* TO \''.$server['replication_db_user'].'\'@\'localhost\' IDENTIFIED BY \''.$server['replication_db_password'].'\'; FLUSH PRIVILEGES; USE \''.$server['database'].'\'; FLUSH TABLES WITH READ LOCK; DO SLEEP(1000000); \"', null, true, false);
 
         /*
          * Dump database
          */
-        servers_exec($server, 'rm /tmp/'.$server['database'].'.sql -f;');
-        servers_exec($server, 'mysqldump \"-u'.$server['root_db_user'].'\" \"-p'.$server['root_db_password'].'\" -K -R -n -e --dump-date --comments -B '.$server['database'].' > /tmp/ '.$server['database'].'.sql');
-showdie("aaaaa");
+        log_console(tr('Making dump of remote database'));
+        servers_exec($server['hostname'], 'sudo rm /tmp/'.$server['database'].'.sql.gz -f;');
+        servers_exec($server['hostname'], 'sudo mysqldump \"-u'.$server['root_db_user'].'\" \"-p'.$server['root_db_password'].'\" -K -R -n -e --dump-date --comments -B '.$server['database'].' | gzip | sudo tee /tmp/'.$server['database'].'.sql.gz');
+
         /*
          * KILL LOCAL SSH process
          */
-        servers_exec($server, 'kill -9'.$ssh_mysql_pid[0], null, false, true);
+        log_console(tr('Dump finished, killing background process mysql shell session'));
+        servers_exec($server['hostname'], 'kill -9 '.$ssh_mysql_pid[0], null, false, true);
 
         /*
          * Delete posible LOCAL backup
-         */
-        servers_exec($server, 'rm /tmp/'.$server['database'].'.sql -f', null, false, true);
-
-        /*
          * SCP dump from server to local
          */
-        ssh_cp($server, '/tmp/'.$server['database'].'.sql', '/tmp/', true);
+        log_console(tr('Copying remote dump to local'));
+        servers_exec($server['hostname'], 'rm /tmp/'.$server['database'].'.sql.gz -f', null, false, true);
+        ssh_cp($server, '/tmp/'.$server['database'].'.sql.gz', '/tmp/', true);
 
         /*
-         * Return
-         * database dump name
-         * log file
-         * log pos
+         * Get the log_file and log_pos
          */
-        $master_status      = servers_exec($server, 'mysql "-u'.$server['root_db_user'].'" "-p'.$server['root_db_password'].'" -ANe "SHOW MASTER STATUS;" | awk \'{print $1 " " $2}\'');
-        $server['log_file'] = servers_exec($server, 'echo '.$master_status[0].' | cut -f1 -d \' \'', null, false, true);
-        $server['log_pos']  = servers_exec($server, 'echo '.$master_status[0].' | cut -f2 -d \' \'', null, false, true);
+        $master_status      = servers_exec($server['hostname'], 'mysql \"-u'.$server['root_db_user'].'\" \"-p'.$server['root_db_password'].'\" -ANe \"SHOW MASTER STATUS;\"');
+        $master_status      = explode(',', preg_replace('/\s+/', ',', $master_status[0]));
+        $server['log_file'] = $master_status[0];
+        $server['log_pos']  = $master_status[1];
+
         return $server;
 
     }catch(Exception $e){
