@@ -1,4 +1,4 @@
-u<?php
+<?php
 /*
  * Form data verification library
  *
