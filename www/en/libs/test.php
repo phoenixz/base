@@ -26,11 +26,13 @@ define('TESTPATH', ROOT.'data/tests/content/');
  * Execute the specified test and show results
  */
 function test($name, $description, $function){
+    global $core;
+
     try{
-        log_console($name.' [TEST] '.$description);
+        log_console($name.' [TEST] '.$description, '', false);
 
         if(!is_callable($function)){
-            throw new bException('test(): Specified function is not a function but a "'.gettype($function).'"');
+            throw new bException(tr('test(): Specified function is not a function but a ":type"', array(':type' => gettype($function))), 'invalid');
         }
 
         $function();
@@ -52,7 +54,6 @@ function test($name, $description, $function){
         $core->register['timers']['tests']['errors']['test'][]    = $e;
         $core->register['timers']['tests']['errors']['library'][] = $e;
 
-//showdie($e);
         return $e;
     }
 }
@@ -63,16 +64,18 @@ function test($name, $description, $function){
  * Show if the specified test completed with errors or not
  */
 function test_completed($name, $type = 'test'){
-    log_console($name.' ['.$type.' COMPLETED] ', 'white');
+    global $core;
+
+    log_console($name.' ['.$type.' COMPLETED] ', 'white', false);
 
     if(!isset($core->register['timers']['tests']['errors'][$type])){
-        throw new bException('test_completed(): Invalid type "" specified. Specify one of "test", "library" or "all"');
+        throw new bException(tr('test_completed(): Unknown type ":type" specified. Specify one of "test", "library" or "all"', array(':type' => $type)), 'unknown');
     }
 
     $errors = $core->register['timers']['tests']['errors'][$type];
 
     if(!is_array($errors)){
-        throw new bException('test_completed(): The specified error list should have datatype array but has datatype "'.gettype($errors).'"');
+        throw new bException(tr('test_completed(): The specified error list should have datatype array but has datatype ":type"', array(':type' => gettype($errors))), 'invalid');
     }
 
     if($errors){

@@ -1,0 +1,16 @@
+#!/usr/bin/php
+<?php
+/*
+ * This script serves as a target for script_exec
+ */
+$quiet = true;
+require_once(dirname(__FILE__).'/../../libs/startup.php');
+
+try{
+    cli_only(true);
+    cli_run_once_local(true);
+
+}catch(Exception $e){
+    throw new bException('scripts/tests/script_exec_target: Failed', $e);
+}
+?>

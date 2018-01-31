@@ -5,7 +5,7 @@
  *
  */
 // :TODO: This will fail for PLATFORM apache since $arguments will not be defined! Implement fix for that
-global $_CONFIG, $argv, $argc;
+global $_CONFIG, $core, $argv, $argc;
 
 try{
     load_libs('file');
@@ -50,7 +50,7 @@ try{
     $_script_exec_file = file_assign_target(TMP, false, false, $length);
     $_script_exec_file = file_copy_tree(ROOT.'scripts/'.$script, TMP.$_script_exec_file, "#!/usr/bin/php\n", '', '.php');
 
-    log_console(tr('Executing script ":script" as ":as"', array(':script' => $script, ':as' => $_script_exec_file)), 'white');
+    log_console(tr('Executing script ":script" as ":as"', array(':script' => $script, ':as' => $_script_exec_file)), 'VERBOSE/cyan');
 
     /*
      * Store the list of scripts being executed, just in case script_exec() is
@@ -60,7 +60,7 @@ try{
         $core->register['scripts'] = array(SCRIPT, $script);
 
     }else{
-        $core->register['scripts'][] = $script;
+        $core->register['scripts'][SCRIPT] = $script;
     }
 
     try{
@@ -72,6 +72,7 @@ try{
         array_pop($core->register['scripts']);
 
     }catch(Exception $e){
+showdie($e);
         if(!$e->getCode()){
             throw $e;
         }

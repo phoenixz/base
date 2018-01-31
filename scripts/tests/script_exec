@@ -1,0 +1,32 @@
+#!/usr/bin/php
+<?php
+/*
+ * This script tests script_exec() function
+ */
+require_once(dirname(__FILE__).'/../../libs/startup.php');
+
+try{
+    cli_only();
+    load_libs('test');
+
+
+
+    /*
+     * Test script_exec()
+     */
+    test('script_exec()', 'This should execute a sub script by including its PHP code directly', function(){
+        try{
+            cli_run_once_local();
+            script_exec('tests/script_exec_target');
+            cli_run_once_local(true);
+
+        }catch(Exception $e){
+        }
+    });
+
+    test_completed('script_exec()');
+
+}catch(Exception $e){
+    throw new bException('scripts/tests/script_exec: Failed', $e);
+}
+?>

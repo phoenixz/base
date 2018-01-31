@@ -26,7 +26,7 @@ try{
         file_clear_path($file);
 
         if(file_exists(dirname($file)) or file_exists(dirname(dirname($file)))){
-            throw new bException('Function did not clear test path');
+            throw new bException(tr('Function file_clear_path() did not clear test path ":path"', array(':path' => $file)), 'failed');
         }
     });
 
