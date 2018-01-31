@@ -8,7 +8,7 @@ try{
         return '';
 
     }elseif($_CONFIG['debug']['bar'] === 'limited'){
-        if(empty($_SESSION['user']['id']) or !has_right("debug")){
+        if(empty($_SESSION['user']['id']) or !has_rights("debug")){
             /*
              * Only show debug bar to authenticated users with "debug" right
              */
