@@ -68,6 +68,13 @@ function fprint_verify($user, $finger = 'auto'){
         return false;
 
     }catch(Exception $e){
+        $data = $e->getData();
+        $data = array_pop($data);
+
+        if(strstr($data, 'Failed to discover prints') !== false){
+            throw new bException(tr('fprint_verify(): No finger prints found for user ":user"', array(':user' => $user)), 'not-exists');
+        }
+
         throw new bException('fprint_verify(): Failed', $e);
     }
 }
