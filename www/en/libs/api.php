@@ -436,7 +436,7 @@ function api_call_base($account, $call, $data = array(), $files = null){
                         throw new bException(tr('api_call_base(): [403] API URL gave access denied'), $e);
 
                     case 'HTTP404':
-                        throw new bException(tr('api_call_base(): [404] API URL ":url" was not found'. array(':url' => str_starts_not($account_data['baseurl'], '/').'/authenticate')), $e);
+                        throw new bException(tr('api_call_base(): [404] API URL ":url" was not found', array(':url' => str_starts_not($account_data['baseurl'], '/').'/authenticate')), $e);
 
                     case 'HTTP500':
                         throw new bException(tr('api_call_base(): [500] API server encountered an internal server error'), $e);
