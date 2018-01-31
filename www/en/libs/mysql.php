@@ -53,13 +53,13 @@ function mysql_master_replication_setup($server){
         $server['id']   = mt_rand() - 1;
         $mysql_cnf_path = '/etc/mysql/mysql.conf.d/mysqld.cnf';
 
-        load_libs('ssh');
+        load_libs('ssh,servers');
 
         /*
          * Check for mysqld.cnf file
          */
         log_console(tr('Checking existance of mysql configuration file on remote server'), 'white');
-        $mysql_cnf = ssh_exec($server, 'test -f '.$mysql_cnf_path.' && echo "1" || echo "0"');
+        $mysql_cnf = servers_exec($server, 'test -f '.$mysql_cnf_path.' && echo "1" || echo "0"');
 
         /*
          * Mysql conf file does not exist
@@ -69,7 +69,7 @@ function mysql_master_replication_setup($server){
              * Try with other possible configuration file
              */
             $mysql_cnf_path = '/etc/mysql/my.cnf';
-            $mysql_cnf      = ssh_exec($server, 'test -f '.$mysql_cnf_path.' && echo "1" || echo "0"');
+            $mysql_cnf      = servers_exec($server, 'test -f '.$mysql_cnf_path.' && echo "1" || echo "0"');
 
             if(!$mysql_cnf[0]){
                 throw new bException(tr('mysql_master_replication_setup(): MySQL configuration file :file does not exist on remote server', array(':file' => $mysql_cnf_path)), 'not-exist');
@@ -80,12 +80,12 @@ function mysql_master_replication_setup($server){
          * MySQL SETUP
          */
         //log_console(tr('Making master setup for MySQL configuration file'));
-        //ssh_exec($server, 'sudo sed -i \"s/#server-id[[:space:]]*=[[:space:]]*1/server-id = '.$server['id'].'/\" '.$mysql_cnf_path);
-        //ssh_exec($server, 'sudo sed -i \"s/#log_bin/log_bin/\" '.$mysql_cnf_path);
-        //ssh_exec($server, 'echo \"binlog_do_db = '.$server['database'].'\" | sudo tee -a '.$mysql_cnf_path);
+        //servers_exec($server, 'sudo sed -i \"s/#server-id[[:space:]]*=[[:space:]]*1/server-id = '.$server['id'].'/\" '.$mysql_cnf_path);
+        //servers_exec($server, 'sudo sed -i \"s/#log_bin/log_bin/\" '.$mysql_cnf_path);
+        //servers_exec($server, 'echo \"binlog_do_db = '.$server['database'].'\" | sudo tee -a '.$mysql_cnf_path);
         //
         //log_console(tr('Restarting remote MySQL service'));
-        //ssh_exec($server, 'sudo service mysql restart');
+        //servers_exec($server, 'sudo service mysql restart');
 
         /*
          * LOCK MySQL database
@@ -93,23 +93,23 @@ function mysql_master_replication_setup($server){
          * kill ssh pid after dumping db
          */
         log_console(tr('Making grant replication on remote server and locking tables'));
-        $ssh_mysql_pid = ssh_exec($server, 'mysql \"-u'.$server['root_db_user'].'\" \"-p'.$server['root_db_password'].'\" -e \"GRANT REPLICATION SLAVE ON *.* TO \''.$server['replication_db_user'].'\'@\'localhost\' IDENTIFIED BY \''.$server['replication_db_password'].'\'; FLUSH PRIVILEGES; FLUSH TABLES WITH READ LOCK; DO SLEEP(5); \"', false, true);
+        $ssh_mysql_pid = servers_exec($server, 'mysql \"-u'.$server['root_db_user'].'\" \"-p'.$server['root_db_password'].'\" -e \"GRANT REPLICATION SLAVE ON *.* TO \''.$server['replication_db_user'].'\'@\'localhost\' IDENTIFIED BY \''.$server['replication_db_password'].'\'; FLUSH PRIVILEGES; FLUSH TABLES WITH READ LOCK; DO SLEEP(5); \"', null, true, false);
 showdie($ssh_mysql_pid);
         /*
          * Dump database
          */
-        ssh_exec($server, 'rm /tmp/'.$server['database'].'.sql -f;');
-        ssh_exec($server, 'mysqldump "-u'.$server['root_db_user'].'" "-p'.$server['root_db_password'].'" -K -R -n -e --dump-date --comments -B '.$server['database'].' > /tmp/ '.$server['database'].'.sql');
+        servers_exec($server, 'rm /tmp/'.$server['database'].'.sql -f;');
+        servers_exec($server, 'mysqldump "-u'.$server['root_db_user'].'" "-p'.$server['root_db_password'].'" -K -R -n -e --dump-date --comments -B '.$server['database'].' > /tmp/ '.$server['database'].'.sql');
 
         /*
          * KILL LOCAL SSH process
          */
-        ssh_exec($server, 'kill -9'.$ssh_mysql_pid[0], true);
+        servers_exec($server, 'kill -9'.$ssh_mysql_pid[0], null, false, true);
 
         /*
          * Delete posible LOCAL backup
          */
-        ssh_exec($server, 'rm /tmp/'.$server['database'].'.sql -f', true);
+        servers_exec($server, 'rm /tmp/'.$server['database'].'.sql -f', null, false, true);
 
         /*
          * SCP dump from server to local
@@ -122,9 +122,9 @@ showdie($ssh_mysql_pid);
          * log file
          * log pos
          */
-        $master_status      = ssh_exec($server, 'mysql "-u'.$server['root_db_user'].'" "-p'.$server['root_db_password'].'" -ANe "SHOW MASTER STATUS;" | awk \'{print $1 " " $2}\'');
-        $server['log_file'] = ssh_exec($server, 'echo '.$master_status[0].' | cut -f1 -d \' \'', true);
-        $server['log_pos']  = ssh_exec($server, 'echo '.$master_status[0].' | cut -f2 -d \' \'', true);
+        $master_status      = servers_exec($server, 'mysql "-u'.$server['root_db_user'].'" "-p'.$server['root_db_password'].'" -ANe "SHOW MASTER STATUS;" | awk \'{print $1 " " $2}\'');
+        $server['log_file'] = servers_exec($server, 'echo '.$master_status[0].' | cut -f1 -d \' \'', null, false, true);
+        $server['log_pos']  = servers_exec($server, 'echo '.$master_status[0].' | cut -f2 -d \' \'', null, false, true);
         return $server;
 
     }catch(Exception $e){
