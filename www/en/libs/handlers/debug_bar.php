@@ -34,7 +34,7 @@ try{
      * Build HTML
      */
     $html = '<div class="debug" id="debug-bar">
-                '.count($core->register('debug_queries')).' / '.number_format(microtime(true) - STARTTIME, 6).'
+                '.($_CONFIG['cache']['method'] ? '(CACHE='.$_CONFIG['cache']['method'].') ' : '').count($core->register('debug_queries')).' / '.number_format(microtime(true) - STARTTIME, 6).'
                 <div class="hidden list">
                     <table>
                         <thead>
