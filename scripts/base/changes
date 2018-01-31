@@ -298,12 +298,22 @@ foreach($files as $file => &$status){
                  */
 
             }else{
+                /*
+                 * These are library files, might be project, toolkit, or base
+                 * library files. Do not copy project library files!
+                 */
                 if(patch_file_exists_in_base($file)){
+                    /*
+                     * These are base library files
+                     */
                     log_console(tr('Identified file as base'), 'VERBOSE');
                     $sections['base'][$file] = $status;
                     $marked = true;
 
                 }elseif(patch_file_exists_in_toolkit($file)){
+                    /*
+                     * These are toolkit library files
+                     */
                     log_console(tr('Identified file as toolkit'), 'VERBOSE');
                     $sections['toolkit'][$file] = $status;
                     $marked = true;
@@ -312,19 +322,29 @@ foreach($files as $file => &$status){
 
         }elseif(preg_match('/libs\/handlers\/[a-z0-9-_]+\.php/', $file)){
             /*
-             * These are library files, most likely base, possibly toolkit
+             * Library handler files, possibly project, toolkit, base, or new
              */
             if(patch_file_exists_in_base($file)){
+                /*
+                 * Base existing library handler files
+                 */
                 log_console(tr('Identified file as base'), 'VERBOSE');
                 $sections['base'][$file] = $status;
+                $marked = true;
+            }elseif(patch_file_exists_in_toolkit($file)){
+                /*
+                 * Toolkit existing library handler files
+                 */
+                log_console(tr('Identified file as toolkit'), 'VERBOSE');
+                $sections['toolkit'][$file] = $status;
                 $marked = true;
             }
 
         }elseif(preg_match('/init\/framework\/[0-9.]+\.php/', $file)){
-            /*
-             * These are framework init files
-             */
             if(patch_file_exists_in_base($file)){
+                /*
+                 * Base existing init files
+                 */
                 log_console(tr('Identified file as base'), 'VERBOSE');
                 $sections['base'][$file] = $status;
                 $marked = true;
@@ -332,6 +352,19 @@ foreach($files as $file => &$status){
 
         }elseif(preg_match('/scripts\/base\/[a-z0-9-]+/', $file)){
             if(patch_file_exists_in_base($file)){
+                /*
+                 * Base existing script files
+                 */
+                log_console(tr('Identified file as base'), 'VERBOSE');
+                $sections['base'][$file] = $status;
+                $marked = true;
+            }
+
+        }elseif(preg_match('/scripts\/tests\/[a-z0-9-]+/', $file)){
+            if(patch_file_exists_in_base($file)){
+                /*
+                 * Base existing test script files
+                 */
                 log_console(tr('Identified file as base'), 'VERBOSE');
                 $sections['base'][$file] = $status;
                 $marked = true;
@@ -339,6 +372,9 @@ foreach($files as $file => &$status){
 
         }elseif(preg_match('/config\/base\/.+/', $file)){
             if(patch_file_exists_in_base($file)){
+                /*
+                 * Base existing configuration files
+                 */
                 log_console(tr('Identified file as base'), 'VERBOSE');
                 $sections['base'][$file] = $status;
                 $marked = true;
