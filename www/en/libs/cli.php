@@ -271,6 +271,8 @@ function cli_readline($prompt = '', $hidden = false){
  * script currently running from script_exec()
  */
 function cli_current_script(){
+    global $core;
+
     try{
         if(empty($core->register['scripts'])){
             return SCRIPT;
@@ -303,7 +305,7 @@ function cli_run_once_local($close = false){
                 /*
                  * Hey, this script is being closed but was never opened?
                  */
-                throw new bException(tr('cli_run_once_local(): The cli_run_once_local() has been called with close option, but it was never opened'), 'invalid');
+                throw new bException(tr('cli_run_once_local(): cli_run_once_local() has been called with close option, but it was never opened'), 'invalid');
             }
 
             file_delete($run_dir.$script);
@@ -311,12 +313,12 @@ function cli_run_once_local($close = false){
             return true;
         }
 
-        if(!empty($executed[$script])){
+        if(isset($executed[$script])){
             /*
              * Hey, script has already been run before, and its run again
              * without the close option, this should never happen!
              */
-            throw new bException(tr('cli_run_once_local(): The cli_run_once_local() has been called twice by script ":script" without $close set to true! This function should be called twice, once without argument, and once with boolean "true"', array(':script' => $script)), 'invalid');
+            throw new bException(tr('cli_run_once_local(): cli_run_once_local() has been called twice by script ":script" without $close set to true! This function should be called twice, once without argument, and once with boolean "true"', array(':script' => $script)), 'invalid');
         }
 
         $executed[$script] = true;
@@ -839,6 +841,8 @@ function cli_show_usage($usage, $color){
  * Exception if this script is not being run as root user
  */
 function cli_is_root(){
+    global $core;
+
     if($core->register['posix']){
         return posix_getuid() == 0;
     }

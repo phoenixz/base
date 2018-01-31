@@ -2269,6 +2269,7 @@ function get_boolean($value){
  */
 function language_lock($language, $script = null){
     global $core;
+
     static $checked   = false;
     static $incorrect = false;
 
