@@ -166,19 +166,6 @@ function servers_exec($hostname, $commands, $options = null, $background = false
             $options = '-o UserKnownHostsFile=/dev/null -o StrictHostKeyChecking=no';
         }
 
-        $commands = '"'.$commands.' "';
-        if($options['background']){
-             $commands .= ' &';
-        }
-
-        /*
-         * If local just use safe_exec
-         */
-        if($options['local']){
-            $result = safe_exec($commands);
-            return $result;
-        }
-
         /*
          * Ensure that ssk_keys directory exists and that its safe
          */
