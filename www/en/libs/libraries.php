@@ -27,20 +27,20 @@
 /*
  * Get specified document from storage
  */
-function libraries_document_get($storage, $seoname){
+function libraries_get_document($storage, $seoname){
     try{
         if(is_numeric($storage)){
             $libraries_id = $storage;
 
         }else{
             if(!is_scalar($storage)){
-                throw new bException(tr('libraries_document_get(): Specified storage ":storage" is invalid', array(':storage' => $storage)), 'invalid');
+                throw new bException(tr('libraries_get_document(): Specified storage ":storage" is invalid', array(':storage' => $storage)), 'invalid');
             }
 
             $libraries_id = sql_get('SELECT `id` FROM `storage` WHERE `seoname` = :seoname AND `status` = NULL', true, array(':seoname' => $storage));
 
             if(!$libraries_id){
-                throw new bException(tr('libraries_document_get(): Specified storage ":storage" does not exist', array(':storage' => $storage)), 'not-exist');
+                throw new bException(tr('libraries_get_document(): Specified storage ":storage" does not exist', array(':storage' => $storage)), 'not-exist');
             }
         }
 
@@ -93,7 +93,7 @@ function libraries_document_get($storage, $seoname){
         return $document;
 
     }catch(Exception $e){
-        throw new bException('libraries_document_get(): Failed', $e);
+        throw new bException('libraries_get_document(): Failed', $e);
     }
 }
 ?>
