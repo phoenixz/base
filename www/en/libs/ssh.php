@@ -260,6 +260,22 @@ function ssh_exec($server, $commands = null, $local = false, $background = false
         return $results;
 
     }catch(Exception $e){
+        /*
+         * Remove "Permanently added host blah" error, even in this exception
+         */
+        $data = $e->getData();
+
+        if(!empty($data[0])){
+            if(preg_match('/Warning: Permanently added \'\[.+?\]:\d{1,5}\' \(\w+\) to the list of known hosts\./', isset_get($data[0]))){
+                /*
+                 * Remove known host warning from results
+                 */
+                array_shift($data);
+            }
+        }
+
+        unset($data);
+
         notify(tr('ssh_exec() exception'), $e, 'developers');
 
         /*
