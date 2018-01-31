@@ -494,6 +494,10 @@ function debug($class = null){
     global $_CONFIG;
 
     try{
+        if(!is_array($_CONFIG['debug'])){
+            throw new bException(tr('debug(): Invalid configuration, $_CONFIG[debug] is boolean, and it should be an array. Please check your config/ directory for "$_CONFIG[\'debug\']"'), 'invalid');
+        }
+
         if($class === null){
             return (boolean) $_CONFIG['debug']['enabled'];
         }
