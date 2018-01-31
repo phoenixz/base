@@ -1,4 +1,4 @@
-<?php
+s<?php
 /*
  * Fprint library
  *
@@ -34,9 +34,13 @@ function fprint_init(){
  * Register the fingerprint with the fprintd deamon
  */
 function fprint_enroll($users_id, $finger = 'auto'){
+    global $_CONFIG;
+
     try{
-        $finger  = fprint_verify_finger($finger);
-        $results = safe_exec('sudo fprintd-enroll '.($finger ? '-f '.$finger.' ' : '').$users_id);
+        $finger = fprint_verify_finger($finger);
+        fprint_kill();
+
+        $results = safe_exec('sudo timeout '.$_CONFIG['fprint']['timeouts']['enroll'].' fprintd-enroll '.($finger ? '-f '.$finger.' ' : '').$users_id);
         $result  = array_pop($results);
 
         if($result == 'Enroll result: enroll-completed'){
@@ -46,6 +50,10 @@ function fprint_enroll($users_id, $finger = 'auto'){
         throw new bException(tr('fprint_enroll(): Enroll failed with ":error"', array(':error' => $result)), 'failed');
 
     }catch(Exception $e){
+        if($e->getCode() == 124){
+            throw new bException(tr('fprint_verify(): finger print scan timed out'), 'timeout');
+        }
+
         throw new bException('fprint_enroll(): Failed', $e);
     }
 }
@@ -56,9 +64,13 @@ function fprint_enroll($users_id, $finger = 'auto'){
  * Verify a fingerprint
  */
 function fprint_verify($user, $finger = 'auto'){
+    global $_CONFIG;
+
     try{
         $finger  = fprint_verify_finger($finger);
-        $results = safe_exec('sudo fprintd-verify '.($finger ? '-f '.$finger.' ' : '').$user);
+        fprint_kill();
+
+        $results = safe_exec('sudo timeout '.$_CONFIG['fprint']['timeouts']['verify'].' fprintd-verify '.($finger ? '-f '.$finger.' ' : '').$user);
         $result  = array_pop($results);
 
         if($result == 'Verify result: verify-match (done)'){
@@ -73,6 +85,10 @@ function fprint_verify($user, $finger = 'auto'){
 
         if(strstr($data, 'Failed to discover prints') !== false){
             throw new bException(tr('fprint_verify(): No finger prints found for user ":user"', array(':user' => $user)), 'not-exists');
+        }
+
+        if($e->getCode() == 124){
+            throw new bException(tr('fprint_verify(): finger print scan timed out'), 'timeout');
         }
 
         throw new bException('fprint_verify(): Failed', $e);
@@ -127,6 +143,21 @@ function fprint_delete($user){
 
     }catch(Exception $e){
         throw new bException('fprint_delete(): Failed', $e);
+    }
+}
+
+
+
+/*
+ *
+ */
+function fprint_kill(){
+    try{
+        load_libs('cli');
+        return cli_pkill('fprint', 15, true);
+
+    }catch(Exception $e){
+        throw new bException('fprint_kill(): Failed', $e);
     }
 }
 
