@@ -1,4 +1,4 @@
-<?php
+u<?php
 /*
  * Form data verification library
  *
@@ -362,7 +362,7 @@ class validate_form {
             return false;
 
         }catch(Exception $e){
-            throw new bException('validate_form->allowEmpty(): Failed', $e);
+            throw new bException('validate_form::allowEmpty(): Failed', $e);
         }
     }
 
@@ -389,7 +389,7 @@ class validate_form {
             }
 
         }catch(Exception $e){
-            throw new bException('validate_form->__construct(): Failed', $e);
+            throw new bException('validate_form::__construct(): Failed', $e);
         }
     }
 
@@ -411,7 +411,7 @@ class validate_form {
             return true;
 
         }catch(Exception $e){
-            throw new bException('validate_form->isScalar(): Failed', $e);
+            throw new bException('validate_form::isScalar(): Failed', $e);
         }
     }
 
@@ -437,7 +437,7 @@ class validate_form {
             return true;
 
         }catch(Exception $e){
-            throw new bException('validate_form->isNotEmpty(): Failed', $e);
+            throw new bException('validate_form::isNotEmpty(): Failed', $e);
         }
     }
 
@@ -463,7 +463,7 @@ class validate_form {
             return true;
 
         }catch(Exception $e){
-            throw new bException('validate_form->isAlphaNumeric(): Failed', $e);
+            throw new bException('validate_form::isAlphaNumeric(): Failed', $e);
         }
     }
 
@@ -477,7 +477,7 @@ class validate_form {
             return $this->isFilter($value, FILTER_VALIDATE_EMAIL, $message, $flags);
 
         }catch(Exception $e){
-            throw new bException('validate_form->isEmail(): Failed', $e);
+            throw new bException('validate_form::isEmail(): Failed', $e);
         }
     }
 
@@ -491,7 +491,7 @@ class validate_form {
             return $this->isFilter($value, FILTER_VALIDATE_URL, $message, $flags);
 
         }catch(Exception $e){
-            throw new bException('validate_form->isUrl(): Failed', $e);
+            throw new bException('validate_form::isUrl(): Failed', $e);
         }
     }
 
@@ -531,7 +531,7 @@ class validate_form {
             return true;
 
         }catch(Exception $e){
-            throw new bException('validate_form->isFilter(): Failed', $e);
+            throw new bException('validate_form::isFilter(): Failed', $e);
         }
     }
 
@@ -557,7 +557,7 @@ class validate_form {
             return true;
 
         }catch(Exception $e){
-            throw new bException('validate_form->isNumeric(): Failed', $e);
+            throw new bException('validate_form::isNumeric(): Failed', $e);
         }
     }
 
@@ -579,7 +579,7 @@ class validate_form {
             return true;
 
         }catch(Exception $e){
-            throw new bException('validate_form->isNatural(): Failed', $e);
+            throw new bException('validate_form::isNatural(): Failed', $e);
         }
     }
 
@@ -605,7 +605,7 @@ class validate_form {
             return true;
 
         }catch(Exception $e){
-            throw new bException('validate_form->isPhonenumber(): Failed', $e);
+            throw new bException('validate_form::isPhonenumber(): Failed', $e);
         }
     }
 
@@ -633,7 +633,7 @@ class validate_form {
             return true;
 
         }catch(Exception $e){
-            throw new bException('validate_form->isEqual(): Failed', $e);
+            throw new bException('validate_form::isEqual(): Failed', $e);
         }
     }
 
@@ -661,7 +661,7 @@ class validate_form {
             return true;
 
         }catch(Exception $e){
-            throw new bException('validate_form->isNotEqual(): Failed', $e);
+            throw new bException('validate_form::isNotEqual(): Failed', $e);
         }
     }
 
@@ -691,7 +691,7 @@ class validate_form {
             return true;
 
         }catch(Exception $e){
-            throw new bException('validate_form->isBetween(): Failed', $e);
+            throw new bException('validate_form::isBetween(): Failed', $e);
         }
     }
 
@@ -717,7 +717,7 @@ class validate_form {
             return true;
 
         }catch(Exception $e){
-            throw new bException('validate_form->isInRange(): Failed', $e);
+            throw new bException('validate_form::isInRange(): Failed', $e);
         }
     }
 
@@ -743,7 +743,7 @@ class validate_form {
             return true;
 
         }catch(Exception $e){
-            throw new bException('validate_form->isEnabled(): Failed', $e);
+            throw new bException('validate_form::isEnabled(): Failed', $e);
         }
     }
 
@@ -771,7 +771,7 @@ class validate_form {
             return true;
 
         }catch(Exception $e){
-            throw new bException('validate_form->hasNoChars(): Failed', $e);
+            throw new bException('validate_form::hasNoChars(): Failed', $e);
         }
     }
 
@@ -797,7 +797,7 @@ class validate_form {
             return true;
 
         }catch(Exception $e){
-            throw new bException('validate_form->hasMinChars(): Failed', $e);
+            throw new bException('validate_form::hasMinChars(): Failed', $e);
         }
     }
 
@@ -823,7 +823,7 @@ class validate_form {
             return true;
 
         }catch(Exception $e){
-            throw new bException('validate_form->hasMaxChars(): Failed', $e);
+            throw new bException('validate_form::hasMaxChars(): Failed', $e);
         }
     }
 
@@ -853,7 +853,7 @@ class validate_form {
             return true;
 
         }catch(Exception $e){
-            throw new bException('validate_form->isFacebookUserpage(): Failed', $e);
+            throw new bException('validate_form::isFacebookUserpage(): Failed', $e);
         }
     }
 
@@ -883,7 +883,7 @@ class validate_form {
             return true;
 
         }catch(Exception $e){
-            throw new bException('validate_form->isTwitterUserpage(): Failed', $e);
+            throw new bException('validate_form::isTwitterUserpage(): Failed', $e);
         }
     }
 
@@ -913,7 +913,7 @@ class validate_form {
             return $matches[1];
 
         }catch(Exception $e){
-            throw new bException('validate_form->isGoogleplusUserpage(): Failed', $e);
+            throw new bException('validate_form::isGoogleplusUserpage(): Failed', $e);
         }
     }
 
@@ -943,7 +943,7 @@ class validate_form {
             return true;
 
         }catch(Exception $e){
-            throw new bException('validate_form->isYoutubeUserpage(): Failed', $e);
+            throw new bException('validate_form::isYoutubeUserpage(): Failed', $e);
         }
     }
 
@@ -973,7 +973,7 @@ class validate_form {
             return true;
 
         }catch(Exception $e){
-            throw new bException('validate_form->isLinkedinUserpage(): Failed', $e);
+            throw new bException('validate_form::isLinkedinUserpage(): Failed', $e);
         }
     }
 
@@ -995,7 +995,7 @@ class validate_form {
             return true;
 
         }catch(Exception $e){
-            throw new bException('validate_form->isChecked(): Failed', $e);
+            throw new bException('validate_form::isChecked(): Failed', $e);
         }
     }
 
@@ -1031,7 +1031,7 @@ class validate_form {
 // :TODO: IMPLEMENT
 
         }catch(Exception $e){
-            throw new bException('validate_form->isTime(): Failed', $e);
+            throw new bException('validate_form::isTime(): Failed', $e);
         }
     }
 
@@ -1045,7 +1045,7 @@ class validate_form {
 // :TODO: IMPLEMENT
 
         }catch(Exception $e){
-            throw new bException('validate_form->isTime(): Failed', $e);
+            throw new bException('validate_form::isTime(): Failed', $e);
         }
     }
 
@@ -1088,7 +1088,7 @@ class validate_form {
                 throw new bException(tr('validate_form->isTime(): Specified time ":value" is invalid', array(':value' => $value)), $e);
             }
 
-            throw new bException('validate_form->isTime(): Failed', $e);
+            throw new bException('validate_form::isTime(): Failed', $e);
         }
     }
 
@@ -1118,7 +1118,7 @@ class validate_form {
                 throw new bException(tr('validate_form->isLatitude(): Specified latitude ":value" is invalid', array(':value' => $value)), $e);
             }
 
-            throw new bException('validate_form->isLatitude(): Failed', $e);
+            throw new bException('validate_form::isLatitude(): Failed', $e);
         }
     }
 
@@ -1148,7 +1148,7 @@ class validate_form {
                 throw new bException(tr('validate_form->isLongitude(): Specified longitude ":value" is invalid', array(':value' => $value)), $e);
             }
 
-            throw new bException('validate_form->isLongitude(): Failed', $e);
+            throw new bException('validate_form::isLongitude(): Failed', $e);
         }
     }
 
@@ -1176,7 +1176,35 @@ class validate_form {
             return true;
 
         }catch(Exception $e){
-            throw new bException('validate_form->isTimezone(): Failed', $e);
+            throw new bException('validate_form::isTimezone(): Failed', $e);
+        }
+    }
+
+
+
+    /*
+     *
+     */
+    function isPassword(&$value, $message = null, $flags = null){
+        try{
+            if(!$this->parseFlags($value, $message, $flags)){
+                return true;
+            }
+
+            load_libs('user');
+
+            if(!$this->isScalar($value, $message)){
+                return false;
+            }
+
+            if(user_password_strength($value)){
+                return true;
+            }
+
+            return $this->setError($message);
+
+        }catch(Exception $e){
+            throw new bException('validate_form::isTimezone(): Failed', $e);
         }
     }
 
@@ -1199,7 +1227,7 @@ class validate_form {
             return true;
 
         }catch(Exception $e){
-            throw new bException('validate_form->inArray(): Failed', $e);
+            throw new bException('validate_form::inArray(): Failed', $e);
         }
     }
 
@@ -1222,7 +1250,7 @@ class validate_form {
             return false;
 
         }catch(Exception $e){
-            throw new bException('validate_form->setError(): Failed', $e);
+            throw new bException('validate_form::setError(): Failed', $e);
         }
     }
 
@@ -1240,7 +1268,7 @@ class validate_form {
             return ! (boolean) $this->errors;
 
         }catch(Exception $e){
-            throw new bException('validate_form->isValid(): Failed', $e);
+            throw new bException('validate_form::isValid(): Failed', $e);
         }
     }
 
@@ -1277,7 +1305,7 @@ class validate_form {
             return $this->errors;
 
         }catch(Exception $e){
-            throw new bException('validate_form->getErrors(): Failed', $e);
+            throw new bException('validate_form::getErrors(): Failed', $e);
         }
     }
 }
