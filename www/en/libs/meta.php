@@ -65,11 +65,25 @@ function meta_add_history($meta_id, $action, $data = null){
  */
 function meta_history($meta_id){
     try{
-        $history = sql_query('SELECT `action`, `data` FROM `meta_history` WHERE `meta_id` = :meta_id', array(':meta_id' => $meta_id));
+        $history = sql_list('SELECT    `meta_history`.`id`,
+                                       `meta_history`.`createdby`,
+                                       `meta_history`.`createdon`,
+                                       `meta_history`.`action`,
+                                       `meta_history`.`data`,
 
-        if(!$history->rowCount()){
-            throw new bException(tr('meta_history(): The specified meta_id ":meta_id" does not exist', array(':meta_id' => $meta_id)), 'not-exist');
-        }
+                                       `users`.`name`,
+                                       `users`.`email`,
+                                       `users`.`username`,
+                                       `users`.`nickname`
+
+                             FROM      `meta_history`
+
+                             LEFT JOIN `users`
+                             ON        `users`.`id` = `meta_history`.`createdby`
+
+                             WHERE     `meta_id` = :meta_id',
+
+                             array(':meta_id' => $meta_id));
 
         return $history;
 
