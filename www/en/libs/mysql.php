@@ -159,9 +159,9 @@ function mysql_master_replication_setup($server){
 
         /*
          * The next line just have to be added one time!
+         * Check if it exists, if not append
          */
-// :TODO: CHECK IF THE FOLLOWING LINE ALREADY EXISTS
-        servers_exec($server['hostname'], 'echo \"binlog_do_db = '.$server['database'].'\" | sudo tee -a '.$mysql_cnf_path);
+        servers_exec($server['hostname'], 'grep -q -F \'binlog_do_db = '.$server['database'].'\' '.$mysql_cnf_path.' || sudo sed -i \"/max_binlog_size[[:space:]]*=[[:space:]]*100M/a binlog_do_db = '.$server['database'].'\" '.$mysql_cnf_path);
 
         log_console(tr('Restarting remote MySQL service'));
         servers_exec($server['hostname'], 'sudo service mysql restart');
@@ -186,6 +186,9 @@ function mysql_master_replication_setup($server){
          */
         log_console(tr('Dump finished, killing background process mysql shell session'));
         servers_exec($server['hostname'], 'kill -9 '.$ssh_mysql_pid[0], null, false, true);
+
+        log_console(tr('Restarting remote MySQL service'));
+        servers_exec($server['hostname'], 'sudo service mysql restart');
 
         /*
          * Delete posible LOCAL backup
@@ -262,11 +265,13 @@ function mysql_slave_replication_setup($server){
         servers_exec($server['hostname'], 'sudo sed -i "s/#log_bin/log_bin/" '.$mysql_cnf_path, null, false, true);
 
         /*
-         * The next 2 lines just have to be added one time!
+         * The next lines just have to be added one time!
+         * Check if they already exist... if not append them
          */
-// :TODO: CHECK IF THE FOLLOWING 2 LINES ALREADY EXIST
-        servers_exec($server['hostname'], 'echo "relay-log = /var/log/mysql/mysql-relay-bin.log" | sudo tee -a '.$mysql_cnf_path, null, false, true);
-        servers_exec($server['hostname'], 'echo "binlog_do_db = '.$server['database'].'" | sudo tee -a '.$mysql_cnf_path, null, false, true);
+        servers_exec($server['hostname'], 'grep -q -F \'relay-log = /var/log/mysql/mysql-relay-bin.log\' '.$mysql_cnf_path.' || echo "relay-log = /var/log/mysql/mysql-relay-bin.log" | sudo tee -a '.$mysql_cnf_path, null, false, true);
+        servers_exec($server['hostname'], 'grep -q -F \'master-info-repository = table\' '.$mysql_cnf_path.' || echo "master-info-repository = table" | sudo tee -a '.$mysql_cnf_path, null, false, true);
+        servers_exec($server['hostname'], 'grep -q -F \'relay-log-info-repository = table\' '.$mysql_cnf_path.' || echo "relay-log-info-repository = table" | sudo tee -a '.$mysql_cnf_path, null, false, true);
+        servers_exec($server['hostname'], 'grep -q -F \'binlog_do_db = '.$server['database'].'\' '.$mysql_cnf_path.' || echo "binlog_do_db = '.$server['database'].'" | sudo tee -a '.$mysql_cnf_path, null, false, true);
 
         /*
          * Create SSH tunneling user
@@ -303,14 +308,15 @@ function mysql_slave_replication_setup($server){
          * Setup slave replication
          */
         $slave_setup  = 'STOP SLAVE; ';
-        $slave_setup .= 'CHANGE MASTER TO MASTER_HOST=\''.$server['hostname'].'\', ';
+        //$slave_setup .= 'CHANGE MASTER TO MASTER_HOST=\''.$server['hostname'].'\', ';
+        $slave_setup .= 'CHANGE MASTER TO MASTER_HOST=\'127.0.0.1\', ';
         $slave_setup .= 'MASTER_USER=\''.$server['replication_db_user'].'\', ';
         $slave_setup .= 'MASTER_PASSWORD=\''.$server['replication_db_password'].'\', ';
         $slave_setup .= 'MASTER_PORT='.$server['slave_ssh_port'].', ';
         $slave_setup .= 'MASTER_LOG_FILE=\''.$server['log_file'].'\', ';
         $slave_setup .= 'MASTER_LOG_POS='.$server['log_pos'].' ';
-        $slave_setup .= 'FOR CHANNEL \'127.0.0.1\'; ';
-        $slave_setup .= 'START SLAVE FOR CHANNEL \'127.0.0.1\';';
+        $slave_setup .= 'FOR CHANNEL \''.$server['hostname'].'_'.$server['database'].'\'; ';
+        $slave_setup .= 'START SLAVE FOR CHANNEL \''.$server['hostname'].'_'.$server['database'].'\';';
         servers_exec($server['hostname'], 'mysql "-u'.$server['root_db_user'].'" "-p'.$server['root_db_password'].'" -e "'.$slave_setup.'"', null, false, true);
 
         /*
