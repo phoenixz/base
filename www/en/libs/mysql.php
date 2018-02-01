@@ -153,7 +153,7 @@ function mysql_master_replication_setup($server){
         /*
          * MySQL SETUP
          */
-        log_console(tr('Making master setup for MySQL configuration file'));
+        log_console(tr('Making master setup for MySQL configuration file'), 'DOT');
         servers_exec($server['hostname'], 'sudo sed -i \"s/#server-id[[:space:]]*=[[:space:]]*1/server-id = '.$server['id'].'/\" '.$mysql_cnf_path);
         servers_exec($server['hostname'], 'sudo sed -i \"s/#log_bin/log_bin/\" '.$mysql_cnf_path);
 
@@ -163,7 +163,7 @@ function mysql_master_replication_setup($server){
          */
         servers_exec($server['hostname'], 'grep -q -F \'binlog_do_db = '.$server['database'].'\' '.$mysql_cnf_path.' || sudo sed -i \"/max_binlog_size[[:space:]]*=[[:space:]]*100M/a binlog_do_db = '.$server['database'].'\" '.$mysql_cnf_path);
 
-        log_console(tr('Restarting remote MySQL service'));
+        log_console(tr('Restarting remote MySQL service'), 'DOT');
         servers_exec($server['hostname'], 'sudo service mysql restart');
 
         /*
@@ -171,30 +171,30 @@ function mysql_master_replication_setup($server){
          * sleep infinity and run in background
          * kill ssh pid after dumping db
          */
-        log_console(tr('Making grant replication on remote server and locking tables'));
+        log_console(tr('Making grant replication on remote server and locking tables'), 'DOT');
         $ssh_mysql_pid = servers_exec($server['hostname'], 'mysql \"-u'.$server['root_db_user'].'\" \"-p'.$server['root_db_password'].'\" -e \"GRANT REPLICATION SLAVE ON *.* TO \''.$server['replication_db_user'].'\'@\'localhost\' IDENTIFIED BY \''.$server['replication_db_password'].'\'; FLUSH PRIVILEGES; USE \''.$server['database'].'\'; FLUSH TABLES WITH READ LOCK; DO SLEEP(1000000); \"', null, true, false);
 
         /*
          * Dump database
          */
-        log_console(tr('Making dump of remote database'));
+        log_console(tr('Making dump of remote database'), 'DOT');
         servers_exec($server['hostname'], 'sudo rm /tmp/'.$server['database'].'.sql.gz -f;');
         servers_exec($server['hostname'], 'sudo mysqldump \"-u'.$server['root_db_user'].'\" \"-p'.$server['root_db_password'].'\" -K -R -n -e --dump-date --comments -B '.$server['database'].' | gzip | sudo tee /tmp/'.$server['database'].'.sql.gz');
 
         /*
          * KILL LOCAL SSH process
          */
-        log_console(tr('Dump finished, killing background process mysql shell session'));
+        log_console(tr('Dump finished, killing background process mysql shell session'), 'DOT');
         servers_exec($server['hostname'], 'kill -9 '.$ssh_mysql_pid[0], null, false, true);
 
-        log_console(tr('Restarting remote MySQL service'));
+        log_console(tr('Restarting remote MySQL service'), 'DOT');
         servers_exec($server['hostname'], 'sudo service mysql restart');
 
         /*
          * Delete posible LOCAL backup
          * SCP dump from server to local
          */
-        log_console(tr('Copying remote dump to local'));
+        log_console(tr('Copying remote dump to local'), 'DOT');
         servers_exec($server['hostname'], 'rm /tmp/'.$server['database'].'.sql.gz -f', null, false, true);
         ssh_cp($server, '/tmp/'.$server['database'].'.sql.gz', '/tmp/', true);
 
@@ -239,7 +239,7 @@ function mysql_slave_replication_setup($server){
         /*
          * Check for mysqld.cnf file
          */
-        log_console(tr('Checking existance of mysql configuration file on local server'));
+        log_console(tr('Checking existance of mysql configuration file on local server'), 'DOT');
         $mysql_cnf = servers_exec($server['hostname'], 'test -f '.$mysql_cnf_path.' && echo "1" || echo "0"', null, false, true);
 
         /*
@@ -260,7 +260,7 @@ function mysql_slave_replication_setup($server){
         /*
          * MySQL SETUP
          */
-        log_console(tr('Making slave setup for MySQL configuration file'));
+        log_console(tr('Making slave setup for MySQL configuration file'), 'DOT');
         servers_exec($server['hostname'], 'sudo sed -i "s/#server-id[[:space:]]*=[[:space:]]*1/server-id = '.$server['id'].'/" '.$mysql_cnf_path, null, false, true);
         servers_exec($server['hostname'], 'sudo sed -i "s/#log_bin/log_bin/" '.$mysql_cnf_path, null, false, true);
 
@@ -276,7 +276,7 @@ function mysql_slave_replication_setup($server){
         /*
          * Create SSH tunneling user
          */
-        log_console(tr('Creating ssh tunneling user on local server'));
+        log_console(tr('Creating ssh tunneling user on local server'), 'DOT');
         ssh_mysql_slave_tunnel($server);
 
 
@@ -284,7 +284,7 @@ function mysql_slave_replication_setup($server){
          * Close PDO connection before restarting MySQL
          */
         sql_close();
-        log_console(tr('Restarting local MySQL service'));
+        log_console(tr('Restarting local MySQL service'), 'DOT');
         servers_exec($server['hostname'], 'sudo service mysql restart', null, false, true);
         sql_close();
 
@@ -325,7 +325,7 @@ function mysql_slave_replication_setup($server){
          */
         $slave_status = servers_exec($server['hostname'], 'mysql "-u'.$server['root_db_user'].'" "-p'.$server['root_db_password'].'" -ANe "SHOW SLAVE STATUS;"', null, false, true);
 
-        log_console(tr('Finished!!'));
+        log_console(tr('Finished!!'), 'white');
 
     }catch(Exception $e){
         throw new bException(tr('mysql_slave_replication_setup(): Failed'), $e);
