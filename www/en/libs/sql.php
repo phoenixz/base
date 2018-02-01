@@ -1,4 +1,4 @@
-sql_connector_name(<?php
+<?php
 /*
  * PDO library
  *
@@ -461,8 +461,33 @@ function sql_connect($connector, $use_database = true){
             $connector['pdo_attributes'][PDO::ATTR_ERRMODE]                  = PDO::ERRMODE_EXCEPTION;
             $connector['pdo_attributes'][PDO::MYSQL_ATTR_USE_BUFFERED_QUERY] = !(boolean) $connector['buffered'];
             $connector['pdo_attributes'][PDO::MYSQL_ATTR_INIT_COMMAND]       = 'SET NAMES '.strtoupper($connector['charset']);
+            $retries = 3;
 
-            $pdo = new PDO($connector['driver'].':host='.$connector['host'].(empty($connector['port']) ? '' : ';port='.$connector['port']).((empty($connector['db']) or !$use_database) ? '' : ';dbname='.$connector['db']), $connector['user'], $connector['pass'], $connector['pdo_attributes']);
+            while(--$retries >= 0){
+                try{
+                    $pdo = new PDO($connector['driver'].':host='.$connector['host'].(empty($connector['port']) ? '' : ';port='.$connector['port']).((empty($connector['db']) or !$use_database) ? '' : ';dbname='.$connector['db']), $connector['user'], $connector['pass'], $connector['pdo_attributes']);
+
+                }catch(Exception $e){
+// :TODO: This is a workaround and should be fixed properly!!!
+                    /*
+                     * This is a work around for the weird PHP MySQL error
+                     * PDO::__construct(): send of 5 bytes failed with errno=32 Broken pipe
+                     * So far we have not been able to find a fix for this but
+                     * we have noted that you always have to connect 3 times,
+                     * and the 3rd time the bug magically disappars. The work
+                     * around will detect the error and retry up to 3 times to
+                     * work around this issue for now
+                     */
+                    $message = $e->getMessage();
+                    if(strstr($message, 'errno=32') === false){
+                        /*
+                         * This is a different error. Continue throwing the
+                         * exception as normal
+                         */
+                        throw $e;
+                    }
+                }
+            }
 
 // :DELETE: The characterset is now set in the mysql init command
 //            /*
