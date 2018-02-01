@@ -132,7 +132,7 @@ function mysql_master_replication_setup($server){
         /*
          * Check for mysqld.cnf file
          */
-        log_console(tr('Checking existance of mysql configuration file on remote server'));
+        log_console(tr('Checking existance of mysql configuration file on remote server'), 'DOT');
         $mysql_cnf = servers_exec($server['hostname'], 'test -f '.$mysql_cnf_path.' && echo "1" || echo "0"');
 
         /*
@@ -286,10 +286,9 @@ function mysql_slave_replication_setup($server){
         sql_close();
         log_console(tr('Restarting local MySQL service'));
         servers_exec($server['hostname'], 'sudo service mysql restart', null, false, true);
+        sql_close();
 
-        log_console(tr('WAITING'), 'white');
         sleep(2);
-        log_console(tr('CONTINUE!'), 'white');
 
         /*
          * Import LOCAL db
@@ -311,7 +310,6 @@ function mysql_slave_replication_setup($server){
          * Setup slave replication
          */
         $slave_setup  = 'STOP SLAVE; ';
-        //$slave_setup .= 'CHANGE MASTER TO MASTER_HOST=\''.$server['hostname'].'\', ';
         $slave_setup .= 'CHANGE MASTER TO MASTER_HOST=\'127.0.0.1\', ';
         $slave_setup .= 'MASTER_USER=\''.$server['replication_db_user'].'\', ';
         $slave_setup .= 'MASTER_PASSWORD=\''.$server['replication_db_password'].'\', ';
@@ -326,7 +324,9 @@ function mysql_slave_replication_setup($server){
          * Final step check for SLAVE status
          */
         $slave_status = servers_exec($server['hostname'], 'mysql "-u'.$server['root_db_user'].'" "-p'.$server['root_db_password'].'" -ANe "SHOW SLAVE STATUS;"', null, false, true);
-showdie($slave_status);
+
+        log_console(tr('Finished!!'));
+
     }catch(Exception $e){
         throw new bException(tr('mysql_slave_replication_setup(): Failed'), $e);
     }

@@ -461,7 +461,7 @@ function sql_connect($connector, $use_database = true){
             $connector['pdo_attributes'][PDO::ATTR_ERRMODE]                  = PDO::ERRMODE_EXCEPTION;
             $connector['pdo_attributes'][PDO::MYSQL_ATTR_USE_BUFFERED_QUERY] = !(boolean) $connector['buffered'];
             $connector['pdo_attributes'][PDO::MYSQL_ATTR_INIT_COMMAND]       = 'SET NAMES '.strtoupper($connector['charset']);
-            $retries = 3;
+            $retries = 7;
 
             while(--$retries >= 0){
                 try{
@@ -479,6 +479,7 @@ function sql_connect($connector, $use_database = true){
                      * work around this issue for now
                      */
                     $message = $e->getMessage();
+
                     if(strstr($message, 'errno=32') === false){
                         /*
                          * This is a different error. Continue throwing the
