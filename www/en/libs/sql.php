@@ -1,4 +1,4 @@
-<?php
+sql_connector_name(<?php
 /*
  * PDO library
  *
@@ -29,10 +29,7 @@ function sql_query($query, $execute = false, $handle_exceptions = true, $connect
     global $core;
 
     try{
-        $connector = sql_connector_name($connector);
-
-        sql_init($connector);
-
+        $connector   = sql_init($connector);
         $query_start = microtime(true);
 
         if(!is_string($query)){
@@ -133,7 +130,7 @@ function sql_prepare($query, $connector = 'core'){
     global $core;
 
     try{
-        sql_init($connector);
+        $connector = sql_init($connector);
         return $core->sql[$connector]->prepare($query);
 
     }catch(Exception $e){
@@ -293,21 +290,13 @@ function sql_init($connector = 'core'){
     global $_CONFIG, $core;
 
     try{
-        if(empty($connector)){
-            throw new bException(tr('sql_init(): No connector specified'), 'not-specified');
-        }
-
-        if(!is_string($connector)){
-            throw new bException(tr('sql_init(): Invalid connector ":connector" specified', array(':connector' => $connector)), 'invalid');
-        }
-
         $connector = sql_connector_name($connector);
 
         if(!empty($core->sql[$connector])){
             /*
-             * Already connected to core DB
+             * Already connected to requested DB
              */
-            return null;
+            return $connector;
         }
 
         if(empty($_CONFIG['db'][$connector])){
@@ -418,6 +407,23 @@ function sql_init($connector = 'core'){
 
     }catch(Exception $e){
         include(__DIR__.'/handlers/sql_init_fail.php');
+    }
+}
+
+
+
+/*
+ * Close the connection for the specified connector
+ */
+function sql_close($connector = 'core'){
+    global $_CONFIG, $core;
+
+    try{
+        $connector = sql_connector_name($connector);
+        unset($core->sql[$connector]);
+
+    }catch(Exception $e){
+        throw new bException(tr('sql_close(): Failed for connector ":connector"', array(':connector' => $connector)), $e);
     }
 }
 
@@ -977,16 +983,25 @@ function sql_merge($db, $post, $skip = 'id,status'){
 
 
 /*
- *
+ * Ensure that $connector is default in case its not specified
  */
 function sql_connector_name($connector){
     global $_CONFIG;
 
-    if($connector === null){
-        return $_CONFIG['db']['default'];
-    }
+    try{
+        if($connector === null){
+            return $_CONFIG['db']['default'];
+        }
 
-    return $connector;
+        if(!is_string($connector)){
+            throw new bException(tr('sql_connector_name(): Invalid connector ":connector" specified', array(':connector' => $connector)), 'invalid');
+        }
+
+        return $connector;
+
+    }catch(Exception $e){
+        throw new bException('sql_connector_name(): Failed', $e);
+    }
 }
 
 
