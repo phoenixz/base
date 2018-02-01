@@ -280,9 +280,12 @@ function mysql_slave_replication_setup($server){
         ssh_mysql_slave_tunnel($server);
 
 
-// :TODO: HOW local mysql service and recover connection object
+        /*
+         * Close PDO connection before restarting MySQL
+         */
+        sql_close();
         log_console(tr('Restarting local MySQL service'));
-        servers_exec($server['hostname'], 'sudo service mysql reload', null, false, true);
+        servers_exec($server['hostname'], 'sudo service mysql restart', null, false, true);
 
         log_console(tr('WAITING'), 'white');
         sleep(2);

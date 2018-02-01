@@ -405,6 +405,8 @@ function sql_init($connector = 'core'){
             }
         }
 
+        return $connector;
+
     }catch(Exception $e){
         include(__DIR__.'/handlers/sql_init_fail.php');
     }
