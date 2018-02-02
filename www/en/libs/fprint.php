@@ -1,4 +1,4 @@
-s<?php
+<?php
 /*
  * Fprint library
  *
@@ -7,8 +7,6 @@ s<?php
  * @license http://opensource.org/licenses/GPL-2.0 GNU Public License, Version 2
  * @copyright Sven Oostenbrink <support@ingiga.com>
  */
-
-
 
 fprint_init();
 
@@ -22,6 +20,8 @@ function fprint_init(){
         if(!file_exists('/var/lib/fprint/')){
             throw new bException(tr('fprint_init(): fprintd application data found, it it probably is not installed. Please fix this by executing "sudo apt-get install fprintd" on the command line'), 'not-exists');
         }
+
+        load_config('fprint');
 
     }catch(Exception $e){
         throw new bException('fprint_init(): Failed', $e);
@@ -50,10 +50,7 @@ function fprint_enroll($users_id, $finger = 'auto'){
         throw new bException(tr('fprint_enroll(): Enroll failed with ":error"', array(':error' => $result)), 'failed');
 
     }catch(Exception $e){
-        if($e->getCode() == 124){
-            throw new bException(tr('fprint_verify(): finger print scan timed out'), 'timeout');
-        }
-
+        fprint_handle_exception($e);
         throw new bException('fprint_enroll(): Failed', $e);
     }
 }
@@ -80,17 +77,7 @@ function fprint_verify($user, $finger = 'auto'){
         return false;
 
     }catch(Exception $e){
-        $data = $e->getData();
-        $data = array_pop($data);
-
-        if(strstr($data, 'Failed to discover prints') !== false){
-            throw new bException(tr('fprint_verify(): No finger prints found for user ":user"', array(':user' => $user)), 'not-exists');
-        }
-
-        if($e->getCode() == 124){
-            throw new bException(tr('fprint_verify(): finger print scan timed out'), 'timeout');
-        }
-
+        fprint_handle_exception($e);
         throw new bException('fprint_verify(): Failed', $e);
     }
 }
@@ -162,6 +149,21 @@ function fprint_kill(){
 }
 
 
+/*
+ *
+ */
+function fprint_process(){
+    try{
+        load_libs('cli');
+        $pids = cli_pgrep('fprint');
+showdie($pids);
+
+    }catch(Exception $e){
+        throw new bException('fprint_kill(): Failed', $e);
+    }
+}
+
+
 
 /*
  *
@@ -199,6 +201,36 @@ function fprint_verify_finger($finger){
 
     }catch(Exception $e){
         throw new bException('fprint_verify_finger(): Failed', $e);
+    }
+}
+
+
+
+/*
+ * Try to handle fprint exceptions
+ */
+function fprint_handle_exception($e){
+    try{
+         $data = $e->getData();
+
+        if($data){
+            $data = array_pop($data);
+
+            if(strstr($data, 'Failed to discover prints') !== false){
+                throw new bException(tr('fprint_verify(): No finger prints found for user ":user"', array(':user' => $user)), 'not-exists');
+            }
+
+            if(strstr($data, 'No devices available') !== false){
+                throw new bException(tr('fprint_verify(): No finger print scanner devices found'), 'no-device');
+            }
+        }
+
+        if($e->getCode() == 124){
+            throw new bException(tr('fprint_verify(): finger print scan timed out'), 'timeout');
+        }
+
+   }catch(Exception $e){
+        throw new bException('fprint_handle_exception(): Failed', $e);
     }
 }
 ?>
