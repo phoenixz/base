@@ -1,4 +1,90 @@
 (function($){
+    $(document).ajaxSuccess(function(event, jqXHR){
+console.log(jqXHR.responseJSON);
+console.log(jqXHR.responseText);
+        if (typeof jqXHR.responseJSON != 'object') {
+            throw "failed to parse json";
+
+        }
+
+        if(typeof jqXHR.responseJSON.result == 'undefined') {
+            throw "json contained no result text";
+
+        }
+
+        if(typeof jqXHR.responseJSON.data == 'undefined'){
+            throw "json contained no data object";
+
+        }
+
+        switch (jqXHR.responseJSON.result) {
+            case "RELOAD":
+                location.reload();
+                break;
+
+            case "OK":
+                break;
+
+            default:
+                throw "invalid json status \"" + jqXHR.responseJSON.result + "\"";
+        }
+    });
+
+    $(document).ajaxError(function(event, jqXHR){
+        var message = tr("Something went wrong while trying to communicate with the server. Please try again in a few moments");
+
+        if (typeof jqXHR.responseJSON != 'object') {
+            console.error("ERROR: Failed to parse result JSON");
+
+        } else if(typeof jqXHR.responseJSON.result == 'undefined') {
+            console.error("ERROR: Result JSON did not have a result text");
+
+        } else if(typeof jqXHR.responseJSON.data == 'undefined') {
+            console.error("ERROR: Result JSON did not have a data object");
+
+        } else {
+            switch (jqXHR.responseJSON.result) {
+                case "OK":
+                    // What went wrong?
+                    // FALLTHROUGH
+
+                case "RELOAD":
+                    // What went wrong?
+                    break;
+
+                case 'SIGNIN':
+                    return $.redirect(jqXHR.responseJSON.data.location);
+
+                 case 'REDIRECT':
+                    return $.redirect(jqXHR.responseJSON.data.location);
+
+                case 'MAINTENANCE':
+                    // Server is in maintenance mode
+                    // FALLTHROUGH
+
+                case 'NOT-FOUND':
+                    // Server is in maintenance mode
+                    // FALLTHROUGH
+
+                case 'ERROR':
+                    // Something crapped up, fallthrough to error handler
+                    console.error("ERROR [ " + jqXHR.responseJSON.result + " ]: ");
+                    console.error(jqXHR.responseJSON.data);
+                    break;
+
+                default:
+                    console.error("UNKNOWN RESULT [ " + jqXHR.responseJSON.result + " ]: ");
+                    console.error(jqXHR.responseJSON.data);
+            }
+        }
+
+        /*
+         * By default, try to show the js flash message
+         */
+        $.flashMessage(message, "error", 0);
+        return false;
+    });
+
     jQuery.fn.extend({
         // Report if selected image is okay
         imageOk : function () {
@@ -31,110 +117,17 @@
         });
     };
 
-    // Handle AJAX JSON done events
-    $.handleDone = function (data, cb, cbe) {
-//console.log("$.handleDone()");
-//console.log(data);
-        try {
-            if(typeof data == "string"){
-                // Auto parse json
-                data = $.parseJSON(data);
-            }
-
-            // Either data.result or data.status may contain ok / error codes
-            if (data.result == undefined) {
-                if (data.status == undefined) {
-                    throw 'No result found';
-                }
-
-                data.result = data.status;
-            }
-
-            if (data.result != 'OK') {
-                return $.handleFail(data, cbe);
-            }
-
-            if (typeof cb == 'function') {
-                return cb(data);
-            }
-
-            // If no done callback function was specified then just leave it as is.
-            return false;
-
-        } catch(e) {
-            return $.handleFail({result  : 'EXCEPTION',
-                                 e       : e,
-                                 message : data}, cbe);
+// :OBSOLETE:
+    $.handleDone = function (data, cb) {
+        if (typeof cb == 'function') {
+            return cb(data);
         }
     };
 
-    // Handle AJAX JSON fail events
+// :OBSOLETE:
     $.handleFail = function (data, cb) {
-console.log("$.handleFail()");
-console.log(data);
-        try {
-            if (typeof data == 'object') {
-                // This is an error / NOT OK notification from data.result from server. errorThrown contains the data
-                switch (data.result) {
-                    case 'LOGIN':
-                        // DEPRECATED! Redirect to the specified login page
-                        // FALLTHROUGH
-
-                    case 'SIGNIN':
-                        // Redirect to the specified sign in page
-
-// :TODO:SVEN:20130717: Maybe for login redirects it should be possible to have a callback function where we -for example- could display a popup?
-
-                     case 'REDIRECT':
-                        // Redirect to the specified page
-console.log(data.result + ' > ' + data.redirect);
-                        return $.redirect(data.redirect);
-
-                    case 'MAINTENANCE':
-                        // Server is in maintenance mode
-                        // FALLTHROUGH
-
-                    case 'EXCEPTION':
-                        // Something went wrong in the done handler
-                        // FALLTHROUGH
-
-                    case 'ERROR':
-                        // Something crapped up, fallthrough to error handler
-                        // FALLTHROUGH
-
-                    default:
-                        // WTF? Unknown result status.
-
-                        if (data.responseText) {
-                            data = $.parseJSON(data.responseText);
-                        }
-
-                        result = data.result;
-                        data   = data.message;
-                }
-
-            }else{
-                result = "ERROR";
-            }
-
-            // Something crapped up
-            if (typeof cb == 'function') {
-                return cb(data, result);
-            }
-
-            console.log("ERROR: " + data);
-
-            /*
-             * By default, try to show the js flash message
-             */
-            $.flashMessage(data, "error", 0);
-            return false;
-
-        } catch(e) {
-            console.log("FAIL HANDLER ERROR");
-            console.log(e);
-
-            return false;
+        if (typeof cb == 'function') {
+            return cb(data, result);
         }
     };
 
@@ -150,23 +143,10 @@ console.log(data.result + ' > ' + data.redirect);
                 alert("The JS flash message system seems not to be working because of \"" + e + "\", sorry for the alerts!");
                 alert(message);
             });
-    }
+    };
 
     // Redirect in the correct way
-// :TODO: Document why is this the correct way to redirect in JS
     $.redirect = function (data) {
-        if (typeof data == 'object') {
-            if (data.redirect == undefined) {
-                if (data.message == undefined) {
-                    throw "No redirect specified";
-                }
-
-                data.redirect = data.message;
-            }
-
-            data = data.redirect;
-        }
-
         if (typeof data != "string") {
             throw "Invalid redirect data specified, should be string, is '" + (typeof data) + "'";
         }
@@ -201,7 +181,7 @@ console.log(data.result + ' > ' + data.redirect);
                 c = c.substring(1, c.length);
             }
 
-            if (c.indexOf(nameEQ) == 0) {
+            if (c.indexOf(nameEQ) === 0) {
                 return unescape(c.substring(nameEQ.length, c.length));
             }
         }
@@ -223,9 +203,9 @@ console.log(data.result + ' > ' + data.redirect);
         try {
 console.log("geoLocation");
             if (!cbe) {
-                cbe = function(e, result){
+                cbe = function(e){
                     $.flashMessage("'.tr('Something went wrong, and your location could not be auto detected').'", "error", 0);
-                }
+                };
             }
 
             if(navigator.geolocation) {
@@ -321,13 +301,6 @@ $(document).ready(function(){
 
 
 
-// Translation marker
-function tr(text){
-    return text;
-}
-
-
-
 //
 function isFunction(variable) {
     if(typeof variable === "function") {
@@ -335,4 +308,11 @@ function isFunction(variable) {
     }
 
     return false;
+}
+
+
+
+// Translation marker
+function tr(text){
+    return text;
 }
