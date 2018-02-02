@@ -11,8 +11,11 @@ try{
     if($path == './'){
         $path = ROOT.'scripts/';
 
-    }elseif(str_ends_not(str_starts_not($path, '/'), '/') == 'base'){
+    }elseif(str_starts_not($path, '/') == 'base/'){
         $path = ROOT.'scripts/base/';
+
+    }else{
+        throw new bException(tr('run_background(): Invalid path ":path" specified. Only scripts in ROOT/scripts/ may be run using this function', array(':path' => $path)), 'security');
     }
 
     if($single and process_runs($cmd)){
@@ -37,16 +40,36 @@ try{
 
     load_libs('file');
     file_ensure_path(ROOT.'data/run-background');
-    file_ensure_path(ROOT.'data/log');
 
-//showdie(sprintf('nohup %s >> '.ROOT.'data/log/%s 2>&1 & echo $! > %s', $path.$cmd.' '.$args, $log, ROOT.'data/run-background/'.$cmd));
+    if(!strstr($args, '--env') and !strstr($args, '-E')){
+        /*
+         * Command doesn't have environment specified. Specify it using the current environment
+         */
+        $args .= ' --env '.ENVIRONMENT;
+    }
+
     if($log){
-        file_ensure_path(dirname(ROOT.'data/log'.$log));
-        exec(sprintf('nohup %s >> '.ROOT.'data/log/%s 2>&1 & echo $! > %s', $path.$cmd.' '.$args, $log, ROOT.'data/run-background/'.$cmd));
+        if(substr($log, 0, 3) === 'tmp'){
+            /*
+             * Log output to the TMP directory instead of the normal log output
+             */
+            $log = TMP.str_starts_not(substr($log, 3), '/');
+
+        }else{
+            $log = ROOT.'data/log/'.$log;
+        }
+
+        $command = sprintf('(nohup %s >> %s 2>&1 & echo $! >&3) 3> %s', $path.$cmd.' '.$args, $log, ROOT.'data/run-background/'.$cmd);
+
+        file_ensure_path(dirname($log));
+        exec($command);
 
     }else{
-        exec(sprintf('nohup %s > /dev/null 2>&1 & echo $! > %s', $path.$cmd.' '.$args, ROOT.'data/run-background/'.$cmd));
+        $command = sprintf('(nohup %s > /dev/null 2>&1 & echo $! >&3) 3> %s', $path.$cmd.' '.$args, ROOT.'data/run-background/'.$cmd);
+        exec($command);
     }
+// :DEBUG: Leave the next line around, it will be useful..
+//showdie($command);
 
     return exec(sprintf('cat %s; rm %s', ROOT.'data/run-background/'.$cmd.' ', ROOT.'data/run-background/'.$cmd));
 
