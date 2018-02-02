@@ -1485,11 +1485,12 @@ function user_or_signin(){
                 /*
                  * No session
                  */
-                if($core->callType('api')){
-                    json_reply(tr('api_start_session(): Specified token ":token" has no session', array(':token' => $_POST['PHPSESSID'])), 'signin');
+                if($core->callType('api') or $core->callType('ajax')){
+                    json_reply(tr('Specified token ":token" has no session', array(':token' => $_POST['PHPSESSID'])), 'signin');
 
                 }else{
-                    redirect(isset_get($_CONFIG['redirects']['signin'], 'signin.php').'?redirect='.urlencode($_SERVER['REQUEST_URI']));
+                    html_flash_set('Unauthorized: PLease sign in to continue');
+                    redirect(isset_get($_CONFIG['redirects']['signin'], 'signin.php').'?redirect='.urlencode($_SERVER['REQUEST_URI']), 302);
                 }
             }
 
@@ -2069,7 +2070,12 @@ function page_show($pagename, $params = null){
             return file_exists(ROOT.'www/'.LANGUAGE.'/'.$prefix.$pagename.'.php');
         }
 
-        include(ROOT.'www/'.LANGUAGE.'/'.$prefix.$pagename.'.php');
+        $result = include(ROOT.'www/'.LANGUAGE.'/'.$prefix.$pagename.'.php');
+
+        if(isset_get($params['return'])){
+            return $result;
+        }
+
         die();
 
     }catch(Exception $e){
