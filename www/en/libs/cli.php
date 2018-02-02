@@ -995,7 +995,7 @@ function cli_done(){
  */
 function cli_pgrep($name){
     try{
-        return safe_exec('pgrep '.$name);
+        return safe_exec('pgrep '.$name, 1);
 
     }catch(Exception $e){
         throw new bException('cli_pgrep(): Failed', $e);
