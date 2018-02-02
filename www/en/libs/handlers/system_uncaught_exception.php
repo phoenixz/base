@@ -39,88 +39,91 @@ try{
 
             /*
              * Command line script crashed.
-             * Try to give nice error messages for known issues
+             *
+             * If not using VERBOSE mode, then try to give nice error messages
+             * for known issues
              */
-            if(str_until($e->getCode(), '/') === 'warning'){
-                /*
-                 * This is just a simple general warning, no backtrace and
-                 * such needed, only show the principal message
-                 */
-                log_console(tr('Warning: :warning', array(':warning' => trim(str_from($e->getMessage(), '():')))), 'yellow');
-                $core->register['exit_code'] = 255;
-                die(255);
+            if(!VERBOSE){
+                if(str_until($e->getCode(), '/') === 'warning'){
+                    /*
+                     * This is just a simple general warning, no backtrace and
+                     * such needed, only show the principal message
+                     */
+                    log_console(tr('Warning: :warning', array(':warning' => trim(str_from($e->getMessage(), '():')))), 'yellow');
+                    $core->register['exit_code'] = 255;
+                    die(255);
+                }
+
+                switch((string) $e->getCode()){
+                    case 'already-running':
+                        log_console(tr('Failed: :message', array(':message' => trim(str_from($e->getMessage(), '():')))), 'yellow');
+                        $core->register['exit_code'] = 254;
+                        die(4);
+
+                    case 'no-method':
+                        log_console(tr('Failed: :message', array(':message' => trim(str_from($e->getMessage(), '():')))), 'yellow');
+                        cli_show_usage(isset_get($GLOBALS['usage']), 'white');
+                        $core->register['exit_code'] = 253;
+                        die(5);
+
+                    case 'unknown-method':
+                        log_console(tr('Failed: :message', array(':message' => trim(str_from($e->getMessage(), '():')))), 'yellow');
+                        cli_show_usage(isset_get($GLOBALS['usage']), 'white');
+                        $core->register['exit_code'] = 252;
+                        die(6);
+
+                    case 'invalid_arguments':
+                        log_console(tr('Failed: :message', array(':message' => trim(str_from($e->getMessage(), '():')))), 'yellow');
+                        cli_show_usage(isset_get($GLOBALS['usage']), 'white');
+                        $core->register['exit_code'] = 251;
+                        die(7);
+
+                    case 'validation':
+                        $messages = $e->getMessages();
+                        array_pop($messages);
+                        array_pop($messages);
+
+                        log_console(tr('Validation failed'), 'yellow');
+                        log_console($messages, 'yellow');
+                        cli_show_usage(isset_get($GLOBALS['usage']), 'white');
+                        $core->register['exit_code'] = 250;
+                        die(7);
+                }
             }
 
-            switch((string) $e->getCode()){
-                case 'already-running':
-                    log_console(tr('Failed: :message', array(':message' => trim(str_from($e->getMessage(), '():')))), 'yellow');
-                    $core->register['exit_code'] = 254;
-                    die(4);
+            log_console('*** UNCAUGHT EXCEPTION ***', 'red');
 
-                case 'no-method':
-                    log_console(tr('Failed: :message', array(':message' => trim(str_from($e->getMessage(), '():')))), 'yellow');
-                    cli_show_usage(isset_get($GLOBALS['usage']), 'white');
-                    $core->register['exit_code'] = 253;
-                    die(5);
+            debug(true);
 
-                case 'unknown-method':
-                    log_console(tr('Failed: :message', array(':message' => trim(str_from($e->getMessage(), '():')))), 'yellow');
-                    cli_show_usage(isset_get($GLOBALS['usage']), 'white');
-                    $core->register['exit_code'] = 252;
-                    die(6);
-
-                case 'invalid_arguments':
-                    log_console(tr('Failed: :message', array(':message' => trim(str_from($e->getMessage(), '():')))), 'yellow');
-                    cli_show_usage(isset_get($GLOBALS['usage']), 'white');
-                    $core->register['exit_code'] = 251;
-                    die(7);
-
-                case 'validation':
+            if($e instanceof bException){
+                if($e->getCode() === 'no-trace'){
                     $messages = $e->getMessages();
-                    array_pop($messages);
-                    array_pop($messages);
+                    log_console(array_pop($messages), 'red');
 
-                    log_console(tr('Validation failed'), 'yellow');
-                    log_console($messages, 'yellow');
-                    cli_show_usage(isset_get($GLOBALS['usage']), 'white');
-                    $core->register['exit_code'] = 250;
-                    die(7);
+                }else{
+                    /*
+                     * Show the entire exception
+                     */
+                    show($e, null, true);
+                }
 
-                default:
-                    log_console('*** UNCAUGHT EXCEPTION ***', 'red');
+            }else{
+                /*
+                 * Treat this as a normal PHP Exception object
+                 */
+                if($e->getCode() === 'no-trace'){
+                    log_console($e->getMessage(), 'red');
 
-                    debug(true);
-
-                    if($e instanceof bException){
-                        if($e->getCode() === 'no-trace'){
-                            $messages = $e->getMessages();
-                            log_console(array_pop($messages), 'red');
-
-                        }else{
-                            /*
-                             * Show the entire exception
-                             */
-                            show($e, null, true);
-                        }
-
-                    }else{
-                        /*
-                         * Treat this as a normal PHP Exception object
-                         */
-                        if($e->getCode() === 'no-trace'){
-                            log_console($e->getMessage(), 'red');
-
-                        }else{
-                            /*
-                             * Show the entire exception
-                             */
-                            show($e, null, true);
-                        }
-                    }
-
-                    $core->register['exit_code'] = 8;
-                    die(8);
+                }else{
+                    /*
+                     * Show the entire exception
+                     */
+                    show($e, null, true);
+                }
             }
+
+            $core->register['exit_code'] = 8;
+            die(8);
 
         case 'http':
             if(empty($core) or empty($core->register['config_ok'])){
