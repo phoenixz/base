@@ -19,52 +19,40 @@ load_config('json');
 /*
  * Send correct JSON reply
  */
-function json_reply($payload = null, $result = 'OK', $http_code = null, $after = 'die'){
-    global $_CONFIG;
-
+function json_reply($data = null, $result = 'OK', $http_code = null, $after = 'die'){
     try{
-        if(!$payload){
-            $payload = array_force($payload);
+        if(!$data){
+            $data = array_force($data);
         }
 
         /*
          * Auto assume result = "OK" entry if not specified
          */
-        if($result === false){
-            /*
-             * Do NOT add result to the reply
-             */
+        if(empty($data['data'])){
+            $data = array('data' => $data);
+        }
 
-        }elseif(strtoupper($result) == 'REDIRECT'){
-            $payload = array('redirect' => $payload,
-                             'result'   => 'REDIRECT');
-
-        }elseif(!is_array($payload) or empty($payload['data'])){
-            if($_CONFIG['json']['obsolete_support']){
-                $payload = array('result'  => strtoupper($result),
-                                 'message' => $payload,
-                                 'data'    => $payload);
-            }else{
-                $payload = array('result'  => strtoupper($result),
-                                 'data'    => $payload);
+        if($result){
+            if(isset($data['result'])){
+                throw new bException(tr('json_reply(): Result was specifed both in the data array as ":result1" as wel as the separate variable as ":result2"', array(':result1' => $data['result'], ':result2' => $result)), 'invalid');
             }
 
+            /*
+             * Add result to the reply
+             */
+            $data['result'] = $result;
         }
 
-        if(empty($payload['result'])){
-            $payload['result'] = $result;
-        }
-
-        $payload['result'] = strtoupper($payload['result']);
-        $payload           = json_encode_custom($payload);
+        $data['result'] = strtoupper($data['result']);
+        $data           = json_encode_custom($data);
 
         $params = array('http_code' => $http_code,
                         'mimetype'  => 'application/json');
 
         load_libs('http');
-        http_headers($params, strlen($payload));
+        http_headers($params, strlen($data));
 
-        echo $payload;
+        echo $data;
 
         switch($after){
             case 'die':
@@ -106,7 +94,7 @@ function json_error($message, $data = null, $result = null, $http_code = 500){
 
     try{
         if(!$message){
-            $message = tr('json_error(): No exception specified in json_error() array');
+            $message = '';
 
         }elseif(is_scalar($message)){
 
@@ -194,40 +182,78 @@ function json_error($message, $data = null, $result = null, $http_code = 500){
                         $http_code = '500';
                 }
 
-                if(debug()){
-                    /*
-                     * This is a user visible message
-                     */
-                    $messages = $message->getMessages();
+                if(str_until($result, '/') == 'warning'){
+                    $data = $message->getMessage();
 
-                    foreach($messages as $id => &$message){
-                        $message = trim(str_from($message, '():'));
+                }else{
+                    if(debug()){
+                        /*
+                         * This is a user visible message
+                         */
+                        $messages = $message->getMessages();
 
-                        if($message == tr('Failed')){
-                            unset($messages[$id]);
+                        foreach($messages as $id => &$message){
+                            $message = trim(str_from($message, '():'));
+
+                            if($message == tr('Failed')){
+                                unset($messages[$id]);
+                            }
                         }
+
+                        unset($message);
+
+                        $data = implode("\n", $messages);
+
+                    }elseif(!empty($default)){
+                        $message = $default;
                     }
-
-                    unset($message);
-
-                    $data = implode("\n", $messages);
-
-                }elseif(!empty($default)){
-                    $message = $default;
                 }
             }
         }
 
         $data = array_force($data);
 
-        if(!empty($message)){
-            $data['message'] = $message;
-        }
-
-        json_reply(array_force($data), ($result ? $result : 'ERROR'), $http_code);
+        json_reply($data, ($result ? $result : 'ERROR'), $http_code);
 
     }catch(Exception $e){
         throw new bException('json_error(): Failed', $e);
+    }
+}
+
+
+
+/*
+ *
+ */
+function json_message($message, $data = null){
+    global $_CONFIG;
+
+    try{
+        switch($message){
+            case 'not-found':
+                json_error(null, null, 'NOT-FOUND', 404);
+
+            case 'error':
+                json_error(null, (debug() ? $data : null), 'ERROR', 500);
+
+            case 'signin':
+                json_error(null, array('location' => domain($_CONFIG['redirects']['signin'])), 'SIGNIN', 302);
+
+            case 'redirect':
+                json_error(null, array('location' => $data), 'REDIRECT', 301);
+
+            case 'reload':
+                json_reply(null, 'RELOAD');
+
+            case 'maintenance':
+                json_error(null, null, 'MAINTENANCE', 503);
+
+            default:
+                throw new bException(tr('json_message(): Unknown message ":message" specified', array(':message' => $message)), 'unknown');
+        }
+
+    }catch(Exception $e){
+        throw new bException('json_message(): Failed', $e);
     }
 }
 
