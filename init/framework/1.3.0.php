@@ -429,4 +429,6 @@ sql_query('CREATE TABLE `libraries_ratings` (`id`           INT(11)     NOT NULL
                                              CONSTRAINT `fk_libraries_ratings_pages_id`     FOREIGN KEY (`pages_id`)     REFERENCES `libraries_pages`     (`id`) ON DELETE CASCADE
 
                                             ) ENGINE=InnoDB AUTO_INCREMENT='.$_CONFIG['db']['core']['autoincrement'].' DEFAULT CHARSET="'.$_CONFIG['db']['core']['charset'].'" COLLATE="'.$_CONFIG['db']['core']['collate'].'";');
+
+sql_query('ALTER TABLE `meta_history` MODIFY COLUMN `data` VARCHAR(64) NULL');
 ?>
