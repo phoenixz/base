@@ -566,7 +566,7 @@ class validate_form {
     /*
      * Only allow integer numbers 1 and up
      */
-    function isNatural(&$value, $message = null, $start = 1, $flags = null){
+    function isNatural(&$value, $start, $message = null, $flags = null){
         try{
             if(!$this->parseFlags($value, $message, $flags)){
                 return true;
