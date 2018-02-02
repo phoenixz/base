@@ -110,22 +110,89 @@ function mysql_dump($params){
 
 
 /*
+ *
+ */
+function mysql_get_database($db_name){
+    try{
+        $database = sql_get('SELECT    `databases`.`id`,
+                                       `databases`.`servers_id`,
+                                       `databases`.`status`,
+                                       `databases`.`replication_status`,
+                                       `databases`.`name` AS `database`,
+                                       `databases`.`ssh_port`,
+                                       `databases`.`error`,
+
+                                       `servers`.`hostname`,
+
+                                       `database_accounts`.`username`      AS `replication_db_user`,
+                                       `database_accounts`.`password`      AS `replication_db_password`,
+                                       `database_accounts`.`root_password` AS `root_db_password`
+
+                             FROM      `databases`
+
+                             LEFT JOIN `servers`
+                             ON        `servers`.`id`           = `databases`.`servers_id`
+
+                             LEFT JOIN `database_accounts`
+                             ON        `database_accounts`.`id` = `servers`.`database_accounts_id`
+
+                             WHERE     `databases`.`name` = :name',
+
+                             array(':name' => $db_name));
+
+        if(!$database){
+            throw new bException(log_database(tr('Specified database ":database" does not exist', array(':database' => $_GET['database'])), 'not-exist'));
+        }
+
+        return $database;
+
+    }catch(Exception $e){
+        throw new bException(tr('mysql_get_database(): Failed'), $e);
+    }
+}
+
+
+
+/*
+ * Current available replication statuses
+ * 'enabled','preparing','paused','disabled','error'
+ */
+function mysql_update_replication_status($database, $status){
+    try{
+        if(is_numeric($database)){
+            sql_query('UPDATE `databases` SET `replication_status` = :replication_status WHERE id = :id', array(':replication_status' => $status, ':id' => $database));
+
+        }else{
+            sql_query('UPDATE `databases` SET `replication_status` = :replication_status WHERE name = :name', array(':replication_status' => $status, ':name' => $database));
+        }
+
+    }catch(Exception $e){
+        throw new bException(tr('mysql_update_replication_status(): Failed'), $e);
+    }
+}
+
+
+/*
  * This function can setup a master
  * 1) MODIFY MASTER MYSQL CONFIG FILE
  * 2) CREATE REPLICATION USER ON MASTER MYSQL
  * 3) DUMP MYSQL DB
  * 4) ON OTHER SHELL GET MYSQL LOG_FILE AND LOG_POS
  */
-function mysql_master_replication_setup($server){
+function mysql_master_replication_setup($params){
     try{
         /*
          * Validate params
          */
-        array_ensure($server, 'server,root_db_user,root_db_password,database,replication_db_password');
+        array_ensure($params, 'hostname,database');
 
-// :TODO: Store in DB, get unique from UNIQUE indexed column! perhaps the `databases`.`id` column?
-        $server['id']   = mt_rand() - 1;
+        /*
+         * Get database
+         */
+        $database       = mysql_get_database($params['database']);
+        $database       = array_merge($database, $params);
         $mysql_cnf_path = '/etc/mysql/mysql.conf.d/mysqld.cnf';
+        mysql_update_replication_status($database['id'], 'preparing');
 
         load_libs('ssh,servers');
 
@@ -133,7 +200,7 @@ function mysql_master_replication_setup($server){
          * Check for mysqld.cnf file
          */
         log_console(tr('Checking existance of mysql configuration file on remote server'), 'DOT');
-        $mysql_cnf = servers_exec($server['hostname'], 'test -f '.$mysql_cnf_path.' && echo "1" || echo "0"');
+        $mysql_cnf = servers_exec($database['hostname'], 'test -f '.$mysql_cnf_path.' && echo "1" || echo "0"');
 
         /*
          * Mysql conf file does not exist
@@ -143,7 +210,7 @@ function mysql_master_replication_setup($server){
              * Try with other possible configuration file
              */
             $mysql_cnf_path = '/etc/mysql/my.cnf';
-            $mysql_cnf      = servers_exec($server['hostname'], 'test -f '.$mysql_cnf_path.' && echo "1" || echo "0"');
+            $mysql_cnf      = servers_exec($database['hostname'], 'test -f '.$mysql_cnf_path.' && echo "1" || echo "0"');
 
             if(!$mysql_cnf[0]){
                 throw new bException(tr('mysql_master_replication_setup(): MySQL configuration file :file does not exist on remote server', array(':file' => $mysql_cnf_path)), 'not-exist');
@@ -154,17 +221,17 @@ function mysql_master_replication_setup($server){
          * MySQL SETUP
          */
         log_console(tr('Making master setup for MySQL configuration file'), 'DOT');
-        servers_exec($server['hostname'], 'sudo sed -i \"s/#server-id[[:space:]]*=[[:space:]]*1/server-id = '.$server['id'].'/\" '.$mysql_cnf_path);
-        servers_exec($server['hostname'], 'sudo sed -i \"s/#log_bin/log_bin/\" '.$mysql_cnf_path);
+        servers_exec($database['hostname'], 'sudo sed -i \"s/#server-id[[:space:]]*=[[:space:]]*1/server-id = '.$database['id'].'/\" '.$mysql_cnf_path);
+        servers_exec($database['hostname'], 'sudo sed -i \"s/#log_bin/log_bin/\" '.$mysql_cnf_path);
 
         /*
          * The next line just have to be added one time!
          * Check if it exists, if not append
          */
-        servers_exec($server['hostname'], 'grep -q -F \'binlog_do_db = '.$server['database'].'\' '.$mysql_cnf_path.' || sudo sed -i \"/max_binlog_size[[:space:]]*=[[:space:]]*100M/a binlog_do_db = '.$server['database'].'\" '.$mysql_cnf_path);
+        servers_exec($database['hostname'], 'grep -q -F \'binlog_do_db = '.$database['database'].'\' '.$mysql_cnf_path.' || sudo sed -i \"/max_binlog_size[[:space:]]*=[[:space:]]*100M/a binlog_do_db = '.$database['database'].'\" '.$mysql_cnf_path);
 
         log_console(tr('Restarting remote MySQL service'), 'DOT');
-        servers_exec($server['hostname'], 'sudo service mysql restart');
+        servers_exec($database['hostname'], 'sudo service mysql restart');
 
         /*
          * LOCK MySQL database
@@ -172,41 +239,42 @@ function mysql_master_replication_setup($server){
          * kill ssh pid after dumping db
          */
         log_console(tr('Making grant replication on remote server and locking tables'), 'DOT');
-        $ssh_mysql_pid = servers_exec($server['hostname'], 'mysql \"-u'.$server['root_db_user'].'\" \"-p'.$server['root_db_password'].'\" -e \"GRANT REPLICATION SLAVE ON *.* TO \''.$server['replication_db_user'].'\'@\'localhost\' IDENTIFIED BY \''.$server['replication_db_password'].'\'; FLUSH PRIVILEGES; USE \''.$server['database'].'\'; FLUSH TABLES WITH READ LOCK; DO SLEEP(1000000); \"', null, true, false);
+        $ssh_mysql_pid = servers_exec($database['hostname'], 'mysql \"-u'.$database['root_db_user'].'\" \"-p'.$database['root_db_password'].'\" -e \"GRANT REPLICATION SLAVE ON *.* TO \''.$database['replication_db_user'].'\'@\'localhost\' IDENTIFIED BY \''.$database['replication_db_password'].'\'; FLUSH PRIVILEGES; USE \''.$database['database'].'\'; FLUSH TABLES WITH READ LOCK; DO SLEEP(1000000); \"', null, true, false);
 
         /*
          * Dump database
          */
         log_console(tr('Making dump of remote database'), 'DOT');
-        servers_exec($server['hostname'], 'sudo rm /tmp/'.$server['database'].'.sql.gz -f;');
-        servers_exec($server['hostname'], 'sudo mysqldump \"-u'.$server['root_db_user'].'\" \"-p'.$server['root_db_password'].'\" -K -R -n -e --dump-date --comments -B '.$server['database'].' | gzip | sudo tee /tmp/'.$server['database'].'.sql.gz');
+        servers_exec($database['hostname'], 'sudo rm /tmp/'.$database['database'].'.sql.gz -f;');
+        servers_exec($database['hostname'], 'sudo mysqldump \"-u'.$database['root_db_user'].'\" \"-p'.$database['root_db_password'].'\" -K -R -n -e --dump-date --comments -B '.$database['database'].' | gzip | sudo tee /tmp/'.$database['database'].'.sql.gz');
 
         /*
          * KILL LOCAL SSH process
+         * to drop the hanged connection
          */
         log_console(tr('Dump finished, killing background process mysql shell session'), 'DOT');
-        servers_exec($server['hostname'], 'kill -9 '.$ssh_mysql_pid[0], null, false, true);
+        servers_exec($database['hostname'], 'kill -9 '.$ssh_mysql_pid[0], null, false, true);
 
         log_console(tr('Restarting remote MySQL service'), 'DOT');
-        servers_exec($server['hostname'], 'sudo service mysql restart');
+        servers_exec($database['hostname'], 'sudo service mysql restart');
 
         /*
          * Delete posible LOCAL backup
          * SCP dump from server to local
          */
         log_console(tr('Copying remote dump to local'), 'DOT');
-        servers_exec($server['hostname'], 'rm /tmp/'.$server['database'].'.sql.gz -f', null, false, true);
-        ssh_cp($server, '/tmp/'.$server['database'].'.sql.gz', '/tmp/', true);
+        servers_exec($database['hostname'], 'rm /tmp/'.$database['database'].'.sql.gz -f', null, false, true);
+        ssh_cp($database, '/tmp/'.$database['database'].'.sql.gz', '/tmp/', true);
 
         /*
          * Get the log_file and log_pos
          */
-        $master_status      = servers_exec($server['hostname'], 'mysql \"-u'.$server['root_db_user'].'\" \"-p'.$server['root_db_password'].'\" -ANe \"SHOW MASTER STATUS;\"');
-        $master_status      = explode(',', preg_replace('/\s+/', ',', $master_status[0]));
-        $server['log_file'] = $master_status[0];
-        $server['log_pos']  = $master_status[1];
+        $master_status        = servers_exec($database['hostname'], 'mysql \"-u'.$database['root_db_user'].'\" \"-p'.$database['root_db_password'].'\" -ANe \"SHOW MASTER STATUS;\"');
+        $master_status        = explode(',', preg_replace('/\s+/', ',', $master_status[0]));
+        $database['log_file'] = $master_status[0];
+        $database['log_pos']  = $master_status[1];
 
-        return $server;
+        return $database;
 
     }catch(Exception $e){
         throw new bException(tr('mysql_master_replication_setup(): Failed'), $e);
@@ -223,15 +291,14 @@ function mysql_master_replication_setup($server){
  * 4) SETUP SLAVE REPLICATION ON A SPECIFIC PORT AND CHANNEL
  * 5) CHECK FOR SLAVE STATUS
  */
-function mysql_slave_replication_setup($server){
+function mysql_slave_replication_setup($params){
     try{
         /*
-         * Validate params
+         * Get database
          */
-        array_ensure($server, 'server,root_db_user,root_db_password,database,replication_db_password');
-
-// :TODO: Store in DB, get unique from UNIQUE indexed column! perhaps the `databases`.`id` column?
-        $server['id']   = mt_rand() - 1;
+        $database       = mysql_get_database($params['database']);
+        $database       = array_merge($database, $params);
+        $database['id'] = mt_rand() - 1;
         $mysql_cnf_path = '/etc/mysql/mysql.conf.d/mysqld.cnf';
 
         load_libs('ssh,servers');
@@ -240,7 +307,7 @@ function mysql_slave_replication_setup($server){
          * Check for mysqld.cnf file
          */
         log_console(tr('Checking existance of mysql configuration file on local server'), 'DOT');
-        $mysql_cnf = servers_exec($server['hostname'], 'test -f '.$mysql_cnf_path.' && echo "1" || echo "0"', null, false, true);
+        $mysql_cnf = servers_exec($database['hostname'], 'test -f '.$mysql_cnf_path.' && echo "1" || echo "0"', null, false, true);
 
         /*
          * Mysql conf file does not exist
@@ -250,7 +317,7 @@ function mysql_slave_replication_setup($server){
              * Try with other possible configuration file
              */
             $mysql_cnf_path = '/etc/mysql/my.cnf';
-            $mysql_cnf      = servers_exec($server['hostname'], 'test -f '.$mysql_cnf_path.' && echo "1" || echo "0"', null, false, true);
+            $mysql_cnf      = servers_exec($database['hostname'], 'test -f '.$mysql_cnf_path.' && echo "1" || echo "0"', null, false, true);
 
             if(!$mysql_cnf[0]){
                 throw new bException(tr('mysql_master_replication_setup(): MySQL configuration file :file does not exist on local server', array(':file' => $mysql_cnf_path)), 'not-exist');
@@ -261,23 +328,23 @@ function mysql_slave_replication_setup($server){
          * MySQL SETUP
          */
         log_console(tr('Making slave setup for MySQL configuration file'), 'DOT');
-        servers_exec($server['hostname'], 'sudo sed -i "s/#server-id[[:space:]]*=[[:space:]]*1/server-id = '.$server['id'].'/" '.$mysql_cnf_path, null, false, true);
-        servers_exec($server['hostname'], 'sudo sed -i "s/#log_bin/log_bin/" '.$mysql_cnf_path, null, false, true);
+        servers_exec($database['hostname'], 'sudo sed -i "s/#server-id[[:space:]]*=[[:space:]]*1/server-id = '.$database['id'].'/" '.$mysql_cnf_path, null, false, true);
+        servers_exec($database['hostname'], 'sudo sed -i "s/#log_bin/log_bin/" '.$mysql_cnf_path, null, false, true);
 
         /*
          * The next lines just have to be added one time!
          * Check if they already exist... if not append them
          */
-        servers_exec($server['hostname'], 'grep -q -F \'relay-log = /var/log/mysql/mysql-relay-bin.log\' '.$mysql_cnf_path.' || echo "relay-log = /var/log/mysql/mysql-relay-bin.log" | sudo tee -a '.$mysql_cnf_path, null, false, true);
-        servers_exec($server['hostname'], 'grep -q -F \'master-info-repository = table\' '.$mysql_cnf_path.' || echo "master-info-repository = table" | sudo tee -a '.$mysql_cnf_path, null, false, true);
-        servers_exec($server['hostname'], 'grep -q -F \'relay-log-info-repository = table\' '.$mysql_cnf_path.' || echo "relay-log-info-repository = table" | sudo tee -a '.$mysql_cnf_path, null, false, true);
-        servers_exec($server['hostname'], 'grep -q -F \'binlog_do_db = '.$server['database'].'\' '.$mysql_cnf_path.' || echo "binlog_do_db = '.$server['database'].'" | sudo tee -a '.$mysql_cnf_path, null, false, true);
+        servers_exec($database['hostname'], 'grep -q -F \'relay-log = /var/log/mysql/mysql-relay-bin.log\' '.$mysql_cnf_path.' || echo "relay-log = /var/log/mysql/mysql-relay-bin.log" | sudo tee -a '.$mysql_cnf_path, null, false, true);
+        servers_exec($database['hostname'], 'grep -q -F \'master-info-repository = table\' '.$mysql_cnf_path.' || echo "master-info-repository = table" | sudo tee -a '.$mysql_cnf_path, null, false, true);
+        servers_exec($database['hostname'], 'grep -q -F \'relay-log-info-repository = table\' '.$mysql_cnf_path.' || echo "relay-log-info-repository = table" | sudo tee -a '.$mysql_cnf_path, null, false, true);
+        servers_exec($database['hostname'], 'grep -q -F \'binlog_do_db = '.$database['database'].'\' '.$mysql_cnf_path.' || echo "binlog_do_db = '.$database['database'].'" | sudo tee -a '.$mysql_cnf_path, null, false, true);
 
         /*
          * Create SSH tunneling user
          */
         log_console(tr('Creating ssh tunneling user on local server'), 'DOT');
-        ssh_mysql_slave_tunnel($server);
+        ssh_mysql_slave_tunnel($database);
 
 
         /*
@@ -285,7 +352,7 @@ function mysql_slave_replication_setup($server){
          */
         sql_close();
         log_console(tr('Restarting local MySQL service'), 'DOT');
-        servers_exec($server['hostname'], 'sudo service mysql restart', null, false, true);
+        servers_exec($database['hostname'], 'sudo service mysql restart', null, false, true);
         sql_close();
 
         sleep(2);
@@ -293,39 +360,40 @@ function mysql_slave_replication_setup($server){
         /*
          * Import LOCAL db
          */
-        sql_query('DROP   DATABASE IF EXISTS `'.$server['database'].'`');
-        sql_query('CREATE DATABASE `'.$server['database'].'`');
-        servers_exec($server['hostname'], 'sudo rm /tmp/'.$server['database'].'.sql -f', null, false, true);
-        servers_exec($server['hostname'], 'gzip -d /tmp/'.$server['database'].'.sql.gz', null, false, true);
-        servers_exec($server['hostname'], 'mysql "-u'.$server['root_db_user'].'" "-p'.$server['root_db_password'].'" -B '.$server['database'].' < /tmp/'.$server['database'].'.sql', null, false, true);
-        servers_exec($server['hostname'], 'sudo rm /tmp/'.$server['database'].'.sql -f', null, false, true);
+        sql_query('DROP   DATABASE IF EXISTS `'.$database['database'].'`');
+        sql_query('CREATE DATABASE `'.$database['database'].'`');
+        servers_exec($database['hostname'], 'sudo rm /tmp/'.$database['database'].'.sql -f', null, false, true);
+        servers_exec($database['hostname'], 'gzip -d /tmp/'.$database['database'].'.sql.gz', null, false, true);
+        servers_exec($database['hostname'], 'mysql "-u'.$database['root_db_user'].'" "-p'.$database['root_db_password'].'" -B '.$database['database'].' < /tmp/'.$database['database'].'.sql', null, false, true);
+        servers_exec($database['hostname'], 'sudo rm /tmp/'.$database['database'].'.sql -f', null, false, true);
 
         /*
          * Setup global configurations to support multiple channels
          */
-        servers_exec($server['hostname'], 'mysql "-u'.$server['root_db_user'].'" "-p'.$server['root_db_password'].'" -e "SET GLOBAL master_info_repository = \'TABLE\';"', null, false, true);
-        servers_exec($server['hostname'], 'mysql "-u'.$server['root_db_user'].'" "-p'.$server['root_db_password'].'" -e "SET GLOBAL relay_log_info_repository = \'TABLE\';"', null, false, true);
+        servers_exec($database['hostname'], 'mysql "-u'.$database['root_db_user'].'" "-p'.$database['root_db_password'].'" -e "SET GLOBAL master_info_repository = \'TABLE\';"', null, false, true);
+        servers_exec($database['hostname'], 'mysql "-u'.$database['root_db_user'].'" "-p'.$database['root_db_password'].'" -e "SET GLOBAL relay_log_info_repository = \'TABLE\';"', null, false, true);
 
         /*
          * Setup slave replication
          */
         $slave_setup  = 'STOP SLAVE; ';
         $slave_setup .= 'CHANGE MASTER TO MASTER_HOST=\'127.0.0.1\', ';
-        $slave_setup .= 'MASTER_USER=\''.$server['replication_db_user'].'\', ';
-        $slave_setup .= 'MASTER_PASSWORD=\''.$server['replication_db_password'].'\', ';
-        $slave_setup .= 'MASTER_PORT='.$server['slave_ssh_port'].', ';
-        $slave_setup .= 'MASTER_LOG_FILE=\''.$server['log_file'].'\', ';
-        $slave_setup .= 'MASTER_LOG_POS='.$server['log_pos'].' ';
-        $slave_setup .= 'FOR CHANNEL \''.$server['hostname'].'_'.$server['database'].'\'; ';
-        $slave_setup .= 'START SLAVE FOR CHANNEL \''.$server['hostname'].'_'.$server['database'].'\';';
-        servers_exec($server['hostname'], 'mysql "-u'.$server['root_db_user'].'" "-p'.$server['root_db_password'].'" -e "'.$slave_setup.'"', null, false, true);
+        $slave_setup .= 'MASTER_USER=\''.$database['replication_db_user'].'\', ';
+        $slave_setup .= 'MASTER_PASSWORD=\''.$database['replication_db_password'].'\', ';
+        $slave_setup .= 'MASTER_PORT='.$database['ssh_port'].', ';
+        $slave_setup .= 'MASTER_LOG_FILE=\''.$database['log_file'].'\', ';
+        $slave_setup .= 'MASTER_LOG_POS='.$database['log_pos'].' ';
+        $slave_setup .= 'FOR CHANNEL \''.$database['hostname'].'_'.$database['database'].'\'; ';
+        $slave_setup .= 'START SLAVE FOR CHANNEL \''.$database['hostname'].'_'.$database['database'].'\';';
+        servers_exec($database['hostname'], 'mysql "-u'.$database['root_db_user'].'" "-p'.$database['root_db_password'].'" -e "'.$slave_setup.'"', null, false, true);
 
         /*
          * Final step check for SLAVE status
          */
-        $slave_status = servers_exec($server['hostname'], 'mysql "-u'.$server['root_db_user'].'" "-p'.$server['root_db_password'].'" -ANe "SHOW SLAVE STATUS;"', null, false, true);
+        $slave_status = servers_exec($database['hostname'], 'mysql "-u'.$database['root_db_user'].'" "-p'.$database['root_db_password'].'" -ANe "SHOW SLAVE STATUS;"', null, false, true);
 
         log_console(tr('Finished!!'), 'white');
+        mysql_update_replication_status($database['database'], 'enabled');
 
     }catch(Exception $e){
         throw new bException(tr('mysql_slave_replication_setup(): Failed'), $e);
