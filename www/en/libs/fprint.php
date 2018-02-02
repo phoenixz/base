@@ -18,7 +18,7 @@ fprint_init();
 function fprint_init(){
     try{
         if(!file_exists('/var/lib/fprint/')){
-            throw new bException(tr('fprint_init(): fprintd application data found, it it probably is not installed. Please fix this by executing "sudo apt-get install fprintd" on the command line'), 'not-exists');
+            throw new bException(tr('fprint_init(): fprintd application data found, it it probably is not installed. Please fix this by executing "sudo apt-get install fprintd" on the command line'), 'warning/not-exists');
         }
 
         load_config('fprint');
@@ -141,7 +141,7 @@ function fprint_delete($user){
 function fprint_kill(){
     try{
         load_libs('cli');
-        return cli_pkill('fprint', 15, true);
+        return cli_pkill('fprintd', 15, true);
 
     }catch(Exception $e){
         throw new bException('fprint_kill(): Failed', $e);
@@ -155,8 +155,7 @@ function fprint_kill(){
 function fprint_process(){
     try{
         load_libs('cli');
-        $pids = cli_pgrep('fprint');
-showdie($pids);
+        return cli_pgrep('fprintd');
 
     }catch(Exception $e){
         throw new bException('fprint_kill(): Failed', $e);
@@ -207,6 +206,54 @@ function fprint_verify_finger($finger){
 
 
 /*
+ * Show the finger print reader page, and prepare $_SESSION['fprint']
+ */
+function fprint_page_show($users_id, $html_flash_class){
+    try{
+        if(empty($_SESSION['fprint']['results'])){
+            if(!$users_id){
+                throw new bException(tr('fprint_page_show(): No users_id specified'), 'not-specified');
+            }
+
+            if(!is_numeric($users_id)){
+                throw new bException(tr('fprint_page_show(): Invalid users_id ":users_id" specified', array(':users_id' => $users_id)), 'invalid');
+            }
+
+            $params = array('file'     => uniqid(),
+                            'users_id' => $users_id);
+
+            fprint_kill();
+            $params['pid'] = run_background('/base/fprint authenticate -Q -C '.$params['users_id'], 'tmp/fprint/'.$params['file']);
+
+            if($params['pid'] === false){
+                /*
+                 * Wut? We just killed it!
+                 */
+                throw new bException(tr('fprint_page_show(): The fprint script is already running'), 'process-runs');
+            }
+
+            $_SESSION['fprint'] = $params;
+
+        }else{
+            /*
+             * Finger print scan finished
+             */
+            $params = $_SESSION['fprint'];
+        }
+
+        $params['html_flash_class'] = $html_flash_class;
+        $params['return']           = true;
+
+        return page_show('fingerprint', $params);
+
+    }catch(Exception $e){
+        throw new bException('fprint_page_show(): Failed', $e);
+    }
+}
+
+
+
+/*
  * Try to handle fprint exceptions
  */
 function fprint_handle_exception($e){
@@ -221,12 +268,12 @@ function fprint_handle_exception($e){
             }
 
             if(strstr($data, 'No devices available') !== false){
-                throw new bException(tr('fprint_verify(): No finger print scanner devices found'), 'no-device');
+                throw new bException(tr('fprint_verify(): No finger print scanner devices found'), 'warning/no-device');
             }
         }
 
         if($e->getCode() == 124){
-            throw new bException(tr('fprint_verify(): finger print scan timed out'), 'timeout');
+            throw new bException(tr('fprint_verify(): finger print scan timed out'), 'warning/timeout');
         }
 
    }catch(Exception $e){
