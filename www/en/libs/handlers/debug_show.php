@@ -15,6 +15,10 @@ try{
         return $data;
     }
 
+    /*
+     * First cleanup data
+     */
+    $data   = debug_cleanup($data);
     $retval = '';
 
     if(PLATFORM_HTTP){
@@ -36,7 +40,6 @@ try{
                     /*
                      * If JSON, CORS requests require correct headers!
                      */
-                    load_libs('http');
                     http_headers(null, 0);
 
                     echo "\n".tr('DEBUG SHOW (:file@:line) ', array(':file' => current_file($trace_offset), ':line' => current_line($trace_offset)))."\n";

@@ -8,7 +8,7 @@ $usage = './scripts/base/tasks
 ./scripts/base/tasks list [options]
 ./scripts/base/tasks execute';
 
-$help  = "This is the tasks manager script
+$help  = 'This is the tasks manager script
 
 This script can be used to manage programmed tasks
 
@@ -75,7 +75,7 @@ list                            - List all tasks. By default, only open tasks
 
 show ID                         - Show detailed information about the specified
                                   task id. The extra data shown will be the
-                                  \"data\" and \"results\" JSON fields decoded";
+                                  \"data\" and \"results\" JSON fields decoded';
 
 require_once(__DIR__.'/../../libs/startup.php');
 
@@ -98,17 +98,17 @@ under_construction('add');
         cli_no_arguments_left();
 
         if(empty($id)){
-            throw new bException(tr('No task specified'), 'not-specified');
+            throw new bException(tr('No task specified'), 'warning/not-specified');
         }
 
         if(!is_natural($id)){
-            throw new bException(tr('The specified task ":id" is invalid', array(':id' => $id)), 'invalid');
+            throw new bException(tr('The specified task ":id" is invalid', array(':id' => $id)), 'warning/invalid');
         }
 
         $task = sql_get('SELECT `id`, `status` FROM `tasks` WHERE `id` = :id', array(':id' => $id));
 
         if(!$task){
-            throw new bException(tr('The specified task ":id" does not exist', array(':id' => $id)), 'not-exist');
+            throw new bException(tr('The specified task ":id" does not exist', array(':id' => $id)), 'warning/not-exist');
         }
 
         if($task['status'] === 'processing'){
@@ -116,7 +116,7 @@ under_construction('add');
              * This task is running!
              */
             if(!FORCE){
-                throw new bException(tr('Task ":id" is currently in process! Use FORCE to delete it', array(':id' => $id)), 'not-authorized');
+                throw new bException(tr('Task ":id" is currently in process! Use FORCE to delete it', array(':id' => $id)), 'warning/not-authorized');
             }
         }
 
@@ -145,11 +145,11 @@ under_construction('add');
 
         if($all){
             if($status){
-                throw new bException(tr('--status cannot be used with --all'), 'invalid');
+                throw new bException(tr('--status cannot be used with --all'), 'warning/invalid');
             }
 
             if(!FORCE){
-                throw new bException(tr('In order to clear non "completed" tasks, use the FORCE option'), 'not-authorized');
+                throw new bException(tr('In order to clear non "completed" tasks, use the FORCE option'), 'warning/not-authorized');
             }
 
             log_console(tr('Clearing all tasks'), 'white');
@@ -160,7 +160,7 @@ under_construction('add');
 
             }else{
                 if(!FORCE){
-                    throw new bException(tr('In order to clear non "completed" tasks, use the FORCE option'), 'not-authorized');
+                    throw new bException(tr('In order to clear non "completed" tasks, use the FORCE option'), 'warning/not-authorized');
                 }
             }
 
@@ -214,7 +214,7 @@ under_construction('add');
 
         if($all){
             if($status){
-                throw new bException(tr('--status cannot be used with --all'), 'invalid');
+                throw new bException(tr('--status cannot be used with --all'), 'warning/invalid');
             }
 
             if(!QUIET){
@@ -262,13 +262,13 @@ under_construction('add');
         cli_no_arguments_left();
 
         if(!is_natural($id)){
-            throw new bException(tr('The specified task ":id" is not valid', array(':id' => $id)), 'invalid');
+            throw new bException(tr('The specified task ":id" is not valid', array(':id' => $id)), 'warning/invalid');
         }
 
         $task = tasks_get($id);
 
         if(!$task){
-            throw new bException(tr('The specified task ":id" does not exist', array(':id' => $id)), 'not-exist');
+            throw new bException(tr('The specified task ":id" does not exist', array(':id' => $id)), 'warning/not-exist');
         }
 
         $data        = json_decode_custom($task['data']);
@@ -310,26 +310,27 @@ under_construction('add');
         cli_no_arguments_left();
 
         if(!is_natural($id)){
-            throw new bException(tr('The specified task ":id" is not valid', array(':id' => $id)), 'invalid');
+            throw new bException(tr('The specified task ":id" is not valid', array(':id' => $id)), 'warning/invalid');
         }
 
         $task = tasks_get($id);
 
         if(!$task){
-            throw new bException(tr('The specified task ":id" does not exist', array(':id' => $id)), 'not-exist');
+            throw new bException(tr('The specified task ":id" does not exist', array(':id' => $id)), 'warning/not-exist');
         }
 
         if(($task['status'] !== 'failed') and !FORCE){
-            throw new bException(tr('Cannot reset task ":id", it has status ":status" instead of "failed". Use FORCE to reset the task anyway', array(':id' => $task['id'], ':status' => $task['status'])), 'invalid');
+            throw new bException(tr('Cannot reset task ":id", it has status ":status" instead of "failed". Use FORCE to reset the task anyway', array(':id' => $task['id'], ':status' => $task['status'])), 'warning/invalid');
         }
 
+        meta_action($task['meta_id'], 'reset');
         sql_query('UPDATE `tasks` SET `status` = "new", `results` = null WHERE `id` = :id', array(':id' => $task['id']));
         log_console(tr('Reset task ":id"', array(':id' => $task['id'])), 'green');
         break;
 
     case 'execute':
         cli_no_arguments_left();
-        load_libs('time');
+        load_libs('date,time');
         $count = 0;
 
         log_console(tr('Started task execution...'), 'white');
@@ -340,11 +341,42 @@ under_construction('add');
                 run_background('base/tasks execute');
             }
 
-            $task = tasks_get('new', 'processing');
+            $task = tasks_get('new,waiting_parent', 'processing');
 
             if(!$task){
                 log_console(tr('No new tasks found, quitting'), 'yellow');
                 break;
+            }
+
+            /*
+             * Task depends on parent?
+             */
+            if($task['parents_id']){
+                /*
+                 * Check if its parent task has already been executed
+                 */
+                $parent = sql_get('SELECT `id`, `status` FROM `tasks` WHERE `id` = :id', array(':parents_id' => $task['parents_id']));
+
+                if(!$parent){
+                    throw new bException(tr('Task ":task" has parents_id ":parent" but this parent does not exist', array(':task' => $task['id'], ':parent' => $task['parents_id'])), 'warning/not-exists');
+                }
+
+                if($parent['status'] != 'completed'){
+                    /*
+                     * Cannot execute this task, the parent task hasn't been completed yet!
+                     */
+                    meta_action($task['meta_id'], 'set-wait');
+                    sql_query('UPDATE `tasks` SET `status` = "waiting_parent" WHERE `id` = :id', array(':id' => $task['id']));
+                    continue;
+                }
+            }
+
+            /*
+             * Task executes after DATE?
+             */
+            if($task['after']){
+                $interval = date_convert($task['after'], 'object')->diff(new DateTime());
+showdie($interval);
             }
 
             $count++;
@@ -388,7 +420,7 @@ under_construction('add');
                         /*
                          * Execute this task in the background
                          */
-                        run_background($command.' '.$options);
+                        run_background($command.' '.$options, 'tasks/'.$task['id'].'-'.str_until($command, ' '));
                         break;
 
                     case 'internal':
@@ -418,7 +450,7 @@ under_construction('add');
                         break;
 
                     default:
-                        throw new bException(tr('Unknown task execution method ":method" specified for task ":id" in ":time"', array(':method' => $task['method'], ':id' => $task['id'], ':time' => time_difference($start, $end, 'auto', 5))), 'unknown');
+                        throw new bException(tr('Unknown task execution method ":method" specified for task ":id" in ":time"', array(':method' => $task['method'], ':id' => $task['id'], ':time' => time_difference($start, $end, 'auto', 5))), 'warning/unknown');
                 }
 
                 $end = microtime(true);

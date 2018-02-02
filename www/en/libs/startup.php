@@ -155,7 +155,7 @@ class core{
             /*
              * Load basic libraries
              */
-            load_libs('strings,array,sql,mb');
+            load_libs('strings,array,sql,mb,meta');
 
 
             /*
@@ -3189,6 +3189,15 @@ function debug_trace($filters = 'args'){
  */
 function debug_bar(){
     return include(__DIR__.'/handlers/debug_bar.php');
+}
+
+
+
+/*
+ * Recursively cleanup the specified variable, removing any password like variable
+ */
+function debug_cleanup($data){
+    return include(__DIR__.'/handlers/debug_cleanup.php');
 }
 
 

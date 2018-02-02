@@ -1035,6 +1035,73 @@ function cli_pkill($process, $signal = null, $sudo = false){
 /*
  *
  */
+function cli_get_columns(){
+    try{
+        $cols = safe_exec('echo $COLUMNS');
+        $cols = array_pop($cols);
+
+        return $cols;
+
+    }catch(Exception $e){
+        throw new bException('cli_get_columns(): Failed', $e);
+    }
+}
+
+
+/*
+ *
+ */
+function cli_get_lines(){
+    try{
+        $rows = safe_exec('echo $LINES');
+        $rows = array_pop($rows);
+
+        return $rows;
+
+    }catch(Exception $e){
+        throw new bException('cli_get_lines(): Failed', $e);
+    }
+}
+
+
+
+/*
+ * Run a process and run callbacks over the output
+ */
+function cli_run_process($command, $callback){
+    try{
+//$p = popen('executable_file_or_script', 'r');
+//while(!feof($p)) {
+//    echo fgets($p);
+//    ob_flush();
+//    flush();
+//}
+//pclose($p);
+
+    }catch(Exception $e){
+        throw new bException('cli_run_process(): Failed', $e);
+    }
+}
+
+
+
+/*
+ * Show a X% width pogress bar on the current line
+ * See https://github.com/guiguiboy/PHP-CLI-Progress-Bar/blob/master/ProgressBar/Manager.php for inspiration
+ */
+function cli_progress_bar($width, $percentage, $color){
+    try{
+
+    }catch(Exception $e){
+        throw new bException('cli_progress_bar(): Failed', $e);
+    }
+}
+
+
+
+/*
+ *
+ */
 function cli_status_color($status){
     try{
         $status = status($status);

@@ -323,7 +323,7 @@ class validate_form {
                  * variable to be empty, even though this variable can never
                  * ever be empty!
                  */
-                throw new bException(tr('validate_form::parseFlags(): Some VALIDATE_ALLOW_EMPTY flag was specified while this validation method does not allow these flags'), 'invalid');
+                throw new bException(tr('validate_form::parseFlags(): Some VALIDATE_ALLOW_EMPTY type flag was specified by the function ":function()" for the validation method ":method", while this method does not support those flags', array(':function' => current_function(2), ':method' => current_function(1))), 'invalid');
             }
 
             return $this->allowEmpty($value, $message);
@@ -672,7 +672,7 @@ class validate_form {
      */
     function isBetween(&$value, $min, $max, $message = null, $flags = null){
         try{
-            if(!$this->parseFlags($value, $message, $flags, false)){
+            if(!$this->parseFlags($value, $message, $flags)){
                 return true;
             }
 
@@ -1216,6 +1216,10 @@ class validate_form {
      */
     function inArray(&$value, $array, $message = null, $flags = null){
         try{
+            if(!$this->parseFlags($value, $message, $flags)){
+                return true;
+            }
+
             if(!$this->isScalar($value, $message, $flags)){
                 return false;
             }

@@ -49,12 +49,12 @@ function libraries_get_document($storage, $seoname){
              * Generate a new document
              */
             sql_query('INSERT INTO `libraries_documents` (`meta_id`)
-                       VALUES                          ('.meta_action().')');
+                       VALUES                            ('.meta_action().')');
 
             $documents_id = sql_insert_id();
 
             sql_query('INSERT INTO `libraries_documents` (`meta_id`)
-                       VALUES                          ('.meta_action().')');
+                       VALUES                            ('.meta_action().')');
 
         }else{
             $document = sql_get('SELECT    `libraries_documents`.`id`,
@@ -84,7 +84,7 @@ function libraries_get_document($storage, $seoname){
                                  FROM      `libraries_pages`
 
                                  JOIN      `libraries_documents`
-                                 ON        `libraries_documents`.`id` = `libraries_pages`.`documents_id`
+                                 ON        `libraries_documents`.`id`  = `libraries_pages`.`documents_id`
 
                                  WHERE     `libraries_pages`.`seoname` = :seoname
                                  AND       `libraries_pages`.`status`  = NULL');

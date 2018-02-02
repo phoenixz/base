@@ -2,7 +2,7 @@
 global $_CONFIG, $core;
 static $executed = false;
 
-//echo '<pre>'; print_r($e); die();
+//echo "<pre>\n"; print_r($e->getCode()); echo"\n"; print_r($e); die();
 
 try{
     if($executed){
@@ -41,7 +41,7 @@ try{
              * Command line script crashed.
              * Try to give nice error messages for known issues
              */
-            if(str_until($e->getCode(), '/') == 'warning'){
+            if(str_until($e->getCode(), '/') === 'warning'){
                 /*
                  * This is just a simple general warning, no backtrace and
                  * such needed, only show the principal message
@@ -91,15 +91,31 @@ try{
 
                     debug(true);
 
-                    if($e->getCode() == 'no-trace'){
-                        $messages = $e->getMessages();
-                        log_console(array_pop($messages), 'red');
+                    if($e instanceof bException){
+                        if($e->getCode() === 'no-trace'){
+                            $messages = $e->getMessages();
+                            log_console(array_pop($messages), 'red');
+
+                        }else{
+                            /*
+                             * Show the entire exception
+                             */
+                            show($e, null, true);
+                        }
 
                     }else{
                         /*
-                         * Show the entire exception
+                         * Treat this as a normal PHP Exception object
                          */
-                        show($e, null, true);
+                        if($e->getCode() === 'no-trace'){
+                            log_console($e->getMessage(), 'red');
+
+                        }else{
+                            /*
+                             * Show the entire exception
+                             */
+                            show($e, null, true);
+                        }
                     }
 
                     $core->register['exit_code'] = 8;
@@ -116,6 +132,7 @@ try{
             }
 
             if(is_numeric($e->getCode()) and page_show($e->getCode(), array('exists' => true))){
+                html_flash_set($e);
                 page_show($e->getCode());
             }
 

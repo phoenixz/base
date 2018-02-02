@@ -8,6 +8,22 @@
  * @copyright Sven Oostenbrink <support@ingiga.com>
  */
 
+tasks_init();
+
+
+
+/*
+ * Initialize the tasks library
+ */
+function tasks_init(){
+    try{
+        load_config('tasks');
+
+    }catch(Exception $e){
+        throw new bException('tasks_init(): Failed', $e);
+    }
+}
+
 
 
 /*
@@ -22,7 +38,7 @@ function tasks_add($task){
 
         $task = tasks_validate($task);
 
-        load_libs('meta,json');
+        load_libs('json');
 
         sql_query('INSERT INTO `tasks` (`createdby`, `meta_id`, `after`, `status`, `command`, `method`, `time_limit`, `parents_id`, `data`, `description`)
                    VALUES              (:createdby , :meta_id , :after , :status , :command , :method , :time_limit , :parents_id , :data , :description )',
@@ -43,7 +59,7 @@ function tasks_add($task){
         log_file(tr('Added new task ":description" with id ":id"', array(':description' => $task['description'], ':id' => $task['id'])), 'tasks');
         run_background('base/tasks execute --env '.ENVIRONMENT);
 
-        return $task['id'];
+        return $task;
 
     }catch(Exception $e){
         throw new bException('tasks_add(): Failed', $e);
@@ -59,8 +75,7 @@ function tasks_update($task, $executed = false){
     try{
         $task = tasks_validate($task);
 
-        load_libs('meta,json');
-
+        load_libs('json');
         meta_action($task['meta_id'], 'update');
 
         sql_query('UPDATE `tasks`
@@ -96,29 +111,30 @@ function tasks_update($task, $executed = false){
  * is object types
  */
 function tasks_validate($task){
+    global $_CONFIG;
+
     try{
         load_libs('validate');
 
-        $v = new validate_form($task, 'status,command,after,data,results,method,time_limit,time_spent,parents_id');
+        $v = new validate_form($task, 'status,command,after,data,results,method,time_limit,executed,time_spent,parents_id');
 
-        if($task['command']){
-            $v->isRegex($task['command'], '/[a-z0-9\/]/', tr('Please ensure that the task command has only alpha-numeric characters'));
-            $v->hasMinChars($task['command'], 2, tr('Please ensure the task command has at least 2 characters'));
-            $v->hasMaxChars($task['command'], 32, tr('Please ensure the task command has a maximum of 32 characters'));
-
-        }else{
-            $v->setError(tr('Please ensure that the task has a command specified'));
+        if($task['time_limit'] === ""){
+            $task['time_limit'] = $_CONFIG['tasks']['default_time_limit'];
         }
 
-        $v->isDateTime($task['after'], tr('Please specify a valid after date / time'), null);
+        $v->isNotEmpty($task['command'], tr('Please ensure that the task has a command specified'));
+        $v->isRegex($task['command'], '/[a-z0-9\/]/', tr('Please ensure that the task command has only alpha-numeric characters'));
+        $v->hasMinChars($task['command'], 2, tr('Please ensure the task command has at least 2 characters'));
+        $v->hasMaxChars($task['command'], 32, tr('Please ensure the task command has a maximum of 32 characters'));
+        $v->isDateTime($task['after'], tr('Please specify a valid after date / time'), VALIDATE_ALLOW_EMPTY_NULL);
         $v->inArray($task['method'], array('background', 'internal', 'normal', 'function'), tr('Please specify a valid method'));
-        $v->inArray($task['status'], array('new', 'processing', 'completed', 'failed', 'timeout', 'deleted'), tr('Please specify a valid status'));
-        $v->isNatural($task['time_limit'], 1, tr('Please specify a valid time limit'), null);
-        $v->isBetween($task['time_limit'], 1, 600, tr('Please specify a valid time limit (between 0 and 600 seconds)'), null);
-        $v->isNumeric($task['time_spent'], tr('Please specify a valid time spent'));
-        $v->isNatural($task['parents_id'], 1, tr('Please specify a valid parents id'), null);
-        $v->hasMinChars($task['description'], 8, tr('Please use more than 8 characters for the description'), null);
-        $v->hasMaxChars($task['description'], 2047, tr('Please use more than 8 characters for the description'), null);
+        $v->inArray($task['status'], array('new', 'processing', 'completed', 'failed', 'timeout', 'deleted'), tr('Please specify a valid status'), VALIDATE_ALLOW_EMPTY_NULL);
+        $v->isNatural($task['time_limit'], 0, tr('Please specify a valid time limit'), VALIDATE_ALLOW_EMPTY_NULL);
+        $v->isBetween($task['time_limit'], 0, 1800, tr('Please specify a valid time limit (between 0 and 1800 seconds)'), VALIDATE_ALLOW_EMPTY_NULL);
+        $v->isNumeric($task['time_spent'], tr('Please specify a valid time spent'), VALIDATE_ALLOW_EMPTY_INTEGER);
+        $v->isNatural($task['parents_id'], 1, tr('Please specify a valid parents id'), VALIDATE_ALLOW_EMPTY_NULL);
+        $v->hasMinChars($task['description'], 8, tr('Please use more than 8 characters for the description'), VALIDATE_ALLOW_EMPTY_NULL);
+        $v->hasMaxChars($task['description'], 2047, tr('Please use more than 8 characters for the description'), VALIDATE_ALLOW_EMPTY_NULL);
 
         if($task['parents_id']){
             $exists = sql_get('SELECT `id` FROM `tasks` WHERE `id` = :id', true, array(':id' => $task['parents_id']));
@@ -162,6 +178,8 @@ function tasks_validate_status($status){
                     // FALLTHROUGH
                 case 'failed':
                     // FALLTHROUGH
+                case 'waiting_parent':
+                    // FALLTHROUGH
                 case 'timeout':
                     // FALLTHROUGH
                 case 'deleted':
@@ -182,39 +200,47 @@ function tasks_validate_status($status){
 /*
  * Get a task with the specified status
  */
-function tasks_get($filter, $set_status = false){
+function tasks_get($filters, $set_status = false){
     try{
-        if(is_natural($filter)){
-            $where   = ' WHERE `id` = :id ';
+        if(is_natural($filters)){
+            $where   = ' WHERE `tasks`.`id` = :id ';
 
-            $execute = array(':id' => $filter);
+            $execute = array(':id' => $filters);
 
         }else{
-            $where = ' WHERE  `status` = :status
-                       AND   (`after` IS NULL OR `after` <= UTC_TIMESTAMP()) ';
-
-            $execute = array(':status' => $filter);
+            $filters = array_force($filters);
+            $execute = sql_in($filters, ':filter');
+            $where   = ' WHERE  `tasks`.`status` IN('.implode(', ', array_keys($execute)).')
+                         AND   (`tasks`.`after` IS NULL OR `tasks`.`after` <= UTC_TIMESTAMP()) ';
         }
 
-        $task = sql_get('SELECT   `id`,
-                                  `meta_id`,
-                                  `parents_id`,
-                                  `command`,
-                                  `status`,
-                                  `after`,
-                                  `data`,
-                                  `results`,
-                                  `time_limit`,
-                                  `time_spent`,
-                                  `executed`,
-                                  `description`,
-                                  `method`
+        $task = sql_get('SELECT    `tasks`.`id`,
+                                   `tasks`.`meta_id`,
+                                   `tasks`.`parents_id`,
+                                   `tasks`.`command`,
+                                   `tasks`.`status`,
+                                   `tasks`.`after`,
+                                   `tasks`.`data`,
+                                   `tasks`.`results`,
+                                   `tasks`.`time_limit`,
+                                   `tasks`.`time_spent`,
+                                   `tasks`.`executed`,
+                                   `tasks`.`description`,
+                                   `tasks`.`method`,
 
-                         FROM     `tasks`
+                                   `users`.`name`     AS `createdby_name`,
+                                   `users`.`email`    AS `createdby_email`,
+                                   `users`.`username` AS `createdby_username`,
+                                   `users`.`nickname` AS `createdby_nickname`
+
+                         FROM      `tasks`
+
+                         LEFT JOIN `users`
+                         ON        `users`.`id` = `tasks`.`createdby`
 
                         '.$where.'
 
-                         ORDER BY `createdon` ASC
+                         ORDER BY  `tasks`.`createdon` ASC
 
                          LIMIT    1',
 
@@ -223,6 +249,7 @@ function tasks_get($filter, $set_status = false){
         if($task){
             if($set_status){
                 tasks_validate_status($set_status);
+                meta_action($task['meta_id'], 'set-status', $set_status);
                 sql_query('UPDATE `tasks` SET `status` = :status WHERE `id` = :id', array(':id' => $task['id'], ':status' => $set_status));
             }
         }

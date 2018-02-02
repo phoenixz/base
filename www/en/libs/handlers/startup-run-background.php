@@ -6,7 +6,7 @@ try{
     $path = slash($path);
     $cmd  = basename($cmd);
 
-    load_libs('process');
+    load_libs('process,file');
 
     if($path == './'){
         $path = ROOT.'scripts/';
@@ -41,6 +41,7 @@ try{
 
 //showdie(sprintf('nohup %s >> '.ROOT.'data/log/%s 2>&1 & echo $! > %s', $path.$cmd.' '.$args, $log, ROOT.'data/run-background/'.$cmd));
     if($log){
+        file_ensure_path(dirname(ROOT.'data/log'.$log));
         exec(sprintf('nohup %s >> '.ROOT.'data/log/%s 2>&1 & echo $! > %s', $path.$cmd.' '.$args, $log, ROOT.'data/run-background/'.$cmd));
 
     }else{
