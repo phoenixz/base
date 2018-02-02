@@ -991,6 +991,20 @@ function cli_done(){
 
 
 /*
+ * Returns the PID list for the specified process name, if exists
+ */
+function cli_pgrep($name){
+    try{
+        return safe_exec('pgrep '.$name);
+
+    }catch(Exception $e){
+        throw new bException('cli_pgrep(): Failed', $e);
+    }
+}
+
+
+
+/*
  *
  */
 function cli_kill($pid, $signal = null, $sudo = false){
@@ -1108,7 +1122,7 @@ function cli_status_color($status){
 
         switch(strtolower($status)){
             case 'ok':
-                return cli_color($status, 'green');
+                return cli_color($status, '_green');
 
             case 'failed':
                 return cli_color($status, 'red');
