@@ -5,7 +5,7 @@
  */
 $usage = './scripts/base/fprint
 ./scripts/base/fprint enroll USER [FINGER]
-./scripts/base/fprint verify USER [FINGER]
+./scripts/base/fprint authenticate USER [FINGER]
 ./scripts/base/fprint list USERS
 ./scripts/base/fprint delete USER [FINGER]';
 
@@ -79,8 +79,10 @@ switch(cli_method()){
             throw new bException(tr('The user ":user" does not exist', array(':user' => $requested)), 'warning/not-exist');
         }
 
-        if(fprint_verify($user)){
-            log_console(tr('User ":user" authenticated!', array(':user' => $requested)), 'green');
+        $result = fprint_verify($user);
+
+        if($result){
+            log_console(tr('User ":user" authenticated!', array(':user' => $requested)), 'VERBOSE/green');
 
         }else{
             log_console(tr('User ":user" not authenticated!', array(':user' => $requested)), 'yellow');
