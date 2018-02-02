@@ -110,15 +110,15 @@ function tasks_validate($task){
             $v->setError(tr('Please ensure that the task has a command specified'));
         }
 
-        $v->isDateTime($task['after'], tr('Please specify a valid after date / time'), null);
+        $v->isDateTime($task['after'], tr('Please specify a valid after date / time'), VALIDATE_ALLOW_EMPTY_NULL);
         $v->inArray($task['method'], array('background', 'internal', 'normal', 'function'), tr('Please specify a valid method'));
         $v->inArray($task['status'], array('new', 'processing', 'completed', 'failed', 'timeout', 'deleted'), tr('Please specify a valid status'));
-        $v->isNatural($task['time_limit'], 1, tr('Please specify a valid time limit'), null);
-        $v->isBetween($task['time_limit'], 1, 600, tr('Please specify a valid time limit (between 0 and 600 seconds)'), null);
-        $v->isNumeric($task['time_spent'], tr('Please specify a valid time spent'));
-        $v->isNatural($task['parents_id'], 1, tr('Please specify a valid parents id'), null);
-        $v->hasMinChars($task['description'], 8, tr('Please use more than 8 characters for the description'), null);
-        $v->hasMaxChars($task['description'], 2047, tr('Please use more than 8 characters for the description'), null);
+        $v->isNatural($task['time_limit'], tr('Please specify a valid time limit'));
+        $v->isBetween($task['time_limit'], 1, 1200, tr('Please specify a valid time limit (between 0 and 1200 seconds)'));
+        $v->isNumeric($task['time_spent'], tr('Please specify a valid time spent'), VALIDATE_ALLOW_EMPTY_NULL);
+        $v->isNatural($task['parents_id'], tr('Please specify a valid parents id'), 1, VALIDATE_ALLOW_EMPTY_NULL);
+        $v->hasMinChars($task['description'], 8, tr('Please use more than 8 characters for the description'), VALIDATE_ALLOW_EMPTY_NULL);
+        $v->hasMaxChars($task['description'], 2047, tr('Please use more than 8 characters for the description'), VALIDATE_ALLOW_EMPTY_NULL);
 
         if($task['parents_id']){
             $exists = sql_get('SELECT `id` FROM `tasks` WHERE `id` = :id', true, array(':id' => $task['parents_id']));
