@@ -1493,13 +1493,17 @@ function user_or_signin(){
                 }
             }
 
-            if(!empty($_SESSION['lock'])){
+            if(!empty($_SESSION['force_page'])){
                 /*
                  * Session is, but locked
                  * Redirect all pages EXCEPT the lock page itself!
                  */
-                if($_CONFIG['redirects']['lock'] !== str_cut($_SERVER['REQUEST_URI'], '/', '?')){
-                    redirect(isset_get($_CONFIG['redirects']['lock'], 'lock.php').'?redirect='.urlencode($_SERVER['REQUEST_URI']));
+                if(empty($_CONFIG['redirects'][$_SESSION['force_page']])){
+                    throw new bException(tr('user_or_signin(): Forced page ":page" does not exist in $_CONFIG[redirects]', array(':page' => $_SESSION['force_page'])), 'not-exist');
+                }
+
+                if($_CONFIG['redirects'][$_SESSION['force_page']] !== str_until(str_rfrom($_SERVER['REQUEST_URI'], '/'), '?')){
+                    redirect($_CONFIG['redirects'][$_SESSION['force_page']].'?redirect='.urlencode($_SERVER['REQUEST_URI']));
                 }
             }
 
@@ -2164,6 +2168,30 @@ function ensure_value($value, $enum, $default){
 
     }catch(Exception $e){
         throw new bException(tr('ensure_value(): Failed'), $e);
+    }
+}
+
+
+
+/*
+ * Disconnect from webserver but continue working
+ */
+function disconnect(){
+    try{
+        switch(php_sapi_name()){
+            case 'fpm-fcgi':
+                fastcgi_finish_request();
+                break;
+
+            case '':
+                throw new bException(tr('disconnect(): No SAPI detected'), 'unknown');
+
+            default:
+                throw new bException(tr('disconnect(): Unknown SAPI ":sapi" detected', array(':sapi' => php_sapi_name())), 'unknown');
+        }
+
+    }catch(Exception $e){
+        throw new bException(tr('disconnect(): Failed'), $e);
     }
 }
 
