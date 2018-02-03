@@ -233,6 +233,11 @@ function json_message($message, $data = null){
             case 'not-found':
                 json_error(null, null, 'NOT-FOUND', 404);
 
+            case 'forbidden':
+                // FALLTHROUGH
+            case 'access-denied':
+                json_error(null, null, 'FORBIDDEN', 403);
+
             case 'error':
                 json_error(null, (debug() ? $data : null), 'ERROR', 500);
 

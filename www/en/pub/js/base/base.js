@@ -1,7 +1,7 @@
 (function($){
     $(document).ajaxSuccess(function(event, jqXHR){
-console.log(jqXHR.responseJSON);
-console.log(jqXHR.responseText);
+//console.log(jqXHR.responseJSON);
+//console.log(jqXHR.responseText);
         if (typeof jqXHR.responseJSON != 'object') {
             throw "failed to parse json";
 
@@ -53,6 +53,7 @@ console.log(jqXHR.responseText);
                     break;
 
                 case 'SIGNIN':
+                    // 302, though actually a 401 Unauthorized
                     return $.redirect(jqXHR.responseJSON.data.location);
 
                  case 'REDIRECT':
@@ -60,6 +61,10 @@ console.log(jqXHR.responseText);
 
                 case 'MAINTENANCE':
                     // Server is in maintenance mode
+                    // FALLTHROUGH
+
+                case 'FORBIDDEN':
+                    // 403 Access denied
                     // FALLTHROUGH
 
                 case 'NOT-FOUND':
