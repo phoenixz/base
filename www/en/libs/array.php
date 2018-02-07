@@ -160,7 +160,10 @@ function array_clear(&$array, $keys, $value = null){
  */
 function array_ensure(&$source, $keys, $value = null){
     try{
-        if(!is_array($source)){
+        if(!$source){
+            $source = array();
+
+        }elseif(!is_array($source)){
             throw new bException(tr('array_ensure(): Specified source is not an array but a ":type"', array(':type' => gettype($source))), 'invalid');
         }
 
