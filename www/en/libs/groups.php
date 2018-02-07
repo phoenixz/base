@@ -114,4 +114,60 @@ function groups_validate($group, $old_group = null){
         throw new bException(tr('groups_validate(): Failed'), $e);
     }
 }
+
+
+
+/*
+ *
+ */
+function groups_get_users($group){
+    try{
+        $retval = sql_get('SELECT    `groups`.`id`,
+                                     `groups`.`name`,
+                                     `groups`.`status`,
+                                     `groups`.`description`,
+
+                                     `createdby`.`name`   AS `createdby_name`,
+                                     `createdby`.`email`  AS `createdby_email`,
+                                     `modifiedby`.`name`  AS `modifiedby_name`,
+                                     `modifiedby`.`email` AS `modifiedby_email`
+
+                           FROM      `groups`
+
+                           LEFT JOIN `users` AS `createdby`
+                           ON        `groups`.`createdby`  = `createdby`.`id`
+
+                           LEFT JOIN `users` AS `modifiedby`
+                           ON        `groups`.`modifiedby` = `modifiedby`.`id`
+
+                           WHERE    (`groups`.`id`      = :group
+                           OR        `groups`.`seoname` = :group)', array(':group' => $group));
+
+        if(empty($retval)){
+            throw new bException(tr('groups_get_users(): Specified group ":group" does not exist', array(':group' => $group)), 'invalid');
+        }
+
+        $users = sql_query('SELECT    `users`.`id`,
+                                      `users`.`name`,
+                                      `users`.`username`
+
+                            FROM      `users`
+
+                            LEFT JOIN `users_groups`
+                            ON        `users_groups`.`users_id` = `users`.`id`
+
+                            WHERE     `users_groups`.`groups_id` = :groups_id', array(':groups_id' => $retval['id']));
+
+        $retval['users'] = array();
+
+        while($user = sql_fetch($users)){
+            array_push($retval['users'], $user);
+        }
+
+        return $retval;
+
+    }catch(Exception $e){
+        throw new bException(tr('groups_get_users(): Failed'), $e);
+    }
+}
 ?>
