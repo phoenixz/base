@@ -1141,10 +1141,11 @@ function user_signup($user, $no_password = false){
             throw new bException(tr('user_signup(): Please specify a password'), 'not-specified');
         }
 
-        sql_query('INSERT INTO `users` (`status`, `createdby`, `username`, `password`, `name`, `email`, `roles_id`, `role`)
-                   VALUES              (:status , :createdby , :username , :password , :name , :email , :roles_id , :role )',
+        sql_query('INSERT INTO `users` (`id`, `status`, `createdby`, `username`, `password`, `name`, `email`, `roles_id`, `role`)
+                   VALUES              (:id , :status , :createdby , :username , :password , :name , :email , :roles_id , :role )',
 
-                   array(':createdby' => isset_get($_SESSION['user']['id']),
+                   array(':id'        => sql_random_id('users'),
+                         ':createdby' => isset_get($_SESSION['user']['id']),
                          ':username'  => get_null(isset_get($user['username'])),
                          ':status'    => isset_get($user['status']),
                          ':name'      => isset_get($user['name']),

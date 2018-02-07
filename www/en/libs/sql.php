@@ -1164,6 +1164,27 @@ function sql_current_database(){
 
 
 /*
+ *
+ */
+function sql_random_id($table, $min = 1, $max = 2147483648){
+    try{
+        $exists = true;
+
+        while($exists){
+            $id     = mt_rand($min, $max);
+            $exists = sql_query('SELECT `id` FROM `'.$table.'` WHERE `id` = :id');
+        }
+
+        return $id;
+
+    }catch(Exception $e){
+        throw new bException(tr('sql_random_id(): Failed for table ":table"', array(':table' => $table)), $e);
+    }
+}
+
+
+
+/*
  * OBSOLETE / COMPATIBILITY FUNCTIONS
  *
  * These functions below exist only for compatibility between pdo.php and mysqli.php
