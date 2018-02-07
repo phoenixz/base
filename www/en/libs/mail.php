@@ -133,7 +133,7 @@ function mail_headers($headers = array()) {
 function mail_trace($email) {
     try{
         //make save for transport
-        return '#IDS#'.base64_encode(str_encrypt($email,'sometimesitworks')).'#IDE#';
+        return '#IDS#'.base64_encode(encrypt($email, 'sometimesitworks')).'#IDE#';
 
     }catch(Exception $e){
         throw new bException('mail_trace(): Failed', $e);

@@ -16,11 +16,16 @@
  * Fix urls that dont start with http://
  */
 function str_ensure_url($url, $protocol = 'http://') {
-    if(substr($url, 0, mb_strlen($protocol)) != $protocol) {
-        return $protocol.$url;
+    try{
+        if(substr($url, 0, mb_strlen($protocol)) != $protocol) {
+            return $protocol.$url;
 
-    } else {
-        return $url;
+        } else {
+            return $url;
+        }
+
+    }catch(Exception $e){
+        throw new bException(tr('str_ensure_url(): Failed'), $e);
     }
 }
 
@@ -29,13 +34,18 @@ function str_ensure_url($url, $protocol = 'http://') {
 /*
  * Return "casa" or "casas" based on number
  */
-function str_plural($cnt, $single_text, $multiple_text) {
-    if($cnt == 1) {
-        return $single_text;
+function str_plural($count, $single_text, $multiple_text) {
+    try{
+        if($count == 1) {
+            return $single_text;
 
+        }
+
+        return $multiple_text;
+
+    }catch(Exception $e){
+        throw new bException(tr('str_plural(): Failed'), $e);
     }
-
-    return $multiple_text;
 }
 
 
@@ -44,7 +54,12 @@ function str_plural($cnt, $single_text, $multiple_text) {
  * Returns true if string is serialized, false if not
  */
 function str_is_serialized($data) {
-    return (boolean) preg_match( "/^([adObis]:|N;)/u", $data );
+    try{
+        return (boolean) preg_match( "/^([adObis]:|N;)/u", $data );
+
+    }catch(Exception $e){
+        throw new bException(tr('str_is_serialized(): Failed'), $e);
+    }
 }
 
 
@@ -53,11 +68,16 @@ function str_is_serialized($data) {
  * Fix urls that dont start with http://
  */
 function str_ensure_utf8($string) {
-    if(str_is_utf8($string)) {
-        return $string;
-    }
+    try{
+        if(str_is_utf8($string)) {
+            return $string;
+        }
 
-    return utf8_encode($string);
+        return utf8_encode($string);
+
+    }catch(Exception $e){
+        throw new bException(tr('str_ensure_utf8(): Failed'), $e);
+    }
 }
 
 
@@ -66,7 +86,13 @@ function str_ensure_utf8($string) {
  * Returns true if string is UTF-8, false if not
  */
 function str_is_utf8($source) {
-    return mb_check_encoding($source, 'UTF8');
+    try{
+        return mb_check_encoding($source, 'UTF8');
+
+    }catch(Exception $e){
+        throw new bException(tr('str_is_utf8(): Failed'), $e);
+    }
+
     /*return preg_match('%^(?:
     [\x09\x0A\x0D\x20-\x7E] # ASCII
     | [\xC2-\xDF][\x80-\xBF] # non-overlong 2-byte
@@ -84,11 +110,16 @@ function str_is_utf8($source) {
 /*
  * Return string will not contain HTML codes for Spanish haracters
  */
-function str_fix_spanish_chars($source) {
-    $from = array('&Aacute;','&aacute;','&Eacute;','&eacute;','&Iacute;','&iacute;','&Oacute;','&oacute;','&Ntilde;','&ntilde;','&Uacute;','&uacute;','&Uuml;','&uuml;','&iexcl;','&ordf;','&iquest;','&ordm;');
-    $to   = array('Á','á','É','é','Í','í','Ó','ó','Ñ','ñ','Ú','ú','Ü','ü','¡','ª','¿','º');
+function str_fix_spanish_chars($source){
+    try{
+        $from = array('&Aacute;', '&aacute;', '&Eacute;', '&eacute;', '&Iacute;', '&iacute;', '&Oacute;', '&oacute;', '&Ntilde;', '&ntilde;', '&Uacute;', '&uacute;', '&Uuml;', '&uuml;','&iexcl;','&ordf;','&iquest;','&ordm;');
+        $to   = array('Á'       , 'á'       , 'É'       , 'é'       , 'Í'       , 'í'       , 'Ó'       , 'ó'       , 'Ñ'       , 'ñ'       , 'Ú'       , 'ú'       , 'Ü'     , 'ü'     , '¡'     , 'ª'    , '¿'      , 'º'    );
 
-    return str_replace($from, $to, $source);
+        return str_replace($from, $to, $source);
+
+    }catch(Exception $e){
+        throw new bException(tr('str_fix_spanish_chars(): Failed'), $e);
+    }
 }
 
 
@@ -97,11 +128,16 @@ function str_fix_spanish_chars($source) {
  * Return a lowercased string with the first letter capitalized
  */
 function str_capitalize($source, $position = 0){
-    if(!$position){
-        return mb_strtoupper(mb_substr($source, 0, 1)).mb_strtolower(mb_substr($source, 1));
-    }
+    try{
+        if(!$position){
+            return mb_strtoupper(mb_substr($source, 0, 1)).mb_strtolower(mb_substr($source, 1));
+        }
 
-    return mb_strtolower(mb_substr($source, 0, $position)).mb_strtoupper(mb_substr($source, $position, 1)).mb_strtolower(mb_substr($source, $position + 1));
+        return mb_strtolower(mb_substr($source, 0, $position)).mb_strtoupper(mb_substr($source, $position, 1)).mb_strtolower(mb_substr($source, $position + 1));
+
+    }catch(Exception $e){
+        throw new bException(tr('str_capitalize(): Failed'), $e);
+    }
 }
 
 
@@ -110,28 +146,33 @@ function str_capitalize($source, $position = 0){
  * Return a random string
  */
 function str_random($length = 8, $unique = false, $characters = '0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ') {
-    $string     = '';
-    $charlen    = mb_strlen($characters);
+    try{
+        $string     = '';
+        $charlen    = mb_strlen($characters);
 
-    if($unique and ($length > $charlen)){
-        throw new bException('str_random(): Can not create unique character random string with size "'.str_log($length).'". When $unique is requested, the string length can not be larger than "'.str_log($charlen).'" because there are no more then that amount of unique characters', 'invalid');
-    }
-
-    for ($i = 0; $i < $length; $i++) {
-        $char = $characters[mt_rand(0, $charlen - 1)];
-
-        if($unique and (mb_strpos($string, $char) !== false)){
-            /*
-             * We want all characters to be unique, do not readd this character again
-             */
-            $i--;
-            continue;
+        if($unique and ($length > $charlen)){
+            throw new bException('str_random(): Can not create unique character random string with size "'.str_log($length).'". When $unique is requested, the string length can not be larger than "'.str_log($charlen).'" because there are no more then that amount of unique characters', 'invalid');
         }
 
-        $string .= $char;
-    }
+        for ($i = 0; $i < $length; $i++) {
+            $char = $characters[mt_rand(0, $charlen - 1)];
 
-    return $string;
+            if($unique and (mb_strpos($string, $char) !== false)){
+                /*
+                 * We want all characters to be unique, do not readd this character again
+                 */
+                $i--;
+                continue;
+            }
+
+            $string .= $char;
+        }
+
+        return $string;
+
+    }catch(Exception $e){
+        throw new bException(tr('str_random(): Failed'), $e);
+    }
 }
 
 
@@ -140,10 +181,15 @@ function str_random($length = 8, $unique = false, $characters = '0123456789abcde
  * Is spanish alphanumeric
  */
 function str_is_alpha($s, $extra = '\s'){
-    $reg   = "/[^\p{L}\d$extra]/u";
-    $count = preg_match($reg, $s, $matches);
+    try{
+        $reg   = "/[^\p{L}\d$extra]/u";
+        $count = preg_match($reg, $s, $matches);
 
-    return $count == 0;
+        return $count == 0;
+
+    }catch(Exception $e){
+        throw new bException(tr('str_is_alpha(): Failed'), $e);
+    }
 }
 
 
@@ -152,7 +198,12 @@ function str_is_alpha($s, $extra = '\s'){
  * Return a clean string, basically leaving only printable latin1 characters,
  */
 function str_clean($source, $replace = '-'){
-    return preg_replace('/\s|\/|\?|&+/u', $replace, cfm($source));
+    try{
+        return preg_replace('/\s|\/|\?|&+/u', $replace, cfm($source));
+
+    }catch(Exception $e){
+        throw new bException(tr('str_clean(): Failed'), $e);
+    }
 }
 
 
@@ -162,7 +213,12 @@ function str_clean($source, $replace = '-'){
  */
 // :DELETE: This is never used, where would it be used?
 function str_escape_for_jquery($source, $replace = ''){
-    return preg_replace('/[#;&,.+*~\':"!^$[\]()=>|\/]/gu', '\\\\$&', $source);
+    try{
+        return preg_replace('/[#;&,.+*~\':"!^$[\]()=>|\/]/gu', '\\\\$&', $source);
+
+    }catch(Exception $e){
+        throw new bException(tr('str_escape_for_jquery(): Failed'), $e);
+    }
 }
 
 
@@ -171,7 +227,12 @@ function str_escape_for_jquery($source, $replace = ''){
  *
  */
 function str_strip_function($string){
-    return trim(str_from($string, '():'));
+    try{
+        return trim(str_from($string, '():'));
+
+    }catch(Exception $e){
+        throw new bException(tr('str_strip_function(): Failed'), $e);
+    }
 }
 
 
@@ -180,11 +241,16 @@ function str_strip_function($string){
  * Will fix a base64 coded string with missing termination = marks before decoding it
  */
 function str_safe_base64_decode($source){
-    if($mod = mb_strlen($source) % 4){
-        $source .= str_repeat('=', 4 - $mod);
-    }
+    try{
+        if($mod = mb_strlen($source) % 4){
+            $source .= str_repeat('=', 4 - $mod);
+        }
 
-    return base64_decode($source);
+        return base64_decode($source);
+
+    }catch(Exception $e){
+        throw new bException(tr('str_safe_base64_decode(): Failed'), $e);
+    }
 }
 
 
@@ -193,7 +259,12 @@ function str_safe_base64_decode($source){
  * Cut and return a piece out of the source string, starting from the start string, stopping at the stop string.
  */
 function str_cut($source, $start, $stop){
-    return str_until(str_from($source, $start), $stop);
+    try{
+        return str_until(str_from($source, $start), $stop);
+
+    }catch(Exception $e){
+        throw new bException(tr('str_cut(): Failed'), $e);
+    }
 }
 
 
@@ -203,8 +274,13 @@ function str_cut($source, $start, $stop){
  */
 // :DELETE: Isn't this str_log()?
 function str_safe($source, $maxsize = 50){
-    load_libs('json');
-    return str_truncate(json_encode_custom($source), $maxsize);
+    try{
+        load_libs('json');
+        return str_truncate(json_encode_custom($source), $maxsize);
+
+    }catch(Exception $e){
+        throw new bException(tr('str_safe(): Failed'), $e);
+    }
 }
 
 
@@ -213,7 +289,12 @@ function str_safe($source, $maxsize = 50){
  * Return the entire string in HEX ASCII
  */
 function str_hex($source){
-    return bin2hex($source);
+    try{
+        return bin2hex($source);
+
+    }catch(Exception $e){
+        throw new bException(tr('str_hex(): Failed'), $e);
+    }
 }
 
 
@@ -222,15 +303,20 @@ function str_hex($source){
  * Return a camel cased string
  */
 function str_camelcase($source, $separator = ' ') {
-    $source = explode($separator, mb_strtolower($source));
+    try{
+        $source = explode($separator, mb_strtolower($source));
 
-    foreach($source as $key => &$value){
-        $value = mb_ucfirst($value);
+        foreach($source as $key => &$value){
+            $value = mb_ucfirst($value);
+        }
+
+        unset($value);
+
+        return implode($separator, $source);
+
+    }catch(Exception $e){
+        throw new bException(tr('str_camelcase(): Failed'), $e);
     }
-
-    unset($value);
-
-    return implode($separator, $source);
 }
 
 
@@ -239,11 +325,16 @@ function str_camelcase($source, $separator = ' ') {
  * Fix PHP explode
  */
 function str_explode($separator, $source){
-    if(!$source){
-        return array();
-    }
+    try{
+        if(!$source){
+            return array();
+        }
 
-    return explode($separator, $source);
+        return explode($separator, $source);
+
+    }catch(Exception $e){
+        throw new bException(tr('str_explode(): Failed'), $e);
+    }
 }
 
 
@@ -255,31 +346,36 @@ function str_explode($separator, $source){
  *
  */
 function str_interleave($source, $interleave, $end = 0, $chunksize = 1){
-    if(!$source){
-        throw new bException('str_interleave: No source specified', 'not-specified');
+    try{
+        if(!$source){
+            throw new bException('str_interleave(): No source specified', 'not-specified');
+        }
+
+        if(!$interleave){
+            throw new bException('str_interleave(): No interleave specified', 'not-specified');
+        }
+
+        if($end){
+            $begin = mb_substr($source, 0, $end);
+            $end   = mb_substr($source, $end);
+
+        }else{
+            $begin = $source;
+            $end   = '';
+        }
+
+        $begin  = mb_str_split($begin, $chunksize);
+        $retval = '';
+
+        foreach($begin as $chunk){
+            $retval .= $chunk.$interleave;
+        }
+
+        return mb_substr($retval, 0, -1).$end;
+
+    }catch(Exception $e){
+        throw new bException(tr('str_interleave(): Failed'), $e);
     }
-
-    if(!$interleave){
-        throw new bException('str_interleave: No interleave specified', 'not-specified');
-    }
-
-    if($end){
-        $begin = mb_substr($source, 0, $end);
-        $end   = mb_substr($source, $end);
-
-    }else{
-        $begin = $source;
-        $end   = '';
-    }
-
-    $begin  = mb_str_split($begin, $chunksize);
-    $retval = '';
-
-    foreach($begin as $chunk){
-        $retval .= $chunk.$interleave;
-    }
-
-    return mb_substr($retval, 0, -1).$end;
 }
 
 
@@ -288,11 +384,16 @@ function str_interleave($source, $interleave, $end = 0, $chunksize = 1){
  * Convert weird chars to their standard ASCII variant
  */
 // :TODO: Isnt this the same as str_fix_spanish_chars() ??
-function str_convert_accents($source) {
-    $from = explode(',', "ç,æ,œ,á,é,í,ó,ú,à,è,ì,ò,ù,ä,ë,ï,ö,ü,ÿ,â,ê,î,ô,û,å,e,i,ø,u,Ú,ñ,Ñ,º");
-    $to   = explode(',', "c,ae,oe,a,e,i,o,u,a,e,i,o,u,a,e,i,o,u,y,a,e,i,o,u,a,e,i,o,u,U,n,n,o");
+function str_convert_accents($source){
+    try{
+        $from = explode(',', "ç,æ,œ,á,é,í,ó,ú,à,è,ì,ò,ù,ä,ë,ï,ö,ü,ÿ,â,ê,î,ô,û,å,e,i,ø,u,Ú,ñ,Ñ,º");
+        $to   = explode(',', "c,ae,oe,a,e,i,o,u,a,e,i,o,u,a,e,i,o,u,y,a,e,i,o,u,a,e,i,o,u,U,n,n,o");
 
-    return str_replace($from, $to, $source);
+        return str_replace($from, $to, $source);
+
+    }catch(Exception $e){
+        throw new bException(tr('str_convert_accents(): Failed'), $e);
+    }
 }
 
 
@@ -301,7 +402,12 @@ function str_convert_accents($source) {
  * Strip whitespace
  */
 function str_strip_html_whitespace($string){
-    return preg_replace('/>\s+</u', '><', $string);
+    try{
+        return preg_replace('/>\s+</u', '><', $string);
+
+    }catch(Exception $e){
+        throw new bException(tr('str_strip_html_whitespace(): Failed'), $e);
+    }
 }
 
 
@@ -310,11 +416,16 @@ function str_strip_html_whitespace($string){
  * Return the specified string quoted or not
  */
 function str_auto_quote($string){
-    if(is_numeric($string)){
-        return $string;
-    }
+    try{
+        if(is_numeric($string)){
+            return $string;
+        }
 
-    return '"'.$string.'"';
+        return '"'.$string.'"';
+
+    }catch(Exception $e){
+        throw new bException(tr('str_auto_quote(): Failed'), $e);
+    }
 }
 
 
@@ -337,7 +448,12 @@ function str_is_version($source){
  * Returns true if the specified source string contains HTML
  */
 function str_is_html($source){
-  return !preg_match('/<[^<]+>/', $source);
+    try{
+        return !preg_match('/<[^<]+>/', $source);
+
+    }catch(Exception $e){
+        throw new bException(tr('str_is_html(): Failed'), $e);
+    }
 }
 
 
@@ -346,8 +462,13 @@ function str_is_html($source){
  * Return if specified source is a JSON string or not
  */
 function str_is_json($source){
-//    return !preg_match('/[^,:{}\[\]0-9.\-+Eaeflnr-u \n\r\t]/', preg_replace('/"(\\.|[^"\\])*"/g', '', $source));
-    return !empty($source) && is_string($source) && preg_match('/^("(\\.|[^"\\\n\r])*?"|[,:{}\[\]0-9.\-+Eaeflnr-u \n\r\t])+?$/', $source);
+    try{
+//        return !preg_match('/[^,:{}\[\]0-9.\-+Eaeflnr-u \n\r\t]/', preg_replace('/"(\\.|[^"\\])*"/g', '', $source));
+        return !empty($source) && is_string($source) && preg_match('/^("(\\.|[^"\\\n\r])*?"|[,:{}\[\]0-9.\-+Eaeflnr-u \n\r\t])+?$/', $source);
+
+    }catch(Exception $e){
+        throw new bException(tr('str_is_json(): Failed'), $e);
+    }
 }
 
 
@@ -405,8 +526,15 @@ function mb_str_split($source, $l = 0) {
  * Correctly converts <br> to \n
  */
 function br2nl($string, $nl = "\n") {
-    $string = preg_replace("/(\r\n|\n|\r)/u", '' , $string);
-    return    preg_replace("/<br *\/?>/iu"  , $nl, $string);
+    try{
+        $string = preg_replace("/(\r\n|\n|\r)/u", '' , $string);
+        $string = preg_replace("/<br *\/?>/iu"  , $nl, $string);
+
+        return $string;
+
+    }catch(Exception $e){
+        throw new bException(tr('br2nl(): Failed'), $e);
+    }
 }
 
 
@@ -736,7 +864,12 @@ function str_xor($a, $b){
  *
  */
 function str_similar($a, $b, $percent){
-    return similar_text($a, $b, $percent);
+    try{
+        return similar_text($a, $b, $percent);
+
+    }catch(Exception $e){
+        throw new bException(tr('str_similar(): Failed'), $e);
+    }
 }
 
 
@@ -835,11 +968,16 @@ function str_diff($old, $new){
  *
  */
 function str_boolean($value){
-    if($value){
-        return 'true';
-    }
+    try{
+        if($value){
+            return 'true';
+        }
 
-    return 'false';
+        return 'false';
+
+    }catch(Exception $e){
+        throw new bException(tr('str_boolean(): Failed'), $e);
+    }
 }
 
 
@@ -862,17 +1000,10 @@ $string4 = implode("",$string4);
 
 echo "$string3". "<br />". $string4;*/
 
+
+
 /*
  * Obsolete functions
  * These functions only exist as wrappers for compatibility purposes
  */
-function str_decrypt($data, $key){
-    load_libs('crypt');
-    return decrypt($data, $key);
-}
-
-function str_encrypt($data, $key){
-    load_libs('crypt');
-    return encrypt($data, $key);
-}
 ?>
