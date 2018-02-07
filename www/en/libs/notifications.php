@@ -25,13 +25,12 @@ return false;
              * Notify about an exception
              */
             $params = array('title'       => tr('Exception'),
-                            'url'         => (PLATFORM_HTTP ? $_SERVER['REQUEST_URI'] : null),
                             'description' => $e,
                             'class'       => 'exception');
         }
 
-        array_params($params);
-        array_ensure($params, 'title,url,description,class,user');
+        array_ensure($params, 'title,description,class,user');
+        array_default($params, 'url', (PLATFORM_HTTP ? $_SERVER['REQUEST_URI'] : 'cli'));
 
         if($params['exception'] and !debug()){
             throw new bException($message, $event);
