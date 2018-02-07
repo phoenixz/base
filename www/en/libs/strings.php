@@ -348,11 +348,11 @@ function str_explode($separator, $source){
 function str_interleave($source, $interleave, $end = 0, $chunksize = 1){
     try{
         if(!$source){
-            throw new bException('str_interleave(): No source specified', 'not-specified');
+            throw new bException('str_interleave(): Empty source specified', 'empty');
         }
 
         if(!$interleave){
-            throw new bException('str_interleave(): No interleave specified', 'not-specified');
+            throw new bException('str_interleave(): Empty interleave specified', 'empty');
         }
 
         if($end){
