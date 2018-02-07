@@ -102,6 +102,7 @@ class core{
                     define('PLATFORM_HTTP', true);
                     define('PLATFORM_CLI' , false);
 
+                    $this->register['etag']      = isset_get($_SERVER['HTTP_ETAG']);
                     $this->register['accepts']   = accepts();
                     $this->register['http_code'] = 200;
 
