@@ -25,14 +25,32 @@ return false;
              * Notify about an exception
              */
             $params = array('title'       => tr('Exception'),
-                            'description' => $e,
+                            'exception'   => true,
+                            'description' => $params,
                             'class'       => 'exception');
         }
 
         array_ensure($params, 'title,description,class,user');
         array_default($params, 'url', (PLATFORM_HTTP ? $_SERVER['REQUEST_URI'] : 'cli'));
 
-        if($params['exception'] and !debug()){
+        if($params['exception'] and !$_CONFIG['production']){
+            /*
+             * Exception in non production environments, don't send
+             * notifications since we're working on this project!
+             */
+            $code = $params['description']->getCode();
+
+            if(str_until($code, '/') === 'warning'){
+                /*
+                 * Just ignore warnings in non production environments.
+                 */
+                return false;
+            }
+
+            /*
+             * Instead of notifying, throw an exception that can be fixed by
+             * the developer
+             */
             throw new bException($message, $event);
         }
 
