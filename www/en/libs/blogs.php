@@ -2227,7 +2227,8 @@ function blogs_update_urls($blogs = null, $category = null){
                         continue;
                     }
 
-                    $query              .= ' AND (`seocategory1` = :seocategory1 OR `seocategory2` = :seocategory2 OR `seocategory3` = :seocategory3) ';
+                    $query .= ' AND (`seocategory1` = :seocategory1 OR `seocategory2` = :seocategory2 OR `seocategory3` = :seocategory3) ';
+
                     $execute[':seocategory1'] = $category['seoname'];
                     $execute[':seocategory2'] = $category['seoname'];
                     $execute[':seocategory3'] = $category['seoname'];
@@ -2236,11 +2237,18 @@ function blogs_update_urls($blogs = null, $category = null){
                 /*
                  * Walk over all posts in the selected filter, and update the URL's
                  */
-                $r = sql_query($query, $execute);
+                $posts = sql_query($query, $execute);
 
-                while($post = sql_fetch($r)){
-                    $post['url_template'] = $blog['url_template'];
-                    blogs_update_url($post);
+                while($post = sql_fetch($posts)){
+                    try{
+                        $post['url_template'] = $blog['url_template'];
+                        blogs_update_url($post);
+                        cli_dot(1);
+
+                    }catch(Exception $e){
+                        notify($e->warning(true));
+                        log_console(tr('blogs_update_urls(): URL update failed for blog post ":post" in blog ":blog" with error ":e". Its status has been updated to "incomplete"', array(':post' => $post['id'].' / '.$post['seoname'], ':blog' => $blog['seoname'], ':e' => $e)), 'yellow');
+                    }
                 }
 
             }catch(Exception $e){
@@ -2248,7 +2256,7 @@ function blogs_update_urls($blogs = null, $category = null){
                  * URL generation failed for this blog post
                  */
                 notify($e);
-                log_console(tr('blogs_update_urls(): URL update failed for blog post ":post" in blog ":blog" with error ":e". Its status has been updated to "incomplete"', array(':post' => $post['id'].' / '.$post['seoname'], ':blog' => $blog['seoname'], ':e' => $e)), 'yellow');
+                log_console(tr('blogs_update_urls(): URL update failed for blog ":blog" with error ":e"', array(':blog' => $blog['seoname'], ':e' => $e)), 'yellow');
             }
         }
 
