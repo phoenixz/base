@@ -467,4 +467,26 @@ if(isset($_GET['redirect'])){
  * Load custom library, if available
  */
 load_libs('custom');
+
+
+
+/*
+ * This is a 400, 403, 404, 500, 503, etc page.
+ * Ensure at least that we're not returning HTML if a different type of file was requested.
+ */
+switch($this->register['accepts']){
+    case 'text/html':
+        /*
+         * Show the standard HTML system page
+         */
+        break;
+
+    default:
+        /*
+         * Something else was requested, only send headers with the requested accept header as Content-Type
+         */
+        http_headers(null, 0);
+        die();
+
+}
 ?>

@@ -184,7 +184,7 @@ function http_get_to_post($keys, $overwrite = true){
  * Send HTTP header for the specified code
  */
 function http_headers($params, $content_length){
-    global $_CONFIG;
+    global $_CONFIG, $core;
     static $sent = false;
 
     if($sent) return false;
@@ -192,9 +192,9 @@ function http_headers($params, $content_length){
 
     try{
         array_params($params, 'http_code');
-        array_default($params, 'http_code', 200);
+        array_default($params, 'http_code', $core->register['http_code']);
         array_default($params, 'cors'     , false);
-        array_default($params, 'mimetype' , 'text/html');
+        array_default($params, 'mimetype' , $core->register['accepts']);
         array_default($params, 'headers'  , array());
 
 //header("HTTP/1.0 404 Not Found");

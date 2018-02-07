@@ -102,6 +102,8 @@ class core{
                     define('PLATFORM_HTTP', true);
                     define('PLATFORM_CLI' , false);
 
+                    $this->register['accepts'] = accepts();
+
                     /*
                      * Detect what http platform we're on
                      */
@@ -117,10 +119,12 @@ class core{
                     }elseif($_CONFIG['amp']['enabled'] and !empty($_GET['amp'])){
                         $this->callType = 'amp';
 
-                    }elseif(substr($_SERVER['PHP_SELF'], -7, 7) == '404.php'){
+                    }elseif(is_numeric(substr($_SERVER['PHP_SELF'], -7, 3))){
+                        $this->register['http_code'] = substr($_SERVER['PHP_SELF'], -7, 3);
                         $this->callType = 'system';
 
                     }else{
+                        $this->register['http_code'] = 200;
                         $this->callType = 'http';
                     }
 
@@ -323,6 +327,20 @@ class bException extends Exception{
 
     public function setData($data){
         $this->data = $data;
+    }
+
+    /*
+     * Make this exception a warning, or not
+     */
+    public function warning($value){
+        if($value){
+            $this->code = str_starts($this->code, 'warning/');
+
+        }else{
+            $this->code = str_starts_not($this->code, 'warning/');
+        }
+
+        return $this;
     }
 }
 
@@ -773,6 +791,24 @@ function load_content($file, $replace = false, $language = null, $autocreate = n
         }
 
         throw new bException(tr('load_content(): Failed for file ":file"', array(':file' => $file)), $e);
+    }
+}
+
+
+
+/*
+ * Return the first priority of what the client accepts
+ */
+function accepts(){
+    try{
+        $header = isset_get($_SERVER['HTTP_ACCEPT']);
+        $header = array_force($header);
+        $header = array_shift($header);
+
+        return $header;
+
+    }catch(Exception $e){
+        throw new bException(tr('accepts(): Failed'), $e);
     }
 }
 
@@ -2048,6 +2084,13 @@ function page_show($pagename, $params = null){
     try{
         array_params($params, 'message');
         array_default($params, 'exists', false);
+
+        if(is_numeric($pagename)){
+            /*
+             * This is a system page, HTTP code. Use the page code as http code as well
+             */
+            $core->register['http_code'] = $pagename;
+        }
 
         if(!empty($core->callType('ajax'))){
             if($params['exists']){
