@@ -95,6 +95,8 @@ function blogs_get($blog = null){
  * Get a new or existing blog post
  */
 function blogs_post_get($blog = null, $post = null, $language = null, $alternative_language = null){
+    global $_CONFIG;
+
     try{
         if($blog){
             /*
@@ -162,13 +164,19 @@ function blogs_post_get($blog = null, $post = null, $language = null, $alternati
                 /*
                  * Language will have to be specified!
                  */
-                if(!$language and $_CONFIG['language']['supported']){
-                    throw new bException(tr('blogs_post_get(): This is a multi-lingual system, but no language was specified for the blog post name ":post"', array(':post' => $post)), 'not-specified');
-                }
+                if(!$language){
+                    if($_CONFIG['language']['supported']){
+                        throw new bException(tr('blogs_post_get(): This is a multi-lingual system, but no language was specified for the blog post name ":post"', array(':post' => $post)), 'not-specified');
+                    }
 
-                $where   = ' WHERE `blogs_posts`.`seoname`  = :seoname AND `blogs_posts`.`language` = :language';
-                $execute = array(':seoname'  => $post,
-                                 ':language' => $language);
+                    $where   = ' WHERE `blogs_posts`.`seoname`  = :seoname ';
+                    $execute = array(':seoname'  => $post);
+
+                }else{
+                    $where   = ' WHERE `blogs_posts`.`seoname`  = :seoname AND `blogs_posts`.`language` = :language ';
+                    $execute = array(':seoname'  => $post,
+                                     ':language' => $language);
+                }
             }
 
             $retval = sql_get('SELECT    `blogs_posts`.`id`,
