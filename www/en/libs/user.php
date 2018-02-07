@@ -1754,14 +1754,16 @@ function user_validate($user, $sections = array()){
                 $v->setError(tr('Please provide a non numeric username'));
             }
 
-            if($v->isNumeric(substr($user['username'], 0, 1))){
+            $username = substr($user['username'], 0, 1);
+
+            if($v->isNumeric($username)){
                 $v->setError(tr('Please provide a username that does not start with a number'));
             }
 
-            $exists = sql_query('SELECT `id` FROM `users` WHERE `username` = :username AND `id` != :id', true, array(':id'       => $user['id'],
-                                                                                                                     ':username' => $user['username']));
+            $exists = sql_query('SELECT `id` FROM `users` WHERE `username` = :username AND `id` != :id', array(':id'       => $user['id'],
+                                                                                                               ':username' => $user['username']));
 
-            if($exists){
+            if($exists->rowCount() > 0){
                 $v->setError(tr('The username ":username" is already taken by another user', array(':username' => $user['username'])));
             }
 

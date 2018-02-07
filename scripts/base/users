@@ -5,7 +5,7 @@
  */
 $usage = './scripts/base/users list
 ./scripts/base/users list [--right RIGHT] [-r RIGHT]
-./scripts/base/users create --username USERNAME --name REALNAME --email EMAIL --password PASSWORD [--latitude LATITUDE] [--longitude LONGITUDE] [--status STATUS] [--type TYPE] [--redirect URL] [--domain DOMAIN]
+./scripts/base/users create --username USERNAME --name REALNAME --email EMAIL --role ROLE [--latitude LATITUDE] [--longitude LONGITUDE] [--status STATUS] [--type TYPE] [--redirect URL] [--domain DOMAIN]
 ./scripts/base/users modify ID|USERNAME [--username USERNAME] [--name NAME] [--email EMAIL] [--latitude LATITUDE] [--longitude LONGITUDE] [--status STATUS] [--type TYPE] [--redirect URL] [--domain DOMAIN]
 ./scripts/base/users password ID|USERNAME
 ./scripts/base/users delete|undelete|erase ID|USERNAME ID|USERNAME ...
@@ -233,10 +233,10 @@ load_libs('user');
 
 switch(cli_method()){
     case 'create':
-        $user               = cli_arguments('--name,--email,--username,--nickname,--latitude,--longitude,--status,--type,--role,--type,--redirect,--domain');
-        $puser['password']  = cli_readline(tr('Please enter the users password'), true);
-        $puser['password2'] = cli_readline(tr('Please validate the password'), true);
-        $user               = users_validate($user);
+        $user              = cli_arguments('--name,--email,--username,--nickname,--latitude,--longitude,--status,--type,--role,--type,--redirect,--domain');
+        $user['password']  = cli_readline(tr('Please enter the users password'), true);
+        $user['password2'] = cli_readline(tr('Please validate the password'), true);
+        $user              = users_validate($user);
 
         cli_no_arguments_left();
 
