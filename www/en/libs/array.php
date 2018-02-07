@@ -158,27 +158,19 @@ function array_clear(&$array, $keys, $value = null){
 /*
  * Make sure the specified keys are available on the array
  */
-function array_ensure(&$array, $keys, $value = null){
+function array_ensure(&$source, $keys, $value = null){
     try{
-        if(!is_array($array)){
-            $array = array();
+        if(!is_array($source)){
+            throw new bException(tr('array_ensure(): Specified source is not an array but a ":type"', array(':type' => gettype($source))), 'invalid');
         }
 
-        if(!is_array($keys)){
-            if(!is_string($keys)){
-                throw new bException(tr('array_ensure(): Invalid $keys specified. Should be either a numeric array or a CSV string'));
-            }
-
-            $keys = explode(',', $keys);
-        }
-
-        foreach($keys as $key){
-            if(!array_key_exists($key, $array)){
-                $array[$key] = $value;
+        if($keys){
+            foreach(array_force($keys) as $key){
+                if(!array_key_exists($key, $source)){
+                    $source[$key] = $value;
+                }
             }
         }
-
-        return $array;
 
     }catch(Exception $e){
         throw new bException('array_ensure(): Failed', $e);
@@ -319,39 +311,6 @@ function array_merge_complete(){
 
     }catch(Exception $e){
         throw new bException('array_merge_complete(): Failed', $e);
-    }
-}
-
-
-
-/*
- * If specified params is not an array, then make it an array with the current value under the specified string_key
- * If numeric_key is set, and params is numeric, then use the numeric key instead
- */
-function array_params(&$params, $string_key = false, $numeric_key = false){
-    try{
-        if(empty($params)){
-            $params = array();
-        }
-
-        if(is_array($params)){
-            return true;
-        }
-
-        if($numeric_key and is_numeric($params)){
-            $params = array($numeric_key => $params);
-
-        }elseif($string_key){
-            $params = array($string_key => $params);
-
-        }else{
-            $params = array();
-        }
-
-        return false;
-
-    }catch(Exception $e){
-        throw new bException('array_params(): Failed', $e);
     }
 }
 
@@ -916,6 +875,36 @@ function array_clean($source, $recursive = true){
 
     }catch(Exception $e){
         throw new bException('array_clean(): Failed', $e);
+    }
+}
+
+
+
+/*
+ * OBSOLETE
+ */
+
+
+
+/*
+ * If specified params is not an array, then make it an array with the current value under the specified string_key
+ * If numeric_key is set, and params is numeric, then use the numeric key instead
+ */
+function array_params(&$params, $keys = null){
+    try{
+        array_ensure($params, $keys);
+
+    }catch(Exception $e){
+        /*
+         * Compatibility code
+         */
+        if(!is_scalar($params) and !is_null($params)){
+            throw new bException('array_params(): Failed', $e);
+        }
+
+        $params = array($keys => $params);
+        array_ensure($params, $keys);
+
     }
 }
 ?>
