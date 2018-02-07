@@ -2144,6 +2144,8 @@ function html_video($params){
                         <source src="'.$params['src'].'" type="'.$params['type'].'">
                     </video>';
 
+        return $html;
+
     }catch(Exception $e){
         if(!$_CONFIG['production']){
             throw new bException('html_video(): Failed', $e);
