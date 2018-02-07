@@ -9,7 +9,7 @@
  * @copyright Sven Oostenbrink <support@ingiga.com>, Johan Geuze
  */
 
-//Debug or not?
+// To debug or not to debug?
 $_CONFIG['debug']              = array('enabled'                            => false,      // If set to true, the system will run in debug mode, the debug.php library will be loaded, and debug functions will be available.
                                        'bar'                                => 'limited'); // true|false|"limited" If set to true, base will display a debug bar that with CSS can be positioned @ the bottom of the screen. When set to limited, only authenticated users with the right "debug" will be able to see the debug bar
 
