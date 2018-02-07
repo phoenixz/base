@@ -212,9 +212,20 @@ function cache_showpage($key = null, $namespace = 'htmlpage', $etag = null){
     global $_CONFIG, $core;
 
     try{
-        $core->register('page_cache_key', $key);
-
         if($_CONFIG['cache']['method']){
+            /*
+             * Default values
+             */
+            if(!$key){
+                $key = SCRIPT;
+            }
+
+            if(!$etag){
+                $etag = $core->register['etag'];
+            }
+
+            $core->register('page_cache_key', $key);
+
             /*
              * First try to apply HTTP ETag cache test
              */
