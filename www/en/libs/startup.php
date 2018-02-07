@@ -102,7 +102,8 @@ class core{
                     define('PLATFORM_HTTP', true);
                     define('PLATFORM_CLI' , false);
 
-                    $this->register['accepts'] = accepts();
+                    $this->register['accepts']   = accepts();
+                    $this->register['http_code'] = 200;
 
                     /*
                      * Detect what http platform we're on
@@ -124,7 +125,6 @@ class core{
                         $this->callType = 'system';
 
                     }else{
-                        $this->register['http_code'] = 200;
                         $this->callType = 'http';
                     }
 
