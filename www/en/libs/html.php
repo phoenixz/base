@@ -2045,7 +2045,8 @@ function html_video($params){
     global $_CONFIG;
 
     try{
-        array_params($params, 'src,width,height,controls,more,type');
+        array_ensure($params, 'src,width,height,more,type');
+        array_default($params, 'controls', true);
 
         if(!$_CONFIG['production']){
             if(!$params['src']){
