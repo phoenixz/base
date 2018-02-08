@@ -7,6 +7,22 @@
  * Written and Copyright by Sven Oostenbrink
  */
 
+servers_init();
+
+
+
+/*
+ * Initialize the library
+ */
+function servers_init(){
+    try{
+        load_config('servers');
+
+    }catch(Exception $e){
+        throw new bException('servers_init(): Failed', $e);
+    }
+}
+
 
 
 /*
@@ -151,6 +167,8 @@ function servers_test($hostname){
  *
  */
 function servers_exec($host, $commands, $options = null, $background = false, $local = false){
+    global $_CONFIG;
+
     try{
         array_params($options);
         array_default($options, 'hostkey_check', false);
@@ -171,7 +189,7 @@ function servers_exec($host, $commands, $options = null, $background = false, $l
         }
 
         if(!$options){
-            $options = ' -o UserKnownHostsFile=/dev/null -o StrictHostKeyChecking=no ';
+            $options = ' -o UserKnownHostsFile=/dev/null -o StrictHostKeyChecking=no'.($_CONFIG['servers']['ssh']['connect_timeout'] ? ' -o ConnectTimeout='.$_CONFIG['servers']['ssh']['connect_timeout'] : '');
         }
 
         /*
