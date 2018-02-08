@@ -1526,7 +1526,7 @@ function user_or_signin(){
                     json_reply(tr('Specified token ":token" has no session', array(':token' => $_POST['PHPSESSID'])), 'signin');
 
                 }else{
-                    html_flash_set('Unauthorized: PLease sign in to continue');
+                    html_flash_set('Unauthorized: Please sign in to continue');
                     redirect(isset_get($_CONFIG['redirects']['signin'], 'signin.php').'?redirect='.urlencode($_SERVER['REQUEST_URI']), 302);
                 }
             }
