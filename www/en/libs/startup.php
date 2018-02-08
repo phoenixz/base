@@ -369,7 +369,7 @@ function uncaught_exception($e, $die = 1){
  * Display value if exists
  * IMPORTANT! After calling this function, $var will exist!
  */
-function isset_get(&$variable, $return = null, $altreturn = null){
+function isset_get(&$variable, $return = null, $alt_return = null){
     if(isset($variable)){
         return $variable;
     }
@@ -377,7 +377,7 @@ function isset_get(&$variable, $return = null, $altreturn = null){
     unset($variable);
 
     if($return === null){
-        return $altreturn;
+        return $alt_return;
     }
 
     return $return;
