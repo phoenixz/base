@@ -204,7 +204,7 @@ class core{
                 case 'amp':
                     // FALLTHROUGH
                 case 404:
-                    return false;
+                    break;
 
                 default:
                     throw new bException(tr('core::callType(): Unknown call type ":type" specified', array(':type' => $type)), 'unknown');
