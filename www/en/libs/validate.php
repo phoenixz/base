@@ -1031,7 +1031,7 @@ class validate_form {
 // :TODO: IMPLEMENT
 
         }catch(Exception $e){
-            throw new bException('validate_form::isTime(): Failed', $e);
+            throw new bException('validate_form::isDate(): Failed', $e);
         }
     }
 
@@ -1045,7 +1045,7 @@ class validate_form {
 // :TODO: IMPLEMENT
 
         }catch(Exception $e){
-            throw new bException('validate_form::isTime(): Failed', $e);
+            throw new bException('validate_form::isDateTime(): Failed', $e);
         }
     }
 

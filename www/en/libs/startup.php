@@ -102,6 +102,7 @@ class core{
                     define('PLATFORM_HTTP', true);
                     define('PLATFORM_CLI' , false);
 
+                    $this->register['etag']      = isset_get($_SERVER['HTTP_ETAG']);
                     $this->register['accepts']   = accepts();
                     $this->register['http_code'] = 200;
 
@@ -203,7 +204,7 @@ class core{
                 case 'amp':
                     // FALLTHROUGH
                 case 404:
-                    return false;
+                    break;
 
                 default:
                     throw new bException(tr('core::callType(): Unknown call type ":type" specified', array(':type' => $type)), 'unknown');
@@ -368,7 +369,7 @@ function uncaught_exception($e, $die = 1){
  * Display value if exists
  * IMPORTANT! After calling this function, $var will exist!
  */
-function isset_get(&$variable, $return = null, $altreturn = null){
+function isset_get(&$variable, $return = null, $alt_return = null){
     if(isset($variable)){
         return $variable;
     }
@@ -376,7 +377,7 @@ function isset_get(&$variable, $return = null, $altreturn = null){
     unset($variable);
 
     if($return === null){
-        return $altreturn;
+        return $alt_return;
     }
 
     return $return;
@@ -1525,7 +1526,7 @@ function user_or_signin(){
                     json_reply(tr('Specified token ":token" has no session', array(':token' => $_POST['PHPSESSID'])), 'signin');
 
                 }else{
-                    html_flash_set('Unauthorized: PLease sign in to continue');
+                    html_flash_set('Unauthorized: Please sign in to continue');
                     redirect(isset_get($_CONFIG['redirects']['signin'], 'signin.php').'?redirect='.urlencode($_SERVER['REQUEST_URI']), 302);
                 }
             }

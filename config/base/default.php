@@ -243,8 +243,8 @@ $_CONFIG['mobile']             = array('enabled'                            => t
 // Name of the website
 $_CONFIG['name']               = 'base';
 
-// Do not index this site?
-$_CONFIG['noindex']            = false;
+// Do not index this site. DANGEROUS! WILL DESTROY SEO! Use for intranet websites, for example.
+$_CONFIG['noindex']            = false;                                                                                                 // If set to true, the entire website will not be indexed at all by google. Use for intranet websites
 
 
 // Paging configuration

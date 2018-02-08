@@ -2045,7 +2045,8 @@ function html_video($params){
     global $_CONFIG;
 
     try{
-        array_params($params, 'src,width,height,controls,more,type');
+        array_ensure($params, 'src,width,height,more,type');
+        array_default($params, 'controls', true);
 
         if(!$_CONFIG['production']){
             if(!$params['src']){
@@ -2143,6 +2144,8 @@ function html_video($params){
         $html = '   <video width="'.$params['width'].'" height="'.$params['height'].'" '.($params['controls'] ? 'controls ' : '').''.($params['more'] ? ' '.$params['more'] : '').'>
                         <source src="'.$params['src'].'" type="'.$params['type'].'">
                     </video>';
+
+        return $html;
 
     }catch(Exception $e){
         if(!$_CONFIG['production']){

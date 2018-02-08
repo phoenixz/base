@@ -29,13 +29,17 @@ $usage = "./scripts/base/init\n".
 
 $help  = "This script will initialize the database and system files to leave your data structures up to date with the current code version
 
+
+
 ARGUMENTS
+
+
 
 [-p VERSION]                    - Run init from project version VERSION
 
 [-f VERSION]                    - Run init from framework version VERSION
 
-[-d]                            - DROP, will drop the core database. Usually
+[--drop]                        - DROP, will drop the core database. Usually
                                   used on production systems in case the
                                   database needs to be dropped
 
@@ -46,7 +50,7 @@ ARGUMENTS
 
 require_once(__DIR__.'/../../libs/startup.php');
 
-$drop                 = cli_argument('--drop') or cli_argument('-d');
+$drop                 = cli_argument('--drop');
 $fromprojectversion   = not_empty(cli_argument('--from-project-version'  , true, null), cli_argument('-p', true, null));
 $fromframeworkversion = not_empty(cli_argument('--from-framework-version', true, null), cli_argument('-f', true, null));
 
@@ -61,8 +65,8 @@ try{
          * Drop the core database
          */
         sql_init();
-        if(is_object($GLOBALS['sql_core']) and $GLOBALS['sql_core'] instanceof PDO){
-            $GLOBALS['sql_core']->query('DROP DATABASE '.$_CONFIG['db']['core']['db']);
+        if(is_object($core->sql['core']) and $core->sql['core'] instanceof PDO){
+            $core->sql['core']->query('DROP DATABASE '.$_CONFIG['db']['core']['db']);
 
             log_console(tr('Dropped database ":db"', array(':db' => $_CONFIG['db']['core']['db'])), 'yellow');
             die();

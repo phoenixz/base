@@ -372,7 +372,7 @@ if($noinit){
      * executed in a completely separate PHP process, while still dumping output on command line
      */
     log_console(tr('Executing init script to ensure that database will be up to date'), 'white');
-    passthru(ROOT.'scripts/base/init', $exitcode);
+    passthru(ROOT.'scripts/base/init --env '.ENVIRONMENT, $exitcode);
 
     if($exitcode){
         throw new bException(tr('Local init failed with exit code ":code"', array(':code' => $exitcode)), 'init');
@@ -403,7 +403,7 @@ if($noinit or $noblogupdateurl){
     load_libs('blogs');
 // :DELETE: Sync script removes original DB, so theres a problem with PDO using that DB.
 //    blogs_update_urls();
-    passthru(ROOT.'scripts/base/blogs rebuild-post-urls');
+    passthru(ROOT.'scripts/base/blogs rebuild-post-urls --env '.ENVIRONMENT);
 }
 
 

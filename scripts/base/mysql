@@ -106,6 +106,67 @@ if($all){
  * Process required methods
  */
 switch(cli_method()){
+    case 'import':
+        switch(cli_method(1)){
+            case 'timezones':
+                try{
+                    log_console(tr('Importing timezone data files in MySQL'), 'white');
+                    log_console(tr('You may ignore any "Warning: Unable to load \'/usr/share/zoneinfo/........\' as time zone. Skipping it." messages'), 'warning');
+                    log_console(tr('Please fill in MySQL root password in the following "Enter password:" request'), 'white');
+
+                    safe_exec('mysql_tzinfo_to_sql /usr/share/zoneinfo | mysql -p  -u root mysql');
+
+                }catch(bException $e){
+                    /*
+                     * Something went wrong during import Get MySQL error
+                     */
+                    $message = $e->getMessages();
+                    $message = array_shift($message);
+                    $message = json_decode_custom($message);
+                    $message = array_shift($message);
+
+                    if(strstr($message, 'ERROR 1045')){
+                        throw new bException(tr('Incorrect MySQL root password supplied'), 'warning/passwordicorrect');
+                    }
+
+                    throw $e;
+                }
+
+                break;
+
+            case '':
+                throw new bException(tr('No sub method specified for method ":method"', array(':method' => cli_method())), 'not-specified');
+
+            default:
+                throw new bException(tr('Unknown sub method ":submethod" specified for method ":method"', array(':method' => cli_method(), ':submethod' => cli_method(1))), 'unknown-method');
+        }
+
+        break;
+
+    case 'check':
+        /*
+         * Perform MySQL checks
+         */
+        switch(cli_method(1)){
+            case 'timezone':
+                // FALLTHROUGH
+            case 'timezones':
+                if(!$count = sql_get('SELECT COUNT(*) AS `count` FROM mysql.time_zone_name;')){
+                    throw new bException('MySQL timezone tables are empty');
+                }
+
+                log_console($count, '', 'white');
+                break;
+
+            case '':
+                throw new bException(tr('No sub method specified for method ":method"', array(':method' => cli_method())), 'not-specified');
+
+            default:
+                throw new bException(tr('Unknown sub method ":submethod" specified for method ":method"', array(':method' => cli_method(), ':submethod' => cli_method(1))), 'unknown-method');
+        }
+
+        break;
+
     case 'change':
         // FALLTHROUGH
     case 'alter':

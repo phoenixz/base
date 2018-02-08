@@ -214,27 +214,41 @@ function servers_exec($host, $commands, $options = null, $background = false, $l
 /*
  *
  */
-function servers_get($host){
+function servers_get($host, $database = false){
     try{
-        $server = sql_get('SELECT    `servers`.`hostname`,
-                                     `servers`.`port`,
-                                     `servers`.`ssh_accounts_id`,
-                                     `servers`.`db_username`,
-                                     `servers`.`db_password`,
+        $query =  'SELECT    `servers`.`hostname`,
+                             `servers`.`port`,
+                             `servers`.`ssh_accounts_id`,
 
-                                     `ssh_accounts`.`username`,
-                                     `ssh_accounts`.`ssh_key`
+                             `ssh_accounts`.`username`,
+                             `ssh_accounts`.`ssh_key`';
 
-                           FROM      `servers`
+        $from  = ' FROM      `servers`
 
-                           LEFT JOIN `ssh_accounts`
-                           ON        `servers`.`ssh_accounts_id` = `ssh_accounts`.`id`
+                   LEFT JOIN `ssh_accounts`
+                   ON        `servers`.`ssh_accounts_id` = `ssh_accounts`.`id`';
 
-                           WHERE     `servers`.`id`       = :id
-                           OR        `servers`.`hostname` = :hostname',
 
-                           array(':id'       => $host,
-                                 ':hostname' => $host));
+        if(is_numeric($host)){
+            $where   = ' WHERE `servers`.`id`       = :id';
+            $execute = array(':id'       => $host);
+
+        }else{
+            $where   = ' WHERE `servers`.`hostname` = :hostname';
+            $execute = array(':hostname' => $host);
+        }
+
+        if($database){
+            $query .= ' ,
+                        `database_accounts`.`username`      AS `db_username`,
+                        `database_accounts`.`password`      AS `db_password`,
+                        `database_accounts`.`root_password` AS `db_root_password`';
+
+            $from  .= ' LEFT JOIN `database_accounts`
+                        ON        `database_accounts`.`id` = `servers`.`database_accounts_id` ';
+        }
+
+        $server = sql_get($query.$from.$where, $execute);
 
         return $server;
 
