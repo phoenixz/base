@@ -240,12 +240,12 @@ function servers_get($host, $database = false){
 
         if($database){
             $query .= ' ,
-                        `database_accounts`.`username`,
-                        `database_accounts`.`password`,
-                        `database_accounts`.`root_password`';
+                        `database_accounts`.`username`      AS `db_username`,
+                        `database_accounts`.`password`      AS `db_password`,
+                        `database_accounts`.`root_password` AS `db_root_password`';
 
             $from  .= ' LEFT JOIN `database_accounts`
-                        ON        `database_accounts`.`ssh_accounts_id` = `ssh_accounts`.`id` ';
+                        ON        `database_accounts`.`id` = `servers`.`database_accounts_id` ';
         }
 
         $server = sql_get($query.$from.$where, $execute);
