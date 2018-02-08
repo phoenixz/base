@@ -132,7 +132,7 @@
 // :OBSOLETE:
     $.handleFail = function (data, cb) {
         if (typeof cb == 'function') {
-            return cb(data, result);
+            return cb(data);
         }
     };
 
