@@ -23,7 +23,7 @@ function mysql_exec($server, $query){
         $query = addslashes($query);
 
         if(!is_array($server)){
-            $server = servers_get($server);
+            $server = servers_get($server, true);
         }
 
         mysql_create_password_file($server['db_username'], $server['db_password'], $server);
