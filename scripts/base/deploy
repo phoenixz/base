@@ -181,6 +181,12 @@ $dobackup            =   cli_argument('--do-backup');
 $tilde               = '~'.date('Ymd-His');
 $categories          =   cli_arguments();
 
+foreach($categories as $category){
+    if(substr($category, 0, 1) == '-'){
+        throw new bException(tr('Invalid category ":category" specified', array(':category' => $category)), 'invalid');
+    }
+}
+
 cli_no_arguments_left();
 
 if(!$message and !$notag){
