@@ -183,7 +183,7 @@ $categories          =   cli_arguments();
 
 foreach($categories as $category){
     if(substr($category, 0, 1) == '-'){
-        throw new bException(tr('Invalid category ":category" specified', array(':category' => $category)), 'invalid');
+        throw new bException(tr('Invalid category ":category" specified', array(':category' => $category)), 'warning/invalid');
     }
 }
 
