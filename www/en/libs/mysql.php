@@ -277,6 +277,7 @@ function mysql_master_replication_setup($params){
         return $database;
 
     }catch(Exception $e){
+        mysql_update_replication_status($database['id'], 'disabled');
         throw new bException(tr('mysql_master_replication_setup(): Failed'), $e);
     }
 }
@@ -396,6 +397,7 @@ function mysql_slave_replication_setup($params){
         mysql_update_replication_status($database['database'], 'enabled');
 
     }catch(Exception $e){
+        mysql_update_replication_status($database['database'], 'disabled');
         throw new bException(tr('mysql_slave_replication_setup(): Failed'), $e);
     }
 }
