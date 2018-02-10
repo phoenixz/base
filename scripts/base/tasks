@@ -462,7 +462,19 @@ showdie($interval);
                     sql_query('SELECT 1');
 
                 }catch(Exception $e){
-showdie($e->getMessage());
+                    $message = $e->getMessage();
+
+                    if(!preg_match('send of .+? bytes failed with .+? Broken pipe', $message)){
+                        /*
+                         * This is a different error, keep on throwing
+                         */
+                        throw $e;
+                    }
+
+                    /*
+                     * MySQL server went away, close the connection
+                     */
+                    sql_close();
                 }
 
                 $end = microtime(true);
