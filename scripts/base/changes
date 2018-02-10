@@ -186,6 +186,21 @@ foreach($files as $file => &$status){
         $marked = false;
         if($status != 'modified') continue;
 
+
+        if(preg_match('/sitemap.*?.xml/', $file)){
+            /*
+             * Skip sitemap files
+             */
+            continue;
+        }
+
+        if(preg_match('/sitemaps\//', $file)){
+            /*
+             * Skip sitemap directories
+             */
+            continue;
+        }
+
         log_console(tr('Checking file ":file"', array(':file' => $file)), 'VERBOSE');
 
         ///*
@@ -472,12 +487,12 @@ foreach($sections as $section => &$list){
                      * git patching failed. Cleanup base and toolkit paths
                      */
                     try{
-                        git_clean($paths['base']   , true, true);
-                        git_checkout($paths['base'], true, true);
+                        git_clean($paths['base'], true, true);
+                        git_checkout($paths['base']);
 
                         if(!$base_only){
-                            git_clean($paths['toolkit']   , true, true);
-                            git_checkout($paths['toolkit'], true, true);
+                            git_clean($paths['toolkit'], true, true);
+                            git_checkout($paths['toolkit']);
                         }
 
                     }catch(Exception $f){
