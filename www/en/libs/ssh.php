@@ -489,7 +489,7 @@ function ssh_mysql_slave_tunnel($server){
         /*
          * Delete key file in background process
          */
-        safe_exec('{ sleep 5; sudo chmod 0600 '.$keyfile.' ; sudo rm -rf '.$keyfile.' ; } &');
+        safe_exec('{ sleep 5; chmod 0600 '.$keyfile.' ; rm -rf '.$keyfile.' ; } &');
 
         return $result;
 
