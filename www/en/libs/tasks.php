@@ -337,4 +337,36 @@ function tasks_list($status, $limit = 10){
         throw new bException('tasks_list(): Failed', $e);
     }
 }
+
+
+
+/*
+ * Test if the core MySQL server is still available. If not, disconnect so that
+ * later queries will auto reconnect
+ */
+function task_test_mysql(){
+    /*
+     * Tasks may have affected the MySQL server or our connection
+     * to it. Test MySQL connection. If dropped, restart our
+     * connection right now
+     */
+    try{
+        sql_query('SELECT 1');
+
+    }catch(Exception $e){
+        $message = $e->getMessage();
+
+        if(!preg_match('/send of .+? bytes failed with .+? Broken pipe/', $message)){
+            /*
+             * This is a different error, keep on throwing
+             */
+            throw new bException('task_test_mysql(): Failed', $e);
+        }
+
+        /*
+         * MySQL server went away, close the connection
+         */
+        sql_close();
+    }
+}
 ?>
