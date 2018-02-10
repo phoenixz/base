@@ -1168,11 +1168,12 @@ function sql_current_database(){
  */
 function sql_random_id($table, $min = 1, $max = 2147483648){
     try{
-        $exists = true;
+        $exists  = true;
+        $timeout = 50; // Don't do more than 50 tries on this!
 
-        while($exists){
+        while($exists and --$timeout > 0){
             $id     = mt_rand($min, $max);
-            $exists = sql_query('SELECT `id` FROM `'.$table.'` WHERE `id` = :id');
+            $exists = sql_query('SELECT `id` FROM `'.$table.'` WHERE `id` = :id', array(':id' => $id));
         }
 
         return $id;
