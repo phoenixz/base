@@ -218,7 +218,7 @@ function patch($file, $path, $method = 'apply', $replaces = null){
         }
 
     }catch(Exception $e){
-        throw new bException('patch(): Failed', $e);
+        throw new bException(tr('patch(): Failed for file ":file"', array(':file' => $file)), $e);
     }
 }
 ?>
