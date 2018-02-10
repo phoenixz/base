@@ -143,9 +143,9 @@ function upload_multi($params){
                 url      : "'.$params['url'].'",
                 '.
 
-                ($params['done'] ?      'done  : function (e, data) { $.handleDone(data.result, '.$params['done'].'); },' : '').
+                ($params['done'] ?   'complete : '.$params['done'].',' : '').
 
-                ($params['fail'] ? "\n".'fail  : function (e, data) { $.handleFail(data.jqXHR, '.$params['fail'].'); },' : '').'
+                ($params['fail'] ? "\n".'fail  : '.$params['fail'].',' : '').'
 
                 progress: function (e, data) {
                     '.$params['process'].'
