@@ -453,6 +453,18 @@ showdie($interval);
                         throw new bException(tr('Unknown task execution method ":method" specified for task ":id" in ":time"', array(':method' => $task['method'], ':id' => $task['id'], ':time' => time_difference($start, $end, 'auto', 5))), 'warning/unknown');
                 }
 
+                /*
+                 * Tasks may have affected the MySQL server or our connection
+                 * to it. Test MySQL connection. If dropped, restart our
+                 * connection right now
+                 */
+                try{
+                    sql_query('SELECT 1');
+
+                }catch(Exception $e){
+showdie($e->getMessage());
+                }
+
                 $end = microtime(true);
 
                 $task['status']     = 'completed';
