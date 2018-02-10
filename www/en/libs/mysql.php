@@ -265,7 +265,6 @@ function mysql_master_replication_setup($params){
         log_console(tr('Copying remote dump to local'), 'DOT');
         servers_exec($database['hostname'], 'rm /tmp/'.$database['database'].'.sql.gz -f', null, false, true);
         ssh_cp($database, '/tmp/'.$database['database'].'.sql.gz', '/tmp/', true);
-        servers_exec($database['hostname'], 'rm /tmp/'.$database['database'].'.sql.gz -f;');
 
         /*
          * Get the log_file and log_pos
