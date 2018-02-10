@@ -42,6 +42,13 @@ try{
     }
 
     /*
+     * Ensure libs symlink is available
+     */
+    if(!file_exists(ROOT.'data/libs')){
+        symlink('../www/en/libs', ROOT.'data/libs');
+    }
+
+    /*
      * Assign temporary file, and copy the script there without the hashbang header
      * Then include it to execute it.
      *
@@ -70,6 +77,12 @@ try{
 //        cli_method(null, false);
         include($_script_exec_file);
         array_pop($core->register['scripts']);
+
+        /*
+         * Delete the TMP script and the data/libs symlink
+         */
+        file_delete(ROOT.'data/libs', true);
+        file_delete($_script_exec_file, true);
 
     }catch(Exception $e){
 showdie($e);
