@@ -484,12 +484,12 @@ function ssh_mysql_slave_tunnel($server){
         /*
          * Execute command
          */
-        $result = safe_exec('ssh -f -p '.$server['port'].' -i '.$keyfile.' -L '.$server['ssh_port'].':127.0.0.1:3306 '.$server['username'].'@'.$server['hostname'].' -N &');
+        $result = safe_exec('ssh -p '.$server['port'].' -i '.$keyfile.' -L '.$server['ssh_port'].':localhost:3306 '.$server['username'].'@'.$server['hostname'].' -f -N &');
 
         /*
          * Delete key file in background process
          */
-        safe_exec('{ sleep 5; sudo chmod 0600 '.$keyfile.' ; sudo rm -rf '.$keyfile.' ; } &');
+        safe_exec('{ sleep 10; chmod 0600 '.$keyfile.' ; rm -rf '.$keyfile.' ; } &');
 
         return $result;
 

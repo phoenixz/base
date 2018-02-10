@@ -1,4 +1,4 @@
-tasks_add=<?php
+<?php
 /*
  * Tasks library
  *
