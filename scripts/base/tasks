@@ -464,7 +464,7 @@ showdie($interval);
                 }catch(Exception $e){
                     $message = $e->getMessage();
 
-                    if(!preg_match('send of .+? bytes failed with .+? Broken pipe', $message)){
+                    if(!preg_match('/send of .+? bytes failed with .+? Broken pipe/', $message)){
                         /*
                          * This is a different error, keep on throwing
                          */
