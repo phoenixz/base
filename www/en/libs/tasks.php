@@ -32,9 +32,10 @@ function tasks_init(){
 function tasks_add($task){
     try{
         array_params($task);
-        array_default($task, 'status'    , 'new');
-        array_default($task, 'method'    , 'normal');
-        array_default($task, 'time_limit', 30);
+        array_default($task, 'status'      , 'new');
+        array_default($task, 'method'      , 'normal');
+        array_default($task, 'time_limit'  , 30);
+        array_default($task, 'auto_execute', true);
 
         $task = tasks_validate($task);
 
@@ -58,7 +59,10 @@ function tasks_add($task){
         $task['id'] = sql_insert_id();
 
         log_file(tr('Added new task ":description" with id ":id"', array(':description' => $task['description'], ':id' => $task['id'])), 'tasks');
-        run_background('base/tasks execute --env '.ENVIRONMENT);
+
+        if($task['auto_execute']){
+            run_background('base/tasks execute --env '.ENVIRONMENT);
+        }
 
         return $task;
 
