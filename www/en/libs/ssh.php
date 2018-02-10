@@ -332,7 +332,8 @@ function ssh_cp($server, $source, $destnation, $from_server = false){
         array_default($server, 'hostname'     , '');
         array_default($server, 'ssh_key'      , '');
         array_default($server, 'port'         , 22);
-        array_default($server, 'arguments'    , '-T');
+        array_default($server, 'hostkey_check', false);
+        array_default($server, 'arguments'    , '');
 
         /*
          * If server was specified by just name, then lookup the server data in
@@ -357,6 +358,10 @@ function ssh_cp($server, $source, $destnation, $from_server = false){
             }
 
             $server = sql_merge($server, $dbserver);
+        }
+
+        if(!$server['hostkey_check']){
+            $server['arguments'] .= ' -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null ';
         }
 
         /*
@@ -428,6 +433,7 @@ function ssh_mysql_slave_tunnel($server){
         array_default($server, 'ssh_key'      , '');
         array_default($server, 'port'         , 22);
         array_default($server, 'arguments'    , '-T');
+        array_default($server, 'hostkey_check', false);
 
         /*
          * If server was specified by just name, then lookup the server data in
@@ -452,6 +458,10 @@ function ssh_mysql_slave_tunnel($server){
             }
 
             $server = sql_merge($server, $dbserver);
+        }
+
+        if(!$server['hostkey_check']){
+            $server['arguments'] .= ' -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null ';
         }
 
         /*
