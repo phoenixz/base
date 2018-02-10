@@ -284,6 +284,15 @@ if(empty($_CONFIG['cookie']['domain'])){
          */
         if(empty($_SESSION['user']['timezone'])){
             $_SESSION['user']['timezone'] = $_CONFIG['timezone']['display'];
+
+        }else{
+            try{
+                $check = new DateTimeZone($_SESSION['user']['timezone']);
+
+            }catch(Exception $e){
+                notify($e);
+                $_SESSION['user']['timezone'] = $_CONFIG['timezone']['display'];
+            }
         }
 
     }catch(Exception $e){
