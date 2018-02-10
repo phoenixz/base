@@ -91,4 +91,23 @@ function meta_history($meta_id){
         throw new bException('meta_history(): Failed', $e);
     }
 }
+
+
+
+/*
+ * Erase the meta entry
+ * NOTE: Due to foreign key restraints, ensure that the referencing table entry
+ * has been erased first!
+ */
+function meta_erase($meta_id){
+    try{
+        sql_query('DELETE FROM `meta_history` WHERE `meta_id` = :meta_id', array(':meta_id' => $meta_id));
+        sql_query('DELETE FROM `meta`         WHERE `id`      = :id'     , array(':id'      => $meta_id));
+
+        return $meta_id;
+
+    }catch(Exception $e){
+        throw new bException('meta_erase(): Failed', $e);
+    }
+}
 ?>

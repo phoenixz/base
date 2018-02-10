@@ -1,4 +1,4 @@
-=<?php
+tasks_add=<?php
 /*
  * Tasks library
  *
@@ -40,8 +40,8 @@ function tasks_add($task){
 
         load_libs('json');
 
-        sql_query('INSERT INTO `tasks` (`createdby`, `meta_id`, `after`, `status`, `command`, `method`, `time_limit`, `parents_id`, `data`, `description`)
-                   VALUES              (:createdby , :meta_id , :after , :status , :command , :method , :time_limit , :parents_id , :data , :description )',
+        sql_query('INSERT INTO `tasks` (`createdby`, `meta_id`, `after`, `status`, `command`, `method`, `time_limit`, `verbose`, `parents_id`, `data`, `description`)
+                   VALUES              (:createdby , :meta_id , :after , :status , :command , :method , :time_limit , :verbose , :parents_id , :data , :description )',
 
                    array(':createdby'   => $_SESSION['user']['id'],
                          ':meta_id'     => meta_action(),
@@ -50,6 +50,7 @@ function tasks_add($task){
                          ':parents_id'  => get_null($task['parents_id']),
                          ':method'      => cfm($task['method']),
                          ':time_limit'  => cfm($task['time_limit']),
+                         ':verbose'     => $task['verbose'],
                          ':after'       => ($task['after'] ? date_convert($task['after'], 'mysql') : null),
                          ':data'        => json_encode_custom($task['data']),
                          ':description' => $task['description']));
@@ -84,6 +85,7 @@ function tasks_update($task, $executed = false){
          '.($executed ? ' `executedon` = NOW(), ' : '').'
                           `executed`   = :executed,
                           `status`     = :status,
+                          `verbose`    = :verbose,
                           `results`    = :results
 
                    WHERE  `id`         = :id',
@@ -91,6 +93,7 @@ function tasks_update($task, $executed = false){
                    array(':id'         => $task['id'],
                          ':after'      => $task['after'],
                          ':status'     => $task['status'],
+                         ':verbose'    => $task['verbose'],
                          ':executed'   => get_null($task['executed']),
                          ':results'    => json_encode_custom($task['results'])));
 
@@ -116,7 +119,7 @@ function tasks_validate($task){
     try{
         load_libs('validate');
 
-        $v = new validate_form($task, 'status,command,after,data,results,method,time_limit,executed,time_spent,parents_id');
+        $v = new validate_form($task, 'status,command,after,data,results,method,time_limit,executed,time_spent,parents_id,verbose');
 
         if($task['time_limit'] === ""){
             $task['time_limit'] = $_CONFIG['tasks']['default_time_limit'];
@@ -143,6 +146,8 @@ function tasks_validate($task){
                 $v->setError(tr('Specified parent tasks id ":id" does not exist', array(':id' => $task['parents_id'])));
             }
         }
+
+        $task['verbose'] = (boolean) $task['verbose'];
 
         if(is_object($task['data'])){
             $v->setError(tr('Specified task data is an object data type, which is not supported'));
@@ -221,6 +226,7 @@ function tasks_get($filters, $set_status = false){
                                    `tasks`.`status`,
                                    `tasks`.`after`,
                                    `tasks`.`data`,
+                                   `tasks`.`verbose`,
                                    `tasks`.`results`,
                                    `tasks`.`time_limit`,
                                    `tasks`.`time_spent`,
@@ -297,6 +303,7 @@ function tasks_list($status, $limit = 10){
                                      `tasks`.`status`,
                                      `tasks`.`after`,
                                      `tasks`.`method`,
+                                     `tasks`.`verbose`,
                                      `tasks`.`time_limit`,
                                      `tasks`.`time_spent`,
                                      `tasks`.`executed`,
