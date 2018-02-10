@@ -20,7 +20,7 @@ try{
 
     }elseif(!is_array($arguments)){
         if(!is_string($arguments)){
-            throw new bException('script_exec(): Invalid argv specified. Should either be an array or a space delimited string');
+            throw new bException('script_exec(): Invalid argv specified. Should either be an array or a space delimited string', 'invalid');
         }
 
         $arguments = explode(' ', $arguments);
@@ -44,7 +44,18 @@ try{
     /*
      * Ensure libs symlink is available
      */
-    if(!file_exists(ROOT.'data/libs')){
+    clearstatcache();
+
+    if(!file_exists(ROOT.'data/libs') and !is_readable(ROOT.'data/libs')){
+        if(is_link(ROOT.'data/libs')){
+            /*
+             * Wut? The data/libs symlink is broken?
+             * Delete and start over
+             */
+            log_console(tr('data/libs symlink broken, fixing issue'), 'warning');
+            file_delete(ROOT.'data/libs');
+        }
+
         symlink('../www/en/libs', ROOT.'data/libs');
     }
 
@@ -81,11 +92,9 @@ try{
         /*
          * Delete the TMP script and the data/libs symlink
          */
-        file_delete(ROOT.'data/libs', true);
         file_delete($_script_exec_file, true);
 
     }catch(Exception $e){
-showdie($e);
         if(!$e->getCode()){
             throw $e;
         }
@@ -114,7 +123,7 @@ showdie($e);
      * Cleanup
      */
     try{
-        file_clear_path($_script_exec_file);
+        file_delete($_script_exec_file, true);
 
     }catch(Exception $e){
         /*
