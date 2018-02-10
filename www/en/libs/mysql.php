@@ -269,8 +269,8 @@ function mysql_master_replication_setup($params){
         /*
          * Get the log_file and log_pos
          */
-        $master_status        = servers_exec($database['hostname'], 'mysql \"-u'.$database['root_db_user'].'\" \"-p'.$database['root_db_password'].'\" -ANe \"SHOW MASTER STATUS;\"');
-        $master_status        = explode(',', preg_replace('/\s+/', ',', $master_status[0]));
+        $master_status        = mysql_exec($database['hostname'], 'SHOW MASTER STATUS');
+        $master_status        = explode(',', preg_replace('/\s+/', ',', $master_status[1]));
         $database['log_file'] = $master_status[0];
         $database['log_pos']  = $master_status[1];
 
