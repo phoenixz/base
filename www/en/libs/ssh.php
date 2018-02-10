@@ -359,6 +359,10 @@ function ssh_cp($server, $source, $destnation, $from_server = false){
             $server = sql_merge($server, $dbserver);
         }
 
+        if(!$server['hostkey_check']){
+            $server['arguments'] .= ' -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null ';
+        }
+
         /*
          * Ensure that ssh_keys directory exists and that its safe
          */
@@ -452,6 +456,10 @@ function ssh_mysql_slave_tunnel($server){
             }
 
             $server = sql_merge($server, $dbserver);
+        }
+
+        if(!$server['hostkey_check']){
+            $server['arguments'] .= ' -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null ';
         }
 
         /*
