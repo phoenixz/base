@@ -21,8 +21,9 @@ function sane_find_scanners(){
     global $_CONFIG;
 
     try{
-        $results = safe_exec('sane-find-scanner -q | grep -v "Could not find"');
-        $retval  = array('usb'       => array(),
+        $results = safe_exec('sudo sane-find-scanner -q | grep -v "Could not find"');
+        $retval  = array('count'     => 0,
+                         'usb'       => array(),
                          'scsi'      => array(),
                          'parrallel' => array(),
                          'unknown'   => array());
@@ -32,44 +33,48 @@ function sane_find_scanners(){
                 /*
                  * Found a USB scanner
                  */
-                if(preg_match_all('/found USB scanner (vendor=0x([0-9a-f]{4}) \[([A-Z0-9-_])\], product=0x([0-9a-f]{4}) \[([A-Z0-9-_])\]) at libusb:([0-9{3}]:[0-9]{3})/i', $result, $matches)){
-                    $retval['usb'][] = array('vendor'       => $matches[0],
-                                             'product'      => $matches[2],
-                                             'model'        => $matches[3],
-                                             'manufacturer' => $matches[1],
-                                             'libusb'       => $matches[4]);
+                if(preg_match_all('/found USB scanner \(vendor=0x([0-9a-f]{4}) \[([A-Za-z0-9-_ ]+)\], product=0x([0-9a-f]{4}) \[([A-Za-z0-9-_ ]+)\]\) at libusb:([0-9]{3}:[0-9]{3})/i', $result, $matches)){
+                    $retval['count']++;
+                    $retval['usb'][] = array('raw'          => $matches[0][0],
+                                             'vendor'       => $matches[1][0],
+                                             'product'      => $matches[3][0],
+                                             'manufacturer' => $matches[2][0],
+                                             'model'        => $matches[4][0],
+                                             'libusb'       => $matches[5][0]);
 
                 }else{
                     $retval['unknown'][] = $result;
                 }
 
             }elseif(substr($result, 0, 18) == 'found SCSI scanner'){
+under_construction();
 // :TEST: This has not been tested due to a lack of parrallel scanners. Do these still exist?
                 /*
                  * Found a SCSI scanner
                  */
                 if(preg_match_all('/found SCSI scanner (vendor=0x([0-9a-f]{4}) \[([A-Z0-9-_])\], product=0x([0-9a-f]{4}) \[([A-Z0-9-_])\]) at libusb:([0-9{3}]:[0-9]{3})/i', $result, $matches)){
-                    $retval['scsi'][] = array('vendor'       => $matches[0],
-                                              'product'      => $matches[2],
-                                              'model'        => $matches[3],
-                                              'manufacturer' => $matches[1],
-                                              'libusb'       => $matches[4]);
+                    $retval['count']++;
+                    $retval['scsi'][] = array('vendor'       => $matches[0][0],
+                                              'product'      => $matches[2][0],
+                                              'manufacturer' => $matches[1][0],
+                                              'libusb'       => $matches[4][0]);
 
                 }else{
                     $retval['unknown'][] = $result;
                 }
 
             }elseif(substr($result, 0, 23) == 'found parrallel scanner'){
+under_construction();
 // :TEST: This has not been tested due to a lack of parrallel scanners. Do these still exist?
                 /*
                  * Found a parrallel scanner
                  */
                 if(preg_match_all('/found parrallel scanner (vendor=0x([0-9a-f]{4}) \[([A-Z0-9-_])\], product=0x([0-9a-f]{4}) \[([A-Z0-9-_])\]) at libusb:([0-9{3}]:[0-9]{3})/i', $result, $matches)){
-                    $retval['parrallel'][] = array('vendor'       => $matches[0],
-                                                   'product'      => $matches[2],
-                                                   'model'        => $matches[3],
-                                                   'manufacturer' => $matches[1],
-                                                   'libusb'       => $matches[4]);
+                    $retval['count']++;
+                    $retval['parrallel'][] = array('vendor'       => $matches[0][0],
+                                                   'product'      => $matches[2][0],
+                                                   'manufacturer' => $matches[1][0],
+                                                   'libusb'       => $matches[4][0]);
 
                 }else{
                     $retval['unknown'][] = $result;
