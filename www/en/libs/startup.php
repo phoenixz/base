@@ -2925,7 +2925,7 @@ function str_truncate($source, $length, $fill = ' ... ', $method = 'right', $on_
 /*
  * Return a string that is suitable for logging.
  */
-function str_log($source, $truncate = 2047, $separator = ', '){
+function str_log($source, $truncate = 8187, $separator = ', '){
     try{
         load_libs('json');
 
