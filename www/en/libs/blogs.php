@@ -1436,6 +1436,12 @@ function blogs_validate_post($post, $params = null){
         $v->isValid();
 
         /*
+         * Merge in from old DB post
+         */
+        $db_post = blogs_post_get($post['blogs_id'], $post['id']);
+        $post    = sql_merge($db_post, $post);
+
+        /*
          * Set extra parameters
          */
         $post['seoname']  = seo_unique($post['name'], 'blogs_posts', $id);
@@ -2085,7 +2091,7 @@ function blogs_post_url($post){
                      * This post does not have all required sections available. Disable post and notify
                      */
                     sql_query('UPDATE `blogs_posts` SET `status` = "incomplete" WHERE `id` = :id', array(':id' => $post['id']));
-                    throw new bException(tr('blogs_post_url(): Blog post ":post" is incomplete, a URL cannot be generated', array(':post' => $post['id'])), 'incomplete');
+                    throw new bException(tr('blogs_post_url(): Blog post ":post" is missing the section ":section", a URL cannot be generated', array(':post' => $post['id'], ':section' => $section)), 'incomplete');
                 }
             }
         }
