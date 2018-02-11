@@ -903,59 +903,6 @@ function cli_not_root(){
 
 
 /*
- * Show a dot on the console each $each call
- * if $each is false, "DONE" will be printed, with next line
- * Internal counter will reset if a different $each is received.
- */
-function cli_dot($each = 10, $color = 'green', $dot = '.', $quiet = false){
-    static $count  = 0,
-           $l_each = 0;
-
-    try{
-        if($quiet and QUIET){
-            /*
-             * Don't show this in QUIET mode
-             */
-            return false;
-        }
-
-        if($each === false){
-            if($count){
-                /*
-                 * Only show "Done" if we have shown any dot at all
-                 */
-                log_console(tr('Done'), $color);
-
-            }else{
-                log_console('');
-            }
-
-            $l_each = 0;
-            $count  = 0;
-            return true;
-        }
-
-        $count++;
-
-        if($l_each != $each){
-            $l_each = $each;
-            $count  = 0;
-        }
-
-        if($count >= $l_each){
-            $count = 0;
-            log_console($dot, $color, false);
-            return true;
-        }
-
-    }catch(Exception $e){
-        throw new bException('cli_dot(): Failed', $e);
-    }
-}
-
-
-
-/*
  *
  */
 function cli_arguments_none_left(){
