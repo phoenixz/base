@@ -8,16 +8,30 @@
  * @copyright Sven Oostenbrink <support@ingiga.com>, Johan Geuze
  */
 
+cli_init();
+
 
 
 /*
- * Ensure that the posix extension is available.
+ * Initialize the SQL library
  */
-$core->register['posix'] = true;
+function cli_init(){
+    global $core;
 
-if(!function_exists('posix_getuid')){
-    log_console('WARNING: The POSIX extension seems to be unavailable, this may cause some functionalities to fail or give unexpected results', 'yellow');
-    $core->register['posix'] = false;
+    try{
+        /*
+         * Ensure that the posix extension is available.
+         */
+        $core->register['posix'] = true;
+
+        if(!function_exists('posix_getuid')){
+            log_console('WARNING: The POSIX extension seems to be unavailable, this may cause some functionalities to fail or give unexpected results', 'yellow');
+            $core->register['posix'] = false;
+        }
+
+    }catch(Exception $e){
+        throw new bException('cli_init(): Failed', $e);
+    }
 }
 
 
@@ -112,13 +126,18 @@ class Colors {
  * Return the specified string in the specified color
  */
 function cli_color($string, $fore_color, $back_color = 'black'){
-    static $color;
+    try{
+        static $color;
 
-    if(!$color){
-        $color = new Colors();
+        if(!$color){
+            $color = new Colors();
+        }
+
+        return $color->getColoredString($string, $fore_color, $back_color);
+
+    }catch(Exception $e){
+        throw new bException('cli_color(): Failed', $e);
     }
-
-    return $color->getColoredString($string, $fore_color, $back_color);
 }
 
 
@@ -144,12 +163,17 @@ function cli_strip_color($string){
  * Only allow execution on shell scripts
  */
 function cli_only($exclusive = false){
-    if(!PLATFORM_CLI){
-        throw new bException('cli_only(): This can only be done from command line', 'clionly');
-    }
+    try{
+        if(!PLATFORM_CLI){
+            throw new bException('cli_only(): This can only be done from command line', 'clionly');
+        }
 
-    if($exclusive){
-        cli_run_once_local();
+        if($exclusive){
+            cli_run_once_local();
+        }
+
+    }catch(Exception $e){
+        throw new bException('cli_only(): Failed', $e);
     }
 }
 
@@ -947,10 +971,9 @@ function cli_done(){
     global $core;
 
     try{
-        if(empty($core)){
+        if(empty($core) or empty($core->register['ready'])){
             echo tr("pre config exception\n");
             die(1);
-
         }
 
         $exit_code = isset_get($core->register['exit_code'], 0);
@@ -1051,9 +1074,7 @@ function cli_pkill($process, $signal = null, $sudo = false){
  */
 function cli_get_columns(){
     try{
-        $cols = safe_exec('echo $COLUMNS');
-        $cols = array_pop($cols);
-
+        $cols = exec('tput cols');
         return $cols;
 
     }catch(Exception $e){
@@ -1067,9 +1088,7 @@ function cli_get_columns(){
  */
 function cli_get_lines(){
     try{
-        $rows = safe_exec('echo $LINES');
-        $rows = array_pop($rows);
-
+        $rows = exec('tput cols');
         return $rows;
 
     }catch(Exception $e){

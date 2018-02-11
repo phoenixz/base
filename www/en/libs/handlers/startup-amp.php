@@ -54,14 +54,6 @@ load_libs(',http,html,inet,cache'.(empty($_CONFIG['memcached']) ? '' : ',memcach
 
 
 /*
- * Configuration has been loaded succesfully, from here all debug functions
- * will work correctly
- */
-$core->register['config_ok'] = true;
-
-
-
-/*
  * Check OPTIONS request.
  * If options was requested, just return basic HTTP headers
  */

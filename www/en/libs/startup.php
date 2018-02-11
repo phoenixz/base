@@ -277,7 +277,7 @@ class bException extends Exception{
             /*
              * Only log to file if core is available and config_ok (configuration is loaded correclty)
              */
-            if(!empty($core) and !empty($core->register['config_ok'])){
+            if(!empty($core) and !empty($core->register['ready'])){
                 foreach($messages as $message){
                     log_file($message, 'exceptions');
                 }
@@ -292,7 +292,7 @@ class bException extends Exception{
         }
 
         parent::__construct($orgmessage, null);
-        $this->code = str_log($code);
+        $this->code = (string) $code;
 
         /*
          * If there are any more messages left, then add them as well
@@ -510,9 +510,13 @@ function cf($source, $allow_null = true){
  * Returns if site is running in debug mode or not
  */
 function debug($class = null){
-    global $_CONFIG;
+    global $_CONFIG, $core;
 
     try{
+        if(empty($core->register['ready'])){
+            throw new bException(tr('debug(): Startup has not yet finished and base is not ready to start working properly. debug() may not be called until configuration is fully loaded and available'), 'invalid');
+        }
+
         if(!is_array($_CONFIG['debug'])){
             throw new bException(tr('debug(): Invalid configuration, $_CONFIG[debug] is boolean, and it should be an array. Please check your config/ directory for "$_CONFIG[\'debug\']"'), 'invalid');
         }
@@ -605,7 +609,7 @@ function load_libs($libraries, $exception = true){
  * Load specified configuration file
  */
 function load_config($files = ''){
-    global $_CONFIG;
+    global $_CONFIG, $core;
     static $paths;
 
     try{
@@ -657,6 +661,12 @@ function load_config($files = ''){
                 throw new bException(tr('load_config(): No configuration file was found for requested configuration ":file"', array(':file' => $file)), 'not-found');
             }
         }
+
+        /*
+         * Configuration has been loaded succesfully, from here all debug
+         * functions will work correctly. This is
+         */
+        $core->register['ready'] = true;
 
     }catch(Exception $e){
         throw new bException(tr('load_config(): Failed to load some or all of config file(s) ":file"', array(':file' => $files)), $e);
@@ -2927,7 +2937,15 @@ function str_truncate($source, $length, $fill = ' ... ', $method = 'right', $on_
  */
 function str_log($source, $truncate = 2047, $separator = ', '){
     try{
-        load_libs('json');
+        try{
+            load_libs('json');
+
+        }catch(Exception $e){
+            /*
+             * Fuck...
+             */
+            return '*** str_log(): json library load failed, cannot show source string ***';
+        }
 
         if(!$source){
             if(is_numeric($source)){

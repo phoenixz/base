@@ -1,5 +1,13 @@
 <?php
+global $core;
+
 try{
+    if(empty($core->register['ready'])){
+        throw new bException(tr('safe_exec(): Startup has not yet finished and base is not ready to start working properly. safe_exec() may not be called until configuration is fully loaded and available'), 'invalid');
+    }
+
+
+
     /*
      * Join all commands together
      */
@@ -43,12 +51,22 @@ try{
         $lastline = exec($command.($route_errors ? ' 2>&1' : ''), $output, $exitcode);
     }
 
+
+
+    /*
+     *
+     */
     if(VERBOSE){
         foreach($output as $line){
             log_console($output);
         }
     }
 
+
+
+    /*
+     *
+     */
     if($exitcode){
         if(!in_array($exitcode, array_force($ok_exitcodes))){
             load_libs('json');
@@ -61,6 +79,10 @@ try{
     return $output;
 
 }catch(Exception $e){
+    if(!isset($output)){
+        $output = '*** COMMAND HAS NOT YET BEEN EXECUTED ***';
+    }
+
     $e->setData($output);
 
     throw new bException('safe_exec(): Failed', $e);

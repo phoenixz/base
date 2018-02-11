@@ -244,10 +244,20 @@ load_libs('cache'.(empty($_CONFIG['memcached']) ? '' : ',memcached').(empty($_CO
 
 
 /*
- * Configuration has been loaded succesfully, from here all debug functions
- * will work correctly
+ * Determine the screen width
  */
-$core->register['config_ok'] = true;
+$core->register['cli'] = array('columns' => cli_get_columns(),
+                               'rows'    => cli_get_lines());
+
+if($core->register['cli']['columns'] <= 80){
+    $core->register['cli']['width'] = 'small';
+
+}elseif($core->register['cli']['columns'] <= 160){
+    $core->register['cli']['width'] = 'medium';
+
+}else{
+    $core->register['cli']['width'] = 'large';
+}
 
 
 

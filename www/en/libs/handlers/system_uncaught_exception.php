@@ -14,7 +14,7 @@ try{
 
     $executed = true;
 
-    if(!empty($core) and !empty($core->register['config_ok'])){
+    if(!empty($core) and !empty($core->register['ready'])){
         log_file($e, 'exceptions');
     }
 
@@ -27,14 +27,14 @@ try{
 
     switch(PLATFORM){
         case 'cli':
-            if(empty($core) or empty($core->register['config_ok'])){
+            if(empty($core) or empty($core->register['ready'])){
                 /*
                  * Configuration hasn't been loaded yet, we cannot even know if we are
                  * in debug mode or not!
                  */
-                echo "\033[0;31mpre config exception\033[0m\n";
+                echo "\033[0;31mPre ready exception\033[0m\n";
                 print_r($e);
-                die("\033[0;31mpre config exception\033[0m\n");
+                die("\033[0;31mPre ready exception\033[0m\n");
             }
 
             /*
@@ -51,32 +51,32 @@ try{
                      */
                     log_console(tr('Warning: :warning', array(':warning' => trim(str_from($e->getMessage(), '():')))), 'yellow');
                     $core->register['exit_code'] = 255;
-                    die(255);
+                    die($core->register['exit_code']);
                 }
 
                 switch((string) $e->getCode()){
                     case 'already-running':
                         log_console(tr('Failed: :message', array(':message' => trim(str_from($e->getMessage(), '():')))), 'yellow');
                         $core->register['exit_code'] = 254;
-                        die(4);
+                        die($core->register['exit_code']);
 
                     case 'no-method':
                         log_console(tr('Failed: :message', array(':message' => trim(str_from($e->getMessage(), '():')))), 'yellow');
                         cli_show_usage(isset_get($GLOBALS['usage']), 'white');
                         $core->register['exit_code'] = 253;
-                        die(5);
+                        die($core->register['exit_code']);
 
                     case 'unknown-method':
                         log_console(tr('Failed: :message', array(':message' => trim(str_from($e->getMessage(), '():')))), 'yellow');
                         cli_show_usage(isset_get($GLOBALS['usage']), 'white');
                         $core->register['exit_code'] = 252;
-                        die(6);
+                        die($core->register['exit_code']);
 
                     case 'invalid_arguments':
                         log_console(tr('Failed: :message', array(':message' => trim(str_from($e->getMessage(), '():')))), 'yellow');
                         cli_show_usage(isset_get($GLOBALS['usage']), 'white');
                         $core->register['exit_code'] = 251;
-                        die(7);
+                        die($core->register['exit_code']);
 
                     case 'validation':
                         $messages = $e->getMessages();
@@ -87,7 +87,7 @@ try{
                         log_console($messages, 'yellow');
                         cli_show_usage(isset_get($GLOBALS['usage']), 'white');
                         $core->register['exit_code'] = 250;
-                        die(7);
+                        die($core->register['exit_code']);
                 }
             }
 
@@ -122,16 +122,20 @@ try{
                 }
             }
 
-            $core->register['exit_code'] = 8;
+            $core->register['exit_code'] = 64;
             die(8);
 
         case 'http':
-            if(empty($core) or empty($core->register['config_ok'])){
+            if(empty($core) or empty($core->register['ready'])){
                 /*
                  * Configuration hasn't been loaded yet, we cannot even know if we are
                  * in debug mode or not!
                  */
-                die('pre config exception');
+                if(!headers_sent()){
+                    header($_SERVER['SERVER_PROTOCOL'] . ' 500 Internal Server Error', true, 500);
+                }
+
+                die('pre ready exception');
             }
 
             if(is_numeric($e->getCode()) and page_show($e->getCode(), array('exists' => true))){
