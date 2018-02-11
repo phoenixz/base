@@ -314,7 +314,7 @@ function blogs_post_update($post, $params = null){
                          ':url'        => $post['url'],
                          ':body'       => $post['body']);
 
-        $query   = 'UPDATE  `blogs_posts`
+        $query   = ' UPDATE  `blogs_posts`
 
                     SET     `modifiedby` = :modifiedby,
                             `modifiedon` = NOW(),
@@ -1225,6 +1225,7 @@ function blogs_validate_post($post, $params = null){
         array_default($params, 'change_frequency' , 'weekly');
         array_default($params, 'status_default'   , 'unpublished');
         array_default($params, 'object_name'      , 'blog posts');
+        array_default($params, 'parents_empty'    , true);
 // :TODO: Make this configurable from `blogs` configuration table
         array_default($params, 'filter_html'      , '<p><a><br><span><small><strong><img><iframe><h1><h2><h3><h4><h5><h6><ul><ol><li>');
 //        array_default($params, 'filter_attributes', '/<([a-z][a-z0-9]*)(?: .*?=".*?")*?(\/?)>/imus');  // Filter only class and style attributes
@@ -1237,6 +1238,44 @@ function blogs_validate_post($post, $params = null){
          * Validate input
          */
         $v = new validate_form($post, 'id,name,featured_until,assigned_to,seocategory1,seocategory2,seocategory3,category1,category2,category3,body,keywords,description,language,level,urlref,status');
+
+        for($i = 1; $i <= 3; $i++){
+            /*
+             * Translate categories
+             */
+            $post['category'.$i] = isset_get($post[$params['category'.$i]]);
+
+            if(empty($params['label_category'.$i])){
+                $post['category'.$i]    = null;
+                $post['seocategory'.$i] = null;
+
+            }else{
+                if(empty($post['category'.$i])){
+                    if(!empty($params['errors']['category'.$i.'_required'])){
+                        /*
+                         * Category required
+                         */
+                        $v->setError($params['errors']['category'.$i.'_required']);
+
+                    }else{
+                        $post['category'.$i]    = null;
+                        $post['seocategory'.$i] = null;
+                    }
+
+                }else{
+                    $category = blogblogs_validate_category($post['category'.$i], $post['blogs_id'], isset_get($params['categories'.$i.'_parent']));
+
+                    $post['category'.$i]    = $category['name'];
+                    $post['seocategory'.$i] = $category['seoname'];
+                }
+            }
+        }
+
+        /*
+         * Merge in from old DB post
+         */
+        $db_post = blogs_post_get($post['blogs_id'], $post['id']);
+        $post    = sql_merge($db_post, $post);
 
         /*
          * Just ensure that the specified id is a valid number
@@ -1324,41 +1363,45 @@ function blogs_validate_post($post, $params = null){
             $post['parents_id'] = null;
 
         }else{
-            $post['parents_id'] = blogs_validate_parent($post['parents_id'], $params['use_parent']);
-        }
-
-        for($i = 1; $i <= 3; $i++){
-            /*
-             * Translate categories
-             */
-            $post['category'.$i] = isset_get($post[$params['category'.$i]]);
-
-            if(empty($params['label_category'.$i])){
-                $post['category'.$i]    = null;
-                $post['seocategory'.$i] = null;
-
-            }else{
-                if(empty($post['category'.$i])){
-                    if(!empty($params['errors']['category'.$i.'_required'])){
-                        /*
-                         * Category required
-                         */
-                        $v->setError($params['errors']['category'.$i.'_required']);
-
-                    }else{
-                        $post['category'.$i]    = null;
-                        $post['seocategory'.$i] = null;
-                    }
+            try{
+                if($post['parents_id']){
+                    /*
+                     * Validate that the specified parent is part of the required parent blog
+                     */
+                    $post['parents_id'] = blogs_validate_parent($post['parents_id'], $params['use_parent']);
 
                 }else{
-                    $category = blogblogs_validate_category($post['category'.$i], $post['blogs_id'], isset_get($params['categories'.$i.'_parent']));
+                    /*
+                     * No parent was specified. Is this allowed?
+                     */
+                    if(empty($params['parents_empty'])){
+                        $v->setError(tr('Please select a :object', array(':object' => $params['label_parent'])));
 
-                    $post['category'.$i]    = $category['name'];
-                    $post['seocategory'.$i] = $category['seoname'];
+                    }else{
+                        $post['parents_id'] = null;
+                    }
                 }
+
+            }catch(Exception $e){
+                switch($e->getCode()){
+                    case 'not-member':
+                        // FALLTHROUGH
+                    case 'not-specified':
+                        throw $e->makeWarning(true);
+
+                    default:
+                        /*
+                         * Unknown error, keep on throwing
+                         */
+                        throw $e;
+                }
+
             }
         }
 
+        /*
+         * Continue validation
+         */
         if(empty($params['label_keywords'])){
             $post['keywords']    = '';
             $post['seokeywords'] = '';
@@ -1434,12 +1477,6 @@ function blogs_validate_post($post, $params = null){
         }
 
         $v->isValid();
-
-        /*
-         * Merge in from old DB post
-         */
-        $db_post = blogs_post_get($post['blogs_id'], $post['id']);
-        $post    = sql_merge($db_post, $post);
 
         /*
          * Set extra parameters
@@ -1993,6 +2030,14 @@ function blogblogs_validate_category($category, $blogs_id){
  */
 function blogs_validate_parent($blog_post_id, $blogs_id){
     try{
+        if(!$blog_post_id){
+            throw new bException(tr('blogs_validate_parent(): No blogs_posts_id specified'), 'not-specified');
+        }
+
+        if(!$blogs_id){
+            throw new bException(tr('blogs_validate_parent(): No blogs_id specified'), 'not-specified');
+        }
+
         if(is_numeric($blog_post_id)){
             $id = sql_get('SELECT `id` FROM `blogs_posts` WHERE `id` = :id AND `blogs_id` = :blogs_id', true, array(':blogs_id' => $blogs_id,
                                                                                                                     ':id'       => cfi($blog_post_id)));
@@ -2002,9 +2047,8 @@ function blogs_validate_parent($blog_post_id, $blogs_id){
                                                                                                                               ':seoname'  => cfm($blog_post_id)));
         }
 
-
         if(!$id){
-            throw new bException(tr('blogs_validate_parent(): Blog ":blog" does not contain a blog post named ":post"', array(':blog' => $blogs_id, ':post' => $blog_post_id)), 'notmember');
+            throw new bException(tr('blogs_validate_parent(): Blog ":blog" does not contain a blog post named ":post"', array(':blog' => $blogs_id, ':post' => $blog_post_id)), 'not-member');
         }
 
         return $id;
@@ -2294,7 +2338,7 @@ function blogs_update_urls($blogs = null, $category = null){
                         $count++;
 
                     }catch(Exception $e){
-                        notify($e->warning(true));
+                        notify($e->makeWarning(true));
                         log_console(tr('blogs_update_urls(): URL update failed for blog post ":post" in blog ":blog" with error ":e". Its status has been updated to "incomplete"', array(':post' => $post['id'].' / '.$post['seoname'], ':blog' => $blog['seoname'], ':e' => $e)), 'yellow');
                     }
                 }
