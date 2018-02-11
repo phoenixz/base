@@ -70,7 +70,6 @@ switch(cli_method()){
         /*
          * List currently available sitemap entries in database
          */
-showdie($core->register);
         $entries = sql_query('SELECT `id`,
                                      `createdon`,
                                      `createdby`,
@@ -90,10 +89,10 @@ showdie($core->register);
             log_console(tr('There are currently no sitemap entries registered'), 'QUIET/yellow');
 
         }else{
-            log_console(str_size(tr('#id'), 6).' '.str_size(tr('Created on'), 10).' '.str_size(tr('Created by'), 20).str_size(tr('URL'), 64).' '.str_size(tr('Priority'), 8).' '.str_size(tr('Page modifiedon'), 16).' '.str_size(tr('Change frequency'), 16).' '.str_size(tr('Language'), 8).' '.str_size(tr('Group'), 12), 'QUIET/cyan');
+            log_console(str_size(tr('#id'), 6).' '.str_size(tr('Created on'), 10).' '.str_size(tr('Created by'), 24).' '.str_size(tr('URL'), 80).' '.str_size(tr('Priority'), 8).' '.str_size(tr('Page modifiedon'), 16).' '.str_size(tr('Change frequency'), 16).' '.str_size(tr('Language'), 8).' '.str_size(tr('Group'), 12), 'QUIET/cyan');
 
             while($entry = sql_fetch($entries)){
-                log_console(str_size($entry['id'], 6).' '.str_size($entry['createdon'], 10).' '.str_size(name($entry['createdby']), 20).' '.str_size($entry['url'], 64).' '.str_size($entry['priority'], 8).' '.str_size($entry['page_modifiedon'], 16).' '.str_size($entry['change_frequency'], 16).str_size($entry['language'], 8).' '.str_size($entry['group'], 12));
+                log_console(str_size($entry['id'], 6).' '.str_size($entry['createdon'], 10).' '.str_size(name($entry['createdby']), 24).' '.str_size($entry['url'], 80).' '.str_size($entry['priority'], 8).' '.str_size($entry['page_modifiedon'], 16).' '.str_size($entry['change_frequency'], 16).' '.str_size($entry['language'], 8).' '.str_size($entry['group'], 12));
             }
         }
 
@@ -153,7 +152,15 @@ showdie($core->register);
     case 'generate':
         cli_no_arguments_left();
         log_console(tr('Regenerating sitemap files'), 'white');
-        sitemap_generate();
+        $count = sitemap_generate();
+
+        if($count){
+            log_console(tr('Generated sitemap file with ":count" entries', array(':count' => $count)), 'green');
+
+        }else{
+            log_console(tr('Generated empty sitemap file as no entries were found'), 'warning');
+        }
+
         break;
 
     case '':

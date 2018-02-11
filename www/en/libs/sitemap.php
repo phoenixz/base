@@ -31,19 +31,27 @@ function sitemap_generate($languages = null){
 
     try{
         load_libs('file');
+        $count = 0;
 
         if(empty($languages)){
             if($_CONFIG['language']['supported']){
                 $languages = array_keys($_CONFIG['language']['supported']);
 
             }else{
-                $languages = array($_CONFIG['language']['default']);
+                $languages = array('');
             }
         }
 
         foreach(array_force($languages) as $language){
-            if(!file_exists(ROOT.'www/'.$language)){
-                log_console(tr('Skipped sitemap generation for language ":language1", the "www/:language2" directory does not exist', array(':language1' => $language, ':language2' => $language)), 'yellow');
+            if($language){
+                log_console(tr('Generating sitemap for language ":language"', array(':language' => $language)));
+
+            }else{
+                log_console(tr('Generating sitemap'));
+            }
+
+            if(!file_exists(ROOT.'www/'.not_empty($language, 'en'))){
+                log_console(tr('Skipped sitemap generation for language ":language1", the "www/:language2" directory does not exist', array(':language1' => $language, ':language2' => not_empty($language, 'en'))), 'yellow');
                 continue;
             }
 
@@ -65,16 +73,16 @@ function sitemap_generate($languages = null){
                  * There are no sitemap entries that require extra sitemap files
                  * Just generate the default sitemap.xml file and we're done!
                  */
-                log_console(tr('Generating single sitemap file for language ":language"', array(':language' => $language)));
-                sitemap_xml($language);
+                log_console(tr('Generating single sitemap file'), 'QUIET');
+                $count += sitemap_xml($language);
 
                 file_execute_mode(ROOT.'www/'.$language, 0770, array('language' => $language), function($params){
-                    if(file_exists(ROOT.'www/'.$params['language'].'/sitemap.xml')){
-                        chmod(ROOT.'www/'.$params['language'].'/sitemap.xml', 0660);
+                    if(file_exists(ROOT.'www/'.not_empty($params['language'], 'en').'/sitemap.xml')){
+                        chmod(ROOT.'www/'.not_empty($params['language'], 'en').'/sitemap.xml', 0660);
                     }
 
-                    rename(TMP.'sitemap.xml', ROOT.'www/'.$params['language'].'/sitemap.xml');
-                    chmod(ROOT.'www/'.$params['language'].'/sitemap.xml', 0440);
+                    rename(TMP.'sitemap.xml', ROOT.'www/'.not_empty($params['language'], 'en').'/sitemap.xml');
+                    chmod(ROOT.'www/'.not_empty($params['language'], 'en').'/sitemap.xml', 0440);
                 });
 
             }else{
@@ -104,7 +112,7 @@ function sitemap_generate($languages = null){
                     if(!$file['file']) $file['file'] = 'basic';
 
                     cli_dot(1);
-                    sitemap_xml($language, $file['file']);
+                    $count += sitemap_xml($language, $file['file']);
                 }
 
                 file_execute_mode(ROOT.'www/'.$language, 0770, array('language' => $language), function($params){
@@ -132,6 +140,8 @@ function sitemap_generate($languages = null){
 
                        array(':language' => $language));
         }
+
+        return $count;
 
     }catch(Exception $e){
         throw new bException('sitemap_generate(): Failed', $e);
@@ -220,12 +230,15 @@ function sitemap_xml($language = null, $file = null){
         }
 
         $entries = sql_query($query.' ORDER BY (`file` IS NOT NULL), `file` DESC, (`priority` IS NOT NULL), `priority` DESC', $execute);
+        $count   = 0;
 
         $xml  = "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n".
                 "   <urlset xmlns=\"http://www.sitemaps.org/schemas/sitemap/0.9\" xmlns:xsi=\"http://www.w3.org/2001/XMLSchema-instance\" xsi:schemaLocation=\"http://www.sitemaps.org/schemas/sitemap/0.9 http://www.sitemaps.org/schemas/sitemap/0.9/sitemap.xsd\">\n";
 
         while($entry = sql_fetch($entries)){
+            $count++;
             $xml .= sitemap_entry($entry);
+            cli_dot(1, '');
         }
 
         $xml .= "</urlset>\n";
@@ -234,7 +247,7 @@ function sitemap_xml($language = null, $file = null){
         file_put_contents(TMP.$sitemap.'.xml', $xml);
         chmod(TMP.$sitemap.'.xml', 0440);
 
-        return TMP.$sitemap.'.xml';
+        return $count;
 
     }catch(Exception $e){
         throw new bException('sitemap_xml(): Failed', $e);
@@ -409,7 +422,6 @@ function sitemap_add_url($url){
                              ':file_update'             => get_null($url['file']),
                              ':group_update'            => $url['group']));
 
-
         }else{
             sql_query('INSERT INTO `sitemaps_data` (`createdby`, `url`, `priority`, `page_modifiedon`, `change_frequency`, `language`, `group`, `file`)
                        VALUES                      (:createdby , :url , :priority , NOW()            , :change_frequency , :language , :group , :file )
@@ -471,16 +483,16 @@ function sitemap_delete_backups($language){
             file_delete(TMP.'sitemaps');
         }
 
-        if(file_exists(ROOT.'www/'.$language.'/sitemaps~')){
-            chmod(ROOT.'www/'.$language.'/sitemaps~', 0770);
+        if(file_exists(ROOT.'www/'.not_empty($language, 'en').'/sitemaps~')){
+            chmod(ROOT.'www/'.not_empty($language, 'en').'/sitemaps~', 0770);
 
-            file_tree_execute(array('path'     => ROOT.'www/'.$language.'/sitemaps~',
+            file_tree_execute(array('path'     => ROOT.'www/'.not_empty($language, 'en').'/sitemaps~',
                                     'callback' => function($file){
                                         chmod($file, 0660);
                                         file_delete($file);
                                     }));
 
-            file_delete(ROOT.'www/'.$language.'/sitemaps~');
+            file_delete(ROOT.'www/'.not_empty($language, 'en').'/sitemaps~');
         }
 
     }catch(Exception $e){
