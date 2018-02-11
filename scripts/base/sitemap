@@ -11,10 +11,31 @@
  * Sitemap scanner should honor robots.txt and meta robots noindex!
  * Sitemap scanner should extract descriptions from pages
  */
-$usage = "sitemap clear\n".
-         "sitemap generate\n";
+$usage = './scripts/base/sitemap clear
+./scripts/base/sitemap update
+./scripts/base/sitemap generate';
 
-$help  = "This sitemap script can create new sitemap files";
+$help  = 'This sitemap script can create new sitemap files
+
+
+
+METHODS
+
+
+
+clear                           - Clear all sitemap entries from the database
+
+list                            - List all current sitemap entries in the
+                                  database
+
+    --groups GROUPS             - Only show entries that are member of the
+                                  specified groups
+
+    --only-groups               - Only show the available groups
+
+generate                        -
+
+update                          - ';
 
 require_once(__DIR__.'/../../libs/startup.php');
 
@@ -23,7 +44,7 @@ load_libs('sitemap');
 
 if(empty($_CONFIG['sitemap']['enabled'])){
     log_console(tr('Sitemap has been disabled in the configuration'), 'yellow');
-    cli_die(0);
+    die(1);
 }
 
 switch(cli_method()){
@@ -42,6 +63,39 @@ switch(cli_method()){
         sitemap_clear(cli_method(1));
 
         log_console(tr('Sitemap data has been cleared'), 'green');
+
+        break;
+
+    case 'list':
+        /*
+         * List currently available sitemap entries in database
+         */
+showdie($core->register);
+        $entries = sql_query('SELECT `id`,
+                                     `createdon`,
+                                     `createdby`,
+                                     `url`,
+                                     `priority`,
+                                     `page_modifiedon`,
+                                     `change_frequency`,
+                                     `language`,
+                                     `group`,
+                                     `file`
+
+                              FROM   `sitemaps_data`
+
+                              WHERE  `status` IS NULL');
+
+        if(!$entries->rowCount()){
+            log_console(tr('There are currently no sitemap entries registered'), 'QUIET/yellow');
+
+        }else{
+            log_console(str_size(tr('#id'), 6).' '.str_size(tr('Created on'), 10).' '.str_size(tr('Created by'), 20).str_size(tr('URL'), 64).' '.str_size(tr('Priority'), 8).' '.str_size(tr('Page modifiedon'), 16).' '.str_size(tr('Change frequency'), 16).' '.str_size(tr('Language'), 8).' '.str_size(tr('Group'), 12), 'QUIET/cyan');
+
+            while($entry = sql_fetch($entries)){
+                log_console(str_size($entry['id'], 6).' '.str_size($entry['createdon'], 10).' '.str_size(name($entry['createdby']), 20).' '.str_size($entry['url'], 64).' '.str_size($entry['priority'], 8).' '.str_size($entry['page_modifiedon'], 16).' '.str_size($entry['change_frequency'], 16).str_size($entry['language'], 8).' '.str_size($entry['group'], 12));
+            }
+        }
 
         break;
 
@@ -103,9 +157,11 @@ switch(cli_method()){
         break;
 
     case '':
-        throw new bException(tr('No argument specified'), 'unknown');
+        throw new bException(tr('No method specified'), 'no-method');
 
     default:
-        throw new bException(tr('Unknown argument ":method" specified', array(':method' => cli_method())), 'unknown');
+        throw new bException(tr('Unknown method ":method" specified', array(':method' => cli_method())), 'unknown-method');
 }
+
+cli_run_once_local(true);
 ?>
