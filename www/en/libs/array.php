@@ -158,7 +158,7 @@ function array_clear(&$array, $keys, $value = null){
 /*
  * Make sure the specified keys are available on the array
  */
-function array_ensure(&$source, $keys, $value = null){
+function array_ensure(&$source, $keys = '', $value = null){
     try{
         if(!$source){
             $source = array();
