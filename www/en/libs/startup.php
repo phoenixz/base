@@ -333,7 +333,7 @@ class bException extends Exception{
     /*
      * Make this exception a warning, or not
      */
-    public function warning($value){
+    public function makeWarning($value){
         if($value){
             $this->code = str_starts($this->code, 'warning/');
 
