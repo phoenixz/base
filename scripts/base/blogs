@@ -4,41 +4,139 @@
  * Blog management script
  */
 $usage = './scripts/base/blogs
-./scripts/base/blogs rebuild-post-urls [option]
-./scripts/base/blogs reprocess-images [option]';
+./scripts/base/blogs list blogs
+./scripts/base/blogs list pages [options]
+./scripts/base/blogs rebuild-post-urls
+./scripts/base/blogs reprocess-images';
 
-$help  = "This script can manage blog post information
+$help  = 'This script can manage blog post information
+
+
 
 METHODS
 
-rebuild-post-urls              - Will update the URL's of all blog posts using
+
+
+list                           -
+
+    blogs                      - List available blogs
+
+        --all                  - List all blogs with all statusses
+
+    posts                      - List all blog posts with the status
+                                 "published"
+
+        --blog BLOG            - Only list blog posts for the specifed BLOG
+
+        --all                  - List all blog pages with all statusses
+
+        --status STATUS        - List only blog posts with the specified status
+
+rebuild-post-urls              - Will update the URL\'s of all blog posts using
                                  the URL format for each blog, and the current
-                                 configured domain name. This may be useful when
-                                 blog posts were transferred to another domain
-                                 name, for example.
+                                 configured domain name. This may be useful
+                                 when blog posts were transferred to another
+                                 domain name, for example.
 
 reprocess-images               - Will take all blog post images, and recompress
                                  them and ensure they all have the configured
-                                 sizes
-
-
-
-ARGUMENTS
-
-";
+                                 sizes';
 
 require_once(__DIR__.'/../../libs/startup.php');
 load_config('blogs');
 
 switch(cli_method()){
+    case 'list':
+        switch(cli_method(1)){
+            case 'blogs':
+                cli_no_arguments_left();
+
+                /*
+                 * List currently available sitemap entries in database
+                 */
+                $entries = sql_query('SELECT `id`,
+                                             `createdon`,
+                                             `createdby`,
+                                             `status`,
+                                             `name`
+
+                                      FROM   `blogs`
+
+                                      WHERE  `status` IS NULL');
+
+                if(!$entries->rowCount()){
+                    log_console(tr('There are currently no blogs registered'), 'QUIET/yellow');
+
+                }else{
+                    log_console(str_size(tr('#id'), 6).' '.str_size(tr('status'), 16).' '.str_size(tr('Created on'), 10).' '.str_size(tr('Created by'), 24).' '.str_size(tr('Name'), 12), 'QUIET/cyan');
+
+                    while($entry = sql_fetch($entries)){
+                        log_console(str_size($entry['id'], 6).' '.str_size(status($entry['status']), 16).' '.str_size($entry['createdon'], 10).' '.str_size(name($entry['createdby']), 24).' '.str_size($entry['name'], 80));
+                    }
+                }
+
+                break;
+
+            case 'posts':
+                /*
+                 * List currently available sitemap entries in database
+                 */
+                $all    = cli_argument('--all');
+                $status = cli_argument('--status', true);
+                $blog   = cli_argument('--blog'  , true);
+                cli_no_arguments_left();
+
+                $entries = sql_query('SELECT    `blogs_posts`.`id`,
+                                                `blogs_posts`.`createdon`,
+                                                `blogs_posts`.`createdby`,
+                                                `blogs_posts`.`status`,
+                                                `blogs_posts`.`name`,
+
+                                                `blogs`.`name` AS `blog`
+
+                                      FROM      `blogs_posts`
+
+                                      LEFT JOIN `blogs`
+                                      ON        `blogs`.`id` = `blogs_posts`.`blogs_id`
+
+                                      ORDER BY  `blog` ASC, `blogs_posts`.`name` ASC');
+
+                if(!$entries->rowCount()){
+                    log_console(tr('There are currently no blog posts registered'), 'QUIET/yellow');
+
+                }else{
+                    log_console(str_size(tr('#id'), 6).' '.str_size(tr('Blog'), 16).' '.str_size(tr('status'), 16).' '.str_size(tr('Created on'), 10).' '.str_size(tr('Created by'), 24).' '.str_size(tr('Name'), 12), 'QUIET/cyan');
+
+                    while($entry = sql_fetch($entries)){
+                        log_console(str_size($entry['id'], 6).' '.str_size($entry['blog'], 16).' '.str_size(status($entry['status']), 16).' '.str_size($entry['createdon'], 10).' '.str_size(name($entry['createdby']), 24).' '.str_size($entry['name'], 80));
+                    }
+                }
+
+                break;
+
+            case '':
+                throw new bException(tr('No sub method specified for method ":method"', array(':method' => cli_method())), 'no-method');
+
+            default:
+                throw new bException(tr('Unknown submethod ":submethod" specified for method ":method"', array(':method' => cli_method(), ':submethod' => cli_method(1))), 'unknown-method');
+        }
+
+        break;
+
     case 'rebuild-post-urls':
         cli_no_arguments_left();
         log_console(tr('Updating all blog post URLs'), 'white');
 
         load_libs('blogs');
-        blogs_update_urls(isset_get($argv));
+        $count = blogs_update_urls(isset_get($argv));
 
-        log_console(tr('Updated all blog posts with the URL configuration ":url"', array(':url' => $_CONFIG['blogs']['url'])), 'green');
+        if($count){
+            log_console(tr('Updated the URL for ":count" blog pages', array(':count' => $count)), 'green');
+
+        }else{
+            log_console(tr('No blog page URL\'s have been updated'), 'warning');
+        }
+
         break;
 
     case 'reprocess-images':
