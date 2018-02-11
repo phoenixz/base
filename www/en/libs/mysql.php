@@ -239,7 +239,7 @@ function mysql_master_replication_setup($params){
          * kill ssh pid after dumping db
          */
         log_console(tr('Making grant replication on remote server and locking tables'), 'DOT');
-        $ssh_mysql_pid = servers_exec($database['hostname'], 'mysql \"-u'.$database['root_db_user'].'\" \"-p'.$database['root_db_password'].'\" -e \"GRANT REPLICATION SLAVE ON *.* TO \''.$database['replication_db_user'].'\'@\'localhost\' IDENTIFIED BY \''.$database['replication_db_password'].'\'; FLUSH PRIVILEGES; USE \''.$database['database'].'\'; FLUSH TABLES WITH READ LOCK; DO SLEEP(1000000); \"', null, true, false);
+        $ssh_mysql_pid = servers_exec($database['hostname'], 'mysql \"-u'.$database['root_db_user'].'\" \"-p'.$database['root_db_password'].'\" -e \"GRANT REPLICATION SLAVE ON *.* TO \''.$database['replication_db_user'].'\'@\'localhost\' IDENTIFIED BY \''.$database['replication_db_password'].'\'; FLUSH PRIVILEGES; USE '.$database['database'].'; FLUSH TABLES WITH READ LOCK; DO SLEEP(1000000); \"', null, true, false);
 
         /*
          * Dump database
@@ -269,8 +269,8 @@ function mysql_master_replication_setup($params){
         /*
          * Get the log_file and log_pos
          */
-        $master_status        = servers_exec($database['hostname'], 'mysql \"-u'.$database['root_db_user'].'\" \"-p'.$database['root_db_password'].'\" -ANe \"SHOW MASTER STATUS;\"');
-        $master_status        = explode(',', preg_replace('/\s+/', ',', $master_status[0]));
+        $master_status        = mysql_exec($database['hostname'], 'SHOW MASTER STATUS');
+        $master_status        = explode(',', preg_replace('/\s+/', ',', $master_status[1]));
         $database['log_file'] = $master_status[0];
         $database['log_pos']  = $master_status[1];
 
