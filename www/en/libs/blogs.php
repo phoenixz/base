@@ -2134,6 +2134,8 @@ function blogs_update_url($post){
                    array(':url' => $url,
                          ':id'  => $post['id']));
 
+        return $url;
+
     }catch(Exception $e){
         throw new bException('blogs_update_url(): Failed', $e);
     }
@@ -2147,6 +2149,17 @@ function blogs_update_url($post){
  */
 function blogs_update_urls($blogs = null, $category = null){
     try{
+        load_libs('sitemap');
+
+        $params = array();
+
+        array_ensure($params);
+        array_default($params, 'status'                  , 'published');
+        array_default($params, 'sitemap_priority'        , 1);
+        array_default($params, 'sitemap_change_frequency', 'weekly');
+
+        $count = 0;
+
         if($category){
             /*
              * Only update for a specific category
@@ -2176,10 +2189,10 @@ function blogs_update_urls($blogs = null, $category = null){
             log_console(tr('blogs_update_urls(): Updating posts for all blogs'));
 
             while($blog = sql_fetch($r)){
-                blogs_update_urls($blog['id'], $category);
+                $count += blogs_update_urls($blog['id'], $category);
             }
 
-            return;
+            return $count;
         }
 
         foreach(array_force($blogs) as $blogname){
@@ -2207,6 +2220,7 @@ function blogs_update_urls($blogs = null, $category = null){
                 $query   = 'SELECT `id`,
                                    `blogs_id`,
                                    `parents_id`,
+                                   `status`,
                                    `url`,
                                    `name`,
                                    `seoname`,
@@ -2223,9 +2237,11 @@ function blogs_update_urls($blogs = null, $category = null){
 
                             FROM   `blogs_posts`
 
-                            WHERE  `blogs_id` = :id';
+                            WHERE  `blogs_id` = :id
+                            AND    `status`   = :status';
 
-                $execute = array(':id' => $blog['id']);
+                $execute = array(':id'     => $blog['id'],
+                                 ':status' => $params['status']);
 
                 if($category){
                     /*
@@ -2255,9 +2271,27 @@ function blogs_update_urls($blogs = null, $category = null){
 
                 while($post = sql_fetch($posts)){
                     try{
+                        $url                  = $post['url'];
                         $post['url_template'] = $blog['url_template'];
-                        blogs_update_url($post);
+                        $post['url']          = blogs_update_url($post);
+
+                        if($url != $post['url']){
+                            /*
+                             * Page URL changed, delete old entry from the sitemap table to
+                             * avoid it still showing up in sitemaps, since this page is now 404
+                             */
+                            sitemap_delete($url);
+                        }
+
+                        if($post['status'] == $params['status']){
+                            sitemap_add_url(array('url'              => $post['url'],
+                                                  'priority'         => $params['sitemap_priority'],
+                                                  'page_modifiedon'  => date_convert(null, 'mysql'),
+                                                  'change_frequency' => $params['sitemap_change_frequency']));
+                        }
+
                         cli_dot(1);
+                        $count++;
 
                     }catch(Exception $e){
                         notify($e->warning(true));
@@ -2273,6 +2307,12 @@ function blogs_update_urls($blogs = null, $category = null){
                 log_console(tr('blogs_update_urls(): URL update failed for blog ":blog" with error ":e"', array(':blog' => $blog['seoname'], ':e' => $e)), 'yellow');
             }
         }
+
+        if($count){
+            log_console();
+        }
+
+        return $count;
 
     }catch(Exception $e){
         throw new bException('blogs_update_urls(): Failed', $e);
