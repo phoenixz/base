@@ -1275,7 +1275,7 @@ function blogs_validate_post($post, $params = null){
          * Merge in from old DB post
          */
         $db_post = blogs_post_get($post['blogs_id'], $post['id']);
-        $post    = sql_merge($db_post, $post);
+        $post    = sql_merge($db_post, $post, (empty($params['label_status']) ? 'id,status' : 'id'));
 
         /*
          * Just ensure that the specified id is a valid number
