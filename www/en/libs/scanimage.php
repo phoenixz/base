@@ -210,6 +210,10 @@ function scanimage_list($device = null, $cached = true){
 /*
  * Search devices from the scanner drivers. This might take a while, easily up
  * to 30 seconds or more
+ *
+ * Example scanimage -L outputs would be
+ * device `brother4:bus4;dev1' is a Brother MFC-L8900CDW USB scanner
+ * device `imagescan:esci:usb:/sys/devices/pci0000:00/0000:00:1c.0/0000:03:00.0/usb4/4-2/4-2:1.0' is a EPSON DS-1630
  */
 function scanimage_search_devices(){
     try{
@@ -218,9 +222,6 @@ function scanimage_search_devices(){
 
         foreach($scanners as $scanner){
             if(substr($scanner, 0, 6) != 'device') continue;
-
-//            $found = preg_match_all('/device `imagescan:esci:(usb|scsi|parrallel):(\/sys\/devices\/.+?)\' is a (.+)/i', $scanner, $matches);
-//            device `brother4:bus4;dev1' is a Brother MFC-L8900CDW USB scanner
 
             $found = preg_match_all('/device `(.+?):bus(\d+);dev(\d+)\' is a (.+)/i', $scanner, $matches);
 
@@ -234,6 +235,20 @@ function scanimage_search_devices(){
                                    'device'        => $matches[3][0],
                                    'device_string' => $matches[1][0].':bus'.$matches[2][0].';dev'.$matches[3][0],
                                    'name'          => $matches[4][0]);
+            }else{
+                $found = preg_match_all('/device `((.+?):.+?)\' is a (.+)/i', $scanner, $matches);
+
+                if($found){
+                    /*
+                     * Found a scanner
+                     */
+                    $devices[] = array('raw'           => $matches[0][0],
+                                       'driver'        => $matches[2][0],
+                                       'bus'           => null,
+                                       'device'        => null,
+                                       'device_string' => $matches[1][0],
+                                       'name'          => $matches[3][0]);
+                }
             }
         }
 
@@ -284,13 +299,13 @@ function scanimage_get_scanner_details($device){
         $retval  = array();
 
         foreach($results as $result){
-            if(preg_match('/Options specific to device \`'.$device.'\':/', $result)){
-                $skip = false;
-                continue;
-            }
+            if($skip){
+                if(preg_match('/Options specific to device \`'.str_replace(array('.', '/'), array('\.', '\/'), $device).'\':/', $result)){
+                    $skip = false;
+                    continue;
+                }
 
-            while($skip){
-                goto skip;
+                continue;
             }
 
             $result = trim($result);
@@ -299,59 +314,125 @@ function scanimage_get_scanner_details($device){
                 /*
                  * Doesn't contain driver info
                  */
-                goto skip;
+                continue;
             }
 
             /*
              * These are driver keys
              */
             if(substr($result, 0, 2) == '--'){
-                $key     = trim(str_until(substr($result, 2), ' '));
-                $data    = trim(str_from($result, ' '));
-                $default = '';
+                /*
+                 * These are double dash options
+                 */
+                if(!preg_match_all('/--([a-zA-Z-]+)(.+)/', $result, $matches)){
+                    throw new bException(tr('scanimage_get_scanner_details(): Unknown driver line format encountered for key "resolution"'), 'unknown');
+                }
+// :DEBUG: Do not remove the folowing commented line(s), its for debugging purposes
+//show($matches);
 
-                switch($key){
-                    case 'mode':
-                        $default = str_cut($data, ' [', ']');
-                        $data    = str_until($data, ' [');
-                        $data    = explode('|', $data);
+                $key     = $matches[1][0];
+                $data    = $matches[2][0];
+                $default = str_rfrom($data, ' [');
+                $default = trim(str_runtil($default, ']'));
+                $data    = trim(str_runtil($data, ' ['));
 
-                        $data['default'] = $default;
-                        break;
+                if($default == 'inactive'){
+                    $default =  null;
+                }
 
-                    case 'resolution':
-                        $default = str_cut($data, ' [', ']');
-                        $data    = str_until($data, ' [');
-                        $data    = explode('|', $data);
+// :DEBUG: Do not remove the folowing commented line(s), its for debugging purposes
+//show($key);
+//show($data);
+//show($default);
+                if($data == '[=(yes|no)]'){
+                    /*
+                     * Options are yes or no
+                     */
+                    $data = array('yes', 'no');
 
-                        $data['default'] = $default;
-                        break;
+                }else{
+                    switch($key){
+                        case 'mode':
+                            // FALLTHROUGH
+                        case 'scan-area':
+                            // FALLTHROUGH
+                        case 'source':
+                            $data = explode('|', $data);
+                            break;
 
-                    case 'source':
-                        $default = str_cut($data, ' [', ']');
-                        $data    = str_until($data, ' [');
-                        $data    = explode('|', $data);
+                        case 'resolution':
+                            $data = str_replace('dpi', '', $data);
 
-                        $data['default'] = $default;
-                        break;
+                            if(strstr($data, '..')){
+                                /*
+                                 * Resolutions given as a range instead of discrete values
+                                 */
+                                $data = array(trim($data));
 
-                    case 'brightness':
-                        $data    = str_until($data, '(');
-                        $data    = str_replace('%', '', $data);
-                        $data    = trim($data);
-                        break;
+                            }else{
+                                $data = explode('|', $data);
+                            }
 
-                    case 'contrast':
-                        $data    = str_until($data, '(');
-                        $data    = str_replace('%', '', $data);
-                        $data    = trim($data);
-                        break;
+                            break;
 
-                    default:
-                        throw new bException(tr('sane_get_scanner_defails(): Unknown driver key ":key" found', array(':key' => $key)), 'unknown');
+                        case 'brightness':
+                            $data = str_until($data, '(');
+                            $data = str_replace('%', '', $data);
+                            $data = array(trim($data));
+                            break;
+
+                        case 'contrast':
+                            $data = str_until($data, '(');
+                            $data = str_replace('%', '', $data);
+                            $data = array(trim($data));
+                            break;
+
+                        default:
+                            if(!strstr($data, '|')){
+                                if(!strstr($data, '..')){
+                                    throw new bException(tr('scanimage_get_scanner_details(): Unknown driver line ":result" found', array(':result' => $result)), 'unknown');
+                                }
+
+                                /*
+                                 * Unknown entry, but treat it as a range
+                                 */
+                                $data = str_until($data, '(');
+                                $data = str_replace('%', '', $data);
+                                $data = array(trim($data));
+
+                            }else{
+                                /*
+                                 * Unknown entry, but treat it as a distinct list
+                                 */
+                                $data = str_until($data, '(');
+                                $data = str_replace('%', '', $data);
+                                $data = explode('|', $data);
+                            }
+                    }
                 }
 
             }else{
+                /*
+                 * These are single dash options
+                 */
+                if(!preg_match_all('/-([a-zA-Z-]+)(.+)/', $result, $matches)){
+                    throw new bException(tr('scanimage_get_scanner_details(): Unknown driver line format encountered for key "resolution"'), 'unknown');
+                }
+// :DEBUG: Do not remove the folowing commented line(s), its for debugging purposes
+//show($matches);
+
+                $key     = $matches[1][0];
+                $data    = $matches[2][0];
+                $default = str_rfrom($data, ' [');
+                $default = trim(str_runtil($default, ']'));
+                $data    = str_runtil($data, ' [');
+                $data    = trim(str_replace('mm', '', $data));
+
+                if($default == 'inactive'){
+                    $default =  null;
+                }
+
+
                 $key  = trim(substr($result, 1 , 1));
                 $data = trim(substr($result, 3));
 
@@ -359,40 +440,40 @@ function scanimage_get_scanner_details($device){
                     case 'l':
                         $data = str_until($data, '(');
                         $data = str_replace('%', '', $data);
-                        $data = trim($data);
+                        $data = array(trim($data));
                         break;
 
                     case 't':
                         $data = str_until($data, '(');
                         $data = str_replace('%', '', $data);
-                        $data = trim($data);
+                        $data = array(trim($data));
                         break;
 
                     case 'x':
                         $data = str_until($data, '(');
                         $data = str_replace('%', '', $data);
-                        $data = trim($data);
+                        $data = array(trim($data));
                         break;
 
                     case 'y':
                         $data = str_until($data, '(');
                         $data = str_replace('%', '', $data);
-                        $data = trim($data);
+                        $data = array(trim($data));
                         break;
 
                     default:
-                        throw new bException(tr('sane_get_scanner_defails(): Unknown driver key ":key" found', array(':key' => $key)), 'unknown');
+                        throw new bException(tr('scanimage_get_scanner_details(): Unknown driver key ":key" found', array(':key' => $key)), 'unknown');
                 }
             }
 
-            $retval[$key] = $data;
-            skip:
+            $retval[$key] = array('data'    => $data,
+                                  'default' => $default);
         }
 
         return $retval;
 
     }catch(Exception $e){
-        throw new bException('scanimage_get_scanner_details(): Failed', $e);
+        throw new bException(tr('scanimage_get_scanner_details(): Failed for device ":device"', array(':device' => $device)), $e);
     }
 }
 
