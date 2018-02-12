@@ -20,7 +20,7 @@ sql_query('CREATE TABLE `drivers_devices` (`id`           INT(11)      NOT NULL 
                                            `libusb`       VARCHAR(8)       NULL,
                                            `bus`          VARCHAR(8)       NULL,
                                            `device`       VARCHAR(8)       NULL,
-                                           `string`       VARCHAR(32)      NULL,
+                                           `string`       VARCHAR(128)     NULL,
                                            `default`      TINYINT(1)   NOT NULL,
                                            `description`  VARCHAR(255)     NULL,
 
@@ -51,7 +51,7 @@ sql_query('CREATE TABLE `drivers_options` (`id`         INT(11)     NOT NULL AUT
                                            `devices_id` INT(11)     NOT NULL,
                                            `key`        VARCHAR(32)     NULL,
                                            `value`      VARCHAR(64)     NULL,
-                                           `default`    TINYINT(1)      NULL,
+                                           `default`    VARCHAR(64)     NULL,
 
                                            PRIMARY KEY `id`         (`id`),
                                                    KEY `devices_id` (`devices_id`),
