@@ -76,13 +76,13 @@ switch(cli_method()){
         cli_no_arguments_left();
 
         log_console(tr('Showing found SANE scanners'), 'white');
-        log_console(str_size('#id', 6).str_size('Type', 12).str_size('Name', 24).' URL', 'cyan');
+        log_console(str_size('#id', 6).str_size('Type', 12).str_size('Name', 24).' Device', 'cyan');
 
         $count = 0;
 
         foreach(scanimage_list() as $type => $devices){
             foreach($devices as $device ){
-                log_console(str_size($count++, 6).str_size($type, 12).str_size($device['name'], 24).$device['url']);
+                log_console(str_size($count++, 6).str_size($type, 12).str_size($device['name'], 24).$device['device']);
             }
         }
 

@@ -1,0 +1,41 @@
+#!/usr/bin/php
+<?php
+/*
+ * This is an empty test script template
+ */
+$usage = './scripts/base/drivers
+./scripts/base/drivers list';
+
+$help  = 'This is the drivers management script
+
+
+
+METHODS
+
+
+
+list                            - List the currently configured devices
+
+    -o / --options              -
+
+show DEVICE                     - Show all available options for the specified
+                                  device';
+
+require_once(__DIR__.'/../../libs/startup.php');
+cli_only();
+load_libs('test');
+
+switch(cli_method()){
+    case 'list':
+        break;
+
+    case 'show':
+        break;
+
+    case '':
+        throw new bException(tr('No method specified'), 'no-method');
+
+    default:
+        throw new bException(tr('Unknown method ":method" specified', array(':method' => cli_method())), 'unknown-method');
+}
+?>
