@@ -17,7 +17,7 @@ load_config('sane');
 /*
  * Find available scanners
  */
-function sane_find_scanners(){
+function sane_find_scanners($libusb = false){
     global $_CONFIG;
 
     try{
@@ -34,13 +34,29 @@ function sane_find_scanners(){
                  * Found a USB scanner
                  */
                 if(preg_match_all('/found USB scanner \(vendor=0x([0-9a-f]{4}) \[([A-Za-z0-9-_ ]+)\], product=0x([0-9a-f]{4}) \[([A-Za-z0-9-_ ]+)\]\) at libusb:([0-9]{3}:[0-9]{3})/i', $result, $matches)){
+                    $device = array('raw'          => $matches[0][0],
+                                    'vendor'       => $matches[1][0],
+                                    'product'      => $matches[3][0],
+                                    'manufacturer' => $matches[2][0],
+                                    'model'        => $matches[4][0],
+                                    'libusb'       => $matches[5][0]);
+
+                    if($libusb){
+                        if($libusb == $device['libusb']){
+                            /*
+                             * Return only the requested device
+                             */
+                            return $device;
+                        }
+
+                        /*
+                         * Only show the requested libusb device
+                         */
+                        continue;
+                    }
+
                     $retval['count']++;
-                    $retval['usb'][] = array('raw'          => $matches[0][0],
-                                             'vendor'       => $matches[1][0],
-                                             'product'      => $matches[3][0],
-                                             'manufacturer' => $matches[2][0],
-                                             'model'        => $matches[4][0],
-                                             'libusb'       => $matches[5][0]);
+                    $retval['usb'][] = $device;
 
                 }else{
                     $retval['unknown'][] = $result;
