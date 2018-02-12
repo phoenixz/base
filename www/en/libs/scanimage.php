@@ -196,33 +196,226 @@ function scanimage($params){
 /*
  * List the available scanner devices
  */
-function scanimage_list(){
+function scanimage_list($cached = true){
     try{
+        if($cached){
+            /*
+             * Get device data from cache
+             */
+            load_libs('drivers');
+            $devices = drivers_get_devices('scanner');
+
+            if($devices){
+                $devices = sql_list($devices);
+                return $devices;
+            }
+        }
+
         $scanners = safe_exec('scanimage -L -q');
-        $retval   = array('usb'       => array(),
-                          'scsi'      => array(),
-                          'parrallel' => array(),
-                          'unknown'   => array());
+        $devices  = array();
 
         foreach($scanners as $scanner){
-            $found = preg_match_all('/device `imagescan:esci:(usb|scsi|parrallel):(\/sys\/devices\/.+?)\' is a (.+)/i', $scanner, $matches);
+            if(substr($scanner, 0, 6) != 'device') continue;
+
+//            $found = preg_match_all('/device `imagescan:esci:(usb|scsi|parrallel):(\/sys\/devices\/.+?)\' is a (.+)/i', $scanner, $matches);
+//            device `brother4:bus4;dev1' is a Brother MFC-L8900CDW USB scanner
+
+            $found = preg_match_all('/device `(.+?):bus(\d+);dev(\d+)\' is a (.+)/i', $scanner, $matches);
 
             if($found){
                 /*
                  * Found a scanner
                  */
-                $retval[$matches[1][0]][] = array('name' => $matches[3][0],
-                                                  'url'  => $matches[2][0]);
+                $devices[] = array('raw'           => $matches[0][0],
+                                   'driver'        => $matches[1][0],
+                                   'bus'           => $matches[2][0],
+                                   'device'        => $matches[3][0],
+                                   'device_string' => $matches[1][0].':bus'.$matches[2][0].';dev'.$matches[3][0],
+                                   'name'          => $matches[4][0]);
+            }
+        }
+
+        return $devices;
+
+    }catch(Exception $e){
+        throw new bException('scanimage_list(): Failed', $e);
+    }
+}
+
+
+
+/*
+ * List the available scanner devices
+ */
+function scanimage_register_devices(){
+    try{
+        load_libs('drivers');
+        drivers_clear_devices('scanner');
+
+        $scanners = scanimage_list(false);
+
+        foreach($scanners as $scanner){
+            $options = scanimage_get_scanner_details($scanner['device_string']);
+            $scanner = drivers_add_device(array('type'        => 'scanner',
+                                                'string'      => $scanner['device_string'],
+                                                'description' => $scanner['name']));
+
+            $count   = drivers_add_options($scanner['id'], $options);
+        }
+
+        return $scanners;
+
+    }catch(Exception $e){
+        throw new bException('scanimage_register_devices(): Failed', $e);
+    }
+}
+
+
+
+/*
+ * Get details for the specified scanner device
+ */
+function scanimage_get_scanner_details($device){
+    try{
+        $skip    = true;
+        $results = safe_exec('scanimage -h -d "'.$device.'"');
+        $retval  = array();
+
+        foreach($results as $result){
+            if(preg_match('/Options specific to device \`'.$device.'\':/', $result)){
+                $skip = false;
+                continue;
+            }
+
+            while($skip){
+                goto skip;
+            }
+
+            $result = trim($result);
+
+            if(substr($result, 0, 1) != '-'){
+                /*
+                 * Doesn't contain driver info
+                 */
+                goto skip;
+            }
+
+            /*
+             * These are driver keys
+             */
+            if(substr($result, 0, 2) == '--'){
+                $key     = trim(str_until(substr($result, 2), ' '));
+                $data    = trim(str_from($result, ' '));
+                $default = '';
+
+                switch($key){
+                    case 'mode':
+                        $default = str_cut($data, ' [', ']');
+                        $data    = str_until($data, ' [');
+                        $data    = explode('|', $data);
+
+                        $data['default'] = $default;
+                        break;
+
+                    case 'resolution':
+                        $default = str_cut($data, ' [', ']');
+                        $data    = str_until($data, ' [');
+                        $data    = explode('|', $data);
+
+                        $data['default'] = $default;
+                        break;
+
+                    case 'source':
+                        $default = str_cut($data, ' [', ']');
+                        $data    = str_until($data, ' [');
+                        $data    = explode('|', $data);
+
+                        $data['default'] = $default;
+                        break;
+
+                    case 'brightness':
+                        $data    = str_until($data, '(');
+                        $data    = str_replace('%', '', $data);
+                        $data    = trim($data);
+                        break;
+
+                    case 'contrast':
+                        $data    = str_until($data, '(');
+                        $data    = str_replace('%', '', $data);
+                        $data    = trim($data);
+                        break;
+
+                    default:
+                        throw new bException(tr('sane_get_scanner_defails(): Unknown driver key ":key" found', array(':key' => $key)), 'unknown');
+                }
 
             }else{
-                $retval['unknown'][] = $scanner;
+                $key  = trim(substr($result, 1 , 1));
+                $data = trim(substr($result, 3));
+
+                switch($key){
+                    case 'l':
+                        $data = str_until($data, '(');
+                        $data = str_replace('%', '', $data);
+                        $data = trim($data);
+                        break;
+
+                    case 't':
+                        $data = str_until($data, '(');
+                        $data = str_replace('%', '', $data);
+                        $data = trim($data);
+                        break;
+
+                    case 'x':
+                        $data = str_until($data, '(');
+                        $data = str_replace('%', '', $data);
+                        $data = trim($data);
+                        break;
+
+                    case 'y':
+                        $data = str_until($data, '(');
+                        $data = str_replace('%', '', $data);
+                        $data = trim($data);
+                        break;
+
+                    default:
+                        throw new bException(tr('sane_get_scanner_defails(): Unknown driver key ":key" found', array(':key' => $key)), 'unknown');
+                }
             }
+
+            $retval[$key] = $data;
+            skip:
         }
 
         return $retval;
 
     }catch(Exception $e){
-        throw new bException('scanimage(): Failed', $e);
+        throw new bException('scanimage_get_scanner_details(): Failed', $e);
+    }
+}
+
+
+
+/*
+ * Return the data on the default scanner
+ */
+function scanimage_get_default(){
+    try{
+        $scanners = scanimage_list();
+
+        foreach($scanners as $devices_id => $scanner){
+            if($scanner['default']){
+                load_libs('drivers');
+
+                $scanner['options'] = drivers_get_options($devices_id);
+                return $scanner;
+            }
+        }
+
+        return null;
+
+    }catch(Exception $e){
+        throw new bException('scanner_get_default(): Failed', $e);
     }
 }
 ?>
