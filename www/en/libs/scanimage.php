@@ -432,10 +432,10 @@ function scanimage_get_scanner_details($device){
                     $default =  null;
                 }
 
-
-                $key  = trim(substr($result, 1 , 1));
-                $data = trim(substr($result, 3));
-
+// :DEBUG: Do not remove the folowing commented line(s), its for debugging purposes
+//show($key);
+//show($data);
+//show($default);
                 switch($key){
                     case 'l':
                         $data = str_until($data, '(');
