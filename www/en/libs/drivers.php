@@ -167,14 +167,12 @@ function drivers_get_options($devices_id){
 function drivers_get_devices($type, $default_only = false){
     try{
         if($default_only){
-            $where = 'FROM   `drivers_devices`
-                      WHERE  `type`    = :type
+            $where = 'WHERE  `type`    = :type
                       AND    `status`  IS NULL
                       AND    `default` = 1';
 
         }else{
-            $where = 'FROM   `drivers_devices`
-                      WHERE  `type`   = :type
+            $where = 'WHERE  `type`   = :type
                       AND    `status` IS NULL';
         }
 
@@ -191,7 +189,9 @@ function drivers_get_devices($type, $default_only = false){
                                      `device`,
                                      `string`,
                                      `default`,
-                                     `description` '.$where,
+                                     `description`
+
+                              FROM   `drivers_devices`'.$where,
 
                               array(':type' => $type));
 
@@ -199,6 +199,42 @@ function drivers_get_devices($type, $default_only = false){
 
     }catch(Exception $e){
         throw new bException('drivers_get_devices(): Failed', $e);
+    }
+}
+
+
+
+/*
+ * Return the device with the specified device string
+ */
+function drivers_get_device($device_string){
+    try{
+        $device = sql_get('SELECT `id`,
+                                  `meta_id`,
+                                  `status`,
+                                  `type`,
+                                  `manufacturer`,
+                                  `model`,
+                                  `vendor`,
+                                  `product`,
+                                  `libusb`,
+                                  `bus`,
+                                  `device`,
+                                  `string`,
+                                  `default`,
+                                  `description`
+
+                           FROM   `drivers_devices`
+
+                           WHERE  `string` = :string
+                           AND    `status` IS NULL',
+
+                           array(':string' => $device_string));
+
+        return $device;
+
+    }catch(Exception $e){
+        throw new bException('drivers_get_device(): Failed', $e);
     }
 }
 
