@@ -8,9 +8,22 @@
  * @copyright Sven Oostenbrink <support@ingiga.com>
  */
 
+sane_init();
 
 
-load_config('sane');
+
+
+/*
+ * Initialize this library
+ */
+function sane_init(){
+    try{
+        load_config('sane');
+
+    }catch(Exception $e){
+        throw new bException('sane_init(): Failed', $e);
+    }
+}
 
 
 
