@@ -56,7 +56,17 @@ function drivers_validate_device($device){
         load_libs('validate');
         $v = new validate_form($device, 'type,manufacturer,model,vendor,product,libusb,device,bus,string');
 
-        $exists = sql_get('SELECT `id` FROM `drivers_devices` WHERE `string` = :string or `libusb` = :libusb', true, array(':string' => $device['string'], ':libusb' => $device['libusb']));
+        $exists = sql_get('SELECT `id`
+
+                           FROM   `drivers_devices`
+
+                           WHERE  `string` = :string
+                           OR     `libusb` = :libusb',
+
+                           true,
+
+                           array(':string' => $device['string'],
+                                 ':libusb' => $device['libusb']));
 
         if($exists){
             /*
@@ -89,16 +99,23 @@ function drivers_add_options($devices_id, $options){
             /*
              * Extract default values, if available
              */
-            $values  = array_force($values);
-            $default = isset_get($values['default']);
-            unset($values['default']);
-
-            foreach($values as $value){
+            foreach($values['data'] as $value){
                 $count++;
+
+                if(strstr($value, '..')){
+                    /*
+                     * This is a single range entry
+                     */
+                    $default = $values['default'];
+
+                }else{
+                    $default = (($value == $values['default']) ? $value : null);
+                }
+
                 $insert->execute(array(':devices_id' => $devices_id,
                                        ':key'        => $key,
                                        ':value'      => $value,
-                                       ':default'    => ($value == $default)));
+                                       ':default'    => $default));
             }
         }
 
