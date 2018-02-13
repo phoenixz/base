@@ -252,10 +252,19 @@ load_libs('cache'.(empty($_CONFIG['memcached']) ? '' : ',memcached').(empty($_CO
 /*
  * Determine the screen width
  */
-$core->register['cli'] = array('columns' => cli_get_columns(),
-                               'rows'    => cli_get_lines());
+try{
+    $core->register['cli'] = array('columns' => cli_get_columns(),
+                                   'rows'    => cli_get_lines());
 
-if($core->register['cli']['columns'] <= 80){
+}catch(Exception $e){
+    $core->register['cli'] = array('columns' => 0,
+                                   'rows'    => 0);
+}
+
+if(!$core->register['cli']['columns']){
+    $core->register['cli']['width'] = 'unknown';
+
+}elseif($core->register['cli']['columns'] <= 80){
     $core->register['cli']['width'] = 'small';
 
 }elseif($core->register['cli']['columns'] <= 160){
