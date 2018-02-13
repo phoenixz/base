@@ -9,8 +9,6 @@
  * @copyright Sven Oostenbrink <support@ingiga.com>
  */
 
-
-
 sweetalert_init();
 
 
