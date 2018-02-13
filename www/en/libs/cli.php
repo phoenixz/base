@@ -1088,7 +1088,7 @@ function cli_status_color($status){
 
         switch(strtolower($status)){
             case 'ok':
-                return cli_color($status, '_green');
+                return cli_color($status, 'green');
 
             case 'failed':
                 return cli_color($status, 'red');

@@ -750,6 +750,8 @@ switch(cli_method()){
             throw new bException(tr('Specified user ":user" does not exist', array(':user' => $requested)), 'warning/not-exist');
         }
 
+        ksort($user);
+
         foreach($user as $key => $value){
             if($key == 'password') continue;
             log_console(cli_color(str_capitalize($key).':', 'white').' '.$value);
@@ -803,7 +805,8 @@ switch(cli_method()){
 
         $r  = sql_query('UPDATE `users`
 
-                         SET    `locked_until` = NULL
+                         SET    `locked_until` = NULL,
+                                `auth_fails`   = 0
 
                          WHERE  '.implode(' AND ', $where),
 
