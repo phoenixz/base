@@ -70,6 +70,9 @@ function fprint_verify($user, $finger = 'auto'){
         $results = safe_exec('sudo timeout '.$_CONFIG['fprint']['timeouts']['verify'].' fprintd-verify '.($finger ? '-f '.$finger.' ' : '').$user);
         $result  = array_pop($results);
 
+        log_file(tr('Started fprintd-verify process for user ":user"', array(':user' => $user)), 'fprint');
+        log_file($results, 'fprint');
+
         if($result == 'Verify result: verify-match (done)'){
             return true;
         }
