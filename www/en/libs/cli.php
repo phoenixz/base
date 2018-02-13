@@ -919,7 +919,7 @@ function cli_done(){
 
     try{
         if(empty($core) or empty($core->register['ready'])){
-            echo tr("pre config exception\n");
+            echo "\033[0;31mCommand line terminated before \$core ready\033[0m\n";
             die(1);
         }
 
