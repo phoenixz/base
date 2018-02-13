@@ -37,9 +37,7 @@ try{
     /*
      *
      */
-    if(VERBOSE){
-        log_console(tr('Executing command ":command"', array(':command' => $command)), 'cyan');
-    }
+    log_console(tr('Executing command ":command"', array(':command' => $command)), 'VERBOSE/cyan');
 
     if(substr($command, -1, 1) == '&'){
         /*
