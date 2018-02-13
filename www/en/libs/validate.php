@@ -297,7 +297,6 @@ class validate_form {
         try{
             $this->allowEmpty = 'no';
             $this->not        = false;
-
             if($flags){
                 if($flags & VALIDATE_NOT){
                     $this->not = true;
@@ -426,8 +425,8 @@ class validate_form {
                 return true;
             }
 
-            if(!$this->isScalar($value, $message)){
-                return false;
+            if(!is_scalar($value)){
+                return $this->setError($message);
             }
 
             if($this->not xor !$value){
@@ -452,8 +451,8 @@ class validate_form {
                 return true;
             }
 
-            if(!$this->isScalar($value, $message)){
-                return false;
+            if(!is_scalar($value)){
+                return $this->setError($message);
             }
 
             if($this->not xor !ctype_alnum($value)){
@@ -594,8 +593,8 @@ class validate_form {
                 return true;
             }
 
-            if(!$this->isScalar($value, $message)){
-                return false;
+            if(!is_scalar($value)){
+                return $this->setError($message);
             }
 
             if($this->not xor !preg_match('/\(?([0-9]{3})\)?(?:[ .-]{1,5})?([0-9]{3})(?:[ .-]{1,5})?([0-9]{4})/', $value)){
@@ -620,8 +619,13 @@ class validate_form {
                 return true;
             }
 
-            $this->isScalar($value , $message);
-            $this->isScalar($value2, $message);
+            if(!is_scalar($value)){
+                return $this->setError($message);
+            }
+
+            if(!is_scalar($value2)){
+                return $this->setError($message);
+            }
 
             $value  = trim($value);
             $value2 = trim($value2);
@@ -639,31 +643,36 @@ class validate_form {
 
 
 
-    /*
-     *
-     */
-    function isNotEqual(&$value, $value2, $message = null, $flags = null){
-        try{
-            if(!$this->parseFlags($value, $message, $flags, false)){
-                return true;
-            }
-
-            $this->isScalar($value , $message);
-            $this->isScalar($value2, $message);
-
-            $value  = trim($value);
-            $value2 = trim($value2);
-
-            if($this->not xor $value == $value2){
-                return $this->setError($message);
-            }
-
-            return true;
-
-        }catch(Exception $e){
-            throw new bException('validate_form::isNotEqual(): Failed', $e);
-        }
-    }
+    ///*
+    // *
+    // */
+    //function isNotEqual(&$value, $value2, $message = null, $flags = null){
+    //    try{
+    //        if(!$this->parseFlags($value, $message, $flags, false)){
+    //            return true;
+    //        }
+    //
+    //        if(!is_scalar($value)){
+    //            return $this->setError($message);
+    //        }
+    //
+    //        if(!is_scalar($value2)){
+    //            return $this->setError($message);
+    //        }
+    //
+    //        $value  = trim($value);
+    //        $value2 = trim($value2);
+    //
+    //        if($this->not xor $value == $value2){
+    //            return $this->setError($message);
+    //        }
+    //
+    //        return true;
+    //
+    //    }catch(Exception $e){
+    //        throw new bException('validate_form::isNotEqual(): Failed', $e);
+    //    }
+    //}
 
 
 
@@ -680,8 +689,8 @@ class validate_form {
                 return true;
             }
 
-            if(!$this->isScalar($value, $message)){
-                return false;
+            if(!is_scalar($value)){
+                return $this->setError($message);
             }
 
             if($this->not xor (($value < $min) and ($value > $max))){
@@ -706,8 +715,8 @@ class validate_form {
                 return true;
             }
 
-            if(!$this->isScalar($value, $message)){
-                return false;
+            if(!is_scalar($value)){
+                return $this->setError($message);
             }
 
             if($this->not xor (!is_numeric($value) or ($value < $min) or ($value > $max))){
@@ -732,8 +741,8 @@ class validate_form {
                 return true;
             }
 
-            if(!$this->isScalar($value, $message)){
-                return false;
+            if(!is_scalar($value)){
+                return $this->setError($message);
             }
 
             if($this->not xor !$value){
@@ -758,12 +767,43 @@ class validate_form {
                 return true;
             }
 
-            if(!$this->isScalar($value, $message)){
-                return false;
+            if(!is_scalar($value)){
+                return $this->setError($message);
             }
 
             foreach(array_force($chars) as $char){
                 if($this->not xor !strpos($value, $char)){
+                    return $this->setError($message);
+                }
+            }
+
+            return true;
+
+        }catch(Exception $e){
+            throw new bException('validate_form::hasChars(): Failed', $e);
+        }
+    }
+
+
+
+    /*
+     * Opposite of hasChars.
+     *
+     * Exists because it is used rather much and is easier to use than the
+     * VALIDATE_NOT flag
+     */
+    function hasNoChars(&$value, $chars, $message = null, $flags = null){
+        try{
+            if(!$this->parseFlags($value, $message, $flags)){
+                return true;
+            }
+
+            if(!is_scalar($value)){
+                return $this->setError($message);
+            }
+
+            foreach(array_force($chars) as $char){
+                if($this->not xor strpos($value, $char)){
                     return $this->setError($message);
                 }
             }
@@ -786,8 +826,8 @@ class validate_form {
                 return true;
             }
 
-            if(!$this->isScalar($value, $message)){
-                return false;
+            if(!is_scalar($value)){
+                return $this->setError($message);
             }
 
             if($this->not xor (strlen($value) < $limit)){
@@ -812,8 +852,8 @@ class validate_form {
                 return true;
             }
 
-            if(!$this->isScalar($value, $message)){
-                return false;
+            if(!is_scalar($value)){
+                return $this->setError($message);
             }
 
             if($this->not xor (strlen($value) > $limit)){
@@ -838,8 +878,8 @@ class validate_form {
                 return true;
             }
 
-            if(!$this->isScalar($value, $message)){
-                return false;
+            if(!is_scalar($value)){
+                return $this->setError($message);
             }
 
             if(!$this->isUrl($value, $message, $empty)){
@@ -868,8 +908,8 @@ class validate_form {
                 return true;
             }
 
-            if(!$this->isScalar($value, $message)){
-                return false;
+            if(!is_scalar($value)){
+                return $this->setError($message);
             }
 
             if(!$this->isUrl($value, $message, $empty)){
@@ -898,8 +938,8 @@ class validate_form {
                 return true;
             }
 
-            if(!$this->isScalar($value, $message)){
-                return false;
+            if(!is_scalar($value)){
+                return $this->setError($message);
             }
 
             if(!$this->isUrl($value, $message, $empty)){
@@ -928,8 +968,8 @@ class validate_form {
                 return true;
             }
 
-            if(!$this->isScalar($value, $message)){
-                return false;
+            if(!is_scalar($value)){
+                return $this->setError($message);
             }
 
             if(!$this->isUrl($value, $message, $empty)){
@@ -958,8 +998,8 @@ class validate_form {
                 return true;
             }
 
-            if(!$this->isScalar($value, $message)){
-                return false;
+            if(!is_scalar($value)){
+                return $this->setError($message);
             }
 
             if(!$this->isUrl($value, $message, $empty)){
@@ -1006,8 +1046,12 @@ class validate_form {
      */
     function isRegex(&$value, $regex, $message = null, $flags = null){
          try{
-            if(!$this->isScalar($value, $message, $flags)){
-                return false;
+            if(!$this->parseFlags($value, $message, $flags, false)){
+                return true;
+            }
+
+            if(!is_scalar($value)){
+                return $this->setError($message);
             }
 
             if($this->not xor !preg_match($regex, $value)){
@@ -1060,8 +1104,8 @@ class validate_form {
                 return true;
             }
 
-            if(!$this->isScalar($value, $message)){
-                return false;
+            if(!is_scalar($value)){
+                return $this->setError($message);
             }
 
             load_libs('time');
@@ -1165,8 +1209,8 @@ class validate_form {
 
             load_libs('date');
 
-            if(!$this->isScalar($value, $message)){
-                return false;
+            if(!is_scalar($value)){
+                return $this->setError($message);
             }
 
             if($this->not xor !date_timezones_exists($value)){
@@ -1193,8 +1237,8 @@ class validate_form {
 
             load_libs('user');
 
-            if(!$this->isScalar($value, $message)){
-                return false;
+            if(!is_scalar($value)){
+                return $this->setError($message);
             }
 
             if(user_password_strength($value)){
@@ -1220,8 +1264,8 @@ class validate_form {
                 return true;
             }
 
-            if(!$this->isScalar($value, $message, $flags)){
-                return false;
+            if(!is_scalar($value)){
+                return $this->setError($message);
             }
 
             if($this->not xor !in_array($value, $array)){
