@@ -1173,7 +1173,19 @@ function log_file($messages, $class = 'messages', $type = null){
 
         if(is_object($messages)){
             if($messages instanceof bException){
+                $data     = $messages->getData();
                 $messages = $messages->getMessages();
+
+                if($data){
+                    /*
+                     * Add data to messages
+                     */
+                    foreach($data as $line){
+                        if($line){
+                            $messages[] = $line;
+                        }
+                    }
+                }
 
                 if($type == 'unknown'){
                     $type = 'exception';
