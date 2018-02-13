@@ -975,6 +975,34 @@ function cli_pgrep($name){
 
 
 /*
+ * Returns the process name for the specified PID
+ */
+function cli_pidgrep($pid){
+    try{
+        try{
+            $results = safe_exec('ps -p 1 > /dev/null');
+            $result  = array_pop($pid);
+
+            return $result;
+
+        }catch(Exception $e){
+            switch($e->getCode()){
+                case 1:
+                    return null;
+
+                default:
+                    throw $e;
+            }
+        }
+
+    }catch(Exception $e){
+        throw new bException('cli_pgrep(): Failed', $e);
+    }
+}
+
+
+
+/*
  *
  */
 function cli_kill($pid, $signal = null, $sudo = false){
@@ -984,9 +1012,45 @@ function cli_kill($pid, $signal = null, $sudo = false){
         }
 
         /*
-         * kill returns 1 if process wasn't found, we can ignore that
+         * pkill returns 1 if process wasn't found, we can ignore that
          */
-        safe_exec(($sudo ? 'sudo ' : '').'kill -'.$signal.' '.$pid, 1);
+        safe_exec(($sudo ? 'sudo ' : '').'pkill -'.$signal.' '.$process, 1);
+
+        if($verify){
+            while(--$verify >= 0){
+                sleep(0.5);
+
+                /*
+                 * Ensure that the progress is gone
+                 */
+                $results = cli_pidgrep($pid);
+
+                if(!$results){
+                    /*
+                     * Killed it softly
+                     */
+                    return true;
+                }
+
+                sleep(0.5);
+            }
+
+            if($sigkill){
+                /*
+                 * Sigkill it!
+                 */
+                $result = cli_pkill($process, 9, $sudo, $verify, false);
+
+                if($result){
+                    /*
+                     * Killed it the hard way!
+                     */
+                    return true;
+                }
+            }
+
+            throw new bException(tr('cli_kill(): Failed to kill process ":process"', array(':process' => $process)), 'failed');
+        }
 
     }catch(Exception $e){
         throw new bException('cli_kill(): Failed', $e);
@@ -996,9 +1060,9 @@ function cli_kill($pid, $signal = null, $sudo = false){
 
 
 /*
- *
+ * Send a signal to the specified process. S
  */
-function cli_pkill($process, $signal = null, $sudo = false){
+function cli_pkill($process, $signal = null, $sudo = false, $verify = 3, $sigkill = true){
     try{
         if(!$signal){
             $signal = 15;
@@ -1008,6 +1072,42 @@ function cli_pkill($process, $signal = null, $sudo = false){
          * pkill returns 1 if process wasn't found, we can ignore that
          */
         safe_exec(($sudo ? 'sudo ' : '').'pkill -'.$signal.' '.$process, 1);
+
+        if($verify){
+            while(--$verify >= 0){
+                sleep(0.5);
+
+                /*
+                 * Ensure that the progress is gone
+                 */
+                $results = cli_pgrep($process);
+
+                if(!$results){
+                    /*
+                     * Killed it softly
+                     */
+                    return true;
+                }
+
+                sleep(0.5);
+            }
+
+            if($sigkill){
+                /*
+                 * Sigkill it!
+                 */
+                $result = cli_pkill($process, 9, $sudo, $verify, false);
+
+                if($result){
+                    /*
+                     * Killed it the hard way!
+                     */
+                    return true;
+                }
+            }
+
+            throw new bException(tr('cli_pkill(): Failed to kill process ":process"', array(':process' => $process)), 'failed');
+        }
 
     }catch(Exception $e){
         throw new bException('cli_pkill(): Failed', $e);
