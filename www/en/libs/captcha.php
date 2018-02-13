@@ -53,10 +53,10 @@ function captcha_verify_response($captcha){
         }
 
         if(empty($captcha)){
-            throw new bException('verify_captcha_response(): Captcha response is empty', 'captcha');
+            throw new bException('Please verify the captcha', 'captcha');
         }
 
-        if ($_CONFIG['captcha']['enabled']){
+        if($_CONFIG['captcha']['enabled']){
             $response = file_get_contents('https://www.google.com/recaptcha/api/siteverify?secret='.$_CONFIG['captcha']['private'].'&response='.$captcha.'&remoteip='.$_SERVER['REMOTE_ADDR']);
             $response = json_decode($response, true);
 
