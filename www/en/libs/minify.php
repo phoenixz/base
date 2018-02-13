@@ -64,6 +64,9 @@ function minify_html($html){
         $html = Minify_HTML::minify($html, array('cssMinifier'     => array('Minify_CSS'  , 'minify'),
                                                  'jsMinifier'      => array('\JSMin\JSMin', 'minify')));
 
+// :FIX: This is a temp fix because the minifier appears to use \n as a space?
+        $html = str_replace("\n", ' ', $html);
+
         return $html;
 
     }catch(Exception $e){
