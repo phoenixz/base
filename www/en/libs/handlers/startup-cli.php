@@ -232,6 +232,12 @@ if(strstr($env, '_')){
 
 define('ENVIRONMENT', $env);
 
+if(!file_exists(ROOT.'config/'.$env.'.php')){
+    echo "\033[0;31mstartup: Configuration file \"ROOT/config/".$env.".php\" for specified environment\"".$env."\" not found\033[0m\n";
+    $core->register['exit_code'] = 5;
+    die(5);
+}
+
 
 
 /*
