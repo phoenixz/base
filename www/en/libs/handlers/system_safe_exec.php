@@ -71,8 +71,7 @@ try{
         if(!in_array($exitcode, array_force($ok_exitcodes))){
             load_libs('json');
 
-            $e =  new bException(json_encode_custom($output), $exitcode, null, $output);
-            throw new bException('safe_exec(): Command "'.str_log($command).'" failed with exit code "'.str_log($exitcode).'", and output "'.json_encode_custom($output, true).'"', $e);
+            throw new bException(tr('safe_exec(): Command ":command" failed with exit code ":exitcode", see attached data for output', array(':command' => $command, ':exitcode' => $exitcode)), $exitcode, $output);
         }
     }
 
