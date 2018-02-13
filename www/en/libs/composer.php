@@ -9,16 +9,6 @@
  * @copyright Sven Oostenbrink <support@ingiga.com>
  */
 
-
-/*
- * Do a version check so we're sure this stuff is supported
- */
-if(version_compare(PHP_VERSION, '5.3.2') < 0){
-    throw new bException('composer library: PHP composer requires PHP 5.3.2+', 'notsupported');
-}
-
-
-
 composer_init();
 
 
@@ -28,6 +18,13 @@ composer_init();
  */
 function composer_init(){
     try{
+        /*
+         * Do a version check so we're sure this stuff is supported
+         */
+        if(version_compare(PHP_VERSION, '5.3.2') < 0){
+            throw new bException('composer_init(): PHP composer requires PHP 5.3.2+', 'notsupported');
+        }
+
         ensure_installed(array('name'      => 'composer',
                                'project'   => 'composer',
                                'callback'  => 'composer_install',
@@ -38,7 +35,7 @@ function composer_init(){
         }
 
     }catch(Exception $e){
-        throw new bException('composer_load(): Failed', $e);
+        throw new bException('composer_init(): Failed', $e);
     }
 }
 
