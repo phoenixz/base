@@ -314,7 +314,7 @@ function blogs_post_update($post, $params = null){
                          ':url'        => $post['url'],
                          ':body'       => $post['body']);
 
-        $query   = ' UPDATE  `blogs_posts`
+        $query   = 'UPDATE  `blogs_posts`
 
                     SET     `modifiedby` = :modifiedby,
                             `modifiedon` = NOW(),
