@@ -162,7 +162,7 @@ function drivers_get_options($devices_id){
                 $retval[$option['key']] = array();
             }
 
-            $retval[$option['key']][] = $option['value'];
+            $retval[$option['key']][$option['value']] = $option['value'];
 
             if($option['default']){
                 $retval[$option['key']]['default'] = $option['default'];

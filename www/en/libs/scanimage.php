@@ -21,20 +21,23 @@ load_config('scanimage');
  */
 function scanimage($params){
     try{
-        $params  = scanimage_validate($params);
-        $command = 'scanimage -d "'.$params['device'].'"'.$device['options'];
-showdie($command);
+        $params = scanimage_validate($params);
+        $command = 'scanimage '.$params['options'];
+
         /*
          * Finish scan command and execute it
          */
         try{
-            if(empty($jpg)){
-                $command .= ' > '.$params['file'];
-                $result   = safe_exec($command);
+            switch($params['format']){
+                case 'tiff':
+                    $command .= ' > '.$params['file'];
+                    $result   = safe_exec($command);
+                    break;
 
-            }else{
-                $command .= ' | convert tiff:- '.$params['file'];
-                $result   = safe_exec($command);
+                case 'jpeg':
+                    $command .= ' | convert tiff:- '.$params['file'];
+                    $result   = safe_exec($command);
+                    break;
             }
 
         }catch(Exception $e){
@@ -99,10 +102,10 @@ function scanimage_validate($params){
          * Validate target file
          */
         if(!$params['file']){
-            $v->setError(tr('scanimage(): No file specified'));
+            $v->setError(tr('No file specified'));
 
         }elseif(file_exists($params['file'])){
-            $v->setError(tr('scanimage(): Specified file ":file" already exists', array(':file' => $params['file'])), 'exists');
+            $v->setError(tr('Specified file ":file" already exists', array(':file' => $params['file'])), 'exists');
 
         }else{
             file_ensure_path(dirname($params['file']));
@@ -129,12 +132,12 @@ function scanimage_validate($params){
                 break;
 
             default:
-                $v->setError(tr('scanimage(): Unknown format ":format" specified', array(':format' => $params['format'])));
+                $v->setError(tr('Unknown format ":format" specified', array(':format' => $params['format'])));
         }
 
         if(!empty($extension)){
             if(str_rfrom($params['file'], '.') != $extension){
-                $v->setError(tr('scanimage(): Specified file ":file" has an incorrect file name extension for the requested format ":format", it should have the extension ":extension"', array(':file' => $params['file'], ':format' => $params['format'], ':extension' => $extension)));
+                $v->setError(tr('Specified file ":file" has an incorrect file name extension for the requested format ":format", it should have the extension ":extension"', array(':file' => $params['file'], ':format' => $params['format'], ':extension' => $extension)));
             }
         }
 
@@ -148,6 +151,11 @@ function scanimage_validate($params){
             foreach($params['options'] as $key => $value){
                 if(!isset($device['options'][$key])){
                     $v->setError(tr('Driver option ":key" is not supported by device ":device"', array(':option' => $key, ':device' => $params['device'])));
+                    continue;
+                }
+
+                if(!$value){
+                    unset($params['option']);
                     continue;
                 }
 
@@ -165,7 +173,12 @@ function scanimage_validate($params){
                     $v->inArray($value, $device['options'][$key], tr('Please select a valid ":key" value', array(':key' => $key)));
                 }
 
-                $options[] = '--key "'.$value.'"';
+                if(strlen($key) == 1){
+                    $options[] = '-'.$key.' "'.$value.'"';
+
+                }else{
+                    $options[] = '--'.$key.' "'.$value.'"';
+                }
             }
         }
 
