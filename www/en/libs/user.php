@@ -1760,10 +1760,9 @@ function user_validate($user, $sections = array()){
                 $v->setError(tr('Please provide a username that does not start with a number'));
             }
 
-            $exists = sql_query('SELECT `id` FROM `users` WHERE `username` = :username AND `id` != :id', array(':id'       => $user['id'],
-                                                                                                               ':username' => $user['username']));
+            $exists = sql_query(' SELECT `id` FROM `users` WHERE `username` = :username AND `id` != :id', array(':id' => $user['id'], ':username' => $user['username']));
 
-            if($exists->rowCount() > 0){
+            if($exists->rowCount()){
                 $v->setError(tr('The username ":username" is already taken by another user', array(':username' => $user['username'])));
             }
 
@@ -1784,7 +1783,7 @@ function user_validate($user, $sections = array()){
             /*
              * Double emails are NOT allowed
              */
-            $exists = sql_get('SELECT `id` FROM `users` WHERE `email` = :email', true, array(':email' => $user['email']));
+            $exists = sql_get('SELECT `id` FROM `users` WHERE `email` = :email AND `id` != :id', true, array(':id' => $user['id'], ':email' => $user['email']));
 
             if($exists){
                 $v->setError(tr('The email address ":email" is already taken by another user', array(':email' => $user['email'])));
@@ -1803,7 +1802,7 @@ function user_validate($user, $sections = array()){
                 /*
                  * Double nicknames are NOT allowed
                  */
-                $exists = sql_get('SELECT `id` FROM `users` WHERE `nickname` = :nickname', true, array(':nickname' => $user['nickname']));
+                $exists = sql_get('SELECT `id` FROM `users` WHERE `nickname` = :nickname AND `id` != :id', true, array(':id' => $user['id'], ':nickname' => $user['nickname']));
 
                 if($exists){
                     $v->setError(tr('The nickname ":nickname" is already taken by another user', array(':nickname' => $user['nickname'])));

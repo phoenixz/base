@@ -2174,7 +2174,7 @@ function file_execute_mode($path, $mode, $callback, $params = null){
         return $retval;
 
     }catch(Exception $e){
-        throw new bException('file_execute_mode(): Failed', $e);
+        throw new bException(tr('file_execute_mode(): Failed for path ":path"', array(':path' => $path)), $e);
     }
 }
 

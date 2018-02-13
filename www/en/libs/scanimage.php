@@ -322,6 +322,7 @@ function scanimage_get_scanner_details($device){
             }
 
             $result = trim($result);
+            $status = null;
 
             if(substr($result, 0, 1) != '-'){
                 /*
@@ -350,7 +351,8 @@ function scanimage_get_scanner_details($device){
                 $data    = trim(str_runtil($data, ' ['));
 
                 if($default == 'inactive'){
-                    $default =  null;
+                    $status  =  $default;
+                    $default = null;
                 }
 
 // :DEBUG: Do not remove the folowing commented line(s), its for debugging purposes
@@ -442,7 +444,8 @@ function scanimage_get_scanner_details($device){
                 $data    = trim(str_replace('mm', '', $data));
 
                 if($default == 'inactive'){
-                    $default =  null;
+                    $status  =  $default;
+                    $default = null;
                 }
 
 // :DEBUG: Do not remove the folowing commented line(s), its for debugging purposes
@@ -480,6 +483,7 @@ function scanimage_get_scanner_details($device){
             }
 
             $retval[$key] = array('data'    => $data,
+                                  'status'  => $status,
                                   'default' => $default);
         }
 
