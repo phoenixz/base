@@ -168,26 +168,118 @@ function install($params, $force = false){
             unset($params['method'][$method]);
             $temp_path = TMP.$params['project'].'/';
 
+            /*
+             * Ensure temporary path exists and is empty
+             */
+            file_delete($temp_path);
             file_ensure_path($temp_path);
             file_ensure_path(ROOT.'www/en/libs/external');
 
-            log_database(tr('Library ":name" not found, auto installing now with method ":method"', array(':name' => $params['name'], ':method' => $method)), 'install');
+            file_execute_mode(ROOT.'www/en/libs/external', 0770, function() use ($method, $params, $instructions, $temp_path){
+                log_file(tr('Library ":name" not found, auto installing now with method ":method"', array(':name' => $params['name'], ':method' => $method)), 'install');
 
-            if(VERBOSE){
-                log_database(tr('Library ":name" not found, auto installing now with method ":method"', array(':name' => $params['name'], ':method' => $method)));
-            }
+                switch($method){
+                    case 'composer':
+                        load_libs('composer');
+                        // FALLTHROUGH
+                    case 'bower':
+                        // FALLTHROUGH
+                    case 'npm':
+                        /*
+                         * Try installation using npm
+                         */
+                        try{
+                            if(!empty($instructions['commands'])){
+                                /*
+                                 * For the first run there will be no previous results
+                                 * because there was no previous command
+                                 */
+                                $result = '';
 
-            switch($method){
-                case 'composer':
-                    load_libs('composer');
-                    // FALLTHROUGH
-                case 'bower':
-                    // FALLTHROUGH
-                case 'npm':
-                    /*
-                     * Try installation using npm
-                     */
-                    try{
+                                foreach(array_force($instructions['commands'], ';') as $command){
+                                    if(is_callable($command)){
+                                        /*
+                                         * This is a PHP function
+                                         */
+                                        $result = $command($result);
+
+                                    }else{
+                                        /*
+                                         * This is a bash command
+                                         */
+                                        $result = safe_exec('cd '.$temp_path.'; '.$command);
+                                    }
+                                }
+                            }
+
+                            $params['test'] = true;
+
+                        }catch(Exception $e){
+                            /*
+                             * Crap! Install using npm failed. Any other method
+                             * left?
+                             */
+                            log_file($e, 'install');
+
+                            if($params['method']){
+                                log_database(tr('Library ":name" installation with method ":method" failed, trying next method', array(':name' => $params['name'], ':method' => $method)), 'install');
+                                break;
+                            }
+                        }
+
+                        break;
+
+                    case 'download':
+                        /*
+                         * Install the required library and continue
+                         */
+                        $first_loop = true;
+
+                        if(!empty($instructions['urls'])){
+                            foreach($instructions['urls'] as $url){
+                                if(preg_match('/^https?:\/\/github\.com\/.+?\/.+?\.git$/i', $url)){
+                                    /*
+                                     * This is a github install file. Clone it, and install from there
+                                     */
+                                    $project = str_rfrom($url    , '/');
+                                    $project = str_until($project, '.git');
+
+                                    log_database(tr('Cloning GIT project ":project"', array(':project' => $project)), 'git/clone');
+
+                                    load_libs('git');
+                                    file_delete(TMP.$project);
+                                    git_clone($url, TMP);
+
+                                }elseif(preg_match('/^https?:\/\/.+/i', $url)){
+                                    /*
+                                     * Set temp path, delete it first to be sure there is no
+                                     * garbage in the way!
+                                     */
+                                    if($first_loop){
+                                        file_delete($temp_path);
+                                    }
+
+                                    /*
+                                     * Download the file to the specified path
+                                     */
+                                    $file = file_move_to_target($url, $temp_path, false, true, 0);
+
+                                }else{
+                                    /*
+                                     * Errr, unknown install link, don't know how to process this..
+                                     */
+                                    throw new bException(tr('install(): Unknown install URL type ":url" specified, it is not known how to process this URL', array(':url' => $url)), 'not-specified');
+                                }
+
+                                $first_loop = false;
+                            }
+                        }
+
+                        /*
+                         * Now execute all commands.
+                         * Each subsequent command will receive the results from the
+                         * previous command
+                         */
                         if(!empty($instructions['commands'])){
                             /*
                              * For the first run there will be no previous results
@@ -211,175 +303,87 @@ function install($params, $force = false){
                             }
                         }
 
+                        /*
+                         * Okay, files are ready to move to their targets, now move
+                         * them to their required locations as specified. Ensure
+                         * that the target paths exists first to avoid crashes on
+                         * missing paths.
+                         */
+                        if(!empty($instructions['locations'])){
+                            foreach($instructions['locations'] as $source => $target){
+                                $target_path = dirname($target);
+                                file_ensure_path($target_path);
+
+                                file_execute_mode($target_path, (is_writable($target_path) ? false : 0770), function($params, $path, $mode) use ($temp_path, $source, $target){
+                                    global $_CONFIG;
+
+                                    if(file_exists($target)){
+                                        if($_CONFIG['production']){
+                                            safe_exec('chmod ug+w '.$target.' -R');
+                                        }
+
+                                        file_delete($target);
+                                    }
+
+                                    if(!file_exists($temp_path.$source)){
+                                        throw new bException(tr('install(): Specified location source ":source" does not exist', array(':source' => $source)), 'not-exist');
+                                    }
+
+                                    if($source[0] == '@'){
+                                        /*
+                                         * $target will be a symlink to specified source
+                                         */
+                                        symlink(substr($source, 1), $target);
+
+                                        if($_CONFIG['production']){
+                                            /*
+                                             * On production environments, always ensure
+                                             * that all files are readonly for safety
+                                             */
+                                            safe_exec('chmod ug-w '.$target);
+                                        }
+
+                                    }else{
+                                        rename($temp_path.$source, $target);
+
+                                        if($_CONFIG['production']){
+                                            /*
+                                             * On production environments, always ensure
+                                             * that all files are readonly for safety
+                                             */
+                                            safe_exec('chmod ug-w '.$target.' -R');
+                                        }
+                                    }
+                                });
+                            }
+                        }
+
+                        /*
+                         * Install done! Remove temporary crap
+                         */
                         $params['test'] = true;
+                        file_delete($temp_path, true);
+                        log_database(tr('Library ":name" installed successfully with method ":method", proceeding with post installation test', array(':name' => $params['name'], ':method' => $method)), 'install');
+                        break;
 
-                    }catch(Exception $e){
-                        /*
-                         * Crap! Install using npm failed. Any other method
-                         * left?
-                         */
-                        if($params['method']){
-                            log_database(tr('Library ":name" installation with method ":method" failed, trying next method', array(':name' => $params['name'], ':method' => $method)), 'install');
-                            break;
-                        }
-                    }
+                    default:
+                        throw new bException(tr('install(): Unknown installation method ":method" specified for library ":name"', array(':name' => $params['name'], ':method' => $params['method'])), 'not-specified');
+                }
 
-                    break;
-
-                case 'download':
+                if(!empty($params['test'])){
                     /*
-                     * Install the required library and continue
+                     * First installation method was successfule, we're done!
                      */
-                    $first_loop = true;
-
-                    if(!empty($instructions['urls'])){
-                        foreach($instructions['urls'] as $url){
-                            if(preg_match('/^https?:\/\/github\.com\/.+?\/.+?\.git$/i', $url)){
-                                /*
-                                 * This is a github install file. Clone it, and install from there
-                                 */
-                                $project = str_rfrom($url    , '/');
-                                $project = str_until($project, '.git');
-
-                                log_database(tr('Cloning GIT project ":project"', array(':project' => $project)), 'git/clone');
-
-                                load_libs('git');
-                                file_delete(TMP.$project);
-                                git_clone($url, TMP);
-
-                            }elseif(preg_match('/^https?:\/\/.+/i', $url)){
-                                /*
-                                 * Set temp path, delete it first to be sure there is no
-                                 * garbage in the way!
-                                 */
-                                if($first_loop){
-                                    file_delete($temp_path);
-                                }
-
-                                /*
-                                 * Download the file to the specified path
-                                 */
-                                $file = file_move_to_target($url, $temp_path, false, true, 0);
-
-                            }else{
-                                /*
-                                 * Errr, unknown install link, don't know how to process this..
-                                 */
-                                throw new bException(tr('install(): Unknown install URL type ":url" specified, it is not known how to process this URL', array(':url' => $url)), 'not-specified');
-                            }
-
-                            $first_loop = false;
-                        }
-                    }
-
-                    /*
-                     * Now execute all commands.
-                     * Each subsequent command will receive the results from the
-                     * previous command
-                     */
-                    if(!empty($instructions['commands'])){
-                        /*
-                         * For the first run there will be no previous results
-                         * because there was no previous command
-                         */
-                        $result = '';
-
-                        foreach(array_force($instructions['commands'], ';') as $command){
-                            if(is_callable($command)){
-                                /*
-                                 * This is a PHP function
-                                 */
-                                $result = $command($result);
-
-                            }else{
-                                /*
-                                 * This is a bash command
-                                 */
-                                $result = safe_exec('cd '.$temp_path.'; '.$command);
-                            }
-                        }
-                    }
-
-                    /*
-                     * Okay, files are ready to move to their targets, now move
-                     * them to their required locations as specified. Ensure
-                     * that the target paths exists first to avoid crashes on
-                     * missing paths.
-                     */
-                    if(!empty($instructions['locations'])){
-                        foreach($instructions['locations'] as $source => $target){
-                            $target_path = dirname($target);
-                            file_ensure_path($target_path);
-
-                            file_execute_mode($target_path, (is_writable($target_path) ? false : 0770), function($params, $path, $mode) use ($temp_path, $source, $target){
-                                global $_CONFIG;
-
-                                if(file_exists($target)){
-                                    if($_CONFIG['production']){
-                                        safe_exec('chmod ug+w '.$target.' -R');
-                                    }
-
-                                    file_delete($target);
-                                }
-
-                                if(!file_exists($temp_path.$source)){
-                                    throw new bException(tr('install(): Specified location source ":source" does not exist', array(':source' => $source)), 'not-exist');
-                                }
-
-                                if($source[0] == '@'){
-                                    /*
-                                     * $target will be a symlink to specified source
-                                     */
-                                    symlink(substr($source, 1), $target);
-
-                                    if($_CONFIG['production']){
-                                        /*
-                                         * On production environments, always ensure
-                                         * that all files are readonly for safety
-                                         */
-                                        safe_exec('chmod ug-w '.$target);
-                                    }
-
-                                }else{
-                                    rename($temp_path.$source, $target);
-
-                                    if($_CONFIG['production']){
-                                        /*
-                                         * On production environments, always ensure
-                                         * that all files are readonly for safety
-                                         */
-                                        safe_exec('chmod ug-w '.$target.' -R');
-                                    }
-                                }
-                            });
-                        }
-                    }
-
-                    /*
-                     * Install done! Remove temporary crap
-                     */
-                    $params['test'] = true;
-                    file_delete($temp_path, true);
-                    log_database(tr('Library ":name" installed successfully with method ":method", proceeding with post installation test', array(':name' => $params['name'], ':method' => $method)), 'install');
-                    break;
-
-                default:
-                    throw new bException(tr('install(): Unknown installation method ":method" specified for library ":name"', array(':name' => $params['name'], ':method' => $params['method'])), 'not-specified');
-            }
-
-            if(!empty($params['test'])){
-                /*
-                 * First installation method was successfule, we're done!
-                 */
-                break;
-            }
+                    return;
+                }
+            });
         }
 
         /*
          * Okay then, library should be installed now! Test this by re-executing
          * install(), it should not have any problems with the checks now
          */
-        return install($params);
+        return ensure_installed($params);
 
     }catch(Exception $e){
         throw new bException('install(): Failed', $e);
