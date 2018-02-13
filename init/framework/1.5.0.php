@@ -49,6 +49,7 @@ sql_query('CREATE TABLE `drivers_devices` (`id`           INT(11)      NOT NULL 
 
 sql_query('CREATE TABLE `drivers_options` (`id`         INT(11)     NOT NULL AUTO_INCREMENT,
                                            `devices_id` INT(11)     NOT NULL,
+                                           `status`     VARCHAR(16)     NULL,
                                            `key`        VARCHAR(32)     NULL,
                                            `value`      VARCHAR(64)     NULL,
                                            `default`    VARCHAR(64)     NULL,

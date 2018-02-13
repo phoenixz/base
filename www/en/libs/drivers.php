@@ -92,8 +92,8 @@ function drivers_validate_device($device){
 function drivers_add_options($devices_id, $options){
     try{
         $count  = 0;
-        $insert = sql_prepare('INSERT INTO `drivers_options` (`devices_id`, `key`, `value`, `default`)
-                               VALUES                        (:devices_id , :key , :value , :default )');
+        $insert = sql_prepare('INSERT INTO `drivers_options` (`devices_id`, `status`, `key`, `value`, `default`)
+                               VALUES                        (:devices_id , :status , :key , :value , :default )');
 
         foreach($options as $key => $values){
             /*
@@ -113,6 +113,7 @@ function drivers_add_options($devices_id, $options){
                 }
 
                 $insert->execute(array(':devices_id' => $devices_id,
+                                       ':status'     => $values['status'],
                                        ':key'        => $key,
                                        ':value'      => $value,
                                        ':default'    => $default));
@@ -148,10 +149,16 @@ function drivers_validate_options($option){
 /*
  *
  */
-function drivers_get_options($devices_id){
+function drivers_get_options($devices_id, $inactive = false){
     try{
-        $retval  = array();
-        $options = sql_query('SELECT `key`, `value`, `default` FROM `drivers_options` WHERE `devices_id` = :devices_id', array(':devices_id' => $devices_id));
+        if($inactive){
+            $retval  = array();
+            $options = sql_query('SELECT `key`, `value`, `default` FROM `drivers_options` WHERE `devices_id` = :devices_id', array(':devices_id' => $devices_id));
+
+        }else{
+            $retval  = array();
+            $options = sql_query('SELECT `key`, `value`, `default` FROM `drivers_options` WHERE `devices_id` = :devices_id AND `status` IS NULL', array(':devices_id' => $devices_id));
+        }
 
         if(!$options){
             throw new bException(tr('drivers_get_options(): Speficied drivers id ":id" does not exist', array(':id' => $devices_id)), 'not-exist');
