@@ -212,7 +212,7 @@ $_CONFIG['locale']             = array(LC_ALL                               => '
 $_CONFIG['location']           = array('detect'                             => false);                                                  // Attempt auto location detect if current session doesn't have location information
 
 //Log configuration
-$_CONFIG['log']                = array('default'                            => 'db');                                                   // Where entries will be logged. Either "db", "file", or "both"
+$_CONFIG['log']                = array('single'                             => true);                                                   // All file logs will go to one and the same file
 
 // Mailer configuration
 $_CONFIG['mailer']             = array('sender'                             => array('wait'               => 5,

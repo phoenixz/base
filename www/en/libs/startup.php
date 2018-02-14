@@ -839,6 +839,11 @@ function log_console($messages = '', $color = null, $newline = true, $filter_dou
             return log_file($messages, SCRIPT);
         }
 
+        if($color and !is_scalar($color)){
+            log_console(tr('[ WARNING ] log_console(): Invalid color ":color" specified for the following message, color has been stripped', array(':color' => $color)), 'warning');
+            $color = null;
+        }
+
         switch(str_until($color, '/')){
             case 'VERBOSE':
                 if(!VERBOSE){
@@ -986,7 +991,7 @@ function log_console($messages = '', $color = null, $newline = true, $filter_dou
         return $message;
 
     }catch(Exception $e){
-        throw new bException('log_console(): Failed', $e, array('message' => $message));
+        throw new bException('log_console(): Failed', $e, array('message' => $messages));
     }
 }
 
@@ -1114,7 +1119,7 @@ function log_database($messages, $type = 'unknown'){
 /*
  * Log specified message to file.
  */
-function log_file($messages, $class = 'messages', $type = null){
+function log_file($messages, $class = 'syslog'){
     global $_CONFIG;
     static $h = array(), $last;
 
@@ -1187,16 +1192,16 @@ function log_file($messages, $class = 'messages', $type = null){
                     }
                 }
 
-                if($type == 'unknown'){
-                    $type = 'exception';
+                if(!$class){
+                    $class = 'exception';
                 }
             }
 
             if($messages instanceof Exception){
                 $messages = $messages->getMessage();
 
-                if($type == 'unknown'){
-                    $type = 'exception';
+                if(!$class){
+                    $class = 'exception';
                 }
             }
         }
@@ -1206,11 +1211,26 @@ function log_file($messages, $class = 'messages', $type = null){
             throw new bException(tr('log_file(): Specified class ":class" is not scalar', array(':class' => str_truncate(json_encode_custom($class), 20))));
         }
 
-        if(empty($h[$class])){
+        /*
+         * Single log or multi log?
+         */
+        if($_CONFIG['log']['single']){
+            $file  = 'syslog';
+            $class = '[ '.$class.' ] ';
+
+        }else{
+            $file  = $class;
+            $class = '';
+        }
+
+        /*
+         * Write log entries
+         */
+        if(empty($h[$file])){
             load_libs('file');
             file_ensure_path(ROOT.'data/log');
 
-            $h[$class] = fopen(slash(ROOT.'data/log').$class, 'a+');
+            $h[$file] = fopen(slash(ROOT.'data/log').$file, 'a+');
         }
 
         $messages = array_force($messages, "\n");
@@ -1218,13 +1238,11 @@ function log_file($messages, $class = 'messages', $type = null){
         $date     = $date->format('Y/m/d H:i:s');
 
         foreach($messages as $key => $message){
-            $type = ($type ? '['.$type.'] ' : '');
-
             if($key and (count($messages) > 1)){
-                fwrite($h[$class], $date.' '.$type.$key.' => '.$message."\n");
+                fwrite($h[$file], $date.' '.$class.$key.' => '.$message."\n");
 
             }else{
-                fwrite($h[$class], $date.' '.$type.$message."\n");
+                fwrite($h[$file], $date.' '.$class.$message."\n");
             }
         }
 
