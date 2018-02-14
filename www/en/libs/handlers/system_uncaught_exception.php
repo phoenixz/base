@@ -15,6 +15,7 @@ try{
     $executed = true;
 
     if(!empty($core) and !empty($core->register['ready'])){
+        log_file(tr('*** UNCAUGHT EXCEPTION ***'), 'exceptions');
         log_file($e, 'exceptions');
     }
 
