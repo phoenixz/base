@@ -285,7 +285,7 @@ function scanimage_update_devices(){
         $scanners = scanimage_search_devices();
 
         foreach($scanners as $scanner){
-            $options = scanimage_get_scanner_details($scanner['device_string']);
+            $options = scanimage_get_options($scanner['device_string']);
             $scanner = drivers_add_device(array('type'        => 'scanner',
                                                 'string'      => $scanner['device_string'],
                                                 'description' => $scanner['name']));
@@ -303,9 +303,14 @@ function scanimage_update_devices(){
 
 
 /*
- * Get details for the specified scanner device
+ * Get driver options for the specified scanner device from the drivers
+ *
+ * Devices confirmed to be working:
+ * device `brother4:bus4;dev1' is a Brother MFC-L8900CDW USB scanner
+ * device `imagescan:esci:usb:/sys/devices/pci0000:00/0000:00:1c.0/0000:03:00.0/usb4/4-2/4-2:1.0' is a EPSON DS-1630
+ * device `hpaio:/usb/HP_LaserJet_CM1415fnw?serial=00CNF8BC4K04' is a Hewlett-Packard HP_LaserJet_CM1415fnw all-in-one
  */
-function scanimage_get_scanner_details($device){
+function scanimage_get_options($device){
     try{
         $skip    = true;
         $results = safe_exec('scanimage -h -d "'.$device.'"');
@@ -339,7 +344,7 @@ function scanimage_get_scanner_details($device){
                  * These are double dash options
                  */
                 if(!preg_match_all('/--([a-zA-Z-]+)(.+)/', $result, $matches)){
-                    throw new bException(tr('scanimage_get_scanner_details(): Unknown driver line format encountered for key "resolution"'), 'unknown');
+                    throw new bException(tr('scanimage_get_options(): Unknown driver line format encountered for key "resolution"'), 'unknown');
                 }
 // :DEBUG: Do not remove the folowing commented line(s), its for debugging purposes
 //show($matches);
@@ -405,7 +410,7 @@ function scanimage_get_scanner_details($device){
                         default:
                             if(!strstr($data, '|')){
                                 if(!strstr($data, '..')){
-                                    throw new bException(tr('scanimage_get_scanner_details(): Unknown driver line ":result" found', array(':result' => $result)), 'unknown');
+                                    throw new bException(tr('scanimage_get_options(): Unknown driver line ":result" found', array(':result' => $result)), 'unknown');
                                 }
 
                                 /*
@@ -431,7 +436,7 @@ function scanimage_get_scanner_details($device){
                  * These are single dash options
                  */
                 if(!preg_match_all('/-([a-zA-Z-]+)(.+)/', $result, $matches)){
-                    throw new bException(tr('scanimage_get_scanner_details(): Unknown driver line format encountered for key "resolution"'), 'unknown');
+                    throw new bException(tr('scanimage_get_options(): Unknown driver line format encountered for key "resolution"'), 'unknown');
                 }
 // :DEBUG: Do not remove the folowing commented line(s), its for debugging purposes
 //show($matches);
@@ -478,7 +483,7 @@ function scanimage_get_scanner_details($device){
                         break;
 
                     default:
-                        throw new bException(tr('scanimage_get_scanner_details(): Unknown driver key ":key" found', array(':key' => $key)), 'unknown');
+                        throw new bException(tr('scanimage_get_options(): Unknown driver key ":key" found', array(':key' => $key)), 'unknown');
                 }
             }
 
@@ -490,7 +495,7 @@ function scanimage_get_scanner_details($device){
         return $retval;
 
     }catch(Exception $e){
-        throw new bException(tr('scanimage_get_scanner_details(): Failed for device ":device"', array(':device' => $device)), $e);
+        throw new bException(tr('scanimage_get_options(): Failed for device ":device"', array(':device' => $device)), $e);
     }
 }
 
