@@ -89,7 +89,7 @@ class Colors {
             /*
              * If requested colors do not exist, return no
              */
-            log_console(tr('[LOG WARNING] specified foreground/background color combination ":fore/:back" for the next line does not exist. The line will be displayed without colors', array(':fore' => $foreground_color, ':back' => $background_color)));
+            log_console(tr('[ WARNING ] getColoredString(): specified foreground/background color combination ":fore/:back" for the next line does not exist. The line will be displayed without colors', array(':fore' => $foreground_color, ':back' => $background_color)), 'warning');
             return $string;
         }
 
@@ -1119,6 +1119,21 @@ function cli_pkill($process, $signal = null, $sudo = false, $verify = 3, $sigkil
 /*
  *
  */
+function cli_get_term(){
+    try{
+        $term = exec('echo $TERM');
+        return $term;
+
+    }catch(Exception $e){
+        throw new bException('cli_get_term(): Failed', $e);
+    }
+}
+
+
+
+/*
+ *
+ */
 function cli_get_columns(){
     try{
         $cols = exec('tput cols');
@@ -1135,7 +1150,7 @@ function cli_get_columns(){
  */
 function cli_get_lines(){
     try{
-        $rows = exec('tput cols');
+        $rows = exec('tput lines');
         return $rows;
 
     }catch(Exception $e){
