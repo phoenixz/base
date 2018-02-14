@@ -273,23 +273,24 @@ class bException extends Exception{
             $messages = array($messages);
         }
 
-        try{
-            /*
-             * Only log to file if core is available and config_ok (configuration is loaded correclty)
-             */
-            if(!empty($core) and !empty($core->register['ready'])){
-                foreach($messages as $message){
-                    log_file($message, 'exceptions');
-                }
-            }
-
-        }catch(Exception $f){
-            /*
-             * Exception database logging failed. Ignore, since from here on there is little to do
-             */
-
-// :TODO: Add notifications!
-        }
+// :DELETE: Exceptions should only logged if uncaught, since only those matter. Caught exceptions have been handled by the system already
+//        try{
+//            /*
+//             * Only log to file if core is available and config_ok (configuration is loaded correclty)
+//             */
+//            if(!empty($core) and !empty($core->register['ready'])){
+//                foreach($messages as $message){
+//                    log_file($message, 'exceptions');
+//                }
+//            }
+//
+//        }catch(Exception $f){
+//            /*
+//             * Exception database logging failed. Ignore, since from here on there is little to do
+//             */
+//
+//// :TODO: Add notifications!
+//        }
 
         parent::__construct($orgmessage, null);
         $this->code = (string) $code;
@@ -1239,6 +1240,10 @@ function log_file($messages, $class = 'syslog'){
 
         foreach($messages as $key => $message){
             if($key and (count($messages) > 1)){
+                if(!is_scalar($message)){
+                    $message = str_log($message);
+                }
+
                 fwrite($h[$file], $date.' '.$class.$key.' => '.$message."\n");
 
             }else{
