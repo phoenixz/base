@@ -198,13 +198,13 @@ function scanimage_validate($params){
 /*
  * List the available scanner devices from the driver database
  */
-function scanimage_list($device = null, $cached = true){
+function scanimage_list($all = false){
     try{
         /*
          * Get device data from cache
          */
         load_libs('drivers');
-        $devices = drivers_get_devices('scanner', $device);
+        $devices = drivers_get_devices('scanner');
 
         if($devices){
             $devices = sql_list($devices);
@@ -242,12 +242,12 @@ function scanimage_search_devices(){
                 /*
                  * Found a scanner
                  */
-                $devices[] = array('raw'           => $matches[0][0],
-                                   'driver'        => $matches[1][0],
-                                   'bus'           => $matches[2][0],
-                                   'device'        => $matches[3][0],
-                                   'device_string' => $matches[1][0].':bus'.$matches[2][0].';dev'.$matches[3][0],
-                                   'name'          => $matches[4][0]);
+                $devices[] = array('raw'         => $matches[0][0],
+                                   'driver'      => $matches[1][0],
+                                   'bus'         => $matches[2][0],
+                                   'device'      => $matches[3][0],
+                                   'string'      => $matches[1][0].':bus'.$matches[2][0].';dev'.$matches[3][0],
+                                   'description' => $matches[4][0]);
             }else{
                 $found = preg_match_all('/device `((.+?):.+?)\' is a (.+)/i', $scanner, $matches);
 
@@ -255,12 +255,12 @@ function scanimage_search_devices(){
                     /*
                      * Found a scanner
                      */
-                    $devices[] = array('raw'           => $matches[0][0],
-                                       'driver'        => $matches[2][0],
-                                       'bus'           => null,
-                                       'device'        => null,
-                                       'device_string' => $matches[1][0],
-                                       'name'          => $matches[3][0]);
+                    $devices[] = array('raw'         => $matches[0][0],
+                                       'driver'      => $matches[2][0],
+                                       'bus'         => null,
+                                       'device'      => null,
+                                       'string'      => $matches[1][0],
+                                       'description' => $matches[3][0]);
                 }
             }
         }
@@ -283,28 +283,55 @@ function scanimage_update_devices(){
         drivers_clear_devices('scanner');
 
         $scanners = scanimage_search_devices();
+        $failed   = 0;
 
         foreach($scanners as $scanner){
+            unset($options);
+
             try{
-                $options = scanimage_get_options($scanner['device_string']);
-                $scanner = drivers_add_device(array('type'        => 'scanner',
-                                                    'string'      => $scanner['device_string'],
-                                                    'description' => $scanner['name']));
-
-                $count   = drivers_add_options($scanner['id'], $options);
-
+                $scanner = drivers_add_device($scanner, 'scanner');
                 log_file(tr('Added device ":device" with device string ":string"', array(':device' => $scanner['description'], ':string' => $scanner['string'])), 'scanner');
 
             }catch(Exception $e){
-                $failed = true;
+                $failed++;
 
                 /*
                  * One device failed to add, continue adding the rest
                  */
-                log_file('scanimage_update_devices(): Device failed to add');
-                log_file($scanner);
-                log_file($e);
+                log_file(tr('Failed to add device ":device" with device string ":string"', array(':device' => $scanner['description'], ':string' => $scanner['string'])), 'scanner');
+                log_file(tr('Scanner data:'), 'scanner');
+                log_file($scanner, 'scanner');
+                log_file(tr('Scanner exception:'), 'exceptions');
+                log_file($e, 'scanner');
+                continue;
+            }
 
+            try{
+                $options = scanimage_get_options($scanner['string']);
+                $count   = drivers_add_options($scanner['id'], $options);
+                log_file(tr('Added ":count" options for device string ":string"', array(':string' => $scanner['string'], ':count' => $count)), 'scanner');
+
+            }catch(Exception $e){
+                $failed++;
+                drivers_device_status($scanner['string'], 'failed');
+
+                /*
+                 * Options for one device failed to add, continue adding the rest
+                 */
+                if(empty($options)){
+                    log_file(tr('Failed to retrieve options for device ":device" with device string ":string", scanner device has been disabled', array(':device' => $scanner['description'], ':string' => $scanner['string'])), 'scanner');
+                    log_file(tr('Scanner options exception:'), 'exceptions');
+                    log_file($e, 'scanner');
+
+                }else{
+                    log_file(tr('Failed to store options for device ":device" with device string ":string", scanner device has been disabled', array(':device' => $scanner['description'], ':string' => $scanner['string'])), 'scanner');
+                    log_file(tr('Options data:'), 'scanner');
+                    log_file($options, 'scanner');
+                    log_file(tr('Scanner exception:'), 'exceptions');
+                    log_file($e, 'scanner');
+                }
+
+                continue;
             }
         }
 
@@ -312,7 +339,7 @@ function scanimage_update_devices(){
             return $scanners;
         }
 
-        throw new bException(tr('scanimage_update_devices(): Failed to add one or more scanners, see file log'), 'failed');
+        throw new bException(tr('scanimage_update_devices(): Failed to add ":count" scanners or driver options, see file log for more information', array(':count' => $failed)), 'warning/failed');
 
     }catch(Exception $e){
         throw new bException('scanimage_update_devices(): Failed', $e);
@@ -336,6 +363,10 @@ function scanimage_get_options($device){
         $retval  = array();
 
         foreach($results as $result){
+            if(strstr($result, 'failed:')){
+                throw new bException(tr('scanimage_get_options(): Options scan for device ":device" failed with ":e"', array(':device' => $device, ':e' => str_from($result, 'failed:'))), 'failed');
+            }
+
             if($skip){
                 if(preg_match('/Options specific to device \`'.str_replace(array('.', '/'), array('\.', '\/'), $device).'\':/', $result)){
                     $skip = false;
@@ -561,7 +592,71 @@ function scanimage_get($device_string){
         return $scanner;
 
     }catch(Exception $e){
-        throw new bException('scanner_get_default(): Failed', $e);
+        throw new bException('scanner_get(): Failed', $e);
+    }
+}
+
+
+
+/*
+ * Create and return HTML for a select component showing available scanners
+ */
+function scanimage_select($params){
+    try{
+        array_ensure($params);
+        array_default($params, 'name'      , 'scanner');
+        array_default($params, 'autosubmit', true);
+        array_default($params, 'none'      , false);
+        array_default($params, 'empty'     , tr('No scanners available'));
+
+        $scanners = scanimage_list();
+
+        foreach($scanners as $scanner){
+            $params['resource'][$scanner['string']] = $scanner['description'];
+        }
+
+        $html = html_select($params);
+
+        return $html;
+
+    }catch(Exception $e){
+        throw new bException('scanimage_select(): Failed', $e);
+    }
+}
+
+
+
+/*
+ * Create and return HTML for a select component showing available resolutions
+ * for the specified scanner device
+ */
+function scanimage_select_resolution($params){
+    try{
+        array_ensure($params, 'string');
+        array_default($params, 'name'      , 'scanner');
+        array_default($params, 'autosubmit', true);
+        array_default($params, 'none'      , false);
+        array_default($params, 'empty'     , tr('No scanners available'));
+
+        $params['resource'] = sql_query('SELECT    `drivers_options`.`value` AS `id`,
+                                                   `drivers_options`.`value`
+
+                                         FROM      `drivers_devices`
+
+                                         LEFT JOIN `drivers_options`
+                                         ON        `drivers_options`.`devices_id` = `drivers_devices`.`id`
+                                         AND       `drivers_options`.`key`        = "resolution"
+
+                                         WHERE     `drivers_devices`.`string`     = :string',
+
+                                         array(':string' => $params['string']));
+
+        $html = html_select($params);
+
+        return $html;
+
+    }catch(Exception $e){
+        throw new bException('scanimage_select(): Failed', $e);
     }
 }
 ?>
