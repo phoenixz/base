@@ -1,0 +1,27 @@
+#!/usr/bin/php
+<?php
+/*
+ * This script will display detailed information about the current framework, project, database ,etc.
+ */
+$usage = './scripts/base/info';
+
+$help  = 'The info script will show detailed information about the current framework, project, database and more';
+
+require_once(__DIR__.'/../../libs/startup.php');
+
+cli_no_arguments_left();
+sql_query('SELECT 1');
+
+log_console(cli_color(tr('Project name:'), 'white').' '.PROJECT);
+log_console(cli_color(tr('Framework code version:'), 'white').' '.FRAMEWORKCODEVERSION);
+log_console(cli_color(tr('Framework database version:'), 'white').' '.FRAMEWORKDBVERSION);
+log_console(cli_color(tr('Project code version:'), 'white').' '.PROJECTCODEVERSION);
+log_console(cli_color(tr('Project database version:'), 'white').' '.PROJECTDBVERSION);
+log_console(cli_color(tr('Init required:'), 'white').' '.str_boolean((FRAMEWORKCODEVERSION != FRAMEWORKDBVERSION) or (PROJECTCODEVERSION != PROJECTDBVERSION)));
+log_console(cli_color(tr('Platform:'), 'white').' '.PLATFORM);
+log_console(cli_color(tr('Environment:'), 'white').' '.ENVIRONMENT);
+log_console(cli_color(tr('Production:'), 'white').' '.str_boolean($_CONFIG['production']));
+log_console(cli_color(tr('Debug:'), 'white').' '.str_boolean(debug()));
+log_console(cli_color(tr('Core database:'), 'white').' '.$_CONFIG['db']['core']['db']);
+log_console(cli_color(tr('Active users:'), 'white').' '.sql_get('SELECT COUNT(`id`) AS `count` FROM `users` WHERE `status` IS NULL', true));
+?>
