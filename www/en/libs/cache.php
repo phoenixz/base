@@ -37,10 +37,14 @@ switch($_CONFIG['cache']['method']){
 /*
  * Read from cache
  */
-function cache_read($key = null, $namespace = null){
+function cache_read($key, $namespace = null){
     global $_CONFIG, $core;
 
     try{
+        if(!$key){
+            throw new bException(tr('cache_read(): No cache key specified'), 'not-specified');
+        }
+
         switch($_CONFIG['cache']['method']){
             case 'file':
                 $key  = cache_key_hash($key);
@@ -108,12 +112,16 @@ function cache_read_file($key, $namespace = null){
 /*
  * Read to cache
  */
-function cache_write($value, $key = null, $namespace = null, $max_age = null){
+function cache_write($value, $key, $namespace = null, $max_age = null){
     global $_CONFIG, $core;
 
     try{
         if(!$max_age){
             $max_age = $_CONFIG['cache']['max_age'];
+        }
+
+        if(!$key){
+            throw new bException(tr('cache_write(): No cache key specified'), 'not-specified');
         }
 
         switch($_CONFIG['cache']['method']){
