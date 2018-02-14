@@ -293,17 +293,26 @@ function scanimage_update_devices(){
 
                 $count   = drivers_add_options($scanner['id'], $options);
 
+                log_file(tr('Added device ":device" with device string ":string"', array(':device' => $scanner['description'], ':string' => $scanner['string'])), 'scanner');
+
             }catch(Exception $e){
+                $failed = true;
+
                 /*
                  * One device failed to add, continue adding the rest
                  */
-                log_file('Device failed to add');
-                log_file('scanimage_update_devices(): '.$scanner);
+                log_file('scanimage_update_devices(): Device failed to add');
+                log_file($scanner);
                 log_file($e);
+
             }
         }
 
-        return $scanners;
+        if(empty($failed)){
+            return $scanners;
+        }
+
+        throw new bException(tr('scanimage_update_devices(): Failed to add one or more scanners, see file log'), 'failed');
 
     }catch(Exception $e){
         throw new bException('scanimage_update_devices(): Failed', $e);
