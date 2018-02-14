@@ -3,29 +3,29 @@
 /*
  * This script will display version information
  */
-$usage = "./scripts/base/version\n".
-         "./scripts/base/version [php|serialize|serialized]\n";
+$usage = './scripts/base/version [--no-database|-n]';
 
-$help  = "The version script will supply you with version information about this copy of the base framework";
+$help  = 'The version script will supply you with version information about this implementation of the base framework
+
+
+
+ARGUMENTS
+
+
+
+--no-database / -n              - Do not get database version information';
 
 require_once(__DIR__.'/../../libs/startup.php');
 
-switch(cli_method()){
-    case 'php':
-        //FALLTHROUGH
-    case 'serialize':
-        //FALLTHROUGH
-    case 'serialized':
-        die(serialize(array('name'      => PROJECT,
-                            'framework' => FRAMEWORKCODEVERSION,
-                            'project'   => PROJECTCODEVERSION)));
+$no_database = not_empty(cli_argument('--no-database'), cli_argument('-n'));
+cli_no_arguments_left();
 
-    case '':
-        log_console(tr('BASE project ":project" with framework version ":fversion" and project version ":pversion"', array(':project' => PROJECT, ':fversion' => FRAMEWORKCODEVERSION, ':pversion' => PROJECTCODEVERSION)), 'white');
-        break;
-
-    default:
-        throw new bException(tr('Unknown method ":method" specified', array(':method' => cli_method())), 'unknown-method');
+if($no_database){
+    log_console(tr('BASE project ":project" with framework version ":fversion" and project version ":pversion"', array(':project' => PROJECT, ':fversion' => FRAMEWORKCODEVERSION, ':pversion' => PROJECTCODEVERSION)));
+    die();
 }
 
+sql_query('SELECT 1');
+log_console(tr('BASE project ":project" with framework version ":fversion" and project version ":pversion"', array(':project' => PROJECT, ':fversion' => FRAMEWORKCODEVERSION, ':pversion' => PROJECTCODEVERSION)));
+log_console(tr('BASE core database ":db" with framework version ":fversion" and project version ":pversion"', array(':db' => $_CONFIG['db']['core']['db'], ':fversion' => FRAMEWORKDBVERSION, ':pversion' => PROJECTDBVERSION)));
 ?>
