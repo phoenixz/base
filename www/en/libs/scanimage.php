@@ -285,12 +285,22 @@ function scanimage_update_devices(){
         $scanners = scanimage_search_devices();
 
         foreach($scanners as $scanner){
-            $options = scanimage_get_options($scanner['device_string']);
-            $scanner = drivers_add_device(array('type'        => 'scanner',
-                                                'string'      => $scanner['device_string'],
-                                                'description' => $scanner['name']));
+            try{
+                $options = scanimage_get_options($scanner['device_string']);
+                $scanner = drivers_add_device(array('type'        => 'scanner',
+                                                    'string'      => $scanner['device_string'],
+                                                    'description' => $scanner['name']));
 
-            $count   = drivers_add_options($scanner['id'], $options);
+                $count   = drivers_add_options($scanner['id'], $options);
+
+            }catch(Exception $e){
+                /*
+                 * One device failed to add, continue adding the rest
+                 */
+                log_file('Device failed to add');
+                log_file('scanimage_update_devices(): '.$scanner);
+                log_file($e);
+            }
         }
 
         return $scanners;
