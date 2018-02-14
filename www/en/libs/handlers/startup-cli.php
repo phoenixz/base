@@ -250,28 +250,30 @@ load_libs('cache'.(empty($_CONFIG['memcached']) ? '' : ',memcached').(empty($_CO
 
 
 /*
- * Determine the screen width
+ * Get terminal data
  */
-try{
-    $core->register['cli'] = array('columns' => cli_get_columns(),
-                                   'rows'    => cli_get_lines());
+$core->register['cli'] = array('term' => cli_get_term());
 
-}catch(Exception $e){
-    $core->register['cli'] = array('columns' => 0,
-                                   'rows'    => 0);
+if($core->register['cli']['term']){
+    $core->register['cli']['columns'] = cli_get_columns();
+    $core->register['cli']['lines']   = cli_get_lines();
+
+    if(!$core->register['cli']['columns']){
+        $core->register['cli']['size'] = 'unknown';
+
+    }elseif($core->register['cli']['columns'] <= 80){
+        $core->register['cli']['size'] = 'small';
+
+    }elseif($core->register['cli']['columns'] <= 160){
+        $core->register['cli']['size'] = 'medium';
+
+    }else{
+        $core->register['cli']['size'] = 'large';
+    }
 }
 
-if(!$core->register['cli']['columns']){
-    $core->register['cli']['width'] = 'unknown';
-
-}elseif($core->register['cli']['columns'] <= 80){
-    $core->register['cli']['width'] = 'small';
-
-}elseif($core->register['cli']['columns'] <= 160){
-    $core->register['cli']['width'] = 'medium';
-
-}else{
-    $core->register['cli']['width'] = 'large';
+if(VERBOSE){
+    log_console(tr('Detected ":size" terminal with ":columns" columns and ":lines" lines', array(':size' => $core->register['cli']['size'], ':columns' => $core->register['cli']['columns'], ':lines' => $core->register['cli']['lines'])));
 }
 
 
