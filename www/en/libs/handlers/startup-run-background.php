@@ -59,15 +59,17 @@ try{
             $log = ROOT.'data/log/'.$log;
         }
 
-        $command = sprintf('(nohup %s >> %s 2>&1 & echo $! >&3) 3> %s', $path.$cmd.' '.$args, $log, ROOT.'data/run-background/'.$cmd);
-
         file_ensure_path(dirname($log));
+
+        $command = sprintf('(nohup %s >> %s 2>&1 & echo $! >&3) 3> %s', $path.$cmd.' '.$args, $log, ROOT.'data/run-background/'.$cmd);
         exec($command);
 
     }else{
         $command = sprintf('(nohup %s > /dev/null 2>&1 & echo $! >&3) 3> %s', $path.$cmd.' '.$args, ROOT.'data/run-background/'.$cmd);
         exec($command);
     }
+
+    log_file($command, 'run-background');
 // :DEBUG: Leave the next line around, it will be useful..
 //showdie($command);
 
