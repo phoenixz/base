@@ -43,10 +43,10 @@ try{
         /*
          * Background commands cannot use "exec()" because that one will always wait for the exit code
          */
-        $lastline = exec(substr($command, 0, -1).' > /dev/null 2>&1 & echo $!', $output, $exitcode);
+        $lastline = exec(substr($command, 0, -1).' > /dev/null 2>&1 3>&1 & echo $!', $output, $exitcode);
 
     }else{
-        $lastline = exec($command.($route_errors ? ' 2>&1' : ''), $output, $exitcode);
+        $lastline = exec($command.($route_errors ? ' 2>&1 3>&1' : ''), $output, $exitcode);
     }
 
 
@@ -68,6 +68,18 @@ try{
     if($exitcode){
         if(!in_array($exitcode, array_force($ok_exitcodes))){
             load_libs('json');
+            log_file(tr('Command ":command" failed with exit code ":exitcode", see output below for more information', array(':command' => $command, ':exitcode' => $exitcode)), 'safe_exec', 'error');
+
+            if($output){
+                log_file($output, 'safe_exec', 'error');
+
+            }elseif(empty($lasline)){
+                log_file(tr('Command has no output'), 'safe_exec', 'error');
+
+            }else{
+                log_file(tr('Command only had last line (shown below)'), 'safe_exec', 'error');
+                log_file($lasline, 'safe_exec', 'error');
+            }
 
             throw new bException(tr('safe_exec(): Command ":command" failed with exit code ":exitcode", see attached data for output', array(':command' => $command, ':exitcode' => $exitcode)), $exitcode, $output);
         }
