@@ -330,8 +330,17 @@ function init_process_version_diff(){
     global $_CONFIG, $core;
 
     try{
-        if((SCRIPT == 'init') or (SCRIPT == 'update') or (SCRIPT == 'sync')){
-            return false;
+        switch(SCRIPT){
+            case 'info':
+                // FALLTHROUGH
+            case 'init':
+                // FALLTHROUGH
+            case 'sync':
+                // FALLTHROUGH
+            case 'update':
+                // FALLTHROUGH
+            case 'version':
+                return false;
         }
 
         $compare_project   = version_compare(PROJECTCODEVERSION  , PROJECTDBVERSION);
