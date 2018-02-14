@@ -1120,11 +1120,13 @@ function log_database($messages, $type = 'unknown'){
 /*
  * Log specified message to file.
  */
-function log_file($messages, $class = 'syslog'){
+function log_file($messages, $class = 'syslog', $color = null){
     global $_CONFIG;
     static $h = array(), $last;
 
     try{
+        load_libs('cli');
+
         switch(str_until($class, '/')){
             case 'VERBOSE':
                 if(!VERBOSE){
@@ -1179,6 +1181,7 @@ function log_file($messages, $class = 'syslog'){
 
         if(is_object($messages)){
             if($messages instanceof bException){
+                $color    = 'error';
                 $data     = $messages->getData();
                 $messages = $messages->getMessages();
 
@@ -1186,9 +1189,9 @@ function log_file($messages, $class = 'syslog'){
                     /*
                      * Add data to messages
                      */
-                    foreach($data as $line){
+                    foreach(array_force($data) as $line){
                         if($line){
-                            $messages[] = $line;
+                            $messages[] = cli_color($line, 'error');
                         }
                     }
                 }
@@ -1199,7 +1202,8 @@ function log_file($messages, $class = 'syslog'){
             }
 
             if($messages instanceof Exception){
-                $messages = $messages->getMessage();
+                $color    = 'error';
+                $messages = cli_color($messages->getMessage(), 'error');
 
                 if(!$class){
                     $class = 'exception';
@@ -1217,7 +1221,7 @@ function log_file($messages, $class = 'syslog'){
          */
         if($_CONFIG['log']['single']){
             $file  = 'syslog';
-            $class = '[ '.$class.' ] ';
+            $class = cli_color('[ '.$class.' ] ', 'white');
 
         }else{
             $file  = $class;
@@ -1244,10 +1248,18 @@ function log_file($messages, $class = 'syslog'){
                     $message = str_log($message);
                 }
 
-                fwrite($h[$file], $date.' '.$class.$key.' => '.$message."\n");
+                if(!empty($color)){
+                    $message = cli_color($message, $color);
+                }
+
+                fwrite($h[$file], cli_color($date, 'cyan').' '.$class.$key.' => '.$message."\n");
 
             }else{
-                fwrite($h[$file], $date.' '.$class.$message."\n");
+                if(!empty($color)){
+                    $message = cli_color($message, $color);
+                }
+
+                fwrite($h[$file], cli_color($date, 'cyan').' '.$class.$message."\n");
             }
         }
 
