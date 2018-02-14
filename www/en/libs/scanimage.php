@@ -22,7 +22,7 @@ load_config('scanimage');
 function scanimage($params){
     try{
         $params = scanimage_validate($params);
-        $command = 'scanimage '.$params['options'];
+        $command = 'scanimage --format tiff '.$params['options'];
 
         /*
          * Finish scan command and execute it
