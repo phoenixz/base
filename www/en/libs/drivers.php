@@ -20,8 +20,8 @@ function drivers_add_device($device, $type = null){
 
         $device = drivers_validate_device($device);
 
-        sql_query('INSERT INTO `drivers_devices` (`createdby`, `meta_id`, `type`, `manufacturer`, `model`, `vendor`, `product`, `libusb`, `bus`, `device`, `string`, `default`, `description`)
-                   VALUES                        (:createdby , :meta_id , :type , :manufacturer , :model , :vendor , :product , :libusb , :bus , :device , :string , :default , :description )',
+        sql_query('INSERT INTO `drivers_devices` (`createdby`, `meta_id`, `type`, `manufacturer`, `model`, `vendor`, `product`, `libusb`, `bus`, `device`, `string`, `seostring`, `default`, `description`)
+                   VALUES                        (:createdby , :meta_id , :type , :manufacturer , :model , :vendor , :product , :libusb , :bus , :device , :string , :seostring , :default , :description )',
 
                    array(':createdby'    => $_SESSION['user']['id'],
                          ':meta_id'      => meta_action(),
@@ -34,6 +34,7 @@ function drivers_add_device($device, $type = null){
                          ':bus'          => $device['bus'],
                          ':device'       => $device['device'],
                          ':string'       => $device['string'],
+                         ':seostring'    => $device['seostring'],
                          ':default'      => $device['default'],
                          ':description'  => $device['description']));
 
@@ -53,7 +54,7 @@ function drivers_add_device($device, $type = null){
  */
 function drivers_validate_device($device){
     try{
-        load_libs('validate');
+        load_libs('validate,seo');
         $v = new validate_form($device, 'type,manufacturer,model,vendor,product,libusb,bus,device,string,default,description');
 
         $v->isAlphaNumericDash($device['type'], tr('Please specify a valid device type string (only alpha numeric characters and a -)'));
@@ -132,12 +133,34 @@ function drivers_validate_device($device){
         /*
          * Cleanup
          */
+        $device['seostring']   = seo_unique($device['seostring'], 'drivers_devices', $device['id'], 'seostring');
         $device['description'] = str_replace('_', ' ', $device['description']);
 
         return $device;
 
     }catch(Exception $e){
         throw new bException('drivers_validate_device(): Failed', $e);
+    }
+}
+
+
+
+/*
+ *
+ */
+function drivers_device_status($device, $status){
+    try{
+        if(is_numeric($device)){
+            $delete = sql_query('UPDATE `drivers_devices` SET `status` = :status WHERE `id` = :id'        , array(':id'     => $device, ':status' => $status));
+
+        }else{
+            $delete = sql_query('UPDATE `drivers_devices` SET `status` = :status WHERE `string` = :string', array(':string' => $device, ':status' => $status));
+        }
+
+        return $delete->rowCount();
+
+    }catch(Exception $e){
+        throw new bException('drivers_disable_device(): Failed', $e);
     }
 }
 
@@ -245,12 +268,15 @@ function drivers_get_options($devices_id, $inactive = false){
 /*
  * Return the available registered drivers for the specified type
  */
-function drivers_get_devices($type, $default_only = false){
+function drivers_get_devices($type, $all = false, $default_only = false){
     try{
         if($default_only){
             $where = 'WHERE  `type`    = :type
                       AND    `status`  IS NULL
                       AND    `default` = 1';
+
+        }elseif($all){
+            $where = 'WHERE  `type`    = :type';
 
         }else{
             $where = 'WHERE  `type`   = :type
@@ -326,7 +352,7 @@ function drivers_get_device($device_string){
  */
 function drivers_get_default_device($type){
     try{
-        $devices = drivers_get_devices($type, true);
+        $devices = drivers_get_devices($type, false, true);
 
         if(!$devices->rowCount()){
             return null;
