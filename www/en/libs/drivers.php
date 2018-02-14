@@ -133,7 +133,7 @@ function drivers_validate_device($device){
         /*
          * Cleanup
          */
-        $device['seostring']   = seo_unique($device['seostring'], 'drivers_devices', $device['id'], 'seostring');
+        $device['seostring']   = seo_unique($device['string'], 'drivers_devices', $device['id'], 'seostring');
         $device['description'] = str_replace('_', ' ', $device['description']);
 
         return $device;
