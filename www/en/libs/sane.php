@@ -34,7 +34,7 @@ function sane_find_scanners($libusb = false){
     global $_CONFIG;
 
     try{
-        $results = safe_exec('sudo sane-find-scanner -q | grep -v "Could not find"');
+        $results = safe_exec('sudo sane-find-scanner -q | grep -v "Could not find" | grep -v "Pipe error"', 1);
         $retval  = array('count'     => 0,
                          'usb'       => array(),
                          'scsi'      => array(),
