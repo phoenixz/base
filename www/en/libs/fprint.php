@@ -152,6 +152,7 @@ function fprint_kill(){
 }
 
 
+
 /*
  *
  */
@@ -230,7 +231,7 @@ function fprint_page_show($users_id, $html_flash_class){
 
             if($params['pid'] === false){
                 /*
-                 * Wut? We just killed it!
+                 * Wut? Why no PID?
                  */
                 throw new bException(tr('fprint_page_show(): The fprint script is already running'), 'process-runs');
             }
