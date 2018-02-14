@@ -443,32 +443,6 @@ class validate_form {
 
 
     /*
-     * Only allow alpha numeric characters
-     */
-    function isAlphaNumeric(&$value, $message = null, $flags = null){
-        try{
-            if(!$this->parseFlags($value, $message, $flags)){
-                return true;
-            }
-
-            if(!is_scalar($value)){
-                return $this->setError($message);
-            }
-
-            if($this->not xor !ctype_alnum($value)){
-                return $this->setError($message);
-            }
-
-            return true;
-
-        }catch(Exception $e){
-            throw new bException('validate_form::isAlphaNumeric(): Failed', $e);
-        }
-    }
-
-
-
-    /*
      * Only allow a valid (unverified!) email address
      */
     function isEmail(&$value, $message = null, $flags = null){
@@ -579,6 +553,166 @@ class validate_form {
 
         }catch(Exception $e){
             throw new bException('validate_form::isNatural(): Failed', $e);
+        }
+    }
+
+
+
+    /*
+     * Only allow alpha numeric characters
+     */
+    function isAlphaNumeric(&$value, $message = null, $flags = null){
+        try{
+            if(!$this->parseFlags($value, $message, $flags)){
+                return true;
+            }
+
+            if(!is_scalar($value)){
+                return $this->setError($message);
+            }
+
+            if($this->not xor !ctype_alnum($value)){
+                return $this->setError($message);
+            }
+
+            return true;
+
+        }catch(Exception $e){
+            throw new bException('validate_form::isAlphaNumeric(): Failed', $e);
+        }
+    }
+
+
+
+    /*
+     * Only allow alpha numeric and - characters
+     */
+    function isHexadecimal(&$value, $message = null, $flags = null){
+        try{
+            if(!$this->parseFlags($value, $message, $flags)){
+                return true;
+            }
+
+            if(!is_scalar($value)){
+                return $this->setError($message);
+            }
+
+            if(substr($value, 0, 2) == '0x'){
+                $value = substr($value, 2);
+            }
+
+            if($this->not xor !preg_match($regex, $value)){
+               return $this->setError($message);
+            }
+
+            return true;
+
+        }catch(Exception $e){
+            throw new bException('validate_form::isHexadecimal(): Failed', $e);
+        }
+    }
+
+
+
+    /*
+     * Only allow alpha numeric and - characters
+     */
+    function isAlphaNumericDash(&$value, $message = null, $flags = null){
+        try{
+            if(!$this->parseFlags($value, $message, $flags)){
+                return true;
+            }
+
+            if(!is_scalar($value)){
+                return $this->setError($message);
+            }
+
+            if($this->not xor !preg_match('/^[a-z0-9-]+$/', $value)){
+               return $this->setError($message);
+            }
+
+            return true;
+
+        }catch(Exception $e){
+            throw new bException('validate_form::isAlphaNumericDash(): Failed', $e);
+        }
+    }
+
+
+
+    /*
+     * Only allow alpha numeric and . characters
+     */
+    function isAlphaNumericDot(&$value, $message = null, $flags = null){
+        try{
+            if(!$this->parseFlags($value, $message, $flags)){
+                return true;
+            }
+
+            if(!is_scalar($value)){
+                return $this->setError($message);
+            }
+
+            if($this->not xor !preg_match('/^[a-z0-9.]+$/', $value)){
+               return $this->setError($message);
+            }
+
+            return true;
+
+        }catch(Exception $e){
+            throw new bException('validate_form::isAlphaNumericDot(): Failed', $e);
+        }
+    }
+
+
+
+    /*
+     * Only allow alpha numeric and [space] characters
+     */
+    function isAlphaNumericSpace(&$value, $message = null, $flags = null){
+        try{
+            if(!$this->parseFlags($value, $message, $flags)){
+                return true;
+            }
+
+            if(!is_scalar($value)){
+                return $this->setError($message);
+            }
+
+            if($this->not xor !preg_match('/^[a-z0-9 ]+$/', $value)){
+               return $this->setError($message);
+            }
+
+            return true;
+
+        }catch(Exception $e){
+            throw new bException('validate_form::isAlphaNumericSpace(): Failed', $e);
+        }
+    }
+
+
+
+    /*
+     * Only allow alpha numeric and _ characters
+     */
+    function isAlphaNumericUnderscore(&$value, $message = null, $flags = null){
+        try{
+            if(!$this->parseFlags($value, $message, $flags)){
+                return true;
+            }
+
+            if(!is_scalar($value)){
+                return $this->setError($message);
+            }
+
+            if($this->not xor !preg_match('/^[a-z0-9_]+$/', $value)){
+               return $this->setError($message);
+            }
+
+            return true;
+
+        }catch(Exception $e){
+            throw new bException('validate_form::isAlphaNumericUnderscore(): Failed', $e);
         }
     }
 
@@ -1046,7 +1180,7 @@ class validate_form {
      */
     function isRegex(&$value, $regex, $message = null, $flags = null){
          try{
-            if(!$this->parseFlags($value, $message, $flags, false)){
+            if(!$this->parseFlags($value, $message, $flags)){
                 return true;
             }
 
@@ -1328,7 +1462,7 @@ class validate_form {
     function getErrors($separator = null){
         try{
             if(!count($this->errors)){
-                throw new bException('validate->getErrors(): There are no errors', 'noerrors');
+                return null;
             }
 
             if($separator){
