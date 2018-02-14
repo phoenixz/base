@@ -54,7 +54,41 @@ function drivers_add_device($device, $type = null){
 function drivers_validate_device($device){
     try{
         load_libs('validate');
-        $v = new validate_form($device, 'type,manufacturer,model,vendor,product,libusb,device,bus,string');
+        $v = new validate_form($device, 'type,manufacturer,model,vendor,product,libusb,bus,device,string,default,description');
+
+        $v->isAlphaNumericDash($device['type'], tr('Please specify a valid device type string (only alpha numeric characters and a -)'));
+        $v->isNotEmpty($device['type'], tr('Please specify a device type'));
+        $v->hasMinChars($device['type'],  2, tr('Please specify a device type of 2 characters or more'));
+        $v->hasMaxChars($device['type'], 32, tr('Please specify a device type of maximum 32 characters'));
+
+        $v->isAlphaNumericDash($device['manufacturer'], tr('Please specify a valid device manufacturer'), VALIDATE_ALLOW_EMPTY_NULL);
+        $v->hasMinChars($device['manufacturer'],  2, tr('Please specify a device manufacturer of 2 characters or more'), VALIDATE_ALLOW_EMPTY_NULL);
+        $v->hasMaxChars($device['manufacturer'], 32, tr('Please specify a device manufacturer of maximum 32 characters'), VALIDATE_ALLOW_EMPTY_NULL);
+
+        $v->isAlphaNumericDash($device['model'], tr('Please specify a valid device model'), VALIDATE_ALLOW_EMPTY_NULL);
+        $v->hasMinChars($device['model'],  2, tr('Please specify a device model of 2 characters or more'), VALIDATE_ALLOW_EMPTY_NULL);
+        $v->hasMaxChars($device['model'], 32, tr('Please specify a device model of maximum 32 characters'), VALIDATE_ALLOW_EMPTY_NULL);
+
+        $v->isHexadecimal($device['vendor'], tr('Please specify a valid hexadecimal device vendor string'), VALIDATE_ALLOW_EMPTY_NULL);
+        $v->hasMinChars($device['vendor'], 4, tr('Please specify a device vendor of 4 characters'), VALIDATE_ALLOW_EMPTY_NULL);
+        $v->hasMaxChars($device['vendor'], 4, tr('Please specify a device vendor of 4 characters'), VALIDATE_ALLOW_EMPTY_NULL);
+
+        $v->isHexadecimal($device['product'], tr('Please specify a valid hexadecimal device vendor string'), VALIDATE_ALLOW_EMPTY_NULL);
+        $v->hasMinChars($device['product'], 4, tr('Please specify a device vendor of 4 characters'), VALIDATE_ALLOW_EMPTY_NULL);
+        $v->hasMaxChars($device['product'], 4, tr('Please specify a device vendor of 4 characters'), VALIDATE_ALLOW_EMPTY_NULL);
+
+        $v->isNatural($device['bus']   , 1, tr('Please specify a valid , natural device bus number'), VALIDATE_ALLOW_EMPTY_NULL);
+        $v->isNatural($device['device'], 1, tr('Please specify a valid, natural device number'), VALIDATE_ALLOW_EMPTY_NULL);
+
+        $v->hasMinChars($device['libusb'], 7, tr('Please specify a libusb string of 7 characters'), VALIDATE_ALLOW_EMPTY_NULL);
+        $v->hasMaxChars($device['libusb'], 7, tr('Please specify a libusb string of 7 characters'), VALIDATE_ALLOW_EMPTY_NULL);
+        $v->isRegex($device['libusb'], '/\d{3}:\d{3}/', tr('Please specify a libusb string in the format nnn:nnn'), VALIDATE_ALLOW_EMPTY_NULL);
+
+        $v->hasMinChars($device['string'],   2, tr('Please specify a device string of 2 characters or more'), VALIDATE_ALLOW_EMPTY_NULL);
+        $v->hasMaxChars($device['string'], 128, tr('Please specify a device string of maximum 128 characters'), VALIDATE_ALLOW_EMPTY_NULL);
+
+        $v->hasMinChars($device['description'],   2, tr('Please specify a device description of 2 characters or more'), VALIDATE_ALLOW_EMPTY_NULL);
+        $v->hasMaxChars($device['description'], 255, tr('Please specify a device description of maximum 255 characters'), VALIDATE_ALLOW_EMPTY_NULL);
 
         $exists = sql_get('SELECT `id`
 
@@ -75,7 +109,30 @@ function drivers_validate_device($device){
             sql_query('DELETE FROM `drivers_devices` WHERE `id` = :id', array(':id' => $exists));
         }
 
-        $device['default'] = !sql_get('SELECT COUNT(`id`) AS `count` FROM `drivers_devices` WHERE `type` = :type', true, array(':type' => $device['type']));
+        if($device['default']){
+            /*
+             * Ensure that there is not another device already the default
+             */
+            $exists = sql_get('SELECT `string` FROM `drivers_devices` WHERE `type` = :type AND `default` IS NOT NULL AND `id` != :id', array(':type' => $device['type'], ':id' => $device['id']));
+
+            if($exists){
+                $v->setError(tr('Device ":device" already is the default for ":type" devices', array(':device' => $exists, ':type' => $device['type'])));
+            }
+
+        }else{
+            $device['default'] = !sql_get('SELECT COUNT(`id`) AS `count` FROM `drivers_devices` WHERE `type` = :type', true, array(':type' => $device['type']));
+
+            if(!$device['default']){
+                $device['default'] = null;
+            }
+        }
+
+        $v->isValid();
+
+        /*
+         * Cleanup
+         */
+        $device['description'] = str_replace('_', ' ', $device['description']);
 
         return $device;
 
