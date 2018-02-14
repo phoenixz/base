@@ -150,6 +150,8 @@ switch(cli_method()){
         cli_roles('modify');
         $roles = cli_arguments();
 
+        cli_no_arguments_left();
+
         if(empty($roles)){
             throw new bException(tr('No roles specified'), 'warning/not-specified');
         }
@@ -191,6 +193,8 @@ switch(cli_method()){
     case 'undelete':
         cli_roles('modify');
         $roles = cli_arguments();
+
+        cli_no_arguments_left();
 
         if(empty($roles)){
             throw new bException(tr('No roles specified'), 'warning/not-specified');
@@ -235,6 +239,8 @@ switch(cli_method()){
         cli_roles('modify');
         $roles = cli_arguments();
 
+        cli_no_arguments_left();
+
         if(empty($roles)){
             throw new bException(tr('No roles specified'), 'warning/not-specified');
         }
@@ -276,6 +282,8 @@ switch(cli_method()){
         $role      = roles_get();
         $arguments = cli_arguments();
 
+        cli_no_arguments_left();
+
         /*
          * Ensure that specified rights exist, and get more detailed rights data
          */
@@ -314,6 +322,8 @@ switch(cli_method()){
         $role      = cli_argument(1);
         $role      = roles_get();
         $arguments = cli_arguments();
+
+        cli_no_arguments_left();
 
         /*
          * Ensure that specified rights exist, and get more detailed rights data
