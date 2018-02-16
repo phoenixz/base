@@ -1,4 +1,4 @@
-libraries_access<?php
+<?php
 /*
  * New statistics library
  */

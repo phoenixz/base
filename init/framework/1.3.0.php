@@ -1,4 +1,4 @@
-libraries_access<?php
+<?php
 /*
  * New meta library system!
  * New libraries library system!
