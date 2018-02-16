@@ -22,7 +22,10 @@ function seo_unique($source, $table, $ownid = null, $field = 'seoname', $replace
         $id = 0;
 
         if(empty($source)){
-            throw new bException(tr('seo_unique(): Empty source spefified'), 'empty');
+            /*
+             * If the given string is empty, then treat seoname as null, this should not cause indexing issues
+             */
+            return null;
         }
 
         if(is_array($source)){
