@@ -1,0 +1,25 @@
+#!/usr/bin/php
+<?php
+/*
+ * This is the base setup script.
+ *
+ * This will configure your project in a user friendly way on the command line
+ */
+$usage = './scripts/base/setup';
+
+$help  = 'This is the base project setup script. This script will ';
+
+require_once(__DIR__.'/../../libs/startup.php');
+cli_only();
+log_console(tr('Welcome to the base setup script. This script will ask you a number of questions and use the information to configure your base script for your new project.'), 'white');
+
+$data = array('db' => array());
+
+$data['project']            = cli_readline(tr('Please enter your project code string (A-Z and _)'));
+$project['db']['hostname']  = cli_readline(tr('Please enter the MySQL host you wish to use for the core database'));
+$project['db']['database']  = cli_readline(tr('Please enter the MySQL database you wish to use for the core database'));
+$project['db']['username']  = cli_readline(tr('Please enter the MySQL username you wish to use to connect to the core database'));
+$project['db']['password']  = cli_readline(tr('Please enter the MySQL password you wish to use for your MySQL account'), true);
+$project['db']['passwordv'] = cli_readline(tr('Please repeat the MySQL password you wish to use for your MySQL account'), true);
+
+?>
