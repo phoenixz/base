@@ -121,11 +121,7 @@ try{
                         <td>'.$key.'</td>
                         <td>'.$type.'</td>
                         <td>?</td>
-                        <td style="padding:0">
-                            <table class="debug">
-                                <thead><td>'.tr('Key').'</td><td>'.tr('Type').'</td><td>'.tr('Size').'</td><td>'.tr('Value').'</td></thead>'.$retval.'
-                            </table>
-                        </td>
+                        <td>'.$retval.'</td>
                     </tr>';
 
         default:
