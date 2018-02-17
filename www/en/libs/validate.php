@@ -372,20 +372,7 @@ class validate_form {
      */
     function __construct(&$source = null, $columns = null, $default_value = null){
         try{
-            if(is_array($source)){
-                $this->source = $source;
-
-                $source = str_trim_array($source);
-
-                /*
-                 * Make sure "id" is always available, since it will near always be used.
-                 */
-                array_default($source, 'id', 0);
-
-                if($columns){
-                    array_ensure($source, $columns, $default_value);
-                }
-            }
+            array_ensure($source, $columns, $default_value);
 
         }catch(Exception $e){
             throw new bException('validate_form::__construct(): Failed', $e);
