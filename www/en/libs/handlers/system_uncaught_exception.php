@@ -15,7 +15,7 @@ try{
     $executed = true;
 
     if(!empty($core) and !empty($core->register['ready'])){
-        log_file(tr('*** UNCAUGHT EXCEPTION ***'), 'exceptions');
+        log_file(tr('*** UNCAUGHT EXCEPTION ***'), 'exceptions', 'error');
         log_file($e, 'exceptions');
     }
 
@@ -149,8 +149,73 @@ try{
                     header($_SERVER['SERVER_PROTOCOL'] . ' 500 Internal Server Error', true, 500);
                 }
 
-                show('*** UNCAUGHT EXCEPTION ***');
-                show(array('SCRIPT' => SCRIPT));
+                $retval = ' <style type="text/css">
+                            table.exception{
+                                font-family: sans-serif;
+                                width:99%;
+                                background:#AAAAAA;
+                                border-collapse:collapse;
+                                border-spacing:2px;
+                                margin: 5px auto 5px auto;
+                            }
+                            td.center{
+                                text-align: center;
+                            }
+                            table.exception thead{
+                                background: #CE0000;
+                                color: white;
+                                font-weight: bold;
+                            }
+                            table.exception td{
+                                border: 1px solid black;
+                                padding: 15px;
+                            }
+                            table.exception td.value{
+                                word-break: break-all;
+                            }
+                            table.debug{
+                                background:#AAAAAA !important;
+                            }
+                            table.debug thead{
+                                background: #CE0000 !important;
+                                color: white;
+                            }
+                            table.debug .debug-header{
+                                display: none;
+                            }
+                            </style>
+                            <table class="exception">
+                                <thead>
+                                    <td colspan="2" class="center">
+                                        '.tr('*** UNCAUGHT EXCEPTION ***').'
+                                    </td>
+                                </thead>
+                                <tbody>
+                                    <tr>
+                                        <td colspan="2" class="center">
+                                            '.tr('An uncaught exception occured in script ":script". See the exception core dump below for more information on how to fix this issue', array(':script' => SCRIPT)).'
+                                        </td>
+                                    </tr>
+                                    <tr>
+                                        <td>
+                                            '.tr('File').'
+                                        </td>
+                                        <td>
+                                            '.$e->getFile().'
+                                        </td>
+                                    </tr>
+                                    <tr>
+                                        <td>
+                                            '.tr('Line').'
+                                        </td>
+                                        <td>
+                                            '.$e->getLine().'
+                                        </td>
+                                    </tr>
+                                </tbody>
+                            </table>';
+
+                echo $retval;
                 showdie($e);
             }
 

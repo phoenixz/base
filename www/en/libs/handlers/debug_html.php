@@ -25,7 +25,7 @@ try{
 
                     table.debug td{
                         border: 1px solid black;
-                        padding: 5px;
+                        padding: 10px;
                     }
                     table.debug td.value{
                         word-break: break-all;
@@ -36,8 +36,8 @@ try{
     }
 
     return $retval.'<table class="debug">
-                        <thead><td colspan="4">'.current_file(1 + $trace_offset).'@'.current_line(1 + $trace_offset).'</td></thead>
-                        <thead><td>'.tr('Key').'</td><td>'.tr('Type').'</td><td>'.tr('Size').'</td><td>'.tr('Value').'</td></thead>'.debug_html_row($value, $key).'
+                        <thead class="debug-header"><td colspan="4">'.current_file(1 + $trace_offset).'@'.current_line(1 + $trace_offset).'</td></thead>
+                        <thead class="debug-columns"><td>'.tr('Key').'</td><td>'.tr('Type').'</td><td>'.tr('Size').'</td><td>'.tr('Value').'</td></thead>'.debug_html_row($value, $key).'
                     </table>';
 
 }catch(Exception $e){
