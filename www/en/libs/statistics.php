@@ -13,7 +13,7 @@
 /*
  * Add a new statistical item
  */
-function statistics_add($params, $event, $details = ''){
+function statistics_add($params){
     try{
         array_params($params);
         array_default($params, 'event'    , '');
