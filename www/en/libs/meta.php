@@ -81,7 +81,9 @@ function meta_history($meta_id){
                              LEFT JOIN `users`
                              ON        `users`.`id` = `meta_history`.`createdby`
 
-                             WHERE     `meta_id` = :meta_id',
+                             WHERE     `meta_id` = :meta_id
+
+                             ORDER BY  `meta_history`.`createdon` DESC, `meta_history`.`id` DESC ',
 
                              array(':meta_id' => $meta_id));
 
@@ -103,6 +105,29 @@ function meta_erase($meta_id){
     try{
         sql_query('DELETE FROM `meta_history` WHERE `meta_id` = :meta_id', array(':meta_id' => $meta_id));
         sql_query('DELETE FROM `meta`         WHERE `id`      = :id'     , array(':id'      => $meta_id));
+
+        return $meta_id;
+
+    }catch(Exception $e){
+        throw new bException('meta_erase(): Failed', $e);
+    }
+}
+
+
+
+/*
+ *
+ */
+function meta_clear($meta_id, $views_only = false){
+    try{
+        if($views_only){
+            sql_query('DELETE FROM `meta_history` WHERE `meta_id` = :meta_id AND `action` = "view"', array(':meta_id' => $meta_id));
+            meta_action($meta_id, 'clear-views');
+
+        }else{
+            sql_query('DELETE FROM `meta_history` WHERE `meta_id` = :meta_id', array(':meta_id' => $meta_id));
+            meta_action($meta_id, 'clear-history');
+        }
 
         return $meta_id;
 
