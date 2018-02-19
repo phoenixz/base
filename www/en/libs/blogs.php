@@ -2256,7 +2256,12 @@ function blogs_update_urls($blogs = null, $category = null){
                     continue;
                 }
 
-                log_console(tr('blogs_update_urls(): Updating posts for blog :blog', array(':blog' => str_size('"'.str_truncate($blog['name'], 40).'"', 42, ' '))));
+                if(!$blog['url_template']){
+                    log_console(tr('blogs_update_urls(): Skipping updating post urls for blog :blog, the blog has no URL template configured', array(':blog' => str_size('"'.str_truncate($blog['name'], 40).'"', 42, ' '))), 'yellow');
+                    continue;
+                }
+
+                log_console(tr('blogs_update_urls(): Updating post urls for blog :blog', array(':blog' => str_size('"'.str_truncate($blog['name'], 40).'"', 42, ' '))));
 
                 /*
                  * Walk over all posts of the specified blog
