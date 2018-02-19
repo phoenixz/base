@@ -151,4 +151,17 @@ function storage_sections_validate($section){
         throw new bException('storage_sections_validate(): Failed', $e);
     }
 }
+
+
+
+/*
+ *
+ */
+function storage_section_has_access($sections_id, $users_id = null){
+    try{
+
+    }catch(Exception $e){
+        throw new bException('storage_section_has_access(): Failed', $e);
+    }
+}
 ?>
