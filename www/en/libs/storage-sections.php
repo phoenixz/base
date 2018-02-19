@@ -13,9 +13,9 @@
 /*
  * Generate a new storage section
  */
-function storage_sections_get($section = null){
+function storage_sections_get($get_section = null){
     try{
-        if(empty($section)){
+        if(empty($get_section)){
             /*
              * Get a _new record for the current user
              */
@@ -30,19 +30,20 @@ function storage_sections_get($section = null){
                 $execute = array(':createdby' => $_SESSION['user']['id']);
             }
 
-        }elseif(is_numeric($section)){
+        }elseif(is_numeric($get_section)){
             $where   = ' WHERE  `id` = :id
                          AND    `status` IS NULL';
-            $execute = array(':id' => $section);
+            $execute = array(':id' => $get_section);
 
         }else{
             $where   = ' WHERE  `seoname` = :seoname
                          AND    `status` IS NULL';
-            $execute = array(':seoname' => $section);
+            $execute = array(':seoname' => $get_section);
         }
 
         $section = sql_get('SELECT `id`,
                                    `meta_id`,
+                                   `status`,
                                    `name`,
                                    `seoname`,
                                    `url_template`,
@@ -54,7 +55,7 @@ function storage_sections_get($section = null){
 
                             $execute);
 
-        if(empty($section) and empty($section)){
+        if(empty($section) and empty($get_section)){
             return storage_sections_add(array('status' => '_new'));
         }
 

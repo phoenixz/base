@@ -24,8 +24,9 @@ function storage_ui_panel_header($params, $section, $active){
         array_default($params, 'header_type'     , 'tabs');
         array_default($params, 'html_flash_class', 'storage');
         array_default($params, 'form_action'     , 'post');
+        array_default($params, 'icon'            , '');
 
-        array_default($params['files'], 'sections'     , 'storage-sections');
+        array_default($params['files'], 'section'      , 'storage-section');
         array_default($params['files'], 'documents'    , 'storage-documents');
         array_default($params['files'], 'categories'   , 'storage-categories');
         array_default($params['files'], 'files'        , 'storage-files');
@@ -52,7 +53,7 @@ function storage_ui_panel_header($params, $section, $active){
         array_default($params['labels'], 'title' , tr('Manage :objects', array(':objects' => $params['objects'])));
         array_default($params['labels'], 'filter', tr('Filter...'));
 
-        array_default($params['tabs'], 'sections'     , tr('Sections'));
+        array_default($params['tabs'], 'section'      , tr('Section'));
         array_default($params['tabs'], 'documents'    , tr('Documents'));
         array_default($params['tabs'], 'categories'   , tr('Categories'));
         array_default($params['tabs'], 'files'        , tr('Files'));
@@ -72,24 +73,24 @@ function storage_ui_panel_header($params, $section, $active){
                 $tab_content    = ' tab-content';
                 $main_heading   = ' <div class="panel-heading">
                                         <div class="panel-title">
-                                            <h2><span class="fa fa-blogs"></span> '.str_replace(':blog', $section['name'], $params['labels']['title']).'</h2>
+                                            <h2><span class="fa fa-'.$params['icon'].'"></span> '.str_replace(':blog', $section['name'], $params['labels']['title']).'</h2>
                                         </div>
                                     </div>';
                 $panel_heading  = ' <ul class="nav nav-tabs" role="tablist">
-                                        <li'.(($params['active'] == 'sections')      ? ' class="active"' : '').'><a href="'.str_replace(':'.$params['seosection'], $_GET[$params['seosection']], $params['urls']['section']).'" role="tab">'.(is_new($section) ? $params['tabs']['section'] : $params['tabs']['sections']).'</a></li>
-                                        <li'.(($params['active'] == 'configuration') ? ' class="active"' : '').'><a href="'.str_replace(':'.$params['seosection'], $_GET[$params['seosection']], $params['urls']['files']).'" role="tab">'.$params['tabs']['configuration'].'</a></li>
-                                        <li'.(($params['active'] == 'categories')    ? ' class="active"' : '').'><a href="'.str_replace(':'.$params['seosection'], $_GET[$params['seosection']], $params['urls']['categories']).'" role="tab">'.$params['tabs']['categories'].'</a></li>
-                                        <li'.(($params['active'] == 'documents')     ? ' class="active"' : '').'><a href="'.str_replace(':'.$params['seosection'], $_GET[$params['seosection']], $params['urls']['documents']).'" role="tab">'.$params['tabs']['documents'].'</a></li>
-                                        <li'.(($params['active'] == 'keywords')      ? ' class="active"' : '').'><a href="'.str_replace(':'.$params['seosection'], $_GET[$params['seosection']], $params['urls']['keywords']).'" role="tab">'.$params['tabs']['keywords'].'</a></li>
-                                        <li'.(($params['active'] == 'key_values')    ? ' class="active"' : '').'><a href="'.str_replace(':'.$params['seosection'], $_GET[$params['seosection']], $params['urls']['key_values']).'" role="tab">'.$params['tabs']['key_values'].'</a></li>
-                                        <li'.(($params['active'] == 'files')         ? ' class="active"' : '').'><a href="'.str_replace(':'.$params['seosection'], $_GET[$params['seosection']], $params['urls']['files']).'" role="tab">'.$params['tabs']['files'].'</a></li>
-                                        <li'.(($params['active'] == 'comments')      ? ' class="active"' : '').'><a href="'.str_replace(':'.$params['seosection'], $_GET[$params['seosection']], $params['urls']['comments']).'" role="tab">'.$params['tabs']['comments'].'</a></li>
-                                        <li'.(($params['active'] == 'ratings')       ? ' class="active"' : '').'><a href="'.str_replace(':'.$params['seosection'], $_GET[$params['seosection']], $params['urls']['ratings']).'" role="tab">'.$params['tabs']['ratings'].'</a></li>
-                                        <li'.(($params['active'] == 'resources')     ? ' class="active"' : '').'><a href="'.str_replace(':'.$params['seosection'], $_GET[$params['seosection']], $params['urls']['resources']).'" role="tab">'.$params['tabs']['resources'].'</a></li>
+                                        <li'.(($active == 'section')       ? ' class="active"' : '').'><a href="'.str_replace(':'.$params['seosection'], $_GET[$params['seosection']], $params['urls']['section']).'" role="tab">'.$params['tabs']['section'].'</a></li>
+                                        <li'.(($active == 'configuration') ? ' class="active"' : '').'><a href="'.str_replace(':'.$params['seosection'], $_GET[$params['seosection']], $params['urls']['files']).'" role="tab">'.$params['tabs']['configuration'].'</a></li>
+                                        <li'.(($active == 'categories')    ? ' class="active"' : '').'><a href="'.str_replace(':'.$params['seosection'], $_GET[$params['seosection']], $params['urls']['categories']).'" role="tab">'.$params['tabs']['categories'].'</a></li>
+                                        <li'.(($active == 'documents')     ? ' class="active"' : '').'><a href="'.str_replace(':'.$params['seosection'], $_GET[$params['seosection']], $params['urls']['documents']).'" role="tab">'.$params['tabs']['documents'].'</a></li>
+                                        <li'.(($active == 'keywords')      ? ' class="active"' : '').'><a href="'.str_replace(':'.$params['seosection'], $_GET[$params['seosection']], $params['urls']['keywords']).'" role="tab">'.$params['tabs']['keywords'].'</a></li>
+                                        <li'.(($active == 'key_values')    ? ' class="active"' : '').'><a href="'.str_replace(':'.$params['seosection'], $_GET[$params['seosection']], $params['urls']['key_values']).'" role="tab">'.$params['tabs']['key_values'].'</a></li>
+                                        <li'.(($active == 'files')         ? ' class="active"' : '').'><a href="'.str_replace(':'.$params['seosection'], $_GET[$params['seosection']], $params['urls']['files']).'" role="tab">'.$params['tabs']['files'].'</a></li>
+                                        <li'.(($active == 'comments')      ? ' class="active"' : '').'><a href="'.str_replace(':'.$params['seosection'], $_GET[$params['seosection']], $params['urls']['comments']).'" role="tab">'.$params['tabs']['comments'].'</a></li>
+                                        <li'.(($active == 'ratings')       ? ' class="active"' : '').'><a href="'.str_replace(':'.$params['seosection'], $_GET[$params['seosection']], $params['urls']['ratings']).'" role="tab">'.$params['tabs']['ratings'].'</a></li>
+                                        <li'.(($active == 'resources')     ? ' class="active"' : '').'><a href="'.str_replace(':'.$params['seosection'], $_GET[$params['seosection']], $params['urls']['resources']).'" role="tab">'.$params['tabs']['resources'].'</a></li>
                                     </ul>';
                 break;
 
-            case 'default':
+            case 'normal':
                 $tab_div_open   = '';
                 $tab_div_close  = '';
                 $tabs           = '';
@@ -97,7 +98,7 @@ function storage_ui_panel_header($params, $section, $active){
                 $main_heading   = '';
                 $panel_heading  = ' <div class="panel-heading">
                                         <div class="panel-title">
-                                            <h2><span class="fa fa-'.$params['icon'].'"></span> '.str_capitalize($params['title']).'</h2>
+                                            <h2><span class="fa fa-'.$params['icon'].'"></span> '.str_capitalize($params['labels']['title']).'</h2>
                                         </div>
                                     </div>';
                 break;

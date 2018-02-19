@@ -13,9 +13,9 @@
 /*
  * Generate a new storage document
  */
-function storage_documents_get($document = null){
+function storage_documents_get($get_document = null){
     try{
-        if(empty($document)){
+        if(empty($get_document)){
             /*
              * Get a _new record for the current user
              */
@@ -30,15 +30,15 @@ function storage_documents_get($document = null){
                 $execute = array(':createdby' => $_SESSION['user']['id']);
             }
 
-        }elseif(is_numeric($document)){
+        }elseif(is_numeric($get_document)){
             $where   = ' WHERE  `id` = :id
                          AND    `status` IS NULL';
-            $execute = array(':id' => $document);
+            $execute = array(':id' => $get_document);
 
         }else{
             $where   = ' WHERE  `seoname` = :seoname
                          AND    `status` IS NULL';
-            $execute = array(':seoname' => $document);
+            $execute = array(':seoname' => $get_document);
         }
 
         $document = sql_get('SELECT `id`,
@@ -54,7 +54,7 @@ function storage_documents_get($document = null){
 
                              $execute);
 
-        if(empty($document) and empty($document)){
+        if(empty($document) and empty($get_document)){
             return storage_documents_add(array('status' => '_new'));
         }
 
@@ -75,7 +75,7 @@ function storage_documents_add($document){
         $document = storage_documents_validate($document);
 
         sql_query('INSERT INTO `storage_documents` (`createdby`, `meta_id`, `status`, `name`, `seoname`, `restrict_file_types`, `slogan`, `description`)
-                   VALUES                         (:createdby , :meta_id , :status , :name , :seoname , :restrict_file_types , :slogan , :description )',
+                   VALUES                          (:createdby , :meta_id , :status , :name , :seoname , :restrict_file_types , :slogan , :description )',
 
                    array(':createdby'           => $_SESSION['user']['id'],
                          ':meta_id'             => meta_action(),
