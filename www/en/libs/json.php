@@ -48,7 +48,7 @@ function json_reply($data = null, $result = 'OK', $http_code = null, $after = 'd
         /*
          * Send a new CSRF code with this payload?
          */
-        if($core->register['csrf_ajax']){
+        if(!empty($core->register['csrf_ajax'])){
             $data['csrf'] = $core->register['csrf_ajax'];
             unset($core->register['csrf_ajax']);
         }
