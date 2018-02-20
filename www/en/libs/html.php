@@ -774,7 +774,7 @@ function html_header($params = null, $meta = array()){
             /*
              * Always add a CSRF for ajax
              */
-            $csrf  = set_csrf_code('ajax_');
+            $csrf  = set_csrf('ajax_');
             $html .= '<input type="hidden" id="ajax_csrf" name="ajax_csrf" value="'.$csrf.'">';
         }
 
@@ -2284,7 +2284,7 @@ function html_form($action, $method, $class, $name = '', $csrf_check = true){
         }
 
         if($csrf_check){
-            $csrf = set_csrf_code();
+            $csrf = set_csrf();
             $csrf = '<input type="hidden" name="csrf" value="'.$csrf.'">';
 
         }else{
