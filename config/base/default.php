@@ -310,18 +310,22 @@ $_CONFIG['security']           = array('signin'                             => a
                                                                                      'auto_lock_fails'  => 6,                           // Upon N authentication failures, auto lock user accounts. Set to 0 to disable
                                                                                      'auto_lock_time'   => 60),                         // Upon user account auto locking, keep the account locked for N seconds. Set to 0 to disable
 
-                                       'passwords'                          => array('test'            => false,                        // Test new user password strength?
-                                                                                     'hash'            => 'sha256',                     // What hash algorithm will we use to store the passwords?
-                                                                                     'usemeta'         => true,                         // Add used hash as meta data to the password when storing them so we know what hash was used.
-                                                                                     'useseed'         => true,                         // Use the SEED constant to calculate passwords
-                                                                                     'unique_updates'  => 3,                            // Passwords cannot be updated to the same password for minimum N times
-                                                                                     'unique_days'     => 30),                          // Passwords cannot be updated to the same password for minimum N days
+                                       'passwords'                          => array('test'             => false,                       // Test new user password strength?
+                                                                                     'hash'             => 'sha256',                    // What hash algorithm will we use to store the passwords?
+                                                                                     'usemeta'          => true,                        // Add used hash as meta data to the password when storing them so we know what hash was used.
+                                                                                     'useseed'          => true,                        // Use the SEED constant to calculate passwords
+                                                                                     'unique_updates'   => 3,                           // Passwords cannot be updated to the same password for minimum N times
+                                                                                     'unique_days'      => 30),                         // Passwords cannot be updated to the same password for minimum N days
 
                                        'user'                               => 'apache',                                                //
                                        'group'                              => 'apache',                                                //
                                        'umask'                              =>  0007,                                                   //
                                        'expose_php'                         => false,                                                   // If false, will hide the X-Powered-By PHP header. If true, will leave the header as is. If set to any other value, will send that value as X-Powered-By value
-                                       'seed'                               => '%T"$#HET&UJHRT87');                                     // SEED for generating codes
+                                       'seed'                               => '%T"$#HET&UJHRT87',                                      // SEED for generating codes
+
+                                       'csrf'                               => array('enabled'          => true,                        // CSRF detection configuration. true | false | "force". Force will forcibly check every POST on CSRF
+                                                                                     'timeout'          => 120));                       // Timeout after page generation, where @ POST time the CSRF check will fail. Use 0 to disable
+
 
 // Sessions
 $_CONFIG['sessions']           = array('lifetime'                           => 3600,                                                    // Session lifetime before the session will be closed and reset

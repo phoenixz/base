@@ -1864,30 +1864,144 @@ function pick_random($count){
  * Return display status for specified status
  */
 function status($status, $list = null){
-    if(is_array($list)){
-        /*
-         * $list contains list of possible statusses
-         */
-        if(isset($list[$status])){
-            return $list[$status];
-        }
-
-
-        return 'Unknown';
-    }
-
-    if($status === null){
-        if($list){
+    try{
+        if(is_array($list)){
             /*
-             * Alternative name specified
+             * $list contains list of possible statusses
              */
-            return $list;
+            if(isset($list[$status])){
+                return $list[$status];
+            }
+
+
+            return 'Unknown';
         }
 
-        return 'Ok';
-    }
+        if($status === null){
+            if($list){
+                /*
+                 * Alternative name specified
+                 */
+                return $list;
+            }
 
-    return str_capitalize($status);
+            return 'Ok';
+        }
+
+        return str_capitalize($status);
+
+    }catch(Exception $e){
+        throw new bException(tr('status(): Failed'), $e);
+    }
+}
+
+
+
+/*
+ * Generate a CSRF code and set it in the $_SESSION[csrf] array
+ */
+function set_csrf($prefix = ''){
+    global $_CONFIG;
+
+    try{
+        if(empty($_CONFIG['security']['csrf']['enabled'])){
+            /*
+             * CSRF check system has been disabled
+             */
+            return false;
+        }
+
+        $csrf = $prefix.unique_code('sha256');
+
+        if(empty($_SESSION['csrf'])){
+            $_SESSION['csrf'] = array();
+        }
+
+        $_SESSION['csrf'][$csrf] = new DateTime();
+        $_SESSION['csrf'][$csrf] = $_SESSION['csrf'][$csrf]->getTimestamp();
+
+        return $csrf;
+
+    }catch(Exception $e){
+        throw new bException(tr('set_csrf(): Failed'), $e);
+    }
+}
+
+
+
+/*
+ *
+ */
+function check_csrf(){
+    global $_CONFIG, $core;
+
+    try{
+        if(!empty($core->register['csrf_ok'])){
+            /*
+             * CSRF check has already been executed for this post, all okay!
+             */
+            return true;
+        }
+
+        if(empty($_POST)){
+            /*
+             * There is no POST data
+             */
+            return false;
+        }
+
+        if(empty($_CONFIG['security']['csrf']['enabled'])){
+            /*
+             * CSRF check system has been disabled
+             */
+            return false;
+        }
+
+        if(empty($_POST['csrf'])){
+            throw new bException(tr('check_csrf(): No CSRF field specified'), 'not-specified');
+        }
+
+        if($core->callType('ajax')){
+            if(substr($_POST['csrf'], 0, 5) != 'ajax_'){
+                throw new bException(tr('check_csrf(): Specified CSRF ":code" is invalid'), 'invalid');
+            }
+        }
+
+        if(empty($_SESSION['csrf'][$_POST['csrf']])){
+            throw new bException(tr('check_csrf(): Specified CSRF ":code" does not exist', array(':code' => $_POST['csrf'])), 'not-exist');
+        }
+
+        /*
+         * Get the code from $_SESSION and delete it so it won't be used twice
+         */
+        $timestamp = $_SESSION['csrf'][$_POST['csrf']];
+        $now       = new DateTime();
+
+        unset($_SESSION['csrf'][$_POST['csrf']]);
+
+        /*
+         * Code timed out?
+         */
+        if($_CONFIG['security']['csrf_timeout']){
+            if(($timestamp + $_CONFIG['security']['csrf_timeout']) < $now->getTimestamp()){
+                throw new bException(tr('check_csrf(): Specified CSRF ":code" timed out', array(':code' => $_POST['csrf'])), 'timeout');
+            }
+        }
+
+        $core->register['csrf_ok'] = true;
+
+        if($core->callType('ajax')){
+            /*
+             * Send new CSRF code with the AJAX return payload
+             */
+            $core->register['ajax_csrf'] = set_csrf('ajax_');
+        }
+
+        return true;
+
+    }catch(Exception $e){
+        throw new bException('check_csrf(): Failed', $e);
+    }
 }
 
 
@@ -3223,6 +3337,10 @@ function date_convert($date = null, $requested_format = 'human_datetime', $to_ti
         }
 
         try{
+            if($format === 'object'){
+                return $date;
+            }
+
             return $date->format($format);
 
         }catch(Exception $e){

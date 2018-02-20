@@ -28,6 +28,11 @@
             default:
                 throw "invalid json status \"" + jqXHR.responseJSON.result + "\"";
         }
+
+        if(jqXHR.responseJSON.csrf){
+            // Server sent updated CSRF code, update local value for next request
+            $('#ajax_csrf').val(jqXHR.responseJSON.csrf);
+        }
     });
 
     $(document).ajaxError(function(event, jqXHR){

@@ -20,6 +20,8 @@ load_config('json');
  * Send correct JSON reply
  */
 function json_reply($data = null, $result = 'OK', $http_code = null, $after = 'die'){
+    global $core;
+
     try{
         if(!$data){
             $data = array_force($data);
@@ -41,6 +43,14 @@ function json_reply($data = null, $result = 'OK', $http_code = null, $after = 'd
              * Add result to the reply
              */
             $data['result'] = $result;
+        }
+
+        /*
+         * Send a new CSRF code with this payload?
+         */
+        if($core->register['csrf_ajax']){
+            $data['csrf'] = $core->register['csrf_ajax'];
+            unset($core->register['csrf_ajax']);
         }
 
         $data['result'] = strtoupper($data['result']);
