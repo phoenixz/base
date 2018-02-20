@@ -20,6 +20,7 @@ function statistics_add($params){
         array_default($params, 'details'  , '');
         array_default($params, 'resource1', null);
         array_default($params, 'resource2', null);
+        array_default($params, 'unique'   , false);
 
         if(empty($params['event'])){
             throw new bException(tr('statistics_add(): No event specified'), 'not-specified');
@@ -34,7 +35,15 @@ function statistics_add($params){
         }
 
         if($params['resource2'] and empty($params['resource1'])){
-            throw new bException(tr('statistics_add(): No resource1 specified, error caused because of resource2 was specified'), 'not-specified');
+            throw new bException(tr('statistics_add(): No resource2 specified without resource1'), 'not-specified');
+        }
+
+        if(!is_natural($params['resource1'], 1, true)){
+            throw new bException(tr('statistics_add(): Invalid resource1 specified, please ensure it is a natural number'), 'invalid');
+        }
+
+        if(!empty($params['resource2']) and !is_natural($params['resource2'], 1, true)){
+            throw new bException(tr('statistics_add(): Invalid resource2 specified, please ensure it is a natural number'), 'invalid');
         }
 
         sql_query('INSERT INTO `statistics` (`createdby`, `remote`, `event`, `details`, `resource1`, `resource2`)
@@ -42,10 +51,10 @@ function statistics_add($params){
 
                    array(':createdby' => isset_get($_SESSION['user']['id']),
                          ':remote'    => (PLATFORM_HTTP ? $_SERVER['REMOTE_ADDR'] : 'CLI'),
-                         ':event'     => $event,
-                         ':details'   => $details,
-                         ':resource1' => $resource1,
-                         ':resource2' => $resource2));
+                         ':event'     => $params['event'],
+                         ':details'   => $params['details'],
+                         ':resource1' => $params['resource1'],
+                         ':resource2' => $params['resource2']));
 
     }catch(Exception $e){
         throw new bException('statistics_add(): Failed', $e);
