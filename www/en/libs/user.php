@@ -605,7 +605,7 @@ function user_authenticate($username, $password, $captcha = null){
          * Apply IP locking system
          */
         if($_CONFIG['security']['signin']['ip_lock'] and (PLATFORM_HTTP)){
-            include(__DIR__.'/handlers/user_ip_lock.php');
+            include(__DIR__.'/handlers/user-ip-lock.php');
         }
 
 
@@ -1455,7 +1455,7 @@ function user_load_rights($user){
  * NOTE: Since this function is rarely used, it it implemented by a handler
  */
 function user_switch($users_id, $redirect = '/'){
-    include(__DIR__.'/handlers/user_switch.php');
+    include(__DIR__.'/handlers/user-switch.php');
 }
 
 

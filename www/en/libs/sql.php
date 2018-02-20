@@ -320,7 +320,7 @@ function sql_init($connector = 'core'){
          * This is only required for the system connection
          */
         if((PLATFORM_CLI) and (SCRIPT == 'init') and FORCE and !empty($_CONFIG['db'][$connector]['init'])){
-            include(__DIR__.'/handlers/sql_init_force.php');
+            include(__DIR__.'/handlers/sql-init-force.php');
         }
 
         if(!defined('FRAMEWORKDBVERSION')){
@@ -408,7 +408,7 @@ function sql_init($connector = 'core'){
         return $connector;
 
     }catch(Exception $e){
-        include(__DIR__.'/handlers/sql_init_fail.php');
+        include(__DIR__.'/handlers/sql-init-fail.php');
     }
 }
 
@@ -501,7 +501,7 @@ function sql_connect($connector, $use_database = true){
                 $pdo->query('SET time_zone = "'.$connector['timezone'].'";');
 
             }catch(Exception $e){
-                include(__DIR__.'/handlers/sql_timezone_fail.php');
+                include(__DIR__.'/handlers/sql-timezone-fail.php');
             }
 
             if(!empty($connector['mode'])){
@@ -509,7 +509,7 @@ function sql_connect($connector, $use_database = true){
             }
 
         }catch(Exception $e){
-            include(__DIR__.'/handlers/sql_connect_exception.php');
+            include(__DIR__.'/handlers/sql-connect-exception.php');
         }
 
         return $pdo;
