@@ -33,7 +33,7 @@ function get_dosubmit(){
  * Redirect
  */
 function redirect($target = '', $http_code = null, $clear_session_redirect = true){
-    return include(__DIR__.'/handlers/http_redirect.php');
+    return include(__DIR__.'/handlers/http-redirect.php');
 }
 
 
@@ -327,7 +327,7 @@ function http_headers($params, $content_length){
  * Thanks to craig at craigfrancis dot co dot uk
  */
 if (!function_exists('http_response_code')){
-    include(__DIR__.'/handlers/http_response_code.php');
+    include(__DIR__.'/handlers/http-response-code.php');
 }
 
 

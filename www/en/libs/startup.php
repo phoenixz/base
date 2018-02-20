@@ -145,7 +145,7 @@ class core{
              * Verify project data integrity
              */
             if(!defined('SEED') or !SEED or (PROJECTCODEVERSION == '0.0.0')){
-                return include(__DIR__.'/handlers/startup_no_project_data.php');
+                return include(__DIR__.'/handlers/startup-no-project-data.php');
             }
 
         }catch(Exception $e){
@@ -352,7 +352,7 @@ class bException extends Exception{
  * Convert all PHP errors in exceptions
  */
 function php_error_handler($errno, $errstr, $errfile, $errline, $errcontext){
-    return include(__DIR__.'/handlers/system_php_error_handler.php');
+    return include(__DIR__.'/handlers/startup-php-error-handler.php');
 }
 
 
@@ -361,7 +361,7 @@ function php_error_handler($errno, $errstr, $errfile, $errline, $errcontext){
  * Display a fatal error
  */
 function uncaught_exception($e, $die = 1){
-    return include(__DIR__.'/handlers/system_uncaught_exception.php');
+    return include(__DIR__.'/handlers/startup-uncaught-exception.php');
 }
 
 
@@ -680,7 +680,7 @@ function load_config($files = ''){
  * Execute shell commands with exception checks
  */
 function safe_exec($commands, $ok_exitcodes = null, $route_errors = true){
-    return include(__DIR__.'/handlers/system_safe_exec.php');
+    return include(__DIR__.'/handlers/startup-safe-exec.php');
 }
 
 
@@ -689,7 +689,7 @@ function safe_exec($commands, $ok_exitcodes = null, $route_errors = true){
  * Execute the specified script from the ROOT/scripts directory
  */
 function script_exec($script, $arguments = null, $ok_exitcodes = null){
-    return include(__DIR__.'/handlers/system_script_exec.php');
+    return include(__DIR__.'/handlers/startup-script-exec.php');
 }
 
 
@@ -1273,36 +1273,6 @@ function log_file($messages, $class = 'syslog', $color = null){
 
 
 /*
- * Keep track of statistics
- */
-function add_stat($code, $count = 1, $details = '') {
-    global $_CONFIG;
-
-    try{
-        if(empty($_CONFIG['statistics']['enabled'])){
-            /*
-             * Statistics has been disabled
-             */
-            return false;
-        }
-
-        if($count > 0) {
-            sql_query('INSERT INTO `statistics` (`code`          , `count`        , `statdate`)
-                       VALUES                   ("'.cfm($code).'", '.cfi($count).','.date('d', time()).')
-
-                       ON DUPLICATE KEY UPDATE `count` = `count` + '.cfi($count).';');
-        }
-
-        error_log($_SESSION['domain'].'-'.str_log($code).($details ? ' "'.str_log($details).'"' : ''));
-
-    }catch(Exception $e){
-        throw new bException('add_stat(): Failed', $e);
-    }
-}
-
-
-
-/*
  * Calculate the hash value for the given password with the (possibly) given
  * algorithm
  */
@@ -1864,30 +1834,144 @@ function pick_random($count){
  * Return display status for specified status
  */
 function status($status, $list = null){
-    if(is_array($list)){
-        /*
-         * $list contains list of possible statusses
-         */
-        if(isset($list[$status])){
-            return $list[$status];
-        }
-
-
-        return 'Unknown';
-    }
-
-    if($status === null){
-        if($list){
+    try{
+        if(is_array($list)){
             /*
-             * Alternative name specified
+             * $list contains list of possible statusses
              */
-            return $list;
+            if(isset($list[$status])){
+                return $list[$status];
+            }
+
+
+            return 'Unknown';
         }
 
-        return 'Ok';
-    }
+        if($status === null){
+            if($list){
+                /*
+                 * Alternative name specified
+                 */
+                return $list;
+            }
 
-    return str_capitalize($status);
+            return 'Ok';
+        }
+
+        return str_capitalize($status);
+
+    }catch(Exception $e){
+        throw new bException(tr('status(): Failed'), $e);
+    }
+}
+
+
+
+/*
+ * Generate a CSRF code and set it in the $_SESSION[csrf] array
+ */
+function set_csrf($prefix = ''){
+    global $_CONFIG;
+
+    try{
+        if(empty($_CONFIG['security']['csrf']['enabled'])){
+            /*
+             * CSRF check system has been disabled
+             */
+            return false;
+        }
+
+        $csrf = $prefix.unique_code('sha256');
+
+        if(empty($_SESSION['csrf'])){
+            $_SESSION['csrf'] = array();
+        }
+
+        $_SESSION['csrf'][$csrf] = new DateTime();
+        $_SESSION['csrf'][$csrf] = $_SESSION['csrf'][$csrf]->getTimestamp();
+
+        return $csrf;
+
+    }catch(Exception $e){
+        throw new bException(tr('set_csrf(): Failed'), $e);
+    }
+}
+
+
+
+/*
+ *
+ */
+function check_csrf(){
+    global $_CONFIG, $core;
+
+    try{
+        if(!empty($core->register['csrf_ok'])){
+            /*
+             * CSRF check has already been executed for this post, all okay!
+             */
+            return true;
+        }
+
+        if(empty($_POST)){
+            /*
+             * There is no POST data
+             */
+            return false;
+        }
+
+        if(empty($_CONFIG['security']['csrf']['enabled'])){
+            /*
+             * CSRF check system has been disabled
+             */
+            return false;
+        }
+
+        if(empty($_POST['csrf'])){
+            throw new bException(tr('check_csrf(): No CSRF field specified'), 'not-specified');
+        }
+
+        if($core->callType('ajax')){
+            if(substr($_POST['csrf'], 0, 5) != 'ajax_'){
+                throw new bException(tr('check_csrf(): Specified CSRF ":code" is invalid'), 'invalid');
+            }
+        }
+
+        if(empty($_SESSION['csrf'][$_POST['csrf']])){
+            throw new bException(tr('check_csrf(): Specified CSRF ":code" does not exist', array(':code' => $_POST['csrf'])), 'not-exist');
+        }
+
+        /*
+         * Get the code from $_SESSION and delete it so it won't be used twice
+         */
+        $timestamp = $_SESSION['csrf'][$_POST['csrf']];
+        $now       = new DateTime();
+
+        unset($_SESSION['csrf'][$_POST['csrf']]);
+
+        /*
+         * Code timed out?
+         */
+        if($_CONFIG['security']['csrf_timeout']){
+            if(($timestamp + $_CONFIG['security']['csrf_timeout']) < $now->getTimestamp()){
+                throw new bException(tr('check_csrf(): Specified CSRF ":code" timed out', array(':code' => $_POST['csrf'])), 'timeout');
+            }
+        }
+
+        $core->register['csrf_ok'] = true;
+
+        if($core->callType('ajax')){
+            /*
+             * Send new CSRF code with the AJAX return payload
+             */
+            $core->register['ajax_csrf'] = set_csrf('ajax_');
+        }
+
+        return true;
+
+    }catch(Exception $e){
+        throw new bException('check_csrf(): Failed', $e);
+    }
 }
 
 
@@ -3223,6 +3307,10 @@ function date_convert($date = null, $requested_format = 'human_datetime', $to_ti
         }
 
         try{
+            if($format === 'object'){
+                return $date;
+            }
+
             return $date->format($format);
 
         }catch(Exception $e){
@@ -3246,7 +3334,7 @@ function date_convert($date = null, $requested_format = 'human_datetime', $to_ti
  * Show the correct HTML flash error message
  */
 function error_message($e, $messages = array(), $default = null){
-    return include(__DIR__.'/handlers/system_error_message.php');
+    return include(__DIR__.'/handlers/startup-error-message.php');
 }
 
 
@@ -3255,7 +3343,7 @@ function error_message($e, $messages = array(), $default = null){
  * Switch to specified site type, and redirect back
  */
 function switch_type($type, $redirect = ''){
-    return include(__DIR__.'/handlers/system_switch_type.php');
+    return include(__DIR__.'/handlers/startup-switch-type.php');
 }
 
 
@@ -3264,7 +3352,7 @@ function switch_type($type, $redirect = ''){
  *
  */
 function get_global_data_path($section = '', $writable = true){
-    return include(__DIR__.'/handlers/system_get_global_data_path.php');
+    return include(__DIR__.'/handlers/startup-get-global-data-path.php');
 }
 
 
@@ -3288,7 +3376,7 @@ function run_background($cmd, $log = true, $single = true){
  * Return the file where this call was made
  */
 function current_file($trace = 0){
-    return include(__DIR__.'/handlers/debug_current_file.php');
+    return include(__DIR__.'/handlers/debug-current-file.php');
 }
 
 
@@ -3297,7 +3385,7 @@ function current_file($trace = 0){
  * Return the line number where this call was made
  */
 function current_line($trace = 0){
-    return include(__DIR__.'/handlers/debug_current_line.php');
+    return include(__DIR__.'/handlers/debug-current-line.php');
 }
 
 
@@ -3306,7 +3394,7 @@ function current_line($trace = 0){
  * Return the function where this call was made
  */
 function current_function($trace = 0){
-    return include(__DIR__.'/handlers/debug_current_function.php');
+    return include(__DIR__.'/handlers/debug-current-function.php');
 }
 
 
@@ -3316,7 +3404,7 @@ function current_function($trace = 0){
  */
 function value($format, $size = null){
     if(!debug()) return '';
-    return include(__DIR__.'/handlers/debug_value.php');
+    return include(__DIR__.'/handlers/debug-value.php');
 }
 
 
@@ -3325,7 +3413,7 @@ function value($format, $size = null){
  * Show data, function results and variables in a readable format
  */
 function show($data = null, $trace_offset = null, $quiet = false){
-    return include(__DIR__.'/handlers/debug_show.php');
+    return include(__DIR__.'/handlers/debug-show.php');
 }
 
 
@@ -3334,16 +3422,7 @@ function show($data = null, $trace_offset = null, $quiet = false){
  * Short hand for show and then die
  */
 function showdie($data = null, $trace_offset = null){
-    return include(__DIR__.'/handlers/debug_showdie.php');
-}
-
-
-
-/*
- * Short hand for show and then randomly die
- */
-function showrandomdie($data = '', $return = false, $quiet = false, $trace_offset = 2){
-    return include(__DIR__.'/handlers/debug_showrandomdie.php');
+    return include(__DIR__.'/handlers/debug-showdie.php');
 }
 
 
@@ -3352,7 +3431,7 @@ function showrandomdie($data = '', $return = false, $quiet = false, $trace_offse
  * Show nice HTML table with all debug data
  */
 function debug_html($value, $key = null, $trace_offset = 0){
-    return include(__DIR__.'/handlers/debug_html.php');
+    return include(__DIR__.'/handlers/debug-html.php');
 }
 
 
@@ -3361,7 +3440,7 @@ function debug_html($value, $key = null, $trace_offset = 0){
  * Show HTML <tr> for the specified debug data
  */
 function debug_html_row($value, $key = null, $type = null){
-    return include(__DIR__.'/handlers/debug_html_row.php');
+    return include(__DIR__.'/handlers/debug-html-row.php');
 }
 
 
@@ -3370,7 +3449,7 @@ function debug_html_row($value, $key = null, $type = null){
  *
  */
 function debug_sql($query, $execute = null, $return_only = false){
-    return include(__DIR__.'/handlers/debug_sql.php');
+    return include(__DIR__.'/handlers/debug-sql.php');
 }
 
 
@@ -3379,7 +3458,7 @@ function debug_sql($query, $execute = null, $return_only = false){
  * Gives a filtered debug_backtrace()
  */
 function debug_trace($filters = 'args'){
-    return include(__DIR__.'/handlers/debug_trace.php');
+    return include(__DIR__.'/handlers/debug-trace.php');
 }
 
 
@@ -3388,7 +3467,7 @@ function debug_trace($filters = 'args'){
  * Return an HTML bar with debug information that can be used to monitor site and fix issues
  */
 function debug_bar(){
-    return include(__DIR__.'/handlers/debug_bar.php');
+    return include(__DIR__.'/handlers/debug-bar.php');
 }
 
 
@@ -3397,7 +3476,7 @@ function debug_bar(){
  * Recursively cleanup the specified variable, removing any password like variable
  */
 function debug_cleanup($data){
-    return include(__DIR__.'/handlers/debug_cleanup.php');
+    return include(__DIR__.'/handlers/debug-cleanup.php');
 }
 
 
@@ -3406,7 +3485,7 @@ function debug_cleanup($data){
  *
  */
 function die_in($count, $message = null){
-    return include(__DIR__.'/handlers/debug_die_in.php');
+    return include(__DIR__.'/handlers/debug-die-in.php');
 }
 
 
@@ -3415,6 +3494,6 @@ function die_in($count, $message = null){
  *
  */
 function variable_zts_safe($variable, $level = 0){
-    return include(__DIR__.'/handlers/variable_zts_safe.php');
+    return include(__DIR__.'/handlers/variable-zts-safe.php');
 }
 ?>

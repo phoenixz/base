@@ -746,10 +746,6 @@ function html_header($params = null, $meta = array()){
         /*
          * Add required fonts
          */
-if(isset($_CONFIG['cdn']['fonts']) and empty($_CONFIG['production'])){
-throw new bException('WARNING: $_CONFIG[cdn][fonts] CONFIGURATION FOUND! THIS IS NO LONGER SUPPORTED! FONTS SHOULD BE SPECIFIED IN $params[fonts] IN c_page()', 'obsolete');
-}
-
         if(!empty($params['fonts'])){
             foreach($params['fonts'] as $font){
                 $retval .= '<link href="'.$font.'" rel="stylesheet" type="text/css">';
@@ -772,8 +768,17 @@ throw new bException('WARNING: $_CONFIG[cdn][fonts] CONFIGURATION FOUND! THIS IS
         }
 
         $retval .= html_favicon($params['favicon']).$params['extra'];
-//showdie($retval.'</head>'.$params['body']);
-        return $retval.'</head>'.$params['body'];
+        $retval .= '</head>'.$params['body'];
+
+        if($_CONFIG['security']['csrf']['enabled'] === 'force'){
+            /*
+             * Always add a CSRF for ajax
+             */
+            $csrf  = set_csrf('ajax_');
+            $html .= '<input type="hidden" id="ajax_csrf" name="ajax_csrf" value="'.$csrf.'">';
+        }
+
+        return $retval;
 
     }catch(Exception $e){
         throw new bException('html_header(): Failed', $e);
@@ -1803,15 +1808,6 @@ function html_status_select($params){
 /*
  *
  */
-function html_form(){
-    return '<input type="hidden" name="dosubmit" value="1">';
-}
-
-
-
-/*
- *
- */
 function html_hidden($source, $key = 'id'){
     try{
         return '<input type="hidden" name="'.$key.'" value="'.isset_get($source[$key]).'">';
@@ -2225,6 +2221,87 @@ function html_minify($html, $full = false){
 
     }catch(Exception $e){
         throw new bException(tr('html_minify(): Failed'), $e);
+    }
+}
+
+
+
+/*
+ * Generate and return a randon name for the specified $name, and store the
+ * link between the two under "group"
+ */
+function html_translate($name){
+    try{
+        $translation = '__'.$name.'__'.substr(unique_code('sha256'), 0, 16);
+
+        return $translation;
+
+    }catch(Exception $e){
+        throw new bException(tr('html_translate(): Failed'), $e);
+    }
+}
+
+
+
+/*
+ * Return the $_POST value for the translated specified key
+ */
+function html_untranslate(){
+    try{
+        $count = 0;
+
+        foreach($_POST as $key => $value){
+            if(substr($key, 0, 2) == '__'){
+                $_POST[str_until(substr($key, 2), '__')] = $_POST[$key];
+                unset($_POST[$key]);
+                $count++;
+            }
+        }
+
+        return $count;
+
+    }catch(Exception $e){
+        throw new bException(tr('html_untranslate(): Failed'), $e);
+    }
+}
+
+
+
+/*
+ *
+ */
+function html_form($action, $method, $class, $name = '', $csrf_check = true){
+    try{
+        /*
+         * Avoid people fucking around
+         */
+        if(isset($_SESSION['csrf']) and (count($_SESSION['csrf']) >= 20)){
+            /*
+             * Too many csrf, so too many post requests open. Just dump all and
+             * start from scratch
+             */
+            array_shift($_SESSION['csrf']);
+        }
+
+        if($csrf_check){
+            $csrf = set_csrf();
+            $csrf = '<input type="hidden" name="csrf" value="'.$csrf.'">';
+
+        }else{
+            $csrf = '';
+        }
+
+        foreach(array('name', 'method', 'action', 'class') as $key){
+            if(!$$key) continue;
+            $keys[] = $key.'="'.$$key.'"';
+        }
+
+        $form = '<form '.implode(' ', $keys).'>'.$csrf;
+
+        return $form;
+
+    }catch(Exception $e){
+        throw new bException('html_form(): Failed', $e);
     }
 }
 ?>

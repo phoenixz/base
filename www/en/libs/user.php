@@ -605,7 +605,7 @@ function user_authenticate($username, $password, $captcha = null){
          * Apply IP locking system
          */
         if($_CONFIG['security']['signin']['ip_lock'] and (PLATFORM_HTTP)){
-            include(__DIR__.'/handlers/user_ip_lock.php');
+            include(__DIR__.'/handlers/user-ip-lock.php');
         }
 
 
@@ -1455,57 +1455,57 @@ function user_load_rights($user){
  * NOTE: Since this function is rarely used, it it implemented by a handler
  */
 function user_switch($users_id, $redirect = '/'){
-    include(__DIR__.'/handlers/user_switch.php');
+    include(__DIR__.'/handlers/user-switch.php');
 }
 
 
 
-/*
- * Find the password field when browser password saving has been disabled
- */
-function user_process_signin_fields($post){
-    global $_CONFIG;
-
-    try{
-        if(empty($_CONFIG['security']['signin']['save_password'])){
-            /*
-             * Clear username and password fields, to ensure they are not being used
-             */
-            unset($post['username']);
-            unset($post['password']);
-
-            /*
-             * Password field is password********
-             */
-            foreach(array_max($post) as $key => $value){
-                if((substr($key, 0, 8) == 'password') and (strlen($key) == 16)){
-                    /*
-                     * This is the password field, set it.
-                     */
-                    $post['password'] = $post[$key];
-                    unset($post[$key]);
-
-                }elseif((substr($key, 0, 8) == 'username') and (strlen($key) == 16)){
-                    /*
-                     * This is the username field, set it.
-                     */
-                    $post['username'] = $post[$key];
-                    unset($post[$key]);
-                    continue;
-                }
-
-                if(isset($post['username']) and isset($post['password'])){
-                    break;
-                }
-            }
-        }
-
-        return $post;
-
-    }catch(Exception $e){
-        throw new bException('user_process_signin_fields(): Failed', $e);
-    }
-}
+///*
+// * Find the password field when browser password saving has been disabled
+// */
+//function user_process_signin_fields($post){
+//    global $_CONFIG;
+//
+//    try{
+//        if(empty($_CONFIG['security']['signin']['save_password'])){
+//            /*
+//             * Clear username and password fields, to ensure they are not being used
+//             */
+//            unset($post['username']);
+//            unset($post['password']);
+//
+//            /*
+//             * Password field is password********
+//             */
+//            foreach(array_max($post) as $key => $value){
+//                if((substr($key, 0, 8) == 'password') and (strlen($key) == 16)){
+//                    /*
+//                     * This is the password field, set it.
+//                     */
+//                    $post['password'] = $post[$key];
+//                    unset($post[$key]);
+//
+//                }elseif((substr($key, 0, 8) == 'username') and (strlen($key) == 16)){
+//                    /*
+//                     * This is the username field, set it.
+//                     */
+//                    $post['username'] = $post[$key];
+//                    unset($post[$key]);
+//                    continue;
+//                }
+//
+//                if(isset($post['username']) and isset($post['password'])){
+//                    break;
+//                }
+//            }
+//        }
+//
+//        return $post;
+//
+//    }catch(Exception $e){
+//        throw new bException('user_process_signin_fields(): Failed', $e);
+//    }
+//}
 
 
 

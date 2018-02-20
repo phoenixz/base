@@ -435,6 +435,22 @@ if(isset($_GET['redirect'])){
 
 
 
+/*
+ * If POST request, automatically untranslate translated POST entries
+ */
+if($_SERVER['REQUEST_METHOD'] == 'POST'){
+    html_untranslate();
+
+    if($_CONFIG['security']['csrf']['enabled'] === 'force'){
+        /*
+         * Force CSRF checks on every submit!
+         */
+        check_csrf();
+    }
+}
+
+
+
 // :TODO: What to do with this?
 //$_CONFIG['cdn']['prefix'] = slash($_CONFIG['cdn']['prefix']);
 //

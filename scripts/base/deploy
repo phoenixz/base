@@ -510,7 +510,7 @@ if($nocompress){
      */
     if(!trim(shell_exec('git status | grep "nothing to commit" | wc -l'))){
         log_console(tr('Changes detected from the compression script script, committing to git'), 'white');
-        safe_exec('cd '.ROOT.'; git add www/cdn; git add www/en/pub; git add www/en/admin/pub; ');
+        safe_exec('cd '.ROOT.'; git add www/cdn; git add www/en/pub; git add www/en/admin/pub; git add data/cdn; ');
         safe_exec('git commit -m "Deploy commit: compressed files changed"');
 
         if(!$nopush){

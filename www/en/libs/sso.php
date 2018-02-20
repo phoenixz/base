@@ -282,12 +282,12 @@ function sso($provider, $method, $redirect, $role = 'user'){
                 throw new bException(tr('sso(): Unknown or disabled provider'), $e);
 
             case 4:
-                $e->setCode(400);
-                throw new bException(tr('sso(): Missing provider application credentials'), $e);
+                $e = new bException(tr('sso(): Missing provider application credentials'), $e);
+                throw $e->setCode(400);
 
             case 5:
-                $e->setCode(400);
-                throw new bException(tr('sso(): Authentication failed The user has canceled the authentication or the provider refused the connection'), $e);
+                $e = new bException(tr('sso(): Authentication failed The user has canceled the authentication or the provider refused the connection'), $e);
+                throw $e->setCode(400);
 
             case 6:
                 $result->logout();
@@ -298,8 +298,8 @@ function sso($provider, $method, $redirect, $role = 'user'){
                 throw new bException(tr('sso(): User not connected to the provider'), $e);
 
             case 8:
-                $e->setCode(400);
-                throw new bException(tr('sso(): Provider does not support this feature'), $e);
+                $e = new bException(tr('sso(): Provider does not support this feature'), $e);
+                throw $e->setCode(400);
 
             default:
                 throw new bException(tr('sso(): Failed'), $e);
