@@ -4,10 +4,6 @@
  */
 global $_CONFIG;
 
-if($key){
-    $key = cache_key_hash($key);
-}
-
 try{
     /*
      * Clear normal cache
@@ -16,6 +12,9 @@ try{
 
     switch($_CONFIG['cache']['method']){
         case 'file':
+            if($key){
+                $key = cache_key_hash($key);
+            }
 
             if($namespace){
                 if($key){
