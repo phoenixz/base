@@ -1783,7 +1783,7 @@ function user_validate($user, $sections = array()){
             /*
              * Double emails are NOT allowed
              */
-            $exists = sql_get('SELECT `id` FROM `users` WHERE `email` = :email AND `id` != :id', true, array(':id' => $user['id'], ':email' => $user['email']));
+            $exists = sql_get('SELECT `id` FROM `users` WHERE `email` = :email', true, array(':email' => $user['email']));
 
             if($exists){
                 $v->setError(tr('The email address ":email" is already taken by another user', array(':email' => $user['email'])));
