@@ -8,14 +8,13 @@
  * @copyright Sven Oostenbrink <support@ingiga.com>, Johan Geuze
  */
 
-cli_init();
-
 
 
 /*
- * Initialize the SQL library
+ * Initialize the library
+ * Automatically executed by libs_load()
  */
-function cli_init(){
+function cli_library_init(){
     global $core;
 
     try{
@@ -30,7 +29,7 @@ function cli_init(){
         }
 
     }catch(Exception $e){
-        throw new bException('cli_init(): Failed', $e);
+        throw new bException('cli_library_init(): Failed', $e);
     }
 }
 

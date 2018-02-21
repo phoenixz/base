@@ -9,20 +9,19 @@
  * @copyright Sven Oostenbrink <support@ingiga.com>
  */
 
-composer_init();
-
 
 
 /*
- * Load the composer library and its CSS requirements
+ * Initialize the library
+ * Automatically executed by libs_load()
  */
-function composer_init(){
+function composer_library_init(){
     try{
         /*
          * Do a version check so we're sure this stuff is supported
          */
         if(version_compare(PHP_VERSION, '5.3.2') < 0){
-            throw new bException('composer_init(): PHP composer requires PHP 5.3.2+', 'notsupported');
+            throw new bException('composer_library_init(): PHP composer requires PHP 5.3.2+', 'notsupported');
         }
 
         ensure_installed(array('name'      => 'composer',
@@ -35,7 +34,7 @@ function composer_init(){
         }
 
     }catch(Exception $e){
-        throw new bException('composer_init(): Failed', $e);
+        throw new bException('composer_library_init(): Failed', $e);
     }
 }
 

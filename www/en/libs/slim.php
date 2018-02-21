@@ -11,14 +11,11 @@
 
 
 
-slim_init();
-
-
-
 /*
- * Load the slim library and its CSS requirements
+ * Initialize the library
+ * Automatically executed by libs_load()
  */
-function slim_init(){
+function slim_library_init(){
     try{
         ensure_installed(array('name'     => 'slim',
                                'project'  => 'slim',
@@ -26,7 +23,7 @@ function slim_init(){
                                'checks'   => array(ROOT.'vendor/slim')));
 
     }catch(Exception $e){
-        throw new bException('slim_load(): Failed', $e);
+        throw new bException('slim_library_init(): Failed', $e);
     }
 }
 

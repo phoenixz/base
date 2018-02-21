@@ -8,19 +8,18 @@
  * @copyright Sven Oostenbrink <support@ingiga.com>
  */
 
-tasks_init();
-
 
 
 /*
- * Initialize the tasks library
+ * Initialize the library
+ * Automatically executed by libs_load()
  */
-function tasks_init(){
+function tasks_library_init(){
     try{
         load_config('tasks');
 
     }catch(Exception $e){
-        throw new bException('tasks_init(): Failed', $e);
+        throw new bException('tasks_library_init(): Failed', $e);
     }
 }
 

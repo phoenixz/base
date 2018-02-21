@@ -13,22 +13,19 @@
 
 
 
-openssl_init();
-
-
-
 /*
- * Init library
+ * Initialize the library
+ * Automatically executed by libs_load()
  */
-function openssl_init(){
+function openssl_library_init(){
     try{
         if(!function_exists('openssl_encrypt')){
-            throw new bException(tr('openssl_init(): PHP module "openssl" appears not to be installed. Please install the module first. On Ubuntu and alikes, use "sudo apt-get -y install php-openssl; sudo phpenmod openssl" to install and enable the module., on Redhat and alikes use "sudo yum -y install php-openssl" to install the module. After this, a restart of your webserver or php-fpm server might be needed'), 'not-exists');
+            throw new bException(tr('openssl_library_init(): PHP module "openssl" appears not to be installed. Please install the module first. On Ubuntu and alikes, use "sudo apt-get -y install php-openssl; sudo phpenmod openssl" to install and enable the module., on Redhat and alikes use "sudo yum -y install php-openssl" to install the module. After this, a restart of your webserver or php-fpm server might be needed'), 'not-exists');
         }
 under_construction();
 
     }catch(Exception $e){
-        throw new bException('openssl_init(): Failed', $e);
+        throw new bException('openssl_library_init(): Failed', $e);
     }
 }
 

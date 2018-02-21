@@ -11,20 +11,17 @@
 
 
 
-buks_init();
-
-
-
 /*
- *
+ * Initialize the library
+ * Automatically executed by libs_load()
  */
-function buks_init(){
+function buks_library_init(){
     try{
         load_libs('openssl');
 under_construction();
 
     }catch(Exception $e){
-        throw new bException('buks_init(): Failed', $e);
+        throw new bException('buks_library_init(): Failed', $e);
     }
 }
 

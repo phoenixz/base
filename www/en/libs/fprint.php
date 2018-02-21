@@ -8,23 +8,22 @@
  * @copyright Sven Oostenbrink <support@ingiga.com>
  */
 
-fprint_init();
-
 
 
 /*
- *
+ * Initialize the library
+ * Automatically executed by libs_load()
  */
-function fprint_init(){
+function fprint_library_init(){
     try{
         if(!file_exists('/var/lib/fprint/')){
-            throw new bException(tr('fprint_init(): fprintd application data found, it it probably is not installed. Please fix this by executing "sudo apt-get install fprintd" on the command line'), 'warning/not-exists');
+            throw new bException(tr('fprint_library_init(): fprintd application data found, it it probably is not installed. Please fix this by executing "sudo apt-get install fprintd" on the command line'), 'warning/not-exists');
         }
 
         load_config('fprint');
 
     }catch(Exception $e){
-        throw new bException('fprint_init(): Failed', $e);
+        throw new bException('fprint_library_init(): Failed', $e);
     }
 }
 

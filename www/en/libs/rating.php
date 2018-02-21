@@ -10,14 +10,11 @@
 
 
 
-rating_init();
-
-
-
 /*
- * Load the rating library and its CSS requirements
+ * Initialize the library
+ * Automatically executed by libs_load()
  */
-function rating_init(){
+function rating_library_init(){
     try{
         ensure_installed(array('name'      => 'rating',
                                'project'   => 'rating',
@@ -30,7 +27,7 @@ function rating_init(){
         html_load_css('rating/rating');
 
     }catch(Exception $e){
-        throw new bException('rating_init(): Failed', $e);
+        throw new bException('rating_library_init(): Failed', $e);
     }
 }
 

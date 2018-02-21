@@ -8,20 +8,18 @@
  * @copyright Sven Oostenbrink <support@ingiga.com>
  */
 
-sane_init();
-
-
 
 
 /*
- * Initialize this library
+ * Initialize the library
+ * Automatically executed by libs_load()
  */
-function sane_init(){
+function sane_library_init(){
     try{
         load_config('sane');
 
     }catch(Exception $e){
-        throw new bException('sane_init(): Failed', $e);
+        throw new bException('sane_library_init(): Failed', $e);
     }
 }
 

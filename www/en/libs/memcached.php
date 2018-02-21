@@ -10,21 +10,20 @@
  * @copyright Johan Geuze, Sven Oostenbrink <support@ingiga.com>
  */
 
-mc_init();
-
 
 
 /*
- * Ensure memcached is available
+ * Initialize the library
+ * Automatically executed by libs_load()
  */
-function mc_init(){
+function mc_library_init(){
     try{
         if(!class_exists('Memcached')){
-            throw new bException(tr('mc_init(): php module "memcached" appears not to be installed. Please install the module first. On Ubuntu and alikes, use "sudo sudo apt-get -y install php5-memcached; sudo php5enmod memcached" to install and enable the module., on Redhat and alikes use ""sudo yum -y install php5-memcached" to install the module. After this, a restart of your webserver or php-fpm server might be needed'), 'not_available');
+            throw new bException(tr('mc_library_init(): php module "memcached" appears not to be installed. Please install the module first. On Ubuntu and alikes, use "sudo sudo apt-get -y install php5-memcached; sudo php5enmod memcached" to install and enable the module., on Redhat and alikes use ""sudo yum -y install php5-memcached" to install the module. After this, a restart of your webserver or php-fpm server might be needed'), 'not_available');
         }
 
     }catch(Exception $e){
-        throw new bException('mc_init(): failed', $e);
+        throw new bException('mc_library_init(): failed', $e);
     }
 }
 

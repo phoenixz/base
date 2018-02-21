@@ -9,14 +9,13 @@
  * @copyright Sven Oostenbrink <support@ingiga.com>
  */
 
-sweetalert_init();
-
 
 
 /*
- * Load the sweetalert library and its CSS requirements
+ * Initialize the library
+ * Automatically executed by libs_load()
  */
-function sweetalert_init(){
+function sweetalert_library_init(){
     try{
         ensure_installed(array('name'      => 'sweetalert',
                                'project'   => 'sweetalert',
@@ -29,7 +28,7 @@ function sweetalert_init(){
         html_load_css('sweetalert/sweetalert');
 
     }catch(Exception $e){
-        throw new bException('sweetalert_init(): Failed', $e);
+        throw new bException('sweetalert_library_init(): Failed', $e);
     }
 }
 

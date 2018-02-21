@@ -13,17 +13,11 @@
 
 
 
-
-
-
-slack_init();
-
-
-
 /*
- * Load the slack library and its CSS requirements
+ * Initialize the library
+ * Automatically executed by libs_load()
  */
-function slack_init(){
+function slack_library_init(){
     try{
         ensure_installed(array('name'      => 'slack',
                                'project'   => 'slack',
@@ -33,7 +27,7 @@ function slack_init(){
         load_config('slack');
 
     }catch(Exception $e){
-        throw new bException('slack_init(): Failed', $e);
+        throw new bException('slack_library_init(): Failed', $e);
     }
 }
 

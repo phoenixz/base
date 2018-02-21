@@ -7,19 +7,18 @@
  * Written and Copyright by Sven Oostenbrink
  */
 
-servers_init();
-
 
 
 /*
  * Initialize the library
+ * Automatically executed by libs_load()
  */
-function servers_init(){
+function servers_library_init(){
     try{
         load_config('servers');
 
     }catch(Exception $e){
-        throw new bException('servers_init(): Failed', $e);
+        throw new bException('servers_library_init(): Failed', $e);
     }
 }
 

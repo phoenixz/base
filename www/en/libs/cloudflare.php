@@ -8,18 +8,19 @@
  * @copyright Sven Oostenbrink <support@ingiga.com>
  */
 
-load_config('cloudflare');
-load_libs('ext/cloudflare');
-
 
 
 /*
- *
+ * Initialize the library
+ * Automatically executed by libs_load()
  */
-function cf_init(){
+function cloudflare_library_init(){
     global $_CONFIG;
 
     try{
+        load_config('cloudflare');
+        load_libs('ext/cloudflare');
+
         if(!empty($core->register['cf_connector'])){
             return null;
         }
@@ -28,7 +29,7 @@ function cf_init(){
         $core->register['cf_connector'] = $cf;
 
     }catch(Exception $e){
-        throw new bException('cf_init(): Failed', $e);
+        throw new bException('cloudflare_library_init(): Failed', $e);
     }
 }
 

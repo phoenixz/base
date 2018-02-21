@@ -17,14 +17,11 @@
 
 
 
-sso_init();
-
-
-
 /*
- * Ensure all required dependancies are available. If not, run the auto installer
+ * Initialize the library
+ * Automatically executed by libs_load()
  */
-function sso_init(){
+function sso_library_init(){
    try{
         ensure_installed(array('name'      => 'hybridauth',
                                'project'   => 'hybridauth',
@@ -33,7 +30,7 @@ function sso_init(){
                                                     ROOT.'libs/external/hybridauth/Hybrid/Auth.php')));
 
     }catch(Exception $e){
-        throw new bException(tr('sso_init(): Failed'), $e);
+        throw new bException(tr('sso_library_init(): Failed'), $e);
     }
 }
 

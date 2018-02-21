@@ -12,14 +12,13 @@
  * @copyright Sven Oostenbrink <support@ingiga.com>
  */
 
-minify_init();
-
 
 
 /*
- * Load the minify library and its CSS requirements
+ * Initialize the library
+ * Automatically executed by libs_load()
  */
-function minify_init(){
+function minify_library_init(){
     try{
         ensure_installed(array('name'      => 'minify',
                                'project'   => 'minify',
@@ -27,7 +26,7 @@ function minify_init(){
                                'checks'    => array(ROOT.'libs/external/vendor/mrclay/minify')));
 
     }catch(Exception $e){
-        throw new bException('minify_init(): Failed', $e);
+        throw new bException('minify_library_init(): Failed', $e);
     }
 }
 

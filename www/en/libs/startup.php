@@ -596,11 +596,23 @@ function load_libs($libraries, $exception = true){
 
             }else{
                 include_once($libs.$library.'.php');
+
+                if(is_callable($library.'_library_init')){
+                    /*
+                     * Auto initialize the library
+                     */
+                    $function = $library.'_library_init';
+                    $function();
+                }
             }
         }
 
     }catch(Exception $e){
-        throw new bException(tr('load_libs(): Failed to load one or more of libraries ":libraries"', array(':libraries' => $libraries)), $e);
+        if(empty($library)){
+            throw new bException(tr('load_libs(): Failed to load one or more of libraries ":libraries"', array(':libraries' => $libraries)), $e);
+        }
+
+        throw new bException(tr('load_libs(): Failed to load one or more of libraries ":libraries", probably ":library"', array(':libraries' => $libraries, ':library' => $library)), $e);
     }
 }
 
