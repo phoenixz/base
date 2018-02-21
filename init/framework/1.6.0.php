@@ -98,8 +98,6 @@ sql_query('CREATE TABLE `storage_categories` (`id`          INT(11)     NOT NULL
 
 
 sql_query('CREATE TABLE `storage_documents` (`id`             INT(11)     NOT NULL AUTO_INCREMENT,
-                                             `createdon`      TIMESTAMP   NOT NULL DEFAULT CURRENT_TIMESTAMP,
-                                             `createdby`      INT(11)         NULL,
                                              `meta_id`        INT(11)     NOT NULL,
                                              `sections_id`    INT(11)     NOT NULL,
                                              `masters_id`     INT(11)         NULL,
@@ -120,8 +118,6 @@ sql_query('CREATE TABLE `storage_documents` (`id`             INT(11)     NOT NU
                                              `comments`       INT(11)     NOT NULL,
 
                                              PRIMARY KEY `id`             (`id`),
-                                                     KEY `createdon`      (`createdon`),
-                                                     KEY `createdby`      (`createdby`),
                                                      KEY `meta_id`        (`meta_id`),
                                                      KEY `sections_id`    (`sections_id`),
                                                      KEY `masters_id`     (`masters_id`),
@@ -142,8 +138,7 @@ sql_query('CREATE TABLE `storage_documents` (`id`             INT(11)     NOT NU
                                              CONSTRAINT `fk_storage_documents_sections_id`    FOREIGN KEY (`sections_id`)    REFERENCES `storage_sections`  (`id`) ON DELETE RESTRICT,
                                              CONSTRAINT `fk_storage_documents_masters_id`     FOREIGN KEY (`masters_id`)     REFERENCES `storage_documents` (`id`) ON DELETE RESTRICT,
                                              CONSTRAINT `fk_storage_documents_parents_id`     FOREIGN KEY (`parents_id`)     REFERENCES `storage_documents` (`id`) ON DELETE RESTRICT,
-                                             CONSTRAINT `fk_storage_documents_assigned_to_id` FOREIGN KEY (`assigned_to_id`) REFERENCES `users`             (`id`) ON DELETE RESTRICT,
-                                             CONSTRAINT `fk_storage_documents_createdby`      FOREIGN KEY (`createdby`)      REFERENCES `users`             (`id`) ON DELETE RESTRICT
+                                             CONSTRAINT `fk_storage_documents_assigned_to_id` FOREIGN KEY (`assigned_to_id`) REFERENCES `users`             (`id`) ON DELETE RESTRICT
 
                                             ) ENGINE=InnoDB AUTO_INCREMENT='.$_CONFIG['db']['core']['autoincrement'].' DEFAULT CHARSET="'.$_CONFIG['db']['core']['charset'].'" COLLATE="'.$_CONFIG['db']['core']['collate'].'";');
 
@@ -155,7 +150,6 @@ sql_query('CREATE TABLE `storage_pages` (`id`           INT(11)      NOT NULL AU
                                          `meta_id`      INT(11)      NOT NULL,
                                          `sections_id`  INT(11)      NOT NULL,
                                          `documents_id` INT(11)      NOT NULL,
-                                         `status`       VARCHAR(16)      NULL,
                                          `language`     VARCHAR(2)       NULL,
                                          `name`         VARCHAR(64)      NULL,
                                          `seoname`      VARCHAR(64)      NULL,
@@ -304,32 +298,26 @@ sql_query('CREATE TABLE `storage_file_restrictions` (`id`            INT(11)    
 
 
 sql_query('CREATE TABLE `storage_files` (`id`           INT(11)      NOT NULL AUTO_INCREMENT,
-                                         `createdon`    TIMESTAMP    NOT NULL DEFAULT CURRENT_TIMESTAMP,
-                                         `createdby`    INT(11)          NULL,
-                                         `meta_id`      INT(11)      NOT NULL,
                                          `sections_id`  INT(11)      NOT NULL,
                                          `documents_id` INT(11)      NOT NULL,
                                          `pages_id`     INT(11)          NULL,
                                          `types_id`     INT(11)          NULL,
                                          `files_id`     INT(11)          NULL,
+                                         `priority`     INT(11)          NULL,
 
                                          PRIMARY KEY `id`           (`id`),
-                                                 KEY `createdon`    (`createdon`),
-                                                 KEY `createdby`    (`createdby`),
-                                                 KEY `meta_id`      (`meta_id`),
                                                  KEY `sections_id`  (`sections_id`),
                                                  KEY `documents_id` (`documents_id`),
                                                  KEY `pages_id`     (`pages_id`),
                                                  KEY `types_id`     (`types_id`),
                                                  KEY `files_id`     (`files_id`),
+                                                 KEY `priority`     (`priority`),
 
-                                         CONSTRAINT `fk_storage_files_meta_id`      FOREIGN KEY (`meta_id`)      REFERENCES `meta`               (`id`) ON DELETE RESTRICT,
                                          CONSTRAINT `fk_storage_files_sections_id`  FOREIGN KEY (`sections_id`)  REFERENCES `storage_sections`   (`id`) ON DELETE RESTRICT,
                                          CONSTRAINT `fk_storage_files_documents_id` FOREIGN KEY (`documents_id`) REFERENCES `storage_documents`  (`id`) ON DELETE RESTRICT,
                                          CONSTRAINT `fk_storage_files_pages_id`     FOREIGN KEY (`pages_id`)     REFERENCES `storage_pages`      (`id`) ON DELETE RESTRICT,
                                          CONSTRAINT `fk_storage_files_types_id`     FOREIGN KEY (`types_id`)     REFERENCES `storage_file_types` (`id`) ON DELETE RESTRICT,
                                          CONSTRAINT `fk_storage_files_files_id`     FOREIGN KEY (`files_id`)     REFERENCES `files`              (`id`) ON DELETE RESTRICT,
-                                         CONSTRAINT `fk_storage_files_createdby`    FOREIGN KEY (`createdby`)    REFERENCES `users`              (`id`) ON DELETE RESTRICT
 
                                         ) ENGINE=InnoDB AUTO_INCREMENT='.$_CONFIG['db']['core']['autoincrement'].' DEFAULT CHARSET="'.$_CONFIG['db']['core']['charset'].'" COLLATE="'.$_CONFIG['db']['core']['collate'].'";');
 
