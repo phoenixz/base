@@ -336,10 +336,12 @@ function mc_namespace($namespace, $delete = false){
 /*
  * Return statistics for memcached
  */
-function mc_get_stats(){
+function mc_stats(){
     global $core;
 
     try{
+        mc_connect();
+
         if(empty($core->register['memcached'])){
             /*
              * Not connected to a memcached server!
@@ -351,7 +353,7 @@ function mc_get_stats(){
         return $stats;
 
     }catch(Exception $e){
-        throw new bException('mc_get_stats(): Failed', $e);
+        throw new bException('mc_stats(): Failed', $e);
     }
 }
 ?>
