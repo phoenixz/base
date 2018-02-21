@@ -1952,8 +1952,8 @@ function check_csrf(){
         /*
          * Code timed out?
          */
-        if($_CONFIG['security']['csrf_timeout']){
-            if(($timestamp + $_CONFIG['security']['csrf_timeout']) < $now->getTimestamp()){
+        if($_CONFIG['security']['csrf']['timeout']){
+            if(($timestamp + $_CONFIG['security']['csrf']['timeout']) < $now->getTimestamp()){
                 throw new bException(tr('check_csrf(): Specified CSRF ":code" timed out', array(':code' => $_POST['csrf'])), 'timeout');
             }
         }
