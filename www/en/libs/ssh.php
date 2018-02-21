@@ -484,7 +484,7 @@ function ssh_mysql_slave_tunnel($server){
         /*
          * Execute command
          */
-        $result = safe_exec('ssh -p '.$server['port'].' -i '.$keyfile.' -L '.$server['ssh_port'].':localhost:3306 '.$server['username'].'@'.$server['hostname'].' -f -N &');
+        $result = safe_exec('autossh -p '.$server['port'].' -i '.$keyfile.' -L '.$server['ssh_port'].':localhost:3306 '.$server['username'].'@'.$server['hostname'].' -f -N &');
 
         /*
          * Delete key file in background process
