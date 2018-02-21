@@ -56,6 +56,8 @@ function statistics_add($params){
                          ':resource1' => $params['resource1'],
                          ':resource2' => $params['resource2']));
 
+        return sql_insert_id();
+
     }catch(Exception $e){
         throw new bException('statistics_add(): Failed', $e);
     }
