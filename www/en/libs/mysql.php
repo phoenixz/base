@@ -86,8 +86,8 @@ function mysql_delete_password_file($server = null){
 function mysql_dump($params){
     try{
         array_params($params);
-        arary_default($params, 'database', '');
-        arary_default($params, 'file'    , $params['database'].'.sql.gz');
+        array_default($params, 'database', '');
+        array_default($params, 'file'    , $params['database'].'.sql.gz');
 
         load_libs('servers');
 
@@ -119,10 +119,12 @@ function mysql_get_database($db_name){
                                        `databases`.`status`,
                                        `databases`.`replication_status`,
                                        `databases`.`name` AS `database`,
-                                       `databases`.`ssh_port`,
                                        `databases`.`error`,
 
+                                       `servers`.`id` AS `servers_id`,
                                        `servers`.`hostname`,
+                                       `servers`.`ssh_port`,
+                                       `servers`.`replication_status` AS `servers_replication_status`,
 
                                        `database_accounts`.`username`      AS `replication_db_user`,
                                        `database_accounts`.`password`      AS `replication_db_password`,
@@ -157,14 +159,32 @@ function mysql_get_database($db_name){
  * Current available replication statuses
  * 'enabled','preparing','paused','disabled','error'
  */
-function mysql_update_replication_status($database, $status){
+function mysql_update_replication_status($params, $status){
     try{
-        if(is_numeric($database)){
-            sql_query('UPDATE `databases` SET `replication_status` = :replication_status WHERE id = :id', array(':replication_status' => $status, ':id' => $database));
+        /*
+         * Update server and database replication_status
+         */
+        array_params($params);
+        array_default($params, 'database'  , '');
+        array_default($params, 'servers_id', '');
 
-        }else{
-            sql_query('UPDATE `databases` SET `replication_status` = :replication_status WHERE name = :name', array(':replication_status' => $status, ':name' => $database));
+        if(empty($params['database'])){
+            throw new bException(tr('mysql_update_replication_status(): database not specified'), 'not-specified');
         }
+
+        if(empty($params['servers_id'])){
+            throw new bException(tr('mysql_update_replication_status(): servers_id not specified'), 'not-specified');
+        }
+
+        /*
+         * Update server
+         */
+        sql_query('UPDATE `servers` SET `replication_status` = :replication_status WHERE id = :id', array(':replication_status' => $status, ':id' => $params['servers_id']));
+
+        /*
+         * Update database
+         */
+        sql_query('UPDATE `databases` SET `replication_status` = :replication_status WHERE name = :name', array(':replication_status' => $status, ':name' => $params['database']));
 
     }catch(Exception $e){
         throw new bException(tr('mysql_update_replication_status(): Failed'), $e);
@@ -192,7 +212,7 @@ function mysql_master_replication_setup($params){
         $database       = mysql_get_database($params['database']);
         $database       = array_merge($database, $params);
         $mysql_cnf_path = '/etc/mysql/mysql.conf.d/mysqld.cnf';
-        mysql_update_replication_status($database['id'], 'preparing');
+        mysql_update_replication_status($database, 'preparing');
 
         load_libs('ssh,servers');
 
@@ -277,7 +297,7 @@ function mysql_master_replication_setup($params){
         return $database;
 
     }catch(Exception $e){
-        mysql_update_replication_status($database['id'], 'disabled');
+        mysql_update_replication_status($database, 'disabled');
         throw new bException(tr('mysql_master_replication_setup(): Failed'), $e);
     }
 }
@@ -342,20 +362,12 @@ function mysql_slave_replication_setup($params){
         servers_exec($database['hostname'], 'grep -q -F \'binlog_do_db = '.$database['database'].'\' '.$mysql_cnf_path.' || echo "binlog_do_db = '.$database['database'].'" | sudo tee -a '.$mysql_cnf_path, null, false, true);
 
         /*
-         * Create SSH tunneling user
-         */
-        log_console(tr('Creating ssh tunneling user on local server'), 'DOT');
-        ssh_mysql_slave_tunnel($database);
-
-
-        /*
          * Close PDO connection before restarting MySQL
          */
         sql_close();
         log_console(tr('Restarting local MySQL service'), 'DOT');
         servers_exec($database['hostname'], 'sudo service mysql restart', null, false, true);
         sql_close();
-
         sleep(2);
 
         /*
@@ -369,6 +381,26 @@ function mysql_slave_replication_setup($params){
         servers_exec($database['hostname'], 'sudo rm /tmp/'.$database['database'].'.sql -f', null, false, true);
 
         /*
+         * Check if this server was already replicating
+         */
+        if($database['servers_replication_status'] == 'enabled'){
+            mysql_update_replication_status($database, 'enabled');
+            return 0;
+        }
+
+        /*
+         * This server master was not replicating
+         * Enable SSH tunnel
+         * Enable SLAVE for this server
+         */
+
+        /*
+         * Create SSH tunneling user
+         */
+        log_console(tr('Creating ssh tunneling user on local server'), 'DOT');
+        ssh_mysql_slave_tunnel($database);
+
+        /*
          * Setup global configurations to support multiple channels
          */
         servers_exec($database['hostname'], 'mysql "-u'.$database['root_db_user'].'" "-p'.$database['root_db_password'].'" -e "SET GLOBAL master_info_repository = \'TABLE\';"', null, false, true);
@@ -377,15 +409,16 @@ function mysql_slave_replication_setup($params){
         /*
          * Setup slave replication
          */
-        $slave_setup  = 'STOP SLAVE; ';
-        $slave_setup .= 'CHANGE MASTER TO MASTER_HOST=\'127.0.0.1\', ';
+// :DELETE: Since we are using channels we dont need this
+        //$slave_setup  = 'STOP SLAVE; ';
+        $slave_setup  = 'CHANGE MASTER TO MASTER_HOST=\'127.0.0.1\', ';
         $slave_setup .= 'MASTER_USER=\''.$database['replication_db_user'].'\', ';
         $slave_setup .= 'MASTER_PASSWORD=\''.$database['replication_db_password'].'\', ';
         $slave_setup .= 'MASTER_PORT='.$database['ssh_port'].', ';
         $slave_setup .= 'MASTER_LOG_FILE=\''.$database['log_file'].'\', ';
         $slave_setup .= 'MASTER_LOG_POS='.$database['log_pos'].' ';
-        $slave_setup .= 'FOR CHANNEL \''.$database['hostname'].'_'.$database['database'].'\'; ';
-        $slave_setup .= 'START SLAVE FOR CHANNEL \''.$database['hostname'].'_'.$database['database'].'\';';
+        $slave_setup .= 'FOR CHANNEL \''.$database['hostname'].'\'; ';
+        $slave_setup .= 'START SLAVE FOR CHANNEL \''.$database['hostname'].'\';';
         servers_exec($database['hostname'], 'mysql "-u'.$database['root_db_user'].'" "-p'.$database['root_db_password'].'" -e "'.$slave_setup.'"', null, false, true);
 
         /*
@@ -394,10 +427,10 @@ function mysql_slave_replication_setup($params){
         $slave_status = servers_exec($database['hostname'], 'mysql "-u'.$database['root_db_user'].'" "-p'.$database['root_db_password'].'" -ANe "SHOW SLAVE STATUS;"', null, false, true);
 
         log_console(tr('Finished!!'), 'white');
-        mysql_update_replication_status($database['database'], 'enabled');
+        mysql_update_replication_status($database, 'enabled');
 
     }catch(Exception $e){
-        mysql_update_replication_status($database['database'], 'disabled');
+        mysql_update_replication_status($database, 'disabled');
         throw new bException(tr('mysql_slave_replication_setup(): Failed'), $e);
     }
 }
