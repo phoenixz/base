@@ -97,7 +97,7 @@ function storage_ui_panel_header($params, $section, $active){
                 $main_heading   = '';
                 $panel_heading  = ' <div class="panel-heading">
                                         <div class="panel-title">
-                                            <h2><span class="fa fa-'.$params['icon'].'"></span> '.str_capitalize($params['title']).'</h2>
+                                            <h2><span class="fa fa-'.$params['icon'].'"></span> '.str_capitalize($params['labels']['title']).'</h2>
                                         </div>
                                     </div>';
                 break;

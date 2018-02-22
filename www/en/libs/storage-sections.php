@@ -47,6 +47,7 @@ function storage_sections_get($get_section = null){
                                    `name`,
                                    `seoname`,
                                    `url_template`,
+                                   `random_ids`,
                                    `restrict_file_types`,
                                    `slogan`,
                                    `description`
@@ -56,7 +57,9 @@ function storage_sections_get($get_section = null){
                             $execute);
 
         if(empty($section) and empty($get_section)){
-            return storage_sections_add(array('status' => '_new'));
+            return storage_sections_add(array('status'              => '_new',
+                                              'random_ids'          => true,
+                                              'restrict_file_types' => true));
         }
 
         return $section;
@@ -75,14 +78,15 @@ function storage_sections_add($section){
     try{
         $section = storage_sections_validate($section);
 
-        sql_query('INSERT INTO `storage_sections` (`createdby`, `meta_id`, `status`, `name`, `seoname`, `restrict_file_types`, `slogan`, `description`)
-                   VALUES                         (:createdby , :meta_id , :status , :name , :seoname , :restrict_file_types , :slogan , :description )',
+        sql_query('INSERT INTO `storage_sections` (`createdby`, `meta_id`, `status`, `name`, `seoname`, `random_ids`, `restrict_file_types`, `slogan`, `description`)
+                   VALUES                         (:createdby , :meta_id , :status , :name , :seoname , :random_ids , :restrict_file_types , :slogan , :description )',
 
                    array(':createdby'           => $_SESSION['user']['id'],
                          ':meta_id'             => meta_action(),
                          ':status'              => $section['status'],
                          ':name'                => $section['name'],
                          ':seoname'             => $section['seoname'],
+                         ':random_ids'          => $section['random_ids'],
                          ':restrict_file_types' => $section['restrict_file_types'],
                          ':slogan'              => $section['slogan'],
                          ':description'         => $section['description']));
@@ -110,6 +114,7 @@ function storage_sections_update($section, $new = false){
                           `name`                = :name,
                           `seoname`             = :seoname,
                           `url_template`        = :url_template,
+                          `random_ids`          = :random_ids,
                           `restrict_file_types` = :restrict_file_types,
                           `slogan`              = :slogan,
                           `description`         = :description
@@ -119,6 +124,7 @@ function storage_sections_update($section, $new = false){
                    array(':id'                  => $section['id'],
                          ':name'                => $section['name'],
                          ':seoname'             => $section['seoname'],
+                         ':random_ids'          => $section['random_ids'],
                          ':restrict_file_types' => $section['restrict_file_types'],
                          ':url_template'        => $section['url_template'],
                          ':slogan'              => $section['slogan'],
@@ -140,8 +146,18 @@ function storage_sections_validate($section){
     try{
         load_libs('validate,seo');
 
-        $v = new validate_form($section, 'id,name,seoname,restrict_file_types,slogan,description');
-        $v->isAlphaNumeric($section, tr(''));
+        $v = new validate_form($section, 'id,name,seoname,random_ids,restrict_file_types,slogan,description');
+        //$v->isAlphaNumeric($section, tr(''));
+        //$v->isAlphaNumeric($section, tr(''));
+        //$v->isAlphaNumeric($section, tr(''));
+        //$v->isAlphaNumeric($section, tr(''));
+        //$v->isAlphaNumeric($section, tr(''));
+        //$v->isAlphaNumeric($section, tr(''));
+        //$v->isAlphaNumeric($section, tr(''));
+        //$v->isAlphaNumeric($section, tr(''));
+        //$v->isAlphaNumeric($section, tr(''));
+        //$v->isAlphaNumeric($section, tr(''));
+        //$v->isAlphaNumeric($section, tr(''));
         $v->isValid();
 
         $section['seoname'] = seo_unique($section['name'], 'storage_sections', $section['id']);

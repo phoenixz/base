@@ -123,15 +123,23 @@ function storage_pages_get($sections_id, $page = null){
 /*
  * Generate a new storage page
  */
-function storage_pages_add($page){
+function storage_pages_add($page, $section = null){
     try{
+        if(!$section){
+            $section = storage_sections_get($page['sections_id']);
+        }
+
+        if($section['random_ids']){
+            $document['id'] = sql_random_id('storage_documents');
+        }
+
         if(empty($page['documents_id'])){
             /*
              * This page has no document
              * Generate a new document for this page
              */
             load_libs('storage-documents');
-            $document = storage_documents_add($page);
+            $document = storage_documents_add($page, $section);
             $page['documents_id'] = $document['id'];
         }
 

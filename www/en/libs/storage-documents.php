@@ -114,14 +114,23 @@ function storage_documents_get($sections_id, $document = null){
 /*
  * Generate a new storage document
  */
-function storage_documents_add($document){
+function storage_documents_add($document, $section = null){
     try{
         $document = storage_documents_validate($document);
 
-        sql_query('INSERT INTO `storage_documents` (`meta_id`, `status`, `sections_id`, `masters_id`, `parents_id`, `rights_id`, `assigned_to_id`, `featured_until`, `category1`, `category2`, `category3`, `upvotes`, `downvotes`, `priority`, `level`, `views`, `rating`, `comments`)
-                   VALUES                          (:meta_id , :status , :sections_id , :masters_id , :parents_id , :rights_id , :assigned_to_id , :featured_until , :category1 , :category2 , :category3 , :upvotes , :downvotes , :priority , :level , :views , :rating , :comments )',
+        if(!$section){
+            $section = storage_sections_get($document['sections_id']);
+        }
 
-                   array(':meta_id'        => meta_action(),
+        if($section['random_ids']){
+            $document['id'] = sql_random_id('storage_documents');
+        }
+
+        sql_query('INSERT INTO `storage_documents` (`id`, `meta_id`, `status`, `sections_id`, `masters_id`, `parents_id`, `rights_id`, `assigned_to_id`, `featured_until`, `category1`, `category2`, `category3`, `upvotes`, `downvotes`, `priority`, `level`, `views`, `rating`, `comments`)
+                   VALUES                          (:id , :meta_id , :status , :sections_id , :masters_id , :parents_id , :rights_id , :assigned_to_id , :featured_until , :category1 , :category2 , :category3 , :upvotes , :downvotes , :priority , :level , :views , :rating , :comments )',
+
+                   array(':id'             => $document['id'],
+                         ':meta_id'        => meta_action(),
                          ':status'         => $document['status'],
                          ':sections_id'    => $document['sections_id'],
                          ':masters_id'     => $document['masters_id'],
@@ -213,24 +222,24 @@ function storage_documents_validate($document){
         load_libs('validate');
 
         $v = new validate_form($document, 'id,meta_id,status,sections_id,masters_id,parents_id,rights_id,assigned_to_id,featured_until,category1,category2,category3,upvotes,downvotes,priority,level,views,rating,comments');
-        $v->isNatural($document['id']                , 1, tr('Please specify a valid page id')                 , VALIDATE_ALLOW_EMPTY_NULL);
-        $v->isNatural($document['meta_id']           , 1, tr('Please specify a valid meta id')                 , VALIDATE_ALLOW_EMPTY_NULL);
-        $v->isAlphaNumericUnderscore($document['status'], tr('Please specify a valid status')                  , VALIDATE_ALLOW_EMPTY_NULL);
-        $v->isNatural($document['masters_id']        , 1, tr('Please specify a valid meta id')                 , VALIDATE_ALLOW_EMPTY_NULL);
-        $v->isNatural($document['parents_id']        , 1, tr('Please specify a valid parent id')               , VALIDATE_ALLOW_EMPTY_NULL);
-        $v->isNatural($document['rights_id']         , 1, tr('Please specify a valid rights id')               , VALIDATE_ALLOW_EMPTY_NULL);
-        $v->isNatural($document['assigned_to_id']    , 1, tr('Please specify a valid assigned to id')          , VALIDATE_ALLOW_EMPTY_NULL);
-        $v->isDateTime($document['featured_until']      , tr('Please specify a valid featured until date time'), VALIDATE_ALLOW_EMPTY_NULL);
-        $v->isNatural($document['category1']         , 1, tr('Please specify a valid category 1')              , VALIDATE_ALLOW_EMPTY_NULL);
-        $v->isNatural($document['category2']         , 1, tr('Please specify a valid category 2')              , VALIDATE_ALLOW_EMPTY_NULL);
-        $v->isNatural($document['category3']         , 1, tr('Please specify a valid category 3')              , VALIDATE_ALLOW_EMPTY_NULL);
-        $v->isNatural($document['upvotes']           , 1, tr('Please specify a valid amount of upvotes')       , VALIDATE_ALLOW_EMPTY_INTEGER);
-        $v->isNatural($document['downvotes']         , 1, tr('Please specify a valid amount of upvotes')       , VALIDATE_ALLOW_EMPTY_INTEGER);
-        $v->isNatural($document['priority']          , 1, tr('Please specify a valid priority')                , VALIDATE_ALLOW_EMPTY_INTEGER);
-        $v->isNatural($document['level']             , 1, tr('Please specify a valid level')                   , VALIDATE_ALLOW_EMPTY_INTEGER);
-        $v->isNatural($document['views']             , 1, tr('Please specify a valid level')                   , VALIDATE_ALLOW_EMPTY_INTEGER);
-        $v->isNatural($document['rating']            , 1, tr('Please specify a valid rating')                  , VALIDATE_ALLOW_EMPTY_INTEGER);
-        $v->isNatural($document['comments']          , 1, tr('Please specify a valid comments')                , VALIDATE_ALLOW_EMPTY_INTEGER);
+        $v->isNatural($document['id']             , 1, tr('Please specify a valid page id')                 , VALIDATE_ALLOW_EMPTY_NULL);
+        $v->isNatural($document['meta_id']        , 1, tr('Please specify a valid meta id')                 , VALIDATE_ALLOW_EMPTY_NULL);
+        $v->isStatus($document['status']             , tr('Please specify a valid status'));
+        $v->isNatural($document['masters_id']     , 1, tr('Please specify a valid meta id')                 , VALIDATE_ALLOW_EMPTY_NULL);
+        $v->isNatural($document['parents_id']     , 1, tr('Please specify a valid parent id')               , VALIDATE_ALLOW_EMPTY_NULL);
+        $v->isNatural($document['rights_id']      , 1, tr('Please specify a valid rights id')               , VALIDATE_ALLOW_EMPTY_NULL);
+        $v->isNatural($document['assigned_to_id'] , 1, tr('Please specify a valid assigned to id')          , VALIDATE_ALLOW_EMPTY_NULL);
+        $v->isDateTime($document['featured_until']   , tr('Please specify a valid featured until date time'), VALIDATE_ALLOW_EMPTY_NULL);
+        $v->isNatural($document['category1']      , 1, tr('Please specify a valid category 1')              , VALIDATE_ALLOW_EMPTY_NULL);
+        $v->isNatural($document['category2']      , 1, tr('Please specify a valid category 2')              , VALIDATE_ALLOW_EMPTY_NULL);
+        $v->isNatural($document['category3']      , 1, tr('Please specify a valid category 3')              , VALIDATE_ALLOW_EMPTY_NULL);
+        $v->isNatural($document['upvotes']        , 1, tr('Please specify a valid amount of upvotes')       , VALIDATE_ALLOW_EMPTY_INTEGER);
+        $v->isNatural($document['downvotes']      , 1, tr('Please specify a valid amount of upvotes')       , VALIDATE_ALLOW_EMPTY_INTEGER);
+        $v->isNatural($document['priority']       , 1, tr('Please specify a valid priority')                , VALIDATE_ALLOW_EMPTY_INTEGER);
+        $v->isNatural($document['level']          , 1, tr('Please specify a valid level')                   , VALIDATE_ALLOW_EMPTY_INTEGER);
+        $v->isNatural($document['views']          , 1, tr('Please specify a valid level')                   , VALIDATE_ALLOW_EMPTY_INTEGER);
+        $v->isNatural($document['rating']         , 1, tr('Please specify a valid rating')                  , VALIDATE_ALLOW_EMPTY_INTEGER);
+        $v->isNatural($document['comments']       , 1, tr('Please specify a valid comments')                , VALIDATE_ALLOW_EMPTY_INTEGER);
 
         $v->isValid();
 
