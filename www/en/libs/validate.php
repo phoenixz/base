@@ -33,18 +33,43 @@ $html .= $vj->output_validation($params);
 /*
  * Basic validation defines
  */
-define('VALIDATE_NOT'                ,  1);
-define('VALIDATE_ALLOW_EMPTY_NULL'   ,  2);
-define('VALIDATE_ALLOW_EMPTY_INTEGER',  4);
-define('VALIDATE_ALLOW_EMPTY_BOOLEAN',  8);
-define('VALIDATE_ALLOW_EMPTY_STRING' , 16);
-
+define('VALIDATE_NOT'                   ,          1); // Validate in reverse. isNotEmpty would fail it source is not empty. isAlpha would fail if source contains alpha, etc.
+define('VALIDATE_ALLOW_EMPTY_NULL'      ,          2); // Empty values are allowed, and will be converted to null
+define('VALIDATE_ALLOW_EMPTY_INTEGER'   ,          4); // Empty values are allowed, and will be converted to 0
+define('VALIDATE_ALLOW_EMPTY_BOOLEAN'   ,          8); // Empty values are allowed, and will be converted to false
+define('VALIDATE_ALLOW_EMPTY_STRING'    ,         32); // Empty values are allowed, and will be converted to ""
+define('VALIDATE_IGNORE_DOT'            ,         64); // Beyond the normal validation, the source may contain the . character
+define('VALIDATE_IGNORE_COMMA'          ,        128); // Beyond the normal validation, the source may contain the , character
+define('VALIDATE_IGNORE_DASH'           ,        256); // Beyond the normal validation, the source may contain the - character
+define('VALIDATE_IGNORE_UNDERSCORE'     ,        512); // Beyond the normal validation, the source may contain the _ character
+define('VALIDATE_IGNORE_SLASH'          ,       1024); // Beyond the normal validation, the source may contain the / character
+define('VALIDATE_IGNORE_COLON'          ,       2048); // Beyond the normal validation, the source may contain the : character
+define('VALIDATE_IGNORE_SEMICOLON'      ,       4096); // Beyond the normal validation, the source may contain the ; character
+define('VALIDATE_IGNORE_QUESTIONMARK'   ,       8192); // Beyond the normal validation, the source may contain the ? character
+define('VALIDATE_IGNORE_EXCLAMATIONMARK',      16384); // Beyond the normal validation, the source may contain the ! character
+define('VALIDATE_IGNORE_AT'             ,      32768); // Beyond the normal validation, the source may contain the @ character
+define('VALIDATE_IGNORE_POUND'          ,      65536); // Beyond the normal validation, the source may contain the # character
+define('VALIDATE_IGNORE_PERCENT'        ,     131072); // Beyond the normal validation, the source may contain the % character
+define('VALIDATE_IGNORE_DOLLAR'         ,     262144); // Beyond the normal validation, the source may contain the $ character
+define('VALIDATE_IGNORE_AMPERSANT'      ,     524288); // Beyond the normal validation, the source may contain the & character
+define('VALIDATE_IGNORE_ASTERISK'       ,    1048576); // Beyond the normal validation, the source may contain the * character
+define('VALIDATE_IGNORE_PLUS'           ,    2097152); // Beyond the normal validation, the source may contain the + character
+define('VALIDATE_IGNORE_EQUALSIGN'      ,    4194304); // Beyond the normal validation, the source may contain the = character
+define('VALIDATE_IGNORE_PIPE'           ,    8388608); // Beyond the normal validation, the source may contain the | character
+define('VALIDATE_IGNORE_TILDE'          ,   16777216); // Beyond the normal validation, the source may contain the ~ character
+define('VALIDATE_IGNORE_TAB'            ,   33554432); // Beyond the normal validation, the source may contain the \t character
+define('VALIDATE_IGNORE_SQUAREBRACKETS' ,   67108864); // Beyond the normal validation, the source may contain the [] characters
+define('VALIDATE_IGNORE_CURLYBRACKETS'  ,  134217728); // Beyond the normal validation, the source may contain the {} characters
+define('VALIDATE_IGNORE_PARENTHESES'    ,  268435456); // Beyond the normal validation, the source may contain the () characters
+define('VALIDATE_IGNORE_SINGLEQUOTES'   ,  536870912); // Beyond the normal validation, the source may contain the ' character
+define('VALIDATE_IGNORE_DOUBLEQUOTES'   , 1073741824); // Beyond the normal validation, the source may contain the " character
+define('VALIDATE_IGNORE_SPACE'          , 2147483648); // Beyond the normal validation, the source may contain the " " character
 
 
 
 /*
-*
-*/
+ *
+ */
 function verify_js($params){
     try{
         html_load_js('verify');
@@ -287,6 +312,7 @@ class validate_form {
 
     private $allowEmpty;
     private $not;
+    private $scalar;
 
 
 
@@ -297,6 +323,8 @@ class validate_form {
         try{
             $this->allowEmpty = 'no';
             $this->not        = false;
+            $this->scalar     = is_scalar($value);
+
             if($flags){
                 if($flags & VALIDATE_NOT){
                     $this->not = true;
@@ -313,6 +341,203 @@ class validate_form {
 
                 }elseif($flags & VALIDATE_ALLOW_EMPTY_STRING){
                     $this->allowEmpty = '';
+                }
+
+                /*
+                 * Ignore special characters?
+                 */
+                if($flags & VALIDATE_IGNORE_DOT){
+                    /*
+                     * . characters are allowed, remove them from the test value
+                     */
+                    $replace[] = '.';
+                }
+
+                if($flags & VALIDATE_IGNORE_COMMA){
+                    /*
+                     * , characters are allowed, remove them from the test value
+                     */
+                    $replace[] = ',';
+                }
+
+                if($flags & VALIDATE_IGNORE_DASH){
+                    /*
+                     * - characters are allowed, remove them from the test value
+                     */
+                    $replace[] = '-';
+                }
+
+                if($flags & VALIDATE_IGNORE_SLASH){
+                    /*
+                     * / characters are allowed, remove them from the test value
+                     */
+                    $replace[] = '/';
+                }
+
+                if($flags & VALIDATE_IGNORE_COLON){
+                    /*
+                     * : characters are allowed, remove them from the test value
+                     */
+                    $replace[] = ':';
+                }
+
+                if($flags & VALIDATE_IGNORE_SEMICOLON){
+                    /*
+                     * ; characters are allowed, remove them from the test value
+                     */
+                    $replace[] = ';';
+                }
+
+                if($flags & VALIDATE_IGNORE_QUESTIONMARK){
+                    /*
+                     * ? characters are allowed, remove them from the test value
+                     */
+                    $replace[] = '?';
+                }
+
+                if($flags & VALIDATE_IGNORE_EXCLAMATIONMARK){
+                    /*
+                     * ! characters are allowed, remove them from the test value
+                     */
+                    $replace[] = '!';
+                }
+
+                if($flags & VALIDATE_IGNORE_AT){
+                    /*
+                     * @ characters are allowed, remove them from the test value
+                     */
+                    $replace[] = '@';
+                }
+
+                if($flags & VALIDATE_IGNORE_POUND){
+                    /*
+                     * # characters are allowed, remove them from the test value
+                     */
+                    $replace[] = '#';
+                }
+
+                if($flags & VALIDATE_IGNORE_PERCENT){
+                    /*
+                     * % characters are allowed, remove them from the test value
+                     */
+                    $replace[] = '%';
+                }
+
+                if($flags & VALIDATE_IGNORE_DOLLAR){
+                    /*
+                     * $ characters are allowed, remove them from the test value
+                     */
+                    $replace[] = '$';
+                }
+
+                if($flags & VALIDATE_IGNORE_AMPERSANT){
+                    /*
+                     * & characters are allowed, remove them from the test value
+                     */
+                    $replace[] = '&';
+                }
+
+                if($flags & VALIDATE_IGNORE_ASTERISK){
+                    /*
+                     * * characters are allowed, remove them from the test value
+                     */
+                    $replace[] = '*';
+                }
+
+                if($flags & VALIDATE_IGNORE_PLUS){
+                    /*
+                     * + characters are allowed, remove them from the test value
+                     */
+                    $replace[] = '+';
+                }
+
+                if($flags & VALIDATE_IGNORE_EQUALSIGN){
+                    /*
+                     * = characters are allowed, remove them from the test value
+                     */
+                    $replace[] = '=';
+                }
+
+                if($flags & VALIDATE_IGNORE_PIPE){
+                    /*
+                     * | characters are allowed, remove them from the test value
+                     */
+                    $replace[] = '|';
+                }
+
+                if($flags & VALIDATE_IGNORE_TILDE){
+                    /*
+                     * ~ characters are allowed, remove them from the test value
+                     */
+                    $replace[] = '~';
+                }
+
+                if($flags & VALIDATE_IGNORE_TAB){
+                    /*
+                     * \t characters are allowed, remove them from the test value
+                     */
+                    $replace[] = "\t";
+                }
+
+                if($flags & VALIDATE_IGNORE_SQUAREBRACKETS){
+                    /*
+                     * [] characters are allowed, remove them from the test value
+                     */
+                    $replace[] = '[';
+                    $replace[] = ']';
+                }
+
+                if($flags & VALIDATE_IGNORE_CURLYBRACKETS){
+                    /*
+                     * {} characters are allowed, remove them from the test value
+                     */
+                    $replace[] = '{';
+                    $replace[] = '}';
+                }
+
+                if($flags & VALIDATE_IGNORE_PARENTHESES){
+                    /*
+                     * () characters are allowed, remove them from the test value
+                     */
+                    $replace[] = '(';
+                    $replace[] = ')';
+                }
+
+                if($flags & VALIDATE_IGNORE_SINGLEQUOTES){
+                    /*
+                     * ' characters are allowed, remove them from the test value
+                     */
+                    $replace[] = "'";
+                }
+
+                if($flags & VALIDATE_IGNORE_DOUBLEQUOTES){
+                    /*
+                     * " characters are allowed, remove them from the test value
+                     */
+                    $replace[] = '"';
+                }
+
+                if($flags & VALIDATE_IGNORE_SPACE){
+                    /*
+                     *   characters are allowed, remove them from the test value
+                     */
+                    $replace[] = ' ';
+                }
+            }
+
+            /*
+             * Ignore certain characters?
+             */
+            if(empty($replace)){
+                $this->testValue = $value;
+
+            }else{
+                if(!$this->scalar){
+                    $this->setError(tr('Value ":value" is not scalar', array(':value' => $value)));
+                    $this->testValue = $value;
+
+                }else{
+                    $this->testValue = str_replace($replace, array_fill(0, count($replace), ''), $value);
                 }
             }
 
@@ -430,6 +655,33 @@ class validate_form {
 
 
     /*
+     * Validate if specified value is a valid table row status.
+     * status can be NULL by default
+     */
+    function isStatus(&$value, $message = null, $flags = VALIDATE_ALLOW_EMPTY_NULL){
+        try{
+            if(!$this->parseFlags($value, $message, $flags)){
+                return true;
+            }
+
+            if(!is_scalar($value)){
+                return $this->setError($message);
+            }
+
+            if($this->not xor (($value !== '_new') and !$this->isRegex($value, '/[a-z-]{1,16}/', $message))){
+                return $this->setError($message);
+            }
+
+            return true;
+
+        }catch(Exception $e){
+            throw new bException('validate_form::isStatus(): Failed', $e);
+        }
+    }
+
+
+
+    /*
      * Only allow a valid (unverified!) email address
      */
     function isEmail(&$value, $message = null, $flags = null){
@@ -484,7 +736,7 @@ class validate_form {
                 return true;
             }
 
-            if($this->not xor !filter_var($value, $filter_flags)){
+            if($this->not xor !filter_var($this->testValue, $filter_flags)){
                 return $this->setError($message);
             }
 
@@ -510,7 +762,7 @@ class validate_form {
                 $value = 0;
             }
 
-            if($this->not xor !is_numeric($value)){
+            if($this->not xor !is_numeric($this->testValue)){
                 return $this->setError($message);
             }
 
@@ -532,7 +784,7 @@ class validate_form {
                 return true;
             }
 
-            if($this->not xor !is_natural($value, $start)){
+            if($this->not xor !is_natural($this->testValue, $start)){
                 return $this->setError($message);
             }
 
@@ -540,6 +792,32 @@ class validate_form {
 
         }catch(Exception $e){
             throw new bException('validate_form::isNatural(): Failed', $e);
+        }
+    }
+
+
+
+    /*
+     * Only allow alpha characters
+     */
+    function isAlpha(&$value, $message = null, $flags = null){
+        try{
+            if(!$this->parseFlags($value, $message, $flags)){
+                return true;
+            }
+
+            if(!is_scalar($value)){
+                return $this->setError($message);
+            }
+
+            if($this->not xor !ctype_alpha($this->testValue)){
+                return $this->setError($message);
+            }
+
+            return true;
+
+        }catch(Exception $e){
+            throw new bException('validate_form::isAlpha(): Failed', $e);
         }
     }
 
@@ -558,7 +836,7 @@ class validate_form {
                 return $this->setError($message);
             }
 
-            if($this->not xor !ctype_alnum($value)){
+            if($this->not xor !ctype_alnum($this->testValue)){
                 return $this->setError($message);
             }
 
@@ -584,11 +862,11 @@ class validate_form {
                 return $this->setError($message);
             }
 
-            if(substr($value, 0, 2) == '0x'){
-                $value = substr($value, 2);
+            if(substr($this->testValue, 0, 2) == '0x'){
+                $this->testValue = substr($this->testValue, 2);
             }
 
-            if($this->not xor !preg_match($regex, $value)){
+            if($this->not xor !preg_match('/[0-9a-f]+/i', $this->testValue)){
                return $this->setError($message);
             }
 
@@ -596,110 +874,6 @@ class validate_form {
 
         }catch(Exception $e){
             throw new bException('validate_form::isHexadecimal(): Failed', $e);
-        }
-    }
-
-
-
-    /*
-     * Only allow alpha numeric and - characters
-     */
-    function isAlphaNumericDash(&$value, $message = null, $flags = null){
-        try{
-            if(!$this->parseFlags($value, $message, $flags)){
-                return true;
-            }
-
-            if(!is_scalar($value)){
-                return $this->setError($message);
-            }
-
-            if($this->not xor !preg_match('/^[a-z0-9-]+$/', $value)){
-               return $this->setError($message);
-            }
-
-            return true;
-
-        }catch(Exception $e){
-            throw new bException('validate_form::isAlphaNumericDash(): Failed', $e);
-        }
-    }
-
-
-
-    /*
-     * Only allow alpha numeric and . characters
-     */
-    function isAlphaNumericDot(&$value, $message = null, $flags = null){
-        try{
-            if(!$this->parseFlags($value, $message, $flags)){
-                return true;
-            }
-
-            if(!is_scalar($value)){
-                return $this->setError($message);
-            }
-
-            if($this->not xor !preg_match('/^[a-z0-9.]+$/', $value)){
-               return $this->setError($message);
-            }
-
-            return true;
-
-        }catch(Exception $e){
-            throw new bException('validate_form::isAlphaNumericDot(): Failed', $e);
-        }
-    }
-
-
-
-    /*
-     * Only allow alpha numeric and [space] characters
-     */
-    function isAlphaNumericSpace(&$value, $message = null, $flags = null){
-        try{
-            if(!$this->parseFlags($value, $message, $flags)){
-                return true;
-            }
-
-            if(!is_scalar($value)){
-                return $this->setError($message);
-            }
-
-            if($this->not xor !preg_match('/^[a-z0-9 ]+$/', $value)){
-               return $this->setError($message);
-            }
-
-            return true;
-
-        }catch(Exception $e){
-            throw new bException('validate_form::isAlphaNumericSpace(): Failed', $e);
-        }
-    }
-
-
-
-    /*
-     * Only allow alpha numeric and _ characters
-     */
-    function isAlphaNumericUnderscore(&$value, $message = null, $flags = null){
-        try{
-            if(!$this->parseFlags($value, $message, $flags)){
-                return true;
-            }
-
-            if(!is_scalar($value)){
-                return $this->setError($message);
-            }
-
-            if($this->not xor !preg_match('/^[a-z0-9_]+$/', $value)){
-               return $this->setError($message);
-            }
-
-            return true;
-
-        }catch(Exception $e){
-            throw new bException('validate_form::isAlphaNumericUnderscore(): Failed', $e);
         }
     }
 
@@ -718,7 +892,7 @@ class validate_form {
                 return $this->setError($message);
             }
 
-            if($this->not xor !preg_match('/\(?([0-9]{3})\)?(?:[ .-]{1,5})?([0-9]{3})(?:[ .-]{1,5})?([0-9]{4})/', $value)){
+            if($this->not xor !preg_match('/\(?([0-9]{3})\)?(?:[ .-]{1,5})?([0-9]{3})(?:[ .-]{1,5})?([0-9]{4})/', $this->testValue)){
                 return $this->setError($message);
             }
 
@@ -814,7 +988,7 @@ class validate_form {
                 return $this->setError($message);
             }
 
-            if($this->not xor (($value < $min) and ($value > $max))){
+            if($this->not xor (($this->testValue < $min) and ($this->testValue > $max))){
                 return $this->setError($message);
             }
 
@@ -822,32 +996,6 @@ class validate_form {
 
         }catch(Exception $e){
             throw new bException('validate_form::isBetween(): Failed', $e);
-        }
-    }
-
-
-
-    /*
-     *
-     */
-    function isInRange(&$value, $min, $max, $message = null, $flags = null){
-        try{
-            if(!$this->parseFlags($value, $message, $flags, false)){
-                return true;
-            }
-
-            if(!is_scalar($value)){
-                return $this->setError($message);
-            }
-
-            if($this->not xor (!is_numeric($value) or ($value < $min) or ($value > $max))){
-                return $this->setError($message);
-            }
-
-            return true;
-
-        }catch(Exception $e){
-            throw new bException('validate_form::isInRange(): Failed', $e);
         }
     }
 
@@ -893,7 +1041,7 @@ class validate_form {
             }
 
             foreach(array_force($chars) as $char){
-                if($this->not xor !strpos($value, $char)){
+                if($this->not xor !strpos($this->testValue, $char)){
                     return $this->setError($message);
                 }
             }
@@ -924,7 +1072,7 @@ class validate_form {
             }
 
             foreach(array_force($chars) as $char){
-                if($this->not xor strpos($value, $char)){
+                if($this->not xor strpos($this->testValue, $char)){
                     return $this->setError($message);
                 }
             }
@@ -1007,7 +1155,7 @@ class validate_form {
                 return false;
             }
 
-            if($this->not xor !preg_match('/^(?:https?:\/\/)(?:www\.)?facebook\.com\/(.+)$/', $value)){
+            if($this->not xor !preg_match('/^(?:https?:\/\/)(?:www\.)?facebook\.com\/(.+)$/', $this->testValue)){
                 return $this->setError($message);
             }
 
@@ -1037,7 +1185,7 @@ class validate_form {
                 return false;
             }
 
-            if($this->not xor !preg_match('/^(?:https?:\/\/)(?:www\.)?twitter\.com\/(.+)$/', $value)){
+            if($this->not xor !preg_match('/^(?:https?:\/\/)(?:www\.)?twitter\.com\/(.+)$/', $this->testValue)){
                 return $this->setError($message);
             }
 
@@ -1067,7 +1215,7 @@ class validate_form {
                 return false;
             }
 
-            if($this->not xor !preg_match('/^(?:(?:https?:\/\/)?plus\.google\.com\/)(\d{21,})(?:\/posts)?$/', $value, $matches)){
+            if($this->not xor !preg_match('/^(?:(?:https?:\/\/)?plus\.google\.com\/)(\d{21,})(?:\/posts)?$/', $this->testValue, $matches)){
                 return $this->setError($message);
             }
 
@@ -1097,7 +1245,7 @@ class validate_form {
                 return false;
             }
 
-            if($this->not xor preg_match('/^(?:https?:\/\/)(?:www\.)?youtube\.com\/user\/(.+)$/', $value)){
+            if($this->not xor preg_match('/^(?:https?:\/\/)(?:www\.)?youtube\.com\/user\/(.+)$/', $this->testValue)){
                 return $this->setError($message);
             }
 
@@ -1127,7 +1275,7 @@ class validate_form {
                 return false;
             }
 
-            if($this->not xor !preg_match('/^(?:https?:\/\/)(?:www\.)?linkedin\.com\/(.+)$/', $value)){
+            if($this->not xor !preg_match('/^(?:https?:\/\/)(?:www\.)?linkedin\.com\/(.+)$/', $this->testValue)){
                 return $this->setError($message);
             }
 
@@ -1175,7 +1323,7 @@ class validate_form {
                 return $this->setError($message);
             }
 
-            if($this->not xor !preg_match($regex, $value)){
+            if($this->not xor !preg_match($regex, $this->testValue)){
                return $this->setError($message);
             }
 
@@ -1232,7 +1380,7 @@ class validate_form {
             load_libs('time');
 
             try{
-                time_validate($value);
+                time_validate($this->testValue);
 
             }catch(Exception $e){
                 if($this->not){
@@ -1272,7 +1420,7 @@ class validate_form {
                 return false;
             }
 
-            if($this->not xor (($value < -90) or ($value > 90))){
+            if($this->not xor (($this->testValue < -90) or ($this->testValue > 90))){
                 return $this->setError($message);
             }
 
@@ -1302,7 +1450,7 @@ class validate_form {
                 return false;
             }
 
-            if($this->not xor (($value < -180) or ($value > 180))){
+            if($this->not xor (($this->testValue < -180) or ($this->testValue > 180))){
                 return $this->setError($message);
             }
 
@@ -1334,7 +1482,7 @@ class validate_form {
                 return $this->setError($message);
             }
 
-            if($this->not xor !date_timezones_exists($value)){
+            if($this->not xor !date_timezones_exists($this->testValue)){
                 return $this->setError($message);
             }
 
@@ -1389,7 +1537,7 @@ class validate_form {
                 return $this->setError($message);
             }
 
-            if($this->not xor !in_array($value, $array)){
+            if($this->not xor !in_array($this->testValue, $array)){
                 return $this->setError($message);
             }
 
