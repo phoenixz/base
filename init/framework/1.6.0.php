@@ -317,7 +317,7 @@ sql_query('CREATE TABLE `storage_files` (`id`           INT(11)      NOT NULL AU
                                          CONSTRAINT `fk_storage_files_documents_id` FOREIGN KEY (`documents_id`) REFERENCES `storage_documents`  (`id`) ON DELETE RESTRICT,
                                          CONSTRAINT `fk_storage_files_pages_id`     FOREIGN KEY (`pages_id`)     REFERENCES `storage_pages`      (`id`) ON DELETE RESTRICT,
                                          CONSTRAINT `fk_storage_files_types_id`     FOREIGN KEY (`types_id`)     REFERENCES `storage_file_types` (`id`) ON DELETE RESTRICT,
-                                         CONSTRAINT `fk_storage_files_files_id`     FOREIGN KEY (`files_id`)     REFERENCES `files`              (`id`) ON DELETE RESTRICT,
+                                         CONSTRAINT `fk_storage_files_files_id`     FOREIGN KEY (`files_id`)     REFERENCES `files`              (`id`) ON DELETE RESTRICT
 
                                         ) ENGINE=InnoDB AUTO_INCREMENT='.$_CONFIG['db']['core']['autoincrement'].' DEFAULT CHARSET="'.$_CONFIG['db']['core']['charset'].'" COLLATE="'.$_CONFIG['db']['core']['collate'].'";');
 
