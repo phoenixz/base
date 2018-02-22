@@ -36,13 +36,15 @@ try{
     if(PLATFORM_HTTP){
         if(empty($core->register['debug_plain'])){
             switch($core->callType()){
+                case 'api':
+                    // FALLTHROUGH
                 case 'ajax':
                     /*
                      * If JSON, CORS requests require correct headers!
                      */
                     http_headers(null, 0);
 
-                    echo "\n".tr('DEBUG SHOW (:file@:line) ', array(':file' => current_file($trace_offset), ':line' => current_line($trace_offset)))."\n";
+                    echo "\n".tr('DEBUG SHOW (:file@:line) ', array(':file' => current_file($trace_offset - 1), ':line' => current_line($trace_offset - 1)))."\n";
                     print_r($data)."\n";
                     break;
 
