@@ -159,6 +159,34 @@ function mysql_get_database($db_name){
  * Current available replication statuses
  * 'enabled','preparing','paused','disabled','error'
  */
+function mysql_update_database_replication_status($params, $status){
+    try{
+        /*
+         * Update server and database replication_status
+         */
+        array_params($params);
+        array_default($params, 'database', '');
+
+        if(empty($params['database'])){
+            throw new bException(tr('mysql_update_replication_status(): database not specified'), 'not-specified');
+        }
+
+        /*
+         * Update database
+         */
+        sql_query('UPDATE `databases` SET `replication_status` = :replication_status WHERE name = :name', array(':replication_status' => $status, ':name' => $params['database']));
+
+    }catch(Exception $e){
+        throw new bException(tr('mysql_update_replication_status(): Failed'), $e);
+    }
+}
+
+
+
+/*
+ * Current available replication statuses
+ * 'enabled','preparing','paused','disabled','error'
+ */
 function mysql_update_replication_status($params, $status){
     try{
         /*
@@ -424,10 +452,10 @@ function mysql_slave_replication_setup($params){
         /*
          * Final step check for SLAVE status
          */
-        $slave_status = servers_exec($database['hostname'], 'mysql "-u'.$database['root_db_user'].'" "-p'.$database['root_db_password'].'" -ANe "SHOW SLAVE STATUS;"', null, false, true);
+// :DELETE: The status check is done by the "replication check" script
+        //$slave_status = servers_exec($database['hostname'], 'mysql "-u'.$database['root_db_user'].'" "-p'.$database['root_db_password'].'" -ANe "SHOW SLAVE STATUS;"', null, false, true);
 
         log_console(tr('Finished!!'), 'white');
-        mysql_update_replication_status($database, 'enabled');
 
     }catch(Exception $e){
         mysql_update_replication_status($database, 'disabled');
