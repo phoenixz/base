@@ -56,6 +56,7 @@ sql_query('CREATE TABLE `storage_sections` (`id`                  INT(11)      N
                                             `meta_id`             INT(11)      NOT NULL,
                                             `status`              VARCHAR(16)      NULL,
                                             `restrict_file_types` TINYINT(1)       NULL,
+                                            `random_ids`          TINYINT(1)       NULL,
                                             `name`                VARCHAR(32)      NULL,
                                             `seoname`             VARCHAR(32)      NULL,
                                             `slogan`              VARCHAR(255)     NULL,
