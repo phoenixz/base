@@ -2296,12 +2296,16 @@ function html_form($action, $method, $class, $name = '', $csrf_check = true){
             $keys[] = $key.'="'.$$key.'"';
         }
 
+        if(empty($keys)){
+            throw new bException(tr('html_form(): No variables specified'), 'not-specified');
+        }
+
         $form = '<form '.implode(' ', $keys).'>'.$csrf;
 
         return $form;
 
     }catch(Exception $e){
-        throw new bException('html_form(): Failed', $e);
+        throw new bException(tr('html_form(): Failed'), $e);
     }
 }
 ?>
