@@ -52,7 +52,7 @@ function storage_ui_panel_header($params, $section, $active){
         array_default($params['labels'], 'title' , tr('Manage :objects', array(':objects' => $params['objects'])));
         array_default($params['labels'], 'filter', tr('Filter...'));
 
-        array_default($params['tabs'], 'sections'     , tr('Sections'));
+        array_default($params['tabs'], 'section'      , tr('Section'));
         array_default($params['tabs'], 'documents'    , tr('Documents'));
         array_default($params['tabs'], 'categories'   , tr('Categories'));
         array_default($params['tabs'], 'files'        , tr('Files'));
@@ -76,7 +76,7 @@ function storage_ui_panel_header($params, $section, $active){
                                         </div>
                                     </div>';
                 $panel_heading  = ' <ul class="nav nav-tabs" role="tablist">
-                                        <li'.(($params['active'] == 'sections')      ? ' class="active"' : '').'><a href="'.str_replace(':'.$params['seosection'], $_GET[$params['seosection']], $params['urls']['section']).'" role="tab">'.(is_new($section) ? $params['tabs']['section'] : $params['tabs']['sections']).'</a></li>
+                                        <li'.(($params['active'] == 'section')       ? ' class="active"' : '').'><a href="'.str_replace(':'.$params['seosection'], $_GET[$params['seosection']], $params['urls']['section']).'" role="tab">'.$params['tabs']['section'].'</a></li>
                                         <li'.(($params['active'] == 'configuration') ? ' class="active"' : '').'><a href="'.str_replace(':'.$params['seosection'], $_GET[$params['seosection']], $params['urls']['files']).'" role="tab">'.$params['tabs']['configuration'].'</a></li>
                                         <li'.(($params['active'] == 'categories')    ? ' class="active"' : '').'><a href="'.str_replace(':'.$params['seosection'], $_GET[$params['seosection']], $params['urls']['categories']).'" role="tab">'.$params['tabs']['categories'].'</a></li>
                                         <li'.(($params['active'] == 'documents')     ? ' class="active"' : '').'><a href="'.str_replace(':'.$params['seosection'], $_GET[$params['seosection']], $params['urls']['documents']).'" role="tab">'.$params['tabs']['documents'].'</a></li>

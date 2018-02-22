@@ -13,8 +13,10 @@
 /*
  * Generate a new storage document
  */
-function storage_documents_get($sections_id, $document = null){
+function storage_documents_get($section, $document = null){
     try{
+        $section = storage_ensure_section($section);
+
         if(empty($document)){
             /*
              * Get a _new record for the current user
@@ -24,14 +26,14 @@ function storage_documents_get($sections_id, $document = null){
                              AND    `storage_documents`.`status`      = "_new"
                              AND    `storage_documents`.`createdby`   IS NULL LIMIT 1';
 
-                $execute = array(':sections_id' => $sections_id);
+                $execute = array(':sections_id' => $section['id']);
 
             }else{
                 $where   = ' WHERE  `storage_documents`.`sections_id` = :sections_id
                              AND    `storage_documents`.`status`      = "_new"
                              AND    `storage_documents`.`createdby`   = :createdby LIMIT 1';
 
-                $execute = array(':sections_id' => $sections_id,
+                $execute = array(':sections_id' => $section['id'],
                                  ':createdby'   => $_SESSION['user']['id']);
             }
 
@@ -43,7 +45,7 @@ function storage_documents_get($sections_id, $document = null){
                          AND    `storage_documents`.`id`          = :id
                          AND    `storage_documents`.`status`      IS NULL';
 
-            $execute = array(':sections_id' => $sections_id,
+            $execute = array(':sections_id' => $section['id'],
                              ':id'          => $document);
 
         }elseif(is_string($document)){
@@ -54,7 +56,7 @@ function storage_documents_get($sections_id, $document = null){
                          AND    `storage_documents`.`seoname`     = :seoname
                          AND    `storage_documents`.`status`      IS NULL';
 
-            $execute = array(':sections_id' => $sections_id,
+            $execute = array(':sections_id' => $section['id'],
                              ':seoname'     => $document);
 
         }elseif(is_array($document)){
@@ -65,7 +67,7 @@ function storage_documents_get($sections_id, $document = null){
                          AND    `storage_documents`.`seoname`     = :seoname
                          AND    `storage_documents`.`status`      IS NULL';
 
-            $execute = array(':sections_id' => $sections_id,
+            $execute = array(':sections_id' => $section['id'],
                              ':seoname'     => $document);
 
         }else{

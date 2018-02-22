@@ -13,9 +13,11 @@
 /*
  * Generate a new storage page
  */
-function storage_pages_get($sections_id, $page = null){
+function storage_pages_get($section, $page = null){
     try{
-        if(empty($sections_id)){
+        $section = storage_ensure_section($section);
+
+        if(empty($section['id'])){
             throw new bException(tr('storage_pages_get(): No sections id specified'), 'not-specified');
         }
 
@@ -28,14 +30,14 @@ function storage_pages_get($sections_id, $page = null){
                              AND    `storage_documents`.`status`  = "_new"
                              AND    `storage_pages`.`createdby`   IS NULL LIMIT 1';
 
-                $execute = array(':sections_id' => $sections_id);
+                $execute = array(':sections_id' => $section['id']);
 
             }else{
                 $where   = ' WHERE  `storage_pages`.`sections_id` = :sections_id
                              AND    `storage_documents`.`status`  = "_new"
                              AND    `storage_pages`.`createdby`   = :createdby LIMIT 1';
 
-                $execute = array(':sections_id' => $sections_id,
+                $execute = array(':sections_id' => $section['id'],
                                  ':createdby'   => $_SESSION['user']['id']);
             }
 
@@ -47,7 +49,7 @@ function storage_pages_get($sections_id, $page = null){
                          AND    `storage_pages`.`id`          = :id
                          AND    `storage_documents`.`status`  IS NULL';
 
-            $execute = array(':sections_id' => $sections_id,
+            $execute = array(':sections_id' => $section['id'],
                              ':id'          => $page);
 
         }elseif(is_string($page)){
@@ -58,7 +60,7 @@ function storage_pages_get($sections_id, $page = null){
                          AND    `storage_pages`.`seoname`     = :seoname
                          AND    `storage_documents`.`status`  IS NULL';
 
-            $execute = array(':sections_id' => $sections_id,
+            $execute = array(':sections_id' => $section['id'],
                              ':seoname'     => $page);
 
         }else{
@@ -106,7 +108,7 @@ function storage_pages_get($sections_id, $page = null){
 
         if(empty($page) and empty($page)){
             $page = storage_pages_add(array('status'       => '_new',
-                                            'sections_id'  => $sections_id,
+                                            'sections_id'  => $section['id'],
                                             'documents_id' => $page['documents_id'],
                                             'language'     => LANGUAGE));
         }
