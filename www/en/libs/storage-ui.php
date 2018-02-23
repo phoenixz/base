@@ -13,9 +13,9 @@
 /*
  * Return atlant style HTML for the storage webui header
  */
-function storage_ui_panel_header($params, $section, $active){
+function storage_ui_panel_header($params, $section){
     try{
-        array_ensure($params, 'active');
+        array_ensure($params);
         array_ensure($params['files']);
         array_ensure($params['urls']);
         array_ensure($params['tabs']);

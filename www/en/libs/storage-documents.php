@@ -28,7 +28,7 @@ function storage_documents_library_init(){
 /*
  * Generate a new storage document
  */
-function storage_documents_get($section, $document = null){
+function storage_documents_get($section, $document = null, $auto_create = false){
     try{
         $section = storage_ensure_section($section);
 
@@ -116,7 +116,7 @@ function storage_documents_get($section, $document = null){
 
                              $execute);
 
-        if(empty($document) and empty($document)){
+        if(empty($document) and empty($document) and $auto_create){
             $document = storage_documents_add(array('status' => '_new'));
         }
 
@@ -137,7 +137,7 @@ function storage_documents_add($document, $section = null){
         $document = storage_documents_validate($document);
 
         if(!$section){
-            $section = storage_sections_get($document['sections_id']);
+            $section = storage_sections_get($document['sections_id'], false);
         }
 
         if($section['random_ids']){
@@ -192,6 +192,7 @@ function storage_documents_update($document, $new = false){
                           `masters_id`     = :masters_id,
                           `parents_id`     = :parents_id,
                           `rights_id`      = :rights_id,
+                          `assigned_to_id` = :assigned_to_id,
                           `featured_until` = :featured_until,
                           `category1`      = :category1,
                           `category2`      = :category2,
@@ -206,7 +207,7 @@ function storage_documents_update($document, $new = false){
 
                    WHERE  `id`             = :id'.($new ? ' AND `status` = "_new"' : ''),
 
-                   array(':status'         => $document['status'],
+                   array(':id'             => $document['id'],
                          ':sections_id'    => $document['sections_id'],
                          ':masters_id'     => $document['masters_id'],
                          ':parents_id'     => $document['parents_id'],

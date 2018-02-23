@@ -64,7 +64,7 @@ function storage_ensure_section($section){
 
         load_libs('storage-sections');
 
-        $section = storage_sections_get($section);
+        $section = storage_sections_get($section, false);
         return $section;
 
     }catch(Exception $e){

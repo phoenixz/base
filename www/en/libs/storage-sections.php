@@ -13,7 +13,7 @@
 /*
  * Generate a new storage section
  */
-function storage_sections_get($get_section = null){
+function storage_sections_get($get_section = null, $auto_create = false){
     try{
         if(empty($get_section)){
             /*
@@ -56,7 +56,7 @@ function storage_sections_get($get_section = null){
 
                             $execute);
 
-        if(empty($section) and empty($get_section)){
+        if(empty($section) and empty($get_section) and $auto_create){
             return storage_sections_add(array('status'              => '_new',
                                               'random_ids'          => true,
                                               'restrict_file_types' => true));

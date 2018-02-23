@@ -28,7 +28,7 @@ function storage_pages_library_init(){
 /*
  * Generate a new storage page
  */
-function storage_pages_get($section, $page = null){
+function storage_pages_get($section, $page = null, $auto_create = false){
     try{
         $section = storage_ensure_section($section);
 
@@ -121,7 +121,7 @@ function storage_pages_get($section, $page = null){
 
                          $execute);
 
-        if(empty($page) and empty($page)){
+        if(empty($page) and empty($page) and $auto_create){
             $page = storage_pages_add(array('status'       => '_new',
                                             'sections_id'  => $section['id'],
                                             'documents_id' => $page['documents_id'],
