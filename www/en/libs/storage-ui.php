@@ -147,7 +147,7 @@ function storage_ui_icon($file){
 /*
  *
  */
-function storage_ui_file($file){
+function storage_ui_file($file, $tabindex = 0){
     try{
         $icon = storage_ui_icon($file);
 
@@ -155,7 +155,7 @@ function storage_ui_file($file){
                         <td class="file">
                             <div>
                                 <a target="_blank" class="fancy" href="'.storage_file_url($file, 'icon').'">
-                                    <img rel="blog-page" class="col-md-1 control-label" src="'.storage_file_url($file['file'], 'small').'" alt="'.html_safe('('.$image[0].' X '.$image[1].')').'" />
+                                    <img rel="blog-page" class="col-md-1 control-label" src="'.storage_file_url($file, 'small').'" alt="'.html_safe('('.$icon['x'].' X '.$icon['y'].')').'" />
                                 </a>
                             </div>
                         </td>
@@ -164,6 +164,16 @@ function storage_ui_file($file){
                                 <a class="col-md-5 btn btn-success blogpost photo up button">'.tr('Up').'</a>
                                 <a class="col-md-5 btn btn-success blogpost photo down button">'.tr('Down').'</a>
                                 <a class="col-md-5 btn btn-danger blogpost photo delete button">'.tr('Delete').'</a>
+                            </div>
+                        </td>
+                        <td class="file_type">
+                            <div>
+                                '.html_select(array('name'     => 'file_status['.$file['id'].']',
+                                                    'class'    => 'btn blogpost photo type',
+                                                    'extra'    => 'tabindex="'.++$tabindex.'"',
+                                                    'selected' => $file['type'],
+                                                    'none'     => tr('Unspecified type'),
+                                                    'resource' => null)).'
                             </div>
                         </td>
                         <td class="description">

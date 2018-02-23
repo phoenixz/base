@@ -78,10 +78,11 @@ function storage_sections_add($section){
     try{
         $section = storage_sections_validate($section);
 
-        sql_query('INSERT INTO `storage_sections` (`createdby`, `meta_id`, `status`, `name`, `seoname`, `random_ids`, `restrict_file_types`, `slogan`, `description`)
-                   VALUES                         (:createdby , :meta_id , :status , :name , :seoname , :random_ids , :restrict_file_types , :slogan , :description )',
+        sql_query('INSERT INTO `storage_sections` (`id`, `createdby`, `meta_id`, `status`, `name`, `seoname`, `random_ids`, `restrict_file_types`, `slogan`, `description`)
+                   VALUES                         (:id , :createdby , :meta_id , :status , :name , :seoname , :random_ids , :restrict_file_types , :slogan , :description )',
 
-                   array(':createdby'           => $_SESSION['user']['id'],
+                   array(':id'                  => sql_random_id('storage_sections'),
+                         ':createdby'           => $_SESSION['user']['id'],
                          ':meta_id'             => meta_action(),
                          ':status'              => $section['status'],
                          ':name'                => $section['name'],

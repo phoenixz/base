@@ -13,16 +13,16 @@
 /*
  *
  */
-function storage_files_add($document, $page, $file, $priority, $types_id){
+function storage_files_add($page, $file, $types_id, $priority = null){
     try{
         load_libs('files');
         $file = files_add($file);
-show($file);
-        sql_query(' INSERT INTO (`sections_id`, `documents_id`, `pages_id`, `types_id`, `files_id`, `priority`)
-                   VALUES      (:sections_id , :documents_id , :pages_id , :types_id , :files_id , :priority )',
 
-                   array(':sections_id'  => $document['sections_id'],
-                         ':documents_id' => $document['id'],
+        sql_query('INSERT INTO `storage_files` (`sections_id`, `documents_id`, `pages_id`, `types_id`, `files_id`, `priority`)
+                   VALUES                      (:sections_id , :documents_id , :pages_id , :types_id , :files_id , :priority )',
+
+                   array(':sections_id'  => $page['sections_id'],
+                         ':documents_id' => $page['documents_id'],
                          ':pages_id'     => $page['id'],
                          ':types_id'     => $types_id,
                          ':files_id'     => $file['id'],
@@ -43,11 +43,7 @@ show($file);
  */
 function storage_file_url($file, $type){
     try{
-        switch($type){
-
-        }
-
-        return $url;
+        return $file['filename'];
 
     }catch(Exception $e){
         throw new bException('storage_file_url(): Failed', $e);

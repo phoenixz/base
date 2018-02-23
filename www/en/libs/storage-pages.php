@@ -62,7 +62,7 @@ function storage_pages_get($section, $page = null, $auto_create = false){
              */
             $where   = ' WHERE  `storage_pages`.`sections_id` = :sections_id
                          AND    `storage_pages`.`id`          = :id
-                         AND    `storage_documents`.`status`  IS NULL';
+                         AND    `storage_documents`.`status`  IN ("published", "unpublished", "_new")';
 
             $execute = array(':sections_id' => $section['id'],
                              ':id'          => $page);
@@ -73,7 +73,7 @@ function storage_pages_get($section, $page = null, $auto_create = false){
              */
             $where   = ' WHERE  `storage_pages`.`sections_id` = :sections_id
                          AND    `storage_pages`.`seoname`     = :seoname
-                         AND    `storage_documents`.`status`  IS NULL';
+                         AND    `storage_documents`.`status`  IN ("published", "unpublished", "_new")';
 
             $execute = array(':sections_id' => $section['id'],
                              ':seoname'     => $page);
@@ -165,7 +165,7 @@ function storage_pages_add($page, $section = null){
         sql_query('INSERT INTO `storage_pages` (`id`, `createdby`, `meta_id`, `sections_id`, `documents_id`, `language`, `name`, `seoname`, `description`, `body`)
                    VALUES                      (:id , :createdby , :meta_id , :sections_id , :documents_id , :language , :name , :seoname , :description , :body )',
 
-                   array(':id'           => $page['sections_id'],
+                   array(':id'           => $page['id'],
                          ':createdby'    => $_SESSION['user']['id'],
                          ':meta_id'      => meta_action(),
                          ':sections_id'  => $page['sections_id'],
@@ -191,20 +191,27 @@ function storage_pages_add($page, $section = null){
  */
 function storage_pages_update($page, $new = false){
     try{
-        $page = storage_pages_validate($page);
+        load_libs('storage-documents');
+
+        $page           = storage_pages_validate($page);
+        $document       = $page;
+        $document['id'] = $page['documents_id'];
+
+        storage_documents_update($document, $new);
         meta_action($page['meta_id'], ($new ? 'create-update' : 'update'));
 
         sql_query('UPDATE `storage_pages`
 
-                   SET    `language`    = :parents_id,
+                   SET    `language`    = :language,
                           `name`        = :name,
                           `seoname`     = :seoname,
                           `description` = :description,
                           `body`        = :body
 
-                   WHERE  `id`          = :id'.($new ? ' AND `status` = "_new"' : ''),
+                   WHERE  `id`          = :id',
 
-                   array(':language'    => $page['language'],
+                   array(':id'          => $page['id'],
+                         ':language'    => $page['language'],
                          ':name'        => $page['name'],
                          ':seoname'     => $page['seoname'],
                          ':description' => $page['description'],

@@ -188,7 +188,8 @@ function storage_documents_update($document, $new = false){
 
         sql_query('UPDATE `storage_documents`
 
-                   SET    `sections_id`    = :sections_id,
+                   SET    '.($new ? '`status` = "unpublished", ' : '').'
+                          `sections_id`    = :sections_id,
                           `masters_id`     = :masters_id,
                           `parents_id`     = :parents_id,
                           `rights_id`      = :rights_id,
