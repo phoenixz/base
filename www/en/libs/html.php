@@ -2270,7 +2270,7 @@ function html_untranslate(){
 /*
  *
  */
-function html_form($action, $method, $class, $name = '', $csrf_check = true){
+function html_form($action, $method, $class, $name = 'form', $csrf_check = true){
     try{
         /*
          * Avoid people fucking around
