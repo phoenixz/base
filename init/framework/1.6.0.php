@@ -99,6 +99,7 @@ sql_query('CREATE TABLE `storage_categories` (`id`          INT(11)     NOT NULL
 
 
 sql_query('CREATE TABLE `storage_documents` (`id`             INT(11)     NOT NULL AUTO_INCREMENT,
+                                             `createdby`      INT(11)     NOT NULL,
                                              `meta_id`        INT(11)     NOT NULL,
                                              `sections_id`    INT(11)     NOT NULL,
                                              `masters_id`     INT(11)         NULL,
@@ -119,6 +120,7 @@ sql_query('CREATE TABLE `storage_documents` (`id`             INT(11)     NOT NU
                                              `comments`       INT(11)     NOT NULL,
 
                                              PRIMARY KEY `id`             (`id`),
+                                                     KEY `createdby`      (`createdby`),
                                                      KEY `meta_id`        (`meta_id`),
                                                      KEY `sections_id`    (`sections_id`),
                                                      KEY `masters_id`     (`masters_id`),
@@ -135,6 +137,7 @@ sql_query('CREATE TABLE `storage_documents` (`id`             INT(11)     NOT NU
                                                      KEY `rating`         (`rating`),
 
                                              CONSTRAINT `fk_storage_documents_meta_id`        FOREIGN KEY (`meta_id`)        REFERENCES `meta`              (`id`) ON DELETE RESTRICT,
+                                             CONSTRAINT `fk_storage_documents_createdby`      FOREIGN KEY (`createdby`)      REFERENCES `users`             (`id`) ON DELETE RESTRICT,
                                              CONSTRAINT `fk_storage_documents_rights_id`      FOREIGN KEY (`rights_id`)      REFERENCES `rights`            (`id`) ON DELETE RESTRICT,
                                              CONSTRAINT `fk_storage_documents_sections_id`    FOREIGN KEY (`sections_id`)    REFERENCES `storage_sections`  (`id`) ON DELETE RESTRICT,
                                              CONSTRAINT `fk_storage_documents_masters_id`     FOREIGN KEY (`masters_id`)     REFERENCES `storage_documents` (`id`) ON DELETE RESTRICT,

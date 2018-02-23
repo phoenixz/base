@@ -25,75 +25,50 @@
 
 
 /*
- * Get specified document from storage
+ *
  */
-function storage_get_document($storage, $seoname){
+function storage_url($url, $section = null, $document = null, $language = null){
     try{
-        if(is_numeric($storage)){
-            $storage_id = $storage;
-
-        }else{
-            if(!is_scalar($storage)){
-                throw new bException(tr('storage_get_document(): Specified storage ":storage" is invalid', array(':storage' => $storage)), 'invalid');
-            }
-
-            $storage_id = sql_get('SELECT `id` FROM `storage` WHERE `seoname` = :seoname AND `status` = NULL', true, array(':seoname' => $storage));
-
-            if(!$storage_id){
-                throw new bException(tr('storage_get_document(): Specified storage ":storage" does not exist', array(':storage' => $storage)), 'not-exist');
-            }
+        if(!$language){
+            $language = LANGUAGE;
         }
 
-        if($seoname === null){
-            /*
-             * Generate a new document
-             */
-            sql_query('INSERT INTO `storage_documents` (`meta_id`)
-                       VALUES                            ('.meta_action().')');
+        $url = str_replace(':language', $language, $url);
 
-            $documents_id = sql_insert_id();
-
-            sql_query('INSERT INTO `storage_documents` (`meta_id`)
-                       VALUES                            ('.meta_action().')');
-
-        }else{
-            $document = sql_get('SELECT    `storage_documents`.`id`,
-                                           `storage_documents`.`meta_id`,
-                                           `storage_documents`.`storage_id`,
-                                           `storage_documents`.`masters_id`,
-                                           `storage_documents`.`parents_id`,
-                                           `storage_documents`.`assigned_to_id`,
-                                           `storage_documents`.`featured_until`,
-                                           `storage_documents`.`category1`,
-                                           `storage_documents`.`category2`,
-                                           `storage_documents`.`category3`,
-                                           `storage_documents`.`upvotes`,
-                                           `storage_documents`.`downvotes`,
-                                           `storage_documents`.`priority`,
-                                           `storage_documents`.`level`,
-                                           `storage_documents`.`views`,
-                                           `storage_documents`.`rating`,
-                                           `storage_documents`.`comments`,
-                                           `storage_documents`.`status`,
-
-                                           `storage_pages`.`name`,
-                                           `storage_pages`.`seoname`,
-                                           `storage_pages`.`description`,
-                                           `storage_pages`.`body`
-
-                                 FROM      `storage_pages`
-
-                                 JOIN      `storage_documents`
-                                 ON        `storage_documents`.`id`  = `storage_pages`.`documents_id`
-
-                                 WHERE     `storage_pages`.`seoname` = :seoname
-                                 AND       `storage_pages`.`status`  = NULL');
+        if($section){
+            $url = str_replace(':seosection', $section['seoname'], $url);
         }
 
-        return $document;
+        if($document){
+            $url = str_replace(':seodocument', $document['seoname'], $url);
+        }
+
+        return $url;
 
     }catch(Exception $e){
-        throw new bException('storage_get_document(): Failed', $e);
+        throw new bException('storage_url(): Failed', $e);
+    }
+}
+
+
+
+/*
+ * Ensure that the specified section is a section array, and not just a
+ * section id
+ */
+function storage_ensure_section($section){
+    try{
+        if(is_array($section)){
+            return $section;
+        }
+
+        load_libs('storage-sections');
+
+        $section = storage_sections_get($section);
+        return $section;
+
+    }catch(Exception $e){
+        throw new bException('storage_url(): Failed', $e);
     }
 }
 ?>

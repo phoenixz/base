@@ -12,7 +12,18 @@
 
 
 
-load_config('upload');
+/*
+ * Initialize the library
+ * Auto executed by libs_load
+ */
+function upload_library_init(){
+    try{
+        load_config('upload');
+
+    }catch(Exception $e){
+        throw new bException('upload_library_init(): Failed', $e);
+    }
+}
 
 
 
@@ -498,6 +509,11 @@ function upload_check_files($max_uploads = null, $min_uploads = null){
 
         unset($file);
         unset($value);
+
+        if(!empty($_FILES['files'][0]['error'])){
+            throw new bException(isset_get($_FILES['files'][0]['error_message'], tr('PHP upload error code ":error"', array(':error' => $_FILES['files'][0]['error']))), $_FILES['files'][0]['error']);
+        }
+
         return isset_get($error_list);
 
     }catch(Exception $e){
