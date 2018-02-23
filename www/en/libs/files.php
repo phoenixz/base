@@ -30,21 +30,24 @@ function files_library_init(){
  * Store a file
  */
 function files_add($file, $require_unique = false){
+    global $_CONFIG;
+
     try{
-        array_params($file);
-        array_default($file, 'type'       , null);
-        array_default($file, 'status'     , null);
-        array_default($file, 'original'   , null);
-        array_default($file, 'description', null);
+        array_params($file, 'filename,type,status,original,meta1,meta2,description');
+
+        if(isset($file['name']) and isset($file['tmp_name'])){
+            /*
+             * This is a PHP file array
+             */
+            $file['filename'] = $file['tmp_name'];
+            $file['original'] = $file['name'];
+        }
 
         $meta = file_mimetype($file['filename']);
 
         $file['meta1'] = str_until($meta, '/');
         $file['meta2'] = str_from($meta , '/');
-
-        if(!$file['hash']){
-            $file['hash'] = hash($_CONFIG['files']['hash'], file_get_contents($file['filename']));
-        }
+        $file['hash']  = hash($_CONFIG['files']['hash'], file_get_contents($file['filename']));
 
         if($require_unique){
             $exists = sql_get('SELECT `id` FROM `files` WHERE `hash` = :hash', array($file['hash']));
@@ -65,7 +68,7 @@ function files_add($file, $require_unique = false){
                          ':type'        => $file['type'],
                          ':meta1'       => $file['meta1'],
                          ':meta2'       => $file['meta2'],
-                         ':description' => $file['descripition']));
+                         ':description' => $file['description']));
 
         $file['id'] = sql_insert_id();
         return $file;
