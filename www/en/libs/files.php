@@ -10,15 +10,26 @@
 
 
 
-load_libs('file');
-load_config('files');
+/*
+ * Initialize the library
+ * Auto executed by libs_load
+ */
+function files_library_init(){
+    try{
+        load_libs('file');
+        load_config('files');
+
+    }catch(Exception $e){
+        throw new bException('files_library_init(): Failed', $e);
+    }
+}
 
 
 
 /*
  * Store a file
  */
-function files_put($file){
+function files_add($file, $require_unique = false){
     try{
         array_params($file);
         array_default($file, 'type'       , null);
@@ -28,18 +39,25 @@ function files_put($file){
 
         $meta = file_mimetype($file['filename']);
 
-        $file['meta1']   = str_until($meta, '/');
-        $file['meta2']   = str_from($meta, '/');
-        $file['meta_id'] = meta_action();
+        $file['meta1'] = str_until($meta, '/');
+        $file['meta2'] = str_from($meta , '/');
 
-        if($file['hash']){
+        if(!$file['hash']){
             $file['hash'] = hash($_CONFIG['files']['hash'], file_get_contents($file['filename']));
+        }
+
+        if($require_unique){
+            $exists = sql_get('SELECT `id` FROM `files` WHERE `hash` = :hash', array($file['hash']));
+
+            if($exists){
+                throw new bException(tr('files_add(): Specified file ":filename" already exists with id ":id"', array(':filename' => $file['filename'], ':id' => $exists)), 'exists');
+            }
         }
 
         sql_query('INSERT INTO `files` (`meta_id`, `status`, `filename`, `original`, `hash`, `type`, `meta1`, `meta2`, `description`)
                    VALUES              (:meta_id , :status , :filename , :original , :hash , :type , :meta1 , :meta2 , :description )',
 
-                   array(':meta_id'     => $file['meta_id'],
+                   array(':meta_id'     => meta_action(),
                          ':status'      => $file['status'],
                          ':filename'    => $file['filename'],
                          ':original'    => $file['original'],
@@ -49,10 +67,11 @@ function files_put($file){
                          ':meta2'       => $file['meta2'],
                          ':description' => $file['descripition']));
 
+        $file['id'] = sql_insert_id();
         return $file;
 
     }catch(Exception $e){
-        throw new bException('files_put(): Failed', $e);
+        throw new bException('files_add(): Failed', $e);
     }
 }
 
