@@ -596,12 +596,12 @@ function load_libs($libraries, $exception = true){
 
             }else{
                 include_once($libs.$library.'.php');
+                $function = str_replace('-', '_', $library).'_library_init';
 
-                if(is_callable($library.'_library_init')){
+                if(is_callable($function)){
                     /*
                      * Auto initialize the library
                      */
-                    $function = $library.'_library_init';
                     $function();
                 }
             }
@@ -1562,7 +1562,7 @@ function user_or_signin(){
                  * No session
                  */
                 if($core->callType('api') or $core->callType('ajax')){
-                    json_reply(tr('Specified token ":token" has no session', array(':token' => $_POST['PHPSESSID'])), 'signin');
+                    json_reply(tr('Specified token ":token" has no session', array(':token' => isset_get($_POST['PHPSESSID']))), 'signin');
 
                 }else{
                     html_flash_set('Unauthorized: Please sign in to continue');
