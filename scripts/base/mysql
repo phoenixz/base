@@ -428,7 +428,7 @@ switch(cli_method()){
                         continue;
                     }
 
-                    mysql_update_database_replication_status($database, 'enabled');
+                    mysql_update_replication_status($database, 'enabled');
                 }
 
                 break;
