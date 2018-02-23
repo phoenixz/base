@@ -8,7 +8,6 @@ $usage = './scripts/base/mysql method [OPTIONS]
 ./scripts/base/mysql list databases [OPTIONS]
 ./scripts/base/mysql list tables [OPTIONS]
 ./scripts/base/mysql list foreign-keys [OPTIONS]
-
 ./scripts/base/mysql change default-charset [OPTIONS]';
 
 $help  = 'This script contains various methods to assist with various mysql operations
@@ -17,14 +16,14 @@ $help  = 'This script contains various methods to assist with various mysql oper
 
 METHODS
 
-list databases              - List the available databases for the used
-                              connector
+list databases                   - List the available databases for the used
+                                   connector
 
-list tables                 - List the available tables for the used connector
-                              and database
+list tables                      - List the available tables for the used
+                                   connector and database
 
-list foreign-keys           - List the available foreign keys for the used
-                              connector and database
+list foreign-keys                - List the available foreign keys for the used
+                                   connector and database
 
 
 
@@ -32,22 +31,37 @@ list foreign-keys           - List the available foreign keys for the used
 
 OPTIONS
 
---all                       - Apply to all databases
+--all                            - Apply to all databases
 
---databases                 - Apply to specified databases. NOTE: Specified
-                              databases will have to exist on the mysql server
-                              specified by the used connector!
+--databases                      - Apply to specified databases. NOTE: Specified
+                                   databases will have to exist on the mysql
+                                   server specified by the used connector!
 
---connector                 - Use a different database connector. By default,
-                              "core" is used, which will use connector
-                              $_CONFIG[db][core]
+--connector                      - Use a different database connector.
+                                   By default, "core" is used, which will use
+                                   connector $_CONFIG[db][core]
 
---database                  - Use a different database. By default, the first
-                              database found in the used connector will be
-                              used';
+--database                       - Use a different database. By default, the
+                                   first database found in the used connector
+                                   will be used
+
+replication
+
+    list
+
+        servers                  - List all currently registered servers
+
+        databases                - List all currently registered databases
+
+    add-master                   - Add new master
+
+        --hostname HOSTNAME      - The hostname of the master server
+                                  (e.g. s1.s.ingiga.com)
+
+        --database DATABASE      - The name of the database to replicate';
 
 require_once(__DIR__.'/../../libs/startup.php');
-
+load_libs('mysql');
 cli_only();
 
 $all       = cli_argument('--all');
@@ -323,6 +337,138 @@ switch(cli_method()){
 
             default:
                 throw new bException(tr('Unknown type ":type" specified', array(':type' => $type)), 'unknown');
+        }
+
+        break;
+
+    case 'replication':
+        switch(cli_method(1)){
+            case 'check':
+                /*
+                 * Get all databases
+                 */
+                log_console(tr('Checking databases replication status'), 'white');
+                $databases = sql_query('SELECT    `databases`.`id`,
+                                                  `databases`.`servers_id`,
+                                                  `databases`.`status`,
+                                                  `databases`.`replication_status`,
+                                                  `databases`.`name` AS `database`,
+                                                  `databases`.`error`,
+
+                                                  `servers`.`id` AS `servers_id`,
+                                                  `servers`.`hostname`,
+                                                  `servers`.`ssh_port`,
+                                                  `servers`.`replication_status` AS `servers_replication_status`,
+
+                                                  `database_accounts`.`username`      AS `replication_db_user`,
+                                                  `database_accounts`.`password`      AS `replication_db_password`,
+                                                  `database_accounts`.`root_password` AS `root_db_password`
+
+                                        FROM      `databases`
+
+                                        LEFT JOIN `servers`
+                                        ON        `servers`.`id`           = `databases`.`servers_id`
+
+                                        LEFT JOIN `database_accounts`
+                                        ON        `database_accounts`.`id` = `servers`.`database_accounts_id`
+
+                                        WHERE     `databases`.`status` IS NULL');
+
+                load_libs('ssh,servers');
+
+                while($database = sql_fetch($databases)){
+                    /*
+                     * Check if MySQL configuration still has this database
+                     */
+                    log_console(tr('Checking database :database from server :server', array(':database' => $database['database'], ':server' => $database['hostname'])), 'white');
+                    $mysql_cnf_path = '/etc/mysql/mysql.conf.d/mysqld.cnf';
+                    $mysql_cnf      = servers_exec($database['hostname'], 'test -f '.$mysql_cnf_path.' && echo "1" || echo "0"');
+
+                    /*
+                     * Mysql conf file does not exist
+                     */
+                    if(!$mysql_cnf[0]){
+                        /*
+                         * Try with other possible configuration file
+                         */
+                        $mysql_cnf_path = '/etc/mysql/my.cnf';
+                        $mysql_cnf      = servers_exec($database['hostname'], 'test -f '.$mysql_cnf_path.' && echo "1" || echo "0"');
+
+                        if(!$mysql_cnf[0]){
+                            throw new bException(tr('MySQL configuration file :file does not exist on this server', array(':file' => $mysql_cnf_path)), 'not-exist');
+                        }
+                    }
+
+                    $result = servers_exec($database['hostname'], 'grep -q -F \'binlog_do_db = '.$database['database'].'\' '.$mysql_cnf_path.' && echo "1" || echo "0"');
+
+                    if(!$result[0]){
+                        /*
+                         * Database is not in binlog then it is disabled
+                         */
+                        mysql_update_database_replication_status($database, 'disabled');
+                        continue;
+                    }
+
+                    /*
+                     * Check channel for the server database
+                     */
+                    $result = sql_get('SHOW SLAVE STATUS FOR CHANNEL :channel', array(':channel' => $database['hostname']));
+
+                    if(strtolower($result['Slave_IO_Running']) != 'yes' and strtolower($result['Slave_IO_Running']) != 'yes'){
+                        ssh_mysql_slave_tunnel($database);
+                        mysql_update_database_replication_status($database, 'error');
+                        continue;
+                    }
+
+                    mysql_update_database_replication_status($database, 'enabled');
+                }
+
+                break;
+
+            case 'list':
+                switch(cli_method(2)){
+                    case 'servers':
+                        break;
+
+                    case 'databases':
+                        break;
+
+                    case '':
+                        throw new bException(tr('No sub method specified for the methods ":method0" ":method1"', array(':method0' => cli_method(), ':method1' => cli_method(1))), 'no-method');
+
+                    default:
+                        throw new bException(tr('Unknown sub method ":method2" specified for the methods ":method0" ":method1"', array(':method0' => cli_method(), ':method1' => cli_method(1), ':method2' => cli_method(2))), 'unknown-method');
+                }
+
+                break;
+
+            case 'add-master':
+                /*
+                 * Get arguments and needed data
+                 */
+                $server                 = cli_arguments('--hostname,--database');
+                $server['root_db_user'] = 'root';
+                $server['arguments']    = '-q';
+                cli_no_arguments_left();
+
+                /*
+                 * Setup master
+                 */
+                log_console(tr('Preparing master'), 'white');
+                $master = mysql_master_replication_setup($server);
+
+                /*
+                 * Setup slave with master info
+                 */
+                log_console(tr('Preparing slave'), 'white');
+                $slave = mysql_slave_replication_setup($master);
+                break;
+
+            case '':
+                throw new bException(tr('No sub method specified for the method ":method"', array(':method' => cli_method())), 'no-method');
+
+            default:
+                throw new bException(tr('Unknown sub method ":submethod" specified for the method ":method"', array(':method' => cli_method(), ':submethod' => cli_method(1))), 'unknown-method');
         }
 
         break;
