@@ -122,4 +122,61 @@ function storage_ui_panel_header($params, $section, $active){
         throw new bException('storage_ui_panel_header(): Failed', $e);
     }
 }
+
+
+
+/*
+ *
+ */
+function storage_ui_icon($file){
+    try{
+        load_libs('image');
+
+        $filename = $file['filename'];
+        $data     = image_info($filename);
+
+        return $data;
+
+    }catch(Exception $e){
+        throw new bException('storage_ui_icon(): Failed', $e);
+    }
+}
+
+
+
+/*
+ *
+ */
+function storage_ui_file($file){
+    try{
+        $icon = storage_ui_icon($file);
+
+        $html = '   <tr class="form-group photo" id="file'.$file['id'].'">
+                        <td class="file">
+                            <div>
+                                <a target="_blank" class="fancy" href="'.storage_file_url($file, 'icon').'">
+                                    <img rel="blog-page" class="col-md-1 control-label" src="'.storage_file_url($file['file'], 'small').'" alt="'.html_safe('('.$image[0].' X '.$image[1].')').'" />
+                                </a>
+                            </div>
+                        </td>
+                        <td class="buttons">
+                            <div>
+                                <a class="col-md-5 btn btn-success blogpost photo up button">'.tr('Up').'</a>
+                                <a class="col-md-5 btn btn-success blogpost photo down button">'.tr('Down').'</a>
+                                <a class="col-md-5 btn btn-danger blogpost photo delete button">'.tr('Delete').'</a>
+                            </div>
+                        </td>
+                        <td class="description">
+                            <div>
+                                <textarea class="blogpost photo description form-control" placeholder="'.tr('Description of this photo').'">'.$file['description'].'</textarea>
+                            </div>
+                        </td>
+                    </tr>';
+
+        return $html;
+
+    }catch(Exception $e){
+        throw new bException('storage_ui_file(): Failed', $e);
+    }
+}
 ?>

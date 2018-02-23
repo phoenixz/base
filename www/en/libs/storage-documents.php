@@ -11,6 +11,21 @@
 
 
 /*
+ * Initialize the library
+ * Auto executed by libs_load
+ */
+function storage_documents_library_init(){
+    try{
+        load_libs('storage');
+
+    }catch(Exception $e){
+        throw new bException('storage_documents_library_init(): Failed', $e);
+    }
+}
+
+
+
+/*
  * Generate a new storage document
  */
 function storage_documents_get($section, $document = null){
@@ -76,6 +91,7 @@ function storage_documents_get($section, $document = null){
 
         $document = sql_get('SELECT `storage_documents`.`id`      AS `documents_id`,
                                     `storage_documents`.`meta_id` AS `documents_meta_id`,
+                                    `storage_documents`.`createdby`,
                                     `storage_documents`.`sections_id`,
                                     `storage_documents`.`masters_id`,
                                     `storage_documents`.`parents_id`,
@@ -91,7 +107,7 @@ function storage_documents_get($section, $document = null){
                                     `storage_documents`.`priority`,
                                     `storage_documents`.`level`,
                                     `storage_documents`.`views`,
-                                    `storage_documents`.`ratings`,
+                                    `storage_documents`.`rating`,
                                     `storage_documents`.`comments`
 
                              FROM   `storage_documents`
@@ -128,11 +144,12 @@ function storage_documents_add($document, $section = null){
             $document['id'] = sql_random_id('storage_documents');
         }
 
-        sql_query('INSERT INTO `storage_documents` (`id`, `meta_id`, `status`, `sections_id`, `masters_id`, `parents_id`, `rights_id`, `assigned_to_id`, `featured_until`, `category1`, `category2`, `category3`, `upvotes`, `downvotes`, `priority`, `level`, `views`, `rating`, `comments`)
-                   VALUES                          (:id , :meta_id , :status , :sections_id , :masters_id , :parents_id , :rights_id , :assigned_to_id , :featured_until , :category1 , :category2 , :category3 , :upvotes , :downvotes , :priority , :level , :views , :rating , :comments )',
+        sql_query('INSERT INTO `storage_documents` (`id`, `createdby`, `meta_id`, `status`, `sections_id`, `masters_id`, `parents_id`, `rights_id`, `assigned_to_id`, `featured_until`, `category1`, `category2`, `category3`, `upvotes`, `downvotes`, `priority`, `level`, `views`, `rating`, `comments`)
+                   VALUES                          (:id , :createdby , :meta_id , :status , :sections_id , :masters_id , :parents_id , :rights_id , :assigned_to_id , :featured_until , :category1 , :category2 , :category3 , :upvotes , :downvotes , :priority , :level , :views , :rating , :comments )',
 
                    array(':id'             => $document['id'],
                          ':meta_id'        => meta_action(),
+                         ':createdby'      => $_SESSION['user']['id'],
                          ':status'         => $document['status'],
                          ':sections_id'    => $document['sections_id'],
                          ':masters_id'     => $document['masters_id'],

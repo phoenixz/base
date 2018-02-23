@@ -11,6 +11,21 @@
 
 
 /*
+ * Initialize the library
+ * Auto executed by libs_load
+ */
+function storage_pages_library_init(){
+    try{
+        load_libs('storage');
+
+    }catch(Exception $e){
+        throw new bException('storage_pages_library_init(): Failed', $e);
+    }
+}
+
+
+
+/*
  * Generate a new storage page
  */
 function storage_pages_get($section, $page = null){
@@ -132,7 +147,7 @@ function storage_pages_add($page, $section = null){
         }
 
         if($section['random_ids']){
-            $document['id'] = sql_random_id('storage_documents');
+            $page['id'] = sql_random_id('storage_pages');
         }
 
         if(empty($page['documents_id'])){
@@ -147,10 +162,11 @@ function storage_pages_add($page, $section = null){
 
         $page = storage_pages_validate($page);
 
-        sql_query('INSERT INTO `storage_pages` (`createdby`, `meta_id`, `sections_id`, `documents_id`, `language`, `name`, `seoname`, `description`, `body`)
-                   VALUES                      (:createdby , :meta_id , :sections_id , :documents_id , :language , :name , :seoname , :description , :body )',
+        sql_query('INSERT INTO `storage_pages` (`id`, `createdby`, `meta_id`, `sections_id`, `documents_id`, `language`, `name`, `seoname`, `description`, `body`)
+                   VALUES                      (:id , :createdby , :meta_id , :sections_id , :documents_id , :language , :name , :seoname , :description , :body )',
 
-                   array(':createdby'    => $_SESSION['user']['id'],
+                   array(':id'           => $page['sections_id'],
+                         ':createdby'    => $_SESSION['user']['id'],
                          ':meta_id'      => meta_action(),
                          ':sections_id'  => $page['sections_id'],
                          ':documents_id' => $page['documents_id'],
@@ -229,6 +245,31 @@ function storage_pages_validate($page){
 
     }catch(Exception $e){
         throw new bException('storage_pages_validate(): Failed', $e);
+    }
+}
+
+
+
+/*
+ *
+ */
+function storage_page_attach_file($pages_id, $file){
+    try{
+        load_libs('files');
+
+        if(!is_array($file)){
+            if(!is_numeric($file)){
+            }
+
+            /*
+             * Assume this is a files_id from the files library
+             */
+
+            $file = files_get($file);
+        }
+
+    }catch(Exception $e){
+        throw new bException('storage_page_attach_file(): Failed', $e);
     }
 }
 
