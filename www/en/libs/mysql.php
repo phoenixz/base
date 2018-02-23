@@ -454,7 +454,7 @@ function mysql_slave_replication_setup($params){
          */
 // :DELETE: The status check is done by the "replication check" script
         //$slave_status = servers_exec($database['hostname'], 'mysql "-u'.$database['root_db_user'].'" "-p'.$database['root_db_password'].'" -ANe "SHOW SLAVE STATUS;"', null, false, true);
-
+        mysql_update_replication_status($database, 'enabled');
         log_console(tr('Finished!!'), 'white');
 
     }catch(Exception $e){

@@ -414,13 +414,21 @@ switch(cli_method()){
                      */
                     $result = sql_get('SHOW SLAVE STATUS FOR CHANNEL :channel', array(':channel' => $database['hostname']));
 
+                    if(empty($result)){
+                        /*
+                         * No slave channel for this server
+                         */
+                        mysql_update_database_replication_status($database, 'disabled');
+                        continue;
+                    }
+
                     if(strtolower($result['Slave_IO_Running']) != 'yes' and strtolower($result['Slave_IO_Running']) != 'yes'){
                         ssh_mysql_slave_tunnel($database);
                         mysql_update_database_replication_status($database, 'error');
                         continue;
                     }
 
-                    mysql_update_database_replication_status($database, 'enabled');
+                    mysql_update_replication_status($database, 'enabled');
                 }
 
                 break;
