@@ -489,7 +489,8 @@ function ssh_mysql_slave_tunnel($server){
         /*
          * Delete key file in background process
          */
-        safe_exec('{ sleep 10; chmod 0600 '.$keyfile.' ; rm -rf '.$keyfile.' ; } &');
+// :DELETE: Do not delete key file, because autossh will need it if its broken
+        //safe_exec('{ sleep 10; chmod 0600 '.$keyfile.' ; rm -rf '.$keyfile.' ; } &');
 
         return $result;
 
