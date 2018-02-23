@@ -1041,6 +1041,18 @@ function html_flash_set($params, $type = 'info', $class = null){
                             'title' => tr('Oops'));
 
             if($object instanceof bException){
+                if(debug()){
+                    if(str_until($object->getCode(), '/') !== 'warning'){
+                        /*
+                         * This is not a warning, this is a real exception!
+                         * On non debugs (usually production) show an "oops"
+                         * html_flash(), but on debug systems, make it an
+                         * uncaught exception so that it can be fixed
+                         */
+                        throw($object);
+                    }
+                }
+
                 if(!$class){
                     $class = $type;
                 }
