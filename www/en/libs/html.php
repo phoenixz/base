@@ -939,10 +939,6 @@ function html_flash($class = null){
                      */
                     foreach(array('html', 'text') as $type){
                         if($flash[$type]){
-                            if($flash['title']){
-                                $flash[$type] = $flash['title'].': '.$flash[$type];
-                            }
-
                             $retval .= tr($_CONFIG['flash']['html'], array(':message' => $flash[$type], ':type' => $flash['type'], ':hidden' => ''), false);
                         }
                     }
@@ -1042,7 +1038,7 @@ function html_flash_set($params, $type = 'info', $class = null){
 
             if($object instanceof bException){
                 if(debug()){
-                    if(str_until($object->getCode(), '/') !== 'warning'){
+                    if(($object->getCode() !== 'validation') and (str_until($object->getCode(), '/') !== 'warning')){
                         /*
                          * This is not a warning, this is a real exception!
                          * On non debugs (usually production) show an "oops"
@@ -1063,8 +1059,16 @@ function html_flash_set($params, $type = 'info', $class = null){
                     $object->setCode(str_replace('/', '', str_replace('warning', '', $object->getCode())));
 
                 }elseif($object->getCode() == 'validation'){
+                    foreach($object->getMessages() as $message){
+                        if(strstr($message, 'validate_form::isValid()')){
+                            break;
+                        }
+
+                        $messages[] = $message;
+                    }
+
                     $params['type'] = 'warning';
-                    $params['html'] = $object->getMessage();
+                    $params['html'] = implode('<br>', $messages);
 
                 }elseif($object->getCode() == 'unknown'){
                     $params['type'] = 'warning';
