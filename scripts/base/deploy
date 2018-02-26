@@ -252,6 +252,7 @@ if(!$targets){
             log_console($target);
         }
         
+        cli_run_once_local(true);
         die();
     
     }
