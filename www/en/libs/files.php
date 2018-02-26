@@ -29,26 +29,60 @@ function files_library_init(){
 /*
  * Store a file
  */
-function files_add($file, $require_unique = false){
+function files_add($file, $base_path = ROOT.'data/files/', $require_unique = false){
     global $_CONFIG;
 
     try{
         array_params($file, 'filename,type,status,original,meta1,meta2,description');
 
+        /*
+         * Ensure that the files base path exists
+         */
+        file_ensure_path($base_path);
+
+        $base_path = slash($base_path);
+        $target    = file_assign_target($base_path, );
+
+        $file['basename'] = substr(unique_code(), 0, 24);
+
         if(isset($file['name']) and isset($file['tmp_name'])){
             /*
-             * This is a PHP file array
+             * This is a PHP uploaded file array
              */
             $file['filename'] = $file['tmp_name'];
             $file['original'] = $file['name'];
+
+            /*
+             * Move the uploaded file to its final position
+             */
+            move_uploaded_file($file['filename'], $base_path.$file['basename']);
+            $file['filename'] = $base_path.$file['basename'];
+
+        }else{
+            /*
+             * This is a normal file already existing in the filesystem
+             */
+            if(substr($file, 0, strlen($base_path)) != $base_path){
+                /*
+                 * Move the file to the base path position
+                 */
+                rename($file['filename'], $base_path.$file['basename']);
+                $file['filename'] = $base_path.$file['basename'];
+            }
         }
 
+        /*
+         * Get file mimetype data
+         */
         $meta = file_mimetype($file['filename']);
 
         $file['meta1'] = str_until($meta, '/');
         $file['meta2'] = str_from($meta , '/');
         $file['hash']  = hash($_CONFIG['files']['hash'], file_get_contents($file['filename']));
 
+        /*
+         * File must be unique?
+         */
         if($require_unique){
             $exists = sql_get('SELECT `id` FROM `files` WHERE `hash` = :hash', array($file['hash']));
 
@@ -57,6 +91,9 @@ function files_add($file, $require_unique = false){
             }
         }
 
+        /*
+         * Store and return file data
+         */
         sql_query('INSERT INTO `files` (`meta_id`, `status`, `filename`, `original`, `hash`, `type`, `meta1`, `meta2`, `description`)
                    VALUES              (:meta_id , :status , :filename , :original , :hash , :type , :meta1 , :meta2 , :description )',
 
