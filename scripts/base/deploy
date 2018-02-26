@@ -22,7 +22,9 @@ This is the project deploy script
 
 METHODS
 
-list                            - List all available deployment targets
+list                            - List all available deployment categories
+
+    --targets / -t              - List all available deployment targets
 
 
 
@@ -147,6 +149,61 @@ if(ENVIRONMENT == 'production') {
     throw new bException('You are running the deploy script on production environment? Are you high?', 'warning/production');
 }
 
+
+
+/*
+ * Load deployment configuration
+ */
+include(ROOT.'config/deploy.php');
+
+if(empty($_CONFIG['deploy'])){
+    throw new bException(tr('No deploy configuration found'), 'warning/validation');
+}
+
+
+
+/*
+ *
+ */
+if(cli_argument('list')){
+    log_console(tr('Listing all deployment target environments'), 'QUIET/white');
+    $list_targets = not_empty(cli_argument('--targets'), cli_argument('-t'));
+
+    if($list_targets){
+        /*
+         * List deployment targets
+         */
+        foreach($_CONFIG['deploy'] as $target => $config){
+            log_console($target);
+        }
+        
+    }else{
+        /*
+         * List deployment categories
+         */
+        foreach($_CONFIG['deploy'] as $target => $config){
+            if(empty($config['categories'])) continue;
+            $categories = array();
+            
+            foreach(array_force($config['categories']) as $category){
+                $categories[] = $category;
+            }
+        }
+        
+        array_unique($categories);
+        
+        foreach($categories as $category){
+            log_console($category);
+        }           
+    }
+    
+    cli_run_once_local(true);
+    die();
+
+}
+
+
+
 /*
  * Check command line parameters
  */
@@ -179,7 +236,7 @@ $notouch             =   cli_argument('--no-touch');
 $nocompress          =   cli_argument('--no-compress');
 $forcecompress       =   cli_argument('--force-compress');
 $noparrallel         =   cli_argument('--no-parrallel');
-$nonotify            =   cli_argument('nonotify');
+$nonotify            =   cli_argument('--no-notify');
 
 $message             =   cli_argument('--message'       , true);
 $continuersync       =   cli_argument('--continuer-sync', true);
@@ -191,27 +248,13 @@ $dobackup            =   cli_argument('--do-backup');
 $tilde               = '~'.date('Ymd-His');
 $categories          =   cli_arguments();
 
-foreach($categories as $category){
-    if(substr($category, 0, 1) == '-'){
-        throw new bException(tr('Invalid category ":category" specified', array(':category' => $category)), 'warning/invalid');
-    }
-}
-
-cli_no_arguments_left();
-
-if(!$message and !$notag){
-    throw new bException(tr('No tag message specified! please use ./scripts/base/deploy ..... message "commit message"'), 'warning/not-specified');
-}
-
 
 
 /*
- * Load deployment configuration
+ *
  */
-include(ROOT.'config/deploy.php');
-
-if(empty($_CONFIG['deploy'])){
-    throw new bException(tr('No deploy configuration found'), 'warning/validation');
+if(!$message and !$notag){
+    throw new bException(tr('No tag message specified! please use ./scripts/base/deploy ..... message "commit message"'), 'warning/not-specified');
 }
 
 
@@ -245,18 +288,6 @@ if(!$targets){
         }
     }
     
-    if((count($categories) == 1) and (current($categories) == 'list')){
-        log_console(tr('Listing all deployment target environments'), 'QUIET/white');
-        
-        foreach($_CONFIG['deploy'] as $target => $config){
-            log_console($target);
-        }
-        
-        cli_run_once_local(true);
-        die();
-    
-    }
-
     /*
      * Get the targets from the specified categories
      */
@@ -277,8 +308,30 @@ if(!$targets){
     }
 }
 
-log_console(tr('Starting deploy of project ":project"', array(':project' => PROJECT)), 'white');
 
+
+/*
+ *
+ */
+foreach($categories as $category){
+    if(substr($category, 0, 1) == '-'){
+        throw new bException(tr('Invalid category ":category" specified', array(':category' => $category)), 'warning/invalid');
+    }
+}
+
+
+
+/*
+ *
+ */
+log_console(tr('Starting deploy of project ":project"', array(':project' => PROJECT)), 'white');
+cli_no_arguments_left();
+
+
+
+/*
+ *
+ */
 if(count($targets) == 1){
     $targets = array_pop($targets);
 }
