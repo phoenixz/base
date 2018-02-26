@@ -154,9 +154,9 @@ function upload_multi($params){
                 url      : "'.$params['url'].'",
                 '.
 
-                ($params['done'] ?   'complete : '.$params['done'].',' : '').
+                ($params['complete'] ?   'complete : '.$params['complete'].',' : '').
 
-                ($params['fail'] ? "\n".'fail  : '.$params['fail'].',' : '').'
+                ($params['fail']     ? "\n".'fail  : '.$params['fail'].','     : '').'
 
                 progress: function (e, data) {
                     '.$params['process'].'
