@@ -6,8 +6,8 @@
  *
  * @copyright Sven Oostenbrink <support@ingiga.com>, Johan Geuze
  */
-$usage = "./scripts/base/deploy ENVIRONMENT / all\n".
-         "./scripts/base/deploy\n";
+$usage = './scripts/base/deploy TARGET_ENVIRONMENT_GROUP / all
+./scripts/base/deploy';
 
 $help  = "The deploy script can deploy the project to target environments, like trial, production, etc.
 This is the project deploy script
@@ -20,7 +20,15 @@ This is the project deploy script
 
 
 
-OPTIONS
+METHODS
+
+list                            - List all available deployment targets
+
+
+
+
+
+GLOBAL OPTIONS
 
 --all / -a                      - Deploy all sub environments
 
@@ -98,6 +106,8 @@ OPTIONS
 
 
 
+
+
 HOOK SCRIPTS: Below are shown (in order) the hook scripts that will be
               executed If the hook scripts exist (in ROOT/scripts/hooks)
               they will be executed. If not, they will be ignored
@@ -127,7 +137,7 @@ require_once(__DIR__.'/../../libs/startup.php');
 cli_only(true);
 load_libs('init,deploy');
 
-log_console(tr('Starting deploy of project ":project"', array(':project' => PROJECT)), 'white');
+
 
 /*
  * Ensure we're not running on the production environment.
@@ -234,6 +244,17 @@ if(!$targets){
             notify('deploy', tr('DEPLOY WARNING! NON PRODUCTION BRANCH DEPLOYED TO PRODUCTION: Deployed branch ":branch" to production category for project ":project"', array(':branch' => $branch, ':project' => PROJECT)));
         }
     }
+    
+    if((count($categories) == 1) and (current($categories) == 'list')){
+        log_console(tr('Listing all deployment target environments'), 'QUIET/white');
+        
+        foreach($_CONFIG['deploy'] as $target => $config){
+            log_console($target);
+        }
+        
+        die();
+    
+    }
 
     /*
      * Get the targets from the specified categories
@@ -254,6 +275,8 @@ if(!$targets){
         throw new bException(tr('The specified categories or targets ":categories" contain no configured deploy targets', array(':categories' => $categories)), 'warning/not-specified');
     }
 }
+
+log_console(tr('Starting deploy of project ":project"', array(':project' => PROJECT)), 'white');
 
 if(count($targets) == 1){
     $targets = array_pop($targets);
