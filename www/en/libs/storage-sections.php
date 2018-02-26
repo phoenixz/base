@@ -37,7 +37,7 @@ function storage_sections_get($get_section = null, $auto_create = false){
 
         }else{
             $where   = ' WHERE  `seoname` = :seoname
-                         AND    `status` IS NULL';
+                         AND    `status`  IS NULL';
             $execute = array(':seoname' => $get_section);
         }
 
@@ -59,7 +59,7 @@ function storage_sections_get($get_section = null, $auto_create = false){
         if(empty($section) and empty($get_section) and $auto_create){
             return storage_sections_add(array('status'              => '_new',
                                               'random_ids'          => true,
-                                              'restrict_file_types' => true));
+                                              'restrict_file_types' => true), true);
         }
 
         return $section;
@@ -74,9 +74,9 @@ function storage_sections_get($get_section = null, $auto_create = false){
 /*
  * Generate a new storage section
  */
-function storage_sections_add($section){
+function storage_sections_add($section, $new = false){
     try{
-        $section = storage_sections_validate($section);
+        $section = storage_sections_validate($section, $new);
 
         sql_query('INSERT INTO `storage_sections` (`id`, `createdby`, `meta_id`, `status`, `name`, `seoname`, `random_ids`, `restrict_file_types`, `slogan`, `description`)
                    VALUES                         (:id , :createdby , :meta_id , :status , :name , :seoname , :random_ids , :restrict_file_types , :slogan , :description )',
@@ -143,25 +143,38 @@ function storage_sections_update($section, $new = false){
 /*
  * Validate and return the specified storage section
  */
-function storage_sections_validate($section){
+function storage_sections_validate($section, $new = false){
     try{
         load_libs('validate,seo');
 
-        $v = new validate_form($section, 'id,name,seoname,random_ids,restrict_file_types,slogan,description');
-        //$v->isAlphaNumeric($section, tr(''));
-        //$v->isAlphaNumeric($section, tr(''));
-        //$v->isAlphaNumeric($section, tr(''));
-        //$v->isAlphaNumeric($section, tr(''));
-        //$v->isAlphaNumeric($section, tr(''));
-        //$v->isAlphaNumeric($section, tr(''));
-        //$v->isAlphaNumeric($section, tr(''));
-        //$v->isAlphaNumeric($section, tr(''));
-        //$v->isAlphaNumeric($section, tr(''));
-        //$v->isAlphaNumeric($section, tr(''));
-        //$v->isAlphaNumeric($section, tr(''));
-        $v->isValid();
+        if($new){
+            $section = array('id'                  => null,
+                             'status'              => '_new',
+                             'name'                => '',
+                             'seoname'             => '',
+                             'random_ids'          => true,
+                             'restrict_file_types' => true,
+                             'slogan'              => '',
+                             'description'         => '');
 
-        $section['seoname'] = seo_unique($section['name'], 'storage_sections', $section['id']);
+
+        }else{
+            $v = new validate_form($section, 'id,name,seoname,random_ids,restrict_file_types,slogan,description');
+            if(!$v->isNotEmpty($section['name'], tr('Please specify a section name'))){
+                $v->isAlphaNumeric($section['name'], tr('Please specify a valid alpha numeric section name (spaces, dashes and parentheses are allowed)'), VALIDATE_IGNORE_PARENTHESES|VALIDATE_IGNORE_SPACE|VALIDATE_IGNORE_DASH);
+            }
+
+            $v->isAlphaNumeric($section['slogan']                        , tr('Please specify a valid alpha numeric slogan (spaces, dashes and parentheses are allowed)'), VALIDATE_ALLOW_EMPTY_STRING|VALIDATE_IGNORE_PARENTHESES|VALIDATE_IGNORE_SPACE|VALIDATE_IGNORE_DASH);
+            $v->isRegex($section['url_template'], '/(:?[a-z0-9-_.%]\/)+/', tr('Please specify a valid URL template'), VALIDATE_ALLOW_EMPTY_STRING);
+            $v->isAlphaNumeric($section['description']                   , tr('Please specify a valid alpha numeric section description (spaces, dashes, commas, dots, underscores, colons, parentheses, exclamation marks, question marks, and asterisks are allowed)'), VALIDATE_ALLOW_EMPTY_STRING|VALIDATE_IGNORE_PARENTHESES|VALIDATE_IGNORE_SPACE|VALIDATE_IGNORE_DASH|VALIDATE_IGNORE_COMMA|VALIDATE_IGNORE_DOT|VALIDATE_IGNORE_UNDERSCORE|VALIDATE_IGNORE_EXCLAMATIONMARK|VALIDATE_IGNORE_QUESTIONMARK|VALIDATE_IGNORE_ASTERISK);
+
+            $section['random_ids']          = (boolean) $section['random_ids'];
+            $section['restrict_file_types'] = (boolean) $section['restrict_file_types'];
+
+            $v->isValid();
+
+            $section['seoname'] = seo_unique($section['name'], 'storage_sections', $section['id']);
+        }
 
         return $section;
 

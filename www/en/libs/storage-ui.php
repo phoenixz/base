@@ -189,4 +189,102 @@ function storage_ui_file($file, $tabindex = 0){
         throw new bException('storage_ui_file(): Failed', $e);
     }
 }
+
+
+
+/*
+ * Return HTML select list containing all available blog categories
+ */
+function storage_ui_categories_select($params) {
+    try{
+        array_ensure($params);
+        array_default($params, 'number'      , 1);
+        array_default($params, 'selected'    , 0);
+        array_default($params, 'class'       , '');
+        array_default($params, 'disabled'    , false);
+        array_default($params, 'name'        , 'seocategory1');
+        array_default($params, 'column'      , '`storage_categories`.`seoname`');
+        array_default($params, 'none'        , tr('Select a category'));
+        array_default($params, 'empty'       , tr('No categories available'));
+        array_default($params, 'option_class', '');
+        array_default($params, 'right'       , false);
+        array_default($params, 'parent'      , false);
+        array_default($params, 'filter'      , array());
+
+        array_ensure($params['labels']);
+        array_default($params['labels'], 'select_category', tr('Select a category'));
+        array_default($params['labels'], 'empty_category' , tr('Select a category'));
+        array_default($params['labels'], 'none_category'  , tr('Select a category'));
+
+        if(empty($params['blogs_id'])){
+            /*
+             * Categories work per blog, so without a blog we cannot show
+             * categories
+             */
+            $params['resource'] = null;
+
+        }else{
+            $execute = array(':blogs_id' => $params['blogs_id']);
+
+            $query   = 'SELECT  '.$params['column'].' AS id,
+                                `storage_categories`.`name`
+
+                        FROM    `storage_categories` ';
+
+            $join    = '';
+
+            $where   = 'WHERE   `storage_categories`.`blogs_id` = :blogs_id
+                        AND     `storage_categories`.`status`   IS NULL ';
+
+            if($params['right']){
+                /*
+                 * User must have right of the category to be able to see it
+                 */
+                $join .= ' JOIN `users_rights`
+                           ON   `users_rights`.`users_id` = :users_id
+                           AND (`users_rights`.`name`     = `storage_categories`.`seoname`
+                           OR   `users_rights`.`name`     = "god") ';
+
+                $execute[':users_id'] = isset_get($_SESSION['user']['id']);
+            }
+
+            if($params['parent']){
+                $join .= ' JOIN `storage_categories` AS parents
+                           ON   `parents`.`seoname` = :parent
+                           AND  `parents`.`id`      = `storage_categories`.`parents_id` ';
+
+                $execute[':parent'] = $params['parent'];
+
+            }elseif($params['parent'] === null){
+                $where .= ' AND  `storage_categories`.`parents_id` IS NULL ';
+
+            }elseif($params['parent'] === false){
+                /*
+                 * Don't filter for any parent
+                 */
+
+            }else{
+                $where .= ' AND `storage_categories`.`parents_id` = 0 ';
+
+            }
+
+            /*
+             * Filter specified values.
+             */
+            foreach($params['filter'] as $key => $value){
+                if(!$value) continue;
+
+                $where            .= ' AND `'.$key.'` != :'.$key.' ';
+                $execute[':'.$key] = $value;
+            }
+
+            $params['resource'] = sql_query($query.$join.$where.' ORDER BY `name` ASC', $execute);
+        }
+
+        return html_select($params);
+
+    }catch(Exception $e){
+        throw new bException('storage_ui_categories_select(): Failed', $e);
+    }
+}
 ?>
