@@ -456,7 +456,7 @@ function blogs_post_update($post, $params = null){
         }
 
         if(isset_get($post['status']) === 'published'){
-            sitemap_add_url(array('url'              => $post['url'],
+            sitemap_add_entry(array('url'              => $post['url'],
                                   'priority'         => $params['sitemap_priority'],
                                   'page_modifiedon'  => date_convert(null, 'mysql'),
                                   'change_frequency' => $params['sitemap_change_frequency']));
@@ -527,7 +527,7 @@ function blogs_update_post_status($blog, $params, $list, $status){
                     break;
 
                 case 'published':
-                    sitemap_add_url(array('url'              => $post['url'],
+                    sitemap_add_entry(array('url'              => $post['url'],
                                           'priority'         => $params['sitemap_priority'],
                                           'page_modifiedon'  => date_convert(null, 'mysql'),
                                           'change_frequency' => $params['sitemap_change_frequency']));
@@ -2333,7 +2333,7 @@ function blogs_update_urls($blogs = null, $category = null){
                         }
 
                         if($post['status'] == $params['status']){
-                            sitemap_add_url(array('url'              => $post['url'],
+                            sitemap_add_entry(array('url'              => $post['url'],
                                                   'priority'         => $params['sitemap_priority'],
                                                   'page_modifiedon'  => date_convert(null, 'mysql'),
                                                   'change_frequency' => $params['sitemap_change_frequency']));
@@ -2464,7 +2464,7 @@ function blogs_regenerate_sitemap_data($blogs_id, $level, $change_frequency, $gr
             cli_dot();
             $count++;
 
-            sitemap_add_url(array('file'             => $file,
+            sitemap_add_entry(array('file'             => $file,
                                   'group'            => $group,
                                   'language'         => $post['language'],
                                   'url'              => $post['url'],

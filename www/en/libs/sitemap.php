@@ -48,7 +48,7 @@ function sitemap_generate($languages = null){
                 $languages = array_keys($_CONFIG['language']['supported']);
 
             }else{
-                $languages = array('');
+                $languages = array($_CONFIG['language']['default']);
             }
         }
 
@@ -126,16 +126,17 @@ function sitemap_generate($languages = null){
                 }
 
                 file_execute_mode(ROOT.'www/'.$language, 0770, array('language' => $language), function($params){
-                    if(file_exists(ROOT.'www/'.$params['language'].'/sitemap.xml')){
-                        chmod(ROOT.'www/'.$params['language'].'/sitemap.xml', 0660);
-                    }
+                    $params['language'] = unslash($params['language']);
 
-                    rename(TMP.'sitemap.xml', ROOT.'www/'.$params['language'].'/sitemap.xml');
+                    /*
+                     * Move originals to backups
+                     */
+                    file_move_to_backup(ROOT.'www/'.$params['language'].'/sitemaps.xml', true);
+                    file_move_to_backup(ROOT.'www/'.$params['language'].'/sitemaps'    , true);
 
-                    if(file_exists(ROOT.'www/'.$params['language'].'/sitemaps')){
-                        rename(ROOT.'www/'.$params['language'].'/sitemaps', ROOT.'www/'.$params['language'].'/sitemaps~');
-                    }
-
+                    /*
+                     * Move sub sitemap files in place
+                     */
                     rename(TMP.'sitemaps', ROOT.'www/'.$params['language'].'/sitemaps');
                     chmod(ROOT.'www/'.$params['language'].'/sitemaps', 0550);
 
@@ -255,7 +256,6 @@ function sitemap_xml($language = null, $file = null){
 
         file_ensure_path(dirname(TMP.$sitemap.'.xml'));
         file_put_contents(TMP.$sitemap.'.xml', $xml);
-        chmod(TMP.$sitemap.'.xml', 0440);
 
         return $count;
 
@@ -390,18 +390,20 @@ function sitemap_delete($list){
 /*
  * Add a new URL to the sitemap table
  */
-function sitemap_add_url($url){
+function sitemap_add_entry($entry){
     try{
-        array_params($url);
-        array_default($url, 'url'             , '');
-        array_default($url, 'priority'        , '');
-        array_default($url, 'page_modifiedon' , null);
-        array_default($url, 'change_frequency', '');
-        array_default($url, 'language'        , '');
-        array_default($url, 'group'           , 'standard');
-        array_default($url, 'file'            , null);
+        array_params($entry);
+        array_default($entry, 'url'             , '');
+        array_default($entry, 'priority'        , '');
+        array_default($entry, 'page_modifiedon' , null);
+        array_default($entry, 'change_frequency', '');
+        array_default($entry, 'language'        , '');
+        array_default($entry, 'group'           , 'standard');
+        array_default($entry, 'file'            , null);
 
-        if($url['page_modifiedon']){
+        $entry = sitemap_validate_entry($entry);
+
+        if($entry['page_modifiedon']){
             sql_query('INSERT INTO `sitemaps_data` (`createdby`, `url`, `priority`, `page_modifiedon`, `change_frequency`, `language`, `group`, `file`)
                        VALUES                      (:createdby , :url , :priority , :page_modifiedon , :change_frequency , :language , :group , :file )
 
@@ -416,21 +418,21 @@ function sitemap_add_url($url){
                                                `group`            = :group_update',
 
                        array(':createdby'               => isset_get($_SESSION['user']['id']),
-                             ':url'                     => $url['url'],
-                             ':priority'                => $url['priority'],
-                             ':page_modifiedon'         => date_convert($url['page_modifiedon'], 'c'),
-                             ':change_frequency'        => $url['change_frequency'],
-                             ':language'                => get_null($url['language']),
-                             ':group'                   => $url['group'],
-                             ':file'                    => get_null($url['file']),
-                             ':url_update'              => $url['url'],
+                             ':url'                     => $entry['url'],
+                             ':priority'                => $entry['priority'],
+                             ':page_modifiedon'         => date_convert($entry['page_modifiedon'], 'c'),
+                             ':change_frequency'        => $entry['change_frequency'],
+                             ':language'                => get_null($entry['language']),
+                             ':group'                   => $entry['group'],
+                             ':file'                    => get_null($entry['file']),
+                             ':url_update'              => $entry['url'],
                              ':modifiedby_update'       => isset_get($_SESSION['user']['id']),
-                             ':priority_update'         => $url['priority'],
-                             ':page_modifiedon_update'  => date_convert($url['page_modifiedon'], 'c'),
-                             ':change_frequency_update' => $url['change_frequency'],
-                             ':language_update'         => get_null($url['language']),
-                             ':file_update'             => get_null($url['file']),
-                             ':group_update'            => $url['group']));
+                             ':priority_update'         => $entry['priority'],
+                             ':page_modifiedon_update'  => date_convert($entry['page_modifiedon'], 'c'),
+                             ':change_frequency_update' => $entry['change_frequency'],
+                             ':language_update'         => get_null($entry['language']),
+                             ':file_update'             => get_null($entry['file']),
+                             ':group_update'            => $entry['group']));
 
         }else{
             sql_query('INSERT INTO `sitemaps_data` (`createdby`, `url`, `priority`, `page_modifiedon`, `change_frequency`, `language`, `group`, `file`)
@@ -447,25 +449,29 @@ function sitemap_add_url($url){
                                                `group`            = :group_update',
 
                        array(':createdby'               => isset_get($_SESSION['user']['id']),
-                             ':url'                     => $url['url'],
-                             ':priority'                => $url['priority'],
-                             ':change_frequency'        => $url['change_frequency'],
-                             ':language'                => get_null($url['language']),
-                             ':group'                   => $url['group'],
-                             ':file'                    => get_null($url['file']),
-                             ':url_update'              => $url['url'],
+                             ':url'                     => $entry['url'],
+                             ':priority'                => $entry['priority'],
+                             ':change_frequency'        => $entry['change_frequency'],
+                             ':language'                => get_null($entry['language']),
+                             ':group'                   => $entry['group'],
+                             ':file'                    => get_null($entry['file']),
+                             ':url_update'              => $entry['url'],
                              ':modifiedby_update'       => isset_get($_SESSION['user']['id']),
-                             ':priority_update'         => $url['priority'],
-                             ':change_frequency_update' => $url['change_frequency'],
-                             ':language_update'         => get_null($url['language']),
-                             ':file_update'             => get_null($url['file']),
-                             ':group_update'            => $url['group']));
+                             ':priority_update'         => $entry['priority'],
+                             ':change_frequency_update' => $entry['change_frequency'],
+                             ':language_update'         => get_null($entry['language']),
+                             ':file_update'             => get_null($entry['file']),
+                             ':group_update'            => $entry['group']));
         }
 
-        return sql_insert_id();
+        if(empty($entry['id'])){
+            $entry['id'] = sql_insert_id();
+        }
+
+        return $entry;
 
     }catch(Exception $e){
-        throw new bException('sitemap_add_url(): Failed', $e);
+        throw new bException('sitemap_add_entry(): Failed', $e);
     }
 }
 
@@ -516,12 +522,22 @@ function sitemap_delete_backups($language){
  *
  */
 function sitemap_validate_entry($entry){
+    global $_CONFIG;
+
     try{
         load_libs('validate');
 
         $v = new validate_form($entry, 'createdby,status,url,priority,page_modifiedon,change_frequency,language,group,file');
 
         $entry['page_modifiedon'] = date_convert($entry['page_modifiedon'], 'mysql');
+        $entry['file']            = get_null($entry['file']);
+
+        if($_CONFIG['language']['supported']){
+            $v->inArray($entry['language'], $_CONFIG['language']['supported'], tr('Please ensure that the specified language is supported'));
+
+        }else{
+            $entry['language'] = $_CONFIG['language']['default'];
+        }
 
         return $entry;
 
