@@ -260,7 +260,7 @@ function cache_showpage($key = null, $namespace = 'htmlpage', $etag = null){
  * Clear the entire cache
  */
 function cache_clear($key = null, $namespace = null){
-    include('handlers/cache_clear.php');
+    include('handlers/cache-clear.php');
 }
 
 
@@ -269,7 +269,7 @@ function cache_clear($key = null, $namespace = null){
  * Return the total size of the cache
  */
 function cache_size(){
-    return include('handlers/cache_size.php');
+    return include('handlers/cache-size.php');
 }
 
 
@@ -278,7 +278,7 @@ function cache_size(){
  * Return the total amount of files currently in cache
  */
 function cache_count(){
-    return include('handlers/cache_count.php');
+    return include('handlers/cache-count.php');
 }
 
 
