@@ -43,7 +43,7 @@ function storage_files_add($page, $file, $types_id, $priority = null){
  */
 function storage_file_url($file, $type){
     try{
-        return $file['filename'];
+        return domain('/files/'.$file['filename']);
 
     }catch(Exception $e){
         throw new bException('storage_file_url(): Failed', $e);

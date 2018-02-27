@@ -128,16 +128,40 @@ function storage_ui_panel_header($params, $section){
 /*
  *
  */
+// :TODO: This function is not finished yet!!
 function storage_ui_icon($file){
     try{
         load_libs('image');
 
-        $filename = $file['filename'];
-        $data     = image_info($filename);
+        $icon      = $file;
+        $filename  = $file['filename'];
+        $data      = image_info($filename);
+        $icon['x'] = $data['x'];
+        $icon['y'] = $data['y'];
 
-        return $data;
+        return $icon;
 
     }catch(Exception $e){
+        switch($e->getCode()){
+            case 'not-exist':
+                /*
+                 * Show a "not exist" icon
+                 */
+                $icon['x'] = 100;
+                $icon['y'] = 100;
+
+                return $icon;
+
+            case 'not-file':
+                /*
+                 * Show an "invalid file" icon
+                 */
+                $icon['x'] = 100;
+                $icon['y'] = 100;
+
+                return $icon;
+        }
+
         throw new bException('storage_ui_icon(): Failed', $e);
     }
 }
@@ -149,13 +173,15 @@ function storage_ui_icon($file){
  */
 function storage_ui_file($file, $tabindex = 0){
     try{
+        load_libs('storage-files');
+
         $icon = storage_ui_icon($file);
 
         $html = '   <tr class="form-group photo" id="file'.$file['id'].'">
                         <td class="file">
                             <div>
-                                <a target="_blank" class="fancy" href="'.storage_file_url($file, 'icon').'">
-                                    <img rel="blog-page" class="col-md-1 control-label" src="'.storage_file_url($file, 'small').'" alt="'.html_safe('('.$icon['x'].' X '.$icon['y'].')').'" />
+                                <a target="_blank" class="fancy" href="'.storage_file_url($icon, 'icon').'">
+                                    <img rel="blog-page" class="col-md-1 control-label" src="'.storage_file_url($icon, 'small').'" alt="'.html_safe('('.$icon['x'].' X '.$icon['y'].')').'" />
                                 </a>
                             </div>
                         </td>
@@ -168,17 +194,17 @@ function storage_ui_file($file, $tabindex = 0){
                         </td>
                         <td class="file_type">
                             <div>
-                                '.html_select(array('name'     => 'file_status['.$file['id'].']',
+                                '.html_select(array('name'     => 'file_status['.$icon['id'].']',
                                                     'class'    => 'btn blogpost photo type',
                                                     'extra'    => 'tabindex="'.++$tabindex.'"',
-                                                    'selected' => $file['type'],
+                                                    'selected' => $icon['type'],
                                                     'none'     => tr('Unspecified type'),
                                                     'resource' => null)).'
                             </div>
                         </td>
                         <td class="description">
                             <div>
-                                <textarea class="blogpost photo description form-control" placeholder="'.tr('Description of this photo').'">'.$file['description'].'</textarea>
+                                <textarea class="blogpost photo description form-control" placeholder="'.tr('Description of this photo').'">'.$icon['description'].'</textarea>
                             </div>
                         </td>
                     </tr>';
