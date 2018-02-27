@@ -2309,4 +2309,43 @@ function file_scan($path, $file){
         throw new bException('file_word_count(): Failed', $e);
     }
 }
+
+
+
+/*
+ * Move specified path to a backup
+ */
+function file_move_to_backup($path){
+    try{
+        if(!file_exists($path)){
+            /*
+             * Specified path doesn't exist, just ignore
+             */
+            return false;
+        }
+
+        $backup_path = $path.'~'.date_convert(null, 'Ymd-His');
+
+        /*
+         * Main sitemap file already exist, move to backup
+         */
+        if(file_exists($backup_path)){
+            /*
+             * Backup already exists as well, script run twice
+             * in under a second. Delete the current one
+             * as the backup was generated less than a second
+             * ago
+             */
+show(stat($path.'/basic.xml'));
+            file_delete($path);
+            return true;
+        }
+
+        rename($path, $backup_path);
+        return true;
+
+    }catch(Exception $e){
+        throw new bException('file_move_to_backup(): Failed', $e);
+    }
+}
 ?>
