@@ -37,16 +37,16 @@ function storage_documents_get($section, $document = null, $auto_create = false)
              * Get a _new record for the current user
              */
             if(empty($_SESSION['user']['id'])){
-                $where   = ' WHERE  `storage_documents`.`sections_id` = :sections_id
-                             AND    `storage_documents`.`status`      = "_new"
-                             AND    `storage_documents`.`createdby`   IS NULL LIMIT 1';
+                $where   = ' WHERE  `sections_id` = :sections_id
+                             AND    `status`      = "_new"
+                             AND    `createdby`   IS NULL LIMIT 1';
 
                 $execute = array(':sections_id' => $section['id']);
 
             }else{
-                $where   = ' WHERE  `storage_documents`.`sections_id` = :sections_id
-                             AND    `storage_documents`.`status`      = "_new"
-                             AND    `storage_documents`.`createdby`   = :createdby LIMIT 1';
+                $where   = ' WHERE  `sections_id` = :sections_id
+                             AND    `status`      = "_new"
+                             AND    `createdby`   = :createdby LIMIT 1';
 
                 $execute = array(':sections_id' => $section['id'],
                                  ':createdby'   => $_SESSION['user']['id']);
@@ -56,9 +56,9 @@ function storage_documents_get($section, $document = null, $auto_create = false)
             /*
              * Assume this is pages id
              */
-            $where   = ' WHERE  `storage_documents`.`sections_id` = :sections_id
-                         AND    `storage_documents`.`id`          = :id
-                         AND    `storage_documents`.`status`      IS NULL';
+            $where   = ' WHERE  `sections_id` = :sections_id
+                         AND    `id`          = :id
+                         AND    `status`      IS NULL';
 
             $execute = array(':sections_id' => $section['id'],
                              ':id'          => $document);
@@ -67,9 +67,9 @@ function storage_documents_get($section, $document = null, $auto_create = false)
             /*
              * Assume this is pages seoname
              */
-            $where   = ' WHERE  `storage_documents`.`sections_id` = :sections_id
-                         AND    `storage_documents`.`seoname`     = :seoname
-                         AND    `storage_documents`.`status`      IS NULL';
+            $where   = ' WHERE  `sections_id` = :sections_id
+                         AND    `seoname`     = :seoname
+                         AND    `status`      IS NULL';
 
             $execute = array(':sections_id' => $section['id'],
                              ':seoname'     => $document);
@@ -78,9 +78,9 @@ function storage_documents_get($section, $document = null, $auto_create = false)
             /*
              * Assume this is pages seoname
              */
-            $where   = ' WHERE  `storage_documents`.`sections_id` = :sections_id
-                         AND    `storage_documents`.`seoname`     = :seoname
-                         AND    `storage_documents`.`status`      IS NULL';
+            $where   = ' WHERE  `sections_id` = :sections_id
+                         AND    `seoname`     = :seoname
+                         AND    `status`      IS NULL';
 
             $execute = array(':sections_id' => $section['id'],
                              ':seoname'     => $document);
@@ -89,26 +89,26 @@ function storage_documents_get($section, $document = null, $auto_create = false)
             throw new bException(tr('storage_documents_get(): Invalid document specified, is datatype ":type", should be null, numeric, string, or array', array(':type' => gettype($document))), 'invalid');
         }
 
-        $document = sql_get('SELECT `storage_documents`.`id`      AS `documents_id`,
-                                    `storage_documents`.`meta_id` AS `documents_meta_id`,
-                                    `storage_documents`.`createdby`,
-                                    `storage_documents`.`sections_id`,
-                                    `storage_documents`.`masters_id`,
-                                    `storage_documents`.`parents_id`,
-                                    `storage_documents`.`rights_id`,
-                                    `storage_documents`.`assigned_to_id`,
-                                    `storage_documents`.`status`,
-                                    `storage_documents`.`featured_until`,
-                                    `storage_documents`.`category1`,
-                                    `storage_documents`.`category2`,
-                                    `storage_documents`.`category3`,
-                                    `storage_documents`.`upvotes`,
-                                    `storage_documents`.`downvotes`,
-                                    `storage_documents`.`priority`,
-                                    `storage_documents`.`level`,
-                                    `storage_documents`.`views`,
-                                    `storage_documents`.`rating`,
-                                    `storage_documents`.`comments`
+        $document = sql_get('SELECT `id`      AS `documents_id`,
+                                    `meta_id` AS `documents_meta_id`,
+                                    `createdby`,
+                                    `sections_id`,
+                                    `masters_id`,
+                                    `parents_id`,
+                                    `rights_id`,
+                                    `assigned_to_id`,
+                                    `status`,
+                                    `featured_until`,
+                                    `category1`,
+                                    `category2`,
+                                    `category3`,
+                                    `upvotes`,
+                                    `downvotes`,
+                                    `priority`,
+                                    `level`,
+                                    `views`,
+                                    `rating`,
+                                    `comments`
 
                              FROM   `storage_documents`
 

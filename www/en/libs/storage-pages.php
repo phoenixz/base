@@ -142,6 +142,8 @@ function storage_pages_get($section, $page = null, $auto_create = false){
  */
 function storage_pages_add($page, $section = null){
     try{
+        load_libs('storage-documents');
+
         if(!$section){
             $section = storage_sections_get($page['sections_id']);
         }
@@ -155,12 +157,18 @@ function storage_pages_add($page, $section = null){
              * This page has no document
              * Generate a new document for this page
              */
-            load_libs('storage-documents');
             $document = storage_documents_add($page, $section);
-            $page['documents_id'] = $document['id'];
+
+        }else{
+            /*
+             * Get document information for this page
+             */
+            $document = storage_documents_get($page['documents_id']);
         }
 
-        $page = storage_pages_validate($page);
+        $page['documents_id'] = $document['id'];
+        $page                 = sql_merge($page, $document);
+        $page                 = storage_pages_validate($page);
 
         sql_query('INSERT INTO `storage_pages` (`id`, `createdby`, `meta_id`, `sections_id`, `documents_id`, `language`, `name`, `seoname`, `description`, `body`)
                    VALUES                      (:id , :createdby , :meta_id , :sections_id , :documents_id , :language , :name , :seoname , :description , :body )',
