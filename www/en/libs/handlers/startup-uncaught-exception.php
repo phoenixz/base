@@ -149,6 +149,15 @@ try{
                     header($_SERVER['SERVER_PROTOCOL'] . ' 500 Internal Server Error', true, 500);
                 }
 
+                switch($core->callType()){
+                    case 'api':
+                        // FALLTHROUGH
+                    case 'ajax':
+                        load_libs('json');
+                        echo "UNCAUGHT EXCEPTION\n\n";
+                        showdie($e);
+                }
+
                 $retval = ' <style type="text/css">
                             table.exception{
                                 font-family: sans-serif;
@@ -220,6 +229,16 @@ try{
             }
 
             notify($e);
+
+            switch($core->callType()){
+                case 'api':
+                    // FALLTHROUGH
+                case 'ajax':
+                    load_libs('json');
+                    json_error(tr('Something went wrong, please try again later'), 500);
+
+            }
+
             page_show(500);
     }
 
