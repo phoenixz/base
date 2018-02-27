@@ -499,4 +499,24 @@ function sitemap_delete_backups($language){
         throw new bException('sitemap_delete_backups(): Failed', $e);
     }
 }
+
+
+
+/*
+ *
+ */
+function sitemap_validate_entry($entry){
+    try{
+        load_libs('validate');
+
+        $v = new validate_form($entry, 'createdby,status,url,priority,page_modifiedon,change_frequency,language,group,file');
+
+        $entry['page_modifiedon'] = date_convert($entry['page_modifiedon'], 'mysql');
+
+        return $entry;
+
+    }catch(Exception $e){
+        throw new bException('sitemap_validate_entry(): Failed', $e);
+    }
+}
 ?>
