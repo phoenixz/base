@@ -14,9 +14,19 @@
 
 
 /*
- * Requires sitemap configuration
+ *
  */
-load_config('sitemap');
+function sitemap_library_init(){
+    try{
+        /*
+         * Requires sitemap configuration
+         */
+        load_config('sitemap');
+
+    }catch(Exception $e){
+        throw new bException('sitemap_library_init(): Failed', $e);
+    }
+}
 
 
 
