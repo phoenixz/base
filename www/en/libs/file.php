@@ -2336,7 +2336,7 @@ function file_move_to_backup($path){
              * as the backup was generated less than a second
              * ago
              */
-show(stat($path.'/basic.xml'));
+
             file_delete($path);
             return true;
         }
