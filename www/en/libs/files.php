@@ -35,50 +35,44 @@ function files_add($file, $base_path = ROOT.'data/files/', $require_unique = fal
     try{
         array_params($file, 'filename,type,status,original,meta1,meta2,description');
 
+        if(isset($file['name']) and isset($file['tmp_name'])){
+            /*
+             * This is a PHP uploaded file array. Correct file names
+             */
+            $file['filename'] = $file['tmp_name'];
+            $file['original'] = $file['name'];
+        }
+
         /*
          * Ensure that the files base path exists
          */
         file_ensure_path($base_path);
 
+        $extension = str_rfrom($file['name'], '.');
         $base_path = slash($base_path);
-        $target    = file_assign_target($base_path, );
-
-        $file['basename'] = substr(unique_code(), 0, 24);
+        $target    = file_assign_target($base_path, $extension);
 
         if(isset($file['name']) and isset($file['tmp_name'])){
             /*
-             * This is a PHP uploaded file array
+             * Move uploaded file to its final position
              */
-            $file['filename'] = $file['tmp_name'];
-            $file['original'] = $file['name'];
-
-            /*
-             * Move the uploaded file to its final position
-             */
-            move_uploaded_file($file['filename'], $base_path.$file['basename']);
-            $file['filename'] = $base_path.$file['basename'];
+            move_uploaded_file($file['filename'], $base_path.$target);
 
         }else{
             /*
-             * This is a normal file already existing in the filesystem
+             * Move the normal file to the base path position
              */
-            if(substr($file, 0, strlen($base_path)) != $base_path){
-                /*
-                 * Move the file to the base path position
-                 */
-                rename($file['filename'], $base_path.$file['basename']);
-                $file['filename'] = $base_path.$file['basename'];
-            }
+            rename($file['filename'], $base_path.$target);
         }
 
         /*
          * Get file mimetype data
          */
-        $meta = file_mimetype($file['filename']);
+        $meta = file_mimetype($base_path.$target);
 
         $file['meta1'] = str_until($meta, '/');
         $file['meta2'] = str_from($meta , '/');
-        $file['hash']  = hash($_CONFIG['files']['hash'], file_get_contents($file['filename']));
+        $file['hash']  = hash($_CONFIG['files']['hash'], file_get_contents($base_path.$target));
 
         /*
          * File must be unique?
@@ -87,7 +81,7 @@ function files_add($file, $base_path = ROOT.'data/files/', $require_unique = fal
             $exists = sql_get('SELECT `id` FROM `files` WHERE `hash` = :hash', array($file['hash']));
 
             if($exists){
-                throw new bException(tr('files_add(): Specified file ":filename" already exists with id ":id"', array(':filename' => $file['filename'], ':id' => $exists)), 'exists');
+                throw new bException(tr('files_add(): Specified file ":filename" already exists with id ":id"', array(':filename' => $base_path.$target, ':id' => $exists)), 'exists');
             }
         }
 
@@ -99,7 +93,7 @@ function files_add($file, $base_path = ROOT.'data/files/', $require_unique = fal
 
                    array(':meta_id'     => meta_action(),
                          ':status'      => $file['status'],
-                         ':filename'    => $file['filename'],
+                         ':filename'    => $target,
                          ':original'    => $file['original'],
                          ':hash'        => $file['hash'],
                          ':type'        => $file['type'],
@@ -107,7 +101,9 @@ function files_add($file, $base_path = ROOT.'data/files/', $require_unique = fal
                          ':meta2'       => $file['meta2'],
                          ':description' => $file['description']));
 
-        $file['id'] = sql_insert_id();
+        $file['id']       = sql_insert_id();
+        $file['filename'] = $target;
+
         return $file;
 
     }catch(Exception $e){
