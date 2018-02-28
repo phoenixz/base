@@ -57,16 +57,16 @@ function drivers_validate_device($device){
         load_libs('validate,seo');
         $v = new validate_form($device, 'type,manufacturer,model,vendor,product,libusb,bus,device,string,default,description');
 
-        $v->isAlphaNumericDash($device['type'], tr('Please specify a valid device type string (only alpha numeric characters and a -)'));
+        $v->isAlphaNumeric($device['type'], tr('Please specify a valid device type string (only alpha numeric characters and a -)'), VALIDATE_IGNORE_DASH);
         $v->isNotEmpty($device['type'], tr('Please specify a device type'));
         $v->hasMinChars($device['type'],  2, tr('Please specify a device type of 2 characters or more'));
         $v->hasMaxChars($device['type'], 32, tr('Please specify a device type of maximum 32 characters'));
 
-        $v->isAlphaNumericDash($device['manufacturer'], tr('Please specify a valid device manufacturer'), VALIDATE_ALLOW_EMPTY_NULL);
+        $v->isAlphaNumeric($device['manufacturer'], tr('Please specify a valid device manufacturer'), VALIDATE_ALLOW_EMPTY_NULL|VALIDATE_IGNORE_DASH);
         $v->hasMinChars($device['manufacturer'],  2, tr('Please specify a device manufacturer of 2 characters or more'), VALIDATE_ALLOW_EMPTY_NULL);
         $v->hasMaxChars($device['manufacturer'], 32, tr('Please specify a device manufacturer of maximum 32 characters'), VALIDATE_ALLOW_EMPTY_NULL);
 
-        $v->isAlphaNumericDash($device['model'], tr('Please specify a valid device model'), VALIDATE_ALLOW_EMPTY_NULL);
+        $v->isAlphaNumeric($device['model'], tr('Please specify a valid device model'), VALIDATE_ALLOW_EMPTY_NULL|VALIDATE_IGNORE_DASH);
         $v->hasMinChars($device['model'],  2, tr('Please specify a device model of 2 characters or more'), VALIDATE_ALLOW_EMPTY_NULL);
         $v->hasMaxChars($device['model'], 32, tr('Please specify a device model of maximum 32 characters'), VALIDATE_ALLOW_EMPTY_NULL);
 
@@ -133,7 +133,7 @@ function drivers_validate_device($device){
         /*
          * Cleanup
          */
-        $device['seostring']   = seo_unique($device['string'], 'drivers_devices', $device['id'], 'seostring');
+        $device['seostring']   = seo_unique($device['string'], 'drivers_devices', isset_get($device['id']), 'seostring');
         $device['description'] = str_replace('_', ' ', $device['description']);
 
         return $device;
