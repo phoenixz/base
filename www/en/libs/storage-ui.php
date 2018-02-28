@@ -24,6 +24,7 @@ function storage_ui_panel_header($params, $section){
         array_default($params, 'header_type'     , 'tabs');
         array_default($params, 'html_flash_class', 'storage');
         array_default($params, 'form_action'     , 'post');
+        array_default($params, 'icon'            , '');
 
         array_default($params['files'], 'section'        , 'storage-section');
         array_default($params['files'], 'documents'      , 'storage-documents');
@@ -69,13 +70,13 @@ function storage_ui_panel_header($params, $section){
 
         switch($params['header_type']){
             case 'tabs':
-                $tab_div_open   = '<div class="tab-pane active" id="tab-blog">';
+                $tab_div_open   = '<div class="tab-pane active" id="tab-'.$params['icon'].'">';
                 $tab_div_close  = '</div>';
                 $tabs           = ' tabs';
                 $tab_content    = ' tab-content';
                 $main_heading   = ' <div class="panel-heading">
                                         <div class="panel-title">
-                                            <h2><span class="fa fa-blogs"></span> '.str_replace(':blog', $section['name'], $params['labels']['title']).'</h2>
+                                            <h2><span class="fa fa-'.$params['icon'].'"></span> '.str_replace(':object', $section['name'], $params['labels']['title']).'</h2>
                                         </div>
                                     </div>';
                 $panel_heading  = ' <ul class="nav nav-tabs" role="tablist">
@@ -185,21 +186,21 @@ function storage_ui_file($file, $tabindex = 0){
                         <td class="file">
                             <div>
                                 <a target="_blank" class="fancy" href="'.storage_file_url($icon, 'icon').'">
-                                    <img rel="blog-page" class="col-md-1 control-label" src="'.storage_file_url($icon, 'small').'" alt="'.html_safe('('.$icon['x'].' X '.$icon['y'].')').'" />
+                                    <img rel="document-file" class="col-md-1 control-label" src="'.storage_file_url($icon, 'small').'" alt="'.html_safe('('.$icon['x'].' X '.$icon['y'].')').'" />
                                 </a>
                             </div>
                         </td>
                         <td class="buttons">
                             <div>
-                                <a class="col-md-5 btn btn-success blogpost photo up button">'.tr('Up').'</a>
-                                <a class="col-md-5 btn btn-success blogpost photo down button">'.tr('Down').'</a>
-                                <a class="col-md-5 btn btn-danger blogpost photo delete button">'.tr('Delete').'</a>
+                                <a class="col-md-5 btn btn-success storage-page photo up button">'.tr('Up').'</a>
+                                <a class="col-md-5 btn btn-success storage-page photo down button">'.tr('Down').'</a>
+                                <a class="col-md-5 btn btn-danger storage-page photo delete button">'.tr('Delete').'</a>
                             </div>
                         </td>
                         <td class="file_type">
                             <div>
                                 '.html_select(array('name'     => 'file_status['.$icon['id'].']',
-                                                    'class'    => 'btn blogpost photo type',
+                                                    'class'    => 'btn storage-page photo type',
                                                     'extra'    => 'tabindex="'.++$tabindex.'"',
                                                     'selected' => $icon['type'],
                                                     'none'     => tr('Unspecified type'),
@@ -208,7 +209,7 @@ function storage_ui_file($file, $tabindex = 0){
                         </td>
                         <td class="description">
                             <div>
-                                <textarea class="blogpost photo description form-control" placeholder="'.tr('Description of this photo').'">'.$icon['description'].'</textarea>
+                                <textarea class="storage-page photo description form-control" placeholder="'.tr('Description of this photo').'">'.$icon['description'].'</textarea>
                             </div>
                         </td>
                     </tr>';
@@ -223,7 +224,7 @@ function storage_ui_file($file, $tabindex = 0){
 
 
 /*
- * Return HTML select list containing all available blog categories
+ * Return HTML select list containing all available storage categories
  */
 function storage_ui_categories_select($params) {
     try{
@@ -246,15 +247,15 @@ function storage_ui_categories_select($params) {
         array_default($params['labels'], 'empty_category' , tr('Select a category'));
         array_default($params['labels'], 'none_category'  , tr('Select a category'));
 
-        if(empty($params['blogs_id'])){
+        if(empty($params['sections_id'])){
             /*
-             * Categories work per blog, so without a blog we cannot show
+             * Categories work per section, so without a section we cannot show
              * categories
              */
             $params['resource'] = null;
 
         }else{
-            $execute = array(':blogs_id' => $params['blogs_id']);
+            $execute = array(':sections_id' => $params['sections_id']);
 
             $query   = 'SELECT  '.$params['column'].' AS id,
                                 `storage_categories`.`name`
@@ -263,7 +264,7 @@ function storage_ui_categories_select($params) {
 
             $join    = '';
 
-            $where   = 'WHERE   `storage_categories`.`blogs_id` = :blogs_id
+            $where   = 'WHERE   `storage_categories`.`sections_id` = :sections_id
                         AND     `storage_categories`.`status`   IS NULL ';
 
             if($params['right']){
