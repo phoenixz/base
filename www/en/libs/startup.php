@@ -1255,7 +1255,7 @@ function log_file($messages, $class = 'syslog', $color = null){
         $date     = $date->format('Y/m/d H:i:s');
 
         foreach($messages as $key => $message){
-            if($key and (count($messages) > 1)){
+            if(count($messages) > 1){
                 if(!is_scalar($message)){
                     $message = str_log($message);
                 }
