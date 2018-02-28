@@ -2336,7 +2336,6 @@ function file_move_to_backup($path){
              * as the backup was generated less than a second
              * ago
              */
-
             file_delete($path);
             return true;
         }
@@ -2346,6 +2345,40 @@ function file_move_to_backup($path){
 
     }catch(Exception $e){
         throw new bException('file_move_to_backup(): Failed', $e);
+    }
+}
+
+
+
+/*
+ * Update the specified file owner and group
+ */
+function file_chown($file, $user = null, $group = null){
+    try{
+        if(!$user){
+             $user = posix_getpwuid(posix_getuid());
+             $user = $user['name'];
+        }
+
+        if(!$group){
+             $group = posix_getpwuid(posix_getuid());
+             $group = $group['name'];
+        }
+
+        $file = realpath($file);
+
+        if(!$file){
+            throw new bException(tr('file_chown(): Specified file ":file" does not exist', array(':file' => $file)), 'not-exist');
+        }
+
+        if(!strstr($file, ROOT)){
+            throw new bException(tr('file_chown(): Specified file ":file" is not in the projects ROOT path ":path"', array(':path' => $path, ':file' => $file)), 'invalid');
+        }
+
+        safe_exec('sudo chown '.$user.':'.$group.' '.$file);
+
+    }catch(Exception $e){
+        throw new bException('file_chown(): Failed', $e);
     }
 }
 ?>
