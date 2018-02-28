@@ -25,43 +25,46 @@ function storage_ui_panel_header($params, $section){
         array_default($params, 'html_flash_class', 'storage');
         array_default($params, 'form_action'     , 'post');
 
-        array_default($params['files'], 'section'      , 'storage-section');
-        array_default($params['files'], 'documents'    , 'storage-documents');
-        array_default($params['files'], 'categories'   , 'storage-categories');
-        array_default($params['files'], 'files'        , 'storage-files');
-        array_default($params['files'], 'configuration', 'storage-configuration');
-        array_default($params['files'], 'comments'     , 'storage-comments');
-        array_default($params['files'], 'keywords'     , 'storage-keywords');
-        array_default($params['files'], 'key_values'   , 'storage-key-values');
-        array_default($params['files'], 'resources'    , 'storage-resources');
-        array_default($params['files'], 'ratings'      , 'storage-ratings');
+        array_default($params['files'], 'section'        , 'storage-section');
+        array_default($params['files'], 'documents'      , 'storage-documents');
+        array_default($params['files'], 'image_documents', 'storage-image-documents');
+        array_default($params['files'], 'categories'     , 'storage-categories');
+        array_default($params['files'], 'files'          , 'storage-files');
+        array_default($params['files'], 'configuration'  , 'storage-configuration');
+        array_default($params['files'], 'comments'       , 'storage-comments');
+        array_default($params['files'], 'keywords'       , 'storage-keywords');
+        array_default($params['files'], 'key_values'     , 'storage-key-values');
+        array_default($params['files'], 'resources'      , 'storage-resources');
+        array_default($params['files'], 'ratings'        , 'storage-ratings');
 
-        array_default($params['urls'], 'form'         , domain(true));
-        array_default($params['urls'], 'create'       , domain('/'.$params['files']['section'].'.html?'.$params['seosection'].'='.$_GET[$params['seosection']]));
-        array_default($params['urls'], 'section'      , domain('/'.$params['files']['section'].'.html?'.$params['seosection'].'='.$_GET[$params['seosection']]));
-        array_default($params['urls'], 'documents'    , domain('/'.$params['files']['documents'].'.html?'.$params['seosection'].'='.$_GET[$params['seosection']]));
-        array_default($params['urls'], 'categories'   , domain('/'.$params['files']['categories'].'.html?'.$params['seosection'].'='.$_GET[$params['seosection']]));
-        array_default($params['urls'], 'files'        , domain('/'.$params['files']['files'].'.html?'.$params['seosection'].'='.$_GET[$params['seosection']]));
-        array_default($params['urls'], 'configuration', domain('/'.$params['files']['configuration'].'.html?'.$params['seosection'].'='.$_GET[$params['seosection']]));
-        array_default($params['urls'], 'comments'     , domain('/'.$params['files']['comments'].'.html?'.$params['seosection'].'='.$_GET[$params['seosection']]));
-        array_default($params['urls'], 'keywords'     , domain('/'.$params['files']['keywords'].'.html?'.$params['seosection'].'='.$_GET[$params['seosection']]));
-        array_default($params['urls'], 'key_values'   , domain('/'.$params['files']['key_values'].'.html?'.$params['seosection'].'='.$_GET[$params['seosection']]));
-        array_default($params['urls'], 'resources'    , domain('/'.$params['files']['resources'].'.html?'.$params['seosection'].'='.$_GET[$params['seosection']]));
-        array_default($params['urls'], 'ratings'      , domain('/'.$params['files']['ratings'].'.html?'.$params['seosection'].'='.$_GET[$params['seosection']]));
+        array_default($params['urls'], 'form'           , domain(true));
+        array_default($params['urls'], 'create'         , domain('/'.$params['files']['section'].'.html?'.$params['seosection'].'='.$_GET[$params['seosection']]));
+        array_default($params['urls'], 'section'        , domain('/'.$params['files']['section'].'.html?'.$params['seosection'].'='.$_GET[$params['seosection']]));
+        array_default($params['urls'], 'documents'      , domain('/'.$params['files']['documents'].'.html?'.$params['seosection'].'='.$_GET[$params['seosection']]));
+        array_default($params['urls'], 'image_documents', domain('/'.$params['files']['image_documents'].'.html?'.$params['seosection'].'='.$_GET[$params['seosection']]));
+        array_default($params['urls'], 'categories'     , domain('/'.$params['files']['categories'].'.html?'.$params['seosection'].'='.$_GET[$params['seosection']]));
+        array_default($params['urls'], 'files'          , domain('/'.$params['files']['files'].'.html?'.$params['seosection'].'='.$_GET[$params['seosection']]));
+        array_default($params['urls'], 'configuration'  , domain('/'.$params['files']['configuration'].'.html?'.$params['seosection'].'='.$_GET[$params['seosection']]));
+        array_default($params['urls'], 'comments'       , domain('/'.$params['files']['comments'].'.html?'.$params['seosection'].'='.$_GET[$params['seosection']]));
+        array_default($params['urls'], 'keywords'       , domain('/'.$params['files']['keywords'].'.html?'.$params['seosection'].'='.$_GET[$params['seosection']]));
+        array_default($params['urls'], 'key_values'     , domain('/'.$params['files']['key_values'].'.html?'.$params['seosection'].'='.$_GET[$params['seosection']]));
+        array_default($params['urls'], 'resources'      , domain('/'.$params['files']['resources'].'.html?'.$params['seosection'].'='.$_GET[$params['seosection']]));
+        array_default($params['urls'], 'ratings'        , domain('/'.$params['files']['ratings'].'.html?'.$params['seosection'].'='.$_GET[$params['seosection']]));
 
         array_default($params['labels'], 'title' , tr('Manage :objects', array(':objects' => $params['objects'])));
         array_default($params['labels'], 'filter', tr('Filter...'));
 
-        array_default($params['tabs'], 'section'      , tr('Section'));
-        array_default($params['tabs'], 'documents'    , tr('Documents'));
-        array_default($params['tabs'], 'categories'   , tr('Categories'));
-        array_default($params['tabs'], 'files'        , tr('Files'));
-        array_default($params['tabs'], 'configuration', tr('Configuration'));
-        array_default($params['tabs'], 'comments'     , tr('Comments'));
-        array_default($params['tabs'], 'keywords'     , tr('Keywords'));
-        array_default($params['tabs'], 'key_values'   , tr('Key values'));
-        array_default($params['tabs'], 'resources'    , tr('Resources'));
-        array_default($params['tabs'], 'ratings'      , tr('Ratings'));
+        array_default($params['tabs'], 'section'        , tr('Section'));
+        array_default($params['tabs'], 'documents'      , tr('Documents'));
+        array_default($params['tabs'], 'image_documents', tr('Image documents'));
+        array_default($params['tabs'], 'categories'     , tr('Categories'));
+        array_default($params['tabs'], 'files'          , tr('Files'));
+        array_default($params['tabs'], 'configuration'  , tr('Configuration'));
+        array_default($params['tabs'], 'comments'       , tr('Comments'));
+        array_default($params['tabs'], 'keywords'       , tr('Keywords'));
+        array_default($params['tabs'], 'key_values'     , tr('Key values'));
+        array_default($params['tabs'], 'resources'      , tr('Resources'));
+        array_default($params['tabs'], 'ratings'        , tr('Ratings'));
 
 
         switch($params['header_type']){
@@ -76,16 +79,17 @@ function storage_ui_panel_header($params, $section){
                                         </div>
                                     </div>';
                 $panel_heading  = ' <ul class="nav nav-tabs" role="tablist">
-                                        <li'.(($params['active'] == 'section')       ? ' class="active"' : '').'><a href="'.str_replace(':'.$params['seosection'], $_GET[$params['seosection']], $params['urls']['section']).'" role="tab">'.$params['tabs']['section'].'</a></li>
-                                        <li'.(($params['active'] == 'configuration') ? ' class="active"' : '').'><a href="'.str_replace(':'.$params['seosection'], $_GET[$params['seosection']], $params['urls']['files']).'" role="tab">'.$params['tabs']['configuration'].'</a></li>
-                                        <li'.(($params['active'] == 'categories')    ? ' class="active"' : '').'><a href="'.str_replace(':'.$params['seosection'], $_GET[$params['seosection']], $params['urls']['categories']).'" role="tab">'.$params['tabs']['categories'].'</a></li>
-                                        <li'.(($params['active'] == 'documents')     ? ' class="active"' : '').'><a href="'.str_replace(':'.$params['seosection'], $_GET[$params['seosection']], $params['urls']['documents']).'" role="tab">'.$params['tabs']['documents'].'</a></li>
-                                        <li'.(($params['active'] == 'keywords')      ? ' class="active"' : '').'><a href="'.str_replace(':'.$params['seosection'], $_GET[$params['seosection']], $params['urls']['keywords']).'" role="tab">'.$params['tabs']['keywords'].'</a></li>
-                                        <li'.(($params['active'] == 'key_values')    ? ' class="active"' : '').'><a href="'.str_replace(':'.$params['seosection'], $_GET[$params['seosection']], $params['urls']['key_values']).'" role="tab">'.$params['tabs']['key_values'].'</a></li>
-                                        <li'.(($params['active'] == 'files')         ? ' class="active"' : '').'><a href="'.str_replace(':'.$params['seosection'], $_GET[$params['seosection']], $params['urls']['files']).'" role="tab">'.$params['tabs']['files'].'</a></li>
-                                        <li'.(($params['active'] == 'comments')      ? ' class="active"' : '').'><a href="'.str_replace(':'.$params['seosection'], $_GET[$params['seosection']], $params['urls']['comments']).'" role="tab">'.$params['tabs']['comments'].'</a></li>
-                                        <li'.(($params['active'] == 'ratings')       ? ' class="active"' : '').'><a href="'.str_replace(':'.$params['seosection'], $_GET[$params['seosection']], $params['urls']['ratings']).'" role="tab">'.$params['tabs']['ratings'].'</a></li>
-                                        <li'.(($params['active'] == 'resources')     ? ' class="active"' : '').'><a href="'.str_replace(':'.$params['seosection'], $_GET[$params['seosection']], $params['urls']['resources']).'" role="tab">'.$params['tabs']['resources'].'</a></li>
+                                        <li'.(($params['active'] == 'section')         ? ' class="active"' : '').'><a href="'.str_replace(':'.$params['seosection'], $_GET[$params['seosection']], $params['urls']['section']).'" role="tab">'.$params['tabs']['section'].'</a></li>
+                                        <li'.(($params['active'] == 'configuration')   ? ' class="active"' : '').'><a href="'.str_replace(':'.$params['seosection'], $_GET[$params['seosection']], $params['urls']['files']).'" role="tab">'.$params['tabs']['configuration'].'</a></li>
+                                        <li'.(($params['active'] == 'categories')      ? ' class="active"' : '').'><a href="'.str_replace(':'.$params['seosection'], $_GET[$params['seosection']], $params['urls']['categories']).'" role="tab">'.$params['tabs']['categories'].'</a></li>
+                                        <li'.(($params['active'] == 'documents')       ? ' class="active"' : '').'><a href="'.str_replace(':'.$params['seosection'], $_GET[$params['seosection']], $params['urls']['documents']).'" role="tab">'.$params['tabs']['documents'].'</a></li>
+                                        <li'.(($params['active'] == 'image_documents') ? ' class="active"' : '').'><a href="'.str_replace(':'.$params['seosection'], $_GET[$params['seosection']], $params['urls']['image_documents']).'" role="tab">'.$params['tabs']['image_documents'].'</a></li>
+                                        <li'.(($params['active'] == 'keywords')        ? ' class="active"' : '').'><a href="'.str_replace(':'.$params['seosection'], $_GET[$params['seosection']], $params['urls']['keywords']).'" role="tab">'.$params['tabs']['keywords'].'</a></li>
+                                        <li'.(($params['active'] == 'key_values')      ? ' class="active"' : '').'><a href="'.str_replace(':'.$params['seosection'], $_GET[$params['seosection']], $params['urls']['key_values']).'" role="tab">'.$params['tabs']['key_values'].'</a></li>
+                                        <li'.(($params['active'] == 'files')           ? ' class="active"' : '').'><a href="'.str_replace(':'.$params['seosection'], $_GET[$params['seosection']], $params['urls']['files']).'" role="tab">'.$params['tabs']['files'].'</a></li>
+                                        <li'.(($params['active'] == 'comments')        ? ' class="active"' : '').'><a href="'.str_replace(':'.$params['seosection'], $_GET[$params['seosection']], $params['urls']['comments']).'" role="tab">'.$params['tabs']['comments'].'</a></li>
+                                        <li'.(($params['active'] == 'ratings')         ? ' class="active"' : '').'><a href="'.str_replace(':'.$params['seosection'], $_GET[$params['seosection']], $params['urls']['ratings']).'" role="tab">'.$params['tabs']['ratings'].'</a></li>
+                                        <li'.(($params['active'] == 'resources')       ? ' class="active"' : '').'><a href="'.str_replace(':'.$params['seosection'], $_GET[$params['seosection']], $params['urls']['resources']).'" role="tab">'.$params['tabs']['resources'].'</a></li>
                                     </ul>';
                 break;
 
