@@ -115,6 +115,7 @@ function upload_multi($params){
         array_default($params, 'url'       , '');
         array_default($params, 'done'      , '');
         array_default($params, 'fail'      , '');
+        array_default($params, 'complete'  , '');
         array_default($params, 'process'   , '');
         array_default($params, 'processall', '');
         array_default($params, 'iframe'    , false);
