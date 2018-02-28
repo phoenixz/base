@@ -10,7 +10,17 @@
 
 
 
-load_config('scanimage');
+/*
+ *
+ */
+function scanimage_library_init(){
+    try{
+        load_config('scanimage');
+
+    }catch(Exception $e){
+        throw new bException('scanimage_library_init(): Failed', $e);
+    }
+}
 
 
 
@@ -22,12 +32,12 @@ load_config('scanimage');
 function scanimage($params){
     try{
         $params = scanimage_validate($params);
-        $command = 'scanimage --format tiff '.$params['options'];
+        $command = scanimage_command().' --format tiff '.$params['options'];
 
         /*
          * Finish scan command and execute it
          */
-$params['format'] = 'tiff';
+
         try{
             switch($params['format']){
                 case 'tiff':
@@ -41,9 +51,17 @@ $params['format'] = 'tiff';
                     break;
             }
 
+            file_chown($params['file']);
+
         }catch(Exception $e){
             $data = $e->getData();
-            $line = array_shift($data);
+
+            if(is_array($data)){
+                $line = array_shift($data);
+
+            }else{
+                $line = '';
+            }
 
             switch(substr($line, 0, 33)){
                 case 'scanimage: open of device images':
@@ -59,7 +77,7 @@ $params['format'] = 'tiff';
                     throw new bException(tr('scanimage(): No scanner found'), 'not-found');
 
                 default:
-                    throw new bException(tr('scanimage(): Unknown error ":e"', array(':e' => $e->getData())), $e);
+                    throw new bException(tr('scanimage(): Unknown scanner process error ":e"', array(':e' => $e->getData())), $e);
             }
         }
 
@@ -105,7 +123,7 @@ function scanimage_validate($params){
         if(!$params['file']){
             $v->setError(tr('No file specified'));
 
-        }elseif(file_exists($params['file'])){
+        }elseif(file_exists($params['file']) and !FORCE){
             $v->setError(tr('Specified file ":file" already exists', array(':file' => $params['file'])), 'exists');
 
         }else{
@@ -151,7 +169,7 @@ function scanimage_validate($params){
         }else{
             foreach($params['options'] as $key => $value){
                 if(!isset($device['options'][$key])){
-                    $v->setError(tr('Driver option ":key" is not supported by device ":device"', array(':option' => $key, ':device' => $params['device'])));
+                    $v->setError(tr('Driver option ":key" is not supported by device ":device"', array(':key' => $key, ':device' => $params['device'])));
                     continue;
                 }
 
@@ -231,24 +249,25 @@ function scanimage_list($all = false){
  */
 function scanimage_detect_devices(){
     try{
-        $scanners = safe_exec('scanimage -L -q');
+        $scanners = safe_exec(scanimage_command().' -L -q');
         $devices  = array();
 
         foreach($scanners as $scanner){
             if(substr($scanner, 0, 6) != 'device') continue;
 
-            $found = preg_match_all('/device `(.+?):bus(\d+);dev(\d+)\' is a (.+)/i', $scanner, $matches);
+            $device = null;
+            $found  = preg_match_all('/device `(.+?):bus(\d+);dev(\d+)\' is a (.+)/i', $scanner, $matches);
 
             if($found){
                 /*
                  * Found a scanner
                  */
-                $devices[] = array('raw'         => $matches[0][0],
-                                   'driver'      => $matches[1][0],
-                                   'bus'         => $matches[2][0],
-                                   'device'      => $matches[3][0],
-                                   'string'      => $matches[1][0].':bus'.$matches[2][0].';dev'.$matches[3][0],
-                                   'description' => $matches[4][0]);
+                $device = array('raw'         => $matches[0][0],
+                                'driver'      => $matches[1][0],
+                                'bus'         => $matches[2][0],
+                                'device'      => $matches[3][0],
+                                'string'      => $matches[1][0].':bus'.$matches[2][0].';dev'.$matches[3][0],
+                                'description' => $matches[4][0]);
             }else{
                 $found = preg_match_all('/device `((.+?):.+?)\' is a (.+)/i', $scanner, $matches);
 
@@ -256,15 +275,23 @@ function scanimage_detect_devices(){
                     /*
                      * Found a scanner
                      */
-                    $devices[] = array('raw'         => $matches[0][0],
-                                       'driver'      => $matches[2][0],
-                                       'bus'         => null,
-                                       'device'      => null,
-                                       'string'      => $matches[1][0],
-                                       'description' => $matches[3][0]);
+                    $device = array('raw'         => $matches[0][0],
+                                    'driver'      => $matches[2][0],
+                                    'bus'         => null,
+                                    'device'      => null,
+                                    'string'      => $matches[1][0],
+                                    'description' => $matches[3][0]);
                 }
             }
+
+            if($device){
+                $device['manufacturer'] = trim(str_until($device['description'], ' '));
+                $device['model']        = trim(str_until(str_from($device['description'], ' '), ' '));
+
+                $devices[] = $device;
+            }
         }
+
 
         return $devices;
 
@@ -373,12 +400,16 @@ function scanimage_update_devices(){
 function scanimage_get_options($device){
     try{
         $skip    = true;
-        $results = safe_exec('scanimage -h -d "'.$device.'"');
+        $results = safe_exec(scanimage_command().' -h -d "'.$device.'"');
         $retval  = array();
 
         foreach($results as $result){
             if(strstr($result, 'failed:')){
-                throw new bException(tr('scanimage_get_options(): Options scan for device ":device" failed with ":e"', array(':device' => $device, ':e' => str_from($result, 'failed:'))), 'failed', $result);
+                if(strtolower(trim(str_from($result, 'failed:'))) == 'invalid argument'){
+                    throw new bException(tr('scanimage_get_options(): Options scan for device ":device" failed with ":e". This could possibly be a permission issue; does the current process user has the required daccess to scanner devices? Please check this user\'s groups!', array(':device' => $device, ':e' => trim(str_from($result, 'failed:')))), 'failed', $result);
+                }
+
+                throw new bException(tr('scanimage_get_options(): Options scan for device ":device" failed with ":e"', array(':device' => $device, ':e' => trim(str_from($result, 'failed:')))), 'failed', $result);
             }
 
             if($skip){
@@ -671,6 +702,25 @@ function scanimage_select_resolution($params){
 
     }catch(Exception $e){
         throw new bException('scanimage_select(): Failed', $e);
+    }
+}
+
+
+/*
+ *
+ */
+function scanimage_command(){
+    global $_CONFIG;
+
+    try{
+        if(empty($_CONFIG['scanimage']['sudo'])){
+            return 'scanimage';
+        }
+
+        return 'sudo scanimage';
+
+    }catch(Exception $e){
+        throw new bException('scanimage_command(): Failed', $e);
     }
 }
 ?>
