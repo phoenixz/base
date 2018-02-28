@@ -1202,7 +1202,12 @@ function cli_status_color($status){
 
         switch(strtolower($status)){
             case 'ok':
+                // FALLTHROUGH
+            case 'completed':
                 return cli_color($status, 'green');
+
+            case 'processing':
+                return cli_color($status, 'light_blue');
 
             case 'failed':
                 return cli_color($status, 'red');
