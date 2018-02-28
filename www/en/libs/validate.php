@@ -533,7 +533,7 @@ class validate_form {
 
             }else{
                 if(!$this->scalar){
-                    $this->setError(tr('Value ":value" is not scalar', array(':value' => $value)));
+                    $this->setError($message);
                     $this->testValue = $value;
 
                 }else{
