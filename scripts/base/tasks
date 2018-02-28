@@ -280,7 +280,14 @@ under_construction('add');
         unset($task['description']);
 
         foreach($task as $key => $value){
-            log_console(cli_color(str_capitalize($key).':', 'white').' '.$value);
+            switch($key){
+                case 'status':
+                    log_console(cli_color(str_capitalize($key).':', 'white').' '.cli_status_color($value));
+                    break;
+
+                default:
+                    log_console(cli_color(str_capitalize($key).':', 'white').' '.$value);
+            }
         }
 
         log_console(cli_color('Description:', 'white').' '.$description);
@@ -406,10 +413,10 @@ showdie($interval);
                     if(empty($value)) continue;
 
                     if(is_integer($key)){
-                        $options .= ' '.$value;
+                        $options .= ' "'.$value.'"';
 
                     }else{
-                        $options .= ' '.$key.' '.$value;
+                        $options .= ' '.$key.' "'.$value.'"';
                     }
                 }
 
@@ -474,7 +481,7 @@ showdie($interval);
                     log_file(tr('Task ":task" failed with ":e" in ":time"'   , array(':task' => $task['id'], ':e' => $e, ':time' => time_difference($start, $end, 'auto', 5))), 'tasks');
 
                     $task['status']     = 'failed';
-                    $task['results']    = $e->getMessages();
+                    $task['results']    = array_merge($e->getMessages(), array(' '), $e->getData());
                     $task['time_spent'] = microtime(true) - $start;
 
                     array_unshift($task['results'], tr('Task executed command ":command"'   , array(':command' => $command.' '.$options))."\n");
