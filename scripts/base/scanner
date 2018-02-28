@@ -89,18 +89,54 @@ switch(cli_method()){
         break;
 
     case 'scan':
-        $scanimage['device']         = cli_argument('--device', true);
-        $scanimage['resolution']     = not_empty(cli_argument('--resolution'     , true), $_CONFIG['scanimage']['resolution']);
-        $scanimage['contrast']       = not_empty(cli_argument('--contrast'       , true), $_CONFIG['scanimage']['contrast']);
-        $scanimage['brightness']     = not_empty(cli_argument('--brightness'     , true), $_CONFIG['scanimage']['brightness']);
-        $scanimage['gamma']          = not_empty(cli_argument('--gamma, true'    , true), $_CONFIG['scanimage']['gamma']);
-        $scanimage['jpeg_quality']   = not_empty(cli_argument('--jpeg-quality'   , true), $_CONFIG['scanimage']['jpeg_quality']);
-        $scanimage['trasfer_format'] = not_empty(cli_argument('--transfer-format', true), $_CONFIG['scanimage']['transfer_format']);
-        $scanimage['mode']           = not_empty(cli_argument('--mode'           , true), $_CONFIG['scanimage']['mode']);
-        $scanimage['format']         = not_empty(cli_argument('--format'         , true), $_CONFIG['scanimage']['format']);
-        $scanimage['clear_exif']     = not_empty(cli_argument('--clear-exif'     , true), $_CONFIG['scanimage']['clear_exif']);
-        $scanimage['file']           = cli_argument();
+        $scanimage['device']  = cli_argument('--device', true);
+        $scanimage['options'] = array();
 
+        $device = scanimage_get($scanimage['device']);
+
+        if(!$device){
+            throw new bException(tr('Specified device ":device" does not exist', array(':device' => $scanimage['device'])), 'not-exist');
+        }
+
+        /*
+         * Parse parameters for this specific device
+         */
+        foreach($device['options'] as $key => $valid_values){
+            $value = cli_argument('--'.$key, true);
+
+            if($value){
+                /*
+                 * Validate values
+                 */
+                if(is_array($valid_values)){
+                    if(!in_array($value, $valid_values)){
+                        throw new bException(tr('Value ":value" for the specified option ":key" is invalid', array(':key' => $key, ':value' => $value)));
+                    }
+
+                }else{
+                    /*
+                     * Ensure range
+                     */
+// :TODO: Implement
+                }
+
+                $scanimage['options'][$key] = $value;
+            }
+        }
+
+        $scanimage['file'] = cli_argument();
+        array_default($scanimage, 'format', 'jpeg');
+
+         //$scanimage['resolution']     = not_empty(cli_argument('--resolution'     , true), isset_get($device['options']['resolution']));
+        //$scanimage['contrast']       = not_empty(cli_argument('--contrast'       , true), isset_get($_CONFIG['scanimage']['contrast']));
+        //$scanimage['brightness']     = not_empty(cli_argument('--brightness'     , true), isset_get($_CONFIG['scanimage']['brightness']));
+        //$scanimage['gamma']          = not_empty(cli_argument('--gamma, true'    , true), isset_get($_CONFIG['scanimage']['gamma']));
+        //$scanimage['jpeg_quality']   = not_empty(cli_argument('--jpeg-quality'   , true), isset_get($_CONFIG['scanimage']['jpeg_quality']));
+        //$scanimage['trasfer_format'] = not_empty(cli_argument('--transfer-format', true), isset_get($_CONFIG['scanimage']['transfer_format']));
+        //$scanimage['mode']           = not_empty(cli_argument('--mode'           , true), isset_get($_CONFIG['scanimage']['mode']));
+        //$scanimage['format']         = not_empty(cli_argument('--format'         , true), isset_get($_CONFIG['scanimage']['format']));
+        //$scanimage['clear_exif']     = not_empty(cli_argument('--clear-exif'     , true), isset_get($_CONFIG['scanimage']['clear_exif']));
+        //$scanimage['file']           = cli_argument();
         cli_no_arguments_left();
 
         if(!$scanimage['file']){
