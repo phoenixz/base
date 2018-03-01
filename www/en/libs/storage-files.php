@@ -41,6 +41,57 @@ function storage_files_add($page, $file, $types_id, $priority = null){
 /*
  *
  */
+function storage_files_query($documents_id, $pages_id = null){
+    try{
+        if($pages_id){
+            /*
+             * Get files linked to this page only
+             */
+            $where   = ' WHERE `storage_files`.`documents_id` = :documents_id AND `storage_files`.`documents_id` = :documents_id';
+
+            $execute = array(':documents_id' => $documents_id);
+
+        }else{
+            /*
+             * Get files linked all pages for this document
+             */
+            $where   = ' WHERE    (`storage_files`.`documents_id` = :documents_id AND `storage_files`.`pages_id` IS NULL)
+                         OR       (`storage_files`.`documents_id` = :documents_id AND `storage_files`.`pages_id` = :pages_id)';
+
+            $execute = array(':documents_id' => $documents_id,
+                             ':pages_id'     => $pages_id);
+        }
+
+        $files = sql_query('SELECT    `files`.`id`,
+                                      `files`.`filename`,
+                                      `files`.`type`,
+                                      `files`.`description`,
+
+                                      `storage_files`.`priority`
+
+                            FROM      `storage_files`
+
+                            LEFT JOIN `files`
+                            ON        `files`.`id` = `storage_files`.`files_id`
+
+                            '.$where.'
+
+                            ORDER BY  `priority` DESC',
+
+                            $execute);
+
+        return $files;
+
+    }catch(Exception $e){
+        throw new bException('storage_files_query(): Failed', $e);
+    }
+}
+
+
+
+/*
+ *
+ */
 function storage_file_url($file, $type){
     try{
         return domain('/files/'.$file['filename']);
