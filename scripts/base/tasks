@@ -355,40 +355,40 @@ under_construction('add');
                 break;
             }
 
-            /*
-             * Task depends on parent?
-             */
-            if($task['parents_id']){
-                /*
-                 * Check if its parent task has already been executed
-                 */
-                $parent = sql_get('SELECT `id`, `status` FROM `tasks` WHERE `id` = :id', array(':parents_id' => $task['parents_id']));
-
-                if(!$parent){
-                    throw new bException(tr('Task ":task" has parents_id ":parent" but this parent does not exist', array(':task' => $task['id'], ':parent' => $task['parents_id'])), 'warning/not-exists');
-                }
-
-                if($parent['status'] != 'completed'){
-                    /*
-                     * Cannot execute this task, the parent task hasn't been completed yet!
-                     */
-                    meta_action($task['meta_id'], 'set-wait');
-                    sql_query('UPDATE `tasks` SET `status` = "waiting_parent" WHERE `id` = :id', array(':id' => $task['id']));
-                    continue;
-                }
-            }
-
-            /*
-             * Task executes after DATE?
-             */
-            if($task['after']){
-                $interval = date_convert($task['after'], 'object')->diff(new DateTime());
-showdie($interval);
-            }
-
-            $count++;
-
             try{
+                /*
+                 * Task depends on parent?
+                 */
+                if($task['parents_id']){
+                    /*
+                     * Check if its parent task has already been executed
+                     */
+                    $parent = sql_get('SELECT `id`, `status` FROM `tasks` WHERE `id` = :id', array(':id' => $task['parents_id']));
+
+                    if(!$parent){
+                        throw new bException(tr('Task ":task" has parents_id ":parent" but this parent does not exist', array(':task' => $task['id'], ':parent' => $task['parents_id'])), 'warning/not-exists');
+                    }
+
+                    if($parent['status'] != 'completed'){
+                        /*
+                         * Cannot execute this task, the parent task hasn't been completed yet!
+                         */
+                        meta_action($task['meta_id'], 'set-wait');
+                        sql_query('UPDATE `tasks` SET `status` = "waiting_parent" WHERE `id` = :id', array(':id' => $task['id']));
+                        continue;
+                    }
+                }
+
+                /*
+                 * Task executes after DATE?
+                 */
+                if($task['after']){
+                    $interval = date_convert($task['after'], 'object')->diff(new DateTime());
+showdie($interval);
+                }
+
+                $count++;
+
                 log_console(tr('Executing task ":task" with description ":description"', array(':task' => $task['id'], ':description' => $task['description'])));
                 log_file(tr('Executing task ":task" with description ":description"'   , array(':task' => $task['id'], ':description' => $task['description'])), 'tasks');
 
