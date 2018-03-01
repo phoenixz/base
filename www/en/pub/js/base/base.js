@@ -1,20 +1,19 @@
 (function($){
-    $(document).ajaxSuccess(function(event, jqXHR){
+    $(document).ajaxSuccess(function(event, jqXHR, settings){
 //console.log(jqXHR.responseJSON);
 //console.log(jqXHR.responseText);
         if (typeof jqXHR.responseJSON != 'object') {
-            throw "failed to parse json";
+            throw "failed to parse json for url \"" + settings.url + "\"";
 
         }
 
         if(typeof jqXHR.responseJSON.result == 'undefined') {
-            throw "json contained no result text";
+            throw "json contained no result text for url \"" + settings.url + "\"";
 
         }
 
         if(typeof jqXHR.responseJSON.data == 'undefined'){
-            throw "json contained no data object";
-
+            throw "json contained no data object for url \"" + settings.url + "\"";
         }
 
         switch (jqXHR.responseJSON.result) {
@@ -26,7 +25,7 @@
                 break;
 
             default:
-                throw "invalid json status \"" + jqXHR.responseJSON.result + "\"";
+                throw "invalid json status \"" + jqXHR.responseJSON.result + "\" for url \"" + settings.url + "\"";
         }
 
         if(jqXHR.responseJSON.csrf){
@@ -35,17 +34,17 @@
         }
     });
 
-    $(document).ajaxError(function(event, jqXHR){
-        var message = tr("Something went wrong while trying to communicate with the server. Please try again in a few moments");
+    $(document).ajaxError(function(event, jqXHR, settings, thrownError){
+        var message = tr("Something went wrong while trying to communicate with the server for url \"" + settings.url + "\". Please try again in a few moments");
 
         if (typeof jqXHR.responseJSON != 'object') {
-            console.error("ERROR: Failed to parse result JSON");
+            console.error("ERROR: Failed to parse result JSON for url \"" + settings.url + "\"");
 
         } else if(typeof jqXHR.responseJSON.result == 'undefined') {
-            console.error("ERROR: Result JSON did not have a result text");
+            console.error("ERROR: Result JSON did not have a result text for url \"" + settings.url + "\"");
 
         } else if(typeof jqXHR.responseJSON.data == 'undefined') {
-            console.error("ERROR: Result JSON did not have a data object");
+            console.error("ERROR: Result JSON did not have a data object for url \"" + settings.url + "\"");
 
         } else {
             switch (jqXHR.responseJSON.result) {
@@ -78,12 +77,12 @@
 
                 case 'ERROR':
                     // Something crapped up, fallthrough to error handler
-                    console.error("ERROR [ " + jqXHR.responseJSON.result + " ]: ");
+                    console.error("ERROR for url \"" + settings.url + "\" [ " + jqXHR.responseJSON.result + " ]: ");
                     console.error(jqXHR.responseJSON.data);
                     break;
 
                 default:
-                    console.error("UNKNOWN RESULT [ " + jqXHR.responseJSON.result + " ]: ");
+                    console.error("UNKNOWN RESULT for url \"" + settings.url + "\" [ " + jqXHR.responseJSON.result + " ]: ");
                     console.error(jqXHR.responseJSON.data);
             }
         }
@@ -91,6 +90,13 @@
         /*
          * By default, try to show the js flash message
          */
+        if(jqXHR.status == 404){
+            if(settings.url.indexOf('/sweetalert.js')){
+                console.error('Failed to load sweetalert');
+                return false;
+            }
+        }
+
         $.flashMessage(message, "error", 0);
         return false;
     });

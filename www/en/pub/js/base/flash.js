@@ -51,17 +51,19 @@ console.log(type);
 
             if(!isFunction("swal")){
                 $.getScript(cdnprefix+"js/sweetalert/sweetalert.js")
-                    .done(function(){
+                    .complete(function(){
                         $.getCSS(cdnprefix+"css/sweetalert/sweetalert.css");
 
-                        swal({title: "Notice",
-                              type: type,
-                              html: message});
+                        if((typeof swal) != 'undefined'){
+                            swal({title: "Notice",
+                                  type: type,
+                                  html: message});
+                        }
                     })
                     .fail(function(e){
                         console.error("****************************************************************");
                         console.error(e);
-                        console.errorlog("****************************************************************");
+                        console.error("****************************************************************");
                     });
 
             }else{
