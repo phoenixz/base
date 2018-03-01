@@ -33,9 +33,11 @@ function files_add($file, $base_path = ROOT.'data/files/', $require_unique = fal
     global $_CONFIG;
 
     try{
-        array_params($file, 'filename,type,status,original,meta1,meta2,description');
+        if(is_string($file)){
+            $file = array('filename' => $file,
+                          'original' => basename($file));
 
-        if(isset($file['name']) and isset($file['tmp_name'])){
+        }elseif(isset($file['name']) and isset($file['tmp_name'])){
             /*
              * This is a PHP uploaded file array. Correct file names
              */
@@ -43,12 +45,14 @@ function files_add($file, $base_path = ROOT.'data/files/', $require_unique = fal
             $file['original'] = $file['name'];
         }
 
+        array_ensure($file, 'filename,type,status,original,meta1,meta2,description');
+
         /*
          * Ensure that the files base path exists
          */
         file_ensure_path($base_path);
 
-        $extension = str_rfrom($file['name'], '.');
+        $extension = str_rfrom($file['filename'], '.');
         $base_path = slash($base_path);
         $target    = file_assign_target($base_path, $extension);
 
