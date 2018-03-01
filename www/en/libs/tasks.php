@@ -224,6 +224,7 @@ function tasks_get($filters, $set_status = false){
 
         $task = sql_get('SELECT    `tasks`.`id`,
                                    `tasks`.`meta_id`,
+                                   `tasks`.`createdby`,
                                    `tasks`.`parents_id`,
                                    `tasks`.`command`,
                                    `tasks`.`status`,
