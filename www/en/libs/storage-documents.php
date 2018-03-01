@@ -58,39 +58,17 @@ function storage_documents_get($section, $document = null, $auto_create = false)
              */
             $where   = ' WHERE  `sections_id` = :sections_id
                          AND    `id`          = :id
-                         AND    `status`      IS NULL';
+                         AND    `status`      IN ("published", "unpublished", "_new")';
 
             $execute = array(':sections_id' => $section['id'],
                              ':id'          => $document);
-
-        }elseif(is_string($document)){
-            /*
-             * Assume this is pages seoname
-             */
-            $where   = ' WHERE  `sections_id` = :sections_id
-                         AND    `seoname`     = :seoname
-                         AND    `status`      IS NULL';
-
-            $execute = array(':sections_id' => $section['id'],
-                             ':seoname'     => $document);
-
-        }elseif(is_array($document)){
-            /*
-             * Assume this is pages seoname
-             */
-            $where   = ' WHERE  `sections_id` = :sections_id
-                         AND    `seoname`     = :seoname
-                         AND    `status`      IS NULL';
-
-            $execute = array(':sections_id' => $section['id'],
-                             ':seoname'     => $document);
 
         }else{
             throw new bException(tr('storage_documents_get(): Invalid document specified, is datatype ":type", should be null, numeric, string, or array', array(':type' => gettype($document))), 'invalid');
         }
 
-        $document = sql_get('SELECT `id`      AS `documents_id`,
-                                    `meta_id` AS `documents_meta_id`,
+        $document = sql_get('SELECT `id`,
+                                    `meta_id`,
                                     `createdby`,
                                     `sections_id`,
                                     `masters_id`,

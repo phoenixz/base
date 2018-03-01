@@ -164,7 +164,7 @@ function storage_sections_validate($section, $new = false){
                 $v->isAlphaNumeric($section['name'], tr('Please specify a valid alpha numeric section name (spaces, dashes and parentheses are allowed)'), VALIDATE_IGNORE_PARENTHESES|VALIDATE_IGNORE_SPACE|VALIDATE_IGNORE_DASH);
             }
 
-            $v->isAlphaNumeric($section['slogan']                        , tr('Please specify a valid alpha numeric slogan (spaces, dashes and parentheses are allowed)'), VALIDATE_ALLOW_EMPTY_STRING|VALIDATE_IGNORE_PARENTHESES|VALIDATE_IGNORE_SPACE|VALIDATE_IGNORE_DASH);
+            $v->isAlphaNumeric($section['slogan']                        , tr('Please specify a valid alpha numeric slogan (spaces, dashes and parentheses are allowed)'), VALIDATE_ALLOW_EMPTY_STRING|VALIDATE_IGNORE_PARENTHESES|VALIDATE_IGNORE_SPACE|VALIDATE_IGNORE_COMMA|VALIDATE_IGNORE_DOT|VALIDATE_IGNORE_DASH|VALIDATE_IGNORE_EXCLAMATIONMARK|VALIDATE_IGNORE_QUESTIONMARK|VALIDATE_IGNORE_PARENTHESES);
             $v->isRegex($section['url_template'], '/(:?[a-z0-9-_.%]\/)+/', tr('Please specify a valid URL template'), VALIDATE_ALLOW_EMPTY_STRING);
             $v->isAlphaNumeric($section['description']                   , tr('Please specify a valid alpha numeric section description (spaces, dashes, commas, dots, underscores, colons, parentheses, exclamation marks, question marks, and asterisks are allowed)'), VALIDATE_ALLOW_EMPTY_STRING|VALIDATE_IGNORE_PARENTHESES|VALIDATE_IGNORE_SPACE|VALIDATE_IGNORE_DASH|VALIDATE_IGNORE_COMMA|VALIDATE_IGNORE_DOT|VALIDATE_IGNORE_UNDERSCORE|VALIDATE_IGNORE_EXCLAMATIONMARK|VALIDATE_IGNORE_QUESTIONMARK|VALIDATE_IGNORE_ASTERISK);
 
