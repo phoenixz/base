@@ -237,6 +237,18 @@ foreach($files as $file => &$status){
                 }
             }
 
+        }elseif(preg_match_all('/www\/[a-z]{2}\/ajax\/storage\/.+?\.php/', $file)){
+            /*
+             * This is a storage system file, managedd by toolkit
+             */
+            if(!$base_only){
+                if(patch_file_exists_in_toolkit($file)){
+                    log_console(tr('Identified file as toolkit'), 'VERBOSE');
+                    $sections['toolkit'][$file] = $status;
+                    $marked = true;
+                }
+            }
+
         }elseif(preg_match_all('/www\/[a-z]{2}\/[a-z0-9-_]+\.php/', $file)){
             /*
              * This is an admin UI file
