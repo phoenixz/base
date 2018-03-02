@@ -211,7 +211,8 @@ function crypto_write_transaction($transaction, $provider){
             }
 
         }else{
-            $transaction['users_id'] = 1;
+// :DELETE: We need to debug using the correct user
+            //$transaction['users_id'] = 1;
         }
 
         log_file(tr('Adding / updating transaction ":tx_id" from address ":address" with ":credits" credits for user ":users_id"', array(':credits' => isset_get($transaction['amount_usd_rounded']), ':users_id' => isset_get($transaction['users_id']), ':tx_id' => isset_get($transaction['txn_id']), ':address' => isset_get($transaction['address']))), 'crypto');
