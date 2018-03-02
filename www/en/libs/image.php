@@ -8,7 +8,7 @@
  * @copyright Sven Oostenbrink <support@ingiga.com>, Johan Geuze
  */
 
-load_libs('storage-documents');
+
 
 /*
  * Initialize the library
@@ -126,16 +126,31 @@ function image_convert($source, $destination, $params = null){
         array_default($params, 'method'          , null);
         array_default($params, 'format'          , null);
         array_default($params, 'background'      , 'none');
-        array_default($params, 'quality'         , $imagick['quality']);
-        array_default($params, 'interlace'       , $imagick['interlace']);
-        array_default($params, 'strip'           , $imagick['strip']);
-        array_default($params, 'blur'            , $imagick['blur']);
-        array_default($params, 'defines'         , $imagick['defines']);
-        array_default($params, 'sampling_factor' , $imagick['sampling_factor']);
-        array_default($params, 'keep_aspectratio', $imagick['keep_aspectratio']);
-        array_default($params, 'limit_memory'    , $imagick['limit']['memory']);
-        array_default($params, 'limit_map'       , $imagick['limit']['map']);
+        array_default($params, 'defaults'        , $imagick['defaults']);
         array_default($params, 'log'             , ROOT.'data/log/imagemagic_convert.log');
+
+        if($params['defaults']){
+            array_default($params, 'quality'         , $imagick['quality']);
+            array_default($params, 'interlace'       , $imagick['interlace']);
+            array_default($params, 'strip'           , $imagick['strip']);
+            array_default($params, 'blur'            , $imagick['blur']);
+            array_default($params, 'defines'         , $imagick['defines']);
+            array_default($params, 'sampling_factor' , $imagick['sampling_factor']);
+            array_default($params, 'keep_aspectratio', $imagick['keep_aspectratio']);
+            array_default($params, 'limit_memory'    , $imagick['limit']['memory']);
+            array_default($params, 'limit_map'       , $imagick['limit']['map']);
+
+        }else{
+            array_default($params, 'quality'         , null);
+            array_default($params, 'interlace'       , null);
+            array_default($params, 'strip'           , null);
+            array_default($params, 'blur'            , null);
+            array_default($params, 'defines'         , null);
+            array_default($params, 'sampling_factor' , null);
+            array_default($params, 'keep_aspectratio', null);
+            array_default($params, 'limit_memory'    , null);
+            array_default($params, 'limit_map'       , null);
+        }
 
         foreach($params as $key => $value){
             switch($key){
@@ -173,8 +188,10 @@ function image_convert($source, $destination, $params = null){
                     break;
 
                 case 'defines':
-                    foreach($value as $define){
-                        $command .= ' -define '.$define;
+                    if($value){
+                        foreach($value as $define){
+                            $command .= ' -define '.$define;
+                        }
                     }
 
                     break;
@@ -261,9 +278,8 @@ function image_convert($source, $destination, $params = null){
          */
         $source_path = dirname($source);
         $source_file = basename($source);
-
-        $dest_path = dirname($destination);
-        $dest_file = basename($destination);
+        $dest_path   = dirname($destination);
+        $dest_file   = basename($destination);
 
         switch($params['format']){
             case 'gif':
