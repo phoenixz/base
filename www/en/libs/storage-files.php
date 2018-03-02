@@ -13,26 +13,67 @@
 /*
  *
  */
-function storage_files_add($page, $file, $types_id, $priority = null){
+function storage_files_add($params){
     try{
+        array_ensure($params);
+        array_default($params, 'sections_id' , null);
+        array_default($params, 'documents_id', null);
+        array_default($params, 'pages_id'    , null);
+        array_default($params, 'types_id'    , null);
+        array_default($params, 'file'        , null);
+        array_default($params, 'priority'    , 0);
+        array_default($params, 'convert'     , false);
+        array_default($params, 'update_owner', false);
+
         load_libs('files');
+
+        $file = $params['file'];
+
+        if(!is_array($file)){
+            $file = array('filename' => $file);
+        }
+
+        if($params['update_owner']){
+            load_libs('file');
+            file_chown($file['filename']);
+        }
+
+        if($params['convert']){
+            switch($params['convert']){
+                case 'jpg':
+                    // FALLTHROUGH
+                case 'jpeg':
+                    /*
+                     * Convert to JPEG
+                     */
+                    load_libs('image');
+                    image_convert($file['filename'], str_runtil($file['filename'], '.').'.jpg', array('method' => 'custom',
+                                                                                                      'format' => 'jpg'));
+                    $file['filename'] = str_runtil($file['filename'], '.').'.jpg';
+                    break;
+
+                default:
+                    throw new bException(tr('storage_files_add(): Unknown convert value ":convert" specified', array(':convert' => $params['convert'])), 'unknown');
+            }
+        }
+
         $file = files_add($file);
 
         sql_query('INSERT INTO `storage_files` (`sections_id`, `documents_id`, `pages_id`, `types_id`, `files_id`, `priority`)
                    VALUES                      (:sections_id , :documents_id , :pages_id , :types_id , :files_id , :priority )',
 
-                   array(':sections_id'  => $page['sections_id'],
-                         ':documents_id' => $page['documents_id'],
-                         ':pages_id'     => $page['id'],
-                         ':types_id'     => $types_id,
+                   array(':sections_id'  => $params['sections_id'],
+                         ':documents_id' => $params['documents_id'],
+                         ':pages_id'     => $params['pages_id'],
+                         ':types_id'     => $params['types_id'],
                          ':files_id'     => $file['id'],
-                         ':priority'     => $priority));
+                         ':priority'     => $params['priority']));
 
         $file['id'] = sql_insert_id();
         return $file;
 
     }catch(Exception $e){
-        throw new bException('storage_file_url(): Failed', $e);
+        throw new bException('storage_files_add(): Failed', $e);
     }
 }
 

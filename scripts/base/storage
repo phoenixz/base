@@ -25,7 +25,23 @@ list
 
 
 add-files                       - Add the specified files to the specified
-                                  document or page';
+                                  document or page
+
+    --monitor-task TASKS_ID     - If specified, this script will continue
+                                  importing as long as the specified TASKS_ID
+                                  status is either "completed" or "failed"
+
+    --update-owner              - Update the owner and group for the file to the
+                                  owner and group of this process. WARNING:
+                                  Requires sudo privileges for the owner of this
+                                  process
+
+    --convert FORMAT            - If specified, will convert the file to the
+                                  specified format using the "convert" command.
+                                  Supported formats (for the moment) are: "jpeg"
+                                  or "jpg"
+
+';
 
 
 
@@ -37,9 +53,12 @@ load_libs('test');
 
 switch(cli_method()){
     case 'add-files':
-        $request['sections_id']  = cli_argument('--section' , true);
-        $request['documents_id'] = cli_argument('--document', true);
-        $request['pages_id']     = cli_argument('--page'    , true);
+        $request['sections_id']  = cli_argument('--section'     , true);
+        $request['documents_id'] = cli_argument('--document'    , true);
+        $request['pages_id']     = cli_argument('--page'        , true);
+        $request['monitor_task'] = cli_argument('--monitor-task', true);
+        $request['update_owner'] = cli_argument('--update-owner', true);
+        $request['convert']      = cli_argument('--convert'     , true);
 
         $files = cli_arguments();
 
@@ -122,9 +141,64 @@ switch(cli_method()){
         /*
          * Yay, all verified and okay! Start adding the files!
          */
-        foreach($files as $file){
-            $file = storage_files_add($page, $file, null);
-            log_console(tr('Added file ":file" to section ":section", document ":document" page ":page"', array(':file' => $file['filename'], ':section' => $page['sections_id'], ':document' => $page['documents_id'], ':page' => $page['id'])));
+        while(true){
+            foreach($files as $path){
+                if(!file_exists($path)){
+                    throw new bException('Specified file or path ":path" does not exist', array(':warning/' => $path), 'warning/not-exist');
+                }
+
+                if(is_dir($path)){
+                    $path = slash($path);
+
+                    foreach(scandir($path) as $file){
+                        if(($file == '.') or ($file == '..')) continue;
+
+                        $file = storage_files_add(array('sections_id'  => $page['sections_id'],
+                                                        'documents_id' => $page['documents_id'],
+                                                        'pages_id'     => $page['id'],
+                                                        'file'         => $path.$file,
+                                                        'update_owner' => $request['update_owner'],
+                                                        'convert'      => $request['convert']));
+
+                        log_console(tr('Added file ":file" from path ":path" to section ":section", document ":document" page ":page"', array(':path' => $path, ':file' => basename($file['filename']), ':section' => $page['sections_id'], ':document' => $page['documents_id'], ':page' => $page['id'])));
+                    }
+
+                }else{
+                    $path = storage_files_add(array('sections_id'  => $page['sections_id'],
+                                                    'documents_id' => $page['documents_id'],
+                                                    'pages_id'     => $page['pages_id'],
+                                                    'file'         => $file,
+                                                    'update_owner' => $request['update_owner'],
+                                                    'convert'      => $request['convert']));
+
+                    log_console(tr('Added file ":file" to section ":section", document ":document" page ":page"', array(':file' => $path['filename'], ':section' => $page['sections_id'], ':document' => $page['documents_id'], ':page' => $page['id'])));
+                }
+            }
+
+            if($request['monitor_task']){
+                load_libs('tasks');
+                $task = tasks_get($request['monitor_task']);
+
+                if(!$task){
+                    throw new bException('Specified task ":task" does not exist', array(':task' => $request['monitor_task']), 'warning/not-exist');
+                }
+
+                switch($task['status']){
+                    case 'completed':
+                        // FALLTHROUGH
+                    case 'failed':
+                        /*
+                         * The process is done, break the loop
+                         */
+                        goto breakout;
+                }
+
+                usleep(100000);
+                continue;
+            }
+
+            breakout:
+            break;
         }
 
         break;
