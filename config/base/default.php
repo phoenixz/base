@@ -174,8 +174,7 @@ $_CONFIG['formats']            = array('force1224'                          => '
                                        'human_nice_date'                    => 'l, j F Y');
 
 // Filesystem configuration
-$_CONFIG['fs']                 = array('system_tempdir'                     => true,                                                    // ?
-                                       'dir_mode'                           => 0770,                                                    // When the system creates directory, this sets what file mode it will have (Google unix file modes for more information)
+$_CONFIG['fs']                 = array('dir_mode'                           => 0770,                                                    // When the system creates directory, this sets what file mode it will have (Google unix file modes for more information)
                                        'file_mode'                          => 0660,                                                    // When the system creates a file, this sets what file mode it will have (Google unix file modes for more information)
                                        'target_path_size'                   => 4);                                                      // When creating
 

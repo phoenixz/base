@@ -1068,7 +1068,7 @@ function file_rename($source, $destination, $search, $rename){
 /*
  * Create temporary directory (sister function from tempnam)
  */
-function file_temp_dir($prefix = '', $system = null, $mode = null){
+function file_temp_dir($prefix = '', $mode = null){
     global $_CONFIG;
 
     try{
@@ -1079,37 +1079,7 @@ function file_temp_dir($prefix = '', $system = null, $mode = null){
             $mode = $_CONFIG['fs']['dir_mode'];
         }
 
-        /*
-         * Use default configged location, or specific one?
-         */
-        if($system === null){
-            $system = $_CONFIG['fs']['system_tempdir'];
-        }
-
-        /*
-         * Determine the base directory
-         */
-        if($system){
-            if(is_bool($system)){
-                /*
-                 * Use system tmp dir (on linux, always /tmp)
-                 */
-                $path = slash(sys_get_temp_dir());
-
-            }else{
-                /*
-                 * Use specific
-                 */
-                $path = slash($system);
-            }
-
-        }else{
-            /*
-             * Use project tmp path
-             * (This might be VERY useful if for example the project install is on a different mount than the system /tmp!)
-             */
-            file_ensure_path($path = TMP);
-        }
+        file_ensure_path($path = TMP);
 
         while(true){
             $unique = uniqid($prefix);
