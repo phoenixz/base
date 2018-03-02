@@ -19,6 +19,7 @@ try{
     }
 
     if($single and process_runs($cmd)){
+        log_file(tr('Specified command ":cmd" is already running and has "single" option specified, not running again', array(':cmd' => str_replace(ROOT, '', $path).$cmd)), 'run_background', 'warning');
         return false;
     }
 
