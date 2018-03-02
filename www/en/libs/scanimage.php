@@ -31,27 +31,39 @@ function scanimage_library_init(){
  */
 function scanimage($params){
     try{
-        $params = scanimage_validate($params);
+        $params  = scanimage_validate($params);
         $command = scanimage_command().' --format tiff '.$params['options'];
 
         /*
          * Finish scan command and execute it
          */
-
         try{
-            switch($params['format']){
-                case 'tiff':
-                    $command .= ' > '.$params['file'];
-                    $result   = safe_exec($command);
-                    break;
+            if(empty($params['batch'])){
+                switch($params['format']){
+                    case 'tiff':
+                        $command .= ' > '.$params['file'];
+                        $result   = safe_exec($command);
+                        break;
 
-                case 'jpeg':
-                    $command .= ' | convert tiff:- '.$params['file'];
-                    $result   = safe_exec($command);
-                    break;
+                    case 'jpeg':
+                        $command .= ' | convert tiff:- '.$params['file'];
+                        $result   = safe_exec($command);
+                        break;
+                }
+
+                file_chown($params['file']);
+
+            }else{
+                switch($params['format']){
+                    case 'tiff':
+                        $result   = safe_exec($command);
+                        break;
+
+                    case 'jpeg':
+                        $result   = safe_exec($command);
+                        break;
+                }
             }
-
-            file_chown($params['file']);
 
         }catch(Exception $e){
             $data = $e->getData();
@@ -121,10 +133,20 @@ function scanimage_validate($params){
          * Validate target file
          */
         if(!$params['file']){
-            $v->setError(tr('No file specified'));
+            if(empty($params['batch'])){
+                $v->setError(tr('No file specified'));
+
+            }else{
+                /*
+                 * Batch orders have a target path with a file pattern
+                 */
+                if(!file_exists(dirname($params['options']['batch']))){
+                    $v->setError(tr('Specified batch target path ":path" does not exists', array(':path' => $params['options']['batch'])));
+                }
+            }
 
         }elseif(file_exists($params['file']) and !FORCE){
-            $v->setError(tr('Specified file ":file" already exists', array(':file' => $params['file'])), 'exists');
+            $v->setError(tr('Specified file ":file" already exists', array(':file' => $params['file'])));
 
         }else{
             file_ensure_path(dirname($params['file']));
@@ -155,8 +177,15 @@ function scanimage_validate($params){
         }
 
         if(!empty($extension)){
-            if(str_rfrom($params['file'], '.') != $extension){
-                $v->setError(tr('Specified file ":file" has an incorrect file name extension for the requested format ":format", it should have the extension ":extension"', array(':file' => $params['file'], ':format' => $params['format'], ':extension' => $extension)));
+            if($params['batch']){
+                if(str_rfrom($params['options']['batch'], '.') != 'tiff'){
+                    $v->setError(tr('Specified batch file pattern ":file" has an incorrect file name extension for the requested format ":format", it should have the extension ":extension"', array(':file' => $params['options']['batch'], ':format' => $params['format'], ':extension' => $extension)));
+                }
+
+            }else{
+                if(str_rfrom($params['file'], '.') != $extension){
+                    $v->setError(tr('Specified file ":file" has an incorrect file name extension for the requested format ":format", it should have the extension ":extension"', array(':file' => $params['file'], ':format' => $params['format'], ':extension' => $extension)));
+                }
             }
         }
 
@@ -169,8 +198,34 @@ function scanimage_validate($params){
         }else{
             foreach($params['options'] as $key => $value){
                 if(!isset($device['options'][$key])){
-                    $v->setError(tr('Driver option ":key" is not supported by device ":device"', array(':key' => $key, ':device' => $params['device'])));
-                    continue;
+                    /*
+                     * This may be a system driver option
+                     */
+                    switch($key){
+                        case 'batch':
+// :TODO: Implement validations!
+                            break;
+                        case 'batch-start':
+// :TODO: Implement validations!
+                            break;
+                        case 'batch-count':
+// :TODO: Implement validations!
+                            break;
+                        case 'batch-increment':
+// :TODO: Implement validations!
+                            break;
+                        case 'batch--double':
+// :TODO: Implement validations!
+                            break;
+
+                        default:
+                            $v->setError(tr('Driver option ":key" is not supported by device ":device"', array(':key' => $key, ':device' => $params['device'])));
+                            goto continue_validation;
+                    }
+
+                    $options[] = '--'.$key.'="'.$value.'"';
+                    $params['options'] = implode(' ', $options);
+                    goto continue_validation;
                 }
 
                 if(!$value){
@@ -198,6 +253,8 @@ function scanimage_validate($params){
                 }else{
                     $options[] = '--'.$key.' "'.$value.'"';
                 }
+
+                continue_validation:
             }
         }
 

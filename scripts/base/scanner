@@ -124,6 +124,25 @@ switch(cli_method()){
             }
         }
 
+        /*
+         * Get system options
+         */
+        $system_options = array('batch',
+                                'batch-start',
+                                'batch-count',
+                                'batch-increment',
+                                'batch--double');
+
+        foreach($system_options as $option){
+            if($value = cli_argument('--'.$option, true)){
+                if($option == 'batch'){
+                    $scanimage['batch'] = true;
+                }
+
+                $scanimage['options'][$option] = $value;
+            }
+        }
+
         $scanimage['file'] = cli_argument();
         array_default($scanimage, 'format', 'jpeg');
 
@@ -140,17 +159,23 @@ switch(cli_method()){
         cli_no_arguments_left();
 
         if(!$scanimage['file']){
-            throw new bException(tr('No target file specified'), 'not-specified');
+            if(empty($scanimage['options']['batch'])){
+                throw new bException(tr('No target file specified'), 'not-specified');
+            }
+
+        }else{
+            $scanimage['file'] = file_absolute($scanimage['file']);
         }
 
-        $scanimage['file'] = file_absolute($scanimage['file']);
         $scanimage['path'] = dirname($scanimage['file']);
 
         file_ensure_path($scanimage['path']);
         scanimage($scanimage);
 
         if(!file_exists($scanimage['file'])){
-            throw new bException(tr('Sane reported scan was saved to target file ":file", but the file was not found', array(':file' => $scanimage['file'])), 'not-found');
+            if(!$scanimage['batch']){
+                throw new bException(tr('Sane reported scan was saved to target file ":file", but the file was not found', array(':file' => $scanimage['file'])), 'not-found');
+            }
         }
 
         log_console(tr('Scanned image to file ":file"', array(':file' => $scanimage['file'])));
