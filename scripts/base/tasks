@@ -218,7 +218,7 @@ under_construction('add');
             }
 
             if(!QUIET){
-                log_console(tr('Showing all tasks'), 'white');
+                log_console(tr('Showing all tasks (parent task id with * means this task executes in parrallel)'), 'white');
             }
 
         }else{
@@ -227,12 +227,12 @@ under_construction('add');
             }
 
             if(!QUIET){
-                log_console(tr('Showing tasks with status ":status"', array(':status' => $status)), 'white');
+                log_console(tr('Showing tasks with status ":status" (parent task id with * means this task executes in parrallel)', array(':status' => $status)), 'white');
             }
         }
 
         if(!QUIET){
-            log_console(str_size('#id', 6).str_size('Meta id', 8).str_size('User', 32).str_size('Parent task id', 18).str_size('Command', 32).str_size('Status', 12).str_size('Description', 32).str_size('Execution method', 20).str_size('Time limit', 12).str_size('Time spent', 12), 'cyan');
+            log_console(str_size('#id', 6).str_size('Meta id', 7).' '.str_size('User', 32).str_size('Parent task id', 14).' '.str_size('Command', 32).str_size('Status', 16).' '.str_size('Description', 32).str_size('Execution method', 20).str_size('Time limit', 4).' '.str_size('Time spent', 10), 'cyan');
         }
 
         $tasks = tasks_list($status, $limit);
@@ -252,7 +252,7 @@ under_construction('add');
                     break;
             }
 
-            log_console(str_size($task['id'], 6).str_size($task['meta_id'], 8).str_size(name($task), 32).str_size(not_empty($task['parents_id'], '-'), 18).str_size($task['command'], 32).str_size($task['status'], 12).str_size($task['description'], 32).str_size($task['method'], 20).str_size(($task['time_limit'] ? $task['time_limit'] : '-'), 12).($task['time_spent'] ? $task['time_spent'] : '-'));
+            log_console(str_size($task['id'], 6).str_size($task['meta_id'], 7, ' ', true).' '.str_size(name($task), 32).str_size(not_empty(($task['parents_id'] ? '* ' : '').$task['parents_id'], '-'), 14, ' ', true).' '.str_size($task['command'], 32).str_size($task['status'], 16).' '.str_size($task['description'], 32).str_size($task['method'], 20).str_size(($task['time_limit'] ? $task['time_limit'] : '-'), 4, ' ', true).' '.str_size($task['time_spent'] ? $task['time_spent'] : '-', 10, ' ', true));
         }
 
         break;
@@ -271,8 +271,20 @@ under_construction('add');
             throw new bException(tr('The specified task ":id" does not exist', array(':id' => $id)), 'warning/not-exist');
         }
 
-        $data        = json_decode_custom($task['data']);
-        $results     = json_decode_custom($task['results']);
+        try{
+            $data = json_decode_custom($task['data']);
+
+        }catch(Exception $e){
+            $data = $e;
+        }
+
+        try{
+            $results = json_decode_custom($task['results']);
+
+        }catch(Exception $e){
+            $results = $e;
+        }
+
         $description = $task['description'];
 
         unset($task['data']);
@@ -300,14 +312,22 @@ under_construction('add');
             print_r($data)."\n";
         }
 
-        log_console();
-        log_console(cli_color('Results:', 'white'));
+        switch($task['status']){
+            case 'completed':
+                // FALLTHROUGH
+            case 'failed':
+                /*
+                 * Task has finished or failed, show results
+                 */
+                log_console();
+                log_console(cli_color('Results:', 'white'));
 
-        if(empty($results)){
-            log_console(tr('This task has no results'), 'yellow');
+                if(empty($results)){
+                    log_console(tr('This task has no results'), 'yellow');
 
-        }else{
-            print_r(stripslashes(print_r($results, true)))."\n";
+                }else{
+                    print_r(stripslashes(print_r($results, true)))."\n";
+                }
         }
 
         break;
@@ -336,24 +356,48 @@ under_construction('add');
         break;
 
     case 'execute':
+        $restarts = cli_argument('--restart', true);
         cli_no_arguments_left();
         load_libs('date,time');
-        $count = 0;
+
+        if(!$restarts and ($restarts !== "0")){
+            $restarts = $_CONFIG['tasks']['restart']['amount'];
+        }
+
+        $count    = 0;
+        $previous = null;
 
         log_console(tr('Started task execution...'), 'white');
 
         while(true){
             if($count > 50){
+                if(--$restarts <= 0){
+                    log_console(tr('Passed the maximum amount of restart cycles, quitting'));
+                    die();
+                }
+
                 log_console(tr('Passed the maximum amount of task cycles, restarting'));
-                run_background('base/tasks execute');
+                run_background('base/tasks execute --env '.ENVIRONMENT.' --restart '.$restarts, true, false);
+                die();
             }
 
-            $task = tasks_get('new,waiting_parent', 'processing');
+            $task = tasks_get('new,waiting_parent', 'processing', $previous);
 
             if(!$task){
                 log_console(tr('No new tasks found, quitting'), 'yellow');
                 break;
             }
+
+            if($task['id'] == $previous){
+                /*
+                 * This task passed just now, meaning there are no new tasks
+                 */
+                log_console(tr('No new tasks found, quitting'), 'yellow');
+                break;
+            }
+
+            $previous = $task['id'];
+            $count++;
 
             try{
                 /*
@@ -369,13 +413,25 @@ under_construction('add');
                         throw new bException(tr('Task ":task" has parents_id ":parent" but this parent does not exist', array(':task' => $task['id'], ':parent' => $task['parents_id'])), 'warning/not-exists');
                     }
 
-                    if($parent['status'] != 'completed'){
-                        /*
-                         * Cannot execute this task, the parent task hasn't been completed yet!
-                         */
-                        meta_action($task['meta_id'], 'set-wait');
-                        sql_query('UPDATE `tasks` SET `status` = "waiting_parent" WHERE `id` = :id', array(':id' => $task['id']));
-                        continue;
+                    if($task['parrallel']){
+                        if(($parent['status'] != 'completed') and ($parent['status'] != 'processing')){
+                            /*
+                             * Cannot execute this task, the parent task hasn't started yet!
+                             */
+                            meta_action($task['meta_id'], 'set-wait');
+                            sql_query('UPDATE `tasks` SET `status` = "waiting_parent" WHERE `id` = :id', array(':id' => $task['id']));
+                            continue;
+                        }
+
+                    }else{
+                        if($parent['status'] != 'completed'){
+                            /*
+                             * Cannot execute this task, the parent task hasn't been completed yet!
+                             */
+                            meta_action($task['meta_id'], 'set-wait');
+                            sql_query('UPDATE `tasks` SET `status` = "waiting_parent" WHERE `id` = :id', array(':id' => $task['id']));
+                            continue;
+                        }
                     }
                 }
 
@@ -384,10 +440,7 @@ under_construction('add');
                  */
                 if($task['after']){
                     $interval = date_convert($task['after'], 'object')->diff(new DateTime());
-showdie($interval);
                 }
-
-                $count++;
 
                 log_console(tr('Executing task ":task" with description ":description"', array(':task' => $task['id'], ':description' => $task['description'])));
                 log_file(tr('Executing task ":task" with description ":description"'   , array(':task' => $task['id'], ':description' => $task['description'])), 'tasks');
@@ -434,14 +487,14 @@ showdie($interval);
                         /*
                          * Execute this task as an internal script
                          */
-                        $task['result'] = script_exec($command, $task['data']);
+                        $task['results'] = script_exec($command, $task['data']);
                         break;
 
                     case 'normal':
                         /*
                          * Execute this task as a normal task
                          */
-                        $task['result'] = safe_exec(ROOT.'scripts/'.$command.' '.$options);
+                        $task['results'] = safe_exec(ROOT.'scripts/'.$command.' '.$options);
                         break;
 
                     case 'function':
@@ -453,13 +506,21 @@ showdie($interval);
                             unset($task['load_libs']);
                         }
 
-                        $task['result'] = $task['command']($task['data']);
+                        $task['results'] = $task['command']($task['data']);
                         break;
 
                     default:
                         throw new bException(tr('Unknown task execution method ":method" specified for task ":id" in ":time"', array(':method' => $task['method'], ':id' => $task['id'], ':time' => time_difference($start, $end, 'auto', 5))), 'warning/unknown');
                 }
 
+                /*
+                 * Ensure that the mysql connection is still available. If not,
+                 * the next function will cut that connection so that it can
+                 * auto reconnect with the next query.
+                 *
+                 * This is done here because some tasks may restart the mysql
+                 * server
+                 */
                 task_test_mysql();
                 $end = microtime(true);
 

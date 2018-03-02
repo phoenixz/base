@@ -40,14 +40,15 @@ function tasks_add($task){
 
         load_libs('json');
 
-        sql_query('INSERT INTO `tasks` (`createdby`, `meta_id`, `after`, `status`, `command`, `method`, `time_limit`, `verbose`, `parents_id`, `data`, `description`)
-                   VALUES              (:createdby , :meta_id , :after , :status , :command , :method , :time_limit , :verbose , :parents_id , :data , :description )',
+        sql_query('INSERT INTO `tasks` (`createdby`, `meta_id`, `after`, `status`, `command`, `method`, `time_limit`, `verbose`, `parents_id`, `parrallel`, `data`, `description`)
+                   VALUES              (:createdby , :meta_id , :after , :status , :command , :method , :time_limit , :verbose , :parents_id , :parrallel , :data , :description )',
 
                    array(':createdby'   => $_SESSION['user']['id'],
                          ':meta_id'     => meta_action(),
                          ':status'      => cfm($task['status']),
                          ':command'     => cfm($task['command']),
                          ':parents_id'  => get_null($task['parents_id']),
+                         ':parrallel'   => (boolean) $task['parrallel'],
                          ':method'      => cfm($task['method']),
                          ':time_limit'  => cfm($task['time_limit']),
                          ':verbose'     => $task['verbose'],
@@ -60,7 +61,7 @@ function tasks_add($task){
         log_file(tr('Added new task ":description" with id ":id"', array(':description' => $task['description'], ':id' => $task['id'])), 'tasks');
 
         if($task['auto_execute']){
-            run_background('base/tasks execute --env '.ENVIRONMENT);
+            run_background('base/tasks execute --env '.ENVIRONMENT, true, false);
         }
 
         return $task;
@@ -82,10 +83,22 @@ function tasks_update($task, $executed = false){
         load_libs('json');
         meta_action($task['meta_id'], 'update');
 
+        $execute = array(':id'         => $task['id'],
+                         ':after'      => $task['after'],
+                         ':status'     => $task['status'],
+                         ':verbose'    => $task['verbose'],
+                         ':executed'   => get_null($task['executed']),
+                         ':results'    => json_encode_custom($task['results']));
+
+        if($executed){
+            $execute[':time_spent'] = $task['time_spent'];
+        }
+
         sql_query('UPDATE `tasks`
 
                    SET    `after`      = :after,
-         '.($executed ? ' `executedon` = NOW(), ' : '').'
+         '.($executed ? ' `executedon` = NOW(),
+                          `time_spent` = :time_spent,' : '').'
                           `executed`   = :executed,
                           `status`     = :status,
                           `verbose`    = :verbose,
@@ -93,12 +106,7 @@ function tasks_update($task, $executed = false){
 
                    WHERE  `id`         = :id',
 
-                   array(':id'         => $task['id'],
-                         ':after'      => $task['after'],
-                         ':status'     => $task['status'],
-                         ':verbose'    => $task['verbose'],
-                         ':executed'   => get_null($task['executed']),
-                         ':results'    => json_encode_custom($task['results'])));
+                   $execute);
 
         return $task;
 
@@ -122,7 +130,7 @@ function tasks_validate($task){
     try{
         load_libs('validate');
 
-        $v = new validate_form($task, 'status,command,after,data,results,method,time_limit,executed,time_spent,parents_id,verbose');
+        $v = new validate_form($task, 'status,command,after,data,results,method,time_limit,executed,time_spent,parents_id,parrallel,verbose');
 
         if($task['time_limit'] === ""){
             $task['time_limit'] = $_CONFIG['tasks']['default_time_limit'];
@@ -148,9 +156,16 @@ function tasks_validate($task){
             if(!$exists){
                 $v->setError(tr('Specified parent tasks id ":id" does not exist', array(':id' => $task['parents_id'])));
             }
+
+        }else{
+            if($task['parrallel']){
+                $v->setError(tr('Parrallel was specified without parents_id'));
+            }
         }
 
-        $task['verbose'] = (boolean) $task['verbose'];
+        $task['verbose']   = (boolean) $task['verbose'];
+        $task['parrallel'] = (boolean) $task['parrallel'];
+
 
         if(is_object($task['data'])){
             $v->setError(tr('Specified task data is an object data type, which is not supported'));
@@ -208,7 +223,7 @@ function tasks_validate_status($status){
 /*
  * Get a task with the specified status
  */
-function tasks_get($filters, $set_status = false){
+function tasks_get($filters, $set_status = false, $min_id = null){
     try{
         if(is_natural($filters)){
             $where   = ' WHERE `tasks`.`id` = :id ';
@@ -220,12 +235,18 @@ function tasks_get($filters, $set_status = false){
             $execute = sql_in($filters, ':filter');
             $where   = ' WHERE  `tasks`.`status` IN('.implode(', ', array_keys($execute)).')
                          AND   (`tasks`.`after` IS NULL OR `tasks`.`after` <= UTC_TIMESTAMP()) ';
+
+            if($min_id){
+                $where .= ' AND `tasks`.`id` > :id ';
+                $execute['id'] = $min_id;
+            }
         }
 
         $task = sql_get('SELECT    `tasks`.`id`,
                                    `tasks`.`meta_id`,
                                    `tasks`.`createdby`,
                                    `tasks`.`parents_id`,
+                                   `tasks`.`parrallel`,
                                    `tasks`.`command`,
                                    `tasks`.`status`,
                                    `tasks`.`after`,
@@ -302,6 +323,7 @@ function tasks_list($status, $limit = 10){
         $task = sql_query('SELECT    `tasks`.`id`,
                                      `tasks`.`meta_id`,
                                      `tasks`.`parents_id`,
+                                     `tasks`.`parrallel`,
                                      `tasks`.`command`,
                                      `tasks`.`data`,
                                      `tasks`.`status`,
