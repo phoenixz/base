@@ -1229,6 +1229,20 @@ function cli_status_color($status){
 
 
 /*
+ * Check if the specified PID is running
+ */
+function cli_pid($pid){
+    try{
+        return file_exists('/proc/'.$pid);
+
+    }catch(Exception $e){
+        throw new bException('cli_pid(): Failed', $e);
+    }
+}
+
+
+
+/*
  * WARNING! BELOW HERE BE OBSOLETE FUNCTIONS AND OBSOLETE-BUT-WE-WANT-TO-BE-BACKWARD-COMPATIBLE WRAPPERS
  */
 function this_script_already_runs($action = 'exception', $force = false){
