@@ -39,6 +39,8 @@ try{
         $log = $cmd;
     }
 
+    $log = str_replace('/', '-', $log);
+
     load_libs('file');
     file_ensure_path(ROOT.'data/run-background');
 
@@ -61,6 +63,16 @@ try{
         }
 
         file_ensure_path(dirname($log));
+
+        if(file_exists($log) and is_dir($log)){
+            /*
+             * Oops, the log file already exists, but as a directory! That is a
+             * problem, get rid of it or it will stop background execution all
+             * together!
+             */
+            log_file(tr('Found specified log file ":path" to exist as a directory. Deleting the directory to avoid run_background() not working correctly', array(':path' => $log)), 'run_background');
+            file_delete($log);
+        }
 
         $command = sprintf('(nohup %s >> %s 2>&1 & echo $! >&3) 3> %s', $path.$cmd.' '.$args, $log, ROOT.'data/run-background/'.$cmd);
         exec($command);
