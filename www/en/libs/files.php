@@ -118,6 +118,70 @@ function files_add($file, $base_path = ROOT.'data/files/', $require_unique = fal
 
 
 /*
+ *
+ */
+function files_get($file){
+    try{
+        if(is_numeric($file)){
+            $where = ' WHERE `id` = :id AND `status` IS NULL ';
+            $execute[':id'] = $file;
+
+        }else{
+            $where = ' WHERE `filename` = :filename AND `status` IS NULL  ';
+            $execute[':filename'] = $file;
+        }
+
+        $files = sql_get('SELECT    `id`,
+                                    `meta_id`,
+                                    `status`,
+                                    `filename`,
+                                    `hash`,
+                                    `type`,
+                                    `meta1`,
+                                    `meta2`,
+                                    `description`
+
+                          FROM      `files`
+
+                          '.$where,
+
+                          $execute);
+
+        return $files;
+
+    }catch(Exception $e){
+        throw new bException('files_get(): Failed', $e);
+    }
+}
+
+
+
+/*
+ * Delete a file
+ */
+function files_delete($file, $base_path = ROOT.'data/files/'){
+    try{
+        $dbfile = files_get($file);
+
+        if(!$dbfile){
+            throw new bException(tr('files_delete(): Specified file ":file" does not exist', array(':file' => $file)), 'not-exist');
+        }
+
+        sql_query('DELETE FROM `files` WHERE `id` = :id', array(':id' => $dbfile['id']));
+
+        load_libs('file');
+        file_delete(slash($base_path).$dbfile['filename']);
+
+        return $dbfile;
+
+    }catch(Exception $e){
+        throw new bException('files_delete(): Failed', $e);
+    }
+}
+
+
+
+/*
  * Retrieve history for specified file
  */
 function files_get_history($file){
