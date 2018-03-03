@@ -151,7 +151,14 @@ switch(cli_method()){
                     $path = slash($path);
 
                     foreach(scandir($path) as $file){
+                        /*
+                         * Skip navication directories, skip PART files which
+                         * are still being scanned / downloaded / etc
+                         */
                         if(($file == '.') or ($file == '..')) continue;
+                        if(str_rfrom($file, '.') == 'part')   continue;
+
+                        log_file(tr('Adding file ":file" from path ":path"', array(':file' => $file, ':path' => $path)), 'storage');
 
                         $file = storage_files_add(array('sections_id'  => $page['sections_id'],
                                                         'documents_id' => $page['documents_id'],
@@ -164,6 +171,8 @@ switch(cli_method()){
                     }
 
                 }else{
+                    log_file(tr('Adding file ":file"', array(':file' => $file)), 'storage');
+
                     $path = storage_files_add(array('sections_id'  => $page['sections_id'],
                                                     'documents_id' => $page['documents_id'],
                                                     'pages_id'     => $page['pages_id'],
@@ -175,30 +184,30 @@ switch(cli_method()){
                 }
             }
 
+            if(!empty($break)){
+                /*
+                 * We're done!
+                 */
+                break;
+            }
+
             if($request['monitor_task']){
                 load_libs('tasks');
-                $task = tasks_get($request['monitor_task']);
 
-                if(!$task){
-                    throw new bException('Specified task ":task" does not exist', array(':task' => $request['monitor_task']), 'warning/not-exist');
-                }
+                if(tasks_check_pid($request['monitor_task'])){
+                    log_file(tr('Task ":task" still running, continuing path ":path" monitoring', array(':task' => $request['monitor_task'], ':path' => $path)), 'storage');
 
-                switch($task['status']){
-                    case 'completed':
-                        // FALLTHROUGH
-                    case 'failed':
-                        /*
-                         * The process is done, break the loop
-                         */
-                        goto breakout;
+                }else{
+                    /*
+                     * The process is done, break the loop
+                     */
+                    log_file(tr('Task ":task" finished, doing one last file check before finishing', array(':task' => $request['monitor_task'])), 'storage');
+                    $break = true;
                 }
 
                 usleep(100000);
                 continue;
             }
-
-            breakout:
-            break;
         }
 
         break;

@@ -39,6 +39,8 @@ function storage_files_add($params){
         }
 
         if($params['convert']){
+            load_libs('file,image');
+
             switch($params['convert']){
                 case 'jpg':
                     // FALLTHROUGH
@@ -46,9 +48,9 @@ function storage_files_add($params){
                     /*
                      * Convert to JPEG
                      */
-                    load_libs('image');
                     image_convert($file['filename'], str_runtil($file['filename'], '.').'.jpg', array('method' => 'custom',
                                                                                                       'format' => 'jpg'));
+                    file_delete($file['filename']);
                     $file['filename'] = str_runtil($file['filename'], '.').'.jpg';
                     break;
 
