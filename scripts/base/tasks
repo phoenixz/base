@@ -351,7 +351,7 @@ under_construction('add');
         }
 
         meta_action($task['meta_id'], 'reset');
-        sql_query('UPDATE `tasks` SET `status` = "new", `results` = null WHERE `id` = :id', array(':id' => $task['id']));
+        tasks_reset($task['id']);
         log_console(tr('Reset task ":id"', array(':id' => $task['id'])), 'green');
         break;
 
@@ -368,6 +368,7 @@ under_construction('add');
         $previous = null;
 
         log_console(tr('Started task execution...'), 'white');
+        log_file(tr('Started task execution'), 'tasks');
 
         while(true){
             if($count > 50){
@@ -480,7 +481,7 @@ under_construction('add');
                         /*
                          * Execute this task in the background
                          */
-                        run_background($command.' '.$options, 'tasks/'.$task['id'].'-'.str_until($command, ' '));
+                        $task['pid'] = run_background($command.' '.$options, 'task-logs/'.$task['id'].'-'.str_until($command, ' '));
                         break;
 
                     case 'internal':
@@ -521,8 +522,8 @@ under_construction('add');
                  * This is done here because some tasks may restart the mysql
                  * server
                  */
-                task_test_mysql();
                 $end = microtime(true);
+                task_test_mysql();
 
                 $task['status']     = 'completed';
                 $task['time_spent'] = $end - $start;
@@ -548,6 +549,7 @@ under_construction('add');
                     array_unshift($task['results'], tr('Task executed command ":command"'   , array(':command' => $command.' '.$options))."\n");
                     array_unshift($task['results'], tr('Task ":id" encountered an exception', array(':id' => $task['id']))."\n");
                     tasks_update($task);
+                    tasks_failed($task['id']);
 
                 }catch(Exception $e){
                     notify('task-exception-failed', 'developers', $e);
@@ -559,6 +561,7 @@ under_construction('add');
 
         if($count){
             log_console(tr('Executed ":count" tasks', array(':count' => $count)), 'green');
+            log_file(tr('Executed ":count" tasks', array(':count' => $count)), 'tasks');
         }
 
         break;

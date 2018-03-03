@@ -58,10 +58,13 @@ function tasks_add($task){
 
         $task['id'] = sql_insert_id();
 
-        log_file(tr('Added new task ":description" with id ":id"', array(':description' => $task['description'], ':id' => $task['id'])), 'tasks');
 
         if($task['auto_execute']){
+            log_file(tr('Added new auto executing task ":description" with id ":id"', array(':description' => $task['description'], ':id' => $task['id'])), 'tasks');
             run_background('base/tasks execute --env '.ENVIRONMENT, true, false);
+
+        }else{
+            log_file(tr('Added new task ":description" with id ":id"', array(':description' => $task['description'], ':id' => $task['id'])), 'tasks');
         }
 
         return $task;
@@ -88,6 +91,7 @@ function tasks_update($task, $executed = false){
                          ':status'     => $task['status'],
                          ':verbose'    => $task['verbose'],
                          ':executed'   => get_null($task['executed']),
+                         ':pid'        => get_null($task['pid']),
                          ':results'    => json_encode_custom($task['results']));
 
         if($executed){
@@ -100,6 +104,7 @@ function tasks_update($task, $executed = false){
          '.($executed ? ' `executedon` = NOW(),
                           `time_spent` = :time_spent,' : '').'
                           `executed`   = :executed,
+                          `pid`        = :pid,
                           `status`     = :status,
                           `verbose`    = :verbose,
                           `results`    = :results
@@ -149,12 +154,18 @@ function tasks_validate($task){
         $v->isNatural($task['parents_id'], 1, tr('Please specify a valid parents id'), VALIDATE_ALLOW_EMPTY_NULL);
         $v->hasMinChars($task['description'], 8, tr('Please use more than 8 characters for the description'), VALIDATE_ALLOW_EMPTY_NULL);
         $v->hasMaxChars($task['description'], 2047, tr('Please use more than 8 characters for the description'), VALIDATE_ALLOW_EMPTY_NULL);
+        $v->isNatural($task['pid'], 1, tr('Please specify a valid pid (process id)'), VALIDATE_ALLOW_EMPTY_NULL);
+        $v->isBetween($task['pid'], 1, 65535, tr('Please specify a valid pid (process id)'), VALIDATE_ALLOW_EMPTY_NULL);
 
         if($task['parents_id']){
-            $exists = sql_get('SELECT `id` FROM `tasks` WHERE `id` = :id', true, array(':id' => $task['parents_id']));
+            $exists = sql_get('SELECT `id`, `method` FROM `tasks` WHERE `id` = :id', array(':id' => $task['parents_id']));
 
             if(!$exists){
                 $v->setError(tr('Specified parent tasks id ":id" does not exist', array(':id' => $task['parents_id'])));
+            }
+
+            if($task['parrallel'] and ($exists['method'] !== 'background')){
+                $v->setError(tr('Parrallel tasks require parent task running in mode "background"'));
             }
 
         }else{
@@ -247,6 +258,7 @@ function tasks_get($filters, $set_status = false, $min_id = null){
                                    `tasks`.`createdby`,
                                    `tasks`.`parents_id`,
                                    `tasks`.`parrallel`,
+                                   `tasks`.`pid`,
                                    `tasks`.`command`,
                                    `tasks`.`status`,
                                    `tasks`.`after`,
@@ -324,6 +336,7 @@ function tasks_list($status, $limit = 10){
                                      `tasks`.`meta_id`,
                                      `tasks`.`parents_id`,
                                      `tasks`.`parrallel`,
+                                     `tasks`.`pid`,
                                      `tasks`.`command`,
                                      `tasks`.`data`,
                                      `tasks`.`status`,
@@ -389,6 +402,82 @@ function task_test_mysql(){
          * MySQL server went away, close the connection
          */
         sql_close();
+    }
+}
+
+
+
+/*
+ * Reset the specified task, plus all tasks that have this task as a parent
+ *
+ */
+function tasks_reset($tasks_id){
+    try{
+        sql_query('UPDATE `tasks` SET `status` = "new", `results` = null WHERE `id` = :id', array(':id' => $tasks_id));
+
+        $count    = 1;
+        $children = sql_query('SELECT `id` FROM `tasks` WHERE `parents_id` = :parents_id', array(':parents_id' => $tasks_id));
+
+        while($child = sql_fetch($children, true)){
+            tasks_reset($child);
+            $count++;
+        }
+
+        return $count;
+
+    }catch(Exception $e){
+        throw new bException('tasks_reset(): Failed', $e);
+    }
+}
+
+
+
+/*
+ * Mark the specified task, plus all tasks that have this task as a parent, as
+ * failed
+ */
+function tasks_failed(){
+    try{
+        sql_query('UPDATE `tasks` SET `status` = "failed" WHERE `id` = :id', array(':id' => $tasks_id));
+
+        $count    = 1;
+        $children = sql_query('SELECT `id` FROM `tasks` WHERE `parents_id` = :parents_id', array(':parents_id' => $tasks_id));
+
+        while($child = sql_fetch($children, true)){
+            tasks_failed($child);
+            $count++;
+        }
+
+        return $count;
+
+    }catch(Exception $e){
+        throw new bException('tasks_failed(): Failed', $e);
+    }
+}
+
+
+
+/*
+ *
+ */
+function tasks_check_pid($tasks_id){
+    try{
+        $task = sql_get('SELECT `id`, `pid` FROM `tasks` WHERE `id` = :id', array(':id' => $tasks_id));
+
+        if(!$task){
+            throw new bException(tr('tasks_check_pid(): Task ":task" does not exist', array(':task' => $tasks_id)), 'not-exist');
+        }
+
+        if(!$task['pid']){
+            throw new bException(tr('tasks_check_pid(): Task ":task" does not have a pid', array(':task' => $tasks_id)), 'empty');
+        }
+
+        load_libs('cli');
+
+        return cli_pid($task['pid']);
+
+    }catch(Exception $e){
+        throw new bException('tasks_check_pid(): Failed', $e);
     }
 }
 ?>
