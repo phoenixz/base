@@ -48,13 +48,15 @@ class Colors {
         $this->foreground_colors['dark_gray']    = '1;30';
         $this->foreground_colors['blue']         = '0;34';
         $this->foreground_colors['light_blue']   = '1;34';
+        $this->foreground_colors['info']         = '1;34';
         $this->foreground_colors['green']        = '0;32';
         $this->foreground_colors['light_green']  = '1;32';
+        $this->foreground_colors['success']      = '1;32';
         $this->foreground_colors['cyan']         = '0;36';
         $this->foreground_colors['light_cyan']   = '1;36';
         $this->foreground_colors['red']          = '0;31';
-        $this->foreground_colors['error']        = '0;31';
         $this->foreground_colors['light_red']    = '1;31';
+        $this->foreground_colors['error']        = '1;31';
         $this->foreground_colors['purple']       = '0;35';
         $this->foreground_colors['light_purple'] = '1;35';
         $this->foreground_colors['brown']        = '0;33';
@@ -74,10 +76,10 @@ class Colors {
     }
 
     // Returns colored string
-    public function getColoredString($string, $foreground_color, $background_color = 'black') {
+    public function getColoredString($string, $foreground_color, $background_color = 'black', $force = false) {
         $colored_string = '';
 
-        if(NOCOLOR){
+        if(NOCOLOR and !$force){
             /*
              * Do NOT apply color
              */
@@ -124,7 +126,7 @@ class Colors {
 /*
  * Return the specified string in the specified color
  */
-function cli_color($string, $fore_color, $back_color = 'black'){
+function cli_color($string, $fore_color, $back_color = null, $force = false){
     try{
         static $color;
 
@@ -132,7 +134,11 @@ function cli_color($string, $fore_color, $back_color = 'black'){
             $color = new Colors();
         }
 
-        return $color->getColoredString($string, $fore_color, $back_color);
+        if(!$back_color){
+            $back_color = 'black';
+        }
+
+        return $color->getColoredString($string, $fore_color, $back_color, $force);
 
     }catch(Exception $e){
         throw new bException('cli_color(): Failed', $e);
