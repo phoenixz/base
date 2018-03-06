@@ -1203,7 +1203,7 @@ function log_file($messages, $class = 'syslog', $color = null){
                      */
                     foreach(array_force($data) as $line){
                         if($line){
-                            $messages[] = cli_color($line, 'error');
+                            $messages[] = cli_color($line, 'error', null, true);
                         }
                     }
                 }
@@ -1215,7 +1215,7 @@ function log_file($messages, $class = 'syslog', $color = null){
 
             if($messages instanceof Exception){
                 $color    = 'error';
-                $messages = cli_color($messages->getMessage(), 'error');
+                $messages = cli_color($messages->getMessage(), 'error', null, true);
 
                 if(!$class){
                     $class = 'exception';
@@ -1233,7 +1233,7 @@ function log_file($messages, $class = 'syslog', $color = null){
          */
         if($_CONFIG['log']['single']){
             $file  = 'syslog';
-            $class = cli_color('[ '.$class.' ] ', 'white');
+            $class = cli_color('[ '.$class.' ] ', 'white', null, true);
 
         }else{
             $file  = $class;
@@ -1261,17 +1261,17 @@ function log_file($messages, $class = 'syslog', $color = null){
                 }
 
                 if(!empty($color)){
-                    $message = cli_color($message, $color);
+                    $message = cli_color($message, $color, null, true);
                 }
 
-                fwrite($h[$file], cli_color($date, 'cyan').' '.$class.$key.' => '.$message."\n");
+                fwrite($h[$file], cli_color($date, 'cyan', null, true).' '.$class.$key.' => '.$message."\n");
 
             }else{
                 if(!empty($color)){
-                    $message = cli_color($message, $color);
+                    $message = cli_color($message, $color, null, true);
                 }
 
-                fwrite($h[$file], cli_color($date, 'cyan').' '.$class.$message."\n");
+                fwrite($h[$file], cli_color($date, 'cyan', null, true).' '.$class.$message."\n");
             }
         }
 
@@ -2197,7 +2197,7 @@ function name($user = null, $key_prefix = '', $default = null){
                  * Fetch user data from DB, then treat it as an array
                  */
                 if(!$user = sql_get('SELECT `nickname`, `name`, `username`, `email` FROM `users` WHERE `id` = :id', array(':id' => $user))){
-                   throw new bException('name(): Specified user id ":id" does not exist', array(':id' => str_log($user)), 'not-exist');
+                    throw new bException('name(): Specified user id ":id" does not exist', array(':id' => str_log($user)), 'not-exist');
                 }
             }
 
