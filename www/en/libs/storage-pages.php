@@ -167,7 +167,7 @@ function storage_pages_add($page, $section = null){
         }
 
         $page['documents_id'] = $document['id'];
-        $page                 = sql_merge($page, $document);
+        $page                 = array_merge($document, $page);
         $page                 = storage_pages_validate($page);
 
         sql_query('INSERT INTO `storage_pages` (`id`, `createdby`, `meta_id`, `sections_id`, `documents_id`, `language`, `name`, `seoname`, `description`, `body`)
@@ -204,8 +204,9 @@ function storage_pages_update($page, $new = false){
         $page           = storage_pages_validate($page);
         $document       = $page;
         $document['id'] = $page['documents_id'];
+        $document       = storage_documents_update($document, $new);
+        $page           = array_merge($page, $document);
 
-        storage_documents_update($document, $new);
         meta_action($page['meta_id'], ($new ? 'create-update' : 'update'));
 
         sql_query('UPDATE `storage_pages`
