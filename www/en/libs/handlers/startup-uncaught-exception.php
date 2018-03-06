@@ -14,8 +14,12 @@ try{
 
     $executed = true;
 
+    if(!defined('SCRIPT')){
+        define('SCRIPT', tr('unknown'));
+    }
+
     if(!empty($core) and !empty($core->register['ready'])){
-        log_file(tr('*** UNCAUGHT EXCEPTION ***'), 'exceptions', 'error');
+        log_file(tr('*** UNCAUGHT EXCEPTION ":code" IN SCRIPT ":script" ***', array(':code' => $e->getCode(), ':script' => SCRIPT)), 'exceptions', 'error');
         log_file($e, 'exceptions');
     }
 
@@ -92,7 +96,7 @@ try{
                 }
             }
 
-            log_console('*** UNCAUGHT EXCEPTION ***', 'red');
+            log_console(tr('*** UNCAUGHT EXCEPTION ":code" IN SCRIPT ":script" ***', array(':code' => $e->getCode(), ':script' => SCRIPT)), 'red');
 
             debug(true);
 
@@ -196,13 +200,13 @@ try{
                             <table class="exception">
                                 <thead>
                                     <td colspan="2" class="center">
-                                        '.tr('*** UNCAUGHT EXCEPTION ***').'
+                                        '.tr('*** UNCAUGHT EXCEPTION ":code" IN SCRIPT ":script" ***', array(':code' => $e->getCode(), ':script' => SCRIPT)).'
                                     </td>
                                 </thead>
                                 <tbody>
                                     <tr>
                                         <td colspan="2" class="center">
-                                            '.tr('An uncaught exception occured in script ":script". See the exception core dump below for more information on how to fix this issue', array(':script' => SCRIPT)).'
+                                            '.tr('An uncaught exception occured in script ":script". See the exception core dump below for more information on how to fix this issue', array(':code' => $e->getCode(), ':script' => SCRIPT)).'
                                         </td>
                                     </tr>
                                     <tr>
@@ -252,8 +256,8 @@ try{
 
     switch(PLATFORM){
         case 'cli':
-            log_console('*** UNCAUGHT EXCEPTION HANDLER CRASHED ***', 'red');
-            log_console('*** SHOWING HANDLER EXCEPTION FIRST, ORIGINAL EXCEPTION BELOW ***', 'red');
+            log_console(tr('*** UNCAUGHT EXCEPTION HANDLER CRASHED FOR SCRIPT ":script" ***', array(':script' => SCRIPT)), 'red');
+            log_console(tr('*** SHOWING HANDLER EXCEPTION FIRST, ORIGINAL EXCEPTION BELOW ***'), 'red');
 
             debug(true);
             show($f);
@@ -266,7 +270,7 @@ try{
                 page_show(500);
             }
 
-            show('*** UNCAUGHT EXCEPTION HANDLER CRASHED ***');
+            show('*** UNCAUGHT EXCEPTION HANDLER CRASHED FOR SCRIPT ":script" ***', array(':script' => SCRIPT));
             show('*** SHOWING HANDLER EXCEPTION FIRST, ORIGINAL EXCEPTION BELOW ***');
 
             show($f);
