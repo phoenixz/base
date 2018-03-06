@@ -49,7 +49,7 @@ function fprint_enroll($users_id, $finger = 'auto'){
         throw new bException(tr('fprint_enroll(): Enroll failed with ":error"', array(':error' => $result)), 'failed');
 
     }catch(Exception $e){
-        fprint_handle_exception($e);
+        fprint_handle_exception($e, $users_id);
         throw new bException('fprint_enroll(): Failed', $e);
     }
 }
@@ -63,6 +63,17 @@ function fprint_verify($user, $finger = 'auto'){
     global $_CONFIG;
 
     try{
+        load_libs('user');
+        $dbuser = user_get($user);
+
+        if(!$dbuser){
+            throw new bException(tr('fprint_verify(): Specified user ":user" does not exist', array(':user' => $user)), 'not-exist');
+        }
+
+        if(!$dbuser['fingerprint']){
+            throw new bException(tr('fprint_verify(): User ":user" has no fingerprint registered', array(':user' => name($dbuser))), 'warning/empty');
+        }
+
         $finger  = fprint_verify_finger($finger);
         fprint_kill();
 
@@ -79,7 +90,7 @@ function fprint_verify($user, $finger = 'auto'){
         return false;
 
     }catch(Exception $e){
-        fprint_handle_exception($e);
+        fprint_handle_exception($e, $user);
         throw new bException('fprint_verify(): Failed', $e);
     }
 }
@@ -222,8 +233,19 @@ function fprint_page_show($users_id, $html_flash_class){
                 throw new bException(tr('fprint_page_show(): Invalid users_id ":users_id" specified', array(':users_id' => $users_id)), 'invalid');
             }
 
+            load_libs('user');
+            $user = user_get($users_id);
+
+            if(!$user){
+                throw new bException(tr('fprint_verify(): Specified user ":user" does not exist', array(':user' => $users_id)), 'not-exist');
+            }
+
+            if(!$user['fingerprint']){
+                throw new bException(tr('fprint_verify(): User ":user" has no fingerprint registered', array(':user' => name($user))), 'warning/empty');
+            }
+
             $params = array('file'     => uniqid(),
-                            'users_id' => $users_id);
+                            'users_id' => $user['id']);
 
             fprint_kill();
             $params['pid'] = run_background('/base/fprint authenticate -Q -C '.$params['users_id'], 'tmp/fprint/'.$params['file']);
@@ -259,7 +281,7 @@ function fprint_page_show($users_id, $html_flash_class){
 /*
  * Try to handle fprint exceptions
  */
-function fprint_handle_exception($e){
+function fprint_handle_exception($e, $user){
     try{
          $data = $e->getData();
 
@@ -267,16 +289,23 @@ function fprint_handle_exception($e){
             $data = array_pop($data);
 
             if(strstr($data, 'Failed to discover prints') !== false){
-                throw new bException(tr('fprint_verify(): No finger prints found for user ":user"', array(':user' => $user)), 'not-exists');
+                /*
+                 * Only counds for verify!
+                 * Do NOT send previous exception, generate a new one, its just a simple warning!
+                 */
+                throw new bException(tr('fprint_handle_exception(): Finger print data missing for user ":user"', array(':user' => name($user))), 'warning/missing');
             }
 
             if(strstr($data, 'No devices available') !== false){
-                throw new bException(tr('fprint_verify(): No finger print scanner devices found'), 'warning/no-device');
+                /*
+                 * Do NOT send previous exception, generate a new one, its just a simple warning!
+                 */
+                throw new bException(tr('fprint_handle_exception(): No finger print scanner devices found'), 'warning/no-device');
             }
         }
 
         if($e->getCode() == 124){
-            throw new bException(tr('fprint_verify(): finger print scan timed out'), 'warning/timeout');
+            throw new bException(tr('fprint_handle_exception(): finger print scan timed out'), 'warning/timeout');
         }
 
    }catch(Exception $e){
