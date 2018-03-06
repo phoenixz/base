@@ -73,13 +73,18 @@ switch(cli_method()){
             throw new bException(tr('No user specified'), 'warning/not-specified');
         }
 
-        $user = sql_get('SELECT `id` FROM `users` WHERE `id` = :id OR `username` = :username OR `email` = :email', true, array(':id' => $requested, ':username' => $requested, ':email' => $requested));
+        load_libs('user');
+        $user = user_get($requested);
 
         if(!$user){
             throw new bException(tr('The user ":user" does not exist', array(':user' => $requested)), 'warning/not-exist');
         }
 
-        $result = fprint_verify($user);
+        if(!$user['fingerprint']){
+            throw new bException(tr('User ":user" has no fingerprint registered', array(':user' => name($user))), 'warning/empty');
+        }
+
+        $result = fprint_verify($user['id']);
 
         if($result){
             log_console(tr('User ":user" authenticated!', array(':user' => $requested)), 'VERBOSE/green');
