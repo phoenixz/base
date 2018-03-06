@@ -206,7 +206,7 @@ try{
                                 <tbody>
                                     <tr>
                                         <td colspan="2" class="center">
-                                            '.tr('An uncaught exception occured in script ":script". See the exception core dump below for more information on how to fix this issue', array(':code' => $e->getCode(), ':script' => SCRIPT)).'
+                                            '.tr('An uncaught exception with code ":code" occured in script ":script". See the exception core dump below for more information on how to fix this issue', array(':code' => $e->getCode(), ':script' => SCRIPT)).'
                                         </td>
                                     </tr>
                                     <tr>
@@ -270,7 +270,7 @@ try{
                 page_show(500);
             }
 
-            show('*** UNCAUGHT EXCEPTION HANDLER CRASHED FOR SCRIPT ":script" ***', array(':script' => SCRIPT));
+            show(tr('*** UNCAUGHT EXCEPTION HANDLER CRASHED FOR SCRIPT ":script" ***', array(':script' => SCRIPT)));
             show('*** SHOWING HANDLER EXCEPTION FIRST, ORIGINAL EXCEPTION BELOW ***');
 
             show($f);
