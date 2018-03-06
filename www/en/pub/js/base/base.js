@@ -91,7 +91,7 @@
          * By default, try to show the js flash message
          */
         if(jqXHR.status == 404){
-            if(settings.url.indexOf('/sweetalert.js')){
+            if(settings.url.indexOf('/sweetalert.')){
                 console.error('Failed to load sweetalert');
                 return false;
             }
