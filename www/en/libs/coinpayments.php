@@ -136,7 +136,7 @@ function coinpayments_get_ipn_transaction(){
             return $_POST;
         }
 
-        log_file(tr('IPN transaction for address ":address" failed with ":e"', array(':address' => isset_get($_POST['address']), ':e' => $e->getMessages())), 'crypto');
+        log_file(tr('IPN transaction for address ":address" failed with ":e"', array(':address' => isset_get($_POST['address']), ':e' => $e->getMessage())), 'crypto');
         throw new bException('coinpayments_get_ipn_transaction(): Failed', $e);
     }
 }
