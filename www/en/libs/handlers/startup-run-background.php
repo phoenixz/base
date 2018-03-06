@@ -36,10 +36,8 @@ try{
     }
 
     if($log === true){
-        $log = $cmd;
+        $log = str_replace('/', '-', $cmd);
     }
-
-    $log = str_replace('/', '-', $log);
 
     load_libs('file');
     file_ensure_path(ROOT.'data/run-background');
