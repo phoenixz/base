@@ -60,7 +60,7 @@ try{
             // FALLTHROUGH
         case 'create':
             try{
-                $class = notifications_validate_class(array('name'        => cli_argument('name'       , true),
+                $class = notifications_class_validate(array('name'        => cli_argument('name'       , true),
                                                             'methods'     => cli_argument('methods'    , true),
                                                             'description' => cli_argument('description', true)));
 
