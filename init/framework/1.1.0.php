@@ -34,6 +34,8 @@ sql_query('ALTER TABLE `notifications` MODIFY COLUMN `description` TEXT NULL');
 
 
 
+sql_query('DROP TABLE IF EXISTS `storage_files`');
+sql_query('DROP TABLE IF EXISTS `files`');
 sql_query('DROP TABLE IF EXISTS `messages`');
 sql_query('DROP TABLE IF EXISTS `messages_users`');
 
@@ -84,8 +86,6 @@ sql_query('CREATE TABLE `messages` (`id`      INT(11)      NOT NULL AUTO_INCREME
 
 
 
-sql_query('DROP TABLE IF EXISTS `files`');
-
 sql_query('CREATE TABLE `files` (`id`          INT(11)       NOT NULL AUTO_INCREMENT,
                                  `meta_id`     INT(11)           NULL,
                                  `status`      VARCHAR(16)       NULL,
@@ -110,8 +110,6 @@ sql_query('CREATE TABLE `files` (`id`          INT(11)       NOT NULL AUTO_INCRE
                                 ) ENGINE=InnoDB AUTO_INCREMENT='.$_CONFIG['db']['core']['autoincrement'].' DEFAULT CHARSET="'.$_CONFIG['db']['core']['charset'].'" COLLATE="'.$_CONFIG['db']['core']['collate'].'";');
 
 
-
-sql_query('DROP TABLE IF EXISTS `storage_files`');
 
 sql_query('CREATE TABLE `storage_files` (`id`           INT(11)      NOT NULL AUTO_INCREMENT,
                                          `storage_id`   INT(11)      NOT NULL,
