@@ -1014,7 +1014,7 @@ function html_flash_set($params, $type = 'info', $class = null){
 
     try{
         if(!PLATFORM_HTTP){
-            throw new bException('html_flash_set(): This function can only be executed on a webserver!');
+            throw new bException(tr('html_flash_set(): This function can only be executed on a webserver!'), 'invalid');
         }
 
         if(!$params){
@@ -1045,7 +1045,7 @@ function html_flash_set($params, $type = 'info', $class = null){
                          * html_flash(), but on debug systems, make it an
                          * uncaught exception so that it can be fixed
                          */
-                        throw($object);
+                        throw($object->setCode('_'.$object->getCode()));
                     }
                 }
 
@@ -1176,6 +1176,19 @@ function html_flash_set($params, $type = 'info', $class = null){
         $_SESSION['flash'][] = $params;
 
     }catch(Exception $e){
+        if(debug() and (substr($e->getCode(), 0, 1) == '_')){
+            /*
+             * These are exceptions sent to be shown as an html flash error, but
+             * since we're in debug mode, we'll just show it as an uncaught
+             * exception. Don't add html_flash_set() history to this exception
+             * as that would cause confusion.
+             */
+             throw $e->setCode(substr($e->getCode(), 1));
+        }
+
+        /*
+         * Here, something actually went wrong within html_flash_set()
+         */
         throw new bException('html_flash_set(): Failed', $e);
     }
 }

@@ -167,22 +167,17 @@ function storage_pages_add($page, $section = null){
         }
 
         $page['documents_id'] = $document['id'];
-        $page                 = array_merge($document, $page);
-        $page                 = storage_pages_validate($page);
+        $page['sections_id']  = $document['sections_id'];
 
-        sql_query('INSERT INTO `storage_pages` (`id`, `createdby`, `meta_id`, `sections_id`, `documents_id`, `language`, `name`, `seoname`, `description`, `body`)
-                   VALUES                      (:id , :createdby , :meta_id , :sections_id , :documents_id , :language , :name , :seoname , :description , :body )',
+        sql_query('INSERT INTO `storage_pages` (`id`, `createdby`, `meta_id`, `sections_id`, `documents_id`, `language`)
+                   VALUES                      (:id , :createdby , :meta_id , :sections_id , :documents_id , :language )',
 
                    array(':id'           => $page['id'],
                          ':createdby'    => $_SESSION['user']['id'],
                          ':meta_id'      => meta_action(),
                          ':sections_id'  => $page['sections_id'],
                          ':documents_id' => $page['documents_id'],
-                         ':language'     => $page['language'],
-                         ':name'         => $page['name'],
-                         ':seoname'      => $page['seoname'],
-                         ':description'  => $page['description'],
-                         ':body'         => $page['body']));
+                         ':language'     => $page['language']));
 
         $page['id'] = sql_insert_id();
         return $page;
@@ -197,17 +192,19 @@ function storage_pages_add($page, $section = null){
 /*
  * Update the specified storage page
  */
-function storage_pages_update($page, $new = false){
+function storage_pages_update($page, $params){
     try{
         load_libs('storage-documents');
 
-        $page           = storage_pages_validate($page);
+        $page           = storage_pages_validate($page, $params);
         $document       = $page;
         $document['id'] = $page['documents_id'];
-        $document       = storage_documents_update($document, $new);
-        $page           = array_merge($page, $document);
+        $document       = storage_documents_update($document, $page['_new']);
 
-        meta_action($page['meta_id'], ($new ? 'create-update' : 'update'));
+        unset($document['id']);
+        $page = array_merge($page, $document);
+
+        meta_action($page['meta_id'], ($page['_new'] ? 'create-update' : 'update'));
 
         sql_query('UPDATE `storage_pages`
 
@@ -238,29 +235,113 @@ function storage_pages_update($page, $new = false){
 /*
  * Validate and return the specified storage page
  */
-function storage_pages_validate($page){
+function storage_pages_validate($page, $params = false){
     try{
         load_libs('validate,seo');
 
-        $v = new validate_form($page, 'id,createdby,meta_id,sections_id,documents_id,language,name,seoname,description,body');
-        $v->isNatural($page['id']          , 1, tr('Please specify a valid page id')              , VALIDATE_ALLOW_EMPTY_NULL);
-        $v->isNatural($page['createdby']   , 1, tr('Please specify a valid created by id')        , VALIDATE_ALLOW_EMPTY_NULL);
-        $v->isNatural($page['meta_id']     , 1, tr('Please specify a valid meta id')              , VALIDATE_ALLOW_EMPTY_NULL);
-        $v->isNatural($page['sections_id'] , 1, tr('Please specify a valid sections id')          , VALIDATE_ALLOW_EMPTY_NULL);
-        $v->isNatural($page['documents_id'], 1, tr('Please specify a valid documents id')         , VALIDATE_ALLOW_EMPTY_NULL);
-        $v->isAlpha($page['language']      , tr('Please specify a valid language')                , VALIDATE_ALLOW_EMPTY_NULL);
-        $v->isNatural($page['name']        , 1, tr('Please specify a valid rights id')            , VALIDATE_ALLOW_EMPTY_NULL);
-        $v->isNatural($page['description'] , 1, tr('Please specify a valid assigned to id')       , VALIDATE_ALLOW_EMPTY_NULL);
-        $v->isDateTime($page['body']       , tr('Please specify a valid featured until date time'), VALIDATE_ALLOW_EMPTY_NULL);
+        $empty = !$params;
+
+        array_ensure($params, 'errors', array());
+        array_default($params['errors'], 'valid_id'          , tr('Please specify a valid created by id'));
+        array_default($params['errors'], 'valid_meta_id'     , tr('Please specify a valid meta id'));
+        array_default($params['errors'], 'valid_sections_id' , tr('Please specify a valid sections id'));
+        array_default($params['errors'], 'valid_documents_id', tr('Please specify a valid documents id'));
+        array_default($params['errors'], 'valid_language'    , tr('Please specify a valid language'));
+        array_default($params['errors'], 'valid_pagename'    , tr('Please specify a valid page name'));
+        array_default($params['errors'], 'page_64'           , tr('Please specify a page name of less than 64 characters'));
+        array_default($params['errors'], 'valid_pageid'      , tr('Please specify a valid page id'));
+        array_default($params['errors'], 'pagename_1'        , tr('Please specify a document name of at least 1 character'));
+        array_default($params['errors'], 'valid_description' , tr('Please specify a valid description'));
+        array_default($params['errors'], 'description_256'   , tr('Please specify a description of less than 255 characters'));
+        array_default($params['errors'], 'description_16'    , tr('Please specify a description of at least 16 characters'));
+        array_default($params['errors'], 'valid_body'        , tr('Please specify a valid body'));
+        array_default($params['errors'], 'body_16mb'         , tr('Please specify a body of less than 16 MegaByte'));
+        array_default($params['errors'], 'body_16'           , tr('Please specify a body of at least 16 characters'));
+
+        $v = new validate_form($page, '_new,id,createdby,meta_id,sections_id,documents_id,language,name,seoname,description,body');
+
+        $v->isNatural($page['createdby'], 1, $params['errors']['valid_id'], VALIDATE_ALLOW_EMPTY_NULL);
+        $v->isNatural($page['meta_id'], 1, $params['errors']['valid_meta_id'], VALIDATE_ALLOW_EMPTY_NULL);
+        $v->isNatural($page['sections_id'], 1, $params['errors']['valid_sections_id'], VALIDATE_ALLOW_EMPTY_NULL);
+        $v->isNatural($page['documents_id'], 1, $params['errors']['valid_documents_id'], VALIDATE_ALLOW_EMPTY_NULL);
+        $v->isAlpha($page['language'], $params['errors']['valid_language'], VALIDATE_ALLOW_EMPTY_NULL);
+        $v->isAlphaNumeric($page['name'], $params['errors']['valid_pagename'], VALIDATE_IGNORE_ALL|VALIDATE_ALLOW_EMPTY_NULL);
+        $v->hasMaxChars($page['name'], 64, $params['errors']['page_64'], VALIDATE_IGNORE_ALL|VALIDATE_ALLOW_EMPTY_NULL);
+
+        if($empty){
+            $page['id'] = null;
+
+        }else{
+            $v->isNatural($page['id'], 1, $params['errors']['valid_pageid']);
+            $v->hasMinChars($page['name'], 1, $params['errors']['pagename_1'], VALIDATE_IGNORE_ALL);
+        }
+
+        if(empty($params['labels']['description']) or $empty){
+            $page['description'] = null;
+
+        }else{
+            /*
+             * Validate description. $params[entry][description] being false
+             * means the entry is available on the UI, but it is not required
+             */
+            $v->isAlphaNumeric($page['description'], $params['errors']['valid_description'], VALIDATE_IGNORE_ALL|((isset_get($params['entry']['description']) === false) ? VALIDATE_ALLOW_EMPTY_NULL : null));
+            $v->hasMaxChars($page['description'], 255, $params['errors']['description_256'], VALIDATE_ALLOW_EMPTY_NULL);
+            $v->hasMinChars($page['description'], 16, $params['errors']['description_16'], VALIDATE_IGNORE_ALL);
+        }
+
+        if(empty($params['show']['body']) or $empty){
+            $page['body'] = null;
+
+        }else{
+            $v->isAlphaNumeric($page['body'], $params['errors']['valid_body'], VALIDATE_IGNORE_ALL|VALIDATE_IGNORE_HTML);
+            $v->hasMaxChars($page['body'], 16777215, $params['errors']['body_16mb']);
+            $v->hasMinChars($page['body'], 16, $params['errors']['body_16']);
+        }
 
         $v->isValid();
 
-        $page['seoname'] = seo_unique($page['seoname'], 'storage_pages', $page['id']);
+        $page['seoname'] = seo_unique($page['name'], 'storage_pages', $page['id']);
 
         return $page;
 
     }catch(Exception $e){
         throw new bException('storage_pages_validate(): Failed', $e);
+    }
+}
+
+
+
+/*
+ * Perform an SQL merge with $post_page element filtered by the available
+ * elements specified in $params[labels]. Basically, this sql_merge() variant
+ * will force all $post_page keys that have no label entries to be NULL, THEN it
+ * will perform the sql_merge(). This way we can enforce that users cannot force
+ * values, even thought they should not be able to be updated
+ */
+function storage_pages_merge($db_page, $post_page, $params){
+    try{
+        if(empty($params['show']['body'])){
+             unset($post_page['body']);
+        }
+
+        $keys = array('name',
+                      'description',
+                      'category1',
+                      'category2',
+                      'category3',
+                      'assigned_to_id',
+                      'status');
+
+        foreach($keys as $key){
+            if(empty($params['labels'][$key])){
+                unset($post_page[$key]);
+            }
+        }
+
+        return sql_merge($db_page, $post_page);
+
+    }catch(Exception $e){
+        throw new bException('storage_pages_merge(): Failed', $e);
     }
 }
 

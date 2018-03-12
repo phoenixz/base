@@ -37,33 +37,35 @@ define('VALIDATE_NOT'                   ,          1); // Validate in reverse. i
 define('VALIDATE_ALLOW_EMPTY_NULL'      ,          2); // Empty values are allowed, and will be converted to null
 define('VALIDATE_ALLOW_EMPTY_INTEGER'   ,          4); // Empty values are allowed, and will be converted to 0
 define('VALIDATE_ALLOW_EMPTY_BOOLEAN'   ,          8); // Empty values are allowed, and will be converted to false
-define('VALIDATE_ALLOW_EMPTY_STRING'    ,         32); // Empty values are allowed, and will be converted to ""
+define('VALIDATE_ALLOW_EMPTY_STRING'    ,         16); // Empty values are allowed, and will be converted to ""
+define('VALIDATE_IGNORE_HTML'           ,         32); // Beyond the normal validation, the source may contain HTML
 define('VALIDATE_IGNORE_DOT'            ,         64); // Beyond the normal validation, the source may contain the . character
 define('VALIDATE_IGNORE_COMMA'          ,        128); // Beyond the normal validation, the source may contain the , character
 define('VALIDATE_IGNORE_DASH'           ,        256); // Beyond the normal validation, the source may contain the - character
 define('VALIDATE_IGNORE_UNDERSCORE'     ,        512); // Beyond the normal validation, the source may contain the _ character
-define('VALIDATE_IGNORE_SLASH'          ,       1024); // Beyond the normal validation, the source may contain the / character
-define('VALIDATE_IGNORE_COLON'          ,       2048); // Beyond the normal validation, the source may contain the : character
-define('VALIDATE_IGNORE_SEMICOLON'      ,       4096); // Beyond the normal validation, the source may contain the ; character
-define('VALIDATE_IGNORE_QUESTIONMARK'   ,       8192); // Beyond the normal validation, the source may contain the ? character
-define('VALIDATE_IGNORE_EXCLAMATIONMARK',      16384); // Beyond the normal validation, the source may contain the ! character
-define('VALIDATE_IGNORE_AT'             ,      32768); // Beyond the normal validation, the source may contain the @ character
-define('VALIDATE_IGNORE_POUND'          ,      65536); // Beyond the normal validation, the source may contain the # character
-define('VALIDATE_IGNORE_PERCENT'        ,     131072); // Beyond the normal validation, the source may contain the % character
-define('VALIDATE_IGNORE_DOLLAR'         ,     262144); // Beyond the normal validation, the source may contain the $ character
-define('VALIDATE_IGNORE_AMPERSANT'      ,     524288); // Beyond the normal validation, the source may contain the & character
-define('VALIDATE_IGNORE_ASTERISK'       ,    1048576); // Beyond the normal validation, the source may contain the * character
-define('VALIDATE_IGNORE_PLUS'           ,    2097152); // Beyond the normal validation, the source may contain the + character
-define('VALIDATE_IGNORE_EQUALSIGN'      ,    4194304); // Beyond the normal validation, the source may contain the = character
-define('VALIDATE_IGNORE_PIPE'           ,    8388608); // Beyond the normal validation, the source may contain the | character
-define('VALIDATE_IGNORE_TILDE'          ,   16777216); // Beyond the normal validation, the source may contain the ~ character
-define('VALIDATE_IGNORE_TAB'            ,   33554432); // Beyond the normal validation, the source may contain the \t character
+define('VALIDATE_IGNORE_SLASH'          ,       1024); // Beyond the normal validation, the source may contain the / or \ character
+define('VALIDATE_IGNORE_CARET'          ,       2048); // Beyond the normal validation, the source may contain the ^ character
+define('VALIDATE_IGNORE_COLON'          ,       4096); // Beyond the normal validation, the source may contain the : character
+define('VALIDATE_IGNORE_SEMICOLON'      ,       8192); // Beyond the normal validation, the source may contain the ; character
+define('VALIDATE_IGNORE_QUESTIONMARK'   ,      16384); // Beyond the normal validation, the source may contain the ? character
+define('VALIDATE_IGNORE_EXCLAMATIONMARK',      32768); // Beyond the normal validation, the source may contain the ! character
+define('VALIDATE_IGNORE_AT'             ,      65536); // Beyond the normal validation, the source may contain the @ character
+define('VALIDATE_IGNORE_POUND'          ,     131072); // Beyond the normal validation, the source may contain the # character
+define('VALIDATE_IGNORE_PERCENT'        ,     262144); // Beyond the normal validation, the source may contain the % character
+define('VALIDATE_IGNORE_DOLLAR'         ,     524288); // Beyond the normal validation, the source may contain the $ character
+define('VALIDATE_IGNORE_AMPERSANT'      ,    1048576); // Beyond the normal validation, the source may contain the & character
+define('VALIDATE_IGNORE_ASTERISK'       ,    2097152); // Beyond the normal validation, the source may contain the * character
+define('VALIDATE_IGNORE_PLUS'           ,    4194304); // Beyond the normal validation, the source may contain the + character
+define('VALIDATE_IGNORE_EQUALSIGN'      ,    8388608); // Beyond the normal validation, the source may contain the = character
+define('VALIDATE_IGNORE_PIPE'           ,   16777216); // Beyond the normal validation, the source may contain the | character
+define('VALIDATE_IGNORE_TILDE'          ,   33554432); // Beyond the normal validation, the source may contain the ~ character
 define('VALIDATE_IGNORE_SQUAREBRACKETS' ,   67108864); // Beyond the normal validation, the source may contain the [] characters
 define('VALIDATE_IGNORE_CURLYBRACKETS'  ,  134217728); // Beyond the normal validation, the source may contain the {} characters
 define('VALIDATE_IGNORE_PARENTHESES'    ,  268435456); // Beyond the normal validation, the source may contain the () characters
 define('VALIDATE_IGNORE_SINGLEQUOTES'   ,  536870912); // Beyond the normal validation, the source may contain the ' character
 define('VALIDATE_IGNORE_DOUBLEQUOTES'   , 1073741824); // Beyond the normal validation, the source may contain the " character
 define('VALIDATE_IGNORE_SPACE'          , 2147483648); // Beyond the normal validation, the source may contain the " " character
+define('VALIDATE_IGNORE_ALL'            , 4294967232); // Ignore all special characters, except HTML
 
 
 
@@ -325,7 +327,10 @@ class validate_form {
             $this->not        = false;
             $this->scalar     = is_scalar($value);
 
-            if($flags){
+            if(!$flags){
+                $this->testValue = $value;
+
+            }else{
                 if($flags & VALIDATE_NOT){
                     $this->not = true;
                 }
@@ -343,202 +348,214 @@ class validate_form {
                     $this->allowEmpty = '';
                 }
 
+                if($value){
+                    /*
+                     * Ignore special characters?
+                     */
+                    if($flags & VALIDATE_IGNORE_DOT){
+                        /*
+                         * . characters are allowed, remove them from the test value
+                         */
+                        $replace[] = '.';
+                    }
+
+                    if($flags & VALIDATE_IGNORE_COMMA){
+                        /*
+                         * , characters are allowed, remove them from the test value
+                         */
+                        $replace[] = ',';
+                    }
+
+                    if($flags & VALIDATE_IGNORE_DASH){
+                        /*
+                         * - characters are allowed, remove them from the test value
+                         */
+                        $replace[] = '-';
+                    }
+
+                    if($flags & VALIDATE_IGNORE_SLASH){
+                        /*
+                         * / or \ characters are allowed, remove them from the test value
+                         */
+                        $replace[] = '/';
+                        $replace[] = '\\';
+                    }
+
+                    if($flags & VALIDATE_IGNORE_CARET){
+                        /*
+                         * \t characters are allowed, remove them from the test value
+                         */
+                        $replace[] = '^';
+                    }
+
+                    if($flags & VALIDATE_IGNORE_COLON){
+                        /*
+                         * : characters are allowed, remove them from the test value
+                         */
+                        $replace[] = ':';
+                    }
+
+                    if($flags & VALIDATE_IGNORE_SEMICOLON){
+                        /*
+                         * ; characters are allowed, remove them from the test value
+                         */
+                        $replace[] = ';';
+                    }
+
+                    if($flags & VALIDATE_IGNORE_QUESTIONMARK){
+                        /*
+                         * ? characters are allowed, remove them from the test value
+                         */
+                        $replace[] = '?';
+                    }
+
+                    if($flags & VALIDATE_IGNORE_EXCLAMATIONMARK){
+                        /*
+                         * ! characters are allowed, remove them from the test value
+                         */
+                        $replace[] = '!';
+                    }
+
+                    if($flags & VALIDATE_IGNORE_AT){
+                        /*
+                         * @ characters are allowed, remove them from the test value
+                         */
+                        $replace[] = '@';
+                    }
+
+                    if($flags & VALIDATE_IGNORE_POUND){
+                        /*
+                         * # characters are allowed, remove them from the test value
+                         */
+                        $replace[] = '#';
+                    }
+
+                    if($flags & VALIDATE_IGNORE_PERCENT){
+                        /*
+                         * % characters are allowed, remove them from the test value
+                         */
+                        $replace[] = '%';
+                    }
+
+                    if($flags & VALIDATE_IGNORE_DOLLAR){
+                        /*
+                         * $ characters are allowed, remove them from the test value
+                         */
+                        $replace[] = '$';
+                    }
+
+                    if($flags & VALIDATE_IGNORE_AMPERSANT){
+                        /*
+                         * & characters are allowed, remove them from the test value
+                         */
+                        $replace[] = '&';
+                    }
+
+                    if($flags & VALIDATE_IGNORE_ASTERISK){
+                        /*
+                         * * characters are allowed, remove them from the test value
+                         */
+                        $replace[] = '*';
+                    }
+
+                    if($flags & VALIDATE_IGNORE_PLUS){
+                        /*
+                         * + characters are allowed, remove them from the test value
+                         */
+                        $replace[] = '+';
+                    }
+
+                    if($flags & VALIDATE_IGNORE_EQUALSIGN){
+                        /*
+                         * = characters are allowed, remove them from the test value
+                         */
+                        $replace[] = '=';
+                    }
+
+                    if($flags & VALIDATE_IGNORE_PIPE){
+                        /*
+                         * | characters are allowed, remove them from the test value
+                         */
+                        $replace[] = '|';
+                    }
+
+                    if($flags & VALIDATE_IGNORE_TILDE){
+                        /*
+                         * ~ characters are allowed, remove them from the test value
+                         */
+                        $replace[] = '~';
+                    }
+
+                    if($flags & VALIDATE_IGNORE_SQUAREBRACKETS){
+                        /*
+                         * [] characters are allowed, remove them from the test value
+                         */
+                        $replace[] = '[';
+                        $replace[] = ']';
+                    }
+
+                    if($flags & VALIDATE_IGNORE_CURLYBRACKETS){
+                        /*
+                         * {} characters are allowed, remove them from the test value
+                         */
+                        $replace[] = '{';
+                        $replace[] = '}';
+                    }
+
+                    if($flags & VALIDATE_IGNORE_PARENTHESES){
+                        /*
+                         * () characters are allowed, remove them from the test value
+                         */
+                        $replace[] = '(';
+                        $replace[] = ')';
+                    }
+
+                    if($flags & VALIDATE_IGNORE_SINGLEQUOTES){
+                        /*
+                         * ' characters are allowed, remove them from the test value
+                         */
+                        $replace[] = "'";
+                    }
+
+                    if($flags & VALIDATE_IGNORE_DOUBLEQUOTES){
+                        /*
+                         * " characters are allowed, remove them from the test value
+                         */
+                        $replace[] = '"';
+                    }
+
+                    if($flags & VALIDATE_IGNORE_SPACE){
+                        /*
+                         *   characters are allowed, remove them from the test value
+                         */
+                        $replace[] = ' ';
+                    }
+                }
+
                 /*
-                 * Ignore special characters?
+                 * Ignore certain characters?
                  */
-                if($flags & VALIDATE_IGNORE_DOT){
-                    /*
-                     * . characters are allowed, remove them from the test value
-                     */
-                    $replace[] = '.';
-                }
-
-                if($flags & VALIDATE_IGNORE_COMMA){
-                    /*
-                     * , characters are allowed, remove them from the test value
-                     */
-                    $replace[] = ',';
-                }
-
-                if($flags & VALIDATE_IGNORE_DASH){
-                    /*
-                     * - characters are allowed, remove them from the test value
-                     */
-                    $replace[] = '-';
-                }
-
-                if($flags & VALIDATE_IGNORE_SLASH){
-                    /*
-                     * / characters are allowed, remove them from the test value
-                     */
-                    $replace[] = '/';
-                }
-
-                if($flags & VALIDATE_IGNORE_COLON){
-                    /*
-                     * : characters are allowed, remove them from the test value
-                     */
-                    $replace[] = ':';
-                }
-
-                if($flags & VALIDATE_IGNORE_SEMICOLON){
-                    /*
-                     * ; characters are allowed, remove them from the test value
-                     */
-                    $replace[] = ';';
-                }
-
-                if($flags & VALIDATE_IGNORE_QUESTIONMARK){
-                    /*
-                     * ? characters are allowed, remove them from the test value
-                     */
-                    $replace[] = '?';
-                }
-
-                if($flags & VALIDATE_IGNORE_EXCLAMATIONMARK){
-                    /*
-                     * ! characters are allowed, remove them from the test value
-                     */
-                    $replace[] = '!';
-                }
-
-                if($flags & VALIDATE_IGNORE_AT){
-                    /*
-                     * @ characters are allowed, remove them from the test value
-                     */
-                    $replace[] = '@';
-                }
-
-                if($flags & VALIDATE_IGNORE_POUND){
-                    /*
-                     * # characters are allowed, remove them from the test value
-                     */
-                    $replace[] = '#';
-                }
-
-                if($flags & VALIDATE_IGNORE_PERCENT){
-                    /*
-                     * % characters are allowed, remove them from the test value
-                     */
-                    $replace[] = '%';
-                }
-
-                if($flags & VALIDATE_IGNORE_DOLLAR){
-                    /*
-                     * $ characters are allowed, remove them from the test value
-                     */
-                    $replace[] = '$';
-                }
-
-                if($flags & VALIDATE_IGNORE_AMPERSANT){
-                    /*
-                     * & characters are allowed, remove them from the test value
-                     */
-                    $replace[] = '&';
-                }
-
-                if($flags & VALIDATE_IGNORE_ASTERISK){
-                    /*
-                     * * characters are allowed, remove them from the test value
-                     */
-                    $replace[] = '*';
-                }
-
-                if($flags & VALIDATE_IGNORE_PLUS){
-                    /*
-                     * + characters are allowed, remove them from the test value
-                     */
-                    $replace[] = '+';
-                }
-
-                if($flags & VALIDATE_IGNORE_EQUALSIGN){
-                    /*
-                     * = characters are allowed, remove them from the test value
-                     */
-                    $replace[] = '=';
-                }
-
-                if($flags & VALIDATE_IGNORE_PIPE){
-                    /*
-                     * | characters are allowed, remove them from the test value
-                     */
-                    $replace[] = '|';
-                }
-
-                if($flags & VALIDATE_IGNORE_TILDE){
-                    /*
-                     * ~ characters are allowed, remove them from the test value
-                     */
-                    $replace[] = '~';
-                }
-
-                if($flags & VALIDATE_IGNORE_TAB){
-                    /*
-                     * \t characters are allowed, remove them from the test value
-                     */
-                    $replace[] = "\t";
-                }
-
-                if($flags & VALIDATE_IGNORE_SQUAREBRACKETS){
-                    /*
-                     * [] characters are allowed, remove them from the test value
-                     */
-                    $replace[] = '[';
-                    $replace[] = ']';
-                }
-
-                if($flags & VALIDATE_IGNORE_CURLYBRACKETS){
-                    /*
-                     * {} characters are allowed, remove them from the test value
-                     */
-                    $replace[] = '{';
-                    $replace[] = '}';
-                }
-
-                if($flags & VALIDATE_IGNORE_PARENTHESES){
-                    /*
-                     * () characters are allowed, remove them from the test value
-                     */
-                    $replace[] = '(';
-                    $replace[] = ')';
-                }
-
-                if($flags & VALIDATE_IGNORE_SINGLEQUOTES){
-                    /*
-                     * ' characters are allowed, remove them from the test value
-                     */
-                    $replace[] = "'";
-                }
-
-                if($flags & VALIDATE_IGNORE_DOUBLEQUOTES){
-                    /*
-                     * " characters are allowed, remove them from the test value
-                     */
-                    $replace[] = '"';
-                }
-
-                if($flags & VALIDATE_IGNORE_SPACE){
-                    /*
-                     *   characters are allowed, remove them from the test value
-                     */
-                    $replace[] = ' ';
-                }
-            }
-
-            /*
-             * Ignore certain characters?
-             */
-            if(empty($replace)){
-                $this->testValue = $value;
-
-            }else{
-                if(!$this->scalar){
-                    $this->setError($message);
+                if(empty($replace)){
                     $this->testValue = $value;
 
                 }else{
-                    $this->testValue = str_replace($replace, array_fill(0, count($replace), ''), $value);
+                    if(!$this->scalar){
+                        $this->setError($message);
+                        $this->testValue = $value;
+
+                    }else{
+                        $this->testValue = str_replace($replace, array_fill(0, count($replace), ''), $value);
+                    }
                 }
+
+                if($flags & VALIDATE_IGNORE_HTML){
+                    /*
+                     * Ignore HTML
+                     */
+                    $this->testValue = strip_tags($this->testValue);
+                    $this->testValue = preg_replace('/&#?[a-z0-9]{2,8};/i', '', $this->testValue);
+                }
+
             }
 
             if(!$allowEmpty and ($this->allowEmpty !== 'no')){
