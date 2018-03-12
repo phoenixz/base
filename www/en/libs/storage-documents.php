@@ -220,25 +220,48 @@ function storage_documents_validate($document){
     try{
         load_libs('validate');
 
+        array_ensure($params, 'errors', array());
+        array_default($params['errors'], 'valid_page_id'       , tr('Please specify a valid created by id number'));
+        array_default($params['errors'], 'valid_meta_id'       , tr('Please specify a valid meta id number'));
+        array_default($params['errors'], 'valid_sections_id'   , tr('Please specify a valid sections id number'));
+        array_default($params['errors'], 'valid_status'        , tr('Please specify a valid status'));
+        array_default($params['errors'], 'valid_masters_id'    , tr('Please specify a valid masters id  number'));
+        array_default($params['errors'], 'valid_parents_id'    , tr('Please specify a valid parents id  number'));
+        array_default($params['errors'], 'valid_rights_id'     , tr('Please specify a valid rights id number'));
+        array_default($params['errors'], 'valid_assigned_to_id', tr('Please specify a valid assigned to number'));
+        array_default($params['errors'], 'valid_featured_until', tr('Please specify a valid featured until date'));
+        array_default($params['errors'], 'valid_category1'     , tr('Please specify a valid category 1 number'));
+        array_default($params['errors'], 'valid_category2'     , tr('Please specify a valid category 2 number'));
+        array_default($params['errors'], 'valid_category3'     , tr('Please specify a valid category 3 number'));
+        array_default($params['errors'], 'valid_upvotes'       , tr('Please specify a valid upvotes number'));
+        array_default($params['errors'], 'valid_downvotes'     , tr('Please specify a valid downvotes number'));
+        array_default($params['errors'], 'valid_priority'      , tr('Please specify a valid priority'));
+        array_default($params['errors'], 'valid_level'         , tr('Please specify a valid level'));
+        array_default($params['errors'], 'valid_views'         , tr('Please specify a valid views number'));
+        array_default($params['errors'], 'valid_rating'        , tr('Please specify a valid ratings number'));
+        array_default($params['errors'], 'valid_comments'      , tr('Please specify a valid comments number'));
+
         $v = new validate_form($document, 'id,meta_id,status,sections_id,masters_id,parents_id,rights_id,assigned_to_id,featured_until,category1,category2,category3,upvotes,downvotes,priority,level,views,rating,comments');
-        $v->isNatural($document['id']             , 1, tr('Please specify a valid page id')                 , VALIDATE_ALLOW_EMPTY_NULL);
-        $v->isNatural($document['meta_id']        , 1, tr('Please specify a valid meta id')                 , VALIDATE_ALLOW_EMPTY_NULL);
-        $v->isStatus($document['status']             , tr('Please specify a valid status'));
-        $v->isNatural($document['masters_id']     , 1, tr('Please specify a valid meta id')                 , VALIDATE_ALLOW_EMPTY_NULL);
-        $v->isNatural($document['parents_id']     , 1, tr('Please specify a valid parent id')               , VALIDATE_ALLOW_EMPTY_NULL);
-        $v->isNatural($document['rights_id']      , 1, tr('Please specify a valid rights id')               , VALIDATE_ALLOW_EMPTY_NULL);
-        $v->isNatural($document['assigned_to_id'] , 1, tr('Please specify a valid assigned to id')          , VALIDATE_ALLOW_EMPTY_NULL);
-        $v->isDateTime($document['featured_until']   , tr('Please specify a valid featured until date time'), VALIDATE_ALLOW_EMPTY_NULL);
-        $v->isNatural($document['category1']      , 1, tr('Please specify a valid category 1')              , VALIDATE_ALLOW_EMPTY_NULL);
-        $v->isNatural($document['category2']      , 1, tr('Please specify a valid category 2')              , VALIDATE_ALLOW_EMPTY_NULL);
-        $v->isNatural($document['category3']      , 1, tr('Please specify a valid category 3')              , VALIDATE_ALLOW_EMPTY_NULL);
-        $v->isNatural($document['upvotes']        , 1, tr('Please specify a valid amount of upvotes')       , VALIDATE_ALLOW_EMPTY_INTEGER);
-        $v->isNatural($document['downvotes']      , 1, tr('Please specify a valid amount of upvotes')       , VALIDATE_ALLOW_EMPTY_INTEGER);
-        $v->isNatural($document['priority']       , 1, tr('Please specify a valid priority')                , VALIDATE_ALLOW_EMPTY_INTEGER);
-        $v->isNatural($document['level']          , 1, tr('Please specify a valid level')                   , VALIDATE_ALLOW_EMPTY_INTEGER);
-        $v->isNatural($document['views']          , 1, tr('Please specify a valid level')                   , VALIDATE_ALLOW_EMPTY_INTEGER);
-        $v->isNatural($document['rating']         , 1, tr('Please specify a valid rating')                  , VALIDATE_ALLOW_EMPTY_INTEGER);
-        $v->isNatural($document['comments']       , 1, tr('Please specify a valid comments')                , VALIDATE_ALLOW_EMPTY_INTEGER);
+
+        $v->isNatural($document['id'], 1, tr('Please specify a valid documents id'), VALIDATE_ALLOW_EMPTY_NULL);
+        $v->isNatural($page['meta_id'], 1, $params['errors']['valid_meta_id'], VALIDATE_ALLOW_EMPTY_NULL);
+        $v->isNatural($page['sections_id'], 1, $params['errors']['valid_sections_id'], VALIDATE_ALLOW_EMPTY_NULL);
+        $v->isStatus($document['status'], $params['errors']['valid_status']);
+        $v->isNatural($document['masters_id'], 1, $params['errors']['valid_masters_id'], VALIDATE_ALLOW_EMPTY_NULL);
+        $v->isNatural($document['parents_id'], 1, $params['errors']['valid_parents_id'], VALIDATE_ALLOW_EMPTY_NULL);
+        $v->isNatural($document['rights_id'], 1, $params['errors']['valid_rights_id'], VALIDATE_ALLOW_EMPTY_NULL);
+        $v->isNatural($document['assigned_to_id'], 1, $params['errors']['valid_assigned_to_id'], VALIDATE_ALLOW_EMPTY_NULL);
+        $v->isDateTime($document['featured_until'], $params['errors']['valid_featured_until'], VALIDATE_ALLOW_EMPTY_NULL);
+        $v->isNatural($document['category1'], 1, $params['errors']['valid_category1'], VALIDATE_ALLOW_EMPTY_NULL);
+        $v->isNatural($document['category2'], 1, $params['errors']['valid_category2'], VALIDATE_ALLOW_EMPTY_NULL);
+        $v->isNatural($document['category3'], 1, $params['errors']['valid_category3'], VALIDATE_ALLOW_EMPTY_NULL);
+        $v->isNatural($document['upvotes'], 1, $params['errors']['valid_upvotes'], VALIDATE_ALLOW_EMPTY_INTEGER);
+        $v->isNatural($document['downvotes'], 1, $params['errors']['valid_downvotes'], VALIDATE_ALLOW_EMPTY_INTEGER);
+        $v->isNatural($document['priority'], 1, $params['errors']['valid_priority'], VALIDATE_ALLOW_EMPTY_INTEGER);
+        $v->isNatural($document['level'], 1, $params['errors']['valid_level'], VALIDATE_ALLOW_EMPTY_INTEGER);
+        $v->isNatural($document['views'], 1, $params['errors']['valid_views'], VALIDATE_ALLOW_EMPTY_INTEGER);
+        $v->isNatural($document['rating'], 1, $params['errors']['valid_rating'], VALIDATE_ALLOW_EMPTY_INTEGER);
+        $v->isNatural($document['comments'], 1, $params['errors']['valid_comments'], VALIDATE_ALLOW_EMPTY_INTEGER);
 
         $v->isValid();
 

@@ -27,7 +27,7 @@
 /*
  *
  */
-function storage_url($url, $section = null, $document = null, $language = null){
+function storage_url($url, $section = null, $page = null, $language = null){
     try{
         if(!$language){
             $language = LANGUAGE;
@@ -39,13 +39,14 @@ function storage_url($url, $section = null, $document = null, $language = null){
             $url = str_replace(':seosection', $section['seoname'], $url);
         }
 
-        if($document){
-            $url = str_replace(':seodocument', $document['seoname'], $url);
+        if($page){
+            $url = str_replace(':seodocument', $page['seoname'], $url);
         }
 
         return $url;
 
     }catch(Exception $e){
+showdie($e);
         throw new bException('storage_url(): Failed', $e);
     }
 }
