@@ -1166,7 +1166,7 @@ function blogs_validate_category($category, $blog){
 
         $v->isValid();
 
-        if($category['id']){
+        if(!empty($category['id'])){
             if(sql_get('SELECT `id` FROM `blogs_categories` WHERE `blogs_id` = :blogs_id AND `name` = :name AND `id` != :id', array(':blogs_id' => $blog['id'], ':id' => $category['id'], ':name' => $category['name']), 'id')){
                 /*
                  * Another category with this name already exists in this blog
@@ -1190,7 +1190,7 @@ function blogs_validate_category($category, $blog){
             $category['assigned_to_id'] = null;
         }
 
-        $category['seoname']     = seo_unique(array('seoname' => $category['name'], 'blogs_id' => $blog['id']), 'blogs_categories', $category['id']);
+        $category['seoname']     = seo_unique(array('seoname' => $category['name'], 'blogs_id' => $blog['id']), 'blogs_categories', empty($category['id']));
         $category['keywords']    = blogs_clean_keywords($category['keywords'], true);
         $category['seokeywords'] = blogs_seo_keywords($category['keywords']);
 
