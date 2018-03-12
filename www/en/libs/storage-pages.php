@@ -152,6 +152,8 @@ function storage_pages_add($page, $section = null){
             $page['id'] = sql_random_id('storage_pages');
         }
 
+        $page = storage_pages_validate($page);
+
         if(empty($page['documents_id'])){
             /*
              * This page has no document
@@ -242,24 +244,28 @@ function storage_pages_validate($page, $params = false){
         $empty = !$params;
 
         array_ensure($params, 'errors', array());
-        array_default($params['errors'], 'valid_id'          , tr('Please specify a valid created by id'));
-        array_default($params['errors'], 'valid_meta_id'     , tr('Please specify a valid meta id'));
-        array_default($params['errors'], 'valid_sections_id' , tr('Please specify a valid sections id'));
-        array_default($params['errors'], 'valid_documents_id', tr('Please specify a valid documents id'));
-        array_default($params['errors'], 'valid_language'    , tr('Please specify a valid language'));
-        array_default($params['errors'], 'valid_pagename'    , tr('Please specify a valid page name'));
-        array_default($params['errors'], 'page_64'           , tr('Please specify a page name of less than 64 characters'));
-        array_default($params['errors'], 'valid_pageid'      , tr('Please specify a valid page id'));
-        array_default($params['errors'], 'pagename_1'        , tr('Please specify a document name of at least 1 character'));
-        array_default($params['errors'], 'valid_description' , tr('Please specify a valid description'));
-        array_default($params['errors'], 'description_256'   , tr('Please specify a description of less than 255 characters'));
-        array_default($params['errors'], 'description_16'    , tr('Please specify a description of at least 16 characters'));
-        array_default($params['errors'], 'valid_body'        , tr('Please specify a valid body'));
-        array_default($params['errors'], 'body_16mb'         , tr('Please specify a body of less than 16 MegaByte'));
-        array_default($params['errors'], 'body_16'           , tr('Please specify a body of at least 16 characters'));
+        array_default($params['errors'], 'valid_id'                , tr('Please specify a valid created by id'));
+        array_default($params['errors'], 'valid_meta_id'           , tr('Please specify a valid meta id'));
+        array_default($params['errors'], 'valid_sections_id'       , tr('Please specify a valid sections id'));
+        array_default($params['errors'], 'valid_documents_id'      , tr('Please specify a valid documents id'));
+        array_default($params['errors'], 'valid_assigned_to_id'    , tr('Please specify a valid assigned_to id'));
+        array_default($params['errors'], 'required_assigned_to_id' , tr('Required assigned_to id is not set'));
+        array_default($params['errors'], 'not_exist_assigned_to_id', tr('Specified assigned_to id does not exist'));
+        array_default($params['errors'], 'valid_language'          , tr('Please specify a valid language'));
+        array_default($params['errors'], 'valid_pagename'          , tr('Please specify a valid page name'));
+        array_default($params['errors'], 'page_64'                 , tr('Please specify a page name of less than 64 characters'));
+        array_default($params['errors'], 'valid_pageid'            , tr('Please specify a valid page id'));
+        array_default($params['errors'], 'pagename_1'              , tr('Please specify a document name of at least 1 character'));
+        array_default($params['errors'], 'valid_description'       , tr('Please specify a valid description'));
+        array_default($params['errors'], 'description_256'         , tr('Please specify a description of less than 255 characters'));
+        array_default($params['errors'], 'description_16'          , tr('Please specify a description of at least 16 characters'));
+        array_default($params['errors'], 'valid_body'              , tr('Please specify a valid body'));
+        array_default($params['errors'], 'body_16mb'               , tr('Please specify a body of less than 16 MegaByte'));
+        array_default($params['errors'], 'body_16'                 , tr('Please specify a body of at least 16 characters'));
 
-        $v = new validate_form($page, '_new,id,createdby,meta_id,sections_id,documents_id,language,name,seoname,description,body');
+        $v = new validate_form($page, '_new,id,createdby,meta_id,sections_id,documents_id,assigned_to_id,category1,category2,category3,language,name,seoname,description,body');
 
+        $v->isNatural($page['id'], 1, $params['errors']['valid_pageid'], VALIDATE_ALLOW_EMPTY_NULL);
         $v->isNatural($page['createdby'], 1, $params['errors']['valid_id'], VALIDATE_ALLOW_EMPTY_NULL);
         $v->isNatural($page['meta_id'], 1, $params['errors']['valid_meta_id'], VALIDATE_ALLOW_EMPTY_NULL);
         $v->isNatural($page['sections_id'], 1, $params['errors']['valid_sections_id'], VALIDATE_ALLOW_EMPTY_NULL);
@@ -268,14 +274,54 @@ function storage_pages_validate($page, $params = false){
         $v->isAlphaNumeric($page['name'], $params['errors']['valid_pagename'], VALIDATE_IGNORE_ALL|VALIDATE_ALLOW_EMPTY_NULL);
         $v->hasMaxChars($page['name'], 64, $params['errors']['page_64'], VALIDATE_IGNORE_ALL|VALIDATE_ALLOW_EMPTY_NULL);
 
-        if($empty){
-            $page['id'] = null;
-
-        }else{
-            $v->isNatural($page['id'], 1, $params['errors']['valid_pageid']);
+        /*
+         * Validate basics
+         */
+        if(!$empty){
             $v->hasMinChars($page['name'], 1, $params['errors']['pagename_1'], VALIDATE_IGNORE_ALL);
         }
 
+
+        /*
+         * Validate assigned_to_id
+         */
+        if(empty($page['assigned_to_id'])){
+            /*
+             * assigned_to_id not set, ensure NULL
+             */
+            $page['assigned_to_id'] = null;
+
+            if(isset_get($params['entry']['assigned_to_id'])){
+                /*
+                 * assigned_to_id is required!
+                 */
+                $v->setError($params['errors']['valid_assigned_to_id']);
+            }
+
+        }else{
+            if(isset_get($params['entry']['assigned_to_id'])){
+                /*
+                 * assigned_to_id is not used at all! Just ignore
+                 */
+                unset($page['assigned_to_id']);
+
+            }else{
+                /*
+                 * assigned_to_id is set. Ensure validity and existence
+                 */
+                $v->isNatural($page['assigned_to_id'], 1, $params['errors']['valid_assigned_to_id'], VALIDATE_ALLOW_EMPTY_NULL);
+
+                $exists = sql_get('SELECT `id` FROM `users` WHERE `id` = :id AND `status` IS NULL', array(':id' => $page['assigned_to_id']));
+
+                if(!$exists){
+                    $v->setError($params['errors']['not_exist_assigned_to_id']);
+                }
+            }
+        }
+
+        /*
+         * Validate description
+         */
         if(empty($params['labels']['description']) or $empty){
             $page['description'] = null;
 
@@ -298,6 +344,9 @@ function storage_pages_validate($page, $params = false){
             $v->hasMinChars($page['body'], 16, $params['errors']['body_16']);
         }
 
+        /*
+         * Done!
+         */
         $v->isValid();
 
         $page['seoname'] = seo_unique($page['name'], 'storage_pages', $page['id']);
@@ -306,42 +355,6 @@ function storage_pages_validate($page, $params = false){
 
     }catch(Exception $e){
         throw new bException('storage_pages_validate(): Failed', $e);
-    }
-}
-
-
-
-/*
- * Perform an SQL merge with $post_page element filtered by the available
- * elements specified in $params[labels]. Basically, this sql_merge() variant
- * will force all $post_page keys that have no label entries to be NULL, THEN it
- * will perform the sql_merge(). This way we can enforce that users cannot force
- * values, even thought they should not be able to be updated
- */
-function storage_pages_merge($db_page, $post_page, $params){
-    try{
-        if(empty($params['show']['body'])){
-             unset($post_page['body']);
-        }
-
-        $keys = array('name',
-                      'description',
-                      'category1',
-                      'category2',
-                      'category3',
-                      'assigned_to_id',
-                      'status');
-
-        foreach($keys as $key){
-            if(empty($params['labels'][$key])){
-                unset($post_page[$key]);
-            }
-        }
-
-        return sql_merge($db_page, $post_page);
-
-    }catch(Exception $e){
-        throw new bException('storage_pages_merge(): Failed', $e);
     }
 }
 

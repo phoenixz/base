@@ -39,14 +39,13 @@ function storage_url($url, $section = null, $page = null, $language = null){
             $url = str_replace(':seosection', $section['seoname'], $url);
         }
 
-        if($page){
+        if($page and !empty($page['seoname'])){
             $url = str_replace(':seodocument', $page['seoname'], $url);
         }
 
         return $url;
 
     }catch(Exception $e){
-showdie($e);
         throw new bException('storage_url(): Failed', $e);
     }
 }

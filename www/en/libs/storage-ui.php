@@ -258,12 +258,48 @@ function storage_ui_get_page($params, $section, $object){
             meta_action($page['meta_id'], 'view');
         }
 
-        $page = storage_pages_merge($page, $_POST, $params);
+        $page = storage_ui_pages_merge($page, $_POST, $params);
 
         return $page;
 
     }catch(Exception $e){
         throw new bException(tr('storage_ui_get_page(): Failed'), $e);
+    }
+}
+
+
+
+/*
+ * Perform an SQL merge with $post_page element filtered by the available
+ * elements specified in $params[labels]. Basically, this sql_merge() variant
+ * will force all $post_page keys that have no label entries to be NULL, THEN it
+ * will perform the sql_merge(). This way we can enforce that users cannot force
+ * values, even thought they should not be able to be updated
+ */
+function storage_ui_pages_merge($db_page, $post_page, $params){
+    try{
+        if(empty($params['show']['body'])){
+             unset($post_page['body']);
+        }
+
+        $keys = array('name',
+                      'description',
+                      'category1',
+                      'category2',
+                      'category3',
+                      'assigned_to_id',
+                      'status');
+
+        foreach($keys as $key){
+            if(empty($params['labels'][$key])){
+                unset($post_page[$key]);
+            }
+        }
+
+        return sql_merge($db_page, $post_page);
+
+    }catch(Exception $e){
+        throw new bException('storage_ui_pages_merge(): Failed', $e);
     }
 }
 
