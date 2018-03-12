@@ -132,6 +132,11 @@ function storage_ui_panel_header($params, $section, $page = null){
                             <div class="panel panel-default'.$tabs.'">
                                 '.$panel_heading.'
                                 <div class="panel-body'.$tab_content.'">
+                                    <div class="row">
+                                        <div class="col-md-12">
+                                            <div id="result" class="hidden"></div>
+                                        </div>
+                                    </div>
                                     '.html_flash($params['html_flash_class']).'
                                     '.$tab_div_open.'
                                         <div class="table-responsive">';
@@ -140,6 +145,125 @@ function storage_ui_panel_header($params, $section, $page = null){
 
     }catch(Exception $e){
         throw new bException('storage_ui_panel_header(): Failed', $e);
+    }
+}
+
+
+
+/*
+ * Process user actions for document page
+ */
+function storage_ui_process_dosubmit($params, $section, $page){
+    try{
+        switch(isset_get($_POST['dosubmit'])){
+            case '':
+                /*
+                 * Do nothing
+                 */
+                break;
+
+            case $params['buttons']['redetect_scanners']:
+                $devices = scanimage_update_devices();
+                html_flash_set(tr('Device detection successful, found ":count" device(s)', array(':count' => count($devices))), 'success', 'documents');
+                redirect(domain(true));
+                break;
+
+            case $params['buttons']['create']:
+                /*
+                 * Create the document
+                 */
+                $page['_new'] = true;
+                $page = storage_pages_update($page, $params);
+                $url  = str_replace(':seoname', $page['seoname'], storage_url($params['urls']['create'], $section, $page));
+
+                html_flash_set(log_database(tr('Created :labeldocument ":document"', array(':labeldocument' => $params['document'], ':document' => '<a href="'.$url.'">'.html_safe($page['name']).'</a>')), 'storage-documents/create'), 'success', 'documents');
+                redirect($url);
+
+            case $params['buttons']['update']:
+                /*
+                 * Update the document
+                 */
+                $page = storage_pages_update($page, $params);
+                $url  = str_replace(':seoname', $page['seoname'], storage_url($params['urls']['update'], $section, $page));
+
+                html_flash_set(log_database(tr('Updated :labeldocument ":document"', array(':labeldocument' => $params['document'], ':document' => '<a href="'.$url.'">'.html_safe($page['name']).'</a>')), 'storage-documents/update'), 'success', 'documents');
+                redirect($url);
+
+            default:
+                /*
+                 * Unknown action specified
+                 */
+                throw new bException(tr('storage_ui_process_dosubmit(): Unknown action ":action" specified', array(':action' => $_POST['dosubmit'])), 'warning/unknown');
+        }
+
+    }catch(Exception $e){
+        html_flash_set($e, 'documents');
+    }
+
+    return $page;
+}
+
+
+
+/*
+ * Get section data from database and $_POST
+ */
+function storage_ui_get_section($params){
+    try{
+        if(empty($_GET[$params['seosection']])){
+            /*
+             * No section available, we cannot do anything!
+             */
+            html_flash_set(tr('No :labelsection specified', array(':labelsection' => $params['section'])), 'warning', 400);
+            page_show(400);
+
+        }
+
+        $section = storage_sections_get($_GET['section']);
+
+        if(!$section or is_new($section)){
+            html_flash_set(log_database(tr('Specified :labelsection ":section" does not exist', array(':labelsection' => $params['section'], ':section' => $_GET[$params['seosection']])), 'not-exist'), 'error', 404);
+            page_show(404);
+        }
+
+        return $section;
+
+    }catch(Exception $e){
+        throw new bException(tr('storage_ui_get_section(): Failed'), $e);
+    }
+}
+
+
+
+/*
+ * Get the page for the UI
+ */
+function storage_ui_get_page($params, $section, $object){
+    try{
+        /*
+         * Get page
+         */
+        if(empty($_GET[$params['seo'.$object]])){
+            $page = storage_pages_get($section, null, true);
+
+        }else{
+            $page = storage_pages_get($section, $_GET[$params['seo'.$object]]);
+
+            if(!$page){
+                html_flash_set(log_database(tr('Specified :labeldocument ":document" does not exist', array(':labeldocument' => $params[$object], ':document' => $_GET[$params['seo'.$object]])), 'not-exist'), 'error', 404);
+                page_show(404);
+            }
+
+            log_database(tr('View :labeldocument ":document"', array(':labeldocument' => $params[$object], ':document' => $page['name'])), 'storage-documents/view');
+            meta_action($page['meta_id'], 'view');
+        }
+
+        $page = storage_pages_merge($page, $_POST, $params);
+
+        return $page;
+
+    }catch(Exception $e){
+        throw new bException(tr('storage_ui_get_page(): Failed'), $e);
     }
 }
 
