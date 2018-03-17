@@ -2,6 +2,15 @@
 /*
  * This is not a real library per-se, it will just start up the system
  *
+ * List of available calltypes:
+ * cli
+ * http
+ * admin
+ * api
+ * ajax
+ * amp
+ * system
+ *
  * @license http://opensource.org/licenses/GPL-2.0 GNU Public License, Version 2
  * @copyright Sven Oostenbrink <support@ingiga.com>, Johan Geuze
  */
