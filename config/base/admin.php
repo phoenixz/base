@@ -4,5 +4,8 @@ $_CONFIG['admin'] = array('signin' => array('contactus'  => '<a href="mailto:sup
                                             'rememberme' => tr('Remember me'),
                                             'recover'    => tr('Recover password'),
                                             'signup'     => tr(''),
-                                            'welcome'    => tr('<strong>Welcome!</strong> Please sign in first.')));
+                                            'signin'     => tr('sign in'),
+                                            'welcome'    => tr('<strong>Welcome!</strong> Please sign in first.'),
+                                            'username'   => tr('Username'),
+                                            'password'   => tr('Password')));
 ?>
