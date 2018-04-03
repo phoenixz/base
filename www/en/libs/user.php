@@ -1763,7 +1763,7 @@ function user_validate($user, $sections = array()){
             $exists = sql_query(' SELECT `id` FROM `users` WHERE `username` = :username AND `id` != :id', array(':id' => $user['id'], ':username' => $user['username']));
 
             if($exists->rowCount()){
-                $v->setError(tr('The username ":username" is already taken by another user', array(':username' => $user['username'])));
+                $v->setError(tr('The username ":username" is already taken by user ":user"', array(':username' => $user['username'], ':user' => '<a target="_blank" href="'.domain('/user.html?user='.$user['id']).'">'.name($user).'</a>')));
             }
 
         }else{
@@ -1783,10 +1783,10 @@ function user_validate($user, $sections = array()){
             /*
              * Double emails are NOT allowed
              */
-            $exists = sql_get('SELECT `id` FROM `users` WHERE `email` = :email', true, array(':email' => $user['email']));
+            $exists = sql_get('SELECT `id` FROM `users` WHERE `email` = :email AND `id` != :id', true, array(':email' => $user['email'], ':id' => $user['id']));
 
             if($exists){
-                $v->setError(tr('The email address ":email" is already taken by another user', array(':email' => $user['email'])));
+                $v->setError(tr('The email address ":email" is already taken by user ":user"', array(':email' => $user['email'], ':user' => '<a target="_blank" href="'.domain('/user.html?user='.$user['id']).'">'.name($user).'</a>')));
             }
         }else{
             $user['email'] = null;
@@ -1805,7 +1805,7 @@ function user_validate($user, $sections = array()){
                 $exists = sql_get('SELECT `id` FROM `users` WHERE `nickname` = :nickname AND `id` != :id', true, array(':id' => $user['id'], ':nickname' => $user['nickname']));
 
                 if($exists){
-                    $v->setError(tr('The nickname ":nickname" is already taken by another user', array(':nickname' => $user['nickname'])));
+                    $v->setError(tr('The nickname ":nickname" is already taken by user ":user"', array(':nickname' => $user['nickname'], ':user' => '<a target="_blank" href="'.domain('/user.html?user='.$user['id']).'">'.name($user).'</a>')));
                 }
             }
         }

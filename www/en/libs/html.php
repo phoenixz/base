@@ -2325,6 +2325,11 @@ function html_form($action, $method, $class, $name = 'form', $csrf_check = true)
             $keys[] = $key.'="'.$$key.'"';
         }
 
+        if(!empty($name)){
+            $keys[] = 'id="'.$name.'"';
+
+        }
+
         if(empty($keys)){
             throw new bException(tr('html_form(): No variables specified'), 'not-specified');
         }
