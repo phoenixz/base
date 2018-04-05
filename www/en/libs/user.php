@@ -1069,7 +1069,7 @@ function user_set_verify_code($user, $email_type = false){
  */
 function user_verify($code){
     try{
-        $user = sql_get('SELECT `id`, `name`, `email`, `nickname`, `username` FROM `users` WHERE `verify_code` = :verify_code', array(':verify_code' => cfm($code)));
+        $user = sql_get('SELECT * FROM `users` WHERE `verify_code` = :verify_code', array(':verify_code' => cfm($code)));
 
         if(!$user){
             throw new bException(tr('user_verify(): The specified verify code ":code" does not exist', array(':code' => $code)), 'not-exist');
