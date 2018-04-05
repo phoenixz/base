@@ -1709,9 +1709,9 @@ function email_validate_account($account, $client){
             $v->setError(tr('Please specify a domain from the list'));
         }
 
-        $v->hasMaxChars($account['description'], 4096, tr('Please ensure that the description has a maximum of 4K characters'));
-        $v->hasMaxChars($account['header']     , 4096, tr('Please ensure that the header has a maximum of 4K characters'));
-        $v->hasMaxChars($account['footer']     , 4096, tr('Please ensure that the footer has a maximum of 4K characters'));
+        $v->hasMaxChars($account['description'], 4096, tr('Please ensure that the description has a maximum of 4K characters'), VALIDATE_ALLOW_EMPTY_NULL);
+        $v->hasMaxChars($account['header']     , 4096, tr('Please ensure that the header has a maximum of 4K characters'), VALIDATE_ALLOW_EMPTY_NULL);
+        $v->hasMaxChars($account['footer']     , 4096, tr('Please ensure that the footer has a maximum of 4K characters'), VALIDATE_ALLOW_EMPTY_NULL);
 
         $domain = sql_get('SELECT `id`, `status` FROM `email'.$client.'_domains` WHERE `seoname` = :seoname', array(':seoname' => $account['domain']));
 
