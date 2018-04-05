@@ -578,6 +578,20 @@ function notify($params){
 
 
 /*
+ * Load external library file
+ */
+function load_external($file){
+    try{
+        include_once(ROOT.'www/en/libs/external/'.$file);
+
+    }catch(Exception $e){
+        throw new bException(tr('load_external(): Failed'), $e);
+    }
+}
+
+
+
+/*
  * Load specified library files
  */
 function load_libs($libraries, $exception = true){
@@ -2322,6 +2336,22 @@ function get_null($source){
 }
 
 
+
+/*
+ * Return the value quoted if non numeric string
+ */
+function quote($value){
+    try{
+        if(!is_numeric($value) and is_string($value)){
+            return '"'.$value.'"';
+        }
+
+        return $value;
+
+    }catch(Exception $e){
+        throw new bException(tr('quote(): Failed'), $e);
+    }
+}
 
 /*
  * Ensure that the specifed library is installed. If not, install it before
