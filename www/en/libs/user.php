@@ -1141,10 +1141,12 @@ function user_signup($user, $no_password = false){
             throw new bException(tr('user_signup(): Please specify a password'), 'not-specified');
         }
 
+        $user['id'] = sql_random_id('users');
+
         sql_query('INSERT INTO `users` (`id`, `status`, `createdby`, `username`, `password`, `name`, `email`, `roles_id`, `role`)
                    VALUES              (:id , :status , :createdby , :username , :password , :name , :email , :roles_id , :role )',
 
-                   array(':id'        => sql_random_id('users'),
+                   array(':id'        => $user['id'],
                          ':createdby' => isset_get($_SESSION['user']['id']),
                          ':username'  => get_null(isset_get($user['username'])),
                          ':status'    => isset_get($user['status']),
@@ -1162,7 +1164,7 @@ function user_signup($user, $no_password = false){
          * lost with the data we return if we don't copy the given $user over
          * the database data.
          */
-        return sql_merge(user_get(sql_insert_id()), $user);
+        return array_merge(user_get(sql_insert_id(), isset_get($user['status'])), $user);
 
     }catch(Exception $e){
         throw new bException('user_signup(): Failed', $e);
@@ -1315,7 +1317,7 @@ function user_update_password($params, $current = true){
 /*
  * Return requested data for specified user
  */
-function user_get($user = null){
+function user_get($user = null, $status = null){
     global $_CONFIG;
 
     try{
@@ -1348,7 +1350,7 @@ function user_get($user = null){
                                    ON        `modifiedby`.`id` = `users`.`modifiedby`
 
                                    WHERE     `users`.`id` = :id
-                                   AND       (`users`.`status` IS NULL OR `users`.`status` = "locked")',
+                                   AND       (`users`.`status` '.sql_where_null($status).' OR `users`.`status` = "locked")',
 
                                    array(':id' => $user));
 
@@ -1373,7 +1375,7 @@ function user_get($user = null){
 
                                    WHERE     `users`.`email`    = :email
                                    OR        `users`.`username` = :username
-                                   AND       (`users`.`status` IS NULL OR `users`.`status` = "locked")',
+                                   AND       (`users`.`status` '.sql_where_null($status).' OR `users`.`status` = "locked")',
 
                                    array(':email'    => $user,
                                          ':username' => $user));
