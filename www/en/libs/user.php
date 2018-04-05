@@ -1032,9 +1032,9 @@ function user_set_verify_code($user, $email_type = false){
             case 'signup':
                 email_send(array('template' => 'signup',
                                  'format'   => 'html',
-                                 'subject'  => 'Welcome to igotit.com! Please verify your email address',
+                                 'subject'  => 'Welcome! Please verify your email address',
                                  'to'       => $user['email'],
-                                 'from'     => 'noreply@igotit.com',
+                                 'from'     => 'noreply@'.$_CONFIG['domain'],
                                  'body'     => ' <a href="'.domain('/verify/'.$code, null, null, null, '').'" style="border: none; color: #333333; background-color: #FFB108; border-color: #cccccc; padding: 8px 15px; font-weight: bold; text-decoration: none; border-radius: 3px;">
                                                      '.tr('Click Here').'
                                                  </a>'));
@@ -1045,7 +1045,7 @@ function user_set_verify_code($user, $email_type = false){
                                  'format'   => 'html',
                                  'subject'  => 'You updated your email address, pelase verify it!',
                                  'to'       => $user['email'],
-                                 'from'     => 'noreply@igotit.com',
+                                 'from'     => 'noreply@'.$_CONFIG['domain'],
                                  'body'     => ' <a href="'.domain('/verify/'.$code, null, null, null, '').'" style="border: none; color: #333333; background-color: #FFB108; border-color: #cccccc; padding: 8px 15px; font-weight: bold; text-decoration: none; border-radius: 3px;">
                                                      '.tr('Click Here').'
                                                  </a>'));
