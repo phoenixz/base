@@ -999,7 +999,7 @@ function user_set_verify_code($user, $email_type = false){
             throw new bException('user_set_verify_code(): Invalid user specified', 'invalid');
         }
 
-        $code = sql_get('SELECT `code` FROM `users` WHERE `id` = :id', true, array(':id' => cfi($user['id'])));
+        $code = sql_get('SELECT `verify_code` FROM `users` WHERE `id` = :id', true, array(':id' => cfi($user['id'])));
 
         if(!$code){
             /*
@@ -1012,13 +1012,13 @@ function user_set_verify_code($user, $email_type = false){
              */
             $r = sql_query('UPDATE `users`
 
-                            SET    `verify_code` = :code,
+                            SET    `verify_code` = :verify_code,
                                    `verifiedon`  = NULL
 
                             WHERE  `id`          = :id',
 
                             array(':id'          => cfi($user['id']),
-                                  ':code'        => cfm($code)));
+                                  ':verify_code' => cfm($code)));
 
             if(!sql_affected_rows($r)){
                 throw new bException(tr('user_set_verify_code(): Specified user ":user" does not exist', array(':user' => $user['id'])), 'not-exist');
