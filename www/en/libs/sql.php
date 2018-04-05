@@ -850,6 +850,32 @@ function sql_where($query, $required = true){
 
 
 /*
+ *
+ */
+function sql_where_null($value, $not = false){
+    try{
+        if($value === null){
+            if($not){
+                return ' IS NOT NULL ';
+            }
+
+            return ' IS NULL ';
+        }
+
+        if($not){
+            return ' != '.quote($value);
+        }
+
+        return ' = '.quote($value);
+
+    }catch(bException $e){
+        throw new bException('sql_where_null(): Failed', $e);
+    }
+}
+
+
+
+/*
  * Try to get single data entry from memcached. If not available, get it from
  * MySQL and store results in memcached for future use
  */
