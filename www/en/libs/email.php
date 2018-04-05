@@ -927,9 +927,10 @@ function email_send($email, $smtp = null){
             /*
              * Use the default SMTP configuration
              */
-            $mail->Host     = $_CONFIG['email']['smtp']['host'];
-            $mail->Port     = $_CONFIG['email']['smtp']['port'];
-            $mail->SMTPAuth = $_CONFIG['email']['smtp']['auth'];
+            $mail->Host      = $_CONFIG['email']['smtp']['host'];
+            $mail->Port      = $_CONFIG['email']['smtp']['port'];
+            $mail->SMTPAuth  = $_CONFIG['email']['smtp']['auth'];
+//            $mail->SMTPDebug = 2;
 
             switch(isset_get($_CONFIG['email']['smtp']['secure'])){
                 case '':
