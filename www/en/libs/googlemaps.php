@@ -87,9 +87,11 @@ function googlemaps_cache_streetmaps($lat, $long, $x = 640, $y = 480) {
  * Display a goole map with markers
  */
 function googlemaps_map_with_markers($markers = array(), $divid = 'map-canvas') {
+    global $_CONFIG;
+
     try{
         //load external library
-        html_load_js('https://maps.googleapis.com/maps/api/js?v=3.exp&sensor=false');
+        html_load_js('https://maps.googleapis.com/maps/api/js?key='.$_CONFIG['google-map-api-key']);
 
         //google maps
         $html='<script>
