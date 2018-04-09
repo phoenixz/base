@@ -91,7 +91,7 @@ function googlemaps_map_with_markers($markers = array(), $divid = 'map-canvas') 
 
     try{
         //load external library
-        html_load_js('https://maps.googleapis.com/maps/api/js?key='.$_CONFIG['google-map-api-key']);
+        html_load_js('<jquery,https://maps.googleapis.com/maps/api/js?key='.$_CONFIG['google-map-api-key']);
 
         //google maps
         $html='<script>
