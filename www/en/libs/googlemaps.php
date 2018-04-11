@@ -317,4 +317,72 @@ function googlemaps_markers($locations, $longitude = null){
         throw new bException('googlemaps_markers(): Failed', $e);
     }
 }
+
+
+
+/*
+ * Display a goole map drag marker
+ */
+function googlemaps_map_drag_marker($lat, $lng, $divid = 'map-canvas'){
+    global $_CONFIG;
+
+    try{
+        //load external library
+        html_load_js('<jquery,https://maps.googleapis.com/maps/api/js?key='.$_CONFIG['google-map-api-key']);
+
+        //google maps
+        $html='<script>
+        $(document).on("ready", function(){
+            var myLatLng = {lat: '.$lat.', lng: '.$lng.'};
+
+            var map = new google.maps.Map(document.getElementById(\''.$divid.'\'), {
+                zoom: 15
+            });
+
+            var infoWindow = new google.maps.InfoWindow({map: map});
+            var marker = new google.maps.Marker({
+                    map: map,
+                    draggable:true,
+                });
+
+            // Try HTML5 geolocation.
+            if (navigator.geolocation) {
+console.log("Obteniendo posicion");
+              navigator.geolocation.getCurrentPosition(function(position) {
+                var pos = {
+                  lat: position.coords.latitude,
+                  lng: position.coords.longitude
+                };
+console.log(pos);
+                infoWindow.setPosition(pos);
+                infoWindow.setContent("Location found.");
+                marker.setPosition(pos);
+                map.setCenter(pos);
+
+              }, function() {
+              console.log("geolocation no soportada2");
+                //handleLocationError(true, infoWindow, map.getCenter());
+              });
+            }else{
+                console.log("geolocation no soportada");
+              // Browser doesnt support Geolocation
+              //handleLocationError(false, infoWindow, map.getCenter());
+            }
+
+            google.maps.event.addListener(marker, "dragend", function(marker){
+                var latLng = marker.latLng;
+                currentLatitude = latLng.lat();
+                currentLongitude = latLng.lng();
+                $("#latitude").val(currentLatitude);
+                $("#longitude").val(currentLongitude);
+            });
+        });
+        </script>';
+
+        return $html;
+
+    }catch(Exception $e){
+        throw new bException('googlemaps_map_drag marker(): Failed', $e);
+    }
+}
 ?>
