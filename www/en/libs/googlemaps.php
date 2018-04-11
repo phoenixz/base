@@ -130,7 +130,11 @@ function googlemaps_map_with_markers($markers = array(), $divid = 'map-canvas') 
                         $data['icon']='/pub/img/googlemaps/a.png';
                     }
 
-                    $list[] = '[\''.$data['html'].'\', '.$data['lat'].', '.$data['lng'].', \''.$data['icon'].'\']';
+                    if(empty($data['draggable'])){
+                        $data['draggable'] = 'false';
+                    }
+
+                    $list[] = '[\''.$data['html'].'\', '.$data['lat'].', '.$data['lng'].', \''.$data['icon'].'\','.$data['draggable'].']';
 
                 }catch(Exception $e){
                     /*
@@ -149,12 +153,23 @@ function googlemaps_map_with_markers($markers = array(), $divid = 'map-canvas') 
 
                 for (i = 0; i < locations.length; i++) {
                     marker = new google.maps.Marker({
-                    position: new google.maps.LatLng(locations[i][1], locations[i][2]),
-                    map: map,
-                    icon: locations[i][3]
+                        position: new google.maps.LatLng(locations[i][1], locations[i][2]),
+                        map: map,
+                        icon: locations[i][3],
+                        draggable: locations[i][4]
                     });
 
                     bounds.extend (new google.maps.LatLng(locations[i][1], locations[i][2]));
+
+                    google.maps.event.addListener(marker, \'dragend\', (function(marker, i){
+                        return function(){
+                            var latLng       = marker.position;
+                            currentLatitude  = latLng.lat();
+                            currentLongitude = latLng.lng();
+                            $("#latitude").val(currentLatitude);
+                            $("#longitude").val(currentLongitude);
+                        }
+                    })(marker, i));
 
                     google.maps.event.addListener(marker, \'click\', (function(marker, i) {
                         return function() {
@@ -323,58 +338,39 @@ function googlemaps_markers($locations, $longitude = null){
 /*
  * Display a goole map drag marker
  */
-function googlemaps_map_drag_marker($lat, $lng, $divid = 'map-canvas'){
+function googlemaps_map_drag_marker($divid = 'map-canvas'){
     global $_CONFIG;
 
     try{
         //load external library
-        html_load_js('<jquery,https://maps.googleapis.com/maps/api/js?key='.$_CONFIG['google-map-api-key']);
+        html_load_js('<jquery,script,https://maps.googleapis.com/maps/api/js?key='.$_CONFIG['google-map-api-key']);
 
         //google maps
         $html='<script>
         $(document).on("ready", function(){
-            var myLatLng = {lat: '.$lat.', lng: '.$lng.'};
+            $.geoLocation(function(data){
+                var myLatLng = {lat: data.coords.latitude, lng: data.coords.longitude};
 
-            var map = new google.maps.Map(document.getElementById(\''.$divid.'\'), {
-                zoom: 15
-            });
-
-            var infoWindow = new google.maps.InfoWindow({map: map});
-            var marker = new google.maps.Marker({
-                    map: map,
-                    draggable:true,
+                var map = new google.maps.Map(document.getElementById(\''.$divid.'\'), {
+                    zoom: 15,
+                    center: myLatLng
                 });
 
-            // Try HTML5 geolocation.
-            if (navigator.geolocation) {
-console.log("Obteniendo posicion");
-              navigator.geolocation.getCurrentPosition(function(position) {
-                var pos = {
-                  lat: position.coords.latitude,
-                  lng: position.coords.longitude
-                };
-console.log(pos);
-                infoWindow.setPosition(pos);
-                infoWindow.setContent("Location found.");
-                marker.setPosition(pos);
-                map.setCenter(pos);
+                var marker = new google.maps.Marker({
+                    map: map,
+                    draggable:true,
+                    position:pos
+                });
 
-              }, function() {
-              console.log("geolocation no soportada2");
-                //handleLocationError(true, infoWindow, map.getCenter());
-              });
-            }else{
-                console.log("geolocation no soportada");
-              // Browser doesnt support Geolocation
-              //handleLocationError(false, infoWindow, map.getCenter());
-            }
+                google.maps.event.addListener(marker, "dragend", function(marker){
+                    var latLng = marker.latLng;
+                    currentLatitude = latLng.lat();
+                    currentLongitude = latLng.lng();
+                    $("#latitude").val(currentLatitude);
+                    $("#longitude").val(currentLongitude);
+                });
+            }, function(e){
 
-            google.maps.event.addListener(marker, "dragend", function(marker){
-                var latLng = marker.latLng;
-                currentLatitude = latLng.lat();
-                currentLongitude = latLng.lng();
-                $("#latitude").val(currentLatitude);
-                $("#longitude").val(currentLongitude);
             });
         });
         </script>';
