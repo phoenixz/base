@@ -338,7 +338,7 @@ function googlemaps_markers($locations, $longitude = null){
 /*
  * Display a goole map drag marker
  */
-function googlemaps_map_drag_marker($divid = 'map-canvas'){
+function googlemaps_map_drag_marker($lat, $lng, $divid = 'map-canvas'){
     global $_CONFIG;
 
     try{
@@ -348,30 +348,26 @@ function googlemaps_map_drag_marker($divid = 'map-canvas'){
         //google maps
         $html='<script>
         $(document).on("ready", function(){
-            $.geoLocation(function(data){
-                var myLatLng = {lat: data.coords.latitude, lng: data.coords.longitude};
+                var myLatLng = {lat: '.$lat.', lng: '.$lng.'};
 
                 var map = new google.maps.Map(document.getElementById(\''.$divid.'\'), {
-                    zoom: 15,
+                    zoom: 8,
                     center: myLatLng
                 });
 
                 var marker = new google.maps.Marker({
                     map: map,
                     draggable:true,
-                    position:pos
+                    position:myLatLng
                 });
 
                 google.maps.event.addListener(marker, "dragend", function(marker){
-                    var latLng = marker.latLng;
-                    currentLatitude = latLng.lat();
+                    var latLng       = marker.latLng;
+                    currentLatitude  = latLng.lat();
                     currentLongitude = latLng.lng();
                     $("#latitude").val(currentLatitude);
                     $("#longitude").val(currentLongitude);
                 });
-            }, function(e){
-
-            });
         });
         </script>';
 
