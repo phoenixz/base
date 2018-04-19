@@ -351,7 +351,7 @@ function googlemaps_map_drag_marker($lat, $lng, $divid = 'map-canvas'){
                 var myLatLng = {lat: '.$lat.', lng: '.$lng.'};
 
                 var map = new google.maps.Map(document.getElementById(\''.$divid.'\'), {
-                    zoom: 8,
+                    zoom: 13,
                     center: myLatLng
                 });
 
