@@ -240,20 +240,38 @@ function json_message($message, $data = null){
 
     try{
         switch($message){
+            case 400:
+                // FALLTHROUGH
+            case 'invalid':
+                json_error(null, null, 'BAD-REQUEST', 400);
+
             case 'not-found':
                 json_error(null, null, 'NOT-FOUND', 404);
 
+            case 403:
+                // FALLTHROUGH
             case 'forbidden':
                 // FALLTHROUGH
             case 'access-denied':
                 json_error(null, null, 'FORBIDDEN', 403);
 
+            case 404:
+                // FALLTHROUGH
+            case 'not-found':
+                json_error(null, null, 'NOT-FOUND', 404);
+
+            case 500:
+                // FALLTHROUGH
             case 'error':
                 json_error(null, (debug() ? $data : null), 'ERROR', 500);
 
+            case 302:
+                // FALLTHROUGH
             case 'signin':
                 json_error(null, array('location' => domain($_CONFIG['redirects']['signin'])), 'SIGNIN', 302);
 
+            case 301:
+                // FALLTHROUGH
             case 'redirect':
                 json_error(null, array('location' => $data), 'REDIRECT', 301);
 
