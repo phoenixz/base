@@ -116,18 +116,11 @@ function servers_validate($server, $password_strength = true){
         /*
          * Already exists?
          */
-        if($server['id']){
-            if(sql_get('SELECT `id` FROM `servers` WHERE `hostname` = :hostname AND `ssh_accounts_id` = :ssh_accounts_id AND `id` != :id', array(':hostname' => $server['hostname'], ':ssh_accounts_id' => $server['ssh_account'], ':id' => $server['id']), 'id')){
-                $v->setError(tr('servers_validate(): A server with hostname ":hostname" and user ":user" already exists', array(':hostname' => $server['hostname'], ':ssh_accounts_id' => $server['ssh_account'])));
-            }
-
-        }else{
-            if(sql_get('SELECT `id` FROM `servers` WHERE `hostname` = :hostname AND `ssh_accounts_id` = :ssh_accounts_id', array(':hostname' => $server['hostname'], ':ssh_accounts_id' => $server['ssh_account']), 'id')){
-                $v->setError(tr('servers_validate(): A server with hostname ":hostname" and ssh_accounts_id ":ssh_accounts_id" already exists', array(':hostname' => $server['hostname'], ':ssh_accounts_id' => $server['ssh_account'])));
-            }
+        if(sql_get('SELECT `id` FROM `servers` WHERE `hostname` = :hostname AND `ssh_accounts_id` = :ssh_accounts_id AND `id` != :id', array(':hostname' => $server['hostname'], ':ssh_accounts_id' => $server['ssh_account'], ':id' => isset_get($server['id'])), 'id')){
+            $v->setError(tr('servers_validate(): A server with hostname ":hostname" and user ":user" already exists', array(':hostname' => $server['hostname'], ':ssh_accounts_id' => $server['ssh_account'])));
         }
 
-        $server['seohostname']  = seo_unique($server['hostname'], 'servers', $server['id'], 'seohostname');
+        $server['seohostname']  = seo_unique($server['hostname'], 'servers', isset_get($server['id']), 'seohostname');
         $server['bill_duedate'] = date_convert($server['bill_duedate'], 'mysql');
 
         $v->isValid();
