@@ -16,7 +16,7 @@ if(SEED){
         throw new bException(tr('This project has already been setup, and to avoid overwriting your previous setup, this script will be blocked unless you run it in FORCE mode using -F'), 'warning');
     }
 
-    log_console(tr('WARNING! This project has already been setup! The setup script will run anyway because of FORCE mode was specified on the command line'), 'warning');
+    log_console(tr('WARNING! This project has already been setup! The setup script will run anyway because FORCE mode was specified on the command line'), 'warning');
 }
 
 log_console(tr('Welcome to the BASE framework setup script!'), 'white');
