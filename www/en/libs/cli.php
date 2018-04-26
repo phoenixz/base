@@ -75,8 +75,10 @@ class Colors {
         $this->background_colors['light_gray']   = '47';
     }
 
-    // Returns colored string
-    public function getColoredString($string, $foreground_color, $background_color = 'black', $force = false) {
+    /*
+     * Returns colored string
+     */
+    public function getColoredString($string, $foreground_color = null, $background_color = null, $force = false, $reset = true) {
         $colored_string = '';
 
         if(NOCOLOR and !$force){
@@ -86,38 +88,69 @@ class Colors {
             return $string;
         }
 
-        if(!is_string($foreground_color) or !is_string($background_color) or !isset($this->foreground_colors[$foreground_color]) or !isset($this->background_colors[$background_color])){
+        if($foreground_color){
+            if(!is_string($foreground_color) or !isset($this->foreground_colors[$foreground_color])){
+                /*
+                 * If requested colors do not exist, return no
+                 */
+                log_console(tr('[ WARNING ] getColoredString(): specified foreground color ":color" for the next line does not exist. The line will be displayed without colors', array(':color' => $foreground_color)), 'warning');
+                return $string;
+            }
+
+            // Check if given foreground color found
+            if(isset($this->foreground_colors[$foreground_color])) {
+                $colored_string .= "\033[".$this->foreground_colors[$foreground_color].'m';
+            }
+        }
+
+        if($background_color){
+            if(!is_string($background_color) or !isset($this->background_colors[$background_color])){
+                /*
+                 * If requested colors do not exist, return no
+                 */
+                log_console(tr('[ WARNING ] getColoredString(): specified background color ":color" for the next line does not exist. The line will be displayed without colors', array(':color' => $background_color)), 'warning');
+                return $string;
+            }
+
             /*
-             * If requested colors do not exist, return no
+             * Check if given background color found
              */
-            log_console(tr('[ WARNING ] getColoredString(): specified foreground/background color combination ":fore/:back" for the next line does not exist. The line will be displayed without colors', array(':fore' => $foreground_color, ':back' => $background_color)), 'warning');
-            return $string;
+            if(isset($this->background_colors[$background_color])) {
+                $colored_string .= "\033[".$this->background_colors[$background_color].'m';
+            }
         }
 
-        // Check if given foreground color found
-        if(isset($this->foreground_colors[$foreground_color])) {
-            $colored_string .= "\033[".$this->foreground_colors[$foreground_color].'m';
-        }
+        /*
+         * Add string and end coloring
+         */
+        $colored_string .=  $string;
 
-        // Check if given background color found
-        if(isset($this->background_colors[$background_color])) {
-            $colored_string .= "\033[".$this->background_colors[$background_color].'m';
+        if($reset){
+            $colored_string .= cli_reset_color();
         }
-
-        // Add string and end coloring
-        $colored_string .=  $string."\033[0m";
 
         return $colored_string;
     }
 
-    // Returns all foreground color names
+    /*
+     * Returns all foreground color names
+     */
     public function getForegroundColors() {
         return array_keys($this->foreground_colors);
     }
 
-    // Returns all background color names
+    /*
+     * Returns all background color names
+     */
     public function getBackgroundColors() {
         return array_keys($this->background_colors);
+    }
+
+    /*
+     * Returns all background color names
+     */
+    public function resetColors() {
+
     }
 }
 
@@ -126,7 +159,7 @@ class Colors {
 /*
  * Return the specified string in the specified color
  */
-function cli_color($string, $fore_color, $back_color = null, $force = false){
+function cli_color($string, $fore_color = null, $back_color = null, $force = false, $reset = true){
     try{
         static $color;
 
@@ -134,14 +167,28 @@ function cli_color($string, $fore_color, $back_color = null, $force = false){
             $color = new Colors();
         }
 
-        if(!$back_color){
-            $back_color = 'black';
-        }
-
-        return $color->getColoredString($string, $fore_color, $back_color, $force);
+        return $color->getColoredString($string, $fore_color, $back_color, $force, $reset);
 
     }catch(Exception $e){
         throw new bException('cli_color(): Failed', $e);
+    }
+}
+
+
+
+/*
+ * Return or echo CLI code to reset all colors
+ */
+function cli_reset_color($echo = false){
+    try{
+        if(!$echo){
+            return "\033[0m";
+        }
+
+        echo "\033[0m";
+
+    }catch(Exception $e){
+        throw new bException('cli_reset_color(): Failed', $e);
     }
 }
 
@@ -242,8 +289,17 @@ function cli_code_back($count){
 /*
  * Returns the shell console to return the cursor to the beginning of the line
  */
-function cli_code_begin(){
-    return "\033[D";
+function cli_code_begin($echo = false){
+    try{
+        if(!$echo){
+            return "\033[D";
+        }
+
+        echo "\033[D";
+
+    }catch(Exception $e){
+        throw new bException('cli_code_begin(): Failed', $e);
+    }
 }
 
 
@@ -251,9 +307,17 @@ function cli_code_begin(){
 /*
  * Hide anything printed to screen
  */
-function cli_hide(){
-    echo "\033[30;40m";
-    echo "\e[?25l";
+function cli_hide($echo = false){
+    try{
+        if(!$echo){
+            return "\033[30;40m\e[?25l";
+        }
+
+        echo "\033[30;40m\e[?25l";
+
+    }catch(Exception $e){
+        throw new bException('cli_hide(): Failed', $e);
+    }
 }
 
 
@@ -261,9 +325,17 @@ function cli_hide(){
 /*
  * Restore screen printing
  */
-function cli_restore(){
-    echo "\033[0m";
-    echo "\e[?25h";
+function cli_restore($echo = false){
+    try{
+        if(!$echo){
+            return "\033[0m\e[?25h";
+        }
+
+        echo "\033[0m\e[?25h";
+
+    }catch(Exception $e){
+        throw new bException('cli_restore(): Failed', $e);
+    }
 }
 
 
@@ -271,18 +343,21 @@ function cli_restore(){
 /*
  * Read input from the command line
  */
-function cli_readline($prompt = '', $hidden = false){
+// :TODO: Implement support for answer coloring
+function cli_readline($prompt = '', $hidden = false, $question_fore_color = null, $question_back_color = null, $answer_fore_color = null, $answer_back_color = null){
     try{
-        if($prompt) echo $prompt;
+        if($prompt) echo cli_color($prompt, $question_fore_color, $question_back_color);
 
         if($hidden){
-            cli_hide();
+            echo cli_hide();
         }
 
+        echo cli_color('', $answer_fore_color, $answer_back_color, false, false);
         $retval = rtrim(fgets(STDIN), "\n");
+        echo cli_reset_color();
 
         if($hidden){
-            cli_restore();
+            echo cli_restore();
         }
 
         return $retval;
@@ -792,7 +867,7 @@ function cli_no_arguments_left(){
 /*
  * Mark the specified keywords in the specified string with the specified color
  */
-function cli_highlight($string, $keywords, $fore_color, $back_color = 'black'){
+function cli_highlight($string, $keywords, $fore_color, $back_color = null){
     static $color;
 
     try{
