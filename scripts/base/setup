@@ -1,25 +1,171 @@
 #!/usr/bin/php
 <?php
 /*
- * This is the base setup script.
- *
- * This will configure your project in a user friendly way on the command line
+ * This is an empty test script template
  */
-$usage = './scripts/base/setup';
+$usage = './scripts/base/setup
+./scripts/base/setup';
 
-$help  = 'This is the base project setup script. This script will ';
+$help  = 'This is the BASE framework install script. It will ask you a number of questions and from that setup and configure your BASE framework for your new project.';
 
 require_once(__DIR__.'/../../libs/startup.php');
 cli_only();
-log_console(tr('Welcome to the base setup script. This script will ask you a number of questions and use the information to configure your base script for your new project.'), 'white');
 
-$data = array('db' => array());
+if(SEED){
+    if(!FORCE){
+        throw new bException(tr('This project has already been setup, and to avoid overwriting your previous setup, this script will be blocked unless you run it in FORCE mode using -F'), 'warning');
+    }
 
-$data['project']            = cli_readline(tr('Please enter your project code string (A-Z and _)'));
-$project['db']['hostname']  = cli_readline(tr('Please enter the MySQL host you wish to use for the core database'));
-$project['db']['database']  = cli_readline(tr('Please enter the MySQL database you wish to use for the core database'));
-$project['db']['username']  = cli_readline(tr('Please enter the MySQL username you wish to use to connect to the core database'));
-$project['db']['password']  = cli_readline(tr('Please enter the MySQL password you wish to use for your MySQL account'), true);
-$project['db']['passwordv'] = cli_readline(tr('Please repeat the MySQL password you wish to use for your MySQL account'), true);
+    log_console(tr('WARNING! This project has already been setup! The setup script will run anyway because of FORCE mode was specified on the command line'), 'warning');
+}
+
+log_console(tr('Welcome to the BASE framework setup script!'), 'white');
+log_console(tr('You will be asked a number of questions about your project, needed to automatically setup your project. Afterwards, you can still change every setting in the config/ files'));
+
+
+
+/*
+ * Required for config/project.php setup
+ */
+$params['seed'] = str_random(mt_rand(16, 32));
+$fail           = true;
+
+
+
+/*
+ * Get project name
+ */
+while($fail){
+    $params['project_name'] = cli_readline(tr('What is the name of your project?'), false, 'cyan');
+
+    if(!preg_match('/[a-z-]{2,32}/i', $params['project_name'])){
+        log_console(tr('Please specify a valid project name. Valid project names can only contain "a-z-" and must be between 2 and 32 characters'), 'warning');
+        continue;
+    }
+
+    break;
+}
+
+
+
+/*
+ * Get project production domain
+ */
+while($fail){
+    $params['domain'] = cli_readline(tr('What is the production domain name (without http://, or https://)?'), false, 'cyan');
+
+    if(!preg_match('/^(?!\-)(?:[a-zA-Z\d\-]{0,62}[a-zA-Z\d]\.){1,126}(?!\d+)[a-zA-Z\d]{1,63}$/', $params['domain'])){
+        log_console(tr('Please specify a valid domain name. It cannot surpass 255 characters, .'), 'warning');
+        continue;
+    }
+
+    break;
+}
+
+
+
+/*
+ * Get project production domain
+ */
+while($fail){
+    $params['multiple_sub_domains'] = cli_readline(tr('Will your project domain use multiple sub domains [N]?'), false, 'cyan');
+
+    switch($params['multiple_sub_domains']){
+        case '':
+            // FALLTRHOUGH
+        case 'n':
+            // FALLTRHOUGH
+        case 'no':
+            $params['multiple_sub_domains'] = false;
+            break;
+
+        case 'y':
+            // FALLTRHOUGH
+        case 'yes':
+            $params['multiple_sub_domains'] = true;
+            break;
+
+        default:
+            log_console(tr('Please specify y / yes or n / no.'), 'warning');
+            continue;
+    }
+
+    break;
+}
+
+
+
+/*
+ * Get project production domain
+ */
+if(!$params['multiple_sub_domains']){
+    while($fail){
+        $params['single_sub_domain'] = cli_readline(tr('Will your project domain use single sub domain? If no, just press enter, if yes, please specify the sub domain here'), false, 'cyan');
+
+        if(!$params['single_sub_domain']){
+            $params['single_sub_domain'] = '';
+
+        }else{
+            if(!preg_match('/[a-z-]{1,63}/i', $params['db_core_user'])){
+                log_console(tr('Please specify a valid domain sections. Valid domain sections can only contain "a-z-" and must be between 1 and 63 characters'), 'warning');
+                continue;
+            }
+        }
+
+        break;
+    }
+}
+
+
+
+/*
+ * Get project production database
+ */
+while($fail){
+    $params['db_core_db'] = cli_readline(tr('What is the production database name?'), false, 'cyan');
+
+    if(!preg_match('/[0-9,a-z,A-Z$_]{2,16}/', $params['db_core_db'])){
+        log_console(tr('Please specify a valid database name. Valid database names can only contain "0-9,a-z,_" and must be between 2 and 16 characters'), 'warning');
+        continue;
+    }
+
+    break;
+}
+
+
+
+/*
+ * Get project production database
+ */
+while($fail){
+    $params['db_core_user'] = cli_readline(tr('What is the production database username?'), false, 'cyan');
+
+    if(!preg_match('/[0-9,a-z,A-Z$_]{2,16}/', $params['db_core_user'])){
+        log_console(tr('Please specify a valid database name. Valid database usernames can only contain "a-z-" and must be between 2 and 16 characters'), 'warning');
+        continue;
+    }
+
+    break;
+}
+
+
+
+/*
+ * Get project production database
+ */
+while($fail){
+    $params['db_core_pass'] = cli_readline(tr('What is password to access your main database?'), false, 'cyan');
+    break;
+}
+
+
+
+/*
+ * Write project config/project.php file
+ */
+log_console(tr('Writing project file...'), '', false);
+//config_write_project();
+log_console(' '.tr('Done!'), 'green');
+
 
 ?>
