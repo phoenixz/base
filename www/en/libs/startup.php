@@ -43,6 +43,8 @@ define('ROOT'  , realpath(__DIR__.'/../../..').'/');
 define('TMP'   , ROOT.'data/tmp/');
 define('PUBTMP', ROOT.'data/content/tmp/');
 define('LIBS'  , __DIR__.'/');
+define('CRLF'  , "\r\n");
+
 
 
 /*
@@ -154,7 +156,9 @@ class core{
              * Verify project data integrity
              */
             if(!defined('SEED') or !SEED or (PROJECTCODEVERSION == '0.0.0')){
-                return include(__DIR__.'/handlers/startup-no-project-data.php');
+                if(SCRIPT !== 'setup'){
+                    return include(__DIR__.'/handlers/startup-no-project-data.php');
+                }
             }
 
         }catch(Exception $e){
