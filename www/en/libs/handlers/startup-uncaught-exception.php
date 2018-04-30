@@ -9,7 +9,7 @@ try{
         /*
          * We seem to be stuck in an uncaught exception loop, cut it out now!
          */
-        die('exception loop');
+        die('exception loop detected');
     }
 
     $executed = true;
@@ -27,19 +27,25 @@ try{
         /*
          * Wow, system crashed before platform detection. See $core->__constructor()
          */
-        die('exception');
+        die('exception before platform detection');
     }
 
     switch(PLATFORM){
         case 'cli':
+            if($e->getCode() == 'parameters'){
+                log_console(trim(str_from($e->getMessage(), '():')), 'warning');
+                $GLOBALS['core'] = false;
+                die(1);
+            }
+
             if(empty($core) or empty($core->register['ready'])){
                 /*
                  * Configuration hasn't been loaded yet, we cannot even know if we are
                  * in debug mode or not!
                  */
-                echo "\033[0;31mPre ready exception\033[0m\n";
+                echo "\033[1;31mPre ready exception\033[0m\n";
                 print_r($e);
-                die("\033[0;31mPre ready exception\033[0m\n");
+                die("\033[1;31mPre ready exception\033[0m\n");
             }
 
             /*
