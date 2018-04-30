@@ -19,16 +19,22 @@ register_shutdown_function('cli_done');
 /*
  * Define basic platform constants
  */
-define('ADMIN'   , '');
-define('SCRIPT'  , str_runtil(str_rfrom($_SERVER['PHP_SELF'], '/'), '.php'));
-define('PWD'     , slash(isset_get($_SERVER['PWD'])));
-define('FORCE'   , cli_argument('-F', false, cli_argument('--force')));
-define('NOCOLOR' , cli_argument('-C', false, cli_argument('--no-color')));
-define('TEST'    , cli_argument('-T', false, cli_argument('--test')));
-define('VERBOSE' , ((empty($this->register['quiet']) or cli_argument('-V', false, cli_argument('--verbose'))) ? 'VERBOSE' : ''));
-define('QUIET'   , cli_argument('-Q', false, cli_argument('--quiet')));
-define('LIMIT'   , cli_argument('--limit', true));
-define('STARTDIR', slash(getcwd()));
+try{
+    define('ADMIN'   , '');
+    define('SCRIPT'  , str_runtil(str_rfrom($_SERVER['PHP_SELF'], '/'), '.php'));
+    define('PWD'     , slash(isset_get($_SERVER['PWD'])));
+    define('VERBOSE' , ((!empty($GLOBALS['quiet']) or cli_argument('-V,--verbose')) ? 'VERBOSE' : ''));
+    define('QUIET'   , cli_argument('-Q,--quiet'));
+    define('FORCE'   , cli_argument('-F,--force'));
+    define('NOCOLOR' , cli_argument('-C,--no-color'));
+    define('TEST'    , cli_argument('-T,--test'));
+    define('LIMIT'   , cli_argument('--limit', true));
+    define('STARTDIR', slash(getcwd()));
+
+}catch(Exception $e){
+    $e->setCode('parameters');
+    throw new bException(tr('startup-cli: Failed to parse one or more system parameters'), $e);
+}
 
 
 
