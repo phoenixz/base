@@ -25,12 +25,12 @@ Possible arguments:
 
 require_once(__DIR__.'/../../libs/startup.php');
 
-$branch   =  cli_argument('--branch', true, 'production');
-$noinit   =  cli_argument('--no-init');
-$nocommit =  cli_argument('--no-commit');
-$ignore   = (cli_argument('-i')         or cli_argument('--ignore-changes'));
-$local    = (cli_argument('--local')    or cli_argument('-l'));
-$no_times = (cli_argument('--no-times') or cli_argument('-n'));
+$branch   = cli_argument('-b,--branch', true, 'production');
+$noinit   = cli_argument('--no-init');
+$nocommit = cli_argument('--no-commit');
+$ignore   = cli_argument('-i,--ignore-changes');
+$local    = cli_argument('-l,--local');
+$no_times = cli_argument('-n,--no-times');
 
 if($ignore and FORCE){
     throw new bException(tr('Both --ignore-changes and --force (or -i and -F) have been used. These options are mutually exclusive'), 'warning/invalid');
