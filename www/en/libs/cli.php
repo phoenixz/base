@@ -695,22 +695,22 @@ function cli_method($index = null, $default = null){
  * This function will REMOVE and then return the argument when its found
  * If the argument is not found, $default will be returned
  */
-function cli_argument($value = null, $next = null, $default = null){
+function cli_argument($keys = null, $next = null, $default = null){
     global $argv;
 
     try{
-        if(is_integer($value)){
+        if(is_integer($keys)){
             $count = count($argv) - 1;
 
             if($next === 'all'){
-// :TODO: This could be optimized using a for() starting at $value instead of a foreach() over all entries
+// :TODO: This could be optimized using a for() starting at $keys instead of a foreach() over all entries
                 foreach($argv as $argv_key => $argv_value){
-                    if($argv_key < $value){
+                    if($argv_key < $keys){
                         continue;
                     }
 
-                    if($argv_key == $value){
-                        unset($argv[$key]);
+                    if($argv_key == $keys){
+                        unset($argv[$keys]);
                         continue;
                     }
 
@@ -732,9 +732,9 @@ function cli_argument($value = null, $next = null, $default = null){
                 return isset_get($retval);
             }
 
-            if(!empty($argv[$value++])){
-                $argument = $argv[$value - 1];
-                unset($argv[$value - 1]);
+            if(!empty($argv[$keys++])){
+                $argument = $argv[$keys - 1];
+                unset($argv[$keys - 1]);
                 return $argument;
             }
 
@@ -744,13 +744,45 @@ function cli_argument($value = null, $next = null, $default = null){
             return $default;
         }
 
-        if($value === null){
+        if($keys === null){
             $retval = array_shift($argv);
             $retval = str_starts_not($retval, '-');
             return $retval;
         }
 
-        if(($key = array_search($value, $argv)) === false){
+        /*
+         * Detect multiple key options for the same command, but ensure only one
+         * is specified
+         */
+        if(is_array($keys) or (is_string($keys) and strstr($keys, ','))){
+            $keys    = array_force($keys);
+            $results = array();
+
+            foreach($keys as $key){
+                $value = cli_argument($key, $next, null);
+
+                if($value){
+                    $results[$key] = $value;
+                }
+            }
+
+            switch(count($results)){
+                case 0:
+                    return $default;
+
+                case 1:
+                    return current($results);
+
+                default:
+                    /*
+                     * Multiple command line options were specified, this is not
+                     * allowed!
+                     */
+                    throw new bException(sprintf('cli_argument(): Multiple command line arguments "%s" for the same option specified. Please specify only one', implode(', ', array_keys($results))), 'warning/multiple');
+            }
+        }
+
+        if(($key = array_search($keys, $argv)) === false){
             /*
              * Specified argument not found
              */
@@ -764,7 +796,7 @@ function cli_argument($value = null, $next = null, $default = null){
                  */
                 foreach($argv as $argv_key => $argv_value){
                     if(empty($start)){
-                        if($argv_value == $value){
+                        if($argv_value == $keys){
                             $start = true;
                             unset($argv[$argv_key]);
                         }
@@ -792,16 +824,16 @@ function cli_argument($value = null, $next = null, $default = null){
             /*
              * Return next argument, if available
              */
-            $retval = array_next_value($argv, $value, true);
+            $retval = array_next_value($argv, $keys, true);
 
             if(substr($retval, 0, 1) == '-'){
-                throw new bException(tr('cli_argument(): Argument ":argument1" has no assigned value, it is immediately followed by argument ":argument2"', array(':argument1' => $value, ':argument2' => $retval)), 'invalid');
+                throw new bException(tr('cli_argument(): Argument ":argument1" has no assigned value, it is immediately followed by argument ":argument2"', array(':argument1' => $keys, ':argument2' => $retval)), 'invalid');
             }
 
             return $retval;
         }
 
-        unset($argv[$key]);
+        unset($argv[$keys]);
         return true;
 
     }catch(Exception $e){
@@ -998,8 +1030,21 @@ function cli_done(){
     global $core;
 
     try{
-        if(empty($core) or empty($core->register['ready'])){
-            echo "\033[0;31mCommand line terminated before \$core ready\033[0m\n";
+        if(!isset($core)){
+            echo "\033[1;31mCommand line terminated before \$core created\033[0m\n";
+            die(1);
+        }
+
+        if($core === false){
+            /*
+             * Core wasn't created yet, but uncaught exception handler basically
+             * is saying that's okay, just warning stuff
+             */
+            die(1);
+        }
+
+        if($core and empty($core->register['ready'])){
+            echo "\033[1;31mCommand line terminated before \$core ready\033[0m\n";
             die(1);
         }
 
