@@ -19,49 +19,52 @@ clear
 
 
 
-download
+download                        - Will download the geoname data files from the
+                                  geonames website
 
-Will download the geoname data files from the geonames website
+--no-check-certificate          - When using https://, do not check the SSL
+                                  certificates
 
---no-check-certificate       - When using https://, do not check the SSL
-                               certificates
-
---no-ssl                     - Force use of http:// over https://
-
-
-
-load-data
+--no-ssl                        - Force use of http:// over https://
 
 
 
-fix-data
+load-data                       -
 
 
 
-import
+fix-data                        -
 
 
 
-fix-errors';
+import                          -
 
-$nologin = true;
+    --no-counties               -
+
+
+
+fix-errors                      - ';
 
 require_once(__DIR__.'/../../../libs/startup.php');
+cli_exclusive();
+cli_only();
+
+
 
 $_CONFIG['db']['core']['pdo_attributes'] = array(PDO::ATTR_EMULATE_PREPARES  => true,
                                                  PDO::ATTR_STRINGIFY_FETCHES => true);
 
 
-cli_exclusive();
-cli_only();
 
 /*
  * Get some optional data required for loaddata
  */
-$username     = cli_argument('user'    , true, cli_argument('username'  , true, 'base'));
-$password     = cli_argument('pass'    , true, cli_argument('password'  , true, 'base'));
-$database     = cli_argument('database', true, 'geonames');
-$skipcounties = cli_argument('nocounties');
+$username     = not_empty(cli_argument('-u', true), cli_argument('--user'    , true), cli_argument('--username'  , true), 'base');
+$password     = not_empty(cli_argument('-p', true), cli_argument('--pass'    , true), cli_argument('--password'  , true), 'base');
+$database     = not_empty(cli_argument('-d', true), cli_argument('--database', true), 'geonames');
+$skipcounties = cli_argument('--no-counties');
+
+
 
 /*
  * Import related data
@@ -72,33 +75,33 @@ switch(cli_method()){
     case 'clear':
         switch(cli_method(1)){
             case 'geonames':
-                log_console('Clearing all data from "geonames" database', '', 'white');
+                log_console(tr('Clearing all data from "geonames" database'), 'white');
 
                 sql_query('SET autocommit         = 1;');
                 sql_query('SET unique_checks      = 1;');
                 sql_query('SET foreign_key_checks = 1;');
 
-                log_console('Clearing cities', '', '');
+                log_console(tr('Clearing cities'));
                 sql_query('DELETE FROM geo_cities;');
 
-                log_console('Clearing counties', '', '');
+                log_console(tr('Clearing counties'));
                 sql_query('DELETE FROM geo_counties;');
 
-                log_console('Clearing states', '', '');
+                log_console(tr('Clearing states'));
                 sql_query('DELETE FROM geo_states;');
 
                 if(cli_argument('all')){
-                    log_console('Clearing countries', '', '');
+                    log_console(tr('Clearing countries'));
                     sql_query('DELETE FROM geo_countries;');
 
-                    log_console('Clearing continents', '', '');
+                    log_console(tr('Clearing continents'));
                     sql_query('DELETE FROM geo_continents;');
                 }
 
                 break;
 
             case 'geotables':
-                log_console(tr('Clearing all data from ":database" database, geo_* tabkes', array(':database' => $_CONFIG['db']['core']['db'])), '', 'white');
+                log_console(tr('Clearing all data from ":database" database, geo_* tabkes', array(':database' => $_CONFIG['db']['core']['db'])), 'white');
 
                 sql_query('DELETE FROM `geo_cities`');
                 sql_query('DELETE FROM `geo_counties`');
@@ -119,8 +122,8 @@ switch(cli_method()){
     case 'download':
         load_libs('file');
 
-        log_console('DOWNLOAD', '', 'white');
-        log_console('Deleting old data...');
+        log_console(tr('DOWNLOAD'), 'white');
+        log_console(tr('Deleting old data...'));
 
         $no_check_certificate = cli_argument('--no-check-certificate');
         $no_ssl               = cli_argument('--no-ssl');
@@ -177,7 +180,7 @@ switch(cli_method()){
             }
         }
 
-        log_console('Downloading data, this may take a while...');
+        log_console(tr('Downloading data, this may take a while...'));
         $result = passthru('cd '.$geoimport_path.'; '.$geoimport_path.'geonames_importer.sh -a download-data', $exitcode);
 
         if($exitcode){
@@ -187,7 +190,7 @@ switch(cli_method()){
         break;
 
     case 'load-data':
-        log_console('LOADDATA', '', 'white');
+        log_console(tr('LOADDATA'), 'white');
 
         /*
          * Get the global data path where the geonames data is stored
@@ -249,7 +252,7 @@ switch(cli_method()){
          * See data/doc/geo.txt for more information
          */
         if(cli_argument('notlocal')){
-            log_console('Updating geonames_import_data.sql for non local import', 'warning', 'yellow');
+            log_console(tr('Updating geonames_import_data.sql for non local import'), 'yellow');
 
             $uniqid = uniqid();
             $data   = file_get_contents($geoimport_path.'geonames_import_data.sql');
@@ -288,7 +291,7 @@ switch(cli_method()){
         break;
 
     case 'fix-data':
-        log_console('FIXDATA', '', 'white');
+        log_console(tr('FIXDATA'), 'white');
 
         $geosql = new PDO('mysql:dbname='.$database.';host=localhost', $username, $password);
         $geosql->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
@@ -299,18 +302,18 @@ switch(cli_method()){
         $r = $geosql->query('SHOW TABLES LIKE "geonames"');
 
         if(!$r->rowCount()){
-            log_console('Renaming geonames table', '');
+            log_console(tr('Renaming geonames table'));
             $geosql->query('RENAME TABLE `geoname` TO `geonames`;');
         }
 
         $r = $geosql->query('SHOW COLUMNS FROM `geonames` WHERE `Field` = "parents_id"');
 
         if(!$r->rowCount()){
-            log_console('Adding parents_id to geonames table', '');
+            log_console(tr('Adding parents_id to geonames table'));
             $geosql->query('ALTER TABLE `geonames` ADD COLUMN `parents_id` INT(11) AFTER `geonameid`;');
         }
 
-        log_console('Applying hierarchy', '');
+        log_console(tr('Applying hierarchy'));
 
         $r     = $geosql->query('SELECT * FROM `hierarchy` ORDER BY `type`;');
         $p     = $geosql->prepare('UPDATE `geonames` SET `parents_id` = :parents_id WHERE `geonameid` = :childs_id');
@@ -323,11 +326,11 @@ switch(cli_method()){
         }
 
         cli_dot(false);
-        log_console('Applying indices', '', 'white');
+        log_console(tr('Applying indices'), 'white');
 
         foreach(array('geonameid', 'parents_id', 'name', 'country', 'admin1', 'admin2', 'moddate', 'latitude', 'longitude') as $column){
             $geosql->query('ALTER TABLE `geonames` ADD INDEX (`'.$column.'`);');
-            log_console(tr('Applied index for ":column"', array(':column' => $column)), '', 'green');
+            log_console(tr('Applied index for ":column"', array(':column' => $column)), 'green');
         }
 
         cli_dot(false);
@@ -369,7 +372,7 @@ switch(cli_method()){
         $types['counties']   = (cli_argument('counties')   or $types['all']);
         $types['cities']     = (cli_argument('cities')     or $types['all']);
 
-        log_console('Caching timezone data...', '', '');
+        log_console(tr('Caching timezone data...'));
         $timezones = sql_list('SELECT `code`, `id` FROM geo_timezones;');
 
         sql_query('SET autocommit         = 0;');
@@ -381,10 +384,10 @@ switch(cli_method()){
          */
         if($types['continents']){
 
-            log_console('Clearing old continents...', '', '');
+            log_console(tr('Clearing old continents...'));
             sql_query('DELETE FROM `geo_continents`');
 
-            log_console('Importing continents...', '', '');
+            log_console(tr('Importing continents...'));
             $r = $geosql->query('SELECT * FROM `continentCodes`');
 
             while($row = $r->fetch(PDO::FETCH_ASSOC)){
@@ -412,7 +415,7 @@ switch(cli_method()){
         /*
          * Cache the continents list
          */
-        log_console('Caching continents...', '', '');
+        log_console(tr('Caching continents...'));
 
         $continents = sql_list('SELECT `code`, `id` FROM geo_continents');
 
@@ -420,7 +423,7 @@ switch(cli_method()){
          * Import countries?
          */
         if($types['countries']){
-            log_console('Importing countries...', '', '');
+            log_console(tr('Importing countries...'));
             $r = $geosql->query('SELECT * FROM `countryinfo`');
 
             $country_exists_statement = sql_prepare('SELECT `id`
@@ -436,7 +439,7 @@ switch(cli_method()){
                 $country_exists_statement->execute(array(':geonames_id' => $row['geonameId'], ':code' => $row['iso_alpha2'], 'name' => $row['name']));
 
                 if($country_exists_statement->rowCount()){
-                    log_console('The country "'.str_log($row['name']).'" already exists and will be skipped', 'skip', 'yellow');
+                    log_console(tr('The country ":country" already exists and will be skipped', array(':country' => $row['name'])), 'yellow');
                     continue;
                 }
 
@@ -478,14 +481,14 @@ switch(cli_method()){
             /*
              * Import all countries
              */
-            log_console('Importing for all countries. Please be patient, this may take a while!!', 'warning', 'yellow');
+            log_console(tr('Importing for all countries. Please be patient, this may take a while!!'), 'yellow');
             $countries = sql_list('SELECT `id` FROM `geo_countries`');
 
         }else{
             /*
              * Import only for the specified countries
              */
-            log_console('ONLY ADDING FOR THESE COUNTRIES:', '', 'yellow');
+            log_console(tr('ONLY ADDING FOR THESE COUNTRIES:'), 'yellow');
 
             foreach(array_force($country_list) as $country){
                 if(strtolower($country) == 'all'){
@@ -495,7 +498,7 @@ switch(cli_method()){
                         throw new bException('Specified country "'.str_log($country).'" not found');
                     }
 
-                    log_console($result['name'], '', 'yellow');
+                    log_console($result['name'], 'yellow');
                     $countries[] = $result['id'];
                 }
             }
@@ -509,11 +512,11 @@ switch(cli_method()){
              * Import states?
              */
             if(!$types['states']){
-                log_console('Not importing states...', '', 'yellow');
+                log_console(tr('Not importing states...'), 'yellow');
 
             }else{
-                log_console('Importing states...', '', '');
-                log_console('Buffering countries...', '', '');
+                log_console(tr('Importing states...'));
+                log_console(tr('Buffering countries...'));
 
                 $countries      = sql_list('SELECT `id`,
                                                    `geonames_id`,
@@ -531,7 +534,7 @@ switch(cli_method()){
                 }
 
 // :DELETE: Delete following 2 lines. States will no longer be deleted. Before insert, a check will be done if the state already exists, and if so, it will be skipped
-                //log_console('Clearing old states...', '', '');
+                //log_console('Clearing old states...');
                 //sql_query('DELETE FROM `geo_states` WHERE `countries_id` IN ('.str_force($country_idlist).');');
                 $state_exists_statement = sql_prepare('SELECT `id`
 
@@ -551,14 +554,14 @@ switch(cli_method()){
                         $geosql->query('UPDATE `geonames` SET `parents_id` = '.$country_data['geonames_id'].' WHERE `parents_id` = '.$parents_id);
                     }
 
-                    log_console('Importing states for country "'.$country_data['name'].'"...', '', '');
+                    log_console(tr('Importing states for country "'.$country_data['name'].'"...'));
                     $r = $geosql->query('SELECT * FROM `geonames` WHERE `parents_id` = '.cfi($country_data['geonames_id'], false));
 
                     while($row = $r->fetch(PDO::FETCH_ASSOC)){
                         $state_exists_statement->execute(array(':geonames_id' => $row['geonameid'], ':countries_id' => $id, 'name' => $row['name']));
 
                         if($state_exists_statement->rowCount()){
-                            log_console('The state "'.str_log($row['name']).'" in country "'.str_log($country_data['name']).'" already exists and will be skipped', 'skip', 'yellow');
+                            log_console(tr('The state ":state" in country ":country" already exists and will be skipped', array(':state' => $row['name'], ':country' => $country_data['name'])), 'yellow');
                             continue;
                         }
 
@@ -590,14 +593,14 @@ switch(cli_method()){
              * Import counties?
              */
             if(!$types['counties'] or $skipcounties){
-                log_console('Not importing counties...', '', 'yellow');
+                log_console(tr('Not importing counties...'), 'yellow');
 
             }else{
 // :DELETE: Delete following 2 lines. Counties will no longer be deleted. Before insert, a check will be done if the county already exists, and if so, it will be skipped
-                //log_console('Clearing old counties...', '', '');
+                //log_console('Clearing old counties...');
                 //sql_query('DELETE FROM `geo_counties`');
 
-                log_console('Importing counties...', '', '');
+                log_console(tr('Importing counties...'));
 
                 $county_exists_statement = sql_prepare('SELECT  `id`
                                                         FROM    `geo_counties`
@@ -606,7 +609,7 @@ switch(cli_method()){
                                                             AND `name`        = :name)');
 
                 if(empty($countries)){
-                    log_console('Buffering countries...', '', '');
+                    log_console(tr('Buffering countries...'));
                     $countries = sql_list('SELECT `id`,
                                                   `geonames_id`,
                                                   `name`,
@@ -636,7 +639,7 @@ switch(cli_method()){
                     }
 
                     foreach($states[$country_data['seoname']] as $states_id => $state_data){
-                        log_console('Importing counties for state "'.str_log($state_data['name']).'" for country "'.$country_data['name'].'"...', '', '');
+                        log_console(tr('Importing counties for state ":state" for country ":country"...', array(':state' => $state_data['name'], ':country' => $country_data['name'])));
 
                         $r = $geosql->query('SELECT *
 
@@ -649,7 +652,7 @@ switch(cli_method()){
                             /*
                              * Looks like this state has no counties specified, just states > cities
                              */
-                            log_console('Looks like state "'.str_log($state_data['name']).'" does not have counties, skipping', 'skip', 'yellow');
+                            log_console(tr('Looks like state ":state" does not have counties, skipping', array(':state' => $state_data['name'])), 'yellow');
                             continue;
                         }
 
@@ -657,7 +660,7 @@ switch(cli_method()){
                             $county_exists_statement->execute(array(':geonames_id' => $row['geonameid'], ':states_id' => $states_id, 'name' => $row['name']));
 
                             if($county_exists_statement->rowCount()){
-                                log_console('The county "'.str_log($row['name']).'" in country "'.str_log($country_data['name']).'" already exists and will be skipped', 'skip', 'yellow');
+                                log_console(tr('The county ":county" in country ":country" already exists and will be skipped', array(':county' => $row['name'], ':country' => $country_data['name'])), 'yellow');
                                 continue;
                             }
 
@@ -690,17 +693,17 @@ switch(cli_method()){
              * Import cities?
              */
             if(!$types['cities']){
-                log_console('Not importing cities...', '', 'yellow');
+                log_console(tr('Not importing cities...'), 'yellow');
 
             }else{
 // :DELETE: Delete following 2 lines. Cities will no longer be deleted. Before insert, a check will be done if the city already exists, and if so, it will be skipped
-                //log_console('Clearing old cities...', '', '');
+                //log_console(tr('Clearing old cities...'));
                 //sql_query('DELETE FROM `geo_cities`');
 
-                log_console('Importing cities...', '', '');
+                log_console(tr('Importing cities...'));
 
                 if(empty($countries)){
-                    log_console('Buffering countries...', '', '');
+                    log_console(tr('Buffering countries...'));
                     $countries = sql_list('SELECT `id`,
                                                   `geonames_id`,
                                                   `name`,
@@ -728,7 +731,7 @@ switch(cli_method()){
                  * Add cities for all countries
                  */
                 foreach($countries as $countries_id => $country_data){
-                    log_console('Buffering states for country "'.$country_data['name'].'"...', '', '');
+                    log_console(tr('Buffering states for country ":country"...', array(':country' => $country_data['name'])));
                     $states[$country_data['seoname']] = sql_list('SELECT `id`,
                                                                          `geonames_id`,
                                                                          `name`,
@@ -747,7 +750,7 @@ switch(cli_method()){
                      * Add cities for all states
                      */
                     foreach($states[$country_data['seoname']] as $states_id => $state_data){
-                        log_console('Buffering counties for state "'.$state_data['name'].'" of country "'.$country_data['name'].'"...', '', '');
+                        log_console(tr('Buffering counties for state ":state" of country ":country"...', array(':state' => $state_data['name'], ':country' => $country_data['name'])));
                         $counties[$country_data['seoname']][$state_data['seoname']] = sql_list('SELECT `id`, `geonames_id`, `name`, `seoname`, `code`, `admin1`, `admin2` FROM `geo_counties` WHERE `states_id` = '.$states_id);
 
                         /*
@@ -755,11 +758,11 @@ switch(cli_method()){
                          */
                         if(!isset($usecounties)){
                             if(empty($counties[$country_data['seoname']][$state_data['seoname']])){
-                                log_console('State "'.$state_data['name'].'" has no counties, assuming no counties for country "'.$country_data['name'].'"', 'notavailable', 'yellow');
+                                log_console(tr('State ":state" has no counties, assuming no counties for country ":country"', array(':state' => $state_data['name'], ':country' => $country_data['name'])), 'yellow');
                                 $usecounties = false;
 
                             }else{
-                                log_console('Counting cities in state and counties (Some geonames countries have missing counties - cities links)', 'searching', 'white');
+                                log_console(tr('Counting cities in state and counties (Some geonames countries have missing counties - cities links)'));
 
                                 $state_cities_count  = $geosql->query('SELECT COUNT(*) AS `count`
 
@@ -805,17 +808,17 @@ switch(cli_method()){
                                      * Okay, we found cities for a county, we can presume that all counties are then okay.
                                      */
                                     $usecounties = (true and $skipcounties);
-                                    log_console('Cities per county match cities per state, using counties - cities links', 'match', 'white');
+                                    log_console(tr('Cities per county match cities per state, using counties - cities links'), 'white');
 
                                 }else{
                                     $usecounties = false;
-                                    log_console('Cities per county does NOT match cities per state, NOT using counties - cities links', 'mismatch', 'yellow');
+                                    log_console(tr('Cities per county does NOT match cities per state, NOT using counties - cities links'), 'yellow');
                                 }
                             }
                         }
 
                         if(!$usecounties){
-                            log_console('Adding cities without counties - cities links', '');
+                            log_console(tr('Adding cities without counties - cities links'));
 
                             /*
                              * This state has no counties
@@ -829,7 +832,7 @@ switch(cli_method()){
                                                  AND    `admin1`      = "'.$state_data['admin1'].'"
                                                  AND    `population`  > '.cfi($threshold, false));
 
-                            log_console('Importing cities for state "'.$state_data['name'].'" for country "'.$country_data['name'].'"...', '', '');
+                            log_console(tr('Importing cities for state ":state" for country ":country"...', array(':state' => $state_data['name'], ':country' => $country_data['name'])));
 
                             while($row = $r->fetch(PDO::FETCH_ASSOC)){
                                 $city_exists_statement->execute(array(':name'      => $row['name'],
@@ -848,7 +851,7 @@ switch(cli_method()){
                                     if($newdate > $databasedate){
 // :TODO: Update the city instead of adding.
                                     }else{
-                                        log_console('City "'.str_log($row['name']).'" in state "'.str_log($state_data['name']).'" in country "'.str_log($country_data['name']).'" already exists, skipping', 'skip', 'yellow');
+                                        log_console(tr('City ":city" in state ":state" in country ":country" already exists, skipping', array(':city' => $row['name'], ':state' => $state_data['name'], ':country' => $country_data['name'])), 'yellow');
                                     }
 
                                 }else{
@@ -879,13 +882,13 @@ switch(cli_method()){
                             }
 
                         }else{
-                            log_console('Adding citied with counties - cities links');
+                            log_console(tr('Adding citied with counties - cities links'));
 
                             /*
                              * Add all cities for this county
                              */
                             foreach($counties[$country_data['seoname']][$state_data['seoname']] as $counties_id => $county_data){
-                                log_console('Importing cities for county "'.$county_data['name'].'" for state "'.$state_data['name'].'" for country "'.$country_data['name'].'"...', '', '');
+                                log_console(tr('Importing cities for county ":county" for state ":state" for country ":country"...', array(':county' => $county_data['name'], ':state' => $state_data['name'], ':country' => $country_data['name'])));
 
                                 /*
                                  * Search for all cities
@@ -917,7 +920,7 @@ switch(cli_method()){
                                         if($newdate > $databasedate){
 // :TODO: Update the city instead of adding.
                                         }else{
-                                            log_console('City "'.str_log($row['name']).'" in state "'.str_log($state_data['name']).'" in country "'.str_log($country_data['name']).'" already exists, skipping', 'skip', 'yellow');
+                                            log_console(tr('City ":city" in state ":state" in country ":country" already exists, skipping', array(':city' => $row['name'], ':state' => $state_data['name'], ':country' => $country_data['name'])), 'yellow');
                                         }
 
                                     }else{
@@ -963,7 +966,7 @@ switch(cli_method()){
         $states = sql_query('SELECT `id`, `geonames_id`, `admin1` FROM `geo_states`');
         $update = sql_prepare('UPDATE `geo_states` SET `code` = :code WHERE `id` = :id');
 
-        log_console('Fixing geo_states missing state codes');
+        log_console(tr('Fixing geo_states missing state codes'));
         sql_query('UPDATE `geo_states` SET `code` = ""');
 
         while($state = sql_fetch($states)){
@@ -989,5 +992,5 @@ sql_query('SET autocommit         = 1;');
 sql_query('SET unique_checks      = 1;');
 sql_query('SET foreign_key_checks = 1;');
 
-log_console('DONE!', '', 'green');
+log_console(tr('DONE!'), 'green');
 ?>
