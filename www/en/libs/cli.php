@@ -833,7 +833,7 @@ function cli_argument($keys = null, $next = null, $default = null){
             return $retval;
         }
 
-        unset($argv[$keys]);
+        unset($argv[$key]);
         return true;
 
     }catch(Exception $e){
