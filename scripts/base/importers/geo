@@ -59,10 +59,11 @@ $_CONFIG['db']['core']['pdo_attributes'] = array(PDO::ATTR_EMULATE_PREPARES  => 
 /*
  * Get some optional data required for loaddata
  */
-$username     = not_empty(cli_argument('-u', true), cli_argument('--user'    , true), cli_argument('--username'  , true), 'base');
-$password     = not_empty(cli_argument('-p', true), cli_argument('--pass'    , true), cli_argument('--password'  , true), 'base');
-$database     = not_empty(cli_argument('-d', true), cli_argument('--database', true), 'geonames');
+$username     = cli_argument('-u,--user,--username', true, 'base');
+$password     = cli_argument('-p,--pass,--password', true, 'base');
+$database     = cli_argument('-d,--database'       , true, 'geonames');
 $skipcounties = cli_argument('--no-counties');
+showdie($username);
 
 
 
