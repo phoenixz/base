@@ -176,7 +176,7 @@ if(cli_argument('list')){
         foreach($_CONFIG['deploy'] as $target => $config){
             log_console($target);
         }
-        
+
     }else{
         /*
          * List deployment categories
@@ -184,19 +184,19 @@ if(cli_argument('list')){
         foreach($_CONFIG['deploy'] as $target => $config){
             if(empty($config['categories'])) continue;
             $categories = array();
-            
+
             foreach(array_force($config['categories']) as $category){
                 $categories[] = $category;
             }
         }
-        
+
         array_unique($categories);
-        
+
         foreach($categories as $category){
             log_console($category);
-        }           
+        }
     }
-    
+
     cli_run_once_local(true);
     die();
 
@@ -207,46 +207,46 @@ if(cli_argument('list')){
 /*
  * Check command line parameters
  */
-$noinit              =   cli_argument('--no-init');
-$nositemap           =   cli_argument('--no-sitemap');
-$nohooks             =  (cli_argument('--no-hook')        or cli_argument('--no-hooks'));
-$nosyntax            = !(cli_argument('--do-syntax')      or cli_argument('--do-parse'));
-$nodeploy            =  (cli_argument('--no-deploy')      or cli_argument('--test'));
-$noversion           = !(cli_argument('--up-version')     or cli_argument('--up-versions'));
-$nocontent           = !(cli_argument('--do-content')     or cli_argument('--do-conten-tcheck'));
-$nofixperms          =  (cli_argument('--no-fix-perms')   or cli_argument('--no-fix-permissions'));
-$nofixstructure      =  (cli_argument('--no-fix-struct')  or cli_argument('--no-fix-structure'));
-$all                 =  (cli_argument('--all')            or cli_argument('-a'));
-$ignore              =  (cli_argument('--ignore-changes') or cli_argument('-i'));
-$nocacheclear        =   cli_argument('--no-cache-clear');
-$notranslate         =   cli_argument('--no-translate');
-$ignore_php          =   cli_argument('--ignore-php');
-$ignore_html         =   cli_argument('--ignore-html');
-$ignore_rsync_errors =   cli_argument('--ignore-rsync-errors');
+$noinit              =  cli_argument('--no-init');
+$nositemap           =  cli_argument('--no-sitemap');
+$nohooks             =  cli_argument('--no-hook,--no-hooks');
+$nosyntax            = !cli_argument('--do-syntax,--do-parse');
+$nodeploy            = (cli_argument('--no-deploy') or TEST);
+$noversion           = !cli_argument('--up-version,--up-versions');
+$nocontent           = !cli_argument('--do-content,--do-content-check');
+$nofixperms          =  cli_argument('--no-fix-perms,--no-fix-permissions');
+$nofixstructure      =  cli_argument('--no-fix-struct,--no-fix-structure');
+$all                 =  cli_argument('--all,-a');
+$ignore              =  cli_argument('--ignore-changes,-i');
+$nocacheclear        =  cli_argument('--no-cache-clear');
+$notranslate         =  cli_argument('--no-translate');
+$ignore_php          =  cli_argument('--ignore-php');
+$ignore_html         =  cli_argument('--ignore-html');
+$ignore_rsync_errors =  cli_argument('--ignore-rsync-errors');
 
-$send_content_photos =   cli_argument('--send-content-photos');
-$send_content_texts  =   cli_argument('--send-content-texts');
-$send_sitemap        =   cli_argument('--send-sitemap');
+$send_content_photos =  cli_argument('--send-content-photos');
+$send_content_texts  =  cli_argument('--send-content-texts');
+$send_sitemap        =  cli_argument('--send-sitemap');
 
-$notag               =  (cli_argument('--no-tag')        or cli_argument('--no-tags') or $noversion);
-$nopush              =   cli_argument('--no-push');
-$stash               =   cli_argument('--stash');
-$notouch             =   cli_argument('--no-touch');
+$notag               = (cli_argument('--no-tag,--no-tags') or $noversion);
+$nopush              =  cli_argument('--no-push');
+$stash               =  cli_argument('--stash');
+$notouch             =  cli_argument('--no-touch');
 
-$nocompress          =   cli_argument('--no-compress');
-$forcecompress       =   cli_argument('--force-compress');
-$noparrallel         =   cli_argument('--no-parrallel');
-$nonotify            =   cli_argument('--no-notify');
+$nocompress          =  cli_argument('--no-compress');
+$forcecompress       =  cli_argument('--force-compress');
+$noparrallel         =  cli_argument('--no-parrallel');
+$nonotify            =  cli_argument('--no-notify');
 
-$message             =   cli_argument('--message'       , true);
-$continuersync       =   cli_argument('--continuer-sync', true);
-$targets             =   cli_argument('--target'        , 'all', cli_argument('--targets', 'all'));
-$nobomcheck          =   cli_argument('--no-bom-check');
-$nobackup            =   cli_argument('--no-backup');
-$dobackup            =   cli_argument('--do-backup');
+$message             =  cli_argument('--message'       , true);
+$continuersync       =  cli_argument('--continuer-sync', true);
+$targets             =  cli_argument('--target,--targets', 'all');
+$nobomcheck          =  cli_argument('--no-bom-check');
+$nobackup            =  cli_argument('--no-backup');
+$dobackup            =  cli_argument('--do-backup');
 
 $tilde               = '~'.date('Ymd-His');
-$categories          =   cli_arguments();
+$categories          =  cli_arguments();
 
 
 
@@ -287,7 +287,7 @@ if(!$targets){
             notify('deploy', tr('DEPLOY WARNING! NON PRODUCTION BRANCH DEPLOYED TO PRODUCTION: Deployed branch ":branch" to production category for project ":project"', array(':branch' => $branch, ':project' => PROJECT)));
         }
     }
-    
+
     /*
      * Get the targets from the specified categories
      */
