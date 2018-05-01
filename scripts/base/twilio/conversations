@@ -88,17 +88,15 @@ switch(cli_method()){
 
         sql_query('UPDATE `sms_conversations` SET `last_messages` = ""');
 
-        $count = 0;
+        $r = sql_query  ('SELECT   `id`,
+                                   `type`,
+                                   `phone_local`,
+                                   `phone_remote`,
+                                   `last_messages`
 
-        $r     = sql_query  ('SELECT   `id`,
-                                       `type`,
-                                       `phone_local`,
-                                       `phone_remote`,
-                                       `last_messages`
+                          FROM     `sms_conversations`
 
-                              FROM     `sms_conversations`
-
-                              ORDER BY `createdon`');
+                          ORDER BY `createdon`');
 
         if($repliedon_now){
             $p = sql_prepare('UPDATE   `sms_conversations`
@@ -122,10 +120,7 @@ switch(cli_method()){
         }
 
         while($conversation = sql_fetch($r)){
-            if($count++ > 10){
-                $count = 0;
-                log_console('.', '', 'green', false);
-            }
+            cli_dot();
 
             $msg_count  = 0;
             $repliedon  = null;
