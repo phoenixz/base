@@ -97,10 +97,13 @@ function sms_get_conversation($phone_local, $phone_remote, $type, $repliedon_now
             /*
              * This phone combo has no conversation yet, create it now.
              */
-            sql_query('INSERT INTO `sms_conversations` (`phone_local`, `phone_remote`, `type`, `repliedon`)
-                       VALUES                          (:phone_local , :phone_remote , :type , '.($repliedon_now ? 'NOW()' : 'NULL').')',
+            $blocked = sql_get('SELECT `id` FROM `sms_blocks` WHERE `number` = :number', true, array(':number' => $phone_remote));
+
+            sql_query('INSERT INTO `sms_conversations` (`status`, `phone_local`, `phone_remote`, `type`, `repliedon`)
+                       VALUES                          (:status , :phone_local , :phone_remote , :type , '.($repliedon_now ? 'NOW()' : 'NULL').')',
 
                        array(':type'         => $type,
+                             ':status'       => ($blocked ? 'blocked' : null),
                              ':phone_local'  => $phone_local,
                              ':phone_remote' => $phone_remote));
 
