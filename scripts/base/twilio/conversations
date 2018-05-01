@@ -37,19 +37,18 @@ switch(cli_method()){
         sql_query('UPDATE `sms_messages` SET `conversations_id` = NULL;');
         sql_query('DELETE FROM `sms_conversations`;');
 
-        $count = 0;
-        $r     = sql_query('SELECT   `id`,
-                                     `type`,
-                                     `from_phone`,
-                                     `to_phone`
+        $r = sql_query('SELECT   `id`,
+                                 `type`,
+                                 `from_phone`,
+                                 `to_phone`
 
-                            FROM     `sms_messages`
+                        FROM     `sms_messages`
 
-                            WHERE    `conversations_id` IS NULL
+                        WHERE    `conversations_id` IS NULL
 
-                            GROUP BY `from_phone`, `to_phone`, `type`
+                        GROUP BY `from_phone`, `to_phone`, `type`
 
-                            ORDER BY `createdon`');
+                        ORDER BY `createdon`');
 
         if($r->rowCount()){
             log_console(tr('Creating conversations for "%count%" messages', array('%count%' => str_log($r->rowCount()))), '');
@@ -67,10 +66,7 @@ switch(cli_method()){
                               OR     `from_phone`       = :from_phone)');
 
             while($message = sql_fetch($r)){
-                if($count++ > 10){
-                    $count = 0;
-                    log_console('.', '', 'green', false);
-                }
+                cli_dot();
 
                 $conversation = sms_get_conversation($message['from_phone'], $message['to_phone'], $message['type'], $repliedon_now);
 
