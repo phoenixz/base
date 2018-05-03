@@ -17,6 +17,10 @@
  */
 function webpush_library_init(){
     try{
+        if(version_compare(PHP_VERSION, '5.6') === -1){
+            throw new bException(tr('webpush_library_init(): The current PHP version is ":version" while version "5.6.0" or higher is required to use the webpush library', array(':version' => PHP_VERSION)), 'version');
+        }
+
         //ensure_installed(array('name'      => 'sweetalert',
         //                       'project'   => 'sweetalert',
         //                       'callback'  => 'sweetalert_install',
@@ -25,6 +29,8 @@ function webpush_library_init(){
 
         require_once(__DIR__.'/external/webpush/vendor/autoload.php');
         require_once(__DIR__.'/external/webpush/vendor/minishlink/web-push/src/WebPush.php');
+
+
 
     }catch(Exception $e){
         throw new bException('webpush_library_init(): Failed', $e);
