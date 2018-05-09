@@ -7,7 +7,7 @@
  * best it can do. If this behaviour is not desired, then simply ensure that all keys have no namespace specified
  *
  * @license http://opensource.org/licenses/GPL-2.0 GNU Public License, Version 2
- * @copyright Johan Geuze, Sven Oostenbrink <support@ingiga.com>
+ * @copyright Johan Geuze, Sven Oostenbrink <support@capmega.com>
  */
 
 

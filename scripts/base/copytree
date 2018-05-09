@@ -3,7 +3,7 @@
 /*
  * This script can do a tree copy with file search / replace
  *
- * @copyright Sven Oostenbrink <support@ingiga.com>
+ * @copyright Sven Oostenbrink <support@capmega.com>
  */
 $usage = "./scripts/base/copytree source target\n".
          "./scripts/base/copytree source target search replace\n";

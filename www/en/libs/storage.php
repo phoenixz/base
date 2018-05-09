@@ -19,7 +19,7 @@
  * storage_files : The files linked to each document. If file_types_id is NULL, then the file can be of any type. This is why this table will have its independant type, mime1, and mime2 columns
  *
  * @license http://opensource.org/licenses/GPL-2.0 GNU Public License, Version 2
- * @copyright Sven Oostenbrink <support@ingiga.com>
+ * @copyright Sven Oostenbrink <support@capmega.com>
  */
 
 

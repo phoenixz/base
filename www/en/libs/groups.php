@@ -5,7 +5,7 @@
  * This is the groups library file, it contains groups functions
  *
  * @license http://opensource.org/licenses/GPL-2.0 GNU Public License, Version 2
- * @copygroup Sven Oostenbrink <support@ingiga.com>
+ * @copygroup Sven Oostenbrink <support@capmega.com>
  */
 
 

@@ -5,8 +5,8 @@
  * This library contains various functions to manage mysql databases and servers
  *
  * @license http://opensource.org/licenses/GPL-2.0 GNU Public License, Version 2
- * @copyright Sven Oostenbrink <support@ingiga.com>
- * @copyright Ismael Haro <support@ingiga.com>
+ * @copyright Sven Oostenbrink <support@capmega.com>
+ * @copyright Ismael Haro <support@capmega.com>
  *
  */
 

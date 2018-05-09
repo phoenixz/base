@@ -5,7 +5,7 @@
  * This library allows to run the scanimage program, scan images and save them to disk
  *
  * @license http://opensource.org/licenses/GPL-2.0 GNU Public License, Version 2
- * @copyright Sven Oostenbrink <support@ingiga.com>
+ * @copyright Sven Oostenbrink <support@capmega.com>
  */
 
 

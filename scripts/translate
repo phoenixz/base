@@ -22,7 +22,7 @@
  *
  * noupdate / nodb               : Do not send updated translations back to the translation server (NOT YET IMPLEMENTED)
  *
- * @copyright Sven Oostenbrink <support@ingiga.com>, Johan Geuze
+ * @copyright Sven Oostenbrink <support@capmega.com>, Johan Geuze
  *
  * INFO:
  * If curl causes an exception due to an HTTP100 response
@@ -263,7 +263,7 @@ switch(cli_method()){
 
             try{
 
-$_CONFIG['translator']['url'] = 'http://toolkit.ingiga.com.l.ingiga.com/api/translate.php';
+$_CONFIG['translator']['url'] = 'http://toolkit.capmega.com.l.capmega.com/api/translate.php';
                 $response = curl_get(array('url'         => $_CONFIG['translator']['url'],
                                            'getdata'     => true,
                                            'proxies'     => false,

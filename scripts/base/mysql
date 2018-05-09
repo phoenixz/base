@@ -56,7 +56,7 @@ replication
     add-master                   - Add new master
 
         --hostname HOSTNAME      - The hostname of the master server
-                                  (e.g. s1.s.ingiga.com)
+                                  (e.g. s1.s.capmega.com)
 
         --database DATABASE      - The name of the database to replicate';
 

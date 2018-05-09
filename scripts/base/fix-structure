@@ -6,7 +6,7 @@
  * This script will ensure that all required directories, and files are available
  * If not, they will be either created or an error will be thrown
  *
- * @copyright Sven Oostenbrink <support@ingiga.com>
+ * @copyright Sven Oostenbrink <support@capmega.com>
  */
 $usage = './scripts/base/ensure-structure';
 

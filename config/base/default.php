@@ -6,7 +6,7 @@
  * ALL CONFIGURATION ENTRIES ARE ORDERED ALPHABETICALLY, ONLY "debug" IS ON TOP FOR CONVENIENCE
 
  * @license http://opensource.org/licenses/GPL-2.0 GNU Public License, Version 2
- * @copyright Sven Oostenbrink <support@ingiga.com>, Johan Geuze
+ * @copyright Sven Oostenbrink <support@capmega.com>, Johan Geuze
  */
 
 // To debug or not to debug?
@@ -111,7 +111,7 @@ $_CONFIG['cookie']             = array('lifetime'                           => 0
 
 //
 $_CONFIG['copyright']          = array('name'                               => 'Ingiga',                                                // Name to be displayed for the copyright
-                                       'url'                                => 'https://ingiga.com/copyright.html');                    // URL used for the copyright
+                                       'url'                                => 'https://capmega.com/copyright.html');                    // URL used for the copyright
 
 // Access-Control-Allow-Origin configuration. comma delimeted list of sites to allow with CORS
 $_CONFIG['cors']               = array('origin'                             => '*.',
@@ -158,7 +158,7 @@ $_CONFIG['editors']            = array('imageupload'                        => '
                                                                                      'encrypt_name'       => false));                   // Should filenames retain their original name (false) or should jbimages give it a random character name (true)?
 
 // Feedback configuration
-$_CONFIG['feedback']           = array('emails'                             => array('Ingiga Support' => 'support@ingiga.com'));
+$_CONFIG['feedback']           = array('emails'                             => array('Ingiga Support' => 'support@capmega.com'));
 
 // Flash alert configuration
 $_CONFIG['flash']              = array('type'                               => 'html',                                                  // The type of HTML flash message to use. Either "html" or "sweetalert"

@@ -37,7 +37,7 @@ $_CONFIG['language']['default']         = 'en';
 
 // Mail configuration
 $_CONFIG['mail']['developers']          = array(array('name'  => 'Sven Oostenbrink',
-                                                      'email' => 'support@ingiga.com'));
+                                                      'email' => 'support@capmega.com'));
 
 //
 $_CONFIG['mobile']['viewport']          = 'width=device-width, initial-scale=1';
