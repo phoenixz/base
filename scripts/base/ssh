@@ -1,0 +1,41 @@
+#!/usr/bin/php
+<?php
+/*
+ *
+ */
+$usage = './scripts/base/ssh
+./scripts/base/ssh connect HOSTNAME';
+
+$help  = 'This script allows to manage SSH connections to registered servers
+
+
+
+METHODS
+
+
+
+connect HOSTNAME                - Connect to specified HOSTNAME';
+
+require_once(__DIR__.'/../../libs/startup.php');
+cli_only();
+load_libs('servers');
+
+switch(cli_method()){
+    case 'connect':
+        $hostname = cli_argument(1);
+        cli_no_arguments_left();
+
+        if(empty($hostname)){
+            throw new bException(tr('No hostname specified'), 'warning/not-specified');
+        }
+
+        $result = servers_exec($hostname);
+        break;
+
+    case '':
+        throw new bException(tr('No method specified'), 'no-method');
+
+    default:
+        throw new bException(tr('Unknown method ":method" specified', array(':method' => cli_method())), 'unknown-method');
+}
+?>
