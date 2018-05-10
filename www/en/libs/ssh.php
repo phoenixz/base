@@ -188,6 +188,7 @@ function ssh_exec($server, $commands = null, $local = false, $background = false
         array_default($server, 'commands'     , $commands);
         array_default($server, 'background'   , $background);
         array_default($server, 'local'        , $local);
+        array_default($server, 'proxies'      , null);
 
         /*
          * Validate commands
@@ -244,6 +245,45 @@ function ssh_exec($server, $commands = null, $local = false, $background = false
         $command = 'ssh '.$server['arguments'].' -p '.$server['port'].' -i '.$keyfile.' '.$server['username'].'@'.$server['hostname'].' "'.$server['commands'].'"'.($server['background'] ? ' &' : '');
 
         log_console($command, 'VERBOSE/cyan');
+
+        if($server['proxies']){
+            /*
+             * To connect to this server, one must pass through a number of SSH proxies
+             */
+            $proxy_template = ' -o ProxyCommand="ssh -p :proxy_template :proxy_port :proxy_host nc :target_host :proxy_port" ';
+            $proxies_string = $proxy_template;
+
+            foreach($server['proxies'] as $id => $proxy){
+                /*
+                 * Fill in proxy values for this proxy
+                 */
+                $proxies_string = str_replace(':proxy_port' , $proxy['port']     , $proxies_string);
+                $proxies_string = str_replace(':proxy_host' , $proxy['hostname'] , $proxies_string);
+                $proxies_string = str_replace(':target_host', $server['hostname'], $proxies_string);
+
+                unset($server['proxies'][$id]);
+
+                if($server['proxies']){
+                    /*
+                     * Add another proxy
+                     */
+                    $proxies_string = str_replace(':proxy_template', $proxy_template, $proxies_string);
+                }
+            }
+
+            /*
+             * No more proxies, remove the template placeholder
+             */
+            $proxies_string = str_replace(':proxy_template', '', $proxies_string);
+        }
+
+
+        //-o ProxyCommand=\"ssh -p 40220 s1.s.ingiga.com nc s2.s.ingiga.com 40220\"
+        //
+        //
+        //
+        //ssh -p 40220 -o ProxyCommand="ssh -p 40220 -o ProxyCommand=\"ssh -p 40220 s1.s.ingiga.com nc s2.s.ingiga.com 40220\" s2.s.ingiga.com nc s3.s.ingiga.com 40220" s3.s.ingiga.com
+
 
         $results = safe_exec($command);
 
