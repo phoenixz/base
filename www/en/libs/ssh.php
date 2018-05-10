@@ -247,28 +247,35 @@ function ssh_exec($server, $commands = null, $local = false, $background = false
         log_console($command, 'VERBOSE/cyan');
 
         if($server['proxies']){
+//-o ProxyCommand=\"ssh -p 40220 s1.s nc s2.s 40220\"
+//ssh -p 40220 -o ProxyCommand="ssh -p 40220 -o ProxyCommand=\"ssh -p 40220 s1.s nc s2.s 40220\" s2.s nc s3.s 40220" s3.s
             /*
              * To connect to this server, one must pass through a number of SSH proxies
              */
+            $escapes        = 0;
             $proxy_template = ' -o ProxyCommand="ssh -p :proxy_template :proxy_port :proxy_host nc :target_host :proxy_port" ';
-            $proxies_string = $proxy_template;
+            $proxies_string = ':proxy_template';
 
             foreach($server['proxies'] as $id => $proxy){
+                $proxy_string = $proxy_template;
+
+                for($escape = 0; $escape < $escapes; $escape++){
+                    $proxy_string = addcslashes($proxy_string, '"\\');
+                }
+
+                /*
+                 * Next proxy string needs more escapes
+                 */
+                $escapes++;
+
                 /*
                  * Fill in proxy values for this proxy
                  */
-                $proxies_string = str_replace(':proxy_port' , $proxy['port']     , $proxies_string);
-                $proxies_string = str_replace(':proxy_host' , $proxy['hostname'] , $proxies_string);
-                $proxies_string = str_replace(':target_host', $server['hostname'], $proxies_string);
+                $proxy_string   = str_replace(':proxy_port' , $proxy['port']     , $proxy_string);
+                $proxy_string   = str_replace(':proxy_host' , $proxy['hostname'] , $proxy_string);
+                $proxy_string   = str_replace(':target_host', $server['hostname'], $proxy_string);
 
-                unset($server['proxies'][$id]);
-
-                if($server['proxies']){
-                    /*
-                     * Add another proxy
-                     */
-                    $proxies_string = str_replace(':proxy_template', $proxy_template, $proxies_string);
-                }
+                $proxies_string = str_replace(':proxy_template', $proxy_string, $proxies_string);
             }
 
             /*
@@ -277,14 +284,9 @@ function ssh_exec($server, $commands = null, $local = false, $background = false
             $proxies_string = str_replace(':proxy_template', '', $proxies_string);
         }
 
-
-        //-o ProxyCommand=\"ssh -p 40220 s1.s.ingiga.com nc s2.s.ingiga.com 40220\"
-        //
-        //
-        //
-        //ssh -p 40220 -o ProxyCommand="ssh -p 40220 -o ProxyCommand=\"ssh -p 40220 s1.s.ingiga.com nc s2.s.ingiga.com 40220\" s2.s.ingiga.com nc s3.s.ingiga.com 40220" s3.s.ingiga.com
-
-
+        /*
+         * Execute the command
+         */
         $results = safe_exec($command);
 
         if($server['background']){
