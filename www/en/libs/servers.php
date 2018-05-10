@@ -158,7 +158,7 @@ function servers_test($hostname){
 /*
  *
  */
-function servers_exec($host, $commands, $options = null, $background = false, $local = false){
+function servers_exec($host, $commands, $options = null, $background = false, $local = false, $function = 'exec'){
     global $_CONFIG;
 
     try{
@@ -193,7 +193,7 @@ function servers_exec($host, $commands, $options = null, $background = false, $l
          * Execute command on remote server
          */
         $options = array_merge($options, $server);
-        $result  = ssh_exec($options);
+        $result  = ssh_exec($options, null, $local, $background, $function);
 
         return $result;
 
@@ -224,11 +224,12 @@ function servers_exec($host, $commands, $options = null, $background = false, $l
 /*
  *
  */
-function servers_get($host, $database = false){
+function servers_get($host, $database = false, $return_proxies = true){
     try{
         $query =  'SELECT    `servers`.`hostname`,
                              `servers`.`port`,
                              `servers`.`ssh_accounts_id`,
+                             `servers`.`ssh_proxy_id`,
 
                              `ssh_accounts`.`username`,
                              `ssh_accounts`.`ssh_key`';
@@ -259,6 +260,18 @@ function servers_get($host, $database = false){
         }
 
         $server = sql_get($query.$from.$where, $execute);
+
+        if($return_proxies){
+            $server['proxies'] = array();
+
+            $proxy = $server['ssh_proxy_id'];
+
+            while($proxy){
+                $server_proxy        = servers_get($proxy, $database, false);
+                $server['proxies'][] = $server_proxy;
+                $proxy               = $server_proxy['ssh_proxy_id'];
+            }
+        }
 
         return $server;
 

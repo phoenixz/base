@@ -718,7 +718,7 @@ function load_config($files = ''){
 /*
  * Execute shell commands with exception checks
  */
-function safe_exec($commands, $ok_exitcodes = null, $route_errors = true){
+function safe_exec($commands, $ok_exitcodes = null, $route_errors = true, $function = 'exec'){
     return include(__DIR__.'/handlers/startup-safe-exec.php');
 }
 

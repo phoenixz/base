@@ -178,7 +178,7 @@ function ssh_stop_control_master($socket = null){
 /*
  *
  */
-function ssh_exec($server, $commands = null, $local = false, $background = false){
+function ssh_exec($server, $commands = null, $local = false, $background = false, $function = 'exec'){
     try{
         array_default($server, 'hostname'     , '');
         array_default($server, 'ssh_key'      , '');
@@ -245,7 +245,7 @@ function ssh_exec($server, $commands = null, $local = false, $background = false
 
         log_console($command, 'VERBOSE/cyan');
 
-        $results = safe_exec($command);
+        $results = safe_exec($command, null, true, $function);
 
         if($server['background']){
             /*
