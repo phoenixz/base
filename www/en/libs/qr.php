@@ -5,7 +5,7 @@
  * This library contains functions to encode information in QR images, and decode information from QR images
  *
  * @license http://opensource.org/licenses/GPL-2.0 GNU Public License, Version 2
- * @copyright Sven Oostenbrink <support@ingiga.com>
+ * @copyright Sven Oostenbrink <support@capmega.com>
  */
 
 

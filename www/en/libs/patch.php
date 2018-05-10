@@ -5,7 +5,7 @@
  * This library contains functions to assist the base patch script
  *
  * @license http://opensource.org/licenses/GPL-2.0 GNU Public License, Version 2
- * @copyright Sven Oostenbrink <support@ingiga.com>
+ * @copyright Sven Oostenbrink <support@capmega.com>
  */
 
 
@@ -67,22 +67,22 @@ function patch_get_toolkit_location(){
         while($path = dirname($path)){
             $path = slash($path);
 
-            if(file_exists($path.'ingiga')){
-                if(!file_exists($path.'ingiga/toolkit.ingiga.com')){
+            if(file_exists($path.'capmega')){
+                if(!file_exists($path.'capmega/toolkit.capmega.com')){
                     /*
-                     * Found the ingiga dir, but not the toolkit project
+                     * Found the capmega dir, but not the toolkit project
                      */
-                    throw new bException(tr('patch_get_toolkit_location(): Found the ingiga company path in ":path", but toolkit.ingiga.com project isn\'t available', array(':path' => $path)), 'not-exist');
+                    throw new bException(tr('patch_get_toolkit_location(): Found the capmega company path in ":path", but toolkit.capmega.com project isn\'t available', array(':path' => $path)), 'not-exist');
                 }
 
-                if(!file_exists($path.'ingiga/toolkit.ingiga.com/config/base/default.php')){
+                if(!file_exists($path.'capmega/toolkit.capmega.com/config/base/default.php')){
                     /*
                      * Found the base default configuration file, we're good
                      */
-                    throw new bException(tr('patch_get_toolkit_location(): Found the toolkit.ingiga.com path in ":path", but its default base configuration file does not exist', array(':path' => $path)), 'not-exist');
+                    throw new bException(tr('patch_get_toolkit_location(): Found the toolkit.capmega.com path in ":path", but its default base configuration file does not exist', array(':path' => $path)), 'not-exist');
                 }
 
-                $path .= 'ingiga/toolkit.ingiga.com/';
+                $path .= 'capmega/toolkit.capmega.com/';
 
                 log_console(tr('Using toolkit location ":path"', array(':path' => $path)), 'VERBOSE');
                 return $path;

@@ -5,7 +5,7 @@
  * This library contains highchart functions that can be used to generate charts
  *
  * @license http://opensource.org/licenses/GPL-2.0 GNU Public License, Version 2
- * @copyright Sven Oostenbrink <support@ingiga.com>
+ * @copyright Sven Oostenbrink <support@capmega.com>
  *
  * $params['name']  => Name of the chart, this is unique
  * $params['url' ]  => Url in ajax call

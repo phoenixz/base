@@ -19,7 +19,7 @@
  *                        in the databaes to be the version number that follows
  *                        this option
  *
- * @copyright Sven Oostenbrink <support@ingiga.com>
+ * @copyright Sven Oostenbrink <support@capmega.com>
  */
 $usage = "./scripts/base/init\n".
          "./scripts/base/init -F | --force\n".

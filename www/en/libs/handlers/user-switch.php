@@ -5,7 +5,7 @@
  * This snippet will switch the current session user to the specified new user
  *
  * @license http://opensource.org/licenses/GPL-2.0 GNU Public License, Version 2
- * @copyright Sven Oostenbrink <support@ingiga.com>
+ * @copyright Sven Oostenbrink <support@capmega.com>
  */
 try{
     /*

@@ -108,7 +108,7 @@ create                          - Create a new user. It\'s possible to specify
 
     --nickname NICKNAME         - The user\'s nickname (e.g. Phoenixz)
 
-    --email EMAIL               - The user\'s email (e.g. info@ingiga.com)
+    --email EMAIL               - The user\'s email (e.g. info@capmega.com)
 
     --longitude LONGITUDE      - The user\'s latitude location (e.g.
                                   19.0437505)
@@ -149,7 +149,7 @@ modify USER                     - Modify the specified user. USER can be
 
     --nickname NICKNAME         - The user\'s nickname (e.g. Phoenixz)
 
-    --email EMAIL               - The user\'s email (e.g. info@ingiga.com)
+    --email EMAIL               - The user\'s email (e.g. info@capmega.com)
 
     --longitude LONGITUDE       - The user\'s latitude location (e.g.
                                   19.0437505)

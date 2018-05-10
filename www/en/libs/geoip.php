@@ -5,7 +5,7 @@
  * This library contains functions to manage GEO IP detection
  *
  * @license http://opensource.org/licenses/GPL-2.0 GNU Public License, Version 2
- * @copyright Johan Geuze, Sven Oostenbrink <support@ingiga.com>
+ * @copyright Johan Geuze, Sven Oostenbrink <support@capmega.com>
  */
 
 

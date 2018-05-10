@@ -5,7 +5,7 @@
  * This is the customers library file, it contains customers functions
  *
  * @license http://opensource.org/licenses/GPL-2.0 GNU Public License, Version 2
- * @copycustomer Sven Oostenbrink <support@ingiga.com>
+ * @copycustomer Sven Oostenbrink <support@capmega.com>
  */
 
 

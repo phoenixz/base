@@ -5,7 +5,7 @@
  * This is the providers library file, it contains providers functions
  *
  * @license http://opensource.org/licenses/GPL-2.0 GNU Public License, Version 2
- * @copyprovider Sven Oostenbrink <support@ingiga.com>
+ * @copyprovider Sven Oostenbrink <support@capmega.com>
  */
 
 

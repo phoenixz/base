@@ -23,7 +23,7 @@ try{
 
         case 'get_message':
             json_start_session(isset_get($_GET['token']));
-            json_reply(array('email'   => 'info@ingiga.com',
+            json_reply(array('email'   => 'info@capmega.com',
                              'message' => 'This is just a test reply'));
             break;
 

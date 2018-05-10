@@ -9,7 +9,7 @@
                      most                 (same as above but doesnt fail if not translations are found)
                      none                 (leave original strings if not translations are found)
  */
-$_CONFIG['translate']                                                           = array('url'          => 'https://toolkit.ingiga.com/api/translate',
+$_CONFIG['translate']                                                           = array('url'          => 'https://toolkit.capmega.com/api/translate',
                                                                                         'mode'         => 'full',
                                                                                         'passphrase'   => 'translate',
                                                                                         'api_key'      => '',

@@ -7,7 +7,7 @@
  * With few exceptions at the end of this file, all functions have the str_ prefix
  *
  * @license http://opensource.org/licenses/GPL-2.0 GNU Public License, Version 2
- * @copyright Sven Oostenbrink <support@ingiga.com>, Johan Geuze
+ * @copyright Sven Oostenbrink <support@capmega.com>, Johan Geuze
  */
 
 
@@ -904,7 +904,7 @@ function str_trim_array($source, $recurse = true){
 // *
 // * Taken from https://github.com/paulgb/simplediff/blob/5bfe1d2a8f967c7901ace50f04ac2d9308ed3169/simplediff.php
 // * Originally written by https://github.com/paulgb
-// * Adapted by Sven Oostnbrink support@ingiga.com for use in BASE project
+// * Adapted by Sven Oostnbrink support@capmega.com for use in BASE project
 // */
 //function str_diff(){
 //    try{

@@ -2,10 +2,10 @@
 /*
  * Webdom API
  *
- * auth:        http://api.escortdetectives.com.l.ingiga.com/auth/hg56h7j56iujew45tyj57
- * close:       http://api.escortdetectives.com.l.ingiga.com/get_message/hg56h7j56iujew45tyj57/op15qgko25jua9r6chpdp66ek4
- * get_message: http://api.escortdetectives.com.l.ingiga.com/get_message/hg56h7j56iujew45tyj57/op15qgko25jua9r6chpdp66ek4
- * add_escort:  http://api.escortdetectives.com.l.ingiga.com/get_message/hg56h7j56iujew45tyj57/op15qgko25jua9r6chpdp66ek4
+ * auth:        http://api.escortdetectives.com.l.capmega.com/auth/hg56h7j56iujew45tyj57
+ * close:       http://api.escortdetectives.com.l.capmega.com/get_message/hg56h7j56iujew45tyj57/op15qgko25jua9r6chpdp66ek4
+ * get_message: http://api.escortdetectives.com.l.capmega.com/get_message/hg56h7j56iujew45tyj57/op15qgko25jua9r6chpdp66ek4
+ * add_escort:  http://api.escortdetectives.com.l.capmega.com/get_message/hg56h7j56iujew45tyj57/op15qgko25jua9r6chpdp66ek4
  */
 require_once(__DIR__.'/../libs/startup.php');
 load_libs('json');
@@ -31,7 +31,7 @@ try{
 
         case 'get_message':
             json_start_session();
-            json_reply(array('email'   => 'info@ingiga.com',
+            json_reply(array('email'   => 'info@capmega.com',
                              'message' => 'This is just a test reply'));
             break;
 

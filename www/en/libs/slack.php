@@ -5,7 +5,7 @@
  * This library is a front-end slack extension library
  *
  * @license http://opensource.org/licenses/GPL-2.0 GNU Public License, Version 2
- * @copyright Sven Oostenbrink <support@ingiga.com>
+ * @copyright Sven Oostenbrink <support@capmega.com>
  *
  * See https://www.twilio.com/blog/2017/02/how-to-build-a-slack-bot-using-php.html
  * See https://stackoverflow.com/questions/21133/simplest-way-to-profile-a-php-script

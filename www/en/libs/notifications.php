@@ -5,7 +5,7 @@
  * This library contains notifications functions, functions related to sending notifications back to ourselves in case of problems, events, etc.
  *
  * @license http://opensource.org/licenses/GPL-2.0 GNU Public License, Version 2
- * @copyright Sven Oostenbrink <support@ingiga.com>
+ * @copyright Sven Oostenbrink <support@capmega.com>
  */
 load_config('notifications');
 

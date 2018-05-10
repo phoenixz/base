@@ -6,7 +6,7 @@
  * web-push library
  *
  * @license http://opensource.org/licenses/GPL-2.0 GNU Public License, Version 2
- * @copyright Sven Oostenbrink <support@ingiga.com>
+ * @copyright Sven Oostenbrink <support@capmega.com>
  */
 
 
@@ -103,7 +103,7 @@ function webpush_notify_user($users_id, $subject = '', $payload = '', $flush = f
  * @param   bool    $flush          Get response from send notification, so, if notification fails, an array with detailed error is returned
  * @return  array|bool              Array with error data if @param $flush is true and send_notification fails, any other case always returns true
  */
-function webpush_notify($public_key, $private_key, $p256dh, $auth, $endpoint, $subject='', $payload='', $flush=false) {
+function webpush_notify($public_key, $private_key, $p256dh, $auth, $endpoint, $subject = '', $payload = '', $flush = false) {
     try{
         $authentication = array('VAPID' => array('subject'    => $subject,
                                                  'publicKey'  => $public_key,
