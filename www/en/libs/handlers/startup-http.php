@@ -177,6 +177,35 @@ if(empty($_CONFIG['cookie']['domain'])){
                 }
         }
 
+
+
+        /*
+         *
+         */
+        if($_CONFIG['sessions']['lifetime']){
+            if(ini_get('session.gc_maxlifetime') < $_CONFIG['sessions']['lifetime']){
+                /*
+                 * Ensure that session data is not considdered
+                 * garbage within the configured session lifetime!
+                 */
+                ini_set('session.gc_maxlifetime', $_CONFIG['sessions']['lifetime']);
+            }
+        }
+
+
+
+        /*
+         * Disable PHP caching stuff
+         */
+// :TODO: WHY?
+        session_cache_limiter('');
+        session_cache_expire(0);
+
+
+
+        /*
+         *
+         */
         try{
             session_start();
 
@@ -215,14 +244,6 @@ if(empty($_CONFIG['cookie']['domain'])){
         }
 
         if($_CONFIG['sessions']['lifetime']){
-            if(ini_get('session.gc_maxlifetime') < $_CONFIG['sessions']['lifetime']){
-                /*
-                 * Ensure that session data is not considdered
-                 * garbage within the configured session lifetime!
-                 */
-                ini_set('session.gc_maxlifetime', $_CONFIG['sessions']['lifetime']);
-            }
-
             if(isset($_SESSION['last_activity']) and (time() - $_SESSION['last_activity'] > $_CONFIG['sessions']['lifetime'])){
                 /*
                  * Session expired!
