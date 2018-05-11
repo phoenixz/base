@@ -183,6 +183,7 @@ function ssh_exec($server, $commands = null, $local = false, $background = false
         array_default($server, 'hostname'     , '');
         array_default($server, 'ssh_key'      , '');
         array_default($server, 'port'         , 22);
+        array_default($server, 'timeout'      , 10);
         array_default($server, 'hostkey_check', false);
         array_default($server, 'arguments'    , '-T');
         array_default($server, 'commands'     , $commands);
@@ -207,6 +208,16 @@ function ssh_exec($server, $commands = null, $local = false, $background = false
 
         if(empty($server['ssh_key'])){
             throw new bException(tr('No ssh key specified'), 'not-specified');
+        }
+
+        if($server['timeout']){
+            /*
+             * Add timeout to the SSH command
+             */
+            $server['timeout'] = ' -o ConnectTimeout='.$server['timeout'].' ';
+
+        }else{
+            $server['timeout'] = '';
         }
 
         /*
@@ -239,22 +250,16 @@ function ssh_exec($server, $commands = null, $local = false, $background = false
         file_put_contents($keyfile, $server['ssh_key'], FILE_APPEND);
         chmod($keyfile, 0400);
 
-        /*
-         * Execute command on remote server
-         */
-        $command = 'ssh '.$server['arguments'].' -p '.$server['port'].' -i '.$keyfile.' '.$server['username'].'@'.$server['hostname'].' "'.$server['commands'].'"'.($server['background'] ? ' &' : '');
-
-        log_console($command, 'VERBOSE/cyan');
-
         if($server['proxies']){
-//-o ProxyCommand=\"ssh -p 40220 s1.s nc s2.s 40220\"
-//ssh -p 40220 -o ProxyCommand="ssh -p 40220 -o ProxyCommand=\"ssh -p 40220 s1.s nc s2.s 40220\" s2.s nc s3.s 40220" s3.s
+//-o ProxyCommand="ssh -p  -o ProxyCommand=\"ssh -p  40220 s1.s.ingiga.com nc s2.s.ingiga.com 40220\"  40220 s2.s.ingiga.com nc s3.s.ingiga.com 40220"
+
             /*
              * To connect to this server, one must pass through a number of SSH proxies
              */
             $escapes        = 0;
-            $proxy_template = ' -o ProxyCommand="ssh -p :proxy_template :proxy_port :proxy_host nc :target_host :proxy_port" ';
+            $proxy_template = ' -o ProxyCommand="ssh '.$server['timeout'].$server['arguments'].' -i '.$keyfile.' -p :proxy_port :proxy_template '.$server['username'].'@:proxy_host nc '.$server['username'].'@:target_host :proxy_port" ';
             $proxies_string = ':proxy_template';
+            $target_server  = $server['hostname'];
 
             foreach($server['proxies'] as $id => $proxy){
                 $proxy_string = $proxy_template;
@@ -273,20 +278,32 @@ function ssh_exec($server, $commands = null, $local = false, $background = false
                  */
                 $proxy_string   = str_replace(':proxy_port' , $proxy['port']     , $proxy_string);
                 $proxy_string   = str_replace(':proxy_host' , $proxy['hostname'] , $proxy_string);
-                $proxy_string   = str_replace(':target_host', $server['hostname'], $proxy_string);
+                $proxy_string   = str_replace(':target_host', $target_server     , $proxy_string);
 
                 $proxies_string = str_replace(':proxy_template', $proxy_string, $proxies_string);
+                $target_server  = $proxy['hostname'];
             }
 
             /*
              * No more proxies, remove the template placeholder
              */
             $proxies_string = str_replace(':proxy_template', '', $proxies_string);
+
+        }else{
+            $proxies_string = '';
         }
+
+        /*
+         * Execute command on remote server
+         */
+        $command = 'ssh '.$server['timeout'].$server['arguments'].' -p '.$server['port'].' '.$proxies_string.' -i '.$keyfile.' '.$server['username'].'@'.$server['hostname'].' "'.$server['commands'].'"'.($server['background'] ? ' &' : '');
+
+        log_console($command, 'VERBOSE/cyan');
 
         /*
          * Execute the command
          */
+showdie($command);
         $results = safe_exec($command);
 
         if($server['background']){
