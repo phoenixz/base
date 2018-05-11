@@ -29,7 +29,21 @@ switch(cli_method()){
             throw new bException(tr('No hostname specified'), 'warning/not-specified');
         }
 
-        $result = servers_exec($hostname);
+        try{
+            $result = servers_exec('*'.$hostname, 'bash');
+
+        }catch(Exception $e){
+            switch($e->getCode()){
+                case 'multiple':
+                    // FALLTROUGH
+                case 'not-exists':
+                    throw $e->makeWarning(true);
+
+                default:
+                    throw $e;
+            }
+        }
+
         break;
 
     case '':
