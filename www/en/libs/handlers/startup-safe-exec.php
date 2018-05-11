@@ -54,14 +54,14 @@ try{
             break;
 
         case 'passthru':
-            $output   = '';
+            $output   = array();
             $lastline = '';
 
             passthru($command, $exitcode);
             break;
 
         case 'system':
-            $output = '';
+            $output = array();
 
             if(substr($command, -1, 1) == '&'){
                 /*
