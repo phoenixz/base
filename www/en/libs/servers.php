@@ -33,7 +33,7 @@ function servers_validate($server, $password_strength = true){
     try{
         load_libs('validate,file,seo');
 
-        $v = new validate_form($server, 'port,hostname,provider,customer,ssh_account,description,database_accounts_id');
+        $v = new validate_form($server, 'port,hostname,provider,customer,ssh_account,description,ssh_proxy,database_accounts_id');
         $v->isNotEmpty($server['ssh_account'], tr('Please specifiy an SSH account'));
         $v->isNotEmpty($server['hostname']   , tr('Please specifiy a hostnames'));
         $v->isNotEmpty($server['port']       , tr('Please specifiy a port'));
@@ -70,7 +70,7 @@ function servers_validate($server, $password_strength = true){
          */
         if(empty($server['port'])){
             $server['port'] = not_empty($_CONFIG['scanner']['ssh']['default_port'], 22);
-            log_console(tr('servers_validate(): No SSH port specified, using port ":port" as default', array(':port' => $server['port'])), 'defaultport', 'yellow');
+            log_console(tr('servers_validate(): No SSH port specified, using port ":port" as default', array(':port' => $server['port'])), 'yellow');
         }
 
         if(!is_numeric($server['port']) or ($server['port'] < 1) or ($server['port'] > 65535)){
@@ -78,10 +78,21 @@ function servers_validate($server, $password_strength = true){
         }
 
         /*
-         * Validate provider, customer, and ssh account
+         * Validate proxy, provider, customer, and ssh account
          */
+        if($server['ssh_proxy']){
+            $server['ssh_proxies_id'] = sql_get('SELECT `id` FROM `servers` WHERE `seohostname` = :seohostname AND `status` IS NULL', array(':seohostname' => $server['ssh_proxy']), true);
+
+            if(!$server['ssh_proxies_id']){
+                $v->setError(tr('servers_validate(): Specified proxy ":proxy" does not exist', array(':proxy' => $server['ssh_proxy'])));
+            }
+
+        }else{
+            $server['ssh_proxies_id'] = null;
+        }
+
         if($server['provider']){
-            $server['providers_id'] = sql_get('SELECT `id` FROM `providers` WHERE `seoname` = :seoname AND `status` IS NULL', array(':seoname' => $server['provider']), 'id');
+            $server['providers_id'] = sql_get('SELECT `id` FROM `providers` WHERE `seoname` = :seoname AND `status` IS NULL', array(':seoname' => $server['provider']), true);
 
             if(!$server['providers_id']){
                 $v->setError(tr('servers_validate(): Specified provider ":provider" does not exist', array(':provider' => $server['provider'])));
@@ -92,7 +103,7 @@ function servers_validate($server, $password_strength = true){
         }
 
         if($server['customer']){
-            $server['customers_id'] = sql_get('SELECT `id` FROM `customers` WHERE `seoname` = :seoname AND `status` IS NULL', array(':seoname' => $server['customer']), 'id');
+            $server['customers_id'] = sql_get('SELECT `id` FROM `customers` WHERE `seoname` = :seoname AND `status` IS NULL', array(':seoname' => $server['customer']), true);
 
             if(!$server['customers_id']){
                 $v->setError(tr('servers_validate(): Specified customer ":customer" does not exist', array(':customer' => $server['customer'])));
@@ -103,7 +114,7 @@ function servers_validate($server, $password_strength = true){
         }
 
         if($server['ssh_account']){
-            $server['ssh_accounts_id'] = sql_get('SELECT `id` FROM `ssh_accounts` WHERE `seoname` = :seoname AND `status` IS NULL', array(':seoname' => $server['ssh_account']), 'id');
+            $server['ssh_accounts_id'] = sql_get('SELECT `id` FROM `ssh_accounts` WHERE `seoname` = :seoname AND `status` IS NULL', array(':seoname' => $server['ssh_account']), true);
 
             if(!$server['ssh_accounts_id']){
                 $v->setError(tr('servers_validate(): Specified SSH account ":account" does not exist', array(':account' => $server['ssh_account'])));
@@ -116,7 +127,9 @@ function servers_validate($server, $password_strength = true){
         /*
          * Already exists?
          */
-        if(sql_get('SELECT `id` FROM `servers` WHERE `hostname` = :hostname AND `ssh_accounts_id` = :ssh_accounts_id AND `id` != :id', array(':hostname' => $server['hostname'], ':ssh_accounts_id' => $server['ssh_account'], ':id' => isset_get($server['id'])), 'id')){
+        $exists = sql_get('SELECT `id` FROM `servers` WHERE `hostname` = :hostname AND `ssh_accounts_id` = :ssh_accounts_id AND `id` != :id', array(':hostname' => $server['hostname'], ':ssh_accounts_id' => $server['ssh_account'], ':id' => isset_get($server['id'])), true);
+
+        if($exists){
             $v->setError(tr('servers_validate(): A server with hostname ":hostname" and user ":user" already exists', array(':hostname' => $server['hostname'], ':ssh_accounts_id' => $server['ssh_account'])));
         }
 
@@ -124,6 +137,7 @@ function servers_validate($server, $password_strength = true){
         $server['bill_duedate'] = date_convert($server['bill_duedate'], 'mysql');
 
         $v->isValid();
+
         return $server;
 
     }catch(Exception $e){
@@ -224,15 +238,22 @@ function servers_exec($host, $commands, $options = null, $background = false, $l
 /*
  *
  */
-function servers_get($host, $database = false, $return_proxies = true){
+function servers_get($host, $database = false, $return_proxies = true, $limited_columns = false){
     try{
-        $query =  'SELECT    `servers`.`hostname`,
-                             `servers`.`port`,
-                             `servers`.`ssh_accounts_id`,
-                             `servers`.`ssh_proxy_id`,
+        if($limited_columns){
+            $query =  'SELECT    `servers`.`hostname`,
+                                 `servers`.`port`,
+                                 `servers`.`ssh_proxies_id` ';
 
-                             `ssh_accounts`.`username`,
-                             `ssh_accounts`.`ssh_key`';
+        }else{
+            $query =  'SELECT    `servers`.`hostname`,
+                                 `servers`.`port`,
+                                 `servers`.`ssh_accounts_id`,
+                                 `servers`.`ssh_proxies_id`,
+
+                                 `ssh_accounts`.`username`,
+                                 `ssh_accounts`.`ssh_key` ';
+        }
 
         $from  = ' FROM      `servers`
 
@@ -243,6 +264,11 @@ function servers_get($host, $database = false, $return_proxies = true){
         if(is_numeric($host)){
             $where   = ' WHERE `servers`.`id`       = :id';
             $execute = array(':id'       => $host);
+
+        }elseif(substr($host, 0, 1) === '*'){
+            $host    = substr($host, 1);
+            $where   = ' WHERE `servers`.`hostname` LIKE :hostname';
+            $execute = array(':hostname' => '%'.$host.'%');
 
         }else{
             $where   = ' WHERE `servers`.`hostname` = :hostname';
@@ -261,21 +287,25 @@ function servers_get($host, $database = false, $return_proxies = true){
 
         $server = sql_get($query.$from.$where, $execute);
 
-        if($return_proxies){
+        if($server and $return_proxies){
             $server['proxies'] = array();
 
-            $proxy = $server['ssh_proxy_id'];
+            $proxy = $server['ssh_proxies_id'];
 
             while($proxy){
-                $server_proxy        = servers_get($proxy, $database, false);
+                $server_proxy        = servers_get($proxy, $database, false, true);
                 $server['proxies'][] = $server_proxy;
-                $proxy               = $server_proxy['ssh_proxy_id'];
+                $proxy               = $server_proxy['ssh_proxies_id'];
             }
         }
 
         return $server;
 
     }catch(Exception $e){
+        if($e->getCode() == 'multiple'){
+            throw new bException(tr('servers_get(): Specified hostname ":hostname" matched multiple results, please specify a more exact hostname', array(':hostname' => $host)), 'multiple');
+        }
+
         throw new bException('servers_get(): Failed', $e);
     }
 }
