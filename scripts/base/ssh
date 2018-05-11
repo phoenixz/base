@@ -30,7 +30,8 @@ switch(cli_method()){
         }
 
         try{
-            $result = servers_exec('*'.$hostname, 'bash');
+                                         //($host, $commands, null, false, false, 'exec')
+            $result = servers_exec('*'.$hostname, '', array('arguments' => ''), false, false, 'passthru');
 
         }catch(Exception $e){
             switch($e->getCode()){
