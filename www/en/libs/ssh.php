@@ -115,7 +115,7 @@ function ssh_start_control_master($server, $socket = null){
                                  'port'      => $_CONFIG['cdn']['port'],
                                  'username'  => $server['username'],
                                  'ssh_key'   => ssh_get_key($server['username']),
-                                 'arguments' => '-nNf -o ControlMaster=yes -o ControlPath='.$socket), ' 2>&1 >'.ROOT.'/data/log/ssh_master');
+                                 'arguments' => '-nNf -o ControlMaster=yes -o ControlPath='.$socket), ' 2>&1 >'.ROOT.'data/log/ssh_master');
 
         return $socket;
 
@@ -192,22 +192,29 @@ function ssh_exec($server, $commands = null, $local = false, $background = false
         array_default($server, 'proxies'      , null);
 
         /*
+         * Ensure that ssh/keys directory exists and that its safe
+         */
+        load_libs('file');
+        file_ensure_path(ROOT.'data/ssh/keys');
+        chmod(ROOT.'data/ssh', 0770);
+
+        /*
          * Validate commands
          */
-        if(empty($server['commands'])){
-            throw new bException(tr('No commmands specified'), 'not-specified');
+        if($server['commands'] === null){
+            throw new bException(tr('ssh_exec(): No commands specified'), 'not-specified');
         }
 
         if(empty($server['hostname'])){
-            throw new bException(tr('No hostname specified'), 'not-specified');
+            throw new bException(tr('ssh_exec(): No hostname specified'), 'not-specified');
         }
 
         if(empty($server['username'])){
-            throw new bException(tr('No username specified'), 'not-specified');
+            throw new bException(tr('ssh_exec(): No username specified'), 'not-specified');
         }
 
         if(empty($server['ssh_key'])){
-            throw new bException(tr('No ssh key specified'), 'not-specified');
+            throw new bException(tr('ssh_exec(): No ssh key specified'), 'not-specified');
         }
 
         if($server['timeout']){
@@ -230,20 +237,13 @@ function ssh_exec($server, $commands = null, $local = false, $background = false
         }
 
         if(!$server['hostkey_check']){
-            $server['arguments'] .= ' -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null ';
+            $server['arguments'] .= ' -o StrictHostKeyChecking=no -o UserKnownHostsFile='.ROOT.'data/ssh ';
         }
-
-        /*
-         * Ensure that ssh_keys directory exists and that its safe
-         */
-        load_libs('file');
-        file_ensure_path(ROOT.'data/ssh_keys');
-        chmod(ROOT.'data/ssh_keys', 0770);
 
         /*
          * Safely create SSH key file
          */
-        $keyfile = ROOT.'data/ssh_keys/'.str_random(8);
+        $keyfile = ROOT.'data/ssh/keys/'.str_random(8);
 
         touch($keyfile);
         chmod($keyfile, 0600);
@@ -252,12 +252,11 @@ function ssh_exec($server, $commands = null, $local = false, $background = false
 
         if($server['proxies']){
 //-o ProxyCommand="ssh -p  -o ProxyCommand=\"ssh -p  40220 s1.s.ingiga.com nc s2.s.ingiga.com 40220\"  40220 s2.s.ingiga.com nc s3.s.ingiga.com 40220"
-
             /*
              * To connect to this server, one must pass through a number of SSH proxies
              */
             $escapes        = 0;
-            $proxy_template = ' -o ProxyCommand="ssh '.$server['timeout'].$server['arguments'].' -i '.$keyfile.' -p :proxy_port :proxy_template '.$server['username'].'@:proxy_host nc '.$server['username'].'@:target_host :proxy_port" ';
+            $proxy_template = ' -o ProxyCommand="ssh '.$server['timeout'].$server['arguments'].' -i '.$keyfile.' -p :proxy_port :proxy_template '.$server['username'].'@:proxy_host nc :target_host :proxy_port" ';
             $proxies_string = ':proxy_template';
             $target_server  = $server['hostname'];
 
@@ -298,13 +297,11 @@ function ssh_exec($server, $commands = null, $local = false, $background = false
          */
         $command = 'ssh '.$server['timeout'].$server['arguments'].' -p '.$server['port'].' '.$proxies_string.' -i '.$keyfile.' '.$server['username'].'@'.$server['hostname'].' "'.$server['commands'].'"'.($server['background'] ? ' &' : '');
 
-        log_console($command, 'VERBOSE/cyan');
-
         /*
          * Execute the command
          */
-showdie($command);
-        $results = safe_exec($command);
+//showdie($command);
+        $results = safe_exec($command, null, true, $function);
 
         if($server['background']){
             /*
@@ -420,20 +417,20 @@ function ssh_cp($server, $source, $destnation, $from_server = false){
         }
 
         if(!$server['hostkey_check']){
-            $server['arguments'] .= ' -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null ';
+            $server['arguments'] .= ' -o StrictHostKeyChecking=no -o UserKnownHostsFile='.ROOT.'data/ssh ';
         }
 
         /*
-         * Ensure that ssh_keys directory exists and that its safe
+         * Ensure that ssh/keys directory exists and that its safe
          */
         load_libs('file');
-        file_ensure_path(ROOT.'data/ssh_keys');
-        chmod(ROOT.'data/ssh_keys', 0770);
+        file_ensure_path(ROOT.'data/ssh/keys');
+        chmod(ROOT.'data/ssh', 0770);
 
         /*
          * Safely create SSH key file
          */
-        $keyfile = ROOT.'data/ssh_keys/'.str_random(8);
+        $keyfile = ROOT.'data/ssh/keys/'.str_random(8);
 
         touch($keyfile);
         chmod($keyfile, 0600);
@@ -520,20 +517,20 @@ function ssh_mysql_slave_tunnel($server){
         }
 
         if(!$server['hostkey_check']){
-            $server['arguments'] .= ' -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null ';
+            $server['arguments'] .= ' -o StrictHostKeyChecking=no -o UserKnownHostsFile='.ROOT.'data/ssh ';
         }
 
         /*
-         * Ensure that ssh_keys directory exists and that its safe
+         * Ensure that ssh/keys directory exists and that its safe
          */
         load_libs('file');
-        file_ensure_path(ROOT.'data/ssh_keys');
-        chmod(ROOT.'data/ssh_keys', 0770);
+        file_ensure_path(ROOT.'data/ssh/keys');
+        chmod(ROOT.'data/ssh', 0770);
 
         /*
          * Safely create SSH key file
          */
-        $keyfile = ROOT.'data/ssh_keys/'.str_random(8);
+        $keyfile = ROOT.'data/ssh/keys/'.str_random(8);
 
         touch($keyfile);
         chmod($keyfile, 0600);
