@@ -309,4 +309,31 @@ function servers_get($host, $database = false, $return_proxies = true, $limited_
         throw new bException('servers_get(): Failed', $e);
     }
 }
+
+function servers_add_to_known_host_file($hostname, $user_known_hosts_file_path, $port){
+
+    if(empty($hostname)){
+        throw new bException(tr('servers_add_to_know_host_file(): No hostname specified'), 'not-specified');
+    }
+
+    if(empty($user_known_hosts_file_path)){
+        throw new bException(tr('servers_add_to_know_host_file(): No user_known_hosts_file_path specified'), 'not-specified');
+    }
+
+    if(empty($port)){
+        throw new bException(tr('servers_add_to_know_host_file(): No port specified'), 'not-specified');
+    }
+
+    $public_keys = safe_exec('ssh-keyscan -p '.$port.' -H '.$hostname);
+
+    if(empty($public_keys)){
+        throw new bException(tr('ssh_exec(): ssh-keyscan not found public keys for hostname ":"', array(':hostname'=>$hostname)), 'no-data');
+    }
+
+    foreach($public_keys as $public_key){
+        if(substr($public_key, 0, 1) != '#'){
+            file_put_contents($user_known_hosts_file_path, $public_key."\n", FILE_APPEND);
+        }
+    }
+}
 ?>

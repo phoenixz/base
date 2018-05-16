@@ -236,8 +236,18 @@ function ssh_exec($server, $commands = null, $local = false, $background = false
             return $result;
         }
 
+        /*
+        * Path for known_hosts file
+        */
+        $user_known_hosts_file = ROOT.'data/ssh/known_hosts';
+
+        /*
+        * Cleaning file so we do not duplicate entries
+        */
+        safe_exec('> '.$user_known_hosts_file);
+
         if(!$server['hostkey_check']){
-            $server['arguments'] .= ' -o StrictHostKeyChecking=no -o UserKnownHostsFile='.ROOT.'data/ssh ';
+            $server['arguments'] .= ' -o StrictHostKeyChecking=no -o UserKnownHostsFile='.$user_known_hosts_file;
         }
 
         /*
@@ -275,14 +285,15 @@ function ssh_exec($server, $commands = null, $local = false, $background = false
                 /*
                  * Fill in proxy values for this proxy
                  */
-                $proxy_string   = str_replace(':proxy_port' , $proxy['port']     , $proxy_string);
-                $proxy_string   = str_replace(':proxy_host' , $proxy['hostname'] , $proxy_string);
-                $proxy_string   = str_replace(':target_host', $target_server     , $proxy_string);
+                $proxy_string      = str_replace(':proxy_port' , $proxy['port']     , $proxy_string);
+                $proxy_string      = str_replace(':proxy_host' , $proxy['hostname'] , $proxy_string);
+                $proxy_string      = str_replace(':target_host', $target_server     , $proxy_string);
 
-                $proxies_string = str_replace(':proxy_template', $proxy_string, $proxies_string);
-                $target_server  = $proxy['hostname'];
+                $proxies_string    = str_replace(':proxy_template', $proxy_string, $proxies_string);
+                $target_server     = $proxy['hostname'];
+
+                servers_add_to_known_host_file($proxy['hostname'], $user_known_hosts_file, $proxy['port']);
             }
-
             /*
              * No more proxies, remove the template placeholder
              */
@@ -293,6 +304,11 @@ function ssh_exec($server, $commands = null, $local = false, $background = false
         }
 
         /*
+        * Also add the target server
+        */
+        servers_add_to_known_host_file($server['hostname'], $user_known_hosts_file, $server['port']);
+
+        /*
          * Execute command on remote server
          */
         $command = 'ssh '.$server['timeout'].$server['arguments'].' -p '.$server['port'].' '.$proxies_string.' -i '.$keyfile.' '.$server['username'].'@'.$server['hostname'].' "'.$server['commands'].'"'.($server['background'] ? ' &' : '');
@@ -301,6 +317,7 @@ function ssh_exec($server, $commands = null, $local = false, $background = false
          * Execute the command
          */
 //showdie($command);
+
         $results = safe_exec($command, null, true, $function);
 
         if($server['background']){
