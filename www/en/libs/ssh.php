@@ -178,7 +178,7 @@ function ssh_stop_control_master($socket = null){
 /*
  *
  */
-function ssh_exec($server, $commands = null, $local = false, $background = false, $function = 'exec'){
+function ssh_exec($server, $commands = null, $background = false, $function = 'exec'){
     try{
         array_default($server, 'hostname'     , '');
         array_default($server, 'ssh_key'      , '');
@@ -188,7 +188,6 @@ function ssh_exec($server, $commands = null, $local = false, $background = false
         array_default($server, 'arguments'    , '-T');
         array_default($server, 'commands'     , $commands);
         array_default($server, 'background'   , $background);
-        array_default($server, 'local'        , $local);
         array_default($server, 'proxies'      , null);
 
         /*
@@ -205,16 +204,14 @@ function ssh_exec($server, $commands = null, $local = false, $background = false
             throw new bException(tr('ssh_exec(): No commands specified'), 'not-specified');
         }
 
-        if(empty($server['hostname'])){
-            throw new bException(tr('ssh_exec(): No hostname specified'), 'not-specified');
-        }
+        if(!empty($server['hostname'])){
+            if(empty($server['username'])){
+                throw new bException(tr('ssh_exec(): No username specified'), 'not-specified');
+            }
 
-        if(empty($server['username'])){
-            throw new bException(tr('ssh_exec(): No username specified'), 'not-specified');
-        }
-
-        if(empty($server['ssh_key'])){
-            throw new bException(tr('ssh_exec(): No ssh key specified'), 'not-specified');
+            if(empty($server['ssh_key'])){
+                throw new bException(tr('ssh_exec(): No ssh key specified'), 'not-specified');
+            }
         }
 
         if($server['timeout']){
@@ -228,10 +225,10 @@ function ssh_exec($server, $commands = null, $local = false, $background = false
         }
 
         /*
-         * If local is specified, then don't execute this command on a remote
-         * server, just use safe_exec and execute it locally
+         * If no hostname is specified, then don't execute this command on a
+         * remote server, just use safe_exec and execute it locally
          */
-        if($server['local']){
+        if(!$server['hostname']){
             $result = safe_exec($server['commands'].($server['background'] ? ' &' : ''));
             return $result;
         }
@@ -587,6 +584,44 @@ function ssh_mysql_slave_tunnel($server){
         }
 
         throw new bException(tr('ssh_mysql_slave_tunnel(): Failed'), $e);
+    }
+}
+
+
+
+/*
+ *
+ */
+function ssh_add_known_host($hostname, $port, $known_hosts_path){
+    try{
+        if(empty($hostname)){
+            throw new bException(tr('ssh_add_known_host(): No hostname specified'), 'not-specified');
+        }
+
+        if(empty($port)){
+            throw new bException(tr('ssh_add_known_host(): No port specified'), 'not-specified');
+        }
+
+        if(empty($known_hosts_path)){
+            throw new bException(tr('ssh_add_known_host(): No user_known_hosts_file_path specified'), 'not-specified');
+        }
+
+        $public_keys = safe_exec('ssh-keyscan -p '.$port.' -H '.$hostname);
+
+        if(empty($public_keys)){
+            throw new bException(tr('ssh_add_known_host(): ssh-keyscan found no public keys for hostname ":hostname"', array(':hostname' => $hostname)), 'not-found');
+        }
+
+        foreach($public_keys as $public_key){
+            if(substr($public_key, 0, 1) != '#'){
+                file_put_contents($known_hosts_path, $public_key."\n", FILE_APPEND);
+            }
+        }
+
+        return count($public_keys);
+
+    }catch(Exception $e){
+        throw new bException('ssh_add_known_host(): Failed', $e);
     }
 }
 ?>
