@@ -35,21 +35,20 @@ function csf_library_init(){
 /*
  * Return the absolute location of the CSF executable binary
  */
-function csf_get_exec(){
+function csf_get_exec($hostname=false){
     static $install = false;
 
     try{
-        $csf = trim(shell_exec('which csf 2> /dev/null'));
-
-        if(!$csf){
-            if($install){
+        $csf = trim(servers_exec($hostname, 'which csf 2> /dev/null'));
+        /*if(!$csf){
+            if(!$install){
                 throw new bException('csf_exec(): CSF is not installed, and installation failed', 'failed');
             }
 
             $install = true;
-            csf_install();
+            csf_install($hostname);
             return csf_get_exec();
-        }
+        }*/
 
         return $csf;
 
@@ -78,25 +77,15 @@ function csf_exec($hostname, $command){
 /*
  * Install Config Server Firewall
  */
-function csf_install(){
+function csf_install($hostname=false){
     try{
-        if($csf = csf_get_exec()){
+        if($csf = csf_get_exec($hostname)){
             throw new bException(tr('csf_install(): CSF has already been installed and is available at ":csf"', array(':csf' => $csf)), 'executable-not-found');
         }
 
-        copy('https://download.configserver.com/csf.tgz', TMP.'csf.tgz');
-        safe_exec('cd '.TMP.'; tar -xf '.TMP.'csf.tgz; cd '.TMP.'csf/; ./install.sh');
-
-        if(!$csf = csf_get_exec()){
-            throw new bException('csf_install(): The CSF executable could not be found after installation', 'executable-not-found');
-        }
-
-        /*
-         * Cleanup
-         */
-        ssh_exec('rm '.TMP.'csf/ -rf');
-
-        return $csf;
+        $command = 'wget --directory-prefix=/tmp https://download.configserver.com/csf.tgz; cd /tmp/; tar -xf csf.tgz; cd csf/; sh install.sh;';
+        csf_exec($hostname, $command);
+        return csf_get_exec($hostname);
 
     }catch(Exception $e){
         throw new bException('csf_install(): Failed', $e);
