@@ -190,7 +190,7 @@ function servers_exec($host, $commands, $options = null, $background = false, $f
         }
 
         if(!$server){
-            throw new bException(tr('servers_exec(): Specified hostname ":hostname" does not exist', array(':hostname' => $host)), 'not-exists');
+            $server = array();
         }
 
         if(!$options){
