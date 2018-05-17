@@ -401,11 +401,15 @@ function csf_validate_testing($value){
             case '1':
                 //These are valid
                 break;
+
+            default:
+                throw new bException(tr('csf_validate_testing(): Invalid testing value ":value" specified', array(':value' => $value)), 'invalid');
         }
+
         return $value;
 
     }catch(Exception $e){
-        throw new bException('csf_validate_ports(): Failed', $e);
+        throw new bException('csf_validate_testing(): Failed', $e);
     }
 }
 
@@ -430,7 +434,11 @@ function csf_validate_restrictsyslog($value){
             case '3':
                 //These are valid
                 break;
-        }
+
+            default:
+                throw new bException(tr('csf_validate_restrictsyslog(): Invalid restrict syslog value ":value" specified', array(':value' => $value)), 'invalid');
+      }
+
         return $value;
 
     }catch(Exception $e){
