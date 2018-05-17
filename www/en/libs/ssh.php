@@ -229,7 +229,7 @@ function ssh_exec($server, $commands = null, $background = false, $function = 'e
          * remote server, just use safe_exec and execute it locally
          */
         if(!$server['hostname']){
-            $result = safe_exec($server['commands'].($server['background'] ? ' &' : ''));
+            $result = shell_exec($server['commands'].($server['background'] ? ' &' : ''));
             return $result;
         }
 
