@@ -66,11 +66,6 @@ function csf_get_exec(){
 function csf_exec($hostname, $command){
     try{
         $csf = csf_get_exec();
-
-        if(empty($hostname)){
-            throw new bException(tr('csf_exec(): Unknown hostname ":hostname" specified', array(':hostname' => $hostname)), 'unknown');
-        }
-
         return servers_exec($hostname, str_replace(':csf', $csf, $command));
 
     }catch(Exception $e){
@@ -113,8 +108,16 @@ function csf_install(){
 /*
  *
  */
-function csf_set_restrict_syslog($value){
-    //RESTRICT_SYSLOG
+function csf_set_restrict_syslog($hostname, $value){
+    try{
+        $value   = csf_validate_restrictsyslog($value);
+        $command = 'sed -i -E \'s/^RESTRICT_SYSLOG = \"[0-3]\"/RESTRICT_SYSLOG = "'.$value.'"/g\' /etc/csf/csf.conf';
+
+        return csf_exec($hostname, $command);
+
+    }catch(Exception $e){
+        throw new bException('csf_set_testing(): Failed', $e);
+    }
 }
 
 
@@ -122,8 +125,16 @@ function csf_set_restrict_syslog($value){
 /*
  *
  */
-function csf_set_testing($value){
-    //TESTING
+function csf_set_testing($hostname, $value){
+    try{
+        $value   = csf_validate_testing($value);
+        $command = 'sed -i -E \'s/^TESTING = \"(0|1)\"/TESTING = "'.$value.'"/g\' /etc/csf/csf.conf';
+
+        return csf_exec($hostname, $command);
+
+    }catch(Exception $e){
+        throw new bException('csf_set_testing(): Failed', $e);
+    }
 }
 
 
@@ -135,7 +146,7 @@ function csf_set_testing($value){
 function csf_set_ports($hostname, $protocol, $rule_type, $ports){
     try{
         $ports     = csf_validate_ports($ports);
-        $rule_type = csf_validate_rule_type($rule_type);
+        $rule_type = csf_validate_rule_type($rule_type, true);
         $protocol  = csf_validate_protocol($protocol);
         $command   = 'sed -i -E \'s/^'.$protocol.'_'.$rule_type.' = \"([0-9]+,)*([0-9]*)\"/'.$protocol.'_'.$rule_type.' = "'.$ports.'"/g\' /etc/csf/csf.conf';
 
@@ -228,16 +239,16 @@ function csf_restart($hostname=false){
  *
  * @param
  */
-function csf_allow_rule($hostname, $protocol, $rule_type, $port, $ip=false){
+function csf_allow_rule($hostname, $protocol, $rule_type, $port, $ip=false, $comments=''){
     try{
         if(empty($port)){
             throw new bException(tr('csf_allow_rule(): Unknown port ":port" specified', array(':port' => $port)), 'unknown');
         }
 
-        $protocol  = csf_validate_protocol($protocol);
+        $protocol  = csf_validate_protocol($protocol, true);
         $rule_type = csf_validate_rule_type($rule_type);
         $ip        = csf_validate_ip($ip);
-        $rule      = $protocol.'|'.$rule_type.'|d='.$port.'|s='.$ip;
+        $rule      = $protocol.'|'.$rule_type.'|d='.$port.'|s='.$ip.' # '.$comments;
         $command   = 'if ! grep "'.$rule.'" /etc/csf/csf.allow; then echo "'.$rule.'" >> /etc/csf/csf.allow; fi;';
 
         return csf_exec($hostname, $command);
@@ -253,16 +264,16 @@ function csf_allow_rule($hostname, $protocol, $rule_type, $port, $ip=false){
  * when adding a new rule we need to check if exist on allow rule and remove in
  * order to create the new one
  */
-function csf_deny_rule($hostname, $protocol, $rule_type, $port, $ip=false){
+function csf_deny_rule($hostname, $protocol, $rule_type, $port, $ip=false, $comments=''){
     try{
         if(empty($port)){
             throw new bException(tr('csf_deny_rule(): Unknown port ":port" specified', array(':port' => $port)), 'unknown');
         }
 
-        $protocol  = csf_validate_protocol($protocol);
+        $protocol  = csf_validate_protocol($protocol, true);
         $rule_type = csf_validate_rule_type($rule_type);
         $ip        = csf_validate_ip($ip);
-        $rule      = $protocol.'|'.$rule_type.'|d='.$port.'|s='.$ip;
+        $rule      = $protocol.'|'.$rule_type.'|d='.$port.'|s='.$ip.' # '.$comments;
         $command   = 'if ! grep "'.$rule.'" /etc/csf/csf.deny; then echo "'.$rule.'" >> /etc/csf/csf.deny; fi;';
 
         return csf_exec($hostname, $command);
@@ -277,7 +288,7 @@ function csf_deny_rule($hostname, $protocol, $rule_type, $port, $ip=false){
 /*
  *
  */
-function csf_validate_protocol($protocol){
+function csf_validate_protocol($protocol, $toLowerCase=false){
     try{
         if(empty($protocol)){
             throw new bException(tr('csf_validate_protocol(): No protocol specified'), 'not-specified');
@@ -286,13 +297,13 @@ function csf_validate_protocol($protocol){
         $protocol = strtoupper($protocol);
 
         switch($protocol){
-            case 'tcp':
+            case 'TCP':
                 // FALLTHROUGH
-            case 'udp':
+            case 'UDP':
                 // FALLTHROUGH
-            case 'tcp6':
+            case 'TCP6':
                 // FALLTHROUGH
-            case 'udp6':
+            case 'UDP6':
                 /*
                  * These are valid
                  */
@@ -302,7 +313,7 @@ function csf_validate_protocol($protocol){
                 throw new bException(tr('csf_validate_protocol(): Unknown protocol ":protocol" specified', array(':protocol' => $protocol)), 'unknown');
         }
 
-        return $protocol;
+        return $toLowerCase?strtolower($protocol):$protocol;
 
     }catch(Exception $e){
         throw new bException('csf_validate_protocol(): Failed', $e);
@@ -314,7 +325,7 @@ function csf_validate_protocol($protocol){
 /*
  *
  */
-function csf_validate_rule_type($rule_type){
+function csf_validate_rule_type($rule_type, $toUpperCase = false){
     try{
         if(empty($rule_type)){
             throw new bException(tr('csf_validate_rule_type(): No rule type specified'), 'not-specified');
@@ -335,7 +346,7 @@ function csf_validate_rule_type($rule_type){
                 throw new bException(tr('csf_validate_rule_type(): Unknown rule type ":ruletype" specified', array(':ruletype' => $rule_type)), 'unknown');
         }
 
-        return $rule_type;
+        return $toUpperCase?strtoupper($rule_type):$rule_type;
 
     }catch(Exception $e){
         throw new bException('csf_validate_rule_type(): Failed', $e);
@@ -381,6 +392,60 @@ function csf_validate_ports($ports){
 
     }catch(Exception $e){
         throw new bException('csf_validate_ports(): Failed', $e);
+    }
+}
+
+
+
+/*
+ *
+ */
+function csf_validate_testing($value){
+    try{
+        if(empty($value)){
+            $value = 0;
+        }
+
+        switch($value){
+            case '0':
+                // FALLTHROUGH
+            case '1':
+                //These are valid
+                break;
+        }
+        return $value;
+
+    }catch(Exception $e){
+        throw new bException('csf_validate_ports(): Failed', $e);
+    }
+}
+
+
+
+/*
+ *
+ */
+function csf_validate_restrictsyslog($value){
+    try{
+        if(empty($value)){
+            $value = 0;
+        }
+
+        switch($value){
+            case '0':
+                // FALLTHROUGH
+            case '1':
+                // FALLTHROUGH
+            case '2':
+                // FALLTHROUGH
+            case '3':
+                //These are valid
+                break;
+        }
+        return $value;
+
+    }catch(Exception $e){
+        throw new bException('csf_validate_restrictsyslog(): Failed', $e);
     }
 }
 ?>
