@@ -60,7 +60,7 @@ show($result);
         $ports     = cli_argument(4);
 
         cli_no_arguments_left();
-        $result = csf_set_ports(null, $protocol, $rule_type, $ports);
+        $result = csf_set_ports($hostname, $protocol, $rule_type, $ports);
 show($result);
         break;
 
@@ -69,7 +69,7 @@ show($result);
         $ip       = cli_argument(2);
 
         cli_no_arguments_left();
-        $result =  csf_allow_ip(null, $ip);
+        $result =  csf_allow_ip($hostname, $ip);
 show($result);
         break;
 
@@ -78,7 +78,7 @@ show($result);
         $ip       = cli_argument(2);
 
         cli_no_arguments_left();
-        $result =  csf_deny_ip(null, $ip);
+        $result =  csf_deny_ip($hostname, $ip);
 show($result);
         break;
 
@@ -95,11 +95,11 @@ show($result);
 
         switch($rule_type){
             case 'allow':
-                $result = csf_allow_rule(null, $protocol, $connection_type, $port, $ip, $comments);
+                $result = csf_allow_rule($hostname, $protocol, $connection_type, $port, $ip, $comments);
                 break;
 
             case 'deny':
-                $result =  csf_deny_rule(null, $protocol, $connection_type, $port, $ip, $comments);
+                $result =  csf_deny_rule($hostname, $protocol, $connection_type, $port, $ip, $comments);
                 break;
 
             case '';
@@ -118,7 +118,7 @@ show($result);
 
         cli_no_arguments_left();
 
-        $result   = csf_set_testing(null, $value);
+        $result   = csf_set_testing($hostname, $value);
 show($result);
         break;
 
@@ -128,7 +128,7 @@ show($result);
 
         cli_no_arguments_left();
 
-        $result   = csf_set_restrict_syslog(null, $value);
+        $result   = csf_set_restrict_syslog($hostname, $value);
 show($result);
         break;
 
