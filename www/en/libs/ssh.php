@@ -289,7 +289,7 @@ function ssh_exec($server, $commands = null, $background = false, $function = 'e
                 $proxies_string    = str_replace(':proxy_template', $proxy_string, $proxies_string);
                 $target_server     = $proxy['hostname'];
 
-                servers_add_to_known_host_file($proxy['hostname'], $user_known_hosts_file, $proxy['port']);
+                ssh_add_known_host($proxy['hostname'], $proxy['port'], $user_known_hosts_file);
             }
             /*
              * No more proxies, remove the template placeholder
@@ -303,7 +303,7 @@ function ssh_exec($server, $commands = null, $background = false, $function = 'e
         /*
         * Also add the target server
         */
-        servers_add_to_known_host_file($server['hostname'], $user_known_hosts_file, $server['port']);
+        ssh_add_known_host($server['hostname'], $server['port'], $user_known_hosts_file);
 
         /*
          * Execute command on remote server
