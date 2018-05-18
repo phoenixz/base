@@ -11,7 +11,7 @@
 /*
  *
  */
-function apache_set_proxy_configuration($hostname){
+function apache_get_proxy_template($hostname){
     try{
 
     }catch(Exception $e){
@@ -19,6 +19,24 @@ function apache_set_proxy_configuration($hostname){
     }
 }
 
+
+
+/*
+ *
+ */
+function apache_get_proxy_configuration_ssl($hostname){
+    try{
+
+    }catch(Exception $e){
+        throw new bException('apache_set_proxy_configuration(): Failed', $e);
+    }
+}
+
+
+
+/*
+ *
+ */
 function apache_turn_off_signature($hostname, $linux_version='ubuntu'){
     try{
         $config_path = apache_get_apache_config_path($linux_version);
@@ -32,6 +50,11 @@ function apache_turn_off_signature($hostname, $linux_version='ubuntu'){
     }
 }
 
+
+
+/*
+ *
+ */
 function apache_get_apache_config_path($linux_version){
     try{
         if(empty($linux_version)){
