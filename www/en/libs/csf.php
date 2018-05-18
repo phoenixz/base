@@ -445,4 +445,32 @@ function csf_validate_restrictsyslog($value){
         throw new bException('csf_validate_restrictsyslog(): Failed', $e);
     }
 }
+
+
+
+/*
+ *
+ */
+function csf_remove_allow_rule($hostname, $protocol, $connection_type, $port, $ip){
+    try{
+
+        return csf_exec($hostname, $command);
+
+    }catch(Exception $e){
+        throw new bException('csf_deny_rule(): Failed', $e);
+    }
+}
+
+
+
+/*
+ *
+ */
+function csf_remove_deny_rule($hostname, $protocol, $connection_type, $port, $ip){
+    try{
+
+    }catch(Exception $e){
+        throw new bException('csf_deny_rule(): Failed', $e);
+    }
+}
 ?>

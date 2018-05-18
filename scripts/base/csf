@@ -4,53 +4,82 @@
  *
  */
 $usage = './scripts/base/csf install
-./scripts/base/csf update-tcp-port HOSTNAME RULE_TYPE PORT IP
-./scripts/base/csf update-utp-port HOSTNAME RULE_TYPE PORT IP
-./scripts/base/csf update-udp-port HOSTNAME RULE_TYPE PORT IP';
+./scripts/base/csf start
+./scripts/base/csf restart
+./scripts/base/csf stop
+./scripts/base/csf update-ports
+./scripts/base/csf allow-ip
+./scripts/base/csf deny-ip
+./scripts/base/csf set-rule
+./scripts/base/csf set-testing-mode
+./scripts/base/csf set-restrict-syslog
 
-$help  = 'This script install csf firewall
+';
+
+$help  = 'This script configures csf
 
 
 METHODS
 
-update-tcp-port HOSTNAME TYPE PORTS             - Add rule for tcp port
 
-update-udp-port HOSTNAME TYPE PORTS             - Add rule for tcp port
+install HOSTNAME                            -install csf
+
+start   HOSTNAME                           -starts csf service
+
+restart HOSTNAME                           -restart csf service
+
+stop    HOSTNAME                           -stops csf service
+
+update-ports HOSTNAME PROTOCOL RULE_TYPE PORTS
+                                           -set ports for a specific protocol
+
+allow-ip HOSTNAME IP                       -allows access for an ip
+
+deny-ip HOSTNAME IP                        -denies access for an ip
+
+add-rule HOSTNAME RULE_TYPE PROTOCOL CONNECTION_TYPE PORT IP COMMENTS
+                                           -sets new rule for a specific port and ip
+
+remove-rule HOSTNAME RULE_TYPE PROTOCOL CONNECTION_TYPE PORT IP COMMENTS
+                                           -sets new rule for a specific port and ip
+
+set-testing-mode HOSTNAME VALUE            -sets value for testing mode
+
+set-restrict-syslog HOSTNAME VALUE         -sets value for restric syslog type
+
+
 
 ';
 
 require_once(__DIR__.'/../../libs/startup.php');
 cli_only();
-load_libs('csf,ssh,servers');
-
-define('CSF_ALLOW', '/etc/csf/csf.allow');
-define('CSF_DENY', '/etc/csf/csf.deny');
+load_libs('csf');
 
 $local = true;
 
 switch(cli_method()){
     case 'install':
         $hostname = cli_argument(1);
-        $result   = csf_install($hostname);
-show($result);
+        csf_install($hostname);
+
         break;
 
     case 'start':
         $hostname = cli_argument(1);
-        $result   = csf_start($hostname);
-show($result);
+        csf_start($hostname);
+
         break;
 
     case 'restart':
         $hostname = cli_argument(1);
-        $result   = csf_restart($hostname);
-show($result);
+        csf_restart($hostname);
+
         break;
 
     case 'stop':
         $hostname = cli_argument(1);
-        $result   = csf_stop($hostname);
-show($result);
+        csf_stop($hostname);
+
         break;
 
     case 'update-ports':
@@ -60,8 +89,8 @@ show($result);
         $ports     = cli_argument(4);
 
         cli_no_arguments_left();
-        $result = csf_set_ports($hostname, $protocol, $rule_type, $ports);
-show($result);
+        csf_set_ports($hostname, $protocol, $rule_type, $ports);
+
         break;
 
     case 'allow-ip':
@@ -69,8 +98,8 @@ show($result);
         $ip       = cli_argument(2);
 
         cli_no_arguments_left();
-        $result =  csf_allow_ip($hostname, $ip);
-show($result);
+        csf_allow_ip($hostname, $ip);
+
         break;
 
     case 'deny-ip':
@@ -78,11 +107,11 @@ show($result);
         $ip       = cli_argument(2);
 
         cli_no_arguments_left();
-        $result =  csf_deny_ip($hostname, $ip);
-show($result);
+        csf_deny_ip($hostname, $ip);
+
         break;
 
-    case 'set-rule':
+    case 'add-rule':
         $hostname        = cli_argument(1);
         $rule_type       = cli_argument(2);
         $protocol        = cli_argument(3);
@@ -109,7 +138,36 @@ show($result);
                 throw new bException(tr('Unknown rule type ":ruletype"', array(':ruletype' => $rule_type)), 'unknown');
 
         }
-show($result);
+        break;
+
+    case 'remove-rule':
+        $hostname        = cli_argument(1);
+        $rule_type       = cli_argument(2);
+        $protocol        = cli_argument(3);
+        $connection_type = cli_argument(4);
+        $port            = cli_argument(5);
+        $ip              = cli_argument(6);
+        $comments        = cli_argument(7);
+
+        cli_no_arguments_left();
+
+        switch($rule_type){
+            case 'allow':
+                $result = csf_remove_allow_rule($hostname, $protocol, $connection_type, $port, $ip);
+                break;
+
+            case 'deny':
+                $result = csf_remove_deny_rule($hostname, $protocol, $connection_type, $port, $ip);
+                break;
+
+            case '';
+                throw new bException(tr('No rule type specified'), 'not-specified');
+
+            default:
+                throw new bException(tr('Unknown rule type ":ruletype"', array(':ruletype' => $rule_type)), 'unknown');
+
+        }
+
         break;
 
     case 'set-testing-mode':
@@ -117,9 +175,8 @@ show($result);
         $value    = cli_argument(2);
 
         cli_no_arguments_left();
+        csf_set_testing($hostname, $value);
 
-        $result   = csf_set_testing($hostname, $value);
-show($result);
         break;
 
     case 'set-restrict-syslog':
@@ -127,9 +184,8 @@ show($result);
         $value    = cli_argument(2);
 
         cli_no_arguments_left();
+        csf_set_restrict_syslog($hostname, $value);
 
-        $result   = csf_set_restrict_syslog($hostname, $value);
-show($result);
         break;
 
     case '':
@@ -138,5 +194,4 @@ show($result);
     default:
         throw new bException(tr('Unknown method ":method"', array(':method' => cli_method())), 'unknown-method');
 }
-//$command     = 'sed -i "s/'.$remove_rule.'//g" '.$remove_from_file.'; if ! grep "'.$complete_rule.'" '.$target_file.'; then echo "'.$complete_rule.'" >> '.$target_file.'; fi; csf -r';
 ?>
