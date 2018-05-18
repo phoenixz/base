@@ -78,11 +78,13 @@ function apache_get_apache_config_path($linux_version='ubuntu'){
             case 'ubuntu':
                 $config_path = '/etc/apache2/apache2.conf';
                 break;
+
             case 'centos6':
                 // FALLTROUGH
             case 'centos7':
                 $config_path = '/etc/httpd/conf/httpd.conf';
                 break;
+
             default:
                 throw new bException(tr('apache_get_apache_config_path(): Invalid linux version value ":linuxversion" specified', array(':linuxversion' => $linux_version)), 'invalid');
         }
@@ -108,11 +110,11 @@ function apache_get_paht_vhosts($linux_version='ubuntu'){
             case 'ubuntu':
                 $vhost_path = '/etc/apache2/sites-available/';
                 break;
-            case 'centos6':
-                // FALLTROUGH
+
             case 'centos7':
                 $vhost_path = '/etc/httpd/conf.d/';
                 break;
+
             default:
                 throw new bException(tr('apache_get_paht_vhosts(): Invalid linux version value ":linuxversion" specified', array(':linuxversion' => $linux_version)), 'invalid');
         }
