@@ -1,48 +1,84 @@
 <?php
 /*
- * Apache library
+ * This is the standard PHP apache frontend library
  *
+ * This library contains functions to manage apache and its configuration on remove or local servers
  *
  * @license http://opensource.org/licenses/GPL-2.0 GNU Public License, Version 2
+ * @copyright Capmega <copyright@capmega.com>
  */
 
 
 
 /*
- *
- *<VirtualHost *:80>
-    ServerName strategyq.org
-    ServerAlias *.strategyq.org
-    ProxyPreserveHost On
-
-    ProxyPass / http://189.210.119.175:40001/
-    ProxyPassReverse / http://189.210.119.175:40001/
-</VirtualHost>
+ * Initialize the library
+ * Automatically executed by libs_load()
  */
-function apache_set_vhost($hostname, $vhost_name, $params, $port, $linux_version='ubuntu'){
+function apache_library_init(){
     try{
-        $params     = apache_validate_params($params);
-        $vhost_name = apache_validate_vhostname($vhost_name);
-        $full_path  = apache_get_paht_vhosts($linux_version).$vhost_name;
-
-        /*
-         *
-         *Cleaning content of file in case already exist
-         */
-        $command  = '> '.$full_path.';';
-        $command .= 'echo "<VirtualHost *:'.$port.'>" >> '.$full_path.';';
-
-        foreach($params as $key => $value){
-            $command .= 'echo  "  '.$key.' '.$value.'" >> '.$full_path.';';
-        }
-        $command .= 'echo "</VirtualHost>" >> '.$full_path.';';
-
-        $result = servers_exec($hostname, $command);
-
-        return $result;
+        load_libs('servers');
 
     }catch(Exception $e){
-        throw new bException('apache_set_vhost(): Failed', $e);
+        throw new bException('apache_library_init(): Failed', $e);
+    }
+}
+
+
+
+/*
+ * Example:
+ *
+ * <VirtualHost *:80>
+ *   ServerName servername.org
+ *   ServerAlias *.servername.org
+ *   ProxyPreserveHost On
+ *
+ *   ProxyPass / http://255.255.255.255:9999/
+ *   ProxyPassReverse / http://1.1.1.1:9999/
+ * </VirtualHost>
+ */
+function apache_write_vhost($hostname, $vhost_name, $params, $port, $linux_version='ubuntu'){
+    try{
+        $os = servers_get_os($hostname);
+
+        switch($os['name']){
+            case 'debian':
+                // FALLTHROUGH
+            case 'ubuntu':
+                // FALLTHROUGH
+            case 'mint':
+                $params    = array_ensure($params);
+                $full_path = apache_get_vhosts_path($os['name']).$vhost_name.'.conf';
+
+                /*
+                 * Cleaning content of file in case already exist
+                 */
+                $command  = '> '.$full_path.';';
+                $command .= 'echo "<VirtualHost *:'.$port.'>" >> '.$full_path.';';
+
+                foreach($params as $key => $value){
+                    $command .= 'echo  "  '.$key.' '.$value.'" >> '.$full_path.';';
+                }
+
+                $command .= 'echo "</VirtualHost>" >> '.$full_path.';';
+                $result   = servers_exec($hostname, $command);
+
+                return $result;
+
+            case 'redhat':
+                // FALLTHROUGH
+            case 'fedora':
+                // FALLTHROUGH
+            case 'centos':
+// :TODO: Implement
+                break;
+
+            default:
+                throw new bException(tr('apache_write_vhost(): Unknown operating system ":os" detected', array(':os' => $os['name'])), 'unknown');
+        }
+
+    }catch(Exception $e){
+        throw new bException('apache_write_vhost(): Failed', $e);
     }
 }
 
@@ -51,11 +87,34 @@ function apache_set_vhost($hostname, $vhost_name, $params, $port, $linux_version
 /*
  *
  */
-function apache_turn_off_signature($hostname, $linux_version='ubuntu'){
+function apache_set_signature($hostname, $type){
     try{
-        $config_path = apache_get_apache_config_path($linux_version);
-        $command     = 'if ! grep "ServerSignature" '.$config_path.'; then echo "ServerSignature off" >> '.$config_path.'; fi;if ! grep "ServerTokens" '.$config_path.'; then echo "ServerTokens Prod" >> '.$config_path.'; fi;';
-        $result      = servers_exec($hostname, $command);
+        $os = servers_get_os($hostname);
+
+        switch($os['name']){
+            case 'debian':
+                // FALLTHROUGH
+            case 'ubuntu':
+                // FALLTHROUGH
+            case 'mint':
+                $config_path = apache_get_config_path($os['name']);
+                $command     = 'if ! grep "ServerSignature" '.$config_path.'; then echo "ServerSignature off" >> '.$config_path.'; fi;if ! grep "ServerTokens" '.$config_path.'; then echo "ServerTokens Prod" >> '.$config_path.'; fi;';
+                $result      = servers_exec($hostname, $command);
+                break;
+
+            case 'redhat':
+                // FALLTHROUGH
+            case 'fedora':
+                // FALLTHROUGH
+            case 'centos':
+                //$config_path = apache_get_config_path($os['name']);
+                //$command     = 'if ! grep "ServerSignature" '.$config_path.'; then echo "ServerSignature off" >> '.$config_path.'; fi;if ! grep "ServerTokens" '.$config_path.'; then echo "ServerTokens Prod" >> '.$config_path.'; fi;';
+                //$result      = servers_exec($hostname, $command);
+                break;
+
+            default:
+                throw new bException(tr('apache_set_signature(): Unknown operating system ":os" detected', array(':os' => $os['name'])), 'unknown');
+        }
 
         return $result;
 
@@ -69,30 +128,33 @@ function apache_turn_off_signature($hostname, $linux_version='ubuntu'){
 /*
  *
  */
-function apache_get_apache_config_path($linux_version='ubuntu'){
+function apache_get_config_path($os_name){
     try{
-        if(empty($linux_version)){
-            throw new bException(tr('No linux version'), 'not-specified');
-        }
-        switch($linux_version){
+        switch($os_name){
+            case 'debian':
+                // FALLTHROUGH
             case 'ubuntu':
+                // FALLTHROUGH
+            case 'mint':
                 $config_path = '/etc/apache2/apache2.conf';
                 break;
 
-            case 'centos6':
-                // FALLTROUGH
-            case 'centos7':
+            case 'redhat':
+                // FALLTHROUGH
+            case 'fedora':
+                // FALLTHROUGH
+            case 'centos':
                 $config_path = '/etc/httpd/conf/httpd.conf';
                 break;
 
             default:
-                throw new bException(tr('apache_get_apache_config_path(): Invalid linux version value ":linuxversion" specified', array(':linuxversion' => $linux_version)), 'invalid');
+                throw new bException(tr('apache_get_config_path(): Unknown operating system ":os" detected', array(':os' => $os_name)), 'unknown');
         }
 
         return $config_path;
 
     }catch(Exception $e){
-        throw new bException('empty(): Failed', $e);
+        throw new bException('apache_get_config_path(): Failed', $e);
     }
 }
 
@@ -101,74 +163,33 @@ function apache_get_apache_config_path($linux_version='ubuntu'){
 /*
  *
  */
-function apache_get_paht_vhosts($linux_version='ubuntu'){
+function apache_get_vhosts_path($os_name){
     try{
-        if(empty($linux_version)){
-            throw new bException(tr('No linux version'), 'not-specified');
-        }
-        switch($linux_version){
+        switch($os_name){
+            case 'debian':
+                // FALLTHROUGH
             case 'ubuntu':
+                // FALLTHROUGH
+            case 'mint':
                 $vhost_path = '/etc/apache2/sites-available/';
                 break;
 
-            case 'centos7':
+            case 'redhat':
+                // FALLTHROUGH
+            case 'fedora':
+                // FALLTHROUGH
+            case 'centos':
                 $vhost_path = '/etc/httpd/conf.d/';
                 break;
 
             default:
-                throw new bException(tr('apache_get_paht_vhosts(): Invalid linux version value ":linuxversion" specified', array(':linuxversion' => $linux_version)), 'invalid');
+                throw new bException(tr('apache_get_vhosts_path(): Unknown operating system ":os" detected', array(':os' => $os_name)), 'unknown');
         }
 
         return $vhost_path;
 
     } catch(Exception $e){
-        throw new bException('empty(): Failed', $e);
-    }
-}
-
-
-
-/*
- *
- */
-function apache_validate_params($params){
-    try{
-        if(empty($params)){
-            throw new bException(tr('No linux version'), 'not-specified');
-        }
-
-        if(!is_array($params)){
-            throw new bException(tr('Params are not valid. No correct format. Must be an array key=>value'), 'invalid');
-        }
-
-        return $params;
-
-    }catch(Exception $e){
-        throw new bException('apache_validate_params(): Failed', $e);
-    }
-}
-
-
-
-/*
- *
- */
-function apache_validate_vhostname($vhost_name){
-    try{
-        if(empty($vhost_name)){
-            throw new bException(tr('No vhost name specified'), 'not-specified');
-        }
-
-        preg_match("/.conf\z/", $vhost_name, $matches);
-
-        if(empty($matches)){
-            $vhost_name = rtrim($vhost_name,'.').'.conf';
-        }
-
-        return $vhost_name;
-
-    }catch(Exception $e){
-        throw new bException('apache_validate_vhostname(): Failed', $e);
+        throw new bException('apache_get_vhosts_path(): Failed', $e);
     }
 }
 ?>
