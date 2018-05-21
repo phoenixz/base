@@ -312,37 +312,45 @@ function servers_get($host, $database = false, $return_proxies = true, $limited_
 
 
 /*
- *
+ * Detect the operating system on the specified host
+ * @param  string $hostname The name of the host where to detect the operating system
+ * @return array            An array containing the operatings system type (linux, windows, macos, etc), group (ubuntu group, redhad group, debian group), name (ubuntu, mint, fedora, etc), and version (7.4, 16.04, etc)
+ * @see servers_get_os()
  */
 function servers_detect_os($hostname){
     try{
-        $output_version  = servers_exec($hostname, 'cat /proc/version');
+        /*
+         *
+         */
+        $output_version = servers_exec($hostname, 'cat /proc/version');
 
         if(empty($output_version)){
             throw new bException(tr('servers_detect_os(): No operating system found on /proc/version for hostname ":hostname"', array(':hostname' => $hostname)), 'unknown');
         }
 
-        preg_match("/(ubuntu |debian |red had )/i", $output_version, $matches);
+        /*
+         *
+         */
+        preg_match('/(ubuntu |debian |red hat )/i', $output_version, $matches);
 
         if(empty($matches)){
             throw new bException(tr('servers_detect_os(): No group version found'), 'unknown');
         }
 
-        $group_name = trim(strtolower($matches[0]));
+        $group = trim(strtolower($matches[0]));
 
-        switch($group_name){
-            case 'ubuntu':
-            case 'lubuntu':
-            case 'mint':
-            case 'edubuntu':
-            case 'xubuntu':
+        switch($group){
+            case 'debian':
                 $release = servers_exec($hostname, 'cat /etc/issue');
                 break;
-            case 'red hat':
 
-                $release = servers_exec($hostname, 'cat /etc/redhat-release');
+            case 'ubuntu':
+                $release = servers_exec($hostname, 'cat /etc/issue');
                 break;
-            case 'debian':
+
+            case 'red hat':
+                $group   = 'redhat';
+                $release = servers_exec($hostname, 'cat /etc/redhat-release');
                 break;
 
             default:
@@ -350,28 +358,33 @@ function servers_detect_os($hostname){
         }
 
         if(empty($release)){
-
-            throw new bException(tr('servers_detect_os(): No data found on /etc/issue for os group ":group"', array(':group' => $matches[0])), 'unknown');
-
-        }else{
-            $server_os['group'] = $group_name;
-
-            preg_match("/[a-z]*\s*[a-z]*/i", $release, $name_match);
-
-            if(!isset($name_match[0])){
-                throw new bException(tr('servers_detect_os(): No name found /etc/issue for os group ":group"', array(':group' => $name_match[0])), 'unknown');
-            } else{
-                $server_os['name'] = $name_match[0];
-            }
-
-            preg_match("/\d*\.?\d+/", $release, $version);
-
-            if(!isset($version[0])){
-                throw new bException(tr('servers_detect_os(): No version found for os ":os"', array(':os' => $server_os['name'])), 'unknown');
-            } else{
-                $server_os['version'] = $version[0];
-            }
+            throw new bException(tr('servers_detect_os(): No data found on for os group ":group"', array(':group' => $matches[0])), 'not-exist');
         }
+
+        $server_os['type']  = 'linux';
+        $server_os['group'] = $group;
+
+        /*
+         *
+         */
+        preg_match('/((:?[kxl]|edu)?ubuntu|mint|debian|red hat enterprise|fedora|centos).+?([0-9.])+/i', $release, $matches);
+
+        if(!isset($matches[0])){
+            throw new bException(tr('servers_detect_os(): No name found for os group ":group"', array(':group' => $matches[0])), 'not-exist');
+        }
+
+        $server_os['name'] = $matches[0];
+
+        /*
+         *
+         */
+        preg_match('/\d*\.?\d+/', $release, $version);
+
+        if(!isset($version[0])){
+            throw new bException(tr('servers_detect_os(): No version found for os ":os"', array(':os' => $server_os['name'])), 'not-exist');
+        }
+
+        $server_os['version'] = $version[0];
 
         return $server_os;
 
