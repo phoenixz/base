@@ -14,7 +14,7 @@
  */
 function apache_library_init(){
     try{
-        load_config('servers');
+        load_libs('servers');
 
     }catch(Exception $e){
         throw new bException('apache_library_init(): Failed', $e);
@@ -69,32 +69,28 @@ function apache_set_vhost($hostname, $vhost_name, $params, $port){
 
 
 /*
- *
+ *ServerName
+ *ServerAdmin
+ *ServerSignature
+ *ServerTokens
+ *UseCanonicalName
+ *UseCanonicalPhysicalPort
  */
-function apache_turn_off_signature($hostname){
+function apache_set_identification($hostname, $params){
     try{
-        $server_os  = servers_get_os($hostname);
+        $command     = '';
+        $config_path = apache_get_path_config($hostname);;
 
-        switch($server_os['id']){
-            case 'linuxmint':
-                //FALL THROUGH
-            case 'ubuntu':
-                $command     = 'if ! grep "ServerSignature" /etc/apache2/apache2.conf; then echo "ServerSignature off" >> /etc/apache2/apache2.conf; fi;if ! grep "ServerTokens" /etc/apache2/apache2.conf; then echo "ServerTokens Prod" >> /etc/apache2/apache2.conf; fi;';
-                $result      = servers_exec($hostname, $command);
-                break;
-
-            case 'centos':
-                $resutl = array();
-                break;
-
-            default:
-                throw new bException(tr('apache_turn_off_signature(): Invalid operating system ":server_os" specified', array(':server_od' => $server_os['id'])), 'invalid');
+        foreach($params as $key => $value){
+            $command .= 'if grep "'.$key.'" "'.$config_path.'"; then sed -i "s/'.$key.'[[:space:]]*.*/'.$key.' '.$value.'/g" "'.$config_path.'"; else echo "'.$key.' '.$value.'" >> '.$config_path.'; fi;';
         }
+
+        $result      = servers_exec($hostname, $command);
 
         return $result;
 
     }catch(Exception $e){
-        throw new bException('apache_turn_off_signature(): Failed', $e);
+        throw new bException('apache_set_identification(): Failed', $e);
     }
 }
 
@@ -127,6 +123,37 @@ function apache_get_path_vhosts($server_os){
 
     } catch(Exception $e){
         throw new bException('apache_get_path_vhosts(): Failed', $e);
+    }
+}
+
+
+
+/*
+ *
+ */
+function apache_get_path_config($hostname){
+    try{
+        $server_os = servers_get_os($hostname);
+
+        switch($server_os['id']){
+            case 'linuxmint':
+                //FALL THROUGH
+            case 'ubuntu':
+                $path = '/etc/apache2/apache2.conf';
+                break;
+
+            case 'centos':
+                $path = '/etc/httpd/conf/httpd.conf';
+                break;
+
+            default:
+                throw new bException(tr('apache_get_path_config(): Invalid operating system ":os" specified', array(':os' => $server_os['id'])), 'invalid');
+        }
+
+        return $path;
+
+    }catch(Exception $e){
+        throw new bException('apache_get_config(): Failed', $e);
     }
 }
 
