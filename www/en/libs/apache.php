@@ -42,7 +42,7 @@ function apache_set_vhost($hostname, $vhost_name, $params, $port){
             $vhost_name .= '.conf';
         }
 
-        $server_os  = servers_get_os($hostname);
+        $server_os  = servers_detect_os($hostname);
         $full_path  = apache_get_path_vhosts($server_os).$vhost_name;
 
         /*
@@ -133,7 +133,7 @@ function apache_get_path_vhosts($server_os){
  */
 function apache_get_path_config($hostname){
     try{
-        $server_os = servers_get_os($hostname);
+        $server_os = servers_detect_os($hostname);
 
         switch($server_os['id']){
             case 'linuxmint':
