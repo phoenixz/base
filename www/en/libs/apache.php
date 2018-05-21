@@ -37,7 +37,7 @@ function apache_library_init(){
  *   ProxyPassReverse / http://1.1.1.1:9999/
  * </VirtualHost>
  */
-function apache_write_vhost($hostname, $vhost_name, $params, $port, $linux_version='ubuntu'){
+function apache_write_vhost($hostname, $vhost_name, $params, $port){
     try{
         $os = servers_get_os($hostname);
 
@@ -61,9 +61,8 @@ function apache_write_vhost($hostname, $vhost_name, $params, $port, $linux_versi
                 }
 
                 $command .= 'echo "</VirtualHost>" >> '.$full_path.';';
-                $result   = servers_exec($hostname, $command);
-
-                return $result;
+                servers_exec($hostname, $command);
+                break;
 
             case 'redhat':
                 // FALLTHROUGH
@@ -85,111 +84,91 @@ function apache_write_vhost($hostname, $vhost_name, $params, $port, $linux_versi
 
 
 /*
+ * ....
  *
+ * ServerName
+ * ServerAdmin
+ * ServerSignature
+ * ServerTokens
+ * UseCanonicalName
+ * UseCanonicalPhysicalPort
  */
-function apache_set_signature($hostname, $type){
+function apache_set_identification($hostname, $params){
     try{
-        $os = servers_get_os($hostname);
+        $command     = '';
+        $config_path = apache_get_config_path($hostname);;
 
-        switch($os['name']){
-            case 'debian':
-                // FALLTHROUGH
-            case 'ubuntu':
-                // FALLTHROUGH
-            case 'mint':
-                $config_path = apache_get_config_path($os['name']);
-                $command     = 'if ! grep "ServerSignature" '.$config_path.'; then echo "ServerSignature off" >> '.$config_path.'; fi;if ! grep "ServerTokens" '.$config_path.'; then echo "ServerTokens Prod" >> '.$config_path.'; fi;';
-                $result      = servers_exec($hostname, $command);
-                break;
-
-            case 'redhat':
-                // FALLTHROUGH
-            case 'fedora':
-                // FALLTHROUGH
-            case 'centos':
-                //$config_path = apache_get_config_path($os['name']);
-                //$command     = 'if ! grep "ServerSignature" '.$config_path.'; then echo "ServerSignature off" >> '.$config_path.'; fi;if ! grep "ServerTokens" '.$config_path.'; then echo "ServerTokens Prod" >> '.$config_path.'; fi;';
-                //$result      = servers_exec($hostname, $command);
-                break;
-
-            default:
-                throw new bException(tr('apache_set_signature(): Unknown operating system ":os" detected', array(':os' => $os['name'])), 'unknown');
+        foreach($params as $key => $value){
+            $command .= 'if grep "'.$key.'" "'.$config_path.'"; then sed -i "s/'.$key.'[[:space:]]*.*/'.$key.' '.$value.'/g" "'.$config_path.'"; else echo "'.$key.' '.$value.'" >> '.$config_path.'; fi;';
         }
 
-        return $result;
+        servers_exec($hostname, $command);
 
     }catch(Exception $e){
-        throw new bException('apache_turn_off_signature(): Failed', $e);
+        throw new bException('apache_set_identification(): Failed', $e);
     }
 }
 
 
 
 /*
- *
+ * .......
  */
-function apache_get_config_path($os_name){
+function apache_get_vhosts_path($server_os){
     try{
-        switch($os_name){
-            case 'debian':
-                // FALLTHROUGH
-            case 'ubuntu':
-                // FALLTHROUGH
-            case 'mint':
-                $config_path = '/etc/apache2/apache2.conf';
-                break;
-
-            case 'redhat':
-                // FALLTHROUGH
-            case 'fedora':
-                // FALLTHROUGH
-            case 'centos':
-                $config_path = '/etc/httpd/conf/httpd.conf';
-                break;
-
-            default:
-                throw new bException(tr('apache_get_config_path(): Unknown operating system ":os" detected', array(':os' => $os_name)), 'unknown');
+        if(empty($server_os['name'])){
+            throw new bException(tr('apache_get_vhosts_path(): No operating system specified'), 'not-specified');
         }
-
-        return $config_path;
-
-    }catch(Exception $e){
-        throw new bException('apache_get_config_path(): Failed', $e);
-    }
-}
-
-
-
-/*
- *
- */
-function apache_get_vhosts_path($os_name){
-    try{
-        switch($os_name){
-            case 'debian':
-                // FALLTHROUGH
+        switch($server_os['name']){
+            case 'linuxmint':
+                //FALL THROUGH
             case 'ubuntu':
-                // FALLTHROUGH
-            case 'mint':
                 $vhost_path = '/etc/apache2/sites-available/';
                 break;
 
-            case 'redhat':
-                // FALLTHROUGH
-            case 'fedora':
-                // FALLTHROUGH
             case 'centos':
                 $vhost_path = '/etc/httpd/conf.d/';
                 break;
 
             default:
-                throw new bException(tr('apache_get_vhosts_path(): Unknown operating system ":os" detected', array(':os' => $os_name)), 'unknown');
+                throw new bException(tr('apache_get_vhosts_path(): Invalid operating system ":os" specified', array(':os' => $server_os['name'])), 'invalid');
         }
 
         return $vhost_path;
 
     } catch(Exception $e){
         throw new bException('apache_get_vhosts_path(): Failed', $e);
+    }
+}
+
+
+
+/*
+ *
+ */
+function apache_get_config_path($hostname){
+    try{
+        $server_os = servers_detect_os($hostname);
+
+        switch($server_os['name']){
+            case 'linuxmint':
+                //FALL THROUGH
+            case 'ubuntu':
+                $path = '/etc/apache2/apache2.conf';
+                break;
+
+            case 'centos':
+                $path = '/etc/httpd/conf/httpd.conf';
+                break;
+
+            default:
+                throw new bException(tr('apache_get_config_path(): Invalid operating system ":os" specified', array(':os' => $server_os['name'])), 'invalid');
+        }
+
+        return $path;
+
+    }catch(Exception $e){
+        throw new bException('apache_get_config_path(): Failed', $e);
     }
 }
 ?>
