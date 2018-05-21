@@ -274,6 +274,46 @@ function csf_deny_rule($hostname, $protocol, $rule_type, $port, $ip=false, $comm
 
 
 
+
+/*
+ *
+ */
+function csf_remove_allow_rule($hostname, $protocol, $connection_type, $port, $ip){
+    try{
+        $protocol        = csf_validate_protocol($protocol, true);
+        $connection_type = csf_validate_rule_type($connection_type);
+        $port            = csf_validate_ports($port);
+
+        $result = csf_exec($hostname, 'sed -i -E \'s/'.$protocol.'\|'.$connection_type.'\|d='.$port.'\|s='.$ip.'//g\' /etc/csf/csf.allow');
+
+        return $result;
+
+    }catch(Exception $e){
+        throw new bException('csf_remove_allow_rule(): Failed', $e);
+    }
+}
+
+
+
+/*
+ *
+ */
+function csf_remove_deny_rule($hostname, $protocol, $connection_type, $port, $ip){
+    try{
+        $protocol        = csf_validate_protocol($protocol, true);
+        $connection_type = csf_validate_rule_type($connection_type);
+        $port            = csf_validate_ports($port);
+
+        $result = csf_exec($hostname, 'sed -i -E \'s/'.$protocol.'\|'.$connection_type.'\|d='.$port.'\|s='.$ip.'//g\' /etc/csf/csf.deny');
+
+        return $result;
+    }catch(Exception $e){
+        throw new bException('csf_deny_rule(): Failed', $e);
+    }
+}
+
+
+
 /*
  *
  */
@@ -443,45 +483,6 @@ function csf_validate_restrictsyslog($value){
 
     }catch(Exception $e){
         throw new bException('csf_validate_restrictsyslog(): Failed', $e);
-    }
-}
-
-
-
-/*
- *
- */
-function csf_remove_allow_rule($hostname, $protocol, $connection_type, $port, $ip){
-    try{
-        $protocol        = csf_validate_protocol($protocol, true);
-        $connection_type = csf_validate_rule_type($connection_type);
-        $port            = csf_validate_ports($port);
-
-        $result = csf_exec($hostname, 'sed -i -E \'s/'.$protocol.'\|'.$connection_type.'\|d='.$port.'\|s='.$ip.'//g\' /etc/csf/csf.allow');
-
-        return $result;
-
-    }catch(Exception $e){
-        throw new bException('csf_remove_allow_rule(): Failed', $e);
-    }
-}
-
-
-
-/*
- *
- */
-function csf_remove_deny_rule($hostname, $protocol, $connection_type, $port, $ip){
-    try{
-        $protocol        = csf_validate_protocol($protocol, true);
-        $connection_type = csf_validate_rule_type($connection_type);
-        $port            = csf_validate_ports($port);
-
-        $result = csf_exec($hostname, 'sed -i -E \'s/'.$protocol.'\|'.$connection_type.'\|d='.$port.'\|s='.$ip.'//g\' /etc/csf/csf.deny');
-
-        return $result;
-    }catch(Exception $e){
-        throw new bException('csf_deny_rule(): Failed', $e);
     }
 }
 ?>
