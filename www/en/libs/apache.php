@@ -101,10 +101,10 @@ function apache_set_identification($hostname, $params){
  */
 function apache_get_path_vhosts($server_os){
     try{
-        if(empty($server_os['id'])){
+        if(empty($server_os['name'])){
             throw new bException(tr('apache_get_path_vhosts(): No operating system specified'), 'not-specified');
         }
-        switch($server_os['id']){
+        switch($server_os['name']){
             case 'linuxmint':
                 //FALL THROUGH
             case 'ubuntu':
@@ -116,7 +116,7 @@ function apache_get_path_vhosts($server_os){
                 break;
 
             default:
-                throw new bException(tr('apache_get_path_vhosts(): Invalid linux version value ":linuxversion" specified', array(':linuxversion' => $linux_version)), 'invalid');
+                throw new bException(tr('apache_get_path_vhosts(): Invalid operating system ":os" specified', array(':os' => $server_os['name'])), 'invalid');
         }
 
         return $vhost_path;
@@ -135,7 +135,7 @@ function apache_get_path_config($hostname){
     try{
         $server_os = servers_detect_os($hostname);
 
-        switch($server_os['id']){
+        switch($server_os['name']){
             case 'linuxmint':
                 //FALL THROUGH
             case 'ubuntu':
@@ -147,7 +147,7 @@ function apache_get_path_config($hostname){
                 break;
 
             default:
-                throw new bException(tr('apache_get_path_config(): Invalid operating system ":os" specified', array(':os' => $server_os['id'])), 'invalid');
+                throw new bException(tr('apache_get_path_config(): Invalid operating system ":os" specified', array(':os' => $server_os['name'])), 'invalid');
         }
 
         return $path;
