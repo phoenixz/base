@@ -312,39 +312,64 @@ function servers_get($host, $database = false, $return_proxies = true, $limited_
 
 
 /*
-*NAME="Linux Mint"
-*VERSION="18.3 (Sylvia)"
-*ID=linuxmint
-*ID_LIKE=ubuntu
-*PRETTY_NAME="Linux Mint 18.3"
-*VERSION_ID="18.3"
-*HOME_URL="http://www.linuxmint.com/"
-*SUPPORT_URL="http://forums.linuxmint.com/"
-*BUG_REPORT_URL="http://bugs.launchpad.net/linuxmint/"
-*VERSION_CODENAME=sylvia
-*UBUNTU_CODENAME=xenial
+ *
  */
 function servers_detect_os($hostname){
     try{
-        $result  = servers_exec($hostname, 'test -e /etc/os-release && cat /etc/os-release');
+        $output_version  = servers_exec($hostname, 'cat /proc/version');
 
-        if(empty($result)){
-            throw new bException(tr('servers_detect_os(): No operating system found on /etc/os-release for hostname ":hostname"', array(':hostname' => $host)), 'unknown');
+        if(empty($output_version)){
+            throw new bException(tr('servers_detect_os(): No operating system found on /proc/version for hostname ":hostname"', array(':hostname' => $hostname)), 'unknown');
         }
 
-        $server_os   = array();
-        $server_info = array_filter(explode("\n", $result));
+        preg_match("/(ubuntu |debian |red had )/i", $output_version, $matches);
 
-        foreach($server_info as $info){
-            if(strpos($info, '=') !== false){
-                $info = explode("=", $info);
-                if($info[0] == 'ID'){
-                    $server_os['name'] = $info[1];
-                }
+        if(empty($matches)){
+            throw new bException(tr('servers_detect_os(): No group version found'), 'unknown');
+        }
 
-                if($info[0] == 'VERSION_ID'){
-                    $server_os['version'] = $info[1];
-                }
+        $group_name = trim(strtolower($matches[0]));
+
+        switch($group_name){
+            case 'ubuntu':
+            case 'lubuntu':
+            case 'mint':
+            case 'edubuntu':
+            case 'xubuntu':
+                $release = servers_exec($hostname, 'cat /etc/issue');
+                break;
+            case 'red hat':
+
+                $release = servers_exec($hostname, 'cat /etc/redhat-release');
+                break;
+            case 'debian':
+                break;
+
+            default:
+                throw new bException(tr('servers_detect_os(): No os group valid :group', array(':group' => $matches[0])), 'invalid');
+        }
+
+        if(empty($release)){
+
+            throw new bException(tr('servers_detect_os(): No data found on /etc/issue for os group ":group"', array(':group' => $matches[0])), 'unknown');
+
+        }else{
+            $server_os['group'] = $group_name;
+
+            preg_match("/[a-z]*\s*[a-z]*/i", $release, $name_match);
+
+            if(!isset($name_match[0])){
+                throw new bException(tr('servers_detect_os(): No name found /etc/issue for os group ":group"', array(':group' => $name_match[0])), 'unknown');
+            } else{
+                $server_os['name'] = $name_match[0];
+            }
+
+            preg_match("/\d*\.?\d+/", $release, $version);
+
+            if(!isset($version[0])){
+                throw new bException(tr('servers_detect_os(): No version found for os ":os"', array(':os' => $server_os['name'])), 'unknown');
+            } else{
+                $server_os['version'] = $version[0];
             }
         }
 
