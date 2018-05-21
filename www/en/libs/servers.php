@@ -308,4 +308,48 @@ function servers_get($host, $database = false, $return_proxies = true, $limited_
         throw new bException('servers_get(): Failed', $e);
     }
 }
+
+
+
+/*
+ *DISTRIB_ID=LinuxMint
+ *DISTRIB_RELEASE=18.3
+ *DISTRIB_CODENAME=sylvia
+ *DISTRIB_DESCRIPTION="Linux Mint 18.3 Sylvia"
+ *NAME="Linux Mint"
+ *VERSION="18.3 (Sylvia)"
+ *ID=linuxmint
+ *ID_LIKE=ubuntu
+ *PRETTY_NAME="Linux Mint 18.3"
+ *VERSION_ID="18.3"
+ *HOME_URL="http://www.linuxmint.com/"
+ *SUPPORT_URL="http://forums.linuxmint.com/"
+ *BUG_REPORT_URL="http://bugs.launchpad.net/linuxmint/"
+ *VERSION_CODENAME=sylvia
+ *UBUNTU_CODENAME=xenial
+ */
+function servers_get_os($hostname){
+    try{
+        $result  = servers_exec($hostname, 'cat /etc/*-release');
+
+        if(empty($result)){
+            throw new bException(tr('servers_get_os(): No operating system found on /etc/*release for hostname ":hostname"', array(':hostname' => $host)), 'unknown');
+        }
+
+        $server_os   = array();
+        $server_info = array_filter(explode("\n", $result));
+
+        foreach($server_info as $info){
+            $info = explode("=", $info);
+            if(isset($info[0]) and isset($info[1])){
+                $server_os[strtolower($info[0])] = $info[1];
+            }
+        }
+
+        return $server_os;
+
+    }catch(Exception $e){
+        throw new bException('servers_get_os(): Failed', $e);
+    }
+}
 ?>
