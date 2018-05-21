@@ -9,21 +9,41 @@
 
 
 /*
+ * Initialize the library
+ * Automatically executed by libs_load()
+ */
+function apache_library_init(){
+    try{
+        load_config('servers');
+
+    }catch(Exception $e){
+        throw new bException('apache_library_init(): Failed', $e);
+    }
+}
+
+
+
+/*
  *
  *<VirtualHost *:80>
-    ServerName strategyq.org
-    ServerAlias *.strategyq.org
-    ProxyPreserveHost On
+ *   ServerName domain.com
+ *   ServerAlias *.domain.org
+ *   ProxyPreserveHost On
 
-    ProxyPass / http://189.210.119.175:40001/
-    ProxyPassReverse / http://189.210.119.175:40001/
+ *   ProxyPass / http://255.255.255.255:8080/
+ *   ProxyPassReverse / http://255.255.255.255:8081/
 </VirtualHost>
  */
-function apache_set_vhost($hostname, $vhost_name, $params, $port, $linux_version='ubuntu'){
+function apache_set_vhost($hostname, $vhost_name, $params, $port){
     try{
         $params     = apache_validate_params($params);
-        $vhost_name = apache_validate_vhostname($vhost_name);
-        $full_path  = apache_get_paht_vhosts($linux_version).$vhost_name;
+
+        if(substr($vhost_name, -5, 5) != '.conf'){
+            $vhost_name .= '.conf';
+        }
+
+        $server_os  = servers_get_os($hostname);
+        $full_path  = apache_get_path_vhosts($server_os).$vhost_name;
 
         /*
          *
@@ -51,11 +71,25 @@ function apache_set_vhost($hostname, $vhost_name, $params, $port, $linux_version
 /*
  *
  */
-function apache_turn_off_signature($hostname, $linux_version='ubuntu'){
+function apache_turn_off_signature($hostname){
     try{
-        $config_path = apache_get_apache_config_path($linux_version);
-        $command     = 'if ! grep "ServerSignature" '.$config_path.'; then echo "ServerSignature off" >> '.$config_path.'; fi;if ! grep "ServerTokens" '.$config_path.'; then echo "ServerTokens Prod" >> '.$config_path.'; fi;';
-        $result      = servers_exec($hostname, $command);
+        $server_os  = servers_get_os($hostname);
+
+        switch($server_os['id']){
+            case 'linuxmint':
+                //FALL THROUGH
+            case 'ubuntu':
+                $command     = 'if ! grep "ServerSignature" /etc/apache2/apache2.conf; then echo "ServerSignature off" >> /etc/apache2/apache2.conf; fi;if ! grep "ServerTokens" /etc/apache2/apache2.conf; then echo "ServerTokens Prod" >> /etc/apache2/apache2.conf; fi;';
+                $result      = servers_exec($hostname, $command);
+                break;
+
+            case 'centos':
+                $resutl = array();
+                break;
+
+            default:
+                throw new bException(tr('apache_turn_off_signature(): Invalid operating system ":server_os" specified', array(':server_od' => $server_os['id'])), 'invalid');
+        }
 
         return $result;
 
@@ -69,60 +103,30 @@ function apache_turn_off_signature($hostname, $linux_version='ubuntu'){
 /*
  *
  */
-function apache_get_apache_config_path($linux_version='ubuntu'){
+function apache_get_path_vhosts($server_os){
     try{
-        if(empty($linux_version)){
-            throw new bException(tr('No linux version'), 'not-specified');
+        if(empty($server_os['id'])){
+            throw new bException(tr('apache_get_path_vhosts(): No operating system specified'), 'not-specified');
         }
-        switch($linux_version){
-            case 'ubuntu':
-                $config_path = '/etc/apache2/apache2.conf';
-                break;
-
-            case 'centos6':
-                // FALLTROUGH
-            case 'centos7':
-                $config_path = '/etc/httpd/conf/httpd.conf';
-                break;
-
-            default:
-                throw new bException(tr('apache_get_apache_config_path(): Invalid linux version value ":linuxversion" specified', array(':linuxversion' => $linux_version)), 'invalid');
-        }
-
-        return $config_path;
-
-    }catch(Exception $e){
-        throw new bException('empty(): Failed', $e);
-    }
-}
-
-
-
-/*
- *
- */
-function apache_get_paht_vhosts($linux_version='ubuntu'){
-    try{
-        if(empty($linux_version)){
-            throw new bException(tr('No linux version'), 'not-specified');
-        }
-        switch($linux_version){
+        switch($server_os['id']){
+            case 'linuxmint':
+                //FALL THROUGH
             case 'ubuntu':
                 $vhost_path = '/etc/apache2/sites-available/';
                 break;
 
-            case 'centos7':
+            case 'centos':
                 $vhost_path = '/etc/httpd/conf.d/';
                 break;
 
             default:
-                throw new bException(tr('apache_get_paht_vhosts(): Invalid linux version value ":linuxversion" specified', array(':linuxversion' => $linux_version)), 'invalid');
+                throw new bException(tr('apache_get_path_vhosts(): Invalid linux version value ":linuxversion" specified', array(':linuxversion' => $linux_version)), 'invalid');
         }
 
         return $vhost_path;
 
     } catch(Exception $e){
-        throw new bException('empty(): Failed', $e);
+        throw new bException('apache_get_path_vhosts(): Failed', $e);
     }
 }
 
@@ -134,41 +138,17 @@ function apache_get_paht_vhosts($linux_version='ubuntu'){
 function apache_validate_params($params){
     try{
         if(empty($params)){
-            throw new bException(tr('No linux version'), 'not-specified');
+            throw new bException(tr('apache_validate_params(): No linux version'), 'not-specified');
         }
 
         if(!is_array($params)){
-            throw new bException(tr('Params are not valid. No correct format. Must be an array key=>value'), 'invalid');
+            throw new bException(tr('apache_validate_params(): Params are not valid. No correct format. Must be an array key=>value'), 'invalid');
         }
 
         return $params;
 
     }catch(Exception $e){
         throw new bException('apache_validate_params(): Failed', $e);
-    }
-}
-
-
-
-/*
- *
- */
-function apache_validate_vhostname($vhost_name){
-    try{
-        if(empty($vhost_name)){
-            throw new bException(tr('No vhost name specified'), 'not-specified');
-        }
-
-        preg_match("/.conf\z/", $vhost_name, $matches);
-
-        if(empty($matches)){
-            $vhost_name = rtrim($vhost_name,'.').'.conf';
-        }
-
-        return $vhost_name;
-
-    }catch(Exception $e){
-        throw new bException('apache_validate_vhostname(): Failed', $e);
     }
 }
 ?>
