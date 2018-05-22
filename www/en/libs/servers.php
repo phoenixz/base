@@ -392,4 +392,23 @@ function servers_detect_os($hostname){
         throw new bException('servers_get_os(): Failed', $e);
     }
 }
+
+
+
+/*
+ * Gets the public ip
+ * @param string $hostname
+ * @return string $ip
+ * @see servers_get_ip()
+ */
+function servers_get_ip($hostname){
+    try{
+        $ip = servers_exec($hostname, 'dig +short myip.opendns.com @resolver1.opendns.com');
+
+        return $ip;
+
+    }catch(Exception $e){
+        throw new bException('servers_get_ip(): Failed', $e);
+    }
+}
 ?>
