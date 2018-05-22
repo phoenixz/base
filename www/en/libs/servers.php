@@ -320,7 +320,7 @@ function servers_get($host, $database = false, $return_proxies = true, $limited_
 function servers_detect_os($hostname){
     try{
         /*
-         *
+         * Getting complete operating system distribution
          */
         $output_version = servers_exec($hostname, 'cat /proc/version');
 
@@ -329,7 +329,7 @@ function servers_detect_os($hostname){
         }
 
         /*
-         *
+         * Determine to which group belongs the operating system
          */
         preg_match('/(ubuntu |debian |red hat )/i', $output_version, $matches);
 
@@ -365,18 +365,18 @@ function servers_detect_os($hostname){
         $server_os['group'] = $group;
 
         /*
-         *
+         * Getting operating systema name based on release file(/etc/issue or /etc/redhad-release)
          */
-        preg_match('/((:?[kxl]|edu)?ubuntu|mint|debian|red hat enterprise|fedora|centos).+?([0-9.])+/i', $release, $matches);
+        preg_match('/((:?[kxl]|edu)?ubuntu|mint|debian|red hat enterprise|fedora|centos)/i', $release, $matches);
 
         if(!isset($matches[0])){
             throw new bException(tr('servers_detect_os(): No name found for os group ":group"', array(':group' => $matches[0])), 'not-exist');
         }
 
-        $server_os['name'] = $matches[0];
+        $server_os['name'] = strtolower($matches[0]);
 
         /*
-         *
+         * Getting complete version for the operating system
          */
         preg_match('/\d*\.?\d+/', $release, $version);
 
