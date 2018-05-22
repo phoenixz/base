@@ -46,10 +46,15 @@ function config_read($environment, $section = null){
 
             foreach($submatches as $id => $match){
                 $keys    = str_replace('\'', '', $match);
+                $keys    = preg_replace('/\]\s*\[/', '][', $match);
                 $keys    = explode('][', $keys);
                 $section = &$config;
 
                 foreach($keys as $key){
+                    if((substr($key, 0, 1) == '"') or (substr($key, 0, 1) == "'")){
+                        $key = substr($key, 1, -1);
+                    }
+
                     if(!isset($section[$key])){
                         $section[$key] = array();
                     }
@@ -188,13 +193,13 @@ function config_update($environment, $keys, $value){
             }
 
         }else{
-            $CONFIG = config_read($environment, $basekey);
+            $CONFIG = config_read($environment);
         }
 
         $config = &$CONFIG;
 
         foreach($keys as $key){
-            if(empty($config[$key])){
+            if(!array_key_exists($key, $config)){
                 throw new bException(tr('config_update(): The specified configuration section ":section" does not exist', array(':section' => $keys)), 'not-exist');
             }
 
@@ -220,7 +225,7 @@ function config_update($environment, $keys, $value){
 
         $config['__value__'] = $value;
 
-        return config_write($CONFIG[$basekey], $environment, $section);
+        return config_write($CONFIG, $environment, $section);
 
     }catch(Exception $e){
         throw new bException(tr('config_update(): Failed'), $e);
