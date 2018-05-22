@@ -36,10 +36,18 @@ function apache_library_init(){
  *   ProxyPass / http://255.255.255.255:9999/
  *   ProxyPassReverse / http://1.1.1.1:9999/
  * </VirtualHost>
+ * @param string $hostname
+ * @param string $vhost_name
+ * @param array $params, params must be key, value example $params = array('ServerName'=>'servername.org');
+ * @param integer $port
  */
 function apache_write_vhost($hostname, $vhost_name, $params, $port){
     try{
-        $os = servers_get_os($hostname);
+        if(!is_array($params)){
+            throw new bException(tr('apache_write_vhost(): Invalid data for params. Params must be  an array', 'invalid'));
+        }
+
+        $os = servers_detect_os($hostname);
 
         switch($os['name']){
             case 'debian':
@@ -47,7 +55,6 @@ function apache_write_vhost($hostname, $vhost_name, $params, $port){
             case 'ubuntu':
                 // FALLTHROUGH
             case 'mint':
-                $params    = array_ensure($params);
                 $full_path = apache_get_vhosts_path($os['name']).$vhost_name.'.conf';
 
                 /*
@@ -92,6 +99,8 @@ function apache_write_vhost($hostname, $vhost_name, $params, $port){
  * ServerTokens
  * UseCanonicalName
  * UseCanonicalPhysicalPort
+ * @param string $hostname
+ * @param array $params, must be an array example: $params = array('ServerName'=>'domain.com',....,'ServerSignature'=>'Off');
  */
 function apache_set_identification($hostname, $params){
     try{
@@ -112,15 +121,17 @@ function apache_set_identification($hostname, $params){
 
 
 /*
- * .......
+ * Returns the complete path for the vhost according to the operating system
+ * @param string $server_os, operating system name
+ * @return string $vhost_path
  */
 function apache_get_vhosts_path($server_os){
     try{
-        if(empty($server_os['name'])){
+        if(empty($server_os)){
             throw new bException(tr('apache_get_vhosts_path(): No operating system specified'), 'not-specified');
         }
-        switch($server_os['name']){
-            case 'linuxmint':
+        switch($server_os){
+            case 'mint':
                 //FALL THROUGH
             case 'ubuntu':
                 $vhost_path = '/etc/apache2/sites-available/';
@@ -144,14 +155,16 @@ function apache_get_vhosts_path($server_os){
 
 
 /*
- *
+ * Returns the complete path for apache configuration according to the operating system from the host
+ * @param string $hostname
+ * @return string $path
  */
 function apache_get_config_path($hostname){
     try{
         $server_os = servers_detect_os($hostname);
 
         switch($server_os['name']){
-            case 'linuxmint':
+            case 'mint':
                 //FALL THROUGH
             case 'ubuntu':
                 $path = '/etc/apache2/apache2.conf';
