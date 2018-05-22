@@ -2266,6 +2266,13 @@ function page_show($pagename, $params = null){
         array_params($params, 'message');
         array_default($params, 'exists', false);
 
+        if(defined('LANGUAGE')){
+            $language = LANGUAGE;
+
+        }else{
+            $language = 'en';
+        }
+
         if(is_numeric($pagename)){
             /*
              * This is a system page, HTTP code. Use the page code as http code as well
@@ -2275,13 +2282,13 @@ function page_show($pagename, $params = null){
 
         if(!empty($core->callType('ajax'))){
             if($params['exists']){
-                return file_exists(ROOT.'www/'.LANGUAGE.'/ajax/'.$pagename.'.php');
+                return file_exists(ROOT.'www/'.$language.'/ajax/'.$pagename.'.php');
             }
 
             /*
              * Execute ajax page
              */
-            return include(ROOT.'www/'.LANGUAGE.'/ajax/'.$pagename.'.php');
+            return include(ROOT.'www/'.$language.'/ajax/'.$pagename.'.php');
 
         }elseif(!empty($core->callType('admin'))){
             $prefix = 'admin/';
@@ -2291,10 +2298,10 @@ function page_show($pagename, $params = null){
         }
 
         if($params['exists']){
-            return file_exists(ROOT.'www/'.LANGUAGE.'/'.$prefix.$pagename.'.php');
+            return file_exists(ROOT.'www/'.$language.'/'.$prefix.$pagename.'.php');
         }
 
-        $result = include(ROOT.'www/'.LANGUAGE.'/'.$prefix.$pagename.'.php');
+        $result = include(ROOT.'www/'.$language.'/'.$prefix.$pagename.'.php');
 
         if(isset_get($params['return'])){
             return $result;
