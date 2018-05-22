@@ -656,7 +656,7 @@ function load_config($files = ''){
         if(!$paths){
             $paths = array(ROOT.'config/base/',
                            ROOT.'config/production',
-                           ROOT.'config/'.ENVIRONMENT.'');
+                           ROOT.'config/'.ENVIRONMENT);
         }
 
         $files = array_force($files);
@@ -3374,6 +3374,62 @@ function date_convert($date = null, $requested_format = 'human_datetime', $to_ti
 
     }catch(Exception $e){
         throw new bException('date_convert(): Failed', $e);
+    }
+}
+
+
+
+/*
+ * This function will check the specified $source variable, estimate what datatype it should be, and cast it as that datatype. Empty strings will be returned as null
+ *
+ * @param mixed $source
+ * @return mixed The variable with the datatype interpreted by this function
+ */
+function force_datatype($source){
+    try{
+        if(!is_scalar($source)){
+            return $source;
+        }
+
+        if(is_numeric($source)){
+            if((int) $source === $source){
+                return (int) $source;
+            }
+
+            return (float) $source;
+        }
+
+        if($source === true){
+            return true;
+        }
+
+        if($source === false){
+            return false;
+        }
+
+        if($source === 'true'){
+            return true;
+        }
+
+        if($source === 'false'){
+            return false;
+        }
+
+        if($source === 'null'){
+            return null;
+        }
+
+        if(!$source){
+            /*
+             * Assume null
+             */
+            return null;
+        }
+
+        return (string) $source;
+
+    }catch(Exception $e){
+        throw new bException('force_datatype(): Failed', $e);
     }
 }
 
