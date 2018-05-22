@@ -39,6 +39,7 @@ switch(cli_method()){
 
         $r = sql_query('SELECT   `id`,
                                  `type`,
+                                 `createdon`,
                                  `from_phone`,
                                  `to_phone`
 
@@ -46,12 +47,14 @@ switch(cli_method()){
 
                         WHERE    `conversations_id` IS NULL
 
-                        GROUP BY `from_phone`, `to_phone`, `type`
+                        GROUP BY `from_phone`,
+                                 `to_phone`,
+                                 `type`
 
-                        ORDER BY `createdon`');
+                        ORDER BY `createdon` DESC');
 
         if($r->rowCount()){
-            log_console(tr('Creating conversations for "%count%" messages', array('%count%' => str_log($r->rowCount()))), '');
+            log_console(tr('Creating conversations for ":count" messages', array(':count' => $r->rowCount())));
 
             $p = sql_prepare('UPDATE `sms_messages`
 
@@ -67,8 +70,7 @@ switch(cli_method()){
 
             while($message = sql_fetch($r)){
                 cli_dot();
-
-                $conversation = sms_get_conversation($message['from_phone'], $message['to_phone'], $message['type'], $repliedon_now);
+                $conversation = sms_get_conversation($message['from_phone'], $message['to_phone'], $message['type'], $message['createdon'], $repliedon_now);
 
                 $p->execute(array(':conversations_id' => $conversation['id'],
                                   ':from_phone'       => $message['from_phone'],
@@ -76,7 +78,7 @@ switch(cli_method()){
                                   ':type'             => $message['type']));
             }
 
-            log_console('Done', '', 'green');
+            log_console('Done', 'green');
         }
 
 
@@ -96,7 +98,7 @@ switch(cli_method()){
 
                           FROM     `sms_conversations`
 
-                          ORDER BY `createdon`');
+                          ORDER BY `createdon` DESC');
 
         if($repliedon_now){
             $p = sql_prepare('UPDATE   `sms_conversations`

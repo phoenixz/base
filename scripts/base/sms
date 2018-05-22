@@ -6,7 +6,7 @@
 $usage = "./scripts/base/sms send PHONE MESSAGE\n".
          "./scripts/base/sms send to PHONE [from PHONE] message MESSAGE [provider twilio|crmtext]\n";
 
-         "./scripts/base/empty option [option]\n";
+         "./scripts/base/sms getimages\n";
 
 $help  = "This SMS script allows you to send out SMS messages using either twilio or crmtext as a provider, depending on the configuration";
 
@@ -17,7 +17,9 @@ load_libs('sms,twilio');
 
 switch(cli_method()){
     case 'send':
-        if(!$to = cli_argument('to')){
+        $to = cli_argument('to');
+
+        if(!$to){
             /*
              * Use sms phone message
              */
@@ -36,7 +38,7 @@ switch(cli_method()){
         break;
 
     case 'getimages':
-        log_console(tr('Downloading MMS images'), '', 'white');
+        log_console(tr('Downloading MMS images'), 'white');
 
         $r = sql_query('SELECT `sms_messages_id`,
                                `url`
@@ -47,10 +49,10 @@ switch(cli_method()){
 
         while($image = sql_fetch($r)){
             twilio_download_image($image['sms_messages_id'], $image['url']);
-            log_console(tr('Downloaded image ":image" for MMS message ":message"', array(':message' => $image['sms_messages_id'], ':image' => $image['url'])), '', 'green');
+            log_console(tr('Downloaded image ":image" for MMS message ":message"', array(':message' => $image['sms_messages_id'], ':image' => $image['url'])), 'green');
         }
 
-        log_console(tr('Finished downloading all pending MMS images'), '', 'green');
+        log_console(tr('Finished downloading all pending MMS images'), 'green');
         break;
 
     case '':
