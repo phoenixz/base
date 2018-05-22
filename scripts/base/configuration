@@ -1,0 +1,109 @@
+#!/usr/bin/php
+<?php
+/*
+ * This is an empty test script template
+ */
+$usage = './scripts/base/configuration
+./scripts/base/configuration init
+./scripts/base/configuration show KEYS
+./scripts/base/configuration update KEYS VALUE ';
+
+$help  = 'Manage the base configuration from the command line. This script allows you to view, and update base configuration values. The system can also initialize (Wipe if exist!) and create new configuration files.
+
+
+
+METHODS
+
+init                            - Initialize new configuration files
+
+show KEYS                       - ';
+
+require_once(__DIR__.'/../../libs/startup.php');
+cli_only();
+load_libs('config');
+
+switch(cli_method()){
+    case 'init':
+        if($_CONFIG['production']){
+            if(!FORCE){
+                throw new bException(tr('Cannot initialize configuration files on production without using FORCE mode. Please specify -f or --force'), 'warning/access-denied');
+            }
+        }
+under_construction();
+        break;
+
+    case 'show':
+        $keys = cli_argument(1);
+
+        cli_no_arguments_left();
+
+        if(!$keys){
+            throw new bException(tr('No keys specified. This script cannot show the entire configuration array.'), 'warning/not-specified');
+        }
+
+        $default = true;
+        $keys    = array_force($keys);
+        $basekey = current($keys);
+
+        if(!isset($_CONFIG[$basekey])){
+            /*
+             * This is not available in default configuration, load specific
+             * configuration file
+             */
+            $default = false;
+            config_read($environment, $basekey);
+
+            if(!isset($_CONFIG[$basekey])){
+                throw new bException(tr('The specified configuration section or file ":file" does not exist', array(':file' => $basekey)), 'warning/not-exist');
+            }
+        }
+
+        $config = $_CONFIG;
+
+        foreach($keys as $key){
+            if(empty($config[$key])){
+                throw new bException(tr('The specified configuration section ":section" does not exist', array(':section' => $keys)), 'warning/not-exist');
+            }
+
+            $config = $config[$key];
+        }
+
+        show($config);
+        break;
+
+    case 'update':
+        $keys        = cli_argument(1);
+        $value       = cli_argument(2);
+        $environment = cli_argument(3);
+
+        if(!$environment){
+            $environment = ENVIRONMENT;
+        }
+
+        cli_no_arguments_left();
+
+        try{
+            config_update($environment, $keys, $value);
+
+        }catch(Exception $e){
+            switch($e->getCode()){
+                case 'invalid':
+                    // FALLTHROUGH
+                case 'not-found':
+                    // FALLTHROUGH
+                case 'not-specified':
+                    throw $e->makeWarning(true);
+            }
+
+            throw $e;
+        }
+
+        break;
+
+    case '':
+        throw new bException(tr('No method specified'), 'no-method');
+
+    default:
+        throw new bException(tr('Unknown method ":method" specified', array(':method' => cli_method())), 'unknown-method');
+}
+?>

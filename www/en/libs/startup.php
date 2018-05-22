@@ -656,7 +656,7 @@ function load_config($files = ''){
         if(!$paths){
             $paths = array(ROOT.'config/base/',
                            ROOT.'config/production',
-                           ROOT.'config/'.ENVIRONMENT.'');
+                           ROOT.'config/'.ENVIRONMENT);
         }
 
         $files = array_force($files);
@@ -2266,6 +2266,13 @@ function page_show($pagename, $params = null){
         array_params($params, 'message');
         array_default($params, 'exists', false);
 
+        if(defined('LANGUAGE')){
+            $language = LANGUAGE;
+
+        }else{
+            $language = 'en';
+        }
+
         if(is_numeric($pagename)){
             /*
              * This is a system page, HTTP code. Use the page code as http code as well
@@ -2275,13 +2282,13 @@ function page_show($pagename, $params = null){
 
         if(!empty($core->callType('ajax'))){
             if($params['exists']){
-                return file_exists(ROOT.'www/'.LANGUAGE.'/ajax/'.$pagename.'.php');
+                return file_exists(ROOT.'www/'.$language.'/ajax/'.$pagename.'.php');
             }
 
             /*
              * Execute ajax page
              */
-            return include(ROOT.'www/'.LANGUAGE.'/ajax/'.$pagename.'.php');
+            return include(ROOT.'www/'.$language.'/ajax/'.$pagename.'.php');
 
         }elseif(!empty($core->callType('admin'))){
             $prefix = 'admin/';
@@ -2291,10 +2298,10 @@ function page_show($pagename, $params = null){
         }
 
         if($params['exists']){
-            return file_exists(ROOT.'www/'.LANGUAGE.'/'.$prefix.$pagename.'.php');
+            return file_exists(ROOT.'www/'.$language.'/'.$prefix.$pagename.'.php');
         }
 
-        $result = include(ROOT.'www/'.LANGUAGE.'/'.$prefix.$pagename.'.php');
+        $result = include(ROOT.'www/'.$language.'/'.$prefix.$pagename.'.php');
 
         if(isset_get($params['return'])){
             return $result;
@@ -3374,6 +3381,62 @@ function date_convert($date = null, $requested_format = 'human_datetime', $to_ti
 
     }catch(Exception $e){
         throw new bException('date_convert(): Failed', $e);
+    }
+}
+
+
+
+/*
+ * This function will check the specified $source variable, estimate what datatype it should be, and cast it as that datatype. Empty strings will be returned as null
+ *
+ * @param mixed $source
+ * @return mixed The variable with the datatype interpreted by this function
+ */
+function force_datatype($source){
+    try{
+        if(!is_scalar($source)){
+            return $source;
+        }
+
+        if(is_numeric($source)){
+            if((int) $source === $source){
+                return (int) $source;
+            }
+
+            return (float) $source;
+        }
+
+        if($source === true){
+            return true;
+        }
+
+        if($source === false){
+            return false;
+        }
+
+        if($source === 'true'){
+            return true;
+        }
+
+        if($source === 'false'){
+            return false;
+        }
+
+        if($source === 'null'){
+            return null;
+        }
+
+        if(!$source){
+            /*
+             * Assume null
+             */
+            return null;
+        }
+
+        return (string) $source;
+
+    }catch(Exception $e){
+        throw new bException('force_datatype(): Failed', $e);
     }
 }
 

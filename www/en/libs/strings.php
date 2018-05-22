@@ -413,18 +413,20 @@ function str_strip_html_whitespace($string){
 
 
 /*
- * Return the specified string quoted or not
+ * Return the specified string quoted if not numeric, boolean,
+ * @param string $string
+ * @param string $quote What quote (or other symbol) to use for the quoting
  */
-function str_auto_quote($string){
+function str_quote($string, $quote = "'"){
     try{
-        if(is_numeric($string)){
+        if(is_numeric($string) or is_bool(is_numeric($string))){
             return $string;
         }
 
-        return '"'.$string.'"';
+        return $quote.$string.$quote;
 
     }catch(Exception $e){
-        throw new bException(tr('str_auto_quote(): Failed'), $e);
+        throw new bException(tr('str_quote(): Failed'), $e);
     }
 }
 
@@ -432,6 +434,9 @@ function str_auto_quote($string){
 
 /*
  * Return if specified source is a valid version or not
+ * @param string $source
+ * @return boolean True if the specified string is a version format string matching "/^\d{1,3}\.\d{1,3}\.\d{1,3}$/". False if not
+ * @example showdie(str_is_version(phpversion())); This example should show a debug table with true
  */
 function str_is_version($source){
     try{
@@ -1006,4 +1011,7 @@ echo "$string3". "<br />". $string4;*/
  * Obsolete functions
  * These functions only exist as wrappers for compatibility purposes
  */
+function str_auto_quote($string, $quote = "'"){
+    return str_quote($string, $quote);
+}
 ?>

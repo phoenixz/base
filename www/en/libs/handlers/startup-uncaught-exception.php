@@ -32,7 +32,7 @@ try{
 
     switch(PLATFORM){
         case 'cli':
-            if($e->getCode() == 'parameters'){
+            if($e->getCode() === 'parameters'){
                 log_console(trim(str_from($e->getMessage(), '():')), 'warning');
                 $GLOBALS['core'] = false;
                 die(1);

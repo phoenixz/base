@@ -1,0 +1,24 @@
+#!/usr/bin/php
+<?php
+/*
+ * This is an empty test script template
+ */
+$usage = './scripts/base/man
+./scripts/base/man list
+./scripts/base/man show ENTRY
+./scripts/base/man generate';
+
+$help  = 'The man script is the base manual interface. It allows generation of the manual, listing of available manual entries, and viewing specific manual entries';
+
+require_once(__DIR__.'/../../libs/startup.php');
+cli_only();
+load_libs('manual');
+
+switch(cli_method()){
+    case '':
+        throw new bException(tr('No method specified'), 'no-method');
+
+    default:
+        throw new bException(tr('Unknown method ":method" specified', array(':method' => cli_method())), 'unknown-method');
+}
+?>
