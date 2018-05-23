@@ -35,7 +35,7 @@ function csf_library_init(){
 /*
  * Install Config Server Firewall
  */
-function csf_install($hostname=false){
+function csf_install($hostname = null){
     try{
         if($csf = csf_get_exec($hostname)){
             throw new bException(tr('csf_install(): CSF has already been installed and is available at ":csf"', array(':csf' => $csf)), 'executable-not-found');
@@ -55,7 +55,7 @@ function csf_install($hostname=false){
 /*
  *
  */
-function csf_start($hostname=false){
+function csf_start($hostname = null){
     try{
         return csf_exec($hostname, ':csf -s');
 
@@ -69,7 +69,7 @@ function csf_start($hostname=false){
 /*
  *
  */
-function csf_stop($hostname=false){
+function csf_stop($hostname = null){
     try{
         return csf_exec($hostname, ':csf -f');
 
@@ -83,7 +83,7 @@ function csf_stop($hostname=false){
 /*
  *
  */
-function csf_restart($hostname=false){
+function csf_restart($hostname = null){
     try{
         return csf_exec($hostname, ':csf -r');
 
@@ -97,21 +97,21 @@ function csf_restart($hostname=false){
 /*
  * Return the absolute location of the CSF executable binary
  */
-function csf_get_exec($hostname=false){
+function csf_get_exec($hostname = null){
     static $install = false;
 
     try{
         $csf = trim(servers_exec($hostname, 'which csf 2> /dev/null'));
-// :DISABLED: Disabled  because it caused endless loops
-        //if(!$csf){
-        //    if(!$install){
-        //        throw new bException('csf_exec(): CSF is not installed, and installation failed', 'failed');
-        //    }
-        //
-        //    $install = true;
-        //    csf_install($hostname);
-        //    return csf_get_exec();
-        //}
+
+        if(!$csf){
+            if(!$install){
+                throw new bException('csf_exec(): CSF is not installed, and installation failed', 'failed');
+            }
+
+            $install = true;
+            csf_install($hostname);
+            return csf_get_exec();
+        }
 
         return $csf;
 
@@ -213,7 +213,6 @@ function csf_allow_ip($hostname, $ip=false){
 function csf_deny_ip($hostname, $ip=false){
     try{
         $ip = csf_validate_ip($ip);
-
         return csf_exec($hostname, ':csf -ar '.$ip.'; :csf -d '.$ip);
 
     }catch(Exception $e){
@@ -298,10 +297,10 @@ function csf_remove_deny_rule($hostname, $protocol, $connection_type, $port, $ip
         $protocol        = csf_validate_protocol($protocol, true);
         $connection_type = csf_validate_rule_type($connection_type);
         $port            = csf_validate_ports($port);
-
-        $result = csf_exec($hostname, 'sed -i -E \'s/'.$protocol.'\|'.$connection_type.'\|d='.$port.'\|s='.$ip.'//g\' /etc/csf/csf.deny');
+        $result          = csf_exec($hostname, 'sed -i -E \'s/'.$protocol.'\|'.$connection_type.'\|d='.$port.'\|s='.$ip.'//g\' /etc/csf/csf.deny');
 
         return $result;
+
     }catch(Exception $e){
         throw new bException('csf_deny_rule(): Failed', $e);
     }
@@ -478,7 +477,7 @@ function csf_validate_restrictsyslog($value){
 
             default:
                 throw new bException(tr('csf_validate_restrictsyslog(): Invalid restrict syslog value ":value" specified', array(':value' => $value)), 'invalid');
-      }
+        }
 
         return $value;
 
