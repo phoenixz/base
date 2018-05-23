@@ -235,6 +235,7 @@ function csf_allow_rule($hostname, $protocol, $rule_type, $port, $ip=false, $com
         $protocol  = csf_validate_protocol($protocol, true);
         $rule_type = csf_validate_rule_type($rule_type);
         $ip        = csf_validate_ip($ip);
+
         $rule      = $protocol.'|'.$rule_type.'|d='.$port.'|s='.$ip.' # '.$comments;
         $command   = 'if ! grep "'.$rule.'" /etc/csf/csf.allow; then echo "'.$rule.'" >> /etc/csf/csf.allow; fi;';
 
@@ -276,47 +277,7 @@ function csf_remove_allow_rule($hostname, $protocol, $connection_type, $port, $i
     try{
         $protocol        = csf_validate_protocol($protocol, true);
         $connection_type = csf_validate_rule_type($connection_type);
-        $port            = csf_validate_ports($port);
-
-        $result = csf_exec($hostname, 'sed -i -E \'s/'.$protocol.'\|'.$connection_type.'\|d='.$port.'\|s='.$ip.'//g\' /etc/csf/csf.allow');
-
-        return $result;
-
-    }catch(Exception $e){
-        throw new bException('csf_remove_allow_rule(): Failed', $e);
-    }
-}
-
-
-
-/*
- *
- */
-function csf_remove_deny_rule($hostname, $protocol, $connection_type, $port, $ip){
-    try{
-        $protocol        = csf_validate_protocol($protocol, true);
-        $connection_type = csf_validate_rule_type($connection_type);
-        $port            = csf_validate_ports($port);
-
-        $result = csf_exec($hostname, 'sed -i -E \'s/'.$protocol.'\|'.$connection_type.'\|d='.$port.'\|s='.$ip.'//g\' /etc/csf/csf.deny');
-
-        return $result;
-    }catch(Exception $e){
-        throw new bException('csf_deny_rule(): Failed', $e);
-    }
-}
-
-
-
-
-/*
- *
- */
-function csf_remove_allow_rule($hostname, $protocol, $connection_type, $port, $ip){
-    try{
-        $protocol        = csf_validate_protocol($protocol, true);
-        $connection_type = csf_validate_rule_type($connection_type);
-        $port            = csf_validate_ports($port);
+        $port            = csf_validate_ports($port, true);
 
         $result = csf_exec($hostname, 'sed -i -E \'s/'.$protocol.'\|'.$connection_type.'\|d='.$port.'\|s='.$ip.'//g\' /etc/csf/csf.allow');
 
@@ -457,7 +418,7 @@ function csf_validate_ports($ports, $single = false){
             }
         }
 
-        return $ports;
+        return $single?$ports[0]:$ports;
 
     }catch(Exception $e){
         throw new bException('csf_validate_ports(): Failed', $e);
