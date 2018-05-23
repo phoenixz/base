@@ -97,7 +97,7 @@ function sms_get_conversation($phone_local, $phone_remote, $type, $createdon = n
             /*
              * This phone combo has no conversation yet, create it now.
              */
-            $blocked = sql_get('SELECT `id` FROM `sms_blocks` WHERE `number` = :number', true, array(':number' => $phone_remote));
+            $blocked = sql_get('SELECT `id` FROM `sms_blocks` WHERE `number` = :number AND `status` IS NULL', true, array(':number' => $phone_remote));
 
             sql_query('INSERT INTO `sms_conversations` (`createdon`, `modifiedon`, `status`, `phone_local`, `phone_remote`, `type`, `repliedon`)
                        VALUES                          (:createdon , :modifiedon , :status , :phone_local , :phone_remote , :type , :repliedon )',
@@ -346,6 +346,92 @@ function sms_select_source($name, $selected, $provider, $class){
 
     }catch(Exception $e){
         throw new bException('sms_select_source(): Failed', $e);
+    }
+}
+
+
+
+/*
+ * Block the specified phone number. Blocked numbers will no longer show up as new conversations, though they may still be updated
+ *
+ * @param string $phone_number The phone number to be blocked
+ * @return integer The amount of phone numbers that were actually blocked
+ */
+function sms_block($phone_numbers, $status = null){
+    try{
+        /*
+         * First block the number
+         */
+        $count         = 0;
+        $phone_numbers = sms_full_phones($phone_numbers);
+        $insert        = sql_prepare('INSERT INTO `sms_blocks` (`createdby`, `meta_id`, `status`, `number`)
+                                      VALUES                   (:createdby , :meta_id , :status , :number )
+
+                                      ON DUPLICATE KEY UPDATE `id` = `id`');
+
+        foreach(array_force($phone_numbers) as $phone_number){
+            $insert->execute(array(':createdby' => isset_get($_SESSION['user']['id']),
+                                   ':meta_id'   => meta_action(),
+                                   ':status'    => $status,
+                                   ':number'    => $phone_number));
+
+            $count += sql_affected_rows($insert);
+
+            /*
+             * Now update all conversations so that this number in history is blocked as well
+             */
+            sql_query('UPDATE `sms_conversations` SET `repliedon` = NOW(), `status` = "blocked" WHERE `phone_remote` = :phone_remote', array(':phone_remote' => $phone_number));
+        }
+
+        return $count;
+
+    }catch(Exception $e){
+        throw new bException('sms_block(): Failed', $e);
+    }
+}
+
+
+
+/*
+ * Unblock the specified phone number. Unblocked numbers will show up as normal again
+ *
+ * @param string $phone_number The phone number to be unblocked
+ * @return integer The amount of phone numbers that were actually unblocked
+ */
+function sms_unblock($phone_numbers, $status = null){
+    try{
+        /*
+         * First unblock the number
+         */
+        $count         = 0;
+        $phone_numbers = sms_full_phones($phone_numbers);
+        $in            = sql_in($phone_numbers);
+
+        $numbers       = sql_query('SELECT `id`, `meta_id`, `number` FROM `sms_blocks` WHERE `number` IN ('.implode(', ', array_keys($in)).')', $in);
+
+        $delete        = sql_prepare('UPDATE `sms_blocks`
+
+                                      SET    `status` = "removed"
+
+                                      WHERE  `number` = :number');
+
+        while($number = sql_fetch($numbers)){
+            meta_action($number['meta_id'], 'removed');
+
+            $delete->execute(array(':number' => $number['number']));
+
+            $count += sql_affected_rows($delete);
+
+            /*
+             * Now update all conversations so that this number in history is unblocked as well
+             */
+            sql_query('UPDATE `sms_conversations` SET `status` = NULL WHERE `phone_remote` = :phone_remote', array(':phone_remote' => $number['number']));
+        }
+
+        return $count;
+
+    }catch(Exception $e){
+        throw new bException('sms_unblock(): Failed', $e);
     }
 }
 ?>
