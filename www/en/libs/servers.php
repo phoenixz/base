@@ -240,15 +240,19 @@ function servers_exec($host, $commands, $options = null, $background = false, $f
 function servers_get($host, $database = false, $return_proxies = true, $limited_columns = false){
     try{
         if($limited_columns){
-            $query =  'SELECT    `servers`.`hostname`,
+            $query =  'SELECT    `servers`.`id` AS `servers_id`,
+                                 `servers`.`hostname`,
                                  `servers`.`port`,
-                                 `servers`.`ssh_proxies_id` ';
+                                 `servers`.`ssh_proxies_id`,
+                                 `servers`.`ipv4`';
 
         }else{
-            $query =  'SELECT    `servers`.`hostname`,
+            $query =  'SELECT    `servers`.`id` AS `servers_id`,
+                                 `servers`.`hostname`,
                                  `servers`.`port`,
                                  `servers`.`ssh_accounts_id`,
                                  `servers`.`ssh_proxies_id`,
+                                 `servers`.`ipv4`,
 
                                  `ssh_accounts`.`username`,
                                  `ssh_accounts`.`ssh_key` ';
