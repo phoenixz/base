@@ -118,13 +118,39 @@ function proxy_insert($hostname, $operation , $target_host){
 
 
 /*
- *
+ * @param string $hostname
  */
-function proxy_remove($hostname, $operation, $target_host){
+function proxy_remove($hostname){
     try{
-        $new_server    = proxy_get_server($hostname);
-        $target_server = proxy_get_server($target_host);
-        $proxy_server  = proxy_get_proxy($target_server, $operation);
+        $server         = proxy_get_server($hostname);
+        $next_proxy     = proxy_get_next($server);
+        $previous_proxy = proxy_get_previous($server['servers_id']);
+
+        /*
+         * If previous proxy exists and next proxy exist
+         * We must update rules on previous to start accepting request from next proxy.
+         */
+
+        /*
+         * If previous proxy exists and next proxy exist
+         * Update rules on next proxy to start accepting request from previous proxy.
+         */
+
+        /*
+         * If previous proxy exists and next proxy exist
+         * Redirect request from next proxy to previous proxy
+         */
+
+        /*
+         * If previous proxy exists and next proxy exist
+         * Remove rules on previous proxy to stop acceting request from removed server
+         */
+
+        /*
+         * If previous proxy exists and next proxy exist
+         * Remove rules on next proxy to stop acceting request from removed server
+         */
+
     }catch(Exception $e){
         throw new bException('proxy_remove(): Failed', $e);
     }
