@@ -120,6 +120,7 @@ function forwards_insert_apply($forward){
 }
 
 
+
 /*
  * Deletes a forwarding rule
  *
@@ -203,7 +204,20 @@ function forwards_delete_apply($forward){
  */
 function forwards_update($forward, $modifiedby = null){
     try{
-        $forward = forwards_validate($forward);
+        $forward     = forwards_validate($forward);
+        $old_forward = sql_get('SELECT
+                                    `forwards`.`id`,
+                                    `forwards`.`source_ip`,
+                                    `forwards`.`source_port`,
+                                    `forwards`.`source_id`,
+                                    `forwards`.`target_ip`,
+                                    `forwards`.`target_port`,
+                                    `forwards`.`target_id`,
+                                    `forwards`.`protocol`
+
+                                FROM      `forwards`
+
+                                WHERE     `forwards`.`id`    = :id', array(':id' => $forward['id']));
 
         sql_query('UPDATE `forwards`
 
@@ -220,19 +234,19 @@ function forwards_update($forward, $modifiedby = null){
 
                        WHERE  `id`          = :id',
 
-                       array(':id'          => $forwarding['id'],
+                       array(':id'          => $forward['id'],
                              ':modifiedby'  => $modifiedby,
-                              'source_ip'   => $forwarding['source_ip'],
-                              'source_port' => $forwarding['source_port'],
-                              'source_id'   => $forwarding['source_id'],
-                              'target_ip'   => $forwarding['target_ip'],
-                              'target_port' => $forwarding['target_port'],
-                              'target_id'   => $forwarding['target_id'],
-                              'protocol'    => $forwarding['protocol'],
-                              'description' => $forwarding['description']));
+                              'source_ip'   => $forward['source_ip'],
+                              'source_port' => $forward['source_port'],
+                              'source_id'   => $forward['source_id'],
+                              'target_ip'   => $forward['target_ip'],
+                              'target_port' => $forward['target_port'],
+                              'target_id'   => $forward['target_id'],
+                              'protocol'    => $forward['protocol'],
+                              'description' => $forward['description']));
 
         if($forward['apply']){
-            forwards_update_apply($forward);
+            forwards_update_apply($forward, $old_forward);
         }
 
     }catch(Exception $e){
@@ -247,7 +261,7 @@ function forwards_update($forward, $modifiedby = null){
  * @param array $forward
  * @return void
  */
-function forwards_update_apply($forward){
+function forwards_update_apply($forward, $old_forward){
     try{
         if($forward['apply']){
             switch($forward['protocol']){
@@ -259,6 +273,10 @@ function forwards_update_apply($forward){
                      */
                     route_add_prerouting( $forward['target_id'], 'tcp', $forward['source_port'], $forward['target_port'], $forward['target_ip']);
                     route_add_postrouting($forward['target_id'], 'tcp', $forward['target_port'], $forward['target_ip']);
+
+                    /*
+                     * Removed old rules
+                     */
                     break;
 
                 case 'ssh':
