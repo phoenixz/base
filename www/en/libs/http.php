@@ -32,7 +32,7 @@ function get_dosubmit(){
 /*
  * Redirect
  */
-function redirect($target = '', $http_code = null, $clear_session_redirect = true){
+function redirect($target = '', $http_code = null, $clear_session_redirect = true, $time_delay = null){
     return include(__DIR__.'/handlers/http-redirect.php');
 }
 

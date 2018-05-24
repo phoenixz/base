@@ -92,6 +92,11 @@ try{
         $target = $_CONFIG['root'].$target;
     }
 
+    if($time_delay){
+        header('Refresh: '.$time_delay.';'.redirect_url($target), true, $http_code);
+        die();
+    }
+
     header('Location:'.redirect_url($target), true, $http_code);
     die();
 
