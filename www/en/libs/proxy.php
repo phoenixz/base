@@ -2,6 +2,8 @@
 /*
  * Proxy library
  *
+ * @license http://opensource.org/licenses/GPL-2.0 GNU Public License, Version 2
+ * @copyright Capmega <copyright@capmega.com>
  */
 
 
@@ -21,94 +23,111 @@ function proxy_library_init(){
 
 
 /*
+ * Inserts a new server
  *
+ * @param string $root_hostname, first server of the proxy chain
+ * @param string $new_hostname, host to be inserted
+ * @param string $target_hostname, hostname after or before new server is going to be inserted
+ * @param string $location, location for the new server(before  or after $target_hostname)
  */
-function proxy_insert($hostname, $operation , $target_host){
+function proxy_insert($root_hostname, $new_hostname, $target_hostname, $location){
     try{
-        $new_server    = proxy_get_server($hostname);
-        $target_server = proxy_get_server($target_host);
-        $proxy_server  = proxy_get_proxy($target_server, $operation);
+        $root = proxy_get_server($root_hostname, true);
+        $new  = proxy_get_server($new_hostname);
 
-        if(empty($proxy_server)){
-            if($operation == 'after'){
+        switch($location){
+            case 'before':
                 /*
-                 * Set rules to allow request from new server to target server
+                 * Get next server
                  */
-                csf_allow_rule($target_server['hostname'], 'tcp', 'in', 80,  $new_server['ipv4']);
-                csf_allow_rule($target_server['hostname'], 'tcp', 'in', 40220,  $new_server['ipv4']);
+                $prev = null;
 
-               /*
-                * Set redirects to target server from new server
-                */
-                route_add_prerouting ($new_server['hostname'], 'tcp', 80, 4001, $target_server['ipv4']);
-                route_add_postrouting($new_server['hostname'], 'tcp', 4001, $target_server['ipv4']);
-            }else{
-                /*
-                 * Set rules to allow request from new server to target server
-                 */
-                csf_allow_rule($new_server['hostname'], 'tcp', 'in', 80,  $target_server['ipv4']);
-                csf_allow_rule($new_server['hostname'], 'tcp', 'in', 40220,  $target_server['ipv4']);
+                foreach($root['proxies'] as $index => $proxy){
 
-                /*
-                 * Set rules to allow request from new server to target server
-                 */
-                csf_allow_rule($target_server['hostname'], 'tcp', 'in', 80,  $new_server['ipv4']);
-                csf_allow_rule($target_server['hostname'], 'tcp', 'in', 40220,  $new_server['ipv4']);
+                    $prev = ($index > 0) ? $root['proxies'][$index-1]['id'] : null;
 
-               /*
-                * Set redirects to target server from new server
-                */
-                route_add_prerouting ($target_server['hostname'], 'tcp', 80, 4001, $new_server['ipv4']);
-                route_add_postrouting($target_server['hostname'], 'tcp', 4001, $new_server['ipv4']);
-            }
+                    if($proxy['hostname'] == $target_hostname){
+                        $next = servers_get($proxy['id'], false, false);
+                        break;
+                    }
+                }
 
-        }else{
-            /*
-             * Set rules in new server to allow requests from proxy server
-             */
-            csf_allow_rule($new_server['hostname'], 'tcp', 'in', 80,  $proxy_server['ipv4']);
-            csf_allow_rule($new_server['hostname'], 'tcp', 'in', 40220,  $proxy_server['ipv4']);
+                if(empty($next)){
+                    throw new bException(tr('proxy_insert(): Next not found'), 'not-found');
+                }
 
-            /*
-             * Set rules in proxy server to allow requests from new server
-             */
-            csf_allow_rule($proxy_server['hostname'], 'tcp', 'in', 80,  $new_server['ipv4']);
-            csf_allow_rule($proxy_server['hostname'], 'tcp', 'in', 40220,  $new_server['ipv4']);
-
-            if($operation == 'after'){
-                /*
-                 * Set rules to redirect requests from new server to target server
-                 */
-                route_add_prerouting ($new_server['hostname'], 'tcp', 80, 4001, $target_server['ipv4']);
-                route_add_postrouting($new_server['hostname'], 'tcp', 4001, $target_server['ipv4']);
-
-               /*
-                * Set rules to redirect requests from proxy server to new server. This will remove redirects to target server from proxy server.
-                */
-                route_add_prerouting ($proxy_server['hostname'], 'tcp', 80, 4001, $new_server['ipv4']);
-                route_add_postrouting($proxy_server['hostname'], 'tcp', 4001, $new_server['ipv4']);
-
-            } else {
-                /* When new server is inserted before another server
-                 * Set rules to redirect requests from new server to previous proxy for target server
-                 */
-                route_add_prerouting ($new_server['hostname'], 'tcp', 80, 4001, $proxy_server['ipv4']);
-                route_add_postrouting($new_server['hostname'], 'tcp', 4001, $proxy_server['ipv4']);
+                if(is_null($prev)){
+                    $prev = $root;
+                }else{
+                    $prev = servers_get($prev, false, false);
+                }
 
                 /*
-                 * Set rules to redirect requests from new target server to new server
+                 * Always must be a prev server
                  */
-                route_add_prerouting ($target_server['hostname'], 'tcp', 80, 4001, $new_server['ipv4']);
-                route_add_postrouting($target_server['hostname'], 'tcp', 4001, $new_server['ipv4']);
-            }
+                if(empty($prev)){
+                    throw new bException(tr('proxy_insert(): Prev not found'), 'not-found');
+                }
 
-            /*
-             * Remove rules on target server to stop accepting requests from proxy
-             */
-            csf_remove_allow_rule($target_server['hostname'], 'tcp', 'in', 80, $proxy_server['ipv4']);
-            csf_remove_allow_rule($target_server['hostname'], 'tcp', 'in', 40220, $proxy_server['ipv4']);
+                break;
 
+            case 'after':
+                /*
+                 * Get previous server
+                 */
+                foreach($root['proxies'] as $proxy){
+
+                    $next = next($root['proxies']);
+
+                    if($proxy['hostname'] == $target_hostname){
+                        $prev = servers_get($proxy['id'], false, false);
+                        break;
+                    }
+
+                }
+
+                if(empty($next)){
+                    throw new bException(tr('proxy_insert(): Next not found'), 'not-found');
+                }
+
+                /*
+                 * Get previous server from proxies list
+                 */
+                $next = servers_get($next['id'], false, false);
+
+                if(empty($prev)){
+                    throw new bException(tr('proxy_insert(): Prev not found'), 'not-found');
+                }
+
+                break;
+
+            default:
+                throw new bException(tr('proxy_insert(): Unknown location ":location"', array(':location'=>$location)), 'unknown');
         }
+        /*
+         * Setting rules for prev to start accepting requests for new server
+         */
+        csf_allow_rule($prev['hostname'], 'tcp', 'in', 80, $new['ipv4']);
+        csf_allow_rule($prev['hostname'], 'tcp', 'in', 80, $new['ipv4']);
+
+        /*
+         * Setting rules for new server to start redirecting requests to prev server
+         */
+        route_add_prerouting ($new['hostname'], 'tcp', 80,   4001, $prev['ipv4']);
+        route_add_postrouting($new['hostname'], 'tcp', 4001, $prev['ipv4']);
+
+
+        /*
+         * Setting rules for next sever to start redirecting requests to new server
+         */
+        route_add_prerouting ($next['hostname'], 'tcp', 80,   4001, $new['ipv4']);
+        route_add_postrouting($next['hostname'], 'tcp', 4001, $new['ipv4']);
+
+        /*
+         * Update database for new proxy relation
+         */
+        sql_query('UPDATE `servers` SET `ssh_proxies_id` = ":proxy_id" WHERE `id` = :id', array(':proxy_id' => $new['id']));
+        sql_query('UPDATE `servers` SET `ssh_proxies_id` = ":proxy_id" WHERE `id` = :id', array(':proxy_id' => $next['id']));
 
     }catch(Exception $e){
         throw new bException('proxy_insert(): Failed', $e);
@@ -118,38 +137,80 @@ function proxy_insert($hostname, $operation , $target_host){
 
 
 /*
- * @param string $hostname
+ * Removes a server form the proxy chain
+ *
+ * @param string $root_hostname
+ * @param string $remove_hostname
  */
-function proxy_remove($hostname){
+function proxy_remove($root_hostname, $remove_hostname){
     try{
-        $server         = proxy_get_server($hostname);
-        $next_proxy     = proxy_get_next($server);
-        $previous_proxy = proxy_get_previous($server['servers_id']);
+        if($root_hostname == $remove_hostname){
+            throw new bException(tr('proxy_remove(): You can not remove the root server for proxy chain'), 'invalid');
+        }
+
+        $root   = proxy_get_server($root_hostname, true);
 
         /*
-         * If previous proxy exists and next proxy exist
-         * We must update rules on previous to start accepting request from next proxy.
+         * Checking if removed hostname is on the proxy chain for the root hostname
          */
+        $belongs_to_chain = false;
+
+        foreach($root['proxies'] as $proxy){
+            if($proxy['hostname'] == $remove_hostname){
+                $belongs_to_chain = true;
+                $removed          = servers_get($remove_hostname, false, false);
+                break;
+            }
+
+        }
+
+        if(!$belongs_to_chain){
+            throw new bException(tr('proxy_remove(): Remove hostname does not belong to the chain for ":root_hostname"', array(':root_hostname'=>$root_hostname)), 'invalid');
+        }
 
         /*
-         * If previous proxy exists and next proxy exist
-         * Update rules on next proxy to start accepting request from previous proxy.
+         * Getting prev server and next server
          */
+        $prev = array();
+        $next = array();
+
+        foreach($root['proxies'] as $index=>$proxy){
+
+            if($proxy['hostname'] == $remove_hostname){
+
+                $prev = isset($root['proxies'][$index-1])?servers_get($root['proxies'][$index-1]['id']):$root;
+                $next = isset($root['proxies'][$index+1])?servers_get($root['proxies'][$index+1]['id']):array();
+
+                break;
+            }
+
+        }
 
         /*
-         * If previous proxy exists and next proxy exist
-         * Redirect request from next proxy to previous proxy
+         * Update rules on prev server to start accepting request for next server
          */
+        csf_allow_rule($prev['hostname'], 'tcp', 'in', 80, $next['ipv4']);
+        csf_allow_rule($prev['hostname'], 'tcp', 'in', 80, $next['ipv4']);
 
         /*
-         * If previous proxy exists and next proxy exist
-         * Remove rules on previous proxy to stop acceting request from removed server
+         * Update next server to start redirecting request to prev server instead or removed server
          */
+        route_add_prerouting ($next['hostname'], 'tcp', 80, 4001, $prev['ipv4']);
+        route_add_postrouting($next['hostname'], 'tcp', 4001,     $prev['ipv4']);
+
 
         /*
-         * If previous proxy exists and next proxy exist
-         * Remove rules on next proxy to stop acceting request from removed server
+         * Start accepting request from removed server on prev server
          */
+        csf_remove_allow_rule($prev['hostname'], 'tcp', 'in', 80,    $removed['ipv4']);
+        csf_remove_allow_rule($prev['hostname'], 'tcp', 'in', 40220, $removed['ipv4']);
+
+
+        /*
+         * Update data base with new proxy relations
+         */
+        sql_query('UPDATE `servers` SET `ssh_proxies_id` = ":proxy_id" WHERE `id` = :id', array(':proxy_id' => $removed['id']));
+        sql_query('UPDATE `servers` SET `ssh_proxies_id` = ":proxy_id" WHERE `id` = :id', array(':proxy_id' => $next['id']));
 
     }catch(Exception $e){
         throw new bException('proxy_remove(): Failed', $e);
@@ -159,148 +220,24 @@ function proxy_remove($hostname){
 
 
 /*
- * Returns proxy information for specified server
- * @param array $server, server information provided by servers_get()
- * @return array $next_proxy
- */
-function proxy_get_next($server){
-    try{
-        $next_proxy = array();
-
-        if(isset($server['proxies']) and isset($server['proxies'][0])){
-            $next_proxy = $server['proxies'][0];
-        }
-
-        return $next_proxy;
-
-    }catch(Exception $e){
-        throw new bException('proxy_get_next(): Failed', $e);
-    }
-}
-
-
-
-/*
- * @param integer $servers_id, server's id
- * @see proxy_get_previous()
- */
-function proxy_get_previous($servers_id){
-    try{
-        if(empty($servers_id)){
-            throw new bException(tr('proxy_get_previous(): No server id specified'), 'not-specified');
-        }
-
-        $query  =  'SELECT    `servers`.`id` AS `server_id`,
-                              `servers`.`hostname`,
-                              `servers`.`port`,
-                              `servers`.`ssh_accounts_id`,
-                              `servers`.`ssh_proxies_id`,
-                              `ssh_accounts`.`username`,
-                              `ssh_accounts`.`ssh_key`
-
-                    FROM      `servers`
-
-                    LEFT JOIN `ssh_accounts`
-                    ON        `servers`.`ssh_accounts_id` = `ssh_accounts`.`id`
-
-                    WHERE       `servers`.`ssh_proxies_id` = :servers_id';
-
-        $previous = sql_get($query, array(':servers_id'=>$servers_id));
-
-        return $previous;
-
-    }catch(Exception $e){
-        throw new bException('proxy_get_previous(): Failed', $e);
-    }
-}
-
-
-
-/*
+ * Returns server information for a specified hostname
+ *
  * @param string $hostname
- * @return array $server
+ * @param boolean $return_proxies
+ * @return array
  */
-function proxy_get_server($hostname){
+function proxy_get_server($hostname, $return_proxies = false){
     try{
-        if(empty($hostname)){
-            throw new bException(tr('proxy_get_server(): No hostname specified'), 'not-specified');
-        }
+        $server = servers_get($hostname, false, $return_proxies);
 
-        $server = servers_get($hostname);
         if(empty($server)){
-            throw new bException(tr('proxy_get_server(): No data found for hostname ":hostname"', array(':hostname' => $hostname)), 'not-found');
+            throw new bException(tr('proxy_get_server(): No server found for hostname ":hostname"', array(':hostname'=>$hostname)), 'not-found');
         }
 
         return $server;
 
     }catch(Exception $e){
         throw new bException('proxy_get_server(): Failed', $e);
-    }
-}
-
-
-
-/*
- * Return proxy according to operation type ,if operation type is equal to before
- * then returns previous proxy from target server, otherwise return next proxy for target server.
- * @param array $server, response provided by sergers_get()
- * @param string $operation, operation must be 'before' or 'after'
- * @return array $proxy_server
- */
-function proxy_get_proxy($server, $operation){
-    try{
-        $operation = proxy_validate_operation($operation);
-
-        switch($operation){
-            case 'before':
-                $proxy_server = proxy_get_previous($server['servers_id']);
-                break;
-
-            case 'after':
-                $proxy_server = proxy_get_next($server);
-                break;
-
-            default:
-                throw new bException(tr('proxy_get_proxy(): Unknown operation ":operation" specified', array(':operation' => $operation)), 'unknown');
-        }
-
-        return $proxy_server;
-
-    }catch(Exception $e){
-        throw new bException('proxy_get_proxy(): Failed', $e);
-    }
-}
-
-
-
-/*
- * @param string $operation, valid operations: before and after
- * @return string $operation
- * @see proxy_validate_operation()
- */
-function proxy_validate_operation($operation){
-    try{
-        if(empty($operation)){
-            throw new bException(tr('proxy_validate_operation(): No operation specified'), 'not-specified');
-        }
-
-        $operation = strtolower($operation);
-
-        switch($operation){
-            case 'before':
-                // FALLTHROUGH
-            case 'after':
-                //valid operations
-                break;
-
-            default:
-                throw new bException(tr('proxy_validate_operation(): Unknown operation ":operation" specified', array(':operation' => $operation)), 'unknown');
-        }
-
-        return $operation;
-
-    }catch(Exception $e){
-        throw new bException('proxy_validate_operation(): Failed', $e);
     }
 }
 ?>

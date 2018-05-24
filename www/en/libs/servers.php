@@ -240,14 +240,14 @@ function servers_exec($host, $commands, $options = null, $background = false, $f
 function servers_get($host, $database = false, $return_proxies = true, $limited_columns = false){
     try{
         if($limited_columns){
-            $query =  'SELECT    `servers`.`id` AS `servers_id`,
+            $query =  'SELECT    `servers`.`id`,
                                  `servers`.`hostname`,
                                  `servers`.`port`,
                                  `servers`.`ssh_proxies_id`,
                                  `servers`.`ipv4`';
 
         }else{
-            $query =  'SELECT    `servers`.`id` AS `servers_id`,
+            $query =  'SELECT    `servers`.`id`,
                                  `servers`.`hostname`,
                                  `servers`.`port`,
                                  `servers`.`ssh_accounts_id`,
@@ -400,19 +400,18 @@ function servers_detect_os($hostname){
 
 
 /*
- * Gets the public ip
+ * Returns the public IP for the specified hostname
+ *
  * @param string $hostname
- * @return string $ip
- * @see servers_get_ip()
+ * @return string $ip The IP for the specified hostname
  */
-function servers_get_ip($hostname){
+function servers_get_public_ip($hostname){
     try{
         $ip = servers_exec($hostname, 'dig +short myip.opendns.com @resolver1.opendns.com');
-
         return $ip;
 
     }catch(Exception $e){
-        throw new bException('servers_get_ip(): Failed', $e);
+        throw new bException('servers_get_public_ip(): Failed', $e);
     }
 }
 ?>

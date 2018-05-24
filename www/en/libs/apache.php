@@ -26,6 +26,8 @@ function apache_library_init(){
 
 
 /*
+ *
+ *
  * Example:
  *
  * <VirtualHost *:80>
@@ -36,10 +38,12 @@ function apache_library_init(){
  *   ProxyPass / http://255.255.255.255:9999/
  *   ProxyPassReverse / http://1.1.1.1:9999/
  * </VirtualHost>
+ *
  * @param string $hostname
  * @param string $vhost_name
  * @param array $params, params must be key, value example $params = array('ServerName'=>'servername.org');
- * @param integer $port
+ * @param integer $port The port for this vhost, valid numbers are 1 - 65535
+ * @return void
  */
 function apache_write_vhost($hostname, $vhost_name, $params, $port){
     try{
@@ -99,6 +103,7 @@ function apache_write_vhost($hostname, $vhost_name, $params, $port){
  * ServerTokens
  * UseCanonicalName
  * UseCanonicalPhysicalPort
+ *
  * @param string $hostname
  * @param array $params, must be an array example: $params = array('ServerName'=>'domain.com',....,'ServerSignature'=>'Off');
  */
@@ -122,8 +127,9 @@ function apache_set_identification($hostname, $params){
 
 /*
  * Returns the complete path for the vhost according to the operating system
- * @param string $server_os, operating system name
- * @return string $vhost_path
+ *
+ * @param string $server_os The operating system name
+ * @return string The path where the virtual host configuration files are located
  */
 function apache_get_vhosts_path($server_os){
     try{
@@ -156,8 +162,9 @@ function apache_get_vhosts_path($server_os){
 
 /*
  * Returns the complete path for apache configuration according to the operating system from the host
+ *
  * @param string $hostname
- * @return string $path
+ * @return string
  */
 function apache_get_config_path($hostname){
     try{
