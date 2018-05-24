@@ -300,6 +300,8 @@ function emailadmin_list_users($domain){
 
 /*
  * Add a new user
+ *
+ * INSERT INTO `accounts` (`domains_id`, `email`, `password`) VALUES (24, "blaatschaap@capmega.com", ENCRYPT("blaatschaap-password-here", CONCAT("$6$", SUBSTRING(SHA(RAND()), -16))));
  */
 function emailadmin_add_user($email, $password){
     try{

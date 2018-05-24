@@ -48,7 +48,7 @@ function sms_send_message($message, $to, $from = null){
 /*
  *
  */
-function sms_get_conversation($phone_local, $phone_remote, $type, $repliedon_now = false){
+function sms_get_conversation($phone_local, $phone_remote, $type, $createdon = null, $repliedon_now = false){
     global $_CONFIG;
 
     try{
@@ -99,11 +99,14 @@ function sms_get_conversation($phone_local, $phone_remote, $type, $repliedon_now
              */
             $blocked = sql_get('SELECT `id` FROM `sms_blocks` WHERE `number` = :number', true, array(':number' => $phone_remote));
 
-            sql_query('INSERT INTO `sms_conversations` (`status`, `phone_local`, `phone_remote`, `type`, `repliedon`)
-                       VALUES                          (:status , :phone_local , :phone_remote , :type , '.($repliedon_now ? 'NOW()' : 'NULL').')',
+            sql_query('INSERT INTO `sms_conversations` (`createdon`, `modifiedon`, `status`, `phone_local`, `phone_remote`, `type`, `repliedon`)
+                       VALUES                          (:createdon , :modifiedon , :status , :phone_local , :phone_remote , :type , :repliedon )',
 
                        array(':type'         => $type,
-                             ':status'       => ($blocked ? 'blocked' : null),
+                             ':createdon'    => $createdon,
+                             ':modifiedon'   => $createdon,
+                             ':repliedon'    => ($repliedon_now ? $createdon : null),
+                             ':status'       => ($blocked       ? 'blocked'  : null),
                              ':phone_local'  => $phone_local,
                              ':phone_remote' => $phone_remote));
 

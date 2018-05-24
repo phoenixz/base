@@ -229,7 +229,7 @@ function ssh_exec($server, $commands = null, $background = false, $function = 'e
          * remote server, just use safe_exec and execute it locally
          */
         if(!$server['hostname']){
-            $result = safe_exec($server['commands'].($server['background'] ? ' &' : ''));
+            $result = shell_exec($server['commands'].($server['background'] ? ' &' : ''));
             return $result;
         }
 
@@ -289,7 +289,7 @@ function ssh_exec($server, $commands = null, $background = false, $function = 'e
                 $proxies_string    = str_replace(':proxy_template', $proxy_string, $proxies_string);
                 $target_server     = $proxy['hostname'];
 
-                servers_add_to_known_host_file($proxy['hostname'], $user_known_hosts_file, $proxy['port']);
+                ssh_add_known_host($proxy['hostname'], $proxy['port'], $user_known_hosts_file);
             }
             /*
              * No more proxies, remove the template placeholder
@@ -303,7 +303,7 @@ function ssh_exec($server, $commands = null, $background = false, $function = 'e
         /*
         * Also add the target server
         */
-        servers_add_to_known_host_file($server['hostname'], $user_known_hosts_file, $server['port']);
+        ssh_add_known_host($server['hostname'], $server['port'], $user_known_hosts_file);
 
         /*
          * Execute command on remote server
@@ -622,6 +622,80 @@ function ssh_add_known_host($hostname, $port, $known_hosts_path){
 
     }catch(Exception $e){
         throw new bException('ssh_add_known_host(): Failed', $e);
+    }
+}
+
+
+
+/*
+ *
+ */
+function ssh_get_config($hostname){
+    try{
+        $config = servers_exec($hostname, 'cat /etc/ssh/sshd_config');
+
+        return $config;
+
+    }catch(Exception $e){
+        throw new bException('ssh_get_config(): Failed', $e);
+    }
+}
+
+
+
+/*
+ * Do not inlude  at the beggining of comments the name of the field, otherwise it would be also replace
+ */
+function ssh_update_config($hostname, $params){
+    try{
+        $params = ssh_validate_params_update_config($params);
+        $config = ssh_get_config($hostname);
+
+        foreach($params as $config_field => $parameters){
+
+            $comments = '';
+            if(isset($parameters['description'])){
+                $comments = '#'.$parameters['description']."\n";
+            }
+
+            $config   = preg_replace('/'.$config_field.'\s+(\d+|\w+)|#'.$config_field.'\s+(\d+|\w+)/', $comments.$config_field." ".$parameters['value'], $config);
+        }
+
+        servers_exec($hostname, 'cat > /etc/ssh/sshd_config << EOF '.$config);
+
+        return $config;
+
+    }catch(Exception $e){
+        throw new bException('ssh_update_config(): Failed', $e);
+    }
+}
+
+
+
+/*
+ * Field description is optional, value is mandatory
+ * Example $params = array('Port'=>array('description'=>'Comentary', 'value'=>40220));
+ */
+function ssh_validate_params_update_config($params){
+    try{
+        if(empty($params)){
+            throw new bException(tr('ssh_validate_params_update_config(): No params specified'), 'not-specified');
+        }
+
+        if(!is_array($params)){
+            throw new bException(tr('ssh_validate_params_update_config(): Params is not an array. Accepted array example: array(\'Port\'=>array(\'description\'=>\'Comentary\', \'value\'=>40220))'), 'not-specified');
+        }
+
+        foreach($params as $config_field=>$parameters){
+            if(!isset($parameters['value'])){
+                throw new bException(tr('ssh_validate_params_update_config(): No value specified for config field :configfield', array(':configfield'=>$config_field)), 'not-specified');
+            }
+        }
+
+        return $params;
+
+    }catch(Exception $e){
+        throw new bException('csf_deny_rule(): Failed', $e);
     }
 }
 ?>

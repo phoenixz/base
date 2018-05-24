@@ -190,7 +190,7 @@ function servers_exec($host, $commands, $options = null, $background = false, $f
         }
 
         if(!$server){
-            throw new bException(tr('servers_exec(): Specified hostname ":hostname" does not exist', array(':hostname' => $host)), 'not-exists');
+            $server = array();
         }
 
         if(!$options){
@@ -240,15 +240,19 @@ function servers_exec($host, $commands, $options = null, $background = false, $f
 function servers_get($host, $database = false, $return_proxies = true, $limited_columns = false){
     try{
         if($limited_columns){
-            $query =  'SELECT    `servers`.`hostname`,
+            $query =  'SELECT    `servers`.`id`,
+                                 `servers`.`hostname`,
                                  `servers`.`port`,
-                                 `servers`.`ssh_proxies_id` ';
+                                 `servers`.`ssh_proxies_id`,
+                                 `servers`.`ipv4`';
 
         }else{
-            $query =  'SELECT    `servers`.`hostname`,
+            $query =  'SELECT    `servers`.`id`,
+                                 `servers`.`hostname`,
                                  `servers`.`port`,
                                  `servers`.`ssh_accounts_id`,
                                  `servers`.`ssh_proxies_id`,
+                                 `servers`.`ipv4`,
 
                                  `ssh_accounts`.`username`,
                                  `ssh_accounts`.`ssh_key` ';
@@ -306,6 +310,108 @@ function servers_get($host, $database = false, $return_proxies = true, $limited_
         }
 
         throw new bException('servers_get(): Failed', $e);
+    }
+}
+
+
+
+/*
+ * Detect the operating system on the specified host
+ * @param  string $hostname The name of the host where to detect the operating system
+ * @return array            An array containing the operatings system type (linux, windows, macos, etc), group (ubuntu group, redhad group, debian group), name (ubuntu, mint, fedora, etc), and version (7.4, 16.04, etc)
+ * @see servers_get_os()
+ */
+function servers_detect_os($hostname){
+    try{
+        /*
+         * Getting complete operating system distribution
+         */
+        $output_version = servers_exec($hostname, 'cat /proc/version');
+
+        if(empty($output_version)){
+            throw new bException(tr('servers_detect_os(): No operating system found on /proc/version for hostname ":hostname"', array(':hostname' => $hostname)), 'unknown');
+        }
+
+        /*
+         * Determine to which group belongs the operating system
+         */
+        preg_match('/(ubuntu |debian |red hat )/i', $output_version, $matches);
+
+        if(empty($matches)){
+            throw new bException(tr('servers_detect_os(): No group version found'), 'unknown');
+        }
+
+        $group = trim(strtolower($matches[0]));
+
+        switch($group){
+            case 'debian':
+                $release = servers_exec($hostname, 'cat /etc/issue');
+                break;
+
+            case 'ubuntu':
+                $release = servers_exec($hostname, 'cat /etc/issue');
+                break;
+
+            case 'red hat':
+                $group   = 'redhat';
+                $release = servers_exec($hostname, 'cat /etc/redhat-release');
+                break;
+
+            default:
+                throw new bException(tr('servers_detect_os(): No os group valid :group', array(':group' => $matches[0])), 'invalid');
+        }
+
+        if(empty($release)){
+            throw new bException(tr('servers_detect_os(): No data found on for os group ":group"', array(':group' => $matches[0])), 'not-exist');
+        }
+
+        $server_os['type']  = 'linux';
+        $server_os['group'] = $group;
+
+        /*
+         * Getting operating systema name based on release file(/etc/issue or /etc/redhad-release)
+         */
+        preg_match('/((:?[kxl]|edu)?ubuntu|mint|debian|red hat enterprise|fedora|centos)/i', $release, $matches);
+
+        if(!isset($matches[0])){
+            throw new bException(tr('servers_detect_os(): No name found for os group ":group"', array(':group' => $matches[0])), 'not-exist');
+        }
+
+        $server_os['name'] = strtolower($matches[0]);
+
+        /*
+         * Getting complete version for the operating system
+         */
+        preg_match('/\d*\.?\d+/', $release, $version);
+
+        if(!isset($version[0])){
+            throw new bException(tr('servers_detect_os(): No version found for os ":os"', array(':os' => $server_os['name'])), 'not-exist');
+        }
+
+        $server_os['version'] = $version[0];
+
+        return $server_os;
+
+    }catch(Exception $e){
+        throw new bException('servers_get_os(): Failed', $e);
+    }
+}
+
+
+
+/*
+ * Returns the public IP for the specified hostname
+ *
+ * @param string $hostname
+ * @return string $ip The IP for the specified hostname
+ */
+function servers_get_public_ip($hostname){
+    try{
+        $ip = servers_exec($hostname, 'dig +short myip.opendns.com @resolver1.opendns.com');
+        return $ip;
+
+    }catch(Exception $e){
+        throw new bException('servers_get_public_ip(): Failed', $e);
     }
 }
 ?>
