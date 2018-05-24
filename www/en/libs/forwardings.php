@@ -13,11 +13,17 @@
 /*
  *
  */
-function forwardings_insert(){
+function forwards_insert($forward){
     try{
+        $forward = forwards_validate($forward);
+
+        sql_query('INSERT INTO `forwarrds` (``, ``)
+                   VALUES                  (: , : )',
+
+                   array());
 
     }catch(Exception $e){
-        throw new bException('forwardings_insert(): Failed', $e);
+        throw new bException('forwards_insert(): Failed', $e);
     }
 }
 
@@ -26,11 +32,34 @@ function forwardings_insert(){
 /*
  *
  */
-function forwardings_delete(){
+function forwards_insert_apply(){
     try{
 
     }catch(Exception $e){
-        throw new bException('forwardings_delete(): Failed', $e);
+        throw new bException('forwards_insert_apply(): Failed', $e);
+    }
+}
+
+
+/*
+ *
+ */
+function forwards_delete($forward){
+    try{
+        array_ensure($forward, '');
+        array_default($forward, 'apply', true);
+
+        sql_query('DELETE FROM `forwarrds`
+                   WHERE  ',
+
+                   array());
+
+        if($forward['apply']){
+            forwards_delete_apply($forward);
+        }
+
+    }catch(Exception $e){
+        throw new bException('forwards_delete(): Failed', $e);
     }
 }
 
@@ -39,11 +68,44 @@ function forwardings_delete(){
 /*
  *
  */
-function forwardings_update(){
+function forwards_delete_apply(){
     try{
 
     }catch(Exception $e){
-        throw new bException('forwardings_update(): Failed', $e);
+        throw new bException('forwards_delete_apply(): Failed', $e);
+    }
+}
+
+
+
+/*
+ *
+ */
+function forwards_update($forward){
+    try{
+        $forward = forwards_validate($forward);
+
+        sql_query('UPDATE `forwarrds`
+                   WHERE  ',
+
+                   array());
+
+
+    }catch(Exception $e){
+        throw new bException('forwards_update(): Failed', $e);
+    }
+}
+
+
+
+/*
+ *
+ */
+function forwards_update_apply(){
+    try{
+
+    }catch(Exception $e){
+        throw new bException('forwards_update_apply(): Failed', $e);
     }
 }
 
@@ -52,54 +114,49 @@ function forwardings_update(){
 /*
  * Validates information in order to insert or update record on database
  *
- * @param array $forwarding
+ * @param array $forward
  * @return array
  */
-function forwardings_validate($forwarding){
+function forwards_validate($forward){
     try{
         load_libs('validate');
-        array_params($forwarding);
+        array_params($forward);
 
-        $v = new validate_form($forwarding, 'source_ip, source_port, target_ip, target_port');
-        $v->isNotEmpty($forwarding['source_ip'],   tr('forwardings_validate(): Please specifiy a source ip'));
-        $v->isNotEmpty($forwarding['source_port'], tr('forwardings_validate(): Please specifiy a source port'));
+        $v = new validate_form($forward, 'source_ip,source_port,target_ip,target_port');
+        $v->isNotEmpty($forward['source_ip'],   tr('Please specifiy a source ip'));
+        $v->isNotEmpty($forward['source_port'], tr('Please specifiy a source port'));
 
-        if(!is_natural($forwarding['source_port']) or ($forwarding['source_port'] > 65535)){
-            $v->setError(tr('forwardings_validate(): Please specify a valid port for source port field'));
+        if(!is_natural($forward['source_port']) or ($forward['source_port'] > 65535)){
+            $v->setError(tr('Please specify a valid port for source port field'));
         }
 
-        if(filter_var($forwarding['source_ip'], FILTER_VALIDATE_IP) === false){
-            $v->setError(tr('forwardings_validate(): Please specify a valid ip for source ip field'));
-        }
+        $v->isFilter($forward['source_ip'], FILTER_VALIDATE_IP, tr('Please specify a valid IP address for source IP field'));
 
-        if($forwarding['source_id']){
-            $forwarding['source_id'] = sql_get('SELECT `id` FROM `servers` WHERE `seohostname` = :seohostname AND `status` IS NULL', array(':seohostname' => $forwarding['source_id']), true);
+        if($forward['source_id']){
+            $exists = sql_get('SELECT `id` FROM `servers` WHERE `seohostname` = :seohostname AND `status` IS NULL', array(':seohostname' => $forward['source_id']), true);
 
-            if(!$forwarding['source_id']){
-                $v->setError(tr('forwardings_validate(): Specified proxy ":source" does not exist', array(':source' => $forwarding['source_id'])));
+            if(!$exists){
+                $v->setError(tr('Specified proxy ":source" does not exist', array(':source' => $forward['source_id'])));
             }
         }
 
-        if($forwarding['target_id']){
-            $forwarding['target_id'] = sql_get('SELECT `id` FROM `servers` WHERE `seohostname` = :seohostname AND `status` IS NULL', array(':seohostname' => $forwarding['target_id']), true);
+        if($forward['target_id']){
+            $exists = sql_get('SELECT `id` FROM `servers` WHERE `seohostname` = :seohostname AND `status` IS NULL', array(':seohostname' => $forward['target_id']), true);
 
-            if(!$forwarding['target_id']){
-                $v->setError(tr('forwardings_validate(): Specified proxy ":source" does not exist', array(':source' => $forwarding['target_id'])));
+            if(!$exists){
+                $v->setError(tr('Specified proxy ":source" does not exist', array(':source' => $forward['target_id'])));
             }
         }
 
 
-        if(!empty($forwarding['target_port']) and (!is_natural($forwarding['target_port']) or ($forwarding['target_port'] > 65535))){
-            $v->setError(tr('forwardings_validate(): Please specify a valid port for target port field'));
+        if(!empty($forward['target_port']) and (!is_natural($forward['target_port']) or ($forward['target_port'] > 65535))){
+            $v->setError(tr('Please specify a valid port for target port field'));
         }
 
-        if(!empty($forwarding['target_ip']) and filter_var($forwarding['target_ip'], FILTER_VALIDATE_IP) === false){
-            $v->setError(tr('forwardings_validate(): Please specify a valid ip for target ip field'));
-        }
+        $v->isFilter($forward['target_ip'], FILTER_VALIDATE_IP, tr('Please specify a valid IP address for target IP field'));
 
-        if($forwarding['protocol']){
-
-            switch($forwarding['protocol']){
+        if($forward['protocol']){
+            switch($forward['protocol']){
                 case 'ssh':
                     // FALLTHROUGH
                 case 'http':
@@ -112,17 +169,20 @@ function forwardings_validate($forwarding){
                     // FALLTHROUGH
                     break;
 
+                case '':
+                    $v->setError(tr('Please specify a protocol'));
+
                 default:
-                    $v->setError(tr('forwardings_validate(): Please specify a protocol'));
+                    $v->setError(tr('Please specify a valid protocol (ssh, http, https, smtp, imap)'));
             }
         }
 
         $v->isValid();
 
-        return $forwarding;
+        return $forward;
 
     }catch(Exception $e){
-        throw new bException('forwardings_validate(): Failed', $e);
+        throw new bException('forwards_validate(): Failed', $e);
     }
 }
 
@@ -131,62 +191,47 @@ function forwardings_validate($forwarding){
 /*
  * Returns a record from the database
  *
- * @param integer $forwarding, id on database to get the information from
+ * @param integer $forward, id on database to get the information from
  * @return array
  */
-function forwardings_get($forwarding){
+function forwards_get($forwards_id){
     try{
-        if(empty($forwarding) or !is_numeric($forwarding)){
-            throw new bException(tr('forwardings_get(): No forwarding specified'), 'not-specified');
+        if(empty($forward)){
+            throw new bException(tr('forwards_get(): No forwarding specified'), 'not-specified');
         }
 
-        $forwarding = sql_get('SELECT    `forwardings`.`id`,
-                                         `forwardings`.`createdby`,
-                                         `forwardings`.`source_ip`,
-                                         `forwardings`.`source_port`,
-                                         `forwardings`.`target_ip`,
-                                         `forwardings`.`target_port`,
-                                         `forwardings`.`protocol`,
-                                         `forwardings`.`description`,
+        $forward = sql_get('SELECT    `forwards`.`id`,
+                                      `forwards`.`createdby`,
+                                      `forwards`.`source_ip`,
+                                      `forwards`.`source_port`,
+                                      `forwards`.`target_ip`,
+                                      `forwards`.`target_port`,
+                                      `forwards`.`protocol`,
+                                      `forwards`.`description`,
 
-                                         `source_servers`.`seohostname` AS `source_id`,
+                                      `source_servers`.`seohostname` AS `source_id`,
+                                      `target_servers`.`seohostname` AS `target_id`,
+                                      `createdby`.`name`             AS `createdby_name`
 
-                                         `target_servers`.`seohostname` AS `target_id`,
-
-                                         `createdby`.`name` AS `createdby_name`
-
-                            FROM      `forwardings`
+                            FROM      `forwards`
 
                             LEFT JOIN `servers` AS `source_servers`
-                            ON        `forwardings`.`source_id` = `source_servers`.`id`
+                            ON        `forwards`.`source_id`  = `source_servers`.`id`
 
                             LEFT JOIN `servers` AS `target_servers`
-                            ON        `forwardings`.`target_id` = `target_servers`.`id`
+                            ON        `forwards`.`target_id`  = `target_servers`.`id`
 
                             LEFT JOIN `users` AS `createdby`
-                            ON        `forwardings`.`createdby`  = `createdby`.`id`
+                            ON        `forwards`.`createdby`  = `createdby`.`id`
 
-                            WHERE     `forwardings`.`id`         = :forwarding',
+                            WHERE     `forwards`.`id`         = :id',
 
-                            array(':forwarding' => $forwarding));
+                            array(':id' => $forwards_id));
 
-        return $forwarding;
-
-    }catch(Exception $e){
-        throw new bException('forwardings_get(): Failed', $e);
-    }
-}
-
-
-
-/*
- *
- */
-function forwardings_apply(){
-    try{
+        return $forward;
 
     }catch(Exception $e){
-        throw new bException('forwardings_apply(): Failed', $e);
+        throw new bException('forwards_get(): Failed', $e);
     }
 }
 ?>
