@@ -41,32 +41,18 @@ function proxy_insert($root_hostname, $new_hostname, $target_hostname, $location
                  * Get next server
                  */
                 $prev = null;
+                $next = proxy_get_server($target_hostname);
 
                 foreach($root['proxies'] as $index => $proxy){
-
-                    $prev = ($index > 0) ? $root['proxies'][$index-1]['id'] : null;
-
-                    if($proxy['hostname'] == $target_hostname){
-                        $next = servers_get($proxy['id'], false, false);
-                        break;
-                    }
+                    $prev = ($index > 0) ? $root['proxies'][$index - 1]['id'] : null;
+                    break;
                 }
 
-                if(empty($next)){
-                    throw new bException(tr('proxy_insert(): Next not found'), 'not-found');
-                }
-
-                if(is_null($prev)){
+                if($prev === null){
                     $prev = $root;
-                }else{
-                    $prev = servers_get($prev, false, false);
-                }
 
-                /*
-                 * Always must be a prev server
-                 */
-                if(empty($prev)){
-                    throw new bException(tr('proxy_insert(): Prev not found'), 'not-found');
+                }else{
+                    $prev = proxy_get_server($prev);
                 }
 
                 break;
@@ -75,28 +61,13 @@ function proxy_insert($root_hostname, $new_hostname, $target_hostname, $location
                 /*
                  * Get previous server
                  */
+                $prev = proxy_get_server($target_hostname);
+                $next = null;
+
                 foreach($root['proxies'] as $proxy){
-
                     $next = next($root['proxies']);
-
-                    if($proxy['hostname'] == $target_hostname){
-                        $prev = servers_get($proxy['id'], false, false);
-                        break;
-                    }
-
-                }
-
-                if(empty($next)){
-                    throw new bException(tr('proxy_insert(): Next not found'), 'not-found');
-                }
-
-                /*
-                 * Get previous server from proxies list
-                 */
-                $next = servers_get($next['id'], false, false);
-
-                if(empty($prev)){
-                    throw new bException(tr('proxy_insert(): Prev not found'), 'not-found');
+                    $next = proxy_get_server($next['id'], false);
+                    break;
                 }
 
                 break;
@@ -104,6 +75,7 @@ function proxy_insert($root_hostname, $new_hostname, $target_hostname, $location
             default:
                 throw new bException(tr('proxy_insert(): Unknown location ":location"', array(':location'=>$location)), 'unknown');
         }
+
         /*
          * Setting rules for prev to start accepting requests for new server
          */
@@ -115,7 +87,6 @@ function proxy_insert($root_hostname, $new_hostname, $target_hostname, $location
          */
         route_add_prerouting ($new['hostname'], 'tcp', 80,   4001, $prev['ipv4']);
         route_add_postrouting($new['hostname'], 'tcp', 4001, $prev['ipv4']);
-
 
         /*
          * Setting rules for next sever to start redirecting requests to new server
@@ -148,7 +119,7 @@ function proxy_remove($root_hostname, $remove_hostname){
             throw new bException(tr('proxy_remove(): You can not remove the root server for proxy chain'), 'invalid');
         }
 
-        $root   = proxy_get_server($root_hostname, true);
+        $root = proxy_get_server($root_hostname, true);
 
         /*
          * Checking if removed hostname is on the proxy chain for the root hostname
@@ -231,7 +202,7 @@ function proxy_get_server($hostname, $return_proxies = false){
         $server = servers_get($hostname, false, $return_proxies);
 
         if(empty($server)){
-            throw new bException(tr('proxy_get_server(): No server found for hostname ":hostname"', array(':hostname'=>$hostname)), 'not-found');
+            throw new bException(tr('proxy_get_server(): No server found for hostname ":hostname"', array(':hostname' => $hostname)), 'not-found');
         }
 
         return $server;
