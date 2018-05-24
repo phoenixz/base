@@ -10,7 +10,18 @@
 
 
 
-load_config('twilio');
+/*
+ * Initialize the library
+ * Automatically executed by libs_load()
+ */
+function twilio_library_init(){
+    try{
+        load_config('twilio');
+
+    }catch(Exception $e){
+        throw new bException('twilio_library_init(): Failed', $e);
+    }
+}
 
 
 
