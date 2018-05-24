@@ -1,11 +1,11 @@
 <?php
 
-sql_query('DROP TABLE IF EXISTS `forwardings`');
+sql_query('DROP TABLE IF EXISTS `forwards`');
 
 /*
  * Create  forwardings table
  */
-sql_query('CREATE TABLE `forwardings` (  `id`           INT(11)      NOT NULL AUTO_INCREMENT,
+sql_query('CREATE TABLE `forwards` (     `id`           INT(11)      NOT NULL AUTO_INCREMENT,
                                          `createdon`    TIMESTAMP    NOT NULL DEFAULT CURRENT_TIMESTAMP,
                                          `createdby`    INT(11)      NULL,
                                          `modifiedon`   TIMESTAMP    NOT NULL DEFAULT CURRENT_TIMESTAMP,
@@ -27,9 +27,9 @@ sql_query('CREATE TABLE `forwardings` (  `id`           INT(11)      NOT NULL AU
                                                  KEY `createdby` (`createdby`),
                                                  KEY `status`    (`status`),
 
-                                         CONSTRAINT `fk_forwardings_source_id` FOREIGN KEY (`source_id`)   REFERENCES `servers`  (`id`) ON DELETE RESTRICT,
-                                         CONSTRAINT `fk_forwardings_target_id` FOREIGN KEY (`target_id`)   REFERENCES `servers`  (`id`) ON DELETE RESTRICT,
-                                         CONSTRAINT `fk_forwardings_createdby` FOREIGN KEY (`createdby`) REFERENCES `users`      (`id`) ON DELETE RESTRICT
+                                         CONSTRAINT `fk_forwards_source_id` FOREIGN KEY (`source_id`)   REFERENCES `servers`  (`id`) ON DELETE RESTRICT,
+                                         CONSTRAINT `fk_forwards_target_id` FOREIGN KEY (`target_id`)   REFERENCES `servers`  (`id`) ON DELETE RESTRICT,
+                                         CONSTRAINT `fk_forwards_createdby` FOREIGN KEY (`createdby`) REFERENCES `users`      (`id`) ON DELETE RESTRICT
 
                                        ) ENGINE=InnoDB AUTO_INCREMENT='.$_CONFIG['db']['core']['autoincrement'].' DEFAULT CHARSET="'.$_CONFIG['db']['core']['charset'].'" COLLATE="'.$_CONFIG['db']['core']['collate'].'";');
 ?>
