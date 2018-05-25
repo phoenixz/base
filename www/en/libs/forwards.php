@@ -16,7 +16,7 @@
  */
 function forwards_library_init(){
     try{
-        load_libs('csf,route');
+        load_libs('csf,iptables');
 
     }catch(Exception $e){
         throw new bException('forwards_library_init(): Failed', $e);
@@ -31,22 +31,71 @@ function forwards_library_init(){
  * @param mixed $server
  * @return void
  */
-function forward_apply($server){
+function forwards_apply_server($server){
     try{
-        $forwards = forwards_list($hostname);
+        $forwards = forwards_list($server);
 
         if($forwards){
             foreach($forwards as $forward){
-                forwards_apply($hostname, $forward);
+                forwards_apply($forward);
             }
+        }
+
+    }catch(Exception $e){
+        throw new bException('forwards_apply_server(): Failed', $e);
+    }
+}
+
+
+
+/*
+ *
+ */
+function forwards_apply($forward){
+    try{
+        if(empty($forward)){
+            throw new bException('forwards_apply(): Forward not specified', 'not-specified');
+        }
+
+        switch($forward['protocol']){
+            case 'smtp':
+                //FALLTHROUGH
+            case 'imap':
+                //FALLTHROUGH
+            case 'http':
+                //FALLTHROUGH
+            case 'https':
+                /*
+                 * Redirect request to target server
+                 */
+                iptables_add_prerouting( $forward['servers_id'], 'tcp', $forward['source_port'], $forward['target_port'], $forward['target_ip']);
+                iptables_add_postrouting($forward['servers_id'], 'tcp', $forward['target_port'], $forward['target_ip']);
+
+                csf_allow_rule($forward['servers_id'], 'tcp', 'in', $forward['target_port'], $forward['source_ip']);
+                csf_allow_rule($forward['servers_id'], 'tcp', 'out', $forward['source_port'], $forward['target_ip']);
+                break;
+
+            case 'ssh':
+                /*
+                 * Allow connections
+                 */
+                csf_allow_rule($forward['servers_id'], 'tcp', 'in', $forward['target_port'], $forward['source_ip']);
+                csf_allow_rule($forward['servers_id'], 'tcp', 'in', $forward['source_port'], $forward['target_ip']);
+                /*
+                * Reload rules for server csf_restart()
+                */
+                csf_restart($forward['source_id']);
+                csf_restart($forward['target_id']);
+                break;
+
+            default:
+
         }
 
     }catch(Exception $e){
         throw new bException('forwards_apply(): Failed', $e);
     }
 }
-
-
 
 /*
  * Inserts a new forwarding rule
@@ -62,10 +111,11 @@ function forwards_insert($forward, $createdby = null){
 
         $forward = forwards_validate($forward);
 
-        sql_query('INSERT INTO `forwards` (`createdby`, `source_ip`, `source_port`, `source_id`, `target_ip`, `target_port`, `target_id`, `protocol`, `description`)
-                   VALUES                 (:createdby , :source_ip , :source_port , :source_id , :target_ip , :target_port , :target_id , :protocol , :description )',
+        sql_query('INSERT INTO `forwards` (`createdby`, `servers_id`, `source_ip`, `source_port`, `source_id`, `target_ip`, `target_port`, `target_id`, `protocol`, `description`)
+                   VALUES                 (:createdby ,  :servers_id, :source_ip , :source_port , :source_id , :target_ip , :target_port , :target_id , :protocol , :description )',
 
                        array(':createdby'   => $createdby,
+                             ':servers_id'  => $forward['servers_id'],
                              ':source_ip'   => $forward['source_ip'],
                              ':source_port' => $forward['source_port'],
                              ':source_id'   => $forward['source_id'],
@@ -78,7 +128,7 @@ function forwards_insert($forward, $createdby = null){
         $forward_id = sql_insert_id();
 
         if($forward_id and $forward['apply']){
-            forwards_insert_apply($forward);
+            forwards_apply($forward);
         }
 
         return $forward_id;
@@ -88,60 +138,6 @@ function forwards_insert($forward, $createdby = null){
     }
 }
 
-
-
-/*
- * Applies to server new forwarding rule
- *
- * @param array
- * @return void
- */
-function forwards_insert_apply($forward){
-    try{
-        array_ensure($forward, '');
-        array_default($forward, 'apply', true);
-
-        if($forward['apply']){
-            switch($forward['protocol']){
-                case 'smtp':
-                    //FALLTHROUGH
-                case 'imap':
-                    //FALLTHROUGH
-                case 'http':
-                    //FALLTHROUGH
-                case 'https':
-                    /*
-                     * Redirect request to target server
-                     */
-                    iptables_add_prerouting( $forward['target_id'], 'tcp', $forward['source_port'], $forward['target_port'], $forward['target_ip']);
-                    iptables_add_postrouting($forward['target_id'], 'tcp', $forward['target_port'], $forward['target_ip']);
-
-                    csf_allow_rule($forward['target_id'], 'tcp', 'in', $forward['target_port'], $forward['source_ip']);
-                    csf_allow_rule($forward['source_id'], 'tcp', 'out', $forward['source_port'], $forward['target_ip']);
-                    break;
-
-                case 'ssh':
-                    /*
-                     * Allow connections
-                     */
-                    csf_allow_rule($forward['target_id'], 'tcp', 'in', $forward['target_port'], $forward['source_ip']);
-                    csf_allow_rule($forward['source_id'], 'tcp', 'in', $forward['source_port'], $forward['target_ip']);
-                    /*
-                    * Reload rules for server csf_restart()
-                    */
-                    csf_restart($forward['source_id']);
-                    csf_restart($forward['target_id']);
-                    break;
-
-                default:
-
-            }
-        }
-
-    }catch(Exception $e){
-        throw new bException('forwards_insert_apply(): Failed', $e);
-    }
-}
 
 
 
@@ -247,6 +243,7 @@ function forwards_update($forward, $modifiedby = null){
 
                    SET    `modifiedby`  = :modifiedby,
                           `modifiedon`  = NOW(),
+                          `servers_id`  = :servers_id,
                           `source_ip`   = :source_ip,
                           `source_port` = :source_port,
                           `source_id`   = :source_id,
@@ -260,6 +257,7 @@ function forwards_update($forward, $modifiedby = null){
 
                    array(':id'          => $forward['id'],
                          ':modifiedby'  => $modifiedby,
+                         ':servers_id'  => $forward['servers_id'],
                          ':source_ip'   => $forward['source_ip'],
                          ':source_port' => $forward['source_port'],
                          ':source_id'   => $forward['source_id'],
@@ -342,7 +340,8 @@ function forwards_validate($forward){
         load_libs('validate');
         array_params($forward);
 
-        $v = new validate_form($forward, 'source_ip,source_port,target_ip,target_port');
+        $v = new validate_form($forward, 'source_ip,source_port,target_ip,target_port,servers_id');
+        $v->isNotEmpty($forward['servers_id'], tr('Please specifiy a server'));
         $v->isNotEmpty($forward['source_ip'], tr('Please specifiy a source ip'));
         $v->isNotEmpty($forward['source_port'], tr('Please specifiy a source port'));
 
@@ -351,6 +350,19 @@ function forwards_validate($forward){
         }
 
         $v->isFilter($forward['source_ip'], FILTER_VALIDATE_IP, tr('Please specify a valid IP address for source IP field'));
+
+        if($forward['servers_id']){
+            $exists = sql_get('SELECT `id` FROM `servers` WHERE `seohostname` = :seohostname AND `status` IS NULL', array(':seohostname' => $forward['servers_id']), true);
+
+            if(!$exists){
+                $v->setError(tr('Specified proxy ":source" does not exist', array(':source' => $forward['servers_id'])));
+
+            }else{
+                $forward['servers_id'] = $exists;
+
+            }
+        }
+
 
         if($forward['source_id']){
             $exists = sql_get('SELECT `id` FROM `servers` WHERE `seohostname` = :seohostname AND `status` IS NULL', array(':seohostname' => $forward['source_id']), true);
@@ -473,17 +485,18 @@ function forwards_list($server){
     try{
         if(!is_numeric($server)){
             if(!is_string($server)){
-                throw new bException();
+                throw new bException(tr('forwards_list(): Server ":server" is not valid. Must be an id or a hostname.'), 'invalid');
             }
 
-            $server = sql_get('');
+            $server = servers_get($server, false, false);
+            $server = $server['id'];
         }
 
         /*
          * From here, $server contains the servers_id
          */
 
-        $forward = sql_list('SELECT   `forwards`.`id`,
+        $forwards = sql_list('SELECT   `forwards`.`id`,
                                       `forwards`.`createdby`,
                                       `forwards`.`source_ip`,
                                       `forwards`.`source_port`,
@@ -507,14 +520,14 @@ function forwards_list($server){
                             LEFT JOIN `users` AS `createdby`
                             ON        `forwards`.`createdby`  = `createdby`.`id`
 
-                            WHERE     `forwards`.`id`         = :id',
+                            WHERE     `forwards`.`servers_id` = :servers_id',
 
-                            array(':id' => $forwards_id));
+                            array(':servers_id' => $server));
 
-        return $forward;
+        return $forwards;
 
     }catch(Exception $e){
-        throw new bException('forwards_get(): Failed', $e);
+        throw new bException('forwards_list(): Failed', $e);
     }
 }
 ?>

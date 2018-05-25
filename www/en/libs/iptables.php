@@ -25,13 +25,14 @@ function iptables_library_init(){
 
 /*
  * Execute iptables with the specified parameters
- * @param string $hostname The unique name or id of the host where to execute the iptables command
+ *
+ * @param string|integer $host The unique name or id of the host where to execute the iptables command
  * @param string $parameters
- * @return mixed The output of servers_exec() for the specified hostname with the specified parameters
+ * @return mixed The output of servers_exec() for the specified host with the specified parameters
  */
-function iptables_exec($hostname, $parameters){
+function iptables_exec($host, $parameters){
     try{
-        return servers_exec($hostname, 'sudo iptables '.$parameters);
+        return servers_exec($host, 'sudo iptables '.$parameters);
 
     }catch(Exception $e){
         throw new bException('iptables_exec(): Failed', $e);
@@ -41,21 +42,26 @@ function iptables_exec($hostname, $parameters){
 
 
 /*
- * ..............
+ * Adds a new rule on iptables
  *
- * @param
+ * @param string|integer $host The unique name or id of the host where to execute the iptables command
+ * @param string $chain_type, allow chain type: prerouting and postrouting
+ * @string $destination_ip
+ * @integer $destination_port
+ * @interger|null $origin_port
+ *
  */
-function iptables_add($hostname, $chain_type, $protocol, $destination_ip, $destination_port, $origin_port = null){
+function iptables_add($host, $chain_type, $protocol, $destination_ip, $destination_port, $origin_port = null){
     try{
         $chain_type = iptables_validate_chain_type($chain_type);
 
         switch($chain_type){
             case 'prerouting':
-                iptables_add_prerouting($hostname, $protocol, $origin_port, $destination_port, $destination_ip);
+                iptables_add_prerouting($host, $protocol, $origin_port, $destination_port, $destination_ip);
                 break;
 
             case 'postrouting':
-                iptables_add_postrouting($hostname, $protocol, $destination_port, $destination_ip);
+                iptables_add_postrouting($host, $protocol, $destination_port, $destination_ip);
                 break;
 
             default:
@@ -71,24 +77,24 @@ function iptables_add($hostname, $chain_type, $protocol, $destination_ip, $desti
 
 
 /*
- * ..............
+ * Adds a prerouting rule on iptables
  *
  * @example usage iptables -t nat -A PREROUTING -p tcp --dport 80 -j DNAT --to-destination 255.255.255.255:401
  * Sets a new iptables rulte for port forwarding
- * @param string $hostname
+ * @param string|integer $host The unique name or id of the host where to execute the iptables command
  * @param string $protocol
  * @param integer $origin_port
  * @param integer $destination_port
  * @param string $destination_ip
  */
-function iptables_add_prerouting($hostname, $protocol, $origin_port, $destination_port, $destination_ip){
+function iptables_add_prerouting($host, $protocol, $origin_port, $destination_port, $destination_ip){
     try{
         $protocol         = iptables_validate_protocol($protocol);
         $origin_port      = iptables_validate_port($origin_port);
         $destination_port = iptables_validate_port($destination_port);
         $destination_ip   = iptables_validate_ip($destination_ip);
 
-        iptables_exec($hostname, '-t nat -A PREROUTING -p tcp --dport '.$origin_port.' -j DNAT --to-destination '.$destination_ip.':'.$destination_port);
+        iptables_exec($host, '-t nat -A PREROUTING -p tcp --dport '.$origin_port.' -j DNAT --to-destination '.$destination_ip.':'.$destination_port);
 
     }catch(Exception $e){
         throw new bException('iptables_add_prerouting(): Failed', $e);
@@ -98,22 +104,22 @@ function iptables_add_prerouting($hostname, $protocol, $origin_port, $destinatio
 
 
 /*
- * ...............
+ * Adds a postrouting rule on iptables
  *
  * @example usage iptables -t nat -A POSTROUTING -p tcp -d 255.210.102.105 --dport 40001 -j SNAT --to-source 255.255.255.255
- * @param string $hostname
+ * @param string|integer $host The unique name or id of the host where to execute the iptables command
  * @param string $protocol
  * @param integer $port
  * @param string $destination_ip
  */
-function iptables_add_postrouting($hostname, $protocol, $port, $destination_ip){
+function iptables_add_postrouting($host, $protocol, $port, $destination_ip){
     try{
         $protocol       = iptables_validate_protocol($protocol);
         $port           = iptables_validate_port($port);
         $destination_ip = iptables_validate_ip($destination_ip);
-        $public_ip      = servers_get_ip($hostname);
+        $public_ip      = servers_get_ip($host);
 
-        iptables_exec($hostname, '-t nat -A POSTROUTING -p tcp -d '.$destination_ip.' --dport '.$port.' -j SNAT --to-source '.$public_ip);
+        iptables_exec($host, '-t nat -A POSTROUTING -p tcp -d '.$destination_ip.' --dport '.$port.' -j SNAT --to-source '.$public_ip);
 
     }catch(Exception $e){
         throw new bException('iptables_add_postrouting(): Failed', $e);
@@ -123,11 +129,13 @@ function iptables_add_postrouting($hostname, $protocol, $port, $destination_ip){
 
 
 /*
- * @param string $hostname
+ * Flush all iptables rules
+ *
+ * @param string|integer $host The unique name or id of the host where to execute the iptables command
  */
-function iptables_flush_all($hostname){
+function iptables_flush_all($host){
     try{
-        iptables_exec($hostname, '-F');
+        iptables_exec($host, '-F');
 
     }catch(Exception $e){
         throw new bException('iptables_flush_all(): Failed', $e);
@@ -137,15 +145,15 @@ function iptables_flush_all($hostname){
 
 
 /*
- * ................
+ * Flush all nat rules on iptables
  *
  * @example usage iptables -t nat -F
- * @param string $hostname
+ * @param string|integer $host The unique name or id of the host where to execute the iptables command
  * @see iptables_clean_nat_chain()
  */
-function iptables_clean_chain_nat($hostname){
+function iptables_clean_chain_nat($host){
     try{
-        iptables_exec($hostname, '-t nat -F');
+        iptables_exec($host, '-t nat -F');
 
     }catch(Exception $e){
         throw new bException('iptables_clean_chain_nat(): Failed', $e);
@@ -155,14 +163,14 @@ function iptables_clean_chain_nat($hostname){
 
 
 /*
- * .............
+ * Deletes all iptables rules
  *
- * @param string $hostname
+ * @param string $host The unique name or id of the host where to execute the iptables command
  * @see iptables_delete_all()
  */
-function iptables_delete_all($hostname){
+function iptables_delete_all($host){
     try{
-        iptables_exec($hostname, '-X');
+        iptables_exec($host, '-X');
 
     }catch(Exception $e){
         throw new bException('iptables_delete_all(): Failed', $e);
@@ -172,7 +180,7 @@ function iptables_delete_all($hostname){
 
 
 /*
- * ............
+ * Validates an specific IP
  *
  * @param string $ip
  * @return string $ip
@@ -196,7 +204,7 @@ function iptables_delete_all($hostname){
 
 
 /*
- * .......
+ * Validates a protocol in order to add a iptables rule
  *
  * @param string $protocol
  * @return string $protocol
@@ -233,7 +241,7 @@ function iptables_validate_protocol($protocol){
 
 
 /*
- * .......
+ * Validates a specific port, it must be in a range to be added on iptables rules
  *
  * @param integer $port
  * @return integer $port
@@ -260,7 +268,7 @@ function iptables_validate_port($port){
 
 
 /*
- * ...........
+ * Validates a chain type, valid chain type: prerouting, postrouting
  *
  * @param string $chain_type, available type = prerouting, postrouting
  * @return string $chain_type
