@@ -45,7 +45,11 @@ function proxy_insert($root_hostname, $new_hostname, $target_hostname, $location
 
                 foreach($root['proxies'] as $index => $proxy){
                     $prev = ($index > 0) ? $root['proxies'][$index - 1]['id'] : null;
-                    break;
+
+                    if($proxy['hostname'] == $target_hostname){
+                        break;
+                    }
+
                 }
 
                 if($prev === null){
@@ -67,7 +71,11 @@ function proxy_insert($root_hostname, $new_hostname, $target_hostname, $location
                 foreach($root['proxies'] as $proxy){
                     $next = next($root['proxies']);
                     $next = proxy_get_server($next['id'], false);
-                    break;
+
+                    if($proxy['hostname'] == $target_hostname){
+                        break;
+                    }
+
                 }
 
                 break;
