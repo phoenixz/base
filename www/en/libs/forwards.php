@@ -35,7 +35,7 @@ function forwards_library_init(){
 function forwards_insert($forward, $createdby = null){
     try{
         array_ensure($forward, '');
-        array_default($forward, 'apply', true);
+        array_default($forward, 'apply', false);
 
         $forward = forwards_validate($forward);
 
@@ -75,7 +75,7 @@ function forwards_insert($forward, $createdby = null){
 function forwards_insert_apply($forward){
     try{
         array_ensure($forward, '');
-        array_default($forward, 'apply', false);
+        array_default($forward, 'apply', true);
 
         if($forward['apply']){
             switch($forward['protocol']){
@@ -168,6 +168,8 @@ function forwards_delete_apply($forward){
 
                     csf_remove_allow_rule($forward['target_id'], 'tcp', 'in', $forward['target_port'], $forward['source_ip']);
                     csf_remove_allow_rule($forward['source_id'], 'tcp', 'out', $forward['source_port'], $forward['target_ip']);
+                    csf_restart($forward['source_id']);
+                    csf_restart($forward['targest_id']);
                     break;
 
                 case 'ssh':
@@ -269,6 +271,12 @@ function forwards_update_apply($forward, $old_forward){
                     //FALLTHROUGH
                 case 'https':
                     /*
+                     * Remove old rules on csf
+                     */
+                    csf_remove_allow_rule($old_forward['target_id'], 'tcp', 'in', $old_forward['target_port'], $old_forward['source_ip']);
+                    csf_remove_allow_rule($old_forward['source_id'], 'tcp', 'out', $old_forward['source_port'], $old_forward['target_ip']);
+
+                    /*
                      * Redirect request to target server
                      */
                     route_add_prerouting( $forward['target_id'], 'tcp', $forward['source_port'], $forward['target_port'], $forward['target_ip']);
@@ -283,6 +291,11 @@ function forwards_update_apply($forward, $old_forward){
                     /*
                      * Allow connections
                      */
+                    csf_allow_rule($forward['target_id'], 'tcp', 'in', $forward['target_port'], $forward['source_ip']);
+                    csf_allow_rule($forward['source_id'], 'tcp', 'in', $forward['source_port'], $forward['target_ip']);
+
+                    csf_remove_allow_rule($old_forward['target_id'], 'tcp', 'in', $old_forward['target_port'], $old_forward['source_ip']);
+                    csf_remove_allow_rule($old_forward['source_id'], 'tcp', 'in', $old_forward['source_port'], $old_forward['target_ip']);
                     break;
 
                 default:
@@ -387,7 +400,7 @@ function forwards_validate($forward){
  */
 function forwards_get($forwards_id){
     try{
-        if(empty($forward)){
+        if(empty($forwards_id)){
             throw new bException(tr('forwards_get(): No forwarding specified'), 'not-specified');
         }
 
