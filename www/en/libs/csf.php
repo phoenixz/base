@@ -91,7 +91,7 @@ function csf_restart($server = null){
     try{
         load_libs('forwards');
         csf_exec($server, ':csf -r');
-        forwards_apply($server);
+        //forwards_apply($server);
 
     }catch(Exception $e){
         throw new bException('csf_restart(): Failed', $e);

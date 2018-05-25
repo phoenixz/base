@@ -13,7 +13,7 @@
  */
 function proxy_library_init(){
     try{
-        load_libs('servers,csf,route');
+        load_libs('servers,csf,route,forwards');
 
     }catch(Exception $e){
         throw new bException('proxy_library_init(): Failed', $e);
@@ -84,23 +84,9 @@ function proxy_insert($root_hostname, $new_hostname, $target_hostname, $location
                 throw new bException(tr('proxy_insert(): Unknown location ":location"', array(':location'=>$location)), 'unknown');
         }
 
-        /*
-         * Setting rules for prev to start accepting requests for new server
-         */
-        csf_allow_rule($prev['hostname'], 'tcp', 'in', 80, $new['ipv4']);
-        csf_allow_rule($prev['hostname'], 'tcp', 'in', 80, $new['ipv4']);
-
-        /*
-         * Setting rules for new server to start redirecting requests to prev server
-         */
-        iptables_add_prerouting ($new['hostname'], 'tcp', 80,   4001, $prev['ipv4']);
-        iptables_add_postrouting($new['hostname'], 'tcp', 4001, $prev['ipv4']);
-
-        /*
-         * Setting rules for next sever to start redirecting requests to new server
-         */
-        iptables_add_prerouting ($next['hostname'], 'tcp', 80,   4001, $new['ipv4']);
-        iptables_add_postrouting($next['hostname'], 'tcp', 4001, $new['ipv4']);
+        forwards_apply_server($prev);
+        forwards_apply_server($new);
+        forwards_apply_server($next);
 
         /*
          * Update database for new proxy relation

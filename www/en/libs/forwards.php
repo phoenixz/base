@@ -53,6 +53,9 @@ function forwards_apply_server($server){
  */
 function forwards_apply($forward){
     try{
+
+        $forward['servers_id'] = null;
+
         if(empty($forward)){
             throw new bException('forwards_apply(): Forward not specified', 'not-specified');
         }
@@ -68,11 +71,14 @@ function forwards_apply($forward){
                 /*
                  * Redirect request to target server
                  */
-                iptables_add_prerouting( $forward['servers_id'], 'tcp', $forward['source_port'], $forward['target_port'], $forward['target_ip']);
-                iptables_add_postrouting($forward['servers_id'], 'tcp', $forward['target_port'], $forward['target_ip']);
 
-                csf_allow_rule($forward['servers_id'], 'tcp', 'in', $forward['target_port'], $forward['source_ip']);
-                csf_allow_rule($forward['servers_id'], 'tcp', 'out', $forward['source_port'], $forward['target_ip']);
+                iptables_add_forward($forward['servers_id'], 'tcp', $forward['target_ip'], $forward['source_port'], $forward['target_port']);
+
+
+                csf_allow_rule($forward['servers_id'], 'tcp', 'out', $forward['target_port'], $forward['source_ip']);
+                csf_allow_rule($forward['servers_id'], 'tcp', 'in', $forward['source_port'], $forward['target_ip']);
+
+                csf_restart($forward['servers_id']);
                 break;
 
             case 'ssh':
@@ -84,12 +90,12 @@ function forwards_apply($forward){
                 /*
                 * Reload rules for server csf_restart()
                 */
-                csf_restart($forward['source_id']);
-                csf_restart($forward['target_id']);
+
+                csf_restart($forward['servers_id']);
                 break;
 
             default:
-
+                throw new bException(tr('forwards_apply(): Unknown protocol ":protocol"', array(':protocol' => $forward['protocol'])), 'not-specified');
         }
 
     }catch(Exception $e){

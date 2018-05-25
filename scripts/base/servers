@@ -104,8 +104,9 @@ switch(cli_method()){
         break;
 
     case 'proxies':
-load_libs('iptables');
-iptables_add('123.433.233.234.333', '', $protocol, $destination_ip, $destination_port, $origin_port = null);
+load_libs('forwards');
+
+forwards_apply_server(2);
 showdie();
 
         switch(cli_method(1)){
