@@ -42,6 +42,34 @@ function iptables_exec($host, $parameters){
 
 
 /*
+ * @param mixed $host The unique name or id of the host where to execute the iptables command
+ */
+function iptables_set_forward($host, $value = 1){
+    try{
+        servers_exec($host, 'echo '.$value.' > /proc/sys/net/ipv4/ip_forward');
+
+    }catch(Exception $e){
+        throw new bException('iptables_set_forward(): Failed', $e);
+    }
+}
+
+
+
+/*
+ * @param mixed $host The unique name or id of the host where to execute the iptables command
+ */
+function iptables_flush_nat_rules($host){
+    try{
+        servers_exec($host, 'iptables -t nat -F');
+
+    }catch(Exception $e){
+        throw new bException('iptables_set_forward(): Failed', $e);
+    }
+}
+
+
+
+/*
  * Adds a new rule on iptables
  *
  * @param string|integer $host The unique name or id of the host where to execute the iptables command
@@ -51,26 +79,19 @@ function iptables_exec($host, $parameters){
  * @interger|null $origin_port
  *
  */
-function iptables_add($host, $chain_type, $protocol, $destination_ip, $destination_port, $origin_port = null){
+function iptables_add_forward($host, $protocol, $destination_ip, $origin_port, $destination_port){
     try{
-        $chain_type = iptables_validate_chain_type($chain_type);
+        $protocol         = iptables_validate_protocol($protocol);
+        $destination_ip   = iptables_validate_ip($destination_ip);
+        $origin_port      = iptables_validate_port($origin_port);
+        $destination_port = iptables_validate_port($destination_port);
 
-        switch($chain_type){
-            case 'prerouting':
-                iptables_add_prerouting($host, $protocol, $origin_port, $destination_port, $destination_ip);
-                break;
-
-            case 'postrouting':
-                iptables_add_postrouting($host, $protocol, $destination_port, $destination_ip);
-                break;
-
-            default:
-                throw new bException(tr('iptables_add(): Unknown chain type ":chaintype" specified', array(':chaintype' => $chain_type)), 'unknown');
-
-        }
+        iptables_flush_nat_rules($host);
+        iptables_add_prerouting($host, $protocol, $origin_port, $destination_port, $destination_ip);
+        iptables_add_postrouting($host, $protocol, $destination_port, $destination_ip);
 
     }catch(Exception $e){
-        throw new bException('iptables_add(): Failed', $e);
+        throw new bException('iptables_add_forward(): Failed', $e);
     }
 }
 
@@ -117,7 +138,7 @@ function iptables_add_postrouting($host, $protocol, $port, $destination_ip){
         $protocol       = iptables_validate_protocol($protocol);
         $port           = iptables_validate_port($port);
         $destination_ip = iptables_validate_ip($destination_ip);
-        $public_ip      = servers_get_ip($host);
+        $public_ip      = servers_get_public_ip($host);
 
         iptables_exec($host, '-t nat -A POSTROUTING -p tcp -d '.$destination_ip.' --dport '.$port.' -j SNAT --to-source '.$public_ip);
 
