@@ -1,0 +1,140 @@
+#!/usr/bin/php
+<?php
+/*
+ * This is an empty test script template
+ */
+$usage = './scripts/servers
+./scripts/servers list [options]
+./scripts/servers show SERVER';
+
+$help  = 'This is the servers management script
+
+This script can manage the registered servers
+
+
+
+METHODS
+
+
+
+list                            - List all registerd servers
+
+    --only-hostnames            - Show only the hostnames. Useful with --quiet
+
+    --provider SERVER           - List all servers for the specified provider
+
+    --customer CUSTOMER         - List all servers for the specified customer
+
+
+
+show SERVER                     - Show detaisl about the specified server';
+
+require_once(__DIR__.'/../libs/startup.php');
+cli_only();
+load_libs('mysql');
+
+switch(cli_method()){
+    case 'list':
+        $deleted = cli_argument('-d') or cli_argument('--deleted');
+        $all     = cli_argument('-a') or cli_argument('--all');
+        $only_hostnames = cli_argument('--only-hostnames');
+        $execute        = array();
+
+        cli_no_arguments_left();
+
+        if($deleted){
+            $where[] = ' `servers`.`status` = "deleted" ';
+
+        }elseif(!$all){
+            $where[] = ' `servers`.`status` IS NULL ';
+        }
+
+        $query   = 'SELECT    `servers`.`id`,
+                              `servers`.`hostname`,
+                              `servers`.`seohostname`,
+                              `servers`.`status`,
+                              `servers`.`createdon`,
+                              `servers`.`description`,
+
+                              `customers`.`name` AS `customer`,
+
+                              `providers`.`name` AS `provider`,
+
+                              `users`.`name`     AS `user_name`,
+                              `users`.`email`    AS `user_email`,
+                              `users`.`username` AS `user_username`
+
+                    FROM      `servers`
+
+                    LEFT JOIN `customers`
+                    ON        `customers`.`id` = `servers`.`customers_id`
+
+                    LEFT JOIN `providers`
+                    ON        `providers`.`id` = `servers`.`providers_id`
+
+                    LEFT JOIN `users`
+                    ON        `users`.`id` = `servers`.`createdby`';
+
+        if(!empty($where)){
+            $where = ' WHERE '.implode(' AND ', $where);
+        }
+
+        $servers = sql_query($query.$where.(LIMIT ? ' LIMIT '.LIMIT : ''), $execute);
+
+        if(!$servers->rowCount()){
+                log_console(tr('There are currently no servers registered'), 'QUIET/yellow');
+
+        }else{
+            if($only_hostnames){
+                log_console(tr('Hostname'), 'QUIET/cyan');
+
+                while($server = sql_fetch($servers)){
+                    log_console($server['hostname']);
+                }
+
+            }else{
+                log_console(str_size(tr('#id'), 7).str_size(tr('Customer'), 33).str_size(tr('Provider'), 33).str_size(tr('Hostname'), 65).str_size(tr('Status'), 17).str_size(tr('Created by'), 32), 'QUIET/cyan');
+
+                while($server = sql_fetch($servers)){
+                    log_console(str_size($server['id'], 6, ' ', true).' '.str_size(cli_status_color($server['customer']), 32).' '.str_size($server['provider'], 32).' '.str_size($server['hostname'], 64).' '.str_size($server['status'], 16).' '.name($server, 'createdby'));
+                }
+            }
+        }
+
+        break;
+
+    case 'proxies':
+load_libs('iptables');
+iptables_add('123.433.233.234.333', '', $protocol, $destination_ip, $destination_port, $origin_port = null);
+showdie();
+
+        switch(cli_method(1)){
+            case 'insert':
+                load_libs('proxies');
+                proxies_insert(blah, foo, bar);
+                break;
+
+            case 'remove':
+                load_libs('proxies');
+                proxies_remove(blah, foo, bar);
+                break;
+
+            case '':
+                throw new bException(tr('No sub method specified for method "projects"'), 'no-method');
+
+            default:
+                throw new bException(tr('Unknown sub method ":method" specified for method "projects"', array(':method' => cli_method())), 'unknown-method');
+        }
+
+        break;
+
+    case 'show':
+        break;
+
+    case '':
+        throw new bException(tr('No method specified'), 'no-method');
+
+    default:
+        throw new bException(tr('Unknown method ":method" specified', array(':method' => cli_method())), 'unknown-method');
+}
+?>

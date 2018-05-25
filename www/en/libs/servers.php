@@ -172,7 +172,7 @@ function servers_test($hostname){
 /*
  *
  */
-function servers_exec($host, $commands, $options = null, $background = false, $function = 'exec'){
+function servers_exec($server, $commands, $options = null, $background = false, $function = 'exec'){
     global $_CONFIG;
 
     try{
@@ -182,11 +182,8 @@ function servers_exec($host, $commands, $options = null, $background = false, $f
         array_default($options, 'background'   , $background);
         array_default($options, 'commands'     , $commands);
 
-        if(is_array($host)){
-            $server = $host;
-
-        }else{
-            $server = servers_get($host);
+        if(!is_array($server)){
+            $server = servers_get($server);
         }
 
         if(!$server){

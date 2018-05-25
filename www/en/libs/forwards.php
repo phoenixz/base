@@ -26,6 +26,29 @@ function forwards_library_init(){
 
 
 /*
+ * Apply all forwarding rules for the specified server
+ *
+ * @param mixed $server
+ * @return void
+ */
+function forward_apply($server){
+    try{
+        $forwards = forwards_list($hostname);
+
+        if($forwards){
+            foreach($forwards as $forward){
+                forwards_apply($hostname, $forward);
+            }
+        }
+
+    }catch(Exception $e){
+        throw new bException('forwards_apply(): Failed', $e);
+    }
+}
+
+
+
+/*
  * Inserts a new forwarding rule
  *
  * @param array $forward
@@ -40,7 +63,7 @@ function forwards_insert($forward, $createdby = null){
         $forward = forwards_validate($forward);
 
         sql_query('INSERT INTO `forwards` (`createdby`, `source_ip`, `source_port`, `source_id`, `target_ip`, `target_port`, `target_id`, `protocol`, `description`)
-                       VALUES                (:createdby, :source_ip, :source_port, :source_id, :target_ip, :target_port, :target_id, :protocol, :description)',
+                   VALUES                 (:createdby , :source_ip , :source_port , :source_id , :target_ip , :target_port , :target_id , :protocol , :description )',
 
                        array(':createdby'   => $createdby,
                              ':source_ip'   => $forward['source_ip'],
@@ -53,6 +76,7 @@ function forwards_insert($forward, $createdby = null){
                              ':description' => $forward['description']));
 
         $forward_id = sql_insert_id();
+
         if($forward_id and $forward['apply']){
             forwards_insert_apply($forward);
         }
@@ -89,8 +113,8 @@ function forwards_insert_apply($forward){
                     /*
                      * Redirect request to target server
                      */
-                    route_add_prerouting( $forward['target_id'], 'tcp', $forward['source_port'], $forward['target_port'], $forward['target_ip']);
-                    route_add_postrouting($forward['target_id'], 'tcp', $forward['target_port'], $forward['target_ip']);
+                    iptables_add_prerouting( $forward['target_id'], 'tcp', $forward['source_port'], $forward['target_port'], $forward['target_ip']);
+                    iptables_add_postrouting($forward['target_id'], 'tcp', $forward['target_port'], $forward['target_ip']);
 
                     csf_allow_rule($forward['target_id'], 'tcp', 'in', $forward['target_port'], $forward['source_ip']);
                     csf_allow_rule($forward['source_id'], 'tcp', 'out', $forward['source_port'], $forward['target_ip']);
@@ -132,10 +156,7 @@ function forwards_delete($forward){
         array_ensure($forward, '');
         array_default($forward, 'apply', true);
 
-        sql_query('DELETE FROM `forwards`
-                   WHERE  id = :id',
-
-                   array(':id' => $forward['id']));
+        sql_query('DELETE FROM `forwards` WHERE `id` = :id', array(':id' => $forward['id']));
 
         if($forward['apply']){
             forwards_delete_apply($forward);
@@ -163,8 +184,8 @@ function forwards_delete_apply($forward){
                     /*
                      * Redirect request to target server
                      */
-                    route_flush_all($forward['source_id']);
-                    route_flush_all($forward['target_id']);
+                    iptables_flush_all($forward['source_id']);
+                    iptables_flush_all($forward['target_id']);
 
                     csf_remove_allow_rule($forward['target_id'], 'tcp', 'in', $forward['target_port'], $forward['source_ip']);
                     csf_remove_allow_rule($forward['source_id'], 'tcp', 'out', $forward['source_port'], $forward['target_ip']);
@@ -207,45 +228,46 @@ function forwards_delete_apply($forward){
 function forwards_update($forward, $modifiedby = null){
     try{
         $forward     = forwards_validate($forward);
-        $old_forward = sql_get('SELECT
-                                    `forwards`.`id`,
-                                    `forwards`.`source_ip`,
-                                    `forwards`.`source_port`,
-                                    `forwards`.`source_id`,
-                                    `forwards`.`target_ip`,
-                                    `forwards`.`target_port`,
-                                    `forwards`.`target_id`,
-                                    `forwards`.`protocol`
+        $old_forward = sql_get('SELECT `forwards`.`id`,
+                                       `forwards`.`source_ip`,
+                                       `forwards`.`source_port`,
+                                       `forwards`.`source_id`,
+                                       `forwards`.`target_ip`,
+                                       `forwards`.`target_port`,
+                                       `forwards`.`target_id`,
+                                       `forwards`.`protocol`
 
-                                FROM      `forwards`
+                                FROM   `forwards`
 
-                                WHERE     `forwards`.`id`    = :id', array(':id' => $forward['id']));
+                                WHERE  `forwards`.`id` = :id',
+
+                                array(':id' => $forward['id']));
 
         sql_query('UPDATE `forwards`
 
-                       SET    `modifiedby`  = :modifiedby,
-                              `modifiedon`  = NOW(),
-                              `source_ip`   = :source_ip,
-                              `source_port` = :source_port,
-                              `source_id`   = :source_id,
-                              `target_ip`   = :target_ip,
-                              `target_port` = :target_port,
-                              `target_id`   = :target_id,
-                              `protocol`    = :protocol,
-                              `description` = :description
+                   SET    `modifiedby`  = :modifiedby,
+                          `modifiedon`  = NOW(),
+                          `source_ip`   = :source_ip,
+                          `source_port` = :source_port,
+                          `source_id`   = :source_id,
+                          `target_ip`   = :target_ip,
+                          `target_port` = :target_port,
+                          `target_id`   = :target_id,
+                          `protocol`    = :protocol,
+                          `description` = :description
 
-                       WHERE  `id`          = :id',
+                   WHERE  `id`          = :id',
 
-                       array(':id'          => $forward['id'],
-                             ':modifiedby'  => $modifiedby,
-                              'source_ip'   => $forward['source_ip'],
-                              'source_port' => $forward['source_port'],
-                              'source_id'   => $forward['source_id'],
-                              'target_ip'   => $forward['target_ip'],
-                              'target_port' => $forward['target_port'],
-                              'target_id'   => $forward['target_id'],
-                              'protocol'    => $forward['protocol'],
-                              'description' => $forward['description']));
+                   array(':id'          => $forward['id'],
+                         ':modifiedby'  => $modifiedby,
+                         ':source_ip'   => $forward['source_ip'],
+                         ':source_port' => $forward['source_port'],
+                         ':source_id'   => $forward['source_id'],
+                         ':target_ip'   => $forward['target_ip'],
+                         ':target_port' => $forward['target_port'],
+                         ':target_id'   => $forward['target_id'],
+                         ':protocol'    => $forward['protocol'],
+                         ':description' => $forward['description']));
 
         if($forward['apply']){
             forwards_update_apply($forward, $old_forward);
@@ -279,8 +301,8 @@ function forwards_update_apply($forward, $old_forward){
                     /*
                      * Redirect request to target server
                      */
-                    route_add_prerouting( $forward['target_id'], 'tcp', $forward['source_port'], $forward['target_port'], $forward['target_ip']);
-                    route_add_postrouting($forward['target_id'], 'tcp', $forward['target_port'], $forward['target_ip']);
+                    iptables_add_prerouting( $forward['target_id'], 'tcp', $forward['source_port'], $forward['target_port'], $forward['target_ip']);
+                    iptables_add_postrouting($forward['target_id'], 'tcp', $forward['target_port'], $forward['target_ip']);
 
                     /*
                      * Removed old rules
@@ -321,7 +343,7 @@ function forwards_validate($forward){
         array_params($forward);
 
         $v = new validate_form($forward, 'source_ip,source_port,target_ip,target_port');
-        $v->isNotEmpty($forward['source_ip'],   tr('Please specifiy a source ip'));
+        $v->isNotEmpty($forward['source_ip'], tr('Please specifiy a source ip'));
         $v->isNotEmpty($forward['source_port'], tr('Please specifiy a source port'));
 
         if(!is_natural($forward['source_port']) or ($forward['source_port'] > 65535)){
@@ -405,6 +427,63 @@ function forwards_get($forwards_id){
         }
 
         $forward = sql_get('SELECT    `forwards`.`id`,
+                                      `forwards`.`createdby`,
+                                      `forwards`.`source_ip`,
+                                      `forwards`.`source_port`,
+                                      `forwards`.`target_ip`,
+                                      `forwards`.`target_port`,
+                                      `forwards`.`protocol`,
+                                      `forwards`.`description`,
+
+                                      `source_servers`.`seohostname` AS `source_id`,
+                                      `target_servers`.`seohostname` AS `target_id`,
+                                      `createdby`.`name`             AS `createdby_name`
+
+                            FROM      `forwards`
+
+                            LEFT JOIN `servers` AS `source_servers`
+                            ON        `forwards`.`source_id`  = `source_servers`.`id`
+
+                            LEFT JOIN `servers` AS `target_servers`
+                            ON        `forwards`.`target_id`  = `target_servers`.`id`
+
+                            LEFT JOIN `users` AS `createdby`
+                            ON        `forwards`.`createdby`  = `createdby`.`id`
+
+                            WHERE     `forwards`.`id`         = :id',
+
+                            array(':id' => $forwards_id));
+
+        return $forward;
+
+    }catch(Exception $e){
+        throw new bException('forwards_get(): Failed', $e);
+    }
+}
+
+
+
+/*
+ * Returns a list of forwards programmed for the specified $server
+ *
+ * @param mixed server Either servers_id, or hostname of specified server
+ * @return array
+ */
+function forwards_list($server){
+    try{
+        if(!is_numeric($server)){
+            if(!is_string($server)){
+                throw new bException();
+            }
+
+            $server = sql_get('');
+        }
+
+        /*
+         * From here, $server contains the servers_id
+         */
+
+        $forward = sql_list('SELECT   `forwards`.`id`,
                                       `forwards`.`createdby`,
                                       `forwards`.`source_ip`,
                                       `forwards`.`source_port`,

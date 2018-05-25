@@ -93,14 +93,14 @@ function proxy_insert($root_hostname, $new_hostname, $target_hostname, $location
         /*
          * Setting rules for new server to start redirecting requests to prev server
          */
-        route_add_prerouting ($new['hostname'], 'tcp', 80,   4001, $prev['ipv4']);
-        route_add_postrouting($new['hostname'], 'tcp', 4001, $prev['ipv4']);
+        iptables_add_prerouting ($new['hostname'], 'tcp', 80,   4001, $prev['ipv4']);
+        iptables_add_postrouting($new['hostname'], 'tcp', 4001, $prev['ipv4']);
 
         /*
          * Setting rules for next sever to start redirecting requests to new server
          */
-        route_add_prerouting ($next['hostname'], 'tcp', 80,   4001, $new['ipv4']);
-        route_add_postrouting($next['hostname'], 'tcp', 4001, $new['ipv4']);
+        iptables_add_prerouting ($next['hostname'], 'tcp', 80,   4001, $new['ipv4']);
+        iptables_add_postrouting($next['hostname'], 'tcp', 4001, $new['ipv4']);
 
         /*
          * Update database for new proxy relation
@@ -174,8 +174,8 @@ function proxy_remove($root_hostname, $remove_hostname){
         /*
          * Update next server to start redirecting request to prev server instead or removed server
          */
-        route_add_prerouting ($next['hostname'], 'tcp', 80, 4001, $prev['ipv4']);
-        route_add_postrouting($next['hostname'], 'tcp', 4001,     $prev['ipv4']);
+        iptables_add_prerouting ($next['hostname'], 'tcp', 80, 4001, $prev['ipv4']);
+        iptables_add_postrouting($next['hostname'], 'tcp', 4001,     $prev['ipv4']);
 
 
         /*
