@@ -53,13 +53,18 @@ function csf_install($server = null){
 
 
 /*
+ * Start CSF on the specified server. After that, IF required, re-apply
+ * programmed forwarding rules, since those are iptable, and CSF will reset all
+ * iptable rules
  *
+ * @param mixed $server (optional) The server where to start CSF
+ * @return void
  */
 function csf_start($server = null){
     try{
         load_libs('forwards');
         csf_exec($server, ':csf -s');
-        forwards_apply($server);
+        forwards_apply_server($server);
 
     }catch(Exception $e){
         throw new bException('csf_start(): Failed', $e);
@@ -69,13 +74,18 @@ function csf_start($server = null){
 
 
 /*
+ * Stop CSF on the specified server. After that, IF required, re-apply
+ * programmed forwarding rules, since those are iptable, and CSF will reset all
+ * iptable rules
  *
+ * @param mixed $server (optional) The server where to start CSF
+ * @return void
  */
 function csf_stop($server = null){
     try{
         load_libs('forwards');
         csf_exec($server, ':csf -f');
-        forwards_apply($server);
+        forwards_apply_server($server);
 
     }catch(Exception $e){
         throw new bException('csf_stop(): Failed', $e);
@@ -85,13 +95,18 @@ function csf_stop($server = null){
 
 
 /*
+ * Restart CSF on the specified server. After that, IF required, re-apply
+ * programmed forwarding rules, since those are iptable, and CSF will reset all
+ * iptable rules
  *
+ * @param mixed $server (optional) The server where to start CSF
+ * @return void
  */
 function csf_restart($server = null){
     try{
         load_libs('forwards');
         csf_exec($server, ':csf -r');
-        //forwards_apply($server);
+        forwards_apply_server($server);
 
     }catch(Exception $e){
         throw new bException('csf_restart(): Failed', $e);

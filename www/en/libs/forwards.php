@@ -37,7 +37,7 @@ function forwards_apply_server($server){
 
         if($forwards){
             foreach($forwards as $forward){
-                forwards_apply($forward);
+                forwards_apply_rule($forward);
             }
         }
 
@@ -49,59 +49,36 @@ function forwards_apply_server($server){
 
 
 /*
+ * Adds a new rule on iptables
  *
+ * @param mixed $host The unique name or id of the host where to execute the iptables command
+ * @param string $chain_type, allow chain type: prerouting and postrouting
+ * @param string $target_ip
+ * @param integer $target_port
+ * @param interger|null $origin_port
+ * $return void
  */
-function forwards_apply($forward){
+function forwards_apply_rule($forward){
     try{
+        array_ensure($forward, 'server,protocol,target_ip,target_port,');
 
-        $forward['servers_id'] = null;
+        $forward = forwards_validate($forward);
 
-        if(empty($forward)){
-            throw new bException('forwards_apply(): Forward not specified', 'not-specified');
-        }
+        //$protocol    = iptables_validate_protocol($protocol);
+        //$target_ip   = iptables_validate_ip($target_ip);
+        //$origin_port = iptables_validate_port($origin_port);
+        //$target_port = iptables_validate_port($target_port);
 
-        switch($forward['protocol']){
-            case 'smtp':
-                //FALLTHROUGH
-            case 'imap':
-                //FALLTHROUGH
-            case 'http':
-                //FALLTHROUGH
-            case 'https':
-                /*
-                 * Redirect request to target server
-                 */
-
-                iptables_add_forward($forward['servers_id'], 'tcp', $forward['target_ip'], $forward['source_port'], $forward['target_port']);
-
-
-                csf_allow_rule($forward['servers_id'], 'tcp', 'out', $forward['target_port'], $forward['source_ip']);
-                csf_allow_rule($forward['servers_id'], 'tcp', 'in', $forward['source_port'], $forward['target_ip']);
-
-                csf_restart($forward['servers_id']);
-                break;
-
-            case 'ssh':
-                /*
-                 * Allow connections
-                 */
-                csf_allow_rule($forward['servers_id'], 'tcp', 'in', $forward['target_port'], $forward['source_ip']);
-                csf_allow_rule($forward['servers_id'], 'tcp', 'in', $forward['source_port'], $forward['target_ip']);
-                /*
-                * Reload rules for server csf_restart()
-                */
-
-                csf_restart($forward['servers_id']);
-                break;
-
-            default:
-                throw new bException(tr('forwards_apply(): Unknown protocol ":protocol"', array(':protocol' => $forward['protocol'])), 'not-specified');
-        }
+        iptables_flush_nat_rules(IPTABLES_BUFFER);
+        iptables_add_prerouting(IPTABLES_BUFFER, $protocol, $origin_port, $target_port, $target_ip);
+        iptables_add_postrouting($forward['server'], $protocol, $target_port, $target_ip);
 
     }catch(Exception $e){
-        throw new bException('forwards_apply(): Failed', $e);
+        throw new bException('forwards_apply_rule(): Failed', $e);
     }
 }
+
+
 
 /*
  * Inserts a new forwarding rule
@@ -134,7 +111,7 @@ function forwards_insert($forward, $createdby = null){
         $forward_id = sql_insert_id();
 
         if($forward_id and $forward['apply']){
-            forwards_apply($forward);
+            forwards_apply_rule($forward);
         }
 
         return $forward_id;
@@ -186,27 +163,24 @@ function forwards_delete_apply($forward){
                     /*
                      * Redirect request to target server
                      */
-                    iptables_flush_all($forward['source_id']);
-                    iptables_flush_all($forward['target_id']);
-
-                    csf_remove_allow_rule($forward['target_id'], 'tcp', 'in', $forward['target_port'], $forward['source_ip']);
-                    csf_remove_allow_rule($forward['source_id'], 'tcp', 'out', $forward['source_port'], $forward['target_ip']);
-                    csf_restart($forward['source_id']);
-                    csf_restart($forward['targest_id']);
+                    //csf_remove_allow_rule($forward['target_id'], 'tcp', 'in', $forward['target_port'], $forward['source_ip']);
+                    //csf_remove_allow_rule($forward['source_id'], 'tcp', 'out', $forward['source_port'], $forward['target_ip']);
+                    //csf_restart($forward['source_id']);
+                    //csf_restart($forward['targest_id']);
                     break;
 
                 case 'ssh':
                     /*
                      * Allow connections
                      */
-                    csf_allow_rule($forward['target_id'], 'tcp', 'in', $forward['target_port'], $forward['source_ip']);
-                    csf_allow_rule($forward['source_id'], 'tcp', 'in', $forward['source_port'], $forward['target_ip']);
-
-                    csf_remove_allow_rule($forward['target_id'], 'tcp', 'in', $forward['target_port'], $forward['source_ip']);
-                    csf_remove_allow_rule($forward['source_id'], 'tcp', 'in', $forward['source_port'], $forward['target_ip']);
-
-                    csf_restart($forward['source_id']);
-                    csf_restart($forward['target_id']);
+                    //csf_allow_rule($forward['target_id'], 'tcp', 'in', $forward['target_port'], $forward['source_ip']);
+                    //csf_allow_rule($forward['source_id'], 'tcp', 'in', $forward['source_port'], $forward['target_ip']);
+                    //
+                    //csf_remove_allow_rule($forward['target_id'], 'tcp', 'in', $forward['target_port'], $forward['source_ip']);
+                    //csf_remove_allow_rule($forward['source_id'], 'tcp', 'in', $forward['source_port'], $forward['target_ip']);
+                    //
+                    //csf_restart($forward['source_id']);
+                    //csf_restart($forward['target_id']);
                     break;
 
                 default:
@@ -299,8 +273,8 @@ function forwards_update_apply($forward, $old_forward){
                     /*
                      * Remove old rules on csf
                      */
-                    csf_remove_allow_rule($old_forward['target_id'], 'tcp', 'in', $old_forward['target_port'], $old_forward['source_ip']);
-                    csf_remove_allow_rule($old_forward['source_id'], 'tcp', 'out', $old_forward['source_port'], $old_forward['target_ip']);
+                    //csf_remove_allow_rule($old_forward['target_id'], 'tcp', 'in', $old_forward['target_port'], $old_forward['source_ip']);
+                    //csf_remove_allow_rule($old_forward['source_id'], 'tcp', 'out', $old_forward['source_port'], $old_forward['target_ip']);
 
                     /*
                      * Redirect request to target server
@@ -317,11 +291,11 @@ function forwards_update_apply($forward, $old_forward){
                     /*
                      * Allow connections
                      */
-                    csf_allow_rule($forward['target_id'], 'tcp', 'in', $forward['target_port'], $forward['source_ip']);
-                    csf_allow_rule($forward['source_id'], 'tcp', 'in', $forward['source_port'], $forward['target_ip']);
-
-                    csf_remove_allow_rule($old_forward['target_id'], 'tcp', 'in', $old_forward['target_port'], $old_forward['source_ip']);
-                    csf_remove_allow_rule($old_forward['source_id'], 'tcp', 'in', $old_forward['source_port'], $old_forward['target_ip']);
+                    //csf_allow_rule($forward['target_id'], 'tcp', 'in', $forward['target_port'], $forward['source_ip']);
+                    //csf_allow_rule($forward['source_id'], 'tcp', 'in', $forward['source_port'], $forward['target_ip']);
+                    //
+                    //csf_remove_allow_rule($old_forward['target_id'], 'tcp', 'in', $old_forward['target_port'], $old_forward['source_ip']);
+                    //csf_remove_allow_rule($old_forward['source_id'], 'tcp', 'in', $old_forward['source_port'], $old_forward['target_ip']);
                     break;
 
                 default:

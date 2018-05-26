@@ -30,11 +30,14 @@ function proxy_library_init(){
  * @param string $target_hostname, hostname after or before new server is going to be inserted
  * @param string $location, location for the new server(before  or after $target_hostname)
  */
-function proxy_insert($root_hostname, $new_hostname, $target_hostname, $location){
+function proxy_insert($root_hostname, $insert_hostname, $target_hostname, $location){
     try{
-        $root = proxy_get_server($root_hostname, true);
-        $new  = proxy_get_server($new_hostname);
+        $root   = proxy_get_server($root_hostname, true);
+        $insert = proxy_get_server($insert_hostname);
 
+        /*
+         * Identify the next and previous servers in this chain
+         */
         switch($location){
             case 'before':
                 /*
@@ -84,14 +87,52 @@ function proxy_insert($root_hostname, $new_hostname, $target_hostname, $location
                 throw new bException(tr('proxy_insert(): Unknown location ":location"', array(':location'=>$location)), 'unknown');
         }
 
-        forwards_apply_server($prev);
-        forwards_apply_server($new);
-        forwards_apply_server($next);
+        /*
+         * We have the previous server, the next server, and the insert server
+         */
+
+        /*
+         * Step 1: Setup a random port to receive the specified protocol on the
+         * insert server
+         */
+        $port = mt_rand(1025, 65535);
+
+        /*
+         * Step 2: Configure target server to receive traffic for the specified
+         * protocol from the insert server (must be on same port as source
+         * server)
+         */
+        forward_this();
+
+        /*
+         * Step 3: Configure insert server to send out the specified protocol
+         * from the new random port to the port of the next server
+         */
+        forward_that();
+
+        /*
+         * Step 4: Apply two iptable rules at once on the source server
+         * A Route all traffic for specified protocol to server 2
+         * B Stop routing all traffic for specified protocol to insert server
+         */
+        forward_blah();
+
+        /*
+         * Step 5: Cleanup; Update target server, it should no longer accept
+         * traffic from the source server (since it now gets the traffic from
+         * the insert server)
+         */
+        forward_remove();
+
+
+        //forwards_apply_server($prev);
+        //forwards_apply_server($insert);
+        //forwards_apply_server($next);
 
         /*
          * Update database for new proxy relation
          */
-        sql_query('UPDATE `servers` SET `ssh_proxies_id` = ":proxy_id" WHERE `id` = :id', array(':proxy_id' => $new['id']));
+        sql_query('UPDATE `servers` SET `ssh_proxies_id` = ":proxy_id" WHERE `id` = :id', array(':proxy_id' => $insert['id']));
         sql_query('UPDATE `servers` SET `ssh_proxies_id` = ":proxy_id" WHERE `id` = :id', array(':proxy_id' => $next['id']));
 
     }catch(Exception $e){
@@ -139,21 +180,32 @@ function proxy_remove($root_hostname, $remove_hostname){
         $prev = array();
         $next = array();
 
-        foreach($root['proxies'] as $index=>$proxy){
-
+        foreach($root['proxies'] as $index => $proxy){
             if($proxy['hostname'] == $remove_hostname){
-
-                $prev = isset($root['proxies'][$index-1])?servers_get($root['proxies'][$index-1]['id']):$root;
-                $next = isset($root['proxies'][$index+1])?servers_get($root['proxies'][$index+1]['id']):array();
-
+                $prev = (isset($root['proxies'][$index - 1]) ? servers_get($root['proxies'][$index - 1]['id']) : $root);
+                $next = (isset($root['proxies'][$index + 1]) ? servers_get($root['proxies'][$index + 1]['id']) : array());
                 break;
             }
-
         }
 
-        forwards_apply_server($prev);
-        forwards_apply_server($removed);
-        forwards_apply_server($next);
+        /*
+         * Step 1: Prepare next server to receive traffic from source server for
+         * specified source protocol
+         */
+
+        /*
+         * Step 2: Apply two iptable rules at once on the source server
+         * A Route all traffic for specified protocol to source server
+         * B Stop routing all traffic for specified protocol to remove server
+         */
+
+        /*
+         * Step 3: Cleanup. Remove all our forwarding rules from remove server
+         */
+
+        //forwards_apply_server($prev);
+        //forwards_apply_server($removed);
+        //forwards_apply_server($next);
 
 
         /*
