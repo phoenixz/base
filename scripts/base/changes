@@ -368,24 +368,20 @@ foreach($files as $file => &$status){
             }
 
         }elseif(preg_match('/init\/framework\/[0-9.]+\.php/', $file)){
-            if(patch_file_exists_in_base($file)){
-                /*
-                 * Base existing init files
-                 */
-                log_console(tr('Identified file as base'), 'VERBOSE');
-                $sections['base'][$file] = $status;
-                $marked = true;
-            }
+            /*
+             * Base existing init files
+             */
+            log_console(tr('Identified file as base'), 'VERBOSE');
+            $sections['base'][$file] = $status;
+            $marked = true;
 
         }elseif(preg_match('/scripts\/base\/[a-z0-9-]+/', $file)){
-            if(patch_file_exists_in_base($file)){
-                /*
-                 * Base existing script files
-                 */
-                log_console(tr('Identified file as base'), 'VERBOSE');
-                $sections['base'][$file] = $status;
-                $marked = true;
-            }
+            /*
+             * Base existing script files
+             */
+            log_console(tr('Identified file as base'), 'VERBOSE');
+            $sections['base'][$file] = $status;
+            $marked = true;
 
         }elseif(preg_match('/scripts\/tests\/[a-z0-9-]+/', $file)){
             if(patch_file_exists_in_base($file)){
@@ -398,14 +394,12 @@ foreach($files as $file => &$status){
             }
 
         }elseif(preg_match('/config\/base\/.+/', $file)){
-            if(patch_file_exists_in_base($file)){
-                /*
-                 * Base existing configuration files
-                 */
-                log_console(tr('Identified file as base'), 'VERBOSE');
-                $sections['base'][$file] = $status;
-                $marked = true;
-            }
+            /*
+             * Base existing configuration files
+             */
+            log_console(tr('Identified file as base'), 'VERBOSE');
+            $sections['base'][$file] = $status;
+            $marked = true;
         }
 
         if($marked){
