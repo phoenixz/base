@@ -151,24 +151,9 @@ function proxy_remove($root_hostname, $remove_hostname){
 
         }
 
-        /*
-         * Update rules on prev server to start accepting request for next server
-         */
-        csf_allow_rule($prev['hostname'], 'tcp', 'in', 80, $next['ipv4']);
-        csf_allow_rule($prev['hostname'], 'tcp', 'in', 80, $next['ipv4']);
-
-        /*
-         * Update next server to start redirecting request to prev server instead or removed server
-         */
-        iptables_add_prerouting ($next['hostname'], 'tcp', 80, 4001, $prev['ipv4']);
-        iptables_add_postrouting($next['hostname'], 'tcp', 4001,     $prev['ipv4']);
-
-
-        /*
-         * Start accepting request from removed server on prev server
-         */
-        csf_remove_allow_rule($prev['hostname'], 'tcp', 'in', 80,    $removed['ipv4']);
-        csf_remove_allow_rule($prev['hostname'], 'tcp', 'in', 40220, $removed['ipv4']);
+        forwards_apply_server($prev);
+        forwards_apply_server($removed);
+        forwards_apply_server($next);
 
 
         /*
