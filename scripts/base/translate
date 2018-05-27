@@ -42,7 +42,11 @@ $usage = './scipts/base/translate clear
 
 $help = 'The translate script can translate the www/en directory to configured languages using the remote translation server
 
+
+
 METHODS
+
+
 
 clear                                   - Delete all www/LANGUAGE trees except
                                           www/en
@@ -56,7 +60,7 @@ translate                               - Actually translate www/en to the
 
 
 
-OPTIONS
+ARGUMENTS
 
 --ignore-php                            - Ignores translations that contain PHP
                                           code
