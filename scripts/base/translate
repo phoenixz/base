@@ -3,25 +3,6 @@
 /*
  * This script can translate php code
  *
- * noutf / noutf8 / noutf8check  : Do not perform file content UTF8 checks
- *
- * Methods :
- *
- * translate                     : Generate the directories for each configured language
- *
- * clear                         : Delete all supported translations
- *
- * Options :
- *
- * -l --languages                : Specify the supported languages, otherwise
- *                                 $_CONFIG['language']['supported'] is used
- *
- * -m --mode                     : Specify the translation mode (strict, full, most or none)
- *
- * scan / scanonly / onlyscan    : Only perform translation scan, do not actually translate the files (NOT YET IMPLEMENTED)
- *
- * noupdate / nodb               : Do not send updated translations back to the translation server (NOT YET IMPLEMENTED)
- *
  * @copyright Sven Oostenbrink <support@capmega.com>, Johan Geuze
  *
  * INFO:
@@ -58,15 +39,54 @@ scan                                    - Scan www/en for translatable strings
 translate                               - Actually translate www/en to the
                                           configured target languages
 
+    -m / --mode [strict|full|most|none] - Translation mode.
+
+                                          "strict" will fail when a single entry
+                                          has not been translated for this
+                                          project
+
+                                          "full" will translate everything but
+                                          when a text is not translated for this
+                                          project, yet is translated for a
+                                          different project, that translation
+                                          from that different project will be
+                                          used instead. If no translations at
+                                          all have been found, "full" will fail
+
+                                          "most" will try to translate as much
+                                          as possible, and never fail. If texts
+                                          are not translated for this project,
+                                          yet have been translated for another
+                                          project, that translation from that
+                                          other project will be used. If no
+                                          translations were found at all, the
+                                          original English text will remain.
+
+                                          "none" will not translate anything at
+                                          all
+
 
 
 ARGUMENTS
+
+
 
 --ignore-php                            - Ignores translations that contain PHP
                                           code
 
 --ignore-html                           - Ignores translations that contain
-                                          HTML';
+                                          HTML
+
+-l / --languages                        - Specify the supported languages,
+                                          otherwise
+                                          $_CONFIG[language][supported] is used
+
+--no-utf / --no-utf8 / --no-utf8-check  - Do not perform file content UTF8
+                                          checks
+
+--no-update                             - Do not send updated translations back
+                                          to the translation server (NOT YET
+                                          IMPLEMENTED)';
 
 require_once(__DIR__.'/../../libs/startup.php');
 load_libs('file,inet,curl,crypt');
@@ -84,16 +104,7 @@ $available_modes = array('strict',
 /*
  *
  */
-$languages = cli_argument('--languages', 'all');
-$l         = cli_argument('-l', 'all');
-
-if($l and $languages){
-    throw new bException(tr('Both l- and --languages were specified. Please specify only one or the other'), 'warning/invalid');
-}
-
-if($l){
-    $languages = $l;
-}
+$languages = cli_argument('-l,--languages', 'all');
 
 
 
