@@ -150,17 +150,6 @@ class core{
                     break;
             }
 
-
-
-            /*
-             * Verify project data integrity
-             */
-            if(!defined('SEED') or !SEED or (PROJECTCODEVERSION == '0.0.0')){
-                if(SCRIPT !== 'setup'){
-                    return include(__DIR__.'/handlers/startup-no-project-data.php');
-                }
-            }
-
         }catch(Exception $e){
             throw new bException(tr('core::__construct(): Failed'), $e);
         }
@@ -180,6 +169,17 @@ class core{
              * Start the call type dependant startup script
              */
             require('handlers/startup-'.$this->callType.'.php');
+
+            /*
+             * Verify project data integrity
+             */
+            if(!defined('SEED') or !SEED or (PROJECTCODEVERSION == '0.0.0')){
+                if(SCRIPT !== 'setup'){
+                    if(!FORCE){
+                        throw new bException(tr('startup: Project data in "ROOT/config/project.php" has not been fully configured. Please ensure that PROJECT is not empty, SEED is not empty, and PROJECTCODEVERSION is valid and not "0.0.0"'), 'project-not-setup');
+                    }
+                }
+            }
 
         }catch(Exception $e){
             throw new bException(tr('core::startup(): Failed'), $e);
