@@ -373,6 +373,13 @@ class validate_form {
                         $replace[] = '-';
                     }
 
+                    if($flags & VALIDATE_IGNORE_UNDERSCORE){
+                        /*
+                         * - characters are allowed, remove them from the test value
+                         */
+                        $replace[] = '_';
+                    }
+
                     if($flags & VALIDATE_IGNORE_SLASH){
                         /*
                          * / or \ characters are allowed, remove them from the test value
