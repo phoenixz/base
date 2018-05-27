@@ -14,6 +14,7 @@ $_CONFIG['translate']                                                           
                                                                                         'passphrase'   => 'translate',
                                                                                         'api_key'      => '',
                                                                                         'allowed_tags' => '<br><a><strong><span><small><b><i><u>',
+                                                                                        'default'      => 'es',
                                                                                         'supported'    => array('en'  => 'English',
                                                                                                                 'es'  => 'Español',
                                                                                                                 'fr'  => 'Français',
