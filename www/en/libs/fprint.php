@@ -16,8 +16,8 @@
  */
 function fprint_library_init(){
     try{
-        if(!file_exists('/var/lib/fprint/')){
-            throw new bException(tr('fprint_library_init(): fprintd application data found, it it probably is not installed. Please fix this by executing "sudo apt-get install fprintd" on the command line'), 'warning/not-exists');
+        if(!file_exists('/usr/sbin/fprintd')){
+            throw new bException(tr('fprint_library_init(): fprintd application data not found, it it probably is not installed. Please fix this by executing "sudo apt-get install fprintd" on the command line'), 'install');
         }
 
         load_config('fprint');
@@ -293,7 +293,7 @@ function fprint_handle_exception($e, $user){
                  * Only counds for verify!
                  * Do NOT send previous exception, generate a new one, its just a simple warning!
                  */
-                throw new bException(tr('fprint_handle_exception(): Finger print data missing for user ":user"', array(':user' => name($user))), 'warning/missing');
+                throw new bException(tr('fprint_handle_exception(): Finger print data missing for user ":user"', array(':user' => name($user))), 'warning/not-exist');
             }
 
             if(strstr($data, 'No devices available') !== false){
