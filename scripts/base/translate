@@ -112,7 +112,9 @@ $languages = cli_argument('-l,--languages', 'all');
  * Validate command line parameters
  */
 if(empty($languages)){
-    $languages = array_keys($_CONFIG['language']['supported']);
+    if($_CONFIG['language']['supported']){
+        $languages = array_keys($_CONFIG['language']['supported']);
+    }
 
     if(empty($languages)){
         throw new bException(tr('No languages specified, no languages configured'), 'warning/not-specified');
