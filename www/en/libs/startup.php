@@ -3482,7 +3482,7 @@ function get_global_data_path($section = '', $writable = true){
 /*
  *
  */
-function run_background($cmd, $log = true, $single = true){
+function run_background($cmd, $log = true, $single = true, $term = 'xterm'){
     return include(__DIR__.'/handlers/startup-run-background.php');
 }
 
