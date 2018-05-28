@@ -328,6 +328,10 @@ class bException extends Exception{
         return $this;
     }
 
+    public function getRealCode(){
+        return str_from($this->code, '/');
+    }
+
     public function getMessages($separator = null){
         if($separator === null){
             return $this->messages;
