@@ -13,7 +13,7 @@
  */
 function proxy_library_init(){
     try{
-        load_libs('servers,csf,route,forwards');
+        load_libs('servers,forwards');
 
     }catch(Exception $e){
         throw new bException('proxy_library_init(): Failed', $e);
@@ -36,6 +36,17 @@ function proxy_insert($root_hostname, $insert_hostname, $target_hostname, $locat
         $insert = proxy_get_server($insert_hostname);
 
         /*
+         * Checkcing if new insert server is already on the chain
+         */
+        if($root['proxies']){
+           foreach($root['proxies'] as $proxy){
+                if(strcasecmp($proxy['hostname'], $insert_hostname) == 0){
+                    throw new bException(tr('proxy_insert(): Insert hostname is already on the chain for ":roothostname"', array(':roothostname'=>$root_hostname)), 'invalid');
+                }
+           }
+        }
+
+        /*
          * Identify the next and previous servers in this chain
          */
         switch($location){
@@ -43,11 +54,11 @@ function proxy_insert($root_hostname, $insert_hostname, $target_hostname, $locat
                 /*
                  * Get next server
                  */
-                $prev = null;
-                $next = proxy_get_server($target_hostname);
+                $next = null;
+                $prev = proxy_get_server($target_hostname);
 
                 foreach($root['proxies'] as $index => $proxy){
-                    $prev = ($index > 0) ? $root['proxies'][$index - 1]['id'] : null;
+                    $next = ($index > 0) ? $root['proxies'][$index - 1]['id'] : null;
 
                     if($proxy['hostname'] == $target_hostname){
                         break;
@@ -55,11 +66,11 @@ function proxy_insert($root_hostname, $insert_hostname, $target_hostname, $locat
 
                 }
 
-                if($prev === null){
-                    $prev = $root;
+                if($next === null){
+                    $next = $root;
 
                 }else{
-                    $prev = proxy_get_server($prev);
+                    $next = proxy_get_server($next);
                 }
 
                 break;
@@ -68,12 +79,12 @@ function proxy_insert($root_hostname, $insert_hostname, $target_hostname, $locat
                 /*
                  * Get previous server
                  */
-                $prev = proxy_get_server($target_hostname);
-                $next = null;
+                $next = proxy_get_server($target_hostname);
+                $prev = null;
 
                 foreach($root['proxies'] as $proxy){
-                    $next = next($root['proxies']);
-                    $next = proxy_get_server($next['id'], false);
+                    $prev = next($root['proxies']);
+                    $prev = proxy_get_server($prev['id'], false);
 
                     if($proxy['hostname'] == $target_hostname){
                         break;
@@ -92,48 +103,74 @@ function proxy_insert($root_hostname, $insert_hostname, $target_hostname, $locat
          */
 
         /*
-         * Step 1: Setup a random port to receive the specified protocol on the
-         * insert server
-         */
-        $port = mt_rand(1025, 65535);
-
-        /*
-         * Step 2: Configure target server to receive traffic for the specified
+         * Step 1: Configure target server to receive traffic for the specified
          * protocol from the insert server (must be on same port as source
          * server)
          */
-        forward_this();
+        log_console('Configuring target server '.$insert['hostname'].' to receive traffic from '.$prev['hostname'],'green');
+        forwards_accept_traffic($next, $insert, $prev);
 
         /*
-         * Step 3: Configure insert server to send out the specified protocol
-         * from the new random port to the port of the next server
+         * Step 2: Configure insert server to send out the specified protocol
+         * from the target_port on source to the port of the next server
          */
-        forward_that();
+        log_console('Configuring insert server '.$insert['hostname'].' to send out traffic to '.$next['hostname'],'white');
+        $forwards = forwards_list($prev['id']);
 
+        if($forwards){
+            /*
+             * prev server could have several protocols redirecting, so
+             * we do not assigne the same port for different protocols
+             */
+            $assigned_ports = array();
+
+            foreach($forwards as $forward){
+                $port = mt_rand(1025, 65535);
+                while(in_array($port, $assigned_ports)){
+                    $port = mt_rand(1025, 65535);
+                }
+
+                $forward['servers_id']  = $insert['id'];
+                $forward['source_ip']   = $insert['ipv4'];
+                $forward['source_port'] = $forward['target_port'];
+                $forward['source_id']   = $forward['servers_id'];
+                $forward['target_ip']   = $next['ipv4'];
+                $forward['target_port'] = $port;
+                $forward['target_id']   = $next['id'];
+                $forward['protocol']    = $forward['protocol'];
+                $forward['description'] = $forward['description'].'. Adding new server';
+
+                forwards_insert($forward);
+                $assigned_ports[] = $port;
+            }
+        }
         /*
-         * Step 4: Apply two iptable rules at once on the source server
+         * Step 3: Apply two iptable rules
          * A Route all traffic for specified protocol to server 2
-         * B Stop routing all traffic for specified protocol to insert server
+         * B Stop routing all traffic for specified protocol to target server
          */
-        forward_blah();
+        log_console('Configuring prev server to send out traffic to  '.$insert['hostname'].' and removing routing to prev server '.$prev['hostname'], 'yellow');
+        $prev_forwards = forwards_list($prev['id']);
 
-        /*
-         * Step 5: Cleanup; Update target server, it should no longer accept
-         * traffic from the source server (since it now gets the traffic from
-         * the insert server)
-         */
-        forward_remove();
+        if($prev_forwards){
+            foreach($prev_forwards as $id=> $forward){
 
+                forwards_delete_apply($forward);
 
-        //forwards_apply_server($prev);
-        //forwards_apply_server($insert);
-        //forwards_apply_server($next);
+                $forward['target_ip'] = $insert['ipv4'];
+
+                forwards_apply_rule($forward);
+
+                $forward['apply'] = false;
+
+                sql_query('UPDATE `forwards` SET `target_ip` = :target_ip WHERE `id` = :id', array(':id'=>$id,':target_ip' => $insert['ipv4']));
+            }
+        }
 
         /*
          * Update database for new proxy relation
          */
-        sql_query('UPDATE `servers` SET `ssh_proxies_id` = ":proxy_id" WHERE `id` = :id', array(':proxy_id' => $insert['id']));
-        sql_query('UPDATE `servers` SET `ssh_proxies_id` = ":proxy_id" WHERE `id` = :id', array(':proxy_id' => $next['id']));
+        sql_query('UPDATE `servers` SET `ssh_proxies_id` = :proxy_id WHERE `id` = :id', array(':id'=>$prev['id'],':proxy_id' => $insert['id']));
 
     }catch(Exception $e){
         throw new bException('proxy_insert(): Failed', $e);
@@ -188,10 +225,17 @@ function proxy_remove($root_hostname, $remove_hostname){
             }
         }
 
+show($next);
+show($removed);
+show($prev);
+
+die;
+
         /*
          * Step 1: Prepare next server to receive traffic from source server for
          * specified source protocol
          */
+        forwards_apply_server($next);
 
         /*
          * Step 2: Apply two iptable rules at once on the source server
@@ -199,13 +243,10 @@ function proxy_remove($root_hostname, $remove_hostname){
          * B Stop routing all traffic for specified protocol to remove server
          */
 
+
         /*
          * Step 3: Cleanup. Remove all our forwarding rules from remove server
          */
-
-        //forwards_apply_server($prev);
-        //forwards_apply_server($removed);
-        //forwards_apply_server($next);
 
 
         /*

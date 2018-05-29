@@ -39,7 +39,7 @@ function iptables_exec($server, $parameters = null){
             /*
              * Buffer the commands
              */
-            $commands[] = 'sudo iptables '.$entry['parameters'];
+            $commands[] = 'sudo iptables '.$parameters;
             return false;
         }
 
@@ -103,20 +103,26 @@ function iptables_flush_nat_rules($server){
  *
  * @example usage iptables -t nat -A PREROUTING -p tcp --dport 80 -j DNAT --to-destination 255.255.255.255:401
  * Sets a new iptables rulte for port forwarding
- * @param string|integer $server The unique name or id of the host where to execute the iptables command
+ * @param mixed $server The unique name or id of the host where to execute the iptables command
  * @param string $protocol
  * @param integer $origin_port
  * @param integer $destination_port
  * @param string $destination_ip
+ * @return void
  */
-function iptables_add_prerouting($server, $protocol, $origin_port, $destination_port, $destination_ip){
+function iptables_set_prerouting($server, $protocol, $origin_port, $destination_port, $destination_ip, $operation = 'add'){
     try{
         $protocol         = iptables_validate_protocol($protocol);
         $origin_port      = iptables_validate_port($origin_port);
         $destination_port = iptables_validate_port($destination_port);
         $destination_ip   = iptables_validate_ip($destination_ip);
 
-        iptables_exec($server, '-t nat -A PREROUTING -p tcp --dport '.$origin_port.' -j DNAT --to-destination '.$destination_ip.':'.$destination_port);
+        /*
+         * With the operation variable we determine if we must add a new rule or delete it
+         */
+        $operation        = $operation == 'add'?'-A':'-D';
+
+        iptables_exec($server, '-t nat '.$operation.' PREROUTING -p tcp --dport '.$origin_port.' -j DNAT --to-destination '.$destination_ip.':'.$destination_port);
 
     }catch(Exception $e){
         throw new bException('iptables_add_prerouting(): Failed', $e);
@@ -125,23 +131,27 @@ function iptables_add_prerouting($server, $protocol, $origin_port, $destination_
 
 
 
+
 /*
  * Adds a postrouting rule on iptables
  *
  * @example usage iptables -t nat -A POSTROUTING -p tcp -d 255.210.102.105 --dport 40001 -j SNAT --to-source 255.255.255.255
- * @param string|integer $server The unique name or id of the host where to execute the iptables command
- * @param string $protocol
+ * @param mixed   $server The unique name or id of the host where to execute the iptables command
+ * @param string  $protocol
  * @param integer $port
- * @param string $destination_ip
+ * @param string  $destination_ip
+ * @return void
  */
-function iptables_add_postrouting($server, $protocol, $port, $destination_ip){
+function iptables_set_postrouting($server, $protocol, $port, $destination_ip, $operation = 'add'){
     try{
         $protocol       = iptables_validate_protocol($protocol);
         $port           = iptables_validate_port($port);
         $destination_ip = iptables_validate_ip($destination_ip);
         $public_ip      = servers_get_public_ip($server);
-
-        iptables_exec($server, '-t nat -A POSTROUTING -p tcp -d '.$destination_ip.' --dport '.$port.' -j SNAT --to-source '.$public_ip);
+        $operation      = $operation == 'add'?'-A':'-D';
+//var_dump($public_ip);die;
+//showdie($server, '-t nat '.$operation.' POSTROUTING -p tcp -d '.$destination_ip.' --dport '.$port.' -j SNAT --to-source '.$public_ip);die;
+        iptables_exec($server, '-t nat '.$operation.' POSTROUTING -p tcp -d '.$destination_ip.' --dport '.$port.' -j SNAT --to-source '.$public_ip);
 
     }catch(Exception $e){
         throw new bException('iptables_add_postrouting(): Failed', $e);
@@ -153,7 +163,8 @@ function iptables_add_postrouting($server, $protocol, $port, $destination_ip){
 /*
  * Flush all iptables rules
  *
- * @param string|integer $server The unique name or id of the host where to execute the iptables command
+ * @param mixed $server The unique name or id of the host where to execute the iptables command
+ * @return void
  */
 function iptables_flush_all($server){
     try{
@@ -170,8 +181,8 @@ function iptables_flush_all($server){
  * Flush all nat rules on iptables
  *
  * @example usage iptables -t nat -F
- * @param string|integer $server The unique name or id of the host where to execute the iptables command
- * @see iptables_clean_nat_chain()
+ * @param mixed $server The unique name or id of the host where to execute the iptables command
+ * @return void
  */
 function iptables_clean_chain_nat($server){
     try{
@@ -188,7 +199,7 @@ function iptables_clean_chain_nat($server){
  * Deletes all iptables rules
  *
  * @param string $server The unique name or id of the host where to execute the iptables command
- * @see iptables_delete_all()
+ * @return void
  */
 function iptables_delete_all($server){
     try{
@@ -196,6 +207,58 @@ function iptables_delete_all($server){
 
     }catch(Exception $e){
         throw new bException('iptables_delete_all(): Failed', $e);
+    }
+}
+
+
+
+/*
+ * Adds a rule on iptables to start accepting traffic from a specific server and port
+ *
+ * @param mixed $server the hostname or id for a specific server
+ * @param string $ip, ip which is going to be accepted for server
+ * @param integer $port
+ * @param string $protocol
+ * @return void
+ */
+function iptables_accept_traffic($server, $ip, $port, $protocol){
+    try{
+        try{
+            /*
+             * Checking if rule already exists, it will through an exception
+             * if rule does not exists
+             */
+            $exists_rule = iptables_exec($server,' -D INPUT -p '.$protocol.' -s '.$ip.' --dport '.$port.' -j ACCEPT');
+
+        }catch(Exception $e){
+            /*
+             * Exception in this case means there is not rule to delete, then we add as new one
+             */
+            iptables_exec($server, ' -I INPUT -p '.$protocol.' -s '.$ip.' --dport '.$port.' -j ACCEPT');
+        }
+
+    }catch(Exception $e){
+        throw new bException('iptables_accept_traffic(): Failed', $e);
+    }
+}
+
+
+
+/*
+ * Removes a rule on iptables to stop accepting traffic from a specific server and port
+ *
+ * @param mixed $server the hostname or id for a specific server
+ * @param string $ip, ip which is going to be accepted for server
+ * @param integer $port
+ * @param string $protocol
+ * @return void
+ */
+function iptables_stop_accepting_traffic($server, $ip, $port, $protocol){
+    try{
+        iptables_exec($server, 'iptables -D INPUT -p '.$protocol.' -s '.$ip.' --dport '.$port.' -j ACCEPT');
+
+    }catch(Exception $e){
+        throw new bException('iptables_stop_traffic(): Failed', $e);
     }
 }
 
@@ -230,7 +293,6 @@ function iptables_delete_all($server){
  *
  * @param string $protocol
  * @return string $protocol
- * @see iptables_validate_protocol()
  */
 function iptables_validate_protocol($protocol){
     try{
@@ -265,7 +327,7 @@ function iptables_validate_protocol($protocol){
 /*
  * Validates a specific port, it must be in a range to be added on iptables rules
  *
- * @param integer $port
+ * @param integer  $port
  * @return integer $port
  * @see iptables_validate_protocol()
  * @see iptables_validate_chain_type()

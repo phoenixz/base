@@ -405,6 +405,11 @@ function servers_detect_os($hostname){
 function servers_get_public_ip($hostname){
     try{
         $ip = servers_exec($hostname, 'dig +short myip.opendns.com @resolver1.opendns.com');
+
+        if(is_array($ip)){
+            $ip = $ip[0];
+        }
+
         return $ip;
 
     }catch(Exception $e){

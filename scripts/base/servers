@@ -104,20 +104,29 @@ switch(cli_method()){
         break;
 
     case 'proxies':
-load_libs('forwards');
-
-forwards_apply_server(2);
-showdie();
+        //load_libs('forwards');
 
         switch(cli_method(1)){
             case 'insert':
-                load_libs('proxies');
-                proxies_insert(blah, foo, bar);
+                //load_libs('forwards');
+                //forwards_apply_server(9);exit;
+                load_libs('proxy');
+                $root_hostname   = cli_argument(2);
+                $new_hostname    = cli_argument(3);
+                $location        = cli_argument(4);
+                $target_hostname = cli_argument(5);
+
+                log_console('Begging insertion for new server '.$new_hostname,'white');
+                proxy_insert($root_hostname, $new_hostname, $target_hostname, $location);
+
                 break;
 
             case 'remove':
-                load_libs('proxies');
-                proxies_remove(blah, foo, bar);
+                load_libs('proxy');
+                $root_hostname   = cli_argument(2);
+                $remove_hostname = cli_argument(3);
+
+                proxy_remove($root_hostname, $remove_hostname);
                 break;
 
             case '':
