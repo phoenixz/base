@@ -228,6 +228,7 @@ function proxies_remove($root_hostname, $remove_hostname){
         }
 
         if($prev){
+            log_console('There are prev and next servers', 'white');
             $prev_forwards = forwards_list($prev['id']);
 
             if(empty($prev_forwards)){
@@ -239,8 +240,8 @@ function proxies_remove($root_hostname, $remove_hostname){
                 $new_forward_prev = $forward;
 
                 $new_forward_prev['apply']     = true;
-                $new_forward_prev['target_ip'] = $next['ipv4'];
-                $new_forward_prev['target_id'] = $next['id'];
+                //$new_forward_prev['target_ip'] = $next['ipv4'];
+                //$new_forward_prev['target_id'] = $next['id'];
 
                 $next_forward = forwards_get_by_protocol_and_sourceip($forward['protocol'],  $next['ipv4']);
 
@@ -256,7 +257,7 @@ function proxies_remove($root_hostname, $remove_hostname){
                  * Applygin new rule on prev server to start redirecting to next server
                  */
 
-                log_console('Applying redirect on prev server');
+                log_console('Applying redirect on prev server', 'white');
                 forwards_insert($new_forward_prev);
 
                 /*
@@ -287,6 +288,44 @@ function proxies_remove($root_hostname, $remove_hostname){
              */
             sql_query('UPDATE `servers` SET `ssh_proxies_id` = :proxy_id WHERE `id` = :id', array(':id'=>$remove['id'],':proxy_id' => NULL));
         }else{
+
+            log_console('Removing server at the front', 'white');
+            $remove_forwards = forwards_list($remove['id']);
+
+            /*
+             * The server that is at the front always listen on port 80
+             * Add rule to start accepting traffic on port 80 on next server
+             */
+            $forward = forwards_get_by_protocol_and_sourceip('http',  $next['ipv4']);
+            $new_forward                = $forward;
+            $new_forward['source_port'] = 80;
+            $new_forward['apply']       = true;
+
+            log_console('Applying forwarding rule on next server to start accepting traffic on port 80', 'white');
+            forwards_insert($new_forward);
+
+            /*
+             * Delete old rule on next server, stop accepting traffic from removed server
+             */
+            log_console('Removing forwarding rule on next server to stop accepting traffic from removed server', 'white');
+
+            $forward['apply'] = true;
+            forwards_delete($forward);
+
+            /*
+             * Remove rules on removed server
+             */
+            foreach($remove_forwards as $id => $forward){
+                $forward['id'] = $id;
+                forwards_delete($forward);
+            }
+
+            /*
+             * Updateing proxy chain on database
+             */
+            log_console('Updating proxy chain on database', 'white');
+            sql_query('UPDATE `servers` SET `ssh_proxies_id` = :proxy_id WHERE `id` = :id', array(':id'=>$next['id'],':proxy_id' => NULL));
+            sql_query('UPDATE `servers` SET `ssh_proxies_id` = :proxy_id WHERE `id` = :id', array(':id'=>$remove['id'],':proxy_id' => NULL));
 
         }
 
