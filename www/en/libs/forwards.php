@@ -83,13 +83,43 @@ function forwards_apply_rule($forward){
         iptables_set_prerouting(IPTABLES_BUFFER,    'tcp', $forward['source_port'], $forward['target_port'], $forward['target_ip']);
         iptables_set_postrouting($forward['servers_id'], 'tcp', $forward['target_port'], $forward['target_ip']);
 
-        /*
-         * Set rules on target server to start acceting the request from source server
-         */
-        iptables_accept_traffic($forward['target_id'], $forward['source_ip'], $forward['target_port'], 'tcp');
+        if($forward['target_id'] > 0){
+            /*
+            * Set rules on target server to start acceting the request from source server
+            */
+            iptables_accept_traffic($forward['target_id'], $forward['source_ip'], $forward['target_port'], 'tcp');
+        }
 
     }catch(Exception $e){
         throw new bException('forwards_apply_rule(): Failed', $e);
+    }
+}
+
+
+
+/*
+ * Checks if forwarding rule is already set up on the host
+ *
+ * @param array
+ * @return boolean
+ */
+function forwards_exists($forward){
+    try{
+        $exits = false;
+
+        /*
+         * Checking if prerouting exist
+         */
+        $result = iptables_exec($forward['servers_id'], ' -t nat -L -n -v|grep "DNAT.*tcp[[:space:]]dpt:'.$forward['source_port'].'[[:space:]]to:"');
+
+        if(!empty($result)){
+            $exits = true;
+        }
+
+        return $exits;
+
+    }catch(Exception $e){
+        throw new bException('forwards_exists(): Failed', $e);
     }
 }
 
@@ -175,20 +205,24 @@ function forwards_delete_apply($forward){
 
         if($forward['apply']){
             try{
-
                 iptables_set_prerouting (IPTABLES_BUFFER,    'tcp', $forward['source_port'], $forward['target_port'], $forward['target_ip'], 'removed');
                 iptables_set_postrouting($forward['servers_id'], 'tcp', $forward['target_port'], $forward['target_ip'], 'removed');
 
-                /*
-                 * Stop accepting traffic
-                 */
-                iptables_stop_accepting_traffic($forward['target_id'], $forward['source_ip'], $forward['target_port'], 'tcp');
+                if($forward['target_id'] > 0){
+                    /*
+                     * Stop accepting traffic
+                     */
+                    iptables_stop_accepting_traffic($forward['target_id'], $forward['source_ip'], $forward['target_port'], 'tcp');
+                }
+
             }catch(Exception $e){
                 /*
                  * In some cases is possible that we are trying to remove a rule that is not on iptables and it will through an error
                  */
+                log_console('Forwards is not present on server');
             }
         }
+
     }catch(Exception $e){
         throw new bException('forwards_delete_apply(): Failed', $e);
     }
@@ -612,6 +646,40 @@ function forwards_get_from_ip($ip){
 
     }catch(Exception $e){
         throw new bException('forwards_get_from_ip(): Failed', $e);
+    }
+}
+
+
+
+
+/*
+ *
+ */
+function forwards_get_by_protocol_and_sourceip($protocol, $ip){
+    try{
+        $forward = sql_get('SELECT  `id`,
+                                    `servers_id`,
+                                    `source_id`,
+                                    `source_ip`,
+                                    `source_port`,
+                                    `target_id`,
+                                    `target_ip`,
+                                    `target_port`,
+                                    `protocol`,
+                                    `description`
+
+                            FROM `forwards` WHERE source_ip = :source_ip
+
+                            AND `protocol` = :protocol
+
+                            AND `status` IS NULL',
+
+                            array(':source_ip' => $ip, ':protocol' => $protocol));
+
+        return $forward;
+
+    }catch(Exception $e){
+        throw new bException('forwards_get_by_protocol_and_sourceip(): Failed', $e);
     }
 }
 ?>

@@ -122,7 +122,7 @@ function iptables_set_prerouting($server, $protocol, $origin_port, $destination_
          */
         $operation        = $operation == 'add'?'-A':'-D';
 
-        iptables_exec($server, '-t nat '.$operation.' PREROUTING -p tcp --dport '.$origin_port.' -j DNAT --to-destination '.$destination_ip.':'.$destination_port);
+        iptables_exec($server, ' -t nat '.$operation.' PREROUTING -p tcp --dport '.$origin_port.' -j DNAT --to-destination '.$destination_ip.':'.$destination_port);
 
     }catch(Exception $e){
         throw new bException('iptables_add_prerouting(): Failed', $e);

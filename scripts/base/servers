@@ -109,14 +109,14 @@ switch(cli_method()){
         switch(cli_method(1)){
             case 'insert':
 
-                load_libs('proxy');
+                load_libs('proxies');
                 $root_hostname   = cli_argument(2);
                 $new_hostname    = cli_argument(3);
                 $location        = cli_argument(4);
                 $target_hostname = cli_argument(5);
 
                 log_console('Begining insertion for new server '.$new_hostname,'white');
-                proxy_insert($root_hostname, $new_hostname, $target_hostname, $location);
+                proxies_insert($root_hostname, $new_hostname, $target_hostname, $location);
 
                 break;
 
