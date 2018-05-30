@@ -199,6 +199,14 @@ class core{
         return $this->register[$key] = $value;
     }
 
+    public function script($script = null){
+        if($script === null){
+            return SCRIPT;
+        }
+
+        return SCRIPT === $script;
+    }
+
     public function callType($type = null){
         if($type){
             switch($type){
