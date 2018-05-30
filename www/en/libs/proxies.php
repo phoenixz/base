@@ -30,14 +30,13 @@ function proxies_insert($root_hostname, $insert_hostname, $target_hostname, $loc
 	try{
 
 		$root     = proxies_get_server($root_hostname, true);
-        showdie($root['proxies']);
 		$insert   = proxies_get_server($insert_hostname, false);
         $on_chain = proxies_validate_on_chain($root['proxies'], $insert_hostname);
 
 		$next   = array();
 		$prev   = array();
 
-        list($prev, $next) = proxies_get_prev_next($root_hostname, $target_hostname, $root['proxies'], $location);
+        list($prev, $next) = proxies_get_prev_next_insert($root_hostname, $target_hostname, $root['proxies'], $location);
 
         if($prev){
             /*
@@ -186,12 +185,111 @@ function proxies_insert($root_hostname, $insert_hostname, $target_hostname, $loc
 
 
 
-
 /*
+ * Removes a server from the proxy chain
  *
+ * @param string $root_hostname
+ * @param string $remove_hostname
+ * @return void
  */
 function proxies_remove($root_hostname, $remove_hostname){
     try{
+        if($root_hostname == $remove_hostname){
+            throw new bException(tr('proxies_remove(): You can not removed main host of the chain'), 'invalid');
+        }
+
+        $root     = proxies_get_server($root_hostname, true);
+		$remove   = proxies_get_server($remove_hostname, false);
+
+        if(empty($root['proxies'])){
+            throw new bException(tr('proxies_remove(): There are not proxies on the chain'), 'invalid');
+        }
+
+        $prev = array();
+        $next = array();
+
+        foreach($root['proxies'] as $position => $proxy){
+            if($proxy['hostname'] == $remove_hostname){
+                if(isset($root['proxies'][$position - 1])){
+                    $next = proxies_get_server($root['proxies'][$position - 1]['id'], false);
+                }else{
+                    $next = $root;
+                }
+
+                /*
+                 * Getting prev
+                 */
+                if(isset($root['proxies'][$position + 1])){
+                    $prev = proxies_get_server($root['proxies'][$position + 1]['id'], false);
+                }
+                break;
+            }
+
+        }
+
+        if($prev){
+            $prev_forwards = forwards_list($prev['id']);
+
+            if(empty($prev_forwards)){
+                throw new bException(tr('proxies_remove(): There are not rules for prev proxy, please verify server'), 'invalid');
+            }
+
+            foreach($prev_forwards as $id => $forward){
+
+                $new_forward_prev = $forward;
+
+                $new_forward_prev['apply']     = true;
+                $new_forward_prev['target_ip'] = $next['ipv4'];
+                $new_forward_prev['target_id'] = $next['id'];
+
+                $next_forward = forwards_get_by_protocol_and_sourceip($forward['protocol'],  $next['ipv4']);
+
+                /*
+                 * Configuring next server to start accepting traffic from prev server
+                 */
+                $next_forward['apply']       = true;
+                $next_forward['source_port'] = $new_forward_prev['target_port'];
+                log_console('Applying redirect on next server', 'white');
+                forwards_insert($next_forward);
+
+                /*
+                 * Applygin new rule on prev server to start redirecting to next server
+                 */
+
+                log_console('Applying redirect on prev server');
+                forwards_insert($new_forward_prev);
+
+                /*
+                 * Remove rule on prev server
+                 */
+                log_console('Removing old rules for redirect on prev and next server', 'white');
+                $forward['id']    = $id;
+                $forward['apply'] = true;
+                forwards_delete($forward);
+                forwards_delete($next_forward);
+
+            }
+
+            /*
+             * Getting removed rules and remove them form the next server
+             */
+            $remove_forwards = forwards_list($remove['id']);
+            log_console('Removing rules on removed server', 'white');
+            foreach($remove_forwards as $id => $forward){
+                $forward['apply'] = true;
+                $forward['id']    = $id;
+                forwards_delete($forward);
+            }
+
+            sql_query('UPDATE `servers` SET `ssh_proxies_id` = :proxy_id WHERE `id` = :id', array(':id'=>$next['id'],':proxy_id' => $prev['id']));
+            /*
+             * Updating ssh_proxies_id for removed server
+             */
+            sql_query('UPDATE `servers` SET `ssh_proxies_id` = :proxy_id WHERE `id` = :id', array(':id'=>$remove['id'],':proxy_id' => NULL));
+        }else{
+
+        }
+
     }catch(Exception $e){
 		throw new bException('proxies_remove(): Failed', $e);
 	}
@@ -200,14 +298,14 @@ function proxies_remove($root_hostname, $remove_hostname){
 
 
 /*
- * Return prev and next server for new insert on proxy chain
+ * Return prev and next server for new insert on proxy chain when a new server is added
  *
  * @param string $target_hostname
  * @parma array $proxies
  * @param string $location
  * @return array
  */
-function proxies_get_prev_next($root_hostname, $target_hostname, $proxies, $location){
+function proxies_get_prev_next_insert($root_hostname, $target_hostname, $proxies, $location){
     try{
         $prev = array();
         $next = array();
@@ -273,13 +371,13 @@ function proxies_get_server($hostname, $return_proxies = false){
 	try{
 		$server = servers_get($hostname, false, $return_proxies);
 		if(empty($server)){
-			throw new bException(tr('proxy_get_server(): No server found for hostname ":hostname"', array(':hostname' => $hostname)), 'not-found');
+			throw new bException(tr('proxies_get_server(): No server found for hostname ":hostname"', array(':hostname' => $hostname)), 'not-found');
 		}
 
 		return $server;
 
 	}catch(Exception $e){
-		throw new bException('proxy_get_server(): Failed', $e);
+		throw new bException('proxies_get_server(): Failed', $e);
 	}
 }
 

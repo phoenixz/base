@@ -121,11 +121,13 @@ switch(cli_method()){
                 break;
 
             case 'remove':
-                load_libs('proxy');
+                load_libs('proxies');
                 $root_hostname   = cli_argument(2);
                 $remove_hostname = cli_argument(3);
 
-                proxy_remove($root_hostname, $remove_hostname);
+                log_console('Removing host '.$remove_hostname,'white');
+                proxies_remove($root_hostname, $remove_hostname);
+
                 break;
 
             case '':
