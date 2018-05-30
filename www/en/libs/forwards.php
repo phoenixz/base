@@ -60,7 +60,6 @@ function forwards_remove_server($server){
 
         if($forwards){
             foreach($forwards as $forward){
-                //$forward['servers_id'] = null;
                 forwards_delete($forward);
             }
         }
@@ -80,10 +79,8 @@ function forwards_remove_server($server){
  */
 function forwards_apply_rule($forward){
     try{
-        array_ensure($forward, 'servers_id,protocol,target_ip,target_port');
-
-        //iptables_flush_nat_rules(IPTABLES_BUFFER);
-        iptables_set_prerouting (IPTABLES_BUFFER,    'tcp', $forward['source_port'], $forward['target_port'], $forward['target_ip']);
+        iptables_set_forward($forward['servers_id']);
+        iptables_set_prerouting(IPTABLES_BUFFER,    'tcp', $forward['source_port'], $forward['target_port'], $forward['target_ip']);
         iptables_set_postrouting($forward['servers_id'], 'tcp', $forward['target_port'], $forward['target_ip']);
 
         /*
@@ -108,7 +105,7 @@ function forwards_apply_rule($forward){
 function forwards_insert($forward, $createdby = null){
     try{
         array_ensure($forward, '');
-        array_default($forward, 'apply', true);
+        array_default($forward, 'apply', false);
 
         $forward = forwards_validate($forward);
 
@@ -182,6 +179,10 @@ function forwards_delete_apply($forward){
                 iptables_set_prerouting (IPTABLES_BUFFER,    'tcp', $forward['source_port'], $forward['target_port'], $forward['target_ip'], 'removed');
                 iptables_set_postrouting($forward['servers_id'], 'tcp', $forward['target_port'], $forward['target_ip'], 'removed');
 
+                /*
+                 * Stop accepting traffic
+                 */
+                iptables_stop_accepting_traffic($forward['target_id'], $forward['source_ip'], $forward['target_port'], 'tcp');
             }catch(Exception $e){
                 /*
                  * In some cases is possible that we are trying to remove a rule that is not on iptables and it will through an error
@@ -577,6 +578,40 @@ function forwards_stop_accepting_traffic($server, $ip){
 
     }catch(Exception $e){
         throw new bException('forwards_stop_accepting_traffic(): Failed', $e);
+    }
+}
+
+
+
+
+/*
+ * Returns forwards for a specific ip source
+ * @param string $ip
+ * return array
+ */
+function forwards_get_from_ip($ip){
+    try{
+        $forwards = sql_list('SELECT `id`,
+                         `servers_id`,
+                         `source_id`,
+                         `source_ip`,
+                         `source_port`,
+                         `target_id`,
+                         `target_ip`,
+                         `target_port`,
+                         `protocol`,
+                         `description`
+
+                 FROM `forwards` WHERE source_ip = :source_ip
+
+                 AND `forwards`.`status` IS NULL',
+
+               array(':source_ip' => $ip));
+
+        return $forwards;
+
+    }catch(Exception $e){
+        throw new bException('forwards_get_from_ip(): Failed', $e);
     }
 }
 ?>

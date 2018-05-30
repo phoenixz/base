@@ -149,8 +149,7 @@ function iptables_set_postrouting($server, $protocol, $port, $destination_ip, $o
         $destination_ip = iptables_validate_ip($destination_ip);
         $public_ip      = servers_get_public_ip($server);
         $operation      = $operation == 'add'?'-A':'-D';
-//var_dump($public_ip);die;
-//showdie($server, '-t nat '.$operation.' POSTROUTING -p tcp -d '.$destination_ip.' --dport '.$port.' -j SNAT --to-source '.$public_ip);die;
+
         iptables_exec($server, '-t nat '.$operation.' POSTROUTING -p tcp -d '.$destination_ip.' --dport '.$port.' -j SNAT --to-source '.$public_ip);
 
     }catch(Exception $e){

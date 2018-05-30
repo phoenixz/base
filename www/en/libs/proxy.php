@@ -51,6 +51,10 @@ function proxy_insert($root_hostname, $insert_hostname, $target_hostname, $locat
          */
         switch($location){
             case 'before':
+                if($root_hostname == $target_hostname){
+                    throw new bException(tr('proxy_insert(): You can not insert a new server before the root chain'), 'unknown');
+                }
+
                 /*
                  * Get next server
                  */
@@ -76,6 +80,7 @@ function proxy_insert($root_hostname, $insert_hostname, $target_hostname, $locat
                 break;
 
             case 'after':
+
                 /*
                  * Get previous server
                  */
@@ -99,78 +104,116 @@ function proxy_insert($root_hostname, $insert_hostname, $target_hostname, $locat
         }
 
         /*
-         * We have the previous server, the next server, and the insert server
+         * If previous proxy exists
          */
+        if($prev){
 
-        /*
-         * Step 1: Configure target server to receive traffic for the specified
-         * protocol from the insert server (must be on same port as source
-         * server)
-         */
-        log_console('Configuring target server '.$insert['hostname'].' to receive traffic from '.$prev['hostname'],'green');
-        forwards_accept_traffic($next, $insert, $prev);
-
-        /*
-         * Step 2: Configure insert server to send out the specified protocol
-         * from the target_port on source to the port of the next server
-         */
-        log_console('Configuring insert server '.$insert['hostname'].' to send out traffic to '.$next['hostname'],'white');
-        $forwards = forwards_list($prev['id']);
-
-        if($forwards){
             /*
-             * prev server could have several protocols redirecting, so
-             * we do not assigne the same port for different protocols
+            * We have the previous server, the next server, and the insert server
+            */
+            $forwards = forwards_get_from_ip($prev['ipv4']);
+
+           /*
+            * Setting forwards for inserted server
+            */
+           $forwards_insert = array();
+
+           if($forwards){
+               foreach($forwards as $id => $forward){
+                   /*
+                    * For source port, generate a random number
+                    */
+                   $port = mt_rand(1025, 65535);
+
+                   $forwards_insert[$id] = array('servers_id'  => $insert['id'],
+                                                 'source_id'   => $insert['id'],
+                                                 'source_ip'   => $insert['ipv4'],
+                                                 'source_port' => $port,
+                                                 'target_id'   => $forward['target_id'],
+                                                 'target_ip'   => $forward['target_ip'],
+                                                 'protocol'    => $forward['protocol'],
+                                                 'description' => $forward['description'],
+                                                 'target_port' => $forward['target_port']);
+
+                   forwards_apply_rule($forwards_insert[$id]);
+
+               }
+
+               foreach($forwards as $id => $forward){
+                   $old_forward = $forward;
+
+                   /*
+                    * Applying new rule
+                    */
+                   $forwards[$id]['target_id']   = $insert['id'];
+                   $forwards[$id]['target_ip']   = $insert['ipv4'];
+                   $forwards[$id]['target_port'] = $forwards_insert[$id]['source_port'];
+
+                   log_console('Applying rule for server '.$insert['hostname'], 'white');
+                   forwards_apply_rule($forwards[$id]);
+
+                   /*
+                    * Deleting rule
+                    */
+                   log_console('Removing rule for server', 'white');
+                   forwards_delete_apply($old_forward);
+               }
+
+               /*
+                * Delete from database old rules
+                */
+               sql_query('DELETE from `forwards` where source_ip = :source_ip', array(':source_ip' => $prev['ipv4']));
+
+               /*
+                * Insert new rules for prev server
+                */
+               if($forwards){
+                   foreach($forwards as $id => $forward){
+                       $forward['apply'] = false;
+                       forwards_insert($forward);
+
+                   }
+               }
+
+               /*
+                * Update new relation for proxies
+                */
+               sql_query('UPDATE `servers` SET `ssh_proxies_id` = :proxy_id WHERE `id` = :id', array(':id'=>$next['id'],':proxy_id'   => $insert['id']));
+               sql_query('UPDATE `servers` SET `ssh_proxies_id` = :proxy_id WHERE `id` = :id', array(':id'=>$insert['id'],':proxy_id' => $prev['id']));
+           }
+
+        } else{
+            /*
+             * Domain must be redirected to new inserted server, for this case
+             * we only need to apply redirected rules on inserted server
+             * we don't know which protocols must be redirected so we apply only one http
              */
-            $assigned_ports = array();
+            $forwards_insert[] = array('servers_id'  => $insert['id'],
+                                       'source_id'   => $insert['id'],
+                                       'source_ip'   => $insert['ipv4'],
+                                       'source_port' => 80,
+                                       'target_id'   => $next['id'],
+                                       'target_ip'   => $next['ipv4'],
+                                       'protocol'    => 'http',
+                                       'target_port' => 80,
+                                       'description' => 'New server at the front of everything');
 
-            foreach($forwards as $forward){
-                $port = mt_rand(1025, 65535);
-                while(in_array($port, $assigned_ports)){
-                    $port = mt_rand(1025, 65535);
-                }
+            forwards_apply_rule($forwards_insert[0]);
 
-                $forward['servers_id']  = $insert['id'];
-                $forward['source_ip']   = $insert['ipv4'];
-                $forward['source_port'] = $forward['target_port'];
-                $forward['source_id']   = $forward['servers_id'];
-                $forward['target_ip']   = $next['ipv4'];
-                $forward['target_port'] = $port;
-                $forward['target_id']   = $next['id'];
-                $forward['protocol']    = $forward['protocol'];
-                $forward['description'] = $forward['description'].'. Adding new server';
-
-                forwards_insert($forward);
-                $assigned_ports[] = $port;
-            }
+            sql_query('UPDATE `servers` SET `ssh_proxies_id` = :proxy_id WHERE `id` = :id', array(':id'=>$next['id'],':proxy_id' => $insert['id']));
         }
+
         /*
-         * Step 3: Apply two iptable rules
-         * A Route all traffic for specified protocol to server 2
-         * B Stop routing all traffic for specified protocol to target server
+         * Insert new rules
          */
-        log_console('Configuring prev server to send out traffic to  '.$insert['hostname'].' and removing routing to prev server '.$prev['hostname'], 'yellow');
-        $prev_forwards = forwards_list($prev['id']);
-
-        if($prev_forwards){
-            foreach($prev_forwards as $id=> $forward){
-
-                forwards_delete_apply($forward);
-
-                $forward['target_ip'] = $insert['ipv4'];
-
-                forwards_apply_rule($forward);
+        if($forwards_insert){
+            foreach($forwards_insert as $forward){
 
                 $forward['apply'] = false;
-
-                sql_query('UPDATE `forwards` SET `target_ip` = :target_ip WHERE `id` = :id', array(':id'=>$id,':target_ip' => $insert['ipv4']));
+                forwards_insert($forward);
             }
         }
 
-        /*
-         * Update database for new proxy relation
-         */
-        sql_query('UPDATE `servers` SET `ssh_proxies_id` = :proxy_id WHERE `id` = :id', array(':id'=>$prev['id'],':proxy_id' => $insert['id']));
 
     }catch(Exception $e){
         throw new bException('proxy_insert(): Failed', $e);
@@ -225,35 +268,27 @@ function proxy_remove($root_hostname, $remove_hostname){
             }
         }
 
-show($next);
-show($removed);
-show($prev);
+        $forwards_insert = array();
 
-die;
+        if($prev){
+            /*
+             * if prev exists we must redirect traffic to next server
+             */
+            $remove_forwards = forwards_get_from_ip($removed['ipv4']);
+            //if($remove_forwards){
+            //    foreach($forwards as $id => $forward){
+            //        $forwards_insert[$id] = array('servers_id'  => $prev['id'],
+            //                                      'source_id'   => $prev['id'],
+            //                                      'source_ip'   => $prev['ipv4'],
+            //                                      'source_port' => $prev[''],
+            //                                      'target_id'   => $forward['target_id'],
+            //                                      'target_ip'   => $forward['target_ip'],
+            //                                      'target_port' => $forward['target_port']);
+            //
+            //    }
+            //}
 
-        /*
-         * Step 1: Prepare next server to receive traffic from source server for
-         * specified source protocol
-         */
-        forwards_apply_server($next);
-
-        /*
-         * Step 2: Apply two iptable rules at once on the source server
-         * A Route all traffic for specified protocol to source server
-         * B Stop routing all traffic for specified protocol to remove server
-         */
-
-
-        /*
-         * Step 3: Cleanup. Remove all our forwarding rules from remove server
-         */
-
-
-        /*
-         * Update data base with new proxy relations
-         */
-        sql_query('UPDATE `servers` SET `ssh_proxies_id` = ":proxy_id" WHERE `id` = :id', array(':proxy_id' => $removed['id']));
-        sql_query('UPDATE `servers` SET `ssh_proxies_id` = ":proxy_id" WHERE `id` = :id', array(':proxy_id' => $next['id']));
+        }
 
     }catch(Exception $e){
         throw new bException('proxy_remove(): Failed', $e);
