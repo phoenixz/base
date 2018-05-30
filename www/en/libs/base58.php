@@ -135,7 +135,4 @@ function base58_decode($base58, $reduced = false){
         throw new bException(tr('base58_decode(): Failed'), $e);
     }
 }
-
-
-
 ?>

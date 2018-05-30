@@ -58,7 +58,7 @@ function config_read($environment, $section = null){
          * Optionally load the platform specific configuration file, if it exists
          */
         if(!file_exists($file = ROOT.'config/'.$environment.$section.'.php')){
-            throw new bException(tr('config_read(): The specified configuration file "ROOT/config/'.$environment.$section.'.php" does not exist'), 'not-exists');
+            throw new bException(tr('config_read(): The specified configuration file ":file" does not exist', array(':file' => 'ROOT/config/'.$environment.$section.'.php')), 'not-exists');
         }
 
         $data   = file_get_contents($file);

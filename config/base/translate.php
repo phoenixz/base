@@ -13,6 +13,19 @@ $_CONFIG['translate']                                                           
                                                                                         'mode'         => 'full',
                                                                                         'passphrase'   => 'translate',
                                                                                         'api_key'      => '',
-                                                                                        'allowed_tags' => '<br><a><strong><span><small><b><i><u>');
+                                                                                        'allowed_tags' => '<br><a><strong><span><small><b><i><u>',
+                                                                                        'default'      => 'es',
+                                                                                        'supported'    => array('en'  => 'English',
+                                                                                                                'es'  => 'Español',
+                                                                                                                'fr'  => 'Français',
+                                                                                                                'fy'  => 'Frysk',
+                                                                                                                'it'  => 'italiano',
+                                                                                                                'de'  => 'Deutsch',
+                                                                                                                'da'  => 'Dansk',
+                                                                                                                'nah' => 'Nahuatl',
+                                                                                                                'nl'  => 'Nederlands',
+                                                                                                                'pr'  => 'Português',
+                                                                                                                'zh'  => '中国',
+                                                                                                                'ja'  => '日本'));
 
 ?>
