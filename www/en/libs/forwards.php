@@ -65,7 +65,7 @@ function forwards_remove_server($server){
         }
 
     }catch(Exception $e){
-        throw new bException('forwards_apply_server(): Failed', $e);
+        throw new bException('forwards_remove_server(): Failed', $e);
     }
 }
 
@@ -79,15 +79,17 @@ function forwards_remove_server($server){
  */
 function forwards_apply_rule($forward){
     try{
-        iptables_set_forward(IPTABLES_BUFFER);
-        iptables_set_prerouting(IPTABLES_BUFFER,         'tcp', $forward['source_port'], $forward['target_port'], $forward['target_ip']);
-        iptables_set_postrouting($forward['servers_id'], 'tcp', $forward['target_port'], $forward['source_ip'],   $forward['target_ip']);
+        if($forward['protocol'] != 'ssh'){
+            iptables_set_forward(IPTABLES_BUFFER);
+            iptables_set_prerouting(IPTABLES_BUFFER,         'tcp', $forward['source_port'], $forward['target_port'], $forward['target_ip']);
+            iptables_set_postrouting($forward['servers_id'], 'tcp', $forward['target_port'], $forward['source_ip'],   $forward['target_ip']);
+        }
 
         if($forward['target_id']){
             /*
              * Set rules on target server to start acceting the request from source server
              */
-            iptables_accept_traffic($forward['target_id'], $forward['source_ip'], $forward['target_port'], 'tcp');
+             forwards_only_accept_traffic($forward);
         }
 
     }catch(Exception $e){
@@ -200,8 +202,14 @@ function forwards_delete($forward){
  */
 function forwards_delete_apply($forward){
     try{
-        iptables_set_prerouting (IPTABLES_BUFFER,    'tcp', $forward['source_port'], $forward['target_port'], $forward['target_ip'], 'removed');
-        iptables_set_postrouting($forward['servers_id'], 'tcp', $forward['target_port'], $forward['source_ip'], $forward['target_ip'], 'removed');
+        if($forward['protocol'] != 'ssh'){
+            /*
+             * Removing forwarding
+             */
+            iptables_set_prerouting (IPTABLES_BUFFER,    'tcp', $forward['source_port'], $forward['target_port'], $forward['target_ip'], 'removed');
+            iptables_set_postrouting($forward['servers_id'], 'tcp', $forward['target_port'], $forward['source_ip'], $forward['target_ip'], 'removed');
+
+        }
 
         if($forward['target_id']){
             /*
@@ -538,41 +546,7 @@ function forwards_only_accept_traffic($forward){
         iptables_accept_traffic($forward['target_id'], $forward['source_ip'], $forward['target_port'], 'tcp');
 
     }catch(Exception $e){
-        throw new bException('forwards_list(): Failed', $e);
-    }
-}
-
-
-
-/*
- *
- */
-function forwards_get_by_protocol_and_sourceip($protocol, $ip){
-    try{
-        $forward = sql_get('SELECT `id`,
-                                   `servers_id`,
-                                   `source_id`,
-                                   `source_ip`,
-                                   `source_port`,
-                                   `target_id`,
-                                   `target_ip`,
-                                   `target_port`,
-                                   `protocol`,
-                                   `description`
-
-                            FROM   `forwards`
-
-                            WHERE  `source_ip` = :source_ip
-                            AND    `protocol`  = :protocol
-                            AND    `status` IS NULL',
-
-                            array(':source_ip' => $ip,
-                                  ':protocol'  => $protocol));
-
-        return $forward;
-
-    }catch(Exception $e){
-        throw new bException('forwards_get_by_protocol_and_sourceip(): Failed', $e);
+        throw new bException('forwards_only_accept_traffic(): Failed', $e);
     }
 }
 ?>

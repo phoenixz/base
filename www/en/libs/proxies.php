@@ -54,56 +54,74 @@ function proxies_insert_front($prev, $insert, $protocols, $apply){
                     /*
                      * For ssh we only accept traffic from
                      */
+                    $new_forward              = $forward;
+                    $new_forward['apply']     = true;
+                    $new_forward['source_id'] = $insert['id'];
+                    $new_forward['source_ip'] = $insert['ipv4'];
+                    $new_forward['target_id'] = $prev['id'];
+                    $new_forward['target_ip'] = $prev['ipv4'];
+
+                    /*
+                     * Inserting and palying new rule
+                     */
+                    forwards_insert($new_forward);
+
+                    /*
+                     * Deleting old rule
+                     */
+                    $forward['apply'] = $apply;
+
+                    forwards_delete($forward);
 
                 } else{
                     /*
-                     * Creating forward rule for inserted server
-                        */
-                       $random_port = mt_rand(1025, 65535);
+                    * Creating forward rule for inserted server
+                    */
+                    $random_port = mt_rand(1025, 65535);
 
-                       $new_forward['apply']       = $apply;
-                       $new_forward['servers_id']  = $insert['id'];
-                       $new_forward['source_id']   = $insert['id'];
-                       $new_forward['source_ip']   = $insert['ipv4'];
-                       $new_forward['source_port'] = $default_source_port;
-                       $new_forward['target_id']   = $prev['id'];
-                       $new_forward['target_ip']   = $prev['ipv4'];
-                       $new_forward['target_port'] = $random_port;
-                       $new_forward['protocol']    = $forward['protocol'];
-                       $new_forward['description'] = 'Rule added by proxies library on '.date('Y-m-d H:i:s');
+                    $new_forward['apply']       = $apply;
+                    $new_forward['servers_id']  = $insert['id'];
+                    $new_forward['source_id']   = $insert['id'];
+                    $new_forward['source_ip']   = $insert['ipv4'];
+                    $new_forward['source_port'] = $default_source_port;
+                    $new_forward['target_id']   = $prev['id'];
+                    $new_forward['target_ip']   = $prev['ipv4'];
+                    $new_forward['target_port'] = $random_port;
+                    $new_forward['protocol']    = $forward['protocol'];
+                    $new_forward['description'] = 'Rule added by proxies library on '.date('Y-m-d H:i:s');
 
-                       $exists = forwards_exists($new_forward);
-                       /*
-                        * If source port is already in use throw exception
-                        */
-                       if($exists){
-                          throw new bException(tr('proxies_insert_front(): Port ":source_port" on host ":host" for protocol ":protocol" is already in use', array(':source_port'=>$default_source_port, ':host'=>$insert['hostname'])), 'invalid');
-                       }
+                    $exists = forwards_exists($new_forward);
+                    /*
+                     * If source port is already in use throw exception
+                     */
+                    if($exists){
+                       throw new bException(tr('proxies_insert_front(): Port ":source_port" on host ":host" for protocol ":protocol" is already in use', array(':source_port'=>$default_source_port, ':host'=>$insert['hostname'])), 'invalid');
+                    }
 
-                       /*
-                        * Updating source port for forward rule on prev server
-                        */
-                       $forward['apply']       = $apply;
-                       $forward['source_port'] = $random_port;
-                       $exists = forwards_exists($forward);
-                       if($exists){
-                          throw new bException(tr('proxies_insert_front(): Port ":source_port" on host ":host" for protocol ":protocol" is already in use', array(':source_port'=>$prev['source_port'], ':host'=>$prev['hostname'])), 'invalid');
-                       }
+                    /*
+                     * Updating source port for forward rule on prev server
+                     */
+                    $forward['apply']       = $apply;
+                    $forward['source_port'] = $random_port;
+                    $exists = forwards_exists($forward);
+                    if($exists){
+                       throw new bException(tr('proxies_insert_front(): Port ":source_port" on host ":host" for protocol ":protocol" is already in use', array(':source_port'=>$prev['source_port'], ':host'=>$prev['hostname'])), 'invalid');
+                    }
 
-                       /*
-                        * Inserting and aplying rules, first on inserted server then in prev server
-                        */
-                       log_console('Applying forward rule on inserted server', 'white');
-                       forwards_insert($new_forward);
+                    /*
+                     * Inserting and aplying rules, first on inserted server then in prev server
+                     */
+                    log_console('Applying forward rule on inserted server', 'white');
+                    forwards_insert($new_forward);
 
-                       log_console('Applying forward rule on prev server for new source port', 'white');
-                       forwards_insert($forward);
+                    log_console('Applying forward rule on prev server for new source port', 'white');
+                    forwards_insert($forward);
 
-                       /*
-                        * Deleting rule from data base
-                        */
-                       log_console('Removing old forward rule on prev server', 'white');
-                       forwards_delete($forward);
+                    /*
+                     * Deleting rule from data base
+                     */
+                    log_console('Removing old forward rule on prev server', 'white');
+                    forwards_delete($forward);
 
                 }
 
@@ -139,6 +157,7 @@ function proxies_insert_front($prev, $insert, $protocols, $apply){
                      * :REVIEW: We keep the port configure on servers table
                      */
                     $forward['target_port'] = $prev['port'];
+                    $forward['apply']       = false;
                     forwards_only_accept_traffic($forward);
 
                 }else{
