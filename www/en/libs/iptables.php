@@ -149,15 +149,15 @@ function iptables_set_prerouting($server, $protocol, $origin_port, $destination_
  * @param string  $destination_ip
  * @return void
  */
-function iptables_set_postrouting($server, $protocol, $port, $destination_ip, $operation = 'add'){
+function iptables_set_postrouting($server, $protocol, $port, $source_ip, $destination_ip, $operation = 'add'){
     try{
         $protocol       = iptables_validate_protocol($protocol);
         $port           = iptables_validate_port($port);
         $destination_ip = iptables_validate_ip($destination_ip);
-        $public_ip      = servers_get_public_ip($server);
+        //$public_ip      = servers_get_public_ip($server);
         $operation      = $operation == 'add'?'-A':'-D';
 
-        iptables_exec($server, '-t nat '.$operation.' POSTROUTING -p tcp -d '.$destination_ip.' --dport '.$port.' -j SNAT --to-source '.$public_ip);
+        iptables_exec($server, '-t nat '.$operation.' POSTROUTING -p tcp -d '.$destination_ip.' --dport '.$port.' -j SNAT --to-source '.$source_ip);
 
     }catch(Exception $e){
         throw new bException('iptables_add_postrouting(): Failed', $e);
@@ -219,28 +219,27 @@ function iptables_delete_all($server){
 
 
 /*
- * Adds a rule on iptables to start accepting traffic from a specific server and port
+ * Adds a rule on iptables to start accepting traffic from a specific ip
+ * on  a specific port in a specific server
  *
  * @param mixed $server the hostname or id for a specific server
- * @param string $ip, ip which is going to be accepted for server
- * @param integer $port
+ * @param string $ip, Accept traffic from this ip
+ * @param integer $port,Accept traffic on this port
  * @param string $protocol
  * @return void
  */
 function iptables_accept_traffic($server, $ip, $port, $protocol){
     try{
-        try{
+        $result = servers_exec($server, 'if sudo iptables -L -v|grep '.$ip.'.*dpt:'.$port.'; then echo 1; else echo 0; fi');
+        /*
+         * If rule does not exist, we add it
+         */
+        if(!$result[0]){
+            iptables_exec($server, ' -A INPUT -p '.$protocol.' -s '.$ip.' --dport '.$port.' -j ACCEPT');
             /*
-             * Checking if rule already exists, it will through an exception
-             * if rule does not exists
+             * Block all the rest of the world
              */
-            $exists_rule = iptables_exec($server,' -D INPUT -p '.$protocol.' -s '.$ip.' --dport '.$port.' -j ACCEPT');
-
-        }catch(Exception $e){
-            /*
-             * Exception in this case means there is not rule to delete, then we add as new one
-             */
-            iptables_exec($server, ' -I INPUT -p '.$protocol.' -s '.$ip.' --dport '.$port.' -j ACCEPT');
+            //iptables_exec($server, ' -A INPUT -p tcp --dport '.$port.' -j DROP');
         }
 
     }catch(Exception $e){
@@ -261,7 +260,7 @@ function iptables_accept_traffic($server, $ip, $port, $protocol){
  */
 function iptables_stop_accepting_traffic($server, $ip, $port, $protocol){
     try{
-        iptables_exec($server, 'iptables -D INPUT -p '.$protocol.' -s '.$ip.' --dport '.$port.' -j ACCEPT');
+        iptables_exec($server, '-D INPUT -p '.$protocol.' -s '.$ip.' --dport '.$port.' -j ACCEPT');
 
     }catch(Exception $e){
         throw new bException('iptables_stop_traffic(): Failed', $e);
