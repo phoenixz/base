@@ -15,6 +15,7 @@
 function iptables_library_init(){
     try{
         load_libs('servers');
+        define('IPTABLES_CLEAR' , '__CLEAR__');
         define('IPTABLES_BUFFER', '__BUFFER__');
 
     }catch(Exception $e){
@@ -35,33 +36,39 @@ function iptables_exec($server, $parameters = null){
     static $commands = array();
 
     try{
-        if($server === IPTABLES_BUFFER){
-            /*
-             * Buffer the commands
-             */
-            $commands[] = 'sudo iptables '.$parameters;
-            return false;
+        switch($server){
+            case IPTABLES_CLEAR:
+                $commands = array();
+                return false;
+
+            case IPTABLES_BUFFER:
+                /*
+                 * Buffer the commands
+                 */
+                $commands[] = 'sudo iptables '.$parameters;
+                return false;
+
+            default:
+                if($commands){
+                    /*
+                     * Execute all commands from the
+                     */
+                    $command  = implode(';', $commands);
+                    $commands = array();
+
+                    servers_exec($server, $command);
+                }
+
+                if(!$parameters){
+                    /*
+                     * Don't do anything, this is usually used to flush the command
+                     * buffer
+                     */
+                    return false;
+                }
+
+                return servers_exec($server, 'sudo iptables '.$parameters);
         }
-
-        if($commands){
-            /*
-             * Execute all commands from the
-             */
-            $command  = implode(';', $commands);
-            $commands = array();
-
-            servers_exec($server, $command);
-        }
-
-        if(!$parameters){
-            /*
-             * Don't do anything, this is usually used to flush the command
-             * buffer
-             */
-            return false;
-        }
-
-        return servers_exec($server, 'sudo iptables '.$parameters);
 
     }catch(Exception $e){
         throw new bException('iptables_exec(): Failed', $e);

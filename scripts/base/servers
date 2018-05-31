@@ -27,6 +27,9 @@ list                            - List all registerd servers
 
 
 
+proxies
+
+
 show SERVER                     - Show detaisl about the specified server';
 
 require_once(__DIR__.'/../../libs/startup.php');
@@ -35,8 +38,8 @@ load_libs('mysql');
 
 switch(cli_method()){
     case 'list':
-        $deleted = cli_argument('-d') or cli_argument('--deleted');
-        $all     = cli_argument('-a') or cli_argument('--all');
+        $deleted        = cli_argument('-d') or cli_argument('--deleted');
+        $all            = cli_argument('-a') or cli_argument('--all');
         $only_hostnames = cli_argument('--only-hostnames');
         $execute        = array();
 
@@ -108,20 +111,20 @@ switch(cli_method()){
 
         switch(cli_method(1)){
             case 'insert':
-
                 load_libs('proxies');
                 $root_hostname   = cli_argument(2);
                 $new_hostname    = cli_argument(3);
                 $location        = cli_argument(4);
                 $target_hostname = cli_argument(5);
+                $protocols       = cli_argument(6);
 
-                log_console('Begining insertion for new server '.$new_hostname,'white');
-                proxies_insert($root_hostname, $new_hostname, $target_hostname, $location);
-
+                log_console(tr('Begining insertion for new server ":server"', array(':server' => $new_hostname)), 'white');
+                proxies_insert($root_hostname, $new_hostname, $target_hostname, $location, $protocols);
                 break;
 
             case 'remove':
                 load_libs('proxies');
+
                 $root_hostname   = cli_argument(2);
                 $remove_hostname = cli_argument(3);
 
