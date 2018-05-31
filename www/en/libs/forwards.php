@@ -80,17 +80,18 @@ function forwards_remove_server($server){
 function forwards_apply_rule($forward){
     try{
         iptables_set_forward($forward['servers_id']);
-        iptables_set_prerouting(IPTABLES_BUFFER,    'tcp', $forward['source_port'], $forward['target_port'], $forward['target_ip']);
+        iptables_set_prerouting(IPTABLES_BUFFER,         'tcp', $forward['source_port'], $forward['target_port'], $forward['target_ip']);
         iptables_set_postrouting($forward['servers_id'], 'tcp', $forward['target_port'], $forward['target_ip']);
 
-        if($forward['target_id'] > 0){
+        if($forward['target_id']){
             /*
-            * Set rules on target server to start acceting the request from source server
-            */
+             * Set rules on target server to start acceting the request from source server
+             */
             iptables_accept_traffic($forward['target_id'], $forward['source_ip'], $forward['target_port'], 'tcp');
         }
 
     }catch(Exception $e){
+        iptables_exec(IPTABLES_CLEAR);
         throw new bException('forwards_apply_rule(): Failed', $e);
     }
 }
@@ -105,18 +106,16 @@ function forwards_apply_rule($forward){
  */
 function forwards_exists($forward){
     try{
-        $exits = false;
-
         /*
          * Checking if prerouting exist
          */
         $result = iptables_exec($forward['servers_id'], ' -t nat -L -n -v|grep "DNAT.*tcp[[:space:]]dpt:'.$forward['source_port'].'[[:space:]]to:"');
 
         if(!empty($result)){
-            $exits = true;
+            return true;
         }
 
-        return $exits;
+        return false;
 
     }catch(Exception $e){
         throw new bException('forwards_exists(): Failed', $e);
@@ -177,7 +176,7 @@ function forwards_insert($forward, $createdby = null){
  */
 function forwards_delete($forward){
     try{
-        array_ensure($forward, '');
+        array_ensure($forward , '');
         array_default($forward, 'apply', true);
 
         sql_query('DELETE FROM `forwards` WHERE `id` = :id', array(':id' => $forward['id']));
@@ -201,26 +200,14 @@ function forwards_delete($forward){
  */
 function forwards_delete_apply($forward){
     try{
-        array_default($forward, 'apply', true);
+        iptables_set_prerouting (IPTABLES_BUFFER,    'tcp', $forward['source_port'], $forward['target_port'], $forward['target_ip'], 'removed');
+        iptables_set_postrouting($forward['servers_id'], 'tcp', $forward['target_port'], $forward['target_ip'], 'removed');
 
-        if($forward['apply']){
-            try{
-                iptables_set_prerouting (IPTABLES_BUFFER,    'tcp', $forward['source_port'], $forward['target_port'], $forward['target_ip'], 'removed');
-                iptables_set_postrouting($forward['servers_id'], 'tcp', $forward['target_port'], $forward['target_ip'], 'removed');
-
-                if($forward['target_id'] > 0){
-                    /*
-                     * Stop accepting traffic
-                     */
-                    iptables_stop_accepting_traffic($forward['target_id'], $forward['source_ip'], $forward['target_port'], 'tcp');
-                }
-
-            }catch(Exception $e){
-                /*
-                 * In some cases is possible that we are trying to remove a rule that is not on iptables and it will through an error
-                 */
-                log_console('Forwards is not present on server');
-            }
+        if($forward['target_id'] > 0){
+            /*
+             * Stop accepting traffic
+             */
+            iptables_stop_accepting_traffic($forward['target_id'], $forward['source_ip'], $forward['target_port'], 'tcp');
         }
 
     }catch(Exception $e){
@@ -239,22 +226,24 @@ function forwards_delete_apply($forward){
  */
 function forwards_update($forward, $modifiedby = null){
     try{
+        array_ensure($forward , '');
         array_default($forward, 'apply', true);
+
         $forward     = forwards_validate($forward);
 
-        $old_forward = sql_get('SELECT `forwards`.`id`,
-                                       `forwards`.`servers_id`,
-                                       `forwards`.`source_ip`,
-                                       `forwards`.`source_port`,
-                                       `forwards`.`source_id`,
-                                       `forwards`.`target_ip`,
-                                       `forwards`.`target_port`,
-                                       `forwards`.`target_id`,
-                                       `forwards`.`protocol`
+        $old_forward = sql_get('SELECT `id`,
+                                       `servers_id`,
+                                       `source_ip`,
+                                       `source_port`,
+                                       `source_id`,
+                                       `target_ip`,
+                                       `target_port`,
+                                       `target_id`,
+                                       `protocol`
 
                                 FROM   `forwards`
 
-                                WHERE  `forwards`.`id` = :id',
+                                WHERE  `id` = :id',
 
                                 array(':id' => $forward['id']));
 
@@ -304,17 +293,16 @@ function forwards_update($forward, $modifiedby = null){
  */
 function forwards_update_apply($forward, $old_forward){
     try{
-        if($forward['apply']){
-            /*
-             * Remove old rule
-             */
-            forwards_delete_apply($old_forward);
+        /*
+         * Remove old rule
+         */
+        forwards_delete_apply($old_forward);
 
-            /*
-             * Add new rule
-             */
-            forwards_apply_rule($forward);
-        }
+        /*
+         * Add new rule
+         */
+        forwards_apply_rule($forward);
+
     }catch(Exception $e){
         throw new bException('forwards_update_apply(): Failed', $e);
     }
@@ -348,6 +336,7 @@ function forwards_validate($forward){
 
             if(is_natural($forward['servers_id'])){
                 $exists = sql_get('SELECT `id` FROM `servers` WHERE `id` = :id AND `status` IS NULL', array(':id' => $forward['servers_id']), true);
+
             }else{
                 $exists = sql_get('SELECT `id` FROM `servers` WHERE `seohostname` = :seohostname AND `status` IS NULL', array(':seohostname' => $forward['servers_id']), true);
             }
@@ -361,11 +350,10 @@ function forwards_validate($forward){
             }
         }
 
-
         if($forward['source_id']){
-
             if(is_natural($forward['source_id'])){
                 $exists = sql_get('SELECT `id` FROM `servers` WHERE `id` = :id AND `status` IS NULL', array(':id' => $forward['source_id']), true);
+
             }else{
                 $exists = sql_get('SELECT `id` FROM `servers` WHERE `seohostname` = :seohostname AND `status` IS NULL', array(':seohostname' => $forward['source_id']), true);
             }
@@ -380,15 +368,16 @@ function forwards_validate($forward){
         }
 
         if($forward['target_id']){
-
             if(is_natural($forward['target_id'])){
                 $exists = sql_get('SELECT `id` FROM `servers` WHERE `id` = :id AND `status` IS NULL', array(':id' => $forward['target_id']), true);
+
             }else{
                 $exists = sql_get('SELECT `id` FROM `servers` WHERE `seohostname` = :seohostname AND `status` IS NULL', array(':seohostname' => $forward['target_id']), true);
             }
 
             if(!$exists){
                 $v->setError(tr('Specified proxy ":source" does not exist', array(':source' => $forward['target_id'])));
+
             }else{
                 $forward['target_id'] = $exists;
             }
@@ -472,7 +461,6 @@ function forwards_get($forwards_id){
                             ON        `forwards`.`createdby`  = `createdby`.`id`
 
                             WHERE     `forwards`.`id`         = :id
-
                             AND       `forwards`.`status` IS NULL',
 
                             array(':id' => $forwards_id));
@@ -507,24 +495,23 @@ function forwards_list($server){
          * From here, $server contains the servers_id
          */
 
-        $forwards = sql_list('SELECT  `forwards`.`id`,
-                                      `forwards`.`servers_id`,
-                                      `forwards`.`source_id`,
-                                      `forwards`.`source_ip`,
-                                      `forwards`.`source_port`,
-                                      `forwards`.`target_id`,
-                                      `forwards`.`target_ip`,
-                                      `forwards`.`target_port`,
-                                      `forwards`.`protocol`,
-                                      `forwards`.`description`
+        $forwards = sql_list('SELECT `id`,
+                                     `servers_id`,
+                                     `source_id`,
+                                     `source_ip`,
+                                     `source_port`,
+                                     `target_id`,
+                                     `target_ip`,
+                                     `target_port`,
+                                     `protocol`,
+                                     `description`
 
-                            FROM      `forwards`
+                              FROM   `forwards`
 
-                            WHERE     `forwards`.`servers_id` = :servers_id
+                              WHERE  `servers_id` = :servers_id
+                              AND    `status` IS NULL',
 
-                            AND       `forwards`.`status` IS NULL',
-
-                            array(':servers_id' => $server));
+                              array(':servers_id' => $server));
 
         return $forwards;
 
@@ -535,151 +522,153 @@ function forwards_list($server){
 
 
 
-
-/*
- * Add rules for server to start accepting requests
- *
- * @param mixed $server, hostname or id for a specific host
- * @param strin $ip
- * @return void
- */
-function forwards_accept_traffic($target_server, $insert_server, $source_server){
-    try{
-        $forwards =  sql_query('SELECT    `forwards`.`id`,
-                                                 `forwards`.`servers_id`,
-                                                 `forwards`.`createdby`,
-                                                 `forwards`.`source_ip`,
-                                                 `forwards`.`source_port`,
-                                                 `forwards`.`target_ip`,
-                                                 `forwards`.`target_port`,
-                                                 `forwards`.`protocol`
-
-                                       FROM      `forwards`
-
-                                       WHERE     `forwards`.`servers_id` = :id
-
-                                       AND `forwards`.`status` IS NULL',
-
-                                       array(':id' => $source_server['id']));
-
-        if($forwards){
-            foreach($forwards as $forward){
-                /*
-                 * Inserting the forwardings for the new server
-                 */
-                iptables_accept_traffic($target_server['id'], $insert_server['ipv4'], $forward['target_port'], 'tcp');
-            }
-        }
-
-    }catch(Exception $e){
-        throw new bException('forwards_accept_traffic(): Failed', $e);
-    }
-}
-
-
-
-/*
- * Remove rules from specific server to stop accepting requests
- *
- * @param mixed $server, hostname or id for a specific host
- * @param strin $ip
- * @return void
- */
-function forwards_stop_accepting_traffic($server, $ip){
-    try{
-        $forwards =  sql_query('SELECT    `forwards`.`id`,
-                                          `forwards`.`servers_id`,
-                                          `forwards`.`createdby`,
-                                          `forwards`.`source_ip`,
-                                          `forwards`.`source_port`,
-                                          `forwards`.`target_ip`,
-                                          `forwards`.`target_port`,
-                                          `forwards`.`protocol`
-
-                                FROM      `forwards`
-
-                                WHERE     `forwards`.`source_ip` = :source_ip
-
-                                AND `forwards`.`status` IS NULL',
-
-                              array(':source_ip' => $ip));
-
-        if($forwards){
-            foreach($forwards as $forward){
-                iptables_stop_accepting_traffic($server, $ip, $forward['target_port'], 'tcp');
-            }
-        }
-
-    }catch(Exception $e){
-        throw new bException('forwards_stop_accepting_traffic(): Failed', $e);
-    }
-}
+// :DELETE: This function is wrong, remove it
+///*
+// * Add rules for server to start accepting requests
+// *
+// * @param mixed $server, hostname or id for a specific host
+// * @param strin $ip
+// * @return void
+// */
+//function forwards_accept_traffic($target_server, $insert_server, $source_server){
+//    try{
+//        $forwards =  sql_query('SELECT `id`,
+//                                       `servers_id`,
+//                                       `createdby`,
+//                                       `source_ip`,
+//                                       `source_port`,
+//                                       `target_ip`,
+//                                       `target_port`,
+//                                       `protocol`
+//
+//                                FROM   `forwards`
+//
+//                                WHERE  `servers_id` = :servers_id
+//                                AND    `status` IS NULL',
+//
+//                                array(':servers_id' => $source_server['id']));
+//
+//        if($forwards){
+//            foreach($forwards as $forward){
+//                /*
+//                 * Inserting the forwardings for the new server
+//                 */
+//                iptables_accept_traffic($target_server['id'], $insert_server['ipv4'], $forward['target_port'], 'tcp');
+//            }
+//        }
+//
+//    }catch(Exception $e){
+//        throw new bException('forwards_accept_traffic(): Failed', $e);
+//    }
+//}
 
 
 
+// :DELETE: This function is wrong, remove it
+///*
+// * Remove rules from specific server to stop accepting requests
+// *
+// * @param mixed $server, hostname or id for a specific host
+// * @param strin $ip
+// * @return void
+// */
+//function forwards_stop_accepting_traffic($server, $ip){
+//    try{
+//        $forwards =  sql_query('SELECT `id`,
+//                                       `servers_id`,
+//                                       `createdby`,
+//                                       `source_ip`,
+//                                       `source_port`,
+//                                       `target_ip`,
+//                                       `target_port`,
+//                                       `protocol`
+//
+//                                FROM   `forwards`
+//
+//                                WHERE  `source_ip` = :source_ip
+//                                AND    `status` IS NULL',
+//
+//                                array(':source_ip' => $ip));
+//
+//        if($forwards){
+//            foreach($forwards as $forward){
+//                iptables_stop_accepting_traffic($server, $ip, $forward['target_port'], 'tcp');
+//            }
+//        }
+//
+//    }catch(Exception $e){
+//        throw new bException('forwards_stop_accepting_traffic(): Failed', $e);
+//    }
+//}
 
-/*
- * Returns forwards for a specific ip source
- * @param string $ip
- * return array
- */
-function forwards_get_from_ip($ip){
-    try{
-        $forwards = sql_list('SELECT `id`,
-                         `servers_id`,
-                         `source_id`,
-                         `source_ip`,
-                         `source_port`,
-                         `target_id`,
-                         `target_ip`,
-                         `target_port`,
-                         `protocol`,
-                         `description`
-
-                 FROM `forwards` WHERE source_ip = :source_ip
-
-                 AND `forwards`.`status` IS NULL',
-
-               array(':source_ip' => $ip));
-
-        return $forwards;
-
-    }catch(Exception $e){
-        throw new bException('forwards_get_from_ip(): Failed', $e);
-    }
-}
 
 
+// :DELETE: This function is wrong, remove it
+///*
+// * Returns forwards for a specific ip source
+// * @param string $ip
+// * return array
+// */
+//function forwards_get_from_ip($ip){
+//    try{
+//        $forwards = sql_list('SELECT `id`,
+//                                     `servers_id`,
+//                                     `source_id`,
+//                                     `source_ip`,
+//                                     `source_port`,
+//                                     `target_id`,
+//                                     `target_ip`,
+//                                     `target_port`,
+//                                     `protocol`,
+//                                     `description`
+//
+//                              FROM   `forwards`
+//
+//                              WHERE  `source_ip` = :source_ip
+//                              AND    `status` IS NULL',
+//
+//                              array(':source_ip' => $ip));
+//
+//        return $forwards;
+//
+//    }catch(Exception $e){
+//        throw new bException('forwards_get_from_ip(): Failed', $e);
+//    }
+//}
 
 
-/*
- *
- */
-function forwards_get_by_protocol_and_sourceip($protocol, $ip){
-    try{
-        $forward = sql_get('SELECT  `id`,
-                                    `servers_id`,
-                                    `source_id`,
-                                    `source_ip`,
-                                    `source_port`,
-                                    `target_id`,
-                                    `target_ip`,
-                                    `target_port`,
-                                    `protocol`,
-                                    `description`
 
-                            FROM `forwards` WHERE source_ip = :source_ip
 
-                            AND `protocol` = :protocol
-
-                            AND `status` IS NULL',
-
-                            array(':source_ip' => $ip, ':protocol' => $protocol));
-
-        return $forward;
-
-    }catch(Exception $e){
-        throw new bException('forwards_get_by_protocol_and_sourceip(): Failed', $e);
-    }
-}
+// :DELETE: This function is wrong, remove it
+///*
+// *
+// */
+//function forwards_get_by_protocol_and_sourceip($protocol, $ip){
+//    try{
+//        $forward = sql_get('SELECT `id`,
+//                                   `servers_id`,
+//                                   `source_id`,
+//                                   `source_ip`,
+//                                   `source_port`,
+//                                   `target_id`,
+//                                   `target_ip`,
+//                                   `target_port`,
+//                                   `protocol`,
+//                                   `description`
+//
+//                            FROM   `forwards`
+//
+//                            WHERE  `source_ip` = :source_ip
+//                            AND    `protocol`  = :protocol
+//                            AND    `status` IS NULL',
+//
+//                            array(':source_ip' => $ip,
+//                                  ':protocol'  => $protocol));
+//
+//        return $forward;
+//
+//    }catch(Exception $e){
+//        throw new bException('forwards_get_by_protocol_and_sourceip(): Failed', $e);
+//    }
+//}
 ?>

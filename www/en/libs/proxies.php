@@ -9,7 +9,8 @@
 
 
 /*
- *
+ * Initialize the library
+ * Automatically executed by libs_load()
  */
 function proxies_library_init(){
     try{
@@ -22,21 +23,55 @@ function proxies_library_init(){
 
 
 
-/**
-* @param $root_hostname initial server on chain
-* @param $insert_hostname
-*/
-function proxies_insert($root_hostname, $insert_hostname, $target_hostname, $location){
+/*
+ * @param $root_hostname initial server on chain
+ * @param $insert_hostname
+ */
+function proxies_insert($root_hostname, $insert_hostname, $target_hostname, $location, $protocols, $apply = true){
 	try{
 
 		$root     = proxies_get_server($root_hostname, true);
 		$insert   = proxies_get_server($insert_hostname, false);
         $on_chain = proxies_validate_on_chain($root['proxies'], $insert_hostname);
 
-		$next   = array();
-		$prev   = array();
+		$next = array();
+		$prev = array();
 
         list($prev, $next) = proxies_get_prev_next_insert($root_hostname, $target_hostname, $root['proxies'], $location);
+
+        $previous_forwards = proxies_get_forwards();
+
+        switch(){
+            proxies_insert_middle();
+            proxies_insert_end();
+            proxies_insert_create();
+            proxies_insert_front($previous_forwards);
+        }
+
+
+        function proxies_insert_front($previous_forwards, $prev, $next){
+            foreach($previous_forwards as $id => $forward){
+                if($previous_forwards[condition]){
+                    $source = $prev;
+                    $target = $next;
+
+                }else{
+                    $source = $next;
+                    $target = $prev;
+                }
+
+                /*
+                 * From here, apply rule as in document, N > T on N, Accept traffic on N from T, etc
+                 * From here do NOT use $prev or $next! Only $source and $target
+                 */
+                    $source
+                    $target
+
+            }
+        }
+
+
+
 
         if($prev){
             /*
@@ -48,12 +83,13 @@ function proxies_insert($root_hostname, $insert_hostname, $target_hostname, $loc
              * We must apply forwarding rules for prev server on inserted server
              */
             $prev_forwards = forwards_list($prev['id']);
+
             foreach($prev_forwards as $id => $forward){
                 $random_port    = mt_rand(1025, 65535);
                 $insert_forward = $forward;
 
 
-                $insert_forward['apply']      = true;
+                $insert_forward['apply']      = $apply;
                 $insert_forward['source_ip']  = $insert['ipv4'];
                 $insert_forward['source_id']  = $insert['id'];
                 $insert_forward['source_port']= $random_port;
@@ -64,7 +100,6 @@ function proxies_insert($root_hostname, $insert_hostname, $target_hostname, $loc
                  * Applying rule on inserted server to start sending traffic to next server
                  */
                 log_console('Applying forwarding rule on inserted server', 'white');
-
                 forwards_insert($insert_forward);
 
                 /*
@@ -79,7 +114,7 @@ function proxies_insert($root_hostname, $insert_hostname, $target_hostname, $loc
                 /*
                  * Updating target_port for prev server
                  */
-                $prev_forwards[$id]['apply']       = true;
+                $prev_forwards[$id]['apply']       = $apply;
                 $prev_forwards[$id]['target_port'] = $random_port;
                 $prev_forwards[$id]['target_ip']   = $insert['ipv4'];
                 $prev_forwards[$id]['target_id']   = $insert['id'];
@@ -94,10 +129,11 @@ function proxies_insert($root_hostname, $insert_hostname, $target_hostname, $loc
                  * Removing forwarding rule on next server
                  */
                 log_console('Removing rule on prev serv', 'white');
+
                 /*
-                 *this is nor removing rule on prev server
+                 * This is nor removing rule on prev server
                  */
-                $forward['apply'] = true;
+                $forward['apply'] = $apply;
                 forwards_delete_apply($forward);
             }
 
@@ -110,25 +146,23 @@ function proxies_insert($root_hostname, $insert_hostname, $target_hostname, $loc
             sql_query('UPDATE `servers` SET `ssh_proxies_id` = :proxy_id WHERE `id` = :id', array(':id'=>$insert['id'],':proxy_id' => $prev['id']));
 
 
-        } else{
+        }else{
             log_console('Inserted server at the front, no prev proxy', 'white');
         	/*
 	        * If prev does not exist, inserted server is going to be at the front of everything.
 	        * So we configure inserted server to start sending traffic to next server
 	        */
-	        $random_port  = mt_rand(1025, 65535);
-
-            $forward      = array(
-                'apply'       => true,
-				'servers_id'  => $insert['id'],
-				'source_port' => 80,
-				'source_id'   => $insert['id'],
-				'source_ip'   => $insert['ipv4'],
-				'target_id'   => $next['id'],
-				'target_port' => $random_port,
-				'target_ip'   => $next['ipv4'],
-				'protocol'    => 'http',
-				'description' => 'Added by proxies library');
+	        $random_port = mt_rand(1025, 65535);
+            $forward     = array('apply'       => true,
+                                 'servers_id'  => $insert['id'],
+                                 'source_port' => 80,
+                                 'source_id'   => $insert['id'],
+                                 'source_ip'   => $insert['ipv4'],
+                                 'target_id'   => $next['id'],
+                                 'target_port' => $random_port,
+                                 'target_ip'   => $next['ipv4'],
+                                 'protocol'    => 'http',
+                                 'description' => 'Added by proxies library');
 
             /*$exist_forward = forwards_exists($forward);
 
@@ -147,23 +181,21 @@ function proxies_insert($root_hostname, $insert_hostname, $target_hostname, $loc
             * Redirect traffic for new random port on next server
             */
 			$next_forward = forwards_get_by_protocol_and_sourceip('http', $next['ipv4']);
+            $forward      = array('apply'       => true,
+                                  'servers_id'  => $next['id'],
+                                  'source_id'   => $next['id'],
+                                  'source_port' => $random_port,
+                                  'source_ip'   => $next['ipv4'],
+                                  'target_id'   => $next_forward['target_id'],
+                                  'target_port' => $next_forward['target_port'],
+                                  'target_ip'   => $next_forward['target_ip'],
+                                  'protocol'    => 'http',
+                                  'description' => 'Added by proxies library');
 
-            $forward = array(
-                'apply'       => true,
-                'servers_id'  => $next['id'],
-                'source_id'   => $next['id'],
-				'source_port' => $random_port,
-				'source_ip'   => $next['ipv4'],
-                'target_id'   => $next_forward['target_id'],
-				'target_port' => $next_forward['target_port'],
-				'target_ip'   => $next_forward['target_ip'],
-                'protocol'    => 'http',
-				'description' => 'Added by proxies library');
-
-            log_console('Applying forwarding rule on next server', 'white');
             /*
              * Insert and apply new forwarding rule on next server
              */
+            log_console('Applying forwarding rule on next server', 'white');
             forwards_insert($forward);
 
             /*
@@ -212,6 +244,7 @@ function proxies_remove($root_hostname, $remove_hostname){
             if($proxy['hostname'] == $remove_hostname){
                 if(isset($root['proxies'][$position - 1])){
                     $next = proxies_get_server($root['proxies'][$position - 1]['id'], false);
+
                 }else{
                     $next = $root;
                 }
@@ -222,9 +255,9 @@ function proxies_remove($root_hostname, $remove_hostname){
                 if(isset($root['proxies'][$position + 1])){
                     $prev = proxies_get_server($root['proxies'][$position + 1]['id'], false);
                 }
+
                 break;
             }
-
         }
 
         if($prev){
@@ -236,9 +269,7 @@ function proxies_remove($root_hostname, $remove_hostname){
             }
 
             foreach($prev_forwards as $id => $forward){
-
                 $new_forward_prev = $forward;
-
                 $new_forward_prev['apply']     = true;
                 //$new_forward_prev['target_ip'] = $next['ipv4'];
                 //$new_forward_prev['target_id'] = $next['id'];
@@ -250,6 +281,7 @@ function proxies_remove($root_hostname, $remove_hostname){
                  */
                 $next_forward['apply']       = true;
                 $next_forward['source_port'] = $new_forward_prev['target_port'];
+
                 log_console('Applying redirect on next server', 'white');
                 forwards_insert($next_forward);
 
@@ -264,8 +296,10 @@ function proxies_remove($root_hostname, $remove_hostname){
                  * Remove rule on prev server
                  */
                 log_console('Removing old rules for redirect on prev and next server', 'white');
+
                 $forward['id']    = $id;
                 $forward['apply'] = true;
+
                 forwards_delete($forward);
                 forwards_delete($next_forward);
 
@@ -276,6 +310,7 @@ function proxies_remove($root_hostname, $remove_hostname){
              */
             $remove_forwards = forwards_list($remove['id']);
             log_console('Removing rules on removed server', 'white');
+
             foreach($remove_forwards as $id => $forward){
                 $forward['apply'] = true;
                 $forward['id']    = $id;
@@ -283,12 +318,13 @@ function proxies_remove($root_hostname, $remove_hostname){
             }
 
             sql_query('UPDATE `servers` SET `ssh_proxies_id` = :proxy_id WHERE `id` = :id', array(':id'=>$next['id'],':proxy_id' => $prev['id']));
+
             /*
              * Updating ssh_proxies_id for removed server
              */
             sql_query('UPDATE `servers` SET `ssh_proxies_id` = :proxy_id WHERE `id` = :id', array(':id'=>$remove['id'],':proxy_id' => NULL));
-        }else{
 
+        }else{
             log_console('Removing server at the front', 'white');
             $remove_forwards = forwards_list($remove['id']);
 
@@ -296,7 +332,7 @@ function proxies_remove($root_hostname, $remove_hostname){
              * The server that is at the front always listen on port 80
              * Add rule to start accepting traffic on port 80 on next server
              */
-            $forward = forwards_get_by_protocol_and_sourceip('http',  $next['ipv4']);
+            $forward                    = forwards_get_by_protocol_and_sourceip('http',  $next['ipv4']);
             $new_forward                = $forward;
             $new_forward['source_port'] = 80;
             $new_forward['apply']       = true;
@@ -348,48 +384,54 @@ function proxies_get_prev_next_insert($root_hostname, $target_hostname, $proxies
     try{
         $prev = array();
         $next = array();
-        switch ($location) {
-                case 'before':
-                    if($root_hostname == $target_hostname){
-                        throw new bException(tr('proxies_get_prev_next(): Server can not be inserted before main host', array(':location' => $location)), 'unkown');
-                    }
-                    $prev    = proxies_get_server($target_hostname);
-                    $proxies = array_reverse($proxies);
 
+        switch($location){
+            case 'before':
+                if($root_hostname == $target_hostname){
+                    throw new bException(tr('proxies_get_prev_next(): Server can not be inserted before main host', array(':location' => $location)), 'unkown');
+                }
+
+                $prev    = proxies_get_server($target_hostname);
+                $proxies = array_reverse($proxies);
+
+                foreach($proxies as $position => $proxy){
+                    if($proxy['hostname'] == $target_hostname){
+                        if(isset($proxies[$position + 1 ])){
+                            $next = proxies_get_server($proxies[$position + 1 ]['id']);
+
+                        }else{
+                            $next = proxies_get_server($root_hostname);
+                        }
+
+                        break;
+                    }
+                }
+
+                break;
+
+            case 'after':
+                $next = proxies_get_server($target_hostname);
+                if(($root_hostname == $target_hostname) and !empty($proxies)){
+                    $prev = $proxies[0];
+
+                }else{
                     foreach($proxies as $position => $proxy){
-                        if($proxy['hostname'] == $target_hostname){
-                            if(isset($proxies[$position + 1 ])){
-                                $next = proxies_get_server($proxies[$position + 1 ]['id']);
-                            }else{
-                                $next = proxies_get_server($root_hostname);
+                        if($target_hostname == $proxy['hostname']){
+                            if(isset($root['proxies'][$position + 1])){
+                                $prev = $root['proxies'][$position + 1];
                             }
+
                             break;
                         }
                     }
-                    break;
+                }
 
-                case 'after':
-                    $next = proxies_get_server($target_hostname);
-                    if(($root_hostname == $target_hostname) and !empty($proxies)){
-                        $prev = $proxies[0];
+                break;
 
-                    } else{
-                        foreach ($proxies as $position => $proxy) {
-                            if(($target_hostname == $proxy['hostname'])){
-                                if(isset($root['proxies'][$position + 1])){
-                                    $prev = $root['proxies'][$position + 1];
-                                }
-                                break;
-                            }
-                        }
+            default:
+                throw new bException(tr('proxies_get_prev_next(): Unknown location ":location"', array(':location' => $location)), 'unkown');
+        }
 
-                    }
-
-                    break;
-
-                default:
-                    throw new bException(tr('proxies_get_prev_next(): Unknown location ":location"', array(':location' => $location)), 'unkown');
-            }
         return array($prev, $next);
 
     }catch(Exception $e){
@@ -409,6 +451,7 @@ function proxies_get_prev_next_insert($root_hostname, $target_hostname, $proxies
 function proxies_get_server($hostname, $return_proxies = false){
 	try{
 		$server = servers_get($hostname, false, $return_proxies);
+
 		if(empty($server)){
 			throw new bException(tr('proxies_get_server(): No server found for hostname ":hostname"', array(':hostname' => $hostname)), 'not-found');
 		}
@@ -433,6 +476,7 @@ function proxies_get_server($hostname, $return_proxies = false){
 function proxies_validate_on_chain($proxies, $search_hostname){
     try{
 		$on_chain = false;
+
         foreach($proxies as $proxy){
             if($proxy['hostname'] == $search_hostname){
                 throw new bException(tr('proxy_validate_on_chain(): Host ":hostname" already on proxies chain', array(':hostname' => $search_hostname)), 'invalid');
