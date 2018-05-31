@@ -1055,8 +1055,7 @@ function html_flash_set($params, $type = 'info', $class = null){
 
                 if(str_until($object->getCode(), '/') == 'warning'){
                     $params['type'] = 'warning';
-                    $params['html'] = $object->getMessage();
-                    $object->setCode(str_replace('/', '', str_replace('warning', '', $object->getCode())));
+                    $params['html'] = trim(str_from($object->getMessage(), '():'));
 
                 }elseif($object->getCode() == 'validation'){
                     foreach($object->getMessages() as $message){
@@ -1070,7 +1069,7 @@ function html_flash_set($params, $type = 'info', $class = null){
                     $params['type'] = 'warning';
                     $params['html'] = implode('<br>', $messages);
 
-                }elseif($object->getCode() == 'unknown'){
+                }elseif($object->getRealCode() == 'unknown'){
                     $params['type'] = 'warning';
                     $params['html'] = $object->getMessage();
 
@@ -1119,7 +1118,7 @@ function html_flash_set($params, $type = 'info', $class = null){
                     $class = $type;
                 }
 
-                if($object->getCode() == 'validation'){
+                if($object->getRealCode() == 'validation'){
                     $params['type'] = 'warning';
                     $params['html'] = $object->getMessage();
 
@@ -1136,7 +1135,7 @@ function html_flash_set($params, $type = 'info', $class = null){
                          * displayed in production sites
                          */
                         $params['html'] = tr('Something went wrong, please try again later');
-                        notify('html_flash/Exception', tr('html_flash_set(): Received PHP exception class ":class" with code ":code" and message ":message"', array(':class' => get_class($object), ':code' => $object->getCode(), ':message' => $object->getMessage())), 'developers');
+                        notify('html_flash/Exception', tr('html_flash_set(): Received PHP exception class ":class" with code ":code" and message ":message"', array(':class' => get_class($object), ':code' => $object->getRealCode(), ':message' => $object->getMessage())), 'developers');
                     }
                 }
 
@@ -1176,14 +1175,14 @@ function html_flash_set($params, $type = 'info', $class = null){
         $_SESSION['flash'][] = $params;
 
     }catch(Exception $e){
-        if(debug() and (substr($e->getCode(), 0, 1) == '_')){
+        if(debug() and (substr($e->getRealCode(), 0, 1) == '_')){
             /*
              * These are exceptions sent to be shown as an html flash error, but
              * since we're in debug mode, we'll just show it as an uncaught
              * exception. Don't add html_flash_set() history to this exception
              * as that would cause confusion.
              */
-             throw $e->setCode(substr($e->getCode(), 1));
+             throw $e->setCode(substr($e->getRealCode(), 1));
         }
 
         /*

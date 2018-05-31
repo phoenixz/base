@@ -72,11 +72,11 @@ try{
             file_delete($log);
         }
 
-        $command = sprintf('(nohup %s >> %s 2>&1 & echo $! >&3) 3> %s', $path.$cmd.' '.$args, $log, ROOT.'data/run-background/'.$cmd);
+        $command = sprintf('export TERM='.$term.'; (nohup %s >> %s 2>&1 & echo $! >&3) 3> %s', $path.$cmd.' '.$args, $log, ROOT.'data/run-background/'.$cmd);
         exec($command);
 
     }else{
-        $command = sprintf('(nohup %s > /dev/null 2>&1 & echo $! >&3) 3> %s', $path.$cmd.' '.$args, ROOT.'data/run-background/'.$cmd);
+        $command = sprintf('export TERM='.$term.'; (nohup %s > /dev/null 2>&1 & echo $! >&3) 3> %s', $path.$cmd.' '.$args, ROOT.'data/run-background/'.$cmd);
         exec($command);
     }
 

@@ -482,7 +482,7 @@ function user_authenticate($username, $password, $captcha = null){
              * Only lock if configured to do so
              */
             if($_CONFIG['security']['authentication']['auto_lock_fails'] and $_CONFIG['security']['authentication']['auto_lock_time']){
-                throw new bException(tr('user_authenticate(): Specified user account is locked'), 'locked', array('locked' => $user['locked_left']));
+                throw new bException(tr('user_authenticate(): Specified user account is locked'), 'warning/locked', array('locked' => $user['locked_left']));
             }
         }
 
@@ -504,7 +504,7 @@ function user_authenticate($username, $password, $captcha = null){
 
                            array(':id' => $user['id']));
 
-                throw new bException(tr('user_authenticate(): Specified user account is locked'), 'locked', array('locked' => $user['locked_left']));
+                throw new bException(tr('user_authenticate(): Specified user account is locked'), 'warning/locked', array('locked' => $user['locked_left']));
             }
         }
 
@@ -558,7 +558,7 @@ function user_authenticate($username, $password, $captcha = null){
                 captcha_verify_response($captcha);
 
             }catch(Exception $e){
-                throw new bException(tr('user_authenticate(): CAPTCHA test failed for ":user"', array(':user' => $user['id'])), 'captcha');
+                throw new bException(tr('user_authenticate(): CAPTCHA test failed for ":user"', array(':user' => $user['id'])), 'warning/captcha');
             }
         }
 
@@ -596,7 +596,7 @@ function user_authenticate($username, $password, $captcha = null){
 
         if($password != str_rfrom($user['password'], '*')){
             log_database(tr('user_authenticate(): Specified password does not match stored password for user ":username"', array(':username' => $username)), 'authentication/failed');
-            throw new bException(tr('user_authenticate(): Specified password does not match stored password'), 'password');
+            throw new bException(tr('user_authenticate(): Specified password does not match stored password'), 'warning/password');
         }
 
 
@@ -626,7 +626,7 @@ function user_authenticate($username, $password, $captcha = null){
          */
         if($_CONFIG['security']['signin']['two_factor']){
             if(empty($user['phone'])){
-                throw new bException('user_autohenticate(): Two factor authentication impossible for user account "'.$user['id'].' / '.$user['name'].'" because no phone is registered', 'twofactor_nophone');
+                throw new bException('user_autohenticate(): Two factor authentication impossible for user account "'.$user['id'].' / '.$user['name'].'" because no phone is registered', 'two-factor-no-phone');
             }
 
             $user['authenticated'] = 'two_factor';
@@ -1196,7 +1196,7 @@ function user_update_password($params, $current = true){
         }
 
         if(empty($params['password'])){
-            throw new bException(tr('user_update_password(): Please specify a password'), 'not-specified');
+            throw new bException(tr('user_update_password(): Please specify a password'), 'warning/not-specified');
         }
 
         if(empty($params['password2'])){
@@ -1207,19 +1207,19 @@ function user_update_password($params, $current = true){
          * Check if password is equal to password2
          */
         if($params['password'] != $params['password2']){
-            throw new bException(tr('user_update_password(): Specified password does not match the validation password'), 'mismatch');
+            throw new bException(tr('user_update_password(): Specified password does not match the validation password'), 'warning/mismatch');
         }
 
         /*
          * Check if password is NOT equal to cpassword
          */
         if($current and ($params['password'] == $params['cpassword'])){
-            throw new bException(tr('user_update_password(): Specified new password is the same as the current password'), 'same-as-current');
+            throw new bException(tr('user_update_password(): Specified new password is the same as the current password'), 'warning/same-as-current');
         }
 
         if($current){
             if(empty($params['cpassword'])){
-                throw new bException(tr('user_update_password(): Please specify the current password'), 'not-specified');
+                throw new bException(tr('user_update_password(): Please specify the current password'), 'warning/not-specified');
             }
 
             user_authenticate($_SESSION['user']['email'], $params['cpassword']);

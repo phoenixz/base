@@ -13,7 +13,11 @@ $usage   = './scripts/base/importers/geo
 
 $help    = 'The geo importer script can import geo data like countries, states, counties and cities from the geoname database repository
 
+
+
 METHODS
+
+
 
 clear
 
@@ -22,10 +26,10 @@ clear
 download                        - Will download the geoname data files from the
                                   geonames website
 
---no-check-certificate          - When using https://, do not check the SSL
+    --no-check-certificate      - When using https://, do not check the SSL
                                   certificates
 
---no-ssl                        - Force use of http:// over https://
+    --no-ssl                    - Force use of http:// over https://
 
 
 
@@ -63,7 +67,6 @@ $username     = cli_argument('-u,--user,--username', true, 'base');
 $password     = cli_argument('-p,--pass,--password', true, 'base');
 $database     = cli_argument('-d,--database'       , true, 'geonames');
 $skipcounties = cli_argument('--no-counties');
-showdie($username);
 
 
 

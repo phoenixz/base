@@ -150,17 +150,6 @@ class core{
                     break;
             }
 
-
-
-            /*
-             * Verify project data integrity
-             */
-            if(!defined('SEED') or !SEED or (PROJECTCODEVERSION == '0.0.0')){
-                if(SCRIPT !== 'setup'){
-                    return include(__DIR__.'/handlers/startup-no-project-data.php');
-                }
-            }
-
         }catch(Exception $e){
             throw new bException(tr('core::__construct(): Failed'), $e);
         }
@@ -181,6 +170,17 @@ class core{
              */
             require('handlers/startup-'.$this->callType.'.php');
 
+            /*
+             * Verify project data integrity
+             */
+            if(!defined('SEED') or !SEED or (PROJECTCODEVERSION == '0.0.0')){
+                if(SCRIPT !== 'setup'){
+                    if(!FORCE){
+                        throw new bException(tr('startup: Project data in "ROOT/config/project.php" has not been fully configured. Please ensure that PROJECT is not empty, SEED is not empty, and PROJECTCODEVERSION is valid and not "0.0.0"'), 'project-not-setup');
+                    }
+                }
+            }
+
         }catch(Exception $e){
             throw new bException(tr('core::startup(): Failed'), $e);
         }
@@ -197,6 +197,14 @@ class core{
         }
 
         return $this->register[$key] = $value;
+    }
+
+    public function script($script = null){
+        if($script === null){
+            return SCRIPT;
+        }
+
+        return SCRIPT === $script;
     }
 
     public function callType($type = null){
@@ -326,6 +334,10 @@ class bException extends Exception{
     public function setCode($code){
         $this->code = $code;
         return $this;
+    }
+
+    public function getRealCode(){
+        return str_from($this->code, '/');
     }
 
     public function getMessages($separator = null){
@@ -3478,7 +3490,7 @@ function get_global_data_path($section = '', $writable = true){
 /*
  *
  */
-function run_background($cmd, $log = true, $single = true){
+function run_background($cmd, $log = true, $single = true, $term = 'xterm'){
     return include(__DIR__.'/handlers/startup-run-background.php');
 }
 

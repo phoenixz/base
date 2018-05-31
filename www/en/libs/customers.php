@@ -23,9 +23,13 @@ function customers_validate($customer){
         $v->hasMaxChars($customer['name'], 32, tr('Please ensure the customer\'s name has less than 32 characters'));
         $v->isRegex    ($customer['name'], '/^[a-zA-Z- ]{2,32}$/', tr('Please ensure the customer\'s name contains only lower case letters, and dashes'));
 
-        $v->isNotEmpty ($customer['description']      , tr('No customer\'s description specified'));
-        $v->hasMinChars($customer['description'],    2, tr('Please ensure the customer\'s description has at least 2 characters'));
-        $v->hasMaxChars($customer['description'], 2047, tr('Please ensure the customer\'s description has less than 2047 characters'));
+        if($customer['description']){
+            $v->hasMinChars($customer['description'],    8, tr('Please ensure the customer\'s description has at least 8 characters'));
+            $v->hasMaxChars($customer['description'], 2047, tr('Please ensure the customer\'s description has less than 2047 characters'));
+
+        }else{
+            $customer['description'] = null;
+        }
 
         if(is_numeric(substr($customer['name'], 0, 1))){
             $v->setError(tr('Please ensure that the customers\'s name does not start with a number'));
