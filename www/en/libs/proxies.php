@@ -119,10 +119,15 @@ function proxies_insert_front($prev, $insert, $protocols, $apply){
                     log_console('Applying forward rule on prev server for new source port', 'white');
                     forwards_insert($prev_forward);
 
+
                     /*
                      * Deleting rule from data base
                      */
                     log_console('Removing old forward rule on prev server', 'white');
+                    /*
+                     * Do not apply, we continue listening on the same port
+                     */
+                    $forward['apply'] = false;
                     forwards_delete($forward);
 
                 }
