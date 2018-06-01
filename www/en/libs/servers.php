@@ -237,22 +237,22 @@ function servers_exec($server, $commands, $options = null, $background = false, 
 function servers_get($host, $database = false, $return_proxies = true, $limited_columns = false){
     try{
         if($limited_columns){
-            $query =  'SELECT    `servers`.`id`,
-                                 `servers`.`hostname`,
-                                 `servers`.`port`,
-                                 `servers`.`ssh_proxies_id`,
-                                 `servers`.`ipv4`';
+            $query =  'SELECT `servers`.`id`,
+                              `servers`.`hostname`,
+                              `servers`.`port`,
+                              `servers`.`ssh_proxies_id`,
+                              `servers`.`ipv4`';
 
         }else{
-            $query =  'SELECT    `servers`.`id`,
-                                 `servers`.`hostname`,
-                                 `servers`.`port`,
-                                 `servers`.`ssh_accounts_id`,
-                                 `servers`.`ssh_proxies_id`,
-                                 `servers`.`ipv4`,
+            $query =  'SELECT `servers`.`id`,
+                              `servers`.`hostname`,
+                              `servers`.`port`,
+                              `servers`.`ssh_accounts_id`,
+                              `servers`.`ssh_proxies_id`,
+                              `servers`.`ipv4`,
 
-                                 `ssh_accounts`.`username`,
-                                 `ssh_accounts`.`ssh_key` ';
+                              `ssh_accounts`.`username`,
+                              `ssh_accounts`.`ssh_key` ';
         }
 
         $from  = ' FROM      `servers`

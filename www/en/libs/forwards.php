@@ -558,10 +558,10 @@ function forwards_only_accept_traffic($forward){
  * @param array $forwards, array of forward rules
  * @return void
  */
-function forwards_massive_delete($forwards, $apply = true){
+function forwards_delete_list($forwards, $apply = true){
     try{
         if(empty($forwards)){
-            throw new bException(tr('forwards_massive_delete(): No forwards specified'), 'not-specified');
+            throw new bException(tr('forwards_delete_list(): No forwards specified'), 'not-specified');
         }
 
         foreach($forwards as $forward){
@@ -570,7 +570,7 @@ function forwards_massive_delete($forwards, $apply = true){
         }
 
     }catch(Exception $e){
-        throw new bException('forwards_massive_delete(): Failed', $e);
+        throw new bException('forwards_delete_list(): Failed', $e);
     }
 }
 ?>

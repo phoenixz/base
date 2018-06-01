@@ -38,14 +38,13 @@ function proxies_insert_front($prev, $insert, $protocols, $apply){
          * If there are not proxies, protocols must be specified otherwise throw exception
          */
         if(empty($protocols)){
-            throw new bException(tr('proxies_insert(): In order to insert host ":insert_hostname" at the front of the proxy chain, you must provide which protocols must be configured', array(':insert_hostname'=>$insert['hostname'])), 'invalid');
+            throw new bException(tr('proxies_insert_front(): No protocols specified', array(':insert_hostname' => $insert['hostname'])), 'not-specified');
         }
 
         $prev_forwards = forwards_list($prev['id']);
 
         if($prev_forwards){
-
-            log_console('Inserting at the front with forwards for previous server');
+            log_console(tr('Inserting at the front with forwards for previous server'));
 
             foreach($prev_forwards as $forward){
                 $default_source_port = proxies_get_default_port($forward['protocol']);
@@ -91,11 +90,12 @@ function proxies_insert_front($prev, $insert, $protocols, $apply){
                     $new_forward['description'] = 'Rule added by proxies library on '.date('Y-m-d H:i:s');
 
                     $exists = forwards_exists($new_forward);
+
                     /*
                      * If source port is already in use throw exception
                      */
                     if($exists){
-                       throw new bException(tr('proxies_insert_front(): Port ":source_port" on host ":host" for protocol ":protocol" is already in use', array(':source_port'=>$default_source_port, ':host'=>$insert['hostname'])), 'invalid');
+                       throw new bException(tr('proxies_insert_front(): Port ":source_port" on host ":host" for protocol ":protocol" is already in use', array(':source_port' => $default_source_port, ':host' => $insert['hostname'])), 'invalid');
                     }
 
                     /*
@@ -106,24 +106,25 @@ function proxies_insert_front($prev, $insert, $protocols, $apply){
                     $prev_forward['source_port'] = $random_port;
 
                     $exists = forwards_exists($prev_forward);
+
                     if($exists){
-                       throw new bException(tr('proxies_insert_front(): Port ":source_port" on host ":host" for protocol ":protocol" is already in use', array(':source_port'=>$prev['source_port'], ':host'=>$prev['hostname'])), 'invalid');
+                       throw new bException(tr('proxies_insert_front(): Port ":source_port" on host ":host" for protocol ":protocol" is already in use', array(':source_port' => $prev['source_port'], ':host' => $prev['hostname'])), 'invalid');
                     }
 
                     /*
                      * Inserting and aplying rules, first on inserted server then in prev server
                      */
-                    log_console('Applying forward rule on inserted server', 'white');
+                    log_console(tr('Applying forward rule on inserted server'));
                     forwards_insert($new_forward);
 
-                    log_console('Applying forward rule on prev server for new source port', 'white');
+                    log_console(tr('Applying forward rule on prev server for new source port'));
                     forwards_insert($prev_forward);
 
 
                     /*
                      * Deleting rule from data base
                      */
-                    log_console('Removing old forward rule on prev server', 'white');
+                    log_console(tr('Removing old forward rule on prev server'));
                     /*
                      * Do not apply, we continue listening on the same port
                      */
@@ -135,17 +136,18 @@ function proxies_insert_front($prev, $insert, $protocols, $apply){
                 /*
                  * Updating data base chaing
                  */
-                log_console('Updating databse with new proxy chain', 'white');
-                sql_query('UPDATE `servers` SET `ssh_proxies_id` = :proxy_id WHERE `id` = :id', array(':id'=>$prev['id'],':proxy_id' => $insert['id']));
+                log_console(tr('Updating databse with new proxy chain'));
+                sql_query('UPDATE `servers` SET `ssh_proxies_id` = :proxy_id WHERE `id` = :id', array(':id' => $prev['id'],':proxy_id' => $insert['id']));
             }
 
         }else{
             /*
              * if previous server does not have forwards, we set random ports for specified protocols
              */
-            log_console('No forwards for previous server');
+            log_console(tr('No forwards for previous server'));
+
             foreach($protocols as $protocol){
-                log_console('Applying forward for protocol: '.$protocol);
+                log_console(tr('Applying forward for protocol: ":protocol"', array(':protocol' => $protocol)));
                 $default_source_port = proxies_get_default_port($protocol);
 
                 $forward['apply']       = $apply;
@@ -174,18 +176,18 @@ function proxies_insert_front($prev, $insert, $protocols, $apply){
                      * If source port is already in use throw exception
                      */
                     if($exists){
-                        throw new bException(tr('proxies_insert_front(): Port ":source_port" on host ":host" for protocol ":protocol" is already in use', array(':source_port'=>$forward['source_port'], ':host'=>$insert['hostname'], ':protocol'=>$protocol)), 'invalid');
+                        throw new bException(tr('proxies_insert_front(): Port ":source_port" on host ":host" for protocol ":protocol" is already in use', array(':source_port' => $forward['source_port'], ':host' => $insert['hostname'], ':protocol' => $protocol)), 'invalid');
                     }
-
                 }
+
                 forwards_insert($forward);
             }
 
             /*
              * Updating proxy chain
              */
-            log_console('Updating databse with new proxy chain', 'white');
-            sql_query('UPDATE `servers` SET `ssh_proxies_id` = :proxy_id WHERE `id` = :id', array(':id'=>$prev['id'],':proxy_id' => $insert['id']));
+            log_console(tr('Updating databse with new proxy chain'));
+            sql_query('UPDATE `servers` SET `ssh_proxies_id` = :proxy_id WHERE `id` = :id', array(':id' => $prev['id'],':proxy_id' => $insert['id']));
         }
 
     }catch(Exception $e){
@@ -209,13 +211,13 @@ function proxies_insert_middle($prev, $next, $insert, $apply){
         $next_forwards = forwards_list($next['id']);
 
         if(empty($next_forwards)){
-            throw new bException(tr('proxies_insert_middle(): There are not configured rule forwards for next server, nothing to map from ":insert" server to ":next"', array(':insert'=>$insert['hostname'], ':next'=>$next['hostname'])), 'invalid');
+            throw new bException(tr('proxies_insert_middle(): There are not configured rule forwards for next server, nothing to map from ":insert" server to ":next"', array(':insert' => $insert['hostname'], ':next' => $next['hostname'])), 'invalid');
         }
 
         foreach($next_forwards as $forward){
 
             if($forward['protocol'] == 'ssh'){
-                log_console('Getting rules for ssh', 'white');
+                log_console(tr('Getting rules for SSH'));
 
                 $new_forward['apply']       = $apply;
                 $new_forward['servers_id']  = $insert['id'];
@@ -243,7 +245,7 @@ function proxies_insert_middle($prev, $next, $insert, $apply){
                 $next_forward['description'] = 'Rule added by proxies library on '.date('Y-m-d H:i:s');
 
             }else{
-                log_console('Getting rules for protocol "'.$forward['protocol'].'"', 'white');
+                log_console(tr('Getting rules for protocol ":protocol"', array(':protocol' => $forward['protocol'])));
                 $random_port = mt_rand(1025, 65535);
 
                 $new_forward['apply']       = $apply;
@@ -276,19 +278,19 @@ function proxies_insert_middle($prev, $next, $insert, $apply){
             /*
              * Apply forward rule on inserted server and start accepting traffic on prev server
              */
-            log_console('Applying rule on inserted server', 'white');
+            log_console(tr('Applying rule on inserted server'));
             forwards_insert($new_forward);
 
             /*
              * Removing forward rule on next server
              */
-            log_console('Removing rule on next server', 'white');
+            log_console(tr('Removing rule on next server'));
             forwards_delete($forward);
 
             /*
              * Appying new rule on next server to start redirecting traffic to inserted server
              */
-            log_console('Applying new rule on next server to redirect traffic to inserted server', 'white');
+            log_console(tr('Applying new rule on next server to redirect traffic to inserted server'));
             forwards_insert($next_forward);
 
         }
@@ -296,9 +298,9 @@ function proxies_insert_middle($prev, $next, $insert, $apply){
         /*
          * After applying and updating rules, we must update proxies chain
          */
-        log_console('Updating proxies chain', 'white');
-        sql_query('UPDATE `servers` SET `ssh_proxies_id` = :proxy_id WHERE `id` = :id', array(':id'=>$prev['id'],   ':proxy_id' => $insert['id']));
-        sql_query('UPDATE `servers` SET `ssh_proxies_id` = :proxy_id WHERE `id` = :id', array(':id'=>$inserst['id'],':proxy_id' => $next['id']));
+        log_console(tr('Updating proxies chain'));
+        sql_query('UPDATE `servers` SET `ssh_proxies_id` = :proxy_id WHERE `id` = :id', array(':id' => $prev['id'],   ':proxy_id' => $insert['id']));
+        sql_query('UPDATE `servers` SET `ssh_proxies_id` = :proxy_id WHERE `id` = :id', array(':id' => $inserst['id'],':proxy_id' => $next['id']));
 
     }catch(Exception $e){
 		throw new bException('proxies_insert_middle(): Failed', $e);
@@ -308,6 +310,8 @@ function proxies_insert_middle($prev, $next, $insert, $apply){
 
 
 /*
+ * ...........................
+ *
  * @param $root_hostname initial server on chain
  * @param $insert_hostname
  */
@@ -327,7 +331,7 @@ function proxies_insert($root_hostname, $insert_hostname, $target_hostname, $loc
          * before main server
          */
         if(empty($root['proxies']) and $location == 'before'){
-            throw new bException(tr('proxies_insert(): New host ":insert_hostname" can not be inserted before main server ":root_hostname"', array(':insert_hostname'=>$insert_hostname, ':root_hostname'=>$root_hostname)), 'invalid');
+            throw new bException(tr('proxies_insert(): New host ":insert_hostname" can not be inserted before main server ":root_hostname"', array(':insert_hostname' => $insert_hostname, ':root_hostname' => $root_hostname)), 'invalid');
         }
 
         list($prev, $next) = proxies_get_prev_next_insert($root_hostname, $target_hostname, $root['proxies'], $location);
@@ -399,13 +403,13 @@ function proxies_remove_front($prev, $remove, $apply){
         $remove_forwards = forwards_list($remove['id']);
 
         if($remove_forwards){
-            forwards_massive_delete($remove_forwards, $apply);
+            forwards_delete_list($remove_forwards, $apply);
         }
 
         /*
          * Updating proxies chaing on database
          */
-        sql_query('UPDATE `servers` SET `ssh_proxies_id` = :proxy_id WHERE `id` = :id', array(':id'=>$prev['id'],':proxy_id' => NULL));
+        sql_query('UPDATE `servers` SET `ssh_proxies_id` = :proxy_id WHERE `id` = :id', array(':id' => $prev['id'],':proxy_id' => null));
 
     }catch(Exception $e){
 		throw new bException('proxies_remove_front(): Failed', $e);
@@ -415,6 +419,8 @@ function proxies_remove_front($prev, $remove, $apply){
 
 
 /*
+ * ..............
+ *
  * @param array $prev
  * @param array $next
  * @param array $remove
@@ -440,7 +446,7 @@ function proxies_remove_middle($prev, $next, $remove, $apply){
         foreach($next_forwards as $forward){
             $new_forward = $forward;
 
-            foreach($remove_forwards as $index=>$remove_forward){
+            foreach($remove_forwards as $index => $remove_forward){
                 if($remove_forward['protocol'] == $forward['protocol']){
 
                     $new_forward['target_id']   = $prev['id'];
@@ -462,19 +468,18 @@ function proxies_remove_middle($prev, $next, $remove, $apply){
         /*
          * Delete forwards rules on next server and removed server
          */
-        forwards_massive_delete($next_forwards, $apply);
+        forwards_delete_list($next_forwards, $apply);
 
         /*
          * Delete forward fules from removed server
          */
-        forwards_massive_delete($remove_forwards, $apply);
+        forwards_delete_list($remove_forwards, $apply);
 
         /*
          * Update proxies chain on database
          */
-        sql_query('UPDATE `servers` SET `ssh_proxies_id` = :proxy_id WHERE `id` = :id', array(':id'=>$prev['id'],':proxy_id' => $next['id']));
-
-        sql_query('UPDATE `servers` SET `ssh_proxies_id` = :proxy_id WHERE `id` = :id', array(':id'=>$remove['id'],':proxy_id' => NULL));
+        sql_query('UPDATE `servers` SET `ssh_proxies_id` = :proxy_id WHERE `id` = :id', array(':id' => $prev['id']  ,':proxy_id' => $next['id']));
+        sql_query('UPDATE `servers` SET `ssh_proxies_id` = :proxy_id WHERE `id` = :id', array(':id' => $remove['id'],':proxy_id' => NULL));
 
     }catch(Exception $e){
 		throw new bException('proxies_remove_middle(): Failed', $e);
@@ -490,23 +495,23 @@ function proxies_remove_middle($prev, $next, $remove, $apply){
  * @param string $remove_hostname
  * @return void
  */
-function proxies_remove($root_hostname, $remove_hostname, $apply = true){
+function proxies_remove($root_host, $remove_host, $apply = true){
     try{
-        if(strcasecmp($root_hostname, $remove_hostname) == 0){
-            throw new bException(tr('proxies_remove(): You can not remove host ":remove_hostname", it is the main host on the proxies chain', array(':remove_hostname' => $remove_hostname)), 'invalid');
+        if(strcasecmp($root_host, $remove_host) == 0){
+            throw new bException(tr('proxies_remove(): You can not remove host ":remove_host", it is the main host on the proxies chain', array(':remove_host' => $remove_host)), 'invalid');
         }
 
-        $root   = proxies_get_server($root_hostname, true);
-        $remove = proxies_get_server($remove_hostname);
+        $root   = proxies_get_server($root_host, true);
+        $remove = proxies_get_server($remove_host);
 
         if(empty($root['proxies'])){
-            throw new bException(tr('proxies_remove(): Root host ":root_hostname" does not have proxies chain', array(':root_hostname' => $root_hostname)), 'invalid');
+            throw new bException(tr('proxies_remove(): Root host ":root_host" does not have proxies chain', array(':root_host' => $root_host)), 'not-exist');
         }
 
-        $host_on_chain = proxies_validate_on_chain($root['proxies'], $remove_hostname);
+        $host_on_chain = proxies_validate_on_chain($root['proxies'], $remove_host);
 
         if(!$host_on_chain){
-            throw new bException(tr('proxies_remove(): Host ":remove_host" is not on the proxies chain', array(':remove_host' => $remove_hostname)), 'invalid');
+            throw new bException(tr('proxies_remove(): Host ":remove_host" is not on the proxies chain', array(':remove_host' => $remove_host)), 'not-exist');
         }
 
         /*
@@ -593,7 +598,7 @@ function proxies_get_prev_next_insert($root_hostname, $target_hostname, $proxies
         switch($location){
             case 'before':
                 if($root_hostname == $target_hostname){
-                    throw new bException(tr('proxies_get_prev_next(): Server can not be inserted before main host', array(':location' => $location)), 'unkown');
+                    throw new bException(tr('proxies_get_prev_next_insert(): Server can not be inserted before main host', array(':location' => $location)), 'unkown');
                 }
 
                 $next    = proxies_get_server($target_hostname);
@@ -616,6 +621,7 @@ function proxies_get_prev_next_insert($root_hostname, $target_hostname, $proxies
 
             case 'after':
                 $prev = proxies_get_server($target_hostname);
+
                 if(($root_hostname == $target_hostname) and !empty($proxies)){
                     $next = $proxies[0];
 
@@ -634,13 +640,13 @@ function proxies_get_prev_next_insert($root_hostname, $target_hostname, $proxies
                 break;
 
             default:
-                throw new bException(tr('proxies_get_prev_next(): Unknown location ":location"', array(':location' => $location)), 'unkown');
+                throw new bException(tr('proxies_get_prev_next_insert(): Unknown location ":location"', array(':location' => $location)), 'unkown');
         }
 
         return array($prev, $next);
 
     }catch(Exception $e){
-		throw new bException('proxies_get_prev_next(): Failed', $e);
+		throw new bException('proxies_get_prev_next_insert(): Failed', $e);
 	}
 }
 
@@ -650,15 +656,15 @@ function proxies_get_prev_next_insert($root_hostname, $target_hostname, $proxies
  * Returns server information for a specified hostname
  *
  * @param string $hostname
- * @param boolean $return_proxies
+ * @param boolean $return_proxies (false)
  * @return array
  */
-function proxies_get_server($hostname, $return_proxies = false){
+function proxies_get_server($host, $return_proxies = false){
 	try{
-		$server = servers_get($hostname, false, $return_proxies);
+		$server = servers_get($host, false, $return_proxies);
 
 		if(empty($server)){
-			throw new bException(tr('proxies_get_server(): No server found for hostname ":hostname"', array(':hostname' => $hostname)), 'not-found');
+			throw new bException(tr('proxies_get_server(): No server found for host ":host"', array(':host' => $host)), 'not-found');
 		}
 
 		return $server;
@@ -689,7 +695,7 @@ function proxies_validate_on_chain($proxies, $search_hostname){
         return false;
 
 	}catch(Exception $e){
-		throw new bException('proxy_on_chain(): Failed', $e);
+		throw new bException('proxies_validate_on_chain(): Failed', $e);
 	}
 }
 
@@ -714,13 +720,11 @@ function proxies_validate_location($location){
             case 'before':
                 //FALLTHROUGH
             case 'after':
-                break;
+                return $location;
 
             default:
-                throw new bException(tr('proxies_validate_location(): Unknown location ":location"', array(':location' => $location)), 'not-specified');
+                throw new bException(tr('proxies_validate_location(): Unknown location ":location"', array(':location' => $location)), 'unknown');
         }
-
-        return $location;
 
 	}catch(Exception $e){
 		throw new bException('proxies_validate_location(): Failed', $e);
@@ -731,7 +735,7 @@ function proxies_validate_location($location){
 
 /*
  * Returns default port for specified protocol, allow protocols: http, https, ssh
- * This is for incoming traffic(source port)
+ * This is for incoming traffic(destination port)
  *
  * @param string $protocol
  * @return integer
@@ -739,27 +743,22 @@ function proxies_validate_location($location){
 function proxies_get_default_port($protocol){
     try{
         if(empty($protocol)){
-            throw new bException(tr('proxies_validate_location(): Protocol not specified'), 'not-specified');
+            throw new bException(tr('proxies_get_default_port(): Protocol not specified'), 'not-specified');
         }
 
         switch($protocol){
             case 'http':
-                $port = 80;
-                break;
+                return 80;
 
             case 'https':
-                $port = 443;
-                break;
+                return 443;
 
             case 'ssh':
-                $port = 22;
-                break;
+                return 22;
 
             default:
-                throw new bException(tr('proxies_get_default_port(): Unknown protocol ":location"', array(':location' => $protocol)), 'not-specified');
+                throw new bException(tr('proxies_get_default_port(): Unknown protocol ":protocol"', array(':protocol' => $protocol)), 'unknown');
         }
-
-        return $port;
 
     }catch(Exception $e){
 		throw new bException('proxies_get_default_port(): Failed', $e);
