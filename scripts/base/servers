@@ -25,19 +25,13 @@ list                            - List all registerd servers
 
     --customer CUSTOMER         - List all servers for the specified customer
 
-
-
 proxies
+
+    insert  ROOTHOST NEWHOST LOCATION TARGETHOST [PROTOCOLS]
                                 - Inserts a new server on the proxies chain
 
-        insert  ROOTHOSTNAME NEWHOSTNAME LOCATION TARGETHOSTNAME PROTOCOLS
-
-
-
+    remove  ROOTHOSTNAME REMOVEHOSTNAME
                                 - Removes a server from the proxies chain
-
-        remove  ROOTHOSTNAME REMOVEHOSTNAME
-
 
 show SERVER                     - Show detaisl about the specified server';
 
