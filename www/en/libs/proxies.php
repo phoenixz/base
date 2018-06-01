@@ -190,15 +190,101 @@ function proxies_insert_front($prev, $insert, $protocols, $apply){
 
 /*
  * Inserts a new server between other 2
- * Inserted server must apply rules from next server and stop redirecting to prev server
+ * Inserted server must apply rules from next server
  *
  * @param array $prev
  * @param array $next
  * @param array $insert
  * @return void
  */
-function proxies_insert_middle($prev, $next, $insert){
+function proxies_insert_middle($prev, $next, $insert, $apply){
     try{
+        $next_forwards = forwards_list($next['id']);
+
+        if(empty($next_forwards)){
+            throw new bException(tr('proxies_insert_middle(): There are not configured rule forwards for next server, nothing to map from ":insert" server to ":next"', array(':insert'=>$insert['hostname'], ':next'=>$next['hostname'])), 'invalid');
+        }
+
+        foreach($next_forwards as $forward){
+
+            if($forward['protocol'] == 'ssh'){
+                log_console('Getting rules for ssh', 'white');
+
+                $new_forward['apply']       = $apply;
+                $new_forward['servers_id']  = $insert['id'];
+                $new_forward['source_id']   = $insert['id'];
+                $new_forward['source_ip']   = $insert['ipv4'];
+                $new_forward['source_port'] = $insert['port'];
+                $new_forward['target_id']   = $prev['id'];
+                $new_forward['target_ip']   = $prev['ipv4'];
+                $new_forward['target_port'] = $forward['target_port'];
+                $new_forward['protocol']    = $forward['protocol'];
+                $new_forward['description'] = 'Rule added by proxies library on '.date('Y-m-d H:i:s');
+
+                /*
+                 * Updating forward rule on next server to start redirecting traffic to inserted server
+                 */
+                $next_forward['apply']       = $apply;
+                $next_forward['servers_id']  = $next['id'];
+                $next_forward['source_id']   = $next['id'];
+                $next_forward['source_ip']   = $next['ipv4'];
+                $next_forward['source_port'] = $forward['source_port'];
+                $next_forward['target_id']   = $insert['id'];
+                $next_forward['target_ip']   = $insert['ipv4'];
+                $next_forward['target_port'] = $insert['port'];
+                $next_forward['protocol']    = $forward['protocol'];
+                $next_forward['description'] = 'Rule added by proxies library on '.date('Y-m-d H:i:s');
+
+            }else{
+                log_console('Getting rules for protocol "'.$forward['protocol'].'"', 'white');
+                $random_port = mt_rand(1025, 65535);
+
+                $new_forward['apply']       = $apply;
+                $new_forward['servers_id']  = $insert['id'];
+                $new_forward['source_id']   = $insert['id'];
+                $new_forward['source_ip']   = $insert['ipv4'];
+                $new_forward['source_port'] = $random_port;
+                $new_forward['target_id']   = $prev['id'];
+                $new_forward['target_ip']   = $prev['ipv4'];
+                $new_forward['target_port'] = $forward['target_port'];
+                $new_forward['protocol']    = $forward['protocol'];
+                $new_forward['description'] = 'Rule added by proxies library on '.date('Y-m-d H:i:s');
+
+                /*
+                 * Updating forward rule on next server to start redirecting traffic to inserted server
+                 */
+                $next_forward['apply']       = $apply;
+                $next_forward['servers_id']  = $next['id'];
+                $next_forward['source_id']   = $next['id'];
+                $next_forward['source_ip']   = $next['ipv4'];
+                $next_forward['source_port'] = $forward['source_port'];
+                $next_forward['target_id']   = $insert['id'];
+                $next_forward['target_ip']   = $insert['ipv4'];
+                $next_forward['target_port'] = $random_port;
+                $next_forward['protocol']    = $forward['protocol'];
+                $next_forward['description'] = 'Rule added by proxies library on '.date('Y-m-d H:i:s');
+
+            }
+
+            /*
+             * Apply forward rule on inserted server and start accepting traffic on prev server
+             */
+            log_console('Applying rule on inserted server', 'white');
+            forwards_insert($new_forward);
+
+            /*
+             * Removing forward rule on next server
+             */
+            log_console('Removing rule on next server', 'white');
+            forwards_delete($forward);
+
+            /*
+             * Appying new rule on next server to start redirecting traffic to inserted server
+             */
+            log_console('Applying new rule on next server to redirect traffic to inserted server', 'white');
+            forwards_insert($next_forward);
+
+        }
 
     }catch(Exception $e){
 		throw new bException('proxies_insert_middle(): Failed', $e);
@@ -243,9 +329,8 @@ function proxies_insert($root_hostname, $insert_hostname, $target_hostname, $loc
             /*
              * If there is and prev and next server, inserted server goest in the middle
              */
-            proxies_insert_middle($prev, $next, $insert);
+            proxies_insert_middle($prev, $next, $insert, $apply);
         }
-
 
 	}catch(Exception $e){
 		throw new bException('proxies_insert(): Failed', $e);
@@ -289,16 +374,16 @@ function proxies_get_prev_next_insert($root_hostname, $target_hostname, $proxies
                     throw new bException(tr('proxies_get_prev_next(): Server can not be inserted before main host', array(':location' => $location)), 'unkown');
                 }
 
-                $prev    = proxies_get_server($target_hostname);
+                $next    = proxies_get_server($target_hostname);
                 $proxies = array_reverse($proxies);
 
                 foreach($proxies as $position => $proxy){
                     if($proxy['hostname'] == $target_hostname){
                         if(isset($proxies[$position + 1 ])){
-                            $next = proxies_get_server($proxies[$position + 1 ]['id']);
+                            $prev = proxies_get_server($proxies[$position + 1 ]['id']);
 
                         }else{
-                            $next = proxies_get_server($root_hostname);
+                            $prev = proxies_get_server($root_hostname);
                         }
 
                         break;
