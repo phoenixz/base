@@ -28,6 +28,15 @@ list                            - List all registerd servers
 
 
 proxies
+                                - Inserts a new server on the proxies chain
+
+        insert  ROOTHOSTNAME NEWHOSTNAME LOCATION TARGETHOSTNAME PROTOCOLS
+
+
+
+                                - Removes a server from the proxies chain
+
+        remove  ROOTHOSTNAME REMOVEHOSTNAME
 
 
 show SERVER                     - Show detaisl about the specified server';

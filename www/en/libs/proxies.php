@@ -347,16 +347,177 @@ function proxies_insert($root_hostname, $insert_hostname, $target_hostname, $loc
 
 
 /*
+ * Removes a proxy at the front of the proxies chain
+ *
+ * @param array $prev, previous server information
+ * @param array $remove, remove server information
+ * @param boolean $apply, whether to apply the rules or not
+ * @return void
+ */
+function proxies_remove_front($prev, $remove, $apply){
+    try{
+        $prev_forwards = forwards_list($prev['id']);
+
+        if($prev_forwards){
+            /*
+             * Updating source port
+             */
+            foreach($prev_forwards as $forward){
+                if($forward['protocol'] != 'ssh'){
+                    /*
+                     * Rules for ssh are remove  when remove server deletes its own rules
+                     */
+                    $default_port = proxies_get_default_port($forward['protocol']);
+
+                    $new_forward['apply']       = $apply;
+                    $new_forward['source_port'] = $default_port;
+
+                    /*
+                     * Applying new rule with default ports
+                     */
+                    forwards_insert($new_forward);
+
+                    /*
+                     * Removing old rule
+                     */
+                    $forward['apply'] = $apply;
+                    forwards_delete($forward);
+                }
+            }
+        }
+
+        /*
+         * Remove rules from removed server
+         */
+        $remove_forwards = forwards_list($remove['id']);
+
+        if($remove_forwards){
+            foreach($remove_forwards as $forward){
+                $forward['apply'] = $apply;
+                forwards_delete($forward);
+
+            }
+        }
+
+        /*
+         * Updating proxies chaing on database
+         */
+        sql_query('UPDATE `servers` SET `ssh_proxies_id` = :proxy_id WHERE `id` = :id', array(':id'=>$prev['id'],':proxy_id' => NULL));
+
+    }catch(Exception $e){
+		throw new bException('proxies_remove_front(): Failed', $e);
+	}
+}
+
+
+
+/*
+ * @param array $prev
+ * @param array $next
+ * @param array $remove
+ * @param boolean $apply
+ * return void
+ */
+function proxies_remove_middle($prev, $next, $remove, $apply){
+    try{
+
+    }catch(Exception $e){
+		throw new bException('proxies_remove_middle(): Failed', $e);
+	}
+}
+
+
+
+/*
  * Removes a server from the proxy chain
  *
  * @param string $root_hostname
  * @param string $remove_hostname
  * @return void
  */
-function proxies_remove($root_hostname, $remove_hostname){
+function proxies_remove($root_hostname, $remove_hostname, $apply = true){
     try{
+        if(strcasecmp($root_hostname, $remove_hostname) == 0){
+            throw new bException(tr('proxies_remove(): You can not remove host ":remove_hostname", it is the main host on the proxies chain', array(':remove_hostname' => $remove_hostname)), 'invalid');
+        }
+
+        $root   = proxies_get_server($root_hostname, true);
+        $remove = proxies_get_server($remove_hostname);
+
+        if(empty($root['proxies'])){
+            throw new bException(tr('proxies_remove(): Root host ":root_hostname" does not have proxies chain', array(':root_hostname' => $root_hostname)), 'invalid');
+        }
+
+        $host_on_chain = proxies_validate_on_chain($root['proxies'], $remove_hostname);
+
+        if(!$host_on_chain){
+            throw new bException(tr('proxies_remove(): Host ":remove_host" is not on the proxies chain', array(':remove_host' => $remove_hostname)), 'invalid');
+        }
+
+        /*
+         * Getting prev and next server
+         */
+        list($prev, $next) = proxies_get_prev_next_remove($root, $remove, $root['proxies']);
+
+        if(!empty($prev) and empty($next)){
+            proxies_remove_front($prev, $remove, $apply);
+
+        }else{
+            proxies_remove_middle($prev, $next, $remove, $apply);
+
+        }
+
     }catch(Exception $e){
 		throw new bException('proxies_remove(): Failed', $e);
+	}
+}
+
+
+
+/*
+ * Returns prev and next server in order to remove a specified server
+ *
+ * @param array $root_server
+ * @param array $remove_server
+ * @return array
+ */
+function proxies_get_prev_next_remove($root_server, $remove_server, $proxies){
+    try{
+
+        $prev = array();
+        $next = array();
+
+        foreach($proxies as $position => $proxy){
+            if($proxy['hostname'] == $remove_server['hostname']){
+                print_r($remove_server);
+
+                /*
+                 * Getting prev server
+                 */
+                if(isset($proxies[$position - 1])){
+                    $prev = proxy_get_server($proxies[$position - 1]['id']);
+
+                }else{
+                    $prev = $root_server;
+                }
+
+                /*
+                 * Getting next server
+                 */
+                if(isset($proxies[$position + 1])){
+                    $next = proxy_get_server($proxies[$position + 1]['id']);
+
+                }
+
+                break;
+
+            }
+        }
+
+        return array($prev, $next);
+
+    }catch(Exception $e){
+		throw new bException('proxies_get_prev_next_remove(): Failed', $e);
 	}
 }
 
@@ -465,13 +626,13 @@ function proxies_get_server($hostname, $return_proxies = false){
  */
 function proxies_validate_on_chain($proxies, $search_hostname){
     try{
-		$on_chain = false;
-
         foreach($proxies as $proxy){
-            if($proxy['hostname'] == $search_hostname){
-                throw new bException(tr('proxy_validate_on_chain(): Host ":hostname" already on proxies chain', array(':hostname' => $search_hostname)), 'invalid');
+            if(strcasecmp($proxy['hostname'], $search_hostname)  == 0){
+                return true;
             }
         }
+
+        return false;
 
 	}catch(Exception $e){
 		throw new bException('proxy_on_chain(): Failed', $e);
