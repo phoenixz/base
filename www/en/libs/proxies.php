@@ -286,6 +286,13 @@ function proxies_insert_middle($prev, $next, $insert, $apply){
 
         }
 
+        /*
+         * After applying and updating rules, we must update proxies chain
+         */
+        log_console('Updating proxies chain', 'white');
+        sql_query('UPDATE `servers` SET `ssh_proxies_id` = :proxy_id WHERE `id` = :id', array(':id'=>$prev['id'],   ':proxy_id' => $insert['id']));
+        sql_query('UPDATE `servers` SET `ssh_proxies_id` = :proxy_id WHERE `id` = :id', array(':id'=>$inserst['id'],':proxy_id' => $next['id']));
+
     }catch(Exception $e){
 		throw new bException('proxies_insert_middle(): Failed', $e);
 	}
