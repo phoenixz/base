@@ -181,7 +181,7 @@ function forwards_delete($forward){
         array_ensure($forward , '');
         array_default($forward, 'apply', true);
 
-        sql_query('DELETE FROM `forwards` WHERE `id` = :id', array(':id' => $forward['id']));
+        sql_query(' DELETE FROM `forwards` WHERE `id` = :id', array(':id' => $forward['id']));
 
         if($forward['apply']){
             forwards_delete_apply($forward);

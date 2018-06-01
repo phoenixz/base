@@ -101,9 +101,11 @@ function proxies_insert_front($prev, $insert, $protocols, $apply){
                     /*
                      * Updating source port for forward rule on prev server
                      */
-                    $forward['apply']       = $apply;
-                    $forward['source_port'] = $random_port;
-                    $exists = forwards_exists($forward);
+                    $prev_forward                = $forward;
+                    $prev_forward['apply']       = $apply;
+                    $prev_forward['source_port'] = $random_port;
+
+                    $exists = forwards_exists($prev_forward);
                     if($exists){
                        throw new bException(tr('proxies_insert_front(): Port ":source_port" on host ":host" for protocol ":protocol" is already in use', array(':source_port'=>$prev['source_port'], ':host'=>$prev['hostname'])), 'invalid');
                     }
@@ -115,7 +117,7 @@ function proxies_insert_front($prev, $insert, $protocols, $apply){
                     forwards_insert($new_forward);
 
                     log_console('Applying forward rule on prev server for new source port', 'white');
-                    forwards_insert($forward);
+                    forwards_insert($prev_forward);
 
                     /*
                      * Deleting rule from data base
@@ -363,10 +365,10 @@ function proxies_remove_front($prev, $remove, $apply){
              * Updating source port
              */
             foreach($prev_forwards as $forward){
+                $new_forward = $forward;
+
                 if($forward['protocol'] != 'ssh'){
-                    /*
-                     * Rules for ssh are remove  when remove server deletes its own rules
-                     */
+
                     $default_port = proxies_get_default_port($forward['protocol']);
 
                     $new_forward['apply']       = $apply;
@@ -378,9 +380,9 @@ function proxies_remove_front($prev, $remove, $apply){
                     forwards_insert($new_forward);
 
                     /*
-                     * Removing old rule
+                     * Removing old rule :REVIEW: something is wrong, rule is  not been deleted from database
                      */
-                    $forward['apply'] = $apply;
+                    $forward['apply'] = true;
                     forwards_delete($forward);
                 }
             }
@@ -489,13 +491,12 @@ function proxies_get_prev_next_remove($root_server, $remove_server, $proxies){
 
         foreach($proxies as $position => $proxy){
             if($proxy['hostname'] == $remove_server['hostname']){
-                print_r($remove_server);
 
                 /*
                  * Getting prev server
                  */
                 if(isset($proxies[$position - 1])){
-                    $prev = proxy_get_server($proxies[$position - 1]['id']);
+                    $prev = proxies_get_server($proxies[$position - 1]['id']);
 
                 }else{
                     $prev = $root_server;
@@ -505,7 +506,7 @@ function proxies_get_prev_next_remove($root_server, $remove_server, $proxies){
                  * Getting next server
                  */
                 if(isset($proxies[$position + 1])){
-                    $next = proxy_get_server($proxies[$position + 1]['id']);
+                    $next = proxies_get_server($proxies[$position + 1]['id']);
 
                 }
 

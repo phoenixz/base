@@ -230,7 +230,7 @@ function iptables_delete_all($server){
  */
 function iptables_accept_traffic($server, $ip, $port, $protocol){
     try{
-        $result = servers_exec($server, 'if sudo iptables -L -v|grep '.$ip.'.*dpt:'.$port.'; then echo 1; else echo 0; fi');
+        $result = servers_exec($server, 'if sudo iptables -L -v -n|grep '.$ip.'.*dpt:'.$port.'; then echo 1; else echo 0; fi');
         /*
          * If rule does not exist, we add it
          */
