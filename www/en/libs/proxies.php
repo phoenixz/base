@@ -394,11 +394,7 @@ function proxies_remove_front($prev, $remove, $apply){
         $remove_forwards = forwards_list($remove['id']);
 
         if($remove_forwards){
-            foreach($remove_forwards as $forward){
-                $forward['apply'] = $apply;
-                forwards_delete($forward);
-
-            }
+            forwards_massive_delete($remove_forwards, $apply);
         }
 
         /*
@@ -422,6 +418,58 @@ function proxies_remove_front($prev, $remove, $apply){
  */
 function proxies_remove_middle($prev, $next, $remove, $apply){
     try{
+        $next_forwards   = forwards_list($next['id']);
+        $remove_forwards = forwards_list($remove['id']);
+
+        if(empty($next_forwards)){
+            throw new bException(tr('proxies_remove_middle(): There are not forwards rules on next server'), 'invalid');
+        }
+
+        if(empty($remove_forwards)){
+            throw new bException(tr('proxies_remove_middle(): There are not forwards rules on remove server'), 'invalid');
+        }
+
+        /*
+         * Applying new rule on next server to start redirecting traffic to prev server
+         */
+        foreach($next_forwards as $forward){
+            $new_forward = $forward;
+
+            foreach($remove_forwards as $index=>$remove_forward){
+                if($remove_forward['protocol'] == $forward['protocol']){
+
+                    $new_forward['target_id']   = $prev['id'];
+                    $new_forward['target_ip']   = $prev['ipv4'];
+                    $new_forward['target_port'] = $remove_forward['target_port'];
+
+                    break;
+                }
+            }
+
+            /*
+             * Inserting and applying new rule on next server
+             */
+            show($new_forward);
+            forwards_insert($new_forward);
+
+        }
+
+        /*
+         * Delete forwards rules on next server and removed server
+         */
+        forwards_massive_delete($next_forwards, $apply);
+
+        /*
+         * Delete forward fules from removed server
+         */
+        forwards_massive_delete($remove_forwards, $apply);
+
+        /*
+         * Update proxies chain on database
+         */
+        sql_query('UPDATE `servers` SET `ssh_proxies_id` = :proxy_id WHERE `id` = :id', array(':id'=>$prev['id'],':proxy_id' => $next['id']));
+
+        sql_query('UPDATE `servers` SET `ssh_proxies_id` = :proxy_id WHERE `id` = :id', array(':id'=>$remove['id'],':proxy_id' => NULL));
 
     }catch(Exception $e){
 		throw new bException('proxies_remove_middle(): Failed', $e);
@@ -628,7 +676,7 @@ function proxies_get_server($hostname, $return_proxies = false){
 function proxies_validate_on_chain($proxies, $search_hostname){
     try{
         foreach($proxies as $proxy){
-            if(strcasecmp($proxy['hostname'], $search_hostname)  == 0){
+            if($proxy['hostname'] == $search_hostname){
                 return true;
             }
         }

@@ -549,4 +549,28 @@ function forwards_only_accept_traffic($forward){
         throw new bException('forwards_only_accept_traffic(): Failed', $e);
     }
 }
+
+
+
+/*
+ * Removes forward rules from database and also deletes them from server
+ *
+ * @param array $forwards, array of forward rules
+ * @return void
+ */
+function forwards_massive_delete($forwards, $apply = true){
+    try{
+        if(empty($forwards)){
+            throw new bException(tr('forwards_massive_delete(): No forwards specified'), 'not-specified');
+        }
+
+        foreach($forwards as $forward){
+            $forward['apply'] = $apply;
+            forwards_delete($forward);
+        }
+
+    }catch(Exception $e){
+        throw new bException('forwards_massive_delete(): Failed', $e);
+    }
+}
 ?>
