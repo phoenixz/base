@@ -188,7 +188,7 @@ function proxies_insert_front($prev, $insert, $protocols, $apply){
                     /*
                      * Do not apply, we continue listening on the same port
                      */
-                    $forward['apply'] = false;
+                    $forward['apply'] = $apply;
                     forwards_delete($forward);
 
                 }
@@ -516,7 +516,7 @@ function proxies_remove_middle($prev, $next, $remove, $apply){
 
             foreach($remove_forwards as $index => $remove_forward){
                 if($remove_forward['protocol'] == $forward['protocol']){
-
+                    $new_forward['apply']       = $apply;
                     $new_forward['target_id']   = $prev['id'];
                     $new_forward['target_ip']   = $prev['ipv4'];
                     $new_forward['target_port'] = $remove_forward['target_port'];
@@ -528,7 +528,7 @@ function proxies_remove_middle($prev, $next, $remove, $apply){
             /*
              * Inserting and applying new rule on next server
              */
-            show($new_forward);
+            log_console(tr('Appying new rule on next server'));
             forwards_insert($new_forward);
 
         }
@@ -536,11 +536,13 @@ function proxies_remove_middle($prev, $next, $remove, $apply){
         /*
          * Delete forwards rules on next server and removed server
          */
+        log_console(tr('Removing rules on next server'));
         forwards_delete_list($next_forwards, $apply);
 
         /*
          * Delete forward fules from removed server
          */
+        log_console(tr('Removing rules on removed server'));
         forwards_delete_list($remove_forwards, $apply);
 
         /*
