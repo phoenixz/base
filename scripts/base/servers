@@ -26,8 +26,8 @@ list                            - List all registerd servers
     --customer CUSTOMER         - List all servers for the specified customer
 
 proxies
+    insert  ROOTHOSTNAME NEWHOSTNAME LOCATION TARGETHOSTNAME [PROTOCOL[:PORT],PROTOCOL[:PORT]...]
 
-    insert  ROOTHOST NEWHOST LOCATION TARGETHOST [PROTOCOLS]
                                 - Inserts a new server on the proxies chain
 
     remove  ROOTHOSTNAME REMOVEHOSTNAME
@@ -37,7 +37,6 @@ show SERVER                     - Show detaisl about the specified server';
 
 require_once(__DIR__.'/../../libs/startup.php');
 cli_only();
-load_libs('mysql');
 
 switch(cli_method()){
     case 'list':
