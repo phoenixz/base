@@ -173,7 +173,7 @@ function twilio_verify_source_phone($phone){
  */
 function twilio_send_message($message, $to, $from = null){
     global $_CONFIG;
-    static $twilio;
+    static $account;
 
     try{
         $source = sql_get('SELECT `number` FROM `twilio_numbers` WHERE `number` = :number', 'number', array(':number' => $from));
@@ -182,8 +182,8 @@ function twilio_send_message($message, $to, $from = null){
             throw new bException(tr('twilio_send_message(): Specified source phone ":from" is not known', array(':from' => $from)), 'unknown');
         }
 
-        if(empty($twilio)){
-            $twilio = twilio_load($source);
+        if(empty($account)){
+            $account = twilio_load($source);
         }
 
         if(is_array($message)){
@@ -198,13 +198,16 @@ function twilio_send_message($message, $to, $from = null){
                 throw new bException(tr('twilio_send_message(): No media specified'), 'not-specified');
             }
 
-            return $twilio->account->messages->sendMessage($source, $to, $message['message'], $message['media']);
+            return $account->messages->create($to, array('body'     => $message['message'],
+                                                         'from'     => $source,
+                                                         'mediaUrl' => $message['media']));
         }
 
         /*
          * Send a normal SMS message
          */
-        return $twilio->account->messages->sendMessage($source, $to, $message);
+        return $account->messages->create($to, array('body' => $message['message'],
+                                                     'from' => $source));
 
     }catch(Exception $e){
         throw new bException(tr('twilio_send_message(): Failed'), $e);
