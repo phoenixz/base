@@ -501,6 +501,10 @@ function proxies_remove($root_host, $remove_host, $apply = true){
             throw new bException(tr('proxies_remove(): You can not remove host ":remove_host", it is the main host on the proxies chain', array(':remove_host' => $remove_host)), 'invalid');
         }
 
+        if($remove_host === 'all'){
+// :TODO: Implement
+        }
+
         $root   = proxies_get_server($root_host, true);
         $remove = proxies_get_server($remove_host);
 
