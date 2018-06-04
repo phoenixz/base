@@ -129,17 +129,6 @@ function iptables_set_prerouting($server, $protocol, $origin_port, $destination_
          */
         $operation        = $operation == 'add'?'-A':'-D';
 
-        /*
-         * If operation is equal to remove, we first check if exist on the iptables nat,
-         * otherwise return false  in order to avoid error
-         */
-        if($operation == '-D'){
-            $result = servers_exec($server, 'if sudo iptables -t nat -L -n|grep "DNAT.*dpt:'.$origin_port.' to:'.$destination_ip.':'.$destination_port.'"; then echo "exists"; else echo 0; fi');
-            if(!$result[0]){
-                return false;
-            }
-        }
-
         iptables_exec($server, ' -t nat '.$operation.' PREROUTING -p tcp --dport '.$origin_port.' -j DNAT --to-destination '.$destination_ip.':'.$destination_port);
 
     }catch(Exception $e){
@@ -166,17 +155,6 @@ function iptables_set_postrouting($server, $protocol, $port, $source_ip, $destin
         $port           = iptables_validate_port($port);
         $destination_ip = iptables_validate_ip($destination_ip);
         $operation      = $operation == 'add'?'-A':'-D';
-
-        /*
-         * If operation is equal to remove, we first check if exist on the iptables nat,
-         * otherwise return false  in order to avoid error
-         */
-        if($operation == '-D'){
-            $result = servers_exec($server, 'if sudo iptables -t nat -L -n|grep "SNAT.*dpt:'.$port.' to:'.$source_ip.'"; then echo "exists"; else echo 0; fi');
-            if(!$result[0]){
-                return false;
-            }
-        }
 
         iptables_exec($server, '-t nat '.$operation.' POSTROUTING -p tcp -d '.$destination_ip.' --dport '.$port.' -j SNAT --to-source '.$source_ip);
 
@@ -412,6 +390,55 @@ function iptables_validate_chain_type($chain_type){
 
     }catch(Exception $e){
         throw new bException('iptables_validate_chain_type(): Failed', $e);
+    }
+}
+
+
+
+/*
+ * Checks if a prerouting rule exists on nat table
+ *
+ * @param mixed server, id or hostname for a specified host
+ * @param integer $origin_port
+ * @param integer $destination_port
+ * @param string $destination_ip
+ * @return boolean
+ */
+function iptables_prerouting_exists($server, $origin_port, $destination_port, $destination_ip){
+    try{
+        $result = servers_exec($server, 'if sudo iptables -t nat -L -n|grep "DNAT.*dpt:'.$origin_port.' to:'.$destination_ip.':'.$destination_port.'"; then echo 1; else echo 0; fi');
+        if($result[0]){
+            return true;
+        }
+
+        return false;
+
+    }catch(Exception $e){
+        throw new bException('iptables_prerouting_exists(): Failed', $e);
+    }
+}
+
+
+
+/*
+ * Check if a postrouting rule exists on nat table
+ *
+ * @param mixed server, id or hostname for a specified host
+ * @param integer $port
+ * @param string $source_ip
+ * @return boolean
+ */
+function iptables_postrouting_exists($server, $port, $source_ip){
+    try{
+        $result = servers_exec($server, 'if sudo iptables -t nat -L -n|grep "SNAT.*dpt:'.$port.' to:'.$source_ip.'"; then echo 1; else echo 0; fi');
+        if($result[0]){
+            return true;
+        }
+
+        return false;
+
+    }catch(Exception $e){
+        throw new bException('iptables_prerouting_exists(): Failed', $e);
     }
 }
 ?>
