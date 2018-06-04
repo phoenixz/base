@@ -24,6 +24,66 @@ function proxies_library_init(){
 
 
 /*
+ * Inserts first server on the proxies chain, ports must be specified alongside protocols
+ *
+ * @param array $prev
+ * @param array insert
+ * @param string $protocols, example http:4563,https:6464, etc.
+ * @param boolean
+ */
+function proxies_insert_create($prev, $insert, $protocols, $apply){
+    try{
+        if(empty($protocols)){
+            throw new bException(tr('proxies_insert_create(): No protocols specified', array(':insert_hostname' => $insert['hostname'])), 'not-specified');
+        }
+
+        $protocol_port = array();
+
+        foreach($protocols as $protocol){
+            $data_protocol = explode(":", $protocol);
+
+            if(!isset($data_protocol[1]) or !is_natural($data_protocol[1]) or ($data_protocol[1] > 65535)){
+                throw new bException(tr('proxies_insert_create(): Invalid port ":port" specified for protocol ":protocol"', array(':port' => $data_protocol[1], ':protocol' => $data_protocol[0])), 'invalid');
+            }
+
+            $protocol_port[$data_protocol[0]] = $data_protocol[1];
+        }
+
+        foreach($protocol_port as $protocol => $port){
+
+            $default_port = proxies_get_default_port($protocol);
+
+            $new_forward['apply']       = $apply;
+            $new_forward['servers_id']  = $insert['id'];
+            $new_forward['source_id']   = $insert['id'];
+            $new_forward['source_ip']   = $insert['ipv4'];
+            $new_forward['source_port'] = $default_port;
+            $new_forward['target_id']   = $prev['id'];
+            $new_forward['target_ip']   = $prev['ipv4'];
+            $new_forward['target_port'] = $port;
+            $new_forward['protocol']    = $protocol;
+            $new_forward['description'] = 'Rule added by proxies library on '.date('Y-m-d H:i:s');
+
+            /*
+             * Insert new rule and apply
+             */
+            log_console(tr('Inserting first server on the proxies chain'));
+            forwards_insert($new_forward);
+        }
+
+        /*
+         * Updating proxy relation on database
+         */
+        sql_query('UPDATE `servers` SET `ssh_proxies_id` = :proxy_id WHERE `id` = :id', array(':id' => $prev['id'],':proxy_id' => $insert['id']));
+
+    }catch(Exception $e){
+        throw new bException('proxies_insert_create(): Failed', $e);
+    }
+}
+
+
+
+/*
  * Inserts a new server at the front of the proxies chain or as first server on chain.
  * When a new server is inserted at the front, protocols alwasy must be specified
  *
@@ -134,7 +194,7 @@ function proxies_insert_front($prev, $insert, $protocols, $apply){
                 }
 
                 /*
-                 * Updating data base chaing
+                 * Updating data base chain
                  */
                 log_console(tr('Updating databse with new proxy chain'));
                 sql_query('UPDATE `servers` SET `ssh_proxies_id` = :proxy_id WHERE `id` = :id', array(':id' => $prev['id'],':proxy_id' => $insert['id']));
@@ -310,7 +370,7 @@ function proxies_insert_middle($prev, $next, $insert, $apply){
 
 
 /*
- * ...........................
+ * Inserts a new server on the proxies chain for a specified root server
  *
  * @param $root_hostname initial server on chain
  * @param $insert_hostname
@@ -341,7 +401,15 @@ function proxies_insert($root_hostname, $insert_hostname, $target_hostname, $loc
             /*
              * If there is not next server, inserted server goes at the front
              */
-            proxies_insert_front($prev, $insert, $protocols, $apply);
+            if(empty($root['proxies'])){
+
+                proxies_insert_create($prev, $insert, $protocols, $apply);
+
+            }else{
+
+                proxies_insert_front($prev, $insert, $protocols, $apply);
+
+            }
 
         } else{
             /*
@@ -419,7 +487,7 @@ function proxies_remove_front($prev, $remove, $apply){
 
 
 /*
- * ..............
+ * Removes a proxy from the middle of the chain
  *
  * @param array $prev
  * @param array $next
