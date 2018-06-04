@@ -537,7 +537,7 @@ function curl_get($params, $referer = null, $post = false, $options = array()){
              *
              */
             usleep($params['sleep']);
-            log_console(tr('curl_get(): Got HTTP0 for url ":url", retry ":retry"', array(':url' => $params['url'], ':retry' => $retry)), 'yellow');
+            log_console(tr('curl_get(): Got HTTP0 for url ":url" with ":timeout" timeout, retry ":retry"', array(':url' => $params['url'], ':retry' => $retry, ':timeout' => $params['timeout'])), 'yellow');
             return curl_get($params, $referer, $post, $options);
         }
 
