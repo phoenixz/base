@@ -7,6 +7,7 @@
  * @license http://opensource.org/licenses/GPL-2.0 GNU Public License, Version 2
  * @copyright Sven Oostenbrink <support@capmega.com>
  */
+use Twilio\Rest\Client;
 
 
 
@@ -68,7 +69,7 @@ function twilio_install(){
 /*
  * Load twilio base library
  */
-function twilio_load($phone, $auto_install = true){
+function twilio_load($source, $auto_install = true){
     global $_CONFIG;
 
     try{
@@ -76,7 +77,7 @@ function twilio_load($phone, $auto_install = true){
          * Load Twilio library
          * If Twilio isnt available, then try auto install
          */
-        $file = ROOT.'libs/external/twilio/Services/Twilio.php';
+        $file = ROOT.'libs/external/twilio/Twilio/autoload.php';
 
         if(!file_exists($file)){
             log_console('twilio_load(): Twilio API library not found', 'notinstalled');
@@ -97,35 +98,13 @@ function twilio_load($phone, $auto_install = true){
         /*
          * Get Twilio object with account data for the specified phone number
          */
-        if(filter_var($phone, FILTER_VALIDATE_EMAIL)){
-            $account = sql_get('SELECT `twilio_accounts`.`accounts_id`,
-                                       `twilio_accounts`.`accounts_token`
-
-                                FROM   `twilio_accounts`
-
-                                WHERE  `twilio_accounts`.`email` = :email',
-
-                                array(':email' => $phone));
-
-        }else{
-            $account = sql_get('SELECT `twilio_accounts`.`accounts_id`,
-                                       `twilio_accounts`.`accounts_token`
-
-                                FROM   `twilio_numbers`
-
-                                JOIN   `twilio_accounts`
-                                ON     `twilio_accounts`.`id` = `twilio_numbers`.`accounts_id`
-
-                                WHERE  `twilio_numbers`.`number` = :number',
-
-                                array(':number' => $phone));
-        }
+        $account = twilio_get_account($source);
 
         if(!$account){
-            throw new bException(tr('twilio_load(): No Twilio account found for phone number ":phone"', array(':phone' => $phone)), 'not-exist');
+            throw new bException(tr('twilio_load(): No Twilio account found for source ":source"', array(':source' => $source)), 'not-exist');
         }
 
-        return new Services_Twilio($account['accounts_id'], $account['accounts_token']);
+        return new Client($account['accounts_id'], $account['accounts_token']);
 
     }catch(Exception $e){
         throw new bException('twilio_load(): Failed', $e);
@@ -571,6 +550,189 @@ function twilio_numbers_get($number){
 
     }catch(Exception $e){
         throw new bException('twilio_numbers_get(): Failed', $e);
+    }
+}
+
+
+
+/*
+ *
+ */
+function twilio_get_account($source){
+    try{
+        if(!$source){
+            throw new bException(tr('twilio_get_account(): No source specified'), 'not-specified');
+        }
+
+        if(!is_scalar($source)){
+            throw new bException(tr('twilio_get_account(): Specified twilio source ":source" is not scalar', array(':source' => $source)), 'invalid');
+        }
+
+        if(filter_var($source, FILTER_VALIDATE_EMAIL)){
+            /*
+             * This is already an account email
+             */
+            $account = sql_get('SELECT `twilio_accounts`.`id`,
+                                       `twilio_accounts`.`email`,
+                                       `twilio_accounts`.`accounts_id`,
+                                       `twilio_accounts`.`accounts_token`
+
+                                FROM   `twilio_accounts`
+
+                                WHERE  `twilio_accounts`.`email`  = :email
+                                AND    `twilio_accounts`.`status` IS NULL',
+
+                                array(':email' => $source));
+
+        }else{
+            $account = sql_get('SELECT `twilio_accounts`.`id`,
+                                       `twilio_accounts`.`email`,
+                                       `twilio_accounts`.`accounts_id`,
+                                       `twilio_accounts`.`accounts_token`
+
+                                FROM   `twilio_numbers`
+
+                                JOIN   `twilio_accounts`
+                                ON     `twilio_accounts`.`id`     = `twilio_numbers`.`accounts_id`
+                                AND    `twilio_accounts`.`status` IS NULL
+
+                                WHERE  `twilio_numbers`.`number`  = :number',
+
+                                array(':number' => $source));
+        }
+
+        return $account;
+
+    }catch(Exception $e){
+        throw new bException('twilio_get_account(): Failed', $e);
+    }
+}
+
+
+
+/*
+ * Fetches all twilio data relevant to the specified twilio phone number
+ *
+ * @param string $phone_number The twilio phone number
+ * @return mixed Array containing the Twilio data for the specified phone number. Returns NULL in case the number does not exist
+ */
+function twilio_list_accounts(){
+    try{
+        $accounts = sql_list('SELECT `twilio_accounts`.`id`,
+                                     `twilio_accounts`.`email`,
+                                     `twilio_accounts`.`accounts_id`,
+                                     `twilio_accounts`.`accounts_token`
+
+                              FROM   `twilio_accounts`
+
+                              WHERE  `status` IS NULL');
+
+        return $accounts;
+
+    }catch(Exception $e){
+        throw new bException('twilio_list_accounts(): Failed', $e);
+    }
+}
+
+
+
+/*
+ * Fetches all twilio data relevant to the specified twilio phone number
+ *
+ * @param string $phone_number The twilio phone number
+ * @return mixed Array containing the Twilio data for the specified phone number. Returns NULL in case the number does not exist
+ */
+function twilio_api_get_number($phone_number, $array = true){
+    try{
+        $client  = twilio_load($account);
+        $numbers = $client->IncomingPhoneNumbers->read();
+
+        foreach($numbers as $number){
+            if($number->phoneNumber === $phone_number){
+                if($array){
+                    return twilio_number_to_array($number);
+                }
+
+                return $number;
+            }
+        }
+
+    }catch(Exception $e){
+        throw new bException('twilio_api_get_number(): Failed', $e);
+    }
+}
+
+
+
+/*
+ * Fetches all twilio data relevant to the specified twilio phone number
+ *
+ * @param string $phone_number The twilio phone number
+ * @return mixed Array containing the Twilio data for the specified phone number. Returns NULL in case the number does not exist
+ */
+function twilio_api_list_numbers($account, $array = true){
+    try{
+        $client  = twilio_load($account);
+        $numbers = $client->IncomingPhoneNumbers->read();
+
+        foreach($numbers as $number){
+            if($array){
+                $retval[$number->phoneNumber] = twilio_number_to_array($number);
+
+            }else{
+                $retval[$number->phoneNumber] = $number;
+            }
+        }
+
+        return $retval;
+
+    }catch(Exception $e){
+        throw new bException('twilio_api_list_numbers(): Failed', $e);
+    }
+}
+
+
+
+/*
+ *
+ */
+function twilio_number_to_array($number){
+    try{
+        $retval['accounts_sid']           = $number->accountSid;
+        $retval['address_sid']            = $number->addressSid;
+        $retval['address_requirements']   = $number->addressRequirements;
+        $retval['api_version']            = $number->apiVersion;
+        $retval['beta']                   = $number->beta;
+        $retval['capabilities']           = $number->capabilities;
+        $retval['date_created']           = $number->dateCreated;
+        $retval['date_updated']           = $number->dateUpdated;
+        $retval['friendly_name']          = $number->friendlyName;
+        $retval['identity_sid']           = $number->identitySid;
+        $retval['phone_number']           = $number->phoneNumber;
+        $retval['origin']                 = $number->origin;
+        $retval['sid']                    = $number->sid;
+        $retval['sms_application_sid']    = $number->smsApplicationSid;
+        $retval['sms_fallback_method']    = $number->smsFallbackMethod;
+        $retval['sms_fallback_url']       = $number->smsFallbackUrl;
+        $retval['sms_method']             = $number->smsMethod;
+        $retval['sms_url']                = $number->smsUrl;
+        $retval['status_callback']        = $number->statusCallback;
+        $retval['status_callback_method'] = $number->statusCallbackMethod;
+        $retval['trunk_sid']              = $number->trunkSid;
+        $retval['uri']                    = $number->uri;
+        $retval['voice_application_sid']  = $number->voiceApplicationSid;
+        $retval['voice_callerid_lookup']  = $number->voiceCallerIdLookup;
+        $retval['voice_fallback_method']  = $number->voiceFallbackMethod;
+        $retval['voice_fallback_url']     = $number->voiceFallbackUrl;
+        $retval['voice_method']           = $number->voiceMethod;
+        $retval['voice_url']              = $number->voiceUrl;
+        $retval['emergency_status']       = $number->emergencyStatus;
+        $retval['emergency_address_sid']  = $number->emergencyAddressSid;
+
+        return $retval;
+
+    }catch(Exception $e){
+        throw new bException('twilio_number_to_array(): Failed', $e);
     }
 }
 ?>
