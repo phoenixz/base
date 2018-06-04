@@ -573,4 +573,21 @@ function forwards_delete_list($forwards, $apply = true){
         throw new bException('forwards_delete_list(): Failed', $e);
     }
 }
+
+
+
+/*
+ * Flush iptables rules and nat rules
+ *
+ * @param meixed, server id or hostname for specified server
+ * @return void
+ */
+function forwards_destroy($server){
+    try{
+        iptables_flush_all(IPTABLES_BUFFER);
+        iptables_clean_chain_nat($server);
+    }catch(Exception $e){
+        throw new bException('forwards_destroy(): Failed', $e);
+    }
+}
 ?>

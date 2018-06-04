@@ -129,6 +129,17 @@ function iptables_set_prerouting($server, $protocol, $origin_port, $destination_
          */
         $operation        = $operation == 'add'?'-A':'-D';
 
+        /*
+         * If operation is equal to remove, we first check if exist on the iptables nat,
+         * otherwise return false  in order to avoid error
+         */
+        if($operation == '-D'){
+            $result = servers_exec($server, 'if sudo iptables -t nat -L -n|grep "DNAT.*dpt:'.$origin_port.' to:'.$destination_ip.':'.$destination_port.'"; then echo "exists"; else echo 0; fi');
+            if(!$result[0]){
+                return false;
+            }
+        }
+
         iptables_exec($server, ' -t nat '.$operation.' PREROUTING -p tcp --dport '.$origin_port.' -j DNAT --to-destination '.$destination_ip.':'.$destination_port);
 
     }catch(Exception $e){
@@ -154,8 +165,18 @@ function iptables_set_postrouting($server, $protocol, $port, $source_ip, $destin
         $protocol       = iptables_validate_protocol($protocol);
         $port           = iptables_validate_port($port);
         $destination_ip = iptables_validate_ip($destination_ip);
-        //$public_ip      = servers_get_public_ip($server);
         $operation      = $operation == 'add'?'-A':'-D';
+
+        /*
+         * If operation is equal to remove, we first check if exist on the iptables nat,
+         * otherwise return false  in order to avoid error
+         */
+        if($operation == '-D'){
+            $result = servers_exec($server, 'if sudo iptables -t nat -L -n|grep "SNAT.*dpt:'.$port.' to:'.$source_ip.'"; then echo "exists"; else echo 0; fi');
+            if(!$result[0]){
+                return false;
+            }
+        }
 
         iptables_exec($server, '-t nat '.$operation.' POSTROUTING -p tcp -d '.$destination_ip.' --dport '.$port.' -j SNAT --to-source '.$source_ip);
 
@@ -230,7 +251,7 @@ function iptables_delete_all($server){
  */
 function iptables_accept_traffic($server, $ip, $port, $protocol){
     try{
-        $result = servers_exec($server, 'if sudo iptables -L -v -n|grep '.$ip.'.*dpt:'.$port.'; then echo 1; else echo 0; fi');
+        $result = servers_exec($server, 'if sudo iptables -L -v -n|grep '.$ip.'.*dpt:'.$port.'; then echo "exists"; else echo 0; fi');
         /*
          * If rule does not exist, we add it
          */
@@ -260,7 +281,11 @@ function iptables_accept_traffic($server, $ip, $port, $protocol){
  */
 function iptables_stop_accepting_traffic($server, $ip, $port, $protocol){
     try{
-        iptables_exec($server, '-D INPUT -p '.$protocol.' -s '.$ip.' --dport '.$port.' -j ACCEPT');
+        $result = servers_exec($server, 'if sudo iptables -L -v -n|grep '.$ip.'.*dpt:'.$port.'; then echo "exists"; else echo 0; fi');
+
+        if(!$result[0]){
+            iptables_exec($server, '-D INPUT -p '.$protocol.' -s '.$ip.' --dport '.$port.' -j ACCEPT');
+        }
 
     }catch(Exception $e){
         throw new bException('iptables_stop_traffic(): Failed', $e);
