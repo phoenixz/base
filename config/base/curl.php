@@ -11,8 +11,8 @@
 
 // Curl library configuration
 $_CONFIG['curl']                                                                = array('proxies'          => array(),
-                                                                                        'connect_timeout'  => 5,
-                                                                                        'timeout'          => 15,
+                                                                                        'connect_timeout'  => 30,
+                                                                                        'timeout'          => 30,
                                                                                         'log'              => false,
                                                                                         'user_agents'      => array('Mozilla/5.0 (Windows NT 5.1; rv:10.0.2) Gecko/20100101 Firefox/10.0.2',
                                                                                                                     'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/49.0.2623.112 Safari/537.36'));
