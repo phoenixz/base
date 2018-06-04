@@ -93,7 +93,7 @@ function twilio_load($source, $auto_install = true){
             }
         }
 
-        include($file);
+        include_once($file);
 
         /*
          * Get Twilio object with account data for the specified phone number
