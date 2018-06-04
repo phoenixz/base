@@ -407,6 +407,7 @@ function iptables_validate_chain_type($chain_type){
 function iptables_prerouting_exists($server, $origin_port, $destination_port, $destination_ip){
     try{
         $result = servers_exec($server, 'if sudo iptables -t nat -L -n|grep "DNAT.*dpt:'.$origin_port.' to:'.$destination_ip.':'.$destination_port.'"; then echo 1; else echo 0; fi');
+
         if($result[0]){
             return true;
         }
@@ -431,6 +432,7 @@ function iptables_prerouting_exists($server, $origin_port, $destination_port, $d
 function iptables_postrouting_exists($server, $port, $source_ip){
     try{
         $result = servers_exec($server, 'if sudo iptables -t nat -L -n|grep "SNAT.*dpt:'.$port.' to:'.$source_ip.'"; then echo 1; else echo 0; fi');
+
         if($result[0]){
             return true;
         }
@@ -438,7 +440,7 @@ function iptables_postrouting_exists($server, $port, $source_ip){
         return false;
 
     }catch(Exception $e){
-        throw new bException('iptables_prerouting_exists(): Failed', $e);
+        throw new bException('iptables_postrouting_exists(): Failed', $e);
     }
 }
 ?>

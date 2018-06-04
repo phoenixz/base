@@ -169,7 +169,6 @@ function forwards_insert($forward, $createdby = null){
 
 
 
-
 /*
  * Deletes a forwarding rule
  *

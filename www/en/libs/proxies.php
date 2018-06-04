@@ -756,7 +756,6 @@ function proxies_get_server($host, $return_proxies = false){
 
 
 
-
 /*
  * Checks if a host is already on the proxy chain
  *
