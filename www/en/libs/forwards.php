@@ -346,10 +346,10 @@ function forwards_validate($forward){
         if($forward['servers_id']){
 
             if(is_natural($forward['servers_id'])){
-                $exists = sql_get('SELECT `id` FROM `servers` WHERE `id` = :id AND `status` IS NULL', array(':id' => $forward['servers_id']), true);
+                $exists = sql_get('SELECT `id` FROM `servers` WHERE `id` = :id', array(':id' => $forward['servers_id']), true);
 
             }else{
-                $exists = sql_get('SELECT `id` FROM `servers` WHERE `seohostname` = :seohostname AND `status` IS NULL', array(':seohostname' => $forward['servers_id']), true);
+                $exists = sql_get('SELECT `id` FROM `servers` WHERE `seohostname` = :seohostname', array(':seohostname' => $forward['servers_id']), true);
             }
 
             if(!$exists){
@@ -363,10 +363,10 @@ function forwards_validate($forward){
 
         if($forward['source_id']){
             if(is_natural($forward['source_id'])){
-                $exists = sql_get('SELECT `id` FROM `servers` WHERE `id` = :id AND `status` IS NULL', array(':id' => $forward['source_id']), true);
+                $exists = sql_get('SELECT `id` FROM `servers` WHERE `id` = :id', array(':id' => $forward['source_id']), true);
 
             }else{
-                $exists = sql_get('SELECT `id` FROM `servers` WHERE `seohostname` = :seohostname AND `status` IS NULL', array(':seohostname' => $forward['source_id']), true);
+                $exists = sql_get('SELECT `id` FROM `servers` WHERE `seohostname` = :seohostname', array(':seohostname' => $forward['source_id']), true);
             }
 
             if(!$exists){
@@ -380,10 +380,10 @@ function forwards_validate($forward){
 
         if($forward['target_id']){
             if(is_natural($forward['target_id'])){
-                $exists = sql_get('SELECT `id` FROM `servers` WHERE `id` = :id AND `status` IS NULL', array(':id' => $forward['target_id']), true);
+                $exists = sql_get('SELECT `id` FROM `servers` WHERE `id` = :id', array(':id' => $forward['target_id']), true);
 
             }else{
-                $exists = sql_get('SELECT `id` FROM `servers` WHERE `seohostname` = :seohostname AND `status` IS NULL', array(':seohostname' => $forward['target_id']), true);
+                $exists = sql_get('SELECT `id` FROM `servers` WHERE `seohostname` = :seohostname', array(':seohostname' => $forward['target_id']), true);
             }
 
             if(!$exists){

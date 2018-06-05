@@ -288,13 +288,23 @@ function servers_get($host, $database = false, $return_proxies = true, $limited_
         if($server and $return_proxies){
             $server['proxies'] = array();
 
-            $proxy = $server['id'];
+            $server_proxy = servers_get_proxy($server['id']);
 
-            while($proxy){
-                $server_proxy        = servers_get_proxy($proxy);
+            if($server_proxy){
                 $server['proxies'][] = $server_proxy;
                 $proxy               = $server_proxy['proxies_id'];
+
+                while($proxy){
+                    $server_proxy        = servers_get_proxy($proxy);
+                    $server['proxies'][] = $server_proxy;
+                    $proxy               = $server_proxy['proxies_id'];
+
+                }
+
+                $server['proxies'] = array_filter($server['proxies']);
             }
+
+
         }
 
         return $server;

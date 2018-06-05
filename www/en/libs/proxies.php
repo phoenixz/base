@@ -65,12 +65,12 @@ function proxies_insert_create($prev, $insert, $protocols, $apply){
             $new_forward['protocol']    = $protocol;
             $new_forward['description'] = 'Rule added by proxies library on '.date('Y-m-d H:i:s');
 
-
             /*
              * Insert new rule and apply
              */
             log_console(tr('Inserting first server on the proxies chain'));
             forwards_insert($new_forward);
+
         }
 
         /*
@@ -91,9 +91,10 @@ function proxies_insert_create($prev, $insert, $protocols, $apply){
         forwards_insert($new_forward);
 
         /*
-         * Updating proxy relation on database
+         * Creating relation on database
          */
-        sql_query('UPDATE `servers` SET `ssh_proxies_id` = :proxy_id WHERE `id` = :id', array(':id' => $prev['id'],':proxy_id' => $insert['id']));
+        proxies_create_relation($prev['id'], $insert['id']);
+        //sql_query('UPDATE `servers` SET `ssh_proxies_id` = :proxy_id WHERE `id` = :id', array(':id' => $prev['id'],':proxy_id' => $insert['id']));
 
     }catch(Exception $e){
         throw new bException('proxies_insert_create(): Failed', $e);
@@ -246,7 +247,7 @@ function proxies_insert_front($prev, $insert, $protocols, $apply){
          * Updating proxy chain
          */
         log_console(tr('Updating databse with new proxy chain'));
-        sql_query('UPDATE `servers` SET `ssh_proxies_id` = :proxy_id WHERE `id` = :id', array(':id' => $prev['id'],':proxy_id' => $insert['id']));
+        proxies_create_relation($prev['id'], $insert['id']);
 
     }catch(Exception $e){
 		throw new bException('proxies_insert_front(): Failed', $e);
@@ -353,12 +354,19 @@ function proxies_insert_middle($prev, $next, $insert, $apply){
 
         forwards_update($ssh_forward_prev);
 
+        //sql_query('UPDATE `servers` SET `ssh_proxies_id` = :proxy_id WHERE `id` = :id', array(':id' => $prev['id'],   ':proxy_id' => $insert['id']));
+        //sql_query('UPDATE `servers` SET `ssh_proxies_id` = :proxy_id WHERE `id` = :id', array(':id' => $insert['id'], ':proxy_id' => $next['id']));
+
         /*
          * After applying and updating rules, we must update proxies chain
          */
         log_console(tr('Updating proxies chain'));
-        sql_query('UPDATE `servers` SET `ssh_proxies_id` = :proxy_id WHERE `id` = :id', array(':id' => $prev['id'],   ':proxy_id' => $insert['id']));
-        sql_query('UPDATE `servers` SET `ssh_proxies_id` = :proxy_id WHERE `id` = :id', array(':id' => $insert['id'], ':proxy_id' => $next['id']));
+        proxies_update_relation($prev['id'], $next['id'], $insert['id']);
+
+        /*
+         * Creating new relation
+         */
+         proxies_create_relation($insert['id'], $next['id']);
 
     }catch(Exception $e){
 		throw new bException('proxies_insert_middle(): Failed', $e);
@@ -881,6 +889,93 @@ function proxies_validate_protocol($protocol){
 
     }catch(Exception $e){
 		throw new bException('proxies_validate_protocol(): Failed', $e);
+	}
+}
+
+
+
+/*
+ * Creates a new record on proxy_servers table to store relation between servers
+ *
+ * @param integer $servers_id
+ * @param integer $proxies_id
+ * @return integer, inserted id
+ */
+function proxies_create_relation($servers_id, $proxies_id){
+    try{
+        if(empty($servers_id)){
+            throw new bException(tr('No servers id specified'), 'not-specified');
+        }
+
+        if(empty($proxies_id)){
+            throw new bException(tr('No proxies id specified'), 'not-specified');
+        }
+
+        sql_query('INSERT INTO `proxy_servers` (`servers_id`, `proxies_id`)
+                   VALUES (:servers_id, :proxies_id)',
+
+                   array(':servers_id' => $servers_id, ':proxies_id' => $proxies_id));
+
+        $proxy_servers_id = sql_insert_id();
+    }catch(Exception $e){
+		throw new bException('proxies_create_relation(): Failed', $e);
+	}
+}
+
+
+
+/*
+ * Updates relation in database base for specified server, in case relation does
+ * not exists, a new record is created
+ *
+ * @param integer $servers_id
+ * @param integer $old_proxies_id
+ * @param integer $new_proxies_id
+ * @return void
+ */
+function proxies_update_relation($servers_id, $old_proxies_id, $new_proxies_id){
+    try{
+        if(empty($servers_id)){
+            throw new bException(tr('No servers id specified'), 'not-specified');
+        }
+
+        if(empty($old_proxies_id)){
+            throw new bException(tr('No old proxies id specified'), 'not-specified');
+        }
+
+        if(empty($new_proxies_id)){
+            throw new bException(tr('No new proxies id specified'), 'not-specified');
+        }
+
+        $record = sql_get('SELECT * FROM `proxy_servers`
+
+                                    WHERE `servers_id` = :servers_id
+                                    AND   `proxies_id` = :proxies_id',
+
+                                    array(':servers_id'=> $servers_id,
+                                          ':proxies_id'=> $old_proxies_id));
+
+        if($record){
+
+            sql_query('UPDATE `proxy_servers`
+
+                       SET    `proxies_id` = :proxies_id
+
+                       WHERE  `id` = :id',
+
+                      array(':id'         => $record['id'],
+                            ':proxies_id' => $new_proxies_id));
+
+        }else{
+            /*
+             * Record does not exist, creating a new one
+             */
+            proxies_create_relation($servers_id, $new_proxies_id);
+
+        }
+
+    }catch(Exception $e){
+		throw new bException('proxies_update_relation(): Failed', $e);
 	}
 }
 ?>
