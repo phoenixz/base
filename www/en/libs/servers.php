@@ -240,7 +240,6 @@ function servers_get($host, $database = false, $return_proxies = true, $limited_
             $query =  'SELECT `servers`.`id`,
                               `servers`.`hostname`,
                               `servers`.`port`,
-                              `servers`.`ssh_proxies_id`,
                               `servers`.`ipv4`';
 
         }else{
@@ -248,7 +247,6 @@ function servers_get($host, $database = false, $return_proxies = true, $limited_
                               `servers`.`hostname`,
                               `servers`.`port`,
                               `servers`.`ssh_accounts_id`,
-                              `servers`.`ssh_proxies_id`,
                               `servers`.`ipv4`,
 
                               `ssh_accounts`.`username`,
@@ -290,12 +288,12 @@ function servers_get($host, $database = false, $return_proxies = true, $limited_
         if($server and $return_proxies){
             $server['proxies'] = array();
 
-            $proxy = $server['ssh_proxies_id'];
+            $proxy = $server['id'];
 
             while($proxy){
-                $server_proxy        = servers_get($proxy, $database, false, true);
+                $server_proxy        = servers_get_proxy($proxy);
                 $server['proxies'][] = $server_proxy;
-                $proxy               = $server_proxy['ssh_proxies_id'];
+                $proxy               = $server_proxy['proxies_id'];
             }
         }
 
@@ -414,6 +412,38 @@ function servers_get_public_ip($hostname){
 
     }catch(Exception $e){
         throw new bException('servers_get_public_ip(): Failed', $e);
+    }
+}
+
+
+
+/*
+ * Returns information about the proxy linked to the parent server
+ *
+ * @param mixed $host, id or hostname for a specified server
+ * @return array
+ */
+function servers_get_proxy($host){
+    try{
+        $server = sql_get('SELECT `servers`.`id`,
+                                  `servers`.`hostname`,
+                                  `servers`.`port`,
+                                  `servers`.`ipv4`,
+                                  `proxy_servers`.`proxies_id`
+
+                           FROM `proxy_servers`
+
+                           LEFT JOIN `servers`
+                           ON        `servers`.`id` = `proxy_servers`.`proxies_id`
+
+                           WHERE     `proxy_servers`.`servers_id` = :servers_id',
+
+                           array(':servers_id' => $host));
+
+        return $server;
+
+    }catch(Exception $e){
+        throw new bException('servers_get_proxy(): Failed', $e);
     }
 }
 ?>
