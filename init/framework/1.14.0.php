@@ -15,15 +15,29 @@ sql_query('CREATE TABLE `proxy_servers` (`id`          INT(11)      NOT NULL AUT
 
                                     PRIMARY KEY `id`         (`id`),
                                             KEY `servers_id` (`servers_id`),
-                                            KEY `proxies_id`  (`source_id`),
+                                            KEY `proxies_id` (`proxies_id`),
                                             KEY `status`     (`status`),
 
-                                    CONSTRAINT `fk_forwards_servers_id` FOREIGN KEY (`servers_id`) REFERENCES `servers` (`id`) ON DELETE RESTRICT,
-                                    CONSTRAINT `fk_forwards_proxies_id` FOREIGN KEY (`proxies_id`) REFERENCES `servers` (`id`) ON DELETE RESTRICT,
-                                    CONSTRAINT `fk_forwards_createdby`  FOREIGN KEY (`createdby`)  REFERENCES `users`   (`id`) ON DELETE RESTRICT
+                                    CONSTRAINT `fk_proxy_servers_servers_id` FOREIGN KEY (`servers_id`) REFERENCES `servers` (`id`) ON DELETE RESTRICT,
+                                    CONSTRAINT `fk_proxy_servers_proxies_id` FOREIGN KEY (`proxies_id`) REFERENCES `servers` (`id`) ON DELETE RESTRICT,
+                                    CONSTRAINT `fk_proxy_servers_createdby`  FOREIGN KEY (`createdby`)  REFERENCES `users`   (`id`) ON DELETE RESTRICT
 
                                   ) ENGINE=InnoDB AUTO_INCREMENT='.$_CONFIG['db']['core']['autoincrement'].' DEFAULT CHARSET="'.$_CONFIG['db']['core']['charset'].'" COLLATE="'.$_CONFIG['db']['core']['collate'].'";');
 
+
+/*
+ * Inserting proxy relation on new table
+ */
+$servers = sql_query('SELECT `id`, `ssh_proxies_id` FROM `servers` WHERE ssh_proxies_id IS NOT NULL');
+
+while($server = sql_fetch($servers)){
+
+    sql_query('INSERT INTO `proxy_servers` (`servers_id`, `proxies_id`)
+               VALUES                      (:servers_id , :proxies_id)',
+
+               array(':servers_id'  => $server['id'],
+                     ':proxies_id'  => $server['ssh_proxies_id']));
+}
 
 /*
  * Removing ssh_proxies_id from servers table
