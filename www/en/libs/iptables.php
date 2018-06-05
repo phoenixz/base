@@ -127,7 +127,7 @@ function iptables_set_prerouting($server, $protocol, $origin_port, $destination_
         /*
          * With the operation variable we determine if we must add a new rule or delete it
          */
-        $operation        = $operation == 'add'?'-A':'-D';
+        $operation = (($operation == 'add') ? '-A' : '-D');
 
         iptables_exec($server, ' -t nat '.$operation.' PREROUTING -p tcp --dport '.$origin_port.' -j DNAT --to-destination '.$destination_ip.':'.$destination_port);
 
@@ -219,7 +219,7 @@ function iptables_delete_all($server){
 
 /*
  * Adds a rule on iptables to start accepting traffic from a specific ip
- * on  a specific port in a specific server
+ * on a specific port in a specific server
  *
  * @param mixed $server the hostname or id for a specific server
  * @param string $ip, Accept traffic from this ip
@@ -230,12 +230,12 @@ function iptables_delete_all($server){
 function iptables_accept_traffic($server, $ip, $port, $protocol){
     try{
         $result = servers_exec($server, 'if sudo iptables -L -v -n|grep '.$ip.'.*dpt:'.$port.'; then echo "exists"; else echo 0; fi');
+
         /*
          * If rule does not exist, we add it
          */
         if(!$result[0]){
             iptables_exec($server, ' -A INPUT -p '.$protocol.' -s '.$ip.' --dport '.$port.' -j ACCEPT');
-
         }
 
     }catch(Exception $e){

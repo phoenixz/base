@@ -40,7 +40,7 @@ function proxies_insert_create($prev, $insert, $protocols, $apply){
         $protocol_port = array();
 
         foreach($protocols as $protocol){
-            $data_protocol = explode(":", $protocol);
+            $data_protocol = explode(':', $protocol);
 
             if(!isset($data_protocol[1]) or !is_natural($data_protocol[1]) or ($data_protocol[1] > 65535)){
                 throw new bException(tr('proxies_insert_create(): Invalid port ":port" specified for protocol ":protocol"', array(':port' => $data_protocol[1], ':protocol' => $data_protocol[0])), 'invalid');
@@ -63,7 +63,7 @@ function proxies_insert_create($prev, $insert, $protocols, $apply){
             $new_forward['target_ip']   = $prev['ipv4'];
             $new_forward['target_port'] = $port;
             $new_forward['protocol']    = $protocol;
-            $new_forward['description'] = 'Rule added by proxies library on '.date('Y-m-d H:i:s');
+            $new_forward['description'] = 'Rule added by '.PROJECT.' proxies library on '.date_convert(null, 'human_readable');
 
             /*
              * Insert new rule and apply
@@ -93,8 +93,8 @@ function proxies_insert_create($prev, $insert, $protocols, $apply){
         /*
          * Creating relation on database
          */
-        proxies_create_relation($prev['id'], $insert['id']);
-        //sql_query('UPDATE `servers` SET `ssh_proxies_id` = :proxy_id WHERE `id` = :id', array(':id' => $prev['id'],':proxy_id' => $insert['id']));
+        load_libs('servers');
+        servers_add_ssh_proxy($prev['id'], $insert['id']);
 
     }catch(Exception $e){
         throw new bException('proxies_insert_create(): Failed', $e);
@@ -176,7 +176,6 @@ function proxies_insert_front($prev, $insert, $protocols, $apply){
                 log_console(tr('Applying forward rule on prev server for new source port'));
                 forwards_insert($prev_forward);
 
-
                 /*
                  * Deleting rule from data base
                  */
@@ -186,8 +185,6 @@ function proxies_insert_front($prev, $insert, $protocols, $apply){
                  */
                 $forward['apply'] = $apply;
                 forwards_delete($forward);
-
-
             }
 
         }else{
@@ -247,7 +244,8 @@ function proxies_insert_front($prev, $insert, $protocols, $apply){
          * Updating proxy chain
          */
         log_console(tr('Updating databse with new proxy chain'));
-        proxies_create_relation($prev['id'], $insert['id']);
+        load_libs('servers');
+        servers_add_ssh_proxy($prev['id'], $insert['id']);
 
     }catch(Exception $e){
 		throw new bException('proxies_insert_front(): Failed', $e);
@@ -303,8 +301,6 @@ function proxies_insert_middle($prev, $next, $insert, $apply){
             $next_forward['protocol']    = $forward['protocol'];
             $next_forward['description'] = 'Rule added by proxies library on '.date('Y-m-d H:i:s');
 
-
-
             /*
              * Apply forward rule on inserted server and start accepting traffic on prev server
              */
@@ -322,7 +318,6 @@ function proxies_insert_middle($prev, $next, $insert, $apply){
              */
             log_console(tr('Applying new rule on next server to redirect traffic to inserted server'));
             forwards_insert($next_forward);
-
         }
 
         /*
@@ -358,12 +353,13 @@ function proxies_insert_middle($prev, $next, $insert, $apply){
          * After applying and updating rules, we must update proxies chain
          */
         log_console(tr('Updating proxies chain'));
-        proxies_update_relation($prev['id'], $next['id'], $insert['id']);
+        servers_update_ssh_proxy($prev['id'], $next['id'], $insert['id']);
 
         /*
          * Creating new relation
          */
-         proxies_create_relation($insert['id'], $next['id']);
+        load_libs('servers');
+        servers_add_ssh_proxy($insert['id'], $next['id']);
 
     }catch(Exception $e){
 		throw new bException('proxies_insert_middle(): Failed', $e);
@@ -399,28 +395,23 @@ function proxies_insert($root_hostname, $insert_hostname, $target_hostname, $loc
 
         list($prev, $next) = proxies_get_prev_next_insert($root_hostname, $target_hostname, $root['proxies'], $location);
 
-
         if(!empty($prev) and empty($next)){
             /*
              * If there is not next server, inserted server goes at the front
              */
             if(empty($root['proxies'])){
-
                 proxies_insert_create($prev, $insert, $protocols, $apply);
 
             }else{
-
                 proxies_insert_front($prev, $insert, $protocols, $apply);
-
             }
 
             /*
              * Drop everything execept previous rules REVIEW
              */
             log_console(tr('Adding iptables rule to drop all except previous rules on inserted server'));
-            //forwards_deny_access($insert['id']);
 
-        } else{
+        }else{
             /*
              * If there is and prev and next server, inserted server goest in the middle
              */
@@ -490,7 +481,7 @@ function proxies_remove_front($prev, $remove, $apply){
          * Updating proxies chaing on database
          */
         log_console(tr('Updating relation on database for proxy chain'));
-        proxies_delete_relation($prev['id'], $remove['id']);
+        servers_delete_ssh_proxy($prev['id'], $remove['id']);
 
     }catch(Exception $e){
 		throw new bException('proxies_remove_front(): Failed', $e);
@@ -533,7 +524,6 @@ function proxies_remove_middle($prev, $next, $remove, $apply){
                     $new_forward['target_id']   = $prev['id'];
                     $new_forward['target_ip']   = $prev['ipv4'];
                     $new_forward['target_port'] = $remove_forward['target_port'];
-
                     break;
                 }
             }
@@ -561,8 +551,8 @@ function proxies_remove_middle($prev, $next, $remove, $apply){
         /*
          * Update proxies chain on database
          */
-        proxies_update_relation($prev['id'], $remove['id'], $next['id']);
-        proxies_delete_relation($remove['id'], $next['id']);
+        servers_update_ssh_proxy($prev['id']  , $remove['id'], $next['id']);
+        servers_delete_ssh_proxy($remove['id'], $next['id']);
 
     }catch(Exception $e){
 		throw new bException('proxies_remove_middle(): Failed', $e);
@@ -584,7 +574,7 @@ function proxies_remove($root_host, $remove_host, $apply = true){
             throw new bException(tr('proxies_remove(): You can not remove host ":remove_host", it is the main host on the proxies chain', array(':remove_host' => $remove_host)), 'invalid');
         }
 
-        $root   = proxies_get_server($root_host, true);
+        $root = proxies_get_server($root_host, true);
 
         if($remove_host === 'all'){
             /*
@@ -617,7 +607,6 @@ function proxies_remove($root_host, $remove_host, $apply = true){
 
         }else{
             proxies_remove_middle($prev, $next, $remove, $apply);
-
         }
 
     }catch(Exception $e){
@@ -636,13 +625,11 @@ function proxies_remove($root_host, $remove_host, $apply = true){
  */
 function proxies_get_prev_next_remove($root_server, $remove_server, $proxies){
     try{
-
         $prev = array();
         $next = array();
 
         foreach($proxies as $position => $proxy){
             if($proxy['hostname'] == $remove_server['hostname']){
-
                 /*
                  * Getting prev server
                  */
@@ -658,11 +645,9 @@ function proxies_get_prev_next_remove($root_server, $remove_server, $proxies){
                  */
                 if(isset($proxies[$position + 1])){
                     $next = proxies_get_server($proxies[$position + 1]['id']);
-
                 }
 
                 break;
-
             }
         }
 
@@ -890,115 +875,6 @@ function proxies_validate_protocol($protocol){
 
     }catch(Exception $e){
 		throw new bException('proxies_validate_protocol(): Failed', $e);
-	}
-}
-
-
-
-/*
- * Creates a new record on proxy_servers table to store relation between servers
- *
- * @param integer $servers_id
- * @param integer $proxies_id
- * @return integer, inserted id
- */
-function proxies_create_relation($servers_id, $proxies_id){
-    try{
-        if(empty($servers_id)){
-            throw new bException(tr('No servers id specified'), 'not-specified');
-        }
-
-        if(empty($proxies_id)){
-            throw new bException(tr('No proxies id specified'), 'not-specified');
-        }
-
-        sql_query('INSERT INTO `proxy_servers` (`servers_id`, `proxies_id`)
-                   VALUES (:servers_id, :proxies_id)',
-
-                   array(':servers_id' => $servers_id, ':proxies_id' => $proxies_id));
-
-        $proxy_servers_id = sql_insert_id();
-    }catch(Exception $e){
-		throw new bException('proxies_create_relation(): Failed', $e);
-	}
-}
-
-
-
-/*
- * Updates relation in database base for specified server, in case relation does
- * not exists, a new record is created
- *
- * @param integer $servers_id
- * @param integer $old_proxies_id
- * @param integer $new_proxies_id
- * @return void
- */
-function proxies_update_relation($servers_id, $old_proxies_id, $new_proxies_id){
-    try{
-        if(empty($servers_id)){
-            throw new bException(tr('No servers id specified'), 'not-specified');
-        }
-
-        if(empty($old_proxies_id)){
-            throw new bException(tr('No old proxies id specified'), 'not-specified');
-        }
-
-        if(empty($new_proxies_id)){
-            throw new bException(tr('No new proxies id specified'), 'not-specified');
-        }
-
-        $record = sql_get('SELECT * FROM `proxy_servers`
-
-                                    WHERE `servers_id` = :servers_id
-                                    AND   `proxies_id` = :proxies_id',
-
-                                    array(':servers_id'=> $servers_id,
-                                          ':proxies_id'=> $old_proxies_id));
-
-        if($record){
-
-            sql_query('UPDATE `proxy_servers`
-
-                       SET    `proxies_id` = :proxies_id
-
-                       WHERE  `id` = :id',
-
-                      array(':id'         => $record['id'],
-                            ':proxies_id' => $new_proxies_id));
-
-        }else{
-            /*
-             * Record does not exist, creating a new one
-             */
-            proxies_create_relation($servers_id, $new_proxies_id);
-
-        }
-
-    }catch(Exception $e){
-		throw new bException('proxies_update_relation(): Failed', $e);
-	}
-}
-
-
-
-/*
- * Deletes from data base relation between two servers
- * @param integer $servers_id
- * @param integer $proxies_id
- */
-function proxies_delete_relation($servers_id, $proxies_id){
-    try{
-        sql_query('DELETE FROM `proxy_servers`
-
-                   WHERE servers_id = :servers_id
-                   AND proxies_id   = :proxies_id',
-
-                   array(':servers_id' => $servers_id,
-                         ':proxies_id' => $proxies_id));
-
-    }catch(Exception $e){
-		throw new bException('proxies_delete_relation(): Failed', $e);
 	}
 }
 ?>

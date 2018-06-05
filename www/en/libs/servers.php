@@ -439,14 +439,14 @@ function servers_get_proxy($host){
                                   `servers`.`hostname`,
                                   `servers`.`port`,
                                   `servers`.`ipv4`,
-                                  `proxy_servers`.`proxies_id`
+                                  `servers_ssh_proxies`.`proxies_id`
 
-                           FROM `proxy_servers`
+                           FROM `servers_ssh_proxies`
 
                            LEFT JOIN `servers`
-                           ON        `servers`.`id` = `proxy_servers`.`proxies_id`
+                           ON        `servers`.`id`                     = `servers_ssh_proxies`.`proxies_id`
 
-                           WHERE     `proxy_servers`.`servers_id` = :servers_id',
+                           WHERE     `servers_ssh_proxies`.`servers_id` = :servers_id',
 
                            array(':servers_id' => $host));
 
@@ -455,5 +455,117 @@ function servers_get_proxy($host){
     }catch(Exception $e){
         throw new bException('servers_get_proxy(): Failed', $e);
     }
+}
+
+
+
+/*
+ * Add the specified proxy $proxies_id to the proxy chain for the specified $servers_id
+ *
+ * @param integer $servers_id
+ * @param integer $proxies_id
+ * @return integer servers_ssh_proxies insert_id
+ */
+function servers_add_ssh_proxy($servers_id, $proxies_id){
+    try{
+        if(empty($servers_id)){
+            throw new bException(tr('proxies_create_relation(): No servers id specified'), 'not-specified');
+        }
+
+        if(empty($proxies_id)){
+            throw new bException(tr('proxies_create_relation(): No proxies id specified'), 'not-specified');
+        }
+
+        sql_query('INSERT INTO `servers_ssh_proxies` (`servers_id`, `proxies_id`)
+                   VALUES                            (:servers_id , :proxies_id )',
+
+                   array(':servers_id' => $servers_id,
+                         ':proxies_id' => $proxies_id));
+
+        return sql_insert_id();
+
+    }catch(Exception $e){
+		throw new bException('proxies_create_relation(): Failed', $e);
+	}
+}
+
+
+
+/*
+ * Updates relation in database base for specified server, in case relation does
+ * not exists, a new record is created
+ *
+ * @param integer $servers_id
+ * @param integer $old_proxies_id
+ * @param integer $new_proxies_id
+ * @return void
+ */
+function servers_update_ssh_proxy($servers_id, $old_proxies_id, $new_proxies_id){
+    try{
+        if(empty($servers_id)){
+            throw new bException(tr('servers_update_ssh_proxy(): No servers id specified'), 'not-specified');
+        }
+
+        if(empty($old_proxies_id)){
+            throw new bException(tr('servers_update_ssh_proxy(): No old proxies id specified'), 'not-specified');
+        }
+
+        if(empty($new_proxies_id)){
+            throw new bException(tr('servers_update_ssh_proxy(): No new proxies id specified'), 'not-specified');
+        }
+
+        $id = sql_get('SELECT `id`
+
+                       FROM   `servers_ssh_proxies`
+
+                       WHERE  `servers_id` = :servers_id
+                       AND    `proxies_id` = :proxies_id',
+
+                       true, array(':servers_id' => $servers_id,
+                                   ':proxies_id' => $old_proxies_id));
+
+        if($id){
+            sql_query('UPDATE `servers_ssh_proxies`
+
+                       SET    `proxies_id` = :proxies_id
+
+                       WHERE  `id`         = :id',
+
+                       array(':id'         => $id,
+                             ':proxies_id' => $new_proxies_id));
+
+        }else{
+            /*
+             * Record does not exist, creating a new one
+             */
+            load_libs('servers');
+            servers_add_ssh_proxy($servers_id, $new_proxies_id);
+        }
+
+    }catch(Exception $e){
+		throw new bException('servers_update_ssh_proxy(): Failed', $e);
+	}
+}
+
+
+
+/*
+ * Deletes from data base relation between two servers
+ * @param integer $servers_id
+ * @param integer $proxies_id
+ */
+function servers_delete_ssh_proxy($servers_id, $proxies_id){
+    try{
+        sql_query('DELETE FROM `servers_ssh_proxies`
+
+                   WHERE       `servers_id` = :servers_id
+                   AND         `proxies_id` = :proxies_id',
+
+                   array(':servers_id' => $servers_id,
+                         ':proxies_id' => $proxies_id));
+
+    }catch(Exception $e){
+		throw new bException('servers_delete_ssh_proxy(): Failed', $e);
+	}
 }
 ?>
