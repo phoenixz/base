@@ -305,14 +305,14 @@ function forwards_update($forward, $modifiedby = null){
 function forwards_update_apply($forward, $old_forward){
     try{
         /*
-         * Remove old rule
-         */
-        forwards_delete_apply($old_forward);
-
-        /*
          * Add new rule
          */
         forwards_apply_rule($forward);
+
+        /*
+         * Remove old rule
+         */
+        forwards_delete_apply($old_forward);
 
     }catch(Exception $e){
         throw new bException('forwards_update_apply(): Failed', $e);
@@ -591,6 +591,53 @@ function forwards_destroy($server){
         iptables_clean_chain_nat($server);
     }catch(Exception $e){
         throw new bException('forwards_destroy(): Failed', $e);
+    }
+}
+
+
+
+/*
+ * Returns a forward rule for a specified server and protocol
+ * @param integer $server, id for specified server
+ * @return array
+ */
+function forwards_get_by_protocol($server, $protocol){
+    try{
+        $forward = sql_get('SELECT     `id`,
+                                       `servers_id`,
+                                       `source_ip`,
+                                       `source_port`,
+                                       `source_id`,
+                                       `target_ip`,
+                                       `target_port`,
+                                       `target_id`,
+                                       `protocol`
+
+                            FROM       `forwards`
+
+                            WHERE      `servers_id` = :servers_id
+                            AND        `protocol`   = :protocol',
+
+                                array(':servers_id' => $server,
+                                      ':protocol'   => $protocol));
+
+        return $forward;
+
+    }catch(Exception $e){
+        throw new bException('forwards_get_by_protocol(): Failed', $e);
+    }
+}
+
+
+
+/*
+ *
+ */
+function forwards_deny_access($server){
+    try{
+        iptalbes_drop_all($server);
+    }catch(Exception $e){
+        throw new bException('forwards_deny_access(): Failed', $e);
     }
 }
 ?>

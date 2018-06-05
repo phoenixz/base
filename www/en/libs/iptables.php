@@ -235,10 +235,7 @@ function iptables_accept_traffic($server, $ip, $port, $protocol){
          */
         if(!$result[0]){
             iptables_exec($server, ' -A INPUT -p '.$protocol.' -s '.$ip.' --dport '.$port.' -j ACCEPT');
-            /*
-             * Block all the rest of the world
-             */
-            //iptables_exec($server, ' -A INPUT -p tcp --dport '.$port.' -j DROP');
+
         }
 
     }catch(Exception $e){
@@ -441,6 +438,23 @@ function iptables_postrouting_exists($server, $port, $source_ip){
 
     }catch(Exception $e){
         throw new bException('iptables_postrouting_exists(): Failed', $e);
+    }
+}
+
+
+
+/*
+ * Drop all on server, just allowing configure rules
+ *
+ * @param mixed, server id or hostname for specified server
+ * @return void
+ */
+function iptalbes_drop_all($server){
+    try{
+        iptables_exec($server, '-P INPUT DROP');
+
+    }catch(Exception $e){
+        throw new bException('iptalbes_drop_all(): Failed', $e);
     }
 }
 ?>

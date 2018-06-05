@@ -46,11 +46,12 @@ function proxies_insert_create($prev, $insert, $protocols, $apply){
                 throw new bException(tr('proxies_insert_create(): Invalid port ":port" specified for protocol ":protocol"', array(':port' => $data_protocol[1], ':protocol' => $data_protocol[0])), 'invalid');
             }
 
-            $protocol_port[$data_protocol[0]] = $data_protocol[1];
+            $protocol = proxies_validate_protocol($data_protocol[0]);
+
+            $protocol_port[$protocol] = $data_protocol[1];
         }
 
         foreach($protocol_port as $protocol => $port){
-
             $default_port = proxies_get_default_port($protocol);
 
             $new_forward['apply']       = $apply;
@@ -64,12 +65,30 @@ function proxies_insert_create($prev, $insert, $protocols, $apply){
             $new_forward['protocol']    = $protocol;
             $new_forward['description'] = 'Rule added by proxies library on '.date('Y-m-d H:i:s');
 
+
             /*
              * Insert new rule and apply
              */
             log_console(tr('Inserting first server on the proxies chain'));
             forwards_insert($new_forward);
         }
+
+        /*
+         * Allowing ssh on inserted server from prev server
+         */
+        $new_forward['apply']       = $apply;
+        $new_forward['servers_id']  = $prev['id'];
+        $new_forward['source_id']   = $prev['id'];
+        $new_forward['source_ip']   = $prev['ipv4'];
+        $new_forward['source_port'] = $prev['port'];
+        $new_forward['target_id']   = $insert['id'];
+        $new_forward['target_ip']   = $insert['ipv4'];
+        $new_forward['target_port'] = $insert['port'];
+        $new_forward['protocol']    = 'ssh';
+        $new_forward['description'] = 'Rule added by proxies library on '.date('Y-m-d H:i:s');
+
+        log_console(tr('Applying rule on inserted server to allow ssh connections from prev server'));
+        forwards_insert($new_forward);
 
         /*
          * Updating proxy relation on database
@@ -109,95 +128,65 @@ function proxies_insert_front($prev, $insert, $protocols, $apply){
             foreach($prev_forwards as $forward){
                 $default_source_port = proxies_get_default_port($forward['protocol']);
 
-                if($forward['protocol'] == 'ssh'){
-                    /*
-                     * For ssh we only accept traffic from
-                     */
-                    $new_forward              = $forward;
-                    $new_forward['apply']     = true;
-                    $new_forward['source_id'] = $insert['id'];
-                    $new_forward['source_ip'] = $insert['ipv4'];
-                    $new_forward['target_id'] = $prev['id'];
-                    $new_forward['target_ip'] = $prev['ipv4'];
+                /*
+                * Creating forward rule for inserted server
+                */
+                $random_port = mt_rand(1025, 65535);
 
-                    /*
-                     * Inserting and palying new rule
-                     */
-                    forwards_insert($new_forward);
+                $new_forward['apply']       = $apply;
+                $new_forward['servers_id']  = $insert['id'];
+                $new_forward['source_id']   = $insert['id'];
+                $new_forward['source_ip']   = $insert['ipv4'];
+                $new_forward['source_port'] = $default_source_port;
+                $new_forward['target_id']   = $prev['id'];
+                $new_forward['target_ip']   = $prev['ipv4'];
+                $new_forward['target_port'] = $random_port;
+                $new_forward['protocol']    = $forward['protocol'];
+                $new_forward['description'] = 'Rule added by proxies library on '.date('Y-m-d H:i:s');
 
-                    /*
-                     * Deleting old rule
-                     */
-                    $forward['apply'] = $apply;
+                $exists = forwards_exists($new_forward);
 
-                    forwards_delete($forward);
-
-                } else{
-                    /*
-                    * Creating forward rule for inserted server
-                    */
-                    $random_port = mt_rand(1025, 65535);
-
-                    $new_forward['apply']       = $apply;
-                    $new_forward['servers_id']  = $insert['id'];
-                    $new_forward['source_id']   = $insert['id'];
-                    $new_forward['source_ip']   = $insert['ipv4'];
-                    $new_forward['source_port'] = $default_source_port;
-                    $new_forward['target_id']   = $prev['id'];
-                    $new_forward['target_ip']   = $prev['ipv4'];
-                    $new_forward['target_port'] = $random_port;
-                    $new_forward['protocol']    = $forward['protocol'];
-                    $new_forward['description'] = 'Rule added by proxies library on '.date('Y-m-d H:i:s');
-
-                    $exists = forwards_exists($new_forward);
-
-                    /*
-                     * If source port is already in use throw exception
-                     */
-                    if($exists){
-                       throw new bException(tr('proxies_insert_front(): Port ":source_port" on host ":host" for protocol ":protocol" is already in use', array(':source_port' => $default_source_port, ':host' => $insert['hostname'])), 'invalid');
-                    }
-
-                    /*
-                     * Updating source port for forward rule on prev server
-                     */
-                    $prev_forward                = $forward;
-                    $prev_forward['apply']       = $apply;
-                    $prev_forward['source_port'] = $random_port;
-
-                    $exists = forwards_exists($prev_forward);
-
-                    if($exists){
-                       throw new bException(tr('proxies_insert_front(): Port ":source_port" on host ":host" for protocol ":protocol" is already in use', array(':source_port' => $prev['source_port'], ':host' => $prev['hostname'])), 'invalid');
-                    }
-
-                    /*
-                     * Inserting and aplying rules, first on inserted server then in prev server
-                     */
-                    log_console(tr('Applying forward rule on inserted server'));
-                    forwards_insert($new_forward);
-
-                    log_console(tr('Applying forward rule on prev server for new source port'));
-                    forwards_insert($prev_forward);
-
-
-                    /*
-                     * Deleting rule from data base
-                     */
-                    log_console(tr('Removing old forward rule on prev server'));
-                    /*
-                     * Do not apply, we continue listening on the same port
-                     */
-                    $forward['apply'] = $apply;
-                    forwards_delete($forward);
-
+                /*
+                 * If source port is already in use throw exception
+                 */
+                if($exists){
+                   throw new bException(tr('proxies_insert_front(): Port ":source_port" on host ":host" for protocol ":protocol" is already in use', array(':source_port' => $default_source_port, ':host' => $insert['hostname'])), 'invalid');
                 }
 
                 /*
-                 * Updating data base chain
+                 * Updating source port for forward rule on prev server
                  */
-                log_console(tr('Updating databse with new proxy chain'));
-                sql_query('UPDATE `servers` SET `ssh_proxies_id` = :proxy_id WHERE `id` = :id', array(':id' => $prev['id'],':proxy_id' => $insert['id']));
+                $prev_forward                = $forward;
+                $prev_forward['apply']       = $apply;
+                $prev_forward['source_port'] = $random_port;
+
+                $exists = forwards_exists($prev_forward);
+
+                if($exists){
+                   throw new bException(tr('proxies_insert_front(): Port ":source_port" on host ":host" for protocol ":protocol" is already in use', array(':source_port' => $prev['source_port'], ':host' => $prev['hostname'])), 'invalid');
+                }
+
+                /*
+                 * Inserting and aplying rules, first on inserted server then in prev server
+                 */
+                log_console(tr('Applying forward rule on inserted server'));
+                forwards_insert($new_forward);
+
+                log_console(tr('Applying forward rule on prev server for new source port'));
+                forwards_insert($prev_forward);
+
+
+                /*
+                 * Deleting rule from data base
+                 */
+                log_console(tr('Removing old forward rule on prev server'));
+                /*
+                 * Do not apply, we continue listening on the same port
+                 */
+                $forward['apply'] = $apply;
+                forwards_delete($forward);
+
+
             }
 
         }else{
@@ -221,34 +210,43 @@ function proxies_insert_front($prev, $insert, $protocols, $apply){
                 $forward['protocol']    = $protocol;
                 $forward['description'] = 'Rule added by proxies library on '.date('Y-m-d H:i:s');
 
-                if($protocol == 'ssh'){
-                    /*
-                     * :REVIEW: We keep the port configure on servers table
-                     */
-                    $forward['target_port'] = $prev['port'];
-                    $forward['apply']       = false;
-                    forwards_only_accept_traffic($forward);
+                $exists = forwards_exists($forward);
 
-                }else{
-                    $exists = forwards_exists($forward);
-
-                    /*
-                     * If source port is already in use throw exception
-                     */
-                    if($exists){
-                        throw new bException(tr('proxies_insert_front(): Port ":source_port" on host ":host" for protocol ":protocol" is already in use', array(':source_port' => $forward['source_port'], ':host' => $insert['hostname'], ':protocol' => $protocol)), 'invalid');
-                    }
+                /*
+                 * If source port is already in use throw exception
+                 */
+                if($exists){
+                    throw new bException(tr('proxies_insert_front(): Port ":source_port" on host ":host" for protocol ":protocol" is already in use', array(':source_port' => $forward['source_port'], ':host' => $insert['hostname'], ':protocol' => $protocol)), 'invalid');
                 }
-
                 forwards_insert($forward);
             }
-
-            /*
-             * Updating proxy chain
-             */
-            log_console(tr('Updating databse with new proxy chain'));
-            sql_query('UPDATE `servers` SET `ssh_proxies_id` = :proxy_id WHERE `id` = :id', array(':id' => $prev['id'],':proxy_id' => $insert['id']));
         }
+
+        /*
+         * For ssh we only accept traffic from
+         */
+        $new_forward['apply']       = $apply;
+        $new_forward['servers_id']  = $prev['id'];
+        $new_forward['source_id']   = $prev['id'];
+        $new_forward['source_ip']   = $prev['ipv4'];
+        $new_forward['source_port'] = $prev['port'];
+        $new_forward['target_id']   = $insert['id'];
+        $new_forward['target_ip']   = $insert['ipv4'];
+        $new_forward['target_port'] = $insert['port'];
+        $new_forward['protocol']    = 'ssh';
+        $new_forward['description'] = 'Rule added by proxies library on '.date('Y-m-d H:i:s');
+
+        /*
+         * Inserting and palying new rule
+         */
+        log_console(tr('Allowing ssh connection from prev server to inserted server'));
+        forwards_insert($new_forward);
+
+        /*
+         * Updating proxy chain
+         */
+        log_console(tr('Updating databse with new proxy chain'));
+        sql_query('UPDATE `servers` SET `ssh_proxies_id` = :proxy_id WHERE `id` = :id', array(':id' => $prev['id'],':proxy_id' => $insert['id']));
 
     }catch(Exception $e){
 		throw new bException('proxies_insert_front(): Failed', $e);
@@ -276,64 +274,35 @@ function proxies_insert_middle($prev, $next, $insert, $apply){
 
         foreach($next_forwards as $forward){
 
-            if($forward['protocol'] == 'ssh'){
-                log_console(tr('Getting rules for SSH'));
+            log_console(tr('Getting rules for protocol ":protocol"', array(':protocol' => $forward['protocol'])));
+            $random_port = mt_rand(1025, 65535);
 
-                $new_forward['apply']       = $apply;
-                $new_forward['servers_id']  = $insert['id'];
-                $new_forward['source_id']   = $insert['id'];
-                $new_forward['source_ip']   = $insert['ipv4'];
-                $new_forward['source_port'] = $insert['port'];
-                $new_forward['target_id']   = $prev['id'];
-                $new_forward['target_ip']   = $prev['ipv4'];
-                $new_forward['target_port'] = $forward['target_port'];
-                $new_forward['protocol']    = $forward['protocol'];
-                $new_forward['description'] = 'Rule added by proxies library on '.date('Y-m-d H:i:s');
+            $new_forward['apply']       = $apply;
+            $new_forward['servers_id']  = $insert['id'];
+            $new_forward['source_id']   = $insert['id'];
+            $new_forward['source_ip']   = $insert['ipv4'];
+            $new_forward['source_port'] = $random_port;
+            $new_forward['target_id']   = $prev['id'];
+            $new_forward['target_ip']   = $prev['ipv4'];
+            $new_forward['target_port'] = $forward['target_port'];
+            $new_forward['protocol']    = $forward['protocol'];
+            $new_forward['description'] = 'Rule added by proxies library on '.date('Y-m-d H:i:s');
 
-                /*
-                 * Updating forward rule on next server to start redirecting traffic to inserted server
-                 */
-                $next_forward['apply']       = $apply;
-                $next_forward['servers_id']  = $next['id'];
-                $next_forward['source_id']   = $next['id'];
-                $next_forward['source_ip']   = $next['ipv4'];
-                $next_forward['source_port'] = $forward['source_port'];
-                $next_forward['target_id']   = $insert['id'];
-                $next_forward['target_ip']   = $insert['ipv4'];
-                $next_forward['target_port'] = $insert['port'];
-                $next_forward['protocol']    = $forward['protocol'];
-                $next_forward['description'] = 'Rule added by proxies library on '.date('Y-m-d H:i:s');
+            /*
+             * Updating forward rule on next server to start redirecting traffic to inserted server
+             */
+            $next_forward['apply']       = $apply;
+            $next_forward['servers_id']  = $next['id'];
+            $next_forward['source_id']   = $next['id'];
+            $next_forward['source_ip']   = $next['ipv4'];
+            $next_forward['source_port'] = $forward['source_port'];
+            $next_forward['target_id']   = $insert['id'];
+            $next_forward['target_ip']   = $insert['ipv4'];
+            $next_forward['target_port'] = $random_port;
+            $next_forward['protocol']    = $forward['protocol'];
+            $next_forward['description'] = 'Rule added by proxies library on '.date('Y-m-d H:i:s');
 
-            }else{
-                log_console(tr('Getting rules for protocol ":protocol"', array(':protocol' => $forward['protocol'])));
-                $random_port = mt_rand(1025, 65535);
 
-                $new_forward['apply']       = $apply;
-                $new_forward['servers_id']  = $insert['id'];
-                $new_forward['source_id']   = $insert['id'];
-                $new_forward['source_ip']   = $insert['ipv4'];
-                $new_forward['source_port'] = $random_port;
-                $new_forward['target_id']   = $prev['id'];
-                $new_forward['target_ip']   = $prev['ipv4'];
-                $new_forward['target_port'] = $forward['target_port'];
-                $new_forward['protocol']    = $forward['protocol'];
-                $new_forward['description'] = 'Rule added by proxies library on '.date('Y-m-d H:i:s');
-
-                /*
-                 * Updating forward rule on next server to start redirecting traffic to inserted server
-                 */
-                $next_forward['apply']       = $apply;
-                $next_forward['servers_id']  = $next['id'];
-                $next_forward['source_id']   = $next['id'];
-                $next_forward['source_ip']   = $next['ipv4'];
-                $next_forward['source_port'] = $forward['source_port'];
-                $next_forward['target_id']   = $insert['id'];
-                $next_forward['target_ip']   = $insert['ipv4'];
-                $next_forward['target_port'] = $random_port;
-                $next_forward['protocol']    = $forward['protocol'];
-                $next_forward['description'] = 'Rule added by proxies library on '.date('Y-m-d H:i:s');
-
-            }
 
             /*
              * Apply forward rule on inserted server and start accepting traffic on prev server
@@ -356,11 +325,40 @@ function proxies_insert_middle($prev, $next, $insert, $apply){
         }
 
         /*
+         * Applying ssh rules to accept only connection from previous servers
+         */
+        log_console(tr('Getting rules for SSH on next server'));
+
+        $new_forward['apply']       = $apply;
+        $new_forward['servers_id']  = $insert['id'];
+        $new_forward['source_id']   = $insert['id'];
+        $new_forward['source_ip']   = $insert['ipv4'];
+        $new_forward['source_port'] = $insert['port'];
+        $new_forward['target_id']   = $next['id'];
+        $new_forward['target_ip']   = $next['ipv4'];
+        $new_forward['target_port'] = $next['port'];
+        $new_forward['protocol']    = 'ssh';
+        $new_forward['description'] = 'Rule added by proxies library on '.date('Y-m-d H:i:s');
+
+        forwards_insert($new_forward);
+
+        log_console(tr('Updating ssh rule on prev server'));
+        $ssh_forward_prev = forwards_get_by_protocol($prev['id'], 'ssh');
+
+        $ssh_forward_prev['apply']       = $apply;
+        $ssh_forward_prev['target_id']   = $insert['id'];
+        $ssh_forward_prev['target_ip']   = $insert['ipv4'];
+        $ssh_forward_prev['target_port'] = $insert['port'];
+        $ssh_forward_prev['description'] = 'Updating ssh on '.date('Y-m-d H:i:s');
+
+        forwards_update($ssh_forward_prev);
+
+        /*
          * After applying and updating rules, we must update proxies chain
          */
         log_console(tr('Updating proxies chain'));
         sql_query('UPDATE `servers` SET `ssh_proxies_id` = :proxy_id WHERE `id` = :id', array(':id' => $prev['id'],   ':proxy_id' => $insert['id']));
-        sql_query('UPDATE `servers` SET `ssh_proxies_id` = :proxy_id WHERE `id` = :id', array(':id' => $inserst['id'],':proxy_id' => $next['id']));
+        sql_query('UPDATE `servers` SET `ssh_proxies_id` = :proxy_id WHERE `id` = :id', array(':id' => $insert['id'], ':proxy_id' => $next['id']));
 
     }catch(Exception $e){
 		throw new bException('proxies_insert_middle(): Failed', $e);
@@ -410,6 +408,12 @@ function proxies_insert($root_hostname, $insert_hostname, $target_hostname, $loc
                 proxies_insert_front($prev, $insert, $protocols, $apply);
 
             }
+
+            /*
+             * Drop everything execept previous rules REVIEW
+             */
+            log_console(tr('Adding iptables rule to drop all except previous rules on inserted server'));
+            //forwards_deny_access($insert['id']);
 
         } else{
             /*
@@ -841,6 +845,42 @@ function proxies_get_default_port($protocol){
 
     }catch(Exception $e){
 		throw new bException('proxies_get_default_port(): Failed', $e);
+	}
+}
+
+
+
+/*
+ * Validate protocol in order to forward traffic, ssh is configured by default,
+ * in order to listen only connection from previous server
+ *
+ * @param string procotol
+ * @return string
+ */
+function proxies_validate_protocol($protocol){
+    try{
+        if(empty($protocol)){
+            throw new bException(tr('proxies_validate_protocol(): No protocol specified'), 'not-specified');
+        }
+
+        $protocol = strtolower($protocol);
+
+        switch($protocol){
+            case 'http':
+                //FALLTHROUGH
+            case 'https':
+                //FALLTHROUGH
+            case 'imap':
+                //FALLTHROUGH
+            case 'smtp':
+                //Valid protocols
+                break;
+        }
+
+        return $protocol;
+
+    }catch(Exception $e){
+		throw new bException('proxies_validate_protocol(): Failed', $e);
 	}
 }
 ?>
