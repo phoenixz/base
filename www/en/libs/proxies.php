@@ -354,9 +354,6 @@ function proxies_insert_middle($prev, $next, $insert, $apply){
 
         forwards_update($ssh_forward_prev);
 
-        //sql_query('UPDATE `servers` SET `ssh_proxies_id` = :proxy_id WHERE `id` = :id', array(':id' => $prev['id'],   ':proxy_id' => $insert['id']));
-        //sql_query('UPDATE `servers` SET `ssh_proxies_id` = :proxy_id WHERE `id` = :id', array(':id' => $insert['id'], ':proxy_id' => $next['id']));
-
         /*
          * After applying and updating rules, we must update proxies chain
          */
@@ -489,7 +486,7 @@ function proxies_remove_front($prev, $remove, $apply){
         /*
          * Updating proxies chaing on database
          */
-        sql_query('UPDATE `servers` SET `ssh_proxies_id` = :proxy_id WHERE `id` = :id', array(':id' => $prev['id'],':proxy_id' => null));
+        proxies_delete_relation($prev['id'], $remove['id']);
 
     }catch(Exception $e){
 		throw new bException('proxies_remove_front(): Failed', $e);
@@ -560,8 +557,8 @@ function proxies_remove_middle($prev, $next, $remove, $apply){
         /*
          * Update proxies chain on database
          */
-        sql_query('UPDATE `servers` SET `ssh_proxies_id` = :proxy_id WHERE `id` = :id', array(':id' => $prev['id']  ,':proxy_id' => $next['id']));
-        sql_query('UPDATE `servers` SET `ssh_proxies_id` = :proxy_id WHERE `id` = :id', array(':id' => $remove['id'],':proxy_id' => NULL));
+        proxies_update_relation($prev['id'], $remove['id'], $next['id']);
+        proxies_delete_relation($remove['id'], $next['id']);
 
     }catch(Exception $e){
 		throw new bException('proxies_remove_middle(): Failed', $e);
@@ -976,6 +973,28 @@ function proxies_update_relation($servers_id, $old_proxies_id, $new_proxies_id){
 
     }catch(Exception $e){
 		throw new bException('proxies_update_relation(): Failed', $e);
+	}
+}
+
+
+
+/*
+ * Deletes from data base relation between two servers
+ * @param integer $servers_id
+ * @param integer $proxies_id
+ */
+function proxies_delete_relation($servers_id, $proxies_id){
+    try{
+        sql_query('DELETE FROM `proxy_servers`
+
+                   WHERE servers_id = :servers_id
+                   AND proxies_id = :provies_id',
+
+                   array('servers_id' => $servers_id,
+                         'proxies_id' => $proxies_id));
+
+    }catch(Exception $e){
+		throw new bException('proxies_delete_relation(): Failed', $e);
 	}
 }
 ?>
