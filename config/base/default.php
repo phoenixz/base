@@ -323,7 +323,7 @@ $_CONFIG['security']           = array('signin'                             => a
                                        'seed'                               => '%T"$#HET&UJHRT87',                                      // SEED for generating codes
 
                                        'csrf'                               => array('enabled'          => true,                        // CSRF detection configuration. true | false | "force". Force will forcibly check every POST on CSRF
-                                                                                     'timeout'          => 120));                       // Timeout after page generation, where @ POST time the CSRF check will fail. Use 0 to disable
+                                                                                     'timeout'          => 0));                         // Timeout after page generation, where @ POST time the CSRF check will fail. Use 0 to disable
 
 
 // Sessions
