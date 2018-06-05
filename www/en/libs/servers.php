@@ -428,32 +428,68 @@ function servers_get_public_ip($hostname){
 
 
 /*
- * Returns information about the proxy linked to the parent server
+ * Returns the proxy (if available) linked to the specified $servers_id. If the specified $servers_id has multiple linked proxy servers, a single random one will be chosen and returned
  *
- * @param mixed $host, id or hostname for a specified server
+ * @param numeric $servers_id, id of the required server
  * @return array
  */
-function servers_get_proxy($host){
+function servers_get_proxy($servers_id){
     try{
-        $server = sql_get('SELECT `servers`.`id`,
-                                  `servers`.`hostname`,
-                                  `servers`.`port`,
-                                  `servers`.`ipv4`,
-                                  `servers_ssh_proxies`.`proxies_id`
+        $server = sql_get('SELECT    `servers`.`id`,
+                                     `servers`.`hostname`,
+                                     `servers`.`port`,
+                                     `servers`.`ipv4`,
+                                     `servers_ssh_proxies`.`proxies_id`
 
-                           FROM `servers_ssh_proxies`
+                           FROM      `servers_ssh_proxies`
 
                            LEFT JOIN `servers`
                            ON        `servers`.`id`                     = `servers_ssh_proxies`.`proxies_id`
 
-                           WHERE     `servers_ssh_proxies`.`servers_id` = :servers_id',
+                           WHERE     `servers_ssh_proxies`.`servers_id` = :servers_id
 
-                           array(':servers_id' => $host));
+                           ORDER BY  RAND()
+
+                           LIMIT     1',
+
+                           array(':servers_id' => $servers_id));
 
         return $server;
 
     }catch(Exception $e){
         throw new bException('servers_get_proxy(): Failed', $e);
+    }
+}
+
+
+
+/*
+ * Returns all the proxy servers (if available) linked to the specified $servers_id
+ *
+ * @param numeric $servers_id, id of the required server
+ * @return array
+ */
+function servers_list_proxies($servers_id){
+    try{
+        $servers = sql_list('SELECT    `servers`.`id`,
+                                       `servers`.`hostname`,
+                                       `servers`.`port`,
+                                       `servers`.`ipv4`,
+                                       `servers_ssh_proxies`.`proxies_id`
+
+                             FROM      `servers_ssh_proxies`
+
+                             LEFT JOIN `servers`
+                             ON        `servers`.`id`                     = `servers_ssh_proxies`.`proxies_id`
+
+                             WHERE     `servers_ssh_proxies`.`servers_id` = :servers_id',
+
+                             array(':servers_id' => $servers_id));
+
+        return $servers;
+
+    }catch(Exception $e){
+        throw new bException('servers_list_proxies(): Failed', $e);
     }
 }
 
