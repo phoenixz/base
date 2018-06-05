@@ -463,12 +463,14 @@ function proxies_remove_front($prev, $remove, $apply){
                     /*
                      * Applying new rule with default ports
                      */
+                    log_console(tr('Applying rule on prev server with default ports'));
                     forwards_insert($new_forward);
 
                     /*
                      * Removing old rule :REVIEW: something is wrong, rule is  not been deleted from database
                      */
                     $forward['apply'] = true;
+                    log_console(tr('Removing old rule'));
                     forwards_delete($forward);
                 }
             }
@@ -477,6 +479,7 @@ function proxies_remove_front($prev, $remove, $apply){
         /*
          * Remove rules from removed server
          */
+        log_console(tr('Removing all rules for removed server'));
         $remove_forwards = forwards_list($remove['id']);
 
         if($remove_forwards){
@@ -486,6 +489,7 @@ function proxies_remove_front($prev, $remove, $apply){
         /*
          * Updating proxies chaing on database
          */
+        log_console(tr('Updating relation on database for proxy chain'));
         proxies_delete_relation($prev['id'], $remove['id']);
 
     }catch(Exception $e){
@@ -988,10 +992,10 @@ function proxies_delete_relation($servers_id, $proxies_id){
         sql_query('DELETE FROM `proxy_servers`
 
                    WHERE servers_id = :servers_id
-                   AND proxies_id = :provies_id',
+                   AND proxies_id   = :proxies_id',
 
-                   array('servers_id' => $servers_id,
-                         'proxies_id' => $proxies_id));
+                   array(':servers_id' => $servers_id,
+                         ':proxies_id' => $proxies_id));
 
     }catch(Exception $e){
 		throw new bException('proxies_delete_relation(): Failed', $e);
