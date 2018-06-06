@@ -200,6 +200,9 @@ function storage_ui_process_dosubmit($params, $section, $page){
         html_flash_set($e, 'documents');
     }
 
+    /*
+     * NOTE: This return is AFTER the general function catch because it still has to return the $page!
+     */
     return $page;
 }
 

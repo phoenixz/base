@@ -37,10 +37,16 @@ function storage_url($url, $section = null, $page = null, $language = null){
 
         if($section){
             $url = str_replace(':seosection', $section['seoname'], $url);
+
+        }else{
+            $url = str_replace(':seosection', '', $url);
         }
 
         if($page and !empty($page['seoname'])){
             $url = str_replace(':seodocument', $page['seoname'], $url);
+
+        }else{
+           $url = str_replace(':seodocument', '', $url);
         }
 
         return $url;

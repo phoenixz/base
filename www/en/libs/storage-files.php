@@ -220,24 +220,22 @@ function storage_files_get($file, $documents_id, $pages_id = null){
             $execute[':filename'] = $file;
         }
 
-        $files = sql_get('SELECT    `files`.`id` AS `files_id`,
-                                    `files`.`filename`,
-                                    `files`.`type`,
-                                    `files`.`description`,
+        $file = sql_get('SELECT    `files`.`id` AS `files_id`,
+                                   `files`.`filename`,
+                                   `files`.`type`,
+                                   `files`.`description`,
 
-                                    `storage_files`.`id`,
-                                    `storage_files`.`priority`
+                                   `storage_files`.`id`,
+                                   `storage_files`.`priority`
 
-                          FROM      `storage_files`
+                         FROM      `storage_files`
 
-                          LEFT JOIN `files`
-                          ON        `files`.`id` = `storage_files`.`files_id`
+                         LEFT JOIN `files`
+                         ON        `files`.`id` = `storage_files`.`files_id` '.$where,
 
-                          '.$where,
+                         $execute);
 
-                          $execute);
-
-        return $files;
+        return $file;
 
     }catch(Exception $e){
         throw new bException('storage_files_get(): Failed', $e);
