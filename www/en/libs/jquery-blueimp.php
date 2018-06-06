@@ -41,9 +41,11 @@ function jquery_blueimp($area_selector, $link_selector, $params = null, $options
                 var target = event.target || event.srcElement;
                 var link = target.src ? target.parentNode : target;
                 var options = {'.array_implode_with_keys($options, ',', ':').'};
-                var links = this.getElementsByTagName("a");
+                var links = $(this).find("'.$link_selector.'");
+console.log(links);
+console.log("aaaaaaaaaaaaaaaaaaaaaaaaaaaa");
                 blueimp.Gallery(links, options);
-            };';
+            });';
 
         $html = '   <div id="blueimp-gallery" class="blueimp-gallery blueimp-gallery-controls" style="display: none;">
                         <div class="slides" style="width: 30480px;"></div>
