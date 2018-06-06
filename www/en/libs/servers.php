@@ -295,9 +295,13 @@ function servers_get($host, $database = false, $return_proxies = true, $limited_
                 $proxy               = $server_proxy['proxies_id'];
 
                 while($proxy){
-                    $server_proxy        = servers_get_proxy($proxy);
-                    $server['proxies'][] = $server_proxy;
-                    $proxy               = $server_proxy['proxies_id'];
+                    $server_proxy  = servers_get_proxy($proxy);
+                    $proxy         = false;
+
+                    if(!empty($server_proxy)){
+                        $server['proxies'][] = $server_proxy;
+                        $proxy               = $server_proxy['proxies_id'];
+                    }
 
                 }
 

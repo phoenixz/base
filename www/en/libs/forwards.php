@@ -205,7 +205,7 @@ function forwards_delete_apply($forward){
             /*
              * Removing forwarding
              */
-            $exists = iptables_prerouting_exists($forward['id'], $forward['source_port'], $forward['target_port'], $forward['target_ip']);
+            $exists = iptables_prerouting_exists($forward['servers_id'], $forward['source_port'], $forward['target_port'], $forward['target_ip']);
             if($exists){
                 iptables_set_prerouting (IPTABLES_BUFFER,        'tcp', $forward['source_port'], $forward['target_port'], $forward['target_ip'], 'removed');
                 iptables_set_postrouting($forward['servers_id'], 'tcp', $forward['target_port'], $forward['source_ip'],   $forward['target_ip'], 'removed');
