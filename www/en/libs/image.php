@@ -64,6 +64,25 @@ function image_get_text($image) {
 /*
  * Standard image conversion function
  */
+function image_rotate($degrees, $source, $destination = null){
+    try{
+        if(!$destination){
+            $destination = $source;
+        }
+
+        return image_convert($source, $destination, array('method'  => 'rotate',
+                                                          'degrees' => $degrees));
+
+    }catch(Exception $e){
+        throw new bException(tr('image_rotate(): Failed'), $e);
+    }
+}
+
+
+
+/*
+ * Standard image conversion function
+ */
 function image_convert($source, $destination, $params = null){
     global $_CONFIG;
 
@@ -89,22 +108,12 @@ function image_convert($source, $destination, $params = null){
         //    }
         //}
 
-        $imagick = $_CONFIG['images']['imagemagick'];
-
         /*
-         * Remove the log file so we surely have data from only this session
-         *
-         * Yeah, bullshit, with parrallel sessions, others sessions might
-         * delete it while this is in process, etc.
-         */
-        file_ensure_path(ROOT.'data/log');
-        file_delete(ROOT.'data/log/imagemagick-convert');
-
-
-        /*
+         * Get imagemagick executable
          * Ensure we have a local copy of the file to work with
          */
-        $source = file_get_local($source);
+        $imagick = $_CONFIG['images']['imagemagick'];
+        $source  = file_get_local($source);
 
 
         /*
@@ -117,17 +126,36 @@ function image_convert($source, $destination, $params = null){
         }
 
         array_params($params);
-        array_default($params, 'x'               , null);
-        array_default($params, 'y'               , null);
-        array_default($params, 'h'               , null);
-        array_default($params, 'w'               , null);
-        array_default($params, 'to_h'            , null);
-        array_default($params, 'to_w'            , null);
-        array_default($params, 'method'          , null);
-        array_default($params, 'format'          , null);
-        array_default($params, 'background'      , 'none');
-        array_default($params, 'defaults'        , $imagick['defaults']);
-        array_default($params, 'log'             , ROOT.'data/log/imagemagic_convert.log');
+        array_default($params, 'degrees'   , null);
+        array_default($params, 'x'         , null);
+        array_default($params, 'y'         , null);
+        array_default($params, 'h'         , null);
+        array_default($params, 'w'         , null);
+        array_default($params, 'to_h'      , null);
+        array_default($params, 'to_w'      , null);
+        array_default($params, 'method'    , null);
+        array_default($params, 'format'    , null);
+        array_default($params, 'background', 'none');
+        array_default($params, 'defaults'  , $imagick['defaults']);
+
+        /*
+         * Remove the log file so we surely have data from only this session
+         *
+         * Yeah, bullshit, with parrallel sessions, others sessions might
+         * delete it while this is in process, etc.
+         */
+        file_ensure_path(ROOT.'data/log');
+
+        if($_CONFIG['log']['single']){
+            array_default($params, 'log', ROOT.'data/log/syslog');
+
+        }else{
+            /*
+             * The imagemagic-convert log shows only the last entry
+             */
+            array_default($params, 'log', ROOT.'data/log/imagemagic-convert');
+            file_delete(ROOT.'data/log/imagemagick-convert');
+        }
 
         if($params['defaults']){
             array_default($params, 'quality'         , $imagick['quality']);
@@ -323,6 +351,12 @@ function image_convert($source, $destination, $params = null){
          * Execute command to convert image
          */
         switch($params['method']){
+            case 'rotate':
+                $complete_command = $command.' -rotate "'.$params['degrees'].'" "'.$source.'" "'.$destination.'"'.($params['log'] ? ' >> '.$params['log'].' 2>&1' : '');
+                safe_exec($complete_command, 0);
+                file_put_contents($params['log'], $complete_command, FILE_APPEND);
+                break;
+
             case 'thumb':
                 $complete_command = $command.' -thumbnail '.$params['x'].'x'.$params['y'].'^ -gravity center -extent '.$params['x'].'x'.$params['y'].' -flatten "'.$source.'" "'.$destination.'"'.($params['log'] ? ' >> '.$params['log'].' 2>&1' : '');
                 safe_exec($complete_command, 0);
