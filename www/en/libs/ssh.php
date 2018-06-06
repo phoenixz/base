@@ -263,9 +263,10 @@ function ssh_exec($server, $commands = null, $background = false, $function = 'e
              * To connect to this server, one must pass through a number of SSH proxies
              */
             $escapes        = 0;
-            $proxy_template = ' -o ProxyCommand="ssh '.$server['timeout'].$server['arguments'].' -i '.$keyfile.' -p :proxy_port :proxy_template '.$server['username'].'@:proxy_host nc :target_host :proxy_port" ';
+            $proxy_template = ' -o ProxyCommand="ssh '.$server['timeout'].$server['arguments'].' -i '.$keyfile.' -p :proxy_port :proxy_template '.$server['username'].'@:proxy_host nc :target_host :target_port" ';
             $proxies_string = ':proxy_template';
             $target_server  = $server['hostname'];
+            $target_port    = $server['port'];
 
             foreach($server['proxies'] as $id => $proxy){
                 $proxy_string = $proxy_template;
@@ -285,9 +286,11 @@ function ssh_exec($server, $commands = null, $background = false, $function = 'e
                 $proxy_string      = str_replace(':proxy_port' , $proxy['port']     , $proxy_string);
                 $proxy_string      = str_replace(':proxy_host' , $proxy['hostname'] , $proxy_string);
                 $proxy_string      = str_replace(':target_host', $target_server     , $proxy_string);
+                $proxy_string      = str_replace(':target_port', $target_port     , $proxy_string);
 
                 $proxies_string    = str_replace(':proxy_template', $proxy_string, $proxies_string);
                 $target_server     = $proxy['hostname'];
+                $target_port       = $proxy['port'];
 
                 ssh_add_known_host($proxy['hostname'], $proxy['port'], $user_known_hosts_file);
             }

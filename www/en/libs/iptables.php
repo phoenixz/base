@@ -82,7 +82,7 @@ function iptables_exec($server, $parameters = null){
  */
 function iptables_set_forward($server, $value = 1){
     try{
-        servers_exec($server, 'echo '.$value.' > /proc/sys/net/ipv4/ip_forward');
+        servers_exec($server, 'sudo bash -c "echo '.$value.' > /proc/sys/net/ipv4/ip_forward"');
 
     }catch(Exception $e){
         throw new bException('iptables_set_forward(): Failed', $e);
