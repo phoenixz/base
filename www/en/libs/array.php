@@ -157,8 +157,20 @@ function array_clear(&$array, $keys, $value = null){
 
 /*
  * Make sure the specified keys are available on the array
+ *
+ * @author Sven Olaf Oostenbrink <sven@capmega.com>
+ * @copyright Copyright (c) 2018 Capmega
+ * @license http://opensource.org/licenses/GPL-2.0 GNU Public License, Version 2
+ * @category Function reference
+ * @package array
+ *
+ * @param array $source
+ * @param mixed (optional) $keys
+ * @param mixed (optional) $default_value
+ * @param mixed (optional) $trim_existing
+ * @return array
  */
-function array_ensure(&$source, $keys = '', $value = null){
+function array_ensure(&$source, $keys = '', $default_value = null, $trim_existing = false){
     try{
         if(!$source){
             $source = array();
@@ -169,8 +181,16 @@ function array_ensure(&$source, $keys = '', $value = null){
 
         if($keys){
             foreach(array_force($keys) as $key){
-                if(!array_key_exists($key, $source)){
-                    $source[$key] = $value;
+                if(array_key_exists($key, $source)){
+                    if($trim_existing){
+                        /*
+                         * Automatically trim the found value
+                         */
+                        $source[$key] = trim($source[$key], (is_bool($trim_existing) ? ' ' : $trim_existing));
+                    }
+
+                }else{
+                    $source[$key] = $default_value;
                 }
             }
         }
