@@ -257,10 +257,29 @@ function servers_get($host, $database = false, $return_proxies = true, $limited_
 
         }else{
             $query =  'SELECT `servers`.`id`,
-                              `servers`.`hostname`,
+                              `servers`.`createdon`,
+                              `servers`.`modifiedon`,
                               `servers`.`port`,
+                              `servers`.`cost`,
+                              `servers`.`status`,
+                              `servers`.`interval`,
+                              `servers`.`hostname`,
+                              `servers`.`seohostname`,
+                              `servers`.`bill_duedate`,
                               `servers`.`ssh_accounts_id`,
+                              `servers`.`database_accounts_id`,
+                              `servers`.`description`,
                               `servers`.`ipv4`,
+                              `servers`.`ipv6`,
+
+                              `createdby`.`name`   AS `createdby_name`,
+                              `createdby`.`email`  AS `createdby_email`,
+                              `modifiedby`.`name`  AS `modifiedby_name`,
+                              `modifiedby`.`email` AS `modifiedby_email`,
+
+                              `providers`.`seoname`    AS `provider`,
+                              `customers`.`seoname`    AS `customer`,
+                              `ssh_accounts`.`seoname` AS `ssh_account`,
 
                               `ssh_accounts`.`username`,
                               `ssh_accounts`.`ssh_key` ';
@@ -268,9 +287,20 @@ function servers_get($host, $database = false, $return_proxies = true, $limited_
 
         $from  = ' FROM      `servers`
 
-                   LEFT JOIN `ssh_accounts`
-                   ON        `servers`.`ssh_accounts_id` = `ssh_accounts`.`id`';
+                   LEFT JOIN `users` AS `createdby`
+                   ON        `servers`.`createdby`       = `createdby`.`id`
 
+                   LEFT JOIN `users` AS `modifiedby`
+                   ON        `servers`.`modifiedby`      = `modifiedby`.`id`
+
+                   LEFT JOIN `providers`
+                   ON        `providers`.`id`            = `servers`.`providers_id`
+
+                   LEFT JOIN `customers`
+                   ON        `customers`.`id`            = `servers`.`customers_id`
+
+                   LEFT JOIN `ssh_accounts`
+                   ON        `ssh_accounts`.`id`         = `servers`.`ssh_accounts_id`';
 
         if(is_numeric($host)){
             $where   = ' WHERE `servers`.`id`       = :id';
