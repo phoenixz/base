@@ -404,7 +404,7 @@ function proxies_insert($root_hostname, $insert_hostname, $target_hostname, $loc
 		$prev      = array();
 
         if($on_chain){
-            throw new bException(tr('proxies_remove(): Host ":insert_hostname" is already on the proxies chain', array(':insert_hostname' => $insert_hostname)), 'invalid');
+            throw new bException(tr('proxies_insert(): Host ":insert_hostname" is already on the proxies chain', array(':insert_hostname' => $insert_hostname)), 'exists');
         }
 
         /*
