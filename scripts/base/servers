@@ -26,11 +26,11 @@ list                            - List all registerd servers
     --customer CUSTOMER         - List all servers for the specified customer
 
 proxies
-    insert  ROOTHOSTNAME NEWHOSTNAME LOCATION TARGETHOSTNAME [PROTOCOL[:PORT],PROTOCOL[:PORT]...]
+    insert  ROOT-HOSTNAME NEW-HOSTNAME LOCATION TARGET-HOSTNAME [PROTOCOL[:PORT],PROTOCOL[:PORT]...]
 
                                 - Inserts a new server on the proxies chain
 
-    remove  ROOTHOSTNAME REMOVEHOSTNAME
+    remove  ROOT-HOSTNAME REMOVEH-OSTNAME
                                 - Removes a server from the proxies chain
 
 show SERVER                     - Show detaisl about the specified server';
@@ -67,7 +67,8 @@ switch(cli_method()){
 
                               `users`.`name`     AS `user_name`,
                               `users`.`email`    AS `user_email`,
-                              `users`.`username` AS `user_username`
+                              `users`.`username` AS `user_username`,
+                              `users`.`nickname` AS `user_nickname`
 
                     FROM      `servers`
 
@@ -101,7 +102,7 @@ switch(cli_method()){
                 log_console(str_size(tr('#id'), 7).str_size(tr('Customer'), 33).str_size(tr('Provider'), 33).str_size(tr('Hostname'), 65).str_size(tr('Status'), 17).str_size(tr('Created by'), 32), 'QUIET/cyan');
 
                 while($server = sql_fetch($servers)){
-                    log_console(str_size($server['id'], 6, ' ', true).' '.str_size(cli_status_color($server['customer']), 32).' '.str_size($server['provider'], 32).' '.str_size($server['hostname'], 64).' '.str_size($server['status'], 16).' '.name($server, 'createdby'));
+                    log_console(str_size($server['id'], 6, ' ', true).' '.str_size(cli_status_color($server['customer']), 32).' '.str_size($server['provider'], 32).' '.str_size($server['hostname'], 64).' '.str_size($server['status'], 16).' '.name($server, 'user'));
                 }
             }
         }
@@ -119,6 +120,22 @@ switch(cli_method()){
                 $location        = cli_argument(4);
                 $target_hostname = cli_argument(5);
                 $protocols       = cli_argument(6);
+
+                if(empty($root_hostname)){
+                    throw new bException(tr('No root hostname specified'), 'warning/not-specified');
+                }
+
+                if(empty($new_hostname)){
+                    throw new bException(tr('No new hostname specified'), 'warning/not-specified');
+                }
+
+                if(empty($location)){
+                    throw new bException(tr('No location specified'), 'warning/not-specified');
+                }
+
+                if(empty($target_hostname)){
+                    throw new bException(tr('No target hostname specified'), 'warning/not-specified');
+                }
 
                 log_console(tr('Begining insertion for new server ":server"', array(':server' => $new_hostname)), 'white');
                 proxies_insert($root_hostname, $new_hostname, $target_hostname, $location, $protocols);
