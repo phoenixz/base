@@ -319,6 +319,20 @@ class validate_form {
 
 
     /*
+     *
+     */
+    function __construct(&$source = null, $columns = null, $default_value = null){
+        try{
+            array_ensure($source, $columns, $default_value, true);
+
+        }catch(Exception $e){
+            throw new bException('validate_form::__construct(): Failed', $e);
+        }
+    }
+
+
+
+    /*
      * Parse the flags given with the validation
      */
     private function parseFlags(&$value, $message, $flags, $allowEmpty = true){
@@ -611,20 +625,6 @@ class validate_form {
 
         }catch(Exception $e){
             throw new bException('validate_form::allowEmpty(): Failed', $e);
-        }
-    }
-
-
-
-    /*
-     *
-     */
-    function __construct(&$source = null, $columns = null, $default_value = null){
-        try{
-            array_ensure($source, $columns, $default_value);
-
-        }catch(Exception $e){
-            throw new bException('validate_form::__construct(): Failed', $e);
         }
     }
 
