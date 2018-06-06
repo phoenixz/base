@@ -182,7 +182,7 @@ function array_ensure(&$source, $keys = '', $default_value = null, $trim_existin
         if($keys){
             foreach(array_force($keys) as $key){
                 if(array_key_exists($key, $source)){
-                    if($trim_existing){
+                    if($trim_existing and is_string($source[$key])){
                         /*
                          * Automatically trim the found value
                          */
