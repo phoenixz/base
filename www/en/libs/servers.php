@@ -66,6 +66,11 @@ function servers_validate($server, $password_strength = true){
         }
 
         /*
+         * IPv4 check
+         */
+        $v->isFilter($server['ipv4'], FILTER_VALIDATE_IP, tr('Please specify a valid IP address'));
+
+        /*
          * Port check
          */
         if(empty($server['port'])){
@@ -78,19 +83,8 @@ function servers_validate($server, $password_strength = true){
         }
 
         /*
-         * Validate proxy, provider, customer, and ssh account
+         * Validate provider, customer, and ssh account
          */
-        if($server['ssh_proxy']){
-            $server['ssh_proxies_id'] = sql_get('SELECT `id` FROM `servers` WHERE `seohostname` = :seohostname AND `status` IS NULL', array(':seohostname' => $server['ssh_proxy']), true);
-
-            if(!$server['ssh_proxies_id']){
-                $v->setError(tr('servers_validate(): Specified proxy ":proxy" does not exist', array(':proxy' => $server['ssh_proxy'])));
-            }
-
-        }else{
-            $server['ssh_proxies_id'] = null;
-        }
-
         if($server['provider']){
             $server['providers_id'] = sql_get('SELECT `id` FROM `providers` WHERE `seoname` = :seoname AND `status` IS NULL', array(':seoname' => $server['provider']), true);
 
