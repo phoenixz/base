@@ -460,6 +460,7 @@ function forwards_get($forwards_id){
 
         $forward = sql_get('SELECT    `forwards`.`id`,
                                       `forwards`.`servers_id`,
+                                      `forwards`.`createdon`,
                                       `forwards`.`createdby`,
                                       `forwards`.`source_ip`,
                                       `forwards`.`source_port`,
