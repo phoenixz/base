@@ -33,13 +33,16 @@ function servers_validate($server, $password_strength = true){
     try{
         load_libs('validate,file,seo');
 
-        $v = new validate_form($server, 'port,hostname,provider,customer,ssh_account,description,ssh_proxy,database_accounts_id');
+        $v = new validate_form($server, 'ipv4,ipv6,port,hostname,provider,customer,ssh_account,description,ssh_proxy,database_accounts_id');
         $v->isNotEmpty($server['ssh_account'], tr('Please specifiy an SSH account'));
         $v->isNotEmpty($server['hostname']   , tr('Please specifiy a hostnames'));
         $v->isNotEmpty($server['port']       , tr('Please specifiy a port'));
         $v->isNotEmpty($server['provider']   , tr('Please specifiy a provider'));
         $v->isNotEmpty($server['customer']   , tr('Please specifiy a customer'));
 
+        /*
+         * Check password
+         */
         if($password_strength){
             $v->isPassword($server['db_password'], tr('Please specifiy a strong password'), '');
         }
@@ -58,11 +61,26 @@ function servers_validate($server, $password_strength = true){
         /*
          * Hostname
          */
+        $server['hostname'] = cfm($server['hostname']);
+
         if(!empty($server['url']) and !FORCE){
             $v->setError(tr('Both hostname ":hostname" and URL ":url" specified, please specify one or the other', array(':hostname' => $server['hostname'], ':url' => $server['url'])));
 
         }elseif(!preg_match('/[a-z0-9][a-z0-9-.]+/', $server['hostname'])){
-            $v->setError(tr('servers_validate(): Invalid server specified, be sure it contains only a-z, 0-9, . and -'));
+            $v->setError(tr('Invalid server specified, be sure it contains only a-z, 0-9, . and -'));
+        }
+
+        /*
+         * Description
+         */
+        if(empty($server['description'])){
+            $server['description'] = '';
+
+        }else{
+            $v->hasMinChars($server['description'],   16, tr('Please specifiy a minimum of 16 characters for the description'));
+            $v->hasMaxChars($server['description'], 2047, tr('Please specifiy a maximum of 2047 characters for the description'));
+
+            $server['description'] = cfm($server['description']);
         }
 
         /*
@@ -79,7 +97,7 @@ function servers_validate($server, $password_strength = true){
         }
 
         if(!is_numeric($server['port']) or ($server['port'] < 1) or ($server['port'] > 65535)){
-            $v->setError(tr('servers_validate(): Specified port ":port" is not valid', array(':port' => $server['port'])));
+            $v->setError(tr('Specified port ":port" is not valid', array(':port' => $server['port'])));
         }
 
         /*
@@ -89,29 +107,29 @@ function servers_validate($server, $password_strength = true){
             $server['providers_id'] = sql_get('SELECT `id` FROM `providers` WHERE `seoname` = :seoname AND `status` IS NULL', array(':seoname' => $server['provider']), true);
 
             if(!$server['providers_id']){
-                $v->setError(tr('servers_validate(): Specified provider ":provider" does not exist', array(':provider' => $server['provider'])));
+                $v->setError(tr('Specified provider ":provider" does not exist', array(':provider' => $server['provider'])));
             }
 
         }else{
-            $v->setError(tr('servers_validate(): Please specify a provider'));
+            $v->setError(tr('Please specify a provider'));
         }
 
         if($server['customer']){
             $server['customers_id'] = sql_get('SELECT `id` FROM `customers` WHERE `seoname` = :seoname AND `status` IS NULL', array(':seoname' => $server['customer']), true);
 
             if(!$server['customers_id']){
-                $v->setError(tr('servers_validate(): Specified customer ":customer" does not exist', array(':customer' => $server['customer'])));
+                $v->setError(tr('Specified customer ":customer" does not exist', array(':customer' => $server['customer'])));
             }
 
         }else{
-            $v->setError(tr('servers_validate(): Please specify a customer'));
+            $v->setError(tr('Please specify a customer'));
         }
 
         if($server['ssh_account']){
             $server['ssh_accounts_id'] = sql_get('SELECT `id` FROM `ssh_accounts` WHERE `seoname` = :seoname AND `status` IS NULL', array(':seoname' => $server['ssh_account']), true);
 
             if(!$server['ssh_accounts_id']){
-                $v->setError(tr('servers_validate(): Specified SSH account ":account" does not exist', array(':account' => $server['ssh_account'])));
+                $v->setError(tr('Specified SSH account ":account" does not exist', array(':account' => $server['ssh_account'])));
             }
 
         }else{
@@ -124,7 +142,7 @@ function servers_validate($server, $password_strength = true){
         $exists = sql_get('SELECT `id` FROM `servers` WHERE `hostname` = :hostname AND `ssh_accounts_id` = :ssh_accounts_id AND `id` != :id', array(':hostname' => $server['hostname'], ':ssh_accounts_id' => $server['ssh_account'], ':id' => isset_get($server['id'])), true);
 
         if($exists){
-            $v->setError(tr('servers_validate(): A server with hostname ":hostname" and user ":user" already exists', array(':hostname' => $server['hostname'], ':ssh_accounts_id' => $server['ssh_account'])));
+            $v->setError(tr('A server with hostname ":hostname" and user ":user" already exists', array(':hostname' => $server['hostname'], ':ssh_accounts_id' => $server['ssh_account'])));
         }
 
         $server['seohostname']  = seo_unique($server['hostname'], 'servers', isset_get($server['id']), 'seohostname');
@@ -147,6 +165,7 @@ function servers_validate($server, $password_strength = true){
 function servers_test($hostname){
     try{
         sql_query('UPDATE `servers` SET `status` = "testing" WHERE `hostname` = :hostname', array(':hostname' => $hostname));
+
         $result = servers_exec($hostname, 'echo 1');
         $result = array_pop($result);
 

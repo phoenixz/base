@@ -4,13 +4,21 @@
  *
  * This library contains functions to manage SSH accounts
  *
- * Written and Copyright by Sven Oostenbrink
+ * Copyright (c) 2018 Capmega
  */
 
 
 
 /*
  * SSH account validation
+ *
+ * @copyright Copyright (c) 2018 Capmega
+ * @license http://opensource.org/licenses/GPL-2.0 GNU Public License, Version 2
+ * @category Function reference
+ * @package ssh
+ *
+ * @param array $ssh
+ * @return array
  */
 function ssh_validate_account($ssh){
     try{
@@ -258,8 +266,9 @@ function ssh_exec($server, $commands = null, $background = false, $function = 'e
         chmod($keyfile, 0400);
 
         if($server['proxies']){
-//-o ProxyCommand="ssh -p  -o ProxyCommand=\"ssh -p  40220 s1.s.ingiga.com nc s2.s.ingiga.com 40220\"  40220 s2.s.ingiga.com nc s3.s.ingiga.com 40220"
+// :TODO: Right now its assumed that every proxy uses the same SSH user and key file, though in practice, they MIGHT have different ones. Add support for each proxy server having its own user and keyfile
             /*
+             * ssh command line ProxyCommand example: -o ProxyCommand="ssh -p  -o ProxyCommand=\"ssh -p  40220 s1.s.ingiga.com nc s2.s.ingiga.com 40220\"  40220 s2.s.ingiga.com nc s3.s.ingiga.com 40220"
              * To connect to this server, one must pass through a number of SSH proxies
              */
             $escapes        = 0;
@@ -283,17 +292,18 @@ function ssh_exec($server, $commands = null, $background = false, $function = 'e
                 /*
                  * Fill in proxy values for this proxy
                  */
-                $proxy_string      = str_replace(':proxy_port' , $proxy['port']     , $proxy_string);
-                $proxy_string      = str_replace(':proxy_host' , $proxy['hostname'] , $proxy_string);
-                $proxy_string      = str_replace(':target_host', $target_server     , $proxy_string);
-                $proxy_string      = str_replace(':target_port', $target_port     , $proxy_string);
+                $proxy_string   = str_replace(':proxy_port'    , $proxy['port']    , $proxy_string);
+                $proxy_string   = str_replace(':proxy_host'    , $proxy['hostname'], $proxy_string);
+                $proxy_string   = str_replace(':target_host'   , $target_server    , $proxy_string);
+                $proxy_string   = str_replace(':target_port'   , $target_port      , $proxy_string);
+                $proxies_string = str_replace(':proxy_template', $proxy_string     , $proxies_string);
 
-                $proxies_string    = str_replace(':proxy_template', $proxy_string, $proxies_string);
-                $target_server     = $proxy['hostname'];
-                $target_port       = $proxy['port'];
+                $target_server  = $proxy['hostname'];
+                $target_port    = $proxy['port'];
 
                 ssh_add_known_host($proxy['hostname'], $proxy['port'], $user_known_hosts_file);
             }
+
             /*
              * No more proxies, remove the template placeholder
              */
@@ -382,7 +392,15 @@ function ssh_exec($server, $commands = null, $background = false, $function = 'e
 
 
 /*
+ * ...
  *
+ * @author Sven Olaf Oostenbrink <sven@capmega.com>
+ * @copyright Copyright (c) 2018 Capmega
+ * @license http://opensource.org/licenses/GPL-2.0 GNU Public License, Version 2
+ * @category Function reference
+ * @package ssh
+ *
+ * @param
  */
 function ssh_get_key($username){
     try{
@@ -396,7 +414,19 @@ function ssh_get_key($username){
 
 
 /*
+ * ...........
  *
+ * @author Sven Olaf Oostenbrink <sven@capmega.com>
+ * @copyright Copyright (c) 2018 Capmega
+ * @license http://opensource.org/licenses/GPL-2.0 GNU Public License, Version 2
+ * @category Function reference
+ * @package ssh
+ *
+ * @param
+ * @param
+ * @param
+ * @param
+ * @return
  */
 function ssh_cp($server, $source, $destnation, $from_server = false){
     try{
@@ -496,7 +526,15 @@ function ssh_cp($server, $source, $destnation, $from_server = false){
 
 
 /*
+ * .............
  *
+ * @author Ismael Haro <isma@capmega.com>
+ * @copyright Copyright (c) 2018 Capmega
+ * @license http://opensource.org/licenses/GPL-2.0 GNU Public License, Version 2
+ * @category Function reference
+ * @package ssh
+ *
+ * @param
  */
 function ssh_mysql_slave_tunnel($server){
     try{
@@ -593,7 +631,15 @@ function ssh_mysql_slave_tunnel($server){
 
 
 /*
+ * ..................
  *
+ * @author Marcos Prudencio <marcos@capmega.com>
+ * @copyright Copyright (c) 2018 Capmega
+ * @license http://opensource.org/licenses/GPL-2.0 GNU Public License, Version 2
+ * @category Function reference
+ * @package ssh
+ *
+ * @param
  */
 function ssh_add_known_host($hostname, $port, $known_hosts_path){
     try{
@@ -631,7 +677,15 @@ function ssh_add_known_host($hostname, $port, $known_hosts_path){
 
 
 /*
+ * .........
  *
+ * @author Marcos Prudencio <marcos@capmega.com>
+ * @copyright Copyright (c) 2018 Capmega
+ * @license http://opensource.org/licenses/GPL-2.0 GNU Public License, Version 2
+ * @category Function reference
+ * @package ssh
+ *
+ * @param
  */
 function ssh_get_config($hostname){
     try{
@@ -648,20 +702,28 @@ function ssh_get_config($hostname){
 
 /*
  * Do not inlude  at the beggining of comments the name of the field, otherwise it would be also replace
+ *
+ * @author Marcos Prudencio <marcos@capmega.com>
+ * @copyright Copyright (c) 2018 Capmega
+ * @license http://opensource.org/licenses/GPL-2.0 GNU Public License, Version 2
+ * @category Function reference
+ * @package ssh
+ *
+ * @param
  */
 function ssh_update_config($hostname, $params){
     try{
-        $params = ssh_validate_params_update_config($params);
+        $params = ssh_validate_config($params);
         $config = ssh_get_config($hostname);
 
-        foreach($params as $config_field => $parameters){
-
+        foreach($params as $key => $values){
             $comments = '';
-            if(isset($parameters['description'])){
-                $comments = '#'.$parameters['description']."\n";
+
+            if(isset($values['description'])){
+                $comments = '#'.$values['description']."\n";
             }
 
-            $config   = preg_replace('/'.$config_field.'\s+(\d+|\w+)|#'.$config_field.'\s+(\d+|\w+)/', $comments.$config_field." ".$parameters['value'], $config);
+            $config = preg_replace('/'.$key.'\s+(\d+|\w+)|#'.$key.'\s+(\d+|\w+)/', $comments.$key." ".$values['value'], $config);
         }
 
         servers_exec($hostname, 'cat > /etc/ssh/sshd_config << EOF '.$config);
@@ -677,28 +739,37 @@ function ssh_update_config($hostname, $params){
 
 /*
  * Field description is optional, value is mandatory
- * Example $params = array('Port'=>array('description'=>'Comentary', 'value'=>40220));
+ * For example: $params = array('Port'=>array('description'=>'Comentary', 'value'=>40220));
+ *
+ * @author Marcos Prudencio <marcos@capmega.com>
+ * @copyright Copyright (c) 2018 Capmega
+ * @license http://opensource.org/licenses/GPL-2.0 GNU Public License, Version 2
+ * @category Function reference
+ * @package ssh
+ *
+ * @param array $params The parameters that need to be validated
+ * @return array The validated parameter data
  */
-function ssh_validate_params_update_config($params){
+function ssh_validate_config($params){
     try{
         if(empty($params)){
-            throw new bException(tr('ssh_validate_params_update_config(): No params specified'), 'not-specified');
+            throw new bException(tr('ssh_validate_config(): No params specified'), 'not-specified');
         }
 
         if(!is_array($params)){
-            throw new bException(tr('ssh_validate_params_update_config(): Params is not an array. Accepted array example: array(\'Port\'=>array(\'description\'=>\'Comentary\', \'value\'=>40220))'), 'not-specified');
+            throw new bException(tr('ssh_validate_config(): Params is not an array. Accepted array example: array(\'Port\'=>array(\'description\'=>\'Comentary\', \'value\'=>40220))'), 'not-specified');
         }
 
-        foreach($params as $config_field=>$parameters){
-            if(!isset($parameters['value'])){
-                throw new bException(tr('ssh_validate_params_update_config(): No value specified for config field :configfield', array(':configfield'=>$config_field)), 'not-specified');
+        foreach($params as $key => $values){
+            if(!isset($values['value'])){
+                throw new bException(tr('ssh_validate_config(): No value specified for configuration key ":key"', array(':key' => $key)), 'not-specified');
             }
         }
 
         return $params;
 
     }catch(Exception $e){
-        throw new bException('csf_deny_rule(): Failed', $e);
+        throw new bException('ssh_validate_config(): Failed', $e);
     }
 }
 ?>

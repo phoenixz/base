@@ -170,7 +170,13 @@ function forwards_insert($forward, $createdby = null){
 
 
 /*
- * Deletes a forwarding rule
+ * Deletes a forwarding rule.
+ *
+ * @author Marcos Prudencio <marcosp@capmega.com>
+ * @copyright Copyright (c) 2018 Capmega
+ * @license http://opensource.org/licenses/GPL-2.0 GNU Public License, Version 2
+ * @category Function reference
+ * @package ssh
  *
  * @param array $forward
  * @retur void
@@ -196,6 +202,12 @@ function forwards_delete($forward){
 /*
  * Removes rules for a deleted forwarding record on database
  *
+ * @author Marcos Prudencio <marcosp@capmega.com>
+ * @copyright Copyright (c) 2018 Capmega
+ * @license http://opensource.org/licenses/GPL-2.0 GNU Public License, Version 2
+ * @category Function reference
+ * @package ssh
+ *
  * @param array $forward
  * @return void
  */
@@ -206,12 +218,12 @@ function forwards_delete_apply($forward){
              * Removing forwarding
              */
             $exists = iptables_prerouting_exists($forward['servers_id'], $forward['source_port'], $forward['target_port'], $forward['target_ip']);
+
             if($exists){
                 iptables_set_prerouting (IPTABLES_BUFFER,        'tcp', $forward['source_port'], $forward['target_port'], $forward['target_ip'], 'removed');
                 iptables_set_postrouting($forward['servers_id'], 'tcp', $forward['target_port'], $forward['source_ip'],   $forward['target_ip'], 'removed');
 
             }
-
         }
 
         if($forward['target_id']){
