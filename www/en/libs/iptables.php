@@ -256,9 +256,9 @@ function iptables_accept_traffic($server, $ip, $port, $protocol){
  */
 function iptables_stop_accepting_traffic($server, $ip, $port, $protocol){
     try{
-        $result = servers_exec($server, 'if sudo iptables -L -v -n|grep '.$ip.'.*dpt:'.$port.'; then echo "exists"; else echo 0; fi');
+        $result = servers_exec($server, 'if sudo iptables -L -v -n|grep '.$ip.'.*dpt:'.$port.'; then echo 1; else echo 0; fi');
 
-        if(!$result[0]){
+        if($result[0]){
             iptables_exec($server, '-D INPUT -p '.$protocol.' -s '.$ip.' --dport '.$port.' -j ACCEPT');
         }
 
