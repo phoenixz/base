@@ -77,12 +77,12 @@ function forwards_remove_server($server){
  * @param array $forward
  * $return void
  */
-function forwards_apply_rule($forward){
+function forwards_apply_rule($forward, $flush = true){
     try{
         if($forward['protocol'] != 'ssh'){
             iptables_set_forward(IPTABLES_BUFFER);
-            iptables_set_prerouting(IPTABLES_BUFFER,         'tcp', $forward['source_port'], $forward['target_port'], $forward['target_ip']);
-            iptables_set_postrouting($forward['servers_id'], 'tcp', $forward['target_port'], $forward['source_ip'],   $forward['target_ip']);
+            iptables_set_prerouting(IPTABLES_BUFFER,                                      'tcp', $forward['source_port'], $forward['target_port'], $forward['target_ip']);
+            iptables_set_postrouting(($flush ? $forward['servers_id'] : IPTABLES_BUFFER), 'tcp', $forward['target_port'], $forward['source_ip'],   $forward['target_ip']);
         }
 
         if($forward['target_id']){
