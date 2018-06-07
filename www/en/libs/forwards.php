@@ -484,8 +484,7 @@ function forwards_get($forwards_id){
                             LEFT JOIN `users` AS `createdby`
                             ON        `forwards`.`createdby`  = `createdby`.`id`
 
-                            WHERE     `forwards`.`id`         = :id
-                            AND       `forwards`.`status` IS NULL',
+                            WHERE     `forwards`.`id`         = :id',
 
                             array(':id' => $forwards_id));
 
