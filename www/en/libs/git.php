@@ -356,6 +356,10 @@ function git_status($path = ROOT, $filters = false){
                     $status = 'deleted';
                     break;
 
+                case 'AD':
+                    $status = 'added to index but deleted';
+                    break;
+
                 case 'AM':
                     $status = 'new file';
                     break;
