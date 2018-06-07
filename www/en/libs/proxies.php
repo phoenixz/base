@@ -406,6 +406,10 @@ function proxies_insert($root_hostname, $insert_hostname, $target_hostname, $loc
             throw new bException(tr('proxies_insert(): Host ":insert_hostname" is already on the proxies chain', array(':insert_hostname' => $insert_hostname)), 'exists');
         }
 
+        if($root['proxies'] and $protocols){
+            throw new bException(tr('proxies_insert(): Protocols specified, but specified root server ":server" already has a proxy chain with its own protocols. Please do NOT specify protocols for this root server', array(':server' => $root_hostname)), 'invalid');
+        }
+
         /*
          * If there are not proxies, server must go at the front, it can no be inserted
          * before main server
