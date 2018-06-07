@@ -73,7 +73,7 @@ function proxies_insert_create($prev, $insert, $protocols, $apply){
             $new_forward['protocol']    = $protocol;
             $new_forward['description'] = 'Rule added by proxies library';
 
-            log_console(tr('Applying rule for protocol ":protocol"', array(':protocol' => $protocol)));
+            log_console(tr('Applying rule on inserted server'));
             forwards_insert($new_forward);
 
         }
@@ -199,7 +199,7 @@ function proxies_insert_front($prev, $insert, $protocols, $apply){
             log_console(tr('No forwards for previous server'));
 
             foreach($protocols as $protocol){
-                log_console(tr('Applying forward for protocol: ":protocol"', array(':protocol' => $protocol)));
+                log_console(tr('Applying forward on inserted server with random port for target_port'));
                 $default_source_port = proxies_get_default_port($protocol);
 
                 $forward['apply']       = $apply;
@@ -253,8 +253,8 @@ function proxies_insert_front($prev, $insert, $protocols, $apply){
         servers_add_ssh_proxy($prev['id'], $insert['id']);
 
     }catch(Exception $e){
-		throw new bException('proxies_insert_front(): Failed', $e);
-	}
+        throw new bException('proxies_insert_front(): Failed', $e);
+    }
 }
 
 
@@ -270,7 +270,7 @@ function proxies_insert_front($prev, $insert, $protocols, $apply){
  */
 function proxies_insert_middle($prev, $next, $insert, $apply){
     try{
-        log_console(tr('Getting forward rule for next server'));
+        log_console(tr('Getting forward rules for next server'));
         $next_forwards = forwards_list($next['id']);
 
         if(empty($next_forwards)){
@@ -381,8 +381,8 @@ function proxies_insert_middle($prev, $next, $insert, $apply){
         servers_add_ssh_proxy($insert['id'], $next['id']);
 
     }catch(Exception $e){
-		throw new bException('proxies_insert_middle(): Failed', $e);
-	}
+        throw new bException('proxies_insert_middle(): Failed', $e);
+    }
 }
 
 
@@ -394,14 +394,14 @@ function proxies_insert_middle($prev, $next, $insert, $apply){
  * @param $insert_hostname
  */
 function proxies_insert($root_hostname, $insert_hostname, $target_hostname, $location, $protocols, $apply = true){
-	try{
+    try{
         $location  = proxies_validate_location($location);
-		$root      = proxies_get_server($root_hostname, true);
-		$insert    = proxies_get_server($insert_hostname, false);
+        $root      = proxies_get_server($root_hostname, true);
+        $insert    = proxies_get_server($insert_hostname, false);
         $protocols = array_force($protocols);
         $on_chain  = proxies_validate_on_chain($root['proxies'], $insert_hostname);
-		$next      = array();
-		$prev      = array();
+        $next      = array();
+        $prev      = array();
 
         if($on_chain){
             throw new bException(tr('proxies_insert(): Host ":insert_hostname" is already on the proxies chain', array(':insert_hostname' => $insert_hostname)), 'exists');
@@ -440,9 +440,9 @@ function proxies_insert($root_hostname, $insert_hostname, $target_hostname, $loc
             proxies_insert_middle($prev, $next, $insert, $apply);
         }
 
-	}catch(Exception $e){
-		throw new bException('proxies_insert(): Failed', $e);
-	}
+    }catch(Exception $e){
+        throw new bException('proxies_insert(): Failed', $e);
+    }
 }
 
 
@@ -506,8 +506,8 @@ function proxies_remove_front($prev, $remove, $apply){
         servers_delete_ssh_proxy($prev['id'], $remove['id']);
 
     }catch(Exception $e){
-		throw new bException('proxies_remove_front(): Failed', $e);
-	}
+        throw new bException('proxies_remove_front(): Failed', $e);
+    }
 }
 
 
@@ -577,8 +577,8 @@ function proxies_remove_middle($prev, $next, $remove, $apply){
         servers_delete_ssh_proxy($remove['id'], $next['id']);
 
     }catch(Exception $e){
-		throw new bException('proxies_remove_middle(): Failed', $e);
-	}
+        throw new bException('proxies_remove_middle(): Failed', $e);
+    }
 }
 
 
@@ -632,8 +632,8 @@ function proxies_remove($root_host, $remove_host, $apply = true){
         }
 
     }catch(Exception $e){
-		throw new bException('proxies_remove(): Failed', $e);
-	}
+        throw new bException('proxies_remove(): Failed', $e);
+    }
 }
 
 
@@ -676,8 +676,8 @@ function proxies_get_prev_next_remove($root_server, $remove_server, $proxies){
         return array($prev, $next);
 
     }catch(Exception $e){
-		throw new bException('proxies_get_prev_next_remove(): Failed', $e);
-	}
+        throw new bException('proxies_get_prev_next_remove(): Failed', $e);
+    }
 }
 
 
@@ -746,8 +746,8 @@ function proxies_get_prev_next_insert($root_hostname, $target_hostname, $proxies
         return array($prev, $next);
 
     }catch(Exception $e){
-		throw new bException('proxies_get_prev_next_insert(): Failed', $e);
-	}
+        throw new bException('proxies_get_prev_next_insert(): Failed', $e);
+    }
 }
 
 
@@ -760,18 +760,18 @@ function proxies_get_prev_next_insert($root_hostname, $target_hostname, $proxies
  * @return array
  */
 function proxies_get_server($host, $return_proxies = false){
-	try{
-		$server = servers_get($host, false, $return_proxies);
+    try{
+        $server = servers_get($host, false, $return_proxies);
 
-		if(empty($server)){
-			throw new bException(tr('proxies_get_server(): No server found for host ":host"', array(':host' => $host)), 'not-found');
-		}
+        if(empty($server)){
+            throw new bException(tr('proxies_get_server(): No server found for host ":host"', array(':host' => $host)), 'not-found');
+        }
 
-		return $server;
+        return $server;
 
-	}catch(Exception $e){
-		throw new bException('proxies_get_server(): Failed', $e);
-	}
+    }catch(Exception $e){
+        throw new bException('proxies_get_server(): Failed', $e);
+    }
 }
 
 
@@ -793,9 +793,9 @@ function proxies_validate_on_chain($proxies, $search_hostname){
 
         return false;
 
-	}catch(Exception $e){
-		throw new bException('proxies_validate_on_chain(): Failed', $e);
-	}
+    }catch(Exception $e){
+        throw new bException('proxies_validate_on_chain(): Failed', $e);
+    }
 }
 
 
@@ -809,7 +809,7 @@ function proxies_validate_on_chain($proxies, $search_hostname){
  */
 function proxies_validate_location($location){
     try{
-		if(empty($location)){
+        if(empty($location)){
             throw new bException(tr('proxies_validate_location(): Location not specified'), 'not-specified');
         }
 
@@ -825,9 +825,9 @@ function proxies_validate_location($location){
                 throw new bException(tr('proxies_validate_location(): Unknown location ":location"', array(':location' => $location)), 'unknown');
         }
 
-	}catch(Exception $e){
-		throw new bException('proxies_validate_location(): Failed', $e);
-	}
+    }catch(Exception $e){
+        throw new bException('proxies_validate_location(): Failed', $e);
+    }
 }
 
 
@@ -860,8 +860,8 @@ function proxies_get_default_port($protocol){
         }
 
     }catch(Exception $e){
-		throw new bException('proxies_get_default_port(): Failed', $e);
-	}
+        throw new bException('proxies_get_default_port(): Failed', $e);
+    }
 }
 
 
@@ -899,7 +899,7 @@ function proxies_validate_protocol($protocol){
         return $protocol;
 
     }catch(Exception $e){
-		throw new bException('proxies_validate_protocol(): Failed', $e);
-	}
+        throw new bException('proxies_validate_protocol(): Failed', $e);
+    }
 }
 ?>
