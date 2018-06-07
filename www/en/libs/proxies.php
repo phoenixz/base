@@ -270,6 +270,7 @@ function proxies_insert_front($prev, $insert, $protocols, $apply){
  */
 function proxies_insert_middle($prev, $next, $insert, $apply){
     try{
+        log_console(tr('Getting forward rule for next server'));
         $next_forwards = forwards_list($next['id']);
 
         if(empty($next_forwards)){
@@ -278,7 +279,6 @@ function proxies_insert_middle($prev, $next, $insert, $apply){
 
         foreach($next_forwards as $forward){
 
-            log_console(tr('Getting rules for protocol ":protocol"', array(':protocol' => $forward['protocol'])));
             $random_port = mt_rand(1025, 65535);
 
             $new_forward['apply']       = $apply;
