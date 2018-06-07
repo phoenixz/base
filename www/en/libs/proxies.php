@@ -14,7 +14,7 @@
  */
 function proxies_library_init(){
     try{
-        load_libs('servers,forwards');
+        load_libs('servers,forwardings');
 
     }catch(Exception $e){
         throw new bException('proxy_library_init(): Failed', $e);
@@ -74,7 +74,7 @@ function proxies_insert_create($prev, $insert, $protocols, $apply){
             $new_forward['description'] = 'Rule added by proxies library';
 
             log_console(tr('Applying rule on inserted server'));
-            forwards_insert($new_forward);
+            forwardings_insert($new_forward);
 
         }
 
@@ -93,7 +93,7 @@ function proxies_insert_create($prev, $insert, $protocols, $apply){
         $new_forward['description'] = 'Rule added by proxies library';
 
         log_console(tr('Applying rule on inserted server to allow ssh connections from prev server'));
-        forwards_apply_rule($new_forward);
+        forwardings_apply_rule($new_forward);
 
         /*
          * Creating relation on database
@@ -126,7 +126,7 @@ function proxies_insert_front($prev, $insert, $protocols, $apply){
             throw new bException(tr('proxies_insert_front(): No protocols specified', array(':insert_hostname' => $insert['hostname'])), 'not-specified');
         }
 
-        $prev_forwards = forwards_list($prev['id']);
+        $prev_forwards = forwardings_list($prev['id']);
 
         if($prev_forwards){
             log_console(tr('Inserting at the front with forwards for previous server'));
@@ -150,7 +150,7 @@ function proxies_insert_front($prev, $insert, $protocols, $apply){
                 $new_forward['protocol']    = $forward['protocol'];
                 $new_forward['description'] = 'Rule added by proxies library';
 
-                $exists = forwards_exists($new_forward);
+                $exists = forwardings_exists($new_forward);
 
                 /*
                  * If source port is already in use throw exception
@@ -166,7 +166,7 @@ function proxies_insert_front($prev, $insert, $protocols, $apply){
                 $prev_forward['apply']       = $apply;
                 $prev_forward['source_port'] = $random_port;
 
-                $exists = forwards_exists($prev_forward);
+                $exists = forwardings_exists($prev_forward);
 
                 if($exists){
                    throw new bException(tr('proxies_insert_front(): Port ":source_port" on host ":host" for protocol ":protocol" is already in use', array(':source_port' => $prev['source_port'], ':host' => $prev['hostname'])), 'invalid');
@@ -176,10 +176,10 @@ function proxies_insert_front($prev, $insert, $protocols, $apply){
                  * Inserting and aplying rules, first on inserted server then in prev server
                  */
                 log_console(tr('Applying forward rule on inserted server'));
-                forwards_insert($new_forward);
+                forwardings_insert($new_forward);
 
                 log_console(tr('Applying forward rule on prev server for new source port'));
-                forwards_insert($prev_forward);
+                forwardings_insert($prev_forward);
 
                 /*
                  * Deleting rule from data base
@@ -189,7 +189,7 @@ function proxies_insert_front($prev, $insert, $protocols, $apply){
                  * Do not apply, we continue listening on the same port
                  */
                 $forward['apply'] = $apply;
-                forwards_delete($forward);
+                forwardings_delete($forward);
             }
 
         }else{
@@ -213,7 +213,7 @@ function proxies_insert_front($prev, $insert, $protocols, $apply){
                 $forward['protocol']    = $protocol;
                 $forward['description'] = 'Rule added by proxies library';
 
-                $exists = forwards_exists($forward);
+                $exists = forwardings_exists($forward);
 
                 /*
                  * If source port is already in use throw exception
@@ -221,7 +221,7 @@ function proxies_insert_front($prev, $insert, $protocols, $apply){
                 if($exists){
                     throw new bException(tr('proxies_insert_front(): Port ":source_port" on host ":host" for protocol ":protocol" is already in use', array(':source_port' => $forward['source_port'], ':host' => $insert['hostname'], ':protocol' => $protocol)), 'invalid');
                 }
-                forwards_insert($forward);
+                forwardings_insert($forward);
             }
         }
 
@@ -243,7 +243,7 @@ function proxies_insert_front($prev, $insert, $protocols, $apply){
          * Inserting and palying new rule
          */
         log_console(tr('Allowing ssh connection from prev server to inserted server'));
-        forwards_apply_rule($new_forward);
+        forwardings_apply_rule($new_forward);
 
         /*
          * Updating proxy chain
@@ -271,7 +271,7 @@ function proxies_insert_front($prev, $insert, $protocols, $apply){
 function proxies_insert_middle($prev, $next, $insert, $apply){
     try{
         log_console(tr('Getting forward rules for next server'));
-        $next_forwards = forwards_list($next['id']);
+        $next_forwards = forwardings_list($next['id']);
 
         if(empty($next_forwards)){
             throw new bException(tr('proxies_insert_middle(): There are not configured rule forwards for next server, nothing to map from ":insert" server to ":next"', array(':insert' => $insert['hostname'], ':next' => $next['hostname'])), 'invalid');
@@ -310,19 +310,19 @@ function proxies_insert_middle($prev, $next, $insert, $apply){
              * Apply forward rule on inserted server and start accepting traffic on prev server
              */
             log_console(tr('Applying rule on inserted server'));
-            forwards_insert($new_forward);
+            forwardings_insert($new_forward);
 
             /*
              * Removing forward rule on next server
              */
             log_console(tr('Removing rule on next server'));
-            forwards_delete($forward);
+            forwardings_delete($forward);
 
             /*
              * Appying new rule on next server to start redirecting traffic to inserted server
              */
             log_console(tr('Applying new rule on next server to redirect traffic to inserted server'));
-            forwards_insert($next_forward);
+            forwardings_insert($next_forward);
         }
 
         /*
@@ -341,7 +341,7 @@ function proxies_insert_middle($prev, $next, $insert, $apply){
         $new_forward['protocol']    = 'ssh';
         $new_forward['description'] = 'Rule added by proxies library';
 
-        forwards_apply_rule($new_forward);
+        forwardings_apply_rule($new_forward);
 
         log_console(tr('Updating ssh rule on prev server'));
         $ssh_forward_prev_old['apply']       = $apply;
@@ -366,7 +366,7 @@ function proxies_insert_middle($prev, $next, $insert, $apply){
         $ssh_forward_prev_new['protocol']    = 'ssh';
         $ssh_forward_prev_new['description'] = 'Rule added by proxies library';
 
-        forwards_update_apply($ssh_forward_prev_new, $ssh_forward_prev_old);
+        forwardings_update_apply($ssh_forward_prev_new, $ssh_forward_prev_old);
 
         /*
          * After applying and updating rules, we must update proxies chain
@@ -457,7 +457,7 @@ function proxies_insert($root_hostname, $insert_hostname, $target_hostname, $loc
  */
 function proxies_remove_front($prev, $remove, $apply){
     try{
-        $prev_forwards = forwards_list($prev['id']);
+        $prev_forwards = forwardings_list($prev['id']);
 
         if($prev_forwards){
             /*
@@ -477,14 +477,14 @@ function proxies_remove_front($prev, $remove, $apply){
                      * Applying new rule with default ports
                      */
                     log_console(tr('Applying rule on prev server with default ports'));
-                    forwards_insert($new_forward);
+                    forwardings_insert($new_forward);
 
                     /*
                      * Removing old rule :REVIEW: something is wrong, rule is  not been deleted from database
                      */
                     $forward['apply'] = true;
                     log_console(tr('Removing old rule'));
-                    forwards_delete($forward);
+                    forwardings_delete($forward);
                 }
             }
         }
@@ -493,10 +493,10 @@ function proxies_remove_front($prev, $remove, $apply){
          * Remove rules from removed server
          */
         log_console(tr('Removing all rules for removed server'));
-        $remove_forwards = forwards_list($remove['id']);
+        $remove_forwards = forwardings_list($remove['id']);
 
         if($remove_forwards){
-            forwards_delete_list($remove_forwards, $apply);
+            forwardings_delete_list($remove_forwards, $apply);
         }
 
         /*
@@ -523,8 +523,8 @@ function proxies_remove_front($prev, $remove, $apply){
  */
 function proxies_remove_middle($prev, $next, $remove, $apply){
     try{
-        $next_forwards   = forwards_list($next['id']);
-        $remove_forwards = forwards_list($remove['id']);
+        $next_forwards   = forwardings_list($next['id']);
+        $remove_forwards = forwardings_list($remove['id']);
 
         if(empty($next_forwards)){
             throw new bException(tr('proxies_remove_middle(): There are not forwards rules on next server'), 'invalid');
@@ -554,7 +554,7 @@ function proxies_remove_middle($prev, $next, $remove, $apply){
              * Inserting and applying new rule on next server
              */
             log_console(tr('Appying new rule on next server'));
-            forwards_insert($new_forward);
+            forwardings_insert($new_forward);
 
         }
 
@@ -562,13 +562,13 @@ function proxies_remove_middle($prev, $next, $remove, $apply){
          * Delete forwards rules on next server and removed server
          */
         log_console(tr('Removing rules on next server'));
-        forwards_delete_list($next_forwards, $apply);
+        forwardings_delete_list($next_forwards, $apply);
 
         /*
          * Delete forward fules from removed server
          */
         log_console(tr('Removing rules on removed server'));
-        forwards_delete_list($remove_forwards, $apply);
+        forwardings_delete_list($remove_forwards, $apply);
 
         /*
          * Update proxies chain on database
@@ -603,7 +603,7 @@ function proxies_remove($root_host, $remove_host, $apply = true){
              * Flush all rules on iptables
              */
             foreach($root['proxies'] as $proxy){
-                forwards_destroy($proxy['id']);
+                forwardings_destroy($proxy['id']);
             }
         }
 
