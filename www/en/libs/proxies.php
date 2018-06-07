@@ -71,7 +71,7 @@ function proxies_insert_create($prev, $insert, $protocols, $apply){
             $new_forward['target_ip']   = $prev['ipv4'];
             $new_forward['target_port'] = $port;
             $new_forward['protocol']    = $protocol;
-            $new_forward['description'] = 'Rule added by '.PROJECT.' proxies library on '.date_convert(null, 'human_readable');
+            $new_forward['description'] = 'Rule added by proxies library';
 
             log_console(tr('Applying rule for protocol ":protocol"', array(':protocol' => $protocol)));
             forwards_insert($new_forward);
@@ -90,7 +90,7 @@ function proxies_insert_create($prev, $insert, $protocols, $apply){
         $new_forward['target_ip']   = $insert['ipv4'];
         $new_forward['target_port'] = $insert['port'];
         $new_forward['protocol']    = 'ssh';
-        $new_forward['description'] = 'Rule added by proxies library on '.date('Y-m-d H:i:s');
+        $new_forward['description'] = 'Rule added by proxies library';
 
         log_console(tr('Applying rule on inserted server to allow ssh connections from prev server'));
         forwards_apply_rule($new_forward);
@@ -148,7 +148,7 @@ function proxies_insert_front($prev, $insert, $protocols, $apply){
                 $new_forward['target_ip']   = $prev['ipv4'];
                 $new_forward['target_port'] = $random_port;
                 $new_forward['protocol']    = $forward['protocol'];
-                $new_forward['description'] = 'Rule added by proxies library on '.date('Y-m-d H:i:s');
+                $new_forward['description'] = 'Rule added by proxies library';
 
                 $exists = forwards_exists($new_forward);
 
@@ -211,7 +211,7 @@ function proxies_insert_front($prev, $insert, $protocols, $apply){
                 $forward['target_ip']   = $prev['ipv4'];
                 $forward['target_port'] = mt_rand(1025, 65535);
                 $forward['protocol']    = $protocol;
-                $forward['description'] = 'Rule added by proxies library on '.date('Y-m-d H:i:s');
+                $forward['description'] = 'Rule added by proxies library';
 
                 $exists = forwards_exists($forward);
 
@@ -237,7 +237,7 @@ function proxies_insert_front($prev, $insert, $protocols, $apply){
         $new_forward['target_ip']   = $insert['ipv4'];
         $new_forward['target_port'] = $insert['port'];
         $new_forward['protocol']    = 'ssh';
-        $new_forward['description'] = 'Rule added by proxies library on '.date('Y-m-d H:i:s');
+        $new_forward['description'] = 'Rule added by proxies library';
 
         /*
          * Inserting and palying new rule
@@ -290,7 +290,7 @@ function proxies_insert_middle($prev, $next, $insert, $apply){
             $new_forward['target_ip']   = $prev['ipv4'];
             $new_forward['target_port'] = $forward['target_port'];
             $new_forward['protocol']    = $forward['protocol'];
-            $new_forward['description'] = 'Rule added by proxies library on '.date('Y-m-d H:i:s');
+            $new_forward['description'] = 'Rule added by proxies library';
 
             /*
              * Updating forward rule on next server to start redirecting traffic to inserted server
@@ -304,7 +304,7 @@ function proxies_insert_middle($prev, $next, $insert, $apply){
             $next_forward['target_ip']   = $insert['ipv4'];
             $next_forward['target_port'] = $random_port;
             $next_forward['protocol']    = $forward['protocol'];
-            $next_forward['description'] = 'Rule added by proxies library on '.date('Y-m-d H:i:s');
+            $next_forward['description'] = 'Rule added by proxies library';
 
             /*
              * Apply forward rule on inserted server and start accepting traffic on prev server
@@ -339,7 +339,7 @@ function proxies_insert_middle($prev, $next, $insert, $apply){
         $new_forward['target_ip']   = $next['ipv4'];
         $new_forward['target_port'] = $next['port'];
         $new_forward['protocol']    = 'ssh';
-        $new_forward['description'] = 'Rule added by proxies library on '.date('Y-m-d H:i:s');
+        $new_forward['description'] = 'Rule added by proxies library';
 
         forwards_apply_rule($new_forward);
 
@@ -353,7 +353,7 @@ function proxies_insert_middle($prev, $next, $insert, $apply){
         $ssh_forward_prev_old['target_ip']   = $next['ipv4'];
         $ssh_forward_prev_old['target_port'] = $next['port'];
         $ssh_forward_prev_old['protocol']    = 'ssh';
-        $ssh_forward_prev_old['description'] = 'Rule added by proxies library on '.date('Y-m-d H:i:s');
+        $ssh_forward_prev_old['description'] = 'Rule added by proxies library';
 
         $ssh_forward_prev_new['apply']       = $apply;
         $ssh_forward_prev_new['servers_id']  = $prev['id'];
@@ -364,7 +364,7 @@ function proxies_insert_middle($prev, $next, $insert, $apply){
         $ssh_forward_prev_new['target_ip']   = $next['ipv4'];
         $ssh_forward_prev_new['target_port'] = $next['port'];
         $ssh_forward_prev_new['protocol']    = 'ssh';
-        $ssh_forward_prev_new['description'] = 'Rule added by proxies library on '.date('Y-m-d H:i:s');
+        $ssh_forward_prev_new['description'] = 'Rule added by proxies library';
 
         forwards_update_apply($ssh_forward_prev_new, $ssh_forward_prev_old);
 
