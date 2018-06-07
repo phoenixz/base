@@ -33,10 +33,10 @@ function forwardings_library_init(){
  */
 function forwardings_apply_server($server){
     try{
-        $forwards = forwardings_list($server);
+        $forwardings = forwardings_list($server);
 
-        if($forwards){
-            foreach($forwards as $forward){
+        if($forwardings){
+            foreach($forwardings as $forward){
                 forwardings_apply_rule($forward);
             }
         }
@@ -56,10 +56,10 @@ function forwardings_apply_server($server){
  */
 function forwardings_remove_server($server){
     try{
-        $forwards = forwardings_list($server);
+        $forwardings = forwardings_list($server);
 
-        if($forwards){
-            foreach($forwards as $forward){
+        if($forwardings){
+            foreach($forwardings as $forward){
                 forwardings_delete($forward);
             }
         }
@@ -140,8 +140,8 @@ function forwardings_insert($forward, $createdby = null){
 
         $forward = forwardings_validate($forward);
 
-        sql_query('INSERT INTO `forwards` (`createdby`, `servers_id`, `source_ip`, `source_port`, `source_id`, `target_ip`, `target_port`, `target_id`, `protocol`, `description`)
-                   VALUES                 (:createdby ,  :servers_id, :source_ip , :source_port , :source_id , :target_ip , :target_port , :target_id , :protocol , :description )',
+        sql_query('INSERT INTO `forwardings` (`createdby`, `servers_id`, `source_ip`, `source_port`, `source_id`, `target_ip`, `target_port`, `target_id`, `protocol`, `description`)
+                   VALUES                    (:createdby ,  :servers_id, :source_ip , :source_port , :source_id , :target_ip , :target_port , :target_id , :protocol , :description )',
 
                        array(':createdby'   => $createdby,
                              ':servers_id'  => $forward['servers_id'],
@@ -186,7 +186,7 @@ function forwardings_delete($forward){
         array_ensure($forward , '');
         array_default($forward, 'apply', true);
 
-        sql_query('DELETE FROM `forwards` WHERE `id` = :id', array(':id' => $forward['id']));
+        sql_query('DELETE FROM `forwardings` WHERE `id` = :id', array(':id' => $forward['id']));
 
         if($forward['apply']){
             forwardings_delete_apply($forward);
@@ -264,13 +264,13 @@ function forwardings_update($forward, $modifiedby = null){
                                        `target_id`,
                                        `protocol`
 
-                                FROM   `forwards`
+                                FROM   `forwardings`
 
                                 WHERE  `id` = :id',
 
                                 array(':id' => $forward['id']));
 
-        sql_query('UPDATE `forwards`
+        sql_query('UPDATE `forwardings`
 
                    SET    `modifiedby`  = :modifiedby,
                           `modifiedon`  = NOW(),
@@ -458,33 +458,33 @@ function forwardings_get($forwardings_id){
             throw new bException(tr('forwardings_get(): No forwarding specified'), 'not-specified');
         }
 
-        $forward = sql_get('SELECT    `forwards`.`id`,
-                                      `forwards`.`servers_id`,
-                                      `forwards`.`createdon`,
-                                      `forwards`.`createdby`,
-                                      `forwards`.`source_ip`,
-                                      `forwards`.`source_port`,
-                                      `forwards`.`target_ip`,
-                                      `forwards`.`target_port`,
-                                      `forwards`.`protocol`,
-                                      `forwards`.`description`,
+        $forward = sql_get('SELECT    `forwardings`.`id`,
+                                      `forwardings`.`servers_id`,
+                                      `forwardings`.`createdon`,
+                                      `forwardings`.`createdby`,
+                                      `forwardings`.`source_ip`,
+                                      `forwardings`.`source_port`,
+                                      `forwardings`.`target_ip`,
+                                      `forwardings`.`target_port`,
+                                      `forwardings`.`protocol`,
+                                      `forwardings`.`description`,
 
                                       `source_servers`.`seohostname` AS `source_id`,
                                       `target_servers`.`seohostname` AS `target_id`,
                                       `createdby`.`name`             AS `createdby_name`
 
-                            FROM      `forwards`
+                            FROM      `forwardings`
 
                             LEFT JOIN `servers` AS `source_servers`
-                            ON        `forwards`.`source_id`  = `source_servers`.`id`
+                            ON        `forwardings`.`source_id`  = `source_servers`.`id`
 
                             LEFT JOIN `servers` AS `target_servers`
-                            ON        `forwards`.`target_id`  = `target_servers`.`id`
+                            ON        `forwardings`.`target_id`  = `target_servers`.`id`
 
                             LEFT JOIN `users` AS `createdby`
-                            ON        `forwards`.`createdby`  = `createdby`.`id`
+                            ON        `forwardings`.`createdby`  = `createdby`.`id`
 
-                            WHERE     `forwards`.`id`         = :id',
+                            WHERE     `forwardings`.`id`         = :id',
 
                             array(':id' => $forwardings_id));
 
@@ -498,7 +498,7 @@ function forwardings_get($forwardings_id){
 
 
 /*
- * Returns a list of forwards programmed for the specified $server
+ * Returns a list of forwardings programmed for the specified $server
  *
  * @param mixed server Either servers_id, or hostname of specified server
  * @return array
@@ -518,7 +518,7 @@ function forwardings_list($server){
          * From here, $server contains the servers_id
          */
 
-        $forwards = sql_list('SELECT `id`,
+        $forwardings = sql_list('SELECT `id`,
                                      `servers_id`,
                                      `source_id`,
                                      `source_ip`,
@@ -529,7 +529,7 @@ function forwardings_list($server){
                                      `protocol`,
                                      `description`
 
-                              FROM   `forwards`
+                              FROM   `forwardings`
 
                               WHERE  `servers_id` = :servers_id
                               AND    `status` IS NULL',
@@ -538,7 +538,7 @@ function forwardings_list($server){
 
                               true);
 
-        return $forwards;
+        return $forwardings;
 
     }catch(Exception $e){
         throw new bException('forwardings_list(): Failed', $e);
@@ -570,16 +570,16 @@ function forwardings_only_accept_traffic($forward){
 /*
  * Removes forward rules from database and also deletes them from server
  *
- * @param array $forwards, array of forward rules
+ * @param array $forwardings, array of forward rules
  * @return void
  */
-function forwardings_delete_list($forwards, $apply = true){
+function forwardings_delete_list($forwardings, $apply = true){
     try{
-        if(empty($forwards)){
-            throw new bException(tr('forwardings_delete_list(): No forwards specified'), 'not-specified');
+        if(empty($forwardings)){
+            throw new bException(tr('forwardings_delete_list(): No forwardings specified'), 'not-specified');
         }
 
-        foreach($forwards as $forward){
+        foreach($forwardings as $forward){
             $forward['apply'] = $apply;
             forwardings_delete($forward);
         }
@@ -625,7 +625,7 @@ function forwardings_get_by_protocol($server, $protocol){
                                        `target_id`,
                                        `protocol`
 
-                            FROM       `forwards`
+                            FROM       `forwardings`
 
                             WHERE      `servers_id` = :servers_id
                             AND        `protocol`   = :protocol',

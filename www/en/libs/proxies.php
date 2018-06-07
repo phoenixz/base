@@ -62,38 +62,38 @@ function proxies_insert_create($prev, $insert, $protocols, $apply){
         foreach($protocol_port as $protocol => $port){
             $default_port = proxies_get_default_port($protocol);
 
-            $new_forward['apply']       = $apply;
-            $new_forward['servers_id']  = $insert['id'];
-            $new_forward['source_id']   = $insert['id'];
-            $new_forward['source_ip']   = $insert['ipv4'];
-            $new_forward['source_port'] = $default_port;
-            $new_forward['target_id']   = $prev['id'];
-            $new_forward['target_ip']   = $prev['ipv4'];
-            $new_forward['target_port'] = $port;
-            $new_forward['protocol']    = $protocol;
-            $new_forward['description'] = 'Rule added by proxies library';
+            $new_forwarding['apply']       = $apply;
+            $new_forwarding['servers_id']  = $insert['id'];
+            $new_forwarding['source_id']   = $insert['id'];
+            $new_forwarding['source_ip']   = $insert['ipv4'];
+            $new_forwarding['source_port'] = $default_port;
+            $new_forwarding['target_id']   = $prev['id'];
+            $new_forwarding['target_ip']   = $prev['ipv4'];
+            $new_forwarding['target_port'] = $port;
+            $new_forwarding['protocol']    = $protocol;
+            $new_forwarding['description'] = 'Rule added by proxies library';
 
             log_console(tr('Applying rule on inserted server'));
-            forwardings_insert($new_forward);
+            forwardings_insert($new_forwarding);
 
         }
 
         /*
          * Allowing ssh on inserted server from prev server
          */
-        $new_forward['apply']       = $apply;
-        $new_forward['servers_id']  = $prev['id'];
-        $new_forward['source_id']   = $prev['id'];
-        $new_forward['source_ip']   = $prev['ipv4'];
-        $new_forward['source_port'] = $prev['port'];
-        $new_forward['target_id']   = $insert['id'];
-        $new_forward['target_ip']   = $insert['ipv4'];
-        $new_forward['target_port'] = $insert['port'];
-        $new_forward['protocol']    = 'ssh';
-        $new_forward['description'] = 'Rule added by proxies library';
+        $new_forwarding['apply']       = $apply;
+        $new_forwarding['servers_id']  = $prev['id'];
+        $new_forwarding['source_id']   = $prev['id'];
+        $new_forwarding['source_ip']   = $prev['ipv4'];
+        $new_forwarding['source_port'] = $prev['port'];
+        $new_forwarding['target_id']   = $insert['id'];
+        $new_forwarding['target_ip']   = $insert['ipv4'];
+        $new_forwarding['target_port'] = $insert['port'];
+        $new_forwarding['protocol']    = 'ssh';
+        $new_forwarding['description'] = 'Rule added by proxies library';
 
         log_console(tr('Applying rule on inserted server to allow ssh connections from prev server'));
-        forwardings_apply_rule($new_forward);
+        forwardings_apply_rule($new_forwarding);
 
         /*
          * Creating relation on database
@@ -126,31 +126,31 @@ function proxies_insert_front($prev, $insert, $protocols, $apply){
             throw new bException(tr('proxies_insert_front(): No protocols specified', array(':insert_hostname' => $insert['hostname'])), 'not-specified');
         }
 
-        $prev_forwards = forwardings_list($prev['id']);
+        $prev_forwardings = forwardings_list($prev['id']);
 
-        if($prev_forwards){
-            log_console(tr('Inserting at the front with forwards for previous server'));
+        if($prev_forwardings){
+            log_console(tr('Inserting at the front with forwardings for previous server'));
 
-            foreach($prev_forwards as $forward){
-                $default_source_port = proxies_get_default_port($forward['protocol']);
+            foreach($prev_forwardings as $forwarding){
+                $default_source_port = proxies_get_default_port($forwarding['protocol']);
 
                 /*
-                * Creating forward rule for inserted server
+                * Creating forwarding rule for inserted server
                 */
                 $random_port = mt_rand(1025, 65535);
 
-                $new_forward['apply']       = $apply;
-                $new_forward['servers_id']  = $insert['id'];
-                $new_forward['source_id']   = $insert['id'];
-                $new_forward['source_ip']   = $insert['ipv4'];
-                $new_forward['source_port'] = $default_source_port;
-                $new_forward['target_id']   = $prev['id'];
-                $new_forward['target_ip']   = $prev['ipv4'];
-                $new_forward['target_port'] = $random_port;
-                $new_forward['protocol']    = $forward['protocol'];
-                $new_forward['description'] = 'Rule added by proxies library';
+                $new_forwarding['apply']       = $apply;
+                $new_forwarding['servers_id']  = $insert['id'];
+                $new_forwarding['source_id']   = $insert['id'];
+                $new_forwarding['source_ip']   = $insert['ipv4'];
+                $new_forwarding['source_port'] = $default_source_port;
+                $new_forwarding['target_id']   = $prev['id'];
+                $new_forwarding['target_ip']   = $prev['ipv4'];
+                $new_forwarding['target_port'] = $random_port;
+                $new_forwarding['protocol']    = $forwarding['protocol'];
+                $new_forwarding['description'] = 'Rule added by proxies library';
 
-                $exists = forwardings_exists($new_forward);
+                $exists = forwardings_exists($new_forwarding);
 
                 /*
                  * If source port is already in use throw exception
@@ -160,13 +160,13 @@ function proxies_insert_front($prev, $insert, $protocols, $apply){
                 }
 
                 /*
-                 * Updating source port for forward rule on prev server
+                 * Updating source port for forwarding rule on prev server
                  */
-                $prev_forward                = $forward;
-                $prev_forward['apply']       = $apply;
-                $prev_forward['source_port'] = $random_port;
+                $prev_forwarding                = $forwarding;
+                $prev_forwarding['apply']       = $apply;
+                $prev_forwarding['source_port'] = $random_port;
 
-                $exists = forwardings_exists($prev_forward);
+                $exists = forwardings_exists($prev_forwarding);
 
                 if($exists){
                    throw new bException(tr('proxies_insert_front(): Port ":source_port" on host ":host" for protocol ":protocol" is already in use', array(':source_port' => $prev['source_port'], ':host' => $prev['hostname'])), 'invalid');
@@ -175,75 +175,75 @@ function proxies_insert_front($prev, $insert, $protocols, $apply){
                 /*
                  * Inserting and aplying rules, first on inserted server then in prev server
                  */
-                log_console(tr('Applying forward rule on inserted server'));
-                forwardings_insert($new_forward);
+                log_console(tr('Applying forwarding rule on inserted server'));
+                forwardings_insert($new_forwarding);
 
-                log_console(tr('Applying forward rule on prev server for new source port'));
-                forwardings_insert($prev_forward);
+                log_console(tr('Applying forwarding rule on prev server for new source port'));
+                forwardings_insert($prev_forwarding);
 
                 /*
                  * Deleting rule from data base
                  */
-                log_console(tr('Removing old forward rule on prev server'));
+                log_console(tr('Removing old forwarding rule on prev server'));
                 /*
                  * Do not apply, we continue listening on the same port
                  */
-                $forward['apply'] = $apply;
-                forwardings_delete($forward);
+                $forwarding['apply'] = $apply;
+                forwardings_delete($forwarding);
             }
 
         }else{
             /*
-             * if previous server does not have forwards, we set random ports for specified protocols
+             * if previous server does not have forwardings, we set random ports for specified protocols
              */
-            log_console(tr('No forwards for previous server'));
+            log_console(tr('No forwardings for previous server'));
 
             foreach($protocols as $protocol){
-                log_console(tr('Applying forward on inserted server with random port for target_port'));
+                log_console(tr('Applying forwarding on inserted server with random port for target_port'));
                 $default_source_port = proxies_get_default_port($protocol);
 
-                $forward['apply']       = $apply;
-                $forward['servers_id']  = $insert['id'];
-                $forward['source_id']   = $insert['id'];
-                $forward['source_ip']   = $insert['ipv4'];
-                $forward['source_port'] = $default_source_port;
-                $forward['target_id']   = $prev['id'];
-                $forward['target_ip']   = $prev['ipv4'];
-                $forward['target_port'] = mt_rand(1025, 65535);
-                $forward['protocol']    = $protocol;
-                $forward['description'] = 'Rule added by proxies library';
+                $forwarding['apply']       = $apply;
+                $forwarding['servers_id']  = $insert['id'];
+                $forwarding['source_id']   = $insert['id'];
+                $forwarding['source_ip']   = $insert['ipv4'];
+                $forwarding['source_port'] = $default_source_port;
+                $forwarding['target_id']   = $prev['id'];
+                $forwarding['target_ip']   = $prev['ipv4'];
+                $forwarding['target_port'] = mt_rand(1025, 65535);
+                $forwarding['protocol']    = $protocol;
+                $forwarding['description'] = 'Rule added by proxies library';
 
-                $exists = forwardings_exists($forward);
+                $exists = forwardings_exists($forwarding);
 
                 /*
                  * If source port is already in use throw exception
                  */
                 if($exists){
-                    throw new bException(tr('proxies_insert_front(): Port ":source_port" on host ":host" for protocol ":protocol" is already in use', array(':source_port' => $forward['source_port'], ':host' => $insert['hostname'], ':protocol' => $protocol)), 'invalid');
+                    throw new bException(tr('proxies_insert_front(): Port ":source_port" on host ":host" for protocol ":protocol" is already in use', array(':source_port' => $forwarding['source_port'], ':host' => $insert['hostname'], ':protocol' => $protocol)), 'invalid');
                 }
-                forwardings_insert($forward);
+                forwardings_insert($forwarding);
             }
         }
 
         /*
          * For ssh we only accept traffic from
          */
-        $new_forward['apply']       = $apply;
-        $new_forward['servers_id']  = $prev['id'];
-        $new_forward['source_id']   = $prev['id'];
-        $new_forward['source_ip']   = $prev['ipv4'];
-        $new_forward['source_port'] = $prev['port'];
-        $new_forward['target_id']   = $insert['id'];
-        $new_forward['target_ip']   = $insert['ipv4'];
-        $new_forward['target_port'] = $insert['port'];
-        $new_forward['protocol']    = 'ssh';
-        $new_forward['description'] = 'Rule added by proxies library';
+        $new_forwarding['apply']       = $apply;
+        $new_forwarding['servers_id']  = $prev['id'];
+        $new_forwarding['source_id']   = $prev['id'];
+        $new_forwarding['source_ip']   = $prev['ipv4'];
+        $new_forwarding['source_port'] = $prev['port'];
+        $new_forwarding['target_id']   = $insert['id'];
+        $new_forwarding['target_ip']   = $insert['ipv4'];
+        $new_forwarding['target_port'] = $insert['port'];
+        $new_forwarding['protocol']    = 'ssh';
+        $new_forwarding['description'] = 'Rule added by proxies library';
 
         /*
          * Inserting and palying new rule
          */
         log_console(tr('Allowing ssh connection from prev server to inserted server'));
-        forwardings_apply_rule($new_forward);
+        forwardings_apply_rule($new_forwarding);
 
         /*
          * Updating proxy chain
@@ -270,59 +270,58 @@ function proxies_insert_front($prev, $insert, $protocols, $apply){
  */
 function proxies_insert_middle($prev, $next, $insert, $apply){
     try{
-        log_console(tr('Getting forward rules for next server'));
-        $next_forwards = forwardings_list($next['id']);
+        log_console(tr('Getting forwarding rules for next server'));
+        $next_forwardings = forwardings_list($next['id']);
 
-        if(empty($next_forwards)){
-            throw new bException(tr('proxies_insert_middle(): There are not configured rule forwards for next server, nothing to map from ":insert" server to ":next"', array(':insert' => $insert['hostname'], ':next' => $next['hostname'])), 'invalid');
+        if(empty($next_forwardings)){
+            throw new bException(tr('proxies_insert_middle(): There are not configured rule forwardings for next server, nothing to map from ":insert" server to ":next"', array(':insert' => $insert['hostname'], ':next' => $next['hostname'])), 'invalid');
         }
 
-        foreach($next_forwards as $forward){
-
+        foreach($next_forwardings as $forwarding){
             $random_port = mt_rand(1025, 65535);
 
-            $new_forward['apply']       = $apply;
-            $new_forward['servers_id']  = $insert['id'];
-            $new_forward['source_id']   = $insert['id'];
-            $new_forward['source_ip']   = $insert['ipv4'];
-            $new_forward['source_port'] = $random_port;
-            $new_forward['target_id']   = $prev['id'];
-            $new_forward['target_ip']   = $prev['ipv4'];
-            $new_forward['target_port'] = $forward['target_port'];
-            $new_forward['protocol']    = $forward['protocol'];
-            $new_forward['description'] = 'Rule added by proxies library';
+            $new_forwarding['apply']       = $apply;
+            $new_forwarding['servers_id']  = $insert['id'];
+            $new_forwarding['source_id']   = $insert['id'];
+            $new_forwarding['source_ip']   = $insert['ipv4'];
+            $new_forwarding['source_port'] = $random_port;
+            $new_forwarding['target_id']   = $prev['id'];
+            $new_forwarding['target_ip']   = $prev['ipv4'];
+            $new_forwarding['target_port'] = $forwarding['target_port'];
+            $new_forwarding['protocol']    = $forwarding['protocol'];
+            $new_forwarding['description'] = 'Rule added by proxies library';
 
             /*
-             * Updating forward rule on next server to start redirecting traffic to inserted server
+             * Updating forwarding rule on next server to start redirecting traffic to inserted server
              */
-            $next_forward['apply']       = $apply;
-            $next_forward['servers_id']  = $next['id'];
-            $next_forward['source_id']   = $next['id'];
-            $next_forward['source_ip']   = $next['ipv4'];
-            $next_forward['source_port'] = $forward['source_port'];
-            $next_forward['target_id']   = $insert['id'];
-            $next_forward['target_ip']   = $insert['ipv4'];
-            $next_forward['target_port'] = $random_port;
-            $next_forward['protocol']    = $forward['protocol'];
-            $next_forward['description'] = 'Rule added by proxies library';
+            $next_forwarding['apply']       = $apply;
+            $next_forwarding['servers_id']  = $next['id'];
+            $next_forwarding['source_id']   = $next['id'];
+            $next_forwarding['source_ip']   = $next['ipv4'];
+            $next_forwarding['source_port'] = $forwarding['source_port'];
+            $next_forwarding['target_id']   = $insert['id'];
+            $next_forwarding['target_ip']   = $insert['ipv4'];
+            $next_forwarding['target_port'] = $random_port;
+            $next_forwarding['protocol']    = $forwarding['protocol'];
+            $next_forwarding['description'] = 'Rule added by proxies library';
 
             /*
-             * Apply forward rule on inserted server and start accepting traffic on prev server
+             * Apply forwarding rule on inserted server and start accepting traffic on prev server
              */
             log_console(tr('Applying rule on inserted server'));
-            forwardings_insert($new_forward);
+            forwardings_insert($new_forwarding);
 
             /*
-             * Removing forward rule on next server
+             * Removing forwarding rule on next server
              */
             log_console(tr('Removing rule on next server'));
-            forwardings_delete($forward);
+            forwardings_delete($forwarding);
 
             /*
              * Appying new rule on next server to start redirecting traffic to inserted server
              */
             log_console(tr('Applying new rule on next server to redirect traffic to inserted server'));
-            forwardings_insert($next_forward);
+            forwardings_insert($next_forwarding);
         }
 
         /*
@@ -330,43 +329,43 @@ function proxies_insert_middle($prev, $next, $insert, $apply){
          */
         log_console(tr('Getting rules for SSH on next server'));
 
-        $new_forward['apply']       = $apply;
-        $new_forward['servers_id']  = $insert['id'];
-        $new_forward['source_id']   = $insert['id'];
-        $new_forward['source_ip']   = $insert['ipv4'];
-        $new_forward['source_port'] = $insert['port'];
-        $new_forward['target_id']   = $next['id'];
-        $new_forward['target_ip']   = $next['ipv4'];
-        $new_forward['target_port'] = $next['port'];
-        $new_forward['protocol']    = 'ssh';
-        $new_forward['description'] = 'Rule added by proxies library';
+        $new_forwarding['apply']       = $apply;
+        $new_forwarding['servers_id']  = $insert['id'];
+        $new_forwarding['source_id']   = $insert['id'];
+        $new_forwarding['source_ip']   = $insert['ipv4'];
+        $new_forwarding['source_port'] = $insert['port'];
+        $new_forwarding['target_id']   = $next['id'];
+        $new_forwarding['target_ip']   = $next['ipv4'];
+        $new_forwarding['target_port'] = $next['port'];
+        $new_forwarding['protocol']    = 'ssh';
+        $new_forwarding['description'] = 'Rule added by proxies library';
 
-        forwardings_apply_rule($new_forward);
-
+        forwardings_apply_rule($new_forwarding);
         log_console(tr('Updating ssh rule on prev server'));
-        $ssh_forward_prev_old['apply']       = $apply;
-        $ssh_forward_prev_old['servers_id']  = $prev['id'];
-        $ssh_forward_prev_old['source_id']   = $prev['id'];
-        $ssh_forward_prev_old['source_ip']   = $prev['ipv4'];
-        $ssh_forward_prev_old['source_port'] = $prev['port'];
-        $ssh_forward_prev_old['target_id']   = $next['id'];
-        $ssh_forward_prev_old['target_ip']   = $next['ipv4'];
-        $ssh_forward_prev_old['target_port'] = $next['port'];
-        $ssh_forward_prev_old['protocol']    = 'ssh';
-        $ssh_forward_prev_old['description'] = 'Rule added by proxies library';
 
-        $ssh_forward_prev_new['apply']       = $apply;
-        $ssh_forward_prev_new['servers_id']  = $prev['id'];
-        $ssh_forward_prev_new['source_id']   = $prev['id'];
-        $ssh_forward_prev_new['source_ip']   = $prev['ipv4'];
-        $ssh_forward_prev_new['source_port'] = $prev['port'];
-        $ssh_forward_prev_new['target_id']   = $next['id'];
-        $ssh_forward_prev_new['target_ip']   = $next['ipv4'];
-        $ssh_forward_prev_new['target_port'] = $next['port'];
-        $ssh_forward_prev_new['protocol']    = 'ssh';
-        $ssh_forward_prev_new['description'] = 'Rule added by proxies library';
+        $ssh_forwarding_prev_old['apply']       = $apply;
+        $ssh_forwarding_prev_old['servers_id']  = $prev['id'];
+        $ssh_forwarding_prev_old['source_id']   = $prev['id'];
+        $ssh_forwarding_prev_old['source_ip']   = $prev['ipv4'];
+        $ssh_forwarding_prev_old['source_port'] = $prev['port'];
+        $ssh_forwarding_prev_old['target_id']   = $next['id'];
+        $ssh_forwarding_prev_old['target_ip']   = $next['ipv4'];
+        $ssh_forwarding_prev_old['target_port'] = $next['port'];
+        $ssh_forwarding_prev_old['protocol']    = 'ssh';
+        $ssh_forwarding_prev_old['description'] = 'Rule added by proxies library';
 
-        forwardings_update_apply($ssh_forward_prev_new, $ssh_forward_prev_old);
+        $ssh_forwarding_prev_new['apply']       = $apply;
+        $ssh_forwarding_prev_new['servers_id']  = $prev['id'];
+        $ssh_forwarding_prev_new['source_id']   = $prev['id'];
+        $ssh_forwarding_prev_new['source_ip']   = $prev['ipv4'];
+        $ssh_forwarding_prev_new['source_port'] = $prev['port'];
+        $ssh_forwarding_prev_new['target_id']   = $next['id'];
+        $ssh_forwarding_prev_new['target_ip']   = $next['ipv4'];
+        $ssh_forwarding_prev_new['target_port'] = $next['port'];
+        $ssh_forwarding_prev_new['protocol']    = 'ssh';
+        $ssh_forwarding_prev_new['description'] = 'Rule added by proxies library';
+
+        forwardings_update_apply($ssh_forwarding_prev_new, $ssh_forwarding_prev_old);
 
         /*
          * After applying and updating rules, we must update proxies chain
@@ -457,34 +456,33 @@ function proxies_insert($root_hostname, $insert_hostname, $target_hostname, $loc
  */
 function proxies_remove_front($prev, $remove, $apply){
     try{
-        $prev_forwards = forwardings_list($prev['id']);
+        $prev_forwardings = forwardings_list($prev['id']);
 
-        if($prev_forwards){
+        if($prev_forwardings){
             /*
              * Updating source port
              */
-            foreach($prev_forwards as $forward){
-                $new_forward = $forward;
+            foreach($prev_forwardings as $forwarding){
+                $new_forwarding = $forwarding;
 
-                if($forward['protocol'] != 'ssh'){
+                if($forwarding['protocol'] != 'ssh'){
+                    $default_port = proxies_get_default_port($forwarding['protocol']);
 
-                    $default_port = proxies_get_default_port($forward['protocol']);
-
-                    $new_forward['apply']       = $apply;
-                    $new_forward['source_port'] = $default_port;
+                    $new_forwarding['apply']       = $apply;
+                    $new_forwarding['source_port'] = $default_port;
 
                     /*
                      * Applying new rule with default ports
                      */
                     log_console(tr('Applying rule on prev server with default ports'));
-                    forwardings_insert($new_forward);
+                    forwardings_insert($new_forwarding);
 
                     /*
                      * Removing old rule :REVIEW: something is wrong, rule is  not been deleted from database
                      */
-                    $forward['apply'] = true;
+                    $forwarding['apply'] = true;
                     log_console(tr('Removing old rule'));
-                    forwardings_delete($forward);
+                    forwardings_delete($forwarding);
                 }
             }
         }
@@ -493,10 +491,10 @@ function proxies_remove_front($prev, $remove, $apply){
          * Remove rules from removed server
          */
         log_console(tr('Removing all rules for removed server'));
-        $remove_forwards = forwardings_list($remove['id']);
+        $remove_forwardings = forwardings_list($remove['id']);
 
-        if($remove_forwards){
-            forwardings_delete_list($remove_forwards, $apply);
+        if($remove_forwardings){
+            forwardings_delete_list($remove_forwardings, $apply);
         }
 
         /*
@@ -523,29 +521,29 @@ function proxies_remove_front($prev, $remove, $apply){
  */
 function proxies_remove_middle($prev, $next, $remove, $apply){
     try{
-        $next_forwards   = forwardings_list($next['id']);
-        $remove_forwards = forwardings_list($remove['id']);
+        $next_forwardings   = forwardings_list($next['id']);
+        $remove_forwardings = forwardings_list($remove['id']);
 
-        if(empty($next_forwards)){
-            throw new bException(tr('proxies_remove_middle(): There are not forwards rules on next server'), 'invalid');
+        if(empty($next_forwardings)){
+            throw new bException(tr('proxies_remove_middle(): There are not forwardings rules on next server'), 'invalid');
         }
 
-        if(empty($remove_forwards)){
-            throw new bException(tr('proxies_remove_middle(): There are not forwards rules on remove server'), 'invalid');
+        if(empty($remove_forwardings)){
+            throw new bException(tr('proxies_remove_middle(): There are not forwardings rules on remove server'), 'invalid');
         }
 
         /*
          * Applying new rule on next server to start redirecting traffic to prev server
          */
-        foreach($next_forwards as $forward){
-            $new_forward = $forward;
+        foreach($next_forwardings as $forwarding){
+            $new_forwarding = $forwarding;
 
-            foreach($remove_forwards as $index => $remove_forward){
-                if($remove_forward['protocol'] == $forward['protocol']){
-                    $new_forward['apply']       = $apply;
-                    $new_forward['target_id']   = $prev['id'];
-                    $new_forward['target_ip']   = $prev['ipv4'];
-                    $new_forward['target_port'] = $remove_forward['target_port'];
+            foreach($remove_forwardings as $index => $remove_forwarding){
+                if($remove_forwarding['protocol'] == $forwarding['protocol']){
+                    $new_forwarding['apply']       = $apply;
+                    $new_forwarding['target_id']   = $prev['id'];
+                    $new_forwarding['target_ip']   = $prev['ipv4'];
+                    $new_forwarding['target_port'] = $remove_forwarding['target_port'];
                     break;
                 }
             }
@@ -554,21 +552,21 @@ function proxies_remove_middle($prev, $next, $remove, $apply){
              * Inserting and applying new rule on next server
              */
             log_console(tr('Appying new rule on next server'));
-            forwardings_insert($new_forward);
+            forwardings_insert($new_forwarding);
 
         }
 
         /*
-         * Delete forwards rules on next server and removed server
+         * Delete forwardings rules on next server and removed server
          */
         log_console(tr('Removing rules on next server'));
-        forwardings_delete_list($next_forwards, $apply);
+        forwardings_delete_list($next_forwardings, $apply);
 
         /*
-         * Delete forward fules from removed server
+         * Delete forwarding fules from removed server
          */
         log_console(tr('Removing rules on removed server'));
-        forwardings_delete_list($remove_forwards, $apply);
+        forwardings_delete_list($remove_forwardings, $apply);
 
         /*
          * Update proxies chain on database
@@ -867,7 +865,7 @@ function proxies_get_default_port($protocol){
 
 
 /*
- * Validate protocol in order to forward traffic, ssh is configured by default,
+ * Validate protocol in order to forwarding traffic, ssh is configured by default,
  * in order to listen only connection from previous server
  *
  * @param string procotol

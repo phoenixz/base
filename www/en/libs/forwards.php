@@ -140,7 +140,7 @@ function forwards_insert($forward, $createdby = null){
 
         $forward = forwards_validate($forward);
 
-        sql_query('INSERT INTO `forwards` (`createdby`, `servers_id`, `source_ip`, `source_port`, `source_id`, `target_ip`, `target_port`, `target_id`, `protocol`, `description`)
+        sql_query('INSERT INTO `forwardings` (`createdby`, `servers_id`, `source_ip`, `source_port`, `source_id`, `target_ip`, `target_port`, `target_id`, `protocol`, `description`)
                    VALUES                 (:createdby ,  :servers_id, :source_ip , :source_port , :source_id , :target_ip , :target_port , :target_id , :protocol , :description )',
 
                        array(':createdby'   => $createdby,
@@ -186,7 +186,7 @@ function forwards_delete($forward){
         array_ensure($forward , '');
         array_default($forward, 'apply', true);
 
-        sql_query('DELETE FROM `forwards` WHERE `id` = :id', array(':id' => $forward['id']));
+        sql_query('DELETE FROM `forwardings` WHERE `id` = :id', array(':id' => $forward['id']));
 
         if($forward['apply']){
             forwards_delete_apply($forward);
@@ -264,13 +264,13 @@ function forwards_update($forward, $modifiedby = null){
                                        `target_id`,
                                        `protocol`
 
-                                FROM   `forwards`
+                                FROM   `forwardings`
 
                                 WHERE  `id` = :id',
 
                                 array(':id' => $forward['id']));
 
-        sql_query('UPDATE `forwards`
+        sql_query('UPDATE `forwardings`
 
                    SET    `modifiedby`  = :modifiedby,
                           `modifiedon`  = NOW(),
@@ -458,33 +458,33 @@ function forwards_get($forwards_id){
             throw new bException(tr('forwards_get(): No forwarding specified'), 'not-specified');
         }
 
-        $forward = sql_get('SELECT    `forwards`.`id`,
-                                      `forwards`.`servers_id`,
-                                      `forwards`.`createdon`,
-                                      `forwards`.`createdby`,
-                                      `forwards`.`source_ip`,
-                                      `forwards`.`source_port`,
-                                      `forwards`.`target_ip`,
-                                      `forwards`.`target_port`,
-                                      `forwards`.`protocol`,
-                                      `forwards`.`description`,
+        $forward = sql_get('SELECT    `forwardings`.`id`,
+                                      `forwardings`.`servers_id`,
+                                      `forwardings`.`createdon`,
+                                      `forwardings`.`createdby`,
+                                      `forwardings`.`source_ip`,
+                                      `forwardings`.`source_port`,
+                                      `forwardings`.`target_ip`,
+                                      `forwardings`.`target_port`,
+                                      `forwardings`.`protocol`,
+                                      `forwardings`.`description`,
 
                                       `source_servers`.`seohostname` AS `source_id`,
                                       `target_servers`.`seohostname` AS `target_id`,
                                       `createdby`.`name`             AS `createdby_name`
 
-                            FROM      `forwards`
+                            FROM      `forwardings`
 
                             LEFT JOIN `servers` AS `source_servers`
-                            ON        `forwards`.`source_id`  = `source_servers`.`id`
+                            ON        `forwardings`.`source_id`  = `source_servers`.`id`
 
                             LEFT JOIN `servers` AS `target_servers`
-                            ON        `forwards`.`target_id`  = `target_servers`.`id`
+                            ON        `forwardings`.`target_id`  = `target_servers`.`id`
 
                             LEFT JOIN `users` AS `createdby`
-                            ON        `forwards`.`createdby`  = `createdby`.`id`
+                            ON        `forwardings`.`createdby`  = `createdby`.`id`
 
-                            WHERE     `forwards`.`id`         = :id',
+                            WHERE     `forwardings`.`id`         = :id',
 
                             array(':id' => $forwards_id));
 
@@ -529,7 +529,7 @@ function forwards_list($server){
                                      `protocol`,
                                      `description`
 
-                              FROM   `forwards`
+                              FROM   `forwardings`
 
                               WHERE  `servers_id` = :servers_id
                               AND    `status` IS NULL',
@@ -625,7 +625,7 @@ function forwards_get_by_protocol($server, $protocol){
                                        `target_id`,
                                        `protocol`
 
-                            FROM       `forwards`
+                            FROM       `forwardings`
 
                             WHERE      `servers_id` = :servers_id
                             AND        `protocol`   = :protocol',
