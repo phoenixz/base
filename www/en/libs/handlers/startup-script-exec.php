@@ -20,7 +20,7 @@ try{
 
     }elseif(!is_array($arguments)){
         if(!is_string($arguments)){
-            throw new bException('script_exec(): Invalid argv specified. Should either be an array or a space delimited string', 'invalid');
+            throw new bException(tr('script_exec(): Invalid argv specified. Should either be an array or a space delimited string'), 'invalid');
         }
 
         $arguments = explode(' ', $arguments);
@@ -85,14 +85,8 @@ try{
         /*
          * Execute the script (by its tempfile)
          */
-//        cli_method(null, false);
         include($_script_exec_file);
         array_pop($core->register['scripts']);
-
-        /*
-         * Delete the TMP script and the data/libs symlink
-         */
-        file_delete($_script_exec_file, true);
 
     }catch(Exception $e){
         if(!$e->getCode()){
@@ -105,7 +99,7 @@ try{
 
             }else{
                 if(!is_string($ok_exitcodes) and !is_numeric($ok_exitcodes)){
-                    throw new bException('script_exec(): Invalid ok_exitcodes specified, should be either CSV string or array');
+                    throw new bException(tr('script_exec(): Invalid ok_exitcodes specified, should be either CSV string or array'), $e);
                 }
 
                 $ok_exitcodes = explode(',', $ok_exitcodes);
@@ -113,14 +107,14 @@ try{
         }
 
         if(!in_array($e->getCode(), $ok_exitcodes)){
-// :TODO: Remove following line, it was not sending error output from the preceding script
-//                    throw new bException('script_exec(): Script "'.str_log($script).'" failed with code "'.str_log($e->getCode()).'"', $e->getCode(), null);
-            throw new bException('script_exec(): Script "'.str_log($script).'" failed with code "'.str_log($e->getCode()).'"', $e);
+            throw new bException(tr('script_exec(): Script ":script" failed with code ":code"', array(':script' => $script, ':code' => $e->getCode())), $e);
         }
     }
 
     /*
      * Cleanup
+     *
+     * Delete the TMP script and the data/libs symlink
      */
     try{
         file_delete($_script_exec_file, true);
@@ -129,7 +123,7 @@ try{
         /*
          * This is a minor problem, really..
          */
-        log_console('script_exec(): Failed to clean up executed temporary script copy path "'.$_script_exec_file.'", probably a parrallel process added new content there?', 'yellow');
+        log_console(tr('script_exec(): Failed to clean up executed temporary script copy path ":file", probably a parrallel process added new content there?', array(':file' => $_script_exec_file)), 'yellow');
     }
 
     $GLOBALS['argv'] = $argv;
