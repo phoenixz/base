@@ -197,20 +197,6 @@ function str_is_alpha($s, $extra = '\s'){
 /*
  * Return a clean string, basically leaving only printable latin1 characters,
  */
-function str_clean($source, $replace = '-'){
-    try{
-        return preg_replace('/\s|\/|\?|&+/u', $replace, cfm($source));
-
-    }catch(Exception $e){
-        throw new bException(tr('str_clean(): Failed'), $e);
-    }
-}
-
-
-
-/*
- * Return a clean string, basically leaving only printable latin1 characters,
- */
 // :DELETE: This is never used, where would it be used?
 function str_escape_for_jquery($source, $replace = ''){
     try{

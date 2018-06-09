@@ -75,6 +75,8 @@ function storage_documents_get($section, $document = null, $auto_create = false)
                                     `parents_id`,
                                     `rights_id`,
                                     `assigned_to_id`,
+                                    `cutomers_id`,
+                                    `providers_id`,
                                     `status`,
                                     `featured_until`,
                                     `category1`,
@@ -122,8 +124,8 @@ function storage_documents_add($document, $section = null){
             $document['id'] = sql_random_id('storage_documents');
         }
 
-        sql_query('INSERT INTO `storage_documents` (`id`, `createdby`, `meta_id`, `status`, `sections_id`, `masters_id`, `parents_id`, `rights_id`, `assigned_to_id`, `featured_until`, `category1`, `category2`, `category3`, `upvotes`, `downvotes`, `priority`, `level`, `views`, `rating`, `comments`)
-                   VALUES                          (:id , :createdby , :meta_id , :status , :sections_id , :masters_id , :parents_id , :rights_id , :assigned_to_id , :featured_until , :category1 , :category2 , :category3 , :upvotes , :downvotes , :priority , :level , :views , :rating , :comments )',
+        sql_query('INSERT INTO `storage_documents` (`id`, `createdby`, `meta_id`, `status`, `sections_id`, `masters_id`, `parents_id`, `rights_id`, `assigned_to_id`, `customers_id`, `providers_id`, `featured_until`, `category1`, `category2`, `category3`, `upvotes`, `downvotes`, `priority`, `level`, `views`, `rating`, `comments`)
+                   VALUES                          (:id , :createdby , :meta_id , :status , :sections_id , :masters_id , :parents_id , :rights_id , :assigned_to_id , :customers_id , :providers_id , :featured_until , :category1 , :category2 , :category3 , :upvotes , :downvotes , :priority , :level , :views , :rating , :comments )',
 
                    array(':id'             => $document['id'],
                          ':meta_id'        => meta_action(),
@@ -134,6 +136,8 @@ function storage_documents_add($document, $section = null){
                          ':parents_id'     => $document['parents_id'],
                          ':rights_id'      => $document['rights_id'],
                          ':assigned_to_id' => $document['assigned_to_id'],
+                         ':customers_id'   => $document['customers_id'],
+                         ':providers_id'   => $document['providers_id'],
                          ':featured_until' => $document['featured_until'],
                          ':category1'      => $document['category1'],
                          ':category2'      => $document['category2'],
@@ -172,6 +176,8 @@ function storage_documents_update($document, $new = false){
                           `parents_id`     = :parents_id,
                           `rights_id`      = :rights_id,
                           `assigned_to_id` = :assigned_to_id,
+                          `customers_id`   = :customers_id,
+                          `providers_id`   = :providers_id,
                           `featured_until` = :featured_until,
                           `category1`      = :category1,
                           `category2`      = :category2,
@@ -192,6 +198,8 @@ function storage_documents_update($document, $new = false){
                          ':parents_id'     => $document['parents_id'],
                          ':rights_id'      => $document['rights_id'],
                          ':assigned_to_id' => $document['assigned_to_id'],
+                         ':customers_id'   => $document['customers_id'],
+                         ':providers_id'   => $document['providers_id'],
                          ':featured_until' => $document['featured_until'],
                          ':category1'      => $document['category1'],
                          ':category2'      => $document['category2'],

@@ -89,6 +89,8 @@ function storage_pages_get($section, $page = null, $auto_create = false){
                                   `storage_documents`.`parents_id`,
                                   `storage_documents`.`rights_id`,
                                   `storage_documents`.`assigned_to_id`,
+                                  `storage_documents`.`customers_id`,
+                                  `storage_documents`.`providers_id`,
                                   `storage_documents`.`status`,
                                   `storage_documents`.`featured_until`,
                                   `storage_documents`.`category1`,
@@ -110,12 +112,22 @@ function storage_pages_get($section, $page = null, $auto_create = false){
                                   `storage_pages`.`name`,
                                   `storage_pages`.`seoname`,
                                   `storage_pages`.`description`,
-                                  `storage_pages`.`body`
+                                  `storage_pages`.`body`,
+
+                                  `customers`.`name` AS `customer`,
+
+                                  `providers`.`name` AS `provider`
 
                          FROM      `storage_pages`
 
                          LEFT JOIN `storage_documents`
                          ON        `storage_documents`.`id` = `storage_pages`.`documents_id`
+
+                         LEFT JOIN `customers`
+                         ON        `customers`.`id` = `storage_documents`.`customers_id`
+
+                         LEFT JOIN `providers`
+                         ON        `providers`.`id` = `storage_documents`.`providers_id`
 
                          '.$where,
 

@@ -20,7 +20,7 @@
 /*
  * Framework version
  */
-define('FRAMEWORKCODEVERSION', '1.14.1');
+define('FRAMEWORKCODEVERSION', '1.15.0');
 
 
 
@@ -81,7 +81,13 @@ $core->startup();
 
 
 /*
+ * $core is the main object for BASE. It starts automatically once the startup library is loaded, determines the platform (cli or http), and in case of http, what the call type is. The call type differentiates between http web pages, admin web pages (pages with /admin, showing the admin section), ajax requests (URL's starting with /ajax), api requests (URL's starting with /api), system pages (any 404, 403, 500, 503, etc. page), Google AMP pages (any URL starting with /amp), and explicit mobile pages (any URL starting with /mobile). $core will automatically run the correct handler for the specified request, which will automatically load the required libraries, setup timezones, configure language and locale, and load the custom library. After that, control is returned to the webpage that called the startup library
  *
+ * @author Sven Olaf Oostenbrink <sven@capmega.com>
+ * @copyright Copyright (c) 2018 Capmega
+ * @license http://opensource.org/licenses/GPL-2.0 GNU Public License, Version 2
+ * @category Function reference
+ * @package startup
  */
 class core{
     public $sql          = array();
@@ -155,6 +161,17 @@ class core{
         }
     }
 
+    /*
+     * The core::startup() method starts the correct call type handler
+     *
+     * @author Sven Olaf Oostenbrink <sven@capmega.com>
+     * @copyright Copyright (c) 2018 Capmega
+     * @license http://opensource.org/licenses/GPL-2.0 GNU Public License, Version 2
+     * @category Function reference
+     * @package startup
+     *
+     * @return void
+     */
     public function startup(){
         global $_CONFIG, $core;
 
@@ -186,11 +203,35 @@ class core{
         }
     }
 
+    /*
+     *
+     *
+     * @author Sven Olaf Oostenbrink <sven@capmega.com>
+     * @copyright Copyright (c) 2018 Capmega
+     * @license http://opensource.org/licenses/GPL-2.0 GNU Public License, Version 2
+     * @category Function reference
+     * @package startup
+     *
+     * @return void
+     */
     public function executedQuery($query_data){
         $this->register['debug_queries'][] = $query_data;
         return count($this->register['debug_queries']);
     }
 
+    /*
+     * The register allows to store global variables without using the $GLOBALS scope
+     *
+     * @author Sven Olaf Oostenbrink <sven@capmega.com>
+     * @copyright Copyright (c) 2018 Capmega
+     * @license http://opensource.org/licenses/GPL-2.0 GNU Public License, Version 2
+     * @category Function reference
+     * @package startup
+     *
+     * @param string $key The key for the value that needs to be stored
+     * @param (optional) mixed $value The data that has to be stored. If no value is specified, the function will return the value for the specified key.
+     * @return mixed If a value is specified, this function will return the specified value. If no value is specified, it will return the value for the specified key.
+     */
     public function register($key, $value = null){
         if($value === null){
             return isset_get($this->register[$key]);
@@ -199,6 +240,18 @@ class core{
         return $this->register[$key] = $value;
     }
 
+    /*
+     * This method returns SCRIPT, or if $script is specified, it will return true if $script is equal to SCRIPT, or false if not.
+     *
+     * @author Sven Olaf Oostenbrink <sven@capmega.com>
+     * @copyright Copyright (c) 2018 Capmega
+     * @license http://opensource.org/licenses/GPL-2.0 GNU Public License, Version 2
+     * @category Function reference
+     * @package startup
+     *
+     * @param (optional) string $script The key for the value that needs to be stored
+     * @return mixed If $script is specified, this function will return true if $script matches SCRIPT, or false if it does not. If $script is not specified, it will return SCRIPT
+     */
     public function script($script = null){
         if($script === null){
             return SCRIPT;
@@ -207,6 +260,18 @@ class core{
         return SCRIPT === $script;
     }
 
+    /*
+     * This method will return the calltype for this call, as is stored in the private variable core::callType or if $type is specified, will return true if $calltype is equal to core::callType, false if not.
+     *
+     * @author Sven Olaf Oostenbrink <sven@capmega.com>
+     * @copyright Copyright (c) 2018 Capmega
+     * @license http://opensource.org/licenses/GPL-2.0 GNU Public License, Version 2
+     * @category Function reference
+     * @package startup
+     *
+     * @param (optional)string $type The call type you wish to compare to, or nothing if you wish to receive the current core::callType
+     * @return mixed If $type is specified, this function will return true if $type matches core::callType, or false if it does not. If $type is not specified, it will return core::callType
+     */
     public function callType($type = null){
         if($type){
             switch($type){
@@ -241,14 +306,31 @@ class core{
 
 
 /*
- * Extend basic PHP exception to automatically add exception trace information
- * inside the exception objects
+ * Extend basic PHP exception to automatically add exception trace information inside the exception objects
+ *
+ * @author Sven Olaf Oostenbrink <sven@capmega.com>
+ * @copyright Copyright (c) 2018 Capmega
+ * @license http://opensource.org/licenses/GPL-2.0 GNU Public License, Version 2
+ * @category Function reference
+ * @package startup
  */
 class bException extends Exception{
     private $messages = array();
     private $data     = null;
     public  $code     = null;
 
+    /*
+     *
+     * @author Sven Olaf Oostenbrink <sven@capmega.com>
+     * @copyright Copyright (c) 2018 Capmega
+     * @license http://opensource.org/licenses/GPL-2.0 GNU Public License, Version 2
+     * @category Function reference
+     * @package startup
+     *
+     * @param mixed $messages
+     * @param string $code
+     * @param (optional) mixed $data
+     */
     function __construct($messages, $code, $data = null){
         global $core;
 
@@ -326,20 +408,67 @@ class bException extends Exception{
         }
     }
 
+    /*
+     * Add specified $message to the exception messages list
+     *
+     * @author Sven Olaf Oostenbrink <sven@capmega.com>
+     * @copyright Copyright (c) 2018 Capmega
+     * @license http://opensource.org/licenses/GPL-2.0 GNU Public License, Version 2
+     * @category Function reference
+     * @package startup
+     *
+     * @param string $message The message you wish to add to the exceptions messages list
+     * @return object $this, so that you can string multiple calls together
+     */
     public function addMessage($message){
         $this->messages[] = $message;
         return $this;
     }
 
+    /*
+     * Set the exception objects code to the specified $code
+     *
+     * @author Sven Olaf Oostenbrink <sven@capmega.com>
+     * @copyright Copyright (c) 2018 Capmega
+     * @license http://opensource.org/licenses/GPL-2.0 GNU Public License, Version 2
+     * @category Function reference
+     * @package startup
+     *
+     * @param string $code The new exception code you wish to set bException::code to
+     * @return object $this, so that you can string multiple calls together
+     */
     public function setCode($code){
         $this->code = $code;
         return $this;
     }
 
+    /*
+     * Returns the current exception code but without any warning prefix. If the exception code has a prefix, it will be separated from the actual code by a forward slash /. For example, "warning/invalid" would return "invalid"
+     *
+     * @author Sven Olaf Oostenbrink <sven@capmega.com>
+     * @copyright Copyright (c) 2018 Capmega
+     * @license http://opensource.org/licenses/GPL-2.0 GNU Public License, Version 2
+     * @category Function reference
+     * @package startup
+     *
+     * @return string The current bException::code value from the first /
+     */
     public function getRealCode(){
         return str_from($this->code, '/');
     }
 
+    /*
+     * Returns all messages from this exception object
+     *
+     * @author Sven Olaf Oostenbrink <sven@capmega.com>
+     * @copyright Copyright (c) 2018 Capmega
+     * @license http://opensource.org/licenses/GPL-2.0 GNU Public License, Version 2
+     * @category Function reference
+     * @package startup
+     *
+     * @param (optional) string $separator If specified, all messages will be returned as a string, each message separated by the specified $separator. If not specified, the messages will be returned as an array
+     * @return mixed An array with the messages list for this exception. If $separator has been specified, this method will return all messages in one string, each message separated by $separator
+     */
     public function getMessages($separator = null){
         if($separator === null){
             return $this->messages;
@@ -348,16 +477,49 @@ class bException extends Exception{
         return implode($separator, $this->messages);
     }
 
+    /*
+     * Returns the data associated with the exception
+     *
+     * @author Sven Olaf Oostenbrink <sven@capmega.com>
+     * @copyright Copyright (c) 2018 Capmega
+     * @license http://opensource.org/licenses/GPL-2.0 GNU Public License, Version 2
+     * @category Function reference
+     * @package startup
+     *
+     * @return mixed Returns the content for bException::data
+     */
     public function getData(){
         return $this->data;
     }
 
+    /*
+     * Set the data associated with the exception. This content could be a data structure received by the function or method that caused the exception, which could help with handling the exception, logging information, or debugging the issue
+     *
+     * @author Sven Olaf Oostenbrink <sven@capmega.com>
+     * @copyright Copyright (c) 2018 Capmega
+     * @license http://opensource.org/licenses/GPL-2.0 GNU Public License, Version 2
+     * @category Function reference
+     * @package startup
+     *
+     * @param mixed $data The content for this exception
+     */
     public function setData($data){
         $this->data = $data;
     }
 
     /*
-     * Make this exception a warning, or not
+     * Make this exception a warning or not.
+     *
+     * Returns all messages from this exception object
+     *
+     * @author Sven Olaf Oostenbrink <sven@capmega.com>
+     * @copyright Copyright (c) 2018 Capmega
+     * @license http://opensource.org/licenses/GPL-2.0 GNU Public License, Version 2
+     * @category Function reference
+     * @package startup
+     *
+     * @param boolean $value Specify true if this exception should be a warning, false if not
+     * @return object $this, so that you can string multiple calls together
      */
     public function makeWarning($value){
         if($value){
@@ -374,7 +536,18 @@ class bException extends Exception{
 
 
 /*
- * Convert all PHP errors in exceptions
+ * Convert all PHP errors in exceptions. With this function the entirety of base works only with exceptions, and function output normally does not need to be checked for errors.
+ *
+ * NOTE: This function should never be called directly
+ *
+ * @author Sven Olaf Oostenbrink <sven@capmega.com>
+ * @copyright Copyright (c) 2018 Capmega
+ * @license http://opensource.org/licenses/GPL-2.0 GNU Public License, Version 2
+ * @category Function reference
+ * @package startup
+ *
+ * @param boolean $value Specify true if this exception should be a warning, false if not
+ * @return object $this, so that you can string multiple calls together
  */
 function php_error_handler($errno, $errstr, $errfile, $errline, $errcontext){
     return include(__DIR__.'/handlers/startup-php-error-handler.php');
@@ -383,7 +556,18 @@ function php_error_handler($errno, $errstr, $errfile, $errline, $errcontext){
 
 
 /*
- * Display a fatal error
+ * This function is called automaticaly
+ *
+ * NOTE: This function should never be called directly
+ *
+ * @author Sven Olaf Oostenbrink <sven@capmega.com>
+ * @copyright Copyright (c) 2018 Capmega
+ * @license http://opensource.org/licenses/GPL-2.0 GNU Public License, Version 2
+ * @category Function reference
+ * @package startup
+ *
+ * @param boolean $value Specify true if this exception should be a warning, false if not
+ * @return object $this, so that you can string multiple calls together
  */
 function uncaught_exception($e, $die = 1){
     return include(__DIR__.'/handlers/startup-uncaught-exception.php');
@@ -394,6 +578,17 @@ function uncaught_exception($e, $die = 1){
 /*
  * Display value if exists
  * IMPORTANT! After calling this function, $var will exist!
+ *
+ * @author Sven Olaf Oostenbrink <sven@capmega.com>
+ * @copyright Copyright (c) 2018 Capmega
+ * @license http://opensource.org/licenses/GPL-2.0 GNU Public License, Version 2
+ * @category Function reference
+ * @package startup
+ *
+ * @param mixed $variable
+ * @param mixed (optional) $return
+ * @param mixed (optional) $alt_return
+ * @return mixed
  */
 function isset_get(&$variable, $return = null, $alt_return = null){
     if(isset($variable)){
@@ -427,6 +622,17 @@ function isset_get(&$variable, $return = null, $alt_return = null){
  * $replace data to ensure that all markers have been replaced, and non were
  * forgotten. If results were found, an exception will be thrown. This
  * behaviour does NOT apply to production systems
+ *
+ * @author Sven Olaf Oostenbrink <sven@capmega.com>
+ * @copyright Copyright (c) 2018 Capmega
+ * @license http://opensource.org/licenses/GPL-2.0 GNU Public License, Version 2
+ * @category Function reference
+ * @package startup
+ *
+ * @param string $text
+ * @param (optional) array $replace
+ * @param (optional) boolean $verify
+ * @return string
  */
 function tr($text, $replace = null, $verify = true){
     global $_CONFIG;
@@ -461,7 +667,7 @@ function tr($text, $replace = null, $verify = true){
 
     }catch(Exception $e){
         /*
-         * Do NOT use tr() here for obvious reasons!
+         * Do NOT use tr() here for obvious endless loop reasons!
          */
         throw new bException('tr(): Failed with text "'.str_log($text).'". Very likely issue with $replace not containing all keywords, or one of the $replace values is non-scalar', $e);
     }
@@ -470,72 +676,18 @@ function tr($text, $replace = null, $verify = true){
 
 
 /*
- * Cleanup string
+ * Set or get debug mode.
+ *
+ * @author Sven Olaf Oostenbrink <sven@capmega.com>
+ * @copyright Copyright (c) 2018 Capmega
+ * @license http://opensource.org/licenses/GPL-2.0 GNU Public License, Version 2
+ * @category Function reference
+ * @package startup
+ *
+ * @param boolean $enable If set to true, will enable debug mode. If set to false, will disable debug mode. If not set at all, will only return the current debug mode setting.
+ * @return boolean the current debug mode setting
  */
-function cfm($source, $utf8 = true){
-    try{
-        if(!is_scalar($source)){
-            if(!is_null($source)){
-                throw new bException(tr('cfm(): Specified source ":source" from ":location" should be datatype "string" but has datatype ":datatype"', array(':source' => $source, ':datatype' => gettype($source), ':location' => current_file(1).'@'.current_line(1))), 'invalid');
-            }
-        }
-
-        if($utf8){
-            load_libs('utf8');
-            return mb_trim(html_entity_decode(utf8_unescape(strip_tags(utf8_escape($source)))));
-        }
-
-        return mb_trim(html_entity_decode(strip_tags($source)));
-
-    }catch(Exception $e){
-        throw new bException(tr('cfm(): Failed with string ":string"', array(':string' => $source)), $e);
-    }
-// :TODO:SVEN:20130709: Check if we should be using mysqli_escape_string() or addslashes(), since the former requires SQL connection, but the latter does NOT have correct UTF8 support!!
-//    return mysqli_escape_string(trim(decode_entities(mb_strip_tags($str))));
-}
-
-
-
-/*
- * Force integer
- */
-function cfi($source, $allow_null = true){
-    try{
-        if(!$source and $allow_null){
-            return null;
-        }
-
-        return (integer) $source;
-
-    }catch(Exception $e){
-        throw new bException(tr('cfi(): Failed with source ":source"', array(':source' => $source)), $e);
-    }
-}
-
-
-
-/*
- * Force float
- */
-function cf($source, $allow_null = true){
-    try{
-        if(!$source and $allow_null){
-            return null;
-        }
-
-        return (float) $source;
-
-    }catch(Exception $e){
-
-    }
-}
-
-
-
-/*
- * Returns if site is running in debug mode or not
- */
-function debug($class = null){
+function debug($enabled = null){
     global $_CONFIG, $core;
 
     try{
@@ -547,23 +699,12 @@ function debug($class = null){
             throw new bException(tr('debug(): Invalid configuration, $_CONFIG[debug] is boolean, and it should be an array. Please check your config/ directory for "$_CONFIG[\'debug\']"'), 'invalid');
         }
 
-        if($class === null){
-            return (boolean) $_CONFIG['debug']['enabled'];
+        if($enabled !== null){
+            $_CONFIG['debug']['enabled'] = (boolean) $enabled;
         }
 
-        if($class === true){
-            /*
-             * Force debug to be true. This may be useful in production situations where some bug needs quick testing.
-             */
-            $_CONFIG['debug']['enabled'] = true;
-            return true;
-        }
 
-        if(!isset($_CONFIG['debug'][$class])){
-            throw new bException(tr('debug(): Unknown debug class ":class" specified', array(':class' => $class)), 'unknown');
-        }
-
-        return $_CONFIG['debug'][$class];
+        return $_CONFIG['debug']['enabled'];
 
     }catch(Exception $e){
         throw new bException(tr('debug(): Failed'), $e);
@@ -573,7 +714,26 @@ function debug($class = null){
 
 
 /*
- * Send notifications of the specified event to the specified class
+ * Send a notification to specified groups. This function can send one and the same message over multiple paths like email, sms, push notifications, log, etc.
+ *
+ * NOTE: This function is still under construction!
+ *
+ * Examples:
+ * notify(array('classes'    => 'developers',
+ *              'title'      => '',
+ *              'decription' => ''));
+ *
+ * @author Sven Olaf Oostenbrink <sven@capmega.com>
+ * @copyright Copyright (c) 2018 Capmega
+ * @license http://opensource.org/licenses/GPL-2.0 GNU Public License, Version 2
+ * @category Function reference
+ * @package startup
+ * @see notifications_send()
+ *
+ * @param mixed $params['classes']
+ * @param string $params['title']
+ * @param string $params['description']
+ * @return void
  */
 function notify($params){
     try{
@@ -594,11 +754,27 @@ function notify($params){
 
 
 /*
- * Load external library file
+ * Load external library files. All external files must be loaded in ROOT/www/en/libs/external/ and must be specified without that path, with their extension
+ *
+ * Examples:
+ * load_external('Twilio/autoload.php');
+ * load_external(array('Twilio/autoload.php', 'Facebook/facebook.php'));
+ *
+ * @author Sven Olaf Oostenbrink <sven@capmega.com>
+ * @copyright Copyright (c) 2018 Capmega
+ * @license http://opensource.org/licenses/GPL-2.0 GNU Public License, Version 2
+ * @category Function reference
+ * @package startup
+ * @see notifications_send()
+ *
+ * @param mixed $files Either array or CSV string with the files to be loaded
+ * @return voic
  */
-function load_external($file){
+function load_external($files){
     try{
-        include_once(ROOT.'www/en/libs/external/'.$file);
+        foreach(array_force($files) as $file){
+            include_once(ROOT.'www/en/libs/external/'.$files);
+        }
 
     }catch(Exception $e){
         throw new bException(tr('load_external(): Failed'), $e);
@@ -608,7 +784,22 @@ function load_external($file){
 
 
 /*
- * Load specified library files
+ * Load specified libraries. All libraries to be loaded must be specified by only their name, not extension
+ *
+ * Examples:
+ * load_libs('atlant');
+ * load_libs('buks,backup,ssl');
+ * load_libs(array('buks', 'backup', 'ssl'));
+ *
+ * @author Sven Olaf Oostenbrink <sven@capmega.com>
+ * @copyright Copyright (c) 2018 Capmega
+ * @license http://opensource.org/licenses/GPL-2.0 GNU Public License, Version 2
+ * @category Function reference
+ * @package startup
+ * @see notifications_send()
+ *
+ * @param mixed $files Either array or CSV string with the libraries to be loaded
+ * @return void
  */
 function load_libs($libraries, $exception = true){
     global $_CONFIG, $core;
@@ -658,7 +849,24 @@ function load_libs($libraries, $exception = true){
 
 
 /*
- * Load specified configuration file
+ * Load specified configuration files. All files must be specified by their section name only, no extension nor environment.
+ * The function will then load the files ROOT/config/base/NAME.php, ROOT/config/base/production_NAME.php, and on non "production" environments, ROOT/config/base/ENVIRONMENT_NAME.php
+ * For example, if you want to load the "fprint" configuration, use load_config('fprint'); The function will load ROOT/config/base/fprint.php, ROOT/config/base/production_fprint.php, and on (for example) the "local" environment, ROOT/config/base/local_fprint.php
+ *
+ * Examples:
+ * load_config('fprint');
+ * load_config('fprint,buks');
+ * load_libs(array('fprint', 'buks'));
+ *
+ * @author Sven Olaf Oostenbrink <sven@capmega.com>
+ * @copyright Copyright (c) 2018 Capmega
+ * @license http://opensource.org/licenses/GPL-2.0 GNU Public License, Version 2
+ * @category Function reference
+ * @package startup
+ * @see notifications_send()
+ *
+ * @param mixed $files Either array or CSV string with the libraries to be loaded
+ * @return void
  */
 function load_config($files = ''){
     global $_CONFIG, $core;
@@ -728,7 +936,25 @@ function load_config($files = ''){
 
 
 /*
- * Execute shell commands with exception checks
+ * Safely executes shell commands.
+ *
+ * NOTE: This function as currently is, is actually NOT YET safe, its still a partial work in progress!
+ *
+ * Examples:
+ * safe_exec('rm '.ROOT.'data/log/test', '1,2')
+ *
+ * @author Sven Olaf Oostenbrink <sven@capmega.com>
+ * @copyright Copyright (c) 2018 Capmega
+ * @license http://opensource.org/licenses/GPL-2.0 GNU Public License, Version 2
+ * @category Function reference
+ * @package startup
+ * @see notifications_send()
+ *
+ * @param string $commands The commands to be executed
+ * @param (optional, default null) mixed $ok_exitcodes  If specified, will not cause exception for the specified command exit codes.
+ * @param (optional, default true) boolean $route_errors If set to true, error output from the commands will be mixed in with their regular output
+ * @param (optional, default 'exec') string $function One of 'exec', 'passthru', or 'system'. The function to be used internally by safe_exec(). Each function will have different execution and different output. 'passthru' will send all command output directly to the client (browser or command line), 'exec' will return the complete output of the command, but cannot be used for background commands as it will check the process exit code, 'system' can run background processes.
+ * @return mixed The output from the command. The exact format of this output depends on the exact function used within safe exec, specified with $function (See description of that parameter)
  */
 function safe_exec($commands, $ok_exitcodes = null, $route_errors = true, $function = 'exec'){
     return include(__DIR__.'/handlers/startup-safe-exec.php');
@@ -737,7 +963,23 @@ function safe_exec($commands, $ok_exitcodes = null, $route_errors = true, $funct
 
 
 /*
- * Execute the specified script from the ROOT/scripts directory
+ * Executes the specified base script directly inside the current process
+ *
+ * Examples:
+ * script_exec('base/users list', '-C -Q')
+ * script_exec('test')
+ *
+ * @author Sven Olaf Oostenbrink <sven@capmega.com>
+ * @copyright Copyright (c) 2018 Capmega
+ * @license http://opensource.org/licenses/GPL-2.0 GNU Public License, Version 2
+ * @category Function reference
+ * @package startup
+ * @see notifications_send()
+ *
+ * @param string $script The commands to be executed
+ * @param (optional, default true) string $arguments
+ * @param (optional, default null) mixed $ok_exitcodes If specified, will not cause exception for the specified command exit codes.
+ * @return mixed The output from the command. The exact format of this output depends on the exact function used within safe exec, specified with $function (See description of that parameter)
  */
 function script_exec($script, $arguments = null, $ok_exitcodes = null){
     return include(__DIR__.'/handlers/startup-script-exec.php');
@@ -746,7 +988,25 @@ function script_exec($script, $arguments = null, $ok_exitcodes = null){
 
 
 /*
- * Load html templates from disk
+ * Load and return HTML contents from files (SOON DATABASE!)
+ *
+ * Examples:
+ * load_content('index/top')
+ * load_content('index/top', array(':foo' => 'bar'))
+ *
+ * @author Sven Olaf Oostenbrink <sven@capmega.com>
+ * @copyright Copyright (c) 2018 Capmega
+ * @license http://opensource.org/licenses/GPL-2.0 GNU Public License, Version 2
+ * @category Function reference
+ * @package startup
+ * @see notifications_send()
+ *
+ * @param string $file
+ * @param (optional, default false) $replace
+ * @param (optional, default false) $language
+ * @param (optional, default false) $autocreate
+ * @param (optional, default false) $validate
+ * @return string The content of the specified content file
  */
 function load_content($file, $replace = false, $language = null, $autocreate = null, $validate = true){
     global $_CONFIG, $core;
@@ -2846,6 +3106,38 @@ function cdn_domain($file, $section = 'pub', $false_on_not_exist = false, $force
 
 
 /*
+ * Cleanup string
+ */
+function str_clean($source, $utf8 = true){
+    try{
+        if(!is_scalar($source)){
+            if(!is_null($source)){
+                throw new bException(tr('str_clean(): Specified source ":source" from ":location" should be datatype "string" but has datatype ":datatype"', array(':source' => $source, ':datatype' => gettype($source), ':location' => current_file(1).'@'.current_line(1))), 'invalid');
+            }
+        }
+
+        if($utf8){
+            load_libs('utf8');
+
+            $source = mb_trim(html_entity_decode(utf8_unescape(strip_tags(utf8_escape($source)))));
+// :TODO: Check if the next line should also be added!
+//            $source = preg_replace('/\s|\/|\?|&+/u', $replace, $source);
+
+            return $source;
+        }
+
+        return mb_trim(html_entity_decode(strip_tags($source)));
+
+    }catch(Exception $e){
+        throw new bException(tr('str_clean(): Failed with string ":string"', array(':string' => $source)), $e);
+    }
+// :TODO:SVEN:20130709: Check if we should be using mysqli_escape_string() or addslashes(), since the former requires SQL connection, but the latter does NOT have correct UTF8 support!!
+//    return mysqli_escape_string(trim(decode_entities(mb_strip_tags($str))));
+}
+
+
+
+/*
  * Return the given string from the specified needle
  */
 function str_from($source, $needle, $more = 0){
@@ -3619,5 +3911,59 @@ function die_in($count, $message = null){
  */
 function variable_zts_safe($variable, $level = 0){
     return include(__DIR__.'/handlers/variable-zts-safe.php');
+}
+
+
+
+/*
+ * BELOW HERE BE DRAGONS AND OBSOLETE FUNCTIONS
+ */
+
+/*
+ * Force integer
+ */
+function cfm($source, $utf8 = true){
+    try{
+        return str_clean($source, $utf8);
+
+    }catch(Exception $e){
+        throw new bException(tr('cfm(): Failed'), $e);
+    }
+}
+
+
+
+/*
+ * Force integer
+ */
+function cfi($source, $allow_null = true){
+    try{
+        if(!$source and $allow_null){
+            return null;
+        }
+
+        return (integer) $source;
+
+    }catch(Exception $e){
+        throw new bException(tr('cfi(): Failed'), $e);
+    }
+}
+
+
+
+/*
+ * Force float
+ */
+function cf($source, $allow_null = true){
+    try{
+        if(!$source and $allow_null){
+            return null;
+        }
+
+        return (float) $source;
+
+    }catch(Exception $e){
+        throw new bException(tr('cf(): Failed'), $e);
+    }
 }
 ?>
