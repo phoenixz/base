@@ -138,7 +138,17 @@ switch(cli_method()){
                 }
 
                 log_console(tr('Inserting new server ":new" in chain for server ":root"', array(':new' => $new_hostname, ':root' => $root_hostname)), 'white');
-                proxies_insert($root_hostname, $new_hostname, $target_hostname, $location, $protocols);
+
+                try{
+                    proxies_insert($root_hostname, $new_hostname, $target_hostname, $location, $protocols);
+                }catch(Exception $e){
+                    switch(str_from($e->getCode(), '/')){
+                        case 'invalid':
+                            $e->makeWarning(true);
+                    }
+
+                    throw $e;
+                }
                 break;
 
             case 'remove':
