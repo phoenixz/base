@@ -1,0 +1,137 @@
+#!/usr/bin/php
+<?php
+/*
+ * This is the base documentation script
+ */
+$usage = './scripts/base/doc parse
+./scripts/base/doc list [options]
+./scripts/base/doc list scripts
+./scripts/base/doc list libraries
+./scripts/base/doc list functions
+./scripts/base/doc list LIBRARY [options]
+./scripts/base/doc show LIBRARY [options]
+./scripts/base/doc show FUNCTION [options]';
+
+$help  = 'This is the documentation function. Use this function to get help about any command, or library
+
+
+
+METHODS
+
+intro                           - Will show an introduction to BASE and TOOLKIT
+
+arguments                       - Will show an introduction to BASE arguments,
+                                  and list availabe system arguments
+
+list scripts                    - Will list the documented scripts
+
+list libraries                  - Will list the documented libraries
+
+list functions                  - Will list the documented functions (warning,
+                                  there are a LOT of functions)
+
+list LIBRARY                    - List the documented functions for the
+                                  specified library
+
+show library LIBRARY            - Will show the documentation for the specified
+                                  library
+
+show script SCRIPT              - Will show the documentation for the specified
+                                  script
+
+show FUNCTION                   - Will show the documentation for the specified
+                                  function
+
+parse                           - Will use PHPDocumenter to parse the entire
+                                  project, and regenerate all documentation';
+
+require_once(__DIR__.'/../../libs/startup.php');
+cli_only();
+
+switch(cli_method()){
+    case 'intro':
+        /*
+         * Show introduction on BASE
+         */
+        break;
+
+    case 'arguments':
+        /*
+         * Show documentation on BASE command line arguments, and BASE system arguments
+         */
+        break;
+
+    case 'list':
+        switch(cli_method(1)){
+            case 'functions':
+                /*
+                 * List available functions
+                 */
+                break;
+
+            case 'libraries':
+                /*
+                 * List available libraries
+                 */
+                break;
+
+            case 'scripts':
+                /*
+                 * List available scripts
+                 */
+                break;
+
+            case '':
+                throw new bException('No sub method specified. Please specify either "function", "libraries", "scripts", or a library name', 'no-method');
+
+            default:
+                /*
+                 * List functions for the specified library
+                 */
+                $library = cli_method(1);
+
+        }
+
+        break;
+
+    case 'show':
+        switch(cli_method(1)){
+            case 'library':
+                /*
+                 * Show documentation on the specified library
+                 */
+                $library = cli_argument(0);
+                break;
+
+            case 'script':
+                /*
+                 * Show documentation on the specified script
+                 */
+                $script = cli_argument(0);
+                break;
+
+            case '':
+                throw new bException('No sub method specified. Please specify either "library" with a library name, "script" with a script name, or a function name', 'no-method');
+
+            default:
+                /*
+                 * Show documentation on the specified function
+                 */
+                $function = cli_method(1);
+
+        }
+
+        break;
+
+    case 'parse':
+        load_libs('phpdoc');
+        phpdoc_parse(ROOT);
+        break;
+
+    case '':
+        throw new bException(tr('No method specified'), 'no-method');
+
+    default:
+        throw new bException(tr('Unknown method ":method" specified', array(':method' => cli_method())), 'unknown-method');
+}
+?>
