@@ -904,6 +904,136 @@ function array_clean($source, $recursive = true){
 
 
 /*
+ * Returns if the specified callback function returns true for all elements
+ *
+ * Example:
+ * array_all(array(1, 2, 3), function($value){ return $value });
+ *
+ * @author Sven Olaf Oostenbrink <sven@capmega.com>
+ * @copyright Copyright (c) 2018 Capmega
+ * @license http://opensource.org/licenses/GPL-2.0 GNU Public License, Version 2
+ * @category Function reference
+ * @package array
+ *
+ * @param array $source The array to check
+ * @param string $function The function to execute
+ * @return boolean Returns true if the specified callback function returned true for all elements in the array, false otherwise
+ */
+function array_all($source, $function){
+    try{
+        foreach($source as $key => $value){
+            if(!$function($value)){
+                return false;
+            }
+        }
+
+        return true;
+
+    }catch(Exception $e){
+        throw new bException('array_all(): Failed', $e);
+    }
+}
+
+
+
+/*
+ * Returns if the specified callback function returns true for all elements
+ *
+ * Example:
+ * array_any(array(0, 1, 2, 3), function($value){ return $value });
+ *
+ * @author Sven Olaf Oostenbrink <sven@capmega.com>
+ * @copyright Copyright (c) 2018 Capmega
+ * @license http://opensource.org/licenses/GPL-2.0 GNU Public License, Version 2
+ * @category Function reference
+ * @package array
+ *
+ * @param array $source The array to check
+ * @param string $function The function to execute
+ * @return boolean Returns true if the specified callback function returned true for any of the elements in the array, false otherwise
+ */
+function array_any($source, $function){
+    try{
+        foreach($source as $key => $value){
+            if($function($value)){
+                return true;
+            }
+        }
+
+        return false;
+
+    }catch(Exception $e){
+        throw new bException('array_any(): Failed', $e);
+    }
+}
+
+
+
+/*
+ * Returns if the specified callback has duplicate values
+ *
+ * Example:
+ * array_has_duplicates(array(0, 1, 2, 1));
+ *
+ * @author Sven Olaf Oostenbrink <sven@capmega.com>
+ * @copyright Copyright (c) 2018 Capmega
+ * @license http://opensource.org/licenses/GPL-2.0 GNU Public License, Version 2
+ * @category Function reference
+ * @package array
+ *
+ * @param array $source The array to check
+ * @return boolean Returns true if the specified array contains duplicate values, false otherwise
+ */
+function array_has_duplicates($source){
+    try{
+        return count($items) > count(array_unique($items));
+
+    }catch(Exception $e){
+        throw new bException('array_has_duplicates(): Failed', $e);
+    }
+}
+
+
+
+/*
+ * Returns all values (with their keys) from the specified array that match the specified regex
+ *
+ * NOTE: Any non string values will be skipped
+ *
+ * Example:
+ * array_pluck(array('foo', 'bar', 'Frack!', 'test'), '/^F/i');
+ *
+ * @author Sven Olaf Oostenbrink <sven@capmega.com>
+ * @copyright Copyright (c) 2018 Capmega
+ * @license http://opensource.org/licenses/GPL-2.0 GNU Public License, Version 2
+ * @category Function reference
+ * @package array
+ *
+ * @param array $source The array to check
+ * @return boolean Returns true if the specified array contains duplicate values, false otherwise
+ */
+function array_pluck($source, $regex){
+    try{
+        $retval = array();
+
+        foreach($source as $key => $value){
+            if(is_string($value)){
+                if(preg_match($regex, $value)){
+                    $retval[$key] = $value;
+                }
+            }
+        }
+
+        return $retval;
+
+    }catch(Exception $e){
+        throw new bException('array_pluck(): Failed', $e);
+    }
+}
+
+
+
+/*
  * OBSOLETE
  */
 
