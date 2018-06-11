@@ -26,10 +26,10 @@
  */
 function phpdoc_library_init(){
     try{
-        ensure_installed(array('name'      => 'phpdoc',
-                               'project'   => 'phpdoc',
-                               'callback'  => 'phpdoc_install',
-                               'checks'    => array(ROOT.'libs/external/phpdoc/')));
+        //ensure_installed(array('name'      => 'phpdoc',
+        //                       'project'   => 'phpdoc',
+        //                       'callback'  => 'phpdoc_install',
+        //                       'checks'    => array(ROOT.'libs/external/phpdoc/')));
 
     }catch(Exception $e){
         throw new bException('phpdoc_library_init(): Failed', $e);
@@ -80,13 +80,15 @@ function phpdoc_install($params){
  */
 function phpdoc_parse_path($path){
     try{
-        return safe_exec('phpdoc parse "'.$path.'"');
+        load_libs('file');
+
+        file_ensure_path(ROOT.'data/doc/phpdoc');
+        $results = safe_exec(ROOT.'libs/external/phpDocumentor/bin/phpdoc -d "'.$path.'" -t "'.ROOT.'data/doc/phpdoc" -p --config "'.ROOT.'.phpdoc"', null, true, 'passthru');
+
+        return $results;
 
     }catch(Exception $e){
         throw new bException('phpdoc_parse_path(): Failed', $e);
     }
 }
-
-
-
 ?>

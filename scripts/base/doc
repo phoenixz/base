@@ -18,7 +18,11 @@ $help  = 'This is the documentation function. Use this function to get help abou
 
 METHODS
 
-intro                           - Will show an introduction to BASE and TOOLKIT
+intro [SECTION]                 - Will show an introduction to BASE and TOOLKIT.
+                                  If no SECTION is specified, the general intro
+                                  will be displayed. If SECTION is specified,
+                                  the introduction on that section will be
+                                  displayed
 
 arguments                       - Will show an introduction to BASE arguments,
                                   and list availabe system arguments
@@ -125,7 +129,8 @@ switch(cli_method()){
 
     case 'parse':
         load_libs('phpdoc');
-        phpdoc_parse(ROOT);
+        $results = phpdoc_parse_path(ROOT);
+showdie($results);
         break;
 
     case '':
