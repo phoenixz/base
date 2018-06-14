@@ -12,6 +12,14 @@
 
 /*
  * Get HTML countries select list
+ *
+ * @author Marcos Prudencio <marcos@capmega.com>
+ * @copyright Copyright (c) 2018 Capmega
+ * @license http://opensource.org/licenses/GPL-2.0 GNU Public License, Version 2
+ * @category Function reference
+ * @package geo
+ *
+ * @param $ip
  */
 function geo_location_from_ip($ip = null) {
     try{
@@ -55,6 +63,14 @@ function geo_location_from_ip($ip = null) {
 
 /*
  * Get HTML countries select list
+ *
+ * @author Marcos Prudencio <marcos@capmega.com>
+ * @copyright Copyright (c) 2018 Capmega
+ * @license http://opensource.org/licenses/GPL-2.0 GNU Public License, Version 2
+ * @category Function reference
+ * @package geo
+ *
+ * @param $params
  */
 function geo_countries_select($params) {
     try{
@@ -62,7 +78,7 @@ function geo_countries_select($params) {
         array_default($params, 'class'       , '');
         array_default($params, 'disabled'    , false);
         array_default($params, 'id_column'   , 'id');
-        array_default($params, 'name'        , 'countries_id');
+        array_default($params, 'name'        , 'country');
         array_default($params, 'none'        , tr('Select a country'));
         array_default($params, 'option_class', '');
 
@@ -88,6 +104,14 @@ function geo_countries_select($params) {
 
 /*
  * Get HTML states select list
+ *
+ * @author Marcos Prudencio <marcos@capmega.com>
+ * @copyright Copyright (c) 2018 Capmega
+ * @license http://opensource.org/licenses/GPL-2.0 GNU Public License, Version 2
+ * @category Function reference
+ * @package geo
+ *
+ * @param $params
  */
 function geo_states_select($params) {
     try{
@@ -96,7 +120,7 @@ function geo_states_select($params) {
         array_default($params, 'class'           , '');
         array_default($params, 'disabled'        , false);
         array_default($params, 'id_column'       , 'id');
-        array_default($params, 'name'            , 'states_id');
+        array_default($params, 'name'            , 'state');
         array_default($params, 'none'            , tr('Select a state'));
         array_default($params, 'option_class'    , '');
         array_default($params, 'countries_column', 'countries_id');
@@ -134,6 +158,14 @@ function geo_states_select($params) {
 
 /*
  * Get HTML cities select list
+ *
+ * @author Marcos Prudencio <marcos@capmega.com>
+ * @copyright Copyright (c) 2018 Capmega
+ * @license http://opensource.org/licenses/GPL-2.0 GNU Public License, Version 2
+ * @category Function reference
+ * @package geo
+ *
+ * @param $params
  */
 function geo_cities_select($params) {
     try{
@@ -143,7 +175,7 @@ function geo_cities_select($params) {
         array_default($params, 'disabled'     , '');
         array_default($params, 'id_column'    , 'id');
         array_default($params, 'value_column' , 'name');
-        array_default($params, 'name'         , '');
+        array_default($params, 'name'         , 'city');
         array_default($params, 'none'         , tr('Select a city'));
         array_default($params, 'option_class' , '');
         array_default($params, 'states_column', 'states_id');
@@ -177,7 +209,202 @@ function geo_cities_select($params) {
 
 
 /*
+ * Get information about the specified country from the database and return it
+ *
+ * @author Marcos Prudencio <marcos@capmega.com>
+ * @copyright Copyright (c) 2018 Capmega
+ * @license http://opensource.org/licenses/GPL-2.0 GNU Public License, Version 2
+ * @category Function reference
+ * @package geo
+ *
+ * @param $country
+ * @return mixed
+ */
+function geo_get_country($country, $id_only = false){
+    try{
+        if($id_only){
+            $country = sql_get('SELECT `'.$single_column.'` FROM `geo_countries` WHERE `seoname` = :seoname AND `status` IS NULL', true, array(':seoname' => $country));
+
+        }else{
+            $country = sql_get('SELECT `id`,
+                                       `updatedon`,
+                                       `geonames_id`,
+                                       `continents_id`,
+                                       `timezones_id`,
+                                       `code`,
+                                       `iso_alpha2`,
+                                       `iso_alpha3`,
+                                       `iso_numeric`,
+                                       `fips_code`,
+                                       `tld`,
+                                       `currency`,
+                                       `currency_name`,
+                                       `phone`,
+                                       `postal_code_format`,
+                                       `postal_code_regex`,
+                                       `languages`,
+                                       `neighbours`,
+                                       `equivalent_fips_code`,
+                                       `latitude`,
+                                       `longitude`,
+                                       `alternate_names`,
+                                       `name`,
+                                       `seoname`,
+                                       `capital`,
+                                       `areainsqkm`,
+                                       `population`,
+                                       `moddate`,
+                                       `status`
+
+                                FROM   `geo_countries`
+
+                                WHERE  `seoname` = :seoname
+                                AND    `status` IS NULL',
+
+                                array(':seoname' => $country));
+        }
+
+        return $country;
+
+    }catch(Exception $e){
+        throw new bException('geo_get_country(): Failed', $e);
+    }
+}
+
+
+
+/*
+ * Get information about the specified country from the database and return it
+ *
+ * @author Marcos Prudencio <marcos@capmega.com>
+ * @copyright Copyright (c) 2018 Capmega
+ * @license http://opensource.org/licenses/GPL-2.0 GNU Public License, Version 2
+ * @category Function reference
+ * @package geo
+ *
+ * @param $country
+ * @return mixed
+ */
+function geo_get_state($state, $single_column = false){
+    try{
+        if($single_column){
+            if($single_column === true){
+                $single_column = 'id';
+            }
+
+            $state = sql_get('SELECT `'.$single_column.'` FROM `geo_states` WHERE `seoname` = :seoname AND `status` IS NULL', true, array(':seoname' => $state));
+
+        }else{
+            $state = sql_get('SELECT `id`,
+                                     `geonames_id`,
+                                     `countries_id`,
+                                     `country_code`,
+                                     `timezones_id`,
+                                     `code`,
+                                     `name`,
+                                     `seoname`,
+                                     `alternate_names`,
+                                     `latitude`,
+                                     `longitude`,
+                                     `population`,
+                                     `elevation`,
+                                     `admin1`,
+                                     `admin2`,
+                                     `moddate`,
+                                     `status`,
+                                     `filter`
+
+                              FROM   `geo_states`
+
+                              WHERE  `seoname` = :seoname
+                              AND    `status` IS NULL',
+
+                              array(':seoname' => $state));
+        }
+
+        return $state;
+
+    }catch(Exception $e){
+        throw new bException('geo_get_state(): Failed', $e);
+    }
+}
+
+
+
+/*
+ * Get information about the specified country from the database and return it
+ *
+ * @author Marcos Prudencio <marcos@capmega.com>
+ * @copyright Copyright (c) 2018 Capmega
+ * @license http://opensource.org/licenses/GPL-2.0 GNU Public License, Version 2
+ * @category Function reference
+ * @package geo
+ *
+ * @param $country
+ * @return mixed
+ */
+function geo_get_city($city, $id_only = false){
+    try{
+        if($id_only){
+            if($single_column === true){
+                $single_column = 'id';
+            }
+
+            $city = sql_get('SELECT `'.$single_column.'` FROM `geo_cities` WHERE `seoname` = :seoname AND `status` IS NULL', true, array(':seoname' => $country));
+
+        }else{
+            $city = sql_get('SELECT `id`,
+                                    `updatedon`,
+                                    `is_city`,
+                                    `geonames_id`,
+                                    `counties_id`,
+                                    `states_id`,
+                                    `countries_id`,
+                                    `country_code`,
+                                    `name`,
+                                    `seoname`,
+                                    `alternate_names`,
+                                    `alternate_country_codes`,
+                                    `latitude`,
+                                    `longitude`,
+                                    `elevation`,
+                                    `admin1`,
+                                    `admin2`,
+                                    `population`,
+                                    `timezones_id`,
+                                    `timezone`,
+                                    `feature_code`,
+                                    `moddate`,
+                                    `status`
+
+                             FROM   `geo_cities`
+
+                             WHERE  `seoname` = :seoname
+                             AND    `status` IS NULL',
+
+                             array(':seoname' => $city));
+        }
+
+        return $city;
+
+    }catch(Exception $e){
+        throw new bException('geo_get_city(): Failed', $e);
+    }
+}
+
+
+
+/*
  * Return the closest city to the specified latitude / longitude
+ *
+ * @author Marcos Prudencio <marcos@capmega.com>
+ * @copyright Copyright (c) 2018 Capmega
+ * @license http://opensource.org/licenses/GPL-2.0 GNU Public License, Version 2
+ * @category Function reference
+ * @package geo
+ *
+ * @param $latitude
+ * @param $longitude
  */
 function geo_get_nearest_city($latitude, $longitude, $filters = null, $columns = '`id`, `name`, `seoname`, `counties_id`, `states_id`, `countries_id`, `latitude`, `longitude`'){
     global $_CONFIG;
