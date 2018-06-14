@@ -916,8 +916,30 @@ class validate_form {
                 return $this->setError($message);
             }
 
-            if($this->not xor !preg_match('/\(?([0-9]{3})\)?(?:[ .-]{1,5})?([0-9]{3})(?:[ .-]{1,5})?([0-9]{4})/', $this->testValue)){
+            $phone = str_replace(array('(', ')', ' ', '-', '.', '/'), '', $this->testValue);
+            $phone = str_replace('ext', 'x', $phone);
+            $ext   = str_from($phone, 'x');
+            $phone = str_until($phone, 'x');
+
+            if($ext == $phone){
+                /*
+                 * str_from() found no 'x'
+                 */
+                $ext = '';
+            }
+
+            $this->testValue = $phone;
+
+            if($this->not xor (!is_numeric($phone) or ( strlen($phone) > 13))){
                 return $this->setError($message);
+            }
+
+            if($ext){
+                $this->testValue = $phone.($ext ? 'x'.$ext : '');
+
+                if($this->not xor (!is_numeric($ext) or ( strlen($ext) > 6))){
+                    return $this->setError($message);
+                }
             }
 
             return true;
