@@ -10,7 +10,7 @@ sql_column_exists     ('storage_documents', 'customers_id'                     ,
 sql_index_exists      ('storage_documents', 'customers_id'                     , '!ALTER TABLE `storage_documents` ADD KEY  `customers_id` (`customers_id`)');
 sql_foreignkey_exists ('storage_documents', 'fk_storage_documents_customers_id', '!ALTER TABLE `storage_documents` ADD CONSTRAINT `fk_storage_documents_customers_id` FOREIGN KEY (`customers_id`) REFERENCES `customers` (`id`) ON DELETE RESTRICT');
 
-sql_column_exists     ('customers', 'code'    , '!ALTER TABLE `customers` ADD COLUMN `code`     VARCHAR(64) NULL DEFAULT NULL AFTER `name`');
+sql_column_exists     ('customers', 'code'    , '!ALTER TABLE `customers` ADD COLUMN `code`     VARCHAR(64) NULL DEFAULT NULL AFTER `seoname`');
 sql_column_exists     ('customers', 'company' , '!ALTER TABLE `customers` ADD COLUMN `company`  VARCHAR(64) NULL DEFAULT NULL AFTER `code`');
 sql_column_exists     ('customers', 'address1', '!ALTER TABLE `customers` ADD COLUMN `address1` VARCHAR(64) NULL DEFAULT NULL AFTER `company`');
 sql_column_exists     ('customers', 'address2', '!ALTER TABLE `customers` ADD COLUMN `address2` VARCHAR(64) NULL DEFAULT NULL AFTER `address1`');

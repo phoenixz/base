@@ -28,7 +28,7 @@ function storage_documents_library_init(){
 /*
  * Generate a new storage document
  */
-function storage_documents_get($section, $document = null, $auto_create = false){
+function storage_documents_get($section, $document = null, $auto_create = false, $column = null, $status = null){
     try{
         $section = storage_ensure_section($section);
 
@@ -37,64 +37,107 @@ function storage_documents_get($section, $document = null, $auto_create = false)
              * Get a _new record for the current user
              */
             if(empty($_SESSION['user']['id'])){
-                $where   = ' WHERE  `sections_id` = :sections_id
-                             AND    `status`      = "_new"
-                             AND    `createdby`   IS NULL LIMIT 1';
+                if($status === false){
+                    $where   = ' WHERE `sections_id` = :sections_id
+                                 AND   `status`      = "_new"
+                                 AND   `createdby`   IS NULL LIMIT 1';
 
-                $execute = array(':sections_id' => $section['id']);
+                    $execute = array(':sections_id' => $section['id']);
+
+                }else{
+                    $where   = ' WHERE `sections_id` = :sections_id
+                                 AND   `status`      = "_new"
+                                 AND   `createdby`   IS NULL LIMIT 1';
+
+                    $execute = array(':status'      => $status,
+                                     ':sections_id' => $section['id']);
+                }
 
             }else{
-                $where   = ' WHERE  `sections_id` = :sections_id
-                             AND    `status`      = "_new"
-                             AND    `createdby`   = :createdby LIMIT 1';
+                if($status === false){
+                    $where   = ' WHERE `sections_id` = :sections_id
+                                 AND   `status`      = "_new"
+                                 AND   `createdby`   = :createdby LIMIT 1';
 
-                $execute = array(':sections_id' => $section['id'],
-                                 ':createdby'   => $_SESSION['user']['id']);
+                    $execute = array(':sections_id' => $section['id'],
+                                     ':createdby'   => $_SESSION['user']['id']);
+
+                }else{
+                    $where   = ' WHERE `sections_id` = :sections_id
+                                 AND   `status`      = "_new"
+                                 AND   `createdby`   = :createdby LIMIT 1';
+
+                    $execute = array(':status'      => $status,
+                                     ':sections_id' => $section['id'],
+                                     ':createdby'   => $_SESSION['user']['id']);
+                }
             }
 
         }elseif(is_numeric($document)){
             /*
              * Assume this is pages id
              */
-            $where   = ' WHERE  `sections_id` = :sections_id
-                         AND    `id`          = :id
-                         AND    `status`      IN ("published", "unpublished", "_new")';
+            if($status === false){
+                $where   = ' WHERE  `sections_id` = :sections_id
+                             AND    `id`          = :id
+                             AND    `status`      IN ("published", "unpublished", "_new")';
 
-            $execute = array(':sections_id' => $section['id'],
-                             ':id'          => $document);
+                $execute = array(':sections_id' => $section['id'],
+                                 ':id'          => $document);
+
+            }else{
+                $where   = ' WHERE  `sections_id` = :sections_id
+                             AND    `id`          = :id
+                             AND    `storage_documents`.`status` '.sql_is($status).' :status ';
+
+                $execute = array(':status'      => $status,
+                                 ':sections_id' => $section['id'],
+                                 ':id'          => $document);
+            }
 
         }else{
             throw new bException(tr('storage_documents_get(): Invalid document specified, is datatype ":type", should be null, numeric, string, or array', array(':type' => gettype($document))), 'invalid');
         }
 
-        $document = sql_get('SELECT `id`,
-                                    `meta_id`,
-                                    `createdby`,
-                                    `sections_id`,
-                                    `masters_id`,
-                                    `parents_id`,
-                                    `rights_id`,
-                                    `assigned_to_id`,
-                                    `cutomers_id`,
-                                    `providers_id`,
-                                    `status`,
-                                    `featured_until`,
-                                    `category1`,
-                                    `category2`,
-                                    `category3`,
-                                    `upvotes`,
-                                    `downvotes`,
-                                    `priority`,
-                                    `level`,
-                                    `views`,
-                                    `rating`,
-                                    `comments`
+        if($column){
+            $document = sql_get('SELECT `'.$column.'`,
 
-                             FROM   `storage_documents`
+                                 FROM   `storage_documents`
 
-                             '.$where,
+                                 '.$where,
 
-                             $execute);
+                                 true, $execute);
+
+        }else{
+            $document = sql_get('SELECT `id`,
+                                        `meta_id`,
+                                        `createdby`,
+                                        `sections_id`,
+                                        `masters_id`,
+                                        `parents_id`,
+                                        `rights_id`,
+                                        `assigned_to_id`,
+                                        `cutomers_id`,
+                                        `providers_id`,
+                                        `status`,
+                                        `featured_until`,
+                                        `category1`,
+                                        `category2`,
+                                        `category3`,
+                                        `upvotes`,
+                                        `downvotes`,
+                                        `priority`,
+                                        `level`,
+                                        `views`,
+                                        `rating`,
+                                        `comments`
+
+                                 FROM   `storage_documents`
+
+                                 '.$where,
+
+                                 $execute);
+        }
 
         if(empty($document) and empty($document) and $auto_create){
             $document = storage_documents_add(array('status' => '_new'));
