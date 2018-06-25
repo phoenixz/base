@@ -174,7 +174,14 @@ function mysql_update_database_replication_status($params, $status){
         /*
          * Update database
          */
-        sql_query('UPDATE `databases` SET `replication_status` = :replication_status WHERE name = :name', array(':replication_status' => $status, ':name' => $params['database']));
+        sql_query('UPDATE `databases`
+
+                   SET    `replication_status` = :replication_status
+
+                   WHERE  `name` = :name',
+
+                   array(':replication_status' => $status,
+                         ':name'               => $params['database']));
 
     }catch(Exception $e){
         throw new bException(tr('mysql_update_replication_status(): Failed'), $e);
@@ -218,6 +225,7 @@ function mysql_update_replication_status($params, $status){
         throw new bException(tr('mysql_update_replication_status(): Failed'), $e);
     }
 }
+
 
 
 /*
@@ -420,9 +428,7 @@ function mysql_slave_replication_setup($params){
          * This server master was not replicating
          * Enable SSH tunnel
          * Enable SLAVE for this server
-         */
-
-        /*
+         *
          * Create SSH tunneling user
          */
         log_console(tr('Creating ssh tunneling user on local server'), 'DOT');
