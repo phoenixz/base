@@ -252,7 +252,7 @@ function ssh_exec($server, $commands = null, $background = false, $function = 'e
         safe_exec('> '.$user_known_hosts_file);
 
         if(!$server['hostkey_check']){
-            $server['arguments'] .= ' -o StrictHostKeyChecking=no -o UserKnownHostsFile='.$user_known_hosts_file;
+            $server['arguments'] .= ' -o CheckHostIP=no -o StrictHostKeyChecking=no -o UserKnownHostsFile='.$user_known_hosts_file;
         }
 
         /*
