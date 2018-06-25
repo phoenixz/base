@@ -433,6 +433,8 @@ switch(cli_method()){
 
                     }catch(Exception $e){
                         log_console(tr('Error :error', array(':error' => $e)), 'red');
+
+                        log_error(tr('mysql/check: Failed to on database ":database", encountered error ":error"', array(':database' => $database['database'], ':error' => str_log($e->getMessage()))));
                     }
                 }
 
