@@ -364,7 +364,7 @@ function mysql_slave_replication_setup($params){
          * Check for mysqld.cnf file
          */
         log_console(tr('Checking existance of mysql configuration file on local server'), 'DOT');
-        $mysql_cnf = servers_exec($database['hostname'], 'test -f '.$mysql_cnf_path.' && echo "1" || echo "0"', null, false);
+        $mysql_cnf = safe_exec('test -f '.$mysql_cnf_path.' && echo "1" || echo "0"');
 
         /*
          * Mysql conf file does not exist
@@ -374,7 +374,7 @@ function mysql_slave_replication_setup($params){
              * Try with other possible configuration file
              */
             $mysql_cnf_path = '/etc/mysql/my.cnf';
-            $mysql_cnf      = servers_exec($database['hostname'], 'test -f '.$mysql_cnf_path.' && echo "1" || echo "0"', null, false);
+            $mysql_cnf      = safe_exec('test -f '.$mysql_cnf_path.' && echo "1" || echo "0"');
 
             if(!$mysql_cnf[0]){
                 throw new bException(tr('mysql_master_replication_setup(): MySQL configuration file :file does not exist on local server', array(':file' => $mysql_cnf_path)), 'not-exist');
@@ -385,24 +385,24 @@ function mysql_slave_replication_setup($params){
          * MySQL SETUP
          */
         log_console(tr('Making slave setup for MySQL configuration file'), 'DOT');
-        servers_exec($database['hostname'], 'sudo sed -i "s/#server-id[[:space:]]*=[[:space:]]*1/server-id = '.$database['id'].'/" '.$mysql_cnf_path, null, false);
-        servers_exec($database['hostname'], 'sudo sed -i "s/#log_bin/log_bin/" '.$mysql_cnf_path, null, false);
+        safe_exec('sudo sed -i "s/#server-id[[:space:]]*=[[:space:]]*1/server-id = '.$database['id'].'/" '.$mysql_cnf_path);
+        safe_exec('sudo sed -i "s/#log_bin/log_bin/" '.$mysql_cnf_path);
 
         /*
          * The next lines just have to be added one time!
          * Check if they already exist... if not append them
          */
-        servers_exec($database['hostname'], 'grep -q -F \'relay-log = /var/log/mysql/mysql-relay-bin.log\' '.$mysql_cnf_path.' || echo "relay-log = /var/log/mysql/mysql-relay-bin.log" | sudo tee -a '.$mysql_cnf_path, null, false);
-        servers_exec($database['hostname'], 'grep -q -F \'master-info-repository = table\' '.$mysql_cnf_path.' || echo "master-info-repository = table" | sudo tee -a '.$mysql_cnf_path, null, false);
-        servers_exec($database['hostname'], 'grep -q -F \'relay-log-info-repository = table\' '.$mysql_cnf_path.' || echo "relay-log-info-repository = table" | sudo tee -a '.$mysql_cnf_path, null, false);
-        servers_exec($database['hostname'], 'grep -q -F \'binlog_do_db = '.$database['database'].'\' '.$mysql_cnf_path.' || echo "binlog_do_db = '.$database['database'].'" | sudo tee -a '.$mysql_cnf_path, null, false);
+        safe_exec('grep -q -F \'relay-log = /var/log/mysql/mysql-relay-bin.log\' '.$mysql_cnf_path.' || echo "relay-log = /var/log/mysql/mysql-relay-bin.log" | sudo tee -a '.$mysql_cnf_path);
+        safe_exec('grep -q -F \'master-info-repository = table\' '.$mysql_cnf_path.' || echo "master-info-repository = table" | sudo tee -a '.$mysql_cnf_path);
+        safe_exec('grep -q -F \'relay-log-info-repository = table\' '.$mysql_cnf_path.' || echo "relay-log-info-repository = table" | sudo tee -a '.$mysql_cnf_path);
+        safe_exec('grep -q -F \'binlog_do_db = '.$database['database'].'\' '.$mysql_cnf_path.' || echo "binlog_do_db = '.$database['database'].'" | sudo tee -a '.$mysql_cnf_path);
 
         /*
          * Close PDO connection before restarting MySQL
          */
         sql_close();
         log_console(tr('Restarting local MySQL service'), 'DOT');
-        servers_exec($database['hostname'], 'sudo service mysql restart', null, false);
+        safe_exec('sudo service mysql restart');
         sql_close();
         sleep(2);
 
@@ -458,8 +458,6 @@ function mysql_slave_replication_setup($params){
         /*
          * Final step check for SLAVE status
          */
-// :DELETE: The status check is done by the "replication check" script
-        //$slave_status = servers_exec($database['hostname'], 'mysql "-u'.$database['root_db_user'].'" "-p'.$database['root_db_password'].'" -ANe "SHOW SLAVE STATUS;"', null, false, true);
         mysql_update_replication_status($database, 'enabled');
         log_console(tr('Finished!!'), 'white');
 
