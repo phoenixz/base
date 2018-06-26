@@ -252,7 +252,7 @@ function ssh_exec($server, $commands = null, $background = false, $function = 'e
         safe_exec('> '.$user_known_hosts_file);
 
         if(!$server['hostkey_check']){
-            $server['arguments'] .= ' -o StrictHostKeyChecking=no -o UserKnownHostsFile='.$user_known_hosts_file;
+            $server['arguments'] .= ' -o CheckHostIP=no -o StrictHostKeyChecking=no -o UserKnownHostsFile='.$user_known_hosts_file;
         }
 
         /*
@@ -595,7 +595,7 @@ function ssh_mysql_slave_tunnel($server){
         /*
          * Execute command
          */
-        $result = safe_exec('autossh -p '.$server['port'].' -i '.$keyfile.' -L '.$server['ssh_port'].':localhost:3306 '.$server['username'].'@'.$server['hostname'].' -f -N &');
+        $result = safe_exec('ssh -p '.$server['port'].' -i '.$keyfile.' -L '.$server['ssh_port'].':localhost:3306 '.$server['username'].'@'.$server['hostname'].' -f -N &');
 
         /*
          * Delete key file in background process

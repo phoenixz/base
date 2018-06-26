@@ -377,58 +377,63 @@ switch(cli_method()){
                 load_libs('ssh,servers');
 
                 while($database = sql_fetch($databases)){
-                    /*
-                     * Check if MySQL configuration still has this database
-                     */
-                    log_console(tr('Checking database :database from server :server', array(':database' => $database['database'], ':server' => $database['hostname'])), 'white');
-                    $mysql_cnf_path = '/etc/mysql/mysql.conf.d/mysqld.cnf';
-                    $mysql_cnf      = servers_exec($database['hostname'], 'test -f '.$mysql_cnf_path.' && echo "1" || echo "0"');
-
-                    /*
-                     * Mysql conf file does not exist
-                     */
-                    if(!$mysql_cnf[0]){
+                    try{
                         /*
-                         * Try with other possible configuration file
+                         * Check if MySQL configuration still has this database
                          */
-                        $mysql_cnf_path = '/etc/mysql/my.cnf';
+                        log_console(tr('Checking database :database from server :server', array(':database' => $database['database'], ':server' => $database['hostname'])), 'white');
+                        $mysql_cnf_path = '/etc/mysql/mysql.conf.d/mysqld.cnf';
                         $mysql_cnf      = servers_exec($database['hostname'], 'test -f '.$mysql_cnf_path.' && echo "1" || echo "0"');
 
+                        /*
+                         * Mysql conf file does not exist
+                         */
                         if(!$mysql_cnf[0]){
-                            throw new bException(tr('MySQL configuration file :file does not exist on this server', array(':file' => $mysql_cnf_path)), 'not-exist');
+                            /*
+                             * Try with other possible configuration file
+                             */
+                            $mysql_cnf_path = '/etc/mysql/my.cnf';
+                            $mysql_cnf      = servers_exec($database['hostname'], 'test -f '.$mysql_cnf_path.' && echo "1" || echo "0"');
+
+                            if(!$mysql_cnf[0]){
+                                throw new bException(tr('MySQL configuration file :file does not exist on this server', array(':file' => $mysql_cnf_path)), 'not-exist');
+                            }
                         }
-                    }
 
-                    $result = servers_exec($database['hostname'], 'grep -q -F \'binlog_do_db = '.$database['database'].'\' '.$mysql_cnf_path.' && echo "1" || echo "0"');
+                        $result = servers_exec($database['hostname'], 'grep -q -F \'binlog_do_db = '.$database['database'].'\' '.$mysql_cnf_path.' && echo "1" || echo "0"');
 
-                    if(!$result[0]){
+                        if(!$result[0]){
+                            /*
+                             * Database is not in binlog then it is disabled
+                             */
+                            mysql_update_database_replication_status($database, 'disabled');
+                            continue;
+                        }
+
                         /*
-                         * Database is not in binlog then it is disabled
+                         * Check channel for the server database
                          */
-                        mysql_update_database_replication_status($database, 'disabled');
-                        continue;
+                        $result = sql_get('SHOW SLAVE STATUS FOR CHANNEL :channel', array(':channel' => $database['hostname']));
+
+                        if(empty($result)){
+                            /*
+                             * No slave channel for this server
+                             */
+                            mysql_update_database_replication_status($database, 'disabled');
+                            continue;
+                        }
+
+                        if(strtolower($result['Slave_IO_Running']) != 'yes' and strtolower($result['Slave_IO_Running']) != 'yes'){
+                            ssh_mysql_slave_tunnel($database);
+                            mysql_update_database_replication_status($database, 'error');
+                            continue;
+                        }
+
+                        mysql_update_replication_status($database, 'enabled');
+
+                    }catch(Exception $e){
+                        log_console(tr('mysql/check: Failed to on database ":database", encountered error ":error"', array(':database' => $database['database'], ':error' => str_log($e->getMessage()))), 'red');
                     }
-
-                    /*
-                     * Check channel for the server database
-                     */
-                    $result = sql_get('SHOW SLAVE STATUS FOR CHANNEL :channel', array(':channel' => $database['hostname']));
-
-                    if(empty($result)){
-                        /*
-                         * No slave channel for this server
-                         */
-                        mysql_update_database_replication_status($database, 'disabled');
-                        continue;
-                    }
-
-                    if(strtolower($result['Slave_IO_Running']) != 'yes' and strtolower($result['Slave_IO_Running']) != 'yes'){
-                        ssh_mysql_slave_tunnel($database);
-                        mysql_update_database_replication_status($database, 'error');
-                        continue;
-                    }
-
-                    mysql_update_replication_status($database, 'enabled');
                 }
 
                 break;
