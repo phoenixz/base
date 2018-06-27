@@ -2525,12 +2525,20 @@ function name($user = null, $key_prefix = '', $default = null){
 /*
  * Show the specified page
  */
-function page_show($pagename, $params = null){
+function page_show($pagename, $params = null, $get = null){
     global $_CONFIG, $core;
 
     try{
         array_params($params, 'message');
         array_default($params, 'exists', false);
+
+        if($get){
+            if(!is_array($get)){
+                throw new bException(tr('page_show(): Specified $get MUST be an array, but is an ":type"', array(':type' => gettype($get))), 'invalid');
+            }
+
+            $_GET = $get;
+        }
 
         if(defined('LANGUAGE')){
             $language = LANGUAGE;
