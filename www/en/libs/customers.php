@@ -11,6 +11,30 @@
 
 
 /*
+ * Initialize the library, automatically executed by libs_load()
+ *
+ * NOTE: This function is executed automatically by the load_libs() function and does not need to be called manually
+ *
+ * @author Sven Olaf Oostenbrink <sven@capmega.com>
+ * @copyright Copyright (c) 2018 Capmega
+ * @license http://opensource.org/licenses/GPL-2.0 GNU Public License, Version 2
+ * @category Function reference
+ * @package customers
+ *
+ * @return void
+ */
+function customers_library_init(){
+    try{
+        load_config('customers');
+
+    }catch(Exception $e){
+        throw new bException('customers_library_init(): Failed', $e);
+    }
+}
+
+
+
+/*
  * Validate a customer
  *
  * This function will validate all relevant fields in the specified $customer array
@@ -288,20 +312,20 @@ function customers_validate($customer){
 function customers_select($params = null){
     try{
         array_ensure($params);
-        array_default($params, 'name'      , 'customers_id');
-        array_default($params, 'class'     , 'form-control');
-        array_default($params, 'selected'  , null);
-        array_default($params, 'parents_id', null);
-        array_default($params, 'status'    , null);
-        array_default($params, 'empty'     , tr('No customers available'));
-        array_default($params, 'none'      , tr('Select a customer'));
-        array_default($params, 'tabindex'  , 0);
-        array_default($params, 'extra'     , 'tabindex="'.$params['tabindex'].'"');
-        array_default($params, 'orderby'   , '`name`');
+        array_default($params, 'name'         , 'customer');
+        array_default($params, 'class'        , 'form-control');
+        array_default($params, 'selected'     , null);
+        array_default($params, 'categories_id', null);
+        array_default($params, 'status'       , null);
+        array_default($params, 'empty'        , tr('No customers available'));
+        array_default($params, 'none'         , tr('Select a customer'));
+        array_default($params, 'tabindex'     , 0);
+        array_default($params, 'extra'        , 'tabindex="'.$params['tabindex'].'"');
+        array_default($params, 'orderby'      , '`name`');
 
-        if($params['parents_id']){
-            $where[] = ' `parents_id` = :parents_id ';
-            $execute[':parents_id'] = $params['parents_id'];
+        if($params['categories_id'] !== false){
+            $where[] = ' `categories_id` '.sql_is($params['categories_id']).' :categories_id ';
+            $execute[':categories_id'] = $params['categories_id'];
         }
 
         if($params['status'] !== false){
