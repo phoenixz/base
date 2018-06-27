@@ -25,6 +25,7 @@
  */
 function progress_library_init(){
     try{
+        load_config('progress');
 
     }catch(Exception $e){
         throw new bException('progress_library_init(): Failed', $e);
@@ -133,7 +134,13 @@ function progress_validate_process($process){
 
                     if($step['url']){
                         $v->hasMaxChars($step['url'], 255, tr('Please ensure the process step URLs have less than 255 characters'));
-                        $v->isURL($step['url'], tr('Please a valid URL'));
+
+                        if(preg_match('/^[a-z-]+:\/\//', $step['url'])){
+                            $v->isURL($step['url'], tr('Please a valid URL'));
+
+                        }else{
+                            $v->isAlphaNumeric($step['url'], tr('Please specify valid process step program'), VALIDATE_IGNORE_DASH);
+                        }
 
                     }else{
                         $step['url'] = null;
@@ -173,7 +180,7 @@ function progress_validate_process($process){
  * Return data for the specified process
  *
  * This function returns information for the specified process. The process can be specified by seoname or id, and return data will either be all data, or (optionally) only the specified column
-
+ *
  * @author Sven Olaf Oostenbrink <sven@capmega.com>
  * @copyright Copyright (c) 2018 Capmega
  * @license http://opensource.org/licenses/GPL-2.0 GNU Public License, Version 2
@@ -237,6 +244,77 @@ function progress_get_process($process, $column = null, $status = null){
 
 
 /*
+ * Return data for the specified process step
+ *
+ * This function returns information for the specified process. The process can be specified by seoname or id, and return data will either be all data, or (optionally) only the specified column
+
+ * @author Sven Olaf Oostenbrink <sven@capmega.com>
+ * @copyright Copyright (c) 2018 Capmega
+ * @license http://opensource.org/licenses/GPL-2.0 GNU Public License, Version 2
+ * @category Function reference
+ * @package progress
+ *
+ * @param mixed $process The requested process. Can either be specified by id (natural number) or string (seoname)
+ * @param mixed $step The requested process step. Can either be specified by id (natural number) or string (seoname)
+ * @param string $column The specific column that has to be returned
+ * @return mixed The category data. If no column was specified, an array with all columns will be returned. If a column was specified, only the column will be returned (having the datatype of that column). If the specified category does not exist, NULL will be returned.
+ */
+function progress_get_step($processes_id, $step, $column = null, $status = null){
+    try{
+        $where[] = ' `progress_steps`.`processes_id` = :processes_id ';
+        $execute[':processes_id'] = $processes_id;
+
+        if($step){
+            if(is_numeric($step)){
+                $where[] = ' `progress_steps`.`id` = :id ';
+                $execute[':id'] = $step;
+
+            }else{
+                $where[] = ' `progress_steps`.`seoname` = :seoname ';
+                $execute[':seoname'] = $step;
+            }
+
+        }else{
+            $where[] = ' `progress_steps`.`parents_id` IS NULL';
+        }
+
+        if($status !== false){
+            $execute[':status'] = $status;
+            $where[] = ' `progress_steps`.`status` '.sql_is($status).' :status';
+        }
+
+        $where   = ' WHERE '.implode(' AND ', $where);
+
+        if($column){
+            $process = sql_get('SELECT `'.$column.'`
+
+                                FROM   `progress_steps`'.$where, true, $execute);
+
+        }else{
+            $process = sql_get('SELECT `id`,
+                                       `createdon`,
+                                       `createdby`,
+                                       `meta_id`,
+                                       `status`,
+                                       `url`,
+                                       `name`,
+                                       `seoname`,
+                                       `description`
+
+                                FROM   `progress_steps` '.$where, $execute);
+        }
+
+
+        return $process;
+
+    }catch(Exception $e){
+        throw new bException('progress_get_step(): Failed', $e);
+    }
+}
+
+
+
+/*
  * Return the available process steps for the specified $processes_id
  *
  *
@@ -250,31 +328,52 @@ function progress_get_process($process, $column = null, $status = null){
  * @param integer $processes_id
  * @return array
  */
-function progress_get_steps($processes_id){
+function progress_get_steps($processes_id, $columns = null, $status = null){
     try{
-        $steps = sql_list('SELECT    `progress_steps`.`id`,
-                                     `progress_steps`.`name`,
-                                     `progress_steps`.`seoname`,
-                                     `progress_steps`.`url`,
-                                     `progress_steps`.`description`,
+        if(!$processes_id){
+            return null;
+        }
 
-                                     `users`.`name`     AS `user_name`,
-                                     `users`.`email`    AS `user_email`,
-                                     `users`.`username` AS `user_username`
+        if(!is_numeric($processes_id)){
+            throw new bException(tr('progress_get_steps(): Invalid processes_id ":id" specified', array(':id' => $processes_id)), 'invalid');
+        }
+
+        $execute[':processes_id'] = $processes_id;
+        $where[]                  = ' `progress_steps`.`processes_id` = :processes_id ';
+
+        if($status !== false){
+            $execute[':status'] = $status;
+            $where[]            = ' `progress_steps`.`status` '.sql_is($status).' :status ';
+        }
+
+        $where = ' WHERE '.implode(' AND ', $where);
+
+        if(!$columns){
+            $columns = '`progress_steps`.`id`,
+                        `progress_steps`.`name`,
+                        `progress_steps`.`seoname`,
+                        `progress_steps`.`url`,
+                        `progress_steps`.`description`,
+
+                        `users`.`name`     AS `user_name`,
+                        `users`.`email`    AS `user_email`,
+                        `users`.`username` AS `user_username`';
+        }
+
+        $steps = sql_list('SELECT    '.$columns.'
 
                            FROM      `progress_steps`
 
                            LEFT JOIN `users`
                            ON        `users`.`id` = `progress_steps`.`createdby`
 
-                           WHERE     `progress_steps`.`processes_id` = :processes_id
-                           AND       `progress_steps`.`status` IS NULL
+                           '.$where.'
 
                            ORDER BY
                                CASE WHEN `progress_steps`.`parents_id` IS NULL THEN CAST(`progress_steps`.`id` AS CHAR)
                                ELSE CONCAT(CAST(`progress_steps`.`parents_id` AS CHAR), "-", CAST(`progress_steps`.`id` AS CHAR)) END',
 
-                           array(':processes_id' => $processes_id));
+                           $execute);
 
         return $steps;
 
@@ -350,22 +449,166 @@ function progress_next($processes_id){
 
 
 /*
- * ...
+ * Return HTML for a progress_process select box
+ *
+ * This function will generate HTML for an HTML select box using html_select() and fill it with the available progress processes
  *
  * @author Sven Olaf Oostenbrink <sven@capmega.com>
  * @copyright Copyright (c) 2018 Capmega
  * @license http://opensource.org/licenses/GPL-2.0 GNU Public License, Version 2
- * @category Function reference
- * @package
+ * @customer Function reference
+ * @package progress_process
  *
- * @param
- * @return
+ * @param array $params The parameters required
+ * @paramkey $params name
+ * @paramkey $params class
+ * @paramkey $params extra
+ * @paramkey $params tabindex
+ * @paramkey $params empty
+ * @paramkey $params none
+ * @paramkey $params selected
+ * @paramkey $params parents_id
+ * @paramkey $params status
+ * @paramkey $params orderby
+ * @paramkey $params resource
+ * @return string HTML for a progress process select box within the specified parameters
  */
-function progress_process_select($params){
+function progress_processes_select($params = null){
     try{
+        array_ensure($params);
+        array_default($params, 'name'         , 'process');
+        array_default($params, 'class'        , 'form-control');
+        array_default($params, 'selected'     , null);
+        array_default($params, 'categories_id', null);
+        array_default($params, 'status'       , null);
+        array_default($params, 'empty'        , tr('No processes available'));
+        array_default($params, 'none'         , tr('Select a process'));
+        array_default($params, 'tabindex'     , 0);
+        array_default($params, 'extra'        , 'tabindex="'.$params['tabindex'].'"');
+        array_default($params, 'orderby'      , '`name`');
+
+        if($params['categories_id']){
+            $where[] = ' `categories_id` = :categories_id ';
+            $execute[':categories_id'] = $params['categories_id'];
+        }
+
+        if($params['status'] !== false){
+            $where[] = ' `status` '.sql_is($params['status']).' :status ';
+            $execute[':status'] = $params['status'];
+        }
+
+        if(empty($where)){
+            $where = '';
+
+        }else{
+            $where = ' WHERE '.implode(' AND ', $where).' ';
+        }
+
+        $query              = 'SELECT `seoname`, `name` FROM `progress_processes` '.$where.' ORDER BY `name`';
+        $params['resource'] = sql_query($query, $execute);
+        $retval             = html_select($params);
+
+        return $retval;
 
     }catch(Exception $e){
-        throw new bException('progress_process_select(): Failed', $e);
+        throw new bException('progress_processes_select(): Failed', $e);
+    }
+}
+
+
+
+/*
+ * Return HTML for a progress_step select box
+ *
+ * This function will generate HTML for an HTML select box using html_select() and fill it with the available progress processes
+ *
+ * @author Sven Olaf Oostenbrink <sven@capmega.com>
+ * @copyright Copyright (c) 2018 Capmega
+ * @license http://opensource.org/licenses/GPL-2.0 GNU Public License, Version 2
+ * @customer Function reference
+ * @package progress_step
+ *
+ * @param array $params The parameters required
+ * @paramkey $params name
+ * @paramkey $params class
+ * @paramkey $params extra
+ * @paramkey $params tabindex
+ * @paramkey $params empty
+ * @paramkey $params none
+ * @paramkey $params selected
+ * @paramkey $params parents_id
+ * @paramkey $params status
+ * @paramkey $params orderby
+ * @paramkey $params resource
+ * @return string HTML for a progress process select box within the specified parameters
+ */
+function progress_steps_select($params = null){
+    try{
+        array_ensure($params);
+        array_default($params, 'name'        , 'step');
+        array_default($params, 'class'       , 'form-control');
+        array_default($params, 'selected'    , null);
+        array_default($params, 'processes_id', null);
+        array_default($params, 'status'      , null);
+        array_default($params, 'empty'       , tr('No steps available'));
+        array_default($params, 'none'        , '');
+        array_default($params, 'tabindex'    , 0);
+        array_default($params, 'extra'       , 'tabindex="'.$params['tabindex'].'"');
+
+        $params['resource'] = progress_get_steps($params['processes_id'], '`progress_steps`.`id`, `progress_steps`.`name`');
+        $retval             = html_select($params);
+
+        return $retval;
+
+    }catch(Exception $e){
+        throw new bException('progress_steps_select(): Failed', $e);
+    }
+}
+
+
+
+/*
+ * Execute the current step for this project
+ *
+ *
+ *
+ * @author Sven Olaf Oostenbrink <sven@capmega.com>
+ * @copyright Copyright (c) 2018 Capmega
+ * @license http://opensource.org/licenses/GPL-2.0 GNU Public License, Version 2
+ * @customer Function reference
+ * @package progress_step
+ *
+ * @param array $params The parameters required
+ * @paramkey $params name
+ * @paramkey $params class
+ * @paramkey $params extra
+ * @paramkey $params tabindex
+ * @paramkey $params empty
+ * @paramkey $params none
+ * @paramkey $params selected
+ * @paramkey $params parents_id
+ * @paramkey $params status
+ * @paramkey $params orderby
+ * @paramkey $params resource
+ * @return string HTML for a progress process select box within the specified parameters
+ */
+function progress_exec_step($project){
+    try{
+        $step_data = progress_get_step($project['processes_id'], $project['steps_id']);
+
+        if(!$step_data){
+            throw new bException(tr('progress_redirect_to_step(): Specified step ":step" for project ":project" does not exist', array(':step' => $step, ':project' => $project)), 'not-exist');
+        }
+
+        if(preg_match('/^[a-z-]+:\/\//', $step_data['url'])){
+            redirect($step_data['url']);
+        }
+
+        $step_data['url'] = 'projects/'.$project['seoname'].'/'.$step_data['url'];
+        page_show($step_data['url'], array('project' => $project));
+
+    }catch(Exception $e){
+        throw new bException('progress_exec_step(): Failed', $e);
     }
 }
 ?>
