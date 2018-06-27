@@ -158,7 +158,7 @@ function categories_validate($category){
 function categories_select($params = null){
     try{
         array_ensure($params);
-        array_default($params, 'name'      , 'category');
+        array_default($params, 'name'      , 'seocategory');
         array_default($params, 'class'     , 'form-control');
         array_default($params, 'selected'  , null);
         array_default($params, 'parent'    , null);
