@@ -1,8 +1,7 @@
 <?php
 /*
- * Add tables for new categories library
- * Add tables for new projects library
- * Add tables for new progress library
+ * Add tables for new inventories library
+ * Add tables for new companies library
  *
  * Update storage_documents table to have process / process steps capabilities
  * Update customers table to use meta_id, drop modifiedon / modifiedby
@@ -140,6 +139,7 @@ sql_query('CREATE TABLE `inventories_items` (`id`            INT(11)       NOT N
                                              `createdby`     INT(11)           NULL DEFAULT NULL,
                                              `meta_id`       INT(11)       NOT NULL,
                                              `categories_id` INT(11)           NULL DEFAULT NULL,
+                                             `providers_id`  INT(11)           NULL DEFAULT NULL,
                                              `documents_id`  INT(11)           NULL DEFAULT NULL,
                                              `status`        VARCHAR(16)       NULL DEFAULT NULL,
                                              `code`          VARCHAR(32)       NULL DEFAULT NULL,
@@ -150,17 +150,20 @@ sql_query('CREATE TABLE `inventories_items` (`id`            INT(11)       NOT N
                                              `description`   VARCHAR(2047)     NULL DEFAULT NULL,
 
                                               PRIMARY KEY `id`            (`id`),
-                                                     KEY `meta_id`       (`meta_id`),
-                                                     KEY `categories_id` (`categories_id`),
-                                                     KEY `createdon`     (`createdon`),
-                                                     KEY `createdby`     (`createdby`),
-                                                     KEY `status`        (`status`),
-                                                     KEY `brand`         (`brand`),
-                                                     KEY `model`         (`model`),
-                                             UNIQUE  KEY `brand_model`   (`brand`, `model`),
+                                                      KEY `meta_id`       (`meta_id`),
+                                                      KEY `categories_id` (`categories_id`),
+                                                      KEY `providers_id`  (`providers_id`),
+                                                      KEY `createdon`     (`createdon`),
+                                                      KEY `createdby`     (`createdby`),
+                                                      KEY `status`        (`status`),
+                                                      KEY `brand`         (`brand`),
+                                                      KEY `model`         (`model`),
+                                             UNIQUE   KEY `seobrand`      (`seobrand`),
+                                             UNIQUE   KEY `brand_model`   (`brand`, `model`),
 
                                              CONSTRAINT `fk_inventories_items_meta_id`       FOREIGN KEY (`meta_id`)       REFERENCES `meta`              (`id`) ON DELETE RESTRICT,
                                              CONSTRAINT `fk_inventories_items_categories_id` FOREIGN KEY (`categories_id`) REFERENCES `categories`        (`id`) ON DELETE RESTRICT,
+                                             CONSTRAINT `fk_inventories_items_providers_id`  FOREIGN KEY (`providers_id`)  REFERENCES `providers`         (`id`) ON DELETE RESTRICT,
                                              CONSTRAINT `fk_inventories_items_documents_id`  FOREIGN KEY (`documents_id`)  REFERENCES `storage_documents` (`id`) ON DELETE RESTRICT,
                                              CONSTRAINT `fk_inventories_items_createdby`     FOREIGN KEY (`createdby`)     REFERENCES `users`             (`id`) ON DELETE RESTRICT
 
@@ -178,31 +181,48 @@ sql_query('CREATE TABLE `inventories` (`id`             INT(11)       NOT NULL A
                                        `departments_id` INT(11)           NULL DEFAULT NULL,
                                        `employees_id`   INT(11)           NULL DEFAULT NULL,
                                        `categories_id`  INT(11)           NULL DEFAULT NULL,
+                                       `customers_id`   INT(11)           NULL DEFAULT NULL,
+                                       `projects_id`    INT(11)           NULL DEFAULT NULL,
                                        `items_id`       INT(11)       NOT NULL,
                                        `code`           VARCHAR(32)       NULL DEFAULT NULL,
                                        `description`    VARCHAR(2047)     NULL DEFAULT NULL,
 
-                                       PRIMARY KEY `id`               (`id`),
-                                               KEY `meta_id`          (`meta_id`),
-                                               KEY `companies_id`     (`companies_id`),
-                                               KEY `branches_id`      (`branches_id`),
-                                               KEY `departments_id`   (`departments_id`),
-                                               KEY `employees_id`     (`employees_id`),
-                                               KEY `categories_id`    (`categories_id`),
-                                               KEY `items_id`         (`items_id`),
-                                               KEY `createdon`        (`createdon`),
-                                               KEY `createdby`        (`createdby`),
-                                               KEY `status`           (`status`),
-                                       UNIQUE  KEY `companies_code`   (`companies_id`, `code`),
+                                       PRIMARY KEY `id`             (`id`),
+                                               KEY `meta_id`        (`meta_id`),
+                                               KEY `companies_id`   (`companies_id`),
+                                               KEY `branches_id`    (`branches_id`),
+                                               KEY `departments_id` (`departments_id`),
+                                               KEY `employees_id`   (`employees_id`),
+                                               KEY `categories_id`  (`categories_id`),
+                                               KEY `items_id`       (`items_id`),
+                                               KEY `customers_id`   (`customers_id`),
+                                               KEY `projects_id`    (`projects_id`),
+                                               KEY `createdon`      (`createdon`),
+                                               KEY `createdby`      (`createdby`),
+                                               KEY `status`         (`status`),
+                                       UNIQUE  KEY `companies_code` (`companies_id`, `code`),
 
-                                       CONSTRAINT `fk_inventories_meta_id`        FOREIGN KEY (`meta_id`)        REFERENCES `meta`            (`id`) ON DELETE RESTRICT,
-                                       CONSTRAINT `fk_inventories_companies_id`   FOREIGN KEY (`companies_id`)   REFERENCES `companies`       (`id`) ON DELETE RESTRICT,
-                                       CONSTRAINT `fk_inventories_branches_id`    FOREIGN KEY (`branches_id`)    REFERENCES `branches`        (`id`) ON DELETE RESTRICT,
-                                       CONSTRAINT `fk_inventories_departments_id` FOREIGN KEY (`departments_id`) REFERENCES `departments`     (`id`) ON DELETE RESTRICT,
-                                       CONSTRAINT `fk_inventories_employees_id`   FOREIGN KEY (`employees_id`)   REFERENCES `employees`       (`id`) ON DELETE RESTRICT,
-                                       CONSTRAINT `fk_inventories_categories_id`  FOREIGN KEY (`categories_id`)  REFERENCES `categories`      (`id`) ON DELETE RESTRICT,
+                                       CONSTRAINT `fk_inventories_meta_id`        FOREIGN KEY (`meta_id`)        REFERENCES `meta`              (`id`) ON DELETE RESTRICT,
+                                       CONSTRAINT `fk_inventories_companies_id`   FOREIGN KEY (`companies_id`)   REFERENCES `companies`         (`id`) ON DELETE RESTRICT,
+                                       CONSTRAINT `fk_inventories_branches_id`    FOREIGN KEY (`branches_id`)    REFERENCES `branches`          (`id`) ON DELETE RESTRICT,
+                                       CONSTRAINT `fk_inventories_departments_id` FOREIGN KEY (`departments_id`) REFERENCES `departments`       (`id`) ON DELETE RESTRICT,
+                                       CONSTRAINT `fk_inventories_employees_id`   FOREIGN KEY (`employees_id`)   REFERENCES `employees`         (`id`) ON DELETE RESTRICT,
+                                       CONSTRAINT `fk_inventories_categories_id`  FOREIGN KEY (`categories_id`)  REFERENCES `categories`        (`id`) ON DELETE RESTRICT,
                                        CONSTRAINT `fk_inventories_items_id`       FOREIGN KEY (`items_id`)       REFERENCES `inventories_items` (`id`) ON DELETE RESTRICT,
-                                       CONSTRAINT `fk_inventories_createdby`      FOREIGN KEY (`createdby`)      REFERENCES `users`       (`id`) ON DELETE RESTRICT
+                                       CONSTRAINT `fk_inventories_customers_id`   FOREIGN KEY (`customers_id`)   REFERENCES `customers`         (`id`) ON DELETE RESTRICT,
+                                       CONSTRAINT `fk_inventories_projects_id`    FOREIGN KEY (`projects_id`)    REFERENCES `projects`          (`id`) ON DELETE RESTRICT,
+                                       CONSTRAINT `fk_inventories_createdby`      FOREIGN KEY (`createdby`)      REFERENCES `users`             (`id`) ON DELETE RESTRICT
 
                                       ) ENGINE=InnoDB AUTO_INCREMENT='.$_CONFIG['db']['core']['autoincrement'].' DEFAULT CHARSET="'.$_CONFIG['db']['core']['charset'].'" COLLATE="'.$_CONFIG['db']['core']['collate'].'";');
+
+sql_column_exists    ('providers', 'meta_id'             , '!ALTER TABLE `providers` ADD COLUMN     `meta_id` INT(11) NULL DEFAULT NULL AFTER `createdby`');
+sql_index_exists     ('providers', 'meta_id'             , '!ALTER TABLE `providers` ADD KEY        `meta_id` (`meta_id`)');
+sql_foreignkey_exists('providers', 'fk_providers_meta_id', '!ALTER TABLE `providers` ADD CONSTRAINT `fk_providers_meta_id` FOREIGN KEY (`meta_id`) REFERENCES `meta` (`id`) ON DELETE RESTRICT;');
+
+sql_index_exists ('providers', 'modifiedon', 'ALTER TABLE `providers` DROP KEY    `modifiedon`');
+sql_column_exists('providers', 'modifiedon', 'ALTER TABLE `providers` DROP COLUMN `modifiedon`');
+
+sql_column_exists    ('providers', 'categories_id'             , '!ALTER TABLE `providers` ADD COLUMN     `categories_id` INT(11) NULL DEFAULT NULL AFTER `status`');
+sql_index_exists     ('providers', 'categories_id'             , '!ALTER TABLE `providers` ADD KEY        `categories_id` (`categories_id`)');
+sql_foreignkey_exists('providers', 'fk_providers_categories_id', '!ALTER TABLE `providers` ADD CONSTRAINT `fk_providers_categories_id` FOREIGN KEY (`categories_id`) REFERENCES `categories` (`id`) ON DELETE RESTRICT;');
 ?>

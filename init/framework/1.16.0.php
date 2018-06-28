@@ -10,6 +10,26 @@
  *
  * Fix servers and databases tables
  */
+sql_foreignkey_exists('inventories'      , 'fk_inventories_projects_id'        , 'ALTER TABLE `inventories`       DROP FOREIGN KEY `fk_inventories_projects_id`');
+sql_foreignkey_exists('inventories'      , 'fk_inventories_categories_id'      , 'ALTER TABLE `inventories`       DROP FOREIGN KEY `fk_inventories_categories_id`');
+sql_foreignkey_exists('inventories_items', 'fk_inventories_items_categories_id', 'ALTER TABLE `inventories_items` DROP FOREIGN KEY `fk_inventories_items_categories_id`');
+
+sql_foreignkey_exists('companies', 'fk_companies_categories_id', 'ALTER TABLE `companies` DROP FOREIGN KEY `fk_companies_categories_id`');
+
+sql_foreignkey_exists('customers', 'fk_customers_categories_id', 'ALTER TABLE `customers` DROP FOREIGN KEY `fk_customers_categories_id`');
+sql_foreignkey_exists('customers', 'fk_customers_documents_id' , 'ALTER TABLE `customers` DROP FOREIGN KEY `fk_customers_documents_id`');
+
+sql_foreignkey_exists('providers', 'fk_providers_categories_id', 'ALTER TABLE `providers` DROP FOREIGN KEY `fk_providers_categories_id`');
+
+sql_foreignkey_exists('projects', 'fk_projects_processes_id' , 'ALTER TABLE `projects` DROP FOREIGN KEY `fk_projects_processes_id`');
+sql_foreignkey_exists('projects', 'fk_projects_steps_id'     , 'ALTER TABLE `projects` DROP FOREIGN KEY `fk_projects_steps_id`');
+sql_foreignkey_exists('projects', 'fk_projects_categories_id', 'ALTER TABLE `projects` DROP FOREIGN KEY `fk_projects_categories_id`');
+
+sql_foreignkey_exists('storage_documents', 'fk_storage_documents_processes_id', 'ALTER TABLE `storage_documents` DROP FOREIGN KEY `fk_storage_documents_processes_id`');
+sql_foreignkey_exists('storage_documents', 'fk_storage_documents_steps_id'    , 'ALTER TABLE `storage_documents` DROP FOREIGN KEY `fk_storage_documents_steps_id`');
+
+sql_query('DROP TABLE IF EXISTS `progress_steps`');
+sql_query('DROP TABLE IF EXISTS `progress_processes`');
 sql_query('DROP TABLE IF EXISTS `categories`');
 
 sql_query('CREATE TABLE `categories` (`id`          INT(11)       NOT NULL AUTO_INCREMENT,
@@ -36,11 +56,6 @@ sql_query('CREATE TABLE `categories` (`id`          INT(11)       NOT NULL AUTO_
                                       CONSTRAINT `fk_categories_createdby`  FOREIGN KEY (`createdby`)  REFERENCES `users`      (`id`) ON DELETE RESTRICT
 
                                     ) ENGINE=InnoDB AUTO_INCREMENT='.$_CONFIG['db']['core']['autoincrement'].' DEFAULT CHARSET="'.$_CONFIG['db']['core']['charset'].'" COLLATE="'.$_CONFIG['db']['core']['collate'].'";');
-
-
-
-sql_query('DROP TABLE IF EXISTS `progress_steps`');
-sql_query('DROP TABLE IF EXISTS `progress_processes`');
 
 
 
@@ -354,4 +369,16 @@ sql_index_exists     ('storage_documents', 'steps_id'                     , '!AL
 sql_foreignkey_exists('storage_documents', 'fk_storage_documents_steps_id', '!ALTER TABLE `storage_documents` ADD CONSTRAINT `fk_storage_documents_steps_id` FOREIGN KEY (`steps_id`) REFERENCES `progress_steps` (`id`) ON DELETE RESTRICT;');
 
 sql_foreignkey_exists('databases', 'fk_databases_projects_id', '!ALTER TABLE `databases` ADD CONSTRAINT `fk_databases_projects_id` FOREIGN KEY (`projects_id`) REFERENCES `projects` (`id`) ON DELETE RESTRICT;');
+
+sql_foreignkey_exists('customers', 'fk_customers_categories_id', '!ALTER TABLE `customers` ADD CONSTRAINT `fk_customers_categories_id` FOREIGN KEY (`categories_id`) REFERENCES `categories`        (`id`) ON DELETE RESTRICT;');
+sql_foreignkey_exists('customers', 'fk_customers_documents_id' , '!ALTER TABLE `customers` ADD CONSTRAINT `fk_customers_documents_id`  FOREIGN KEY (`documents_id`)  REFERENCES `storage_documents` (`id`) ON DELETE RESTRICT;');
+
+sql_foreignkey_exists('providers', 'fk_providers_categories_id', '!ALTER TABLE `providers` ADD CONSTRAINT `fk_providers_categories_id` FOREIGN KEY (`categories_id`) REFERENCES `categories`        (`id`) ON DELETE RESTRICT;');
+
+sql_foreignkey_exists('projects', 'fk_projects_processes_id' , '!ALTER TABLE `projects` ADD CONSTRAINT `fk_projects_processes_id`  FOREIGN KEY (`processes_id`)  REFERENCES `progress_processes` (`id`) ON DELETE RESTRICT;');
+sql_foreignkey_exists('projects', 'fk_projects_steps_id'     , '!ALTER TABLE `projects` ADD CONSTRAINT `fk_projects_steps_id`      FOREIGN KEY (`steps_id`)      REFERENCES `progress_steps`     (`id`) ON DELETE RESTRICT;');
+sql_foreignkey_exists('projects', 'fk_projects_categories_id', '!ALTER TABLE `projects` ADD CONSTRAINT `fk_projects_categories_id` FOREIGN KEY (`categories_id`) REFERENCES `categories`         (`id`) ON DELETE RESTRICT;');
+
+sql_foreignkey_exists('storage_documents', 'fk_storage_documents_processes_id', '!ALTER TABLE `storage_documents` ADD CONSTRAINT `fk_storage_documents_processes_id` FOREIGN KEY (`processes_id`) REFERENCES `progress_processes` (`id`) ON DELETE RESTRICT;');
+sql_foreignkey_exists('storage_documents', 'fk_storage_documents_steps_id'    , '!ALTER TABLE `storage_documents` ADD CONSTRAINT `fk_storage_documents_steps_id`     FOREIGN KEY (`steps_id`)     REFERENCES `progress_steps`     (`id`) ON DELETE RESTRICT;');
 ?>
