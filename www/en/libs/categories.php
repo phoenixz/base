@@ -223,7 +223,7 @@ function categories_select($params = null){
                 /*
                  * Filter out only one entry
                  */
-                $where[] = ' `id` = :id ';
+                $where[] = ' `id` != :id ';
                 $execute[':id'] = $params['remove'];
 
             }else{
@@ -307,13 +307,13 @@ function categories_get($category, $column = null, $status = null, $parent = fal
             /*
              * Explicitly must be a parent category
              */
-            $where[] = ' `categories`.`parent_only` = 1 ';
+            $where[] = ' `categories`.`parents_id` IS NULL ';
 
         }elseif($parent === false){
             /*
              * Explicitly cannot be a parent category
              */
-            $where[] = ' `categories`.`parent_only` = 0 ';
+            $where[] = ' `categories`.`parents_id` IS NOT NULL ';
 
         }else{
             /*
@@ -349,6 +349,50 @@ function categories_get($category, $column = null, $status = null, $parent = fal
 
     }catch(Exception $e){
         throw new bException('categories_get(): Failed', $e);
+    }
+}
+
+
+
+/*
+ * Returns a list of all categories that are children to the specified category
+ *
+ * The returned array with categories will be an associate array with the following format:
+ *
+ * @code array(CATEGORY_ID => array("name" => CATEGORY_NAME, "seoname" => CATEGORY_SEONAME))
+ *
+ * @author Sven Olaf Oostenbrink <sven@capmega.com>
+ * @copyright Copyright (c) 2018 Capmega
+ * @license http://opensource.org/licenses/GPL-2.0 GNU Public License, Version 2
+ * @category Function reference
+ * @package categories
+ *
+ * @param mixed $category The requested category. Can either be specified by id (natural number) or string (seoname)
+ * @return array An array containing the list of categories
+ */
+function categories_get_children($category){
+    try{
+        if(!is_numeric($category)){
+            $categories_id = categories_get($category, 'id');
+
+        }else{
+            $categories_id = $category;
+        }
+
+        $retval = sql_list('SELECT `categories`.`id`,
+                                   `categories`.`name`,
+                                   `categories`.`seoname`
+
+                            FROM   `categories`
+
+                            WHERE  `categories`.`parents_id` = :parents_id',
+
+                            array(':parents_id' => $categories_id));
+
+        return $retval;
+
+    }catch(Exception $e){
+        throw new bException('categories_get_children(): Failed', $e);
     }
 }
 ?>
