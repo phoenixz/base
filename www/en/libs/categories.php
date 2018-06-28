@@ -158,36 +158,48 @@ function categories_validate($category){
 function categories_select($params = null){
     try{
         array_ensure($params);
-        array_default($params, 'name'      , 'seocategory');
-        array_default($params, 'class'     , 'form-control');
-        array_default($params, 'selected'  , null);
-        array_default($params, 'parent'    , null);
-        array_default($params, 'parents_id', null);
-        array_default($params, 'status'    , null);
-        array_default($params, 'remove'    , null);
-        array_default($params, 'empty'     , tr('No categories available'));
-        array_default($params, 'none'      , tr('Select a category'));
-        array_default($params, 'tabindex'  , 0);
-        array_default($params, 'extra'     , 'tabindex="'.$params['tabindex'].'"');
-        array_default($params, 'orderby'   , '`name`');
+        array_default($params, 'name'        , 'seocategory');
+        array_default($params, 'class'       , 'form-control');
+        array_default($params, 'selected'    , null);
+        array_default($params, 'parent'      , null);
+        array_default($params, 'autosubmit'  , true);
+        array_default($params, 'parents_id'  , null);
+        array_default($params, 'status'      , null);
+        array_default($params, 'remove'      , null);
+        array_default($params, 'empty'       , tr('No categories available'));
+        array_default($params, 'none'        , tr('Select a category'));
+        array_default($params, 'tabindex'    , 0);
+        array_default($params, 'extra'       , 'tabindex="'.$params['tabindex'].'"');
+        array_default($params, 'orderby'     , '`name`');
 
         if($params['parent']){
-            $params['parents_id'] = sql_get('SELECT `id` FROM `categories` WHERE `seoname` = :seoname AND `status` IS NULL', true, array(':seoname' => $params['parent']));
+            /*
+             * This is a child category
+             */
+            $params['parents_id'] = sql_get('SELECT `id` FROM `categories` WHERE `seoname` = :seoname AND `parents_id` IS NULL AND `status` IS NULL', true, array(':seoname' => $params['parent']));
 
             if(!$params['parents_id']){
                 /*
                  * The category apparently does not exist, auto create it
                  */
-                $parent = sql_get('SELECT `id`, `status` FROM `categories` WHERE `seoname` = :seoname', array(':seoname' => $params['parent']));
+                $parent = sql_get('SELECT `id`, `parents_id`, `status` FROM `categories` WHERE `seoname` = :seoname', array(':seoname' => $params['parent']));
 
                 if($parent){
+                    if($parent['status']){
+                        /*
+                         * The category exists, but has non NULL status, we cannot continue!
+                         */
+                        throw new bException(tr('categories_select(): The reqested parent ":parent" does exist, but is not available', array(':parent' => $params['parent'])), 'not-available');
+                    }
+
                     /*
-                     * The category exists, but has been deleted, we cannot continue!
+                     * The category exists, but it's a child category
                      */
-                    throw new bException(tr('categories_select(): The reqested parent ":parent" does exist, but is deleted', array(':parent' => $params['parent'])), 'deleted');
+                    throw new bException(tr('categories_select(): The reqested parent ":parent" does exist, but is a child category itself. Child categories cannot be parent categories', array(':parent' => $params['parent'])), 'not-available');
                 }
 
                 load_libs('seo');
+
                 sql_query('INSERT INTO `categories` (`meta_id`, `name`, `seoname`)
                            VALUES                   (:meta_id , :name , :seoname )',
 
@@ -197,6 +209,11 @@ function categories_select($params = null){
 
                 $params['parents_id'] = sql_insert_id();
             }
+
+        }else{
+            /*
+             * This is a parent category. Nothing to do, just saying..
+             */
         }
 
         $execute = array();
@@ -222,7 +239,11 @@ function categories_select($params = null){
         if($params['parents_id']){
             $where[] = ' `parents_id` = :parents_id ';
             $execute[':parents_id'] = $params['parents_id'];
+
+        }else{
+            $where[] = ' `parents_id` IS NULL ';
         }
+
 
         if($params['status'] !== false){
             $where[] = ' `status` '.sql_is($params['status']).' :status ';
@@ -262,9 +283,11 @@ function categories_select($params = null){
  *
  * @param mixed $category The requested category. Can either be specified by id (natural number) or string (seoname)
  * @param string $column The specific column that has to be returned
+ * @param string $status
+ * @param string $parent
  * @return mixed The category data. If no column was specified, an array with all columns will be returned. If a column was specified, only the column will be returned (having the datatype of that column). If the specified category does not exist, NULL will be returned.
  */
-function categories_get($category, $column = null, $status = null){
+function categories_get($category, $column = null, $status = null, $parent = false){
     try{
         if(is_numeric($category)){
             $where[] = ' `categories`.`id` = :id ';
@@ -280,7 +303,25 @@ function categories_get($category, $column = null, $status = null){
             $where[] = ' `categories`.`status` '.sql_is($status).' :status';
         }
 
-        $where   = ' WHERE '.implode(' AND ', $where).' ';
+        if($parent){
+            /*
+             * Explicitly must be a parent category
+             */
+            $where[] = ' `categories`.`parent_only` = 1 ';
+
+        }elseif($parent === false){
+            /*
+             * Explicitly cannot be a parent category
+             */
+            $where[] = ' `categories`.`parent_only` = 0 ';
+
+        }else{
+            /*
+             * Don't care if its a parent or child category
+             */
+        }
+
+        $where = ' WHERE '.implode(' AND ', $where).' ';
 
         if($column){
             $retval = sql_get('SELECT `'.$column.'` FROM `categories` '.$where, true, $execute);
