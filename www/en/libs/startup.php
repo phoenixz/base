@@ -2071,6 +2071,8 @@ function not_empty(){
             return $argument;
         }
     }
+
+    return $argument;
 }
 
 
