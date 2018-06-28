@@ -36,8 +36,10 @@ ARGUMENTS
 
 
 [-p VERSION]                    - Run init from project version VERSION
+[--from-project-version VERSION]
 
 [-f VERSION]                    - Run init from framework version VERSION
+[--from-framework-version VERSION]
 
 [--drop]                        - DROP, will drop the core database. Usually
                                   used on production systems in case the
