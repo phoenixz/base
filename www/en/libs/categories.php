@@ -49,16 +49,16 @@ function categories_validate($category){
     try{
         load_libs('validate,seo');
 
-        $v = new validate_form($category, 'name,parent,description');
+        $v = new validate_form($category, 'name,seoparent,description');
 
         /*
          * Validate parents_id
          */
-        if(empty($category['parent'])){
+        if(empty($category['seoparent'])){
             $category['parents_id'] = null;
 
         }else{
-            $category['parents_id'] = sql_get('SELECT `id` FROM `categories` WHERE `seoname` = :seoname', true, array(':seoname' => $category['parent']));
+            $category['parents_id'] = sql_get('SELECT `id` FROM `categories` WHERE `seoname` = :seoname', true, array(':seoname' => $category['seoparent']));
 
             if(!$category['parents_id']){
                 $v->setError(tr('The specified parent category does not exist'));
@@ -87,11 +87,11 @@ function categories_validate($category){
         /*
          * Does the category already exist within the specified parents_id?
          */
-        $exists = sql_get(' SELECT `id` FROM `categories` WHERE `parents_id` '.sql_is(isset_get($category['parents_id'])).' :parents_id AND `name` = :name AND `id` '.sql_is(isset_get($category['id']), true).' :id', true, array(':name' => $category['name'], ':id' => isset_get($category['id']), ':parents_id' => isset_get($category['parents_id'])));
+        $exists = sql_get('SELECT `id` FROM `categories` WHERE `parents_id` '.sql_is(isset_get($category['parents_id'])).' :parents_id AND `name` = :name AND `id` '.sql_is(isset_get($category['id']), true).' :id', true, array(':name' => $category['name'], ':id' => isset_get($category['id']), ':parents_id' => isset_get($category['parents_id'])));
 
         if($exists){
-            if($category['parent']){
-                $v->setError(tr('The category name ":category" already exists in the parent category ":parent"', array(':parent' => $category['parent'], ':category' => $category['name'])));
+            if($category['parents_id']){
+                $v->setError(tr('The category name ":category" already exists in the parent category ":parent"', array(':parent' => not_empty($category['seoparent'], $category['parents_id']), ':category' => $category['name'])));
 
             }else{
                 $v->setError(tr('The category name ":category" already exists', array(':category' => $category['name'])));
@@ -161,7 +161,7 @@ function categories_select($params = null){
         array_default($params, 'name'        , 'seocategory');
         array_default($params, 'class'       , 'form-control');
         array_default($params, 'selected'    , null);
-        array_default($params, 'parent'      , null);
+        array_default($params, 'seoparent'    , null);
         array_default($params, 'autosubmit'  , true);
         array_default($params, 'parents_id'  , null);
         array_default($params, 'status'      , null);
@@ -172,30 +172,30 @@ function categories_select($params = null){
         array_default($params, 'extra'       , 'tabindex="'.$params['tabindex'].'"');
         array_default($params, 'orderby'     , '`name`');
 
-        if($params['parent']){
+        if($params['seoparent']){
             /*
              * This is a child category
              */
-            $params['parents_id'] = sql_get('SELECT `id` FROM `categories` WHERE `seoname` = :seoname AND `parents_id` IS NULL AND `status` IS NULL', true, array(':seoname' => $params['parent']));
+            $params['parents_id'] = sql_get('SELECT `id` FROM `categories` WHERE `seoname` = :seoname AND `parents_id` IS NULL AND `status` IS NULL', true, array(':seoname' => $params['seoparent']));
 
             if(!$params['parents_id']){
                 /*
                  * The category apparently does not exist, auto create it
                  */
-                $parent = sql_get('SELECT `id`, `parents_id`, `status` FROM `categories` WHERE `seoname` = :seoname', array(':seoname' => $params['parent']));
+                $parent = sql_get('SELECT `id`, `parents_id`, `status` FROM `categories` WHERE `seoname` = :seoname', array(':seoname' => $params['seoparent']));
 
                 if($parent){
                     if($parent['status']){
                         /*
                          * The category exists, but has non NULL status, we cannot continue!
                          */
-                        throw new bException(tr('categories_select(): The reqested parent ":parent" does exist, but is not available', array(':parent' => $params['parent'])), 'not-available');
+                        throw new bException(tr('categories_select(): The reqested parent ":parent" does exist, but is not available', array(':parent' => $params['seoparent'])), 'not-available');
                     }
 
                     /*
                      * The category exists, but it's a child category
                      */
-                    throw new bException(tr('categories_select(): The reqested parent ":parent" does exist, but is a child category itself. Child categories cannot be parent categories', array(':parent' => $params['parent'])), 'not-available');
+                    throw new bException(tr('categories_select(): The reqested parent ":parent" does exist, but is a child category itself. Child categories cannot be parent categories', array(':parent' => $params['seoparent'])), 'not-available');
                 }
 
                 load_libs('seo');
@@ -204,8 +204,8 @@ function categories_select($params = null){
                            VALUES                   (:meta_id , :name , :seoname )',
 
                            array(':meta_id' => meta_action(),
-                                 ':name'    => $params['parent'],
-                                 ':seoname' => seo_unique($params['parent'], 'categories')));
+                                 ':name'    => $params['seoparent'],
+                                 ':seoname' => seo_unique($params['seoparent'], 'categories')));
 
                 $params['parents_id'] = sql_insert_id();
             }

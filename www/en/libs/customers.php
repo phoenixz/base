@@ -65,7 +65,7 @@ function customers_validate($customer){
     try{
         load_libs('validate,seo');
 
-        $v = new validate_form($customer, 'name,code,company,email,phones,address1,address2,address3,zipcode,documents_id,category,country,state,city,description');
+        $v = new validate_form($customer, 'seocategory,name,code,company,email,phones,address1,address2,address3,zipcode,documents_id,seocountry,seostate,seocity,description');
         $v->isNotEmpty ($customer['name']    , tr('No customers name specified'));
         $v->hasMinChars($customer['name'],  2, tr('Please ensure the customer\'s name has at least 2 characters'));
         $v->hasMaxChars($customer['name'], 64, tr('Please ensure the customer\'s name has less than 64 characters'));
@@ -137,9 +137,9 @@ function customers_validate($customer){
         if($customer['documents_id']){
             load_libs('storage-documents');
 
-            $customer['documents_id'] = storage_documents_get('customers', $customer['documents_id'], false, 'id');
+            $exists = storage_documents_get('customers', $customer['documents_id'], false, 'id');
 
-            if(!$customer['documents_id']){
+            if(!$exists){
                 $v->setError(tr('Specified document does not exist'));
             }
 
@@ -150,10 +150,10 @@ function customers_validate($customer){
         /*
          * Validate category
          */
-        if($customer['category']){
+        if($customer['seocategory']){
             load_libs('categories');
 
-            $customer['categories_id'] = categories_get($customer['category'], 'id');
+            $customer['categories_id'] = categories_get($customer['seocategory'], 'id');
 
             if(!$customer['categories_id']){
                 $v->setError(tr('Specified category does not exist'));
@@ -166,23 +166,23 @@ function customers_validate($customer){
         /*
          * Confirm country, state, city
          */
-        if($customer['country']){
+        if($customer['seocountry']){
             load_libs('geo');
-            $customer['countries_id'] = geo_get_country($customer['country'], true);
+            $customer['countries_id'] = geo_get_country($customer['seocountry'], true);
 
             if(!$customer['countries_id']){
                 $v->setError(tr('Specified country does not exist'));
             }
 
-            if($customer['state']){
-                $customer['states_id'] = geo_get_state($customer['state'], true);
+            if($customer['seostate']){
+                $customer['states_id'] = geo_get_state($customer['seostate'], true);
 
                 if(!$customer['states_id']){
                     $v->setError(tr('Specified state does not exist in this country'));
                 }
 
-                if($customer['city']){
-                    $customer['cities_id'] = geo_get_city($customer['city'], true);
+                if($customer['seocity']){
+                    $customer['cities_id'] = geo_get_city($customer['seocity'], true);
 
                     if(!$customer['cities_id']){
                         $v->setError(tr('Specified city does not exist in this state'));
@@ -312,9 +312,10 @@ function customers_validate($customer){
 function customers_select($params = null){
     try{
         array_ensure($params);
-        array_default($params, 'name'         , 'customer');
+        array_default($params, 'name'         , 'seocustomer');
         array_default($params, 'class'        , 'form-control');
         array_default($params, 'selected'     , null);
+        array_default($params, 'seocategory'  , null);
         array_default($params, 'categories_id', null);
         array_default($params, 'status'       , null);
         array_default($params, 'empty'        , tr('No customers available'));
@@ -322,6 +323,15 @@ function customers_select($params = null){
         array_default($params, 'tabindex'     , 0);
         array_default($params, 'extra'        , 'tabindex="'.$params['tabindex'].'"');
         array_default($params, 'orderby'      , '`name`');
+
+        if($params['seocategory']){
+            load_libs('categories');
+            $params['categories_id'] = categories_get($params['seocategory'], 'id');
+
+            if(!$params['categories_id']){
+                throw new bException(tr('companies_select(): The reqested category ":category" does exist, but is deleted', array(':category' => $params['seocategory'])), 'deleted');
+            }
+        }
 
         if($params['categories_id'] !== false){
             $where[] = ' `categories_id` '.sql_is($params['categories_id']).' :categories_id ';
@@ -413,12 +423,31 @@ function customers_get($customer, $column = null, $status = null){
                                          `customers`.`url`,
                                          `customers`.`description`,
 
-                                         `categories`.`seoname` AS `category`
+                                         `categories`.`name`       AS `category`,
+                                         `categories`.`seoname`    AS `seocategory`,
+
+                                         `geo_countries`.`name`    AS `country`,
+                                         `geo_countries`.`seoname` AS `seocountry`,
+
+                                         `geo_states`.`name`       AS `state`,
+                                         `geo_states`.`seoname`    AS `seostate`,
+
+                                         `geo_cities`.`name`       AS `city`,
+                                         `geo_cities`.`seoname`    AS `seocity`
 
                                FROM      `customers`
 
+                               LEFT JOIN `geo_countries`
+                               ON        `geo_countries`.`id` = `customers`.`countries_id`
+
+                               LEFT JOIN `geo_states`
+                               ON        `geo_states`.`id`    = `customers`.`states_id`
+
+                               LEFT JOIN `geo_cities`
+                               ON        `geo_cities`.`id`    = `customers`.`cities_id`
+
                                LEFT JOIN `categories`
-                               ON        `categories`.`id` = `customers`.`categories_id` '.$where, $execute);
+                               ON        `categories`.`id`    = `customers`.`categories_id` '.$where, $execute);
         }
 
         return $retval;

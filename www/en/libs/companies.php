@@ -88,8 +88,8 @@ function companies_validate($company){
         $exists = sql_get('SELECT `id` FROM `companies` WHERE `categories_id` '.sql_is(isset_get($company['categories_id'])).' :categories_id AND `name` = :name AND `id` '.sql_is(isset_get($company['id']), true).' :id', true, array(':name' => $company['name'], ':id' => isset_get($company['id']), ':categories_id' => isset_get($company['categories_id'])));
 
         if($exists){
-            if($company['category']){
-                $v->setError(tr('The company name ":company" already exists in the category company ":category"', array(':category' => $company['category'], ':company' => $company['name'])));
+            if($company['categories_id']){
+                $v->setError(tr('The company name ":company" already exists in the category company ":category"', array(':category' => not_empty($company['seocategory'], $company['categories_id']), ':company' => $company['name'])));
 
             }else{
                 $v->setError(tr('The company name ":company" already exists', array(':company' => $company['name'])));
@@ -163,6 +163,7 @@ function companies_select($params = null){
         array_default($params, 'categories_id', null);
         array_default($params, 'status'       , null);
         array_default($params, 'remove'       , null);
+        array_default($params, 'autosubmit'   , true);
         array_default($params, 'empty'        , tr('No companies available'));
         array_default($params, 'none'         , tr('Select a company'));
         array_default($params, 'tabindex'     , 0);
@@ -180,7 +181,7 @@ function companies_select($params = null){
 
         $execute = array();
 
-        if($params['categories_id']){
+        if($params['categories_id'] !== false){
             $where[] = ' `categories_id` = :categories_id ';
             $execute[':categories_id'] = $params['categories_id'];
         }
@@ -258,7 +259,7 @@ function companies_get($company, $column = null, $status = null){
                                       `companies`.`description`,
 
                                       `categories`.`name`    AS `category`,
-                                      `categories`.`seoname` AS `seocategory`,
+                                      `categories`.`seoname` AS `seocategory`
 
                                FROM   `companies`
 
@@ -307,6 +308,8 @@ function companies_validate_branch($branch, $reload_only = false){
             $branch['companies_id'] = null;
             $v->setError(tr('No company specified'));
         }
+
+        $v->isValid();
 
         if($reload_only){
             return $branch;
@@ -403,6 +406,7 @@ function companies_select_branch($params = null){
         array_default($params, 'companies_id', null);
         array_default($params, 'status'      , null);
         array_default($params, 'remove'      , null);
+        array_default($params, 'autosubmit'  , true);
         array_default($params, 'empty'       , tr('No branches available'));
         array_default($params, 'none'        , tr('Select a branch'));
         array_default($params, 'tabindex'    , 0);
@@ -600,6 +604,8 @@ function companies_validate_department($department, $reload_only = false){
             $v->setError(tr('No company specified'));
         }
 
+        $v->isValid();
+
         if($reload_only){
             return $department;
         }
@@ -697,7 +703,8 @@ function companies_select_department($params = null){
         array_default($params, 'branches_id' , null);
         array_default($params, 'status'      , null);
         array_default($params, 'remove'      , null);
-        array_default($params, 'empty'       , tr('No branches available'));
+        array_default($params, 'autosubmit'  , true);
+        array_default($params, 'empty'       , tr('No departments available'));
         array_default($params, 'none'        , tr('Select a department'));
         array_default($params, 'tabindex'    , 0);
         array_default($params, 'extra'       , 'tabindex="'.$params['tabindex'].'"');
@@ -958,6 +965,8 @@ function companies_validate_employee($employee, $reload_only = false){
             $v->setError(tr('No company specified'));
         }
 
+        $v->isValid();
+
         if($reload_only){
             return $employee;
         }
@@ -1057,8 +1066,8 @@ function companies_select_employee($params = null){
         array_default($params, 'departments_id', null);
         array_default($params, 'status'        , null);
         array_default($params, 'remove'        , null);
-        array_default($params, 'empty'         , tr('No branches available'));
-        array_default($params, 'none'          , tr('Select a employee'));
+        array_default($params, 'empty'         , tr('No employees available'));
+        array_default($params, 'none'          , tr('Select an employee'));
         array_default($params, 'tabindex'      , 0);
         array_default($params, 'extra'         , 'tabindex="'.$params['tabindex'].'"');
         array_default($params, 'orderby'       , '`name`');
@@ -1144,7 +1153,7 @@ function companies_select_employee($params = null){
  * @param string $column The specific column that has to be returned
  * @return mixed The company data. If no column was specified, an array with all columns will be returned. If a column was specified, only the column will be returned (having the datatype of that column). If the specified company does not exist, NULL will be returned.
  */
-function companies_get_employee($company, $branch, $employee, $column = null, $status = null){
+function companies_get_employee($company, $branch, $department, $employee, $column = null, $status = null){
     try{
         /*
          * Filter by specified company
@@ -1175,6 +1184,23 @@ function companies_get_employee($company, $branch, $employee, $column = null, $s
 
         }else{
             $branches_id = $branch;
+        }
+
+        $where[] = ' `employees`.`companies_id` = :companies_id ';
+        $execute[':companies_id'] = $companies_id;
+
+        /*
+         * Filter by specified department
+         */
+        if(!is_numeric($department)){
+            $departments_id = companies_get_department($companies_id, $department, 'id');
+
+            if(!$departments_id){
+                throw new bException(tr('companies_get_employee(): Specified department ":department" does not exist', array(':department' => $department)), 'not-exist');
+            }
+
+        }else{
+            $departments_id = $department;
         }
 
         $where[] = ' `employees`.`companies_id` = :companies_id ';

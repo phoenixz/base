@@ -597,7 +597,7 @@ function progress_exec_step($project){
         $step_data = progress_get_step($project['processes_id'], $project['steps_id']);
 
         if(!$step_data){
-            throw new bException(tr('progress_redirect_to_step(): Specified step ":step" for project ":project" does not exist', array(':step' => $step, ':project' => $project)), 'not-exist');
+            throw new bException(tr('progress_redirect_to_step(): Specified step ":step" for progress ":process" in project ":project" does not exist', array(':project' => $project['id'], ':step' => $project['steps_id'], ':process' => $project['processes_id'])), 'not-exist');
         }
 
         if(preg_match('/^[a-z-]+:\/\//', $step_data['url'])){

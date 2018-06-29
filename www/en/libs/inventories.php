@@ -50,7 +50,7 @@ function inventories_validate($item, $reload_only = false){
     try{
         load_libs('validate,seo');
 
-        $v = new validate_form($item, 'name,seocategory,seoprovider,brand,model,code,description');
+        $v = new validate_form($item, 'seocategory,seocompany,seobranch,seodepartment,seoemployee,seocustomer,seoproject,items_id,code,description');
 
         /*
          * Validate category
@@ -65,57 +65,140 @@ function inventories_validate($item, $reload_only = false){
 
         }else{
             $item['categories_id'] = null;
-            $v->setError(tr('No category specified'));
+
+            if(!$reload_only){
+                $v->setError(tr('No category specified'));
+            }
         }
 
         /*
-         * Validate provider
+         * Validate company
          */
-        if($item['seoprovider']){
-            load_libs('providers');
-            $item['providers_id'] = providers_get($item['seoprovider'], 'id');
+        if($item['seocompany']){
+            load_libs('companies');
+            $item['companies_id'] = companies_get($item['seocompany'], 'id');
 
-            if(!$item['providers_id']){
-                $v->setError(tr('Specified provider does not exist'));
+            if(!$item['companies_id']){
+                $v->setError(tr('Specified company does not exist'));
+            }
+
+            /*
+             * Validate branch
+             */
+            if($item['seobranch']){
+                load_libs('companies');
+                $item['branches_id'] = companies_get_branch($item['companies_id'], $item['seobranch'], 'id');
+
+                if(!$item['branches_id']){
+                    $v->setError(tr('Specified branch does not exist'));
+                }
+
+            }else{
+                $item['branches_id']    = null;
+                $item['departments_id'] = null;
+                $item['employees_id']   = null;
+
+                if(!$reload_only){
+                    $v->setError(tr('No branch specified'));
+                }
+            }
+
+            /*
+             * Validate department
+             */
+            if($item['seodepartment']){
+                load_libs('companies');
+                $item['departments_id'] = companies_get_department($item['companies_id'], $item['branches_id'], $item['seodepartment'], 'id');
+
+                if(!$item['departments_id']){
+                    $v->setError(tr('Specified department does not exist'));
+                }
+
+            }else{
+                $item['departments_id'] = null;
+                $item['employees_id']   = null;
+
+                if(!$reload_only){
+                    $v->setError(tr('No department specified'));
+                }
+            }
+
+            /*
+             * Validate employee
+             */
+            if($item['seoemployee']){
+                load_libs('companies');
+                $item['employees_id'] = companies_get_employee($item['companies_id'], $item['branches_id'], $item['departments_id'], $item['seoemployee'], 'id');
+
+                if(!$item['employees_id']){
+                    $v->setError(tr('Specified employee does not exist'));
+                }
+
+            }else{
+                $item['employees_id'] = null;
             }
 
         }else{
-            $item['providers_id'] = null;
+            $item['companies_id']   = null;
+            $item['branches_id']    = null;
+            $item['departments_id'] = null;
+            $item['employees_id']   = null;
         }
+
+        /*
+         * Validate customer
+         */
+        if($item['seocustomer']){
+            load_libs('customers');
+            $item['customers_id'] = customers_get($item['seocustomer'], 'id');
+
+            if(!$item['customers_id']){
+                $v->setError(tr('Specified customer does not exist'));
+            }
+
+        }else{
+            $item['customers_id'] = null;
+
+        }
+
+        /*
+         * Validate project
+         */
+        if($item['seoproject']){
+            load_libs('projects');
+            $item['projects_id'] = projects_get($item['seoproject'], 'id');
+
+            if(!$item['projects_id']){
+                $v->setError(tr('Specified project does not exist'));
+            }
+
+        }else{
+            $item['projects_id'] = null;
+        }
+
+        /*
+         * Validate item
+         */
+        if($item['items_id']){
+            $exist = inventories_get_item($item['items_id'], $item['categories_id'], 'id');
+
+            if(!$exist){
+                $v->setError(tr('Specified item does not exist'));
+            }
+
+        }else{
+            $item['items_id'] = null;
+
+            if(!$reload_only){
+                $v->setError(tr('No item specified'));
+            }
+        }
+
+        $v->isValid();
 
         if($reload_only){
             return $item;
         }
-
-        /*
-         * Validate brand
-         */
-        $v->isNotEmpty ($item['brand']    , tr('Please specify a company brand'));
-        $v->hasMinChars($item['brand'],  2, tr('Please ensure the company brand has at least 2 characters'));
-        $v->hasMaxChars($item['brand'], 64, tr('Please ensure the company brand has less than 64 characters'));
-
-        if(is_numeric(substr($item['brand'], 0, 1))){
-            $v->setError(tr('Please ensure that the company brand does not start with a number'));
-        }
-
-        $v->hasMaxChars($item['brand'], 64, tr('Please ensure the company brand has less than 64 characters'));
-
-        $item['brand'] = str_clean($item['brand']);
-
-        /*
-         * Validate model
-         */
-        $v->isNotEmpty ($item['model']    , tr('Please specify a company model'));
-        $v->hasMinChars($item['model'],  2, tr('Please ensure the company model has at least 2 characters'));
-        $v->hasMaxChars($item['model'], 64, tr('Please ensure the company model has less than 64 characters'));
-
-        if(is_numeric(substr($item['model'], 0, 1))){
-            $v->setError(tr('Please ensure that the company model does not start with a number'));
-        }
-
-        $v->hasMaxChars($item['model'], 64, tr('Please ensure the company model has less than 64 characters'));
-
-        $item['model'] = str_clean($item['model']);
 
         /*
          * Validate code
@@ -149,11 +232,6 @@ function inventories_validate($item, $reload_only = false){
          * All valid?
          */
         $v->isValid();
-
-        /*
-         * Set seoname
-         */
-        $item['seoname'] = seo_unique($item['name'], 'inventories_items', isset_get($item['id']));
 
         return $item;
 
@@ -233,7 +311,7 @@ function inventories_select($params = null){
             $where = ' WHERE '.implode(' AND ', $where).' ';
         }
 
-        $query              = 'SELECT `seoname`, `name` FROM `companies` '.$where.' ORDER BY `name`';
+        $query              = 'SELECT `seoname`, `name` FROM `inventories` '.$where.' ORDER BY `name`';
         $params['resource'] = sql_query($query, $execute);
         $retval             = html_select($params);
 
@@ -261,44 +339,102 @@ function inventories_select($params = null){
  * @param string $column The specific column that has to be returned
  * @return mixed The company data. If no column was specified, an array with all columns will be returned. If a column was specified, only the column will be returned (having the datatype of that column). If the specified company does not exist, NULL will be returned.
  */
-function inventories_get($item, $column = null, $status = null){
+function inventories_get($entry, $column = null, $status = null){
     try{
-        if(is_numeric($item)){
-            $where[] = ' `companies`.`id` = :id ';
-            $execute[':id'] = $item;
-
-        }else{
-            $where[] = ' `companies`.`seoname` = :seoname ';
-            $execute[':seoname'] = $item;
+        if(!is_numeric($entry)){
+            throw new bException(tr('inventories_get(): Specified entry ":entry" is invalid, it should be numeric', array(':entry' => $entry)), 'invalid');
         }
+
+        $where[] = ' `inventories`.`id` = :id ';
+        $execute[':id'] = $entry;
 
         if($status !== false){
             $execute[':status'] = $status;
-            $where[] = ' `companies`.`status` '.sql_is($status).' :status';
+            $where[] = ' `inventories`.`status` '.sql_is($status).' :status';
         }
 
         $where   = ' WHERE '.implode(' AND ', $where).' ';
 
         if($column){
-            $retval = sql_get('SELECT `'.$column.'` FROM `companies` '.$where, true, $execute);
+            $retval = sql_get('SELECT `'.$column.'` FROM `inventories` '.$where, true, $execute);
 
         }else{
-            $retval = sql_get('SELECT    `companies`.`id`,
-                                         `companies`.`createdon`,
-                                         `companies`.`createdby`,
-                                         `companies`.`meta_id`,
-                                         `companies`.`status`,
-                                         `companies`.`categories_id`,
-                                         `companies`.`name`,
-                                         `companies`.`seoname`,
-                                         `companies`.`description`,
+            $retval = sql_get('SELECT    `inventories`.`id`,
+                                         `inventories`.`createdon`,
+                                         `inventories`.`createdby`,
+                                         `inventories`.`meta_id`,
+                                         `inventories`.`status`,
+                                         `inventories`.`categories_id`,
+                                         `inventories`.`customers_id`,
+                                         `inventories`.`projects_id`,
+                                         `inventories`.`items_id`,
+                                         `inventories`.`companies_id`,
+                                         `inventories`.`branches_id`,
+                                         `inventories`.`departments_id`,
+                                         `inventories`.`employees_id`,
+                                         `inventories`.`code`,
+                                         `inventories`.`description`,
 
-                                         `categories`.`seoname` AS `category`
+                                         `inventories_items`.`providers_id`,
 
-                               FROM      `companies`
+                                         `inventories_items`.`brand`    AS `brand`,
+                                         `inventories_items`.`brand`    AS `seobrand`,
+
+                                         `inventories_items`.`model`    AS `model`,
+                                         `inventories_items`.`seomodel` AS `seomodel`,
+
+                                         `categories`.`name`            AS `category`,
+                                         `categories`.`seoname`         AS `seocategory`,
+
+                                         `providers`.`name`             AS `provider`,
+                                         `providers`.`seoname`          AS `seoprovider`,
+
+                                         `customers`.`name`             AS `customer`,
+                                         `customers`.`seoname`          AS `seocustomer`,
+
+                                         `projects`.`name`              AS `project`,
+                                         `projects`.`seoname`           AS `seoproject`,
+
+                                         `companies`.`name`             AS `company`,
+                                         `companies`.`seoname`          AS `seocompany`,
+
+                                         `branches`.`name`              AS `branch`,
+                                         `branches`.`seoname`           AS `seobranch`,
+
+                                         `departments`.`name`           AS `department`,
+                                         `departments`.`seoname`        AS `seodepartment`,
+
+                                         `employees`.`name`             AS `employee`,
+                                         `employees`.`seoname`          AS `seoemployee`
+
+                               FROM      `inventories`
 
                                LEFT JOIN `categories`
-                               ON        `categories`.`id` = `companies`.`categories_id` '.$where, $execute);
+                               ON        `categories`.`id`        = `inventories`.`categories_id`
+
+                               LEFT JOIN `inventories_items`
+                               ON        `inventories_items`.`id` = `inventories`.`items_id`
+
+                               LEFT JOIN `customers`
+                               ON        `customers`.`id`         = `inventories`.`customers_id`
+
+                               LEFT JOIN `projects`
+                               ON        `projects`.`id`          = `inventories`.`projects_id`
+
+                               LEFT JOIN `providers`
+                               ON        `providers`.`id`         = `inventories_items`.`providers_id`
+
+                               LEFT JOIN `companies`
+                               ON        `companies`.`id`         = `inventories`.`companies_id`
+
+                               LEFT JOIN `branches`
+                               ON        `branches`.`id`          = `inventories`.`branches_id`
+
+                               LEFT JOIN `departments`
+                               ON        `departments`.`id`       = `inventories`.`departments_id`
+
+                               LEFT JOIN `employees`
+                               ON        `employees`.`id`         = `inventories`.`employees_id` '.$where, $execute);
         }
 
         return $retval;
@@ -325,7 +461,7 @@ function inventories_get($item, $column = null, $status = null){
 function inventories_validate_item($item, $reload_only = false){
     try{
         load_libs('validate,seo');
-        $v = new validate_form($item, 'name,seocategory,seoprovider,brand,model,code,description');
+        $v = new validate_form($item, 'seocategory,seoprovider,brand,model,code,description');
 
         /*
          * Validate category
@@ -340,7 +476,10 @@ function inventories_validate_item($item, $reload_only = false){
 
         }else{
             $item['categories_id'] = null;
-            $v->setError(tr('No category specified'));
+
+            if(!$reload_only){
+                $v->setError(tr('No category specified'));
+            }
         }
 
         /*
@@ -357,6 +496,8 @@ function inventories_validate_item($item, $reload_only = false){
         }else{
             $item['providers_id'] = null;
         }
+
+        $v->isValid();
 
         if($reload_only){
             return $item;
@@ -427,11 +568,6 @@ function inventories_validate_item($item, $reload_only = false){
          */
         $v->isValid();
 
-        /*
-         * Set seoname
-         */
-        $item['seoname'] = seo_unique($item['name'], 'inventories_items', isset_get($item['id']));
-
         return $item;
 
     }catch(Exception $e){
@@ -466,28 +602,27 @@ function inventories_validate_item($item, $reload_only = false){
  * @paramkey $params resource
  * @return string HTML for a companies select box within the specified parameters
  */
-function inventories_select_items($params = null){
+function inventories_select_item($params = null){
     try{
         array_ensure($params);
-        array_default($params, 'name'        , 'seobranch');
-        array_default($params, 'class'       , 'form-control');
-        array_default($params, 'seocompany'  , null);
-        array_default($params, 'selected'    , null);
-        array_default($params, 'category'    , null);
-        array_default($params, 'inventories_id', null);
-        array_default($params, 'status'      , null);
-        array_default($params, 'remove'      , null);
-        array_default($params, 'empty'       , tr('No branches available'));
-        array_default($params, 'none'        , tr('Select a branch'));
-        array_default($params, 'tabindex'    , 0);
-        array_default($params, 'extra'       , 'tabindex="'.$params['tabindex'].'"');
-        array_default($params, 'orderby'     , '`name`');
+        array_default($params, 'name'         , 'items_id');
+        array_default($params, 'class'        , 'form-control');
+        array_default($params, 'selected'     , null);
+        array_default($params, 'seocategory'  , null);
+        array_default($params, 'categories_id', null);
+        array_default($params, 'status'       , null);
+        array_default($params, 'remove'       , null);
+        array_default($params, 'empty'        , tr('No items available'));
+        array_default($params, 'none'         , tr('Select an item'));
+        array_default($params, 'tabindex'     , 0);
+        array_default($params, 'extra'        , 'tabindex="'.$params['tabindex'].'"');
+        array_default($params, 'orderby'      , '`name`');
 
-        if($params['seocompany']){
-            $params['inventories_id'] = inventories_get($params['seocompany'], 'id');
+        if($params['seocategory']){
+            $params['categories_id'] = inventories_get($params['seocategory'], 'id');
 
-            if(!$params['inventories_id']){
-                throw new bException(tr('inventories_select_items(): The specified company ":company" does not exist or is not available', array(':company' => $params['company'])), 'not-exist');
+            if(!$params['categories_id']){
+                throw new bException(tr('inventories_select_items(): The specified category ":category" does not exist or is not available', array(':category' => $params['category'])), 'not-exist');
             }
         }
 
@@ -496,9 +631,9 @@ function inventories_select_items($params = null){
         /*
          * Only show branches per office
          */
-        if($params['inventories_id']){
-            $where[] = ' `inventories_id` = :inventories_id ';
-            $execute[':inventories_id'] = $params['inventories_id'];
+        if($params['categories_id']){
+            $where[] = ' `categories_id` = :categories_id ';
+            $execute[':categories_id'] = $params['categories_id'];
 
             if($params['status'] !== false){
                 $where[] = ' `status` '.sql_is($params['status']).' :status ';
@@ -512,7 +647,7 @@ function inventories_select_items($params = null){
                 $where = ' WHERE '.implode(' AND ', $where).' ';
             }
 
-            $query              = 'SELECT `seoname`, `name` FROM `branches` '.$where.' ORDER BY `name`';
+            $query              = 'SELECT `id`, CONCAT(`brand`, " ", `model`) AS `name` FROM `inventories_items` '.$where.' ORDER BY `name`';
             $params['resource'] = sql_query($query, $execute);
         }
 
@@ -521,7 +656,7 @@ function inventories_select_items($params = null){
         return $retval;
 
     }catch(Exception $e){
-        throw new bException('inventories_select_items(): Failed', $e);
+        throw new bException('inventories_select_item(): Failed', $e);
     }
 }
 
@@ -542,24 +677,32 @@ function inventories_select_items($params = null){
  * @param string $column The specific column that has to be returned
  * @return mixed The company data. If no column was specified, an array with all columns will be returned. If a column was specified, only the column will be returned (having the datatype of that column). If the specified company does not exist, NULL will be returned.
  */
-function inventories_get_item($brand, $model, $column = null, $status = null){
+function inventories_get_item($items_id, $category = null, $column = null, $status = null){
     try{
         /*
-         * Filter by specified brand and model
+         * Filter by specified id
          */
-        if(!$brand){
-            throw new bException(tr('inventories_get_item(): No brand specified'), 'not-specified');
-        }
-
-        if(!$model){
+        if(!$items_id){
             throw new bException(tr('inventories_get_item(): No modelspecified'), 'not-specified');
         }
 
-        $where[] = ' `inventories_items`.`brand` = :brand ';
-        $where[] = ' `inventories_items`.`model` = :model ';
+        $where[] = ' `inventories_items`.`id` = :id ';
+        $execute[':id'] = $items_id;
 
-        $execute[':brand'] = $brand;
-        $execute[':model'] = $model;
+        /*
+         * Optionally filter by category as well
+         */
+        if($category){
+            load_libs('categories');
+            $categories_id = categories_get($category, 'id');
+
+            if(!$categories_id){
+                throw new bException(tr('Specified category ":category" does not exist', array(':category' => $category)), 'not-exist');
+            }
+
+            $where[] = ' `inventories_items`.`categories_id` = :categories_id ';
+            $execute[':categories_id'] = $categories_id;
+        }
 
         /*
          * Filter by specified status
