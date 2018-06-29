@@ -65,11 +65,27 @@ function providers_validate($provider){
     try{
         load_libs('validate,seo');
 
-        $v = new validate_form($provider, 'name,code,url,description');
+        $v = new validate_form($provider, 'seocategory,name,code,url,email,phones,description');
         $v->isNotEmpty ($provider['name']    , tr('No providers name specified'));
         $v->hasMinChars($provider['name'],  2, tr('Please ensure the provider\'s name has at least 2 characters'));
         $v->hasMaxChars($provider['name'], 64, tr('Please ensure the provider\'s name has less than 64 characters'));
         $v->isRegex    ($provider['name'], '/^[a-zA-Z- ]{2,32}$/', tr('Please ensure the provider\'s name contains only lower case letters, and dashes'));
+
+        /*
+         * Validate category
+         */
+        if($provider['seocategory']){
+            load_libs('categories');
+
+            $provider['categories_id'] = categories_get($provider['seocategory'], 'id');
+
+            if(!$provider['categories_id']){
+                $v->setError(tr('Specified category does not exist'));
+            }
+
+        }else{
+            $provider['categories_id'] = null;
+        }
 
         /*
          * Validate basic data
@@ -90,15 +106,6 @@ function providers_validate($provider){
 
         }else{
             $provider['url'] = null;
-        }
-
-        if($provider['company']){
-            $v->hasMaxChars($provider['company'], 64, tr('Please ensure the company has less than 64 characters'));
-
-            $provider['company'] = str_clean($provider['company']);
-
-        }else{
-            $provider['company'] = null;
         }
 
         if($provider['email']){
@@ -129,38 +136,6 @@ function providers_validate($provider){
 
         }else{
             $provider['code'] = null;
-        }
-
-        /*
-         * Validate linked document
-         */
-        if($provider['documents_id']){
-            load_libs('storage-documents');
-
-            $provider['documents_id'] = storage_documents_get('providers', $provider['documents_id'], false, 'id');
-
-            if(!$provider['documents_id']){
-                $v->setError(tr('Specified document does not exist'));
-            }
-
-        }else{
-            $provider['documents_id'] = null;
-        }
-
-        /*
-         * Validate category
-         */
-        if($provider['category']){
-            load_libs('categories');
-
-            $provider['categories_id'] = categories_get($provider['category'], 'id');
-
-            if(!$provider['categories_id']){
-                $v->setError(tr('Specified category does not exist'));
-            }
-
-        }else{
-            $provider['categories_id'] = null;
         }
 
         /*
@@ -298,10 +273,14 @@ function providers_get($provider, $column = null, $status = null){
                                          `providers`.`status`,
                                          `providers`.`name`,
                                          `providers`.`seoname`,
+                                         `providers`.`email`,
+                                         `providers`.`phones`,
+                                         `providers`.`code`,
                                          `providers`.`url`,
                                          `providers`.`description`,
 
-                                         `categories`.`seoname` AS `category`
+                                         `categories`.`name`    AS `category`,
+                                         `categories`.`seoname` AS `seocategory`
 
                                FROM      `providers`
 

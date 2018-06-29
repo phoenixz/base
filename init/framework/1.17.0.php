@@ -222,6 +222,12 @@ sql_foreignkey_exists('providers', 'fk_providers_meta_id', '!ALTER TABLE `provid
 sql_index_exists ('providers', 'modifiedon', 'ALTER TABLE `providers` DROP KEY    `modifiedon`');
 sql_column_exists('providers', 'modifiedon', 'ALTER TABLE `providers` DROP COLUMN `modifiedon`');
 
+sql_column_exists('providers', 'email' , '!ALTER TABLE `providers` ADD COLUMN `email`  VARCHAR(128) AFTER `seoname`');
+sql_column_exists('providers', 'phones', '!ALTER TABLE `providers` ADD COLUMN `phones` VARCHAR(36)  AFTER `email`');
+sql_column_exists('providers', 'code'  , '!ALTER TABLE `providers` ADD COLUMN `code`   VARCHAR(64)  AFTER `phones`');
+
+sql_query('ALTER TABLE `providers` MODIFY COLUMN `description` VARCHAR(2047) NULL DEFAULT NULL');
+
 sql_column_exists    ('providers', 'categories_id'             , '!ALTER TABLE `providers` ADD COLUMN     `categories_id` INT(11) NULL DEFAULT NULL AFTER `status`');
 sql_index_exists     ('providers', 'categories_id'             , '!ALTER TABLE `providers` ADD KEY        `categories_id` (`categories_id`)');
 sql_foreignkey_exists('providers', 'fk_providers_categories_id', '!ALTER TABLE `providers` ADD CONSTRAINT `fk_providers_categories_id` FOREIGN KEY (`categories_id`) REFERENCES `categories` (`id`) ON DELETE RESTRICT;');
