@@ -159,7 +159,7 @@ function companies_select($params = null){
         array_default($params, 'name'         , 'seocompany');
         array_default($params, 'class'        , 'form-control');
         array_default($params, 'selected'     , null);
-        array_default($params, 'category'     , null);
+        array_default($params, 'seocategory'  , null);
         array_default($params, 'categories_id', null);
         array_default($params, 'status'       , null);
         array_default($params, 'remove'       , null);
@@ -169,12 +169,12 @@ function companies_select($params = null){
         array_default($params, 'extra'        , 'tabindex="'.$params['tabindex'].'"');
         array_default($params, 'orderby'      , '`name`');
 
-        if($params['category']){
+        if($params['seocategory']){
             load_libs('categories');
-            $params['categories_id'] = categories_get($params['category'], 'id');
+            $params['categories_id'] = categories_get($params['seocategory'], 'id');
 
             if(!$params['categories_id']){
-                throw new bException(tr('companies_select(): The reqested category ":category" does exist, but is deleted', array(':category' => $params['category'])), 'deleted');
+                throw new bException(tr('companies_select(): The reqested category ":category" does exist, but is deleted', array(':category' => $params['seocategory'])), 'deleted');
             }
         }
 
@@ -247,22 +247,23 @@ function companies_get($company, $column = null, $status = null){
             $retval = sql_get('SELECT `'.$column.'` FROM `companies` '.$where, true, $execute);
 
         }else{
-            $retval = sql_get('SELECT    `companies`.`id`,
-                                         `companies`.`createdon`,
-                                         `companies`.`createdby`,
-                                         `companies`.`meta_id`,
-                                         `companies`.`status`,
-                                         `companies`.`categories_id`,
-                                         `companies`.`name`,
-                                         `companies`.`seoname`,
-                                         `companies`.`description`,
+            $retval = sql_get('SELECT `companies`.`id`,
+                                      `companies`.`createdon`,
+                                      `companies`.`createdby`,
+                                      `companies`.`meta_id`,
+                                      `companies`.`status`,
+                                      `companies`.`categories_id`,
+                                      `companies`.`name`,
+                                      `companies`.`seoname`,
+                                      `companies`.`description`,
 
-                                         `categories`.`seoname` AS `category`
+                                      `categories`.`name`    AS `category`,
+                                      `categories`.`seoname` AS `seocategory`,
 
-                               FROM      `companies`
+                               FROM   `companies`
 
-                               LEFT JOIN `categories`
-                               ON        `categories`.`id` = `companies`.`categories_id` '.$where, $execute);
+                               JOIN   `categories`
+                               ON     `categories`.`id` = `companies`.`categories_id` '.$where, $execute);
         }
 
         return $retval;
@@ -332,12 +333,7 @@ function companies_validate_branch($branch, $reload_only = false){
         $exists = sql_get('SELECT `id` FROM `branches` WHERE `companies_id` '.sql_is(isset_get($branch['companies_id'])).' :companies_id AND `name` = :name AND `id` '.sql_is(isset_get($branch['id']), true).' :id', true, array(':name' => $branch['name'], ':id' => isset_get($branch['id']), ':companies_id' => isset_get($branch['companies_id'])));
 
         if($exists){
-            if($branch['category']){
-                $v->setError(tr('The branch name ":branch" already exists in the category branch ":category"', array(':category' => $branch['category'], ':branch' => $branch['name'])));
-
-            }else{
-                $v->setError(tr('The branch name ":branch" already exists', array(':branch' => $branch['name'])));
-            }
+            $v->setError(tr('The branch name ":branch" already exists', array(':branch' => $branch['name'])));
         }
 
         /*
@@ -402,9 +398,8 @@ function companies_select_branch($params = null){
         array_ensure($params);
         array_default($params, 'name'        , 'seobranch');
         array_default($params, 'class'       , 'form-control');
-        array_default($params, 'seocompany'  , null);
         array_default($params, 'selected'    , null);
-        array_default($params, 'category'    , null);
+        array_default($params, 'seocompany'  , null);
         array_default($params, 'companies_id', null);
         array_default($params, 'status'      , null);
         array_default($params, 'remove'      , null);
@@ -425,7 +420,7 @@ function companies_select_branch($params = null){
         $execute = array();
 
         /*
-         * Only show branches per office
+         * Only show branches per company
          */
         if($params['companies_id']){
             $where[] = ' `companies_id` = :companies_id ';
@@ -524,24 +519,30 @@ function companies_get_branch($company, $branch, $column = null, $status = null)
                                AND    `companies`.`status` IS NULL '.$where, true, $execute);
 
         }else{
-            $retval = sql_get('SELECT  `branches`.`id`,
-                                       `branches`.`createdon`,
-                                       `branches`.`createdby`,
-                                       `branches`.`meta_id`,
-                                       `branches`.`status`,
-                                       `branches`.`companies_id`,
-                                       `branches`.`name`,
-                                       `branches`.`seoname`,
-                                       `branches`.`description`,
+            $retval = sql_get('SELECT `branches`.`id`,
+                                      `branches`.`createdon`,
+                                      `branches`.`createdby`,
+                                      `branches`.`meta_id`,
+                                      `branches`.`status`,
+                                      `branches`.`companies_id`,
+                                      `branches`.`name`,
+                                      `branches`.`seoname`,
+                                      `branches`.`description`,
 
-                                       `companies`.`name`    AS `company`,
-                                       `companies`.`seoname` AS `seocompany`
+                                      `categories`.`name`    AS `category`,
+                                      `categories`.`seoname` AS `seocategory`,
 
-                               FROM    `branches`
+                                      `companies`.`name`     AS `company`,
+                                      `companies`.`seoname`  AS `seocompany`
 
-                               JOIN    `companies`
-                               ON      `companies`.`id` = `branches`.`companies_id`
-                               AND     `companies`.`status` IS NULL '.$where, $execute);
+                               FROM   `branches`
+
+                               JOIN   `companies`
+                               ON     `companies`.`id`    = `branches`.`companies_id`
+                               AND    `companies`.`status` IS NULL
+
+                               JOIN   `categories`
+                               ON     `categories`.`id`   = `companies`.`categories_id` '.$where, $execute);
         }
 
         return $retval;
@@ -621,15 +622,10 @@ function companies_validate_department($department, $reload_only = false){
         /*
          * Does the department already exist within the specified companies_id?
          */
-        $exists = sql_get('SELECT `id` FROM `departments` WHERE `companies_id` '.sql_is(isset_get($department['companies_id'])).' :companies_id AND `name` = :name AND `id` '.sql_is(isset_get($department['id']), true).' :id', true, array(':name' => $department['name'], ':id' => isset_get($department['id']), ':companies_id' => isset_get($department['companies_id'])));
+        $exists = sql_get('SELECT `id` FROM `departments` WHERE `companies_id` '.sql_is(isset_get($department['companies_id'])).' :companies_id AND `branches_id` '.sql_is(isset_get($department['branches_id'])).' :branches_id AND `name` = :name AND `id` '.sql_is(isset_get($department['id']), true).' :id', true, array(':name' => $department['name'], ':id' => isset_get($department['id']), ':companies_id' => isset_get($department['companies_id']), ':branches_id' => isset_get($department['branches_id'])));
 
         if($exists){
-            if($department['category']){
-                $v->setError(tr('The department name ":department" already exists in the category department ":category"', array(':category' => $department['category'], ':department' => $department['name'])));
-
-            }else{
-                $v->setError(tr('The department name ":department" already exists', array(':department' => $department['name'])));
-            }
+            $v->setError(tr('The department name ":department" already exists', array(':department' => $department['name'])));
         }
 
         /*
@@ -858,20 +854,26 @@ function companies_get_department($company, $branch, $department, $column = null
                                        `departments`.`seoname`,
                                        `departments`.`description`,
 
-                                       `companies`.`name`    AS `company`,
-                                       `companies`.`seoname` AS `seocompany`,
+                                       `categories`.`name`    AS `category`,
+                                       `categories`.`seoname` AS `seocategory`,
 
-                                       `branches`.`name`     AS `branch`,
-                                       `branches`.`seoname`  AS `seobranch`
+                                       `companies`.`name`     AS `company`,
+                                       `companies`.`seoname`  AS `seocompany`,
+
+                                       `branches`.`name`      AS `branch`,
+                                       `branches`.`seoname`   AS `seobranch`
 
                                FROM    `departments`
 
                                JOIN    `companies`
-                               ON      `companies`.`id` = `departments`.`companies_id`
+                               ON      `companies`.`id`    = `departments`.`companies_id`
                                AND     `companies`.`status` IS NULL
 
+                               JOIN    `categories`
+                               ON      `categories`.`id`   = `companies`.`categories_id`
+
                                JOIN    `branches`
-                               ON      `branches`.`id`  = `departments`.`branches_id`
+                               ON      `branches`.`id`     = `departments`.`branches_id`
                                AND     `branches`.`status`  IS NULL '.$where, $execute);
         }
 
@@ -978,15 +980,10 @@ function companies_validate_employee($employee, $reload_only = false){
         /*
          * Does the employee already exist within the specified companies_id?
          */
-        $exists = sql_get('SELECT `id` FROM `employees` WHERE `companies_id` '.sql_is(isset_get($employee['companies_id'])).' :companies_id AND `name` = :name AND `id` '.sql_is(isset_get($employee['id']), true).' :id', true, array(':name' => $employee['name'], ':id' => isset_get($employee['id']), ':companies_id' => isset_get($employee['companies_id'])));
+        $exists = sql_get('SELECT `id` FROM `employees` WHERE `companies_id` '.sql_is(isset_get($employee['companies_id'])).' :companies_id AND `branches_id` '.sql_is(isset_get($employee['branches_id'])).' :branches_id AND `departments_id` '.sql_is(isset_get($employee['departments_id'])).' :departments_id AND `name` = :name AND `id` '.sql_is(isset_get($employee['id']), true).' :id', true, array(':name' => $employee['name'], ':id' => isset_get($employee['id']), ':companies_id' => isset_get($employee['companies_id']), ':branches_id' => isset_get($employee['branches_id']), ':departments_id' => isset_get($employee['departments_id'])));
 
         if($exists){
-            if($employee['category']){
-                $v->setError(tr('The employee name ":employee" already exists in the category employee ":category"', array(':category' => $employee['category'], ':employee' => $employee['name'])));
-
-            }else{
-                $v->setError(tr('The employee name ":employee" already exists', array(':employee' => $employee['name'])));
-            }
+            $v->setError(tr('The employee name ":employee" already exists', array(':employee' => $employee['name'])));
         }
 
         /*
@@ -1234,6 +1231,9 @@ function companies_get_employee($company, $branch, $employee, $column = null, $s
                                        `employees`.`seoname`,
                                        `employees`.`description`,
 
+                                       `categories`.`name`     AS `category`,
+                                       `categories`.`seoname`  AS `seocategory`,
+
                                        `companies`.`name`      AS `company`,
                                        `companies`.`seoname`   AS `seocompany`,
 
@@ -1248,6 +1248,9 @@ function companies_get_employee($company, $branch, $employee, $column = null, $s
                                JOIN    `companies`
                                ON      `companies`.`id`   = `employees`.`companies_id`
                                AND     `companies`.`status`   IS NULL
+
+                               JOIN    `categories`
+                               ON      `categories`.`id` = `companies`.`categories_id`
 
                                JOIN    `branches`
                                ON      `branches`.`id`    = `employees`.`branches_id`
