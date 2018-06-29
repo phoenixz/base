@@ -77,9 +77,11 @@ function geo_countries_select($params) {
         array_params ($params);
         array_default($params, 'class'       , '');
         array_default($params, 'disabled'    , false);
-        array_default($params, 'id_column'   , 'id');
-        array_default($params, 'name'        , 'country');
+        array_default($params, 'autosubmit'  , true);
+        array_default($params, 'id_column'   , 'seoname');
+        array_default($params, 'name'        , 'seocountry');
         array_default($params, 'none'        , tr('Select a country'));
+        array_default($params, 'empty'       , tr('No countries available'));
         array_default($params, 'option_class', '');
 
         $cache_key = serialize($params);
@@ -119,9 +121,11 @@ function geo_states_select($params) {
         array_default($params, 'selected'        , '');
         array_default($params, 'class'           , '');
         array_default($params, 'disabled'        , false);
-        array_default($params, 'id_column'       , 'id');
-        array_default($params, 'name'            , 'state');
+        array_default($params, 'autosubmit'      , true);
+        array_default($params, 'id_column'       , 'seoname');
+        array_default($params, 'name'            , 'seostate');
         array_default($params, 'none'            , tr('Select a state'));
+        array_default($params, 'empty'           , tr('No states available'));
         array_default($params, 'option_class'    , '');
         array_default($params, 'countries_column', 'countries_id');
 
@@ -173,10 +177,11 @@ function geo_cities_select($params) {
         array_default($params, 'selected'     , '');
         array_default($params, 'class'        , '');
         array_default($params, 'disabled'     , '');
-        array_default($params, 'id_column'    , 'id');
+        array_default($params, 'id_column'    , 'seoname');
         array_default($params, 'value_column' , 'name');
-        array_default($params, 'name'         , 'city');
+        array_default($params, 'name'         , 'seocity');
         array_default($params, 'none'         , tr('Select a city'));
+        array_default($params, 'empty'        , tr('No cities available'));
         array_default($params, 'option_class' , '');
         array_default($params, 'states_column', 'states_id');
 
@@ -220,9 +225,13 @@ function geo_cities_select($params) {
  * @param $country
  * @return mixed
  */
-function geo_get_country($country, $id_only = false){
+function geo_get_country($country, $single_column = false){
     try{
-        if($id_only){
+        if($single_column){
+            if($single_column === true){
+                $single_column = 'id';
+            }
+
             $country = sql_get('SELECT `'.$single_column.'` FROM `geo_countries` WHERE `seoname` = :seoname AND `status` IS NULL', true, array(':seoname' => $country));
 
         }else{
