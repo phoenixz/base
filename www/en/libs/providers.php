@@ -213,7 +213,7 @@ function providers_validate($provider){
 function providers_select($params = null){
     try{
         array_ensure($params);
-        array_default($params, 'name'         , 'provider');
+        array_default($params, 'name'         , 'seoprovider');
         array_default($params, 'class'        , 'form-control');
         array_default($params, 'selected'     , null);
         array_default($params, 'categories_id', null);
