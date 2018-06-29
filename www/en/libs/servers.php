@@ -31,9 +31,9 @@ function servers_validate($server, $password_strength = true){
     global $_CONFIG;
 
     try{
-        load_libs('validate,file,seo');
+        load_libs('validate,file,seo,customers,providers');
 
-        $v = new validate_form($server, 'ipv4,ipv6,port,hostname,provider,customer,ssh_account,description,ssh_proxy,database_accounts_id');
+        $v = new validate_form($server, 'ipv4,ipv6,port,hostname,seoprovider,seocustomer,ssh_account,description,ssh_proxy,database_accounts_id');
         $v->isNotEmpty($server['ssh_account'], tr('Please specifiy an SSH account'));
         $v->isNotEmpty($server['hostname']   , tr('Please specifiy a hostnames'));
         $v->isNotEmpty($server['port']       , tr('Please specifiy a port'));
@@ -103,22 +103,22 @@ function servers_validate($server, $password_strength = true){
         /*
          * Validate provider, customer, and ssh account
          */
-        if($server['provider']){
-            $server['providers_id'] = sql_get('SELECT `id` FROM `providers` WHERE `seoname` = :seoname AND `status` IS NULL', array(':seoname' => $server['provider']), true);
+        if($server['seoprovider']){
+            $server['providers_id'] = sql_get('SELECT `id` FROM `providers` WHERE `seoname` = :seoname AND `status` IS NULL', array(':seoname' => $server['seoprovider']), true);
 
             if(!$server['providers_id']){
-                $v->setError(tr('Specified provider ":provider" does not exist', array(':provider' => $server['provider'])));
+                $v->setError(tr('Specified provider ":provider" does not exist', array(':provider' => $server['seoprovider'])));
             }
 
         }else{
             $v->setError(tr('Please specify a provider'));
         }
 
-        if($server['customer']){
-            $server['customers_id'] = sql_get('SELECT `id` FROM `customers` WHERE `seoname` = :seoname AND `status` IS NULL', array(':seoname' => $server['customer']), true);
+        if($server['seocustomer']){
+            $server['customers_id'] = sql_get('SELECT `id` FROM `customers` WHERE `seoname` = :seoname AND `status` IS NULL', array(':seoname' => $server['seocustomer']), true);
 
             if(!$server['customers_id']){
-                $v->setError(tr('Specified customer ":customer" does not exist', array(':customer' => $server['customer'])));
+                $v->setError(tr('Specified customer ":customer" does not exist', array(':customer' => $server['seocustomer'])));
             }
 
         }else{
