@@ -43,70 +43,106 @@ function inventories_library_init(){
  * @category Function reference
  * @package companies
  *
- * @param array $company The company to validate
- * @return array The validated and cleaned $company array
+ * @param array $item The company to validate
+ * @return array The validated and cleaned $item array
  */
-function inventories_validate($company){
+function inventories_validate($item, $reload_only = false){
     try{
         load_libs('validate,seo');
 
-        $v = new validate_form($company, 'name,seocategory,description');
+        $v = new validate_form($item, 'name,seocategory,seoprovider,brand,model,code,description');
 
         /*
          * Validate category
          */
-        if($company['seocategory']){
+        if($item['seocategory']){
             load_libs('categories');
-            $company['categories_id'] = categories_get($company['seocategory'], 'id');
+            $item['categories_id'] = categories_get($item['seocategory'], 'id');
 
-            if(!$company['categories_id']){
+            if(!$item['categories_id']){
                 $v->setError(tr('Specified category does not exist'));
             }
 
         }else{
-            $company['categories_id'] = null;
+            $item['categories_id'] = null;
+            $v->setError(tr('No category specified'));
         }
 
         /*
-         * Validate name
+         * Validate provider
          */
-        $v->isNotEmpty ($company['name']    , tr('Please specify a company name'));
-        $v->hasMinChars($company['name'],  2, tr('Please ensure the company name has at least 2 characters'));
-        $v->hasMaxChars($company['name'], 64, tr('Please ensure the company name has less than 64 characters'));
+        if($item['seoprovider']){
+            load_libs('providers');
+            $item['providers_id'] = providers_get($item['seoprovider'], 'id');
 
-        if(is_numeric(substr($company['name'], 0, 1))){
-            $v->setError(tr('Please ensure that the company name does not start with a number'));
-        }
-
-        $v->hasMaxChars($company['name'], 64, tr('Please ensure the company name has less than 64 characters'));
-
-        $company['name'] = str_clean($company['name']);
-
-        /*
-         * Does the company already exist within the specified categories_id?
-         */
-        $exists = sql_get('SELECT `id` FROM `companies` WHERE `categories_id` '.sql_is(isset_get($company['categories_id'])).' :categories_id AND `name` = :name AND `id` '.sql_is(isset_get($company['id']), true).' :id', true, array(':name' => $company['name'], ':id' => isset_get($company['id']), ':categories_id' => isset_get($company['categories_id'])));
-
-        if($exists){
-            if($company['category']){
-                $v->setError(tr('The company name ":company" already exists in the category company ":category"', array(':category' => $company['category'], ':company' => $company['name'])));
-
-            }else{
-                $v->setError(tr('The company name ":company" already exists', array(':company' => $company['name'])));
+            if(!$item['providers_id']){
+                $v->setError(tr('Specified provider does not exist'));
             }
+
+        }else{
+            $item['providers_id'] = null;
         }
+
+        if($reload_only){
+            return $item;
+        }
+
+        /*
+         * Validate brand
+         */
+        $v->isNotEmpty ($item['brand']    , tr('Please specify a company brand'));
+        $v->hasMinChars($item['brand'],  2, tr('Please ensure the company brand has at least 2 characters'));
+        $v->hasMaxChars($item['brand'], 64, tr('Please ensure the company brand has less than 64 characters'));
+
+        if(is_numeric(substr($item['brand'], 0, 1))){
+            $v->setError(tr('Please ensure that the company brand does not start with a number'));
+        }
+
+        $v->hasMaxChars($item['brand'], 64, tr('Please ensure the company brand has less than 64 characters'));
+
+        $item['brand'] = str_clean($item['brand']);
+
+        /*
+         * Validate model
+         */
+        $v->isNotEmpty ($item['model']    , tr('Please specify a company model'));
+        $v->hasMinChars($item['model'],  2, tr('Please ensure the company model has at least 2 characters'));
+        $v->hasMaxChars($item['model'], 64, tr('Please ensure the company model has less than 64 characters'));
+
+        if(is_numeric(substr($item['model'], 0, 1))){
+            $v->setError(tr('Please ensure that the company model does not start with a number'));
+        }
+
+        $v->hasMaxChars($item['model'], 64, tr('Please ensure the company model has less than 64 characters'));
+
+        $item['model'] = str_clean($item['model']);
+
+        /*
+         * Validate code
+         */
+        $v->isNotEmpty ($item['code']    , tr('Please specify a company code'));
+        $v->hasMinChars($item['code'],  2, tr('Please ensure the company code has at least 2 characters'));
+        $v->hasMaxChars($item['code'], 64, tr('Please ensure the company code has less than 64 characters'));
+
+        if(is_numeric(substr($item['code'], 0, 1))){
+            $v->setError(tr('Please ensure that the company code does not start with a number'));
+        }
+
+        $v->hasMaxChars($item['code'], 64, tr('Please ensure the company code has less than 64 characters'));
+
+        $item['code'] = str_clean($item['code']);
 
         /*
          * Validate description
          */
-        if(empty($company['description'])){
-            $company['description'] = null;
+        if(empty($item['description'])){
+            $item['description'] = null;
 
         }else{
-            $v->hasMinChars($company['description'],   16, tr('Please ensure the company description has at least 16 characters'));
-            $v->hasMaxChars($company['description'], 2047, tr('Please ensure the company description has less than 2047 characters'));
+            $v->hasMinChars($item['description'],   16, tr('Please ensure the company description has at least 16 characters'));
+            $v->hasMaxChars($item['description'], 2047, tr('Please ensure the company description has less than 2047 characters'));
 
-            $company['description'] = str_clean($company['description']);
+            $item['description'] = str_clean($item['description']);
         }
 
         /*
@@ -117,9 +153,9 @@ function inventories_validate($company){
         /*
          * Set seoname
          */
-        $company['seoname'] = seo_unique($company['name'], 'companies', isset_get($company['id']));
+        $item['seoname'] = seo_unique($item['name'], 'inventories_items', isset_get($item['id']));
 
-      return $company;
+        return $item;
 
     }catch(Exception $e){
         throw new bException('inventories_validate(): Failed', $e);
@@ -221,19 +257,19 @@ function inventories_select($params = null){
  * @category Function reference
  * @package companies
  *
- * @param mixed $company The required company. Can either be specified by id (natural number) or string (seoname)
+ * @param mixed $item The required company. Can either be specified by id (natural number) or string (seoname)
  * @param string $column The specific column that has to be returned
  * @return mixed The company data. If no column was specified, an array with all columns will be returned. If a column was specified, only the column will be returned (having the datatype of that column). If the specified company does not exist, NULL will be returned.
  */
-function inventories_get($company, $column = null, $status = null){
+function inventories_get($item, $column = null, $status = null){
     try{
-        if(is_numeric($company)){
+        if(is_numeric($item)){
             $where[] = ' `companies`.`id` = :id ';
-            $execute[':id'] = $company;
+            $execute[':id'] = $item;
 
         }else{
             $where[] = ' `companies`.`seoname` = :seoname ';
-            $execute[':seoname'] = $company;
+            $execute[':seoname'] = $item;
         }
 
         if($status !== false){
@@ -286,71 +322,104 @@ function inventories_get($company, $column = null, $status = null){
  * @param array $branch The branch to validate
  * @return array The validated and cleaned $branch array
  */
-function inventories_validate_items($branch, $reload_only = false){
+function inventories_validate_item($item, $reload_only = false){
     try{
         load_libs('validate,seo');
-
-        $v = new validate_form($branch, 'name,seocompany,description');
+        $v = new validate_form($item, 'name,seocategory,seoprovider,brand,model,code,description');
 
         /*
-         * Validate company
+         * Validate category
          */
-        if($branch['seocompany']){
-            $branch['inventories_id'] = inventories_get($branch['seocompany'], 'id');
+        if($item['seocategory']){
+            load_libs('categories');
+            $item['categories_id'] = categories_get($item['seocategory'], 'id');
 
-            if(!$branch['inventories_id']){
-                $v->setError(tr('Specified company does not exist'));
+            if(!$item['categories_id']){
+                $v->setError(tr('Specified category does not exist'));
             }
 
         }else{
-            $branch['inventories_id'] = null;
-            $v->setError(tr('No company specified'));
+            $item['categories_id'] = null;
+            $v->setError(tr('No category specified'));
+        }
+
+        /*
+         * Validate provider
+         */
+        if($item['seoprovider']){
+            load_libs('providers');
+            $item['providers_id'] = providers_get($item['seoprovider'], 'id');
+
+            if(!$item['providers_id']){
+                $v->setError(tr('Specified provider does not exist'));
+            }
+
+        }else{
+            $item['providers_id'] = null;
         }
 
         if($reload_only){
-            return $branch;
+            return $item;
         }
 
         /*
-         * Validate name
+         * Validate brand
          */
-        $v->isNotEmpty ($branch['name']    , tr('Please specify a branch name'));
-        $v->hasMinChars($branch['name'],  2, tr('Please ensure the branch name has at least 2 characters'));
-        $v->hasMaxChars($branch['name'], 64, tr('Please ensure the branch name has less than 64 characters'));
+        $v->isNotEmpty ($item['brand']    , tr('Please specify a company brand'));
+        $v->hasMinChars($item['brand'],  2, tr('Please ensure the company brand has at least 2 characters'));
+        $v->hasMaxChars($item['brand'], 64, tr('Please ensure the company brand has less than 64 characters'));
 
-        if(is_numeric(substr($branch['name'], 0, 1))){
-            $v->setError(tr('Please ensure that the branch name does not start with a number'));
+        if(is_numeric(substr($item['brand'], 0, 1))){
+            $v->setError(tr('Please ensure that the company brand does not start with a number'));
         }
 
-        $v->hasMaxChars($branch['name'], 64, tr('Please ensure the branch name has less than 64 characters'));
+        $v->hasMaxChars($item['brand'], 64, tr('Please ensure the company brand has less than 64 characters'));
 
-        $branch['name'] = str_clean($branch['name']);
+        $item['brand']    = str_clean($item['brand']);
+        $item['seobrand'] = seo_string($item['brand']);
 
         /*
-         * Does the branch already exist within the specified inventories_id?
+         * Validate model
          */
-        $exists = sql_get('SELECT `id` FROM `branches` WHERE `inventories_id` '.sql_is(isset_get($branch['inventories_id'])).' :inventories_id AND `name` = :name AND `id` '.sql_is(isset_get($branch['id']), true).' :id', true, array(':name' => $branch['name'], ':id' => isset_get($branch['id']), ':inventories_id' => isset_get($branch['inventories_id'])));
+        $v->isNotEmpty ($item['model']    , tr('Please specify a company model'));
+        $v->hasMinChars($item['model'],  2, tr('Please ensure the company model has at least 2 characters'));
+        $v->hasMaxChars($item['model'], 64, tr('Please ensure the company model has less than 64 characters'));
 
-        if($exists){
-            if($branch['category']){
-                $v->setError(tr('The branch name ":branch" already exists in the category branch ":category"', array(':category' => $branch['category'], ':branch' => $branch['name'])));
-
-            }else{
-                $v->setError(tr('The branch name ":branch" already exists', array(':branch' => $branch['name'])));
-            }
+        if(is_numeric(substr($item['model'], 0, 1))){
+            $v->setError(tr('Please ensure that the company model does not start with a number'));
         }
+
+        $v->hasMaxChars($item['model'], 64, tr('Please ensure the company model has less than 64 characters'));
+
+        $item['model']    = str_clean($item['model']);
+        $item['seomodel'] = seo_string($item['model']);
+
+        /*
+         * Validate code
+         */
+        $v->isNotEmpty ($item['code']    , tr('Please specify a company code'));
+        $v->hasMinChars($item['code'],  2, tr('Please ensure the company code has at least 2 characters'));
+        $v->hasMaxChars($item['code'], 64, tr('Please ensure the company code has less than 64 characters'));
+
+        if(is_numeric(substr($item['code'], 0, 1))){
+            $v->setError(tr('Please ensure that the company code does not start with a number'));
+        }
+
+        $v->hasMaxChars($item['code'], 64, tr('Please ensure the company code has less than 64 characters'));
+
+        $item['code'] = str_clean($item['code']);
 
         /*
          * Validate description
          */
-        if(empty($branch['description'])){
-            $branch['description'] = null;
+        if(empty($item['description'])){
+            $item['description'] = null;
 
         }else{
-            $v->hasMinChars($branch['description'],   16, tr('Please ensure the branch description has at least 16 characters'));
-            $v->hasMaxChars($branch['description'], 2047, tr('Please ensure the branch description has less than 2047 characters'));
+            $v->hasMinChars($item['description'],   16, tr('Please ensure the company description has at least 16 characters'));
+            $v->hasMaxChars($item['description'], 2047, tr('Please ensure the company description has less than 2047 characters'));
 
-            $branch['description'] = str_clean($branch['description']);
+            $item['description'] = str_clean($item['description']);
         }
 
         /*
@@ -361,12 +430,12 @@ function inventories_validate_items($branch, $reload_only = false){
         /*
          * Set seoname
          */
-        $branch['seoname'] = seo_unique($branch['name'], 'branches', isset_get($branch['id']));
+        $item['seoname'] = seo_unique($item['name'], 'inventories_items', isset_get($item['id']));
 
-      return $branch;
+        return $item;
 
     }catch(Exception $e){
-        throw new bException('inventories_validate_items(): Failed', $e);
+        throw new bException('inventories_validate_item(): Failed', $e);
     }
 }
 
@@ -473,105 +542,74 @@ function inventories_select_items($params = null){
  * @param string $column The specific column that has to be returned
  * @return mixed The company data. If no column was specified, an array with all columns will be returned. If a column was specified, only the column will be returned (having the datatype of that column). If the specified company does not exist, NULL will be returned.
  */
-function inventories_get_items($company, $branch, $column = null, $status = null){
+function inventories_get_item($brand, $model, $column = null, $status = null){
     try{
         /*
-         * Filter by specified company
+         * Filter by specified brand and model
          */
-        if(!is_numeric($company)){
-            $inventories_id = inventories_get($company, 'id');
-
-            if(!$inventories_id){
-                throw new bException(tr('inventories_get_items(): Specified company ":company" does not exist', array(':company' => $company)), 'not-exist');
-            }
-
-        }else{
-            $inventories_id = $company;
+        if(!$brand){
+            throw new bException(tr('inventories_get_item(): No brand specified'), 'not-specified');
         }
 
-        $where[] = ' `branches`.`inventories_id` = :inventories_id ';
-        $execute[':inventories_id'] = $inventories_id;
-
-        /*
-         * Filter by specified branch
-         */
-        if(is_numeric($branch)){
-            $where[] = ' `branches`.`id` = :id ';
-            $execute[':id'] = $branch;
-
-        }else{
-            $where[] = ' `branches`.`seoname` = :seoname ';
-            $execute[':seoname'] = $branch;
+        if(!$model){
+            throw new bException(tr('inventories_get_item(): No modelspecified'), 'not-specified');
         }
+
+        $where[] = ' `inventories_items`.`brand` = :brand ';
+        $where[] = ' `inventories_items`.`model` = :model ';
+
+        $execute[':brand'] = $brand;
+        $execute[':model'] = $model;
 
         /*
          * Filter by specified status
          */
         if($status !== false){
             $execute[':status'] = $status;
-            $where[] = ' `branches`.`status` '.sql_is($status).' :status';
+            $where[] = ' `inventories_items`.`status` '.sql_is($status).' :status';
         }
 
         $where   = ' WHERE '.implode(' AND ', $where).' ';
 
         if($column){
-            $retval = sql_get('SELECT `branches`.`'.$column.'`
+            $retval = sql_get('SELECT `inventories_items`.`'.$column.'`
 
-                               FROM   `branches`
-
-                               JOIN   `companies`
-                               ON     `companies`.`id` = `branches`.`inventories_id`
-                               AND    `companies`.`status` IS NULL '.$where, true, $execute);
+                               FROM   `inventories_items` '.$where, true, $execute);
 
         }else{
-            $retval = sql_get('SELECT  `branches`.`id`,
-                                       `branches`.`createdon`,
-                                       `branches`.`createdby`,
-                                       `branches`.`meta_id`,
-                                       `branches`.`status`,
-                                       `branches`.`inventories_id`,
-                                       `branches`.`name`,
-                                       `branches`.`seoname`,
-                                       `branches`.`description`,
+            $retval = sql_get('SELECT    `inventories_items`.`id`,
+                                         `inventories_items`.`createdon`,
+                                         `inventories_items`.`createdby`,
+                                         `inventories_items`.`meta_id`,
+                                         `inventories_items`.`status`,
+                                         `inventories_items`.`categories_id`,
+                                         `inventories_items`.`providers_id`,
+                                         `inventories_items`.`brand`,
+                                         `inventories_items`.`seobrand`,
+                                         `inventories_items`.`model`,
+                                         `inventories_items`.`seomodel`,
+                                         `inventories_items`.`code`,
+                                         `inventories_items`.`description`,
 
-                                       `companies`.`name`    AS `company`,
-                                       `companies`.`seoname` AS `seocompany`
+                                         `providers`.`name`     AS `provider`,
+                                         `providers`.`seoname`  AS `seoprovider`,
 
-                               FROM    `branches`
+                                         `categories`.`name`    AS `category`,
+                                         `categories`.`seoname` AS `seocategory`
 
-                               JOIN    `companies`
-                               ON      `companies`.`id` = `branches`.`inventories_id`
-                               AND     `companies`.`status` IS NULL '.$where, $execute);
+                               FROM      `inventories_items`
+
+                               LEFT JOIN `categories`
+                               ON        `categories`.`id` = `inventories_items`.`categories_id`
+
+                               LEFT JOIN `providers`
+                               ON        `providers`.`id` = `inventories_items`.`providers_id` '.$where, $execute);
         }
 
         return $retval;
 
     }catch(Exception $e){
-        throw new bException('inventories_get_items(): Failed', $e);
-    }
-}
-
-
-
-/*
- * Validate the specified inventory item
- *
- * @author Sven Olaf Oostenbrink <sven@capmega.com>
- * @copyright Copyright (c) 2018 Capmega
- * @license http://opensource.org/licenses/GPL-2.0 GNU Public License, Version 2
- * @category Function reference
- * @package inventories
- *
- * @param
- * @return
- */
-function inventories_validate_item($item){
-    try{
-        return $item;
-
-    }catch(Exception $e){
-        throw new bException('inventories_validate_item(): Failed', $e);
+        throw new bException('inventories_get_item(): Failed', $e);
     }
 }
 ?>
-t
