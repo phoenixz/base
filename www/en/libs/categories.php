@@ -337,7 +337,8 @@ function categories_get($category, $column = null, $status = null, $parent = fal
                                          `categories`.`seoname`,
                                          `categories`.`description`,
 
-                                         `parents`.`seoname` AS `parent`
+                                         `parents`.`name`    AS `parent`,
+                                         `parents`.`seoname` AS `seoparent`
 
                                FROM      `categories`
 
