@@ -881,12 +881,12 @@ function companies_get_department($company, $branch, $department, $column = null
 
                                FROM      `departments`
 
-                               LEFT JOIN `categories`
-                               ON        `categories`.`id`   = `companies`.`categories_id`
-
                                JOIN      `companies`
                                ON        `companies`.`id`    = `departments`.`companies_id`
                                AND       `companies`.`status` IS NULL
+
+                               LEFT JOIN `categories`
+                               ON        `categories`.`id`   = `companies`.`categories_id`
 
                                JOIN      `branches`
                                ON        `branches`.`id`     = `departments`.`branches_id`
