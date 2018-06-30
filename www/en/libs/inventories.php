@@ -807,13 +807,13 @@ function inventories_get_default_code($items_id, $companies_id){
             return $item['code'];
         }
 
-        $highest = sql_get('SELECT `code` FROM `inventories` WHERE `companies_id` = :companies_id AND `items_id` = :items_id ORDER BY `code` DESC LIMIT 1', true, array(':companies_id' => $companies_id, ':items_id' => $items_id));
+        $code    = substr($item['code'], 0, -1);
+        $highest = sql_get('SELECT `code` FROM `inventories` WHERE `companies_id` = :companies_id AND SUBSTR(`code`, 1, '.strlen($code).') = :code ORDER BY `code` DESC LIMIT 1', true, array(':companies_id' => $companies_id, ':code' => $code));
 
         if(!$highest){
             return str_replace('#', '1', $item['code']);
         }
 
-        $code    = substr($item['code'], 0, -1);
         $highest = str_replace($code, '', $highest);
         $highest++;
 
