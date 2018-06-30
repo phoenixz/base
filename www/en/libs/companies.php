@@ -248,23 +248,23 @@ function companies_get($company, $column = null, $status = null){
             $retval = sql_get('SELECT `'.$column.'` FROM `companies` '.$where, true, $execute);
 
         }else{
-            $retval = sql_get('SELECT `companies`.`id`,
-                                      `companies`.`createdon`,
-                                      `companies`.`createdby`,
-                                      `companies`.`meta_id`,
-                                      `companies`.`status`,
-                                      `companies`.`categories_id`,
-                                      `companies`.`name`,
-                                      `companies`.`seoname`,
-                                      `companies`.`description`,
+            $retval = sql_get('SELECT    `companies`.`id`,
+                                         `companies`.`createdon`,
+                                         `companies`.`createdby`,
+                                         `companies`.`meta_id`,
+                                         `companies`.`status`,
+                                         `companies`.`categories_id`,
+                                         `companies`.`name`,
+                                         `companies`.`seoname`,
+                                         `companies`.`description`,
 
-                                      `categories`.`name`    AS `category`,
-                                      `categories`.`seoname` AS `seocategory`
+                                         `categories`.`name`    AS `category`,
+                                         `categories`.`seoname` AS `seocategory`
 
-                               FROM   `companies`
+                               FROM      `companies`
 
-                               JOIN   `categories`
-                               ON     `categories`.`id` = `companies`.`categories_id` '.$where, $execute);
+                               LEFT JOIN `categories`
+                               ON        `categories`.`id` = `companies`.`categories_id` '.$where, $execute);
         }
 
         return $retval;
@@ -523,30 +523,30 @@ function companies_get_branch($company, $branch, $column = null, $status = null)
                                AND    `companies`.`status` IS NULL '.$where, true, $execute);
 
         }else{
-            $retval = sql_get('SELECT `branches`.`id`,
-                                      `branches`.`createdon`,
-                                      `branches`.`createdby`,
-                                      `branches`.`meta_id`,
-                                      `branches`.`status`,
-                                      `branches`.`companies_id`,
-                                      `branches`.`name`,
-                                      `branches`.`seoname`,
-                                      `branches`.`description`,
+            $retval = sql_get('SELECT    `branches`.`id`,
+                                         `branches`.`createdon`,
+                                         `branches`.`createdby`,
+                                         `branches`.`meta_id`,
+                                         `branches`.`status`,
+                                         `branches`.`companies_id`,
+                                         `branches`.`name`,
+                                         `branches`.`seoname`,
+                                         `branches`.`description`,
 
-                                      `categories`.`name`    AS `category`,
-                                      `categories`.`seoname` AS `seocategory`,
+                                         `categories`.`name`    AS `category`,
+                                         `categories`.`seoname` AS `seocategory`,
 
-                                      `companies`.`name`     AS `company`,
-                                      `companies`.`seoname`  AS `seocompany`
+                                         `companies`.`name`     AS `company`,
+                                         `companies`.`seoname`  AS `seocompany`
 
-                               FROM   `branches`
+                               FROM      `branches`
 
-                               JOIN   `companies`
-                               ON     `companies`.`id`    = `branches`.`companies_id`
-                               AND    `companies`.`status` IS NULL
+                               JOIN      `companies`
+                               ON        `companies`.`id`    = `branches`.`companies_id`
+                               AND       `companies`.`status` IS NULL
 
-                               JOIN   `categories`
-                               ON     `categories`.`id`   = `companies`.`categories_id` '.$where, $execute);
+                               LEFT JOIN `categories`
+                               ON        `categories`.`id`   = `companies`.`categories_id` '.$where, $execute);
         }
 
         return $retval;
@@ -842,46 +842,46 @@ function companies_get_department($company, $branch, $department, $column = null
                                FROM   `departments`
 
                                JOIN   `companies`
-                               ON     `companies`.`id`  = `departments`.`companies_id`
-                               AND    `companies`.`status`  IS NULL
+                               ON     `companies`.`id` = `departments`.`companies_id`
+                               AND    `companies`.`status` IS NULL
 
-                               JOIN    `branches`
-                               ON      `branches`.`id`  = `departments`.`branches_id`
-                               AND     `branches`.`status`  IS NULL '.$where, true, $execute);
+                               JOIN   `branches`
+                               ON     `branches`.`id`  = `departments`.`branches_id`
+                               AND    `branches`.`status`  IS NULL '.$where, true, $execute);
 
         }else{
-            $retval = sql_get('SELECT  `departments`.`id`,
-                                       `departments`.`createdon`,
-                                       `departments`.`createdby`,
-                                       `departments`.`meta_id`,
-                                       `departments`.`status`,
-                                       `departments`.`companies_id`,
-                                       `departments`.`branches_id`,
-                                       `departments`.`name`,
-                                       `departments`.`seoname`,
-                                       `departments`.`description`,
+            $retval = sql_get('SELECT    `departments`.`id`,
+                                         `departments`.`createdon`,
+                                         `departments`.`createdby`,
+                                         `departments`.`meta_id`,
+                                         `departments`.`status`,
+                                         `departments`.`companies_id`,
+                                         `departments`.`branches_id`,
+                                         `departments`.`name`,
+                                         `departments`.`seoname`,
+                                         `departments`.`description`,
 
-                                       `categories`.`name`    AS `category`,
-                                       `categories`.`seoname` AS `seocategory`,
+                                         `categories`.`name`    AS `category`,
+                                         `categories`.`seoname` AS `seocategory`,
 
-                                       `companies`.`name`     AS `company`,
-                                       `companies`.`seoname`  AS `seocompany`,
+                                         `companies`.`name`     AS `company`,
+                                         `companies`.`seoname`  AS `seocompany`,
 
-                                       `branches`.`name`      AS `branch`,
-                                       `branches`.`seoname`   AS `seobranch`
+                                         `branches`.`name`      AS `branch`,
+                                         `branches`.`seoname`   AS `seobranch`
 
-                               FROM    `departments`
+                               FROM      `departments`
 
-                               JOIN    `companies`
-                               ON      `companies`.`id`    = `departments`.`companies_id`
-                               AND     `companies`.`status` IS NULL
+                               LEFT JOIN `categories`
+                               ON        `categories`.`id`   = `companies`.`categories_id`
 
-                               JOIN    `categories`
-                               ON      `categories`.`id`   = `companies`.`categories_id`
+                               JOIN      `companies`
+                               ON        `companies`.`id`    = `departments`.`companies_id`
+                               AND       `companies`.`status` IS NULL
 
-                               JOIN    `branches`
-                               ON      `branches`.`id`     = `departments`.`branches_id`
-                               AND     `branches`.`status`  IS NULL '.$where, $execute);
+                               JOIN      `branches`
+                               ON        `branches`.`id`     = `departments`.`branches_id`
+                               AND       `branches`.`status`  IS NULL '.$where, $execute);
         }
 
         return $retval;
@@ -1246,45 +1246,45 @@ function companies_get_employee($company, $branch, $department, $employee, $colu
                                AND     `departments`.`status` IS NULL '.$where, true, $execute);
 
         }else{
-            $retval = sql_get('SELECT  `employees`.`id`,
-                                       `employees`.`createdon`,
-                                       `employees`.`createdby`,
-                                       `employees`.`meta_id`,
-                                       `employees`.`status`,
-                                       `employees`.`companies_id`,
-                                       `employees`.`branches_id`,
-                                       `employees`.`name`,
-                                       `employees`.`seoname`,
-                                       `employees`.`description`,
+            $retval = sql_get('SELECT    `employees`.`id`,
+                                         `employees`.`createdon`,
+                                         `employees`.`createdby`,
+                                         `employees`.`meta_id`,
+                                         `employees`.`status`,
+                                         `employees`.`companies_id`,
+                                         `employees`.`branches_id`,
+                                         `employees`.`name`,
+                                         `employees`.`seoname`,
+                                         `employees`.`description`,
 
-                                       `categories`.`name`     AS `category`,
-                                       `categories`.`seoname`  AS `seocategory`,
+                                         `categories`.`name`     AS `category`,
+                                         `categories`.`seoname`  AS `seocategory`,
 
-                                       `companies`.`name`      AS `company`,
-                                       `companies`.`seoname`   AS `seocompany`,
+                                         `companies`.`name`      AS `company`,
+                                         `companies`.`seoname`   AS `seocompany`,
 
-                                       `branches`.`name`       AS `branch`,
-                                       `branches`.`seoname`    AS `seobranch`,
+                                         `branches`.`name`       AS `branch`,
+                                         `branches`.`seoname`    AS `seobranch`,
 
-                                       `departments`.`name`    AS `department`,
-                                       `departments`.`seoname` AS `seodepartment`
+                                         `departments`.`name`    AS `department`,
+                                         `departments`.`seoname` AS `seodepartment`
 
-                               FROM    `employees`
+                               FROM      `employees`
 
-                               JOIN    `companies`
-                               ON      `companies`.`id`   = `employees`.`companies_id`
-                               AND     `companies`.`status`   IS NULL
+                               LEFT JOIN `categories`
+                               ON        `categories`.`id` = `companies`.`categories_id`
 
-                               JOIN    `categories`
-                               ON      `categories`.`id` = `companies`.`categories_id`
+                               JOIN      `companies`
+                               ON        `companies`.`id`   = `employees`.`companies_id`
+                               AND       `companies`.`status`   IS NULL
 
-                               JOIN    `branches`
-                               ON      `branches`.`id`    = `employees`.`branches_id`
-                               AND     `branches`.`status`    IS NULL
+                               JOIN      `branches`
+                               ON        `branches`.`id`    = `employees`.`branches_id`
+                               AND       `branches`.`status`    IS NULL
 
-                               JOIN    `departments`
-                               ON      `departments`.`id` = `employees`.`departments_id`
-                               AND     `departments`.`status` IS NULL '.$where, $execute);
+                               JOIN      `departments`
+                               ON        `departments`.`id` = `employees`.`departments_id`
+                               AND       `departments`.`status` IS NULL '.$where, $execute);
         }
 
         return $retval;
