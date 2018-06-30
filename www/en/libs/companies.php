@@ -198,7 +198,7 @@ function companies_select($params = null){
             $where = ' WHERE '.implode(' AND ', $where).' ';
         }
 
-        $query              = ' SELECT `seoname`, `name` FROM `companies` '.$where.' ORDER BY `name`';
+        $query              = 'SELECT `seoname`, `name` FROM `companies` '.$where.' ORDER BY `name`';
         $params['resource'] = sql_query($query, $execute);
         $retval             = html_select($params);
 
@@ -306,7 +306,10 @@ function companies_validate_branch($branch, $reload_only = false){
 
         }else{
             $branch['companies_id'] = null;
-            $v->setError(tr('No company specified'));
+
+            if(!$reload_only){
+                $v->setError(tr('No company specified'));
+            }
         }
 
         $v->isValid();
