@@ -916,7 +916,7 @@ class validate_form {
                 return $this->setError($message);
             }
 
-            $phone = str_replace(array('(', ')', ' ', '-', '.', '/'), '', $this->testValue);
+            $phone = str_replace(array('+', '(', ')', ' ', '-', '.', '/'), '', $this->testValue);
             $phone = str_replace('ext', 'x', $phone);
             $ext   = str_from($phone, 'x');
             $phone = str_until($phone, 'x');
