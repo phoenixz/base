@@ -1,4 +1,4 @@
 <?php
-sql_column_exists('inventories', 'serial', '!ALTER TABLE `inventories_items` ADD COLUMN     `serial` VARCHAR(32) NULL DEFAULT NULL');
-sql_index_exists ('inventories', 'serial', '!ALTER TABLE `inventories_items` ADD UNIQUE KEY `serial` (`serial`)');
+sql_column_exists('inventories', 'serial', '!ALTER TABLE `inventories` ADD COLUMN     `serial` VARCHAR(32) NULL DEFAULT NULL AFTER `code`');
+sql_index_exists ('inventories', 'serial', '!ALTER TABLE `inventories` ADD UNIQUE KEY `serial` (`serial`)');
 ?>

@@ -50,7 +50,7 @@ function inventories_validate($item, $reload_only = false){
     try{
         load_libs('validate,seo');
 
-        $v = new validate_form($item, 'seocategory,seocompany,seobranch,seodepartment,seoemployee,seocustomer,seoproject,items_id,code,description');
+        $v = new validate_form($item, 'seocategory,seocompany,seobranch,seodepartment,seoemployee,seocustomer,seoproject,items_id,code,serial,description');
 
         /*
          * Validate category
@@ -225,6 +225,19 @@ function inventories_validate($item, $reload_only = false){
         }
 
         /*
+         * Validate serial
+         */
+        if($item['serial']){
+            $v->isNotEmpty ($item['serial']    , tr('Please specify an inventory entry serial code'));
+            $v->hasMinChars($item['serial'],  2, tr('Please ensure the inventory entry serial code has at least 2 characters'));
+            $v->hasMaxChars($item['serial'], 64, tr('Please ensure the inventory entry serial code has less than 64 characters'));
+            $item['serial'] = str_clean($item['serial']);
+
+        }else{
+            $item['serial'] = null;
+        }
+
+        /*
          * Validate description
          */
         if(empty($item['description'])){
@@ -382,6 +395,7 @@ function inventories_get($entry, $column = null, $status = null){
                                          `inventories`.`departments_id`,
                                          `inventories`.`employees_id`,
                                          `inventories`.`code`,
+                                         `inventories`.`serial`,
                                          `inventories`.`description`,
 
                                          `inventories_items`.`providers_id`,
