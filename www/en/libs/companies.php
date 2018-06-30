@@ -182,7 +182,7 @@ function companies_select($params = null){
         $execute = array();
 
         if($params['categories_id'] !== false){
-            $where[] = ' `categories_id` = :categories_id ';
+            $where[] = ' `categories_id` '.sql_is($params['categories_id']).' :categories_id ';
             $execute[':categories_id'] = $params['categories_id'];
         }
 
@@ -198,7 +198,7 @@ function companies_select($params = null){
             $where = ' WHERE '.implode(' AND ', $where).' ';
         }
 
-        $query              = 'SELECT `seoname`, `name` FROM `companies` '.$where.' ORDER BY `name`';
+        $query              = ' SELECT `seoname`, `name` FROM `companies` '.$where.' ORDER BY `name`';
         $params['resource'] = sql_query($query, $execute);
         $retval             = html_select($params);
 
