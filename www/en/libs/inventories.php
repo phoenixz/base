@@ -117,10 +117,6 @@ function inventories_validate($item, $reload_only = false){
             }else{
                 $item['departments_id'] = null;
                 $item['employees_id']   = null;
-
-                if(!$reload_only){
-                    $v->setError(tr('No department specified'));
-                }
             }
 
             /*
