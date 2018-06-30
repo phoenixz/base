@@ -24,8 +24,15 @@
  * @return void
  */
 function companies_library_init(){
+    global $_CONFIG;
+
     try{
         load_config('companies');
+
+        if(empty($_GET['seocompany']) and empty($_POST['seocompany'])){
+            $_GET['seocompany']  = $_CONFIG['companies']['default'];
+            $_POST['seocompany'] = $_CONFIG['companies']['default'];
+        }
 
     }catch(Exception $e){
         throw new bException('companies_library_init(): Failed', $e);
