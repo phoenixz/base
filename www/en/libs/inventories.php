@@ -183,7 +183,11 @@ function inventories_validate($item, $reload_only = false){
             $exist = inventories_get_item($item['items_id'], $item['categories_id'], 'id');
 
             if(!$exist){
-                $v->setError(tr('Specified item does not exist'));
+                $item['items_id'] = null;
+
+                if(!$reload_only){
+                    $v->setError(tr('Specified item does not exist'));
+                }
             }
 
         }else{
@@ -551,9 +555,9 @@ function inventories_validate_item($item, $reload_only = false){
             $v->setError(tr('Please ensure that the item code does not start with a number'));
         }
 
-        $v->hasMaxChars($item['code'], 64, tr('Please ensure the item code has less than 64 characters'));
+        $item['code'] = trim(strtoupper($item['code']));
 
-        $item['code'] = str_clean($item['code']);
+        $v->isRegex($item['code'], '/[A-Z0-9]+#/', tr('Please ensure the item code has a valid format. Format should be in the form of the expression "[A-Z0-9]+#"'));
 
         /*
          * Validate description
@@ -758,6 +762,55 @@ function inventories_get_item($items_id, $category = null, $column = null, $stat
 
     }catch(Exception $e){
         throw new bException('inventories_get_item(): Failed', $e);
+    }
+}
+
+
+
+/*
+ * Return the default code for the specified item
+ *
+ *
+ *
+ * @author Sven Olaf Oostenbrink <sven@capmega.com>
+ * @copyright Copyright (c) 2018 Capmega
+ * @license http://opensource.org/licenses/GPL-2.0 GNU Public License, Version 2
+ * @category Function reference
+ * @package companies
+ *
+ * @param numeric $items_id
+ * @return string
+ */
+function inventories_get_default_code($items_id, $companies_id){
+    try{
+        $item = sql_get('SELECT `id`, `code` FROM `inventories_items` WHERE `id` = :id', array(':id' => $items_id));
+
+        if(!$item){
+            throw new bException(tr('inventories_get_default_code(): The specified item ":id" does not exist', array(':id' => $items_id)), 'not-exist');
+        }
+
+        if(!$item['code']){
+            throw new bException(tr('inventories_get_default_code(): The specified item ":id" has no code specified', array(':id' => $items_id)), 'not-available');
+        }
+
+        if(strstr('#', $item['code'])){
+            return $item['code'];
+        }
+
+        $highest = sql_get('SELECT `code` FROM `inventories` WHERE `companies_id` = :companies_id AND `items_id` = :items_id ORDER BY `code` DESC LIMIT 1', true, array(':companies_id' => $companies_id, ':items_id' => $items_id));
+
+        if(!$highest){
+            return str_replace('#', '1', $item['code']);
+        }
+
+        $code    = substr($item['code'], 0, -1);
+        $highest = str_replace($code, '', $highest);
+        $highest++;
+
+        return $code.$highest;
+
+    }catch(Exception $e){
+        throw new bException('inventories_get_default_code(): Failed', $e);
     }
 }
 ?>
