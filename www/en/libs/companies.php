@@ -919,15 +919,20 @@ function companies_validate_employee($employee, $reload_only = false){
     try{
         load_libs('validate,seo');
 
-        $v = new validate_form($employee, 'name,users_id,seocompany,seobranch,seodepartment,description');
+        $v = new validate_form($employee, 'name,username,seocompany,seobranch,seodepartment,description');
 
         /*
          * Validate user
          */
-        if($employee['users_id']){
-            $exists = sql_get('SELECT `id` FROM `users` WHERE `id` = :id AND `status` IS NULL', true, array(':id' => $employee['users_id']));
+        if($employee['username']){
+            if(strstr($employee['username'], '@')){
+                $employee['users_id'] = sql_get(' SELECT `id` FROM `users` WHERE `email`    = :email    AND `status` IS NULL', true, array(':email'    => $employee['username']));
 
-            if(!$exists){
+            }else{
+                $employee['users_id'] = sql_get('SELECT `id` FROM `users` WHERE `username` = :username AND `status` IS NULL', true, array(':username' => $employee['username']));
+            }
+
+            if(!$employee['users_id']){
                 $v->setError(tr('Specified user does not exist'));
             }
 
@@ -1211,7 +1216,7 @@ function companies_get_employee($company, $branch, $department, $employee, $colu
          * Filter by specified department
          */
         if(!is_numeric($department)){
-            $departments_id = companies_get_department($companies_id, $department, 'id');
+            $departments_id = companies_get_department($companies_id, $branches_id, $department, 'id');
 
             if(!$departments_id){
                 throw new bException(tr('companies_get_employee(): Specified department ":department" does not exist', array(':department' => $department)), 'not-exist');
@@ -1271,9 +1276,14 @@ function companies_get_employee($company, $branch, $department, $employee, $colu
                                          `employees`.`status`,
                                          `employees`.`companies_id`,
                                          `employees`.`branches_id`,
+                                         `employees`.`departments_id`,
+                                         `employees`.`users_id`,
                                          `employees`.`name`,
                                          `employees`.`seoname`,
                                          `employees`.`description`,
+
+                                         `users`.`username`,
+                                         `users`.`email`,
 
                                          `categories`.`name`     AS `category`,
                                          `categories`.`seoname`  AS `seocategory`,
@@ -1289,12 +1299,15 @@ function companies_get_employee($company, $branch, $department, $employee, $colu
 
                                FROM      `employees`
 
-                               LEFT JOIN `categories`
-                               ON        `categories`.`id` = `companies`.`categories_id`
+                               LEFT JOIN `users`
+                               ON        `users`.`id`       = `employees`.`users_id`
 
                                JOIN      `companies`
                                ON        `companies`.`id`   = `employees`.`companies_id`
                                AND       `companies`.`status`   IS NULL
+
+                               LEFT JOIN `categories`
+                               ON        `categories`.`id`  = `companies`.`categories_id`
 
                                JOIN      `branches`
                                ON        `branches`.`id`    = `employees`.`branches_id`
