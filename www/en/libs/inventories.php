@@ -35,7 +35,7 @@ function inventories_library_init(){
 
 
 /*
- * Validate the specified company
+ * Validate the specified inventory entry
  *
  * @author Sven Olaf Oostenbrink <sven@capmega.com>
  * @copyright Copyright (c) 2018 Capmega
@@ -43,7 +43,7 @@ function inventories_library_init(){
  * @category Function reference
  * @package companies
  *
- * @param array $item The company to validate
+ * @param array $item The inventory entry to validate
  * @return array The validated and cleaned $item array
  */
 function inventories_validate($item, $reload_only = false){
@@ -203,17 +203,22 @@ function inventories_validate($item, $reload_only = false){
         /*
          * Validate code
          */
-        $v->isNotEmpty ($item['code']    , tr('Please specify a company code'));
-        $v->hasMinChars($item['code'],  2, tr('Please ensure the company code has at least 2 characters'));
-        $v->hasMaxChars($item['code'], 64, tr('Please ensure the company code has less than 64 characters'));
+        if($item['code']){
+            $v->isNotEmpty ($item['code']    , tr('Please specify an inventory entry code'));
+            $v->hasMinChars($item['code'],  2, tr('Please ensure the inventory entry code has at least 2 characters'));
+            $v->hasMaxChars($item['code'], 64, tr('Please ensure the inventory entry code has less than 64 characters'));
 
-        if(is_numeric(substr($item['code'], 0, 1))){
-            $v->setError(tr('Please ensure that the company code does not start with a number'));
+            if(is_numeric(substr($item['code'], 0, 1))){
+                $v->setError(tr('Please ensure that the inventory entry code does not start with a number'));
+            }
+
+            $v->hasMaxChars($item['code'], 64, tr('Please ensure the inventory entry code has less than 64 characters'));
+
+            $item['code'] = str_clean($item['code']);
+
+        }else{
+            $item['code'] = null;
         }
-
-        $v->hasMaxChars($item['code'], 64, tr('Please ensure the company code has less than 64 characters'));
-
-        $item['code'] = str_clean($item['code']);
 
         /*
          * Validate description
@@ -222,8 +227,8 @@ function inventories_validate($item, $reload_only = false){
             $item['description'] = null;
 
         }else{
-            $v->hasMinChars($item['description'],   16, tr('Please ensure the company description has at least 16 characters'));
-            $v->hasMaxChars($item['description'], 2047, tr('Please ensure the company description has less than 2047 characters'));
+            $v->hasMinChars($item['description'],   16, tr('Please ensure the inventory entry description has at least 16 characters'));
+            $v->hasMaxChars($item['description'], 2047, tr('Please ensure the inventory entry description has less than 2047 characters'));
 
             $item['description'] = str_clean($item['description']);
         }
@@ -506,15 +511,15 @@ function inventories_validate_item($item, $reload_only = false){
         /*
          * Validate brand
          */
-        $v->isNotEmpty ($item['brand']    , tr('Please specify a company brand'));
-        $v->hasMinChars($item['brand'],  2, tr('Please ensure the company brand has at least 2 characters'));
-        $v->hasMaxChars($item['brand'], 64, tr('Please ensure the company brand has less than 64 characters'));
+        $v->isNotEmpty ($item['brand']    , tr('Please specify a item brand'));
+        $v->hasMinChars($item['brand'],  2, tr('Please ensure the item brand has at least 2 characters'));
+        $v->hasMaxChars($item['brand'], 64, tr('Please ensure the item brand has less than 64 characters'));
 
         if(is_numeric(substr($item['brand'], 0, 1))){
-            $v->setError(tr('Please ensure that the company brand does not start with a number'));
+            $v->setError(tr('Please ensure that the item brand does not start with a number'));
         }
 
-        $v->hasMaxChars($item['brand'], 64, tr('Please ensure the company brand has less than 64 characters'));
+        $v->hasMaxChars($item['brand'], 64, tr('Please ensure the item brand has less than 64 characters'));
 
         $item['brand']    = str_clean($item['brand']);
         $item['seobrand'] = seo_string($item['brand']);
@@ -522,31 +527,31 @@ function inventories_validate_item($item, $reload_only = false){
         /*
          * Validate model
          */
-        $v->isNotEmpty ($item['model']    , tr('Please specify a company model'));
-        $v->hasMinChars($item['model'],  2, tr('Please ensure the company model has at least 2 characters'));
-        $v->hasMaxChars($item['model'], 64, tr('Please ensure the company model has less than 64 characters'));
+        $v->isNotEmpty ($item['model']    , tr('Please specify a item model'));
+        $v->hasMinChars($item['model'],  2, tr('Please ensure the item model has at least 2 characters'));
+        $v->hasMaxChars($item['model'], 64, tr('Please ensure the item model has less than 64 characters'));
 
         if(is_numeric(substr($item['model'], 0, 1))){
-            $v->setError(tr('Please ensure that the company model does not start with a number'));
+            $v->setError(tr('Please ensure that the item model does not start with a number'));
         }
 
-        $v->hasMaxChars($item['model'], 64, tr('Please ensure the company model has less than 64 characters'));
+        $v->hasMaxChars($item['model'], 64, tr('Please ensure the item model has less than 64 characters'));
 
         $item['model']    = str_clean($item['model']);
         $item['seomodel'] = seo_string($item['model']);
 
         /*
-         * Validate code
+         * Validate code pattern
          */
-        $v->isNotEmpty ($item['code']    , tr('Please specify a company code'));
-        $v->hasMinChars($item['code'],  2, tr('Please ensure the company code has at least 2 characters'));
-        $v->hasMaxChars($item['code'], 64, tr('Please ensure the company code has less than 64 characters'));
+        $v->isNotEmpty ($item['code']    , tr('Please specify a item code'));
+        $v->hasMinChars($item['code'],  2, tr('Please ensure the item code has at least 2 characters'));
+        $v->hasMaxChars($item['code'], 64, tr('Please ensure the item code has less than 64 characters'));
 
         if(is_numeric(substr($item['code'], 0, 1))){
-            $v->setError(tr('Please ensure that the company code does not start with a number'));
+            $v->setError(tr('Please ensure that the item code does not start with a number'));
         }
 
-        $v->hasMaxChars($item['code'], 64, tr('Please ensure the company code has less than 64 characters'));
+        $v->hasMaxChars($item['code'], 64, tr('Please ensure the item code has less than 64 characters'));
 
         $item['code'] = str_clean($item['code']);
 
@@ -557,8 +562,8 @@ function inventories_validate_item($item, $reload_only = false){
             $item['description'] = null;
 
         }else{
-            $v->hasMinChars($item['description'],   16, tr('Please ensure the company description has at least 16 characters'));
-            $v->hasMaxChars($item['description'], 2047, tr('Please ensure the company description has less than 2047 characters'));
+            $v->hasMinChars($item['description'],   16, tr('Please ensure the item description has at least 16 characters'));
+            $v->hasMaxChars($item['description'], 2047, tr('Please ensure the item description has less than 2047 characters'));
 
             $item['description'] = str_clean($item['description']);
         }
@@ -663,9 +668,9 @@ function inventories_select_item($params = null){
 
 
 /*
- * Return data for the specified company
+ * Return data for the specified item
  *
- * This function returns information for the specified company. The company can be specified by seoname or id, and return data will either be all data, or (optionally) only the specified column
+ * This function returns information for the specified item. The item can be specified by id only, and return data will either be all data, or (optionally) only the specified column
  *
  * @author Sven Olaf Oostenbrink <sven@capmega.com>
  * @copyright Copyright (c) 2018 Capmega
@@ -673,9 +678,9 @@ function inventories_select_item($params = null){
  * @category Function reference
  * @package companies
  *
- * @param mixed $branch The required company. Can either be specified by id (natural number) or string (seoname)
+ * @param mixed $branch The required item. Can either be specified by id (natural number) or string (seoname)
  * @param string $column The specific column that has to be returned
- * @return mixed The company data. If no column was specified, an array with all columns will be returned. If a column was specified, only the column will be returned (having the datatype of that column). If the specified company does not exist, NULL will be returned.
+ * @return mixed The item data. If no column was specified, an array with all columns will be returned. If a column was specified, only the column will be returned (having the datatype of that column). If the specified company does not exist, NULL will be returned.
  */
 function inventories_get_item($items_id, $category = null, $column = null, $status = null){
     try{
