@@ -599,12 +599,18 @@ function companies_validate_department($department, $reload_only = false){
 
             }else{
                 $department['branches_id'] = null;
-                $v->setError(tr('No branch specified'));
+
+                if(!$reload_only){
+                    $v->setError(tr('No branch specified'));
+                }
             }
 
         }else{
             $department['companies_id'] = null;
-            $v->setError(tr('No company specified'));
+
+            if(!$reload_only){
+                $v->setError(tr('No company specified'));
+            }
         }
 
         $v->isValid();
@@ -955,17 +961,26 @@ function companies_validate_employee($employee, $reload_only = false){
 
                 }else{
                     $employee['departments_id'] = null;
-                    $v->setError(tr('No department specified'));
+
+                    if(!$reload_only){
+                        $v->setError(tr('No department specified'));
+                    }
                 }
 
             }else{
                 $employee['branches_id'] = null;
-                $v->setError(tr('No branch specified'));
+
+                if(!$reload_only){
+                    $v->setError(tr('No branch specified'));
+                }
             }
 
         }else{
             $employee['companies_id'] = null;
-            $v->setError(tr('No company specified'));
+
+            if(!$reload_only){
+                $v->setError(tr('No company specified'));
+            }
         }
 
         $v->isValid();
