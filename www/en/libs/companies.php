@@ -737,13 +737,13 @@ function companies_select_department($params = null){
 
         $execute = array();
 
-        if($params['companies_id']){
-            $where[] = ' `companies_id` = :companies_id ';
+        if($params['companies_id'] !== false){
+            $where[] = ' `companies_id` '.sql_is($params['companies_id']).' :companies_id ';
             $execute[':companies_id'] = $params['companies_id'];
         }
 
-        if($params['branches_id']){
-            $where[] = ' `branches_id` = :branches_id ';
+        if($params['branches_id'] !== false){
+            $where[] = ' `branches_id` '.sql_is($params['branches_id']).' :branches_id ';
             $execute[':branches_id'] = $params['branches_id'];
         }
 
@@ -1121,18 +1121,18 @@ function companies_select_employee($params = null){
 
         $execute = array();
 
-        if($params['companies_id']){
-            $where[] = ' `companies_id` = :companies_id ';
+        if($params['companies_id'] !== false){
+            $where[] = ' `companies_id` '.sql_is($params['companies_id']).' :companies_id ';
             $execute[':companies_id'] = $params['companies_id'];
         }
 
-        if($params['branches_id']){
-            $where[] = ' `branches_id` = :branches_id ';
+        if($params['branches_id'] !== false){
+            $where[] = ' `branches_id` '.sql_is($params['branches_id']).' :branches_id ';
             $execute[':branches_id'] = $params['branches_id'];
         }
 
-        if($params['departments_id']){
-            $where[] = ' `departments_id` = :departments_id ';
+        if($params['departments_id'] !== false){
+            $where[] = ' `departments_id` '.sql_is($params['departments_id']).' :departments_id ';
             $execute[':departments_id'] = $params['departments_id'];
         }
 
