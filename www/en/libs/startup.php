@@ -3627,31 +3627,39 @@ function date_convert($date = null, $requested_format = 'human_datetime', $to_ti
         /*
          * Force 12 or 24 hour format?
          */
-        switch($_CONFIG['formats']['force1224']){
-            case false:
-                break;
+        if($requested_format == 'object'){
+            /*
+             * Return a PHP DateTime object
+             */
+            $format = $requested_format;
 
-            case '12':
-                /*
-                 * Only add AM/PM in case original spec has 24H and no AM/PM
-                 */
-                if(($requested_format != 'mysql') and strstr($format, 'g')){
-                    $format = str_replace('H', 'g', $format);
+        }else{
+            switch($_CONFIG['formats']['force1224']){
+                case false:
+                    break;
 
-                    if(!strstr($format, 'a')){
-                        $format .= ' a';
+                case '12':
+                    /*
+                     * Only add AM/PM in case original spec has 24H and no AM/PM
+                     */
+                    if(($requested_format != 'mysql') and strstr($format, 'g')){
+                        $format = str_replace('H', 'g', $format);
+
+                        if(!strstr($format, 'a')){
+                            $format .= ' a';
+                        }
                     }
-                }
 
-                break;
+                    break;
 
-            case '24':
-                $format = str_replace('g', 'H', $format);
-                $format = trim(str_replace('a', '', $format));
-                break;
+                case '24':
+                    $format = str_replace('g', 'H', $format);
+                    $format = trim(str_replace('a', '', $format));
+                    break;
 
-            default:
-                throw new bException(tr('date_convert(): Invalid force1224 hour format ":format" specified. Must be either false, "12", or "24". See $_CONFIG[formats][force1224]', array(':format' => $_CONFIG['formats']['force1224'])), 'invalid');
+                default:
+                    throw new bException(tr('date_convert(): Invalid force1224 hour format ":format" specified. Must be either false, "12", or "24". See $_CONFIG[formats][force1224]', array(':format' => $_CONFIG['formats']['force1224'])), 'invalid');
+            }
         }
 
         /*
