@@ -2,6 +2,8 @@
 global $_CONFIG, $core;
 
 try{
+    load_libs('numbers');
+
     if(!debug()) return '';
 
     if($_CONFIG['debug']['bar'] === false){
@@ -36,7 +38,7 @@ try{
     $html = '<div class="debug" id="debug-bar">
                 '.($_CONFIG['cache']['method'] ? '(CACHE='.$_CONFIG['cache']['method'].') ' : '').count($core->register('debug_queries')).' / '.number_format(microtime(true) - STARTTIME, 6).'
                 <div class="hidden list">
-                    <table>
+                    <table style="width:100%">
                         <thead>
                             <tr>
                                 <th>'.tr('Time').'</th>
@@ -60,6 +62,20 @@ try{
     }
 
     $html .= '          </tbody>
+                    </table>
+                    <table style="width:100%">
+                        <thead>
+                            <tr>
+                                <th>'.tr('Peak memory usage').'</th>
+                                <th>'.tr('Execution time').'</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                        <tr>
+                            <td>'.human_readable(memory_get_peak_usage()).'</td>
+                            <td>'.tr(':time milliseconds', array(':time' => number_format((microtime(true) - STARTTIME) * 1000, 2))).'</td>
+                        </tr>
+                        </tbody>
                     </table>
                 </div>
              </div>';
