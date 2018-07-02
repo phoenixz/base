@@ -16,7 +16,7 @@
  * Execute a query on a remote SSH server.
  * NOTE: This does NOT support bound variables!
  */
-function mysql_exec($server, $query){
+function mysql_exec($server, $query, $root = false){
     try{
         load_libs('servers');
 
@@ -26,8 +26,19 @@ function mysql_exec($server, $query){
             $server = servers_get($server, true);
         }
 
-        mysql_create_password_file($server['db_username'], $server['db_password'], $server);
+        /*
+         * Are we going to execute as root?
+         */
+        if($root){
+            mysql_create_password_file('root', $server['db_root_password'], $server);
+
+        }else{
+            mysql_create_password_file($server['db_username'], $server['db_password'], $server);
+        }
+
         $results = servers_exec($server, 'mysql -e \"'.str_ends($query, ';').'\"');
+
+
         mysql_delete_password_file($server);
 
         return $results;

@@ -119,6 +119,8 @@ function mysqlr_update_replication_status($params, $status){
  * 4) ON OTHER SHELL GET MYSQL LOG_FILE AND LOG_POS
  */
 function mysqlr_master_replication_setup($params){
+    global $_CONFIG;
+
     try{
         load_libs('mysql');
 
@@ -126,6 +128,15 @@ function mysqlr_master_replication_setup($params){
          * Validate params
          */
         array_ensure($params, 'hostname,database');
+
+        /*
+         * Check Slave hostname
+         */
+        $slave = $_CONFIG['mysqlr']['hostname'];
+
+        if(empty($slave)){
+            throw new bException('MySQL Configuration for replicator hostname is not set', 'not-specified');
+        }
 
         /*
          * Get database
@@ -180,7 +191,7 @@ function mysqlr_master_replication_setup($params){
          * kill ssh pid after dumping db
          */
         log_console(tr('Making grant replication on remote server and locking tables'), 'DOT');
-        $ssh_mysql_pid = servers_exec($database['hostname'], 'mysql \"-u'.$database['root_db_user'].'\" \"-p'.$database['root_db_password'].'\" -e \"GRANT REPLICATION SLAVE ON *.* TO \''.$database['replication_db_user'].'\'@\'localhost\' IDENTIFIED BY \''.$database['replication_db_password'].'\'; FLUSH PRIVILEGES; USE '.$database['database'].'; FLUSH TABLES WITH READ LOCK; DO SLEEP(1000000); \"', null, true);
+        $ssh_mysql_pid = mysql_exec($database['hostname'], 'GRANT REPLICATION SLAVE ON *.* TO \''.$database['replication_db_user'].'\'@\'localhost\' IDENTIFIED BY \''.$database['replication_db_password'].'\'; FLUSH PRIVILEGES; USE '.$database['database'].'; FLUSH TABLES WITH READ LOCK; DO SLEEP(1000000);', true);
 
         /*
          * Dump database
@@ -201,11 +212,18 @@ function mysqlr_master_replication_setup($params){
 
         /*
          * Delete posible LOCAL backup
-         * SCP dump from server to local
+         * SCP dump from master server to local
          */
-        log_console(tr('Copying remote dump to local'), 'DOT');
-        shell_exec('rm /tmp/'.$database['database'].'.sql.gz -f');
+        log_console(tr('Copying remote dump to SLAVE'), 'DOT');
+        safe_exec('rm /tmp/'.$database['database'].'.sql.gz -f');
         ssh_cp($database, '/tmp/'.$database['database'].'.sql.gz', '/tmp/', true);
+
+        /*
+         * Copy from local to slave server
+         */
+        servers_exec($slave, 'rm /tmp/'.$database['database'].'.sql.gz -f');
+        ssh_cp(array('hostname' => $slave), '/tmp/'.$database['database'].'.sql.gz', '/tmp/');
+        safe_exec('rm /tmp/'.$database['database'].'.sql.gz -f');
 
         /*
          * Get the log_file and log_pos
@@ -234,8 +252,19 @@ function mysqlr_master_replication_setup($params){
  * 5) CHECK FOR SLAVE STATUS
  */
 function mysqlr_slave_replication_setup($params){
+    global $_CONFIG;
+
     try{
         load_libs('mysql');
+
+        /*
+         * Check Slave hostname
+         */
+        $slave = $_CONFIG['mysqlr']['hostname'];
+
+        if(empty($slave)){
+            throw new bException('MySQL Configuration for replicator hostname is not set', 'not-specified');
+        }
 
         /*
          * Get database
@@ -251,7 +280,7 @@ function mysqlr_slave_replication_setup($params){
          * Check for mysqld.cnf file
          */
         log_console(tr('Checking existance of mysql configuration file on local server'), 'DOT');
-        $mysql_cnf = shell_exec('test -f '.$mysql_cnf_path.' && echo "1" || echo "0"');
+        $mysql_cnf = servers_exec($slave, 'test -f '.$mysql_cnf_path.' && echo "1" || echo "0"');
 
         /*
          * Mysql conf file does not exist
@@ -272,36 +301,34 @@ function mysqlr_slave_replication_setup($params){
          * MySQL SETUP
          */
         log_console(tr('Making slave setup for MySQL configuration file'), 'DOT');
-        shell_exec('sudo sed -i "s/#server-id[[:space:]]*=[[:space:]]*1/server-id = '.$database['id'].'/" '.$mysql_cnf_path);
-        shell_exec('sudo sed -i "s/#log_bin/log_bin/" '.$mysql_cnf_path);
+        servers_exec($slave, 'sudo sed -i "s/#server-id[[:space:]]*=[[:space:]]*1/server-id = '.$database['id'].'/" '.$mysql_cnf_path);
+        servers_exec($slave, 'sudo sed -i "s/#log_bin/log_bin/" '.$mysql_cnf_path);
 
         /*
          * The next lines just have to be added one time!
          * Check if they already exist... if not append them
          */
-        shell_exec('grep -q -F \'relay-log = /var/log/mysql/mysql-relay-bin.log\' '.$mysql_cnf_path.' || echo "relay-log = /var/log/mysql/mysql-relay-bin.log" | sudo tee -a '.$mysql_cnf_path);
-        shell_exec('grep -q -F \'master-info-repository = table\' '.$mysql_cnf_path.' || echo "master-info-repository = table" | sudo tee -a '.$mysql_cnf_path);
-        shell_exec('grep -q -F \'relay-log-info-repository = table\' '.$mysql_cnf_path.' || echo "relay-log-info-repository = table" | sudo tee -a '.$mysql_cnf_path);
-        shell_exec('grep -q -F \'binlog_do_db = '.$database['database'].'\' '.$mysql_cnf_path.' || echo "binlog_do_db = '.$database['database'].'" | sudo tee -a '.$mysql_cnf_path);
+        servers_exec($slave, 'grep -q -F \'relay-log = /var/log/mysql/mysql-relay-bin.log\' '.$mysql_cnf_path.' || echo "relay-log = /var/log/mysql/mysql-relay-bin.log" | sudo tee -a '.$mysql_cnf_path);
+        servers_exec($slave, 'grep -q -F \'master-info-repository = table\' '.$mysql_cnf_path.' || echo "master-info-repository = table" | sudo tee -a '.$mysql_cnf_path);
+        servers_exec($slave, 'grep -q -F \'relay-log-info-repository = table\' '.$mysql_cnf_path.' || echo "relay-log-info-repository = table" | sudo tee -a '.$mysql_cnf_path);
+        servers_exec($slave, 'grep -q -F \'binlog_do_db = '.$database['database'].'\' '.$mysql_cnf_path.' || echo "binlog_do_db = '.$database['database'].'" | sudo tee -a '.$mysql_cnf_path);
 
         /*
          * Close PDO connection before restarting MySQL
          */
-        sql_close();
-        log_console(tr('Restarting local MySQL service'), 'DOT');
-        shell_exec('sudo service mysql restart');
-        sql_close();
+        log_console(tr('Restarting Slave MySQL service'), 'DOT');
+        servers_exec($slave, 'sudo service mysql restart');
         sleep(2);
 
         /*
          * Import LOCAL db
          */
-        sql_query('DROP   DATABASE IF EXISTS `'.$database['database'].'`');
-        sql_query('CREATE DATABASE `'.$database['database'].'`');
-        shell_exec('sudo rm /tmp/'.$database['database'].'.sql -f');
-        shell_exec('gzip -d /tmp/'.$database['database'].'.sql.gz');
-        shell_exec('sudo mysql "-u'.$database['root_db_user'].'" "-p'.$database['root_db_password'].'" -B '.$database['database'].' < /tmp/'.$database['database'].'.sql');
-        shell_exec('sudo rm /tmp/'.$database['database'].'.sql -f');
+        mysql_exec($slave, 'DROP   DATABASE IF EXISTS `'.$database['database'].'`');
+        mysql_exec($slave, 'CREATE DATABASE `'.$database['database'].'`');
+        servers_exec($slave, 'sudo rm /tmp/'.$database['database'].'.sql -f');
+        servers_exec($slave, 'gzip -d /tmp/'.$database['database'].'.sql.gz');
+        servers_exec($slave, 'sudo mysql "-u'.$database['root_db_user'].'" "-p'.$database['root_db_password'].'" -B '.$database['database'].' < /tmp/'.$database['database'].'.sql');
+        servers_exec($slave, 'sudo rm /tmp/'.$database['database'].'.sql -f');
 
         /*
          * Check if this server was already replicating
@@ -319,19 +346,18 @@ function mysqlr_slave_replication_setup($params){
          * Create SSH tunneling user
          */
         log_console(tr('Creating ssh tunneling user on local server'), 'DOT');
+// :TODO: Figure out how to tunnel with ssh the slave and master
         ssh_mysql_slave_tunnel($database);
 
         /*
          * Setup global configurations to support multiple channels
          */
-        shell_exec('sudo mysql "-u'.$database['root_db_user'].'" "-p'.$database['root_db_password'].'" -e "SET GLOBAL master_info_repository = \'TABLE\';"');
-        shell_exec('sudo mysql "-u'.$database['root_db_user'].'" "-p'.$database['root_db_password'].'" -e "SET GLOBAL relay_log_info_repository = \'TABLE\';"');
+        mysql_exec('SET GLOBAL master_info_repository = \'TABLE\';', true);
+        mysql_exec('SET GLOBAL relay_log_info_repository = \'TABLE\';', true);
 
         /*
          * Setup slave replication
          */
-// :DELETE: Since we are using channels we dont need this
-        //$slave_setup  = 'STOP SLAVE; ';
         $slave_setup  = 'CHANGE MASTER TO MASTER_HOST=\'127.0.0.1\', ';
         $slave_setup .= 'MASTER_USER=\''.$database['replication_db_user'].'\', ';
         $slave_setup .= 'MASTER_PASSWORD=\''.$database['replication_db_password'].'\', ';
@@ -340,7 +366,7 @@ function mysqlr_slave_replication_setup($params){
         $slave_setup .= 'MASTER_LOG_POS='.$database['log_pos'].' ';
         $slave_setup .= 'FOR CHANNEL \''.$database['hostname'].'\'; ';
         $slave_setup .= 'START SLAVE FOR CHANNEL \''.$database['hostname'].'\';';
-        shell_exec('sudo mysql "-u'.$database['root_db_user'].'" "-p'.$database['root_db_password'].'" -e "'.$slave_setup.'"');
+        mysql_exec($slave, $slave_setup, true);
 
         /*
          * Final step check for SLAVE status
@@ -351,6 +377,110 @@ function mysqlr_slave_replication_setup($params){
     }catch(Exception $e){
         mysql_update_replication_status($database, 'disabled');
         throw new bException(tr('mysqlr_slave_replication_setup(): Failed'), $e);
+    }
+}
+
+
+
+/*
+ * .............
+ *
+ * @author Ismael Haro <isma@capmega.com>
+ * @copyright Copyright (c) 2018 Capmega
+ * @license http://opensource.org/licenses/GPL-2.0 GNU Public License, Version 2
+ * @category Function reference
+ * @package mysqlr
+ *
+ * @param
+ */
+function mysqlr_slave_ssh_tunnel($server){
+    try{
+        array_params($server);
+        array_default($server, 'server'       , '');
+        array_default($server, 'hostname'     , '');
+        array_default($server, 'ssh_key'      , '');
+        array_default($server, 'port'         , 22);
+        array_default($server, 'arguments'    , '-T');
+        array_default($server, 'hostkey_check', false);
+
+        /*
+         * If server was specified by just name, then lookup the server data in
+         * the database
+         */
+        if($server['hostname']){
+            $dbserver = sql_get('SELECT    `ssh_accounts`.`username`,
+                                           `ssh_accounts`.`ssh_key`,
+                                           `servers`.`id`,
+                                           `servers`.`hostname`,
+                                           `servers`.`port`
+
+                                 FROM      `servers`
+
+                                 LEFT JOIN `ssh_accounts`
+                                 ON        `ssh_accounts`.`id` = `servers`.`ssh_accounts_id`
+
+                                 WHERE     `servers`.`hostname` = :hostname', array(':hostname' => $server['hostname']));
+
+            if(!$dbserver){
+                throw new bException(tr('ssh_mysql_slave_tunnel(): Specified server ":server" does not exist', array(':server' => $server['server'])), 'not-exist');
+            }
+
+            $server = sql_merge($server, $dbserver);
+        }
+
+        if(!$server['hostkey_check']){
+            $server['arguments'] .= ' -o StrictHostKeyChecking=no -o UserKnownHostsFile='.ROOT.'data/ssh ';
+        }
+
+        /*
+         * Ensure that ssh/keys directory exists and that its safe
+         */
+        load_libs('file');
+        file_ensure_path(ROOT.'data/ssh/keys');
+        chmod(ROOT.'data/ssh', 0770);
+
+        /*
+         * Safely create SSH key file
+         */
+        $keyfile = ROOT.'data/ssh/keys/'.str_random(8);
+
+        touch($keyfile);
+        chmod($keyfile, 0600);
+        file_put_contents($keyfile, $server['ssh_key'], FILE_APPEND);
+        chmod($keyfile, 0400);
+
+        /*
+         * Execute command
+         */
+        $result = safe_exec('ssh -p '.$server['port'].' -i '.$keyfile.' -L '.$server['ssh_port'].':localhost:3306 '.$server['username'].'@'.$server['hostname'].' -f -N &');
+
+        /*
+         * Delete key file in background process
+         */
+        safe_exec('{ sleep 10; chmod 0600 '.$keyfile.' ; rm -rf '.$keyfile.' ; } &');
+
+        return $result;
+
+    }catch(Exception $e){
+        notify(tr('ssh_mysql_slave_tunnel() exception'), $e, 'developers');
+
+        /*
+         * Try deleting the keyfile anyway!
+         */
+        try{
+            if(!empty($keyfile)){
+                safe_exec(chmod($keyfile, 0600));
+                file_delete($keyfile);
+            }
+
+        }catch(Exception $e){
+            /*
+             * Cannot be deleted, just ignore and notify
+             */
+            notify(tr('ssh_mysql_slave_tunnel() cannot delete key'), $e, 'developers');
+        }
+
+        throw new bException(tr('ssh_mysql_slave_tunnel(): Failed'), $e);
     }
 }
 ?>
