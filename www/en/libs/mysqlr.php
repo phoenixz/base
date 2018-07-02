@@ -290,10 +290,10 @@ function mysqlr_slave_replication_setup($params){
              * Try with other possible configuration file
              */
             $mysql_cnf_path = '/etc/mysql/my.cnf';
-            $mysql_cnf      = shell_exec('test -f '.$mysql_cnf_path.' && echo "1" || echo "0"');
+            $mysql_cnf      = servers_exec($slave, 'test -f '.$mysql_cnf_path.' && echo "1" || echo "0"');
 
             if(!$mysql_cnf[0]){
-                throw new bException(tr('mysql_master_replication_setup(): MySQL configuration file :file does not exist on local server', array(':file' => $mysql_cnf_path)), 'not-exist');
+                throw new bException(tr('mysql_master_replication_setup(): MySQL configuration file :file does not exist on Slave server', array(':file' => $mysql_cnf_path)), 'not-exist');
             }
         }
 
@@ -346,14 +346,13 @@ function mysqlr_slave_replication_setup($params){
          * Create SSH tunneling user
          */
         log_console(tr('Creating ssh tunneling user on local server'), 'DOT');
-// :TODO: Figure out how to tunnel with ssh the slave and master
-        mysqlr_slave_ssh_tunnel($database);
+        mysqlr_slave_ssh_tunnel($database, $slave);
 
         /*
          * Setup global configurations to support multiple channels
          */
-        mysql_exec('SET GLOBAL master_info_repository = \'TABLE\';', true);
-        mysql_exec('SET GLOBAL relay_log_info_repository = \'TABLE\';', true);
+        mysql_exec($slave, 'SET GLOBAL master_info_repository = \'TABLE\';', true);
+        mysql_exec($slave, 'SET GLOBAL relay_log_info_repository = \'TABLE\';', true);
 
         /*
          * Setup slave replication
@@ -393,7 +392,173 @@ function mysqlr_slave_replication_setup($params){
  *
  * @param
  */
-function mysqlr_slave_ssh_tunnel($server){
+function mysqlr_stop_replication($db){
+    global $_CONFIG;
+
+    try{
+        load_libs('mysql');
+
+        /*
+         * Check Slave hostname
+         */
+        $slave = $_CONFIG['mysqlr']['hostname'];
+
+        if(empty($slave)){
+            throw new bException('MySQL Configuration for replicator hostname is not set', 'not-specified');
+        }
+
+        /*
+         * Check if this server exist
+         */
+        $database = mysql_get_database($db);
+
+        if(empty($database)){
+            throw new bException(tr('The specified database :database does not exist', array(':database' => $database)), 'not-exist');
+        }
+
+        $mysql_cnf_path = '/etc/mysql/mysql.conf.d/mysqld.cnf';
+
+        load_libs('ssh,servers');
+
+        /*
+         * Check for mysqld.cnf file
+         */
+        log_console(tr('Checking existance of mysql configuration file on local server'), 'DOT');
+        $mysql_cnf = servers_exec($slave, 'test -f '.$mysql_cnf_path.' && echo "1" || echo "0"');
+
+        /*
+         * Mysql conf file does not exist
+         */
+        if(!$mysql_cnf[0]){
+            /*
+             * Try with other possible configuration file
+             */
+            $mysql_cnf_path = '/etc/mysql/my.cnf';
+            $mysql_cnf      = servers_exec($slave, 'test -f '.$mysql_cnf_path.' && echo "1" || echo "0"');
+
+            if(!$mysql_cnf[0]){
+                throw new bException(tr('mysql_master_replication_setup(): MySQL configuration file :file does not exist on Slave server', array(':file' => $mysql_cnf_path)), 'not-exist');
+            }
+        }
+
+        /*
+         * Comment the database for replication
+         */
+        servers_exec($slave, 'sudo sed -i "s/binlog_do_db = '.$database['database'].'/#binlog_do_db = '.$database['database'].'/" '.$mysql_cnf_path);
+
+        /*
+         * Close PDO connection before restarting MySQL
+         */
+        log_console(tr('Restarting Slave MySQL service'), 'DOT');
+        servers_exec($slave, 'sudo service mysql restart');
+
+        log_console(tr('Done databas replication'), 'DOT');
+
+        return 0;
+
+    }catch(Exception $e){
+        throw new bException(tr('mysqlr_stop_replication(): Failed'), $e);
+    }
+}
+
+
+
+/*
+ * .............
+ *
+ * @author Ismael Haro <isma@capmega.com>
+ * @copyright Copyright (c) 2018 Capmega
+ * @license http://opensource.org/licenses/GPL-2.0 GNU Public License, Version 2
+ * @category Function reference
+ * @package mysqlr
+ *
+ * @param
+ */
+function mysqlr_resume_replication($db){
+    global $_CONFIG;
+
+    try{
+        load_libs('mysql');
+
+        /*
+         * Check Slave hostname
+         */
+        $slave = $_CONFIG['mysqlr']['hostname'];
+
+        if(empty($slave)){
+            throw new bException('MySQL Configuration for replicator hostname is not set', 'not-specified');
+        }
+
+        /*
+         * Check if this server exist
+         */
+        $database = mysql_get_database($db);
+
+        if(empty($database)){
+            throw new bException(tr('The specified database :database does not exist', array(':database' => $database)), 'not-exist');
+        }
+
+        $mysql_cnf_path = '/etc/mysql/mysql.conf.d/mysqld.cnf';
+
+        load_libs('ssh,servers');
+
+        /*
+         * Check for mysqld.cnf file
+         */
+        log_console(tr('Checking existance of mysql configuration file on local server'), 'DOT');
+        $mysql_cnf = servers_exec($slave, 'test -f '.$mysql_cnf_path.' && echo "1" || echo "0"');
+
+        /*
+         * Mysql conf file does not exist
+         */
+        if(!$mysql_cnf[0]){
+            /*
+             * Try with other possible configuration file
+             */
+            $mysql_cnf_path = '/etc/mysql/my.cnf';
+            $mysql_cnf      = servers_exec($slave, 'test -f '.$mysql_cnf_path.' && echo "1" || echo "0"');
+
+            if(!$mysql_cnf[0]){
+                throw new bException(tr('mysql_master_replication_setup(): MySQL configuration file :file does not exist on Slave server', array(':file' => $mysql_cnf_path)), 'not-exist');
+            }
+        }
+
+        /*
+         * Comment the database for replication
+         */
+        servers_exec($slave, 'sudo sed -i "s/#binlog_do_db = '.$database['database'].'/binlog_do_db = '.$database['database'].'/" '.$mysql_cnf_path);
+
+        /*
+         * Close PDO connection before restarting MySQL
+         */
+        log_console(tr('Restarting Slave MySQL service'), 'DOT');
+        servers_exec($slave, 'sudo service mysql restart');
+
+        log_console(tr('Done databas replication'), 'DOT');
+
+        return 0;
+
+    }catch(Exception $e){
+        throw new bException(tr('mysqlr_stop_replication(): Failed'), $e);
+    }
+}
+
+
+
+/*
+ * .............
+ *
+ * @author Ismael Haro <isma@capmega.com>
+ * @copyright Copyright (c) 2018 Capmega
+ * @license http://opensource.org/licenses/GPL-2.0 GNU Public License, Version 2
+ * @category Function reference
+ * @package mysqlr
+ *
+ * @param
+ */
+function mysqlr_slave_ssh_tunnel($server, $slave){
+    global $_CONFIG;
+
     try{
         array_params($server);
         array_default($server, 'server'       , '');
@@ -442,27 +607,28 @@ function mysqlr_slave_ssh_tunnel($server){
         /*
          * Safely create SSH key file
          */
-        $keyfile = ROOT.'data/ssh/keys/'.str_random(8);
-
+        $keyname = str_random(8);
+        $keyfile = ROOT.'data/ssh/keys/'.$keyname;
         touch($keyfile);
         chmod($keyfile, 0600);
         file_put_contents($keyfile, $server['ssh_key'], FILE_APPEND);
         chmod($keyfile, 0400);
 
         /*
-         * Execute command
+         * Copy key file
+         * and execute autossh
          */
-        $result = safe_exec('ssh -p '.$server['port'].' -i '.$keyfile.' -L '.$server['ssh_port'].':localhost:3306 '.$server['username'].'@'.$server['hostname'].' -f -N &');
+        servers_exec('scp '.$server['arguments'].' -P '.$_CONFIG['mysqlr']['port'].' -i '.$keyfile.' '.$keyfile.' '.$slave.':/data/ssh/keys/');
+        servers_exec($slave, 'autossh -p '.$server['port'].' -i /data/ssh/keys/'.$keyname.' -L '.$server['ssh_port'].':localhost:3306 '.$server['username'].'@'.$server['hostname'].' -f -N');
 
         /*
-         * Delete key file in background process
+         * Delete local file key
          */
-        safe_exec('{ sleep 10; chmod 0600 '.$keyfile.' ; rm -rf '.$keyfile.' ; } &');
-
-        return $result;
+        safe_exec(chmod($keyfile, 0600));
+        file_delete($keyfile);
 
     }catch(Exception $e){
-        notify(tr('ssh_mysql_slave_tunnel() exception'), $e, 'developers');
+        notify(tr('ssh_mysql_slave_tunnel(): exception'), $e, 'developers');
 
         /*
          * Try deleting the keyfile anyway!
@@ -477,7 +643,7 @@ function mysqlr_slave_ssh_tunnel($server){
             /*
              * Cannot be deleted, just ignore and notify
              */
-            notify(tr('ssh_mysql_slave_tunnel() cannot delete key'), $e, 'developers');
+            notify(tr('ssh_mysql_slave_tunnel(): cannot delete key'), $e, 'developers');
         }
 
         throw new bException(tr('ssh_mysql_slave_tunnel(): Failed'), $e);

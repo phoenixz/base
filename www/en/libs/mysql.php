@@ -149,7 +149,8 @@ function mysql_get_database($db_name){
                              LEFT JOIN `database_accounts`
                              ON        `database_accounts`.`id` = `servers`.`database_accounts_id`
 
-                             WHERE     `databases`.`name` = :name',
+                             WHERE     `databases`.`id`         = :name
+                             OR        `databases`.`name`       = :name',
 
                              array(':name' => $db_name));
 
