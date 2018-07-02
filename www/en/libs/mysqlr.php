@@ -347,7 +347,7 @@ function mysqlr_slave_replication_setup($params){
          */
         log_console(tr('Creating ssh tunneling user on local server'), 'DOT');
 // :TODO: Figure out how to tunnel with ssh the slave and master
-        ssh_mysql_slave_tunnel($database);
+        mysqlr_slave_ssh_tunnel($database);
 
         /*
          * Setup global configurations to support multiple channels
@@ -372,7 +372,7 @@ function mysqlr_slave_replication_setup($params){
          * Final step check for SLAVE status
          */
         mysql_update_replication_status($database, 'enabled');
-        log_console(tr('Finished!!'), 'white');
+        log_console(tr('MySQL replication setup finished!'), 'white');
 
     }catch(Exception $e){
         mysql_update_replication_status($database, 'disabled');
