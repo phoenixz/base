@@ -710,7 +710,7 @@ function mysqlr_slave_ssh_tunnel($server, $slave){
         file_delete($keyfile);
 
     }catch(Exception $e){
-        notify(tr('ssh_mysql_slave_tunnel(): exception'), $e, 'developers');
+        notify(tr('mysqlr_slave_ssh_tunnel(): exception'), $e, 'developers');
 
         /*
          * Try deleting the keyfile anyway!
@@ -725,10 +725,10 @@ function mysqlr_slave_ssh_tunnel($server, $slave){
             /*
              * Cannot be deleted, just ignore and notify
              */
-            notify(tr('ssh_mysql_slave_tunnel(): cannot delete key'), $e, 'developers');
+            notify(tr('mysqlr_slave_ssh_tunnel(): cannot delete key'), $e, 'developers');
         }
 
-        throw new bException(tr('ssh_mysql_slave_tunnel(): Failed'), $e);
+        throw new bException(tr('mysqlr_slave_ssh_tunnel(): Failed'), $e);
     }
 }
 ?>
