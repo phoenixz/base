@@ -312,7 +312,8 @@ function servers_get($host, $database = false, $return_proxies = true, $limited_
             $execute = array(':hostname' => '%'.$host.'%');
 
         }else{
-            $where   = ' WHERE `servers`.`hostname` = :hostname';
+            $where   = ' WHERE `servers`.`hostname` = :hostname
+                         OR    `servers`.`seohostname` = :hostname';
             $execute = array(':hostname' => $host);
         }
 
