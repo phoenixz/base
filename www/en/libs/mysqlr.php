@@ -392,7 +392,7 @@ function mysqlr_slave_replication_setup($params){
  *
  * @param
  */
-function mysqlr_stop_replication($db){
+function mysqlr_disable_replication($db){
     global $_CONFIG;
 
     try{
@@ -444,7 +444,7 @@ function mysqlr_stop_replication($db){
         /*
          * Comment the database for replication
          */
-        servers_exec($slave, 'sudo sed -i "s/binlog_do_db = '.$database['database'].'/#binlog_do_db = '.$database['database'].'/" '.$mysql_cnf_path);
+        servers_exec($slave, 'sudo sed -i "s/binlog_do_db = '.$database['database'].'//" '.$mysql_cnf_path);
 
         /*
          * Close PDO connection before restarting MySQL
@@ -452,7 +452,89 @@ function mysqlr_stop_replication($db){
         log_console(tr('Restarting Slave MySQL service'), 'DOT');
         servers_exec($slave, 'sudo service mysql restart');
 
-        log_console(tr('Done databas replication'), 'DOT');
+        log_console(tr('Disabled replication for database :database', array(':database' => $database['database'])), 'DOT');
+
+        return 0;
+
+    }catch(Exception $e){
+        throw new bException(tr('mysqlr_stop_replication(): Failed'), $e);
+    }
+}
+
+
+
+/*
+ * .............
+ *
+ * @author Ismael Haro <isma@capmega.com>
+ * @copyright Copyright (c) 2018 Capmega
+ * @license http://opensource.org/licenses/GPL-2.0 GNU Public License, Version 2
+ * @category Function reference
+ * @package mysqlr
+ *
+ * @param
+ */
+function mysqlr_pause_replication($db){
+    global $_CONFIG;
+
+    try{
+        load_libs('mysql');
+
+        /*
+         * Check Slave hostname
+         */
+        $slave = $_CONFIG['mysqlr']['hostname'];
+
+        if(empty($slave)){
+            throw new bException('MySQL Configuration for replicator hostname is not set', 'not-specified');
+        }
+
+        /*
+         * Check if this server exist
+         */
+        $database = mysql_get_database($db);
+
+        if(empty($database)){
+            throw new bException(tr('The specified database :database does not exist', array(':database' => $database)), 'not-exist');
+        }
+
+        $mysql_cnf_path = '/etc/mysql/mysql.conf.d/mysqld.cnf';
+
+        load_libs('ssh,servers');
+
+        /*
+         * Check for mysqld.cnf file
+         */
+        log_console(tr('Checking existance of mysql configuration file on local server'), 'DOT');
+        $mysql_cnf = servers_exec($slave, 'test -f '.$mysql_cnf_path.' && echo "1" || echo "0"');
+
+        /*
+         * Mysql conf file does not exist
+         */
+        if(!$mysql_cnf[0]){
+            /*
+             * Try with other possible configuration file
+             */
+            $mysql_cnf_path = '/etc/mysql/my.cnf';
+            $mysql_cnf      = servers_exec($slave, 'test -f '.$mysql_cnf_path.' && echo "1" || echo "0"');
+
+            if(!$mysql_cnf[0]){
+                throw new bException(tr('mysql_master_replication_setup(): MySQL configuration file :file does not exist on Slave server', array(':file' => $mysql_cnf_path)), 'not-exist');
+            }
+        }
+
+        /*
+         * Enable replicate ignore
+         */
+        servers_exec($slave, 'grep -q -F \'replicate-ignore-db='.$database['database'].'\' '.$mysql_cnf_path.' || echo "replicate-ignore-db='.$database['database'].'" | sudo tee -a '.$mysql_cnf_path);
+
+        /*
+         * Close PDO connection before restarting MySQL
+         */
+        log_console(tr('Restarting Slave MySQL service'), 'DOT');
+        servers_exec($slave, 'sudo service mysql restart');
+
+        log_console(tr('Disabled replication for database :database', array(':database' => $database['database'])), 'DOT');
 
         return 0;
 
@@ -526,7 +608,7 @@ function mysqlr_resume_replication($db){
         /*
          * Comment the database for replication
          */
-        servers_exec($slave, 'sudo sed -i "s/#binlog_do_db = '.$database['database'].'/binlog_do_db = '.$database['database'].'/" '.$mysql_cnf_path);
+        servers_exec($slave, 'sudo sed -i "s/replicate-ignore-db='.$database['database'].'//" '.$mysql_cnf_path);
 
         /*
          * Close PDO connection before restarting MySQL
@@ -534,7 +616,7 @@ function mysqlr_resume_replication($db){
         log_console(tr('Restarting Slave MySQL service'), 'DOT');
         servers_exec($slave, 'sudo service mysql restart');
 
-        log_console(tr('Done databas replication'), 'DOT');
+        log_console(tr('Resumed replication for database :database', array(':database' => $database['database'])), 'DOT');
 
         return 0;
 
