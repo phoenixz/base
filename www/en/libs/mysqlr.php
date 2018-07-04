@@ -143,31 +143,13 @@ function mysqlr_master_replication_setup($params){
          */
         $database       = mysql_get_database($params['database']);
         $database       = array_merge($database, $params);
-        $mysql_cnf_path = '/etc/mysql/mysql.conf.d/mysqld.cnf';
         mysql_update_replication_status($database, 'preparing');
 
+        /*
+         * Get MySQL configuration path
+         */
         load_libs('ssh,servers');
-
-        /*
-         * Check for mysqld.cnf file
-         */
-        log_console(tr('Checking existance of mysql configuration file on remote server'), 'DOT');
-        $mysql_cnf = servers_exec($database['hostname'], 'test -f '.$mysql_cnf_path.' && echo "1" || echo "0"');
-
-        /*
-         * Mysql conf file does not exist
-         */
-        if(!$mysql_cnf[0]){
-            /*
-             * Try with other possible configuration file
-             */
-            $mysql_cnf_path = '/etc/mysql/my.cnf';
-            $mysql_cnf      = servers_exec($database['hostname'], 'test -f '.$mysql_cnf_path.' && echo "1" || echo "0"');
-
-            if(!$mysql_cnf[0]){
-                throw new bException(tr('mysql_master_replication_setup(): MySQL configuration file :file does not exist on remote server', array(':file' => $mysql_cnf_path)), 'not-exist');
-            }
-        }
+        $mysql_cnf_path = mysqlr_check_configuration_path($database['hostname']);
 
         /*
          * MySQL SETUP
@@ -272,30 +254,12 @@ function mysqlr_slave_replication_setup($params){
         $database       = mysql_get_database($params['database']);
         $database       = array_merge($database, $params);
         $database['id'] = mt_rand() - 1;
-        $mysql_cnf_path = '/etc/mysql/mysql.conf.d/mysqld.cnf';
 
+        /*
+         * Get MySQL configuration path
+         */
         load_libs('ssh,servers');
-
-        /*
-         * Check for mysqld.cnf file
-         */
-        log_console(tr('Checking existance of mysql configuration file on local server'), 'DOT');
-        $mysql_cnf = servers_exec($slave, 'test -f '.$mysql_cnf_path.' && echo "1" || echo "0"');
-
-        /*
-         * Mysql conf file does not exist
-         */
-        if(!$mysql_cnf[0]){
-            /*
-             * Try with other possible configuration file
-             */
-            $mysql_cnf_path = '/etc/mysql/my.cnf';
-            $mysql_cnf      = servers_exec($slave, 'test -f '.$mysql_cnf_path.' && echo "1" || echo "0"');
-
-            if(!$mysql_cnf[0]){
-                throw new bException(tr('mysql_master_replication_setup(): MySQL configuration file :file does not exist on Slave server', array(':file' => $mysql_cnf_path)), 'not-exist');
-            }
-        }
+        $mysql_cnf_path = mysqlr_check_configuration_path($slave);
 
         /*
          * MySQL SETUP
@@ -416,30 +380,11 @@ function mysqlr_disable_replication($db){
             throw new bException(tr('The specified database :database does not exist', array(':database' => $database)), 'not-exist');
         }
 
-        $mysql_cnf_path = '/etc/mysql/mysql.conf.d/mysqld.cnf';
-
+        /*
+         * Get MySQL configuration path
+         */
         load_libs('ssh,servers');
-
-        /*
-         * Check for mysqld.cnf file
-         */
-        log_console(tr('Checking existance of mysql configuration file on local server'), 'DOT');
-        $mysql_cnf = servers_exec($slave, 'test -f '.$mysql_cnf_path.' && echo "1" || echo "0"');
-
-        /*
-         * Mysql conf file does not exist
-         */
-        if(!$mysql_cnf[0]){
-            /*
-             * Try with other possible configuration file
-             */
-            $mysql_cnf_path = '/etc/mysql/my.cnf';
-            $mysql_cnf      = servers_exec($slave, 'test -f '.$mysql_cnf_path.' && echo "1" || echo "0"');
-
-            if(!$mysql_cnf[0]){
-                throw new bException(tr('mysql_master_replication_setup(): MySQL configuration file :file does not exist on Slave server', array(':file' => $mysql_cnf_path)), 'not-exist');
-            }
-        }
+        $mysql_cnf_path = mysqlr_check_configuration_path($slave);
 
         /*
          * Comment the database for replication
@@ -455,6 +400,52 @@ function mysqlr_disable_replication($db){
         log_console(tr('Disabled replication for database :database', array(':database' => $database['database'])), 'DOT');
 
         return 0;
+
+    }catch(Exception $e){
+        throw new bException(tr('mysqlr_stop_replication(): Failed'), $e);
+    }
+}
+
+
+
+/*
+ * .............
+ *
+ * @author Ismael Haro <isma@capmega.com>
+ * @copyright Copyright (c) 2018 Capmega
+ * @license http://opensource.org/licenses/GPL-2.0 GNU Public License, Version 2
+ * @category Function reference
+ * @package mysqlr
+ *
+ * @param
+ */
+function mysqlr_check_configuration_path($server_target){
+    try{
+        load_libs('ssh,servers');
+        $mysql_cnf_path = '/etc/mysql/mysql.conf.d/mysqld.cnf';
+
+        /*
+         * Check for mysqld.cnf file
+         */
+        log_console(tr('Checking existance of mysql configuration file'), 'DOT');
+        $mysql_cnf = servers_exec($server_target, 'test -f '.$mysql_cnf_path.' && echo "1" || echo "0"');
+
+        /*
+         * Mysql conf file does not exist
+         */
+        if(!$mysql_cnf[0]){
+            /*
+             * Try with other possible configuration file
+             */
+            $mysql_cnf_path = '/etc/mysql/my.cnf';
+            $mysql_cnf      = servers_exec($server_target, 'test -f '.$mysql_cnf_path.' && echo "1" || echo "0"');
+
+            if(!$mysql_cnf[0]){
+                throw new bException(tr('mysql_master_replication_setup(): MySQL configuration file :file does not exist on server :server', array(':file' => $mysql_cnf_path, ':server' => $server_target)), 'not-exist');
+            }
+        }
+
+        return $mysql_cnf_path;
 
     }catch(Exception $e){
         throw new bException(tr('mysqlr_stop_replication(): Failed'), $e);
@@ -498,30 +489,11 @@ function mysqlr_pause_replication($db){
             throw new bException(tr('The specified database :database does not exist', array(':database' => $database)), 'not-exist');
         }
 
-        $mysql_cnf_path = '/etc/mysql/mysql.conf.d/mysqld.cnf';
-
+        /*
+         * Get MySQL configuration path
+         */
         load_libs('ssh,servers');
-
-        /*
-         * Check for mysqld.cnf file
-         */
-        log_console(tr('Checking existance of mysql configuration file on local server'), 'DOT');
-        $mysql_cnf = servers_exec($slave, 'test -f '.$mysql_cnf_path.' && echo "1" || echo "0"');
-
-        /*
-         * Mysql conf file does not exist
-         */
-        if(!$mysql_cnf[0]){
-            /*
-             * Try with other possible configuration file
-             */
-            $mysql_cnf_path = '/etc/mysql/my.cnf';
-            $mysql_cnf      = servers_exec($slave, 'test -f '.$mysql_cnf_path.' && echo "1" || echo "0"');
-
-            if(!$mysql_cnf[0]){
-                throw new bException(tr('mysql_master_replication_setup(): MySQL configuration file :file does not exist on Slave server', array(':file' => $mysql_cnf_path)), 'not-exist');
-            }
-        }
+        $mysql_cnf_path = mysqlr_check_configuration_path($slave);
 
         /*
          * Enable replicate ignore
@@ -580,30 +552,8 @@ function mysqlr_resume_replication($db){
             throw new bException(tr('The specified database :database does not exist', array(':database' => $database)), 'not-exist');
         }
 
-        $mysql_cnf_path = '/etc/mysql/mysql.conf.d/mysqld.cnf';
-
         load_libs('ssh,servers');
-
-        /*
-         * Check for mysqld.cnf file
-         */
-        log_console(tr('Checking existance of mysql configuration file on local server'), 'DOT');
-        $mysql_cnf = servers_exec($slave, 'test -f '.$mysql_cnf_path.' && echo "1" || echo "0"');
-
-        /*
-         * Mysql conf file does not exist
-         */
-        if(!$mysql_cnf[0]){
-            /*
-             * Try with other possible configuration file
-             */
-            $mysql_cnf_path = '/etc/mysql/my.cnf';
-            $mysql_cnf      = servers_exec($slave, 'test -f '.$mysql_cnf_path.' && echo "1" || echo "0"');
-
-            if(!$mysql_cnf[0]){
-                throw new bException(tr('mysql_master_replication_setup(): MySQL configuration file :file does not exist on Slave server', array(':file' => $mysql_cnf_path)), 'not-exist');
-            }
-        }
+        $mysql_cnf_path = mysqlr_check_configuration_path($slave);
 
         /*
          * Comment the database for replication
