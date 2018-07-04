@@ -1684,10 +1684,22 @@ function blogs_media_process($file, $post, $priority = null, $original = null){
         /*
          *
          */
+        $mime_type = file_mimetype($file);
         $prefix = ROOT.'data/content/photos/';
-        $file   = $post['blog_name'].'/'.file_move_to_target($file, $prefix.$post['blog_name'].'/', '-original.jpg', false, 4);
-        $media  = str_runtil($file, '-');
         $types  = $_CONFIG['blogs']['images'];
+
+        if (str_until($mime_type, '/') === 'video') {
+            load_libs('video');
+
+            $original_video = $file;
+            // $video_extension = file_extension($original);
+            $video_thumb = get_video_thumbnail($file, 'hd720');
+            $file   = $post['blog_name'].'/'.file_move_to_target($video_thumb, $prefix.$post['blog_name'].'/', '-original.jpg', false, 4);
+        } else {
+            $file   = $post['blog_name'].'/'.file_move_to_target($file, $prefix.$post['blog_name'].'/', '-original.jpg', false, 4);
+        }
+
+        $media  = str_runtil($file, '-');
         $files  = array('media/'.$media.'-original.jpg' => $prefix.$file);
         $hash   = hash('sha256', $prefix.$file);
 
@@ -1725,6 +1737,15 @@ function blogs_media_process($file, $post, $priority = null, $original = null){
             }
 
             $files['media/'.$media.'-'.$type.'@2x.jpg'] = $prefix.$media.'-'.$type.'@2x.jpg';
+        }
+
+        if (isset($original_video)) {
+            // $file   = $post['blog_name'].'/'.file_move_to_target($original_video, $prefix.$post['blog_name'].'/', '-original.' . $video_extension, false, 4);
+            // copy($prefix.$file, $prefix.$media.'-original.' . $video_extension);
+
+            file_delete($prefix.$media.'-original.*');
+            $file   = $post['blog_name'].'/'.file_move_to_target($original_video, $prefix.$post['blog_name'].'/', '-original.mp4', false, 4);
+            copy($prefix.$file, $prefix.$media.'-original.mp4');
         }
 
         /*
