@@ -51,7 +51,7 @@ function mysqlr_update_database_replication_status($params, $status){
         array_default($params, 'database', '');
 
         if(empty($params['database'])){
-            throw new bException(tr('mysql_update_replication_status(): database not specified'), 'not-specified');
+            throw new bException(tr('mysqlr_update_replication_status(): database not specified'), 'not-specified');
         }
 
         /*
@@ -87,11 +87,11 @@ function mysqlr_update_replication_status($params, $status){
         array_default($params, 'servers_id', '');
 
         if(empty($params['database'])){
-            throw new bException(tr('mysql_update_replication_status(): database not specified'), 'not-specified');
+            throw new bException(tr('mysqlr_update_replication_status(): database not specified'), 'not-specified');
         }
 
         if(empty($params['servers_id'])){
-            throw new bException(tr('mysql_update_replication_status(): servers_id not specified'), 'not-specified');
+            throw new bException(tr('mysqlr_update_replication_status(): servers_id not specified'), 'not-specified');
         }
 
         /*
@@ -141,9 +141,9 @@ function mysqlr_master_replication_setup($params){
         /*
          * Get database
          */
-        $database       = mysql_get_database($params['database']);
-        $database       = array_merge($database, $params);
-        mysql_update_replication_status($database, 'preparing');
+        $database = mysql_get_database($params['database']);
+        $database = array_merge($database, $params);
+        mysqlr_update_replication_status($database, 'preparing');
 
         /*
          * Get MySQL configuration path
@@ -218,7 +218,7 @@ function mysqlr_master_replication_setup($params){
         return $database;
 
     }catch(Exception $e){
-        mysql_update_replication_status($database, 'disabled');
+        mysqlr_update_replication_status($database, 'disabled');
         throw new bException(tr('mysqlr_master_replication_setup(): Failed'), $e);
     }
 }
@@ -298,7 +298,7 @@ function mysqlr_slave_replication_setup($params){
          * Check if this server was already replicating
          */
         if($database['servers_replication_status'] == 'enabled'){
-            mysql_update_replication_status($database, 'enabled');
+            mysqlr_update_replication_status($database, 'enabled');
             return 0;
         }
 
@@ -334,11 +334,11 @@ function mysqlr_slave_replication_setup($params){
         /*
          * Final step check for SLAVE status
          */
-        mysql_update_replication_status($database, 'enabled');
+        mysqlr_update_replication_status($database, 'enabled');
         log_console(tr('MySQL replication setup finished!'), 'white');
 
     }catch(Exception $e){
-        mysql_update_replication_status($database, 'disabled');
+        mysqlr_update_replication_status($database, 'disabled');
         throw new bException(tr('mysqlr_slave_replication_setup(): Failed'), $e);
     }
 }
