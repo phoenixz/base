@@ -37,8 +37,8 @@ function servers_validate($server, $password_strength = true){
         $v->isNotEmpty($server['ssh_account'], tr('Please specifiy an SSH account'));
         $v->isNotEmpty($server['hostname']   , tr('Please specifiy a hostnames'));
         $v->isNotEmpty($server['port']       , tr('Please specifiy a port'));
-        $v->isNotEmpty($server['provider']   , tr('Please specifiy a provider'));
-        $v->isNotEmpty($server['customer']   , tr('Please specifiy a customer'));
+        $v->isNotEmpty($server['seoprovider'], tr('Please specifiy a provider'));
+        $v->isNotEmpty($server['seocustomer'], tr('Please specifiy a customer'));
 
         /*
          * Check password
@@ -312,7 +312,8 @@ function servers_get($host, $database = false, $return_proxies = true, $limited_
             $execute = array(':hostname' => '%'.$host.'%');
 
         }else{
-            $where   = ' WHERE `servers`.`hostname` = :hostname';
+            $where   = ' WHERE `servers`.`hostname` = :hostname
+                         OR    `servers`.`seohostname` = :hostname';
             $execute = array(':hostname' => $host);
         }
 

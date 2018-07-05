@@ -61,7 +61,7 @@ replication
         --database DATABASE      - The name of the database to replicate';
 
 require_once(__DIR__.'/../../libs/startup.php');
-load_libs('mysql');
+load_libs('mysql,mysqlr');
 cli_only();
 
 $all       = cli_argument('--all');
@@ -406,7 +406,7 @@ switch(cli_method()){
                             /*
                              * Database is not in binlog then it is disabled
                              */
-                            mysql_update_database_replication_status($database, 'disabled');
+                            mysqlr_update_database_replication_status($database, 'disabled');
                             continue;
                         }
 
@@ -419,17 +419,17 @@ switch(cli_method()){
                             /*
                              * No slave channel for this server
                              */
-                            mysql_update_database_replication_status($database, 'disabled');
+                            mysqlr_update_database_replication_status($database, 'disabled');
                             continue;
                         }
 
                         if(strtolower($result['Slave_IO_Running']) != 'yes' and strtolower($result['Slave_IO_Running']) != 'yes'){
                             ssh_mysql_slave_tunnel($database);
-                            mysql_update_database_replication_status($database, 'error');
+                            mysqlr_update_database_replication_status($database, 'error');
                             continue;
                         }
 
-                        mysql_update_replication_status($database, 'enabled');
+                        mysqlr_update_replication_status($database, 'enabled');
 
                     }catch(Exception $e){
                         log_console(tr('mysql/check: Failed to on database ":database", encountered error ":error"', array(':database' => $database['database'], ':error' => str_log($e->getMessage()))), 'red');
@@ -468,13 +468,45 @@ switch(cli_method()){
                  * Setup master
                  */
                 log_console(tr('Preparing master'), 'white');
-                $master = mysql_master_replication_setup($server);
+                $master = mysqlr_master_replication_setup($server);
 
                 /*
                  * Setup slave with master info
                  */
                 log_console(tr('Preparing slave'), 'white');
-                $slave = mysql_slave_replication_setup($master);
+                $slave = mysqlr_slave_replication_setup($master);
+                break;
+
+            case 'pause':
+                /*
+                 * Get arguments and needed data
+                 */
+                $server                 = cli_arguments('--database');
+                $server['root_db_user'] = 'root';
+                $server['arguments']    = '-q';
+                cli_no_arguments_left();
+
+                /*
+                 * Pause database
+                 */
+                mysqlr_stop_replication($server['database']);
+                mysql_update_database_replication_status($database, 'paused');
+                break;
+
+            case 'resume':
+                /*
+                 * Get arguments and needed data
+                 */
+                $server                 = cli_arguments('--database');
+                $server['root_db_user'] = 'root';
+                $server['arguments']    = '-q';
+                cli_no_arguments_left();
+
+                /*
+                 * Pause database
+                 */
+                mysqlr_resume_replication($server['database']);
+                mysql_update_database_replication_status($database, 'enabled');
                 break;
 
             case '':
