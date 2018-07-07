@@ -12,19 +12,19 @@
 
 
 
- /*
-  * Initialize the library, automatically executed by libs_load()
-  *
-  * NOTE: This function is executed automatically by the load_libs() function and does not need to be called manually
-  *
-  * @author Ismael Haro <isma@capmega.com>
-  * @copyright Copyright (c) 2018 Capmega
-  * @license http://opensource.org/licenses/GPL-2.0 GNU Public License, Version 2
-  * @category Function reference
-  * @package mysqlr
-  *
-  * @return void
-  */
+/*
+ * Initialize the library, automatically executed by libs_load()
+ *
+ * NOTE: This function is executed automatically by the load_libs() function and does not need to be called manually
+ *
+ * @author Ismael Haro <isma@capmega.com>
+ * @copyright Copyright (c) 2018 Capmega
+ * @license http://opensource.org/licenses/GPL-2.0 GNU Public License, Version 2
+ * @category Function reference
+ * @package mysqlr
+ *
+ * @return void
+ */
 function mysqlr_library_init(){
     global $_CONFIG;
 
@@ -41,6 +41,15 @@ function mysqlr_library_init(){
 /*
  * Current available replication statuses
  * 'enabled','preparing','paused','disabled','error'
+ *
+ * @author Ismael Haro <isma@capmega.com>
+ * @copyright Copyright (c) 2018 Capmega
+ * @license http://opensource.org/licenses/GPL-2.0 GNU Public License, Version 2
+ * @category Function reference
+ * @package mysqlr
+ *
+ * @param
+ * @return
  */
 function mysqlr_update_database_replication_status($params, $status){
     try{
@@ -51,7 +60,7 @@ function mysqlr_update_database_replication_status($params, $status){
         array_default($params, 'database', '');
 
         if(empty($params['database'])){
-            throw new bException(tr('mysqlr_update_replication_status(): database not specified'), 'not-specified');
+            throw new bException(tr('mysqlr_update_database_replication_status(): No database specified'), 'not-specified');
         }
 
         /*
@@ -76,6 +85,15 @@ function mysqlr_update_database_replication_status($params, $status){
 /*
  * Current available replication statuses
  * 'enabled','preparing','paused','disabled','error'
+ *
+ * @author Ismael Haro <isma@capmega.com>
+ * @copyright Copyright (c) 2018 Capmega
+ * @license http://opensource.org/licenses/GPL-2.0 GNU Public License, Version 2
+ * @category Function reference
+ * @package mysqlr
+ *
+ * @param
+ * @return
  */
 function mysqlr_update_replication_status($params, $status){
     try{
@@ -87,22 +105,22 @@ function mysqlr_update_replication_status($params, $status){
         array_default($params, 'servers_id', '');
 
         if(empty($params['database'])){
-            throw new bException(tr('mysqlr_update_replication_status(): database not specified'), 'not-specified');
+            throw new bException(tr('mysqlr_update_replication_status(): No database specified'), 'not-specified');
         }
 
         if(empty($params['servers_id'])){
-            throw new bException(tr('mysqlr_update_replication_status(): servers_id not specified'), 'not-specified');
+            throw new bException(tr('mysqlr_update_replication_status(): No servers_id specified'), 'not-specified');
         }
 
         /*
          * Update server
          */
-        sql_query('UPDATE `servers` SET `replication_status` = :replication_status WHERE id = :id', array(':replication_status' => $status, ':id' => $params['servers_id']));
+        sql_query('UPDATE `servers` SET `replication_status` = :replication_status WHERE `id` = :id', array(':replication_status' => $status, ':id' => $params['servers_id']));
 
         /*
          * Update database
          */
-        sql_query('UPDATE `databases` SET `replication_status` = :replication_status WHERE name = :name', array(':replication_status' => $status, ':name' => $params['database']));
+        sql_query('UPDATE `databases` SET `replication_status` = :replication_status WHERE `name` = :name', array(':replication_status' => $status, ':name' => $params['database']));
 
     }catch(Exception $e){
         throw new bException(tr('mysqlr_update_replication_status(): Failed'), $e);
@@ -117,6 +135,15 @@ function mysqlr_update_replication_status($params, $status){
  * 2) CREATE REPLICATION USER ON MASTER MYSQL
  * 3) DUMP MYSQL DB
  * 4) ON OTHER SHELL GET MYSQL LOG_FILE AND LOG_POS
+ *
+ * @author Ismael Haro <isma@capmega.com>
+ * @copyright Copyright (c) 2018 Capmega
+ * @license http://opensource.org/licenses/GPL-2.0 GNU Public License, Version 2
+ * @category Function reference
+ * @package mysqlr
+ *
+ * @param
+ * @return
  */
 function mysqlr_master_replication_setup($params){
     global $_CONFIG;
@@ -135,7 +162,7 @@ function mysqlr_master_replication_setup($params){
         $slave = $_CONFIG['mysqlr']['hostname'];
 
         if(empty($slave)){
-            throw new bException('MySQL Configuration for replicator hostname is not set', 'not-specified');
+            throw new bException(tr('mysqlr_master_replication_setup(): MySQL configuration for replicator hostname is not set'), 'not-specified');
         }
 
         /*
@@ -232,6 +259,15 @@ function mysqlr_master_replication_setup($params){
  * 3) IMPORT MYSQL MASTER DB on SLAVE
  * 4) SETUP SLAVE REPLICATION ON A SPECIFIC PORT AND CHANNEL
  * 5) CHECK FOR SLAVE STATUS
+ *
+ * @author Ismael Haro <isma@capmega.com>
+ * @copyright Copyright (c) 2018 Capmega
+ * @license http://opensource.org/licenses/GPL-2.0 GNU Public License, Version 2
+ * @category Function reference
+ * @package mysqlr
+ *
+ * @param
+ * @return
  */
 function mysqlr_slave_replication_setup($params){
     global $_CONFIG;
@@ -245,7 +281,7 @@ function mysqlr_slave_replication_setup($params){
         $slave = $_CONFIG['mysqlr']['hostname'];
 
         if(empty($slave)){
-            throw new bException('MySQL Configuration for replicator hostname is not set', 'not-specified');
+            throw new bException(tr('mysqlr_slave_replication_setup(): MySQL configuration for replicator hostname is not set'), 'not-specified');
         }
 
         /*
@@ -368,7 +404,7 @@ function mysqlr_disable_replication($db){
         $slave = $_CONFIG['mysqlr']['hostname'];
 
         if(empty($slave)){
-            throw new bException('MySQL Configuration for replicator hostname is not set', 'not-specified');
+            throw new bException(tr('mysqlr_disable_replication(): MySQL Configuration for replicator hostname is not set'), 'not-specified');
         }
 
         /*
@@ -377,7 +413,7 @@ function mysqlr_disable_replication($db){
         $database = mysql_get_database($db);
 
         if(empty($database)){
-            throw new bException(tr('The specified database :database does not exist', array(':database' => $database)), 'not-exist');
+            throw new bException(tr('mysqlr_disable_replication(): The specified database :database does not exist', array(':database' => $database)), 'not-exist');
         }
 
         /*
@@ -399,6 +435,7 @@ function mysqlr_disable_replication($db){
 
         log_console(tr('Disabled replication for database :database', array(':database' => $database['database'])), 'DOT');
 
+// :QUESTION: Return 0? Are functions dependant on this? Why not return true or false, or if nothing is needed, null (aka, remove the return statement completely)?
         return 0;
 
     }catch(Exception $e){
@@ -441,14 +478,14 @@ function mysqlr_check_configuration_path($server_target){
             $mysql_cnf      = servers_exec($server_target, 'test -f '.$mysql_cnf_path.' && echo "1" || echo "0"');
 
             if(!$mysql_cnf[0]){
-                throw new bException(tr('mysql_master_replication_setup(): MySQL configuration file :file does not exist on server :server', array(':file' => $mysql_cnf_path, ':server' => $server_target)), 'not-exist');
+                throw new bException(tr('mysqlr_check_configuration_path(): MySQL configuration file :file does not exist on server :server', array(':file' => $mysql_cnf_path, ':server' => $server_target)), 'not-exist');
             }
         }
 
         return $mysql_cnf_path;
 
     }catch(Exception $e){
-        throw new bException(tr('mysqlr_stop_replication(): Failed'), $e);
+        throw new bException(tr('mysqlr_check_configuration_path(): Failed'), $e);
     }
 }
 
@@ -477,7 +514,7 @@ function mysqlr_pause_replication($db){
         $slave = $_CONFIG['mysqlr']['hostname'];
 
         if(empty($slave)){
-            throw new bException('MySQL Configuration for replicator hostname is not set', 'not-specified');
+            throw new bException(tr('mysqlr_pause_replication(): MySQL Configuration for replicator hostname is not set'), 'not-specified');
         }
 
         /*
@@ -486,7 +523,7 @@ function mysqlr_pause_replication($db){
         $database = mysql_get_database($db);
 
         if(empty($database)){
-            throw new bException(tr('The specified database :database does not exist', array(':database' => $database)), 'not-exist');
+            throw new bException(tr('mysqlr_pause_replication(): The specified database :database does not exist', array(':database' => $database)), 'not-exist');
         }
 
         /*
@@ -511,7 +548,7 @@ function mysqlr_pause_replication($db){
         return 0;
 
     }catch(Exception $e){
-        throw new bException(tr('mysqlr_stop_replication(): Failed'), $e);
+        throw new bException(tr('mysqlr_pause_replication(): Failed'), $e);
     }
 }
 
@@ -540,7 +577,7 @@ function mysqlr_resume_replication($db){
         $slave = $_CONFIG['mysqlr']['hostname'];
 
         if(empty($slave)){
-            throw new bException('MySQL Configuration for replicator hostname is not set', 'not-specified');
+            throw new bException(tr('mysqlr_resume_replication(): MySQL Configuration for replicator hostname is not set'), 'not-specified');
         }
 
         /*
@@ -549,7 +586,7 @@ function mysqlr_resume_replication($db){
         $database = mysql_get_database($db);
 
         if(empty($database)){
-            throw new bException(tr('The specified database :database does not exist', array(':database' => $database)), 'not-exist');
+            throw new bException(tr('mysqlr_resume_replication(): The specified database :database does not exist', array(':database' => $database)), 'not-exist');
         }
 
         load_libs('ssh,servers');
@@ -571,7 +608,7 @@ function mysqlr_resume_replication($db){
         return 0;
 
     }catch(Exception $e){
-        throw new bException(tr('mysqlr_stop_replication(): Failed'), $e);
+        throw new bException(tr('mysqlr_resume_replication(): Failed'), $e);
     }
 }
 
