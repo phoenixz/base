@@ -50,7 +50,7 @@ function inventories_validate($item, $reload_only = false){
     try{
         load_libs('validate,seo');
 
-        $v = new validate_form($item, 'seocategory,seocompany,seobranch,seodepartment,seoemployee,seocustomer,seoproject,items_id,code,serial,description');
+        $v = new validate_form($item, 'seocategory,seocompany,seobranch,seodepartment,seoemployee,seocustomer,seoproject,items_id,code,set_with,serial,description');
 
         /*
          * Validate category
@@ -247,6 +247,25 @@ function inventories_validate($item, $reload_only = false){
         }
 
         /*
+         * Validate set_with
+         */
+        if($item['set_with']){
+            foreach(array_force($item['set_with']) as $code){
+                $exist = sql_get('SELECT `id` FROM `inventories` WHERE `code` = :code', true, array(':code' => $code));
+
+                if(!$exist){
+                    $v->setError(tr('Please ensure the specified set code(s) are valid'));
+
+                }elseif($exist == isset_get($item['id'])){
+                    $v->setError(tr('The entry cannot be in a set with itself'));
+                }
+            }
+
+        }else{
+            $item['set_with'] = null;
+        }
+
+        /*
          * All valid?
          */
         $v->isValid();
@@ -392,6 +411,7 @@ function inventories_get($entry, $column = null, $status = null){
                                          `inventories`.`employees_id`,
                                          `inventories`.`code`,
                                          `inventories`.`serial`,
+                                         `inventories`.`set_with`,
                                          `inventories`.`description`,
 
                                          `inventories_items`.`providers_id`,
