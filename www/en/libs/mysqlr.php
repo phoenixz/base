@@ -303,8 +303,8 @@ function mysqlr_slave_replication_setup($params){
          * MySQL SETUP
          */
         log_console(tr('Making slave setup for MySQL configuration file'), 'DOT');
-        servers_exec($slave, 'sudo sed -i "s/#server-id[[:space:]]*=[[:space:]]*1/server-id = '.$database['id'].'/" '.$mysql_cnf_path);
-        servers_exec($slave, 'sudo sed -i "s/#log_bin/log_bin/" '.$mysql_cnf_path);
+        servers_exec($slave, 'sudo sed -i \'s/#server-id[[:space:]]*=[[:space:]]*1/server-id = '.$database['id'].'/\' '.$mysql_cnf_path);
+        servers_exec($slave, 'sudo sed -i \'s/#log_bin/log_bin/\' '.$mysql_cnf_path);
 
         /*
          * The next lines just have to be added one time!
