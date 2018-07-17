@@ -1856,11 +1856,10 @@ function user_or_signin(){
                  */
                 if($core->callType('api') or $core->callType('ajax')){
                     json_reply(tr('Specified token ":token" has no session', array(':token' => isset_get($_POST['PHPSESSID']))), 'signin');
-
-                }else{
-                    html_flash_set('Unauthorized: Please sign in to continue');
-                    redirect(isset_get($_CONFIG['redirects']['signin'], 'signin.php').'?redirect='.urlencode($_SERVER['REQUEST_URI']), 302);
                 }
+
+                html_flash_set('Unauthorized: Please sign in to continue');
+                redirect(domain(isset_get($_CONFIG['redirects']['signin'], 'signin.php').'?redirect='.urlencode($_SERVER['REQUEST_URI'])), 302);
             }
 
             if(!empty($_SESSION['force_page'])){
@@ -1873,7 +1872,7 @@ function user_or_signin(){
                 }
 
                 if($_CONFIG['redirects'][$_SESSION['force_page']] !== str_until(str_rfrom($_SERVER['REQUEST_URI'], '/'), '?')){
-                    redirect($_CONFIG['redirects'][$_SESSION['force_page']].'?redirect='.urlencode($_SERVER['REQUEST_URI']));
+                    redirect(domain($_CONFIG['redirects'][$_SESSION['force_page']].'?redirect='.urlencode($_SERVER['REQUEST_URI'])));
                 }
             }
 
@@ -1882,7 +1881,7 @@ function user_or_signin(){
              */
             if(empty($_SESSION['lock']) and !empty($_SESSION['user']['redirect'])){
                 if(str_from($_SESSION['user']['redirect'], '://') != $_SERVER['SERVER_NAME'].$_SERVER['REQUEST_URI']){
-                    redirect($_SESSION['user']['redirect']);
+                    redirect(domain($_SESSION['user']['redirect']));
                 }
             }
         }
@@ -1914,7 +1913,7 @@ function rights_or_access_denied($rights, $url = null){
         }
 
         if(in_array('admin', array_force($rights))){
-            redirect(isset_get($url, $_CONFIG['redirects']['signin']));
+            redirect(domain(isset_get($url, $_CONFIG['redirects']['signin'])));
         }
 
         page_show(403);
@@ -1940,7 +1939,7 @@ function groups_or_access_denied($groups){
         }
 
         if(in_array('admin', array_force($groups))){
-            redirect($_CONFIG['redirects']['signin']);
+            redirect(domain($_CONFIG['redirects']['signin']));
         }
 
         page_show($_CONFIG['redirects']['access-denied']);
