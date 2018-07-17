@@ -431,7 +431,7 @@ function twilio_accounts_get($account){
                            LEFT JOIN `users` AS `modifiedby`
                            ON        `twilio_accounts`.`modifiedby` = `modifiedby`.`id`
 
-                           WHERE     `twilio_accounts`.`id`   = :account
+                           WHERE     `twilio_accounts`.`id`    = :account
                            OR        `twilio_accounts`.`email` = :account',
 
                            array(':account' => $account));
