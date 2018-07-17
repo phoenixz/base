@@ -373,8 +373,6 @@ sql_foreignkey_exists('databases', 'fk_databases_projects_id', '!ALTER TABLE `da
 sql_foreignkey_exists('customers', 'fk_customers_categories_id', '!ALTER TABLE `customers` ADD CONSTRAINT `fk_customers_categories_id` FOREIGN KEY (`categories_id`) REFERENCES `categories`        (`id`) ON DELETE RESTRICT;');
 sql_foreignkey_exists('customers', 'fk_customers_documents_id' , '!ALTER TABLE `customers` ADD CONSTRAINT `fk_customers_documents_id`  FOREIGN KEY (`documents_id`)  REFERENCES `storage_documents` (`id`) ON DELETE RESTRICT;');
 
-sql_foreignkey_exists('providers', 'fk_providers_categories_id', '!ALTER TABLE `providers` ADD CONSTRAINT `fk_providers_categories_id` FOREIGN KEY (`categories_id`) REFERENCES `categories`        (`id`) ON DELETE RESTRICT;');
-
 sql_foreignkey_exists('projects', 'fk_projects_processes_id' , '!ALTER TABLE `projects` ADD CONSTRAINT `fk_projects_processes_id`  FOREIGN KEY (`processes_id`)  REFERENCES `progress_processes` (`id`) ON DELETE RESTRICT;');
 sql_foreignkey_exists('projects', 'fk_projects_steps_id'     , '!ALTER TABLE `projects` ADD CONSTRAINT `fk_projects_steps_id`      FOREIGN KEY (`steps_id`)      REFERENCES `progress_steps`     (`id`) ON DELETE RESTRICT;');
 sql_foreignkey_exists('projects', 'fk_projects_categories_id', '!ALTER TABLE `projects` ADD CONSTRAINT `fk_projects_categories_id` FOREIGN KEY (`categories_id`) REFERENCES `categories`         (`id`) ON DELETE RESTRICT;');

@@ -200,7 +200,9 @@ function mysqlr_master_replication_setup($params){
          * kill ssh pid after dumping db
          */
         log_console(tr('Making grant replication on remote server and locking tables'), 'DOT');
-        $ssh_mysql_pid = mysql_exec($database['hostname'], 'GRANT REPLICATION SLAVE ON *.* TO "'.$database['replication_db_user'].'"@"localhost" IDENTIFIED BY "'.$database['replication_db_password'].'"; FLUSH PRIVILEGES; USE '.$database['database'].'; FLUSH TABLES WITH READ LOCK; DO SLEEP(1000000);', true);
+// :FIX: There is an issue with mysql exec not executing as root         
+        //$ssh_mysql_pid = mysql_exec($database['hostname'], 'GRANT REPLICATION SLAVE ON *.* TO "'.$database['replication_db_user'].'"@"localhost" IDENTIFIED BY "'.$database['replication_db_password'].'"; FLUSH PRIVILEGES; USE '.$database['database'].'; FLUSH TABLES WITH READ LOCK; DO SLEEP(1000000);', true);
+        $ssh_mysql_pid = servers_exec($database['hostname'], 'mysql \"-u'.$database['root_db_user'].'\" \"-p'.$database['root_db_password'].'\" -e \"GRANT REPLICATION SLAVE ON *.* TO \''.$database['replication_db_user'].'\'@\'localhost\' IDENTIFIED BY \''.$database['replication_db_password'].'\'; FLUSH PRIVILEGES; USE '.$database['database'].'; FLUSH TABLES WITH READ LOCK; DO SLEEP(1000000); \"', null, true);
 
         /*
          * Dump database
@@ -301,8 +303,8 @@ function mysqlr_slave_replication_setup($params){
          * MySQL SETUP
          */
         log_console(tr('Making slave setup for MySQL configuration file'), 'DOT');
-        servers_exec($slave, 'sudo sed -i "s/#server-id[[:space:]]*=[[:space:]]*1/server-id = '.$database['id'].'/" '.$mysql_cnf_path);
-        servers_exec($slave, 'sudo sed -i "s/#log_bin/log_bin/" '.$mysql_cnf_path);
+        servers_exec($slave, 'sudo sed -i \'s/#server-id[[:space:]]*=[[:space:]]*1/server-id = '.$database['id'].'/\' '.$mysql_cnf_path);
+        servers_exec($slave, 'sudo sed -i \'s/#log_bin/log_bin/\' '.$mysql_cnf_path);
 
         /*
          * The next lines just have to be added one time!
@@ -323,8 +325,8 @@ function mysqlr_slave_replication_setup($params){
         /*
          * Import LOCAL db
          */
-        mysql_exec($slave, 'DROP   DATABASE IF EXISTS `'.$database['database'].'`');
-        mysql_exec($slave, 'CREATE DATABASE `'.$database['database'].'`');
+        mysql_exec($slave, 'DROP   DATABASE IF EXISTS `'.$database['database'].'`;', true);
+        mysql_exec($slave, 'CREATE DATABASE `'.$database['database'].'`;', true);
         servers_exec($slave, 'sudo rm /tmp/'.$database['database'].'.sql -f');
         servers_exec($slave, 'gzip -d /tmp/'.$database['database'].'.sql.gz');
         servers_exec($slave, 'sudo mysql "-u'.$database['root_db_user'].'" "-p'.$database['root_db_password'].'" -B '.$database['database'].' < /tmp/'.$database['database'].'.sql');
@@ -351,8 +353,8 @@ function mysqlr_slave_replication_setup($params){
         /*
          * Setup global configurations to support multiple channels
          */
-        mysql_exec($slave, 'SET GLOBAL master_info_repository = \'TABLE\';', true);
-        mysql_exec($slave, 'SET GLOBAL relay_log_info_repository = \'TABLE\';', true);
+        mysql_exec($slave, 'SET GLOBAL master_info_repository = \'TABLE\';', true, true);
+        mysql_exec($slave, 'SET GLOBAL relay_log_info_repository = \'TABLE\';', true, true);
 
         /*
          * Setup slave replication
@@ -365,7 +367,7 @@ function mysqlr_slave_replication_setup($params){
         $slave_setup .= 'MASTER_LOG_POS='.$database['log_pos'].' ';
         $slave_setup .= 'FOR CHANNEL \''.$database['hostname'].'\'; ';
         $slave_setup .= 'START SLAVE FOR CHANNEL \''.$database['hostname'].'\';';
-        mysql_exec($slave, $slave_setup, true);
+        mysql_exec($slave, $slave_setup, true, true);
 
         /*
          * Final step check for SLAVE status
