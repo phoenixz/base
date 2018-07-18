@@ -746,7 +746,7 @@ function notify($params){
          *
          * Do NOT cause exception, because it its not caught, it might cause another notification, that will fail, cause exception and an endless loop!
          */
-        log_file(tr('Failed to notify event ":event" for classes ":classes" with message ":message"', array(':event' => $event, ':classes' => $classes, ':message' => $message)), 'failed');
+        log_file(tr('Failed to notify event ":event" for classes ":classes" with message ":message"', array(':event' => isset_get($params['event']), ':classes' => isset_get($params['classes']), ':message' => isset_get($params['message']))), 'failed');
         return false;
     }
 }

@@ -284,7 +284,9 @@ if(!$targets){
             /*
              * Notify about forced deploy!
              */
-            notify('deploy', tr('DEPLOY WARNING! NON PRODUCTION BRANCH DEPLOYED TO PRODUCTION: Deployed branch ":branch" to production category for project ":project"', array(':branch' => $branch, ':project' => PROJECT)));
+            notify(array('class'       => 'developers',
+                         'title'       => 'Deploy warning',
+                         'description' => tr('DEPLOY WARNING! NON PRODUCTION BRANCH DEPLOYED TO PRODUCTION: Deployed branch ":branch" to production category for project ":project"', array(':branch' => $branch, ':project' => PROJECT))));
         }
     }
 
@@ -402,7 +404,9 @@ if(in_array('production', $targets)){
         /*
          * Notify about forced deploy!
          */
-        notify('deploy', tr('DEPLOY WARNING! NON PRODUCTION BRANCH DEPLOYED TO PRODUCTION: Deployed branch ":branch" to production environment for project ":project"', array(':branch' => $branch, ':project' => PROJECT)));
+        notify(array('class'       => 'developers',
+                     'title'       => 'Deploy warning',
+                     'description' => tr('DEPLOY WARNING! NON PRODUCTION BRANCH DEPLOYED TO PRODUCTION: Deployed branch ":branch" to production environment for project ":project"', array(':branch' => $branch, ':project' => PROJECT))));
     }
 }
 
@@ -1130,7 +1134,9 @@ foreach($targets as $target_environment){
     }else{
         log_console(tr('Executing deploy notifications'), 'white');
 
-        notify('deploy', 'Deployed project "'.PROJECT.'" with languages "'.str_log(implode(', ', array_force($_CONFIG['language']['supported']))).'"');
+        notify(array('class'       => 'developers',
+                     'title'       => 'Deployed project "'.PROJECT.'"',
+                     'description' => 'Deployed project "'.PROJECT.'" with languages "'.str_log(implode(', ', array_force($_CONFIG['language']['supported']))).'"'));
 
         init_hook('deploy_post_notify', $nohooks, array('target_user'   => $deploy_config['target_user'],
                                                         'target_port'   => $deploy_config['target_port'],

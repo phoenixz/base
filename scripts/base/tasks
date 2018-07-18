@@ -552,7 +552,7 @@ under_construction('add');
                     tasks_failed($task['id']);
 
                 }catch(Exception $e){
-                    notify('task-exception-failed', 'developers', $e);
+                    notify($e);
                     log_console(tr('Exception handling for task ":task" failed with ":e"', array(':task' => $task['id'], ':e' => $e)), 'red');
                     log_file(tr('Exception handling for task ":task" failed with ":e"'   , array(':task' => $task['id'], ':e' => $e)), 'tasks');
                 }
