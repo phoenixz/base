@@ -19,7 +19,7 @@ function notifications_send($params){
     global $_CONFIG, $core;
 
     try{
-        log_file($params['message'], 'notifications', 'warning');
+//        log_file(isset_get($params['message']), 'notifications', 'warning');
 return false;
 
         if(is_object($params) and ($params instanceof Exception)){
