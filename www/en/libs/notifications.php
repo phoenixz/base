@@ -15,11 +15,13 @@ load_config('notifications');
  * Do notifications
  */
 function notifications_send($params){
-return false;
     static $count = 0;
     global $_CONFIG, $core;
 
     try{
+        log_file($params['message'], 'notifications', 'warning');
+return false;
+
         if(is_object($params) and ($params instanceof Exception)){
             /*
              * Notify about an exception
