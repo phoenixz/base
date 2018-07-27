@@ -524,24 +524,40 @@ function twilio_numbers_validate($number, $old_twilio = null){
 /*
  *
  */
-function twilio_numbers_get($number){
+function twilio_get_number($number){
     try{
         if(!$number){
-            throw new bException(tr('twilio_numbers_get(): No number specified'), 'not-specified');
+            throw new bException(tr('twilio_get_number(): No number specified'), 'not-specified');
         }
 
         if(!is_scalar($number)){
-            throw new bException(tr('twilio_numbers_get(): Specified twilio number ":number" is not scalar', array(':number' => $number)), 'invalid');
+            throw new bException(tr('twilio_get_number(): Specified twilio number ":number" is not scalar', array(':number' => $number)), 'invalid');
         }
 
         $retval = sql_get('SELECT   `twilio_numbers`.`id`,
+                                    `twilio_numbers`.`createdon`,
+                                    `twilio_numbers`.`createdby`,
                                     `twilio_numbers`.`name`,
                                     `twilio_numbers`.`number`,
                                     `twilio_numbers`.`accounts_id`,
                                     `twilio_numbers`.`groups_id`,
-                                    `twilio_numbers`.`status`
+                                    `twilio_numbers`.`status`,
+                                    `twilio_numbers`.`type`,
+                                    `twilio_numbers`.`data`,
+
+                                    `twilio_groups`.`name`  AS `group`,
+
+                                    `twilio_accounts`.`email` AS `accounts_email`,
+                                    `twilio_accounts`.`accounts_id`,
+                                    `twilio_accounts`.`accounts_token`
 
                            FROM     `twilio_numbers`
+
+                           LEFT JOIN `twilio_groups`
+                           ON        `twilio_groups`.`id`     = `twilio_numbers`.`groups_id`
+
+                           LEFT JOIN `twilio_accounts`
+                           ON        `twilio_accounts`.`id`   = `twilio_numbers`.`accounts_id`
 
                            WHERE    `twilio_numbers`.`name`   = :name
                            OR       `twilio_numbers`.`number` = :number',
@@ -552,7 +568,7 @@ function twilio_numbers_get($number){
         return $retval;
 
     }catch(Exception $e){
-        throw new bException('twilio_numbers_get(): Failed', $e);
+        throw new bException('twilio_get_number(): Failed', $e);
     }
 }
 
@@ -736,6 +752,64 @@ function twilio_number_to_array($number){
 
     }catch(Exception $e){
         throw new bException('twilio_number_to_array(): Failed', $e);
+    }
+}
+
+
+
+/*
+ *
+ */
+function twilio_select_accounts($params){
+    try{
+        array_ensure($params);
+        array_default($params, 'name' , 'number');
+        array_default($params, 'none' , tr('Select number'));
+        array_default($params, 'empty', tr('No numbers available'));
+
+        $params['resource'] = sql_query('SELECT `accounts_id`, `email` FROM `twilio_accounts` WHERE `status` IS NULL ORDER BY `email`');
+
+        $html = html_select($params);
+        return $html;
+
+    }catch(Exception $e){
+        throw new bException('twilio_select_accounts(): Failed', $e);
+    }
+}
+
+
+
+/*
+ *
+ */
+function twilio_select_number($params){
+    try{
+        array_ensure($params);
+        array_default($params, 'name' , 'number');
+        array_default($params, 'none' , tr('Select number'));
+        array_default($params, 'empty', tr('No numbers available'));
+
+        $params['resource'] = sql_query('SELECT `number` AS `id`, `name` FROM `twilio_numbers` WHERE `status` IS NULL AND `number` != "" AND `name` != "" ORDER BY `name`');
+
+        $html = html_select($params);
+        return $html;
+
+    }catch(Exception $e){
+        throw new bException('twilio_select_number(): Failed', $e);
+    }
+}
+
+
+
+/*
+ * OBSOLETE
+ */
+function twilio_numbers_get($number){
+    try{
+        return twilio_get_number($number);
+
+    }catch(Exception $e){
+        throw new bException('twilio_numbers_get(): Failed', $e);
     }
 }
 ?>

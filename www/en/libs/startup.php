@@ -20,7 +20,7 @@
 /*
  * Framework version
  */
-define('FRAMEWORKCODEVERSION', '1.17.3');
+define('FRAMEWORKCODEVERSION', '1.17.4');
 
 
 
@@ -2592,7 +2592,7 @@ function page_show($pagename, $params = null, $get = null){
 
 
 /*
- * Throw an "under construction" exception
+ * Throw an "under-construction" exception
  */
 function under_construction($functionality = ''){
     if($functionality){
@@ -2600,6 +2600,19 @@ function under_construction($functionality = ''){
     }
 
     throw new bException(tr('This function is under construction!'), 'under-construction');
+}
+
+
+
+/*
+ * Throw an "not-supported" exception
+ */
+function not_supported($functionality = ''){
+    if($functionality){
+        throw new bException(tr('The functionality ":f" is not support!', array(':f' => $functionality)), 'not-supported');
+    }
+
+    throw new bException(tr('This function is not supported!'), 'not-supported');
 }
 
 
