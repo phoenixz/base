@@ -695,7 +695,7 @@ function mysqlr_slave_ssh_tunnel($server, $slave){
         /*
          * Delete local file key
          */
-        safe_exec(chmod($keyfile, 0600));
+        chmod($keyfile, 0600);
         file_delete($keyfile);
 
     }catch(Exception $e){
