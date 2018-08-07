@@ -353,8 +353,8 @@ function mysqlr_slave_replication_setup($params){
         /*
          * Setup global configurations to support multiple channels
          */
-        mysql_exec($slave, 'SET GLOBAL master_info_repository = \'TABLE\'', true, true);
-        mysql_exec($slave, 'SET GLOBAL relay_log_info_repository = \'TABLE\'', true, true);
+        mysql_exec($slave, 'SET GLOBAL master_info_repository = \'TABLE\'');
+        mysql_exec($slave, 'SET GLOBAL relay_log_info_repository = \'TABLE\'');
 
         /*
          * Setup slave replication
@@ -367,7 +367,7 @@ function mysqlr_slave_replication_setup($params){
         $slave_setup .= 'MASTER_LOG_POS='.$database['log_pos'].' ';
         $slave_setup .= 'FOR CHANNEL \''.$database['hostname'].'\'; ';
         $slave_setup .= 'START SLAVE FOR CHANNEL \''.$database['hostname'].'\';';
-        mysql_exec($slave, $slave_setup, true, true);
+        mysql_exec($slave, $slave_setup);
 
         /*
          * Final step check for SLAVE status
