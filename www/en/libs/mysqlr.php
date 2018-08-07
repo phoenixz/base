@@ -353,8 +353,8 @@ function mysqlr_slave_replication_setup($params){
         /*
          * Setup global configurations to support multiple channels
          */
-        mysql_exec($slave, 'SET GLOBAL master_info_repository = \'TABLE\'');
-        mysql_exec($slave, 'SET GLOBAL relay_log_info_repository = \'TABLE\'');
+        mysql_exec($slave, 'SET GLOBAL master_info_repository = \"TABLE\"');
+        mysql_exec($slave, 'SET GLOBAL relay_log_info_repository = \"TABLE\"');
 
         /*
          * Setup slave replication
