@@ -209,7 +209,7 @@ under_construction('add');
         cli_no_arguments_left();
 
         if(!$limit){
-            $limit = 100;
+            $limit = 1000;
         }
 
         if($all){
