@@ -325,8 +325,8 @@ function mysqlr_slave_replication_setup($params){
         /*
          * Import LOCAL db
          */
-        mysql_exec($slave, 'DROP   DATABASE IF EXISTS \`'.$database['database'].'\`;');
-        mysql_exec($slave, 'CREATE DATABASE \`'.$database['database'].'\`;');
+        mysql_exec($slave, 'DROP   DATABASE IF EXISTS '.$database['database']);
+        mysql_exec($slave, 'CREATE DATABASE '.$database['database']);
         servers_exec($slave, 'sudo rm /tmp/'.$database['database'].'.sql -f');
         servers_exec($slave, 'gzip -d /tmp/'.$database['database'].'.sql.gz');
         servers_exec($slave, 'sudo mysql "-u'.$database['root_db_user'].'" "-p'.$database['root_db_password'].'" -B '.$database['database'].' < /tmp/'.$database['database'].'.sql');
@@ -353,8 +353,8 @@ function mysqlr_slave_replication_setup($params){
         /*
          * Setup global configurations to support multiple channels
          */
-        mysql_exec($slave, 'SET GLOBAL master_info_repository = \'TABLE\';', true, true);
-        mysql_exec($slave, 'SET GLOBAL relay_log_info_repository = \'TABLE\';', true, true);
+        mysql_exec($slave, 'SET GLOBAL master_info_repository = \'TABLE\'', true, true);
+        mysql_exec($slave, 'SET GLOBAL relay_log_info_repository = \'TABLE\'', true, true);
 
         /*
          * Setup slave replication
