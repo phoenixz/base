@@ -359,14 +359,14 @@ function mysqlr_slave_replication_setup($params){
         /*
          * Setup slave replication
          */
-        $slave_setup  = 'CHANGE MASTER TO MASTER_HOST=\'127.0.0.1\', ';
-        $slave_setup .= 'MASTER_USER=\''.$database['replication_db_user'].'\', ';
-        $slave_setup .= 'MASTER_PASSWORD=\''.$database['replication_db_password'].'\', ';
+        $slave_setup  = 'CHANGE MASTER TO MASTER_HOST=\"127.0.0.1\", ';
+        $slave_setup .= 'MASTER_USER=\"'.$database['replication_db_user'].'\", ';
+        $slave_setup .= 'MASTER_PASSWORD=\"'.$database['replication_db_password'].'\", ';
         $slave_setup .= 'MASTER_PORT='.$database['ssh_port'].', ';
-        $slave_setup .= 'MASTER_LOG_FILE=\''.$database['log_file'].'\', ';
+        $slave_setup .= 'MASTER_LOG_FILE=\"'.$database['log_file'].'\", ';
         $slave_setup .= 'MASTER_LOG_POS='.$database['log_pos'].' ';
-        $slave_setup .= 'FOR CHANNEL \''.$database['hostname'].'\'; ';
-        $slave_setup .= 'START SLAVE FOR CHANNEL \''.$database['hostname'].'\';';
+        $slave_setup .= 'FOR CHANNEL \"'.$database['hostname'].'\"; ';
+        $slave_setup .= 'START SLAVE FOR CHANNEL \"'.$database['hostname'].'\";';
         mysql_exec($slave, $slave_setup);
 
         /*
