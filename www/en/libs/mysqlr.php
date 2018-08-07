@@ -325,8 +325,8 @@ function mysqlr_slave_replication_setup($params){
         /*
          * Import LOCAL db
          */
-        mysql_exec($slave, 'DROP   DATABASE IF EXISTS `'.$database['database'].'`;', true);
-        mysql_exec($slave, 'CREATE DATABASE `'.$database['database'].'`;', true);
+        mysql_exec($slave, 'DROP   DATABASE IF EXISTS \`'.$database['database'].'\`;');
+        mysql_exec($slave, 'CREATE DATABASE \`'.$database['database'].'\`;');
         servers_exec($slave, 'sudo rm /tmp/'.$database['database'].'.sql -f');
         servers_exec($slave, 'gzip -d /tmp/'.$database['database'].'.sql.gz');
         servers_exec($slave, 'sudo mysql "-u'.$database['root_db_user'].'" "-p'.$database['root_db_password'].'" -B '.$database['database'].' < /tmp/'.$database['database'].'.sql');
@@ -689,7 +689,7 @@ function mysqlr_slave_ssh_tunnel($server, $slave){
          * Copy key file
          * and execute autossh
          */
-        servers_exec('scp '.$server['arguments'].' -P '.$_CONFIG['mysqlr']['port'].' -i '.$keyfile.' '.$keyfile.' '.$slave.':/data/ssh/keys/');
+        safe_exec('scp '.$server['arguments'].' -P '.$_CONFIG['mysqlr']['port'].' -i '.$keyfile.' '.$keyfile.' '.$server['username'].'@'.$slave.':/data/ssh/keys/');
         servers_exec($slave, 'autossh -p '.$server['port'].' -i /data/ssh/keys/'.$keyname.' -L '.$server['ssh_port'].':localhost:3306 '.$server['username'].'@'.$server['hostname'].' -f -N');
 
         /*
