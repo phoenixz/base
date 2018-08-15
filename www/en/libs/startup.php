@@ -703,7 +703,6 @@ function debug($enabled = null){
             $_CONFIG['debug']['enabled'] = (boolean) $enabled;
         }
 
-
         return $_CONFIG['debug']['enabled'];
 
     }catch(Exception $e){
