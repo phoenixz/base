@@ -1369,6 +1369,29 @@ function cli_pid($pid){
 
 
 /*
+ * Check if the specified CLI command exists or not
+ *
+ * @copyright Copyright (c) 2018 Capmega
+ * @license http://opensource.org/licenses/GPL-2.0 GNU Public License, Version 2
+ * @category Function reference
+ * @package cli
+ *
+ * @param string $command the CLI command to be tested
+ * @return boolean true if the specified command exists, false if not.
+ */
+function cli_command_exists($command){
+    try{
+        $exists = safe_exec('which "'.$command.'"');
+        return (boolean) $exists;
+
+    }catch(Exception $e){
+        throw new bException(tr('cli_command_exists(): Failed'), $e);
+    }
+}
+
+
+
+/*
  * WARNING! BELOW HERE BE OBSOLETE FUNCTIONS AND OBSOLETE-BUT-WE-WANT-TO-BE-BACKWARD-COMPATIBLE WRAPPERS
  */
 function this_script_already_runs($action = 'exception', $force = false){
