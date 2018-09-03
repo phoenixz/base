@@ -961,6 +961,7 @@ function email_send($email, $smtp = null, $emailAccount = null){
             /*
              * Use user specific SMTP configuration
              */
+            $mail->CharSet  = $smtp['charSet'];
             $mail->Host     = $smtp['host'];
             $mail->Port     = isset_get($smtp['port'], 25);
             $mail->SMTPAuth = $smtp['auth'];
