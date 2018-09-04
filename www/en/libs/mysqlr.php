@@ -359,7 +359,8 @@ function mysqlr_slave_replication_setup($params){
         /*
          * Setup slave replication
          */
-        $slave_setup  = 'CHANGE MASTER TO MASTER_HOST=\"127.0.0.1\", ';
+        $slave_setup  = 'STOP SLAVE; ';
+        $slave_setup .= 'CHANGE MASTER TO MASTER_HOST=\"127.0.0.1\", ';
         $slave_setup .= 'MASTER_USER=\"'.$database['replication_db_user'].'\", ';
         $slave_setup .= 'MASTER_PASSWORD=\"'.$database['replication_db_password'].'\", ';
         $slave_setup .= 'MASTER_PORT='.$database['ssh_port'].', ';
