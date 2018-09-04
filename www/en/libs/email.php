@@ -888,10 +888,13 @@ function email_get_accounts_id($email){
 
 
 
-/*
+/**
  * Send a new email
+ * @param  array $email  [description]
+ * @param  array $smtp   SMTP server to use
+ * @return [type]        [description]
  */
-function email_send($email, $smtp = null){
+function email_send($email, $smtp = null, $emailAccount = null){
     global $_CONFIG;
 
     try{
@@ -919,7 +922,12 @@ function email_send($email, $smtp = null){
          * Send the email right now
          */
         $mail    = email_load_phpmailer();
-        $account = email_get_client_account($email['from']);
+		if(empty($emailAccount))
+		{
+			$account = email_get_client_account($email['from']);
+		}else{
+			$account = $emailAccount;
+		}
 
         $mail->IsSMTP(); // send via SMTP
 
@@ -953,6 +961,7 @@ function email_send($email, $smtp = null){
             /*
              * Use user specific SMTP configuration
              */
+            $mail->CharSet  = $smtp['charSet'];
             $mail->Host     = $smtp['host'];
             $mail->Port     = isset_get($smtp['port'], 25);
             $mail->SMTPAuth = $smtp['auth'];
