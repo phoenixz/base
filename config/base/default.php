@@ -61,6 +61,8 @@ $_CONFIG['cdn']                = array('min'                                => t
 
                                        'copies'                             => 2,                                                       // Required amount of copies of each files. NOTE: This amount should be lower or equal to the amount of available CDN servers! (would not make sense otherwise)
 
+                                       'domain'                             => '',                                                       // Required amount of copies of each files. NOTE: This amount should be lower or equal to the amount of available CDN servers! (would not make sense otherwise)
+
                                        'bundler'                            => array('enabled'            => true,                      // If JS and CSS bundler should be enabled or not
                                                                                      'max_age'            => 86400),                    // Max age of bundle files before they are deleted and regenerated
 

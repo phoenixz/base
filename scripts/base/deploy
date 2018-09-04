@@ -49,6 +49,8 @@ GLOBAL OPTIONS
 
 --no-notify                     - Do not send notifications
 
+--no-compress                   - Do not compress the javascript / CSS files.
+
 --no-push                       - Do not automatically git push all changes
                                   and tags
 

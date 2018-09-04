@@ -301,7 +301,7 @@ function html_bundler($type){
                         }
                 }
 
-                file_append($bundle_file, $data);
+                file_append($bundle_file, $data.($_CONFIG['cdn']['min'] ? '' : "\n"));
             }
 
             unset($file);
@@ -2235,17 +2235,17 @@ function html_minify($html, $full = false){
     global $_CONFIG;
 
     try{
-        if(!$_CONFIG['cdn']['min']){
-            /*
-             * Don't do anything. This way, on non debug systems, where this is
-             * used to minify HTML output, we can still see normal HTML that is
-             * a bit more readable.
-             */
-            return $html;
+        if($_CONFIG['cdn']['min']){
+            load_libs('minify');
+            return minify_html($html);
         }
 
-        load_libs('minify');
-        return minify_html($html);
+        /*
+         * Don't do anything. This way, on non debug systems, where this is
+         * used to minify HTML output, we can still see normal HTML that is
+         * a bit more readable.
+         */
+        return $html;
 
     }catch(Exception $e){
         throw new bException(tr('html_minify(): Failed'), $e);

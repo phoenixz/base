@@ -3020,7 +3020,7 @@ function cdn_domain($file, $section = 'pub', $false_on_not_exist = false, $force
                 }
             }
 
-            return domain($file, null, $section, null, '');
+            return domain($file, null, $section, $_CONFIG['cdn']['domain'], '');
         }
 
         if($section == 'pub'){
