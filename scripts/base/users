@@ -877,7 +877,7 @@ switch(cli_method()){
                 $query = 'DELETE FROM UPDATE users` WHERE  '.implode(' AND ', $where);
 
             case 'undelete':
-                $query = ' UPDATE `users`
+                $query = 'UPDATE `users`
 
                           SET    `status` = null
 
