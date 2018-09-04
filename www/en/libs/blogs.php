@@ -1230,7 +1230,7 @@ function blogs_validate_post($post, $params = null){
         array_default($params, 'filter_html'      , '<p><a><br><span><small><strong><img><iframe><h1><h2><h3><h4><h5><h6><ul><ol><li>');
 //        array_default($params, 'filter_attributes', '/<([a-z][a-z0-9]*)(?: .*?=".*?")*?(\/?)>/imus');  // Filter only class and style attributes
         array_default($params, 'filter_attributes', '/<([a-z][a-z0-9]*)(?: style=".*?)>/imus');  // Filter only class and style attributes
-        //array_default($params, 'filter_attributes', '[^>]'); // Filter all attributes
+//        array_default($params, 'filter_attributes', '[^>]'); // Filter all attributes
 
         load_libs('seo,validate');
 
