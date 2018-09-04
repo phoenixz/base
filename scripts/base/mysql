@@ -58,7 +58,11 @@ replication
         --hostname HOSTNAME      - The hostname of the master server
                                   (e.g. s1.s.capmega.com)
 
-        --database DATABASE      - The name of the database to replicate';
+        --database DATABASE      - The name/id of the database to replicate
+        
+        --log-info               - Info useful on tasks script log
+                                   (e.g. database name)';
+        
 
 require_once(__DIR__.'/../../libs/startup.php');
 load_libs('mysql,mysqlr');
@@ -459,7 +463,7 @@ switch(cli_method()){
                 /*
                  * Get arguments and needed data
                  */
-                $server                 = cli_arguments('--hostname,--database');
+                $server                 = cli_arguments('--hostname,--database,--log-info');
                 $server['root_db_user'] = 'root';
                 $server['arguments']    = '-q';
                 cli_no_arguments_left();
