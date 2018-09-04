@@ -51,32 +51,50 @@ function mysqlr_library_init(){
  * @param
  * @return
  */
-function mysqlr_update_database_replication_status($params, $status){
+function mysqlr_update_server_replication_status($params, $status){
     try{
         /*
-         * Update server and database replication_status
+         * Update server replication_status
          */
         array_params($params);
-        array_default($params, 'databases_id', '');
+        array_default($params, 'servers_id' , '');
 
-        if(empty($params['databases_id'])){
-            throw new bException(tr('mysqlr_update_database_replication_status(): No database specified'), 'not-specified');
+        if(empty($params['servers_id'])){
+            throw new bException(tr('mysqlr_update_replication_status(): No servers_id specified'), 'not-specified');
+        }
+        
+        if(empty($status)){
+            throw new bException(tr('mysqlr_update_replication_status(): No status specified'), 'not-specified');
+        }
+        
+        /*
+         * Update server replication_lock
+         */
+        switch($status){
+            case 'preparing':
+                sql_query('UPDATE `servers` SET `replication_lock` = :replication_lock WHERE `id` = :id', array(':replication_lock' => 1, ':id' => $params['servers_id']));        
+                break;
+            
+            case 'disabled_replication':
+                // FALLTHROUGH
+            case 'enabled':
+                sql_query('UPDATE `servers` SET `replication_lock`   = :replication_lock   WHERE `id` = :id', array(':replication_lock' => 0, ':id' => $params['servers_id']));
+                sql_query('UPDATE `servers` SET `replication_status` = :replication_status WHERE `id` = :id', array(':replication_status' => $status, ':id' => $params['servers_id']));
+                break;
+            
+            case 'disabled':
+                /*
+                 * No action
+                 */
+                sql_query('UPDATE `servers` SET `replication_status` = :replication_status WHERE `id` = :id', array(':replication_status' => $status, ':id' => $params['servers_id']));
+                break;
+            
+            default:
+                throw new bException(tr('Unknown status ":status"', array(':status' => $status)));
         }
 
-        /*
-         * Update database
-         */
-        sql_query('UPDATE `databases`
-
-                   SET    `replication_status` = :replication_status
-
-                   WHERE  `id` = :id',
-
-                   array(':replication_status' => $status,
-                         ':id'                 => $params['databases_id']));
-
     }catch(Exception $e){
-        throw new bException(tr('mysqlr_update_database_replication_status(): Failed'), $e);
+        throw new bException(tr('mysqlr_update_server_replication_status(): Failed'), $e);
     }
 }
 
@@ -111,11 +129,28 @@ function mysqlr_update_replication_status($params, $status){
         if(empty($params['servers_id'])){
             throw new bException(tr('mysqlr_update_replication_status(): No servers_id specified'), 'not-specified');
         }
-
+        
+        if(empty($status)){
+            throw new bException(tr('mysqlr_update_replication_status(): No status specified'), 'not-specified');
+        }
+        
         /*
-         * Update server
+         * Update server replication_lock
          */
-        sql_query('UPDATE `servers` SET `replication_status` = :replication_status WHERE `id` = :id', array(':replication_status' => $status, ':id' => $params['servers_id']));
+        switch($status){
+            case 'preparing':
+                sql_query('UPDATE `servers` SET `replication_lock` = :replication_lock WHERE `id` = :id', array(':replication_lock' => 1, ':id' => $params['servers_id']));        
+                break;
+            
+            case 'disabled':
+                // FALLTHROUGH
+            case 'enabled':
+                sql_query('UPDATE `servers` SET `replication_lock` = :replication_lock WHERE `id` = :id', array(':replication_lock' => 0, ':id' => $params['servers_id']));        
+                break;
+            
+            default:
+                throw new bException(tr('Unknown status ":status"', array(':status' => $status)));
+        }
 
         /*
          * Update database
@@ -247,6 +282,7 @@ function mysqlr_master_replication_setup($params){
         return $database;
 
     }catch(Exception $e){
+        mysqlr_update_server_replication_status($database, 'disabled_lock');
         mysqlr_update_replication_status($database, 'disabled');
         throw new bException(tr('mysqlr_master_replication_setup(): Failed'), $e);
     }
@@ -374,9 +410,11 @@ function mysqlr_slave_replication_setup($params){
          * Final step check for SLAVE status
          */
         mysqlr_update_replication_status($database, 'enabled');
+        mysqlr_update_server_replication_status($database, 'enabled');
         log_console(tr('MySQL replication setup finished!'), 'white');
 
     }catch(Exception $e){
+        mysqlr_update_server_replication_status($database, 'disabled_lock');
         mysqlr_update_replication_status($database, 'disabled');
         throw new bException(tr('mysqlr_slave_replication_setup(): Failed'), $e);
     }
