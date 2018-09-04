@@ -160,7 +160,7 @@ function mysql_get_database($db_name){
                              array(':name' => $db_name));
 
         if(!$database){
-            throw new bException(log_database(tr('Specified database ":database" does not exist', array(':database' => $_GET['database'])), 'not-exist'));
+            throw new bException(log_database(tr('Specified database ":database" does not exist', array(':database' => $db_name)), 'not-exist'));
         }
 
         return $database;

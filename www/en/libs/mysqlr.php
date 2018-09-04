@@ -289,9 +289,11 @@ function mysqlr_slave_replication_setup($params){
         /*
          * Get database
          */
-        $database       = mysql_get_database($params['database']);
-        $database       = array_merge($database, $params);
-        $database['id'] = mt_rand() - 1;
+        $database         = mysql_get_database($params['database']);
+        $db_name          = $database['name'];
+        $database         = array_merge($database, $params);
+        $database['name'] = $db_name;
+        $database['id']   = mt_rand() - 1;
 
         /*
          * Get MySQL configuration path
