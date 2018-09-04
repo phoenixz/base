@@ -135,7 +135,7 @@ function mysql_get_database($db_name){
                                        `databases`.`servers_id`,
                                        `databases`.`status`,
                                        `databases`.`replication_status`,
-                                       `databases`.`name` AS `database`,
+                                       `databases`.`name` AS `database_name`,
                                        `databases`.`error`,
 
                                        `servers`.`id` AS `servers_id`,
