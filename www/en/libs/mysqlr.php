@@ -75,7 +75,7 @@ function mysqlr_update_server_replication_status($params, $status){
                 sql_query('UPDATE `servers` SET `replication_lock` = :replication_lock WHERE `id` = :id', array(':replication_lock' => 1, ':id' => $params['servers_id']));        
                 break;
             
-            case 'disabled_replication':
+            case 'disabled_lock':
                 // FALLTHROUGH
             case 'enabled':
                 sql_query('UPDATE `servers` SET `replication_lock`   = :replication_lock   WHERE `id` = :id', array(':replication_lock' => 0, ':id' => $params['servers_id']));
@@ -90,7 +90,7 @@ function mysqlr_update_server_replication_status($params, $status){
                 break;
             
             default:
-                throw new bException(tr('Unknown status ":status"', array(':status' => $status)));
+                throw new bException(tr('Unknown status ":status"', array(':status' => $status)), 'unknown');
         }
 
     }catch(Exception $e){
