@@ -3098,6 +3098,7 @@ function cdn_domain($file, $section = 'pub', $false_on_not_exist = false, $force
 
         return domain($file);
 
+// :TODO: What why where?
         ///*
         // * We have a CDN server in session? If not, get one.
         // */
@@ -3174,7 +3175,7 @@ function str_from($source, $needle, $more = 0){
         return mb_substr($source, $pos + mb_strlen($needle) - $more);
 
     }catch(Exception $e){
-        throw new bException('str_from(): Failed for "'.str_log($source).'"', $e);
+        throw new bException(tr('str_from(): Failed for string ":string"', array(':string' => $source)), $e);
     }
 }
 
@@ -3196,7 +3197,7 @@ function str_until($source, $needle, $more = 0, $start = 0){
         return mb_substr($source, $start, $pos + $more);
 
     }catch(Exception $e){
-        throw new bException('str_until(): Failed for "'.str_log($source).'"', $e);
+        throw new bException(tr('str_until(): Failed for string ":string"', array(':string' => $source)), $e);
     }
 }
 
@@ -3218,7 +3219,7 @@ function str_rfrom($source, $needle, $more = 0){
         return mb_substr($source, $pos + mb_strlen($needle) - $more);
 
     }catch(Exception $e){
-        throw new bException('str_rfrom(): Failed for "'.str_log($source).'"', $e);
+        throw new bException(tr('str_rfrom(): Failed for string ":string"', array(':string' => $source)), $e);
     }
 }
 
@@ -3240,7 +3241,7 @@ function str_runtil($source, $needle, $more = 0, $start = 0){
         return mb_substr($source, $start, $pos + $more);
 
     }catch(Exception $e){
-        throw new bException('str_runtil(): Failed for "'.str_log($source).'"', $e);
+        throw new bException(tr('str_runtil(): Failed for string ":string"', array(':string' => $source)), $e);
     }
 }
 
@@ -3250,11 +3251,16 @@ function str_runtil($source, $needle, $more = 0, $start = 0){
  * Ensure that specified source string starts with specified string
  */
 function str_starts($source, $string){
-    if(mb_substr($source, 0, mb_strlen($string)) == $string){
-        return $source;
-    }
+    try{
+        if(mb_substr($source, 0, mb_strlen($string)) == $string){
+            return $source;
+        }
 
-    return $string.$source;
+        return $string.$source;
+
+    }catch(Exception $e){
+        throw new bException(tr('str_starts(): Failed for ":source"', array(':source' => $source)), $e);
+    }
 }
 
 
@@ -3263,11 +3269,16 @@ function str_starts($source, $string){
  * Ensure that specified source string starts NOT with specified string
  */
 function str_starts_not($source, $string){
-    while(mb_substr($source, 0, mb_strlen($string)) == $string){
-        $source = mb_substr($source, mb_strlen($string));
-    }
+    try{
+        while(mb_substr($source, 0, mb_strlen($string)) == $string){
+            $source = mb_substr($source, mb_strlen($string));
+        }
 
-    return $source;
+        return $source;
+
+    }catch(Exception $e){
+        throw new bException(tr('str_starts_not(): Failed for ":source"', array(':source' => $source)), $e);
+    }
 }
 
 
@@ -3371,18 +3382,22 @@ function unslash($string, $loop = true){
  * Remove double "replace" chars
  */
 function str_nodouble($source, $replace = '\1', $character = null, $case_insensitive = true){
-    if($character){
+    try{
+        if($character){
+            /*
+             * Remove specific character
+             */
+            return preg_replace('/('.$character.')\\1+/u'.($case_insensitive ? 'i' : ''), $replace, $source);
+        }
+
         /*
-         * Remove specific character
+         * Remove ALL double characters
          */
-        return preg_replace('/('.$character.')\\1+/u'.($case_insensitive ? 'i' : ''), $replace, $source);
+        return preg_replace('/(.)\\1+/u'.($case_insensitive ? 'i' : ''), $replace, $source);
+
+    }catch(Exception $e){
+        throw new bException('str_nodouble(): Failed', $e);
     }
-
-    /*
-     * Remove ALL double characters
-     */
-    return preg_replace('/(.)\\1+/u'.($case_insensitive ? 'i' : ''), $replace, $source);
-
 }
 
 

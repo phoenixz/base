@@ -55,7 +55,7 @@ list                            - List currently available users. By default the
 
     -l --limit LIMIT            - Limit the amount of users to the
                                   specified number. Must be a natural number
-                                  1-5000, defaults to 100
+                                  1-99999, defaults to 100
 
 
 
@@ -92,7 +92,7 @@ rights                          - List the rights for the users. By default the
 
     -l --limit LIMIT            - Limit the amount of users to the
                                   specified number. Must be a natural number
-                                  1-5000, defaults to 100
+                                  1-99999, defaults to 100
 
 
 
@@ -432,8 +432,8 @@ switch(cli_method()){
 
         $execute     = array();
 
-        if(!is_natural($limit) or (!$limit > 5000)){
-            throw new bException(tr('--limit must be followed by a natural number lower than 5000'), 'warning/invalid');
+        if(!is_natural($limit) or (!$limit > 99999)){
+            throw new bException(tr('--limit must be followed by a natural number lower than 99999'), 'warning/invalid');
         }
 
         if($status and $deleted and $all){
@@ -587,8 +587,8 @@ switch(cli_method()){
 
         cli_no_arguments_left();
 
-        if(!is_natural($limit) or (!$limit > 5000)){
-            throw new bException(tr('--limit must be followed by a natural number lower than 5000'), 'warning/invalid');
+        if(!is_natural($limit, 0) or (!$limit > 99999)){
+            throw new bException(tr('--limit must be followed by a natural number lower than 99999'), 'warning/invalid');
         }
 
         if($status and $deleted and $all){
@@ -877,7 +877,7 @@ switch(cli_method()){
                 $query = 'DELETE FROM UPDATE users` WHERE  '.implode(' AND ', $where);
 
             case 'undelete':
-                $query = ' UPDATE `users`
+                $query = 'UPDATE `users`
 
                           SET    `status` = null
 

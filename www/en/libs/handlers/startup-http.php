@@ -54,13 +54,16 @@ load_libs('http,html,inet,cache'.(empty($_CONFIG['memcached']) ? '' : ',memcache
 
 
 /*
- * Check OPTIONS request.
- * If options was requested, just return basic HTTP headers
+ * Check HEAD and OPTIONS requests.
+ * If HEAD was requested, just return basic HTTP headers
  */
 // :TODO: Should pages themselves not check for this and perhaps send other headers?
-if($_SERVER['REQUEST_METHOD'] == 'OPTIONS'){
-    http_headers(200, 0);
-    die();
+switch($_SERVER['REQUEST_METHOD'] ){
+    case 'OPTIONS':
+under_construction();
+    case 'HEAD':
+        http_headers(200, 0);
+        die();
 }
 
 
