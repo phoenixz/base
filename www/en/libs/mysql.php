@@ -131,6 +131,7 @@ function mysql_dump($params){
 function mysql_get_database($db_name){
     try{
         $database = sql_get('SELECT    `databases`.`id`,
+                                       `databases`.`id` AS `databases_id`,
                                        `databases`.`servers_id`,
                                        `databases`.`status`,
                                        `databases`.`replication_status`,

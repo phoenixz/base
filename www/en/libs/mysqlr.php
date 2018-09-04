@@ -57,9 +57,9 @@ function mysqlr_update_database_replication_status($params, $status){
          * Update server and database replication_status
          */
         array_params($params);
-        array_default($params, 'database', '');
+        array_default($params, 'databases_id', '');
 
-        if(empty($params['database'])){
+        if(empty($params['databases_id'])){
             throw new bException(tr('mysqlr_update_database_replication_status(): No database specified'), 'not-specified');
         }
 
@@ -70,10 +70,10 @@ function mysqlr_update_database_replication_status($params, $status){
 
                    SET    `replication_status` = :replication_status
 
-                   WHERE  `name` = :name',
+                   WHERE  `id` = :id',
 
                    array(':replication_status' => $status,
-                         ':name'               => $params['database']));
+                         ':id'                 => $params['databases_id']));
 
     }catch(Exception $e){
         throw new bException(tr('mysqlr_update_database_replication_status(): Failed'), $e);
@@ -101,10 +101,10 @@ function mysqlr_update_replication_status($params, $status){
          * Update server and database replication_status
          */
         array_params($params);
-        array_default($params, 'database'  , '');
-        array_default($params, 'servers_id', '');
+        array_default($params, 'databases_id', '');
+        array_default($params, 'servers_id' , '');
 
-        if(empty($params['database'])){
+        if(empty($params['databases_id'])){
             throw new bException(tr('mysqlr_update_replication_status(): No database specified'), 'not-specified');
         }
 
@@ -120,7 +120,7 @@ function mysqlr_update_replication_status($params, $status){
         /*
          * Update database
          */
-        sql_query('UPDATE `databases` SET `replication_status` = :replication_status WHERE `name` = :name', array(':replication_status' => $status, ':name' => $params['database']));
+        sql_query('UPDATE `databases` SET `replication_status` = :replication_status WHERE `id` = :id', array(':replication_status' => $status, ':id' => $params['databases_id']));
 
     }catch(Exception $e){
         throw new bException(tr('mysqlr_update_replication_status(): Failed'), $e);
