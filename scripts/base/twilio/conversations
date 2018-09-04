@@ -32,7 +32,7 @@ switch(cli_method()){
 
         cli_no_arguments_left();
 
-        log_console(tr('Rebuilding twilio conversations'), '', 'white');
+        log_console(tr('Rebuilding twilio conversations'), 'white');
 
         sql_query('UPDATE `sms_messages` SET `conversations_id` = NULL;');
         sql_query('DELETE FROM `sms_conversations`;');
@@ -69,7 +69,7 @@ switch(cli_method()){
                               OR     `from_phone`       = :from_phone)');
 
             while($message = sql_fetch($r)){
-                cli_dot();
+                cli_dot(100);
                 $conversation = sms_get_conversation($message['from_phone'], $message['to_phone'], $message['type'], $message['createdon'], $repliedon_now);
 
                 $p->execute(array(':conversations_id' => $conversation['id'],
@@ -78,7 +78,7 @@ switch(cli_method()){
                                   ':type'             => $message['type']));
             }
 
-            log_console('Done', 'green');
+            log_console(tr('Done'), 'green');
         }
 
 
@@ -86,7 +86,7 @@ switch(cli_method()){
         /*
          * First clean all last_messages from conversations and rebuild them from scratch
          */
-        log_console('Rebuilding twilio conversation messages', 'conversations', 'white');
+        log_console(tr('Rebuilding twilio conversation messages'), 'white');
 
         sql_query('UPDATE `sms_conversations` SET `last_messages` = ""');
 
@@ -101,28 +101,28 @@ switch(cli_method()){
                           ORDER BY `createdon` DESC');
 
         if($repliedon_now){
-            $p = sql_prepare('UPDATE   `sms_conversations`
+            $p = sql_prepare('UPDATE `sms_conversations`
 
-                              SET      `last_messages` = :last_messages,
-                                       `direction`     = :direction,
-                                       `modifiedon`    = :modifiedon,
-                                       `repliedon`     = NOW()
+                              SET    `last_messages` = :last_messages,
+                                     `direction`     = :direction,
+                                     `modifiedon`    = :modifiedon,
+                                     `repliedon`     = NOW()
 
-                              WHERE    `id` = :id');
+                              WHERE  `id` = :id');
 
         }else{
-            $p = sql_prepare('UPDATE   `sms_conversations`
+            $p = sql_prepare('UPDATE `sms_conversations`
 
-                              SET      `last_messages` = :last_messages,
-                                       `direction`     = :direction,
-                                       `modifiedon`    = :modifiedon,
-                                       `repliedon`     = :repliedon
+                              SET    `last_messages` = :last_messages,
+                                     `direction`     = :direction,
+                                     `modifiedon`    = :modifiedon,
+                                     `repliedon`     = :repliedon
 
-                              WHERE    `id` = :id');
+                              WHERE  `id` = :id');
         }
 
         while($conversation = sql_fetch($r)){
-            cli_dot();
+            cli_dot(100);
 
             $msg_count  = 0;
             $repliedon  = null;
