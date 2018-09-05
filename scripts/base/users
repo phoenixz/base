@@ -707,7 +707,7 @@ switch(cli_method()){
             $where = ' WHERE '.implode(' AND ', $where);
         }
 
-        $r = sql_query($query.$where.($limit ? ' LIMIT '.$limit : ''), $execute);
+        $r = sql_query($query.$where.(ORDERBY ? ORDERBY : '').($limit ? ' LIMIT '.$limit : ''), $execute);
 
         if(!$r->rowCount()){
                 log_console(tr('There are currently no users registered'), 'QUIET/yellow');
