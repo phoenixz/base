@@ -829,6 +829,10 @@ switch(cli_method()){
     case 'delete':
         // FALLTRGOUGH
     case 'undelete':
+        // FALLTRGOUGH
+    case 'disable':
+        // FALLTRGOUGH
+    case 'enable':
         $users = cli_arguments();
 
         if(empty($users)){
@@ -879,7 +883,7 @@ switch(cli_method()){
             case 'undelete':
                 $query = 'UPDATE `users`
 
-                          SET    `status` = null
+                          SET    `status` = NULL
 
                           WHERE  '.implode(' AND ', $where);
                 break;
@@ -890,6 +894,22 @@ switch(cli_method()){
                           SET    `status` = "deleted"
 
                           WHERE  '.implode(' AND ', $where);
+                break;
+
+            case 'disable':
+                $query = 'UPDATE `users`
+
+                          SET    `status` = "disabled"
+
+                          WHERE  '.implode(' AND ', $where);
+                break;
+
+            case 'enable':
+                $query = ' UPDATE `users`
+
+                          SET    `status` = NULL
+
+                          WHERE  '.implode(' AND ', $where).' AND `status` = "disabled"';
                 break;
         }
 
