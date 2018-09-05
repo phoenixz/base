@@ -1,10 +1,10 @@
 #!/usr/bin/php
 <?php
 /*
- * This is an empty test script template
+ * This is the Phoundation command line interface setup script
  */
 $usage = './scripts/base/setup
-./scripts/base/setup';
+./scripts/base/setup [-F | --force]';
 
 $help  = 'This is the BASE framework install script. It will ask you a number of questions and from that setup and configure your BASE framework for your new project.';
 
@@ -27,8 +27,8 @@ log_console(tr('You will be asked a number of questions about your project, need
 /*
  * Required for config/project.php setup
  */
-$params['seed'] = str_random(mt_rand(16, 32));
-$fail           = true;
+$config['project']['seed'] = str_random(mt_rand(16, 32));
+$fail                      = true;
 
 
 
@@ -36,10 +36,10 @@ $fail           = true;
  * Get project name
  */
 while($fail){
-    $params['project_name'] = cli_readline(tr('What is the name of your project?'), false, 'cyan');
+    $config['project']['project_name'] = cli_readline(tr('What is the name of your project?'), false, 'cyan');
 
-    if(!preg_match('/[a-z-]{2,32}/i', $params['project_name'])){
-        log_console(tr('Please specify a valid project name. Valid project names can only contain "a-z-" and must be between 2 and 32 characters'), 'warning');
+    if(!preg_match('/[a-z-]{2,32}/i', $config['production']['project_name'])){
+        log_console(tr('Please specify a valid project name. Valid project names can only contain "a-z-", must be lower case, and must be between 2 and 32 characters'), 'warning');
         continue;
     }
 
@@ -52,9 +52,9 @@ while($fail){
  * Get project production domain
  */
 while($fail){
-    $params['domain'] = cli_readline(tr('What is the production domain name (without http://, or https://)?'), false, 'cyan');
+    $config['production']['domain'] = cli_readline(tr('What is the production domain name (without http://, or https://)?'), false, 'cyan');
 
-    if(!preg_match('/^(?!\-)(?:[a-zA-Z\d\-]{0,62}[a-zA-Z\d]\.){1,126}(?!\d+)[a-zA-Z\d]{1,63}$/', $params['domain'])){
+    if(!preg_match('/^(?!\-)(?:[a-zA-Z\d\-]{0,62}[a-zA-Z\d]\.){1,126}(?!\d+)[a-zA-Z\d]{1,63}$/', $config['production']['domain'])){
         log_console(tr('Please specify a valid domain name. It cannot surpass 255 characters, .'), 'warning');
         continue;
     }
@@ -68,21 +68,21 @@ while($fail){
  * Get project production domain
  */
 while($fail){
-    $params['multiple_sub_domains'] = cli_readline(tr('Will your project domain use multiple sub domains [N]?'), false, 'cyan');
+    $config['production']['multiple_sub_domains'] = cli_readline(tr('Will your project domain use multiple sub domains [N]?'), false, 'cyan');
 
-    switch($params['multiple_sub_domains']){
+    switch($config['production']['multiple_sub_domains']){
         case '':
             // FALLTRHOUGH
         case 'n':
             // FALLTRHOUGH
         case 'no':
-            $params['multiple_sub_domains'] = false;
+            $config['production']['multiple_sub_domains'] = false;
             break;
 
         case 'y':
             // FALLTRHOUGH
         case 'yes':
-            $params['multiple_sub_domains'] = true;
+            $config['production']['multiple_sub_domains'] = true;
             break;
 
         default:
@@ -98,15 +98,15 @@ while($fail){
 /*
  * Get project production domain
  */
-if(!$params['multiple_sub_domains']){
+if(!$config['production']['multiple_sub_domains']){
     while($fail){
-        $params['single_sub_domain'] = cli_readline(tr('Will your project domain use single sub domain? If no, just press enter, if yes, please specify the sub domain here'), false, 'cyan');
+        $config['production']['single_sub_domain'] = cli_readline(tr('Will your project domain use single sub domain? If no, just press enter, if yes, please specify the sub domain here'), false, 'cyan');
 
-        if(!$params['single_sub_domain']){
-            $params['single_sub_domain'] = '';
+        if(!$config['production']['single_sub_domain']){
+            $config['production']['single_sub_domain'] = '';
 
         }else{
-            if(!preg_match('/[a-z-]{1,63}/i', $params['db_core_user'])){
+            if(!preg_match('/[a-z-]{1,63}/i', $config['production']['db_core_user'])){
                 log_console(tr('Please specify a valid domain sections. Valid domain sections can only contain "a-z-" and must be between 1 and 63 characters'), 'warning');
                 continue;
             }
@@ -122,9 +122,9 @@ if(!$params['multiple_sub_domains']){
  * Get project production database
  */
 while($fail){
-    $params['db_core_db'] = cli_readline(tr('What is the production database name?'), false, 'cyan');
+    $config['production']['db_core_db'] = cli_readline(tr('What is the production database name?'), false, 'cyan');
 
-    if(!preg_match('/[0-9,a-z,A-Z$_]{2,16}/', $params['db_core_db'])){
+    if(!preg_match('/[0-9,a-z,A-Z$_]{2,16}/', $config['production']['db_core_db'])){
         log_console(tr('Please specify a valid database name. Valid database names can only contain "0-9,a-z,_" and must be between 2 and 16 characters'), 'warning');
         continue;
     }
@@ -138,9 +138,9 @@ while($fail){
  * Get project production database
  */
 while($fail){
-    $params['db_core_user'] = cli_readline(tr('What is the production database username?'), false, 'cyan');
+    $config['production']['db_core_user'] = cli_readline(tr('What is the production database username?'), false, 'cyan');
 
-    if(!preg_match('/[0-9,a-z,A-Z$_]{2,16}/', $params['db_core_user'])){
+    if(!preg_match('/[0-9,a-z,A-Z$_]{2,16}/', $config['production']['db_core_user'])){
         log_console(tr('Please specify a valid database name. Valid database usernames can only contain "a-z-" and must be between 2 and 16 characters'), 'warning');
         continue;
     }
@@ -154,7 +154,7 @@ while($fail){
  * Get project production database
  */
 while($fail){
-    $params['db_core_pass'] = cli_readline(tr('What is password to access your main database?'), false, 'cyan');
+    $config['production']['db_core_pass'] = cli_readline(tr('What is password to access your main database?'), false, 'cyan');
     break;
 }
 
@@ -163,9 +163,20 @@ while($fail){
 /*
  * Write project config/project.php file
  */
-log_console(tr('Writing project file...'), '', false);
-//config_write_project();
-log_console(' '.tr('Done!'), 'green');
+log_console(tr('Writing project file...'), 'white');
+config_write_project();
+
+unset($config['project']);
 
 
+
+/*
+ * Write project configuration files
+ */
+log_console(tr('Writing configuration files...'), 'white');
+
+foreach($config as $file => $data){
+    log_console(tr('Writing configuration file ":file"...', array(':file' => $file)));
+    config_write($file, $data);
+}
 ?>
