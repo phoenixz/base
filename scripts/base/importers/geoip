@@ -62,7 +62,7 @@ if(cli_argument('--no-download')){
     copy($path.'GeoLiteCity-latest.zip', $tmpdir.'GeoLiteCity-latest.zip');
 
 }else{
-    log_console(tr('Downloading geoip'));
+    log_console(tr('Downloading geoip'), 'white');
     passthru('wget http://geolite.maxmind.com/download/geoip/database/GeoLiteCity_CSV/GeoLiteCity-latest.zip -O '.$tmpdir.'GeoLiteCity-latest.zip');
 }
 
@@ -74,7 +74,7 @@ if(cli_argument('--no-unzip')){
     log_console(tr('Skipping unzip because of "nounzip" argument'), 'yellow');
 
 }else{
-    log_console(tr('Unzipping geoip'));
+    log_console(tr('Unzipping geoip'), 'white');
 
     try{
         safe_exec('cd '.$tmpdir.'; unzip '.$tmpdir.'GeoLiteCity-latest.zip');
@@ -95,7 +95,7 @@ if(cli_argument('--no-encoding')){
     log_console(tr('Not converting encoding of GEOIP data because of "noencoding" argument'), 'yellow');
 
 }else{
-    log_console(tr('Converting encoding of GEOIP'));
+    log_console(tr('Converting encoding of GEOIP'), 'white');
     safe_exec('cd '.$tmpdir.'GeoLiteCity_*/;iconv -t UTF-8 -f "ISO-8859-1" GeoLiteCity-Blocks.csv -o ../geoip_blocks.csv >> '.ROOT.'data/log/mysqlimport 2>&1');
     safe_exec('cd '.$tmpdir.'GeoLiteCity_*/;iconv -t UTF-8 -f "ISO-8859-1" GeoLiteCity-Location.csv -o ../geoip_location.csv >> '.ROOT.'data/log/mysqlimport 2>&1');
 }
@@ -135,7 +135,7 @@ if(cli_argument('--no-import')){
 
     sql_table_exists('geoip_location', '!RENAME TABLE `geoip_locations` TO `geoip_location`');
 
-    log_console(tr('Importing GEOIP blocks'));
+    log_console(tr('Importing GEOIP blocks'), 'white');
     sql_query('TRUNCATE `geoip_blocks`');
     safe_exec('mysqlimport --fields-terminated-by="," --fields-optionally-enclosed-by="\"" --lines-terminated-by="\n" --local --user='.$_CONFIG['db']['core']['user'].' --password=\''.$_CONFIG['db']['core']['pass'].'\' '.$_CONFIG['db']['core']['db'].' '.$tmpdir.'geoip_blocks.csv>> '.ROOT.'data/log/mysqlimport 2>&1');
 
@@ -156,7 +156,7 @@ if(cli_argument('--no-structures')){
     log_console(tr('Not fixing data structures due to "nostructures" argument'), 'yellow');
 
 }else{
-    log_console(tr('Fixing data structures geoip_locations'));
+    log_console(tr('Fixing data structures geoip_locations'), 'white');
     load_libs('sql_exists');
 
     /*
