@@ -3466,12 +3466,13 @@ function str_log($source, $truncate = 8187, $separator = ', '){
     try{
         try{
             load_libs('json');
+            $json_encode = 'json_encode_custom';
 
         }catch(Exception $e){
             /*
              * Fuck...
              */
-            return '*** str_log(): json library load failed, cannot show source string ***';
+            $json_encode = 'json_encode';
         }
 
         if(!$source){
@@ -3484,22 +3485,13 @@ function str_log($source, $truncate = 8187, $separator = ', '){
 
         if(!is_scalar($source)){
             if(is_array($source)){
-                try{
-                    $source = mb_trim(json_encode_custom($source));
-
-                }catch(Exception $e){
-                    /*
-                     * Most likely (basically only) reason for this would be that implode failed on imploding an array with sub arrays.
-                     * Use json_encode_custom() instead
-                     */
-                    $source = mb_trim(json_encode_custom($source));
-                }
+                $source = mb_trim($json_encode($source));
 
             }elseif(is_object($source) and ($source instanceof bException)){
                 $source = $source->getCode().' / '.$source->getMessage();
 
             }else{
-                $source = mb_trim(json_encode_custom($source));
+                $source = mb_trim($json_encode($source));
             }
         }
 
