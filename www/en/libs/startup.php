@@ -1695,6 +1695,9 @@ function domain($current_url = false, $query = null, $root = null, $domain = nul
         if($query){
             load_libs('inet');
             $retval = url_add_query($retval, $query);
+
+        }elseif($query === false){
+            $retval = str_until($retval, '?');
         }
 
         return $retval;
