@@ -328,7 +328,7 @@ function rights_validate($right, $old_right = null){
             $right = array_merge($old_right, $right);
         }
 
-        $v = new validate_form($right, 'name,description');
+        $v = new validate_form($right, 'id,name,description');
         $v->isNotEmpty ($right['name']    , tr('No rights name specified'));
         $v->hasMinChars($right['name'],  2, tr('Please ensure the right\'s name has at least 2 characters'));
         $v->hasMaxChars($right['name'], 32, tr('Please ensure the right\'s name has less than 32 characters'));
@@ -345,18 +345,13 @@ function rights_validate($right, $old_right = null){
         /*
          * Does the right already exist?
          */
-        if(empty($right['id'])){
-            if($id = sql_get('SELECT `id` FROM `rights` WHERE `name` = :name', array(':name' => $right['name']))){
-                $v->setError(tr('The right ":right" already exists with id ":id"', array(':right' => $right['name'], ':id' => $id)));
-            }
+        if($id = sql_get('SELECT `id` FROM `rights` WHERE `name` = :name AND `id` != :id', array(':name' => $right['name'], ':id' => $right['id']))){
+            $v->setError(tr('The right ":right" already exists with id ":id"', array(':right' => $right['name'], ':id' => $id)));
+        }
 
-        }else{
-            if($id = sql_get('SELECT `id` FROM `rights` WHERE `name` = :name AND `id` != :id', array(':name' => $right['name'], ':id' => $right['id']))){
-                $v->setError(tr('The right ":right" already exists with id ":id"', array(':right' => $right['name'], ':id' => $id)));
-            }
-
+        if(!empty($right['id'])){
             /*
-             * Also check if this is not the god right. If so, it CAN NOT be
+             * Check if this is not the god right. If so, it CAN NOT be
              * updated
              */
             $name = sql_get('SELECT `name` FROM `rights` WHERE `id` = :id', 'name', array(':id' => $right['id']));
