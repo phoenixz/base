@@ -3617,7 +3617,7 @@ function date_convert($date = null, $requested_format = 'human_datetime', $to_ti
          * Older systems will still have the timezone specified as a single string, newer as an array
          * The difference between these two can result in systems no longer starting up after an update
          */
-        if(!$to_timezone === null){
+        if($to_timezone === null){
             $to_timezone = TIMEZONE;
         }
 
