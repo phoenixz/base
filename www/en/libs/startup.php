@@ -745,7 +745,9 @@ function notify($params){
          *
          * Do NOT cause exception, because it its not caught, it might cause another notification, that will fail, cause exception and an endless loop!
          */
-        log_file(tr('Failed to notify event ":event" for classes ":classes" with message ":message"', array(':event' => isset_get($params['event']), ':classes' => isset_get($params['classes']), ':message' => isset_get($params['message']))), 'failed');
+        $params = array_force($params);
+        array_ensure($params, 'event,classes,message');
+        log_file(tr('Failed to notify event ":event" for classes ":classes" with message ":message"', array(':event' => $params['event'], ':classes' => $params['classes'], ':message' => $params['message'])), 'failed');
         return false;
     }
 }
@@ -4000,6 +4002,46 @@ function cf($source, $allow_null = true){
 
     }catch(Exception $e){
         throw new bException(tr('cf(): Failed'), $e);
+    }
+}
+
+
+
+/*
+ * $core is the main object for BASE. It starts automatically once the startup library is loaded, determines the platform (cli or http), and in case of http, what the call type is. The call type differentiates between http web pages, admin web pages (pages with /admin, showing the admin section), ajax requests (URL's starting with /ajax), api requests (URL's starting with /api), system pages (any 404, 403, 500, 503, etc. page), Google AMP pages (any URL starting with /amp), and explicit mobile pages (any URL starting with /mobile). $core will automatically run the correct handler for the specified request, which will automatically load the required libraries, setup timezones, configure language and locale, and load the custom library. After that, control is returned to the webpage that called the startup library
+ *
+ * @author Sven Olaf Oostenbrink <sven@capmega.com>
+ * @copyright Copyright (c) 2018 Capmega
+ * @license http://opensource.org/licenses/GPL-2.0 GNU Public License, Version 2
+ * @category Function reference
+ * @package startup
+ *
+ * @param string $value
+ * @param boolean $default
+ * @return boolean
+ */
+function get_true_false($value, $default){
+    try{
+        switch($value){
+            case '':
+                return $default;
+
+            case tr('n'):
+                // FALLTRHOUGH
+            case tr('no'):
+                return false;
+
+            case tr('y'):
+                // FALLTRHOUGH
+            case tr('yes'):
+                return true;
+
+            default:
+                throw new bException(tr('get_true_false(): Please specify y / yes or n / no, or just <enter> for the default value.'), 'warning');
+        }
+
+    }catch(Exception $e){
+        throw new bException(tr('get_true_false(): Failed'), $e);
     }
 }
 ?>
