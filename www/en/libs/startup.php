@@ -4040,7 +4040,7 @@ function get_true_false($value, $default){
                 return true;
 
             default:
-                throw new bException(tr('get_true_false(): Please specify y / yes or n / no, or just <enter> for the default value.'), 'warning');
+                throw new bException(tr('get_true_false(): Please specify y / yes or n / no, or nothing for the default value.'), 'warning');
         }
 
     }catch(Exception $e){
