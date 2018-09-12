@@ -21,7 +21,10 @@ switch(cli_method()){
                                     `status`,
                                     `description`
 
-                             FROM   `rights`'.(LIMIT ? ' LIMIT '.LIMIT : ''));
+                             FROM   `rights`
+
+                             WHERE  `status` IS NULL
+                             OR     `status` != "_new" '.(LIMIT ? ' LIMIT '.LIMIT : ''));
 
         if(!$rights->rowCount()){
             log_console(tr('There are currently no rights available'), 'QUIET/yellow');
@@ -53,9 +56,10 @@ switch(cli_method()){
 
                          FROM   `users`
 
-                         WHERE  `id`       = :id
+                         WHERE (`id`       = :id
                          OR     `email`    = :email
-                         OR     `username` = :username',
+                         OR     `username` = :username)
+                         AND    `status`   IS NULL',
 
                          array(':id'       => $requested,
                                ':email'    => $requested,
@@ -72,6 +76,7 @@ switch(cli_method()){
 
                              LEFT JOIN `rights`
                              ON        `rights`.`id`             = `users_rights`.`rights_id`
+                             AND       `rights`.`status`         IS NULL
 
                              WHERE     `users_rights`.`users_id` = :users_id',
 
