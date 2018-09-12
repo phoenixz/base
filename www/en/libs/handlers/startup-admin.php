@@ -28,6 +28,7 @@ define('TEST'    , false);
 define('VERBOSE' , false);
 define('QUIET'   , false);
 define('LIMIT'   , false);
+define('ORDERBY' , false);
 define('STARTDIR', slash(getcwd()));
 
 

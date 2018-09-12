@@ -12,6 +12,15 @@
 
 /*
  * Return configuration for specified environment
+ *
+ * @author Sven Olaf Oostenbrink <sven@capmega.com>
+ * @copyright Copyright (c) 2018 Capmega
+ * @license http://opensource.org/licenses/GPL-2.0 GNU Public License, Version 2
+ * @category Function reference
+ * @package startup
+ *
+ * @param string $environment
+ * @return array
  */
 function config_get_for_environment($environment){
     try{
@@ -41,6 +50,12 @@ function config_get_for_environment($environment){
 
 /*
  * Return configuration for specified environment with entry description (from commentaries) as well
+ *
+ * @author Sven Olaf Oostenbrink <sven@capmega.com>
+ * @copyright Copyright (c) 2018 Capmega
+ * @license http://opensource.org/licenses/GPL-2.0 GNU Public License, Version 2
+ * @category Function reference
+ * @package startup
  *
  * @param string $environment The environment for the configuration file you wish to read.
  * @param string (optional) $section a non default configuration section.
@@ -95,7 +110,15 @@ function config_read($environment, $section = null){
                     /*
                      * The value is an array that can contain various keys, values and descriptions
                      */
+                    $section['__value__'] = str_replace('::', '____', $section['__value__']);
                     $section['__value__'] = array_tokenizer($section['__value__']);
+
+                    foreach($section['__value__'] as $key => $value){
+                        if(strstr($key, '____')){
+                            $section['__value__'][str_replace('____', '::', $key)] = $value;
+                            unset($section['__value__'][$key]);
+                        }
+                    }
 
                 }else{
                     /*
@@ -130,6 +153,12 @@ function config_read($environment, $section = null){
  * $section are not specified, then the function will not write the information
  * to disk, but return it. This is used internally by this function to create
  * the recursed arrays.
+ *
+ * @author Sven Olaf Oostenbrink <sven@capmega.com>
+ * @copyright Copyright (c) 2018 Capmega
+ * @license http://opensource.org/licenses/GPL-2.0 GNU Public License, Version 2
+ * @category Function reference
+ * @package startup
  *
  * @param $data Contains the configuration data that will be written
  * @param $environment
@@ -169,7 +198,13 @@ function config_write($data, $environment, $section = false){
         $lines = "<?php\n/* THIS CONFIGURATION FILE HAS BEEN GENERATED AUTOMATICALLY BY BASE */\n\n".implode("\n", $lines)."?>";
 
         load_libs('file');
-        file_execute_mode($file, 0660, function($params, $file) use($lines) { file_put_contents($file, $lines); });
+
+        file_execute_mode(dirname($file), 0770, function($params, $path) use($lines, $file) {
+            file_execute_mode($file, 0660, function($params, $path) use($lines, $file) {
+                file_put_contents($file, $lines);
+            });
+        });
+
         return true;
 
     }catch(Exception $e){
@@ -181,6 +216,12 @@ function config_write($data, $environment, $section = false){
 
 /*
  * Update the specified configuration section with the specified value. Only configuration leafs can be updated, configuration branches (arrays) can NOT be updated at once.
+ *
+ * @author Sven Olaf Oostenbrink <sven@capmega.com>
+ * @copyright Copyright (c) 2018 Capmega
+ * @license http://opensource.org/licenses/GPL-2.0 GNU Public License, Version 2
+ * @category Function reference
+ * @package startup
  *
  * @param $environment
  * @param $keys mixed CSV string or array containg the keys pointing to the configuration leaf that must be updated
@@ -263,6 +304,12 @@ function config_update($environment, $keys, $value){
 
 /*
  * Build up configuration lines
+ *
+ * @author Sven Olaf Oostenbrink <sven@capmega.com>
+ * @copyright Copyright (c) 2018 Capmega
+ * @license http://opensource.org/licenses/GPL-2.0 GNU Public License, Version 2
+ * @category Function reference
+ * @package startup
  *
  * @param $key
  * @param $value

@@ -494,7 +494,7 @@ function image_interlace_valid($value, $source = false){
             break;
 
         default:
-            throw new bException(tr('image_interlace_valid(): Unknown interlace value "%value%" specified', array('%value%' => $value)), 'unknown');
+            throw new bException(tr('image_interlace_valid(): Unknown interlace value ":value" specified', array(':value' => $value)), 'unknown');
     }
 }
 

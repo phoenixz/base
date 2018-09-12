@@ -1,15 +1,16 @@
 #!/usr/bin/php
 <?php
 /*
- * This is an empty test script template
+ * This is the Phoundation command line interface setup script
  */
-$usage = './scripts/base/setup
-./scripts/base/setup';
+$usage = './scripts/base/setup [PROJECTNAME]
+./scripts/base/setup [-F | --force]';
 
 $help  = 'This is the BASE framework install script. It will ask you a number of questions and from that setup and configure your BASE framework for your new project.';
 
 require_once(__DIR__.'/../../libs/startup.php');
 cli_only();
+load_libs('config');
 
 if(SEED){
     if(!FORCE){
@@ -25,10 +26,13 @@ log_console(tr('You will be asked a number of questions about your project, need
 
 
 /*
- * Required for config/project.php setup
+ * Required variables for config/project.php setup, default values, etc.
  */
-$params['seed'] = str_random(mt_rand(16, 32));
-$fail           = true;
+$fail    = true;
+$version = '0.1.0';
+$name    = cli_argument(0);
+$config  = array('project'    => array('seed' => str_random(mt_rand(16, 32))),
+                 'production' => array(''     => config_read('production')));
 
 
 
@@ -36,10 +40,39 @@ $fail           = true;
  * Get project name
  */
 while($fail){
-    $params['project_name'] = cli_readline(tr('What is the name of your project?'), false, 'cyan');
+    $config['project']['name'] = cli_readline(tr('What is the name of your project'.($name ? ' ['.$name.'] ' : '').'?'), false, 'cyan');
 
-    if(!preg_match('/[a-z-]{2,32}/i', $params['project_name'])){
-        log_console(tr('Please specify a valid project name. Valid project names can only contain "a-z-" and must be between 2 and 32 characters'), 'warning');
+    $match = preg_match('/[a-z-]{2,32}/', $config['project']['name']);
+
+    if(!$match){
+        if(!$config['project']['name'] and $name){
+            $config['project']['name'] = $name;
+
+        }else{
+            log_console(tr('Please specify a valid project name. Valid project names can only contain "a-z-", must be lower case, and must be between 2 and 32 characters'), 'warning');
+            continue;
+        }
+    }
+
+    break;
+}
+
+
+
+/*
+ * Get project version
+ */
+while($fail){
+    $config['project']['version'] = cli_readline(tr('What is the version of your project [:default] ?', array(':default' => $version)), false, 'cyan');
+
+    if(!$config['project']['version']){
+        $config['project']['version'] = $version;
+    }
+
+    $match = preg_match('/[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}/i', $config['project']['version']);
+
+    if(!$match){
+        log_console(tr('Please specify a valid project version. Valid project versions must have the form of number.number.number, like for example "0.1.0"'), 'warning');
         continue;
     }
 
@@ -52,9 +85,15 @@ while($fail){
  * Get project production domain
  */
 while($fail){
-    $params['domain'] = cli_readline(tr('What is the production domain name (without http://, or https://)?'), false, 'cyan');
+    $config['production']['']['domain']['__value__'] = cli_readline(tr('What is the production FQDN (Fully Qualified Domain Name, without http://, or https://) [:fqdn] ?', array(':fqdn' => $config['project']['name'].'.com')), false, 'cyan');
 
-    if(!preg_match('/^(?!\-)(?:[a-zA-Z\d\-]{0,62}[a-zA-Z\d]\.){1,126}(?!\d+)[a-zA-Z\d]{1,63}$/', $params['domain'])){
+    if(!$config['production']['']['domain']['__value__']){
+        $config['production']['']['domain']['__value__'] = $config['project']['name'].'.com';
+    }
+
+    $match = preg_match('/^(?!\-)(?:[a-zA-Z\d\-]{0,62}[a-zA-Z\d]\.){1,126}(?!\d+)[a-zA-Z\d]{1,63}$/', $config['production']['']['domain']['__value__']);
+
+    if(!$match){
         log_console(tr('Please specify a valid domain name. It cannot surpass 255 characters, .'), 'warning');
         continue;
     }
@@ -68,29 +107,14 @@ while($fail){
  * Get project production domain
  */
 while($fail){
-    $params['multiple_sub_domains'] = cli_readline(tr('Will your project domain use multiple sub domains [N]?'), false, 'cyan');
+    try{
+        $multiple_sub_domains = cli_readline(tr('Will your project domain use multiple sub domains [N]?'), false, 'cyan');
+        $multiple_sub_domains = get_true_false($multiple_sub_domains, false);
+        break;
 
-    switch($params['multiple_sub_domains']){
-        case '':
-            // FALLTRHOUGH
-        case 'n':
-            // FALLTRHOUGH
-        case 'no':
-            $params['multiple_sub_domains'] = false;
-            break;
-
-        case 'y':
-            // FALLTRHOUGH
-        case 'yes':
-            $params['multiple_sub_domains'] = true;
-            break;
-
-        default:
-            log_console(tr('Please specify y / yes or n / no.'), 'warning');
-            continue;
+    }catch(Exception $e){
+        log_console(tr('Please specify y / yes or n / no, or just <enter> for the default value.'), 'warning');
     }
-
-    break;
 }
 
 
@@ -98,15 +122,17 @@ while($fail){
 /*
  * Get project production domain
  */
-if(!$params['multiple_sub_domains']){
-    while($fail){
-        $params['single_sub_domain'] = cli_readline(tr('Will your project domain use single sub domain? If no, just press enter, if yes, please specify the sub domain here'), false, 'cyan');
+if($multiple_sub_domains){
 
-        if(!$params['single_sub_domain']){
-            $params['single_sub_domain'] = '';
+}else{
+    while($fail){
+        $single_sub_domain = cli_readline(tr('Will your project domain use single sub domain? If no, just press enter, if yes, please specify the sub domain here: '), false, 'cyan');
+
+        if(!$single_sub_domain){
+            $single_sub_domain = '';
 
         }else{
-            if(!preg_match('/[a-z-]{1,63}/i', $params['db_core_user'])){
+            if(!preg_match('/[a-z-]{1,63}/i', $single_sub_domain)){
                 log_console(tr('Please specify a valid domain sections. Valid domain sections can only contain "a-z-" and must be between 1 and 63 characters'), 'warning');
                 continue;
             }
@@ -119,12 +145,47 @@ if(!$params['multiple_sub_domains']){
 
 
 /*
+ * Get cookie domain configuration
+ */
+if($multiple_sub_domains or $single_sub_domain){
+    $config['production']['']['whitelabels']['__value__'] = 'sub';
+
+    while($fail){
+        try{
+            $sub_domain_cookies = cli_readline(tr('Will cookie scope include all sub domains [Y]?'), false, 'cyan');
+            $sub_domain_cookies = get_true_false($sub_domain_cookies, true);
+
+            if($sub_domain_cookies){
+                $config['production']['']['cookie']['domain']['__value__'] = '.'.$config['production']['']['domain']['__value__'];
+
+            }else{
+                $config['production']['']['cookie']['domain']['__value__'] = $config['production']['']['domain']['__value__'];
+            }
+
+            break;
+
+        }catch(Exception $e){
+            log_console(tr('Please specify y / yes or n / no, or just <enter> for the default value.'), 'warning');
+        }
+    }
+
+}else{
+    $config['production']['']['cookie']['domain']['__value__'] = $config['production']['']['domain']['__value__'];
+}
+
+
+
+/*
  * Get project production database
  */
 while($fail){
-    $params['db_core_db'] = cli_readline(tr('What is the production database name?'), false, 'cyan');
+    $config['production']['']['db']['core']['db']['__value__'] = cli_readline(tr('What is the production database name [:default] ?', array(':default' => str_until($config['production']['']['domain']['__value__'], '.'))), false, 'cyan');
 
-    if(!preg_match('/[0-9,a-z,A-Z$_]{2,16}/', $params['db_core_db'])){
+    if(!$config['production']['']['db']['core']['db']['__value__']){
+        $config['production']['']['db']['core']['db']['__value__'] = str_until($config['production']['']['domain']['__value__'], '.');
+    }
+
+    if(!preg_match('/[0-9,a-z,A-Z$_]{2,16}/', $config['production']['']['db']['core']['db']['__value__'])){
         log_console(tr('Please specify a valid database name. Valid database names can only contain "0-9,a-z,_" and must be between 2 and 16 characters'), 'warning');
         continue;
     }
@@ -135,12 +196,16 @@ while($fail){
 
 
 /*
- * Get project production database
+ * Get project production database username
  */
 while($fail){
-    $params['db_core_user'] = cli_readline(tr('What is the production database username?'), false, 'cyan');
+    $config['production']['']['db']['core']['user']['__value__'] = cli_readline(tr('What is the production database username [:default] ?', array(':default' => str_until($config['production']['']['domain']['__value__'], '.'))), false, 'cyan');
 
-    if(!preg_match('/[0-9,a-z,A-Z$_]{2,16}/', $params['db_core_user'])){
+    if(!$config['production']['']['db']['core']['user']['__value__']){
+        $config['production']['']['db']['core']['user']['__value__'] = str_until($config['production']['']['domain']['__value__'], '.');
+    }
+
+    if(!preg_match('/[0-9,a-z,A-Z$_]{2,16}/', $config['production']['']['db']['core']['user']['__value__'])){
         log_console(tr('Please specify a valid database name. Valid database usernames can only contain "a-z-" and must be between 2 and 16 characters'), 'warning');
         continue;
     }
@@ -151,10 +216,34 @@ while($fail){
 
 
 /*
- * Get project production database
+ * Get project production database password
  */
 while($fail){
-    $params['db_core_pass'] = cli_readline(tr('What is password to access your main database?'), false, 'cyan');
+    $password = str_random(16);
+
+    $config['production']['']['db']['core']['pass']['__value__'] = cli_readline(tr('What is the production database user password to access your main database [:password] ?', array(':password' => $password)), false, 'cyan');
+
+    if(!$config['production']['']['db']['core']['pass']['__value__']){
+        $config['production']['']['db']['core']['pass']['__value__'] = $password;
+    }
+    break;
+}
+
+
+
+/*
+ * Get project production database timezone
+ */
+while($fail){
+    $timezone = 'UTC';
+
+    $config['production']['']['db']['core']['timezone']['__value__'] = cli_readline(tr('What is the production database user password to access your main database [:default] ?', array(':default' => $timezone)), false, 'cyan');
+
+    if(!$config['production']['']['db']['core']['timezone']['__value__']){
+        $config['production']['']['db']['core']['timezone']['__value__'] = $timezone;
+    }
+
+    $timezone = strtoupper($timezone);
     break;
 }
 
@@ -163,9 +252,24 @@ while($fail){
 /*
  * Write project config/project.php file
  */
-log_console(tr('Writing project file...'), '', false);
-//config_write_project();
-log_console(' '.tr('Done!'), 'green');
+log_console(tr('Writing project file...'), 'white');
+config_write_project($config['project']['name'], $config['project']['version'], $config['project']['seed']);
+
+unset($config['project']);
 
 
+
+/*
+ * Write project configuration files
+ */
+log_console(tr('Writing configuration files...'), 'white');
+
+foreach($config as $environment => $files){
+    log_console(tr('Writing configuration environment ":environment"...', array(':environment' => $environment)));
+
+    foreach($files as $file => $data){
+        log_console(tr('Writing configuration file ":file"...', array(':file' => $environment.($file ? '_'.$file : ''))));
+        config_write($data, $environment, $file);
+    }
+}
 ?>

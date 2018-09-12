@@ -70,7 +70,7 @@ if(!PROJECT){
     throw new bException(tr('This project has no project name, perhaps you are trying to run this on the base project?'), 'warning/invalid');
 }
 
-$base_only = (PROJECT == 'INGIGA_TOOLKIT');
+$base_only = (PROJECT == 'CAPMEGA_TOOLKIT');
 
 
 

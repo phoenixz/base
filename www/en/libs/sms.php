@@ -46,7 +46,19 @@ function sms_send_message($message, $to, $from = null){
 
 
 /*
+ * Get the conversation between the specified local and remote phone numbers
  *
+ * @copyright Copyright (c) 2018 Capmega
+ * @license http://opensource.org/licenses/GPL-2.0 GNU Public License, Version 2
+ * @category Function reference
+ * @package sms
+ *
+ * @param string $phone_local
+ * @param string $phone_remote
+ * @param string $type
+ * @param integer $createdon
+ * @param integer $repliedon_now
+ * @return array
  */
 function sms_get_conversation($phone_local, $phone_remote, $type, $createdon = null, $repliedon_now = false){
     global $_CONFIG;

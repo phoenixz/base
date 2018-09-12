@@ -23,7 +23,7 @@ try{
     define('ADMIN'   , '');
     define('SCRIPT'  , str_runtil(str_rfrom($_SERVER['PHP_SELF'], '/'), '.php'));
     define('PWD'     , slash(isset_get($_SERVER['PWD'])));
-    define('VERBOSE' , ((!empty($GLOBALS['quiet']) or cli_argument('-V,--verbose')) ? 'VERBOSE' : ''));
+    define('VERBOSE' , (cli_argument('-V,--verbose') ? 'VERBOSE' : ''));
     define('QUIET'   , cli_argument('-Q,--quiet'));
     define('FORCE'   , cli_argument('-F,--force'));
     define('NOCOLOR' , cli_argument('-C,--no-color'));
@@ -100,30 +100,24 @@ try{
 
                 }else{
                     if(empty($GLOBALS['help'])){
-                        log_console(tr('Sorry, this script has no help text defined yet'), 'yellow');
+                        throw new bException(tr('Sorry, this script has no help text defined'), 'warning');
+                    }
+
+                    $GLOBALS['help'] = array_force($GLOBALS['help'], "\n");
+
+                    if(count($GLOBALS['help']) == 1){
+                        log_console(array_shift($GLOBALS['help']), 'white');
 
                     }else{
-                        $GLOBALS['help'] = array_force($GLOBALS['help'], "\n");
-
-                        if(count($GLOBALS['help']) == 1){
-                            log_console(array_shift($GLOBALS['help']), 'white');
-
-                        }else{
-                            foreach(array_force($GLOBALS['help'], "\n") as $line){
-                                log_console($line, 'white');
-                            }
-
-                            log_console();
+                        foreach(array_force($GLOBALS['help'], "\n") as $line){
+                            log_console($line, 'white');
                         }
+
+                        log_console();
                     }
                 }
 
                 $die = 0;
-                break;
-
-            case '-V':
-                // FALLTHROUGH
-            case '--verbose':
                 break;
 
             case '-L':
@@ -133,15 +127,14 @@ try{
                  * Set language to be used
                  */
                 if(isset($language)){
-                    throw new Exception('Language has been specified twice');
+                    throw new bException(tr('startup-cli: Language has been specified twice'), 'exists');
                 }
 
                 if(!isset($GLOBALS['argv'][$argid + 1])){
-                    throw new Exception('startup-cli: The "language" argument requires a two letter language core right after it');
-
-                }else{
-                    $language = $GLOBALS['argv'][$argid + 1];
+                    throw new bException(tr('startup-cli: The "language" argument requires a two letter language core right after it'), 'invalid');
                 }
+
+                $language = $GLOBALS['argv'][$argid + 1];
 
                 unset($GLOBALS['argv'][$argid]);
                 unset($GLOBALS['argv'][$argid + 1]);
@@ -154,14 +147,31 @@ try{
                  * Set environment and reset next
                  */
                 if(isset($environment)){
-                    throw new Exception('Environment has been specified twice');
+                    throw new bException(tr('startup-cli: Environment has been specified twice'), 'exists');
                 }
 
                 if(!isset($GLOBALS['argv'][$argid + 1])){
-                    throw new Exception('startup-cli: The "environment" argument requires an existing environment name right after it');
+                    throw new bException(tr('startup-cli: The "environment" argument requires an existing environment name right after it'), 'invalid');
+                }
 
-                }else{
-                    $environment = $GLOBALS['argv'][$argid + 1];
+                $environment = $GLOBALS['argv'][$argid + 1];
+
+                unset($GLOBALS['argv'][$argid]);
+                unset($GLOBALS['argv'][$argid + 1]);
+                break;
+
+            case '-O':
+                // TALLTHROUGH
+            case '--orderby':
+                define('ORDERBY', ' ORDER BY `'.str_until($GLOBALS['argv'][$argid + 1], ' ').'` '.str_from($GLOBALS['argv'][$argid + 1], ' ').' ');
+
+                $valid = preg_match('/^ ORDER BY `[a-z0-9_]+`(?:\s+(?:DESC|ASC))? $/', ORDERBY);
+
+                if(!$valid){
+                    /*
+                     * The specified column ordering is NOT valid
+                     */
+                    throw new bException(tr('startup-cli: The specified orderby argument ":argument" is invalid', array(':argument' => ORDERBY)), 'invalid');
                 }
 
                 unset($GLOBALS['argv'][$argid]);
@@ -173,15 +183,15 @@ try{
                  * Set timezone
                  */
                 if(isset($timezone)){
-                    throw new Exception('Timezone has been specified twice');
+                    throw new bException(tr('startup-cli: Timezone has been specified twice'), 'exists');
                 }
 
                 if(!isset($GLOBALS['argv'][$argid + 1])){
-                    throw new Exception('startup-cli: The "timezone" argument requires a valid and existing timezone name right after it');
+                    throw new bException(tr('startup-cli: The "timezone" argument requires a valid and existing timezone name right after it'), 'invalid');
 
-                }else{
-                    $timezone = $GLOBALS['argv'][$argid + 1];
                 }
+
+                $timezone = $GLOBALS['argv'][$argid + 1];
 
                 unset($GLOBALS['argv'][$argid]);
                 unset($GLOBALS['argv'][$argid + 1]);
@@ -198,6 +208,10 @@ try{
     unset($arg);
     unset($argid);
 
+    if(!defined('ORDERBY')){
+        define('ORDERBY', '');
+    }
+
 }catch(Exception $e){
     echo "startup-cli: Command line parser failed with \"".$e->getMessage()."\"\n";
     $core->register['exit_code'] = 1;
@@ -205,6 +219,7 @@ try{
 }
 
 if(isset($die)){
+    $core->register['ready']     = true;
     $core->register['exit_code'] = $die;
     die($die);
 }

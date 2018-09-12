@@ -440,8 +440,8 @@ function email_get_conversation($email){
                                  FROM   `email_conversations`
 
                                  WHERE ((`us`      LIKE :us1     AND `them`    LIKE :them1)
-                                 OR     (`us`      LIKE :them2   AND `them`    LIKE :us2)
-                                 AND    (`subject` =    :subject OR  `subject` =    :resubject))',
+                                 OR     (`us`      LIKE :them2   AND `them`    LIKE :us2))
+                                 AND    (`subject` =    :subject OR  `subject` =    :resubject)',
 
                                  array(':us1'       => '%'.$email['to'].'%',
                                        ':them1'     => '%'.$email['from'].'%',

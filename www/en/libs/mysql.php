@@ -131,10 +131,11 @@ function mysql_dump($params){
 function mysql_get_database($db_name){
     try{
         $database = sql_get('SELECT    `databases`.`id`,
+                                       `databases`.`id` AS `databases_id`,
                                        `databases`.`servers_id`,
                                        `databases`.`status`,
                                        `databases`.`replication_status`,
-                                       `databases`.`name` AS `database`,
+                                       `databases`.`name` AS `database_name`,
                                        `databases`.`error`,
 
                                        `servers`.`id` AS `servers_id`,
@@ -160,7 +161,7 @@ function mysql_get_database($db_name){
                              array(':name' => $db_name));
 
         if(!$database){
-            throw new bException(log_database(tr('Specified database ":database" does not exist', array(':database' => $_GET['database'])), 'not-exist'));
+            throw new bException(log_database(tr('Specified database ":database" does not exist', array(':database' => $db_name)), 'not-exist'));
         }
 
         return $database;

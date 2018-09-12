@@ -436,7 +436,7 @@ function tasks_reset($tasks_id){
  * Mark the specified task, plus all tasks that have this task as a parent, as
  * failed
  */
-function tasks_failed(){
+function tasks_failed($tasks_id){
     try{
         sql_query('UPDATE `tasks` SET `status` = "failed" WHERE `id` = :id', array(':id' => $tasks_id));
 

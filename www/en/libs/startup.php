@@ -20,7 +20,7 @@
 /*
  * Framework version
  */
-define('FRAMEWORKCODEVERSION', '1.17.4');
+define('FRAMEWORKCODEVERSION', '1.17.5');
 
 
 
@@ -745,7 +745,9 @@ function notify($params){
          *
          * Do NOT cause exception, because it its not caught, it might cause another notification, that will fail, cause exception and an endless loop!
          */
-        log_file(tr('Failed to notify event ":event" for classes ":classes" with message ":message"', array(':event' => isset_get($params['event']), ':classes' => isset_get($params['classes']), ':message' => isset_get($params['message']))), 'failed');
+        $params = array_force($params);
+        array_ensure($params, 'event,classes,message');
+        log_file(tr('Failed to notify event ":event" for classes ":classes" with message ":message"', array(':event' => $params['event'], ':classes' => $params['classes'], ':message' => $params['message'])), 'failed');
         return false;
     }
 }
@@ -1693,6 +1695,9 @@ function domain($current_url = false, $query = null, $root = null, $domain = nul
         if($query){
             load_libs('inet');
             $retval = url_add_query($retval, $query);
+
+        }elseif($query === false){
+            $retval = str_until($retval, '?');
         }
 
         return $retval;
@@ -3098,6 +3103,7 @@ function cdn_domain($file, $section = 'pub', $false_on_not_exist = false, $force
 
         return domain($file);
 
+// :TODO: What why where?
         ///*
         // * We have a CDN server in session? If not, get one.
         // */
@@ -3174,7 +3180,7 @@ function str_from($source, $needle, $more = 0){
         return mb_substr($source, $pos + mb_strlen($needle) - $more);
 
     }catch(Exception $e){
-        throw new bException('str_from(): Failed for "'.str_log($source).'"', $e);
+        throw new bException(tr('str_from(): Failed for string ":string"', array(':string' => $source)), $e);
     }
 }
 
@@ -3196,7 +3202,7 @@ function str_until($source, $needle, $more = 0, $start = 0){
         return mb_substr($source, $start, $pos + $more);
 
     }catch(Exception $e){
-        throw new bException('str_until(): Failed for "'.str_log($source).'"', $e);
+        throw new bException(tr('str_until(): Failed for string ":string"', array(':string' => $source)), $e);
     }
 }
 
@@ -3218,7 +3224,7 @@ function str_rfrom($source, $needle, $more = 0){
         return mb_substr($source, $pos + mb_strlen($needle) - $more);
 
     }catch(Exception $e){
-        throw new bException('str_rfrom(): Failed for "'.str_log($source).'"', $e);
+        throw new bException(tr('str_rfrom(): Failed for string ":string"', array(':string' => $source)), $e);
     }
 }
 
@@ -3240,7 +3246,7 @@ function str_runtil($source, $needle, $more = 0, $start = 0){
         return mb_substr($source, $start, $pos + $more);
 
     }catch(Exception $e){
-        throw new bException('str_runtil(): Failed for "'.str_log($source).'"', $e);
+        throw new bException(tr('str_runtil(): Failed for string ":string"', array(':string' => $source)), $e);
     }
 }
 
@@ -3250,11 +3256,16 @@ function str_runtil($source, $needle, $more = 0, $start = 0){
  * Ensure that specified source string starts with specified string
  */
 function str_starts($source, $string){
-    if(mb_substr($source, 0, mb_strlen($string)) == $string){
-        return $source;
-    }
+    try{
+        if(mb_substr($source, 0, mb_strlen($string)) == $string){
+            return $source;
+        }
 
-    return $string.$source;
+        return $string.$source;
+
+    }catch(Exception $e){
+        throw new bException(tr('str_starts(): Failed for ":source"', array(':source' => $source)), $e);
+    }
 }
 
 
@@ -3263,11 +3274,16 @@ function str_starts($source, $string){
  * Ensure that specified source string starts NOT with specified string
  */
 function str_starts_not($source, $string){
-    while(mb_substr($source, 0, mb_strlen($string)) == $string){
-        $source = mb_substr($source, mb_strlen($string));
-    }
+    try{
+        while(mb_substr($source, 0, mb_strlen($string)) == $string){
+            $source = mb_substr($source, mb_strlen($string));
+        }
 
-    return $source;
+        return $source;
+
+    }catch(Exception $e){
+        throw new bException(tr('str_starts_not(): Failed for ":source"', array(':source' => $source)), $e);
+    }
 }
 
 
@@ -3371,18 +3387,22 @@ function unslash($string, $loop = true){
  * Remove double "replace" chars
  */
 function str_nodouble($source, $replace = '\1', $character = null, $case_insensitive = true){
-    if($character){
+    try{
+        if($character){
+            /*
+             * Remove specific character
+             */
+            return preg_replace('/('.$character.')\\1+/u'.($case_insensitive ? 'i' : ''), $replace, $source);
+        }
+
         /*
-         * Remove specific character
+         * Remove ALL double characters
          */
-        return preg_replace('/('.$character.')\\1+/u'.($case_insensitive ? 'i' : ''), $replace, $source);
+        return preg_replace('/(.)\\1+/u'.($case_insensitive ? 'i' : ''), $replace, $source);
+
+    }catch(Exception $e){
+        throw new bException('str_nodouble(): Failed', $e);
     }
-
-    /*
-     * Remove ALL double characters
-     */
-    return preg_replace('/(.)\\1+/u'.($case_insensitive ? 'i' : ''), $replace, $source);
-
 }
 
 
@@ -3451,12 +3471,13 @@ function str_log($source, $truncate = 8187, $separator = ', '){
     try{
         try{
             load_libs('json');
+            $json_encode = 'json_encode_custom';
 
         }catch(Exception $e){
             /*
              * Fuck...
              */
-            return '*** str_log(): json library load failed, cannot show source string ***';
+            $json_encode = 'json_encode';
         }
 
         if(!$source){
@@ -3469,22 +3490,13 @@ function str_log($source, $truncate = 8187, $separator = ', '){
 
         if(!is_scalar($source)){
             if(is_array($source)){
-                try{
-                    $source = mb_trim(json_encode_custom($source));
-
-                }catch(Exception $e){
-                    /*
-                     * Most likely (basically only) reason for this would be that implode failed on imploding an array with sub arrays.
-                     * Use json_encode_custom() instead
-                     */
-                    $source = mb_trim(json_encode_custom($source));
-                }
+                $source = mb_trim($json_encode($source));
 
             }elseif(is_object($source) and ($source instanceof bException)){
                 $source = $source->getCode().' / '.$source->getMessage();
 
             }else{
-                $source = mb_trim(json_encode_custom($source));
+                $source = mb_trim($json_encode($source));
             }
         }
 
@@ -3605,11 +3617,11 @@ function date_convert($date = null, $requested_format = 'human_datetime', $to_ti
          * Older systems will still have the timezone specified as a single string, newer as an array
          * The difference between these two can result in systems no longer starting up after an update
          */
-        if(!$to_timezone){
+        if($to_timezone === null){
             $to_timezone = TIMEZONE;
         }
 
-        if(!$from_timezone){
+        if($from_timezone === null){
             $from_timezone = $_CONFIG['timezone']['system'];
         }
 
@@ -3993,6 +4005,46 @@ function cf($source, $allow_null = true){
 
     }catch(Exception $e){
         throw new bException(tr('cf(): Failed'), $e);
+    }
+}
+
+
+
+/*
+ * $core is the main object for BASE. It starts automatically once the startup library is loaded, determines the platform (cli or http), and in case of http, what the call type is. The call type differentiates between http web pages, admin web pages (pages with /admin, showing the admin section), ajax requests (URL's starting with /ajax), api requests (URL's starting with /api), system pages (any 404, 403, 500, 503, etc. page), Google AMP pages (any URL starting with /amp), and explicit mobile pages (any URL starting with /mobile). $core will automatically run the correct handler for the specified request, which will automatically load the required libraries, setup timezones, configure language and locale, and load the custom library. After that, control is returned to the webpage that called the startup library
+ *
+ * @author Sven Olaf Oostenbrink <sven@capmega.com>
+ * @copyright Copyright (c) 2018 Capmega
+ * @license http://opensource.org/licenses/GPL-2.0 GNU Public License, Version 2
+ * @category Function reference
+ * @package startup
+ *
+ * @param string $value
+ * @param boolean $default
+ * @return boolean
+ */
+function get_true_false($value, $default){
+    try{
+        switch($value){
+            case '':
+                return $default;
+
+            case tr('n'):
+                // FALLTRHOUGH
+            case tr('no'):
+                return false;
+
+            case tr('y'):
+                // FALLTRHOUGH
+            case tr('yes'):
+                return true;
+
+            default:
+                throw new bException(tr('get_true_false(): Please specify y / yes or n / no, or nothing for the default value.'), 'warning');
+        }
+
+    }catch(Exception $e){
+        throw new bException(tr('get_true_false(): Failed'), $e);
     }
 }
 ?>
