@@ -62,33 +62,33 @@ function mysqlr_update_server_replication_status($params, $status){
         if(empty($params['servers_id'])){
             throw new bException(tr('mysqlr_update_replication_status(): No servers_id specified'), 'not-specified');
         }
-        
+
         if(empty($status)){
             throw new bException(tr('mysqlr_update_replication_status(): No status specified'), 'not-specified');
         }
-        
+
         /*
          * Update server replication_lock
          */
         switch($status){
             case 'preparing':
-                sql_query('UPDATE `servers` SET `replication_lock` = :replication_lock WHERE `id` = :id', array(':replication_lock' => 1, ':id' => $params['servers_id']));        
+                sql_query('UPDATE `servers` SET `replication_lock` = :replication_lock WHERE `id` = :id', array(':replication_lock' => 1, ':id' => $params['servers_id']));
                 break;
-            
+
             case 'disabled_lock':
                 // FALLTHROUGH
             case 'enabled':
                 sql_query('UPDATE `servers` SET `replication_lock`   = :replication_lock   WHERE `id` = :id', array(':replication_lock' => 0, ':id' => $params['servers_id']));
                 sql_query('UPDATE `servers` SET `replication_status` = :replication_status WHERE `id` = :id', array(':replication_status' => $status, ':id' => $params['servers_id']));
                 break;
-            
+
             case 'disabled':
                 /*
                  * No action
                  */
                 sql_query('UPDATE `servers` SET `replication_status` = :replication_status WHERE `id` = :id', array(':replication_status' => $status, ':id' => $params['servers_id']));
                 break;
-            
+
             default:
                 throw new bException(tr('Unknown status ":status"', array(':status' => $status)), 'unknown');
         }
@@ -129,25 +129,25 @@ function mysqlr_update_replication_status($params, $status){
         if(empty($params['servers_id'])){
             throw new bException(tr('mysqlr_update_replication_status(): No servers_id specified'), 'not-specified');
         }
-        
+
         if(empty($status)){
             throw new bException(tr('mysqlr_update_replication_status(): No status specified'), 'not-specified');
         }
-        
+
         /*
          * Update server replication_lock
          */
         switch($status){
             case 'preparing':
-                sql_query('UPDATE `servers` SET `replication_lock` = :replication_lock WHERE `id` = :id', array(':replication_lock' => 1, ':id' => $params['servers_id']));        
+                sql_query('UPDATE `servers` SET `replication_lock` = :replication_lock WHERE `id` = :id', array(':replication_lock' => 1, ':id' => $params['servers_id']));
                 break;
-            
+
             case 'disabled':
                 // FALLTHROUGH
             case 'enabled':
-                sql_query('UPDATE `servers` SET `replication_lock` = :replication_lock WHERE `id` = :id', array(':replication_lock' => 0, ':id' => $params['servers_id']));        
+                sql_query('UPDATE `servers` SET `replication_lock` = :replication_lock WHERE `id` = :id', array(':replication_lock' => 0, ':id' => $params['servers_id']));
                 break;
-            
+
             default:
                 throw new bException(tr('Unknown status ":status"', array(':status' => $status)));
         }
@@ -235,7 +235,7 @@ function mysqlr_master_replication_setup($params){
          * kill ssh pid after dumping db
          */
         log_console(tr('Making grant replication on remote server and locking tables'), 'DOT');
-// :FIX: There is an issue with mysql exec not executing as root         
+// :FIX: There is an issue with mysql exec not executing as root
         //$ssh_mysql_pid = mysql_exec($database['hostname'], 'GRANT REPLICATION SLAVE ON *.* TO "'.$database['replication_db_user'].'"@"localhost" IDENTIFIED BY "'.$database['replication_db_password'].'"; FLUSH PRIVILEGES; USE '.$database['database'].'; FLUSH TABLES WITH READ LOCK; DO SLEEP(1000000);', true);
         $ssh_mysql_pid = servers_exec($database['hostname'], 'mysql \"-u'.$database['root_db_user'].'\" \"-p'.$database['root_db_password'].'\" -e \"GRANT REPLICATION SLAVE ON *.* TO \''.$database['replication_db_user'].'\'@\'localhost\' IDENTIFIED BY \''.$database['replication_db_password'].'\'; FLUSH PRIVILEGES; USE '.$database['database_name'].'; FLUSH TABLES WITH READ LOCK; DO SLEEP(1000000); \"', null, true);
 
@@ -676,7 +676,7 @@ function mysqlr_slave_ssh_tunnel($server, $slave){
         array_default($server, 'ssh_key'      , '');
         array_default($server, 'port'         , 22);
         array_default($server, 'arguments'    , '-T');
-        array_default($server, 'hostkey_check', false);
+        array_default($server, 'hostkey_check', true);
 
         /*
          * If server was specified by just name, then lookup the server data in
@@ -704,7 +704,7 @@ function mysqlr_slave_ssh_tunnel($server, $slave){
         }
 
         if(!$server['hostkey_check']){
-            $server['arguments'] .= ' -o StrictHostKeyChecking=no -o UserKnownHostsFile='.ROOT.'data/ssh ';
+            $server['arguments'] .= ' -o StrictHostKeyChecking=no -o UserKnownHostsFile='.ROOT.'data/ssh/known_hosts ';
         }
 
         /*
