@@ -357,7 +357,7 @@ function mysqlr_slave_replication_setup($params){
         servers_exec($slave, 'grep -q -F \'relay-log = /var/log/mysql/mysql-relay-bin.log\' '.$mysql_cnf_path.' || echo "relay-log = /var/log/mysql/mysql-relay-bin.log" | sudo tee -a '.$mysql_cnf_path);
         servers_exec($slave, 'grep -q -F \'master-info-repository = table\' '.$mysql_cnf_path.' || echo "master-info-repository = table" | sudo tee -a '.$mysql_cnf_path);
         servers_exec($slave, 'grep -q -F \'relay-log-info-repository = table\' '.$mysql_cnf_path.' || echo "relay-log-info-repository = table" | sudo tee -a '.$mysql_cnf_path);
-        servers_exec($slave, 'grep -q -F \'binlog_do_db = '.$database['database_name'].'\' '.$mysql_cnf_path.' || echo "binlog_do_db = '.$database['database'].'" | sudo tee -a '.$mysql_cnf_path);
+        servers_exec($slave, 'grep -q -F \'binlog_do_db = '.$database['database_name'].'\' '.$mysql_cnf_path.' || echo "binlog_do_db = '.$database['database_name'].'" | sudo tee -a '.$mysql_cnf_path);
 
         /*
          * Close PDO connection before restarting MySQL
@@ -474,7 +474,7 @@ function mysqlr_disable_replication($db){
         /*
          * Comment the database for replication
          */
-        servers_exec($slave, 'sudo sed -i "s/binlog_do_db = '.$database['database'].'//" '.$mysql_cnf_path);
+        servers_exec($slave, 'sudo sed -i "s/binlog_do_db = '.$database['database_name'].'//" '.$mysql_cnf_path);
 
         /*
          * Close PDO connection before restarting MySQL
@@ -482,7 +482,7 @@ function mysqlr_disable_replication($db){
         log_console(tr('Restarting Slave MySQL service'), 'DOT');
         servers_exec($slave, 'sudo service mysql restart');
 
-        log_console(tr('Disabled replication for database :database', array(':database' => $database['database'])), 'DOT');
+        log_console(tr('Disabled replication for database :database', array(':database' => $database['database_name'])), 'DOT');
 
 // :QUESTION: Return 0? Are functions dependant on this? Why not return true or false, or if nothing is needed, null (aka, remove the return statement completely)?
         return 0;
@@ -586,7 +586,7 @@ function mysqlr_pause_replication($db){
         /*
          * Enable replicate ignore
          */
-        servers_exec($slave, 'grep -q -F \'replicate-ignore-db='.$database['database'].'\' '.$mysql_cnf_path.' || echo "replicate-ignore-db='.$database['database'].'" | sudo tee -a '.$mysql_cnf_path);
+        servers_exec($slave, 'grep -q -F \'replicate-ignore-db='.$database['database_name'].'\' '.$mysql_cnf_path.' || echo "replicate-ignore-db='.$database['database_name'].'" | sudo tee -a '.$mysql_cnf_path);
 
         /*
          * Close PDO connection before restarting MySQL
@@ -595,7 +595,7 @@ function mysqlr_pause_replication($db){
         servers_exec($slave, 'sudo service mysql restart');
 
         mysqlr_update_replication_status($database, 'paused');
-        log_console(tr('Paused replication for database :database', array(':database' => $database['database'])), 'DOT');
+        log_console(tr('Paused replication for database :database', array(':database' => $database['database_name'])), 'DOT');
 
         return 0;
 
@@ -649,7 +649,7 @@ function mysqlr_resume_replication($db){
         /*
          * Comment the database for replication
          */
-        servers_exec($slave, 'sudo sed -i "s/replicate-ignore-db='.$database['database'].'//" '.$mysql_cnf_path);
+        servers_exec($slave, 'sudo sed -i "s/replicate-ignore-db='.$database['database_name'].'//" '.$mysql_cnf_path);
 
         /*
          * Close PDO connection before restarting MySQL
@@ -657,7 +657,7 @@ function mysqlr_resume_replication($db){
         log_console(tr('Restarting Slave MySQL service'), 'DOT');
         servers_exec($slave, 'sudo service mysql restart');
         mysqlr_update_replication_status($database, 'enabled');
-        log_console(tr('Resumed replication for database :database', array(':database' => $database['database'])), 'DOT');
+        log_console(tr('Resumed replication for database :database', array(':database' => $database['database_name'])), 'DOT');
 
         return 0;
 
