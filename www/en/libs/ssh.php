@@ -192,7 +192,7 @@ function ssh_exec($server, $commands = null, $background = false, $function = 'e
         array_default($server, 'ssh_key'      , '');
         array_default($server, 'port'         , 22);
         array_default($server, 'timeout'      , 10);
-        array_default($server, 'hostkey_check', false);
+        array_default($server, 'hostkey_check', true);
         array_default($server, 'arguments'    , '-T');
         array_default($server, 'commands'     , $commands);
         array_default($server, 'background'   , $background);
@@ -452,7 +452,7 @@ function ssh_cp($server, $source, $destnation, $from_server = false){
                                  FROM      `servers`
 
                                  LEFT JOIN `ssh_accounts`
-                                 ON        `ssh_accounts`.`id` = `servers`.`ssh_accounts_id`
+                                 ON        `ssh_accounts`.`id`  = `servers`.`ssh_accounts_id`
 
                                  WHERE     `servers`.`hostname` = :hostname', array(':hostname' => $server['hostname']));
 
@@ -464,7 +464,7 @@ function ssh_cp($server, $source, $destnation, $from_server = false){
         }
 
         if(!$server['hostkey_check']){
-            $server['arguments'] .= ' -o StrictHostKeyChecking=no -o UserKnownHostsFile='.ROOT.'data/ssh ';
+            $server['arguments'] .= ' -o StrictHostKeyChecking=no -o UserKnownHostsFile='.ROOT.'data/ssh/known_hosts ';
         }
 
         /*
@@ -547,7 +547,7 @@ function ssh_add_known_host($hostname, $port, $known_hosts_path){
         }
 
         if(empty($known_hosts_path)){
-            throw new bException(tr('ssh_add_known_host(): No user_known_hosts_file_path specified'), 'not-specified');
+            throw new bException(tr('ssh_add_known_host(): No known_hosts_path specified'), 'not-specified');
         }
 
         $public_keys = safe_exec('ssh-keyscan -p '.$port.' -H '.$hostname);

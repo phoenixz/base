@@ -190,7 +190,7 @@ function servers_exec($server, $commands, $options = null, $background = false, 
 
     try{
         array_params($options);
-        array_default($options, 'hostkey_check', false);
+        array_default($options, 'hostkey_check', true);
         array_default($options, 'arguments'    , '-T');
         array_default($options, 'background'   , $background);
         array_default($options, 'commands'     , $commands);
@@ -204,7 +204,7 @@ function servers_exec($server, $commands, $options = null, $background = false, 
         }
 
         if(!$options){
-            $options = ' -o UserKnownHostsFile=/dev/null -o StrictHostKeyChecking=no'.($_CONFIG['servers']['ssh']['connect_timeout'] ? ' -o ConnectTimeout='.$_CONFIG['servers']['ssh']['connect_timeout'] : '');
+            $options = ' -o UserKnownHostsFile='.ROOT.'data/ssh/known_hosts '($params['hostkey_check'] ? ' -o StrictHostKeyChecking=no ' : '').($_CONFIG['servers']['ssh']['connect_timeout'] ? ' -o ConnectTimeout='.$_CONFIG['servers']['ssh']['connect_timeout'] : '');
         }
 
         /*
@@ -249,6 +249,14 @@ function servers_exec($server, $commands, $options = null, $background = false, 
  */
 function servers_get($host, $database = false, $return_proxies = true, $limited_columns = false){
     try{
+        if(is_array($host)){
+            /*
+             * Specified host is an array, so it should already contain all
+             * information
+             */
+            return $host;
+        }
+
         if($limited_columns){
             $query =  'SELECT `servers`.`id`,
                               `servers`.`hostname`,
