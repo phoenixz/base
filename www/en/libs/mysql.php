@@ -15,16 +15,26 @@
 /*
  * Execute a query on a remote SSH server.
  * NOTE: This does NOT support bound variables!
+ *
+ * @author Sven Olaf Oostenbrink <sven@capmega.com>
+ * @copyright Copyright (c) 2018 Capmega
+ * @license http://opensource.org/licenses/GPL-2.0 GNU Public License, Version 2
+ * @category Function reference
+ * @package mysql
+ *
+ * @param mixed $server
+ * @param string $query
+ * @param boolean $query
+ * @param boolean $simple_quotes
+ *
+ * @return
  */
 function mysql_exec($server, $query, $root = false, $simple_quotes = false){
     try{
         load_libs('servers');
 
-        $query = addslashes($query);
-
-        if(!is_array($server)){
-            $server = servers_get($server, true);
-        }
+        $query  = addslashes($query);
+        $server = servers_get($server, true);
 
         /*
          * Are we going to execute as root?
@@ -35,17 +45,15 @@ function mysql_exec($server, $query, $root = false, $simple_quotes = false){
         }else{
             mysql_create_password_file($server['db_username'], $server['db_password'], $server);
         }
-        
+
         if($simple_quotes){
             $results = servers_exec($server, 'mysql -e \''.str_ends($query, ';').'\'');
-            
+
         }else{
-            $results = servers_exec($server, 'mysql -e \"'.str_ends($query, ';').'\"');   
+            $results = servers_exec($server, 'mysql -e \"'.str_ends($query, ';').'\"');
         }
 
-
         mysql_delete_password_file($server);
-
         return $results;
 
     }catch(Exception $e){
@@ -59,14 +67,26 @@ function mysql_exec($server, $query, $root = false, $simple_quotes = false){
 
         }
 
-        throw new bException(tr('mysql_dump(): Failed'), $e);
+        throw new bException(tr('mysql_exec(): Failed'), $e);
     }
 }
 
 
 
 /*
+ * ..............
  *
+ * @author Sven Olaf Oostenbrink <sven@capmega.com>
+ * @copyright Copyright (c) 2018 Capmega
+ * @license http://opensource.org/licenses/GPL-2.0 GNU Public License, Version 2
+ * @category Function reference
+ * @package mysql
+ *
+ * @param string $user
+ * @param string $password
+ * @param mixed $server
+ *
+ * @return
  */
 function mysql_create_password_file($user, $password, $server = null){
     try{
@@ -82,7 +102,17 @@ function mysql_create_password_file($user, $password, $server = null){
 
 
 /*
- * Ensure
+ * ..............
+ *
+ * @author Sven Olaf Oostenbrink <sven@capmega.com>
+ * @copyright Copyright (c) 2018 Capmega
+ * @license http://opensource.org/licenses/GPL-2.0 GNU Public License, Version 2
+ * @category Function reference
+ * @package mysql
+ *
+ * @param mixed $server
+ *
+ * @return
  */
 function mysql_delete_password_file($server = null){
     try{
@@ -97,13 +127,26 @@ function mysql_delete_password_file($server = null){
 
 
 /*
- * Make a dump of the specified database on the specified server and copy the file locally.
+ * Make a dump of the specified database on the specified server and write the
+ * file on the same server on the specified location
+ *
+ * @author Sven Olaf Oostenbrink <sven@capmega.com>
+ * @copyright Copyright (c) 2018 Capmega
+ * @license http://opensource.org/licenses/GPL-2.0 GNU Public License, Version 2
+ * @category Function reference
+ * @package mysql
+ *
+ * @param array $params
+ * @return
  */
 function mysql_dump($params){
     try{
         array_params($params);
+        array_default($params, 'server'  , '');
         array_default($params, 'database', '');
-        array_default($params, 'file'    , $params['database'].'.sql.gz');
+        array_default($params, 'path'    , '');
+        array_default($params, 'gzip'    , true);
+        array_default($params, 'filename', $params['database'].'.sql'.($params['gzip'] ? '.gz' : ''));
 
         load_libs('servers');
 
@@ -111,11 +154,13 @@ function mysql_dump($params){
             throw new bException(tr('mysql_dump(): No database specified'), 'not-specified');
         }
 
-// :TOO: Implement optoins through $params
-        $optoins = '-p -K -R -n -e --dump-date --comments -B';
+        $server = servers_get($params['server'], true);
 
-        mysql_create_password_file($password, $user, $server);
-        servers_exec($server, 'mysqldump '.$options.' '.$database.' | gzip > '.$file);
+// :TOO: Implement optoins through $params
+        $optoins  = ' -p -K -R -n -e --dump-date --comments -B ';
+
+        mysql_create_password_file($server['db_root_password'], 'root', $server);
+        servers_exec($params['server'], 'mysqldump '.$options.' '.$params['database'].($params['gzip'] ? ' | gzip' : '').' > '.$params['file']);
         mysql_delete_password_file($server);
 
     }catch(Exception $e){
@@ -126,7 +171,16 @@ function mysql_dump($params){
 
 
 /*
+ * ..................
  *
+ * @author Sven Olaf Oostenbrink <sven@capmega.com>
+ * @copyright Copyright (c) 2018 Capmega
+ * @license http://opensource.org/licenses/GPL-2.0 GNU Public License, Version 2
+ * @category Function reference
+ * @package mysql
+ *
+ * @param array $params
+ * @return
  */
 function mysql_get_database($db_name){
     try{
@@ -161,10 +215,32 @@ function mysql_get_database($db_name){
                              array(':name' => $db_name));
 
         if(!$database){
-            throw new bException(log_database(tr('Specified database ":database" does not exist', array(':database' => $db_name)), 'not-exist'));
+            throw new bException(tr('mysql_get_database(): Specified database ":database" does not exist', array(':database' => $db_name)), 'not-exist');
         }
 
         return $database;
+
+    }catch(Exception $e){
+        throw new bException(tr('mysql_get_database(): Failed'), $e);
+    }
+}
+
+
+
+/*
+ * ..................
+ *
+ * @author Sven Olaf Oostenbrink <sven@capmega.com>
+ * @copyright Copyright (c) 2018 Capmega
+ * @license http://opensource.org/licenses/GPL-2.0 GNU Public License, Version 2
+ * @category Function reference
+ * @package mysql
+ *
+ * @param array $params
+ * @return
+ */
+function mysql_reset_password($params){
+    try{
 
     }catch(Exception $e){
         throw new bException(tr('mysql_get_database(): Failed'), $e);
