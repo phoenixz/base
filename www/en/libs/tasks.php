@@ -147,7 +147,7 @@ function tasks_validate($task){
         $v->hasMaxChars($task['command'], 32, tr('Please ensure the task command has a maximum of 32 characters'));
         $v->isDateTime($task['after'], tr('Please specify a valid after date / time'), VALIDATE_ALLOW_EMPTY_NULL);
         $v->inArray($task['method'], array('background', 'internal', 'normal', 'function'), tr('Please specify a valid method'));
-        $v->inArray($task['status'], array('new', 'processing', 'completed', 'failed', 'timeout', 'deleted'), tr('Please specify a valid status'), VALIDATE_ALLOW_EMPTY_NULL);
+        $v->inArray($task['status'], array('new', 'waiting_parent', 'processing', 'completed', 'failed', 'timeout', 'deleted'), tr('Please specify a valid status'), VALIDATE_ALLOW_EMPTY_NULL);
         $v->isNatural($task['time_limit'], 0, tr('Please specify a valid time limit'), VALIDATE_ALLOW_EMPTY_NULL);
         $v->isBetween($task['time_limit'], 0, 1800, tr('Please specify a valid time limit (between 0 and 1800 seconds)'), VALIDATE_ALLOW_EMPTY_NULL);
         $v->isNumeric($task['time_spent'], tr('Please specify a valid time spent'), VALIDATE_ALLOW_EMPTY_INTEGER);
