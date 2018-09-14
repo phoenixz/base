@@ -441,116 +441,6 @@ function mysqlr_slave_replication_setup($params){
  *
  * @param
  */
-function mysqlr_disable_replication($db){
-    global $_CONFIG;
-
-    try{
-        load_libs('mysql');
-
-        /*
-         * Check Slave hostname
-         */
-        $slave = $_CONFIG['mysqlr']['hostname'];
-
-        if(empty($slave)){
-            throw new bException(tr('mysqlr_disable_replication(): MySQL Configuration for replicator hostname is not set'), 'not-specified');
-        }
-
-        /*
-         * Check if this server exist
-         */
-        $database = mysql_get_database($db);
-
-        if(empty($database)){
-            throw new bException(tr('mysqlr_disable_replication(): The specified database :database does not exist', array(':database' => $database)), 'not-exist');
-        }
-
-        /*
-         * Get MySQL configuration path
-         */
-        load_libs('ssh,servers');
-        $mysql_cnf_path = mysqlr_check_configuration_path($slave);
-
-        /*
-         * Comment the database for replication
-         */
-        servers_exec($slave, 'sudo sed -i "s/binlog_do_db = '.$database['database_name'].'//" '.$mysql_cnf_path);
-
-        /*
-         * Close PDO connection before restarting MySQL
-         */
-        log_console(tr('Restarting Slave MySQL service'), 'DOT');
-        servers_exec($slave, 'sudo service mysql restart');
-
-        log_console(tr('Disabled replication for database :database', array(':database' => $database['database_name'])), 'DOT');
-
-// :QUESTION: Return 0? Are functions dependant on this? Why not return true or false, or if nothing is needed, null (aka, remove the return statement completely)?
-        return 0;
-
-    }catch(Exception $e){
-        throw new bException(tr('mysqlr_stop_replication(): Failed'), $e);
-    }
-}
-
-
-
-/*
- * .............
- *
- * @author Ismael Haro <isma@capmega.com>
- * @copyright Copyright (c) 2018 Capmega
- * @license http://opensource.org/licenses/GPL-2.0 GNU Public License, Version 2
- * @category Function reference
- * @package mysqlr
- *
- * @param
- */
-function mysqlr_check_configuration_path($server_target){
-    try{
-        load_libs('ssh,servers');
-        $mysql_cnf_path = '/etc/mysql/mysql.conf.d/mysqld.cnf';
-
-        /*
-         * Check for mysqld.cnf file
-         */
-        log_console(tr('Checking existance of mysql configuration file'), 'DOT');
-        $mysql_cnf = servers_exec($server_target, 'test -f '.$mysql_cnf_path.' && echo "1" || echo "0"');
-
-        /*
-         * Mysql conf file does not exist
-         */
-        if(!$mysql_cnf[0]){
-            /*
-             * Try with other possible configuration file
-             */
-            $mysql_cnf_path = '/etc/mysql/my.cnf';
-            $mysql_cnf      = servers_exec($server_target, 'test -f '.$mysql_cnf_path.' && echo "1" || echo "0"');
-
-            if(!$mysql_cnf[0]){
-                throw new bException(tr('mysqlr_check_configuration_path(): MySQL configuration file :file does not exist on server :server', array(':file' => $mysql_cnf_path, ':server' => $server_target)), 'not-exist');
-            }
-        }
-
-        return $mysql_cnf_path;
-
-    }catch(Exception $e){
-        throw new bException(tr('mysqlr_check_configuration_path(): Failed'), $e);
-    }
-}
-
-
-
-/*
- * .............
- *
- * @author Ismael Haro <isma@capmega.com>
- * @copyright Copyright (c) 2018 Capmega
- * @license http://opensource.org/licenses/GPL-2.0 GNU Public License, Version 2
- * @category Function reference
- * @package mysqlr
- *
- * @param
- */
 function mysqlr_pause_replication($db){
     global $_CONFIG;
 
@@ -663,6 +553,117 @@ function mysqlr_resume_replication($db){
 
     }catch(Exception $e){
         throw new bException(tr('mysqlr_resume_replication(): Failed'), $e);
+    }
+}
+
+
+
+/*
+ * .............
+ *
+ * @author Ismael Haro <isma@capmega.com>
+ * @copyright Copyright (c) 2018 Capmega
+ * @license http://opensource.org/licenses/GPL-2.0 GNU Public License, Version 2
+ * @category Function reference
+ * @package mysqlr
+ *
+ * @param
+ */
+// :TODO: Implement disable replication
+//function mysqlr_disable_replication($db){
+//    global $_CONFIG;
+//
+//    try{
+//        load_libs('mysql');
+//
+//        /*
+//         * Check Slave hostname
+//         */
+//        $slave = $_CONFIG['mysqlr']['hostname'];
+//
+//        if(empty($slave)){
+//            throw new bException(tr('mysqlr_disable_replication(): MySQL Configuration for replicator hostname is not set'), 'not-specified');
+//        }
+//
+//        /*
+//         * Check if this server exist
+//         */
+//        $database = mysql_get_database($db);
+//
+//        if(empty($database)){
+//            throw new bException(tr('mysqlr_disable_replication(): The specified database :database does not exist', array(':database' => $database)), 'not-exist');
+//        }
+//
+//        /*
+//         * Get MySQL configuration path
+//         */
+//        load_libs('ssh,servers');
+//        $mysql_cnf_path = mysqlr_check_configuration_path($slave);
+//
+//        /*
+//         * Comment the database for replication
+//         */
+//        servers_exec($slave, 'sudo sed -i "s/binlog_do_db = '.$database['database_name'].'//" '.$mysql_cnf_path);
+//
+//        /*
+//         * Close PDO connection before restarting MySQL
+//         */
+//        log_console(tr('Restarting Slave MySQL service'), 'DOT');
+//        servers_exec($slave, 'sudo service mysql restart');
+//
+//        log_console(tr('Disabled replication for database :database', array(':database' => $database['database_name'])), 'DOT');
+//
+//// :QUESTION: Return 0? Are functions dependant on this? Why not return true or false, or if nothing is needed, null (aka, remove the return statement completely)?
+//        return 0;
+//
+//    }catch(Exception $e){
+//        throw new bException(tr('mysqlr_stop_replication(): Failed'), $e);
+//    }
+//}
+
+
+
+/*
+ * .............
+ *
+ * @author Ismael Haro <isma@capmega.com>
+ * @copyright Copyright (c) 2018 Capmega
+ * @license http://opensource.org/licenses/GPL-2.0 GNU Public License, Version 2
+ * @category Function reference
+ * @package mysqlr
+ *
+ * @param
+ */
+function mysqlr_check_configuration_path($server_target){
+    try{
+        load_libs('ssh,servers');
+        $mysql_cnf_path = '/etc/mysql/mysql.conf.d/mysqld.cnf';
+
+        /*
+         * Check for mysqld.cnf file
+         */
+        log_console(tr('Checking existance of mysql configuration file'), 'DOT');
+        $mysql_cnf = servers_exec($server_target, 'test -f '.$mysql_cnf_path.' && echo "1" || echo "0"');
+
+        /*
+         * Mysql conf file does not exist
+         */
+        if(!$mysql_cnf[0]){
+            /*
+             * Try with other possible configuration file
+             */
+            $mysql_cnf_path = '/etc/mysql/my.cnf';
+            $mysql_cnf      = servers_exec($server_target, 'test -f '.$mysql_cnf_path.' && echo "1" || echo "0"');
+
+            if(!$mysql_cnf[0]){
+                throw new bException(tr('mysqlr_check_configuration_path(): MySQL configuration file :file does not exist on server :server', array(':file' => $mysql_cnf_path, ':server' => $server_target)), 'not-exist');
+            }
+        }
+
+        return $mysql_cnf_path;
+
+    }catch(Exception $e){
+        throw new bException(tr('mysqlr_check_configuration_path(): Failed'), $e);
     }
 }
 
