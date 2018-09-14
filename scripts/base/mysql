@@ -493,8 +493,7 @@ switch(cli_method()){
                 /*
                  * Pause database
                  */
-                mysqlr_stop_replication($server['database']);
-                mysql_update_database_replication_status($database, 'paused');
+                mysqlr_pause_replication($server['database']);
                 break;
 
             case 'resume':
@@ -510,7 +509,6 @@ switch(cli_method()){
                  * Pause database
                  */
                 mysqlr_resume_replication($server['database']);
-                mysql_update_database_replication_status($database, 'enabled');
                 break;
 
             case '':
