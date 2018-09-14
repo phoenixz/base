@@ -10,39 +10,86 @@
 
 
 
-if(!function_exists('openssl_encrypt')){
-    if(!function_exists('mcrypt_module_open')){
-        throw new bException(tr('crypt: Neither php module "mcrypt" nor "openssl" appears not to be installed. Please install the module first. On Ubuntu and alikes, use "sudo apt-get -y install php-mcrypt; sudo phpenmod mcrypt" to install and enable the module. On Redhat and alikes use "sudo yum -y install php-mcrypt" to install mcrytpt (OBSOLETE!) ot "sudo yum -y install php-openssl" to install openssl. After this, a restart of your webserver or php-fpm server might be needed'), 'not-exists');
+/*
+ * Initialize the library, automatically executed by libs_load()
+ *
+ * NOTE: This function is executed automatically by the load_libs() function and does not need to be called manually
+ *
+ * @author Sven Olaf Oostenbrink <sven@capmega.com>
+ * @copyright Copyright (c) 2018 Capmega
+ * @license http://opensource.org/licenses/GPL-2.0 GNU Public License, Version 2
+ * @category Function reference
+ * @package sodium
+ *
+ * @return void
+ */
+function crypt_library_init(){
+    try{
+        switch(str_until(PHP_VERSION, '.')){
+            case 5:
+                if(!function_exists('mcrypt_module_open')){
+                    throw new bException(tr('crypt: PHP module "mcrypt" appears not to be installed. Please install the module first. On Ubuntu and alikes, use "sudo apt-get -y install php-mcrypt" to install and enable the module. After this, a restart of your webserver or php-fpm server may be needed'), 'not-exists');
+                }
+
+                $core->register('crypt_backend', 'mcrypt');
+                break;
+
+            case 7:
+                $core->register('crypt_backend', 'sodium');
+                load_libs('sodium');
+                break;
+
+            default:
+                throw new bException(tr('crypt_library_init(): Unsupported PHP version ":version"', array(':version' => PHP_VERSION)), 'unsupported');
+        }
+
+    }catch(Exception $e){
+        throw new bException('crypt_library_init(): Failed', $e);
     }
-
-    $core->register('backend', 'mcrypt');
-
-}else{
-    $core->register('backend', 'openssl');
 }
 
 
 
 /*
+ * Encrypt the specified string with the specified key.
  *
+ * This function will return an encrypted string made from the specified source string and secret key. The encrypted string will contain the used nonce appended in front of the ciphertext with the format library^nonce$ciphertext
+ *
+ * @author Sven Olaf Oostenbrink <sven@capmega.com>
+ * @copyright Copyright (c) 2018 Capmega
+ * @license http://opensource.org/licenses/GPL-2.0 GNU Public License, Version 2
+ * @category Function reference
+ * @package sodium
+ *
+ * @param string $string The text string to be encrypted
+ * @param string $key The secret key to encrypt the text string with
+ * @return string The encrypted ciphertext
  */
 function encrypt($data, $key, $method = null){
     try{
         load_libs('json');
 
-        $data = json_encode_custom($data);
+        switch($core->register('crypt_backend')){
+            case 'sodium':
+                $data = json_encode_custom($data);
+                $data = 'sodium'.soduim_encrypt($data, $key);
+                $data = base64_encode($data);
+                break;
 
-        if($key){
-            $td   = mcrypt_module_open('tripledes', '', 'ecb', '');
-            $iv   = mcrypt_create_iv (mcrypt_enc_get_iv_size($td), MCRYPT_RAND);
+            case 'mcrypt':
+                if($key){
+                    $td   = mcrypt_module_open('tripledes', '', 'ecb', '');
+                    $iv   = mcrypt_create_iv (mcrypt_enc_get_iv_size($td), MCRYPT_RAND);
 
-            mcrypt_generic_init($td, mb_substr($key, 0, mcrypt_enc_get_key_size($td)), $iv);
+                    mcrypt_generic_init($td, mb_substr($key, 0, mcrypt_enc_get_key_size($td)), $iv);
 
-            $data = mcrypt_generic($td, $data);
+                    $data = 'mcrypt^'.mcrypt_generic($td, $data);
+                    $data = base64_encode($data);
+                }
+                break;
         }
 
-        //make save for transport
-        return base64_encode($data);
+        return $data;
 
     }catch(Exception $e){
         throw new bException('encrypt(): Failed', $e);
@@ -64,14 +111,35 @@ function decrypt($data, $key, $method = null){
             throw new bException(tr('decrypt(): base64_decode() asppears to have failed to decode data, probably invalid base64 string'), 'invalid');
         }
 
-        if($key){
-            $td   = mcrypt_module_open('tripledes', '', 'ecb', '');
-            $iv   = mcrypt_create_iv (mcrypt_enc_get_iv_size($td), MCRYPT_RAND);
+        $backend = str_from($data, '^');
+        $data    = str_from($data, '^');
 
-            mcrypt_generic_init($td, mb_substr($key, 0, mcrypt_enc_get_key_size($td)), $iv);
-
-            $data = mdecrypt_generic($td, $data);
+        if(!$backend){
+            throw new bException(tr('decrypt(): Data has no backend specified'), 'invalid');
         }
+
+        if($backend !== $core->register('crypt_backend')){
+            throw new bException(tr('decrypt(): Data requires crypto backend ":data" but only ":system" is available', array(':system' => $core->register('crypt_backend'), ':data' => $backend)), 'not-available');
+        }
+
+        switch($core->register('crypt_backend')){
+            case 'sodium':
+                $data = soduim_decrypt($data, $key);
+                break;
+
+            case 'mcrypt':
+                if($key){
+                    $td = mcrypt_module_open('tripledes', '', 'ecb', '');
+                    $iv = mcrypt_create_iv (mcrypt_enc_get_iv_size($td), MCRYPT_RAND);
+
+                    mcrypt_generic_init($td, mb_substr($key, 0, mcrypt_enc_get_key_size($td)), $iv);
+
+                    $data = mdecrypt_generic($td, $data);
+                }
+
+                break;
+        }
+
 
         $data = trim($data);
         $data = json_decode_custom($data);
