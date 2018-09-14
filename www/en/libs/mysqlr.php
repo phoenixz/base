@@ -138,10 +138,18 @@ function mysqlr_update_replication_status($params, $status){
          * Update server replication_lock
          */
         switch($status){
+            case 'disabling':
+                // FALLTHROUGH
+            case 'resuming':
+                // FALLTHROUGH
+            case 'pausing':
+                // FALLTHROUGH
             case 'preparing':
                 sql_query('UPDATE `servers` SET `replication_lock` = :replication_lock WHERE `id` = :id', array(':replication_lock' => 1, ':id' => $params['servers_id']));        
                 break;
             
+            case 'paused':
+                // FALLTHROUGH
             case 'disabled':
                 // FALLTHROUGH
             case 'enabled':
@@ -566,6 +574,8 @@ function mysqlr_pause_replication($db){
         if(empty($database)){
             throw new bException(tr('mysqlr_pause_replication(): The specified database :database does not exist', array(':database' => $database)), 'not-exist');
         }
+        
+        mysqlr_update_replication_status($database, 'pausing');
 
         /*
          * Get MySQL configuration path
@@ -584,7 +594,8 @@ function mysqlr_pause_replication($db){
         log_console(tr('Restarting Slave MySQL service'), 'DOT');
         servers_exec($slave, 'sudo service mysql restart');
 
-        log_console(tr('Disabled replication for database :database', array(':database' => $database['database'])), 'DOT');
+        mysqlr_update_replication_status($database, 'paused');
+        log_console(tr('Paused replication for database :database', array(':database' => $database['database'])), 'DOT');
 
         return 0;
 
@@ -629,6 +640,8 @@ function mysqlr_resume_replication($db){
         if(empty($database)){
             throw new bException(tr('mysqlr_resume_replication(): The specified database :database does not exist', array(':database' => $database)), 'not-exist');
         }
+        
+        mysqlr_update_replication_status($database, 'resuming');
 
         load_libs('ssh,servers');
         $mysql_cnf_path = mysqlr_check_configuration_path($slave);
@@ -643,7 +656,7 @@ function mysqlr_resume_replication($db){
          */
         log_console(tr('Restarting Slave MySQL service'), 'DOT');
         servers_exec($slave, 'sudo service mysql restart');
-
+        mysqlr_update_replication_status($database, 'enabled');
         log_console(tr('Resumed replication for database :database', array(':database' => $database['database'])), 'DOT');
 
         return 0;
