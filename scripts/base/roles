@@ -24,24 +24,27 @@ switch(cli_method()){
         if($rights){
             log_console(tr('Showing rights for currently available roles'), 'QUIET/white');
 
-            $limit   = 200;
-            $r       = sql_query('SELECT    `id`,
-                                            `name`,
-                                            `status`
+            $roles = sql_query('SELECT `id`,
+                                       `name`,
+                                       `status`
 
-                                  FROM      `roles`'.($limit ? ' LIMIT '.$limit : ''));
+                                FROM   `roles`
+
+                                WHERE  `status` IS NULL
+                                OR     `status` != "_new" '.(LIMIT ? ' LIMIT '.LIMIT : ''));
 
             log_console(str_size('#id', 6).' '.str_size('Name', 20).' '.str_size('Status', 16).' Rights', 'QUIET/cyan');
 
-            while($role = sql_fetch($r)){
+            while($role = sql_fetch($roles)){
                 $rights = sql_list('SELECT    `rights`.`name`
 
                                     FROM      `roles_rights`
 
                                     JOIN      `rights`
-                                    ON        `rights`.`id` = `roles_rights`.`rights_id`
+                                    ON        `rights`.`id`     = `roles_rights`.`rights_id`
+                                    AND       `roles_id`        = :roles_id
 
-                                    AND       `roles_id` = :roles_id',
+                                    WHERE     `rights`.`status` IS NULL ',
 
                                     array(':roles_id' => $role['id']));
 
@@ -51,18 +54,19 @@ switch(cli_method()){
         }else{
             log_console(tr('Showing currently available roles'), 'QUIET/white');
 
-            $limit   = 200;
+            $roles = sql_query('SELECT `id`,
+                                       `name`,
+                                       `status`,
+                                       `description`
 
-            $r       = sql_query('SELECT    `id`,
-                                            `name`,
-                                            `status`,
-                                            `description`
+                                FROM   `roles`
 
-                                  FROM      `roles`'.($limit ? ' LIMIT '.$limit : ''));
+                                WHERE  `status` IS NULL
+                                OR     `status` != "_new" '.(LIMIT ? ' LIMIT '.LIMIT : ''));
 
             log_console(str_size('#id', 6).' '.str_size('Name', 20).' '.str_size('Status', 16).' Description', 'QUIET/cyan');
 
-            while($role = sql_fetch($r)){
+            while($role = sql_fetch($roles)){
                 log_console(str_size($role['id'], 6, ' ', true).' '.str_size($role['name'], 20).' '.str_size(status($role['status']), 16).' '.$role['description']);
             }
         }
