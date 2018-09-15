@@ -24,7 +24,11 @@
  * @return void
  */
 function crypt_library_init(){
+    global $core;
+
     try{
+        load_config('crypt');
+
         switch(str_until(PHP_VERSION, '.')){
             case 5:
                 if(!function_exists('mcrypt_module_open')){
@@ -66,14 +70,16 @@ function crypt_library_init(){
  * @return string The encrypted ciphertext
  */
 function encrypt($data, $key, $method = null){
+    global $core;
+
     try{
         load_libs('json');
 
         switch($core->register('crypt_backend')){
             case 'sodium':
+                $key  = crypt_pad_key($key);
                 $data = json_encode_custom($data);
-                $data = 'sodium'.soduim_encrypt($data, $key);
-                $data = base64_encode($data);
+                $data = 'sodium^'.sodium_encrypt($data, $key);
                 break;
 
             case 'mcrypt':
@@ -83,9 +89,11 @@ function encrypt($data, $key, $method = null){
 
                     mcrypt_generic_init($td, mb_substr($key, 0, mcrypt_enc_get_key_size($td)), $iv);
 
-                    $data = 'mcrypt^'.mcrypt_generic($td, $data);
+                    $data = mcrypt_generic($td, $data);
                     $data = base64_encode($data);
+                    $data = 'mcrypt^'.$data;
                 }
+
                 break;
         }
 
@@ -102,17 +110,18 @@ function encrypt($data, $key, $method = null){
  *
  */
 function decrypt($data, $key, $method = null){
+    global $core;
+
     try{
         load_libs('json');
-
-        $data = base64_decode($data);
 
         if($data === false){
             throw new bException(tr('decrypt(): base64_decode() asppears to have failed to decode data, probably invalid base64 string'), 'invalid');
         }
 
-        $backend = str_from($data, '^');
-        $data    = str_from($data, '^');
+        $key     = crypt_pad_key($key);
+        $backend = str_until($data, '^');
+        $data    = str_from ($data, '^');
 
         if(!$backend){
             throw new bException(tr('decrypt(): Data has no backend specified'), 'invalid');
@@ -124,7 +133,7 @@ function decrypt($data, $key, $method = null){
 
         switch($core->register('crypt_backend')){
             case 'sodium':
-                $data = soduim_decrypt($data, $key);
+                $data = sodium_decrypt($data, $key);
                 break;
 
             case 'mcrypt':
@@ -148,6 +157,38 @@ function decrypt($data, $key, $method = null){
 
     }catch(Exception $e){
         throw new bException('decrypt(): Failed', $e);
+    }
+}
+
+
+
+/*
+ * Pad the specified crypto key
+ *
+ * .....
+ *
+ * @author Sven Olaf Oostenbrink <sven@capmega.com>
+ * @copyright Copyright (c) 2018 Capmega
+ * @license http://opensource.org/licenses/GPL-2.0 GNU Public License, Version 2
+ * @category Function reference
+ * @package crypt
+ *
+ * @param string $key The secret key required to verify the MAC signature
+ * @param string $character The character to pad the crypto key with
+ * @return string
+ */
+function crypt_pad_key($key, $character = '*'){
+    global $_CONFIG;
+
+    try{
+        if($_CONFIG['crypt']['min_key_size'] and (strlen($key) < $_CONFIG['crypt']['min_key_size'])){
+            $key = $key.str_repeat($character, $_CONFIG['crypt']['min_key_size'] - strlen($key));
+        }
+
+        return $key;
+
+    }catch(Exception $e){
+        throw new bException('crypt_pad_key(): Failed', $e);
     }
 }
 ?>

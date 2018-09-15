@@ -136,8 +136,12 @@ function sodium_random($type){
  */
 function sodium_encrypt($data, $key){
     try{
+        $key         = sodium_pad_key($key);
         $nonce       = sodium_nonce();
         $cipher_data = sodium_crypto_secretbox($data, $nonce, $key);
+        $cipher_data = base64_encode($cipher_data);
+        $nonce       = base64_encode($nonce);
+
         $cipher_data = $nonce.'$'.$cipher_data;
 
         sodium_memzero($key);
@@ -168,13 +172,16 @@ function sodium_encrypt($data, $key){
  */
 function sodium_decrypt($cipher_data, $key){
     try{
+        $key   = sodium_pad_key($key);
         $nonce = str_until($cipher_data, '$');
+        $nonce = base64_decode($nonce);
 
         if(!$nonce){
             throw new bException(tr('sodium_decrypt(): Specified ciphertext does not contain a nonce prefix'), 'not-exist');
         }
 
         $cipher_data = str_from($cipher_data, '$');
+        $cipher_data = base64_decode($cipher_data);
         $data        = sodium_crypto_secretbox_open($cipher_data, $nonce, $key);
 
         if($data === false){
@@ -209,6 +216,7 @@ function sodium_decrypt($cipher_data, $key){
  */
 function sodium_sign_mac($data, $key){
     try{
+        $key  = sodium_pad_key($key);
         $mac  = sodium_crypto_auth($data, $key);
         $data = $mac.'$'.$data;
 
@@ -240,6 +248,7 @@ function sodium_sign_mac($data, $key){
  */
 function sodium_verify_mac($data, $key){
     try{
+        $key = sodium_pad_key($key);
         $mac = str_from($data, '$');
 
         if(!$mac){
@@ -259,6 +268,38 @@ function sodium_verify_mac($data, $key){
     }catch(Exception $e){
         sodium_memzero($key);
         throw new bException('sodium_verify_mac(): Failed', $e);
+    }
+}
+
+
+
+/*
+ * Pad the specified crypto key
+ *
+ * .....
+ *
+ * @author Sven Olaf Oostenbrink <sven@capmega.com>
+ * @copyright Copyright (c) 2018 Capmega
+ * @license http://opensource.org/licenses/GPL-2.0 GNU Public License, Version 2
+ * @category Function reference
+ * @package sodium
+ *
+ * @param string $key The secret key required to verify the MAC signature
+ * @param string $character The character to pad the crypto key with
+ * @return string
+ */
+function sodium_pad_key($key, $character = '*'){
+    global $_CONFIG;
+
+    try{
+        if(strlen($key) < SODIUM_CRYPTO_SECRETBOX_KEYBYTES){
+            $key = $key.str_repeat($character, SODIUM_CRYPTO_SECRETBOX_KEYBYTES - strlen($key));
+        }
+
+        return $key;
+
+    }catch(Exception $e){
+        throw new bException('sodium_pad_key(): Failed', $e);
     }
 }
 ?>
