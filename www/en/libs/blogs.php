@@ -1308,7 +1308,7 @@ function blogs_validate_post($post, $params = null){
                 /*
                  * Multilingual site!
                  */
-                $exists = sql_get('SELECT `id` FROM `blogs_posts` WHERE `blogs_id` = :blogs_id AND `name` = :name AND `language` = :language AND `id` != :id', array(':blogs_id' => $post['blogs_id'], ':id' => $id, ':name' => $post['name'], ':language' => $post['language']), 'id');
+                $exists = sql_get('SELECT `id` FROM `blogs_posts` WHERE `blogs_id` = :blogs_id AND `name` = :name AND `language` = :language AND `id` != :id LIMIT 1', array(':blogs_id' => $post['blogs_id'], ':id' => $id, ':name' => $post['name'], ':language' => $post['language']), 'id');
 
                 if($exists){
                     /*
@@ -1318,7 +1318,7 @@ function blogs_validate_post($post, $params = null){
                 }
 
             }else{
-                $exists = sql_get('SELECT `id` FROM `blogs_posts` WHERE `blogs_id` = :blogs_id AND `id` != :id AND `name` = :name', array(':blogs_id' => $post['blogs_id'], ':id' => $id, ':name' => $post['name']), 'id');
+                $exists = sql_get('SELECT `id` FROM `blogs_posts` WHERE `blogs_id` = :blogs_id AND `id` != :id AND `name` = :name LIMIT 1', array(':blogs_id' => $post['blogs_id'], ':id' => $id, ':name' => $post['name']), 'id');
 
                 if($exists){
                     /*
@@ -1414,13 +1414,20 @@ function blogs_validate_post($post, $params = null){
             $v->isNotEmpty ($post['keywords'],    tr('Please provide keywords for your :objectname', array(':objectname' => $params['object_name'])));
         }
 
-        if(empty($post['assigned_to'])){
-            $post['assigned_to_id'] = null;
+        if(!empty($params['label_assigned_to'])){
+            if(empty($post['assigned_to'])){
+                $post['assigned_to_id'] = null;
+
+            }else{
+                $post['assigned_to_id'] = sql_get('SELECT `id` FROM `users` WHERE `email` = :email', 'id', array(':email' => $post['assigned_to']));
+
+                if(!$post['assigned_to_id']){
+                    $v->setError(tr('The specified assigned-to-user ":assigned_to" does not exist', array(':assigned_to' => $post['assigned_to'])));
+                }
+            }
 
         }else{
-            if(!$post['assigned_to_id'] = sql_get('SELECT `id` FROM `users` WHERE `name` = :name', 'id', array(':name' => $post['assigned_to']))){
-                $v->setError(tr('The specified assigned-to-user ":assigned_to" does not exist', array(':assigned_to' => $post['assigned_to'])));
-            }
+            $post['assigned_to_id'] = null;
         }
 
         if(!empty($params['label_featured'])){
