@@ -294,6 +294,9 @@ function sodium_pad_key($key, $character = '*'){
     try{
         if(strlen($key) < SODIUM_CRYPTO_SECRETBOX_KEYBYTES){
             $key = $key.str_repeat($character, SODIUM_CRYPTO_SECRETBOX_KEYBYTES - strlen($key));
+
+        }elseif(strlen($key) > SODIUM_CRYPTO_SECRETBOX_KEYBYTES){
+            $key = substr($key, 0, SODIUM_CRYPTO_SECRETBOX_KEYBYTES);
         }
 
         return $key;
