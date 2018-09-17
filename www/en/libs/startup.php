@@ -3020,8 +3020,15 @@ function cdn_domain($file, $section = 'pub', $false_on_not_exist = false, $force
     try{
         if(!$_CONFIG['cdn']['enabled'] and !$force_cdn){
             if($section == 'pub'){
-                if(!empty($_CONFIG['cdn']['prefix'])){
+                if(empty($_CONFIG['cdn']['prefix'])){
+                    $section = '/';
+
+                }else{
                     $section = $_CONFIG['cdn']['prefix'];
+                }
+
+                if($_CONFIG['language']['supported']){
+                    $section = '/'.LANGUAGE.$section;
                 }
             }
 
