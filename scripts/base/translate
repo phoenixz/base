@@ -18,6 +18,7 @@
  * in the translation server apache configuration
  */
 $usage = './scipts/base/translate clear
+./scipts/base/translate test
 ./scipts/base/translate scan
 ./scipts/base/translate translate';
 
@@ -35,6 +36,9 @@ clear                                   - Delete all www/LANGUAGE trees except
 scan                                    - Scan www/en for translatable strings
                                           and submit these strings to the
                                           translator
+
+test                                    - tests the connection with the
+                                          configured translation server
 
 translate                               - Actually translate www/en to the
                                           configured target languages
@@ -89,7 +93,7 @@ ARGUMENTS
                                           IMPLEMENTED)';
 
 require_once(__DIR__.'/../../libs/startup.php');
-load_libs('file,inet,curl,crypt');
+load_libs('file,inet,curl');
 load_config('translate');
 
 
@@ -142,6 +146,30 @@ switch(cli_method()){
 
             log_console(tr('Deleting ":language"', array(':language' => $language)));
             file_delete_tree(ROOT.'www/'.$language);
+        }
+
+        break;
+
+    case 'test':
+        cli_no_arguments_left();
+
+        try{
+            $response = curl_get(array('url'         => url_add_query($_CONFIG['translate']['url'], 'test=1'),
+                                       'getdata'     => true,
+                                       'proxies'     => false,
+                                       'getheaders'  => false,
+                                       'post'        => array('data' => 'test'),
+                                       'httpheaders' => false));
+
+        }catch(Exception $e){
+            if(substr($e->getCode(), 0, 4) == 'HTTP'){
+                $server_message = $e->getData()['data'];
+                $code           = $e->getCode();
+
+                throw new bException(tr('Translation server gave HTTP code ":code" on URL ":url" with server message ":message"', array(':code' => $code, ':message' => $server_message, ':url' => $_CONFIG['translate']['url'])), 'failed');
+            }
+
+            throw new bException(tr('Test failed'), $e);
         }
 
         break;
@@ -344,7 +372,7 @@ switch(cli_method()){
                                            'getdata'     => true,
                                            'proxies'     => false,
                                            'getheaders'  => false,
-                                           'post'        => array('data' => encrypt($data, $_CONFIG['translate']['passphrase'])),
+                                           'post'        => array('data' => $data),
                                            'httpheaders' => false));
 
 
@@ -364,7 +392,7 @@ switch(cli_method()){
                 throw new bException(tr('Error trying to connect with server'), 'translation_error');
             }
 
-            $result = decrypt(trim($response['data']), $_CONFIG['translate']['passphrase']);
+            $result = trim($response['data']);
 //showdie($result);
 
             if($result['status'] != 'success'){
@@ -402,7 +430,7 @@ switch(cli_method()){
                                            'getdata'     => true,
                                            'proxies'     => false,
                                            'getheaders'  => false,
-                                           'post'        => array('data' => encrypt($data, $_CONFIG['translate']['passphrase'])),
+                                           'post'        => array('data' => $data),
                                            'httpheaders' => false));
 //showdie($response);
             }catch(Exception $e){
@@ -421,7 +449,7 @@ switch(cli_method()){
                 throw new bException(tr('Error trying to connect with server'), 'translation_error');
             }
 
-            $returned_data = decrypt(trim($response['data']), $_CONFIG['translate']['passphrase']);
+            $returned_data = trim($response['data']);
 
             if(!is_array($returned_data) or (isset_get($returned_data['status']) != 'success') or (!is_array(isset_get($returned_data['translations'])))){
                 throw new bException(tr('Failed to receive translations', 'error'));

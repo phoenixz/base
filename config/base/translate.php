@@ -11,7 +11,6 @@
  */
 $_CONFIG['translate']                                                           = array('url'          => 'https://toolkit.capmega.com/api/translate',
                                                                                         'mode'         => 'full',
-                                                                                        'passphrase'   => 'translate',
                                                                                         'api_key'      => '',
                                                                                         'allowed_tags' => '<br><a><strong><span><small><b><i><u>',
                                                                                         'default'      => 'es',
