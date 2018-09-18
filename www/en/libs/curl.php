@@ -88,9 +88,14 @@ function curl_get_random_ip($allowipv6 = false) {
     global $col;
 
     try{
-        $result = implode("\n", safe_exec('/sbin/ifconfig'));
+        try{
+            $result = implode("\n", safe_exec('/sbin/ifconfig'));
 
-        if(!preg_match_all('/(?:addr|inet):(\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}) /', $result, $matches)){
+        }catch(Exception $e){
+            throw new bException(tr('curl_get_random_ip(): Failed to execute ifconfig, it probably is not installed. On Ubuntu install it by executing "sudo apt install net-toolks"'), $e);
+        }
+
+        if(!preg_match_all('/(?:addr|inet)(?:\:| )(\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}) /', $result, $matches)){
             throw new bException('curl_get_random_ip(): ifconfig returned no IPs', 'not-found');
         }
 
