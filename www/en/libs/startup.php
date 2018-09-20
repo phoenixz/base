@@ -2542,66 +2542,7 @@ function name($user = null, $key_prefix = '', $default = null){
  * Show the specified page
  */
 function page_show($pagename, $params = null, $get = null){
-    global $_CONFIG, $core;
-
-    try{
-        array_params($params, 'message');
-        array_default($params, 'exists', false);
-
-        if($get){
-            if(!is_array($get)){
-                throw new bException(tr('page_show(): Specified $get MUST be an array, but is an ":type"', array(':type' => gettype($get))), 'invalid');
-            }
-
-            $_GET = $get;
-        }
-
-        if(defined('LANGUAGE')){
-            $language = LANGUAGE;
-
-        }else{
-            $language = 'en';
-        }
-
-        if(is_numeric($pagename)){
-            /*
-             * This is a system page, HTTP code. Use the page code as http code as well
-             */
-            $core->register['http_code'] = $pagename;
-        }
-
-        if(!empty($core->callType('ajax'))){
-            if($params['exists']){
-                return file_exists(ROOT.'www/'.$language.'/ajax/'.$pagename.'.php');
-            }
-
-            /*
-             * Execute ajax page
-             */
-            return include(ROOT.'www/'.$language.'/ajax/'.$pagename.'.php');
-
-        }elseif(!empty($core->callType('admin'))){
-            $prefix = 'admin/';
-
-        }else{
-            $prefix = '';
-        }
-
-        if($params['exists']){
-            return file_exists(ROOT.'www/'.$language.'/'.$prefix.$pagename.'.php');
-        }
-
-        $result = include(ROOT.'www/'.$language.'/'.$prefix.$pagename.'.php');
-
-        if(isset_get($params['return'])){
-            return $result;
-        }
-
-        die();
-
-    }catch(Exception $e){
-        throw new bException(tr('page_show(): Failed to show page ":page"', array(':page' => $pagename)), $e);
-    }
+    return include(__DIR__.'/handlers/startup-page-show.php');
 }
 
 
