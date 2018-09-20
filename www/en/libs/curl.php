@@ -525,7 +525,7 @@ function curl_get($params, $referer = null, $post = false, $options = array()){
                 }
 
                 load_libs('http');
-                throw new bException(tr('curl_get(): URL ":url" gave HTTP "403" ACCESS DENIED because ":message"', array(':url' => $params['url'], ':message' => $data['message'])), 'HTTP'.$retval['status']['http_code'], $retval);
+                throw new bException(tr('curl_get(): URL ":url" gave HTTP "403" ACCESS DENIED because ":data"', array(':url' => $params['url'], ':data' => $data)), 'HTTP'.$retval['status']['http_code'], $retval);
 
             default:
                 load_libs('http');
