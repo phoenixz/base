@@ -115,19 +115,35 @@ $languages = cli_argument('-l,--languages', 'all');
 /*
  * Validate command line parameters
  */
-if(empty($languages)){
+if($languages === null){
     if($_CONFIG['language']['supported']){
         $languages = array_keys($_CONFIG['language']['supported']);
     }
 
     if(empty($languages)){
-        throw new bException(tr('No languages specified, no languages configured'), 'warning/not-specified');
+        throw new bException(tr('This project is not a multi-lingual project. Please check the $_CONFIG[language][supported] configuration, or specify languages on the command line'), 'warning/not-specified');
     }
 
-    log_console(tr('Translating to configured languages ":languages"', array(':languages' => implode(', ', $languages))), 'white');
+    log_console(tr('Using configured languages ":languages"', array(':languages' => implode(', ', $languages))));
 
 }else{
-    log_console(tr('Translating to requested languages ":languages"', array(':languages' => implode(', ', $languages))), 'white');
+    if(empty($languages)){
+        throw new bException(tr('Please specify languages when using -l or --languages'), 'warning/not-specified');
+    }
+
+    log_console(tr('Using specified languages ":languages"', array(':languages' => implode(', ', $languages))));
+}
+
+
+
+
+/*
+ * Validate requested languages
+ */
+foreach($languages as $language){
+    if(!preg_match('/^[a-z]{2}$/', $language)){
+        throw new bException(tr('Specified language ":language" is invalid, please use a ISO 639-2 compatible language code', array(':language' => $language)), 'validation');
+    }
 }
 
 
@@ -154,19 +170,30 @@ switch(cli_method()){
         cli_no_arguments_left();
 
         try{
-            $response = curl_get(array('url'         => url_add_query($_CONFIG['translate']['url'], 'test=1'),
-                                       'getdata'     => true,
-                                       'proxies'     => false,
-                                       'getheaders'  => false,
-                                       'post'        => array('data' => 'test'),
-                                       'httpheaders' => false));
+            $response = curl_get(array('url'            => url_add_query($_CONFIG['translate']['url'], 'test=1'),
+                                       'getdata'        => true,
+                                       'proxies'        => false,
+                                       'getheaders'     => false,
+                                       'posturlencoded' => true,
+                                       'post'           => array('method' => 'test'),
+                                       'httpheaders'    => false));
+
+            if(TEST){
+                show($response);
+            }
+
+            if($response['data'] !== 'OK'){
+                throw new bException(tr('Failed test connection with translation server ":url"', array(':url' => $_CONFIG['translate']['url'])), 'failed');
+            }
+
+            log_console(tr('Successfully tested connection with translation server ":url"', array(':url' => $_CONFIG['translate']['url'])), 'green');
 
         }catch(Exception $e){
             if(substr($e->getCode(), 0, 4) == 'HTTP'){
                 $server_message = $e->getData()['data'];
                 $code           = $e->getCode();
 
-                throw new bException(tr('Translation server gave HTTP code ":code" on URL ":url" with server message ":message"', array(':code' => $code, ':message' => $server_message, ':url' => $_CONFIG['translate']['url'])), 'failed');
+                throw new bException(tr('Translation server gave HTTP code ":code" on URL ":url" with server message ":message"', array(':code' => $code, ':message' => $server_message, ':url' => $_CONFIG['translate']['url'])), $e);
             }
 
             throw new bException(tr('Test failed'), $e);
@@ -358,42 +385,44 @@ switch(cli_method()){
         if(cli_method() == 'scan'){
             log_console(tr('Sending translatable strings to server ":server"', array(':server' => $_CONFIG['translate']['url'])), 'green');
 
-            /*
-             * Construct data for sending
-             */
-            $data = array('project'      => PROJECT,
-                          'api_key'      => $_CONFIG['translate']['api_key'],
-                          'translations' => $results['translations'],
-                          'method'       => 'post',
-                          'options'         => array('mode' => $mode));
-
             try{
-                $response = curl_get(array('url'         => $_CONFIG['translate']['url'],
-                                           'getdata'     => true,
-                                           'proxies'     => false,
-                                           'getheaders'  => false,
-                                           'post'        => array('data' => $data),
-                                           'httpheaders' => false));
+                $response = curl_get(array('url'            => $_CONFIG['translate']['url'],
+                                           'getdata'        => true,
+                                           'proxies'        => false,
+                                           'getheaders'     => false,
+                                           'posturlencoded' => true,
+                                           'post'           => array('project'      => PROJECT,
+                                                                     'api_key'      => $_CONFIG['translate']['api_key'],
+                                                                     'method'       => 'post',
+                                                                     'options'      => array('mode' => $mode),
+                                                                     'translations' => $results['translations']),
+                                           'httpheaders'    => false));
 
 
-//showdie($response);
+                if(TEST){
+                    show($response);
+                }
+
             }catch(Exception $e){
                 if(substr($e->getCode(), 0, 4) == 'HTTP'){
                     $server_message = $e->getData()['data'];
                     $code           = $e->getCode();
 
-                    throw new bException(tr('Translation server gave HTTP code ":code" on URL ":url" with server message ":message"', array(':code' => $code, ':message' => $server_message, ':url' => $_CONFIG['translate']['url'])), 'failed');
+                    throw new bException(tr('Translation server gave HTTP code ":code" on URL ":url" with server message ":message"', array(':code' => $code, ':message' => $server_message, ':url' => $_CONFIG['translate']['url'])), $e);
                 }
 
-                throw new bException(tr('Error trying to connect with server : ":error"', array(':error' => $e->getMessage())), 'failed');
+                throw new bException(tr('Error trying to connect with server : ":error"', array(':error' => $e->getMessage())), $e);
             }
 
             if(empty($response['status'])){
-                throw new bException(tr('Error trying to connect with server'), 'translation_error');
+                throw new bException(tr('Error trying to connect with server'), $response['status']);
             }
 
             $result = trim($response['data']);
-//showdie($result);
+
+            if(TEST){
+                show($response);
+            }
 
             if($result['status'] != 'success'){
                 throw new bException(tr('Failed to send translatable strings'), $result['status'], $result);
@@ -415,38 +444,36 @@ switch(cli_method()){
             log_console(tr('Translating language ":language"', array(':language' => $language)), 'white');
             log_console(tr('Requesting translations from server url":url"', array(':url' => $_CONFIG['translate']['url'])));
 
-            /*
-             * Construct data for sending
-             */
-            $data = array('project'         => PROJECT,
-                          'api_key'         => $_CONFIG['translate']['api_key'],
-                          'translations'    => $results['translations'],
-                          'target_language' => $language,
-                          'method'          => 'get',
-                          'options'         => array('mode' => $mode));
-
             try{
-                $response = curl_get(array('url'         => $_CONFIG['translate']['url'],
-                                           'getdata'     => true,
-                                           'proxies'     => false,
-                                           'getheaders'  => false,
-                                           'post'        => array('data' => $data),
-                                           'httpheaders' => false));
-//showdie($response);
+                $response = curl_get(array('url'            => $_CONFIG['translate']['url'],
+                                           'getdata'        => true,
+                                           'proxies'        => false,
+                                           'getheaders'     => false,
+                                           'posturlencoded' => true,
+                                           'post'           => array('project'         => PROJECT,
+                                                                     'api_key'         => $_CONFIG['translate']['api_key'],
+                                                                     'target_language' => $language,
+                                                                     'method'          => 'get',
+                                                                     'options'         => array('mode' => $mode),
+                                                                     'translations'    => $results['translations']),
+                                           'httpheaders'    => false));
+            if(TEST){
+                show($response);
+            }
+
             }catch(Exception $e){
-//show($e);
                 if(substr($e->getCode(), 0, 4) == 'HTTP'){
                     $server_message = $e->getData()['data'];
                     $code           = $e->getCode();
 
-                    throw new bException(tr('Translation server gave HTTP code ":code" on URL ":url" with server message ":message"', array(':code' => $code, ':message' => $server_message, ':url' => $_CONFIG['translate']['url'])), 'translation_error');
+                    throw new bException(tr('Translation server gave HTTP code ":code" on URL ":url" with server message ":message"', array(':code' => $code, ':message' => $server_message, ':url' => $_CONFIG['translate']['url'])), $e);
                 }
 
-                throw new bException(tr('Error trying to connect with server : ":error"', array(':error' => $e->getMessage())), 'translation_error');
+                throw new bException(tr('Error trying to connect with server : ":error"', array(':error' => $e->getMessage())), $e);
             }
 
             if(empty($response['status'])){
-                throw new bException(tr('Error trying to connect with server'), 'translation_error');
+                throw new bException(tr('Error trying to connect with server'), $response['status']);
             }
 
             $returned_data = trim($response['data']);
