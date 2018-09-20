@@ -1301,7 +1301,7 @@ function log_console($messages = '', $color = null, $newline = true, $filter_dou
             }
         }
 
-        return $message;
+        return $messages;
 
     }catch(Exception $e){
         throw new bException('log_console(): Failed', $e, array('message' => $messages));
@@ -1437,7 +1437,7 @@ function log_file($messages, $class = 'syslog', $color = null){
     static $h = array(), $last;
 
     try{
-        load_libs('cli');
+        load_libs('cli,json');
 
         switch(str_until($class, '/')){
             case 'VERBOSE':
@@ -1501,9 +1501,20 @@ function log_file($messages, $class = 'syslog', $color = null){
                     /*
                      * Add data to messages
                      */
+                    $messages[] = cli_color('Exception data:', 'error', null, true);
+
                     foreach(array_force($data) as $line){
                         if($line){
-                            $messages[] = cli_color($line, 'error', null, true);
+                            if(is_scalar($line)){
+                                $messages[] = cli_color($line, 'error', null, true);
+
+                            }elseif(is_array($line)){
+                                /*
+                                 * This is a multi dimensional array or object,
+                                 * we cannot cli_color() these, so just JSON it.
+                                 */
+                                $messages[] = cli_color(json_encode_custom($line), 'error', null, true);
+                            }
                         }
                     }
                 }
