@@ -156,8 +156,7 @@ try{
             }
 
             if(is_numeric($e->getCode()) and page_show($e->getCode(), array('exists' => true))){
-                html_flash_set($e);
-                page_show($e->getCode());
+                page_show($e->getCode(), array('message' =>$e->getMessage()));
             }
 
             if(debug()){
@@ -259,6 +258,9 @@ try{
     }
 
 }catch(Exception $f){
+    log_file('startup-uncaught-exception handler crashed!', 'red');
+    log_file($f);
+
     if(!defined('PLATFORM')){
         /*
          * Wow, system crashed before platform detection. See $core->__constructor()
