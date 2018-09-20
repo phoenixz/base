@@ -408,7 +408,15 @@ switch(cli_method()){
                     $server_message = $e->getData()['data'];
                     $code           = $e->getCode();
 
-                    throw new bException(tr('Translation server gave HTTP code ":code" on URL ":url" with server message ":message"', array(':code' => $code, ':message' => $server_message, ':url' => $_CONFIG['translate']['url'])), $e);
+                    switch(substr($e->getCode(), 4)){
+                        case 401:
+
+                        case 404:
+                            throw new bException(tr('Translation server said that project ":project" does not exist', array(':project' => PROJECT)), 'warning');
+
+                        default:
+                            throw new bException(tr('Translation server gave HTTP code ":code" on URL ":url" with server message ":message"', array(':code' => $code, ':message' => $server_message, ':url' => $_CONFIG['translate']['url'])), $e);
+                    }
                 }
 
                 throw new bException(tr('Error trying to connect with server : ":error"', array(':error' => $e->getMessage())), $e);
