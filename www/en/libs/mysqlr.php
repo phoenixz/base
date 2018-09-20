@@ -773,4 +773,93 @@ function mysqlr_slave_ssh_tunnel($server, $slave){
         throw new bException(tr('mysqlr_slave_ssh_tunnel(): Failed'), $e);
     }
 }
+
+
+
+/*
+ * .............
+ *
+ * @author Ismael Haro <isma@capmega.com>
+ * @copyright Copyright (c) 2018 Capmega
+ * @license http://opensource.org/licenses/GPL-2.0 GNU Public License, Version 2
+ * @category Function reference
+ * @package mysqlr
+ *
+ * @param
+ */
+function mysqlr_full_backup(){
+    global $_CONFIG;
+    
+    try{
+        /*
+         * Get all servers replicating
+         */
+        $slave   = $_CONFIG['mysqlr']['hostname'];
+        $servers = sql_query('SELECT `id`,
+                                     `hostname`,
+                                     `seohostname`
+                              
+                              FROM   `servers`
+                              
+                              WHERE  `replication_status` = "enabled"');
+
+        if(!$servers->rowCount()){
+            /*
+             * There are no servers in replication status
+             */
+            return false;
+        }
+        
+        /*
+         * Make a directory with current date as name on the replication server
+         */
+        load_libs('ssh,servers');
+        $date        = servers_exec($slave, 'date +%Y%m%d');
+        $backup_path = '/data/backups/'.$date[0];
+        servers_exec($slave, 'sudo mkdir -p '.$backup_path);
+        
+        /*
+         * For each server get the databases replicating
+         */
+        while($server = sql_fetch($servers)){
+            $databases = sql_query('SELECT `id`
+                                    
+                                    FROM   `databases`
+                                    
+                                    WHERE  `replication_status` = "enabled"
+                                    AND    `servers_id`         = :servers_id',
+                                    
+                                    array(':servers_id' => $server['id']));
+            
+            if(!$databases->rowCount()){
+                /*
+                 * There are no databases replicating at this time
+                 * Skip to next server
+                 */
+                continue;
+            }
+            
+            /*
+             * Create a directory for the current server inside the backup directory
+             */
+            $server_backup_path = $backup_path.'/'.$server['seohostname'];
+            servers_exec($slave, 'sudo mkdir -p '.$server_backup_path);
+            
+            while($database = sql_fetch($databases)){
+                $db                 = mysql_get_database($database['id']);
+                $db['root_db_user'] = 'root';
+                
+                /*
+                 * Make a dump and save it on the backups server backup directory
+                 */
+                servers_exec($slave, 'sudo mysqldump \"-u'.$db['root_db_user'].'\" \"-p'.$db['root_db_password'].'\" -K -R -n -e --dump-date --comments -B '.$db['database_name'].' | gzip | sudo tee '.$server_backup_path.'/'.$db['database_name'].'.sql.gz');
+            }           
+        }
+        
+        log_console(tr('mysqlr_full_backup(): Finished backups'), 'DOT');
+        
+    }catch(Exception $e){
+        throw new bException(tr('mysqlr_full_backup(): Failed'), $e);
+    }
+}
 ?>

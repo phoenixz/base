@@ -510,6 +510,18 @@ switch(cli_method()){
                  */
                 mysqlr_resume_replication($server['database']);
                 break;
+            
+            case 'backup':
+                /*
+                 * No arguments required
+                 */
+                cli_no_arguments_left();
+
+                /*
+                 * Make backups for every replicating database
+                 */
+                mysqlr_full_backup();
+                break;
 
             case '':
                 throw new bException(tr('No sub method specified for the method ":method"', array(':method' => cli_method())), 'no-method');
