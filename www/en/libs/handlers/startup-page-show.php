@@ -29,6 +29,8 @@ try{
         $language = 'en';
     }
 
+    $params['page'] = $pagename;
+
     if(is_numeric($pagename)){
         /*
          * This is a system page, HTTP code. Use the page code as http code as well
