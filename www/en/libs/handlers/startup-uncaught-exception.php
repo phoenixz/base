@@ -108,7 +108,7 @@ try{
                 }
             }
 
-            log_console(tr('*** UNCAUGHT EXCEPTION ":code" IN SCRIPT ":script" ***', array(':code' => $e->getCode(), ':script' => SCRIPT)), 'red');
+            log_console(tr('*** UNCAUGHT EXCEPTION ":code" IN CONSOLE SCRIPT ":script" ***', array(':code' => $e->getCode(), ':script' => SCRIPT)), 'red');
 
             debug(true);
 
@@ -211,7 +211,7 @@ try{
                             <table class="exception">
                                 <thead>
                                     <td colspan="2" class="center">
-                                        '.tr('*** UNCAUGHT EXCEPTION ":code" IN SCRIPT ":script" ***', array(':code' => $e->getCode(), ':script' => SCRIPT)).'
+                                        '.tr('*** UNCAUGHT EXCEPTION ":code" IN ":type" TYPE SCRIPT ":script" ***', array(':code' => $e->getCode(), ':script' => SCRIPT, $core->callType())).'
                                     </td>
                                 </thead>
                                 <tbody>
