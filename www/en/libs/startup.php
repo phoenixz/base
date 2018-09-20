@@ -20,7 +20,7 @@
 /*
  * Framework version
  */
-define('FRAMEWORKCODEVERSION', '1.17.5');
+define('FRAMEWORKCODEVERSION', '1.17.6');
 
 
 
@@ -2021,47 +2021,38 @@ function return_with_groups($groups, $with_groups, $without_groups = null){
 /*
  * Read extended signin
  */
-function check_extended_session() {
+function check_extended_session(){
     global $_CONFIG;
 
     try{
-        if(empty($_CONFIG['sessions']['extended'])) {
+        if(empty($_CONFIG['sessions']['extended']['enabled'])){
             return false;
         }
-
-// :TODO: Clean garbage
-        //if($api === null){
-        //    $api = (strtolower(substr($_SERVER['SCRIPT_NAME'], 0, 5)) == '/api/');
-        //}
 
         if(isset($_COOKIE['extsession']) and !isset($_SESSION['user'])) {
             /*
              * Pull  extsession data
              */
-            $ext = sql_get('SELECT `users_id` FROM `extended_sessions` WHERE `session_key` = "'.cfm($_COOKIE['extsession']).'" AND DATE(`addedon`) < DATE(NOW());');
+            $ext = sql_get('SELECT `users_id` FROM `extended_sessions` WHERE `session_key` = ":session_key" AND DATE(`addedon`) < DATE(NOW());', array(':session_key' => cfm($_COOKIE['extsession'])));
 
             if($ext['users_id']) {
-                $user = sql_get('SELECT * FROM `users` WHERE `users`.`id` = '.cfi($ext['users_id']).';');
+                $user = sql_get('SELECT * FROM `users` WHERE `users`.`id` = :id', array(':id' => cfi($ext['users_id'])));
 
-                if($user['id']) {
+                if($user['id']){
                     /*
-                     * sign in user
+                     * Auto sign in user
                      */
                     load_libs('user');
                     user_signin($user, true);
 
-                    //if(!$api){
-                    //    redirect($_SERVER['REQUEST_URI']);
-                    //}
-
-                } else {
+                }else{
                     /*
                      * Remove cookie
                      */
                     setcookie('extsession', 'stub', 1);
                 }
 
-            } else {
+            }else{
                 /*
                  * Remove cookie
                  */
