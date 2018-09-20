@@ -11,40 +11,20 @@
 
 
 /*
- * Add a new statistical item
+ * ..................
+ *
+ * @author Sven Olaf Oostenbrink <sven@capmega.com>
+ * @copyright Copyright (c) 2018 Capmega
+ * @license http://opensource.org/licenses/GPL-2.0 GNU Public License, Version 2
+ * @category Function reference
+ * @package statistics
+ *
+ * @param array $params
+ * returns array The specified parameters, now validated and clean
  */
 function statistics_add($params){
     try{
-        array_params($params);
-        array_default($params, 'event'    , '');
-        array_default($params, 'details'  , '');
-        array_default($params, 'resource1', null);
-        array_default($params, 'resource2', null);
-        array_default($params, 'unique'   , false);
-
-        if(empty($params['event'])){
-            throw new bException(tr('statistics_add(): No event specified'), 'not-specified');
-        }
-
-        if(empty($params['details'])){
-            throw new bException(tr('statistics_add(): No details specified'), 'not-specified');
-        }
-
-        if(empty($params['resource1'])){
-            throw new bException(tr('statistics_add(): No resource1 specified'), 'not-specified');
-        }
-
-        if($params['resource2'] and empty($params['resource1'])){
-            throw new bException(tr('statistics_add(): No resource2 specified without resource1'), 'not-specified');
-        }
-
-        if(!is_natural($params['resource1'], 1, true)){
-            throw new bException(tr('statistics_add(): Invalid resource1 specified, please ensure it is a natural number'), 'invalid');
-        }
-
-        if(!empty($params['resource2']) and !is_natural($params['resource2'], 1, true)){
-            throw new bException(tr('statistics_add(): Invalid resource2 specified, please ensure it is a natural number'), 'invalid');
-        }
+        $params = statistics_validate($params);
 
         sql_query('INSERT INTO `statistics` (`createdby`, `remote`, `event`, `details`, `resource1`, `resource2`)
                    VALUES                   (:createdby , :remote , :event , :details , :resource1 , :resource2 )',
@@ -52,6 +32,7 @@ function statistics_add($params){
                    array(':createdby' => isset_get($_SESSION['user']['id']),
                          ':remote'    => (PLATFORM_HTTP ? $_SERVER['REMOTE_ADDR'] : 'CLI'),
                          ':event'     => $params['event'],
+                         ':subevent'  => $params['event'],
                          ':details'   => $params['details'],
                          ':resource1' => $params['resource1'],
                          ':resource2' => $params['resource2']));
@@ -60,6 +41,56 @@ function statistics_add($params){
 
     }catch(Exception $e){
         throw new bException('statistics_add(): Failed', $e);
+    }
+}
+
+
+
+/*
+ * ..................
+ *
+ * @author Sven Olaf Oostenbrink <sven@capmega.com>
+ * @copyright Copyright (c) 2018 Capmega
+ * @license http://opensource.org/licenses/GPL-2.0 GNU Public License, Version 2
+ * @category Function reference
+ * @package statistics
+ *
+ * @param array $params
+ * returns array The specified parameters, now validated and clean
+ */
+function statistics_validate($params){
+    try{
+        load_libs('validate');
+        $v = new validate_form($params, 'event,subevent,details,resource1,resource2');
+
+        $v->isNotEmpty($params['event'], tr('Please specify an event'));
+        $v->isNotEmpty($params['details'], tr('Please specify event details'));
+
+        if(empty($params['subevent'])){
+            $params['subevent'] = null;
+        }
+
+        if(empty($params['resource1'])){
+            $params['resource1'] = null;
+
+            if($params['resource2']){
+                $v->setError(tr('Resource2 cannot be specified without resource1'));
+            }
+
+        }else{
+            $v->isNatural($params['resource1'], 1, tr('statistics_add(): Invalid resource1 specified, please ensure it is a natural number'));
+
+            if($params['resource2']){
+                $v->isNatural($params['resource2'], 1, tr('statistics_add(): Invalid resource2 specified, please ensure it is a natural number'));
+            }
+        }
+
+        $v->isValid();
+
+        return $params;
+
+    }catch(Exception $e){
+        throw new bException('statistics_validate(): Failed', $e);
     }
 }
 ?>

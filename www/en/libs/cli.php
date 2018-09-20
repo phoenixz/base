@@ -81,6 +81,10 @@ class Colors {
     public function getColoredString($string, $foreground_color = null, $background_color = null, $force = false, $reset = true) {
         $colored_string = '';
 
+        if(!is_scalar($string)){
+            throw new bException(tr('getColoredString(): Specified text ":text" is not a string or scalar', array(':text' => $string)), 'invalid');
+        }
+
         if(NOCOLOR and !$force){
             /*
              * Do NOT apply color
@@ -759,11 +763,30 @@ function cli_argument($keys = null, $next = null, $default = null){
             $results = array();
 
             foreach($keys as $key){
-                $value = cli_argument($key, $next, null);
+                if($next === 'all'){
+                    /*
+                     * We're requesting all values for all specified keys
+                     * cli_argument will return null in case the specified key
+                     * does not exist
+                     */
+                    $value = cli_argument($key, 'all', null);
 
-                if($value){
-                    $results[$key] = $value;
+                    if(is_array($value)){
+                        $found   = true;
+                        $results = array_merge($results, $value);
+                    }
+
+                }else{
+                    $value = cli_argument($key, $next, null);
+
+                    if($value){
+                        $results[$key] = $value;
+                    }
                 }
+            }
+
+            if(($next === 'all') and isset($found)){
+                return $results;
             }
 
             switch(count($results)){
@@ -794,6 +817,8 @@ function cli_argument($keys = null, $next = null, $default = null){
                 /*
                  * Return all following arguments, if available, until the next option
                  */
+                $retval = array();
+
                 foreach($argv as $argv_key => $argv_value){
                     if(empty($start)){
                         if($argv_value == $keys){

@@ -91,11 +91,17 @@ try{
 
                     case 'validation':
                         $messages = $e->getMessages();
-                        array_pop($messages);
-                        array_pop($messages);
 
-                        log_console(tr('Validation failed'), 'yellow');
-                        log_console($messages, 'yellow');
+                        if(count($messages) > 2){
+                            array_pop($messages);
+                            array_pop($messages);
+                            log_console(tr('Validation failed'), 'yellow');
+                            log_console($messages, 'yellow');
+
+                        }else{
+                            log_console($messages, 'yellow');
+                        }
+
                         cli_show_usage(isset_get($GLOBALS['usage']), 'white');
                         $core->register['exit_code'] = 250;
                         die($core->register['exit_code']);

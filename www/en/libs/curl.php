@@ -397,7 +397,14 @@ function curl_get($params, $referer = null, $post = false, $options = array()){
                 curl_setopt($ch, CURLOPT_POSTFIELDS, http_build_query($params['post']));
 
             }else{
-                curl_setopt($ch, CURLOPT_POSTFIELDS , $params['post']);
+                try{
+                    curl_setopt($ch, CURLOPT_POSTFIELDS , $params['post']);
+
+                }catch(Exception $e){
+                    if(strstr($e->getMessage(), 'Array to string conversion')){
+                        throw new bException(tr('curl_get(): CURLOPT_POSTFIELDS failed with "Array to string conversion", this is very likely because the specified post array is a multi dimensional array, while CURLOPT_POSTFIELDS only accept one dimensional arrays. Please set $params[posturlencoded] = true to use http_build_query() to set CURLOPT_POSTFIELDS instead'), 'invalid');
+                    }
+                }
             }
 
         }else{
