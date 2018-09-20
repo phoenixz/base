@@ -441,7 +441,7 @@ function mysqlr_slave_replication_setup($params){
  *
  * @param
  */
-function mysqlr_pause_replication($db){
+function mysqlr_pause_replication($db, $restart_mysql = true){
     global $_CONFIG;
 
     try{
@@ -481,8 +481,10 @@ function mysqlr_pause_replication($db){
         /*
          * Close PDO connection before restarting MySQL
          */
-        log_console(tr('Restarting Slave MySQL service'), 'DOT');
-        servers_exec($slave, 'sudo service mysql restart');
+        if($restart_mysql){
+            log_console(tr('Restarting Slave MySQL service'), 'DOT');
+            servers_exec($slave, 'sudo service mysql restart');   
+        }
 
         mysqlr_update_replication_status($database, 'paused');
         log_console(tr('Paused replication for database :database', array(':database' => $database['database_name'])), 'DOT');
@@ -507,7 +509,7 @@ function mysqlr_pause_replication($db){
  *
  * @param
  */
-function mysqlr_resume_replication($db){
+function mysqlr_resume_replication($db, $restart_mysql = true){
     global $_CONFIG;
 
     try{
@@ -544,8 +546,11 @@ function mysqlr_resume_replication($db){
         /*
          * Close PDO connection before restarting MySQL
          */
-        log_console(tr('Restarting Slave MySQL service'), 'DOT');
-        servers_exec($slave, 'sudo service mysql restart');
+        if($restart_mysql){
+            log_console(tr('Restarting Slave MySQL service'), 'DOT');
+            servers_exec($slave, 'sudo service mysql restart');   
+        }
+        
         mysqlr_update_replication_status($database, 'enabled');
         log_console(tr('Resumed replication for database :database', array(':database' => $database['database_name'])), 'DOT');
 
@@ -811,7 +816,7 @@ function mysqlr_full_backup(){
         }
         
         /*
-         * Make a directory with current date as name on the replication server
+         * Make a directory with the current date as name on the replication server
          */
         load_libs('ssh,servers');
         $date        = servers_exec($slave, 'date +%Y%m%d');
@@ -822,16 +827,17 @@ function mysqlr_full_backup(){
          * For each server get the databases replicating
          */
         while($server = sql_fetch($servers)){
-            $databases = sql_query('SELECT `id`
+            $databases = sql_list('SELECT `id`,
+                                           `name`
                                     
-                                    FROM   `databases`
+                                   FROM   `databases`
                                     
-                                    WHERE  `replication_status` = "enabled"
-                                    AND    `servers_id`         = :servers_id',
+                                   WHERE  `replication_status` = "enabled"
+                                   AND    `servers_id`         = :servers_id',
                                     
-                                    array(':servers_id' => $server['id']));
-            
-            if(!$databases->rowCount()){
+                                   array(':servers_id' => $server['id']));
+ 
+            if(!count($databases)){
                 /*
                  * There are no databases replicating at this time
                  * Skip to next server
@@ -839,21 +845,45 @@ function mysqlr_full_backup(){
                 continue;
             }
             
+            log_console(tr('Making backups of server :server', array(':server' => $server['hostname'])), 'DOT');
+            
+            /*
+             * Disable replication of each database
+             */
+            foreach($databases as $id => $name){
+                log_console(tr('Disabling replication of database :database', array(':database' => $name)), 'DOT');
+                mysqlr_pause_replication($id, false);
+            }
+            
+            /*
+             * Restart mysql service on slave to disable replication on selected databases
+             */
+            servers_exec($slave, 'sudo service mysql restart');
+            
             /*
              * Create a directory for the current server inside the backup directory
              */
             $server_backup_path = $backup_path.'/'.$server['seohostname'];
             servers_exec($slave, 'sudo mkdir -p '.$server_backup_path);
             
-            while($database = sql_fetch($databases)){
-                $db                 = mysql_get_database($database['id']);
+            foreach($databases as $id => $name){
+                $db                 = mysql_get_database($id);
                 $db['root_db_user'] = 'root';
+                
+                log_console(tr('Making backup of database :database', array(':database' => $db['database_name'])), 'DOT');
                 
                 /*
                  * Make a dump and save it on the backups server backup directory
+                 * And resume replication on this database
                  */
                 servers_exec($slave, 'sudo mysqldump \"-u'.$db['root_db_user'].'\" \"-p'.$db['root_db_password'].'\" -K -R -n -e --dump-date --comments -B '.$db['database_name'].' | gzip | sudo tee '.$server_backup_path.'/'.$db['database_name'].'.sql.gz');
-            }           
+                mysqlr_resume_replication($id, false);
+            }
+            
+            /*
+             * Restart mysql service on slave to enable replication again on selected databases
+             */
+            servers_exec($slave, 'sudo service mysql restart');
         }
         
         log_console(tr('mysqlr_full_backup(): Finished backups'), 'DOT');
