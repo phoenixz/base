@@ -5,18 +5,36 @@
  *
  * @copyright Sven Oostenbrink <support@capmega.com>
  */
-$usage = "backup database mysql username USERNAME password PASSWORD [database DATABASE]\n".
-         "backup path PATH\n".
-         "backup sync SOURCE DESTINATION\n".
-         "backup default\n".
-         "backup (same as backup default)\n";
-         "backup clean|clear\n";
+$usage = './scripts/base/backup all
+./scripts/base/backup database
+./scripts/base/backup path
+./scripts/base/backup clean|clear';
 
-$help  = "The backup script can create (zipped) backups of directory trees, and databases, and / or sync them with a remote localtion. It currently only supports MySQL databases";
+$help  = 'The backup script can create (zipped) backups of directory trees, and databases, and / or sync them with a remote localtion. It currently only supports MySQL databases';
 
 require_once(__DIR__.'/../../libs/startup.php');
 
 load_libs('backup');
+
+switch(cli_method()){
+    case 'all':
+        break;
+
+    case 'database':
+        break;
+
+    case 'path':
+        break;
+
+    case 'clear':
+        break;
+
+    case '':
+        throw new bException(tr('No method specified'), 'no-method');
+
+    default:
+        throw new bException(tr('Unknown method ":method" specified', array(':method' => cli_method())), 'unknown-method');
+}
 
 $sync  = cli_argument('sync');
 $mysql = cli_argument('mysql');

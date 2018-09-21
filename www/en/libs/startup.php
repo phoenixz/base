@@ -420,8 +420,11 @@ class bException extends Exception{
      * @param string $message The message you wish to add to the exceptions messages list
      * @return object $this, so that you can string multiple calls together
      */
-    public function addMessage($message){
-        $this->messages[] = $message;
+    public function addMessages($messages){
+        foreach(array_force($messages) as $message){
+            $this->messages[] = $message;
+        }
+
         return $this;
     }
 

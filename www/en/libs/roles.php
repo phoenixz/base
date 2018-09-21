@@ -89,13 +89,11 @@ function roles_validate($role){
     try{
         load_libs('validate');
 
-        $v = new validate_form($role, 'name,role,description');
+        $v = new validate_form($role, 'name,description');
 
-        $v->isNatural  ($role['id']       , tr('Invalid role id specified'));
-        $v->isNotEmpty ($role['name']     , tr('No roles name specified'));
-        $v->hasMinChars($role['name'],   2, tr('Please ensure the role\'s name has at least 2 characters'));
-        $v->hasMaxChars($role['name'],  32, tr('Please ensure the role\'s name has less than 32 characters'));
-        $v->hasNoChars ($role['name'], ' ', tr('Please ensure the role\'s name contains no spaces'));
+        $v->isNatural($role['id'], tr('Invalid role id specified'));
+        $v->isNotEmpty($role['name'], tr('No roles name specified'));
+        $v->isRegex($role['name'], '/[a-z-]{2,32}/', tr('Please ensure the role\'s name is valid. It can only contain a-z and -, and no spaces'));
 
         $v->isNotEmpty ($role['description']      , tr('No role\'s description specified'));
         $v->hasMinChars($role['description'],    2, tr('Please ensure the role\'s description has at least 2 characters'));

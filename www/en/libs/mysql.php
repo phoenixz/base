@@ -2,13 +2,36 @@
 /*
  * MySQL library
  *
- * This library contains various functions to manage mysql databases and servers
+ * This library contains various functions to manage mysql databases and servers through the command line mysql or mysqldump commands
  *
  * @license http://opensource.org/licenses/GPL-2.0 GNU Public License, Version 2
  * @copyright Sven Oostenbrink <support@capmega.com>
  * @copyright Ismael Haro <support@capmega.com>
  *
  */
+
+
+
+/*
+ * Initialize the library, automatically executed by libs_load()
+ *
+ * NOTE: This function is executed automatically by the load_libs() function and does not need to be called manually
+ *
+ * @author Sven Olaf Oostenbrink <sven@capmega.com>
+ * @copyright Copyright (c) 2018 Capmega
+ * @license http://opensource.org/licenses/GPL-2.0 GNU Public License, Version 2
+ * @category Function reference
+ * @package
+ *
+ * @return void
+ */
+function mysql_library_init(){
+    try{
+
+    }catch(Exception $e){
+        throw new bException('mysql_library_init(): Failed', $e);
+    }
+}
 
 
 
@@ -64,7 +87,7 @@ function mysql_exec($server, $query, $root = false, $simple_quotes = false){
             mysql_delete_password_file($server);
 
         }catch(Exception $e){
-
+            $e->addMessages($e->getMessages());
         }
 
         throw new bException(tr('mysql_exec(): Failed'), $e);
@@ -228,7 +251,7 @@ function mysql_get_database($db_name){
 
 
 /*
- * ..................
+ * Reset the password for the specified user on the specified server
  *
  * @author Sven Olaf Oostenbrink <sven@capmega.com>
  * @copyright Copyright (c) 2018 Capmega
@@ -236,10 +259,12 @@ function mysql_get_database($db_name){
  * @category Function reference
  * @package mysql
  *
- * @param array $params
- * @return
+ * @param mixed $server
+ * @param mixed $username
+ * @param mixed $password
+ * @return voic
  */
-function mysql_reset_password($params){
+function mysql_reset_password($server, $username, $password){
     try{
 
     }catch(Exception $e){
