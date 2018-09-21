@@ -863,7 +863,7 @@ function mysqlr_full_backup(){
             /*
              * Create a directory for the current server inside the backup directory
              */
-            $server_backup_path = $backup_path.'/'.$server['seohostname'];
+            $server_backup_path = $backup_path.'/'.$server['hostname'];
             servers_exec($slave, 'sudo mkdir '.$server_backup_path);
             
             foreach($databases as $id => $name){
