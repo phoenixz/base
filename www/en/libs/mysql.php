@@ -27,10 +27,6 @@
  */
 function mysql_library_init(){
     try{
-        ensure_installed(array('name'      => 'empty',
-                               'project'   => 'emptyear',
-                               'callback'  => 'empty_install',
-                               'checks'    => array(ROOT.'libs/external/empty/')));
 
     }catch(Exception $e){
         throw new bException('mysql_library_init(): Failed', $e);
