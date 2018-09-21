@@ -322,7 +322,7 @@ foreach($_CONFIG['locale'] as $key => $value){
 /*
  * Prepare for unicode usage
  */
-if($_CONFIG['charset'] = 'UTF-8'){
+if($_CONFIG['charset'] == 'UTF-8'){
     mb_init(not_empty($_CONFIG['locale'][LC_CTYPE], $_CONFIG['locale'][LC_ALL]));
 
     if(function_exists('mb_internal_encoding')){
