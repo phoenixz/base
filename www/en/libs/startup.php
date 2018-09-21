@@ -20,7 +20,7 @@
 /*
  * Framework version
  */
-define('FRAMEWORKCODEVERSION', '1.17.5');
+define('FRAMEWORKCODEVERSION', '1.17.6');
 
 
 
@@ -420,8 +420,11 @@ class bException extends Exception{
      * @param string $message The message you wish to add to the exceptions messages list
      * @return object $this, so that you can string multiple calls together
      */
-    public function addMessage($message){
-        $this->messages[] = $message;
+    public function addMessages($messages){
+        foreach(array_force($messages) as $message){
+            $this->messages[] = $message;
+        }
+
         return $this;
     }
 
@@ -2021,47 +2024,38 @@ function return_with_groups($groups, $with_groups, $without_groups = null){
 /*
  * Read extended signin
  */
-function check_extended_session() {
+function check_extended_session(){
     global $_CONFIG;
 
     try{
-        if(empty($_CONFIG['sessions']['extended'])) {
+        if(empty($_CONFIG['sessions']['extended']['enabled'])){
             return false;
         }
-
-// :TODO: Clean garbage
-        //if($api === null){
-        //    $api = (strtolower(substr($_SERVER['SCRIPT_NAME'], 0, 5)) == '/api/');
-        //}
 
         if(isset($_COOKIE['extsession']) and !isset($_SESSION['user'])) {
             /*
              * Pull  extsession data
              */
-            $ext = sql_get('SELECT `users_id` FROM `extended_sessions` WHERE `session_key` = "'.cfm($_COOKIE['extsession']).'" AND DATE(`addedon`) < DATE(NOW());');
+            $ext = sql_get('SELECT `users_id` FROM `extended_sessions` WHERE `session_key` = ":session_key" AND DATE(`addedon`) < DATE(NOW());', array(':session_key' => cfm($_COOKIE['extsession'])));
 
             if($ext['users_id']) {
-                $user = sql_get('SELECT * FROM `users` WHERE `users`.`id` = '.cfi($ext['users_id']).';');
+                $user = sql_get('SELECT * FROM `users` WHERE `users`.`id` = :id', array(':id' => cfi($ext['users_id'])));
 
-                if($user['id']) {
+                if($user['id']){
                     /*
-                     * sign in user
+                     * Auto sign in user
                      */
                     load_libs('user');
                     user_signin($user, true);
 
-                    //if(!$api){
-                    //    redirect($_SERVER['REQUEST_URI']);
-                    //}
-
-                } else {
+                }else{
                     /*
                      * Remove cookie
                      */
                     setcookie('extsession', 'stub', 1);
                 }
 
-            } else {
+            }else{
                 /*
                  * Remove cookie
                  */
@@ -2542,66 +2536,7 @@ function name($user = null, $key_prefix = '', $default = null){
  * Show the specified page
  */
 function page_show($pagename, $params = null, $get = null){
-    global $_CONFIG, $core;
-
-    try{
-        array_params($params, 'message');
-        array_default($params, 'exists', false);
-
-        if($get){
-            if(!is_array($get)){
-                throw new bException(tr('page_show(): Specified $get MUST be an array, but is an ":type"', array(':type' => gettype($get))), 'invalid');
-            }
-
-            $_GET = $get;
-        }
-
-        if(defined('LANGUAGE')){
-            $language = LANGUAGE;
-
-        }else{
-            $language = 'en';
-        }
-
-        if(is_numeric($pagename)){
-            /*
-             * This is a system page, HTTP code. Use the page code as http code as well
-             */
-            $core->register['http_code'] = $pagename;
-        }
-
-        if(!empty($core->callType('ajax'))){
-            if($params['exists']){
-                return file_exists(ROOT.'www/'.$language.'/ajax/'.$pagename.'.php');
-            }
-
-            /*
-             * Execute ajax page
-             */
-            return include(ROOT.'www/'.$language.'/ajax/'.$pagename.'.php');
-
-        }elseif(!empty($core->callType('admin'))){
-            $prefix = 'admin/';
-
-        }else{
-            $prefix = '';
-        }
-
-        if($params['exists']){
-            return file_exists(ROOT.'www/'.$language.'/'.$prefix.$pagename.'.php');
-        }
-
-        $result = include(ROOT.'www/'.$language.'/'.$prefix.$pagename.'.php');
-
-        if(isset_get($params['return'])){
-            return $result;
-        }
-
-        die();
-
-    }catch(Exception $e){
-        throw new bException(tr('page_show(): Failed to show page ":page"', array(':page' => $pagename)), $e);
-    }
+    return include(__DIR__.'/handlers/startup-page-show.php');
 }
 
 

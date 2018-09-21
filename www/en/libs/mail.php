@@ -9,6 +9,28 @@
 
 
 /*
+ * Initialize the library
+ * Automatically executed by libs_load()
+ *
+ * @copyright Copyright (c) 2018 Capmega
+ * @license http://opensource.org/licenses/GPL-2.0 GNU Public License, Version 2
+ * @category Function reference
+ * @package email-server
+ *
+ * @return array
+ */
+function mail_library_init(){
+    try{
+        load_config('mail');
+
+    }catch(Exception $e){
+        throw new bException('mail_library_init(): Failed', $e);
+    }
+}
+
+
+
+/*
  * Send a templated email
  */
 function mail_send_templated_email($params, $subject, $body, $language = false, $template = 'email/template'){

@@ -315,6 +315,7 @@ function projects_get($project, $column = null, $status = null){
                                          `projects`.`seoname`,
                                          `projects`.`code`,
                                          `projects`.`api_key`,
+                                         `projects`.`fcm_apikey`,
                                          `projects`.`last_login`,
                                          `projects`.`description`,
 

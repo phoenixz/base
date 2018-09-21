@@ -19,7 +19,7 @@ try{
     }
 
     if(!empty($core) and !empty($core->register['ready'])){
-        log_file(tr('*** UNCAUGHT EXCEPTION ":code" IN SCRIPT ":script" ***', array(':code' => $e->getCode(), ':script' => SCRIPT)), 'exceptions', 'error');
+        log_file(tr('*** UNCAUGHT EXCEPTION ":code" IN ":type" SCRIPT ":script" ***', array(':code' => $e->getCode(), ':type' => $core->callType(), ':script' => SCRIPT)), 'exceptions', 'error');
         log_file($e, 'exceptions');
     }
 
@@ -108,7 +108,7 @@ try{
                 }
             }
 
-            log_console(tr('*** UNCAUGHT EXCEPTION ":code" IN SCRIPT ":script" ***', array(':code' => $e->getCode(), ':script' => SCRIPT)), 'red');
+            log_console(tr('*** UNCAUGHT EXCEPTION ":code" IN CONSOLE SCRIPT ":script" ***', array(':code' => $e->getCode(), ':script' => SCRIPT)), 'red');
 
             debug(true);
 
@@ -156,8 +156,7 @@ try{
             }
 
             if(is_numeric($e->getCode()) and page_show($e->getCode(), array('exists' => true))){
-                html_flash_set($e);
-                page_show($e->getCode());
+                page_show($e->getCode(), array('message' =>$e->getMessage()));
             }
 
             if(debug()){
@@ -212,7 +211,7 @@ try{
                             <table class="exception">
                                 <thead>
                                     <td colspan="2" class="center">
-                                        '.tr('*** UNCAUGHT EXCEPTION ":code" IN SCRIPT ":script" ***', array(':code' => $e->getCode(), ':script' => SCRIPT)).'
+                                        '.tr('*** UNCAUGHT EXCEPTION ":code" IN ":type" TYPE SCRIPT ":script" ***', array(':code' => $e->getCode(), ':script' => SCRIPT, 'type' => $core->callType())).'
                                     </td>
                                 </thead>
                                 <tbody>
@@ -259,6 +258,9 @@ try{
     }
 
 }catch(Exception $f){
+    log_file('STARTUP-UNCAUGHT-EXCEPTION HANDLER CRASHED!', 'exception-handler', 'red');
+    log_file($f, 'exception-handler');
+
     if(!defined('PLATFORM')){
         /*
          * Wow, system crashed before platform detection. See $core->__constructor()

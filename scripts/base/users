@@ -234,6 +234,9 @@ load_libs('user');
 switch(cli_method()){
     case 'create':
         $user              = cli_arguments('--name,--email,--username,--nickname,--latitude,--longitude,--status,--type,--role,--type,--redirect,--domain');
+        $user              = users_validate($user, array('password'            => false,
+                                                         'validation_password' => false));
+
         $user['password']  = cli_readline(tr('Please enter the users password'), true);
         $user['password2'] = cli_readline(tr('Please validate the password'), true);
         $user              = users_validate($user);

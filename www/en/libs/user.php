@@ -147,7 +147,7 @@ function user_update_groups($user, $groups, $validate = false){
             }
 
             if(is_numeric($user)){
-                $users_id = sql_get('SELECT `id` FROM `users` WHERE `id` = :id', 'id', array(':id' => $user));
+                $users_id = sql_get('SELECT `id` FROM `users` WHERE `id` = :id', true, array(':id' => $user));
 
             }else{
                 $users_id = sql_get('SELECT `id` FROM `users` WHERE (`username` = :username OR `email` = :email)', 'id', array(':username' => $user, ':email' => $user));
@@ -733,13 +733,13 @@ function user_log_authentication($username, $users_id, $captcha_required, $e = n
         sql_query('INSERT INTO `authentications` (`createdby`, `status`, `captcha_required`, `failed_reason`, `users_id`, `username`, `ip`)
                    VALUES                        (:createdby , :status , :captcha_required , :failed_reason , :users_id , :username , :ip )',
 
-                   array(':status'            => $status,
-                         ':createdby'         => isset_get($_SESSION['user']['id']),
-                         ':users_id'          => $users_id,
-                         ':username'          => $username,
-                         ':failed_reason'     => str_truncate(trim(str_from(isset_get($failed_reason), '():')), 127),
-                         ':captcha_required'  => (boolean) $captcha_required,
-                         ':ip'                => isset_get($_SERVER['REMOTE_ADDR'])));
+                   array(':status'           => $status,
+                         ':createdby'        => isset_get($_SESSION['user']['id']),
+                         ':users_id'         => $users_id,
+                         ':username'         => $username,
+                         ':failed_reason'    => str_truncate(trim(str_from(isset_get($failed_reason), '():')), 127),
+                         ':captcha_required' => (boolean) $captcha_required,
+                         ':ip'               => isset_get($_SERVER['REMOTE_ADDR'])));
 
     }catch(Exception $e){
         throw new bException('user_log_authentication(): Failed', $e);
@@ -992,6 +992,8 @@ function user_create_extended_session($users_id) {
  * Set a users verification code
  */
 function user_set_verify_code($user, $email_type = false){
+	global $_CONFIG;
+
     try{
         load_libs('email');
 
@@ -1344,12 +1346,12 @@ function user_get($user = null, $status = null){
                                    FROM      `users`
 
                                    LEFT JOIN `users` AS `createdby`
-                                   ON        `createdby`.`id` = `users`.`createdby`
+                                   ON        `createdby`.`id`  = `users`.`createdby`
 
                                    LEFT JOIN `users` AS `modifiedby`
                                    ON        `modifiedby`.`id` = `users`.`modifiedby`
 
-                                   WHERE     `users`.`id` = :id
+                                   WHERE     `users`.`id`      = :id
                                    AND       (`users`.`status` '.sql_where_null($status).' OR `users`.`status` = "locked")',
 
                                    array(':id' => $user));

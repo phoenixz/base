@@ -398,17 +398,20 @@ switch(cli_method()){
                                                                      'translations' => $results['translations']),
                                            'httpheaders'    => false));
 
-
-                if(TEST){
-                    show($response);
-                }
-
             }catch(Exception $e){
                 if(substr($e->getCode(), 0, 4) == 'HTTP'){
                     $server_message = $e->getData()['data'];
                     $code           = $e->getCode();
 
-                    throw new bException(tr('Translation server gave HTTP code ":code" on URL ":url" with server message ":message"', array(':code' => $code, ':message' => $server_message, ':url' => $_CONFIG['translate']['url'])), $e);
+                    switch(substr($e->getCode(), 4)){
+                        case 401:
+
+                        case 404:
+                            throw new bException(tr('Translation server said that project ":project" does not exist', array(':project' => PROJECT)), 'warning');
+
+                        default:
+                            throw new bException(tr('Translation server gave HTTP code ":code" on URL ":url" with server message ":message"', array(':code' => $code, ':message' => $server_message, ':url' => $_CONFIG['translate']['url'])), $e);
+                    }
                 }
 
                 throw new bException(tr('Error trying to connect with server : ":error"', array(':error' => $e->getMessage())), $e);
@@ -418,10 +421,10 @@ switch(cli_method()){
                 throw new bException(tr('Error trying to connect with server'), $response['status']);
             }
 
-            $result = trim($response['data']);
+            $result = json_decode_custom($response['data']);
 
             if(TEST){
-                show($response);
+                show($result);
             }
 
             if($result['status'] != 'success'){
@@ -457,9 +460,6 @@ switch(cli_method()){
                                                                      'options'         => array('mode' => $mode),
                                                                      'translations'    => $results['translations']),
                                            'httpheaders'    => false));
-            if(TEST){
-                show($response);
-            }
 
             }catch(Exception $e){
                 if(substr($e->getCode(), 0, 4) == 'HTTP'){
@@ -476,19 +476,23 @@ switch(cli_method()){
                 throw new bException(tr('Error trying to connect with server'), $response['status']);
             }
 
-            $returned_data = trim($response['data']);
+            $retval = json_decode_custom($response['data']);
 
-            if(!is_array($returned_data) or (isset_get($returned_data['status']) != 'success') or (!is_array(isset_get($returned_data['translations'])))){
+            if(TEST){
+                show($retval);
+            }
+
+            if(!is_array($retval) or (isset_get($retval['status']) != 'success') or (!is_array(isset_get($retval['translations'])))){
                 throw new bException(tr('Failed to receive translations', 'error'));
             }
 
             $count = 0;
 
-            foreach($returned_data['translations'] as $translations){
+            foreach($retval['translations'] as $translations){
                 $count += count($translations);
             }
 
-            log_console(tr('Received ":count" translations for ":files" files from translation server', array(':count' => $count, ':files' => count($returned_data['translations']))), 'green');
+            log_console(tr('Received ":count" translations for ":files" files from translation server', array(':count' => $count, ':files' => count($retval['translations']))), 'green');
 
 
 
@@ -515,7 +519,7 @@ switch(cli_method()){
 
                 log_console(tr('Applying translations'), '', true);
 
-                foreach($returned_data['translations'] as $short_file => $data){
+                foreach($retval['translations'] as $short_file => $data){
                     if(VERBOSE){
                         log_console(tr('Translating ":file"', array(':file' => $short_file)), '', false);
 
@@ -558,11 +562,11 @@ switch(cli_method()){
 
                 cli_dot(false);
 
-                if($returned_data['stats']['translations_missing'] > 0){
-                    log_console(tr('Missing ":count" translations', array(':count' => number_format($returned_data['stats']['translations_missing']))), 'yellow');
+                if($retval['stats']['translations_missing'] > 0){
+                    log_console(tr('Missing ":count" translations', array(':count' => number_format($retval['stats']['translations_missing']))), 'yellow');
                 }
 
-                log_console(tr('Successfully translated ":count" sections', array(':count' => number_format($returned_data['stats']['translations_done']))), 'green');
+                log_console(tr('Successfully translated ":count" sections', array(':count' => number_format($retval['stats']['translations_done']))), 'green');
 
             }catch(Exception $e){
                 throw new bException(tr('Error applying ":lang" translations', array(':lang' => $language)), $e);
