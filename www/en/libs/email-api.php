@@ -11,14 +11,38 @@
 
 
 
- load_libs('api');
+/*
+ *
+ *
+ * @copyright Copyright (c) 2018 Capmega
+ * @license http://opensource.org/licenses/GPL-2.0 GNU Public License, Version 2
+ * @category Function reference
+ * @package emailapi
+ *
+ * @return void
+ */
+function emailapi_library_init(){
+    try{
+        load_libs('api');
+
+    }catch(Exception $e){
+        throw new bException('emailapi_library_init(): Failed', $e);
+    }
+}
 
 
 
 /*
- * (Re) initialize the entire mail database from scratch
+ *
+ *
+ * @copyright Copyright (c) 2018 Capmega
+ * @license http://opensource.org/licenses/GPL-2.0 GNU Public License, Version 2
+ * @category Function reference
+ * @package emailapi
+ *
+ * @return array
  */
-function emailapi_init($server){
+function emailapi_init(){
     try{
         return api_call_base($server, '/email/init');
 
@@ -31,13 +55,20 @@ function emailapi_init($server){
 
 /*
  * Clear all domains, all aliases and accounts from the email database
+ *
+ * @copyright Copyright (c) 2018 Capmega
+ * @license http://opensource.org/licenses/GPL-2.0 GNU Public License, Version 2
+ * @category Function reference
+ * @package emailapi
+ *
+ * @return array
  */
-function emailapi_clearall($server){
+function emailapi_clear_all($server){
     try{
-        return api_call_base($server, '/email/clearall');
+        return api_call_base($server, '/email/clear-all');
 
     }catch(Exception $e){
-        throw new bException('emailapi_clearall(): Failed', $e);
+        throw new bException('emailapi_clear_all(): Failed', $e);
     }
 }
 
@@ -45,8 +76,15 @@ function emailapi_clearall($server){
 
 /*
  * Create new email domains
+ *
+ * @copyright Copyright (c) 2018 Capmega
+ * @license http://opensource.org/licenses/GPL-2.0 GNU Public License, Version 2
+ * @category Function reference
+ * @package emailapi
+ *
+ * @return array
  */
-function emailapi_create_domains($servers, $domains){
+function emailapi_create_domains($domains){
     try{
         return api_call_base($server, '/email/create-domains', array('domains' => $domains));
 
@@ -59,8 +97,15 @@ function emailapi_create_domains($servers, $domains){
 
 /*
  * Create new email accounts
+ *
+ * @copyright Copyright (c) 2018 Capmega
+ * @license http://opensource.org/licenses/GPL-2.0 GNU Public License, Version 2
+ * @category Function reference
+ * @package emailapi
+ *
+ * @return array
  */
-function emailapi_create_accounts($servers, $accounts){
+function emailapi_create_accounts($accounts){
     try{
         return api_call_base($server, '/email/create-accounts', array('accounts' => $accounts));
 
@@ -73,8 +118,15 @@ function emailapi_create_accounts($servers, $accounts){
 
 /*
  * Create new email aliases
+ *
+ * @copyright Copyright (c) 2018 Capmega
+ * @license http://opensource.org/licenses/GPL-2.0 GNU Public License, Version 2
+ * @category Function reference
+ * @package emailapi
+ *
+ * @return array
  */
-function emailapi_create_aliases($servers, $aliases){
+function emailapi_create_aliases($aliases){
     try{
         return api_call_base($server, '/email/create-aliases', array('aliases' => $aliases));
 
@@ -87,8 +139,15 @@ function emailapi_create_aliases($servers, $aliases){
 
 /*
  * Delete new email domains
+ *
+ * @copyright Copyright (c) 2018 Capmega
+ * @license http://opensource.org/licenses/GPL-2.0 GNU Public License, Version 2
+ * @category Function reference
+ * @package emailapi
+ *
+ * @return array
  */
-function emailapi_delete_domains($servers, $domains){
+function emailapi_delete_domains($domains){
     try{
         return api_call_base($server, '/email/delete-domains', array('domains' => $domains));
 
@@ -101,8 +160,15 @@ function emailapi_delete_domains($servers, $domains){
 
 /*
  * Delete new email accounts
+ *
+ * @copyright Copyright (c) 2018 Capmega
+ * @license http://opensource.org/licenses/GPL-2.0 GNU Public License, Version 2
+ * @category Function reference
+ * @package emailapi
+ *
+ * @return array
  */
-function emailapi_delete_accounts($servers, $accounts){
+function emailapi_delete_accounts($accounts){
     try{
         return api_call_base($server, '/email/delete-accounts', array('accounts' => $accounts));
 
@@ -115,8 +181,15 @@ function emailapi_delete_accounts($servers, $accounts){
 
 /*
  * Delete new email aliases
+ *
+ * @copyright Copyright (c) 2018 Capmega
+ * @license http://opensource.org/licenses/GPL-2.0 GNU Public License, Version 2
+ * @category Function reference
+ * @package emailapi
+ *
+ * @return array
  */
-function emailapi_delete_aliases($servers, $aliases){
+function emailapi_delete_aliases($aliases){
     try{
         return api_call_base($server, '/email/delete-aliases', array('aliases' => $aliases));
 
@@ -129,6 +202,13 @@ function emailapi_delete_aliases($servers, $aliases){
 
 /*
  * List new email domains
+ *
+ * @copyright Copyright (c) 2018 Capmega
+ * @license http://opensource.org/licenses/GPL-2.0 GNU Public License, Version 2
+ * @category Function reference
+ * @package emailapi
+ *
+ * @return array
  */
 function emailapi_list_domains($server){
     try{
@@ -143,10 +223,17 @@ function emailapi_list_domains($server){
 
 /*
  * List new email accounts
+ *
+ * @copyright Copyright (c) 2018 Capmega
+ * @license http://opensource.org/licenses/GPL-2.0 GNU Public License, Version 2
+ * @category Function reference
+ * @package emailapi
+ *
+ * @return array
  */
-function emailapi_list_accounts($servers, $domains){
+function emailapi_list_accounts($server, $domain){
     try{
-        return api_call_base($server, '/email/list-accounts', array('domains' => $domains));
+        return api_call_base($server, '/email/list-accounts', array('domain' => $domain));
 
     }catch(Exception $e){
         throw new bException('emailapi_list_accounts(): Failed', $e);
@@ -157,10 +244,17 @@ function emailapi_list_accounts($servers, $domains){
 
 /*
  * List new email aliases
+ *
+ * @copyright Copyright (c) 2018 Capmega
+ * @license http://opensource.org/licenses/GPL-2.0 GNU Public License, Version 2
+ * @category Function reference
+ * @package emailapi
+ *
+ * @return array
  */
-function emailapi_list_aliases($servers, $domains){
+function emailapi_list_aliases($server, $domain){
     try{
-        return api_call_base($server, '/email/list-accounts', array('domains' => $domains));
+        return api_call_base($server, '/email/list-accounts', array('domain' => $domain));
 
     }catch(Exception $e){
         throw new bException('emailapi_list_aliases(): Failed', $e);
@@ -170,14 +264,23 @@ function emailapi_list_aliases($servers, $domains){
 
 
 /*
- * List new email aliases
+ *
+ *
+ * @author Marcos Prudencio <marcos@capmega.com>
+ * @copyright Copyright (c) 2018 Capmega
+ * @license http://opensource.org/licenses/GPL-2.0 GNU Public License, Version 2
+ * @category Function reference
+ * @package emailapi
+ *
+ * @param array $servers
+ * @return array The validated parameter data
  */
-function emailapi_update_passwords($servers, $accounts){
+function emailapi_update_password($account, $password){
     try{
-        return api_call_base($server, '/email/update-passwords', array('accounts' => $accounts));
+        return api_call_base($server, '/email/update-password', array('accounts' => $accounts));
 
     }catch(Exception $e){
-        throw new bException('emailapi_list_aliases(): Failed', $e);
+        throw new bException('emailapi_update_password(): Failed', $e);
     }
 }
 ?>

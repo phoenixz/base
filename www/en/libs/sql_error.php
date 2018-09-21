@@ -128,8 +128,8 @@ function sql_error($e, $query, $execute, $sql = null){
                         if((SCRIPT == 'init')){
                             if($retry){
                                 $e = new bException('sql_error(): Cannot use database "'.isset_get($query['db']).'", it does not exist and cannot be created automatically with the current user "'.isset_get($query['user']).'"', $e);
-                                $e->addMessage('sql_error(): Possible reason can be that the configured user does not have the required GRANT to create database');
-                                $e->addMessage('sql_error(): Possible reason can be that MySQL cannot create the database because the filesystem permissions of the mysql data files has been borked up (on linux, usually this is /var/lib/mysql, and this should have the user:group mysql:mysql)');
+                                $e->addMessages('sql_error(): Possible reason can be that the configured user does not have the required GRANT to create database');
+                                $e->addMessages('sql_error(): Possible reason can be that MySQL cannot create the database because the filesystem permissions of the mysql data files has been borked up (on linux, usually this is /var/lib/mysql, and this should have the user:group mysql:mysql)');
 
                                 throw $e;
                             }
