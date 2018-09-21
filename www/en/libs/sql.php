@@ -1,6 +1,6 @@
 <?php
 /*
- * PDO library
+ * SQL library
  *
  * This file contains various functions to access databases over PDO
  *
@@ -10,7 +10,42 @@
 
 
 /*
+ * Initialize the library, automatically executed by libs_load()
+ *
+ * NOTE: This function is executed automatically by the load_libs() function and does not need to be called manually
+ *
+ * @author Sven Olaf Oostenbrink <sven@capmega.com>
+ * @copyright Copyright (c) 2018 Capmega
+ * @license http://opensource.org/licenses/GPL-2.0 GNU Public License, Version 2
+ * @category Function reference
+ * @package
+ *
+ * @return void
+ */
+function sql_library_init(){
+    try{
+        ensure_installed(array('name'      => 'empty',
+                               'project'   => 'emptyear',
+                               'callback'  => 'empty_install',
+                               'checks'    => array(ROOT.'libs/external/empty/')));
+
+    }catch(Exception $e){
+        throw new bException('sql_library_init(): Failed', $e);
+    }
+}
+
+
+
+/*
  * Helper for building sql_in key value pairs
+ *
+ * @copyright Copyright (c) 2018 Capmega
+ * @license http://opensource.org/licenses/GPL-2.0 GNU Public License, Version 2
+ * @category Function reference
+ * @package sql
+ *
+ * @param
+ * @return
  */
 function sql_in_columns($in){
     try{
@@ -24,6 +59,14 @@ function sql_in_columns($in){
 
 /*
  * Execute specified query
+ *
+ * @copyright Copyright (c) 2018 Capmega
+ * @license http://opensource.org/licenses/GPL-2.0 GNU Public License, Version 2
+ * @category Function reference
+ * @package sql
+ *
+ * @param
+ * @return
  */
 function sql_query($query, $execute = false, $handle_exceptions = true, $connector = 'core'){
     global $core;
@@ -125,6 +168,14 @@ function sql_query($query, $execute = false, $handle_exceptions = true, $connect
 
 /*
  * Prepare specified query
+ *
+ * @copyright Copyright (c) 2018 Capmega
+ * @license http://opensource.org/licenses/GPL-2.0 GNU Public License, Version 2
+ * @category Function reference
+ * @package sql
+ *
+ * @param
+ * @return
  */
 function sql_prepare($query, $connector = 'core'){
     global $core;
@@ -142,6 +193,14 @@ function sql_prepare($query, $connector = 'core'){
 
 /*
  * Fetch and return data from specified resource
+ *
+ * @copyright Copyright (c) 2018 Capmega
+ * @license http://opensource.org/licenses/GPL-2.0 GNU Public License, Version 2
+ * @category Function reference
+ * @package sql
+ *
+ * @param
+ * @return
  */
 function sql_fetch($r, $single_column = false, $fetch_style = PDO::FETCH_ASSOC){
     try{
@@ -191,6 +250,14 @@ function sql_fetch($r, $single_column = false, $fetch_style = PDO::FETCH_ASSOC){
 
 /*
  * Execute query and return only the first row
+ *
+ * @copyright Copyright (c) 2018 Capmega
+ * @license http://opensource.org/licenses/GPL-2.0 GNU Public License, Version 2
+ * @category Function reference
+ * @package sql
+ *
+ * @param
+ * @return
  */
 function sql_get($query, $single_column = null, $execute = null, $connector = 'core'){
     try{
@@ -234,6 +301,14 @@ function sql_get($query, $single_column = null, $execute = null, $connector = 'c
 
 /*
  * Execute query and return only the first row
+ *
+ * @copyright Copyright (c) 2018 Capmega
+ * @license http://opensource.org/licenses/GPL-2.0 GNU Public License, Version 2
+ * @category Function reference
+ * @package sql
+ *
+ * @param
+ * @return
  */
 function sql_list($query, $execute = null, $numerical_array = false, $connector = 'core'){
     try{
@@ -285,6 +360,14 @@ function sql_list($query, $execute = null, $numerical_array = false, $connector 
 
 /*
  * Connect with the main database
+ *
+ * @copyright Copyright (c) 2018 Capmega
+ * @license http://opensource.org/licenses/GPL-2.0 GNU Public License, Version 2
+ * @category Function reference
+ * @package sql
+ *
+ * @param
+ * @return
  */
 function sql_init($connector = 'core'){
     global $_CONFIG, $core;
@@ -416,6 +499,14 @@ function sql_init($connector = 'core'){
 
 /*
  * Close the connection for the specified connector
+ *
+ * @copyright Copyright (c) 2018 Capmega
+ * @license http://opensource.org/licenses/GPL-2.0 GNU Public License, Version 2
+ * @category Function reference
+ * @package sql
+ *
+ * @param
+ * @return
  */
 function sql_close($connector = 'core'){
     global $_CONFIG, $core;
@@ -435,6 +526,14 @@ function sql_close($connector = 'core'){
  * Connect to database and do a DB version check.
  * If the database was already connected, then just ignore and continue.
  * If the database version check fails, then exception
+ *
+ * @copyright Copyright (c) 2018 Capmega
+ * @license http://opensource.org/licenses/GPL-2.0 GNU Public License, Version 2
+ * @category Function reference
+ * @package sql
+ *
+ * @param
+ * @return
  */
 function sql_connect($connector, $use_database = true){
     global $_CONFIG;
@@ -523,6 +622,14 @@ function sql_connect($connector, $use_database = true){
 
 /*
  * Import data from specified file
+ *
+ * @copyright Copyright (c) 2018 Capmega
+ * @license http://opensource.org/licenses/GPL-2.0 GNU Public License, Version 2
+ * @category Function reference
+ * @package sql
+ *
+ * @param
+ * @return
  */
 function sql_import($file, $connector = 'core'){
     global $core;
@@ -572,6 +679,14 @@ function sql_import($file, $connector = 'core'){
 
 /*
  *
+ *
+ * @copyright Copyright (c) 2018 Capmega
+ * @license http://opensource.org/licenses/GPL-2.0 GNU Public License, Version 2
+ * @category Function reference
+ * @package sql
+ *
+ * @param
+ * @return
  */
 function sql_columns($source, $columns){
     try{
@@ -645,6 +760,14 @@ function sql_columns($source, $columns){
 
 /*
  *
+ *
+ * @copyright Copyright (c) 2018 Capmega
+ * @license http://opensource.org/licenses/GPL-2.0 GNU Public License, Version 2
+ * @category Function reference
+ * @package sql
+ *
+ * @param
+ * @return
  */
 function sql_values($source, $columns, $prefix = ':'){
     try{
@@ -672,6 +795,14 @@ function sql_values($source, $columns, $prefix = ':'){
 
 /*
  *
+ *
+ * @copyright Copyright (c) 2018 Capmega
+ * @license http://opensource.org/licenses/GPL-2.0 GNU Public License, Version 2
+ * @category Function reference
+ * @package sql
+ *
+ * @param
+ * @return
  */
 function sql_insert_id($connector = 'core'){
     global $core;
@@ -688,6 +819,14 @@ function sql_insert_id($connector = 'core'){
 
 /*
  *
+ *
+ * @copyright Copyright (c) 2018 Capmega
+ * @license http://opensource.org/licenses/GPL-2.0 GNU Public License, Version 2
+ * @category Function reference
+ * @package sql
+ *
+ * @param
+ * @return
  */
 function sql_get_id_or_name($entry, $seo = true, $code = false){
     try{
@@ -754,6 +893,14 @@ function sql_get_id_or_name($entry, $seo = true, $code = false){
 
 /*
  * Return a unique, non existing ID for the specified table.column
+ *
+ * @copyright Copyright (c) 2018 Capmega
+ * @license http://opensource.org/licenses/GPL-2.0 GNU Public License, Version 2
+ * @category Function reference
+ * @package sql
+ *
+ * @param
+ * @return
  */
 function sql_unique_id($table, $column = 'id', $max = 10000000, $connector = 'core'){
     try{
@@ -779,6 +926,14 @@ function sql_unique_id($table, $column = 'id', $max = 10000000, $connector = 'co
 
 /*
  *
+ *
+ * @copyright Copyright (c) 2018 Capmega
+ * @license http://opensource.org/licenses/GPL-2.0 GNU Public License, Version 2
+ * @category Function reference
+ * @package sql
+ *
+ * @param
+ * @return
  */
 function sql_filters($params, $columns, $table = ''){
     try{
@@ -810,6 +965,14 @@ function sql_filters($params, $columns, $table = ''){
 
 /*
  * Return a sequential array that can be used in sql_in
+ *
+ * @copyright Copyright (c) 2018 Capmega
+ * @license http://opensource.org/licenses/GPL-2.0 GNU Public License, Version 2
+ * @category Function reference
+ * @package sql
+ *
+ * @param
+ * @return
  */
 function sql_in($source, $column = ':value'){
     try{
@@ -829,6 +992,14 @@ function sql_in($source, $column = ':value'){
 
 /*
  *
+ *
+ * @copyright Copyright (c) 2018 Capmega
+ * @license http://opensource.org/licenses/GPL-2.0 GNU Public License, Version 2
+ * @category Function reference
+ * @package sql
+ *
+ * @param
+ * @return
  */
 function sql_where($query, $required = true){
     try{
@@ -851,6 +1022,14 @@ function sql_where($query, $required = true){
 
 /*
  *
+ *
+ * @copyright Copyright (c) 2018 Capmega
+ * @license http://opensource.org/licenses/GPL-2.0 GNU Public License, Version 2
+ * @category Function reference
+ * @package sql
+ *
+ * @param
+ * @return
  */
 function sql_where_null($value, $not = false){
     try{
@@ -878,6 +1057,14 @@ function sql_where_null($value, $not = false){
 /*
  * Try to get single data entry from memcached. If not available, get it from
  * MySQL and store results in memcached for future use
+ *
+ * @copyright Copyright (c) 2018 Capmega
+ * @license http://opensource.org/licenses/GPL-2.0 GNU Public License, Version 2
+ * @category Function reference
+ * @package sql
+ *
+ * @param
+ * @return
  */
 function sql_get_cached($key, $query, $column = false, $execute = false, $expiration_time = 86400, $connector = 'core'){
     try{
@@ -923,6 +1110,14 @@ function sql_get_cached($key, $query, $column = false, $execute = false, $expira
 /*
  * Try to get data list from memcached. If not available, get it from
  * MySQL and store results in memcached for future use
+ *
+ * @copyright Copyright (c) 2018 Capmega
+ * @license http://opensource.org/licenses/GPL-2.0 GNU Public License, Version 2
+ * @category Function reference
+ * @package sql
+ *
+ * @param
+ * @return
  */
 function sql_list_cached($key, $query, $execute = false, $numerical_array = false, $connector = 'core', $expiration_time = 86400){
     try{
@@ -947,6 +1142,14 @@ function sql_list_cached($key, $query, $execute = false, $numerical_array = fals
 
 /*
  *
+ *
+ * @copyright Copyright (c) 2018 Capmega
+ * @license http://opensource.org/licenses/GPL-2.0 GNU Public License, Version 2
+ * @category Function reference
+ * @package sql
+ *
+ * @param
+ * @return
  */
 function sql_valid_limit($limit, $connector = null){
     global $_CONFIG;
@@ -970,6 +1173,14 @@ function sql_valid_limit($limit, $connector = null){
 
 /*
  * Fetch and return data from specified resource
+ *
+ * @copyright Copyright (c) 2018 Capmega
+ * @license http://opensource.org/licenses/GPL-2.0 GNU Public License, Version 2
+ * @category Function reference
+ * @package sql
+ *
+ * @param
+ * @return
  */
 function sql_fetch_column($r, $column){
     try{
@@ -991,6 +1202,14 @@ function sql_fetch_column($r, $column){
 /*
  * Merge database entry with new posted entry, overwriting the old DB values,
  * while skipping the values specified in $filter
+ *
+ * @copyright Copyright (c) 2018 Capmega
+ * @license http://opensource.org/licenses/GPL-2.0 GNU Public License, Version 2
+ * @category Function reference
+ * @package sql
+ *
+ * @param
+ * @return
  */
 function sql_merge($db, $post, $skip = null, $empty = null){
     try{
@@ -1043,6 +1262,14 @@ function sql_merge($db, $post, $skip = null, $empty = null){
 
 /*
  * Ensure that $connector is default in case its not specified
+ *
+ * @copyright Copyright (c) 2018 Capmega
+ * @license http://opensource.org/licenses/GPL-2.0 GNU Public License, Version 2
+ * @category Function reference
+ * @package sql
+ *
+ * @param
+ * @return
  */
 function sql_connector_name($connector){
     global $_CONFIG;
@@ -1067,6 +1294,14 @@ function sql_connector_name($connector){
 
 /*
  * Use correct SQL in case NULL is used in queries
+ *
+ * @copyright Copyright (c) 2018 Capmega
+ * @license http://opensource.org/licenses/GPL-2.0 GNU Public License, Version 2
+ * @category Function reference
+ * @package sql
+ *
+ * @param
+ * @return
  */
 function sql_is($value, $not = false){
     try{
@@ -1093,6 +1328,14 @@ function sql_is($value, $not = false){
 
 /*
  * Enable / Disable all query logging on mysql server
+ *
+ * @copyright Copyright (c) 2018 Capmega
+ * @license http://opensource.org/licenses/GPL-2.0 GNU Public License, Version 2
+ * @category Function reference
+ * @package sql
+ *
+ * @param
+ * @return
  */
 function sql_log($enable){
     try{
@@ -1114,6 +1357,14 @@ function sql_log($enable){
 
 /*
  *
+ *
+ * @copyright Copyright (c) 2018 Capmega
+ * @license http://opensource.org/licenses/GPL-2.0 GNU Public License, Version 2
+ * @category Function reference
+ * @package sql
+ *
+ * @param
+ * @return
  */
 function sql_exists($table, $column, $value, $id = null){
     try{
@@ -1135,6 +1386,14 @@ function sql_exists($table, $column, $value, $id = null){
  *
  * Return table row count by returning results count for SELECT `id`
  * Results will be cached in a counts table
+ *
+ * @copyright Copyright (c) 2018 Capmega
+ * @license http://opensource.org/licenses/GPL-2.0 GNU Public License, Version 2
+ * @category Function reference
+ * @package sql
+ *
+ * @param
+ * @return
  */
 function sql_count($table, $where = '', $execute = null, $column = '`id`'){
     global $_CONFIG;
@@ -1182,6 +1441,14 @@ function sql_count($table, $where = '', $execute = null, $column = '`id`'){
 
 /*
  * Returns what database currently is selected
+ *
+ * @copyright Copyright (c) 2018 Capmega
+ * @license http://opensource.org/licenses/GPL-2.0 GNU Public License, Version 2
+ * @category Function reference
+ * @package sql
+ *
+ * @param
+ * @return
  */
 function sql_current_database(){
     try{
@@ -1196,6 +1463,14 @@ function sql_current_database(){
 
 /*
  *
+ *
+ * @copyright Copyright (c) 2018 Capmega
+ * @license http://opensource.org/licenses/GPL-2.0 GNU Public License, Version 2
+ * @category Function reference
+ * @package sql
+ *
+ * @param
+ * @return
  */
 function sql_random_id($table, $min = 1, $max = 2147483648){
     try{
@@ -1211,6 +1486,141 @@ function sql_random_id($table, $min = 1, $max = 2147483648){
 
     }catch(Exception $e){
         throw new bException(tr('sql_random_id(): Failed for table ":table"', array(':table' => $table)), $e);
+    }
+}
+
+
+
+/*
+ * Execute a query on a remote SSH server.
+ * NOTE: This does NOT support bound variables!
+ *
+ * @copyright Copyright (c) 2018 Capmega
+ * @license http://opensource.org/licenses/GPL-2.0 GNU Public License, Version 2
+ * @category Function reference
+ * @package sql
+ *
+ * @param
+ * @return
+ */
+function sql_exec($server, $query, $root = false, $simple_quotes = false){
+    try{
+        load_libs('servers');
+
+        $query = addslashes($query);
+
+        if(!is_array($server)){
+            $server = servers_get($server, true);
+        }
+
+        /*
+         * Are we going to execute as root?
+         */
+        if($root){
+            sql_create_password_file('root', $server['db_root_password'], $server);
+
+        }else{
+            sql_create_password_file($server['db_username'], $server['db_password'], $server);
+        }
+
+        if($simple_quotes){
+            $results = servers_exec($server, 'mysql -e \''.str_ends($query, ';').'\'');
+
+        }else{
+            $results = servers_exec($server, 'mysql -e \"'.str_ends($query, ';').'\"');
+        }
+
+        sql_delete_password_file($server);
+
+        return $results;
+
+    }catch(Exception $e){
+        /*
+         * Make sure the password file gets removed!
+         */
+        try{
+            sql_delete_password_file($server);
+
+        }catch(Exception $e){
+
+        }
+
+        throw new bException(tr('sql_exec(): Failed'), $e);
+    }
+}
+
+
+
+///*
+// *
+// *
+// * @copyright Copyright (c) 2018 Capmega
+// * @license http://opensource.org/licenses/GPL-2.0 GNU Public License, Version 2
+// * @category Function reference
+// * @package sql
+// *
+// * @return array
+// */
+//function sql_exec_get($server, $query, $root = false, $simple_quotes = false){
+//    try{
+//
+//    }catch(Exception $e){
+//        throw new bException(tr('sql_exec_get(): Failed'), $e);
+//    }
+//}
+
+
+
+/*
+ *
+ *
+ * @copyright Copyright (c) 2018 Capmega
+ * @license http://opensource.org/licenses/GPL-2.0 GNU Public License, Version 2
+ * @category Function reference
+ * @package sql
+ *
+ * @param array $params
+ * @return
+ */
+function sql_get_database($db_name){
+    try{
+        $database = sql_get('SELECT    `databases`.`id`,
+                                       `databases`.`servers_id`,
+                                       `databases`.`status`,
+                                       `databases`.`replication_status`,
+                                       `databases`.`name` AS `database`,
+                                       `databases`.`error`,
+
+                                       `servers`.`id` AS `servers_id`,
+                                       `servers`.`hostname`,
+                                       `servers`.`ssh_port`,
+                                       `servers`.`replication_status` AS `servers_replication_status`,
+
+                                       `database_accounts`.`username`      AS `replication_db_user`,
+                                       `database_accounts`.`password`      AS `replication_db_password`,
+                                       `database_accounts`.`root_password` AS `root_db_password`
+
+                             FROM      `databases`
+
+                             LEFT JOIN `servers`
+                             ON        `servers`.`id`           = `databases`.`servers_id`
+
+                             LEFT JOIN `database_accounts`
+                             ON        `database_accounts`.`id` = `servers`.`database_accounts_id`
+
+                             WHERE     `databases`.`id`         = :name
+                             OR        `databases`.`name`       = :name',
+
+                             array(':name' => $db_name));
+
+        if(!$database){
+            throw new bException(log_database(tr('Specified database ":database" does not exist', array(':database' => $_GET['database'])), 'not-exist'));
+        }
+
+        return $database;
+
+    }catch(Exception $e){
+        throw new bException(tr('sql_get_database(): Failed'), $e);
     }
 }
 
