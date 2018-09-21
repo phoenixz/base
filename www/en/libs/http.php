@@ -322,17 +322,6 @@ function http_headers($params, $content_length){
 
 
 /*
- * For PHP < 5.4.0, where http_response_code will be missing
- * Taken from http://php.net/manual/en/function.http-response-code.php
- * Thanks to craig at craigfrancis dot co dot uk
- */
-if (!function_exists('http_response_code')){
-    include(__DIR__.'/handlers/http-response-code.php');
-}
-
-
-
-/*
  * Add a variable to the specified URL
  */
 function http_add_variable($url, $key, $value){

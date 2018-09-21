@@ -24,6 +24,10 @@ function init($projectfrom = null, $frameworkfrom = null){
             throw new bException('init(): This platform is not authorized to do init()', 'denied');
         }
 
+        if(version_compare(PHP_VERSION, PHP_MINIMUM_VERSION) < 1){
+            throw new bException(tr('init(): This version of base requires at minimum PHP version ":required", anything below is not supported. The current version of PHP installed is ":installed" If you wish to force to run this version of base on this version of PHP, lower the required version defined with the constant PHP_MINIMUM_VERSION in the top of ROOT/libs/startup.php', array(':required' => PHP_MINIMUM_VERSION, ':installed' => PHP_VERSION)), 'denied');
+        }
+
         load_libs('file,sql_exists');
 
         /*
