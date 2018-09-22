@@ -816,13 +816,12 @@ function mysqlr_full_backup(){
         }
         
         /*
-         * Make a directory with the current date as name on the replication server
+         * Make a directory on the replication server
          */
         load_libs('ssh,servers');
-        $date        = servers_exec($slave, 'date +%Y%m%d');
-        $backup_path = '/data/backups/'.$date[0];
+        $backup_path = '/data/backups/databases';
         servers_exec($slave, 'sudo mkdir -p '.$backup_path);
-        
+
         /*
          * For each server get the databases replicating
          */
@@ -863,8 +862,8 @@ function mysqlr_full_backup(){
             /*
              * Create a directory for the current server inside the backup directory
              */
-            $server_backup_path = $backup_path.'/'.$server['seohostname'];
-            servers_exec($slave, 'sudo mkdir -p '.$server_backup_path);
+            $server_backup_path = $backup_path.'/'.$server['hostname'];
+            servers_exec($slave, 'sudo mkdir '.$server_backup_path);
             
             foreach($databases as $id => $name){
                 $db                 = mysql_get_database($id);
@@ -876,7 +875,13 @@ function mysqlr_full_backup(){
                  * Make a dump and save it on the backups server backup directory
                  * And resume replication on this database
                  */
-                servers_exec($slave, 'sudo mysqldump \"-u'.$db['root_db_user'].'\" \"-p'.$db['root_db_password'].'\" -K -R -n -e --dump-date --comments -B '.$db['database_name'].' | gzip | sudo tee '.$server_backup_path.'/'.$db['database_name'].'.sql.gz');
+                mysql_dump(array('server'   => $slave,
+                                 'database' => $db['database_name'],
+                                 'gzip'     => '',
+                                 'redirect' => ' | sudo tee',
+                                 'file'     => $server_backup_path.'/'.$db['database_name'].'.sql'));
+// :DELETE: the below code is deprecated since we are using mysql_dump function                
+                //servers_exec($slave, 'sudo mysqldump \"-u'.$db['root_db_user'].'\" \"-p'.$db['root_db_password'].'\" -K -R -n -e --dump-date --comments -B '.$db['database_name'].' | gzip | sudo tee '.$server_backup_path.'/'.$db['database_name'].'.sql.gz');
                 mysqlr_resume_replication($id, false);
             }
             
@@ -885,6 +890,16 @@ function mysqlr_full_backup(){
              */
             servers_exec($slave, 'sudo service mysql restart');
         }
+        
+        /*
+         * rsync to backup server
+         */
+        servers_exec($slave, 'rsync -avze \"ssh -p '.$_CONFIG['mysqlr']['backup']['port'].'\" '.$backup_path.'/*'.' '.$_CONFIG['mysqlr']['backup']['hostname'].':'.$_CONFIG['mysqlr']['backup']['path']);
+        
+        /*
+         * delete replicate backup for today
+         */
+        servers_exec($slave, 'sudo rm -rf '.$backup_path);
         
         log_console(tr('mysqlr_full_backup(): Finished backups'), 'DOT');
         

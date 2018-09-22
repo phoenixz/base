@@ -992,6 +992,8 @@ function user_create_extended_session($users_id) {
  * Set a users verification code
  */
 function user_set_verify_code($user, $email_type = false){
+	global $_CONFIG;
+
     try{
         load_libs('email');
 

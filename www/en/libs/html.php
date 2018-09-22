@@ -981,7 +981,7 @@ function html_flash($class = null){
             case 'sweetalert':
                 load_libs('sweetalert');
 
-                switch(count(isset_get($sweetalerts))){
+                switch(count(isset_get($sweetalerts, array()))){
                     case 0:
                         /*
                          * No alerts
@@ -2092,7 +2092,7 @@ function html_autosuggest($params){
         array_default($params, 'selector'         , 'form.autosuggest');
 
         $retval = ' <div class="autosuggest'.($params['class'] ? ' '.$params['class'] : '').'">
-                        <input autocomplete="off" spellcheck="false" role="combobox" dir="ltr" '.($params['input_class'] ? 'class="'.$params['input_class'].'" ' : '').'type="text" name="'.$params['name'].'" id="'.$params['id'].'" placeholder="'.$params['placeholder'].'" data-source="'.$params['source'].'" value="'.$params['value'].'"'.($params['filter_selector'] ? ' data-filter-selector="'.$params['filter_selector'].'"' : '').($params['maxlength'] ? ' maxlength="'.$params['maxlength'].'"' : '').($params['required'] ? ' required' : '').'>
+                        <input autocomplete="new_password" spellcheck="false" role="combobox" dir="ltr" '.($params['input_class'] ? 'class="'.$params['input_class'].'" ' : '').'type="text" name="'.$params['name'].'" id="'.$params['id'].'" placeholder="'.$params['placeholder'].'" data-source="'.$params['source'].'" value="'.$params['value'].'"'.($params['filter_selector'] ? ' data-filter-selector="'.$params['filter_selector'].'"' : '').($params['maxlength'] ? ' maxlength="'.$params['maxlength'].'"' : '').($params['required'] ? ' required' : '').'>
                         <ul>
                         </ul>
                     </div>';
@@ -2147,16 +2147,20 @@ function html_minify($html, $full = false){
  * Generate and return a randon name for the specified $name, and store the
  * link between the two under "group"
  */
-function html_translate($name){
-    try{
-        $translation = '__'.$name.'__'.substr(unique_code('sha256'), 0, 16);
+ function html_translate($name){
+ 	static $translations = array();
 
-        return $translation;
+     try{
+ 		if(!isset($translations[$name])){
+ 			$translations[$name] = '__'.$name.'__'.substr(unique_code('sha256'), 0, 16);
+ 		}
 
-    }catch(Exception $e){
-        throw new bException(tr('html_translate(): Failed'), $e);
-    }
-}
+ 		return $translations[$name];
+
+     }catch(Exception $e){
+         throw new bException(tr('html_translate(): Failed'), $e);
+     }
+ }
 
 
 

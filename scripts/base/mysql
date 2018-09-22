@@ -61,7 +61,10 @@ replication
         --database DATABASE      - The name/id of the database to replicate
         
         --log-info               - Info useful on tasks script log
-                                   (e.g. database name)';
+                                   (e.g. database name)
+                                   
+    backup                       - Make remote backup on replication server
+                                   for databases that are replicating';
         
 
 require_once(__DIR__.'/../../libs/startup.php');

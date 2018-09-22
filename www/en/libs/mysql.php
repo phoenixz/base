@@ -168,8 +168,9 @@ function mysql_dump($params){
         array_default($params, 'server'  , '');
         array_default($params, 'database', '');
         array_default($params, 'path'    , '');
-        array_default($params, 'gzip'    , true);
-        array_default($params, 'filename', $params['database'].'.sql'.($params['gzip'] ? '.gz' : ''));
+        array_default($params, 'gzip'    , 'yes');
+        array_default($params, 'redirect', 'yes');
+        array_default($params, 'filename', $params['database'].'.sql'.($params['gzip'] == 'yes' ? '.gz' : ''));
 
         load_libs('servers');
 
@@ -180,10 +181,10 @@ function mysql_dump($params){
         $server = servers_get($params['server'], true);
 
 // :TOO: Implement optoins through $params
-        $optoins  = ' -p -K -R -n -e --dump-date --comments -B ';
+        $options  = ' -K -R -n -e --dump-date --comments -B ';
 
-        mysql_create_password_file($server['db_root_password'], 'root', $server);
-        servers_exec($params['server'], 'mysqldump '.$options.' '.$params['database'].($params['gzip'] ? ' | gzip' : '').' > '.$params['file']);
+        mysql_create_password_file('root', $server['db_root_password'], $server);
+        servers_exec($params['server'], 'mysqldump '.$options.' '.$params['database'].($params['gzip'] == 'yes' ? ' | gzip' : $params['gzip']).' '.($params['redirect'] == 'yes' ? ' > ' : $params['redirect']).' '.$params['file']);
         mysql_delete_password_file($server);
 
     }catch(Exception $e){
