@@ -256,7 +256,7 @@ if(!sql_table_exists('databases')){
                                          `servers_id`         INT(11)       NOT NULL,
                                          `projects_id`        INT(11)           NULL DEFAULT NULL,
                                          `replication_status` ENUM("enabled","preparing","paused","disabled","error") NULL DEFAULT "disabled",
-                                         `name`               VARCHAR(255)  NOT NULL,
+                                         `name`               VARCHAR(64)   NOT NULL,
                                          `description`        VARCHAR(2047)     NULL DEFAULT NULL,
                                          `error`              VARCHAR(2047)     NULL DEFAULT NULL,
 
