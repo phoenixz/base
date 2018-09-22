@@ -11,50 +11,6 @@
  *
  * Fix servers and databases tables
  */
-if(!sql_table_exists('projects')){
-    sql_query('CREATE TABLE `projects` (`id`            INT(11)     NOT NULL AUTO_INCREMENT,
-                                        `createdon`     TIMESTAMP   NOT NULL DEFAULT CURRENT_TIMESTAMP,
-                                        `createdby`     INT(11)         NULL DEFAULT NULL,
-                                        `meta_id`       INT(11)     NOT NULL,
-                                        `status`        VARCHAR(16)     NULL DEFAULT NULL,
-                                        `categories_id` INT(11)         NULL DEFAULT NULL,
-                                        `customers_id`  INT(11)         NULL DEFAULT NULL,
-                                        `processes_id`  INT(11)         NULL DEFAULT NULL,
-                                        `steps_id`      INT(11)         NULL DEFAULT NULL,
-                                        `documents_id`  INT(11)         NULL DEFAULT NULL,
-                                        `name`          VARCHAR(64)     NULL DEFAULT NULL,
-                                        `seoname`       VARCHAR(64)     NULL DEFAULT NULL,
-                                        `code`          VARCHAR(32)     NULL DEFAULT NULL,
-                                        `api_key`       VARCHAR(64)     NULL DEFAULT NULL,
-                                        `last_login`    TIMESTAMP       NULL DEFAULT NULL,
-                                        `description`   VARCHAR(2047)   NULL DEFAULT NULL,
-                                        `fcm_apikey`    VARCHAR(511)    NULL DEFAULT NULL,
-
-                                        PRIMARY KEY (`id`),
-                                        UNIQUE KEY `seoname`       (`seoname`),
-                                        UNIQUE KEY `code`          (`code`),
-                                        UNIQUE KEY `api_key`       (`api_key`),
-                                               KEY `meta_id`       (`meta_id`),
-                                               KEY `createdon`     (`createdon`),
-                                               KEY `createdby`     (`createdby`),
-                                               KEY `status`        (`status`),
-                                               KEY `categories_id` (`categories_id`),
-                                               KEY `customers_id`  (`customers_id`),
-                                               KEY `documents_id`  (`documents_id`),
-                                               KEY `processes_id`  (`processes_id`),
-                                               KEY `steps_id`      (`steps_id`),
-
-                                        CONSTRAINT `fk_projects_categories_id` FOREIGN KEY (`categories_id`) REFERENCES `categories`         (`id`) ON DELETE RESTRICT,
-                                        CONSTRAINT `fk_projects_createdby`     FOREIGN KEY (`createdby`)     REFERENCES `users`              (`id`) ON DELETE RESTRICT,
-                                        CONSTRAINT `fk_projects_customers_id`  FOREIGN KEY (`customers_id`)  REFERENCES `customers`          (`id`) ON DELETE RESTRICT,
-                                        CONSTRAINT `fk_projects_documents_id`  FOREIGN KEY (`documents_id`)  REFERENCES `storage_documents`  (`id`) ON DELETE RESTRICT,
-                                        CONSTRAINT `fk_projects_meta_id`       FOREIGN KEY (`meta_id`)       REFERENCES `meta`               (`id`) ON DELETE RESTRICT,
-                                        CONSTRAINT `fk_projects_processes_id`  FOREIGN KEY (`processes_id`)  REFERENCES `progress_processes` (`id`) ON DELETE RESTRICT,
-                                        CONSTRAINT `fk_projects_steps_id`      FOREIGN KEY (`steps_id`)      REFERENCES `progress_steps`     (`id`) ON DELETE CASCADE
-
-                                       ) ENGINE=InnoDB AUTO_INCREMENT='.$_CONFIG['db']['core']['autoincrement'].' DEFAULT CHARSET="'.$_CONFIG['db']['core']['charset'].'" COLLATE="'.$_CONFIG['db']['core']['collate'].'";');
-}
-
 sql_foreignkey_exists('inventories'      , 'fk_inventories_projects_id'        , 'ALTER TABLE `inventories`       DROP FOREIGN KEY `fk_inventories_projects_id`');
 sql_foreignkey_exists('inventories'      , 'fk_inventories_categories_id'      , 'ALTER TABLE `inventories`       DROP FOREIGN KEY `fk_inventories_categories_id`');
 sql_foreignkey_exists('inventories_items', 'fk_inventories_items_categories_id', 'ALTER TABLE `inventories_items` DROP FOREIGN KEY `fk_inventories_items_categories_id`');
