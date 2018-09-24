@@ -36,6 +36,8 @@ try{
     throw new bException(tr('startup-cli: Failed to parse one or more system parameters'), $e);
 }
 
+log_file(tr('Running script ":script"', array(':script' => $_SERVER['PHP_SELF'])), 'startup', 'cyan');
+
 
 
 /*
