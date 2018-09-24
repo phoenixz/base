@@ -20,7 +20,7 @@
 /*
  * Framework version
  */
-define('FRAMEWORKCODEVERSION', '1.17.6');
+define('FRAMEWORKCODEVERSION', '1.17.7');
 define('PHP_MINIMUM_VERSION' , '5.5.9');
 
 
@@ -1149,13 +1149,6 @@ function log_console($messages = '', $color = null, $newline = true, $filter_dou
     static $c, $last;
 
     try{
-        if(!PLATFORM_CLI){
-            /*
-             * If not on CLI, then log to file
-             */
-            return log_file($messages, SCRIPT);
-        }
-
         if($color and !is_scalar($color)){
             log_console(tr('[ WARNING ] log_console(): Invalid color ":color" specified for the following message, color has been stripped', array(':color' => $color)), 'warning');
             $color = null;
@@ -1219,6 +1212,11 @@ function log_console($messages = '', $color = null, $newline = true, $filter_dou
                  */
                 $color = str_replace('/', '', str_replace('DEBUG', '', $color));
         }
+
+        /*
+         * Always log to file log as well
+         */
+        log_file($messages, SCRIPT, $color);
 
         if(($filter_double == true) and ($messages == $last)){
             /*
@@ -1437,7 +1435,7 @@ function log_database($messages, $type = 'unknown'){
  * Log specified message to file.
  */
 function log_file($messages, $class = 'syslog', $color = null){
-    global $_CONFIG;
+    global $_CONFIG, $core;
     static $h = array(), $last;
 
     try{
@@ -1539,14 +1537,17 @@ function log_file($messages, $class = 'syslog', $color = null){
         }
 
         if(!is_scalar($class)){
-            load_libs('json');
             throw new bException(tr('log_file(): Specified class ":class" is not scalar', array(':class' => str_truncate(json_encode_custom($class), 20))));
         }
 
         /*
          * Single log or multi log?
          */
-        if($_CONFIG['log']['single']){
+        if(!$core or !$core->register('ready')){
+            $file  = 'syslog';
+            $class = cli_color('[ '.$class.' ] ', 'white', null, true);
+
+        }elseif($_CONFIG['log']['single']){
             $file  = 'syslog';
             $class = cli_color('[ '.$class.' ] ', 'white', null, true);
 
