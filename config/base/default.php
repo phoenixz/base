@@ -249,13 +249,19 @@ $_CONFIG['noindex']            = false;                                         
 
 
 // Paging configuration
-$_CONFIG['paging']             = array('limit'                              => 20,                                                      // The maximum amount of items shown per page
+$_CONFIG['paging']             = array('limit'                              => 50,                                                      // The maximum amount of items shown per page
                                        'show_pages'                         => 5,                                                       // The maximum amount of pages show, should always be an odd number, or an exception will be thrown!
                                        'prev_next'                          => true,                                                    // Show previous - next links
                                        'first_last'                         => true,                                                    // Show first - last links
                                        'hide_first'                         => true,                                                    // Hide first number (number 1) in URL, useful for links like all.html, all2.html, etc
                                        'hide_single'                        => true,                                                    // Hide pager if there is only a single page
-                                       'hide_ends'                          => true);                                                   // Hide the "first" and "last" options
+                                       'hide_ends'                          => true,                                                    // Hide the "first" and "last" options
+                                       'list'                               => array(  10 => tr('Show 10 entries'),
+                                                                                       20 => tr('Show 20 entries'),
+                                                                                       50 => tr('Show 50 entries'),
+                                                                                      100 => tr('Show 100 entries'),
+                                                                                      500 => tr('Show 500 entries'),
+                                                                                     null => tr('Show all entries')));
 
 //Paypal configuration
 $_CONFIG['paypal']             = array('version'                            => 'sandbox',                                               //
