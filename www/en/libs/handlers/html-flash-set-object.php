@@ -122,4 +122,5 @@ if($object instanceof bException){
     notify('html_flash/object', tr('html_flash_set(): Received PHP object with class ":class" and content ":content"', array(':class' => get_class($object), ':content' => print_r($object->getMessage(), true))), 'developers');
 }
 
+$_SESSION['flash'][] = $params;
 ?>
