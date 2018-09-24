@@ -1,0 +1,83 @@
+#!/usr/bin/php
+<?php
+/*
+ * This is an empty test script template
+ */
+$usage = './scripts/domains --keywords KEYWORD1 [KEYWORD2] [...] --tld TLD';
+
+$help  = 'This script can be used to manage domains and the domains scanner';
+
+require_once(__DIR__.'/../../libs/startup.php');
+
+cli_only();
+load_libs('whois');
+
+switch(cli_method()){
+    case 'scan':
+        $domains = sql_query('SELECT `domain` FROM `domains` WHERE `type` = "scan" AND `status` IS NULL');
+
+        while($domain = sql_fetch($domains, true)){
+            log_console(tr('Scanning domain ":domain"', array()));
+
+            $results = safe_exec('whois '.$domain.' | grep "Name Server"', 1);
+            $ns      = array();
+            $errors  = array();
+
+            foreach($results as $result){
+                if(strstr($result, 'Name Server')){
+                    $nameserver = str_from($result, 'Name Server');
+                    $nameserver = str_replace(':', '', $nameserver);
+                    $nameserver = trim($nameserver);
+                    $ns[] = $nameserver;
+
+                }else{
+                    /*
+                     * No "Name Server" in here, error?
+                     *
+                     */
+                    $errors[] = $result;
+                }
+            }
+
+            if($errors){
+                foreach($errors as $error){
+                    log_console(tr('Found possible error ":error"', array(':error' => $error)));
+                }
+            }
+
+            if($ns){
+                foreach($ns as $nameserver){
+                    log_console(tr('Found name server record ":nameserver"', array(':nameserver' => $nameserver)));
+                }
+
+                log_console(tr('Domain ":domain" exists', array(':domain' => $domain)));
+                sql_query('UPDATE `domains` SET `status` = "exists" WHERE `domain` = :domain AND `type` = "scan"', array(':domain' => $domain));
+
+            }else{
+                log_console(tr('Domain ":domain" is available', array(':domain' => $domain)));
+                sql_query('UPDATE `domains` SET `status` = "available" WHERE `domain` = :domain AND `type` = "scan"', array(':domain' => $domain));
+            }
+        }
+
+        break;
+
+    case 'reset':
+        $results = sql_query('UPDATE `domains` SET `status` = NULL WHERE `type` = "scan"');
+        $count   = sql_num_rows($results);
+
+        if($count){
+            log_console(tr('Reset ":count" scanned domains', array(':count' => $count)));
+
+        }else{
+            log_console(tr('No scanned domains reset'), 'yellow');
+        }
+
+        break;
+
+    case '':
+        throw new bException(tr('No method specified'), 'not-specified');
+
+    default:
+        throw new bException(tr('Unknown argument ":method" specified', array(':method' => cli_method())), 'unknown');
+}
+?>
