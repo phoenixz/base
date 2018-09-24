@@ -609,4 +609,52 @@ function http_language_redirect($url, $language = null){
         throw new bException('http_language_redirect(): Failed', $e);
     }
 }
+
+
+
+/*
+ * Sets and returns $_GET[count] data
+ *
+ * @author Sven Olaf Oostenbrink <sven@capmega.com>
+ * @copyright Copyright (c) 2018 Capmega
+ * @license http://opensource.org/licenses/GPL-2.0 GNU Public License, Version 2
+ * @category Function reference
+ * @package http
+ *
+ * @return integer The
+ */
+function set_count(){
+    try{
+        $_GET['limit'] = force_natural(isset_get($_GET['count'], 1));
+        return $_GET['limit'];
+
+    }catch(Exception $e){
+        throw new bException(tr('set_count(): Failed'), $e);
+    }
+}
+
+
+
+/*
+ * Sets and returns $_GET[limit] data
+ *
+ * @author Sven Olaf Oostenbrink <sven@capmega.com>
+ * @copyright Copyright (c) 2018 Capmega
+ * @license http://opensource.org/licenses/GPL-2.0 GNU Public License, Version 2
+ * @category Function reference
+ * @package http
+ *
+ * @return integer The
+ */
+function set_limit(){
+    global $_CONFIG;
+
+    try{
+        $_GET['count'] = (integer) ensure_value(isset_get($_GET['limit'], $_CONFIG['paging']['limit']), array_keys($_CONFIG['paging']['list']), $_CONFIG['paging']['limit']);
+        return $_GET['count'];
+
+    }catch(Exception $e){
+        throw new bException(tr('set_limit(): Failed'), $e);
+    }
+}
 ?>
