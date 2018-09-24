@@ -1594,6 +1594,15 @@ function log_file($messages, $class = 'syslog', $color = null){
         return $messages;
 
     }catch(Exception $e){
+        $message = $e->getMessage();
+
+        if(strstr($message, 'data/log') and strstr($message, 'failed to open stream: Permission denied')){
+            /*
+             * We cannot write to the log file
+             */
+            throw new bException(tr('log_file(): Failed to write to log, permission denied to write to log file ":file". Please ensure the correct write permissions for this file and the ROOT/data/log directory in general', array(':file' => str_cut($message, 'fopen(', ')'))), 'warning');
+        }
+
         throw new bException('log_file(): Failed', $e, array('message' => $messages));
     }
 }
