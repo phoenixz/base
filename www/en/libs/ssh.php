@@ -10,6 +10,28 @@
 
 
 /*
+ * Initialize the library. Automatically executed by libs_load(). Will automatically load the ssh library configuration
+ *
+ * @auhthor Sven Olaf Oostenbrink <sven@capmega.com>
+ * @copyright Copyright (c) 2018 Capmega
+ * @license http://opensource.org/licenses/GPL-2.0 GNU Public License, Version 2
+ * @category Function reference
+ * @package ssh
+ *
+ * @return void
+ */
+function ssh_library_init(){
+    try{
+        load_config('ssh');
+
+    }catch(Exception $e){
+        throw new bException('ssh_library_init(): Failed', $e);
+    }
+}
+
+
+
+/*
  * SSH account validation
  *
  * @author Sven Olaf Oostenbrink <sven@capmega.com>
@@ -19,7 +41,7 @@
  * @package ssh
  *
  * @param array $ssh
- * @return array
+ * @return array the specified $ssh array validated and clean
  */
 function ssh_validate_account($ssh){
     try{
@@ -529,7 +551,7 @@ function ssh_cp($server, $source, $destnation, $from_server = false){
 /*
  * ..................
  *
- * @author Marcos Prudencio <marcos@capmega.com>
+ * @author Marcos Prudencio <sven@capmega.com>
  * @copyright Copyright (c) 2018 Capmega
  * @license http://opensource.org/licenses/GPL-2.0 GNU Public License, Version 2
  * @category Function reference
@@ -575,7 +597,7 @@ function ssh_add_known_host($hostname, $port, $known_hosts_path){
 /*
  * .........
  *
- * @author Marcos Prudencio <marcos@capmega.com>
+ * @author Marcos Prudencio <sven@capmega.com>
  * @copyright Copyright (c) 2018 Capmega
  * @license http://opensource.org/licenses/GPL-2.0 GNU Public License, Version 2
  * @category Function reference
@@ -599,7 +621,7 @@ function ssh_get_config($hostname){
 /*
  * Do not inlude  at the beggining of comments the name of the field, otherwise it would be also replace
  *
- * @author Marcos Prudencio <marcos@capmega.com>
+ * @author Marcos Prudencio <sven@capmega.com>
  * @copyright Copyright (c) 2018 Capmega
  * @license http://opensource.org/licenses/GPL-2.0 GNU Public License, Version 2
  * @category Function reference
@@ -637,7 +659,7 @@ function ssh_update_config($hostname, $params){
  * Field description is optional, value is mandatory
  * For example: $params = array('Port'=>array('description'=>'Comentary', 'value'=>40220));
  *
- * @author Marcos Prudencio <marcos@capmega.com>
+ * @author Marcos Prudencio <sven@capmega.com>
  * @copyright Copyright (c) 2018 Capmega
  * @license http://opensource.org/licenses/GPL-2.0 GNU Public License, Version 2
  * @category Function reference
@@ -666,6 +688,94 @@ function ssh_validate_config($params){
 
     }catch(Exception $e){
         throw new bException('ssh_validate_config(): Failed', $e);
+    }
+}
+
+
+
+/*
+ * Returns SSH connection string for the specified SSH options array
+ *
+ * @author Sven Olaf Oostenbrink <sven@capmega.com>
+ * @copyright Copyright (c) 2018 Capmega
+ * @license http://opensource.org/licenses/GPL-2.0 GNU Public License, Version 2
+ * @category Function reference
+ * @package ssh
+ *
+ * @param array $params The parameters that need to be validated
+ * @return array The validated parameter data
+ */
+function ssh_get_conect_string($options = null){
+    global $_CONFIG;
+
+    try{
+        /*
+         * Get options from  default configuration and specified options
+         */
+        $options = array_merge($_CONFIG['ssh']['options'], $options);
+        $string  = '';
+
+        foreach($options as $option => $value){
+            switch($option){
+                case 'connect_timeout':
+                    if($value){
+                        if(!is_numeric($value)){
+                            throw new bException(tr('ssh_get_conect_string(): Specified option "connect_timeout" requires a numeric value, but ":value" was specified', array(':value' => $value)), 'invalid');
+                        }
+
+                        $string .= ' -o ConnectTimeout="'.$value.'"';
+                    }
+
+                    break;
+
+                case 'check_host_ip':
+                    if(!is_bool($value)){
+                        throw new bException(tr('ssh_get_conect_string(): Specified option "check_host_ip" requires a boolean value, but ":value" was specified', array(':value' => $value)), 'invalid');
+                    }
+
+                    $string .= ' -o CheckHostIP="'.get_yes_no($value).'"';
+                    break;
+
+                case 'strict_host_checking':
+                    if(!is_bool($value)){
+                        throw new bException(tr('ssh_get_conect_string(): Specified option "strict_host_checking" requires a boolean value, but ":value" was specified', array(':value' => $value)), 'invalid');
+                    }
+
+                    $string .= ' -o StrictHostChecking="'.get_yes_no($value).'"';
+                    break;
+
+                case 'user_known_hosts_file':
+                    if($value){
+                        if(!is_string($value)){
+                            throw new bException(tr('ssh_get_conect_string(): Specified option "user_known_hosts_file" requires a string value, but ":value" was specified', array(':value' => $value)), 'invalid');
+                        }
+
+                        $string .= ' -o UserKnownHostsFile="'.$value.'"';
+                    }
+
+                    break;
+
+                case 'port':
+                    if($value){
+                        if(!is_natural($value) or ($value > 65535)){
+                            throw new bException(tr('ssh_get_conect_string(): Specified option "port" requires a natural number value 1 - 65535, but ":value" was specified', array(':value' => $value)), 'invalid');
+                        }
+
+                        $string .= ' -p '.$value;
+                    }
+
+                    break;
+
+                default:
+                    throw new bException(tr('ssh_get_conect_string(): Unknown option ":option" specified', array(':option' => $option)), 'unknown');
+            }
+
+        }
+
+        return $string;
+
+    }catch(Exception $e){
+        throw new bException('ssh_get_conect_string(): Failed', $e);
     }
 }
 ?>
