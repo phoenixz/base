@@ -550,6 +550,14 @@ function sql_connect($connector, $use_database = true){
         }
 
         /*
+         * Does this connector require an SSH tunnel?
+         */
+        if(isset_get($connector['ssh_tunnel']['required'])){
+            load_libs('servers');
+            servers_tunnel($connector['ssh_tunnel']);
+        }
+
+        /*
          * Connect!
          */
         try{
