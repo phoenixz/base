@@ -16,14 +16,14 @@ function detect_client(){
     try{
         global $_CONFIG;
 
-        load_libs('mobile');
-
         if(PLATFORM_CLI){
             /*
              * This is a shell, there is no client
              */
             throw new bException(tr('detect_client(): This function cannot be run from a cli shell'), 'invalid');
         }
+
+        load_libs('mobile');
 
         if(!$_CONFIG['client']['detect']){
             $_SESSION['client'] = false;
@@ -59,7 +59,7 @@ function detect_client(){
                     array_ensure($ua, 'majorver,minorver');
 
                 }catch(Exception $e){
-                    log_console($e);
+                    notify($e);
                 }
 
             }
