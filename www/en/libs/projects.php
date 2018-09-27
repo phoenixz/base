@@ -50,7 +50,7 @@ function projects_validate($project, $reload_only = false){
     try{
         load_libs('validate,seo');
 
-        $v = new validate_form($project, 'seocategory,seocustomer,name,code,seoprocess,step');
+        $v = new validate_form($project, 'seocategory,seocustomer,name,code,seoprocess,step,documents_id,api_key,fcm_api_key,description');
 
         /*
          * Validate category
@@ -129,17 +129,17 @@ function projects_validate($project, $reload_only = false){
          * Validate name
          */
         if(!$v->isNotEmpty ($project['name'], tr('No projects name specified'))){
-            $v->hasMinChars($project['name'],  2, tr('Please ensure the project\'s name has at least 2 characters'));
+            $v->hasMinChars($project['name'], 2, tr('Please ensure the project\'s name has at least 2 characters'));
             $v->hasMaxChars($project['name'], 64, tr('Please ensure the project\'s name has less than 64 characters'));
-            $v->isAlphaNumeric($project['name'] , tr('Please specify a valid project name'), VALIDATE_IGNORE_ALL);
+            $v->isAlphaNumeric($project['name'], tr('Please specify a valid project name'), VALIDATE_IGNORE_ALL);
         }
 
         $project['name'] = str_clean($project['name']);
 
         if($project['code']){
-            $v->hasMinChars($project['code'],  2, tr('Please ensure the project\'s code has at least 2 characters'));
+            $v->hasMinChars($project['code'], 2, tr('Please ensure the project\'s code has at least 2 characters'));
             $v->hasMaxChars($project['code'], 32, tr('Please ensure the project\'s code has less than 32 characters'));
-            $v->isAlphaNumeric($project['code'] , tr('Please ensure the project\'s code contains no spaces'), VALIDATE_IGNORE_UNDERSCORE);
+            $v->isAlphaNumeric($project['code'], tr('Please ensure the project\'s code contains no spaces'), VALIDATE_IGNORE_UNDERSCORE);
 
         }else{
             $project['code'] = null;
@@ -148,10 +148,47 @@ function projects_validate($project, $reload_only = false){
         $project['code'] = str_clean($project['code']);
         $project['code'] = strtoupper($project['code']);
 
+        if($project['api_key']){
+            $v->hasMinChars($project['api_key'], 32, tr('Please ensure the project\'s api_key has at least 32 characters'));
+            $v->hasMaxChars($project['api_key'], 64, tr('Please ensure the project\'s api_key has less than 64 characters'));
+            $v->isAlphaNumeric($project['api_key'], tr('Please ensure the project\'s api_key contains no spaces'));
+
+        }else{
+            $project['api_key'] = null;
+        }
+
+        if($project['fcm_api_key']){
+            $v->hasMinChars($project['fcm_api_key'], 11, tr('Please ensure the project\'s fcm_api_key has at least 11 characters'));
+            $v->hasMaxChars($project['fcm_api_key'], 511, tr('Please ensure the project\'s fcm_api_key has less than 511 characters'));
+            $v->isAlphaNumeric($project['fcm_api_key'], tr('Please ensure the project\'s fcm_api_key contains no spaces'), VALIDATE_IGNORE_DASH);
+
+        }else{
+            $project['fcm_api_key'] = null;
+        }
+
+        $v->hasMaxChars($project['description'], 2047, tr('Please ensure the project\'s description has less than 2047 characters'), VALIDATE_ALLOW_EMPTY_NULL);
+        $v->isText($project['description'], tr('Please ensure the project\'s description is valid'), VALIDATE_ALLOW_EMPTY_NULL);
+
+        if($project['documents_id']){
+            $v->isNatural($project['documents_id'], 1, tr('Please ensure the project\'s linked documents_id is a valid number'));
+
+        }else{
+            $project['documents_id'] = null;
+        }
+
         /*
          * Structural validation finished, if all is okay continue to check for existence
          */
         $v->isValid();
+
+        /*
+         * Does the linked document exist?
+         */
+        $exists = sql_get('SELECT `id` FROM `storage_documents` WHERE `id` = :id', true, array(':id' => $project['documents_id']));
+
+        if($exists){
+            $v->setError(tr('The linked document does not exist'));
+        }
 
         /*
          * Does the project name already exist?
@@ -170,6 +207,8 @@ function projects_validate($project, $reload_only = false){
         if($exists){
             $v->setError(tr('The project code ":code" already exists with id ":id"', array(':code' => $project['code'], ':id' => $exists)));
         }
+
+        $v->isValid();
 
         /*
          * All is good, yay!
@@ -315,7 +354,7 @@ function projects_get($project, $column = null, $status = null){
                                          `projects`.`seoname`,
                                          `projects`.`code`,
                                          `projects`.`api_key`,
-                                         `projects`.`fcm_apikey`,
+                                         `projects`.`fcm_api_key`,
                                          `projects`.`last_login`,
                                          `projects`.`description`,
 
