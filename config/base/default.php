@@ -126,44 +126,49 @@ $_CONFIG['data']               = array('global'                             => t
 // Database connectors configuration
 $_CONFIG['db']                 = array('default'                            => 'core',
 
-                                       'core'                               => array('driver'           => 'mysql',                     // PDO Driver used to communicate with the database server. For now, only MySQL has been tested, no others have been used yet, use at your own discretion
-                                                                                     'host'             => 'localhost',                 // Hostname for SQL server
-                                                                                     'port'             => '',                          // If set, don't use the default 3306 port
-                                                                                     'user'             => 'base',                      // Username to login to SQL server
-                                                                                     'pass'             => 'base',                      // Password to login to SQL server
-                                                                                     'db'               => 'base',                      // Name of core database on SQL server
-                                                                                     'init'             => true,                        // If set to true, upon first query of the pageload, the SQL library will check if the database requires initialization
-                                                                                     'autoincrement'    => 1,                           // Default autoincrement for all database tables (MySQL only)
-                                                                                     'buffered'         => false,                       // WARNING, READ ALL!! Use buffered queries or not. See PHP documentation for more information. WARNING: Currently buffered queries appear to completely wreck this sytem, do NOT use!
-                                                                                     'charset'          => 'utf8mb4',                   // Default character set for all database tables
-                                                                                     'collate'          => 'utf8mb4_general_ci',        // Default collate set for all database tables
-                                                                                     'limit_max'        => 10000,                       // Standard SQL allowed LIMIT specified in table displays, for example, to avoid displaying a table with a milion entries, for example
+                                       'core'                               => array('driver'           => 'mysql',                         // PDO Driver used to communicate with the database server. For now, only MySQL has been tested, no others have been used yet, use at your own discretion
+                                                                                     'host'             => 'localhost',                     // Hostname for SQL server
+                                                                                     'port'             => '',                              // If set, don't use the default 3306 port
+                                                                                     'user'             => 'base',                          // Username to login to SQL server
+                                                                                     'pass'             => 'base',                          // Password to login to SQL server
+                                                                                     'db'               => 'base',                          // Name of core database on SQL server
+                                                                                     'init'             => true,                            // If set to true, upon first query of the pageload, the SQL library will check if the database requires initialization
+                                                                                     'autoincrement'    => 1,                               // Default autoincrement for all database tables (MySQL only)
+                                                                                     'buffered'         => false,                           // WARNING, READ ALL!! Use buffered queries or not. See PHP documentation for more information. WARNING: Currently buffered queries appear to completely wreck this sytem, do NOT use!
+                                                                                     'charset'          => 'utf8mb4',                       // Default character set for all database tables
+                                                                                     'collate'          => 'utf8mb4_general_ci',            // Default collate set for all database tables
+                                                                                     'limit_max'        => 10000,                           // Standard SQL allowed LIMIT specified in table displays, for example, to avoid displaying a table with a milion entries, for example
                                                                                      'mode'             => 'PIPES_AS_CONCAT,IGNORE_SPACE,NO_KEY_OPTIONS,NO_TABLE_OPTIONS,NO_FIELD_OPTIONS',   // Special mode options for MySQL server
-                                                                                     'pdo_attributes'   => array(),                     // Special PDO otions. By default, try to use MySQLND with PDO::ATTR_EMULATE_PREPARES to avoid internal data type changes from int > string!
+                                                                                     'ssh_tunnel'       => array('required'    => false,    // SSH tunnel configuration. This should NOT be used for the core database!
+                                                                                                                 'local_port'  => 3307,     // Port on the local machine to enter in the SSH tunnel
+                                                                                                                 'remote_port' => 3306,     // MySQL server port on the remote server
+                                                                                                                 'server'      => ''),      // SEO name of server registered in the servers table
+
+                                                                                     'pdo_attributes'   => array(),                         // Special PDO otions. By default, try to use MySQLND with PDO::ATTR_EMULATE_PREPARES to avoid internal data type changes from int > string!
                                                                                      //'pdo_attributes'   => array(PDO::ATTR_EMULATE_PREPARES  => false,  // Special PDO otions. By default, try to use MySQLND with PDO::ATTR_EMULATE_PREPARES to avoid internal data type changes from int > string!
                                                                                      //                            PDO::ATTR_STRINGIFY_FETCHES => false, ),
-                                                                                     'timezone'         => 'America/Mexico_City'));     // Default timezone to use
+                                                                                     'timezone'         => 'America/Mexico_City'));         // Default timezone to use
 
 //domain
-$_CONFIG['domain']             = 'auto';                                                                                                // The base domain of this website. for example, "mywebsite.com",  "thisismine.com.mx", etc. If set to "auto" it will use $_SERVER[SERVER_NAME]
+$_CONFIG['domain']             = 'auto';                                                                                                    // The base domain of this website. for example, "mywebsite.com",  "thisismine.com.mx", etc. If set to "auto" it will use $_SERVER[SERVER_NAME]
 
 // Editors configuration, tinymce jbimages plugin configuration
-$_CONFIG['editors']            = array('imageupload'                        => 'session',                                               // "all" or "session" or "admin",
+$_CONFIG['editors']            = array('imageupload'                        => 'session',                                                   // "all" or "session" or "admin",
 
-                                       'images'                             => array('url'                => '/images',                 // Base URL that jbimiages will give to tinymce for all images inserted into the document
-                                                                                     'allowed_types'      => 'gif|jpg|png',             // What file extensions will be recognized by jbimages as being an image
-                                                                                     'max_size'           => 0,                         //
-                                                                                     'max_width'          => 0,                         //
-                                                                                     'max_height'         => 0,                         //
-                                                                                     'allow_resize'       => false,                     //
-                                                                                     'overwrite'          => false,                     // If set to true, if images names already exist when a new images is being uploaded, it will be overwritten. If set to false, the new image will be assigned a number behind the basename (before the extension) to make it unique
-                                                                                     'encrypt_name'       => false));                   // Should filenames retain their original name (false) or should jbimages give it a random character name (true)?
+                                       'images'                             => array('url'                => '/images',                     // Base URL that jbimiages will give to tinymce for all images inserted into the document
+                                                                                     'allowed_types'      => 'gif|jpg|png',                 // What file extensions will be recognized by jbimages as being an image
+                                                                                     'max_size'           => 0,                             //
+                                                                                     'max_width'          => 0,                             //
+                                                                                     'max_height'         => 0,                             //
+                                                                                     'allow_resize'       => false,                         //
+                                                                                     'overwrite'          => false,                         // If set to true, if images names already exist when a new images is being uploaded, it will be overwritten. If set to false, the new image will be assigned a number behind the basename (before the extension) to make it unique
+                                                                                     'encrypt_name'       => false));                       // Should filenames retain their original name (false) or should jbimages give it a random character name (true)?
 
 // Feedback configuration
 $_CONFIG['feedback']           = array('emails'                             => array('Ingiga Support' => 'support@capmega.com'));
 
 // Flash alert configuration
-$_CONFIG['flash']              = array('type'                               => 'html',                                                  // The type of HTML flash message to use. Either "html" or "sweetalert"
+$_CONFIG['flash']              = array('type'                               => 'html',                                                      // The type of HTML flash message to use. Either "html" or "sweetalert"
                                        'html'                               => '<div class="flash:type">:message</div>');
 
 //
@@ -176,28 +181,28 @@ $_CONFIG['formats']            = array('force1224'                          => '
                                        'human_nice_date'                    => 'l, j F Y');
 
 // Filesystem configuration
-$_CONFIG['fs']                 = array('dir_mode'                           => 0770,                                                    // When the system creates directory, this sets what file mode it will have (Google unix file modes for more information)
-                                       'file_mode'                          => 0660,                                                    // When the system creates a file, this sets what file mode it will have (Google unix file modes for more information)
-                                       'target_path_size'                   => 4);                                                      // When creating
+$_CONFIG['fs']                 = array('dir_mode'                           => 0770,                                                        // When the system creates directory, this sets what file mode it will have (Google unix file modes for more information)
+                                       'file_mode'                          => 0660,                                                        // When the system creates a file, this sets what file mode it will have (Google unix file modes for more information)
+                                       'target_path_size'                   => 4);                                                          // When creating
 
 // google api
-$_CONFIG['google-map-api-key'] = '';                                                                                                    // The google maps API key
+$_CONFIG['google-map-api-key'] = '';                                                                                                        // The google maps API key
 
 // Init configuration
-$_CONFIG['init']               = array('cli'                                => true,                                                    // Sets if system init can be executed by shell
-                                       'http'                               => false);                                                  // Sets if system init can be executed by http (IMPORTANT: This is not supported yet!)
+$_CONFIG['init']               = array('cli'                                => true,                                                        // Sets if system init can be executed by shell
+                                       'http'                               => false);                                                      // Sets if system init can be executed by http (IMPORTANT: This is not supported yet!)
 
 // JS configuration
-$_CONFIG['js']                 = array('animate'                            => array('speed'              => 100));                     // Sets default speed for javascript animations
+$_CONFIG['js']                 = array('animate'                            => array('speed'              => 100));                         // Sets default speed for javascript animations
 
 // jQuery UI configuration
-$_CONFIG['jquery-ui']          = array('theme'                              => 'smoothness');                                           // Sets the default UI theme for jquery-ui
+$_CONFIG['jquery-ui']          = array('theme'                              => 'smoothness');                                               // Sets the default UI theme for jquery-ui
 
 // Language
-$_CONFIG['language']           = array('default'                            => 'en',                                                    // If www user has no language specified, this determines the default language. Either a 2 char language code (en, es, nl, ru, pr, etc) or "auto" to do GEOIP language detection
-                                       'detect'                             => true,                                                    // Perform requested language auto detect
-                                       'supported'                          => array('en'                 => 'English',                 // Associated array list of language_code => language_name of supported languages for this website
-                                                                                     'es'                 => 'Español',                 // Associated array list of language_code => language_name of supported languages for this website
+$_CONFIG['language']           = array('default'                            => 'en',                                                        // If www user has no language specified, this determines the default language. Either a 2 char language code (en, es, nl, ru, pr, etc) or "auto" to do GEOIP language detection
+                                       'detect'                             => true,                                                        // Perform requested language auto detect
+                                       'supported'                          => array('en'                 => 'English',                     // Associated array list of language_code => language_name of supported languages for this website
+                                                                                     'es'                 => 'Español',                     // Associated array list of language_code => language_name of supported languages for this website
                                                                                      'nl'                 => 'Nederlands'));
 
 // Locale configuration
@@ -210,10 +215,10 @@ $_CONFIG['locale']             = array(LC_ALL                               => '
                                        LC_MESSAGES                          => null);
 
 // Location configuration
-$_CONFIG['location']           = array('detect'                             => false);                                                  // Attempt auto location detect if current session doesn't have location information
+$_CONFIG['location']           = array('detect'                             => false);                                                      // Attempt auto location detect if current session doesn't have location information
 
 //Log configuration
-$_CONFIG['log']                = array('single'                             => true);                                                   // All file logs will go to one and the same file
+$_CONFIG['log']                = array('single'                             => true);                                                       // All file logs will go to one and the same file
 
 // Mailer configuration
 $_CONFIG['mailer']             = array('sender'                             => array('wait'               => 5,
@@ -223,39 +228,39 @@ $_CONFIG['mailer']             = array('sender'                             => a
 $_CONFIG['mail']               = array('developers'                         => array());
 
 // Maintenance configuration
-$_CONFIG['maintenance']        = false;                                                                                                 // If set to true, the only page that will be displayed is the www/LANGUAGE/maintenance.php
+$_CONFIG['maintenance']        = false;                                                                                                     // If set to true, the only page that will be displayed is the www/LANGUAGE/maintenance.php
 
 // Memcached configuration. If NOT set to false, the memcached library will automatically be loaded!
-$_CONFIG['memcached']          = array('servers'                            => array(array('localhost', 11211, 20)),                    // Array of multiple memcached servers. If set to false, no memcached will be done.
-                                       'expire_time'                        => 86400,                                                   // Default memcached object expire time (after this time memcached will drop them automatically)
-                                       'prefix'                             => PROJECT.'-',                                             // Default memcached object key prefix (in case multiple projects use the same memcached server)
-                                       'namespaces'                         => true);                                                   // Use namespaces to store the data. This will require extra lookups on memcached to determine namespaces contents, but allows for more flexibility
+$_CONFIG['memcached']          = array('servers'                            => array(array('localhost', 11211, 20)),                        // Array of multiple memcached servers. If set to false, no memcached will be done.
+                                       'expire_time'                        => 86400,                                                       // Default memcached object expire time (after this time memcached will drop them automatically)
+                                       'prefix'                             => PROJECT.'-',                                                 // Default memcached object key prefix (in case multiple projects use the same memcached server)
+                                       'namespaces'                         => true);                                                       // Use namespaces to store the data. This will require extra lookups on memcached to determine namespaces contents, but allows for more flexibility
 
 //Meta configuration
-$_CONFIG['meta']               = array('author'                             => '');                                                     // Set default meta tags for this site which may be overruled by parameters for the function html_header(). See libs/html.php
+$_CONFIG['meta']               = array('author'                             => '');                                                         // Set default meta tags for this site which may be overruled by parameters for the function html_header(). See libs/html.php
 
 // Mobile configuration
-$_CONFIG['mobile']             = array('enabled'                            => true,                                                    // If disabled, treat every device as a normal desktop device, no mobile detection will be done
-                                       'force'                              => false,                                                   // Treat every device as if it is a mobile device
-                                       'auto_redirect'                      => true,                                                    // If set to true, the first session page load will automatically redirect to the mobile version of the site
-                                       'tablets'                            => false,                                                   // Treat tablets as mobile devices
-                                       'viewport'                           => 'width=device-width, initial-scale=1, maximum-scale=1'); // The <meta> viewport tag used for this site
+$_CONFIG['mobile']             = array('enabled'                            => true,                                                        // If disabled, treat every device as a normal desktop device, no mobile detection will be done
+                                       'force'                              => false,                                                       // Treat every device as if it is a mobile device
+                                       'auto_redirect'                      => true,                                                        // If set to true, the first session page load will automatically redirect to the mobile version of the site
+                                       'tablets'                            => false,                                                       // Treat tablets as mobile devices
+                                       'viewport'                           => 'width=device-width, initial-scale=1, maximum-scale=1');     // The <meta> viewport tag used for this site
 
 // Name of the website
 $_CONFIG['name']               = 'base';
 
 // Do not index this site. DANGEROUS! WILL DESTROY SEO! Use for intranet websites, for example.
-$_CONFIG['noindex']            = false;                                                                                                 // If set to true, the entire website will not be indexed at all by google. Use for intranet websites
+$_CONFIG['noindex']            = false;                                                                                                     // If set to true, the entire website will not be indexed at all by google. Use for intranet websites
 
 
 // Paging configuration
-$_CONFIG['paging']             = array('limit'                              => 50,                                                      // The maximum amount of items shown per page
-                                       'show_pages'                         => 5,                                                       // The maximum amount of pages show, should always be an odd number, or an exception will be thrown!
-                                       'prev_next'                          => true,                                                    // Show previous - next links
-                                       'first_last'                         => true,                                                    // Show first - last links
-                                       'hide_first'                         => true,                                                    // Hide first number (number 1) in URL, useful for links like all.html, all2.html, etc
-                                       'hide_single'                        => true,                                                    // Hide pager if there is only a single page
-                                       'hide_ends'                          => true,                                                    // Hide the "first" and "last" options
+$_CONFIG['paging']             = array('limit'                              => 50,                                                          // The maximum amount of items shown per page
+                                       'show_pages'                         => 5,                                                           // The maximum amount of pages show, should always be an odd number, or an exception will be thrown!
+                                       'prev_next'                          => true,                                                        // Show previous - next links
+                                       'first_last'                         => true,                                                        // Show first - last links
+                                       'hide_first'                         => true,                                                        // Hide first number (number 1) in URL, useful for links like all.html, all2.html, etc
+                                       'hide_single'                        => true,                                                        // Hide pager if there is only a single page
+                                       'hide_ends'                          => true,                                                        // Hide the "first" and "last" options
                                        'list'                               => array(  10 => tr('Show 10 entries'),
                                                                                        20 => tr('Show 20 entries'),
                                                                                        50 => tr('Show 50 entries'),
@@ -264,7 +269,7 @@ $_CONFIG['paging']             = array('limit'                              => 5
                                                                                      null => tr('Show all entries')));
 
 //Paypal configuration
-$_CONFIG['paypal']             = array('version'                            => 'sandbox',                                               //
+$_CONFIG['paypal']             = array('version'                            => 'sandbox',                                                   //
 
                                        'live'                               => array('email'              => '',
                                                                                      'api-username'       => '',
@@ -289,107 +294,107 @@ $_CONFIG['prefetch']           = array('dns'                                => a
 $_CONFIG['production']         = true;
 
 //domain
-$_CONFIG['protocol']           = 'http://';                                                                                             // The base protocol of this website. Basically either "http://",  or "https://".
+$_CONFIG['protocol']           = 'http://';                                                                                                 // The base protocol of this website. Basically either "http://",  or "https://".
 
 // Redirects configuration (This ususally would not require changes unless you want to have other file names for certain actions like signin, etc)
-$_CONFIG['redirects']          = array('auto'                               => 'get',                                                   // Auto redirects (usually because of user or right required) done by "session" or "get"
-                                                                               'index'            => 'index.php',                       // What is the default index page for this site
-                                                                               'accessdenied'     => '403',                             // Usually won't redirect, but just show
-                                                                               'signin'           => 'signin.php',                      // What is the default signin page for this site
-                                                                               'lock'             => 'lock.php',                        // What is the default lock page for this site
-                                                                               'aftersignin'      => 'index.php',                       // Where will the site redirect to by default after a signin?
+$_CONFIG['redirects']          = array('auto'                               => 'get',                                                       // Auto redirects (usually because of user or right required) done by "session" or "get"
+                                                                               'index'            => 'index.php',                           // What is the default index page for this site
+                                                                               'accessdenied'     => '403',                                 // Usually won't redirect, but just show
+                                                                               'signin'           => 'signin.php',                          // What is the default signin page for this site
+                                                                               'lock'             => 'lock.php',                            // What is the default lock page for this site
+                                                                               'aftersignin'      => 'index.php',                           // Where will the site redirect to by default after a signin?
                                                                                'aftersignout'     => 'index.php');
 
 
 // Root URL of the website
-$_CONFIG['root']               = '';                                                                                                    //
+$_CONFIG['root']               = '';                                                                                                        //
 
 // Share buttons
-$_CONFIG['share']              = array('provider'                           => false);                                                  // Share button provider
+$_CONFIG['share']              = array('provider'                           => false);                                                      // Share button provider
 
 // Security configuration
-$_CONFIG['security']           = array('signin'                             => array('save_password'    => true,                        // Allow the browser client to save the passwords. If set to false, different form names will be used to stop browsers from saving passwords
-                                                                                     'ip_lock'          => false,                       // Either "false", "true" or number n (which makes it lock to users with the right ip_lock), or "ip address" or array("ip address", "ip address", ...). If specified as true, only 1 IP will be allowed. If specified as number N, up to N IP addresses will be allowed. If specified as "ip address", only that IP address will be allowed. If specified as array("ip address", ...) all IP addresses in that array will be allowed
-                                                                                     'destroy_session'  => false,                       // Either "false", "true" or number n (which makes it lock to users with the right ip_lock), or "ip address" or array("ip address", "ip address", ...). If specified as true, only 1 IP will be allowed. If specified as number N, up to N IP addresses will be allowed. If specified as "ip address", only that IP address will be allowed. If specified as array("ip address", ...) all IP addresses in that array will be allowed
-                                                                                     'two_factor'       => false),                      // Either "false" or a valid twilio "from" phone number
+$_CONFIG['security']           = array('signin'                             => array('save_password'    => true,                            // Allow the browser client to save the passwords. If set to false, different form names will be used to stop browsers from saving passwords
+                                                                                     'ip_lock'          => false,                           // Either "false", "true" or number n (which makes it lock to users with the right ip_lock), or "ip address" or array("ip address", "ip address", ...). If specified as true, only 1 IP will be allowed. If specified as number N, up to N IP addresses will be allowed. If specified as "ip address", only that IP address will be allowed. If specified as array("ip address", ...) all IP addresses in that array will be allowed
+                                                                                     'destroy_session'  => false,                           // Either "false", "true" or number n (which makes it lock to users with the right ip_lock), or "ip address" or array("ip address", "ip address", ...). If specified as true, only 1 IP will be allowed. If specified as number N, up to N IP addresses will be allowed. If specified as "ip address", only that IP address will be allowed. If specified as array("ip address", ...) all IP addresses in that array will be allowed
+                                                                                     'two_factor'       => false),                          // Either "false" or a valid twilio "from" phone number
 
-                                       'authentication'                     => array('captcha_failures' => 4,                           // Authentication failures until re-captcha is required. If 0, recaptcha will be required with every authentication. If set to FALSE, captcha will be disabled completely
-                                                                                     'auto_lock_fails'  => 6,                           // Upon N authentication failures, auto lock user accounts. Set to 0 to disable
-                                                                                     'auto_lock_time'   => 60),                         // Upon user account auto locking, keep the account locked for N seconds. Set to 0 to disable
+                                       'authentication'                     => array('captcha_failures' => 4,                               // Authentication failures until re-captcha is required. If 0, recaptcha will be required with every authentication. If set to FALSE, captcha will be disabled completely
+                                                                                     'auto_lock_fails'  => 6,                               // Upon N authentication failures, auto lock user accounts. Set to 0 to disable
+                                                                                     'auto_lock_time'   => 60),                             // Upon user account auto locking, keep the account locked for N seconds. Set to 0 to disable
 
-                                       'passwords'                          => array('test'             => false,                       // Test new user password strength?
-                                                                                     'hash'             => 'sha256',                    // What hash algorithm will we use to store the passwords?
-                                                                                     'usemeta'          => true,                        // Add used hash as meta data to the password when storing them so we know what hash was used.
-                                                                                     'useseed'          => true,                        // Use the SEED constant to calculate passwords
-                                                                                     'unique_updates'   => 3,                           // Passwords cannot be updated to the same password for minimum N times
-                                                                                     'unique_days'      => 30),                         // Passwords cannot be updated to the same password for minimum N days
+                                       'passwords'                          => array('test'             => false,                           // Test new user password strength?
+                                                                                     'hash'             => 'sha256',                        // What hash algorithm will we use to store the passwords?
+                                                                                     'usemeta'          => true,                            // Add used hash as meta data to the password when storing them so we know what hash was used.
+                                                                                     'useseed'          => true,                            // Use the SEED constant to calculate passwords
+                                                                                     'unique_updates'   => 3,                               // Passwords cannot be updated to the same password for minimum N times
+                                                                                     'unique_days'      => 30),                             // Passwords cannot be updated to the same password for minimum N days
 
-                                       'user'                               => 'apache',                                                //
-                                       'group'                              => 'apache',                                                //
-                                       'umask'                              =>  0007,                                                   //
-                                       'expose_php'                         => false,                                                   // If false, will hide the X-Powered-By PHP header. If true, will leave the header as is. If set to any other value, will send that value as X-Powered-By value
-                                       'seed'                               => '%T"$#HET&UJHRT87',                                      // SEED for generating codes
+                                       'user'                               => 'apache',                                                    //
+                                       'group'                              => 'apache',                                                    //
+                                       'umask'                              =>  0007,                                                       //
+                                       'expose_php'                         => false,                                                       // If false, will hide the X-Powered-By PHP header. If true, will leave the header as is. If set to any other value, will send that value as X-Powered-By value
+                                       'seed'                               => '%T"$#HET&UJHRT87',                                          // SEED for generating codes
 
-                                       'csrf'                               => array('enabled'          => true,                        // CSRF detection configuration. true | false | "force". Force will forcibly check every POST on CSRF
-                                                                                     'timeout'          => 0));                         // Timeout after page generation, where @ POST time the CSRF check will fail. Use 0 to disable
+                                       'csrf'                               => array('enabled'          => true,                            // CSRF detection configuration. true | false | "force". Force will forcibly check every POST on CSRF
+                                                                                     'timeout'          => 0));                             // Timeout after page generation, where @ POST time the CSRF check will fail. Use 0 to disable
 
 
 // Sessions
-$_CONFIG['sessions']           = array('lifetime'                           => 3600,                                                    // Session lifetime before the session will be closed and reset
-                                       'regenerate_id'                      => 600,                                                     // Time required to regenerate the session id, used to mitigate session fixation attacks. MUST BE LOWER THAN $_CONFIG[session][lifetime]!
+$_CONFIG['sessions']           = array('lifetime'                           => 3600,                                                        // Session lifetime before the session will be closed and reset
+                                       'regenerate_id'                      => 600,                                                         // Time required to regenerate the session id, used to mitigate session fixation attacks. MUST BE LOWER THAN $_CONFIG[session][lifetime]!
 
-                                       'shared_memory'                      => false,                                                   // Store session data in shared memory, very useful for security on shared servers!
+                                       'shared_memory'                      => false,                                                       // Store session data in shared memory, very useful for security on shared servers!
 
-                                       'extended'                           => array('age'           => 2592000,                        //
-                                                                                     'clear'         => true),                          //
+                                       'extended'                           => array('age'           => 2592000,                            //
+                                                                                     'clear'         => true),                              //
 
-                                       'signin'                             => array('force'         => false,                          //
-                                                                                     'allow_next'    => true,                           //
-                                                                                     'redirect'      => 'index.php'));                  //
+                                       'signin'                             => array('force'         => false,                              //
+                                                                                     'allow_next'    => true,                               //
+                                                                                     'redirect'      => 'index.php'));                      //
 
 // Social website integration configuration
-$_CONFIG['social']             = array('links'                              => array('facebook'       => '',                            //
-                                                                                     'twitter'        => '',                            //
-                                                                                     'youtube'        => '',                            //
-                                                                                     'target'         => '_blank'));                    //
+$_CONFIG['social']             = array('links'                              => array('facebook'       => '',                                //
+                                                                                     'twitter'        => '',                                //
+                                                                                     'youtube'        => '',                                //
+                                                                                     'target'         => '_blank'));                        //
 
 // SSO configuration
 $_CONFIG['sso']                = array('cache_config'                       => 86400,
 
-                                       'facebook'                           => false,                                                   //
+                                       'facebook'                           => false,                                                       //
 
-                                       'google'                             => false,                                                   //
+                                       'google'                             => false,                                                       //
 
-                                       'linkedin'                           => false,                                                   //
+                                       'linkedin'                           => false,                                                       //
 
-                                       'microsoft'                          => false,                                                   //
+                                       'microsoft'                          => false,                                                       //
 
-                                       'paypal'                             => false,                                                   //
+                                       'paypal'                             => false,                                                       //
 
-                                       'reddit'                             => false,                                                   //
+                                       'reddit'                             => false,                                                       //
 
-                                       'twitter'                            => false,                                                   //
+                                       'twitter'                            => false,                                                       //
 
-                                       'yandex'                             => false);                                                  //
-
-// Sync configuration.
-$_CONFIG['sync']               = array();                                                                                               //
+                                       'yandex'                             => false);                                                      //
 
 // Sync configuration.
-$_CONFIG['statistics']         = array('enabled'                            => true);                                                   //
+$_CONFIG['sync']               = array();                                                                                                   //
+
+// Sync configuration.
+$_CONFIG['statistics']         = array('enabled'                            => true);                                                       //
 
 // Timezone configuration. See http://www.php.net/manual/en/timezones.php for more info
-$_CONFIG['timezone']           = array('display'                            => 'America/Mexico_City',                                   // Default timezone to be used to display date/time
-                                       'system'                             => 'UTC');                                                  // Default system timezone to be used when dates are stored
+$_CONFIG['timezone']           = array('display'                            => 'America/Mexico_City',                                       // Default timezone to be used to display date/time
+                                       'system'                             => 'UTC');                                                      // Default system timezone to be used when dates are stored
 
 // Default title configuration
-$_CONFIG['title']              = 'Base';                                                                                                //
+$_CONFIG['title']              = 'Base';                                                                                                    //
 
 // Temporary path location, either "local" (ROOT/tmp/) or "global" (/tmp/)
-$_CONFIG['tmp']                = 'local';                                                                                               // Either "local" or "global". "local" will save all temporary files in ROOT/tmp, "global" will save all temporary files in /tmp/PROJECT/
+$_CONFIG['tmp']                = 'local';                                                                                                   // Either "local" or "global". "local" will save all temporary files in ROOT/tmp, "global" will save all temporary files in /tmp/PROJECT/
 
 // What webservice this is.
-$_CONFIG['type']               = 'core';                                                                                                // core, api, cdn
+$_CONFIG['type']               = 'core';                                                                                                    // core, api, cdn
 
 // User configuration
 $_CONFIG['users']              = array('type_filter'                        => null,
@@ -397,7 +402,7 @@ $_CONFIG['users']              = array('type_filter'                        => n
                                        'duplicate_reference_codes'          => false);
 
 //Xapian search
-$_CONFIG['xapian']             = array('dir'                                => ROOT.'data/xapian/');                                    // Base path for Xapian databases
+$_CONFIG['xapian']             = array('dir'                                => ROOT.'data/xapian/');                                        // Base path for Xapian databases
 
-$_CONFIG['whitelabels']        = array('enabled'                            => false);                                                  // Either false (No whitelabel domains, only the normal site FQDN allowed), true (only default and registered FQDNs allowed), "sub" (only default FQDN and its sub domains allowed), or "all" (All domains allowed)
+$_CONFIG['whitelabels']        = array('enabled'                            => false);                                                      // Either false (No whitelabel domains, only the normal site FQDN allowed), true (only default and registered FQDNs allowed), "sub" (only default FQDN and its sub domains allowed), or "all" (All domains allowed)
 ?>
