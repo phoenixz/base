@@ -57,6 +57,7 @@ class Colors {
         $this->foreground_colors['red']          = '0;31';
         $this->foreground_colors['light_red']    = '1;31';
         $this->foreground_colors['error']        = '1;31';
+        $this->foreground_colors['exception']    = '1;31';
         $this->foreground_colors['purple']       = '0;35';
         $this->foreground_colors['light_purple'] = '1;35';
         $this->foreground_colors['brown']        = '0;33';
@@ -1082,6 +1083,35 @@ function cli_done(){
             return false;
         }
 
+        /*
+         * Do we need to run other shutdown functions?
+         */
+        foreach($core->register as $key => $value){
+            if(substr($key, 0, 9) !== 'shutdown_'){
+                continue;
+            }
+
+            /*
+             * Execute this shutdown function with the specified value
+             */
+            if(VERBOSE){
+                log_console(tr('cli_done(): Executing shutdown function ":function" with value ":value"', array(':function' => substr($key, 9), ':value' => $value)), 'cyan');
+            }
+
+            if(is_array($value)){
+                /*
+                 * Shutdown function value is an array. Execute it for each entry
+                 */
+                foreach($value as $entry){
+                    substr($key, 9)($entry);
+                }
+
+            }else{
+                substr($key, 9)($value);
+            }
+
+        }
+
         if(QUIET){
             return false;
         }
@@ -1129,21 +1159,11 @@ function cli_pgrep($name){
  */
 function cli_pidgrep($pid){
     try{
-        try{
-            $results = safe_exec('ps -p 1 > /dev/null');
-            $result  = array_pop($pid);
+        $results = safe_exec('ps '.$pid.' | grep -v "PID TTY      STAT   TIME COMMAND"', '0,1');
+        $result  = array_pop($results);
+        $result  = substr($result, 27);
 
-            return $result;
-
-        }catch(Exception $e){
-            switch($e->getCode()){
-                case 1:
-                    return null;
-
-                default:
-                    throw $e;
-            }
-        }
+        return $result;
 
     }catch(Exception $e){
         throw new bException('cli_pgrep(): Failed', $e);
@@ -1153,9 +1173,18 @@ function cli_pidgrep($pid){
 
 
 /*
+ * Send signal to the specified PID. By default, signal KILL (15) will be sent, and up to $vakudate validations will be executed ensuring the PID has closed. If $verify is negative, and after all validations have passed, the PID is still there, a SIGKILL (9) will be sent and the function terminates.
  *
+ * @author Sven Olaf Oostenbrink <sven@capmega.com>
+ * @copyright Copyright (c) 2018 Capmega
+ * @license http://opensource.org/licenses/GPL-2.0 GNU Public License, Version 2
+ * @category Function reference
+ * @package cli
+ *
+ * @param numeric $pid
+ * @return void
  */
-function cli_kill($pid, $signal = null, $sudo = false){
+function cli_kill($pid, $signal = 15, $verify = -20, $sudo = false){
     try{
         if(!$signal){
             $signal = 15;
@@ -1164,32 +1193,35 @@ function cli_kill($pid, $signal = null, $sudo = false){
         /*
          * pkill returns 1 if process wasn't found, we can ignore that
          */
-        safe_exec(($sudo ? 'sudo ' : '').'pkill -'.$signal.' '.$process, 1);
+        log_console(tr('Killing PID ":pid" with signal ":signal"', array(':pid' => $pid, ':signal' => $signal)), 'cyan');
+        safe_exec(($sudo ? 'sudo ' : '').'kill -'.$signal.' '.$pid, 1);
 
         if($verify){
+            $sigkill = ($verify < 0);
+            $verify  = abs($verify);
+
             while(--$verify >= 0){
-                sleep(0.5);
+                usleep(100000);
 
                 /*
                  * Ensure that the progress is gone
                  */
-                $results = cli_pidgrep($pid);
-
-                if(!$results){
+                if(!cli_pidgrep($pid)){
                     /*
                      * Killed it softly
                      */
                     return true;
                 }
-
-                sleep(0.5);
+                log_console(tr('Waiting for PID ":pid" to die...', array(':pid' => $pid)), 'cyan');
+                usleep(100000);
             }
 
             if($sigkill){
                 /*
                  * Sigkill it!
                  */
-                $result = cli_pkill($process, 9, $sudo, $verify, false);
+                log_console(tr('Killing PID ":pid" with signal ":signal"', array(':pid' => $pid, ':signal' => 9)), 'cyan');
+                $result = cli_kill($pid, 9, 0, $sudo);
 
                 if($result){
                     /*
@@ -1199,7 +1231,7 @@ function cli_kill($pid, $signal = null, $sudo = false){
                 }
             }
 
-            throw new bException(tr('cli_kill(): Failed to kill process ":process"', array(':process' => $process)), 'failed');
+            throw new bException(tr('cli_kill(): Failed to kill PID ":pid"', array(':pid' => $pid)), 'failed');
         }
 
     }catch(Exception $e){
