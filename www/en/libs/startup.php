@@ -238,6 +238,18 @@ class core{
             return isset_get($this->register[$key]);
         }
 
+        if(is_array($value)){
+            /*
+             * If value is an array, then build up a list
+             */
+            if(!isset($this->register[$key])){
+                $this->register[$key] = array();
+            }
+
+            $this->register[$key] = array_merge($this->register[$key], $value);
+            return $this->register[$key];
+        }
+
         return $this->register[$key] = $value;
     }
 
