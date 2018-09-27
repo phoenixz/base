@@ -1385,6 +1385,32 @@ class validate_form {
     /*
      *
      */
+    function isText(&$value, $message = null, $flags = null){
+         try{
+            if(!$this->parseFlags($value, $message, $flags)){
+                return true;
+            }
+
+            if(!is_scalar($value)){
+                return $this->setError($message);
+            }
+
+            if($this->not xor !preg_match('/[a-z0-9,.:;"\'!?@#$%^&*\(\)\[\]\{\}\|\/+=_-]/i', $this->testValue)){
+               return $this->setError($message);
+            }
+
+            return true;
+
+         }catch(Exception $e){
+            throw new bException(tr('validate_form::isRegex(): failed (possibly invalid regex?)'), $e);
+         }
+    }
+
+
+
+    /*
+     *
+     */
     function isDate(&$value, $message = null, $flags = null){
         try{
 // :TODO: IMPLEMENT
