@@ -1218,6 +1218,13 @@ function log_console($messages = '', $color = null, $newline = true, $filter_dou
          */
         log_file($messages, SCRIPT, $color);
 
+        if(!PLATFORM_CLI){
+            /*
+             * Only log to console on CLI platform
+             */
+            return false;
+        }
+
         if(($filter_double == true) and ($messages == $last)){
             /*
             * We already displayed this message, skip!
@@ -3975,7 +3982,7 @@ function cf($source, $allow_null = true){
 
 
 /*
- * $core is the main object for BASE. It starts automatically once the startup library is loaded, determines the platform (cli or http), and in case of http, what the call type is. The call type differentiates between http web pages, admin web pages (pages with /admin, showing the admin section), ajax requests (URL's starting with /ajax), api requests (URL's starting with /api), system pages (any 404, 403, 500, 503, etc. page), Google AMP pages (any URL starting with /amp), and explicit mobile pages (any URL starting with /mobile). $core will automatically run the correct handler for the specified request, which will automatically load the required libraries, setup timezones, configure language and locale, and load the custom library. After that, control is returned to the webpage that called the startup library
+ *
  *
  * @author Sven Olaf Oostenbrink <sven@capmega.com>
  * @copyright Copyright (c) 2018 Capmega
@@ -4009,6 +4016,37 @@ function get_true_false($value, $default){
 
     }catch(Exception $e){
         throw new bException(tr('get_true_false(): Failed'), $e);
+    }
+}
+
+
+
+/*
+ *
+ *
+ * @author Sven Olaf Oostenbrink <sven@capmega.com>
+ * @copyright Copyright (c) 2018 Capmega
+ * @license http://opensource.org/licenses/GPL-2.0 GNU Public License, Version 2
+ * @category Function reference
+ * @package startup
+ *
+ * @param boolean $value The true or false value to be asserted
+ * @return string "yes" for boolean true, "no" for boolean false
+ */
+function get_yes_no($value){
+    try{
+        if($value === true){
+            return 'yes';
+        }
+
+        if($value === false){
+            return 'no';
+        }
+
+        throw new bException(tr('get_yes_no(): Please specify true or false'), 'warning');
+
+    }catch(Exception $e){
+        throw new bException(tr('get_yes_no(): Failed'), $e);
     }
 }
 ?>
