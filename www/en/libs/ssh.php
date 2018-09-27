@@ -32,7 +32,7 @@ function ssh_library_init(){
 
 
 /*
- * SSH account validation
+ * Executes the specified commands on the specified hostname. Supports passing through multiple SSH proxies
  *
  * @author Sven Olaf Oostenbrink <sven@capmega.com>
  * @copyright Copyright (c) 2018 Capmega
@@ -40,85 +40,510 @@ function ssh_library_init(){
  * @category Function reference
  * @package ssh
  *
- * @param array $ssh
- * @return array the specified $ssh array validated and clean
+ * @param array $server
+ * @params string hostname
+ * @params string port (1 - 65535) [null]
+ * @params string ssh_key alias for identity_file
+ * @params string identity_file
+ * @params string commands
+ * @params string background
+ * @params array proxies [null]
+ * @param string $commands
+ * @param boolean $background
+ * @param string $function
+ * @return array
  */
-function ssh_validate_account($ssh){
+function ssh_exec($server, $commands = null, $background = false, $function = 'exec', $ok_exitcodes = 0){
+    global $core;
+
     try{
-        load_libs('validate');
+        array_default($server, 'hostname'     , null);
+        array_default($server, 'hostname'     , null);
+        array_default($server, 'ssh_key'      , null);
+        array_default($server, 'identity_file', $server['ssh_key']);
+        array_default($server, 'commands'     , $commands);
+        array_default($server, 'background'   , $background);
+        array_default($server, 'proxies'      , null);
 
-        $v = new validate_form($ssh, 'name,username,ssh_key,description');
-        $v->isNotEmpty ($ssh['name']    , tr('No account name specified'));
-        $v->hasMinChars($ssh['name'],  2, tr('Please ensure the account name has at least 2 characters'));
-        $v->hasMaxChars($ssh['name'], 32, tr('Please ensure the account name has less than 32 characters'));
+        /*
+         * Validate that for hostnames we have a username and identity_file available
+         */
+        if(!empty($server['hostname'])){
+            if(empty($server['username'])){
+                throw new bException(tr('ssh_exec(): No username specified'), 'not-specified');
+            }
 
-        $v->isNotEmpty ($ssh['username']    , tr('No user name specified'));
-        $v->hasMinChars($ssh['username'],  2, tr('Please ensure the user name has at least 2 characters'));
-        $v->hasMaxChars($ssh['username'], 32, tr('Please ensure the user name has less than 32 characters'));
-
-        $v->isNotEmpty ($ssh['ssh_key'], tr('No SSH key specified to the account'));
-
-        $v->isNotEmpty ($ssh['description']   , tr('No description specified'));
-        $v->hasMinChars($ssh['description'], 2, tr('Please ensure the description has at least 2 characters'));
-
-        if(is_numeric(substr($ssh['name'], 0, 1))){
-            $v->setError(tr('Please ensure that the account name does not start with a number'));
+            if(empty($server['identity_file'])){
+                throw new bException(tr('ssh_exec(): No "ssh_key" or "identity_file" specified'), 'not-specified');
+            }
         }
 
-        $v->isValid();
+        /*
+         * If no hostname is specified, then don't execute this command on a
+         * remote server, just use safe_exec and execute it locally
+         */
+        if(!$server['hostname']){
+            return safe_exec($server['commands'].($server['background'] ? ' &' : ''), $ok_exitcodes, true, $function);
+        }
 
-        return $ssh;
+        /*
+         * Build the SSH command
+         * Execute the command
+         */
+        $command = ssh_build_command($server);
+        $results = safe_exec($command, $ok_exitcodes, true, $function);
+
+        /*
+         * Remove SSH warning
+         */
+        if(!$server['background']){
+            if(preg_match('/Warning: Permanently added \'\[.+?\]:\d{1,5}\' \(\w+\) to the list of known hosts\./', isset_get($results[0]))){
+                /*
+                 * Remove known host warning from results
+                 */
+                array_shift($results);
+            }
+        }
+
+        if(!empty($server['tunnel'])){
+            if(empty($server['tunnel']['persist'])){
+                /*
+                 * This SSH tunnel must be closed automatically once the script finishes
+                 */
+                log_file(tr('Created SSH tunnel ":source_port::target_hostname::target_port" to hostname ":hostname"', array(':hostname' => $server['hostname'], ':source_port' => $server['tunnel']['source_port'], ':target_hostname' => $server['tunnel']['target_hostname'], ':target_port' => $server['tunnel']['target_port'])));
+                $core->register('shutdown_ssh_close_tunnel', $results);
+
+            }else{
+                log_file(tr('Created PERSISTENT SSH tunnel ":source_port::target_hostname::target_port" to hostname ":hostname"', array(':hostname' => $server['hostname'], ':source_port' => $server['tunnel']['source_port'], ':target_hostname' => $server['tunnel']['target_hostname'], ':target_port' => $server['tunnel']['target_port'])));
+            }
+        }
+
+        return $results;
 
     }catch(Exception $e){
-        throw new bException(tr('ssh_validate_account(): Failed'), $e);
+        /*
+         * Remove "Permanently added host blah" error, even in this exception
+         */
+        $data = $e->getData();
+
+        if(!empty($data[0])){
+            if(preg_match('/Warning: Permanently added \'\[.+?\]:\d{1,5}\' \(\w+\) to the list of known hosts\./', $data[0])){
+                /*
+                 * Remove known host warning from results
+                 */
+                array_shift($data);
+            }
+        }
+
+        unset($data);
+        notify($e);
+
+        /*
+         * Try deleting the keyfile anyway!
+         */
+        try{
+            if(!empty($key_file)){
+                chmod($key_file, 0600);
+                file_delete($key_file);
+            }
+
+        }catch(Exception $e){
+            /*
+             * Cannot be deleted, just ignore and notify
+             */
+            notify($e);
+        }
+
+        throw new bException('ssh_exec(): Failed', $e);
     }
 }
 
 
 
 /*
- * Returns ssh account data
+ * Returns SSH connection string for the specified SSH connection parameters. Supports multiple SSH proxy servers
+ *
+ * @author Sven Olaf Oostenbrink <sven@capmega.com>
+ * @copyright Copyright (c) 2018 Capmega
+ * @license http://opensource.org/licenses/GPL-2.0 GNU Public License, Version 2
+ * @category Function reference
+ * @package ssh
+ *
+ * @param array $server The server parameters required to build the SSH connection string
+ * @params numeric port [1 - 65535] The port number for the remote host to connect to
+ * @params string log [filename]
+ * @params boolean no_command
+ * @params boolean background
+ * @params boolean remote_connect
+ * @params string tunnel [1 - 65535]>[1 - 65535]
+ * @params string identity_file [filename]
+ * @params array options
+ * @return string The connection string
  */
-function ssh_get_account($account){
+function ssh_build_command(&$server = null, $ssh_command = 'ssh'){
+    global $_CONFIG;
+
     try{
-        if(!$account){
-            throw new bException(tr('ssh_get_account(): No accounts id specified'), 'not-specified');
+        if(empty($server['hostname'])){
+            throw new bException(tr('ssh_build_command(): No hostname specified'), 'not-specified');
         }
 
-        if(!is_numeric($account)){
-            throw new bException(tr('ssh_get_account(): Specified accounts id ":id" is not numeric', array(':id' => $account)), 'invalid');
+        /*
+         * Get default SSH arguments and create basic SSH command with options
+         */
+        $server  = array_merge($_CONFIG['ssh']['arguments'], $server);
+        $command = $ssh_command.ssh_build_options(isset_get($server['options']));
+
+        /*
+         * "tunnel" option requires (and automatically assumes) no_command, background, and remote_connect
+         */
+        if(!empty($server['tunnel'])){
+            $server['background']      = true;
+            $server['no_command']      = true;
+            $server['remote_connect']  = true;
         }
 
-        $retval = sql_get('SELECT    `ssh_accounts`.`id`,
-                                     `ssh_accounts`.`createdon`,
-                                     `ssh_accounts`.`modifiedon`,
-                                     `ssh_accounts`.`name`,
-                                     `ssh_accounts`.`username`,
-                                     `ssh_accounts`.`ssh_key`,
-                                     `ssh_accounts`.`status`,
-                                     `ssh_accounts`.`description`,
+        foreach($server as $parameter => &$value){
+            switch($parameter){
+                case 'options':
+                    /*
+                     * Options are processed in ssh_get_otions();
+                     */
+                    break;
 
-                                     `createdby`.`name`   AS `createdby_name`,
-                                     `createdby`.`email`  AS `createdby_email`,
-                                     `modifiedby`.`name`  AS `modifiedby_name`,
-                                     `modifiedby`.`email` AS `modifiedby_email`
+                case 'port':
+                    if($value){
+                        if(!is_numeric($value) or ($value < 1) or ($value > 65535)){
+                            if($value !== ':proxy_port'){
+                                throw new bException(tr('ssh_build_command(): Specified port natural numeric value between 1 - 65535, but ":value" was specified', array(':value' => $value)), 'invalid');
+                            }
+                        }
 
-                           FROM      `ssh_accounts`
+                        switch($ssh_command){
+                            case 'ssh':
+                                // FALLTHROUGH
+                            case 'autossh':
+                                // FALLTHROUGH
+                            case 'ssh-copy-id':
+                                $command .= ' -p "'.$value.'"';
+                                break;
 
-                           LEFT JOIN `users` AS `createdby`
-                           ON        `ssh_accounts`.`createdby`  = `createdby`.`id`
+                            case 'scp':
+                                $command .= ' -P "'.$value.'"';
+                                break;
 
-                           LEFT JOIN `users` AS `modifiedby`
-                           ON        `ssh_accounts`.`modifiedby` = `modifiedby`.`id`
+                            default:
+                                throw new bException(tr('ssh_build_command(): Unknown ssh command ":command" specified', array(':command' => $ssh_command)), 'command');
+                        }
+                    }
 
-                           WHERE     `ssh_accounts`.`id`   = :id',
+                    break;
 
-                           array(':id' => $account));
+                case 'log':
+                    if($value){
+                        if(!is_string($value)){
+                            throw new bException(tr('ssh_build_command(): Specified option "log" requires string value containing the path to the identity file, but contains ":value"', array(':value' => $value)), 'invalid');
+                        }
 
-        return $retval;
+                        if(!file_exists($value)){
+                            throw new bException(tr('ssh_build_command(): Specified log file directory ":path" does not exist', array(':file' => dirname($value))), 'not-exist');
+                        }
+
+                        $command .= ' -E "'.$value.'"';
+                    }
+
+                    break;
+
+                case 'goto_background':
+                    /*
+                     * NOTE: This is not the same as shell background! This will execute SSH with one PID and then have it switch to an independant process with another PID!
+                     */
+                    if($value){
+                        $command .= ' -f';
+                    }
+
+                    break;
+
+                case 'remote_connect':
+                    if($value){
+                        $command .= ' -g';
+                    }
+
+                    break;
+
+                case 'master':
+                    if($value){
+                        $command .= ' -M';
+                    }
+
+                    break;
+
+                case 'no_command':
+                    if($value){
+                        $command .= ' -N';
+                    }
+
+                    break;
+
+                case 'tunnel':
+                    array_ensure ($value, 'source_port,target_port');
+                    array_default($value, 'target_hostname', 'localhost');
+                    array_default($value, 'persist'        , false);
+
+                    if(!$value['persist'] and !empty($server['proxies'])){
+                        throw new bException(tr('ssh_build_command(): A non persistent SSH tunnel with proxies was requested, but since SSH proxies will cause another SSH process with unknown PID, we will not be able to close them automatically. Use "persisten" for this tunnel or tunnel without proxies'), 'warning/invalid');
+                    }
+
+                    if(!is_natural($value['source_port']) or ($value['source_port'] > 65535)){
+                        if(!$value['source_port']){
+                            throw new bException(tr('ssh_build_command(): No source_port specified for parameter "tunnel". Value should be 1-65535'), 'invalid');
+                        }
+
+                        throw new bException(tr('ssh_build_command(): Invalid source_port specified for parameter "tunnel". Value should be 1-65535'), 'invalid');
+                    }
+
+                    if(!is_natural($value['target_port']) or ($value['target_port'] > 65535)){
+                        if(!$value['target_port']){
+                            throw new bException(tr('ssh_build_command(): No source_port specified for parameter "tunnel". Value should be 1-65535'), 'invalid');
+                        }
+
+                        throw new bException(tr('ssh_build_command(): Invalid target_port specified for parameter "tunnel". Value should be 1-65535'), 'invalid');
+                    }
+
+                    if(!is_scalar($value['target_hostname']) or (strlen($value['target_hostname']) < 1) or (strlen($value['target_hostname']) > 253)){
+                        if(!$value['target_hostname']){
+                            throw new bException(tr('ssh_build_command(): No target_hostname specified for parameter "tunnel". Value should be the target hosts FQDN, IP, localhost, or host defined in the /etc/hosts of the target machine'), 'invalid');
+                        }
+
+                        throw new bException(tr('ssh_build_command(): Invalid target_hostname specified for parameter "tunnel". Value should be scalar, and >= 1 and <= 253 characters'), 'invalid');
+                    }
+
+                    $command .= ' -L '.$value['source_port'].':'.$value['target_hostname'].':'.$value['target_port'];
+                    break;
+
+                case 'identity_file':
+                    if($value){
+                        if(!is_string($value)){
+                            throw new bException(tr('ssh_build_command(): Specified option "identity_file" requires string value containing the path to the identity file, but contains ":value"', array(':value' => $value)), 'invalid');
+                        }
+
+                        if(!file_exists($value)){
+                            throw new bException(tr('ssh_build_command(): Specified identity file ":file" does not exist', array(':file' => $value)), 'not-exist');
+                        }
+
+                        $command .= ' -i "'.$value.'"';
+                    }
+
+                    break;
+
+                case 'proxies':
+// :TODO: Right now its assumed that every proxy uses the same SSH user and key file, though in practice, they MIGHT have different ones. Add support for each proxy server having its own user and keyfile
+                    if(!$value){
+                        break;
+                    }
+
+                    /*
+                     * $value IS REFERENCED, DO NOT USE IT DIRECTLY HERE!
+                     */
+                    $proxies = $value;
+
+                    /*
+                     * ssh command line ProxyCommand example: -o ProxyCommand="ssh -p  -o ProxyCommand=\"ssh -p  40220 s1.s.ingiga.com nc s2.s.ingiga.com 40220\"  40220 s2.s.ingiga.com nc s3.s.ingiga.com 40220"
+                     * To connect to this server, one must pass through a number of SSH proxies
+                     */
+                    if($proxies === ':proxy_template'){
+                        /*
+                         * We're building a proxy_template command, which itself as proxy template has just the string ":proxy_template"
+                         */
+                        $command .= ' :proxy_template';
+
+                    }else{
+                        $template             = $server;
+                        $template['hostname'] = ':proxy_host';
+                        $template['port']     = ':proxy_port';
+                        $template['commands'] = 'nc :target_hostname :target_port';
+                        $template['proxies']  = ':proxy_template';
+
+//'ssh '.$server['timeout'].$server['arguments'].' -i '.$key_file.' -p :proxy_port :proxy_template '.$server['username'].'@:proxy_host nc :target_hostname :target_port';
+
+                        $escapes        = 0;
+                        $proxy_template = ' -o ProxyCommand="'.addslashes(ssh_build_command($template)).'" ';
+                        $proxies_string = ':proxy_template';
+                        $target_server  = $server['hostname'];
+                        $target_port    = $server['port'];
+
+                        foreach($proxies as $id => $proxy){
+                            $proxy_string = $proxy_template;
+
+                            for($escape = 0; $escape < $escapes; $escape++){
+                                $proxy_string = addcslashes($proxy_string, '"\\');
+                            }
+
+                            /*
+                             * Next proxy string needs more escapes
+                             */
+                            $escapes++;
+
+                            /*
+                             * Fill in proxy values for this proxy
+                             */
+                            $proxy_string   = str_replace(':proxy_port'     , $proxy['port']    , $proxy_string);
+                            $proxy_string   = str_replace(':proxy_host'     , $proxy['hostname'], $proxy_string);
+                            $proxy_string   = str_replace(':target_hostname', $target_server    , $proxy_string);
+                            $proxy_string   = str_replace(':target_port'    , $target_port      , $proxy_string);
+                            $proxies_string = str_replace(':proxy_template' , $proxy_string     , $proxies_string);
+
+                            $target_server  = $proxy['hostname'];
+                            $target_port    = $proxy['port'];
+
+                            ssh_add_known_host($proxy['hostname'], $proxy['port']);
+                        }
+
+                        /*
+                         * No more proxies, remove the template placeholder
+                         */
+                        $command .= str_replace(':proxy_template', '', $proxies_string);
+                    }
+
+                    break;
+
+                case 'force_terminal':
+                    if($value){
+                        $command .= ' -t';
+                    }
+
+                case 'disable_terminal':
+                    if(!empty($server['force_terminal'])){
+                        throw new bException(tr('ssh_build_command(): Both "force_terminal" and "disable_terminal" were specified. These options are mutually exclusive, please use only one or the other'), 'invalid');
+                    }
+
+                    if($value){
+                        $command .= ' -T';
+                    }
+
+                default:
+                    /*
+                     * Ignore any known parameter as specified $server list may contain parameters for other functions than the SSH library functions
+                     */
+            }
+
+        }
+
+        /*
+         * Add the target server
+         */
+        $command .= ' "'.$server['hostname'].'"';
+
+        if(isset_get($server['commands'])){
+            $command .= ' "'.$server['commands'].'"';
+        }
+
+        if(isset_get($server['background'])){
+            $command .= ' &';
+        }
+
+        return $command;
 
     }catch(Exception $e){
-        throw new bException('ssh_get_account(): Failed', $e);
+        throw new bException('ssh_build_command(): Failed', $e);
+    }
+}
+
+
+
+/*
+ * Returns SSH options string for the specified SSH options array
+ *
+ * @author Sven Olaf Oostenbrink <sven@capmega.com>
+ * @copyright Copyright (c) 2018 Capmega
+ * @license http://opensource.org/licenses/GPL-2.0 GNU Public License, Version 2
+ * @category Function reference
+ * @package ssh
+ *
+ * @param array $options The SSH options to be used to build the options string
+ * @return array The validated parameter data
+ */
+function ssh_build_options($options = null){
+    global $_CONFIG;
+
+    try{
+        /*
+         * Get options from  default configuration and specified options
+         */
+        $string  = '';
+        $options = array_merge($_CONFIG['ssh']['options'], $options);
+
+        /*
+         * Easy short cut to disable strict host key checks
+         */
+        if(isset($options['check_hostkey'])){
+            if(!$options['check_hostkey']){
+                $options['check_host_ip']            = false;
+                $options['strict_host_key_checking'] = false;
+            }
+
+            unset($options['check_hostkey']);
+        }
+
+        /*
+         * The known_hosts file for this user defaults to ROOT/data/ss/known_hosts
+         */
+        if(empty($options['user_known_hosts_file'])){
+            $string .= ' -o UserKnownHostsFile="'.ROOT.'data/ssh/known_hosts"';
+
+        }else{
+            if($value){
+                if(!is_string($value)){
+                    throw new bException(tr('ssh_get_conect_string(): Specified option "user_known_hosts_file" requires a string value, but ":value" was specified', array(':value' => $value)), 'invalid');
+                }
+
+                $string .= ' -o UserKnownHostsFile="'.$value.'"';
+            }
+
+            unset($options['user_known_hosts_file']);
+        }
+
+        /*
+         * Validate and apply each option
+         */
+        foreach($options as $option => $value){
+            switch($option){
+                case 'connect_timeout':
+                    if($value){
+                        if(!is_numeric($value)){
+                            throw new bException(tr('ssh_get_conect_string(): Specified option "connect_timeout" requires a numeric value, but ":value" was specified', array(':value' => $value)), 'invalid');
+                        }
+
+                        $string .= ' -o ConnectTimeout="'.$value.'"';
+                    }
+
+                    break;
+
+                case 'check_host_ip':
+                    if(!is_bool($value)){
+                        throw new bException(tr('ssh_get_conect_string(): Specified option "check_host_ip" requires a boolean value, but ":value" was specified', array(':value' => $value)), 'invalid');
+                    }
+
+                    $string .= ' -o CheckHostIP="'.get_yes_no($value).'"';
+                    break;
+
+                case 'strict_host_key_checking':
+                    if(!is_bool($value)){
+                        throw new bException(tr('ssh_get_conect_string(): Specified option "strict_host_key_checking" requires a boolean value, but ":value" was specified', array(':value' => $value)), 'invalid');
+                    }
+
+                    $string .= ' -o StrictHostKeyChecking="'.get_yes_no($value).'"';
+                    break;
+
+                default:
+                    throw new bException(tr('ssh_build_options(): Unknown option ":option" specified', array(':option' => $option)), 'unknown');
+            }
+        }
+
+        return $string;
+
+    }catch(Exception $e){
+        throw new bException('ssh_build_options(): Failed', $e);
     }
 }
 
@@ -126,6 +551,14 @@ function ssh_get_account($account){
 
 /*
  *
+ *
+ * @author Sven Olaf Oostenbrink <sven@capmega.com>
+ * @copyright Copyright (c) 2018 Capmega
+ * @license http://opensource.org/licenses/GPL-2.0 GNU Public License, Version 2
+ * @category Function reference
+ * @package ssh
+ *
+ * @param
  */
 function ssh_start_control_master($server, $socket = null){
     global $_CONFIG;
@@ -151,7 +584,6 @@ function ssh_start_control_master($server, $socket = null){
         return $socket;
 
     }catch(Exception $e){
-//showdie($e);
         throw new bException('ssh_start_control_master(): Failed', $e);
     }
 }
@@ -160,6 +592,14 @@ function ssh_start_control_master($server, $socket = null){
 
 /*
  *
+ *
+ * @author Sven Olaf Oostenbrink <sven@capmega.com>
+ * @copyright Copyright (c) 2018 Capmega
+ * @license http://opensource.org/licenses/GPL-2.0 GNU Public License, Version 2
+ * @category Function reference
+ * @package ssh
+ *
+ * @param
  */
 function ssh_get_control_master($socket = null){
     global $_CONFIG;
@@ -176,7 +616,6 @@ function ssh_get_control_master($socket = null){
         return $pid;
 
     }catch(Exception $e){
-//showdie($e);
         throw new bException('ssh_get_control_master(): Failed', $e);
     }
 }
@@ -185,6 +624,14 @@ function ssh_get_control_master($socket = null){
 
 /*
  *
+ *
+ * @author Sven Olaf Oostenbrink <sven@capmega.com>
+ * @copyright Copyright (c) 2018 Capmega
+ * @license http://opensource.org/licenses/GPL-2.0 GNU Public License, Version 2
+ * @category Function reference
+ * @package ssh
+ *
+ * @param
  */
 function ssh_stop_control_master($socket = null){
     global $_CONFIG;
@@ -199,7 +646,6 @@ function ssh_stop_control_master($socket = null){
         return true;
 
     }catch(Exception $e){
-//showdie($e);
         throw new bException('ssh_stop_control_master(): Failed', $e);
     }
 }
@@ -207,215 +653,7 @@ function ssh_stop_control_master($socket = null){
 
 
 /*
- *
- */
-function ssh_exec($server, $commands = null, $background = false, $function = 'exec'){
-    try{
-        array_default($server, 'hostname'     , '');
-        array_default($server, 'ssh_key'      , '');
-        array_default($server, 'port'         , 22);
-        array_default($server, 'timeout'      , 10);
-        array_default($server, 'hostkey_check', true);
-        array_default($server, 'arguments'    , '-T');
-        array_default($server, 'commands'     , $commands);
-        array_default($server, 'background'   , $background);
-        array_default($server, 'proxies'      , null);
-
-        /*
-         * Ensure that ssh/keys directory exists and that its safe
-         */
-        load_libs('file');
-        file_ensure_path(ROOT.'data/ssh/keys');
-        chmod(ROOT.'data/ssh', 0770);
-
-        /*
-         * Validate commands
-         */
-        if($server['commands'] === null){
-            throw new bException(tr('ssh_exec(): No commands specified'), 'not-specified');
-        }
-
-        if(!empty($server['hostname'])){
-            if(empty($server['username'])){
-                throw new bException(tr('ssh_exec(): No username specified'), 'not-specified');
-            }
-
-            if(empty($server['ssh_key'])){
-                throw new bException(tr('ssh_exec(): No ssh key specified'), 'not-specified');
-            }
-        }
-
-        if($server['timeout']){
-            /*
-             * Add timeout to the SSH command
-             */
-            $server['timeout'] = ' -o ConnectTimeout='.$server['timeout'].' ';
-
-        }else{
-            $server['timeout'] = '';
-        }
-
-        /*
-         * If no hostname is specified, then don't execute this command on a
-         * remote server, just use safe_exec and execute it locally
-         */
-        if(!$server['hostname']){
-            $result = shell_exec($server['commands'].($server['background'] ? ' &' : ''));
-            return $result;
-        }
-
-        /*
-        * Path for known_hosts file
-        */
-        $user_known_hosts_file = ROOT.'data/ssh/known_hosts';
-
-        /*
-        * Cleaning file so we do not duplicate entries
-        */
-        safe_exec('> '.$user_known_hosts_file);
-
-        if(!$server['hostkey_check']){
-            $server['arguments'] .= ' -o CheckHostIP=no -o StrictHostKeyChecking=no -o UserKnownHostsFile='.$user_known_hosts_file;
-        }
-
-        /*
-         * Safely create SSH key file
-         */
-        $keyfile = ROOT.'data/ssh/keys/'.str_random(8);
-
-        touch($keyfile);
-        chmod($keyfile, 0600);
-        file_put_contents($keyfile, $server['ssh_key'], FILE_APPEND);
-        chmod($keyfile, 0400);
-
-        if($server['proxies']){
-// :TODO: Right now its assumed that every proxy uses the same SSH user and key file, though in practice, they MIGHT have different ones. Add support for each proxy server having its own user and keyfile
-            /*
-             * ssh command line ProxyCommand example: -o ProxyCommand="ssh -p  -o ProxyCommand=\"ssh -p  40220 s1.s.ingiga.com nc s2.s.ingiga.com 40220\"  40220 s2.s.ingiga.com nc s3.s.ingiga.com 40220"
-             * To connect to this server, one must pass through a number of SSH proxies
-             */
-            $escapes        = 0;
-            $proxy_template = ' -o ProxyCommand="ssh '.$server['timeout'].$server['arguments'].' -i '.$keyfile.' -p :proxy_port :proxy_template '.$server['username'].'@:proxy_host nc :target_host :target_port" ';
-            $proxies_string = ':proxy_template';
-            $target_server  = $server['hostname'];
-            $target_port    = $server['port'];
-
-            foreach($server['proxies'] as $id => $proxy){
-                $proxy_string = $proxy_template;
-
-                for($escape = 0; $escape < $escapes; $escape++){
-                    $proxy_string = addcslashes($proxy_string, '"\\');
-                }
-
-                /*
-                 * Next proxy string needs more escapes
-                 */
-                $escapes++;
-
-                /*
-                 * Fill in proxy values for this proxy
-                 */
-                $proxy_string   = str_replace(':proxy_port'    , $proxy['port']    , $proxy_string);
-                $proxy_string   = str_replace(':proxy_host'    , $proxy['hostname'], $proxy_string);
-                $proxy_string   = str_replace(':target_host'   , $target_server    , $proxy_string);
-                $proxy_string   = str_replace(':target_port'   , $target_port      , $proxy_string);
-                $proxies_string = str_replace(':proxy_template', $proxy_string     , $proxies_string);
-
-                $target_server  = $proxy['hostname'];
-                $target_port    = $proxy['port'];
-
-                ssh_add_known_host($proxy['hostname'], $proxy['port'], $user_known_hosts_file);
-            }
-
-            /*
-             * No more proxies, remove the template placeholder
-             */
-            $proxies_string = str_replace(':proxy_template', '', $proxies_string);
-
-        }else{
-            $proxies_string = '';
-        }
-
-        /*
-        * Also add the target server
-        */
-        ssh_add_known_host($server['hostname'], $server['port'], $user_known_hosts_file);
-
-        /*
-         * Execute command on remote server
-         */
-        $command = 'ssh '.$server['timeout'].$server['arguments'].' -p '.$server['port'].' '.$proxies_string.' -i '.$keyfile.' '.$server['username'].'@'.$server['hostname'].' "'.$server['commands'].'"'.($server['background'] ? ' &' : '');
-
-        /*
-         * Execute the command
-         */
-//showdie($command);
-
-        $results = safe_exec($command, null, true, $function);
-
-        if($server['background']){
-            /*
-             * Delete key file in background process
-             */
-            safe_exec('{ sleep 5; sudo chmod 0600 '.$keyfile.' ; sudo rm -rf '.$keyfile.' ; } &');
-
-        }else{
-            chmod($keyfile, 0600);
-            file_delete($keyfile);
-        }
-
-        if(preg_match('/Warning: Permanently added \'\[.+?\]:\d{1,5}\' \(\w+\) to the list of known hosts\./', isset_get($results[0]))){
-            /*
-             * Remove known host warning from results
-             */
-            array_shift($results);
-        }
-
-        return $results;
-
-    }catch(Exception $e){
-        /*
-         * Remove "Permanently added host blah" error, even in this exception
-         */
-        $data = $e->getData();
-
-        if(!empty($data[0])){
-            if(preg_match('/Warning: Permanently added \'\[.+?\]:\d{1,5}\' \(\w+\) to the list of known hosts\./', isset_get($data[0]))){
-                /*
-                 * Remove known host warning from results
-                 */
-                array_shift($data);
-            }
-        }
-
-        unset($data);
-
-        notify(tr('ssh_exec() exception'), $e, 'developers');
-
-        /*
-         * Try deleting the keyfile anyway!
-         */
-        try{
-            if(!empty($keyfile)){
-                chmod($keyfile, 0600);
-                file_delete($keyfile);
-            }
-
-        }catch(Exception $e){
-            /*
-             * Cannot be deleted, just ignore and notify
-             */
-            notify(tr('ssh_exec() cannot delete key'), $e, 'developers');
-        }
-
-        throw new bException('ssh_exec(): Failed', $e);
-    }
-}
-
-
-
-/*
- * ...
+ * SSH account validation
  *
  * @author Sven Olaf Oostenbrink <sven@capmega.com>
  * @copyright Copyright (c) 2018 Capmega
@@ -423,7 +661,110 @@ function ssh_exec($server, $commands = null, $background = false, $function = 'e
  * @category Function reference
  * @package ssh
  *
- * @param
+ * @param array $ssh
+ * @return array the specified $ssh array validated and clean
+ */
+function ssh_validate_account($ssh){
+    try{
+        load_libs('validate');
+
+        $v = new validate_form($ssh, 'name,username,ssh_key,description');
+        $v->isNotEmpty ($ssh['name'], tr('No account name specified'));
+        $v->hasMinChars($ssh['name'], 2, tr('Please ensure the account name has at least 2 characters'));
+        $v->hasMaxChars($ssh['name'], 32, tr('Please ensure the account name has less than 32 characters'));
+
+        $v->isNotEmpty ($ssh['username'], tr('No user name specified'));
+        $v->hasMinChars($ssh['username'], 2, tr('Please ensure the user name has at least 2 characters'));
+        $v->hasMaxChars($ssh['username'], 32, tr('Please ensure the user name has less than 32 characters'));
+
+        $v->isNotEmpty ($ssh['ssh_key'], tr('No SSH key specified to the account'));
+
+        $v->isNotEmpty ($ssh['description'], tr('No description specified'));
+        $v->hasMinChars($ssh['description'], 2, tr('Please ensure the description has at least 2 characters'));
+
+        if(is_numeric(substr($ssh['name'], 0, 1))){
+            $v->setError(tr('Please ensure that the account name does not start with a number'));
+        }
+
+        $v->isValid();
+
+        return $ssh;
+
+    }catch(Exception $e){
+        throw new bException(tr('ssh_validate_account(): Failed'), $e);
+    }
+}
+
+
+
+/*
+ * Returns SSH account data for the specified SSH accounts id
+ *
+ * @author Sven Olaf Oostenbrink <sven@capmega.com>
+ * @copyright Copyright (c) 2018 Capmega
+ * @license http://opensource.org/licenses/GPL-2.0 GNU Public License, Version 2
+ * @category Function reference
+ * @package ssh
+ *
+ * @param numeric $accounts_id The table ID for the account
+ * @return array The account data for the specified $accounts_id
+ */
+function ssh_get_account($accounts_id){
+    try{
+        if(!$accounts_id){
+            throw new bException(tr('ssh_get_account(): No accounts id specified'), 'not-specified');
+        }
+
+        if(!is_numeric($accounts_id)){
+            throw new bException(tr('ssh_get_account(): Specified accounts id ":id" is not numeric', array(':id' => $accounts_id)), 'invalid');
+        }
+
+        $retval = sql_get('SELECT    `ssh_accounts`.`id`,
+                                     `ssh_accounts`.`createdon`,
+                                     `ssh_accounts`.`modifiedon`,
+                                     `ssh_accounts`.`name`,
+                                     `ssh_accounts`.`username`,
+                                     `ssh_accounts`.`ssh_key`,
+                                     `ssh_accounts`.`status`,
+                                     `ssh_accounts`.`description`,
+
+                                     `createdby`.`name`   AS `createdby_name`,
+                                     `createdby`.`email`  AS `createdby_email`,
+                                     `modifiedby`.`name`  AS `modifiedby_name`,
+                                     `modifiedby`.`email` AS `modifiedby_email`
+
+                           FROM      `ssh_accounts`
+
+                           LEFT JOIN `users` AS `createdby`
+                           ON        `ssh_accounts`.`createdby`  = `createdby`.`id`
+
+                           LEFT JOIN `users` AS `modifiedby`
+                           ON        `ssh_accounts`.`modifiedby` = `modifiedby`.`id`
+
+                           WHERE     `ssh_accounts`.`id`         = :id',
+
+                           array(':id' => $accounts_id));
+
+        return $retval;
+
+    }catch(Exception $e){
+        throw new bException('ssh_get_account(): Failed', $e);
+    }
+}
+
+
+
+/*
+ * Returns an SSH key for the specified username, if available
+ *
+ * @author Sven Olaf Oostenbrink <sven@capmega.com>
+ * @copyright Copyright (c) 2018 Capmega
+ * @license http://opensource.org/licenses/GPL-2.0 GNU Public License, Version 2
+ * @category Function reference
+ * @package ssh
+ *
+ * @param string $username The SSH username for which an SSH key must be returned
+ * @return string The SSH key for the specified username
  */
 function ssh_get_key($username){
     try{
@@ -437,7 +778,7 @@ function ssh_get_key($username){
 
 
 /*
- * ...........
+ * Create a safe SSH keyfile containing the specified SSH key
  *
  * @author Sven Olaf Oostenbrink <sven@capmega.com>
  * @copyright Copyright (c) 2018 Capmega
@@ -445,113 +786,78 @@ function ssh_get_key($username){
  * @category Function reference
  * @package ssh
  *
- * @param
- * @param
- * @param
- * @param
- * @return
+ * @param string $ssh_key The SSH key that must be placed in a keyfile
+ * return string $key_file The created keyfile
  */
-function ssh_cp($server, $source, $destnation, $from_server = false){
+function ssh_create_key_file($ssh_key){
     try{
-        array_params($server);
-        array_default($server, 'server'       , '');
-        array_default($server, 'hostname'     , '');
-        array_default($server, 'ssh_key'      , '');
-        array_default($server, 'port'         , 22);
-        array_default($server, 'hostkey_check', false);
-        array_default($server, 'arguments'    , '');
-
-        /*
-         * If server was specified by just name, then lookup the server data in
-         * the database
-         */
-        if($server['hostname']){
-            $dbserver = sql_get('SELECT    `ssh_accounts`.`username`,
-                                           `ssh_accounts`.`ssh_key`,
-                                           `servers`.`id`,
-                                           `servers`.`hostname`,
-                                           `servers`.`port`
-
-                                 FROM      `servers`
-
-                                 LEFT JOIN `ssh_accounts`
-                                 ON        `ssh_accounts`.`id`  = `servers`.`ssh_accounts_id`
-
-                                 WHERE     `servers`.`hostname` = :hostname', array(':hostname' => $server['hostname']));
-
-            if(!$dbserver){
-                throw new bException(tr('ssh_cp(): Specified server ":server" does not exist', array(':server' => $server['server'])), 'not-exist');
-            }
-
-            $server = sql_merge($server, $dbserver);
-        }
-
-        if(!$server['hostkey_check']){
-            $server['arguments'] .= ' -o StrictHostKeyChecking=no -o UserKnownHostsFile='.ROOT.'data/ssh/known_hosts ';
-        }
-
         /*
          * Ensure that ssh/keys directory exists and that its safe
          */
         load_libs('file');
-        file_ensure_path(ROOT.'data/ssh/keys');
-        chmod(ROOT.'data/ssh', 0770);
+        file_ensure_path(ROOT.'data/ssh/keys', 0750);
+        chmod(ROOT.'data/ssh', 0750);
 
         /*
          * Safely create SSH key file
          */
-        $keyfile = ROOT.'data/ssh/keys/'.str_random(8);
+        $key_file = ROOT.'data/ssh/keys/'.str_random(8);
 
-        touch($keyfile);
-        chmod($keyfile, 0600);
-        file_put_contents($keyfile, $server['ssh_key'], FILE_APPEND);
-        chmod($keyfile, 0400);
+        touch($key_file);
+        chmod($key_file, 0600);
+        file_put_contents($key_file, $ssh_key, FILE_APPEND);
+        chmod($key_file, 0400);
 
-        if($from_server){
-            $command = $server['username'].'@'.$server['hostname'].':'.$source.' '.$destnation;
-
-        }else{
-            $command = $source.' '.$server['username'].'@'.$server['hostname'].':'.$destnation;
-        }
-
-        /*
-         * Execute command
-         */
-        $result = safe_exec('scp '.$server['arguments'].' -P '.$server['port'].' -i '.$keyfile.' '.$command.'');
-        chmod($keyfile, 0600);
-        file_delete($keyfile);
-
-        return $result;
+        return substr($key_file, -8, 8);
 
     }catch(Exception $e){
-        notify(tr('ssh_cp() exception'), $e, 'developers');
-
-                /*
-         * Try deleting the keyfile anyway!
-         */
-        try{
-            if(!empty($keyfile)){
-                safe_exec(chmod($keyfile, 0600));
-                file_delete($keyfile);
-            }
-
-        }catch(Exception $e){
-            /*
-             * Cannot be deleted, just ignore and notify
-             */
-            notify(tr('ssh_cp() cannot delete key'), $e, 'developers');
-        }
-
-        throw new bException(tr('ssh_cp(): Failed'), $e);
+        throw new bException('ssh_create_key_file(): Failed', $e);
     }
 }
 
 
 
 /*
- * ..................
+ * Delete the specified SSH key
  *
- * @author Marcos Prudencio <sven@capmega.com>
+ * @author Sven Olaf Oostenbrink <sven@capmega.com>
+ * @copyright Copyright (c) 2018 Capmega
+ * @license http://opensource.org/licenses/GPL-2.0 GNU Public License, Version 2
+ * @category Function reference
+ * @package ssh
+ *
+ * @param string $key_file The SSH key file that must be deleted
+ * return boolean True if the specified keyfile was deleted, false if no keyfile was specified
+ */
+function ssh_remove_key_file($key_file, $background = false){
+    try{
+        if(!$key_file){
+            return false;
+        }
+
+        $key_file = ROOT.'data/ssh/keys/'.$key_file;
+
+        if($background){
+            safe_exec('{ sleep 5; sudo chmod 0600 '.$key_file.' ; sudo rm -rf '.$key_file.' ; } &');
+
+        }else{
+            chmod($key_file, 0600);
+            file_delete($key_file);
+        }
+
+        return true;
+
+    }catch(Exception $e){
+        throw new bException('ssh_remove_key_file(): Failed', $e);
+    }
+}
+
+
+
+/*
+ *
+ *
+ * @Sven Olaf Oostenbrink <sven@capmega.com>
  * @copyright Copyright (c) 2018 Capmega
  * @license http://opensource.org/licenses/GPL-2.0 GNU Public License, Version 2
  * @category Function reference
@@ -559,7 +865,7 @@ function ssh_cp($server, $source, $destnation, $from_server = false){
  *
  * @param
  */
-function ssh_add_known_host($hostname, $port, $known_hosts_path){
+function ssh_add_known_host($hostname, $port){
     try{
         if(empty($hostname)){
             throw new bException(tr('ssh_add_known_host(): No hostname specified'), 'not-specified');
@@ -569,9 +875,8 @@ function ssh_add_known_host($hostname, $port, $known_hosts_path){
             throw new bException(tr('ssh_add_known_host(): No port specified'), 'not-specified');
         }
 
-        if(empty($known_hosts_path)){
-            throw new bException(tr('ssh_add_known_host(): No known_hosts_path specified'), 'not-specified');
-        }
+        load_libs('file');
+        file_ensure_path(ROOT.'data/ssh/keys/', 0750);
 
         $public_keys = safe_exec('ssh-keyscan -p '.$port.' -H '.$hostname);
 
@@ -581,7 +886,7 @@ function ssh_add_known_host($hostname, $port, $known_hosts_path){
 
         foreach($public_keys as $public_key){
             if(substr($public_key, 0, 1) != '#'){
-                file_put_contents($known_hosts_path, $public_key."\n", FILE_APPEND);
+                file_put_contents(ROOT.'data/ssh/known_hosts', $public_key."\n", FILE_APPEND);
             }
         }
 
@@ -595,9 +900,9 @@ function ssh_add_known_host($hostname, $port, $known_hosts_path){
 
 
 /*
- * .........
  *
- * @author Marcos Prudencio <sven@capmega.com>
+ *
+ * @Sven Olaf Oostenbrink <sven@capmega.com>
  * @copyright Copyright (c) 2018 Capmega
  * @license http://opensource.org/licenses/GPL-2.0 GNU Public License, Version 2
  * @category Function reference
@@ -605,23 +910,31 @@ function ssh_add_known_host($hostname, $port, $known_hosts_path){
  *
  * @param
  */
-function ssh_get_config($hostname){
+function ssh_read_server_config($hostname){
     try{
+        $retval = array();
         $config = servers_exec($hostname, 'cat /etc/ssh/sshd_config');
 
-        return $config;
+        foreach($config as $line){
+            $key    = str_until($line, ' ');
+            $values = str_from($line, ' ');
+
+            $retval[$key] = $config;
+        }
+
+        return $retval;
 
     }catch(Exception $e){
-        throw new bException('ssh_get_config(): Failed', $e);
+        throw new bException('ssh_read_server_config(): Failed', $e);
     }
 }
 
 
 
 /*
- * Do not inlude  at the beggining of comments the name of the field, otherwise it would be also replace
  *
- * @author Marcos Prudencio <sven@capmega.com>
+ *
+ * @Sven Olaf Oostenbrink <sven@capmega.com>
  * @copyright Copyright (c) 2018 Capmega
  * @license http://opensource.org/licenses/GPL-2.0 GNU Public License, Version 2
  * @category Function reference
@@ -629,24 +942,78 @@ function ssh_get_config($hostname){
  *
  * @param
  */
-function ssh_update_config($hostname, $params){
+function ssh_write_server_config($hostname, $config){
     try{
-        $params = ssh_validate_config($params);
-        $config = ssh_get_config($hostname);
-
-        foreach($params as $key => $values){
-            $comments = '';
-
-            if(isset($values['description'])){
-                $comments = '#'.$values['description']."\n";
-            }
-
-            $config = preg_replace('/'.$key.'\s+(\d+|\w+)|#'.$key.'\s+(\d+|\w+)/', $comments.$key." ".$values['value'], $config);
+        foreach($config as $key => $value){
+            $data = $key.' '.$value."\n";
         }
 
-        servers_exec($hostname, 'cat > /etc/ssh/sshd_config << EOF '.$config);
+        servers_exec($hostname, 'sudo cat > /etc/ssh/sshd_config << EOF '.$data);
 
-        return $config;
+    }catch(Exception $e){
+        throw new bException('ssh_write_server_config(): Failed', $e);
+    }
+}
+
+
+
+/*
+ * Validate sshd_config data
+ *
+ * @Sven Olaf Oostenbrink <sven@capmega.com>
+ * @copyright Copyright (c) 2018 Capmega
+ * @license http://opensource.org/licenses/GPL-2.0 GNU Public License, Version 2
+ * @category Function reference
+ * @package ssh
+ *
+ * @param array $entries
+ * @return array The validated data
+ */
+function ssh_validate_server_config($entries){
+    try{
+// :TODO: Implement
+
+        return $entries;
+
+    }catch(Exception $e){
+        throw new bException('ssh_validate_server_config(): Failed', $e);
+    }
+}
+
+
+
+/*
+ *
+ *
+ * @Sven Olaf Oostenbrink <sven@capmega.com>
+ * @copyright Copyright (c) 2018 Capmega
+ * @license http://opensource.org/licenses/GPL-2.0 GNU Public License, Version 2
+ * @category Function reference
+ * @package ssh
+ *
+ * @param string $hostname
+ * @param array $config
+ */
+function ssh_update_config($hostname, $config){
+    try{
+        $config        = ssh_validate_server_config($config);
+        $server_config = ssh_read_server_config($hostname);
+
+        foreach($config as $key => $values){
+// :TODO: Just WTF was this in the first place?
+            //$comments = '';
+            //
+            //if(isset($values['description'])){
+            //    $comments = '#'.$values['description']."\n";
+            //}
+            //
+            //$server_config[$key] = preg_replace('/'.$key.'\s+(\d+|\w+)|#'.$key.'\s+(\d+|\w+)/', $comments.$key." ".$values, $values);
+            $server_config[$key] = $values;
+        }
+
+        ssh_write_server_config($hostname, $server_config);
+
+        return $server_config;
 
     }catch(Exception $e){
         throw new bException('ssh_update_config(): Failed', $e);
@@ -656,45 +1023,7 @@ function ssh_update_config($hostname, $params){
 
 
 /*
- * Field description is optional, value is mandatory
- * For example: $params = array('Port'=>array('description'=>'Comentary', 'value'=>40220));
  *
- * @author Marcos Prudencio <sven@capmega.com>
- * @copyright Copyright (c) 2018 Capmega
- * @license http://opensource.org/licenses/GPL-2.0 GNU Public License, Version 2
- * @category Function reference
- * @package ssh
- *
- * @param array $params The parameters that need to be validated
- * @return array The validated parameter data
- */
-function ssh_validate_config($params){
-    try{
-        if(empty($params)){
-            throw new bException(tr('ssh_validate_config(): No params specified'), 'not-specified');
-        }
-
-        if(!is_array($params)){
-            throw new bException(tr('ssh_validate_config(): Params is not an array. Accepted array example: array(\'Port\'=>array(\'description\'=>\'Comentary\', \'value\'=>40220))'), 'not-specified');
-        }
-
-        foreach($params as $key => $values){
-            if(!isset($values['value'])){
-                throw new bException(tr('ssh_validate_config(): No value specified for configuration key ":key"', array(':key' => $key)), 'not-specified');
-            }
-        }
-
-        return $params;
-
-    }catch(Exception $e){
-        throw new bException('ssh_validate_config(): Failed', $e);
-    }
-}
-
-
-
-/*
- * Returns SSH connection string for the specified SSH options array
  *
  * @author Sven Olaf Oostenbrink <sven@capmega.com>
  * @copyright Copyright (c) 2018 Capmega
@@ -702,80 +1031,201 @@ function ssh_validate_config($params){
  * @category Function reference
  * @package ssh
  *
- * @param array $params The parameters that need to be validated
- * @return array The validated parameter data
+ * @param array $source
+ * @param array $destnation
+ * @return
  */
-function ssh_get_conect_string($options = null){
-    global $_CONFIG;
-
+function ssh_cp($source, $target, $options = null){
     try{
+under_construction();
         /*
-         * Get options from  default configuration and specified options
+         * If server was specified by just name, then lookup the server data in
+         * the database
          */
-        $options = array_merge($_CONFIG['ssh']['options'], $options);
-        $string  = '';
+        if(is_string($source)){
+            /*
+             * This source is a server specified by string with the source path in there.
+             */
+// :TODO: This may fail with files containing :
+            if(strstr(':', $source)){
+                $path   = str_from ($source, ':');
+                $source = str_until($source, ':');
+                $server = sql_get('SELECT    `ssh_accounts`.`username`,
+                                             `ssh_accounts`.`ssh_key`,
+                                             `servers`.`id`,
+                                             `servers`.`hostname`,
+                                             `servers`.`port`
 
-        foreach($options as $option => $value){
-            switch($option){
-                case 'connect_timeout':
-                    if($value){
-                        if(!is_numeric($value)){
-                            throw new bException(tr('ssh_get_conect_string(): Specified option "connect_timeout" requires a numeric value, but ":value" was specified', array(':value' => $value)), 'invalid');
-                        }
+                                   FROM      `servers`
 
-                        $string .= ' -o ConnectTimeout="'.$value.'"';
-                    }
+                                   LEFT JOIN `ssh_accounts`
+                                   ON        `ssh_accounts`.`id`  = `servers`.`ssh_accounts_id`
 
-                    break;
+                                   WHERE     `servers`.`hostname` = :hostname',
 
-                case 'check_host_ip':
-                    if(!is_bool($value)){
-                        throw new bException(tr('ssh_get_conect_string(): Specified option "check_host_ip" requires a boolean value, but ":value" was specified', array(':value' => $value)), 'invalid');
-                    }
+                                   array(':hostname' => $source));
 
-                    $string .= ' -o CheckHostIP="'.get_yes_no($value).'"';
-                    break;
+                if(!$server){
+                    throw new bException(tr('ssh_cp(): Specified server ":server" does not exist', array(':server' => $source)), 'not-exist');
+                }
 
-                case 'strict_host_checking':
-                    if(!is_bool($value)){
-                        throw new bException(tr('ssh_get_conect_string(): Specified option "strict_host_checking" requires a boolean value, but ":value" was specified', array(':value' => $value)), 'invalid');
-                    }
-
-                    $string .= ' -o StrictHostChecking="'.get_yes_no($value).'"';
-                    break;
-
-                case 'user_known_hosts_file':
-                    if($value){
-                        if(!is_string($value)){
-                            throw new bException(tr('ssh_get_conect_string(): Specified option "user_known_hosts_file" requires a string value, but ":value" was specified', array(':value' => $value)), 'invalid');
-                        }
-
-                        $string .= ' -o UserKnownHostsFile="'.$value.'"';
-                    }
-
-                    break;
-
-                case 'port':
-                    if($value){
-                        if(!is_natural($value) or ($value > 65535)){
-                            throw new bException(tr('ssh_get_conect_string(): Specified option "port" requires a natural number value 1 - 65535, but ":value" was specified', array(':value' => $value)), 'invalid');
-                        }
-
-                        $string .= ' -p '.$value;
-                    }
-
-                    break;
-
-                default:
-                    throw new bException(tr('ssh_get_conect_string(): Unknown option ":option" specified', array(':option' => $option)), 'unknown');
+                $source         = $server;
+                $target['path'] = $path;
             }
+
+        }else{
+            /*
+             * This source is a server
+             */
+            array_ensure($source, 'server,hostname,ssh_key,port,check_hostkey,arguments,path');
+        }
+
+        if(is_string($target)){
+// :TODO: This may fail with files containing :
+            if(strstr(':', $target)){
+                if(is_array($source)){
+                    throw new bException(tr('ssh_cp(): Specified source ":source" and target ":target" are both servers. This function can only copy from local to server or server to local', array(':source' => $source, ':target' => $target, )), 'invalid');
+                }
+
+                $path   = str_from ($target, ':');
+                $target = str_until($target, ':');
+                $server = sql_get('SELECT    `ssh_accounts`.`username`,
+                                               `ssh_accounts`.`ssh_key`,
+                                               `servers`.`id`,
+                                               `servers`.`hostname`,
+                                               `servers`.`port`
+
+                                     FROM      `servers`
+
+                                     LEFT JOIN `ssh_accounts`
+                                     ON        `ssh_accounts`.`id`  = `servers`.`ssh_accounts_id`
+
+                                     WHERE     `servers`.`hostname` = :hostname',
+
+                                     array(':hostname' => $target));
+
+                if(!$server){
+                    throw new bException(tr('ssh_cp(): Specified target server ":server" does not exist', array(':server' => $target)), 'not-exist');
+                }
+
+                $target         = $server;
+                $target['path'] = $path;
+            }
+
+        }else{
+            array_ensure($target, 'server,hostname,ssh_key,port,check_hostkey,arguments');
+        }
+
+        $server = array('options' => $options);
+        ssh_build_command($server, 'scp');
+
+        if($options){
 
         }
 
-        return $string;
+        if(!$server['check_hostkey']){
+            $server['arguments'] .= ' -o StrictHostKeyChecking=no -o UserKnownHostsFile='.ROOT.'data/ssh/known_hosts ';
+        }
+
+        /*
+         * Safely create SSH key file from the server ssh key
+         */
+        $key_file = ssh_create_key_file($server['ssh_key']);
+
+        /*
+         * ????
+         */
+        if($from_server){
+            $command = $server['username'].'@'.$server['hostname'].':'.$source.' '.$destnation;
+
+        }else{
+            $command = $source.' '.$server['username'].'@'.$server['hostname'].':'.$destnation;
+        }
+
+        /*
+         * Execute command
+         */
+        $result = safe_exec('scp '.$server['arguments'].' -P '.$server['port'].' -i '.$key_file.' '.$command.'');
+        ssh_remove_key_file($key_file);
+
+        return $result;
 
     }catch(Exception $e){
-        throw new bException('ssh_get_conect_string(): Failed', $e);
+        notify($e);
+
+        /*
+         * Try deleting the keyfile anyway!
+         */
+        try{
+            ssh_remove_key_file(isset_get($key_file));
+
+        }catch(Exception $e){
+            /*
+             * Cannot be deleted, just ignore and notify
+             */
+            notify($e);
+        }
+
+        throw new bException(tr('ssh_cp(): Failed'), $e);
+    }
+}
+
+
+
+/*
+ * Set up an SSH tunnel
+ *
+ * @author Sven Olaf Oostenbrink <sven@capmega.com>
+ * @copyright Copyright (c) 2018 Capmega
+ * @license http://opensource.org/licenses/GPL-2.0 GNU Public License, Version 2
+ * @category Function reference
+ * @package ssh
+ * @exception Throws an exception if the ssh command does not return exit code 0
+ *
+ * @param array $params
+ * @params string $hostname The hostname where SSH should connect to
+ * @params string $local_port The port on the local server where SSH should listen to 1-65535
+ * @params string $remote_port The port on the remote server where SSH should connect to 1-65535
+ * @params array $options The required SSH options
+ * @return void
+ */
+function ssh_tunnel($params){
+    try{
+        array_ensure ($params, 'hostname,source_port,target_port');
+        array_default($params, 'tunnel', 'localhost');
+
+        $params['tunnel'] = array('source_port'     => $params['source_port'],
+                                  'target_hostname' => $params['target_hostname'],
+                                  'target_port'     => $params['target_port']);
+
+        return ssh_exec($params);
+
+    }catch(Exception $e){
+        throw new bException('ssh_tunnel(): Failed', $e);
+    }
+}
+
+
+
+/*
+ * Close SSH tunnel with the specified PID
+ *
+ * @author Sven Olaf Oostenbrink <sven@capmega.com>
+ * @copyright Copyright (c) 2018 Capmega
+ * @license http://opensource.org/licenses/GPL-2.0 GNU Public License, Version 2
+ * @category Function reference
+ * @package ssh
+ *
+ * @param numeric $pid
+ * @return void
+ */
+function ssh_close_tunnel($pid){
+    try{
+        load_libs('cli');
+        cli_kill($pid);
+
+    }catch(Exception $e){
+        throw new bException('ssh_close_tunnel(): Failed', $e);
     }
 }
 ?>
