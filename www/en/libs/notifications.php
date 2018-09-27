@@ -20,7 +20,6 @@ function notifications_send($params){
 
     try{
 //        log_file(isset_get($params['message']), 'notifications', 'warning');
-return false;
 
         if(is_object($params) and ($params instanceof Exception)){
             /*
@@ -30,7 +29,14 @@ return false;
                             'exception'   => true,
                             'description' => $params,
                             'class'       => 'exception');
+
+            log_file($params['description'], 'notification-'.$params['title'], 'red');
+
+        }else{
+            log_file($params['description'], 'notification-'.$params['title'], isset_get($params['class'], 'cyan'));
         }
+
+return false;
 
         array_ensure($params, 'title,description,class,user');
         array_default($params, 'url', (PLATFORM_HTTP ? $_SERVER['REQUEST_URI'] : 'cli'));
