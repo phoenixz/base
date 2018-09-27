@@ -53,6 +53,17 @@ try{
 
             break;
 
+        case 'shell_exec':
+            if(substr($command, -1, 1) == '&'){
+                throw new bException(tr('safe_exec(): The specified command ":command" requires background execution (because of the & at the end) which is not supported by the requested PHP exec function shell_exec()', array(':command' => $command)), 'not-supported');
+
+            }
+
+            $exitcode = null;
+            $lastline = '';
+            $output   = shell_exec($command);
+            break;
+
         case 'passthru':
             $output   = array();
             $lastline = '';
@@ -76,7 +87,7 @@ try{
             break;
 
         default:
-            throw new bException('safe_exec(): No function specified use exec, passthru', 'not-specified');
+            throw new bException(tr('safe_exec(): Unknown exec function ":function" specified, please use exec, passthru, or system', array(':function' => $function)), 'not-specified');
             break;
     }
 
@@ -85,7 +96,7 @@ try{
     /*
      *
      */
-    if(VERBOSE){
+    if(VERYVERBOSE){
         foreach($output as $line){
             log_console($output);
         }

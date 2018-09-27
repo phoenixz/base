@@ -11,17 +11,18 @@
 /*
  * Define basic platform constants
  */
-define('ADMIN'   , '');
-define('SCRIPT'  , str_runtil(str_rfrom($_SERVER['PHP_SELF'], '/'), '.php'));
-define('PWD'     , slash(isset_get($_SERVER['PWD'])));
-define('FORCE'   , false);
-define('NOCOLOR' , false);
-define('TEST'    , false);
-define('VERBOSE' , false);
-define('QUIET'   , false);
-define('LIMIT'   , false);
-define('ORDERBY' , false);
-define('STARTDIR', slash(getcwd()));
+define('ADMIN'      , '');
+define('SCRIPT'     , str_runtil(str_rfrom($_SERVER['PHP_SELF'], '/'), '.php'));
+define('PWD'        , slash(isset_get($_SERVER['PWD'])));
+define('FORCE'      , false);
+define('NOCOLOR'    , false);
+define('TEST'       , false);
+define('VERBOSE'    , false);
+define('VERYVERBOSE', false);
+define('QUIET'      , false);
+define('LIMIT'      , false);
+define('ORDERBY'    , false);
+define('STARTDIR'   , slash(getcwd()));
 
 
 
