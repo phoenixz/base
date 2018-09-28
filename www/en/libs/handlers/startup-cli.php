@@ -20,16 +20,17 @@ register_shutdown_function('cli_done');
  * Define basic platform constants
  */
 try{
-    define('ADMIN'   , '');
-    define('SCRIPT'  ,  str_runtil(str_rfrom($_SERVER['PHP_SELF'], '/'), '.php'));
-    define('PWD'     , slash(isset_get($_SERVER['PWD'])));
-    define('VERBOSE' , (cli_argument('-V,--verbose,-D,--debug') ? 'VERBOSE' : ''));
-    define('QUIET'   , cli_argument('-Q,--quiet'));
-    define('FORCE'   , cli_argument('-F,--force'));
-    define('NOCOLOR' , cli_argument('-C,--no-color'));
-    define('TEST'    , cli_argument('-T,--test'));
-    define('LIMIT'   , cli_argument('--limit', true));
-    define('STARTDIR', slash(getcwd()));
+    define('ADMIN'      , '');
+    define('SCRIPT'     ,  str_runtil(str_rfrom($_SERVER['PHP_SELF'], '/'), '.php'));
+    define('PWD'        , slash(isset_get($_SERVER['PWD'])));
+    define('VERBOSE'    , (cli_argument('-V,--verbose,-V2,--very-verbose') ? 'VERBOSE'     : ''));
+    define('VERYVERBOSE', (cli_argument('-V2,--very-verbose')              ? 'VERYVERBOSE' : ''));
+    define('QUIET'      , cli_argument('-Q,--quiet'));
+    define('FORCE'      , cli_argument('-F,--force'));
+    define('NOCOLOR'    , cli_argument('-C,--no-color'));
+    define('TEST'       , cli_argument('-T,--test'));
+    define('LIMIT'      , cli_argument('--limit', true));
+    define('STARTDIR'   , slash(getcwd()));
 
 }catch(Exception $e){
     $e->setCode('parameters');
@@ -294,10 +295,6 @@ if($core->register['cli']['term']){
     }
 }
 
-if(VERBOSE){
-    log_console(tr('Detected ":size" terminal with ":columns" columns and ":lines" lines', array(':size' => $core->register['cli']['size'], ':columns' => $core->register['cli']['columns'], ':lines' => $core->register['cli']['lines'])));
-}
-
 
 
 /*
@@ -376,11 +373,14 @@ if(VERBOSE){
         throw new bException(tr('Both QUIET and VERBOSE have been specified but these options are mutually exclusive. Please specify either one or the other'), 'warning/invalid');
     }
 
-    log_console(tr('Running in VERBOSE mode, started @ ":datetime"', array(':datetime' => date_convert(STARTTIME, 'human_datetime'))), 'white');
+    if(VERYVERBOSE){
+        log_console(tr('Running in VERYVERBOSE mode, started @ ":datetime"', array(':datetime' => date_convert(STARTTIME, 'human_datetime'))), 'white');
 
-    if(debug()){
-        log_console('Running in DEBUG mode', 'yellow');
+    }else{
+        log_console(tr('Running in VERBOSE mode, started @ ":datetime"', array(':datetime' => date_convert(STARTTIME, 'human_datetime'))), 'white');
     }
+
+    log_console(tr('Detected ":size" terminal with ":columns" columns and ":lines" lines', array(':size' => $core->register['cli']['size'], ':columns' => $core->register['cli']['columns'], ':lines' => $core->register['cli']['lines'])));
 }
 
 if(FORCE){
@@ -389,9 +389,8 @@ if(FORCE){
     }
 
     log_console(tr('Running in FORCE mode'), 'yellow');
-}
 
-if(TEST){
+}elseif(TEST){
     log_console(tr('Running in TEST mode'), 'yellow');
 }
 

@@ -4,7 +4,7 @@
  */
 try{
     file_delete($script_file, true);
-    log_console(tr('Cleaning up temporary script file ":script"', array(':script' => $script_file)), 'DEBUG/cyan');
+    log_console(tr('Cleaning up temporary script file ":script"', array(':script' => $script_file)), 'VERYVERBOSE/cyan');
 
 }catch(Exception $e){
     /*

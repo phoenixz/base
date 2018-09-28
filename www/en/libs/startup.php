@@ -1214,6 +1214,20 @@ function log_console($messages = '', $color = null, $newline = true, $filter_dou
                 $color = str_from($color, 'VERBOSE/');
                 break;
 
+            case 'VERYVERBOSE':
+                if(!VERYVERBOSE){
+                    /*
+                     * Only log this if we're in verbose mode
+                     */
+                    return false;
+                }
+
+                /*
+                 * Remove the VERYVERBOSE
+                 */
+                $color = str_from($color, 'VERYVERBOSE/');
+                break;
+
             case 'QUIET':
                 if(QUIET){
                     /*
