@@ -1094,9 +1094,7 @@ function cli_done(){
             /*
              * Execute this shutdown function with the specified value
              */
-            if(VERBOSE){
-                log_console(tr('cli_done(): Executing shutdown function ":function" with value ":value"', array(':function' => substr($key, 9), ':value' => $value)), 'cyan');
-            }
+            log_console(tr('cli_done(): Executing shutdown function ":function" with value ":value"', array(':function' => substr($key, 9), ':value' => $value)), 'VERBOSE/cyan');
 
             if(is_array($value)){
                 /*
