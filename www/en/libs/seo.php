@@ -100,9 +100,9 @@ function seo_unique($source, $table, $ownid = null, $field = 'seoname', $replace
                     }
                 }
 
-                $result = sql_get('SELECT COUNT(*) AS `count` FROM `'.$table.'` WHERE '.array_implode_with_keys($source, ' AND ', ' = ', true).$ownid.';');
+                $exists = sql_get('SELECT COUNT(*) AS `count` FROM `'.$table.'` WHERE `'.array_implode_with_keys($source, '" AND `', '` = "', true).'"'.$ownid.';', true);
 
-                if(!$result['count']){
+                if(!$exists){
                     return $source[key($first)];
                 }
 
@@ -121,9 +121,9 @@ function seo_unique($source, $table, $ownid = null, $field = 'seoname', $replace
                     }
                 }
 
-                $result = sql_get('SELECT COUNT(*) AS `count` FROM `'.$table.'` WHERE `'.$field.'` = "'.$str.'"'.$ownid.';');
+                $exists = sql_get('SELECT COUNT(*) AS `count` FROM `'.$table.'` WHERE `'.$field.'` = "'.$str.'"'.$ownid.';', true);
 
-                if(!$result['count']){
+                if(!$exists){
                     return $str;
                 }
             }
