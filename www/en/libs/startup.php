@@ -434,6 +434,14 @@ class bException extends Exception{
      * @return object $this, so that you can string multiple calls together
      */
     public function addMessages($messages){
+        if(is_object($messages)){
+            if(!($messages instanceof bException)){
+                throw new bException(tr('bException::addMessages(): Only supported object class to add to messages is bException'), 'invalid');
+            }
+
+            $messages = $messages->getMessages();
+        }
+
         foreach(array_force($messages) as $message){
             $this->messages[] = $message;
         }
@@ -1005,6 +1013,31 @@ function script_exec($script, $arguments = null, $ok_exitcodes = null){
 
 
 /*
+ * Cleans up the temporary script file from script_exec()
+ *
+ * Examples:
+ * script_exec('base/users list', '-C -Q')
+ * script_exec('test')
+ *
+ * @author Sven Olaf Oostenbrink <sven@capmega.com>
+ * @copyright Copyright (c) 2018 Capmega
+ * @license http://opensource.org/licenses/GPL-2.0 GNU Public License, Version 2
+ * @category Function reference
+ * @package startup
+ * @see notifications_send()
+ *
+ * @param string $script The commands to be executed
+ * @param (optional, default true) string $arguments
+ * @param (optional, default null) mixed $ok_exitcodes If specified, will not cause exception for the specified command exit codes.
+ * @return mixed The output from the command. The exact format of this output depends on the exact function used within safe exec, specified with $function (See description of that parameter)
+ */
+function script_clean($script_file){
+    return include(__DIR__.'/handlers/startup-script-clean.php');
+}
+
+
+
+/*
  * Load and return HTML contents from files (SOON DATABASE!)
  *
  * Examples:
@@ -1178,7 +1211,7 @@ function log_console($messages = '', $color = null, $newline = true, $filter_dou
                 /*
                  * Remove the VERBOSE
                  */
-                $color = str_replace('/', '', str_replace('VERBOSE', '', $color));
+                $color = str_from($color, 'VERBOSE/');
                 break;
 
             case 'QUIET':
@@ -1192,7 +1225,7 @@ function log_console($messages = '', $color = null, $newline = true, $filter_dou
                 /*
                  * Remove the QUIET
                  */
-                $color = str_replace('/', '', str_replace('QUIET', '', $color));
+                $color = str_from($color, 'QUIET/');
                 break;
 
             case 'DOT':
@@ -1206,9 +1239,9 @@ function log_console($messages = '', $color = null, $newline = true, $filter_dou
                 }
 
                 /*
-                 * Remove the VERBOSE
+                 * Remove the DOT
                  */
-                $color = str_replace('/', '', str_replace('VERBOSE', '', $color));
+                $color = str_from($color, 'DOT/');
                 break;
 
             case 'DEBUG':
@@ -1222,7 +1255,7 @@ function log_console($messages = '', $color = null, $newline = true, $filter_dou
                 /*
                  * Remove the QUIET
                  */
-                $color = str_replace('/', '', str_replace('DEBUG', '', $color));
+                $color = str_from($color, 'DEBUG/');
         }
 
         /*
