@@ -1,17 +1,25 @@
 <?php
 /*
- * Custom servers library
+ * Servers library
  *
- * This library contains functions to manage toolkit servers
+ * This library contains functions to manage registered servers
  *
- * Written and Copyright by Sven Oostenbrink
+ * @copyright (c) 2018 Capmega
+ * @author Sven Olaf Oostenbrink
  */
 
 
 
 /*
- * Initialize the library
- * Automatically executed by libs_load()
+ * Initialize the library. Automatically executed by libs_load(). Will automatically load the ssh library configuration
+ *
+ * @auhthor Sven Olaf Oostenbrink <sven@capmega.com>
+ * @copyright Copyright (c) 2018 Capmega
+ * @license http://opensource.org/licenses/GPL-2.0 GNU Public License, Version 2
+ * @category Function reference
+ * @package servers
+ *
+ * @return void
  */
 function servers_library_init(){
     try{
@@ -26,6 +34,16 @@ function servers_library_init(){
 
 /*
  *
+ *
+ * @author Sven Olaf Oostenbrink <sven@capmega.com>
+ * @copyright Copyright (c) 2018 Capmega
+ * @license http://opensource.org/licenses/GPL-2.0 GNU Public License, Version 2
+ * @category Function reference
+ * @package servers
+ *
+ * @param array $server
+ * @param boolean $password_strength
+ * @return array
  */
 function servers_validate($server, $password_strength = true){
     global $_CONFIG;
@@ -160,75 +178,74 @@ function servers_validate($server, $password_strength = true){
 
 
 /*
+ * Execute the specified commands on the specified server using ssh_exec() and return the results.
  *
- */
-function servers_test($hostname){
-    try{
-        sql_query('UPDATE `servers` SET `status` = "testing" WHERE `hostname` = :hostname', array(':hostname' => $hostname));
-
-        $result = servers_exec($hostname, 'echo 1');
-        $result = array_pop($result);
-
-        if($result != '1'){
-            throw new bException(tr('servers_test(): Failed to SSH connect to ":server"', array(':server' => $user.'@'.$hostname.':'.$port)), 'failedconnect');
-        }
-
-        sql_query('UPDATE `servers` SET `status` = NULL WHERE `hostname` = :hostname', array(':hostname' => $hostname));
-
-    }catch(Exception $e){
-        throw new bException('servers_test(): Failed', $e);
-    }
-}
-
-
-
-/*
+ * If server is specified as an array, servers_exec() will assume the server data is available and send it directly to ssh_exec(). If server is specified as a string or integer, servers_exec() will look up the server in the database by either servers_id or hostname, and if found, use that server data to send the commands to ssh_exec()
  *
+ * @author Sven Olaf Oostenbrink <sven@capmega.com>
+ * @copyright Copyright (c) 2018 Capmega
+ * @license http://opensource.org/licenses/GPL-2.0 GNU Public License, Version 2
+ * @category Function reference
+ * @package servers
+ *
+ * @param mixed $server
+ * @param mixed $commands
+ * @param boolean $background
+ * @param string $function
+ * @return array The results of the executed SSH commands in an array, each entry containing one line of the output
+ * @see ssh_exec()
  */
-function servers_exec($server, $commands, $options = null, $background = false, $function = 'exec'){
-    global $_CONFIG;
-
+function servers_exec($server, $commands, $background = false, $function = 'exec'){
     try{
-        array_params($options);
-        array_default($options, 'hostkey_check', true);
-        array_default($options, 'arguments'    , '-T');
-        array_default($options, 'background'   , $background);
-        array_default($options, 'commands'     , $commands);
+        array_params($server);
+        array_default($server, 'hostkey_check', true);
+        array_default($server, 'arguments'    , '-T');
+        array_default($server, 'background'   , $background);
+        array_default($server, 'commands'     , $commands);
+        array_default($server, 'options'      , $options);
 
-        if(!is_array($server)){
-            $server = servers_get($server);
+        if($server){
+            if(!is_array($server) or empty($server['identity_file'])){
+                if(!is_scalar($server)){
+                    throw new bException(tr('servers_exec(): The specified server ":server" is invalid', array(':server' => $server)), 'invalid');
+                }
+
+                $requested = $server;
+                $server    = servers_get($server);
+
+                if(!$server){
+                    /*
+                     * Specified server was not found
+                     */
+                    throw new bException(tr('servers_exec(): The specified server ":server" does not exist', array(':server' => $requested)), 'not-exist');
+                }
+            }
+
+        }else{
+           $server = null;
         }
 
-        if(!$server){
-            $server = array();
-        }
+        if(empty($server['identity_file'])){
 
-        if(!$options){
-            $options = ' -o UserKnownHostsFile='.ROOT.'data/ssh/known_hosts '($params['hostkey_check'] ? ' -o StrictHostKeyChecking=no ' : '').($_CONFIG['servers']['ssh']['connect_timeout'] ? ' -o ConnectTimeout='.$_CONFIG['servers']['ssh']['connect_timeout'] : '');
         }
-
-        /*
-         * Ensure that ssk_keys directory exists and that its safe
-         */
-        load_libs('ssh');
 
         /*
          * Execute command on remote server
          */
-        $options = array_merge($options, $server);
-        $result  = ssh_exec($options, null, $background, $function);
+        load_libs('ssh');
 
-        return $result;
+        $server['key_file'] = ssh_create_key_file($server['identity_file']);
+        $results            = ssh_exec($server);
+
+        ssh_remove_key_file($key_file);
+        return $results;
 
     }catch(Exception $e){
         /*
          * Try deleting the keyfile anyway!
          */
         try{
-            if(!empty($filepath)){
-                chmod($filepath, 0600);
-                file_delete($filepath);
-            }
+            ssh_remove_key_file($key_file);
 
         }catch(Exception $e){
             /*
@@ -246,10 +263,22 @@ function servers_exec($server, $commands, $options = null, $background = false, 
 
 /*
  *
+ *
+ * @author Sven Olaf Oostenbrink <sven@capmega.com>
+ * @copyright Copyright (c) 2018 Capmega
+ * @license http://opensource.org/licenses/GPL-2.0 GNU Public License, Version 2
+ * @category Function reference
+ * @package servers
+ *
+ * @param mixed $hostname
+ * @param boolean $database
+ * @param boolean $return_proxies
+ * @param boolean $limited_columns
+ * @return array The database entry data for the requested hostname
  */
 function servers_get($host, $database = false, $return_proxies = true, $limited_columns = false){
     try{
-        if(is_array($host)){
+        if(is_array($server) or !empty($server['identity_file'])){
             /*
              * Specified host is an array, so it should already contain all
              * information
@@ -261,7 +290,10 @@ function servers_get($host, $database = false, $return_proxies = true, $limited_
             $query =  'SELECT `servers`.`id`,
                               `servers`.`hostname`,
                               `servers`.`port`,
-                              `servers`.`ipv4`';
+                              `servers`.`ipv4`
+
+                              `ssh_accounts`.`username`,
+                              `ssh_accounts`.`ssh_key` ';
 
         }else{
             $query =  'SELECT `servers`.`id`,
@@ -377,7 +409,46 @@ function servers_get($host, $database = false, $return_proxies = true, $limited_
 
 
 /*
+ *
+ *
+ * @author Sven Olaf Oostenbrink <sven@capmega.com>
+ * @copyright Copyright (c) 2018 Capmega
+ * @license http://opensource.org/licenses/GPL-2.0 GNU Public License, Version 2
+ * @category Function reference
+ * @package servers
+ *
+ * @param mixed $server
+ * @return
+ */
+function servers_test($server){
+    try{
+        sql_query('UPDATE `servers` SET `status` = "testing" WHERE `hostname` = :hostname', array(':hostname' => $hostname));
+
+        $result = servers_exec($server, 'echo 1');
+        $result = array_pop($result);
+
+        if($result != '1'){
+            throw new bException(tr('servers_test(): Failed to SSH connect to ":server"', array(':server' => $user.'@'.$hostname.':'.$port)), 'failedconnect');
+        }
+
+        sql_query('UPDATE `servers` SET `status` = NULL WHERE `hostname` = :hostname', array(':hostname' => $hostname));
+
+    }catch(Exception $e){
+        throw new bException('servers_test(): Failed', $e);
+    }
+}
+
+
+
+/*
  * Detect the operating system on the specified host
+ *
+ * @author Sven Olaf Oostenbrink <sven@capmega.com>
+ * @copyright Copyright (c) 2018 Capmega
+ * @license http://opensource.org/licenses/GPL-2.0 GNU Public License, Version 2
+ * @category Function reference
+ * @package servers
+ *
  * @param  string $hostname The name of the host where to detect the operating system
  * @return array            An array containing the operatings system type (linux, windows, macos, etc), group (ubuntu group, redhad group, debian group), name (ubuntu, mint, fedora, etc), and version (7.4, 16.04, etc)
  * @see servers_get_os()
@@ -463,6 +534,12 @@ function servers_detect_os($hostname){
 /*
  * Returns the public IP for the specified hostname
  *
+ * @author Sven Olaf Oostenbrink <sven@capmega.com>
+ * @copyright Copyright (c) 2018 Capmega
+ * @license http://opensource.org/licenses/GPL-2.0 GNU Public License, Version 2
+ * @category Function reference
+ * @package servers
+ *
  * @param string $hostname
  * @return string $ip The IP for the specified hostname
  */
@@ -485,6 +562,12 @@ function servers_get_public_ip($hostname){
 
 /*
  * Returns the proxy (if available) linked to the specified $servers_id. If the specified $servers_id has multiple linked proxy servers, a single random one will be chosen and returned
+ *
+ * @author Sven Olaf Oostenbrink <sven@capmega.com>
+ * @copyright Copyright (c) 2018 Capmega
+ * @license http://opensource.org/licenses/GPL-2.0 GNU Public License, Version 2
+ * @category Function reference
+ * @package servers
  *
  * @param numeric $servers_id, id of the required server
  * @return array
@@ -522,6 +605,12 @@ function servers_get_proxy($servers_id){
 /*
  * Returns all the proxy servers (if available) linked to the specified $servers_id
  *
+ * @author Sven Olaf Oostenbrink <sven@capmega.com>
+ * @copyright Copyright (c) 2018 Capmega
+ * @license http://opensource.org/licenses/GPL-2.0 GNU Public License, Version 2
+ * @category Function reference
+ * @package servers
+ *
  * @param numeric $servers_id, id of the required server
  * @return array
  */
@@ -554,6 +643,12 @@ function servers_list_proxies($servers_id){
 /*
  * Add the specified proxy $proxies_id to the proxy chain for the specified $servers_id
  *
+ * @author Sven Olaf Oostenbrink <sven@capmega.com>
+ * @copyright Copyright (c) 2018 Capmega
+ * @license http://opensource.org/licenses/GPL-2.0 GNU Public License, Version 2
+ * @category Function reference
+ * @package servers
+ *
  * @param integer $servers_id
  * @param integer $proxies_id
  * @return integer servers_ssh_proxies insert_id
@@ -584,8 +679,13 @@ function servers_add_ssh_proxy($servers_id, $proxies_id){
 
 
 /*
- * Updates relation in database base for specified server, in case relation does
- * not exists, a new record is created
+ * Updates relation in database base for specified server, in case relation does not exists, a new record is created
+ *
+ * @author Sven Olaf Oostenbrink <sven@capmega.com>
+ * @copyright Copyright (c) 2018 Capmega
+ * @license http://opensource.org/licenses/GPL-2.0 GNU Public License, Version 2
+ * @category Function reference
+ * @package servers
  *
  * @param integer $servers_id
  * @param integer $old_proxies_id
@@ -643,6 +743,13 @@ function servers_update_ssh_proxy($servers_id, $old_proxies_id, $new_proxies_id)
 
 /*
  * Deletes from data base relation between two servers
+ *
+ * @author Sven Olaf Oostenbrink <sven@capmega.com>
+ * @copyright Copyright (c) 2018 Capmega
+ * @license http://opensource.org/licenses/GPL-2.0 GNU Public License, Version 2
+ * @category Function reference
+ * @package servers
+ *
  * @param integer $servers_id
  * @param integer $proxies_id
  */
