@@ -4,7 +4,8 @@
  *
  * This library contains functions to manage SSH accounts
  *
- * Copyright (c) 2018 Capmega
+ * @copyright (c) 2018 Capmega
+ * @author Sven Olaf Oostenbrink
  */
 
 
@@ -51,12 +52,22 @@ function ssh_library_init(){
  * @param string $commands
  * @param boolean $background
  * @param string $function
- * @return array
+ * @param string $ok_exitcodes
+ * @return array The results of the executed SSH commands in an array, each entry containing one line of the output
  */
 function ssh_exec($server, $commands = null, $background = false, $function = 'exec', $ok_exitcodes = 0){
     global $core;
 
     try{
+        if(!is_array($server)){
+            if(!scalar($server)){
+                throw new bException(tr('ssh_exec(): Invalid $server specified. $server must '), '');
+            }
+
+            load_libs('servers');
+            return servers_exec($server, $commands, $background, $function, $ok_exitcodes);
+        }
+
         array_default($server, 'hostname'     , null);
         array_default($server, 'hostname'     , null);
         array_default($server, 'ssh_key'      , null);
@@ -910,10 +921,10 @@ function ssh_add_known_host($hostname, $port){
  *
  * @param
  */
-function ssh_read_server_config($hostname){
+function ssh_read_server_config($server){
     try{
         $retval = array();
-        $config = servers_exec($hostname, 'cat /etc/ssh/sshd_config');
+        $config = ssh_exec($server, 'cat /etc/ssh/sshd_config');
 
         foreach($config as $line){
             $key    = str_until($line, ' ');
@@ -942,13 +953,13 @@ function ssh_read_server_config($hostname){
  *
  * @param
  */
-function ssh_write_server_config($hostname, $config){
+function ssh_write_server_config($server, $config){
     try{
         foreach($config as $key => $value){
             $data = $key.' '.$value."\n";
         }
 
-        servers_exec($hostname, 'sudo cat > /etc/ssh/sshd_config << EOF '.$data);
+        ssh_exec($server, 'sudo cat > /etc/ssh/sshd_config << EOF '.$data);
 
     }catch(Exception $e){
         throw new bException('ssh_write_server_config(): Failed', $e);
@@ -1127,10 +1138,6 @@ under_construction();
             $server['arguments'] .= ' -o StrictHostKeyChecking=no -o UserKnownHostsFile='.ROOT.'data/ssh/known_hosts ';
         }
 
-        /*
-         * Safely create SSH key file from the server ssh key
-         */
-        $key_file = ssh_create_key_file($server['ssh_key']);
 
         /*
          * ????
@@ -1145,10 +1152,7 @@ under_construction();
         /*
          * Execute command
          */
-        $result = safe_exec('scp '.$server['arguments'].' -P '.$server['port'].' -i '.$key_file.' '.$command.'');
-        ssh_remove_key_file($key_file);
-
-        return $result;
+        return safe_exec('scp '.$server['arguments'].' -P '.$server['port'].' -i '.$key_file.' '.$command.'');
 
     }catch(Exception $e){
         notify($e);
