@@ -96,7 +96,7 @@ try{
     /*
      *
      */
-    if(VERYVERBOSE){
+    if(debug()){
         foreach($output as $line){
             log_console($output);
         }

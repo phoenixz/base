@@ -68,6 +68,7 @@ try{
     $_script_exec_file = file_assign_target(TMP, false, false, $length);
     $_script_exec_file = file_copy_tree(ROOT.'scripts/'.$script, TMP.$_script_exec_file, "#!/usr/bin/php\n", '', '.php');
 
+    $core->register('shutdown_script_clean', array($_script_exec_file));
     log_console(tr('Executing script ":script" as ":as"', array(':script' => $script, ':as' => $_script_exec_file)), 'VERBOSE/cyan');
 
     /*
@@ -116,15 +117,7 @@ try{
      *
      * Delete the TMP script and the data/libs symlink
      */
-    try{
-        file_delete($_script_exec_file, true);
-
-    }catch(Exception $e){
-        /*
-         * This is a minor problem, really..
-         */
-        log_console(tr('script_exec(): Failed to clean up executed temporary script copy path ":file", probably a parrallel process added new content there?', array(':file' => $_script_exec_file)), 'yellow');
-    }
+    script_clean($_script_exec_file);
 
     $GLOBALS['argv'] = $argv;
 
@@ -134,6 +127,11 @@ try{
 
 }catch(Exception $e){
     $GLOBALS['argv'] = $argv;
+
+    if($_script_exec_file){
+        script_clean($_script_exec_file);
+    }
+
     throw new bException(tr('script_exec(): Failed to execute ":script"', array(':script' => $script)), $e);
 }
 ?>

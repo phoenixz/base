@@ -20,17 +20,16 @@ register_shutdown_function('cli_done');
  * Define basic platform constants
  */
 try{
-    define('ADMIN'      , '');
-    define('SCRIPT'     ,  str_runtil(str_rfrom($_SERVER['PHP_SELF'], '/'), '.php'));
-    define('PWD'        , slash(isset_get($_SERVER['PWD'])));
-    define('VERBOSE'    , (cli_argument('-V,--verbose,-V2,--very-verbose') ? 'VERBOSE'     : ''));
-    define('VERYVERBOSE', (cli_argument('-V2,--very-verbose')              ? 'VERYVERBOSE' : ''));
-    define('QUIET'      , cli_argument('-Q,--quiet'));
-    define('FORCE'      , cli_argument('-F,--force'));
-    define('NOCOLOR'    , cli_argument('-C,--no-color'));
-    define('TEST'       , cli_argument('-T,--test'));
-    define('LIMIT'      , cli_argument('--limit', true));
-    define('STARTDIR'   , slash(getcwd()));
+    define('ADMIN'   , '');
+    define('SCRIPT'  ,  str_runtil(str_rfrom($_SERVER['PHP_SELF'], '/'), '.php'));
+    define('PWD'     , slash(isset_get($_SERVER['PWD'])));
+    define('VERBOSE' , (cli_argument('-V,--verbose,-D,--debug') ? 'VERBOSE' : ''));
+    define('QUIET'   , cli_argument('-Q,--quiet'));
+    define('FORCE'   , cli_argument('-F,--force'));
+    define('NOCOLOR' , cli_argument('-C,--no-color'));
+    define('TEST'    , cli_argument('-T,--test'));
+    define('LIMIT'   , cli_argument('--limit', true));
+    define('STARTDIR', slash(getcwd()));
 
 }catch(Exception $e){
     $e->setCode('parameters');
@@ -71,7 +70,6 @@ try{
                 /*
                  * Run script in debug mode
                  */
-                log_console('WARNING: RUNNING IN DEBUG MODE!');
                 debug(true);
                 break;
 
@@ -379,6 +377,10 @@ if(VERBOSE){
     }
 
     log_console(tr('Running in VERBOSE mode, started @ ":datetime"', array(':datetime' => date_convert(STARTTIME, 'human_datetime'))), 'white');
+
+    if(debug()){
+        log_console('Running in DEBUG mode', 'yellow');
+    }
 }
 
 if(FORCE){
