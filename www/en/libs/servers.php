@@ -351,42 +351,42 @@ function servers_get($server, $database = false, $return_proxies = true, $limite
         }
 
         if($limited_columns){
-            $query =  'SELECT `servers`.`id`,
-                              `servers`.`hostname`,
-                              `servers`.`port`,
-                              `servers`.`ipv4`
+            $query = 'SELECT `servers`.`id`,
+                             `servers`.`hostname`,
+                             `servers`.`port`,
+                             `servers`.`ipv4`
 
-                              `ssh_accounts`.`username`,
-                              `ssh_accounts`.`ssh_key` ';
+                             `ssh_accounts`.`username`,
+                             `ssh_accounts`.`ssh_key` ';
 
         }else{
-            $query =  'SELECT `servers`.`id`,
-                              `servers`.`createdon`,
-                              `servers`.`modifiedon`,
-                              `servers`.`port`,
-                              `servers`.`cost`,
-                              `servers`.`status`,
-                              `servers`.`interval`,
-                              `servers`.`hostname`,
-                              `servers`.`seohostname`,
-                              `servers`.`bill_duedate`,
-                              `servers`.`ssh_accounts_id`,
-                              `servers`.`database_accounts_id`,
-                              `servers`.`description`,
-                              `servers`.`ipv4`,
-                              `servers`.`ipv6`,
+            $query = 'SELECT `servers`.`id`,
+                             `servers`.`createdon`,
+                             `servers`.`modifiedon`,
+                             `servers`.`port`,
+                             `servers`.`cost`,
+                             `servers`.`status`,
+                             `servers`.`interval`,
+                             `servers`.`hostname`,
+                             `servers`.`seohostname`,
+                             `servers`.`bill_duedate`,
+                             `servers`.`ssh_accounts_id`,
+                             `servers`.`database_accounts_id`,
+                             `servers`.`description`,
+                             `servers`.`ipv4`,
+                             `servers`.`ipv6`,
 
-                              `createdby`.`name`   AS `createdby_name`,
-                              `createdby`.`email`  AS `createdby_email`,
-                              `modifiedby`.`name`  AS `modifiedby_name`,
-                              `modifiedby`.`email` AS `modifiedby_email`,
+                             `createdby`.`name`   AS `createdby_name`,
+                             `createdby`.`email`  AS `createdby_email`,
+                             `modifiedby`.`name`  AS `modifiedby_name`,
+                             `modifiedby`.`email` AS `modifiedby_email`,
 
-                              `providers`.`seoname`    AS `provider`,
-                              `customers`.`seoname`    AS `customer`,
-                              `ssh_accounts`.`seoname` AS `ssh_account`,
+                             `providers`.`seoname`    AS `provider`,
+                             `customers`.`seoname`    AS `customer`,
+                             `ssh_accounts`.`seoname` AS `ssh_account`,
 
-                              `ssh_accounts`.`username`,
-                              `ssh_accounts`.`ssh_key` ';
+                             `ssh_accounts`.`username`,
+                             `ssh_accounts`.`ssh_key` ';
         }
 
         $from  = ' FROM      `servers`
@@ -421,8 +421,23 @@ function servers_get($server, $database = false, $return_proxies = true, $limite
                 throw new bException(tr('servers_get(): Specified server array does not contain a hostname'), 'invalid');
             }
 
-            $where   = ' WHERE `servers`.`hostname` = :hostname';
-            $execute = array(':hostname' => $server['hostname']);
+            if(is_numeric($server['hostname'])){
+                /*
+                 * Host specified by id
+                 */
+                $where   = ' WHERE `servers`.`id` = :id';
+                $execute = array(':id' => $server['hostname']);
+
+            }elseif(is_scalar($server['hostname'])){
+                /*
+                 * Host specified by id
+                 */
+                $where   = ' WHERE `servers`.`hostname` = :hostname';
+                $execute = array(':hostname' => $server['hostname']);
+
+            }else{
+                throw new bException(tr('servers_get(): Specified server array hostname should be a natural numeric id or a hostname, but is a ":type"', array(':type' => gettype($server['hostname']))), 'invalid');
+            }
 
         }elseif(is_string($server)){
             /*
@@ -476,10 +491,10 @@ function servers_get($server, $database = false, $return_proxies = true, $limite
 
                 $dbserver['proxies'] = array_filter($dbserver['proxies']);
             }
-        }
 
-        if(is_array($server)){
-            $dbserver = array_merge($server, $dbserver);
+            if(is_array($server)){
+                $dbserver = array_merge($server, $dbserver);
+            }
         }
 
         return $dbserver;
