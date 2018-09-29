@@ -1060,4 +1060,38 @@ function array_params(&$params, $keys = null){
 
     }
 }
+
+
+
+/*
+ * Merge multiple arrays together, but overwrite null values
+ *
+ * @author Sven Olaf Oostenbrink <sven@capmega.com>
+ * @copyright Copyright (c) 2018 Capmega
+ * @license http://opensource.org/licenses/GPL-2.0 GNU Public License, Version 2
+ * @category Function reference
+ * @package ssh
+ *
+ * @param array
+ * @return array
+ */
+function array_merge_null(){
+    try{
+        $args   = func_get_args();
+        $retval = array();
+
+        foreach($args as $array){
+            foreach($array as $key => $value){
+                if(!isset($retval[$key]) or ($value !== null)){
+                    $retval[$key] = $value;
+                }
+            }
+        }
+
+        return $retval;
+
+    }catch(Exception $e){
+        throw new bException('array_merge_null(): Failed', $e);
+    }
+}
 ?>
