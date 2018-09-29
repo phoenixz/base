@@ -1211,7 +1211,7 @@ function log_console($messages = '', $color = null, $newline = true, $filter_dou
                 /*
                  * Remove the VERBOSE
                  */
-                $color = str_from($color, 'VERBOSE/');
+                $color = str_from(str_from($color, 'VERBOSE'), '/');
                 break;
 
             case 'VERYVERBOSE':
@@ -1225,7 +1225,7 @@ function log_console($messages = '', $color = null, $newline = true, $filter_dou
                 /*
                  * Remove the VERYVERBOSE
                  */
-                $color = str_from($color, 'VERYVERBOSE/');
+                $color = str_from(str_from($color, 'VERYVERBOSE'), '/');
                 break;
 
             case 'QUIET':
@@ -1239,7 +1239,7 @@ function log_console($messages = '', $color = null, $newline = true, $filter_dou
                 /*
                  * Remove the QUIET
                  */
-                $color = str_from($color, 'QUIET/');
+                $color = str_from(str_from($color, 'QUIET'), '/');
                 break;
 
             case 'DOT':
@@ -1255,7 +1255,7 @@ function log_console($messages = '', $color = null, $newline = true, $filter_dou
                 /*
                  * Remove the DOT
                  */
-                $color = str_from($color, 'DOT/');
+                $color = str_from(str_from($color, 'DOT'), '/');
                 break;
 
             case 'DEBUG':
@@ -1269,7 +1269,7 @@ function log_console($messages = '', $color = null, $newline = true, $filter_dou
                 /*
                  * Remove the QUIET
                  */
-                $color = str_from($color, 'DEBUG/');
+                $color = str_from(str_from($color, 'DEBUG'), '/');
         }
 
         /*
