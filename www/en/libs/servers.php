@@ -23,6 +23,7 @@
  */
 function servers_library_init(){
     try{
+        load_libs('ssh');
         load_config('servers');
 
     }catch(Exception $e){
@@ -197,19 +198,22 @@ function servers_validate($server, $password_strength = true){
  */
 function servers_exec($server, $commands, $background = false, $function = 'exec'){
     try{
-        array_params($server);
+        array_ensure($server);
         array_default($server, 'hostkey_check', true);
-        array_default($server, 'arguments'    , '-T');
         array_default($server, 'background'   , $background);
         array_default($server, 'commands'     , $commands);
-        array_default($server, 'options'      , $options);
+
+        load_libs('ssh');
 
         if($server){
-            if(!is_array($server) or empty($server['identity_file'])){
-                if(!is_scalar($server)){
-                    throw new bException(tr('servers_exec(): The specified server ":server" is invalid', array(':server' => $server)), 'invalid');
-                }
+            if(!is_scalar($server) and !is_array($server)){
+                throw new bException(tr('servers_exec(): The specified server ":server" is invalid', array(':server' => $server)), 'invalid');
+            }
 
+            if(!is_array($server) or (empty($server['identity_file']) and empty($server['ssh_key']))){
+                /*
+                 * Server is specified either by hostname, or in array without the required identity file. Load all server data from database
+                 */
                 $requested = $server;
                 $server    = servers_get($server);
 
@@ -217,6 +221,10 @@ function servers_exec($server, $commands, $background = false, $function = 'exec
                     /*
                      * Specified server was not found
                      */
+                    if(is_array($requested)){
+                        throw new bException(tr('servers_exec(): The specified server ":server" does not exist', array(':server' => isset_get($requested['hostname']))), 'not-exist');
+                    }
+
                     throw new bException(tr('servers_exec(): The specified server ":server" does not exist', array(':server' => $requested)), 'not-exist');
                 }
             }
@@ -226,18 +234,24 @@ function servers_exec($server, $commands, $background = false, $function = 'exec
         }
 
         if(empty($server['identity_file'])){
+            if(empty($server['ssh_key'])){
+                throw new bException(tr('servers_exec(): The specified server ":server" has no identity file or SSH key available', array(':server' => $server['hostname'])), 'missing-data');
+            }
 
+            /*
+             * Copy the ssh_key to a temporal identity_file
+             */
+            $identity_file           = servers_create_identity_file($server['ssh_key']);
+            $server['identity_file'] = ROOT.'data/ssh/keys/'.$identity_file;
+            servers_clear_key($server);
         }
+
 
         /*
          * Execute command on remote server
          */
-        load_libs('ssh');
-
-        $server['key_file'] = ssh_create_key_file($server['identity_file']);
-        $results            = ssh_exec($server);
-
-        ssh_remove_key_file($key_file);
+        $results = ssh_exec($server, null, false, $function);
+        servers_remove_identity_file($identity_file);
         return $results;
 
     }catch(Exception $e){
@@ -245,7 +259,8 @@ function servers_exec($server, $commands, $background = false, $function = 'exec
          * Try deleting the keyfile anyway!
          */
         try{
-            ssh_remove_key_file($key_file);
+            servers_remove_identity_file(isset_get($identity_file));
+            notify($e);
 
         }catch(Exception $e){
             /*
@@ -254,7 +269,6 @@ function servers_exec($server, $commands, $background = false, $function = 'exec
             notify(tr('servers_exec() cannot delete key'), $e, 'developers');
         }
 
-        notify(tr('servers_exec() exception'), $e, 'developers');
         throw new bException('servers_exec(): Failed', $e);
     }
 }
@@ -270,20 +284,70 @@ function servers_exec($server, $commands, $background = false, $function = 'exec
  * @category Function reference
  * @package servers
  *
- * @param mixed $hostname
+ * @param mixed $server
+ * @return array The database entry data for the requested hostname
+ */
+function servers_register_host($server){
+    try{
+        if(!$server){
+            throw new bException('servers_register_host(): No server specified', 'not-specified');
+        }
+
+        if(!is_scalar($server) and !is_array($server)){
+            throw new bException(tr('servers_exec(): The specified server ":server" is invalid', array(':server' => $server)), 'invalid');
+        }
+
+        if(!is_array($server) or (empty($server['identity_file']) and empty($server['ssh_key']))){
+            /*
+             * Server is specified either by hostname, or in array without the required identity file. Load all server data from database
+             */
+            $requested = $server;
+            $server    = servers_get($server);
+
+            if(!$server){
+                /*
+                 * Specified server was not found
+                 */
+                if(is_array($requested)){
+                    throw new bException(tr('servers_exec(): The specified server ":server" does not exist', array(':server' => isset_get($requested['hostname']))), 'not-exist');
+                }
+
+                throw new bException(tr('servers_exec(): The specified server ":server" does not exist', array(':server' => $requested)), 'not-exist');
+            }
+        }
+
+        return ssh_add_known_host($server['hostname'], $server['port']);
+
+    }catch(Exception $e){
+        throw new bException('servers_register_host(): Failed', $e);
+    }
+}
+
+
+
+/*
+ *
+ *
+ * @author Sven Olaf Oostenbrink <sven@capmega.com>
+ * @copyright Copyright (c) 2018 Capmega
+ * @license http://opensource.org/licenses/GPL-2.0 GNU Public License, Version 2
+ * @category Function reference
+ * @package servers
+ *
+ * @param mixed $server
  * @param boolean $database
  * @param boolean $return_proxies
  * @param boolean $limited_columns
  * @return array The database entry data for the requested hostname
  */
-function servers_get($host, $database = false, $return_proxies = true, $limited_columns = false){
+function servers_get($server, $database = false, $return_proxies = true, $limited_columns = false){
     try{
-        if(is_array($server) or !empty($server['identity_file'])){
+        if(is_array($server) and !empty($server['identity_file'])){
             /*
              * Specified host is an array, so it should already contain all
              * information
              */
-            return $host;
+            return $server;
         }
 
         if($limited_columns){
@@ -342,19 +406,41 @@ function servers_get($host, $database = false, $return_proxies = true, $limited_
                    LEFT JOIN `ssh_accounts`
                    ON        `ssh_accounts`.`id`         = `servers`.`ssh_accounts_id`';
 
-        if(is_numeric($host)){
-            $where   = ' WHERE `servers`.`id`       = :id';
-            $execute = array(':id'       => $host);
+        if(is_numeric($server)){
+            /*
+             * Host specified by id
+             */
+            $where   = ' WHERE `servers`.`id` = :id';
+            $execute = array(':id' => $server);
 
-        }elseif(substr($host, 0, 1) === '*'){
-            $host    = substr($host, 1);
-            $where   = ' WHERE `servers`.`hostname` LIKE :hostname';
-            $execute = array(':hostname' => '%'.$host.'%');
+        }elseif(is_array($server)){
+            /*
+             * Server host specified by array containing hostname
+             */
+            if(empty($server['hostname'])){
+                throw new bException(tr('servers_get(): Specified server array does not contain a hostname'), 'invalid');
+            }
+
+            $where   = ' WHERE `servers`.`hostname` = :hostname';
+            $execute = array(':hostname' => $server['hostname']);
+
+        }elseif(is_string($server)){
+            /*
+             * Hostname specified by name
+             */
+            if(substr($server, 0, 1) === '*'){
+                $server    = substr($server, 1);
+                $where   = ' WHERE `servers`.`hostname` LIKE :hostname';
+                $execute = array(':hostname' => '%'.$server.'%');
+
+            }else{
+                $where   = ' WHERE `servers`.`hostname`    = :hostname
+                             OR    `servers`.`seohostname` = :hostname';
+                $execute = array(':hostname' => $server);
+            }
 
         }else{
-            $where   = ' WHERE `servers`.`hostname` = :hostname
-                         OR    `servers`.`seohostname` = :hostname';
-            $execute = array(':hostname' => $host);
+            throw new bException(tr('servers_get(): Invalid server or hostname specified. Should be either a natural nuber, hostname, or array containing hostname information'), 'invalid');
         }
 
         if($database){
@@ -367,39 +453,40 @@ function servers_get($host, $database = false, $return_proxies = true, $limited_
                         ON        `database_accounts`.`id` = `servers`.`database_accounts_id` ';
         }
 
-        $server = sql_get($query.$from.$where, $execute);
+        $dbserver = sql_get($query.$from.$where, $execute);
 
-        if($server and $return_proxies){
-            $server['proxies'] = array();
+        if($dbserver and $return_proxies){
+            $dbserver['proxies'] = array();
 
-            $server_proxy = servers_get_proxy($server['id']);
+            $dbserver_proxy = servers_get_proxy($dbserver['id']);
 
-            if($server_proxy){
-                $server['proxies'][] = $server_proxy;
-                $proxy               = $server_proxy['proxies_id'];
+            if($dbserver_proxy){
+                $dbserver['proxies'][] = $dbserver_proxy;
+                $proxy                 = $dbserver_proxy['proxies_id'];
 
                 while($proxy){
-                    $server_proxy  = servers_get_proxy($proxy);
-                    $proxy         = false;
+                    $dbserver_proxy = servers_get_proxy($proxy);
+                    $proxy          = false;
 
-                    if(!empty($server_proxy)){
-                        $server['proxies'][] = $server_proxy;
-                        $proxy               = $server_proxy['proxies_id'];
+                    if(!empty($dbserver_proxy)){
+                        $dbserver['proxies'][] = $dbserver_proxy;
+                        $proxy                 = $dbserver_proxy['proxies_id'];
                     }
-
                 }
 
-                $server['proxies'] = array_filter($server['proxies']);
+                $dbserver['proxies'] = array_filter($dbserver['proxies']);
             }
-
-
         }
 
-        return $server;
+        if(is_array($server)){
+            $dbserver = array_merge($server, $dbserver);
+        }
+
+        return $dbserver;
 
     }catch(Exception $e){
         if($e->getCode() == 'multiple'){
-            throw new bException(tr('servers_get(): Specified hostname ":hostname" matched multiple results, please specify a more exact hostname', array(':hostname' => $host)), 'multiple');
+            throw new bException(tr('servers_get(): Specified hostname ":hostname" matched multiple results, please specify a more exact hostname', array(':hostname' => $server)), 'multiple');
         }
 
         throw new bException('servers_get(): Failed', $e);
@@ -435,6 +522,142 @@ function servers_test($server){
 
     }catch(Exception $e){
         throw new bException('servers_test(): Failed', $e);
+    }
+}
+
+
+
+/*
+ * Returns an SSH key for the specified username, if available
+ *
+ * @author Sven Olaf Oostenbrink <sven@capmega.com>
+ * @copyright Copyright (c) 2018 Capmega
+ * @license http://opensource.org/licenses/GPL-2.0 GNU Public License, Version 2
+ * @category Function reference
+ * @package ssh
+ *
+ * @param string $username The SSH username for which an SSH key must be returned
+ * @return string The SSH key for the specified username
+ */
+function servers_get_key($username){
+    try{
+        return sql_get('SELECT `ssh_key` FROM `ssh_accounts` WHERE `username` = :username', 'ssh_key', array(':username' => $username));
+
+    }catch(Exception $e){
+        throw new bException('servers_get_key(): Failed', $e);
+    }
+}
+
+
+
+/*
+ * Securely clear the private key from a servers array
+ *
+ * @author Sven Olaf Oostenbrink <sven@capmega.com>
+ * @copyright Copyright (c) 2018 Capmega
+ * @license http://opensource.org/licenses/GPL-2.0 GNU Public License, Version 2
+ * @category Function reference
+ * @package ssh
+ *
+ * @param array $server Server array containing the private key that will be deleted securely
+ * return boolean true if key was cleared, false if the specified $server array did not contain "ss_key"
+ */
+function servers_clear_key(&$server){
+    try{
+        if(empty($server['ssh_key'])){
+            return false;
+        }
+
+        if(function_exists('sodium_memzero')){
+            sodium_memzero($server['ssh_key']);
+            unset($server['ssh_key']);
+
+        }else{
+            $server['ssh_key'] = random_bytes(2048);
+            unset($server['ssh_key']);
+        }
+
+        return true;
+
+    }catch(Exception $e){
+        throw new bException('servers_clear_key(): Failed', $e);
+    }
+}
+
+
+
+/*
+ * Create a safe SSH keyfile containing the specified SSH key
+ *
+ * @author Sven Olaf Oostenbrink <sven@capmega.com>
+ * @copyright Copyright (c) 2018 Capmega
+ * @license http://opensource.org/licenses/GPL-2.0 GNU Public License, Version 2
+ * @category Function reference
+ * @package ssh
+ *
+ * @param string $ssh_key The SSH key that must be placed in a keyfile
+ * return string $identity_file The created keyfile
+ */
+function servers_create_identity_file($ssh_key){
+    try{
+        /*
+         * Ensure that ssh/keys directory exists and that its safe
+         */
+        load_libs('file');
+        file_ensure_path(ROOT.'data/ssh/keys', 0750);
+        chmod(ROOT.'data/ssh', 0750);
+
+        /*
+         * Safely create SSH key file
+         */
+        $identity_file = ROOT.'data/ssh/keys/'.str_random(8);
+
+        touch($identity_file);
+        chmod($identity_file, 0600);
+        file_put_contents($identity_file, $ssh_key, FILE_APPEND);
+        chmod($identity_file, 0400);
+
+        return substr($identity_file, -8, 8);
+
+    }catch(Exception $e){
+        throw new bException('servers_create_identity_file(): Failed', $e);
+    }
+}
+
+
+
+/*
+ * Delete the specified SSH key
+ *
+ * @author Sven Olaf Oostenbrink <sven@capmega.com>
+ * @copyright Copyright (c) 2018 Capmega
+ * @license http://opensource.org/licenses/GPL-2.0 GNU Public License, Version 2
+ * @category Function reference
+ * @package ssh
+ *
+ * @param string $identity_file The SSH key file that must be deleted
+ * return boolean True if the specified keyfile was deleted, false if no keyfile was specified
+ */
+function servers_remove_identity_file($identity_file, $background = false){
+    try{
+        if(!$identity_file){
+            return false;
+        }
+
+        $identity_file = ROOT.'data/ssh/keys/'.$identity_file;
+
+        if($background){
+            safe_exec('{ sleep 5; sudo chmod 0600 '.$identity_file.' ; sudo rm -rf '.$identity_file.' ; } &');
+
+        }else{
+            chmod($identity_file, 0600);
+            file_delete($identity_file);
+        }
+
+        return true;
+
+    }catch(Exception $e){
+        throw new bException('servers_remove_identity_file(): Failed', $e);
     }
 }
 
@@ -672,7 +895,7 @@ function servers_add_ssh_proxy($servers_id, $proxies_id){
         return sql_insert_id();
 
     }catch(Exception $e){
-		throw new bException('proxies_create_relation(): Failed', $e);
+		throw new bException('servers_add_ssh_proxy(): Failed', $e);
 	}
 }
 

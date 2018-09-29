@@ -4,45 +4,59 @@
  *
  */
 $usage = './scripts/base/ssh
-./scripts/base/ssh connect HOSTNAME';
+./scripts/base/ssh HOSTNAME [ARGUMENTS] [COMMANDS]';
 
 $help  = 'This script allows to manage SSH connections to registered servers
 
 
 
-METHODS
+HOSTNAME                        - The hostname (or id) of the server to connect
+                                  to. The host must be registered in the servers
+                                  system, and have an SSH account linked.
+
+COMMANDS                        - (optional) the commands to execute on the
+                                  specified hostname. If no commands have been
+                                  specified, then "bash" will be executed,
+                                  providing a bash shell for the user
 
 
 
-connect HOSTNAME                - Connect to specified HOSTNAME';
+ARGUMENTS
+
+-i,--identity-file FILE         - The identity file (private key file) that
+                                  should be used for this connection
+
+-f,--function                   - What PHP function to use to execute this
+                                  command. Defaults to passthru, forces passthru
+                                  if no command has been specified
+
+-b,--background                 - Execute in background. This will execute the
+                                  entire command in the background and return
+                                  the command prompt. NOTE: This option will not
+                                  generate any output on the command line';
 
 require_once(__DIR__.'/../../libs/startup.php');
 cli_only();
 load_libs('servers');
 
+$background    = cli_argument('-b,--background');
+$function      = not_empty(cli_argument('-f,--function'), 'passthru');
+$identity_file = cli_argument('-i,--identity-file');
+
 switch(cli_method()){
-    case 'connect':
+    case 'register':
         $hostname = cli_argument(1);
         cli_no_arguments_left();
 
-        if(empty($hostname)){
-            throw new bException(tr('No hostname specified'), 'warning/not-specified');
-        }
+        cli_no_arguments_left();
+        $count = servers_register_host(array('hostname'      => $hostname,
+                                             'identity_file' => $identity_file));
 
-        try{
-                                         //($host, $commands, null, false, false, 'exec')
-            $result = servers_exec($hostname, '', array('arguments' => ''), false, 'passthru');
+        if($count){
+            log_console(tr('Added ":count" hashed hostnames', array(':count' => $count)), 'green');
 
-        }catch(Exception $e){
-            switch($e->getCode()){
-                case 'multiple':
-                    // FALLTROUGH
-                case 'not-exists':
-                    throw $e->makeWarning(true);
-
-                default:
-                    throw $e;
-            }
+        }else{
+            log_console(tr('Added no hashed hostnames, hostname was probably already registered'), 'yellow');
         }
 
         break;
@@ -51,6 +65,42 @@ switch(cli_method()){
         throw new bException(tr('No method specified'), 'no-method');
 
     default:
-        throw new bException(tr('Unknown method ":method" specified', array(':method' => cli_method())), 'unknown-method');
+        $hostname = cli_method();
+        $commands = cli_arguments();
+
+        if(empty($hostname)){
+            throw new bException(tr('No hostname specified'), 'warning/not-specified');
+        }
+
+        if(empty($commands)){
+            /*
+             * Just run bash shell
+             */
+            $commands         = 'bash';
+            $force_terminal   = true;
+            $disable_terminal = false;
+            $function         = 'passthru';
+        }
+
+        try{
+            $server = array('hostname'         => $hostname,
+                            'force_terminal'   => isset_get($force_terminal),
+                            'disable_terminal' => isset_get($disable_terminal),
+                            'commands'         => $commands,
+                            'identity_file'    => $identity_file);
+
+            $result = servers_exec($server, $commands, $background, $function);
+
+        }catch(Exception $e){
+            switch($e->getCode()){
+                case 'multiple':
+                    // FALLTROUGH
+                case 'not-exist':
+                    throw $e->makeWarning(true);
+
+                default:
+                    throw $e;
+            }
+        }
 }
 ?>

@@ -70,8 +70,7 @@ function ssh_exec($server, $commands = null, $background = false, $function = 'e
 
         array_default($server, 'hostname'     , null);
         array_default($server, 'hostname'     , null);
-        array_default($server, 'ssh_key'      , null);
-        array_default($server, 'identity_file', $server['ssh_key']);
+        array_default($server, 'identity_file', null);
         array_default($server, 'commands'     , $commands);
         array_default($server, 'background'   , $background);
         array_default($server, 'proxies'      , null);
@@ -135,36 +134,7 @@ function ssh_exec($server, $commands = null, $background = false, $function = 'e
         /*
          * Remove "Permanently added host blah" error, even in this exception
          */
-        $data = $e->getData();
-
-        if(!empty($data[0])){
-            if(preg_match('/Warning: Permanently added \'\[.+?\]:\d{1,5}\' \(\w+\) to the list of known hosts\./', $data[0])){
-                /*
-                 * Remove known host warning from results
-                 */
-                array_shift($data);
-            }
-        }
-
-        unset($data);
         notify($e);
-
-        /*
-         * Try deleting the keyfile anyway!
-         */
-        try{
-            if(!empty($key_file)){
-                chmod($key_file, 0600);
-                file_delete($key_file);
-            }
-
-        }catch(Exception $e){
-            /*
-             * Cannot be deleted, just ignore and notify
-             */
-            notify($e);
-        }
-
         throw new bException('ssh_exec(): Failed', $e);
     }
 }
@@ -202,7 +172,7 @@ function ssh_build_command(&$server = null, $ssh_command = 'ssh'){
         /*
          * Get default SSH arguments and create basic SSH command with options
          */
-        $server  = array_merge($_CONFIG['ssh']['arguments'], $server);
+        $server  = array_merge_null($_CONFIG['ssh']['arguments'], $server);
         $command = $ssh_command.ssh_build_options(isset_get($server['options']));
 
         /*
@@ -375,7 +345,7 @@ function ssh_build_command(&$server = null, $ssh_command = 'ssh'){
                         $template['commands'] = 'nc :target_hostname :target_port';
                         $template['proxies']  = ':proxy_template';
 
-//'ssh '.$server['timeout'].$server['arguments'].' -i '.$key_file.' -p :proxy_port :proxy_template '.$server['username'].'@:proxy_host nc :target_hostname :target_port';
+//'ssh '.$server['timeout'].$server['arguments'].' -i '.$identity_file.' -p :proxy_port :proxy_template '.$server['username'].'@:proxy_host nc :target_hostname :target_port';
 
                         $escapes        = 0;
                         $proxy_template = ' -o ProxyCommand="'.addslashes(ssh_build_command($template)).'" ';
@@ -423,14 +393,18 @@ function ssh_build_command(&$server = null, $ssh_command = 'ssh'){
                         $command .= ' -t';
                     }
 
-                case 'disable_terminal':
-                    if(!empty($server['force_terminal'])){
-                        throw new bException(tr('ssh_build_command(): Both "force_terminal" and "disable_terminal" were specified. These options are mutually exclusive, please use only one or the other'), 'invalid');
-                    }
+                    break;
 
+                case 'disable_terminal':
                     if($value){
+                        if(!empty($server['force_terminal'])){
+                            throw new bException(tr('ssh_build_command(): Both "force_terminal" and "disable_terminal" were specified. These options are mutually exclusive, please use only one or the other'), 'invalid');
+                        }
+
                         $command .= ' -T';
                     }
+
+                    break;
 
                 default:
                     /*
@@ -443,7 +417,12 @@ function ssh_build_command(&$server = null, $ssh_command = 'ssh'){
         /*
          * Add the target server
          */
-        $command .= ' "'.$server['hostname'].'"';
+        if($server['username']){
+            $command .= ' "'.$server['username'].'@'.$server['hostname'].'"';
+
+        }else{
+            $command .= ' "'.$server['hostname'].'"';
+        }
 
         if(isset_get($server['commands'])){
             $command .= ' "'.$server['commands'].'"';
@@ -481,8 +460,14 @@ function ssh_build_options($options = null){
         /*
          * Get options from  default configuration and specified options
          */
-        $string  = '';
-        $options = array_merge($_CONFIG['ssh']['options'], $options);
+        if($options){
+            $string  = '';
+            $options = array_merge($_CONFIG['ssh']['options'], $options);
+
+        }else{
+            $string  = '';
+            $options = $_CONFIG['ssh']['options'];
+        }
 
         /*
          * Easy short cut to disable strict host key checks
@@ -766,106 +751,6 @@ function ssh_get_account($accounts_id){
 
 
 /*
- * Returns an SSH key for the specified username, if available
- *
- * @author Sven Olaf Oostenbrink <sven@capmega.com>
- * @copyright Copyright (c) 2018 Capmega
- * @license http://opensource.org/licenses/GPL-2.0 GNU Public License, Version 2
- * @category Function reference
- * @package ssh
- *
- * @param string $username The SSH username for which an SSH key must be returned
- * @return string The SSH key for the specified username
- */
-function ssh_get_key($username){
-    try{
-        return sql_get('SELECT `ssh_key` FROM `ssh_accounts` WHERE `username` = :username', 'ssh_key', array(':username' => $username));
-
-    }catch(Exception $e){
-        throw new bException('ssh_get_key(): Failed', $e);
-    }
-}
-
-
-
-/*
- * Create a safe SSH keyfile containing the specified SSH key
- *
- * @author Sven Olaf Oostenbrink <sven@capmega.com>
- * @copyright Copyright (c) 2018 Capmega
- * @license http://opensource.org/licenses/GPL-2.0 GNU Public License, Version 2
- * @category Function reference
- * @package ssh
- *
- * @param string $ssh_key The SSH key that must be placed in a keyfile
- * return string $key_file The created keyfile
- */
-function ssh_create_key_file($ssh_key){
-    try{
-        /*
-         * Ensure that ssh/keys directory exists and that its safe
-         */
-        load_libs('file');
-        file_ensure_path(ROOT.'data/ssh/keys', 0750);
-        chmod(ROOT.'data/ssh', 0750);
-
-        /*
-         * Safely create SSH key file
-         */
-        $key_file = ROOT.'data/ssh/keys/'.str_random(8);
-
-        touch($key_file);
-        chmod($key_file, 0600);
-        file_put_contents($key_file, $ssh_key, FILE_APPEND);
-        chmod($key_file, 0400);
-
-        return substr($key_file, -8, 8);
-
-    }catch(Exception $e){
-        throw new bException('ssh_create_key_file(): Failed', $e);
-    }
-}
-
-
-
-/*
- * Delete the specified SSH key
- *
- * @author Sven Olaf Oostenbrink <sven@capmega.com>
- * @copyright Copyright (c) 2018 Capmega
- * @license http://opensource.org/licenses/GPL-2.0 GNU Public License, Version 2
- * @category Function reference
- * @package ssh
- *
- * @param string $key_file The SSH key file that must be deleted
- * return boolean True if the specified keyfile was deleted, false if no keyfile was specified
- */
-function ssh_remove_key_file($key_file, $background = false){
-    try{
-        if(!$key_file){
-            return false;
-        }
-
-        $key_file = ROOT.'data/ssh/keys/'.$key_file;
-
-        if($background){
-            safe_exec('{ sleep 5; sudo chmod 0600 '.$key_file.' ; sudo rm -rf '.$key_file.' ; } &');
-
-        }else{
-            chmod($key_file, 0600);
-            file_delete($key_file);
-        }
-
-        return true;
-
-    }catch(Exception $e){
-        throw new bException('ssh_remove_key_file(): Failed', $e);
-    }
-}
-
-
-
-/*
  *
  *
  * @Sven Olaf Oostenbrink <sven@capmega.com>
@@ -888,20 +773,35 @@ function ssh_add_known_host($hostname, $port){
 
         load_libs('file');
         file_ensure_path(ROOT.'data/ssh/keys/', 0750);
+        file_ensure_file(ROOT.'data/ssh/known_hosts', 0640);
 
-        $public_keys = safe_exec('ssh-keyscan -p '.$port.' -H '.$hostname);
+        $hashes = safe_exec('ssh-keyscan -p '.$port.' -H '.$hostname);
+        $count  = 0;
 
-        if(empty($public_keys)){
+        if(empty($hashes)){
             throw new bException(tr('ssh_add_known_host(): ssh-keyscan found no public keys for hostname ":hostname"', array(':hostname' => $hostname)), 'not-found');
         }
 
-        foreach($public_keys as $public_key){
-            if(substr($public_key, 0, 1) != '#'){
-                file_put_contents(ROOT.'data/ssh/known_hosts', $public_key."\n", FILE_APPEND);
+        foreach($hashes as $hash){
+            if(substr($hash, 0, 1) != '#'){
+                /*
+                 * Check if the hash already exists
+                 */
+                $test   = str_from(str_from($hash, ' '), ' ');
+                $exists = safe_exec('grep "'.$test.'" '.ROOT.'data/ssh/known_hosts', '0,1');
+
+                if(!$exists){
+                    log_console(tr('Adding hash ":hash" for hostname ":hostname" to known_hosts', array(':hash' => $hash, ':hostname' => $hostname)), 'VERBOSE');
+                    file_put_contents(ROOT.'data/ssh/known_hosts', $hash."\n", FILE_APPEND);
+                    $count++;
+
+                }else{
+                    log_console(tr('Skipping hash ":hash" for hostname ":hostname", it already exists in known_hosts', array(':hash' => $hash, ':hostname' => $hostname)), 'VERYVERBOSE');
+                }
             }
         }
 
-        return count($public_keys);
+        return $count;
 
     }catch(Exception $e){
         throw new bException('ssh_add_known_host(): Failed', $e);
@@ -1152,7 +1052,7 @@ under_construction();
         /*
          * Execute command
          */
-        return safe_exec('scp '.$server['arguments'].' -P '.$server['port'].' -i '.$key_file.' '.$command.'');
+        return safe_exec('scp '.$server['arguments'].' -P '.$server['port'].' -i '.$identity_file.' '.$command.'');
 
     }catch(Exception $e){
         notify($e);
@@ -1161,7 +1061,7 @@ under_construction();
          * Try deleting the keyfile anyway!
          */
         try{
-            ssh_remove_key_file(isset_get($key_file));
+            ssh_remove_identity_file(isset_get($identity_file));
 
         }catch(Exception $e){
             /*
