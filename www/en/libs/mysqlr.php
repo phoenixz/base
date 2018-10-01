@@ -275,13 +275,13 @@ function mysqlr_master_replication_setup($params){
          */
         log_console(tr('Copying remote dump to SLAVE'), 'DOT');
         safe_exec('rm /tmp/'.$database['database_name'].'.sql.gz -f');
-        ssh_cp($database, '/tmp/'.$database['database_name'].'.sql.gz', '/tmp/', true);
+        mysqlr_scp_database($database, '/tmp/'.$database['database_name'].'.sql.gz', '/tmp/', true);
 
         /*
          * Copy from local to slave server
          */
         servers_exec($slave, 'rm /tmp/'.$database['database_name'].'.sql.gz -f');
-        ssh_cp(array('hostname' => $slave), '/tmp/'.$database['database_name'].'.sql.gz', '/tmp/');
+        mysqlr_scp_database(array('hostname' => $slave), '/tmp/'.$database['database_name'].'.sql.gz', '/tmp/');
         safe_exec('rm /tmp/'.$database['database_name'].'.sql.gz -f');
 
         /*
@@ -845,6 +845,116 @@ function mysqlr_full_backup(){
         
     }catch(Exception $e){
         throw new bException(tr('mysqlr_full_backup(): Failed'), $e);
+    }
+}
+
+
+
+/*
+ * Current available replication statuses
+ * 'enabled','preparing','paused','disabled','error'
+ *
+ * @author Ismael Haro <isma@capmega.com>
+ * @copyright Copyright (c) 2018 Capmega
+ * @license http://opensource.org/licenses/GPL-2.0 GNU Public License, Version 2
+ * @category Function reference
+ * @package mysqlr
+ *
+ * @param
+ * @return
+ */
+function mysqlr_scp_database($server, $source, $destnation, $from_server = false){
+    try{
+        array_params($server);
+        array_default($server, 'server'       , '');
+        array_default($server, 'hostname'     , '');
+        array_default($server, 'ssh_key'      , '');
+        array_default($server, 'port'         , 22);
+        array_default($server, 'hostkey_check', false);
+        array_default($server, 'arguments'    , '');
+
+        /*
+         * If server was specified by just name, then lookup the server data in
+         * the database
+         */
+        if($server['hostname']){
+            $dbserver = sql_get('SELECT    `ssh_accounts`.`username`,
+                                           `ssh_accounts`.`ssh_key`,
+                                           `servers`.`id`,
+                                           `servers`.`hostname`,
+                                           `servers`.`port`
+
+                                 FROM      `servers`
+
+                                 LEFT JOIN `ssh_accounts`
+                                 ON        `ssh_accounts`.`id`  = `servers`.`ssh_accounts_id`
+
+                                 WHERE     `servers`.`hostname` = :hostname', array(':hostname' => $server['hostname']));
+
+            if(!$dbserver){
+                throw new bException(tr('mysqlr_scp_database(): Specified server ":server" does not exist', array(':server' => $server['server'])), 'not-exist');
+            }
+
+            $server = sql_merge($server, $dbserver);
+        }
+
+        if(!$server['hostkey_check']){
+            $server['arguments'] .= ' -o StrictHostKeyChecking=no -o UserKnownHostsFile='.ROOT.'data/ssh/known_hosts ';
+        }
+
+        /*
+         * Ensure that ssh/keys directory exists and that its safe
+         */
+        load_libs('file');
+        file_ensure_path(ROOT.'data/ssh/keys');
+        chmod(ROOT.'data/ssh', 0770);
+
+        /*
+         * Safely create SSH key file
+         */
+        $keyfile = ROOT.'data/ssh/keys/'.str_random(8);
+
+        touch($keyfile);
+        chmod($keyfile, 0600);
+        file_put_contents($keyfile, $server['ssh_key'], FILE_APPEND);
+        chmod($keyfile, 0400);
+
+        if($from_server){
+            $command = $server['username'].'@'.$server['hostname'].':'.$source.' '.$destnation;
+
+        }else{
+            $command = $source.' '.$server['username'].'@'.$server['hostname'].':'.$destnation;
+        }
+
+        /*
+         * Execute command
+         */
+        $result = safe_exec('scp '.$server['arguments'].' -P '.$server['port'].' -i '.$keyfile.' '.$command.'');
+        chmod($keyfile, 0600);
+        file_delete($keyfile);
+
+        return $result;
+
+    }catch(Exception $e){
+        notify(tr('mysqlr_scp_database() exception'), $e, 'developers');
+
+                /*
+         * Try deleting the keyfile anyway!
+         */
+        try{
+            if(!empty($keyfile)){
+                safe_exec(chmod($keyfile, 0600));
+                file_delete($keyfile);
+            }
+
+        }catch(Exception $e){
+            /*
+             * Cannot be deleted, just ignore and notify
+             */
+            notify(tr('mysqlr_scp_database() cannot delete key'), $e, 'developers');
+        }
+
+        throw new bException(tr('mysqlr_scp_database(): Failed'), $e);
     }
 }
 
