@@ -37,7 +37,7 @@ try{
     /*
      *
      */
-    log_console(tr('Executing command ":command"', array(':command' => $command)), 'VERBOSE/cyan');
+    log_console(tr('Executing command ":command" using function ":function"', array(':command' => $command, ':function' => $function)), 'VERBOSE/cyan');
 
     switch($function){
         case 'exec':
@@ -61,7 +61,7 @@ try{
 
             $exitcode = null;
             $lastline = '';
-            $output   = shell_exec($command);
+            $output   = array(shell_exec($command));
             break;
 
         case 'passthru':
@@ -84,6 +84,10 @@ try{
                 $lastline = system($command.($route_errors ? ' 2>&1 3>&1' : ''), $exitcode);
             }
 
+            break;
+
+        case 'pcntl_exec':
+under_construction();
             break;
 
         default:
