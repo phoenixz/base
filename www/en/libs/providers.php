@@ -216,7 +216,7 @@ function providers_select($params = null){
             $where = ' WHERE '.implode(' AND ', $where).' ';
         }
 
-        $query              = 'SELECT `seoname`, `name` FROM `providers` '.$where.' ORDER BY `name`';
+        $query              = 'SELECT `seoname`, `name` FROM `providers` '.$where.' ORDER BY '.$params['orderby'];
         $params['resource'] = sql_query($query, $execute);
         $retval             = html_select($params);
 

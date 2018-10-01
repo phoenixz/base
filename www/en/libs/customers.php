@@ -350,7 +350,7 @@ function customers_select($params = null){
             $where = ' WHERE '.implode(' AND ', $where).' ';
         }
 
-        $query              = 'SELECT `seoname`, `name` FROM `customers` '.$where.' ORDER BY `name`';
+        $query              = 'SELECT `seoname`, `name` FROM `customers` '.$where.' ORDER BY '.$params['orderby'];
         $params['resource'] = sql_query($query, $execute);
         $retval             = html_select($params);
 
