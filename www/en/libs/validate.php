@@ -734,11 +734,27 @@ class validate_form {
 
 
     /*
+     *
+     */
+    function isDomain(&$value, $message = null, $flags = null){
+        try{
+            return $this->isFilter($value, FILTER_VALIDATE_DOMAIN, $message, $flags);
+
+        }catch(Exception $e){
+            throw new bException('validate_form::isDomain(): Failed', $e);
+        }
+    }
+
+
+
+    /*
      * Apply specified filter
      *
      * See http://php.net/manual/en/filter.filters.validate.php
      *
      * Valid filters (with optional flags):
+     * FILTER_VALIDATE_DOMAIN
+     *      FILTER_FLAG_HOSTNAME
      * FILTER_VALIDATE_BOOLEAN
      *      FILTER_NULL_ON_FAILURE
      * FILTER_VALIDATE_EMAIL
