@@ -52,11 +52,10 @@ function servers_validate($server, $password_strength = true){
     try{
         load_libs('validate,file,seo,customers,providers');
 
-        $v = new validate_form($server, 'ipv4,ipv6,port,hostname,seoprovider,seocustomer,ssh_account,description,ssh_proxy,database_accounts_id');
+        $v = new validate_form($server, 'ipv4,ipv6,port,hostname,hostnames,seoprovider,seocustomer,ssh_account,description,ssh_proxy,database_accounts_id');
         $v->isNotEmpty($server['ssh_account'], tr('Please specifiy an SSH account'));
         $v->isNotEmpty($server['hostname']   , tr('Please specifiy a hostnames'));
         $v->isNotEmpty($server['port']       , tr('Please specifiy a port'));
-        $v->isNotEmpty($server['seoprovider'], tr('Please specifiy a provider'));
         $v->isNotEmpty($server['seocustomer'], tr('Please specifiy a customer'));
 
         /*
@@ -105,7 +104,30 @@ function servers_validate($server, $password_strength = true){
         /*
          * IPv4 check
          */
-        $v->isFilter($server['ipv4'], FILTER_VALIDATE_IP, tr('Please specify a valid IP address'));
+        if($server['ipv4']){
+            /*
+             * IP was specified manually
+             */
+            $v->isFilter($server['ipv4'], FILTER_VALIDATE_IP, tr('Please specify a valid IP address'));
+
+        }else{
+            /*
+             * IP not specified, try to lookup
+             */
+            $server['ipv4'] = gethostbynamel($server['hostname']);
+
+            if(!$server['ipv4']){
+                $server['ipv4'] = null;
+
+            }else{
+                if(count($server['ipv4']) == 1){
+                    $server['ipv4'] = array_shift($server['ipv4']);
+
+                }else{
+                    $v->isFilter($server['ipv4'], FILTER_VALIDATE_IP, tr('Failed to auto lookup IPv4, please specify a valid IP address'));
+                }
+            }
+        }
 
         /*
          * Port check
@@ -119,6 +141,21 @@ function servers_validate($server, $password_strength = true){
             $v->setError(tr('Specified port ":port" is not valid', array(':port' => $server['port'])));
         }
 
+        if($server['hostnames']){
+            $v->isScalar($server['hostnames'], tr('Please specify valid hostnames'));
+
+            $server['hostnames'] = explode("\n", $server['hostnames']);
+
+            foreach($server['hostnames'] as &$hostname){
+                $v->isAlphaNumeric($hostname, tr('Please specify valid alternative hostnames'), VALIDATE_IGNORE_DOT|VALIDATE_IGNORE_DASH);
+            }
+
+            $server['hostnames'][] = $server['hostname'];
+            $server['hostnames']   = array_unique($server['hostnames']);
+        }
+
+        $v->isValid();
+
         /*
          * Validate provider, customer, and ssh account
          */
@@ -130,7 +167,8 @@ function servers_validate($server, $password_strength = true){
             }
 
         }else{
-            $v->setError(tr('Please specify a provider'));
+            $server['providers_id'] = null;
+            //$v->setError(tr('Please specify a provider'));
         }
 
         if($server['seocustomer']){
@@ -179,6 +217,109 @@ function servers_validate($server, $password_strength = true){
 
 
 /*
+ * Return HTML for a servers select box
+ *
+ * This function will generate HTML for an HTML select box using html_select() and fill it with the available servers
+ *
+ * @author Sven Olaf Oostenbrink <sven@capmega.com>
+ * @copyright Copyright (c) 2018 Capmega
+ * @license http://opensource.org/licenses/GPL-2.0 GNU Public License, Version 2
+ * @provider Function reference
+ * @package servers
+ *
+ * @param array $params The parameters required
+ * @paramkey $params name
+ * @paramkey $params class
+ * @paramkey $params extra
+ * @paramkey $params tabindex
+ * @paramkey $params empty
+ * @paramkey $params none
+ * @paramkey $params selected
+ * @paramkey $params parents_id
+ * @paramkey $params status
+ * @paramkey $params orderby
+ * @paramkey $params resource
+ * @return string HTML for a servers select box within the specified parameters
+ */
+function servers_select($params = null){
+    try{
+        array_ensure($params);
+        array_default($params, 'name'         , 'seoserver');
+        array_default($params, 'class'        , 'form-control');
+        array_default($params, 'selected'     , null);
+        array_default($params, 'status'       , null);
+        array_default($params, 'empty'        , tr('No servers available'));
+        array_default($params, 'none'         , tr('Select a server'));
+        array_default($params, 'tabindex'     , 0);
+        array_default($params, 'extra'        , 'tabindex="'.$params['tabindex'].'"');
+        array_default($params, 'orderby'      , '`hostname`');
+
+        if($params['status'] !== false){
+            $where[] = ' `status` '.sql_is($params['status']).' :status ';
+            $execute[':status'] = $params['status'];
+        }
+
+        if(empty($where)){
+            $where = '';
+
+        }else{
+            $where = ' WHERE '.implode(' AND ', $where).' ';
+        }
+
+        $query              = 'SELECT `seohostname`, `hostname` FROM `servers` '.$where.' ORDER BY '.$params['orderby'];
+        $params['resource'] = sql_query($query, $execute);
+        $retval             = html_select($params);
+
+        return $retval;
+
+    }catch(Exception $e){
+        throw new bException('servers_select(): Failed', $e);
+    }
+}
+
+
+
+/*
+ * Update the hostnames list for the specified server
+ *
+ * @author Sven Olaf Oostenbrink <sven@capmega.com>
+ * @copyright Copyright (c) 2018 Capmega
+ * @license http://opensource.org/licenses/GPL-2.0 GNU Public License, Version 2
+ * @category Function reference
+ * @package servers
+ *
+ * @param integer $servers_id
+ * @param array $hostnames
+ *
+ * @return integer The amount of hostnames added
+ */
+function servers_update_hostnames($servers_id, $hostnames){
+    try{
+        sql_query('DELETE FROM `servers_hostnames` WHERE `servers_id` = :servers_id', array(':servers_id' => $servers_id));
+
+        if(!$hostnames){
+            return false;
+        }
+
+        $insert  = sql_prepare('INSERT INTO `servers_hostnames` (`meta_id`, `servers_id`, `hostname`)
+                                VALUES                          (:meta_id , :servers_id , :hostname )');
+
+        foreach($hostnames as $hostname){
+            $insert->execute(array(':meta_id'    => meta_action(),
+                                   ':servers_id' => $servers_id,
+                                   ':hostname'   => $hostname));
+        }
+
+        return count($hostnames);
+
+    }catch(Exception $e){
+        throw new bException('servers_update_hostnames(): Failed', $e);
+    }
+}
+
+
+
+/*
  * Execute the specified commands on the specified server using ssh_exec() and return the results.
  *
  * If server is specified as an array, servers_exec() will assume the server data is available and send it directly to ssh_exec(). If server is specified as a string or integer, servers_exec() will look up the server in the database by either servers_id or hostname, and if found, use that server data to send the commands to ssh_exec()
@@ -196,14 +337,12 @@ function servers_validate($server, $password_strength = true){
  * @return array The results of the executed SSH commands in an array, each entry containing one line of the output
  * @see ssh_exec()
  */
-function servers_exec($server, $commands, $background = false, $function = 'exec'){
+function servers_exec($server, $commands = null, $background = false, $function = null){
     try{
-        array_ensure($server);
+        array_params($server, 'hostname');
         array_default($server, 'hostkey_check', true);
         array_default($server, 'background'   , $background);
         array_default($server, 'commands'     , $commands);
-
-        load_libs('ssh');
 
         if($server){
             if(!is_scalar($server) and !is_array($server)){
@@ -215,7 +354,7 @@ function servers_exec($server, $commands, $background = false, $function = 'exec
                  * Server is specified either by hostname, or in array without the required identity file. Load all server data from database
                  */
                 $requested = $server;
-                $server    = servers_get($server);
+                $server    = servers_get($server, false, true, false, true);
 
                 if(!$server){
                     /*
@@ -251,7 +390,6 @@ function servers_exec($server, $commands, $background = false, $function = 'exec
          * Execute command on remote server
          */
         $results = ssh_exec($server, null, false, $function);
-        servers_remove_identity_file($identity_file);
         return $results;
 
     }catch(Exception $e){
@@ -362,7 +500,7 @@ function servers_get($server, $database = false, $return_proxies = true, $limite
         }else{
             $query = 'SELECT `servers`.`id`,
                              `servers`.`createdon`,
-                             `servers`.`modifiedon`,
+                             `servers`.`meta_id`,
                              `servers`.`port`,
                              `servers`.`cost`,
                              `servers`.`status`,
@@ -378,11 +516,11 @@ function servers_get($server, $database = false, $return_proxies = true, $limite
 
                              `createdby`.`name`   AS `createdby_name`,
                              `createdby`.`email`  AS `createdby_email`,
-                             `modifiedby`.`name`  AS `modifiedby_name`,
-                             `modifiedby`.`email` AS `modifiedby_email`,
 
-                             `providers`.`seoname`    AS `provider`,
-                             `customers`.`seoname`    AS `customer`,
+                             `providers`.`name`       AS `provider`,
+                             `customers`.`name`       AS `customer`,
+                             `providers`.`seoname`    AS `seoprovider`,
+                             `customers`.`seoname`    AS `seocustomer`,
                              `ssh_accounts`.`seoname` AS `ssh_account`,
 
                              `ssh_accounts`.`username`,
@@ -393,9 +531,6 @@ function servers_get($server, $database = false, $return_proxies = true, $limite
 
                    LEFT JOIN `users` AS `createdby`
                    ON        `servers`.`createdby`       = `createdby`.`id`
-
-                   LEFT JOIN `users` AS `modifiedby`
-                   ON        `servers`.`modifiedby`      = `modifiedby`.`id`
 
                    LEFT JOIN `providers`
                    ON        `providers`.`id`            = `servers`.`providers_id`
@@ -430,10 +565,17 @@ function servers_get($server, $database = false, $return_proxies = true, $limite
 
             }elseif(is_scalar($server['hostname'])){
                 /*
-                 * Host specified by id
+                 * Host specified by hostname
                  */
-                $where   = ' WHERE `servers`.`hostname` = :hostname';
-                $execute = array(':hostname' => $server['hostname']);
+                if(substr($server['hostname'], 0, 1) === '*'){
+                    $server['hostname']  = substr($server['hostname'], 1);
+                    $where               = ' WHERE `servers`.`hostname` LIKE :hostname';
+                    $execute             = array(':hostname' => '%'.$server['hostname'].'%');
+
+                }else{
+                    $where   = ' WHERE `servers`.`hostname` = :hostname';
+                    $execute = array(':hostname' => $server['hostname']);
+                }
 
             }else{
                 throw new bException(tr('servers_get(): Specified server array hostname should be a natural numeric id or a hostname, but is a ":type"', array(':type' => gettype($server['hostname']))), 'invalid');
@@ -470,30 +612,34 @@ function servers_get($server, $database = false, $return_proxies = true, $limite
 
         $dbserver = sql_get($query.$from.$where, $execute);
 
-        if($dbserver and $return_proxies){
-            $dbserver['proxies'] = array();
+        if($dbserver){
+            $dbserver['hostnames'] = sql_list('SELECT `id`, `hostname` FROM `servers_hostnames` WHERE `servers_id` = :servers_id AND `status` IS NULL', array(':servers_id' => $dbserver['id']));
 
-            $dbserver_proxy = servers_get_proxy($dbserver['id']);
+            if($return_proxies){
+                $dbserver['proxies'] = array();
 
-            if($dbserver_proxy){
-                $dbserver['proxies'][] = $dbserver_proxy;
-                $proxy                 = $dbserver_proxy['proxies_id'];
+                $dbserver_proxy = servers_get_proxy($dbserver['id']);
 
-                while($proxy){
-                    $dbserver_proxy = servers_get_proxy($proxy);
-                    $proxy          = false;
+                if($dbserver_proxy){
+                    $dbserver['proxies'][] = $dbserver_proxy;
+                    $proxy                 = $dbserver_proxy['proxies_id'];
 
-                    if(!empty($dbserver_proxy)){
-                        $dbserver['proxies'][] = $dbserver_proxy;
-                        $proxy                 = $dbserver_proxy['proxies_id'];
+                    while($proxy){
+                        $dbserver_proxy = servers_get_proxy($proxy);
+                        $proxy          = false;
+
+                        if(!empty($dbserver_proxy)){
+                            $dbserver['proxies'][] = $dbserver_proxy;
+                            $proxy                 = $dbserver_proxy['proxies_id'];
+                        }
                     }
+
+                    $dbserver['proxies'] = array_filter($dbserver['proxies']);
                 }
 
-                $dbserver['proxies'] = array_filter($dbserver['proxies']);
-            }
-
-            if(is_array($server)){
-                $dbserver = array_merge($server, $dbserver);
+                if(is_array($server)){
+                    $dbserver = array_merge($server, $dbserver);
+                }
             }
         }
 
@@ -522,11 +668,11 @@ function servers_get($server, $database = false, $return_proxies = true, $limite
  * @param mixed $server
  * @return
  */
-function servers_test($server){
+function servers_test($hostname){
     try{
         sql_query('UPDATE `servers` SET `status` = "testing" WHERE `hostname` = :hostname', array(':hostname' => $hostname));
 
-        $result = servers_exec($server, 'echo 1');
+        $result = servers_exec($hostname, 'echo 1');
         $result = array_pop($result);
 
         if($result != '1'){
@@ -614,6 +760,8 @@ function servers_clear_key(&$server){
  * return string $identity_file The created keyfile
  */
 function servers_create_identity_file($ssh_key){
+    global $core;
+
     try{
         /*
          * Ensure that ssh/keys directory exists and that its safe
@@ -631,6 +779,8 @@ function servers_create_identity_file($ssh_key){
         chmod($identity_file, 0600);
         file_put_contents($identity_file, $ssh_key, FILE_APPEND);
         chmod($identity_file, 0400);
+
+        $core->register('shutdown_servers_remove_identity_file', array($identity_file));
 
         return substr($identity_file, -8, 8);
 
@@ -661,12 +811,14 @@ function servers_remove_identity_file($identity_file, $background = false){
 
         $identity_file = ROOT.'data/ssh/keys/'.$identity_file;
 
-        if($background){
-            safe_exec('{ sleep 5; sudo chmod 0600 '.$identity_file.' ; sudo rm -rf '.$identity_file.' ; } &');
+        if(file_exists($identity_file)){
+            if($background){
+                safe_exec('{ sleep 5; sudo chmod 0600 '.$identity_file.' ; sudo rm -rf '.$identity_file.' ; } &');
 
-        }else{
-            chmod($identity_file, 0600);
-            file_delete($identity_file);
+            }else{
+                chmod($identity_file, 0600);
+                file_delete($identity_file);
+            }
         }
 
         return true;

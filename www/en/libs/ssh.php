@@ -55,13 +55,22 @@ function ssh_library_init(){
  * @param string $ok_exitcodes
  * @return array The results of the executed SSH commands in an array, each entry containing one line of the output
  */
-function ssh_exec($server, $commands = null, $background = false, $function = 'exec', $ok_exitcodes = 0){
-    global $core;
+function ssh_exec($server, $commands = null, $background = false, $function = null, $ok_exitcodes = 0){
+    global $core, $_CONFIG;
 
     try{
+        if($function === null){
+            $function = $_CONFIG['ssh']['function'];
+        }
+
+        /*
+         * Ensure valid server variable
+         * If $server is a string, the load server information from servers
+         * table
+         */
         if(!is_array($server)){
-            if(!scalar($server)){
-                throw new bException(tr('ssh_exec(): Invalid $server specified. $server must '), '');
+            if(!is_scalar($server)){
+                throw new bException(tr('ssh_exec(): Invalid $server specified. $server must be either a hostname, or server array'), 'invalid');
             }
 
             load_libs('servers');
@@ -69,23 +78,18 @@ function ssh_exec($server, $commands = null, $background = false, $function = 'e
         }
 
         array_default($server, 'hostname'     , null);
-        array_default($server, 'hostname'     , null);
         array_default($server, 'identity_file', null);
         array_default($server, 'commands'     , $commands);
         array_default($server, 'background'   , $background);
         array_default($server, 'proxies'      , null);
 
         /*
-         * Validate that for hostnames we have a username and identity_file available
+         * If $server[hostname] is available without identity file, then load
+         * server data from server table
          */
-        if(!empty($server['hostname'])){
-            if(empty($server['username'])){
-                throw new bException(tr('ssh_exec(): No username specified'), 'not-specified');
-            }
-
-            if(empty($server['identity_file'])){
-                throw new bException(tr('ssh_exec(): No "ssh_key" or "identity_file" specified'), 'not-specified');
-            }
+        if(empty($server['identity_file'])){
+            load_libs('servers');
+            return servers_exec($server, $commands, $background, $function, $ok_exitcodes);
         }
 
         /*
@@ -165,8 +169,19 @@ function ssh_build_command(&$server = null, $ssh_command = 'ssh'){
     global $_CONFIG;
 
     try{
+        /*
+         * Validate minimum requirements
+         */
         if(empty($server['hostname'])){
             throw new bException(tr('ssh_build_command(): No hostname specified'), 'not-specified');
+        }
+
+        if(empty($server['username'])){
+            throw new bException(tr('ssh_build_command(): No username specified'), 'not-specified');
+        }
+
+        if(empty($server['identity_file'])){
+            throw new bException(tr('ssh_build_command(): No identity_file specified'), 'not-specified');
         }
 
         /*
@@ -179,6 +194,8 @@ function ssh_build_command(&$server = null, $ssh_command = 'ssh'){
          * "tunnel" option requires (and automatically assumes) no_command, background, and remote_connect
          */
         if(!empty($server['tunnel'])){
+//            $server['commands']        = 'true';
+//            $server['goto_background'] = true;
             $server['background']      = true;
             $server['no_command']      = true;
             $server['remote_connect']  = true;
@@ -417,12 +434,7 @@ function ssh_build_command(&$server = null, $ssh_command = 'ssh'){
         /*
          * Add the target server
          */
-        if($server['username']){
-            $command .= ' "'.$server['username'].'@'.$server['hostname'].'"';
-
-        }else{
-            $command .= ' "'.$server['hostname'].'"';
-        }
+        $command .= ' "'.$server['username'].'@'.$server['hostname'].'"';
 
         if(isset_get($server['commands'])){
             $command .= ' "'.$server['commands'].'"';
@@ -810,126 +822,126 @@ function ssh_add_known_host($hostname, $port){
 
 
 
-/*
- *
- *
- * @Sven Olaf Oostenbrink <sven@capmega.com>
- * @copyright Copyright (c) 2018 Capmega
- * @license http://opensource.org/licenses/GPL-2.0 GNU Public License, Version 2
- * @category Function reference
- * @package ssh
- *
- * @param
- */
-function ssh_read_server_config($server){
-    try{
-        $retval = array();
-        $config = ssh_exec($server, 'cat /etc/ssh/sshd_config');
-
-        foreach($config as $line){
-            $key    = str_until($line, ' ');
-            $values = str_from($line, ' ');
-
-            $retval[$key] = $config;
-        }
-
-        return $retval;
-
-    }catch(Exception $e){
-        throw new bException('ssh_read_server_config(): Failed', $e);
-    }
-}
-
-
-
-/*
- *
- *
- * @Sven Olaf Oostenbrink <sven@capmega.com>
- * @copyright Copyright (c) 2018 Capmega
- * @license http://opensource.org/licenses/GPL-2.0 GNU Public License, Version 2
- * @category Function reference
- * @package ssh
- *
- * @param
- */
-function ssh_write_server_config($server, $config){
-    try{
-        foreach($config as $key => $value){
-            $data = $key.' '.$value."\n";
-        }
-
-        ssh_exec($server, 'sudo cat > /etc/ssh/sshd_config << EOF '.$data);
-
-    }catch(Exception $e){
-        throw new bException('ssh_write_server_config(): Failed', $e);
-    }
-}
-
-
-
-/*
- * Validate sshd_config data
- *
- * @Sven Olaf Oostenbrink <sven@capmega.com>
- * @copyright Copyright (c) 2018 Capmega
- * @license http://opensource.org/licenses/GPL-2.0 GNU Public License, Version 2
- * @category Function reference
- * @package ssh
- *
- * @param array $entries
- * @return array The validated data
- */
-function ssh_validate_server_config($entries){
-    try{
-// :TODO: Implement
-
-        return $entries;
-
-    }catch(Exception $e){
-        throw new bException('ssh_validate_server_config(): Failed', $e);
-    }
-}
-
-
-
-/*
- *
- *
- * @Sven Olaf Oostenbrink <sven@capmega.com>
- * @copyright Copyright (c) 2018 Capmega
- * @license http://opensource.org/licenses/GPL-2.0 GNU Public License, Version 2
- * @category Function reference
- * @package ssh
- *
- * @param string $hostname
- * @param array $config
- */
-function ssh_update_config($hostname, $config){
-    try{
-        $config        = ssh_validate_server_config($config);
-        $server_config = ssh_read_server_config($hostname);
-
-        foreach($config as $key => $values){
-// :TODO: Just WTF was this in the first place?
-            //$comments = '';
-            //
-            //if(isset($values['description'])){
-            //    $comments = '#'.$values['description']."\n";
-            //}
-            //
-            //$server_config[$key] = preg_replace('/'.$key.'\s+(\d+|\w+)|#'.$key.'\s+(\d+|\w+)/', $comments.$key." ".$values, $values);
-            $server_config[$key] = $values;
-        }
-
-        ssh_write_server_config($hostname, $server_config);
-
-        return $server_config;
-
-    }catch(Exception $e){
-        throw new bException('ssh_update_config(): Failed', $e);
-    }
-}
+///*
+// *
+// *
+// * @Sven Olaf Oostenbrink <sven@capmega.com>
+// * @copyright Copyright (c) 2018 Capmega
+// * @license http://opensource.org/licenses/GPL-2.0 GNU Public License, Version 2
+// * @category Function reference
+// * @package ssh
+// *
+// * @param
+// */
+//function ssh_read_server_config($server){
+//    try{
+//        $retval = array();
+//        $config = ssh_exec($server, 'cat /etc/ssh/sshd_config');
+//
+//        foreach($config as $line){
+//            $key    = str_until($line, ' ');
+//            $values = str_from($line, ' ');
+//
+//            $retval[$key] = $config;
+//        }
+//
+//        return $retval;
+//
+//    }catch(Exception $e){
+//        throw new bException('ssh_read_server_config(): Failed', $e);
+//    }
+//}
+//
+//
+//
+///*
+// *
+// *
+// * @Sven Olaf Oostenbrink <sven@capmega.com>
+// * @copyright Copyright (c) 2018 Capmega
+// * @license http://opensource.org/licenses/GPL-2.0 GNU Public License, Version 2
+// * @category Function reference
+// * @package ssh
+// *
+// * @param
+// */
+//function ssh_write_server_config($server, $config){
+//    try{
+//        foreach($config as $key => $value){
+//            $data = $key.' '.$value."\n";
+//        }
+//
+//        ssh_exec($server, 'sudo cat > /etc/ssh/sshd_config << EOF '.$data);
+//
+//    }catch(Exception $e){
+//        throw new bException('ssh_write_server_config(): Failed', $e);
+//    }
+//}
+//
+//
+//
+///*
+// * Validate sshd_config data
+// *
+// * @Sven Olaf Oostenbrink <sven@capmega.com>
+// * @copyright Copyright (c) 2018 Capmega
+// * @license http://opensource.org/licenses/GPL-2.0 GNU Public License, Version 2
+// * @category Function reference
+// * @package ssh
+// *
+// * @param array $entries
+// * @return array The validated data
+// */
+//function ssh_validate_server_config($entries){
+//    try{
+//// :TODO: Implement
+//
+//        return $entries;
+//
+//    }catch(Exception $e){
+//        throw new bException('ssh_validate_server_config(): Failed', $e);
+//    }
+//}
+//
+//
+//
+///*
+// *
+// *
+// * @Sven Olaf Oostenbrink <sven@capmega.com>
+// * @copyright Copyright (c) 2018 Capmega
+// * @license http://opensource.org/licenses/GPL-2.0 GNU Public License, Version 2
+// * @category Function reference
+// * @package ssh
+// *
+// * @param string $hostname
+// * @param array $config
+// */
+//function ssh_update_config($hostname, $config){
+//    try{
+//        $config        = ssh_validate_server_config($config);
+//        $server_config = ssh_read_server_config($hostname);
+//
+//        foreach($config as $key => $values){
+//// :TODO: Just WTF was this in the first place?
+//            //$comments = '';
+//            //
+//            //if(isset($values['description'])){
+//            //    $comments = '#'.$values['description']."\n";
+//            //}
+//            //
+//            //$server_config[$key] = preg_replace('/'.$key.'\s+(\d+|\w+)|#'.$key.'\s+(\d+|\w+)/', $comments.$key." ".$values, $values);
+//            $server_config[$key] = $values;
+//        }
+//
+//        ssh_write_server_config($hostname, $server_config);
+//
+//        return $server_config;
+//
+//    }catch(Exception $e){
+//        throw new bException('ssh_update_config(): Failed', $e);
+//    }
+//}
 
 
 
@@ -1096,13 +1108,25 @@ under_construction();
 function ssh_tunnel($params){
     try{
         array_ensure ($params, 'hostname,source_port,target_port');
-        array_default($params, 'tunnel', 'localhost');
+        array_default($params, 'tunnel'  , 'localhost');
+
+        /*
+         * Ensure port is available.
+         */
+        $in_use = safe_exec('netstat -lnt | grep 127.0.0.1 | grep '.$params['source_port'], '0,1');
+
+        if($in_use){
+            throw new bException(tr('ssh_tunnel(): Source port ":port" is already in use', array(':port' => $params['source_port'])), 'not-available');
+        }
 
         $params['tunnel'] = array('source_port'     => $params['source_port'],
                                   'target_hostname' => $params['target_hostname'],
                                   'target_port'     => $params['target_port']);
 
-        return ssh_exec($params);
+        $retval = ssh_exec($params, null, false, 'exec');
+        log_console(tr('Created SSH tunnel ":source_port::target_hostname::target_port', array(':source_port' => $params['source_port'], ':target_hostname' => $params['target_hostname'], ':target_port' => $params['target_port'])), 'VERYVERBOSE');
+
+        return $retval;
 
     }catch(Exception $e){
         throw new bException('ssh_tunnel(): Failed', $e);
