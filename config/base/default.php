@@ -96,7 +96,7 @@ $_CONFIG['cdn']                = array('min'                                => t
 $_CONFIG['charset']            = 'UTF-8';                                                                                               // The default character set for this website (Will be used in meta charset tag)
 
 // Client configuration
-$_CONFIG['client']             = array('detect'                             => true);
+$_CONFIG['client']             = array('detect'                             => 'lite');                                                 // If client detection should be performed. false if not, one of "full", "normal" or "lite" if detection should happen, and what type of detection
 
 // PHP composer configuration
 $_CONFIG['composer']           = array('global'                             => false);
@@ -147,7 +147,7 @@ $_CONFIG['db']                 = array('default'                            => '
                                                                                      'pdo_attributes'   => array(),                         // Special PDO otions. By default, try to use MySQLND with PDO::ATTR_EMULATE_PREPARES to avoid internal data type changes from int > string!
                                                                                      //'pdo_attributes'   => array(PDO::ATTR_EMULATE_PREPARES  => false,  // Special PDO otions. By default, try to use MySQLND with PDO::ATTR_EMULATE_PREPARES to avoid internal data type changes from int > string!
                                                                                      //                            PDO::ATTR_STRINGIFY_FETCHES => false, ),
-                                                                                     'timezone'         => 'America/Mexico_City'));         // Default timezone to use
+                                                                                     'timezone'         => 'UTC'));                         // Default timezone to use
 
 //domain
 $_CONFIG['domain']             = 'auto';                                                                                                    // The base domain of this website. for example, "mywebsite.com",  "thisismine.com.mx", etc. If set to "auto" it will use $_SERVER[SERVER_NAME]
