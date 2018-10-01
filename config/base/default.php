@@ -96,7 +96,7 @@ $_CONFIG['cdn']                = array('min'                                => t
 $_CONFIG['charset']            = 'UTF-8';                                                                                               // The default character set for this website (Will be used in meta charset tag)
 
 // Client configuration
-$_CONFIG['client']             = array('detect'                             => 'lite');                                                 // If client detection should be performed. false if not, one of "full", "normal" or "lite" if detection should happen, and what type of detection
+$_CONFIG['client']             = array('detect'                             => false);                                                  // If client detection should be performed. false if not, one of "full", "normal" or "lite" if detection should happen, and what type of detection
 
 // PHP composer configuration
 $_CONFIG['composer']           = array('global'                             => false);
