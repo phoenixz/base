@@ -211,6 +211,7 @@ function mysql_get_database($db_name){
         $database = sql_get('SELECT    `databases`.`id`,
                                        `databases`.`id` AS `databases_id`,
                                        `databases`.`servers_id`,
+                                       `databases`.`projects_id`,
                                        `databases`.`status`,
                                        `databases`.`replication_status`,
                                        `databases`.`name` AS `database_name`,

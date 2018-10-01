@@ -75,10 +75,12 @@ function mysqlr_update_server_replication_status($params, $status){
                 sql_query('UPDATE `servers` SET `replication_lock` = :replication_lock WHERE `id` = :id', array(':replication_lock' => 1, ':id' => $params['servers_id']));
                 break;
 
+            case 'error':
+                // FALLTHROUGH
             case 'disabled_lock':
                 // FALLTHROUGH
             case 'enabled':
-                sql_query('UPDATE `servers` SET `replication_lock`   = :replication_lock   WHERE `id` = :id', array(':replication_lock' => 0, ':id' => $params['servers_id']));
+                sql_query('UPDATE `servers` SET `replication_lock`   = :replication_lock   WHERE `id` = :id', array(':replication_lock'   => 0      , ':id' => $params['servers_id']));
                 sql_query('UPDATE `servers` SET `replication_status` = :replication_status WHERE `id` = :id', array(':replication_status' => $status, ':id' => $params['servers_id']));
                 break;
 
@@ -86,6 +88,7 @@ function mysqlr_update_server_replication_status($params, $status){
                 /*
                  * No action
                  */
+                sql_query('UPDATE `servers` SET `replication_lock`   = :replication_lock   WHERE `id` = :id', array(':replication_lock'   => 0      , ':id' => $params['servers_id']));
                 sql_query('UPDATE `servers` SET `replication_status` = :replication_status WHERE `id` = :id', array(':replication_status' => $status, ':id' => $params['servers_id']));
                 break;
 
@@ -151,6 +154,8 @@ function mysqlr_update_replication_status($params, $status){
             case 'paused':
                 // FALLTHROUGH
             case 'disabled':
+                // FALLTHROUGH
+            case 'error':
                 // FALLTHROUGH
             case 'enabled':
                 sql_query('UPDATE `servers` SET `replication_lock` = :replication_lock WHERE `id` = :id', array(':replication_lock' => 0, ':id' => $params['servers_id']));
@@ -574,71 +579,6 @@ function mysqlr_resume_replication($db, $restart_mysql = true){
  *
  * @param
  */
-// :TODO: Implement disable replication
-//function mysqlr_disable_replication($db){
-//    global $_CONFIG;
-//
-//    try{
-//        load_libs('mysql');
-//
-//        /*
-//         * Check Slave hostname
-//         */
-//        $slave = $_CONFIG['mysqlr']['hostname'];
-//
-//        if(empty($slave)){
-//            throw new bException(tr('mysqlr_disable_replication(): MySQL Configuration for replicator hostname is not set'), 'not-specified');
-//        }
-//
-//        /*
-//         * Check if this server exist
-//         */
-//        $database = mysql_get_database($db);
-//
-//        if(empty($database)){
-//            throw new bException(tr('mysqlr_disable_replication(): The specified database :database does not exist', array(':database' => $database)), 'not-exist');
-//        }
-//
-//        /*
-//         * Get MySQL configuration path
-//         */
-//        load_libs('ssh,servers');
-//        $mysql_cnf_path = mysqlr_check_configuration_path($slave);
-//
-//        /*
-//         * Comment the database for replication
-//         */
-//        servers_exec($slave, 'sudo sed -i "s/binlog_do_db = '.$database['database_name'].'//" '.$mysql_cnf_path);
-//
-//        /*
-//         * Close PDO connection before restarting MySQL
-//         */
-//        log_console(tr('Restarting Slave MySQL service'), 'DOT');
-//        servers_exec($slave, 'sudo service mysql restart');
-//
-//        log_console(tr('Disabled replication for database :database', array(':database' => $database['database_name'])), 'DOT');
-//
-//// :QUESTION: Return 0? Are functions dependant on this? Why not return true or false, or if nothing is needed, null (aka, remove the return statement completely)?
-//        return 0;
-//
-//    }catch(Exception $e){
-//        throw new bException(tr('mysqlr_stop_replication(): Failed'), $e);
-//    }
-//}
-
-
-
-/*
- * .............
- *
- * @author Ismael Haro <isma@capmega.com>
- * @copyright Copyright (c) 2018 Capmega
- * @license http://opensource.org/licenses/GPL-2.0 GNU Public License, Version 2
- * @category Function reference
- * @package mysqlr
- *
- * @param
- */
 function mysqlr_check_configuration_path($server_target){
     try{
         load_libs('ssh,servers');
@@ -905,6 +845,228 @@ function mysqlr_full_backup(){
         
     }catch(Exception $e){
         throw new bException(tr('mysqlr_full_backup(): Failed'), $e);
+    }
+}
+
+
+
+/*
+ * Current available replication statuses
+ * 'enabled','preparing','paused','disabled','error'
+ *
+ * @author Ismael Haro <isma@capmega.com>
+ * @copyright Copyright (c) 2018 Capmega
+ * @license http://opensource.org/licenses/GPL-2.0 GNU Public License, Version 2
+ * @category Function reference
+ * @package mysqlr
+ *
+ * @param
+ * @return
+ */
+function mysqlr_add_log($params){
+    try{
+        /*
+         * Validate
+         */
+        array_params($params);
+        array_default($params, 'databases_id', '');
+        array_default($params, 'type'        , '');
+        array_default($params, 'message'     , '');
+
+        if(empty($params['databases_id'])){
+            throw new bException(tr('No database specified'), 'not-specified');
+        }
+
+        if(empty($params['type'])){
+            throw new bException(tr('No type specified'), 'not-specified');
+        }
+        
+        /*
+         * Validate log type
+         */
+        switch($params['type']){
+            case 'ssh_tunnel':
+                // FALLTHROUGH
+            case 'table_issue':
+                // FALLTHROUGH
+            case 'misconfiguration':
+                // FALLTHROUGH
+            case 'other':
+                /*
+                 * Do nothing
+                 */
+                break;
+                
+            default:
+                throw new bException(tr('Specified type is not valid'), 'not-valid');
+        }
+        
+        if(empty($params['message'])){
+            throw new bException(tr('No message specified'), 'not-specified');
+        }
+        
+        /*
+         * Get database
+         * This function will throw an error is this database does not exist
+         */
+        $database = mysql_get_database($params['databases_id']);
+        
+        /*
+         * Update database
+         */
+        sql_query('INSERT INTO `replicator_logs` (`type`, `projects_id`, `servers_id`, `databases_id`, `message`)
+                   VALUES                        (:type , :projects_id , :servers_id , :databases_id , :message )',
+                   
+                   array(':type'         => $params['type'],
+                         ':projects_id'  => $database['projects_id'],
+                         ':servers_id'   => $database['servers_id'],
+                         ':databases_id' => $database['databases_id'],
+                         ':message'      => $params['message']));
+
+    }catch(Exception $e){
+        throw new bException(tr('mysqlr_add_log(): Failed'), $e);
+    }
+}
+
+
+/*
+ * Current available replication statuses
+ * 'enabled','preparing','paused','disabled','error'
+ *
+ * @author Ismael Haro <isma@capmega.com>
+ * @copyright Copyright (c) 2018 Capmega
+ * @license http://opensource.org/licenses/GPL-2.0 GNU Public License, Version 2
+ * @category Function reference
+ * @package mysqlr
+ *
+ * @param
+ * @return
+ */
+function mysqlr_get_logs($database){
+    try{
+        /*
+         * Validate data
+         */
+        if(empty($database)){
+            throw new bException(tr('No database specified'), 'not-specified');
+        }
+        
+        /*
+         * Get database
+         * This function will throw an error is this database does not exist
+         */
+        $database = mysql_get_database($database);
+        
+        /*
+         * Get logs
+         */
+        $replicator_logs = array();
+        $replicator_logs = sql_list('SELECT    `replicator_logs`.`id`,
+                                               `replicator_logs`.`status`,
+                                               `replicator_logs`.`type,
+                                               `replicator_logs`.`projects_id`,
+                                               `replicator_logs`.`servers_id`,
+                                               `replicator_logs`.`databases_id`,
+                                               `replicator_logs`.`message`,
+                                            
+                                               `servers`.`hostname`,
+                                               `servers`.`seohostname`,
+                                               
+                                               `projects`.`name`
+                                            
+                                     LEFT JOIN `projects`
+                                     ON        `replicator_logs`.`projects_id`  = `projects`.`id`
+                                     
+                                     LEFT JOIN `servers`
+                                     ON        `replicator_logs`.`servers_id`   = `servers`.`id`
+                                     
+                                     WHERE     `replicator_logs`.`databases_id` = :databases_id
+                                     AND       `replicator_logs`.`status`       IS NULL');
+
+        return $replicator_logs;
+
+    }catch(Exception $e){
+        throw new bException(tr('mysqlr_add_log(): Failed'), $e);
+    }
+}
+
+
+
+/*
+ * Current available replication statuses
+ * 'enabled','preparing','paused','disabled','error'
+ *
+ * @author Ismael Haro <isma@capmega.com>
+ * @copyright Copyright (c) 2018 Capmega
+ * @license http://opensource.org/licenses/GPL-2.0 GNU Public License, Version 2
+ * @category Function reference
+ * @package mysqlr
+ *
+ * @param
+ * @return
+ */
+function mysqlr_monitor_database($database){
+    try{
+        /*
+         * Validate data
+         */
+        if(empty($database)){
+            throw new bException(tr('No database specified'), 'not-specified');
+        }
+        
+        /*
+         * Get database
+         * This function will throw an error is this database does not exist
+         */
+        $database = mysql_get_database($database);
+        
+        /*
+         * Check if MySQL configuration still has this database
+         */
+        log_console(tr('Checking database :database from server :server', array(':database' => $database['database'], ':server' => $database['hostname'])), 'white');
+        $mysql_cnf_path = mysqlr_check_configuration_path($database['database']);
+        $result         = servers_exec($database['hostname'], 'grep -q -F \'binlog_do_db = '.$database['database'].'\' '.$mysql_cnf_path.' && echo "1" || echo "0"');
+
+        if(!$result[0]){
+            /*
+             * Database is not in binlog then it is disabled
+             */
+            mysqlr_add_log(array('databases_id' => $database['id'],
+                                 'type'         => 'misconfiguration',
+                                 'message'      => 'The mysql configuration file does not contain this database'));
+            mysqlr_update_database_replication_status($database, 'disabled');
+            return 1;
+        }
+
+        /*
+         * Check channel for the server database
+         */
+        $result = sql_get('SHOW SLAVE STATUS FOR CHANNEL :channel', array(':channel' => $database['hostname']));
+
+        if(empty($result)){
+            /*
+             * No slave channel for this server
+             */
+            mysqlr_add_log(array('databases_id' => $database['id'],
+                                 'type'         => 'mysql_issue',
+                                 'message'      => 'The mysql channel for this database does not exist, check the configuration for this slave'));
+            mysqlr_update_database_replication_status($database, 'disabled');
+            return 1;
+        }
+
+        if(strtolower($result['Slave_IO_Running']) != 'yes' and strtolower($result['Slave_IO_Running']) != 'yes'){
+            mysqlr_add_log(array('databases_id' => $database['id'],
+                                 'type'         => 'mysql_issue',
+                                 'message'      => tr('There is an error with the Slave, restarting ssh tunnel, Last_IO_Errno ":Last_IO_Errno", Last_IO_Error ":Last_IO_Error"', array(':Last_IO_Errno' => $result['Last_IO_Errno'], 'Last_IO_Error' => $result['Last_IO_Error']))));
+            ssh_mysql_slave_tunnel($database);
+            mysqlr_update_database_replication_status($database, 'error');
+            return 1;
+        }
+
+        mysqlr_update_replication_status($database, 'enabled');
+
+    }catch(Exception $e){
+        throw new bException(tr('mysqlr_monitor_database(): Failed'), $e);
     }
 }
 ?>
