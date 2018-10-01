@@ -79,7 +79,7 @@ function servers_validate($server, $password_strength = true){
         /*
          * Hostname
          */
-        $server['hostname'] = cfm($server['hostname']);
+        $v->isDomain($server['hostname'], tr('The hostname ":hostname" is invalid', array(':hostname' => $server['hostname'])));
 
         if(!empty($server['url']) and !FORCE){
             $v->setError(tr('Both hostname ":hostname" and URL ":url" specified, please specify one or the other', array(':hostname' => $server['hostname'], ':url' => $server['url'])));
@@ -147,7 +147,7 @@ function servers_validate($server, $password_strength = true){
             $server['hostnames'] = explode("\n", $server['hostnames']);
 
             foreach($server['hostnames'] as &$hostname){
-                $v->isAlphaNumeric($hostname, tr('Please specify valid alternative hostnames'), VALIDATE_IGNORE_DOT|VALIDATE_IGNORE_DASH);
+                $v->isDomain($hostname, tr('The hostname ":hostname" is invalid', array(':hostname' => $hostname)));
             }
 
             $server['hostnames'][] = $server['hostname'];
