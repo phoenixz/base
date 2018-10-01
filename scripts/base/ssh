@@ -87,7 +87,7 @@ switch(cli_method()){
         }
 
         try{
-            $server = array('hostname'         => $hostname,
+            $server = array('hostname'         => '*'.$hostname,
                             'force_terminal'   => isset_get($force_terminal),
                             'disable_terminal' => isset_get($disable_terminal),
                             'commands'         => $commands,
@@ -98,9 +98,10 @@ switch(cli_method()){
         }catch(Exception $e){
             switch($e->getCode()){
                 case 'multiple':
-                    // FALLTROUGH
+                    throw new bException(tr('Specified hostname ":hostname" matched multiple registered servers, please be more specific', array(':hostname' => $hostname)), 'warning/multiple');
+
                 case 'not-exist':
-                    throw $e->makeWarning(true);
+                    throw new bException(tr('Specified hostname ":hostname" matched no registered servers', array(':hostname' => $hostname)), 'warning/not-exist');
 
                 default:
                     throw $e;
