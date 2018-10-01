@@ -33,7 +33,7 @@ sql_query('CREATE TABLE `servers_hostnames` (`id`          INT(11)     NOT NULL 
 /*
  * Add all current hostnames to server_hostnames list
  */
-$servers = sql_query('SELECT `id`, `hostname` FROM `servers` WHERE `status` IS NULL');
+$servers = sql_query('SELECT `id`, `hostname` FROM `servers` WHERE `status` IS NULL OR `status` = "unregistered"');
 $insert  = sql_prepare('INSERT INTO `servers_hostnames` (`meta_id`, `servers_id`, `hostname`)
                         VALUES                          (:meta_id , :servers_id , :hostname )');
 
