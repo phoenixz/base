@@ -24,6 +24,12 @@
  */
 function sql_library_init(){
     try{
+        if(!class_exists('PDO')){
+            /*
+             * Wulp, PDO class not available, PDO driver is not loaded somehow
+             */
+            throw new bException('sql_library_init(): Could not find the "PDO" class, does this PHP have PDO available?', 'not-available');
+        }
 
     }catch(Exception $e){
         throw new bException('sql_library_init(): Failed', $e);
@@ -64,7 +70,7 @@ function sql_in_columns($in){
  * @param
  * @return
  */
-function sql_query($query, $execute = false, $handle_exceptions = true, $connector = 'core'){
+function sql_query($query, $execute = false, $connector = 'core'){
     global $core;
 
     try{
@@ -141,12 +147,7 @@ function sql_query($query, $execute = false, $handle_exceptions = true, $connect
 
         return $pdo_statement;
 
-
     }catch(Exception $e){
-        if(!$handle_exceptions){
-            throw new bException(tr('sql_query(:connector): Query ":query" failed', array(':connector' => $connector, ':query' => debug_sql($query, $execute, true))), $e);
-        }
-
         try{
             /*
              * Let sql_error() try and generate more understandable errors
@@ -271,7 +272,7 @@ function sql_get($query, $single_column = null, $execute = null, $connector = 'c
                 unset($tmp);
             }
 
-            $result = sql_query($query, $execute, true, $connector);
+            $result = sql_query($query, $execute, $connector);
 
             if($result->rowCount() > 1){
                 throw new bException(tr('sql_get(): Failed for query ":query" to fetch single row, specified query result contains not 1 but ":count" results', array(':count' => $result->rowCount(), ':query' => debug_sql($result->queryString, $execute, true))), 'multiple');
@@ -313,7 +314,7 @@ function sql_list($query, $execute = null, $numerical_array = false, $connector 
             $query = $r->queryString;
 
         }else{
-            $r = sql_query($query, $execute, true, $connector);
+            $r = sql_query($query, $execute, $connector);
         }
 
         $retval = array();
@@ -542,19 +543,20 @@ function sql_connect($connector, $use_database = true){
         array_default($connector, 'pass'   , null);
         array_default($connector, 'charset', null);
 
-        if(!class_exists('PDO')){
-            /*
-             * Wulp, PDO class not available, PDO driver is not loaded somehow
-             */
-            throw new bException('sql_connect(): Could not find the "PDO" class, does this PHP have PDO available?', 'dbdriver');
-        }
-
         /*
          * Does this connector require an SSH tunnel?
          */
         if(isset_get($connector['ssh_tunnel']['required'])){
-            load_libs('servers');
-            servers_tunnel($connector['ssh_tunnel']);
+            /*
+             * Apply default configuration
+             */
+            load_libs('ssh');
+
+            $connector['ssh_tunnel'] = array_merge_null(array('target_hostname' => $_CONFIG['ssh']['tunnel']['target_hostname'],
+                                                              'target_port'     => 3306), $connector['ssh_tunnel']);
+
+            ssh_tunnel($connector['ssh_tunnel']);
+            usleep(isset_get($connector['ssh_tunnel']['usleep'], 10000));
         }
 
         /*
@@ -568,22 +570,43 @@ function sql_connect($connector, $use_database = true){
 
             while(--$retries >= 0){
                 try{
-                    $pdo = new PDO($connector['driver'].':host='.$connector['host'].(empty($connector['port']) ? '' : ';port='.$connector['port']).((empty($connector['db']) or !$use_database) ? '' : ';dbname='.$connector['db']), $connector['user'], $connector['pass'], $connector['pdo_attributes']);
+                    $connect_string = $connector['driver'].':host='.$connector['host'].(empty($connector['port']) ? '' : ';port='.$connector['port']).((empty($connector['db']) or !$use_database) ? '' : ';dbname='.$connector['db']);
+                    $pdo            = new PDO($connect_string, $connector['user'], $connector['pass'], $connector['pdo_attributes']);
+
+                    log_console(tr('Connected with PDO connect string ":string"', array(':string' => $connect_string)), 'VERYVERBOSE');
+                    break;
 
                 }catch(Exception $e){
-// :TODO: This is a workaround and should be fixed properly!!!
                     /*
                      * This is a work around for the weird PHP MySQL error
-                     * PDO::__construct(): send of 5 bytes failed with errno=32 Broken pipe
-                     * So far we have not been able to find a fix for this but
-                     * we have noted that you always have to connect 3 times,
-                     * and the 3rd time the bug magically disappars. The work
-                     * around will detect the error and retry up to 3 times to
-                     * work around this issue for now
+                     * "PDO::__construct(): send of 5 bytes failed with errno=32
+                     * Broken pipe". So far we have not been able to find a fix
+                     * for this but we have noted that you always have to
+                     * connect 3 times, and the 3rd time the bug magically
+                     * disappears. The work around will detect the error and
+                     * retry up to 3 times to work around this issue for now.
+                     *
+                     * Over time, it has appeared that the cause of this issue
+                     * may be that MySQL is chewing on a huge and slow query
+                     * which prevents it from accepting new connections. This is
+                     * not confirmed yet, but very likely. Either way, this
+                     * "fix" still fixes the issue..
                      */
+                    log_console(tr('Failed to connect with PDO connect string ":string"', array(':string' => $connect_string)), 'exception');
+                    log_console($e);
+
                     $message = $e->getMessage();
 
                     if(strstr($message, 'errno=32') === false){
+                        if($e->getMessage() == 'ERROR 2013 (HY000): Lost connection to MySQL server at \'reading initial communication packet\', system error: 0'){
+                            if(isset_get($connector['ssh_tunnel']['required'])){
+                                /*
+                                 * The tunneling server has "AllowTcpForwarding" set to "no" in the sshd_config, attempt auto fix
+                                 */
+                                os_enable_ssh_tcp_forwarding($connector['ssh_tunnel']['server']);
+                            }
+                        }
+
                         /*
                          * This is a different error. Continue throwing the
                          * exception as normal
@@ -1476,14 +1499,14 @@ function sql_current_database(){
  * @param
  * @return
  */
-function sql_random_id($table, $min = 1, $max = 2147483648){
+function sql_random_id($table, $min = 1, $max = 2147483648, $connector = 'core'){
     try{
         $exists  = true;
         $timeout = 50; // Don't do more than 50 tries on this!
 
         while($exists and --$timeout > 0){
             $id     = mt_rand($min, $max);
-            $exists = sql_query('SELECT `id` FROM `'.$table.'` WHERE `id` = :id', array(':id' => $id));
+            $exists = sql_query('SELECT `id` FROM `'.$table.'` WHERE `id` = :id', array(':id' => $id), $connector);
         }
 
         return $id;
