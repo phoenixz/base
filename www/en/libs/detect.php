@@ -12,9 +12,10 @@
 /*
  * Sets client info in $_SESSION and returns it
  */
-function detect_client(){
+function detect_client($auto_resolve = true){
+    global $_CONFIG;
+
     try{
-        global $_CONFIG;
 
         if(PLATFORM_CLI){
             /*
@@ -55,13 +56,29 @@ function detect_client(){
              */
             if(isset($_SERVER['HTTP_USER_AGENT']) and function_exists('get_browser')){
                 try{
+                    /*
+                     * Ensure browscap file exist
+                     */
+                    $browscap_file = ini_get('browscap');
+
+                    if(!$browscap_file){
+                        throw new bException(tr('detect_client(): No browscap file configured'), 'not-specified');
+                    }
+
+                    if(!file_exists($browscap_file)){
+                        throw new bException(tr('detect_client(): Configured browscap file ":file" does not exist', array(':file' => $browscap_file)), 'not-exist');
+                    }
+
                     $ua = get_browser(null, true);
                     array_ensure($ua, 'majorver,minorver');
 
                 }catch(Exception $e){
+                    /*
+                     * Invalid browscap configuration. Nothing to do here really
+                     * but notify debs
+                     */
                     notify($e);
                 }
-
             }
 
             /*
