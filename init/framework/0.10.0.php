@@ -45,7 +45,7 @@ if(!$user = sql_get('SELECT `id`, `name`, `username` FROM `users` WHERE `usernam
  */
 load_libs('rights');
 rights_give($user['id'], 'admin,god');
-log_console('Created admin user "'.$_SERVER['USER'].'" with god rights', 'created', 'green');
+log_console(tr('Created admin user ":user" with god rights', array(':user' => $_SERVER['USER'])), 'green');
 
 
 
