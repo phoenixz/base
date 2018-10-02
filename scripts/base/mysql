@@ -385,6 +385,12 @@ switch(cli_method()){
                         log_console($message, 'red');
                     }
                 }
+                
+                /*
+                 * Restart itself
+                 */
+                log_console(tr('Finished checking replication, restarting again'));
+                run_background('base/mysql replication --env '.ENVIRONMENT.' check ', true, false);
 
                 break;
 
