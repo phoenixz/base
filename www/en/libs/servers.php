@@ -258,15 +258,15 @@ function servers_validate($server, $password_strength = true){
 function servers_select($params = null){
     try{
         array_ensure($params);
-        array_default($params, 'name'         , 'seoserver');
-        array_default($params, 'class'        , 'form-control');
-        array_default($params, 'selected'     , null);
-        array_default($params, 'status'       , null);
-        array_default($params, 'empty'        , tr('No servers available'));
-        array_default($params, 'none'         , tr('Select a server'));
-        array_default($params, 'tabindex'     , 0);
-        array_default($params, 'extra'        , 'tabindex="'.$params['tabindex'].'"');
-        array_default($params, 'orderby'      , '`hostname`');
+        array_default($params, 'name'    , 'seoserver');
+        array_default($params, 'class'   , 'form-control');
+        array_default($params, 'selected', null);
+        array_default($params, 'status'  , null);
+        array_default($params, 'empty'   , tr('No servers available'));
+        array_default($params, 'none'    , tr('Select a server'));
+        array_default($params, 'tabindex', 0);
+        array_default($params, 'extra'   , 'tabindex="'.$params['tabindex'].'"');
+        array_default($params, 'orderby' , '`hostname`');
 
         if($params['status'] !== false){
             $where[] = ' `status` '.sql_is($params['status']).' :status ';
@@ -280,7 +280,7 @@ function servers_select($params = null){
             $where = ' WHERE '.implode(' AND ', $where).' ';
         }
 
-        $query              = 'SELECT `seohostname`, `hostname` FROM `servers` '.$where.' ORDER BY '.$params['orderby'];
+        $query              = 'SELECT `seohostname`, CONCAT(`hostname`, " (", `ipv4`, ")") AS `name` FROM `servers` '.$where.' ORDER BY '.$params['orderby'];
         $params['resource'] = sql_query($query, $execute);
         $retval             = html_select($params);
 
