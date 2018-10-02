@@ -462,7 +462,7 @@ function cli_run_once_local($close = false){
              * File exists, or contains invalid data, but PID either doesn't
              * exist, or is used by a different process. Remove the PID file
              */
-            log_console(tr('cli_run_once_local(): Cleaning up stale run file ":file"', array(':file' => $run_dir.$script)), 'yellow');
+            log_console(tr('cli_run_once_local(): Cleaning up stale run file ":file"', array(':file' => $run_dir.$script)), 'VERBOSE/yellow');
             file_delete($run_dir.$script);
         }
 
@@ -850,7 +850,17 @@ function cli_argument($keys = null, $next = null, $default = null){
             /*
              * Return next argument, if available
              */
-            $retval = array_next_value($argv, $keys, true);
+            try{
+                $retval = array_next_value($argv, $keys, true);
+
+            }catch(Exception $e){
+                if($e->getCode() == 'invalid'){
+                    /*
+                     * This argument requires another parameter
+                     */
+                    throw $e->setCode('missing-arguments');
+                }
+            }
 
             if(substr($retval, 0, 1) == '-'){
                 throw new bException(tr('cli_argument(): Argument ":argument1" has no assigned value, it is immediately followed by argument ":argument2"', array(':argument1' => $keys, ':argument2' => $retval)), 'invalid');
@@ -917,7 +927,7 @@ function cli_no_arguments_left(){
         return true;
     }
 
-    throw new bException(tr('cli_no_arguments_left(): Unknown arguments ":arguments" encountered', array(':arguments' => str_force($argv, ', '))), 'invalid_arguments');
+    throw new bException(tr('cli_no_arguments_left(): Unknown arguments ":arguments" encountered', array(':arguments' => str_force($argv, ', '))), 'invalid-arguments');
 }
 
 
