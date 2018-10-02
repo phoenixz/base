@@ -1201,7 +1201,7 @@ function cli_kill($pid, $signal = 15, $verify = -20, $sudo = false){
         /*
          * pkill returns 1 if process wasn't found, we can ignore that
          */
-        log_console(tr('Killing PID ":pid" with signal ":signal"', array(':pid' => $pid, ':signal' => $signal)), 'cyan');
+        log_console(tr('Killing PID ":pid" with signal ":signal"', array(':pid' => $pid, ':signal' => $signal)), 'VERBOSE/cyan');
         safe_exec(($sudo ? 'sudo ' : '').'kill -'.$signal.' '.$pid, 1);
 
         if($verify){
