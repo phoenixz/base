@@ -77,10 +77,11 @@ function sql_in_columns($in){
  * @param
  * @return
  */
-function sql_query($query, $execute = false, $connector = 'core'){
+function sql_query($query, $execute = false, $connector = null){
     global $core;
 
     try{
+        $connector   = sql_connector_name($connector);
         $connector   = sql_init($connector);
         $query_start = microtime(true);
 
@@ -181,11 +182,13 @@ function sql_query($query, $execute = false, $connector = 'core'){
  * @param
  * @return
  */
-function sql_prepare($query, $connector = 'core'){
+function sql_prepare($query, $connector = null){
     global $core;
 
     try{
+        $connector = sql_connector_name($connector);
         $connector = sql_init($connector);
+
         return $core->sql[$connector]->prepare($query);
 
     }catch(Exception $e){
@@ -263,8 +266,10 @@ function sql_fetch($r, $single_column = false, $fetch_style = PDO::FETCH_ASSOC){
  * @param
  * @return
  */
-function sql_get($query, $single_column = null, $execute = null, $connector = 'core'){
+function sql_get($query, $single_column = null, $execute = null, $connector = null){
     try{
+        $connector = sql_connector_name($connector);
+
         if(is_object($query)){
             return sql_fetch($query, $single_column);
 
@@ -314,8 +319,10 @@ function sql_get($query, $single_column = null, $execute = null, $connector = 'c
  * @param
  * @return
  */
-function sql_list($query, $execute = null, $numerical_array = false, $connector = 'core'){
+function sql_list($query, $execute = null, $numerical_array = false, $connector = null){
     try{
+        $connector = sql_connector_name($connector);
+
         if(is_object($query)){
             $r     = $query;
             $query = $r->queryString;
@@ -373,7 +380,7 @@ function sql_list($query, $execute = null, $numerical_array = false, $connector 
  * @param
  * @return
  */
-function sql_init($connector = 'core'){
+function sql_init($connector = null){
     global $_CONFIG, $core;
 
     try{
@@ -512,7 +519,7 @@ function sql_init($connector = 'core'){
  * @param
  * @return
  */
-function sql_close($connector = 'core'){
+function sql_close($connector = null){
     global $_CONFIG, $core;
 
     try{
@@ -665,7 +672,7 @@ function sql_connect($connector, $use_database = true){
  * @param
  * @return
  */
-function sql_import($file, $connector = 'core'){
+function sql_import($file, $connector = null){
     global $core;
 
     try {
@@ -838,10 +845,11 @@ function sql_values($source, $columns, $prefix = ':'){
  * @param
  * @return
  */
-function sql_insert_id($connector = 'core'){
+function sql_insert_id($connector = null){
     global $core;
 
     try{
+        $connector = sql_connector_name($connector);
         return $core->sql[sql_connector_name($connector)]->lastInsertId();
 
     }catch(Exception $e){
@@ -936,8 +944,10 @@ function sql_get_id_or_name($entry, $seo = true, $code = false){
  * @param
  * @return
  */
-function sql_unique_id($table, $column = 'id', $max = 10000000, $connector = 'core'){
+function sql_unique_id($table, $column = 'id', $max = 10000000, $connector = null){
     try{
+        $connector = sql_connector_name($connector);
+
         $retries    =  0;
         $maxretries = 50;
 
@@ -1100,8 +1110,10 @@ function sql_where_null($value, $not = false){
  * @param
  * @return
  */
-function sql_get_cached($key, $query, $column = false, $execute = false, $expiration_time = 86400, $connector = 'core'){
+function sql_get_cached($key, $query, $column = false, $execute = false, $expiration_time = 86400, $connector = null){
     try{
+        $connector = sql_connector_name($connector);
+
         if(($value = mc_get($key, 'sql_')) === false){
             /*
              * Keyword data not found in cache, get it from MySQL with
@@ -1153,8 +1165,10 @@ function sql_get_cached($key, $query, $column = false, $execute = false, $expira
  * @param
  * @return
  */
-function sql_list_cached($key, $query, $execute = false, $numerical_array = false, $connector = 'core', $expiration_time = 86400){
+function sql_list_cached($key, $query, $execute = false, $numerical_array = false, $connector = null, $expiration_time = 86400){
     try{
+        $connector = sql_connector_name($connector);
+
         if(($list = mc_get($key, 'sql_')) === false){
             /*
              * Keyword data not found in cache, get it from MySQL with
@@ -1189,8 +1203,8 @@ function sql_valid_limit($limit, $connector = null){
     global $_CONFIG;
 
     try{
-        $limit     = force_natural($limit);
         $connector = sql_connector_name($connector);
+        $limit     = force_natural($limit);
 
         if($limit > $_CONFIG['db'][$connector]['limit_max']){
             return $_CONFIG['db'][$connector]['limit_max'];
@@ -1306,15 +1320,21 @@ function sql_merge($db, $post, $skip = null, $empty = null){
  * @return
  */
 function sql_connector_name($connector){
-    global $_CONFIG;
+    global $_CONFIG, $core;
 
     try{
         if($connector === null){
+            $connector = $core->register('sql_connector');
+
+            if($connector){
+                return $_CONFIG['db']['default'];
+            }
+
             return $_CONFIG['db']['default'];
         }
 
-        if(!is_string($connector)){
-            throw new bException(tr('sql_connector_name(): Invalid connector ":connector" specified', array(':connector' => $connector)), 'invalid');
+        if(!is_scalar($connector)){
+            throw new bException(tr('sql_connector_name(): Invalid connector ":connector" specified, it must be scalar', array(':connector' => $connector)), 'invalid');
         }
 
         return $connector;
@@ -1506,10 +1526,11 @@ function sql_current_database(){
  * @param
  * @return
  */
-function sql_random_id($table, $min = 1, $max = 2147483648, $connector = 'core'){
+function sql_random_id($table, $min = 1, $max = 2147483648, $connector = null){
     try{
-        $exists  = true;
-        $timeout = 50; // Don't do more than 50 tries on this!
+        $connector = sql_connector_name($connector);
+        $exists    = true;
+        $timeout   = 50; // Don't do more than 50 tries on this!
 
         while($exists and --$timeout > 0){
             $id     = mt_rand($min, $max);
@@ -1655,6 +1676,91 @@ function sql_get_database($db_name){
 
     }catch(Exception $e){
         throw new bException(tr('sql_get_database(): Failed'), $e);
+    }
+}
+
+
+
+/*
+ * Return connector data for the specified connector.
+ *
+ * Connector data will first be searched for in $_CONFIG[db][CONNECTOR]. If the connector is not found there, the sql_connectors table will be searched. If the connector is not found there either, NULL will be returned
+ *
+ * @copyright Copyright (c) 2018 Capmega
+ * @license http://opensource.org/licenses/GPL-2.0 GNU Public License, Version 2
+ * @category Function reference
+ * @package sql
+ *
+ * @param string $connector The requested connector name
+ * @return array The requested connector data. NULL if the specified connector does not exist
+ */
+function sql_get_connector($connector){
+    global $_CONFIG;
+
+    try{
+        if(!is_natural($connector)){
+            /*
+             * Connector was specified by name
+             */
+            if(isset($_CONFIG['db'][$connector])){
+                return $_CONFIG['db'][$connector];
+            }
+
+            $where   = ' `name` = :name ';
+            $execute = array(':name' => $connector);
+
+        }else{
+            /*
+             * Connector was specified by id
+             */
+            $where   = ' `id` = :id ';
+            $execute = array(':id' => $connector);
+        }
+
+        $connector = sql_get('SELECT `id`,
+                                     `createdon`,
+                                     `createdby`,
+                                     `meta_id`,
+                                     `status`,
+                                     `name`,
+                                     `seoname`,
+                                     `servers_id`,
+                                     `hostname`,
+                                     `driver`,
+                                     `database`,
+                                     `user`,
+                                     `password`,
+                                     `autoincrement`,
+                                     `buffered`,
+                                     `charset`,
+                                     `collate`,
+                                     `limit_max`,
+                                     `mode`,
+                                     `ssh_tunnel_required`,
+                                     `ssh_tunnel_source_port`,
+                                     `ssh_tunnel_hostname`,
+                                     `usleep`,
+                                     `pdo_attributes`,
+                                     `timezone`
+
+                              FROM   `sql_connectors`'.$where,
+
+                              $execute);
+
+        if($connector){
+            $connector['ssh_tunnel'] = array('required'    => $connector['ssh_tunnel_required'],
+                                             'source_port' => $connector['ssh_tunnel_source_port'],
+                                             'hostname'    => $connector['ssh_tunnel_hostname']);
+
+            unset($connector['ssh_tunnel_required']);
+            unset($connector['ssh_tunnel_source_port']);
+            unset($connector['ssh_tunnel_hostname']);
+        }
+
+        return $connector;
+
+    }catch(Exception $e){
+        throw new bException(tr('sql_get_connector(): Failed'), $e);
     }
 }
 
