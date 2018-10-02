@@ -507,7 +507,7 @@ function servers_get($server, $database = false, $return_proxies = true, $limite
             $query = 'SELECT `servers`.`id`,
                              `servers`.`hostname`,
                              `servers`.`port`,
-                             `servers`.`ipv4`
+                             `servers`.`ipv4`,
 
                              `ssh_accounts`.`username`,
                              `ssh_accounts`.`ssh_key` ';
