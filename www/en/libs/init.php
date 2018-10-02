@@ -11,7 +11,16 @@
 
 
 /*
- * Execute the init
+ * Execute database initialization
+ *
+ * @copyright Copyright (c) 2018 Capmega
+ * @license http://opensource.org/licenses/GPL-2.0 GNU Public License, Version 2
+ * @category Function reference
+ * @package init
+ *
+ * @param string $projectfrom
+ * @param string $frameworkfrom
+ * @return void
  */
 function init($projectfrom = null, $frameworkfrom = null){
     global $_CONFIG, $core;
@@ -43,7 +52,7 @@ function init($projectfrom = null, $frameworkfrom = null){
         sql_init();
 
         if(empty($_CONFIG['db']['core']['init'])){
-            throw new bException(tr('init(): Core database init system has been disabled in %init%', array('%init%' => '$_CONFIG[db][core][init]')), 'noinit');
+            throw new bException(tr('init(): Core database init system has been disabled in $_CONFIG[db][core][init]'), 'no-init');
         }
 
         if(!empty($core->register['time_zone_fail'])){
@@ -203,7 +212,7 @@ function init($projectfrom = null, $frameworkfrom = null){
                          * This init file has a higher version number than the current code, so it should not yet be executed (until a later time that is)
                          */
                         if(VERBOSE){
-                            log_console('Skipped future init file "'.$version.'"', 'init/'.$type);
+                            log_console('Skipped future init file "'.$version.'"', 'warning');
                         }
 
                     }else{
@@ -213,7 +222,7 @@ function init($projectfrom = null, $frameworkfrom = null){
                              */
                             try{
                                 if(file_exists($hook = $initpath.'hooks/pre_'.$file)){
-                                    log_console('Executing newer init "pre" hook file with version "'.$version.'"', 'init/'.$type, 'green');
+                                    log_console('Executing newer init "pre" hook file with version "'.$version.'"', 'cyan');
                                     include_once($hook);
                                 }
 
@@ -237,7 +246,7 @@ function init($projectfrom = null, $frameworkfrom = null){
 
                             try{
                                 if(file_exists($hook = $initpath.'hooks/post_'.$file)){
-                                    log_console('Executing newer init "post" hook file with version "'.$version.'"', 'init/'.$type, 'green');
+                                    log_console('Executing newer init "post" hook file with version "'.$version.'"', 'cyan');
                                     include_once($hook);
                                 }
 
@@ -493,6 +502,213 @@ function init_include($file){
 
     }catch(Exception $e){
         throw new bException('init_include(): Failed', $e);
+    }
+}
+
+
+
+/*
+ * Initialize the specified section.
+ *
+ * The section must be available as a directory with the name of the section in the ROOT/init path. If (for example) the section is called "mail", the init section in ROOT/init/mail will be executed. The section name will FORCE all sql_query() calls to use the connector with the $section name.
+ *
+ * @Sven Olaf Oostenbrink <sven@capmega.com>
+ * @copyright Copyright (c) 2018 Capmega
+ * @license http://opensource.org/licenses/GPL-2.0 GNU Public License, Version 2
+ * @category Function reference
+ * @package ssh
+ *
+ * @param string $section
+ * @param string $version
+ * @return void
+ */
+function init_section($section, $version){
+    global $_CONFIG;
+
+    try{
+        $path = ROOT.'init/'.$section;
+
+        if(!file_exists($path)){
+            throw new bException(tr('init_section(): Specified section ":section" path ":path" does not exist', array(':section' => $section, ':path' => $path)), 'not-exist');
+        }
+
+        $connector = sql_get_connector($section);
+
+        if(!$connector){
+            throw new bException(tr('init_section(): Specified section ":section" does not have a connector configuration. Please check $_CONFIG[db] or the `sql_connectors` table', array(':section' => $section)), 'not-exist');
+        }
+
+        /*
+         * Set the default connector to the connector for the specified section
+         */
+        $core->register('sql_connector', $section);
+
+        if($version){
+            /*
+             * Reset the versions table to the specified version
+             */
+            sql_query('DELETE FROM `versions` WHERE (SUBSTRING(`framework`, 1, 1) != "-") AND (INET_ATON(CONCAT(`framework`, REPEAT(".0", 3 - CHAR_LENGTH(`framework`) + CHAR_LENGTH(REPLACE(`framework`, ".", ""))))) >= INET_ATON(CONCAT("'.$version.'", REPEAT(".0", 3 - CHAR_LENGTH("'.$version.'") + CHAR_LENGTH(REPLACE("'.$version.'", ".", ""))))))');
+        }
+
+        $dbversion = sql_get('SELECT `version` FROM `versions` ORDER BY `id` DESC LIMIT 1', true);
+
+        if($dbversion === null){
+            /*
+             * No version data found, we're at 0.0.0
+             */
+            $dbversion = '0.0.0';
+        }
+
+        log_console(tr('Starting ":section" init at version ":version"', array(':section' => $section, ':version' => $version)));
+
+        $files = scandir($path);
+
+        /*
+         * Cleanup and order file list
+         */
+        foreach($files as $key => $file){
+            /*
+             * Skip garbage
+             */
+            if(($file == '.') or ($file == '..')){
+                unset($files[$key]);
+                continue;
+            }
+
+            if((file_extension($file) != 'php') or !str_is_version(str_until($file, '.php'))) {
+                log_console(tr('Skipping unknown file ":file"', array(':file' => $file)), 'yellow');
+                unset($files[$key]);
+                continue;
+            }
+
+            $files[$key] = substr($file, 0, -4);
+        }
+
+        usort($files, 'version_compare');
+
+        /*
+         * Go over each init file, see if it needs execution or not
+         */
+        foreach($files as $file){
+            $version = $file;
+            $file    = $file.'.php';
+
+            if(version_compare($version, $connector['version']) >= 1){
+                /*
+                 * This init file has a higher version number than the current code, so it should not yet be executed (until a later time that is)
+                 */
+                if(VERBOSE){
+                    log_console(tr('Skipped future init file "'.$version.'"', array(':version' => $version, ':section' => $section)));
+                }
+
+            }else{
+                if(($dbversion === 0) or (version_compare($version, $dbversion) >= 1)){
+                    /*
+                     * This init file is higher than the DB version, but lower than the code version, so it must be executed
+                     */
+                    try{
+                        if(file_exists($hook = $path.'hooks/pre_'.$file)){
+                            log_console('Executing newer init "pre" hook file with version "'.$version.'"', 'cyan');
+                            include_once($hook);
+                        }
+
+                    }catch(Exception $e){
+                        /*
+                         * INIT FILE FAILED!
+                         */
+                        throw new bException('init('.$type.'): Init "pre" hook file "'.$file.'" failed', $e);
+                    }
+
+                    try{
+                        log_console('Executing newer init file with version "'.$version.'"', 'green');
+                        init_include($path.$file);
+
+                    }catch(Exception $e){
+                        /*
+                         * INIT FILE FAILED!
+                         */
+                        throw new bException('init('.$type.'): Init file "'.$file.'" failed', $e);
+                    }
+
+                    try{
+                        if(file_exists($hook = $path.'hooks/post_'.$file)){
+                            log_console('Executing newer init "post" hook file with version "'.$version.'"', 'cyan');
+                            include_once($hook);
+                        }
+
+                    }catch(Exception $e){
+                        /*
+                         * INIT FILE FAILED!
+                         */
+                        throw new bException('init('.$type.'): Init "post" hook file "'.$file.'" failed', $e);
+                    }
+
+                    $versions[$type] = $version;
+
+                    sql_query('INSERT INTO `versions` (`framework`, `project`) VALUES ("'.cfm($versions['framework']).'", "'.cfm($versions['project']).'")');
+
+                    log_console('Finished init version "'.$version.'"', 'green');
+
+                }else{
+                    /*
+                     * This init file has already been executed so we can skip it.
+                     */
+                    if(VERBOSE){
+                        log_console('Skipped older init file "'.$version.'"', 'yellow');
+                    }
+                }
+            }
+        }
+
+        /*
+         * There are no more init files. If the last executed init file has a lower
+         * version than the code version still, then update the DB version to the
+         * code version now.
+         *
+         * This way, the code version can be upped without having to add empty init files.
+         */
+        if(version_compare(constant($utype.'CODEVERSION'), $versions[$type]) > 0){
+            log_console('Last init file was "'.$versions[$type].'" while code version is still higher at "'.constant($utype.'CODEVERSION').'"', 'yellow');
+            log_console('Updating database version to code version manually'                                                                  , 'yellow');
+
+            $versions[$type] = constant($utype.'CODEVERSION');
+
+            sql_query('INSERT INTO `versions` (`framework`, `project`) VALUES ("'.cfm((string) $versions['framework']).'", "'.cfm((string) $versions['project']).'")');
+        }
+
+        /*
+         * Finished one init part (either type framework or type project)
+         */
+        log_console('Finished init', 'green');
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+        /*
+         * Reset the default connector
+         */
+        $core->register('sql_connector', null);
+
+    }catch(Exception $e){
+        throw new bException('init_section(): Failed', $e);
     }
 }
 ?>

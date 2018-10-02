@@ -21,13 +21,14 @@
  *
  * @copyright Sven Oostenbrink <support@capmega.com>
  */
-$usage = "./scripts/base/init\n".
-         "./scripts/base/init -F | --force\n".
-         "./scripts/base/init -d | --drop\n".
-         "./scripts/base/init -f | --frameworkversion VERSION\n".
-         "./scripts/base/init -p | --projectversion VERSION\n";
+$usage = './scripts/base/init.
+./scripts/base/init -F | --force
+./scripts/base/init -d | --drop
+./scripts/base/init -f | --frameworkversion VERSION
+./scripts/base/init -p | --projectversion VERSION
+./scripts/base/init -s | --section SECTION [-v VERSION]';
 
-$help  = "This script will initialize the database and system files to leave your data structures up to date with the current code version
+$help  = 'This script will initialize the database and system files to leave your data structures up to date with the current code version
 
 
 
@@ -48,66 +49,90 @@ ARGUMENTS
 [-F]                            - FORCE, will drop the core database and start
                                   init from version 0. NOTE: For safety against
                                   accidents, this will NOT work on production
-                                  systems";
+                                  systems
+
+-s | --section SECTION          - Initialize the specified section. This
+                                  requires that ROOT/init/SECTION exists, and
+                                  that a database connector called SECTION is
+                                  configured. See $_CONFIG[db] or the
+                                  `sql_connectors` database table for database
+                                  connectors
+
+-v | --section-version VERSION  - Only applies to section initialization. Will
+                                  initialize the specified section starting at
+                                  the specified VERSION';
 
 require_once(__DIR__.'/../../libs/startup.php');
 
 $drop                 = cli_argument('--drop');
 $fromprojectversion   = not_empty(cli_argument('--from-project-version'  , true, null), cli_argument('-p', true, null));
 $fromframeworkversion = not_empty(cli_argument('--from-framework-version', true, null), cli_argument('-f', true, null));
+$section              = cli_argument('-s,--section');
 
 cli_only(true);
-cli_no_arguments_left();
+load_libs('init');
 
-try{
-    load_libs(array('init'));
-
-    if($drop){
-        /*
-         * Drop the core database
-         */
-        sql_init();
-        if(is_object($core->sql['core']) and $core->sql['core'] instanceof PDO){
-            $core->sql['core']->query('DROP DATABASE '.$_CONFIG['db']['core']['db']);
-
-            log_console(tr('Dropped database ":db"', array(':db' => $_CONFIG['db']['core']['db'])), 'yellow');
-            die();
-        }
-    }
-
-    if($pfrom = $fromprojectversion){
-        if(!str_is_version($pfrom)){
-            throw new bException(tr('The specified fromprojectversion ":version" is not a valid version format. Please supply a version in format "n.n.n"', array(':version' => $pfrom)), 'warning/invalid');
-        }
-    }
-
-    if($ffrom = $fromframeworkversion){
-        if(!str_is_version($ffrom)){
-            throw new bException(tr('The specified fromframeworkversion ":version" is not a valid version format. Please supply a version in format "n.n.n"', array(':version' => $ffrom)), 'warning/invalid');
-        }
-    }
-
+if($section){
     /*
-     * During init, force EMULATE_PREPARES because loads of init stuff will NOT work without
-     * Thanks PHP, for giving us the option between a shitty driver, or half a driver!
+     * Section initialization
      */
-    foreach($_CONFIG['db'] as $name => &$connector){
-        if($name == 'default') continue;
+    $version = cli_argument('-v,--section-version');
+    cli_no_arguments_left();
+    init_section($section, $version);
 
-        if(!empty($connector['init'])){
-            $connector['pdo_attributes'] = array(PDO::ATTR_EMULATE_PREPARES  => true,
-                                                 PDO::ATTR_STRINGIFY_FETCHES => true);
+}else{
+    cli_no_arguments_left();
+
+    try{
+
+        if($drop){
+            /*
+             * Drop the core database
+             */
+            sql_init();
+            if(is_object($core->sql['core']) and $core->sql['core'] instanceof PDO){
+                $core->sql['core']->query('DROP DATABASE '.$_CONFIG['db']['core']['db']);
+
+                log_console(tr('Dropped database ":db"', array(':db' => $_CONFIG['db']['core']['db'])), 'yellow');
+                die();
+            }
         }
+
+        if($pfrom = $fromprojectversion){
+            if(!str_is_version($pfrom)){
+                throw new bException(tr('The specified fromprojectversion ":version" is not a valid version format. Please supply a version in format "n.n.n"', array(':version' => $pfrom)), 'warning/invalid');
+            }
+        }
+
+        if($ffrom = $fromframeworkversion){
+            if(!str_is_version($ffrom)){
+                throw new bException(tr('The specified fromframeworkversion ":version" is not a valid version format. Please supply a version in format "n.n.n"', array(':version' => $ffrom)), 'warning/invalid');
+            }
+        }
+
+        /*
+         * During init, force EMULATE_PREPARES because loads of init stuff will NOT work without
+         * Thanks PHP, for giving us the option between a shitty driver, or half a driver!
+         */
+        foreach($_CONFIG['db'] as $name => &$connector){
+            if($name == 'default') continue;
+
+            if(!empty($connector['init'])){
+                $connector['pdo_attributes'] = array(PDO::ATTR_EMULATE_PREPARES  => true,
+                                                     PDO::ATTR_STRINGIFY_FETCHES => true);
+            }
+        }
+
+        init($pfrom, $ffrom);
+        cli_run_once_local(true);
+
+    }catch(Exception $e){
+        if($e->getCode() != 'noinit'){
+            throw new bException('scripts/base/init: Failed', $e);
+        }
+
+        log_console(tr('Core database init system has been disabled in db configuration'), 'yellow');
+        throw $e;
     }
-
-    init($pfrom, $ffrom);
-    cli_run_once_local(true);
-
-}catch(Exception $e){
-    if($e->getCode() != 'noinit'){
-        throw new bException('scripts/base/init: Failed', $e);
-    }
-
-    log_console(tr('Core database init system has been disabled in db configuration'), 'yellow');
 }
 ?>
