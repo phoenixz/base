@@ -1034,6 +1034,13 @@ function mysqlr_add_log($params){
                          ':servers_id'   => $database['servers_id'],
                          ':databases_id' => $database['databases_id'],
                          ':message'      => $params['message']));
+        
+        /*
+         * Notify
+         */
+        notify(array('classes'    => 'developers',
+                     'title'      => tr('mysqlr monitoring failed with code ":code"', array(':code' => $params['type'])),
+                     'decription' => $params['message']));
 
     }catch(Exception $e){
         throw new bException(tr('mysqlr_add_log(): Failed'), $e);
