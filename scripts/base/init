@@ -76,7 +76,7 @@ if($section){
     /*
      * Section initialization
      */
-    $version = cli_argument('-v,--section-version');
+    $version = cli_argument('-v,--section-version', true);
     cli_no_arguments_left();
 
     try{
