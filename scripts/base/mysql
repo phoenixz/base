@@ -353,45 +353,53 @@ switch(cli_method()){
             case 'check':
                 /*
                  * The replicator checker runs over Cron each 1 minute
-                 * If its already running it won't run.
-                 * After finishing it runs itself again.
+                 * If its already running it won't run
                  */
+                cli_run_once_local();
                 log_console(tr('Checking databases replication status'), 'white');
                 
                 /*
                  * Get databases
                  */
-                $databases = sql_query('SELECT    `databases`.`id`,
-                                                  `databases`.`status`,
-                                                  `databases`.`replication_status`,
-                                                  `databases`.`name` AS `database`
+                $databases = sql_query('SELECT     `databases`.`id`,
+                                                   `databases`.`status`,
+                                                   `databases`.`replication_status`,
+                                                   `databases`.`id`         AS `databases_id`,
+                                                   `databases`.`name`       AS `database`,
+                                                   `databases`.`servers_id` AS `servers_id`
 
-                                        FROM      `databases`
+                                        FROM       `databases`
+                                        
+                                        LEFT JOIN  `servers`
+                                        ON         `databases`.`servers_id` = `servers`.`id`
 
-                                        WHERE     `databases`.`status` IS NULL');
+                                        WHERE      `databases`.`status` IS NULL
+                                        AND        `servers`.`status`   IS NULL');
 
                 load_libs('ssh,servers');
 
                 while($database = sql_fetch($databases)){
                     try{
+                        log_console(tr('Checking database ":database"', array(':database' => $database['database'])));
                         mysqlr_monitor_database($database);
+                        sleep(1);
 
                     }catch(Exception $e){
-                        $message = tr('mysql/check: Failed to on database ":database", encountered error ":error"', array(':database' => $database['database'], ':error' => str_log($e->getMessage())));
+                        $message = tr('mysqlr_monitor_database(): Failed to on database ":database", encountered error ":error"', array(':database' => $database['database'], ':error' => str_log($e->getMessage())));
                         mysqlr_add_log(array('databases_id' => $database['id'],
                                              'type'         => 'other',
                                              'message'      => $message));
-                        mysqlr_update_database_replication_status($database, 'error');
+                        mysqlr_update_replication_status($database, 'error');
                         log_console($message, 'red');
+                        sleep(1);
                     }
                 }
                 
                 /*
-                 * Restart itself
+                 *
                  */
-                log_console(tr('Finished checking replication, restarting again'));
-                run_background('base/mysql replication --env '.ENVIRONMENT.' check ', true, false);
-
+                log_console(tr('Finished checking replication'));
+                cli_run_once_local(true);
                 break;
 
             case 'list':

@@ -60,11 +60,11 @@ function mysqlr_update_server_replication_status($params, $status){
         array_default($params, 'servers_id' , '');
 
         if(empty($params['servers_id'])){
-            throw new bException(tr('mysqlr_update_replication_status(): No servers_id specified'), 'not-specified');
+            throw new bException(tr('mysqlr_update_server_replication_status(): No servers_id specified'), 'not-specified');
         }
 
         if(empty($status)){
-            throw new bException(tr('mysqlr_update_replication_status(): No status specified'), 'not-specified');
+            throw new bException(tr('mysqlr_update_server_replication_status(): No status specified'), 'not-specified');
         }
 
         /*
@@ -634,7 +634,7 @@ function mysqlr_slave_ssh_tunnel($server, $slave){
         array_default($server, 'hostname'     , '');
         array_default($server, 'ssh_key'      , '');
         array_default($server, 'port'         , 22);
-        array_default($server, 'arguments'    , '-T');
+        array_default($server, 'arguments'    , '');
         array_default($server, 'hostkey_check', true);
 
         /*
@@ -1061,7 +1061,7 @@ function mysqlr_add_log($params){
  * @param
  * @return
  */
-function mysqlr_get_logs($database){
+function mysqlr_get_logs($database, $limit = 50){
     try{
         load_libs('mysql');
         
@@ -1082,6 +1082,7 @@ function mysqlr_get_logs($database){
          * Get logs
          */
         $replicator_logs = sql_list('SELECT    `replicator_logs`.`id`,
+                                               `replicator_logs`.`createdon`,
                                                `replicator_logs`.`status`,
                                                `replicator_logs`.`type`,
                                                `replicator_logs`.`projects_id`,
@@ -1103,7 +1104,11 @@ function mysqlr_get_logs($database){
                                      ON        `replicator_logs`.`servers_id`   = `servers`.`id`
                                      
                                      WHERE     `replicator_logs`.`databases_id` = :databases_id
-                                     AND       `replicator_logs`.`status`       IS NULL',
+                                     AND       `replicator_logs`.`status`       IS NULL
+                                     
+                                     ORDER BY  `replicator_logs`.`createdon` DESC
+                                     
+                                     LIMIT     '.$limit,
                                      
                                      array(':databases_id' => $database['id']));
 
@@ -1130,7 +1135,11 @@ function mysqlr_get_logs($database){
  * @return
  */
 function mysqlr_monitor_database($database){
+    global $_CONFIG;
+    
     try{
+        $slave = $_CONFIG['mysqlr']['hostname'];
+        
         /*
          * Validate data
          */
@@ -1142,14 +1151,22 @@ function mysqlr_monitor_database($database){
          * Get database
          * This function will throw an error is this database does not exist
          */
-        $database = mysql_get_database($database);
+        $database = mysql_get_database($database['databases_id']);
+        log_console(tr('Checking database :database from server :server', array(':database' => $database['database_name'], ':server' => $database['hostname'])), 'white');
         
+        /*
+         * Check if this db can replicate
+         */
+        if(!mysqlr_db_can_replicate($database['database_name'])){
+            log_console(tr('This database can not replicate due to more databases with the same name, skipping'), 'yellow');
+            return 1;
+        }
+
         /*
          * Check if MySQL configuration still has this database
          */
-        log_console(tr('Checking database :database from server :server', array(':database' => $database['database'], ':server' => $database['hostname'])), 'white');
-        $mysql_cnf_path = mysqlr_check_configuration_path($database['database']);
-        $result         = servers_exec($database['hostname'], 'grep -q -F \'binlog_do_db = '.$database['database'].'\' '.$mysql_cnf_path.' && echo "1" || echo "0"');
+        $mysql_cnf_path = mysqlr_check_configuration_path($database['hostname']);
+        $result         = servers_exec($database['hostname'], 'grep -q -F \'binlog_do_db = '.$database['database_name'].'\' '.$mysql_cnf_path.' && echo "1" || echo "0"');
 
         if(!$result[0]){
             /*
@@ -1157,15 +1174,15 @@ function mysqlr_monitor_database($database){
              */
             mysqlr_add_log(array('databases_id' => $database['id'],
                                  'type'         => 'misconfiguration',
-                                 'message'      => 'The mysql configuration file does not contain this database'));
-            mysqlr_update_database_replication_status($database, 'disabled');
+                                 'message'      => tr('mysqlr_monitor_database(): The mysql configuration file does not contain this database, meaning that this database is not replicating')));
+            mysqlr_update_replication_status($database, 'disabled');
             return 1;
         }
 
         /*
-         * Check channel for the server database
+         * Check channel for the server database on the Replicator server
          */
-        $result = sql_get('SHOW SLAVE STATUS FOR CHANNEL :channel', array(':channel' => $database['hostname']));
+        $result = sql_get('SHOW SLAVE STATUS FOR CHANNEL :channel', array(':channel' => $database['hostname']), null, 'replicator');
 
         if(empty($result)){
             /*
@@ -1173,17 +1190,17 @@ function mysqlr_monitor_database($database){
              */
             mysqlr_add_log(array('databases_id' => $database['id'],
                                  'type'         => 'mysql_issue',
-                                 'message'      => 'The mysql channel for this database does not exist, check the configuration for this slave'));
-            mysqlr_update_database_replication_status($database, 'disabled');
+                                 'message'      => tr('mysqlr_monitor_database(): The mysql channel for this database does not exist, check the configuration for this slave')));
+            mysqlr_update_replication_status($database, 'disabled');
             return 1;
         }
 
         if(strtolower($result['Slave_IO_Running']) != 'yes' and strtolower($result['Slave_IO_Running']) != 'yes'){
             mysqlr_add_log(array('databases_id' => $database['id'],
                                  'type'         => 'mysql_issue',
-                                 'message'      => tr('There is an error with the Slave, restarting ssh tunnel, Last_IO_Errno ":Last_IO_Errno", Last_IO_Error ":Last_IO_Error"', array(':Last_IO_Errno' => $result['Last_IO_Errno'], 'Last_IO_Error' => $result['Last_IO_Error']))));
-            ssh_mysql_slave_tunnel($database);
-            mysqlr_update_database_replication_status($database, 'error');
+                                 'message'      => tr('mysqlr_monitor_database(): There is an error with the Slave, restarting ssh tunnel, Last_IO_Errno ":Last_IO_Errno", Last_IO_Error ":Last_IO_Error"', array(':Last_IO_Errno' => $result['Last_IO_Errno'], ':Last_IO_Error' => $result['Last_IO_Error']))));
+            mysqlr_slave_ssh_tunnel($database, $slave);
+            mysqlr_update_replication_status($database, 'error');
             return 1;
         }
 
@@ -1236,6 +1253,37 @@ function mysqlr_log_type_human($type){
         }
         
         return $retval;
+        
+    }catch(Exception $e){
+        throw new bException(tr('mysqlr_log_html_tag_type(): Failed'), $e);
+    }
+}
+
+
+
+/*
+ *
+ * @author Ismael Haro <isma@capmega.com>
+ * @copyright Copyright (c) 2018 Capmega
+ * @license http://opensource.org/licenses/GPL-2.0 GNU Public License, Version 2
+ * @category Function reference
+ * @package mysqlr
+ *
+ * @param
+ * @return
+ */
+function mysqlr_db_can_replicate($database_name){
+    try{
+        /*
+         * Check if there is duplicate database names on other servers
+         */
+        $duplicates = sql_query('SELECT `id`,`name` FROM `databases` WHERE `name` = :name', array(':name' => $database_name));
+
+        if($duplicates->rowCount() > 1){
+            return false;
+        }
+        
+        return true;
         
     }catch(Exception $e){
         throw new bException(tr('mysqlr_log_html_tag_type(): Failed'), $e);
