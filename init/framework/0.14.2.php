@@ -5,7 +5,7 @@
 sql_column_exists('blogs_key_values', 'seovalue', '!ALTER TABLE `blogs_key_values` ADD COLUMN `seovalue` VARCHAR(128) AFTER `value`');
 sql_index_exists ('blogs_key_values', 'seovalue', '!ALTER TABLE `blogs_key_values` ADD INDEX(`seovalue`)');
 
-log_console('Fixing `blogs_key_values`.`seovalue` column', 'init', '', false);
+log_console('Fixing `blogs_key_values`.`seovalue` column', 'white', false);
 load_libs('seo');
 
 $count = 0;
@@ -22,5 +22,5 @@ while($value = sql_fetch($r)){
                       ':seovalue' => seo_create_string($value['value'])));
 }
 
-log_console('done', '', 'green');
+log_console(tr('Done'), 'green');
 ?>

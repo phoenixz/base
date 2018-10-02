@@ -76,9 +76,9 @@ sql_query('CREATE TABLE `users` (`id`           INT(11)      NOT NULL AUTO_INCRE
  * Check MySQL timezone availability
  */
 if(!sql_get('SELECT CONVERT_TZ("2012-06-07 12:00:00", "GMT", "America/New_York") AS `time`', 'time')){
-    log_console('No timezone data found in MySQL, importing timezone data files now', 'import', 'white');
-    log_console('Please fill in MySQL root password in the following "Enter password:" request', 'import', 'white');
-    log_console('You may ignore any "Warning: Unable to load \'/usr/share/zoneinfo/........\' as time zone. Skipping it." messages', 'import', 'yellow');
+    log_console('No timezone data found in MySQL, importing timezone data files now', 'white');
+    log_console('Please fill in MySQL root password in the following "Enter password:" request', 'white');
+    log_console('You may ignore any "Warning: Unable to load \'/usr/share/zoneinfo/........\' as time zone. Skipping it." messages', 'yellow');
 
     safe_exec('mysql_tzinfo_to_sql /usr/share/zoneinfo | mysql -p  -u root mysql');
 }

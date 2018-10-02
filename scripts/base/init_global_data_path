@@ -1,11 +1,11 @@
 #!/usr/bin/php
 <?php
 /*
- * This is an empty test script template
+ * This script is used to find ther global data path
  */
-$usage = "./scripts/base/init_global_data_path [PATH]\n";
+$usage = './scripts/base/init_global_data_path [PATH]';
 
-$help  = "This script will initialize the global data path where data that can be shared between multiple projects (Like geodata data files) is stored";
+$help  = 'This script will initialize the global data path where data that can be shared between multiple projects (Like geodata data files) is stored';
 
 require_once(__DIR__.'/../../libs/startup.php');
 
@@ -13,7 +13,7 @@ log_console('Initializing global data path', '', 'white');
 
 if(empty($_CONFIG['data']['global'])){
     if(!$path = cli_argument(0)){
-        log_console('Please type the absolute path of the data directory [<enter> for '.$_CONFIG['data']['global'].']:', '', '', false);
+        log_console(TR('Please type the absolute path of the data directory [<enter> for ":path"]:', array(':path' => $_CONFIG['data']['global'])), false);
         $path = readline('');
     }
 
@@ -34,18 +34,17 @@ if(empty($_CONFIG['data']['global'])){
         /*
          * Umm, we don't have a user data directory
          */
-        throw new bException('No user home directory found for non root user', 'nohomedir');
+        throw new bException(tr('No user home directory found for non root user'), 'not-exist');
     }
 }
 
 if(substr($path, 0, 1) != '/'){
-    throw new bException('The specified path "'.str_log($path).'" is invalid. An absolute path (starting with a forward slash /) is required', 'invalid');
+    throw new bException(tr('The specified path ":path" is invalid. An absolute path (starting with a forward slash /) is required', array(':path' => $path)), 'invalid');
 }
 
 $path = slash($path);
 
-log_console('Trying to use location "'.str_log($path).'" for global data directory', 'tryingpath', 'white');
-
+log_console(tr('Trying to use location ":path" for global data directory', array(':path' => $path)), 'white');
 load_libs('file');
 
 try{
@@ -53,7 +52,7 @@ try{
         /*
          * Wut? Requested path already exists, we're done here!
          */
-        log_console(tr('Warning: The specified global data path "%path%" already exists', array('%path%' => $path)), 'pathalreadyexists', 'yellow');
+        log_console(tr('Warning: The specified global data path ":path" already exists', array(':path' => $path)), 'yellow');
 
     }else{
         mkdir($path, $_CONFIG['fs']['dir_mode'], true);

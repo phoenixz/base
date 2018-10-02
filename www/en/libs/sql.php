@@ -31,6 +31,13 @@ function sql_library_init(){
             throw new bException('sql_library_init(): Could not find the "PDO" class, does this PHP have PDO available?', 'not-available');
         }
 
+        if(!defined('PDO::MYSQL_ATTR_USE_BUFFERED_QUERY')){
+            /*
+             * Wulp, MySQL library is not available
+             */
+            throw new bException('sql_library_init(): Could not find the "MySQL" library. To install this on Ubuntu derrivates, please type "sudo apt install php-mysql', 'not-available');
+        }
+
     }catch(Exception $e){
         throw new bException('sql_library_init(): Failed', $e);
     }
