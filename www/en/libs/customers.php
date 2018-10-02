@@ -316,7 +316,7 @@ function customers_select($params = null){
         array_default($params, 'class'        , 'form-control');
         array_default($params, 'selected'     , null);
         array_default($params, 'seocategory'  , null);
-        array_default($params, 'categories_id', null);
+        array_default($params, 'categories_id', false);
         array_default($params, 'status'       , null);
         array_default($params, 'empty'        , tr('No customers available'));
         array_default($params, 'none'         , tr('Select a customer'));
