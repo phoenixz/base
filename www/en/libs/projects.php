@@ -76,7 +76,7 @@ function projects_validate($project, $reload_only = false){
          */
         if($project['seocustomer']){
             load_libs('customers');
-            $project['customers_id'] = customers_get($project['seocustomer'], 'id');
+            $project['customers_id'] = customers_get($project['seocustomer'], 'id', null, false);
 
             if(!$project['customers_id']){
                 $v->setError(tr('Specified customer does not exist'));
