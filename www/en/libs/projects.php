@@ -160,7 +160,7 @@ function projects_validate($project, $reload_only = false){
         if($project['fcm_api_key']){
             $v->hasMinChars($project['fcm_api_key'], 11, tr('Please ensure the project\'s fcm_api_key has at least 11 characters'));
             $v->hasMaxChars($project['fcm_api_key'], 511, tr('Please ensure the project\'s fcm_api_key has less than 511 characters'));
-            $v->isAlphaNumeric($project['fcm_api_key'], tr('Please ensure the project\'s fcm_api_key contains no spaces'), VALIDATE_IGNORE_DASH);
+            $v->isAlphaNumeric($project['fcm_api_key'], tr('Please ensure the project\'s fcm_api_key is alpha numeric with only dashes'), VALIDATE_IGNORE_DASH);
 
         }else{
             $project['fcm_api_key'] = null;
@@ -193,19 +193,19 @@ function projects_validate($project, $reload_only = false){
         /*
          * Does the project name already exist?
          */
-        $exists = sql_get('SELECT `id` FROM `projects` WHERE `name` = :name AND `id` != :id', true, array(':name' => $project['name'], ':id' => isset_get($project['id'])));
+        $exists = sql_get('SELECT `id` FROM `projects` WHERE `name` = :name AND `id` != :id', true, array(':name' => $project['name'], ':id' => isset_get($project['id'], 0)));
 
         if($exists){
-            $v->setError(tr('The name ":name" already exists with id ":id"', array(':name' => $project['name'], ':id' => $exists)));
+            $v->setError(tr('The name ":name" already exists for project id ":id"', array(':name' => $project['name'], ':id' => $exists)));
         }
 
         /*
          * Does the project code already exist?
          */
-        $exists = sql_get('SELECT `id` FROM `projects` WHERE `code` = :code AND `id` != :id', true, array(':code' => $project['code'], ':id' => isset_get($project['id'])));
+        $exists = sql_get('SELECT `id` FROM `projects` WHERE `code` = :code AND `id` != :id', true, array(':code' => $project['code'], ':id' => isset_get($project['id'], 0)));
 
         if($exists){
-            $v->setError(tr('The project code ":code" already exists with id ":id"', array(':code' => $project['code'], ':id' => $exists)));
+            $v->setError(tr('The project code ":code" already exists for project id ":id"', array(':code' => $project['code'], ':id' => $exists)));
         }
 
         $v->isValid();
@@ -213,7 +213,7 @@ function projects_validate($project, $reload_only = false){
         /*
          * All is good, yay!
          */
-        $project['seoname'] = seo_unique($project['name'], 'projects', isset_get($project['id']));
+        $project['seoname'] = seo_unique($project['name'], 'projects', isset_get($project['id'], 0));
 
         return $project;
 
