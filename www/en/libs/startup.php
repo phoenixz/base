@@ -1728,7 +1728,7 @@ function domain($current_url = false, $query = null, $root = null, $domain = nul
             //}
             //
             //if($_SESSION['domain'] == 'auto'){
-            //    $_SESSION['domain'] = $_SERVER['SERVER_NAME'];
+            //    $_SESSION['domain'] = $_SERVER['HTTP_HOST'];
             //}
 
             $domain = $_CONFIG['domain'];
@@ -1737,7 +1737,7 @@ function domain($current_url = false, $query = null, $root = null, $domain = nul
             /*
              * Use current domain name
              */
-            $domain = $_SERVER['SERVER_NAME'];
+            $domain = $_SERVER['HTTP_HOST'];
         }
 
         if(empty($_CONFIG['language']['supported'])){
@@ -1975,7 +1975,7 @@ function user_or_signin(){
              * Is user restricted to a page? if so, keep him there
              */
             if(empty($_SESSION['lock']) and !empty($_SESSION['user']['redirect'])){
-                if(str_from($_SESSION['user']['redirect'], '://') != $_SERVER['SERVER_NAME'].$_SERVER['REQUEST_URI']){
+                if(str_from($_SESSION['user']['redirect'], '://') != $_SERVER['HTTP_HOST'].$_SERVER['REQUEST_URI']){
                     redirect(domain($_SESSION['user']['redirect']));
                 }
             }

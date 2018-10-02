@@ -162,11 +162,11 @@ if(empty($_SESSION['init'])){
             break;
 
         case 'auto':
-            $_CONFIG['domain'] = $_SERVER['SERVER_NAME'];
+            $_CONFIG['domain'] = $_SERVER['HTTP_HOST'];
             break;
 
         case '.auto':
-            $_CONFIG['domain'] = '.'.$_SERVER['SERVER_NAME'];
+            $_CONFIG['domain'] = '.'.$_SERVER['HTTP_HOST'];
             break;
 
         default:
@@ -185,8 +185,8 @@ if(empty($_SESSION['init'])){
 
             $length = strlen($test);
 
-            if(substr($_SERVER['SERVER_NAME'], -$length, $length) != $test){
-                throw new bException(tr('startup-webpage(): Specified cookie domain ":cookie_domain" is invalid for current domain ":current_domain"', array(':cookie_domain' => $_CONFIG['cookie']['domain'], ':current_domain' => $_SERVER['SERVER_NAME'])), 'cookiedomain');
+            if(substr($_SERVER['HTTP_HOST'], -$length, $length) != $test){
+                throw new bException(tr('startup-webpage(): Specified cookie domain ":cookie_domain" is invalid for current domain ":current_domain"', array(':cookie_domain' => $_CONFIG['cookie']['domain'], ':current_domain' => $_SERVER['HTTP_HOST'])), 'cookiedomain');
             }
 
             unset($test);

@@ -96,7 +96,7 @@ function is_ipv6($version = null){
  * Correct domain name
  */
 function domain_correct($count){
-    $_SERVER['SERVER_NAME'] = substr($_SERVER['SERVER_NAME'], $count);
+    $_SERVER['HTTP_HOST'] = substr($_SERVER['HTTP_HOST'], $count);
     $_SERVER['HTTP_HOST']   = substr($_SERVER['HTTP_HOST']  , $count);
 }
 
@@ -124,11 +124,11 @@ function is_valid_domain_name($domain_name) {
  */
 function inet_get_domain($strip = array('www', 'dev', 'm')){
     try{
-        if(in_array(str_until($_SERVER['SERVER_NAME'], '.'), array_force($strip))){
-            return str_from($_SERVER['SERVER_NAME']);
+        if(in_array(str_until($_SERVER['HTTP_HOST'], '.'), array_force($strip))){
+            return str_from($_SERVER['HTTP_HOST']);
         }
 
-        return $_SERVER['SERVER_NAME'];
+        return $_SERVER['HTTP_HOST'];
 
     }catch(Exception $e){
         throw new bException(tr('inet_get_domain(): Failed'), $e);
@@ -145,12 +145,12 @@ function inet_get_subdomain($domain = null, $strip = array('www', 'dev', 'm')){
 
     try{
         if(!$domain){
-            $domain = $_SERVER['SERVER_NAME'];
+            $domain = $_SERVER['HTTP_HOST'];
         }
 
         $subdomain = str_until($domain, '.');
 
-        if(in_array(str_until($_SERVER['SERVER_NAME'], '.'), array_force($strip))){
+        if(in_array(str_until($_SERVER['HTTP_HOST'], '.'), array_force($strip))){
             return false;
         }
 
