@@ -25,45 +25,66 @@ if(empty($_CONFIG['cookie']['domain'])){
 
 
         /*
-         *
+         * Check the detected domain against the configured domain.
+         * If it doesnt match then check if its a registered whitelabel domain
          */
-        switch(true){
-            case ($_CONFIG['whitelabels']['enabled'] === 'all'):
-                // FALLTHROUGH
-            case ($_CONFIG['whitelabels']['enabled'] === false):
+        if($_SERVER['SERVER_NAME'] === $_CONFIG['domain']){
+            /*
+             * This is the registered domain
+             */
+            session_set_cookie_params($_CONFIG['cookie']['lifetime'], $_CONFIG['cookie']['path'], $_SERVER['SERVER_NAME'], $_CONFIG['cookie']['secure'], $_CONFIG['cookie']['httponly']);
+
+        }else{
+            /*
+             * This is not the registered domain!
+             */
+            if($_CONFIG['whitelabels']['enabled'] === false){
                 /*
                  * white label domains are disabled, so the detected domain MUST match the configured domain
                  */
-                session_set_cookie_params($_CONFIG['cookie']['lifetime'], $_CONFIG['cookie']['path'], cfm($_SERVER['HTTP_HOST']), $_CONFIG['cookie']['secure'], $_CONFIG['cookie']['httponly']);
-                break;
+                redirect(domain());
 
-            case ($_CONFIG['whitelabels']['enabled'] === 'sub'):
+            }elseif($_CONFIG['whitelabels']['enabled'] === 'all'){
+                /*
+                 * All domains are allowed
+                 */
+                session_set_cookie_params($_CONFIG['cookie']['lifetime'], $_CONFIG['cookie']['path'], $_SERVER['SERVER_NAME'], $_CONFIG['cookie']['secure'], $_CONFIG['cookie']['httponly']);
+
+            }elseif($_CONFIG['whitelabels']['enabled'] === 'sub'){
+                $len = strlen($_CONFIG['domain']);
+
+                if(substr($_SERVER['SERVER_NAME'], -$len, $len) !== $_CONFIG['domain']){
+                    redirect(domain());
+                }
+
                 /*
                  * white label domains are disabled, but sub domains from the $_CONFIG[domain] are allowed
                  */
                 session_set_cookie_params($_CONFIG['cookie']['lifetime'], $_CONFIG['cookie']['path'], $_CONFIG['domain'], $_CONFIG['cookie']['secure'], $_CONFIG['cookie']['httponly']);
-                break;
 
-            default:
+            }elseif($_CONFIG['whitelabels']['enabled'] === 'list'){
                 /*
-                 * Check the detected domain against the configured domain.
-                 * If it doesnt match then check if its a registered whitelabel domain
+                 * This domain must be registered in the whitelabels list
                  */
-                if($_SERVER['SERVER_NAME'] === $_CONFIG['domain']){
-                    session_set_cookie_params($_CONFIG['cookie']['lifetime'], $_CONFIG['cookie']['path'], $_SERVER['SERVER_NAME'], $_CONFIG['cookie']['secure'], $_CONFIG['cookie']['httponly']);
+                $domain = sql_get('SELECT `domain` FROM `whitelabels` WHERE `domain` = :domain AND `status` IS NULL', 'domain', array(':domain' => $_SERVER['HTTP_HOST']));
 
-                }else{
-                    $domain = sql_get('SELECT `domain` FROM `whitelabels` WHERE `domain` = :domain AND `status` IS NULL', 'domain', array(':domain' => $_SERVER['HTTP_HOST']));
-
-                    if(empty($domain)){
-                        /*
-                         * Either we have no domain or it is not allowed. Redirect to main domain
-                         */
-                        redirect();
-                    }
-
-                    session_set_cookie_params($_CONFIG['cookie']['lifetime'], $_CONFIG['cookie']['path'], $domain, $_CONFIG['cookie']['secure'], $_CONFIG['cookie']['httponly']);
+                if(empty($domain)){
+                    redirect(domain());
                 }
+
+                session_set_cookie_params($_CONFIG['cookie']['lifetime'], $_CONFIG['cookie']['path'], $domain, $_CONFIG['cookie']['secure'], $_CONFIG['cookie']['httponly']);
+
+            }else{
+                /*
+                 * The domain must match either $_CONFIG[domain] or the domain
+                 * specified in $_CONFIG[whitelabels][enabled]
+                 */
+                if($_SERVER['SERVER_NAME'] !== $_CONFIG['whitelabels']['enabled']){
+                    redirect(domain());
+                }
+
+                session_set_cookie_params($_CONFIG['cookie']['lifetime'], $_CONFIG['cookie']['path'], $_SERVER['SERVER_NAME'], $_CONFIG['cookie']['secure'], $_CONFIG['cookie']['httponly']);
+            }
         }
 
 
