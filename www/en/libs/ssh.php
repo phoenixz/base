@@ -812,6 +812,8 @@ function ssh_add_known_host($hostname, $port){
                 }
             }
         }
+        
+        sql_query('UPDATE `servers` SET `status` = NULL WHERE `hostname` = :hostname', array(':hostname' => $hostname));
 
         return $count;
 
