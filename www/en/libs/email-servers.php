@@ -1,6 +1,6 @@
 <?php
 /*
- * email-server library
+ * email-servers library
  *
  * This library contains functions to manage email servers through SQL queries
  *
@@ -11,20 +11,21 @@
 
 
 /*
+ * Initialize the library. Automatically executed by libs_load(). Will automatically load the ssh library configuration
  *
- *
+ * @auhthor Sven Olaf Oostenbrink <sven@capmega.com>
  * @copyright Copyright (c) 2018 Capmega
  * @license http://opensource.org/licenses/GPL-2.0 GNU Public License, Version 2
  * @category Function reference
- * @package email-server
+ * @package email-servers
  *
  * @return void
  */
-function email_server_library_init(){
+function email_servers_library_init(){
     try{
 
     }catch(Exception $e){
-        throw new bException('email_server_library_init(): Failed', $e);
+        throw new bException('email_servers_library_init(): Failed', $e);
     }
 }
 
@@ -36,29 +37,37 @@ function email_server_library_init(){
  * @copyright Copyright (c) 2018 Capmega
  * @license http://opensource.org/licenses/GPL-2.0 GNU Public License, Version 2
  * @category Function reference
- * @package email-server
+ * @package email-servers
  *
  * @return array
  */
-function email_server_init($server, $database = 'mail'){
+function email_servers_init($server, $connector = 'mail'){
     try{
+        if(!isset($_CONFIG['db'][$connector])){
+            throw new bException(tr('email_servers_init(): The specified connector ":connector" does not exist', array(':connector' => $connector)), 'not-exist');
+        }
+
+        $config   = $_CONFIG['db'][$connector];
+        $database = $config['database'];
+
         /*
          * Create mail database with tables
          */
-        sql_exec($server, 'USE `'.$database.'`; DROP TABLE IF EXISTS `aliases`');
-        sql_exec($server, 'USE `'.$database.'`; DROP TABLE IF EXISTS `accounts`');
-        sql_exec($server, 'USE `'.$database.'`; DROP TABLE IF EXISTS `domains`');
+        sql_query('DROP TABLE IF EXISTS `aliases`' , null, $connector);
+        sql_query('DROP TABLE IF EXISTS `accounts`', null, $connector);
+        sql_query('DROP TABLE IF EXISTS `domains`' , null, $connector);
 
-        sql_exec($server, 'USE `'.$database.'`; CREATE TABLE `domains` (`id`     INT(11)     NOT NULL AUTO_INCREMENT PRIMARY KEY,
-                                                                        `status` VARCHAR(16)     NULL,
-                                                                        `name`   VARCHAR(50)     NULL,
+        sql_query('CREATE TABLE `domains` (`id`           INT(11)     NOT NULL AUTO_INCREMENT PRIMARY KEY,
+                                           `status`       VARCHAR(16)     NULL,
+                                           `max_accounts` INT(11)     NOT NULL DEFAULT 0,
+                                           `name`         VARCHAR(50)     NULL,
 
-                                                                               KEY `status` (`status`),
-                                                                        UNIQUE KEY `name`   (`name`)
+                                           KEY `status` (`status`),
+                                           UNIQUE KEY `name`   (`name`)
 
-                                                                       ) ENGINE=InnoDB AUTO_INCREMENT='.$_CONFIG['db']['core']['autoincrement'].' DEFAULT CHARSET="'.$_CONFIG['db']['core']['charset'].'" COLLATE="'.$_CONFIG['db']['core']['collate'].'";', null, null, 'mail');
+                                          ) ENGINE=InnoDB AUTO_INCREMENT='.$_CONFIG['db']['core']['autoincrement'].' DEFAULT CHARSET="'.$_CONFIG['db']['core']['charset'].'" COLLATE="'.$_CONFIG['db']['core']['collate'].'";', null, $connector);
 
-        sql_exec($server, 'USE `'.$database.'`; CREATE TABLE `aliases` (`id`         INT(11)      NOT NULL AUTO_INCREMENT PRIMARY KEY,
+        sql_query('CREATE TABLE `aliases` (`id`         INT(11)      NOT NULL AUTO_INCREMENT PRIMARY KEY,
                                                                         `status`     VARCHAR(16)      NULL,
                                                                         `domains_id` INT(11)      NOT NULL,
                                                                         `source`     VARCHAR(120)     NULL,
@@ -74,7 +83,7 @@ function email_server_init($server, $database = 'mail'){
 
                                                                        ) ENGINE=InnoDB AUTO_INCREMENT='.$_CONFIG['db']['core']['autoincrement'].' DEFAULT CHARSET="'.$_CONFIG['db']['core']['charset'].'" COLLATE="'.$_CONFIG['db']['core']['collate'].'";', null, null, 'mail');
 
-        sql_exec($server, 'USE `'.$database.'`; CREATE TABLE `accounts` (`id`         INT(11)      NOT NULL AUTO_INCREMENT PRIMARY KEY,
+        sql_exec($server, 'CREATE TABLE `accounts` (`id`         INT(11)      NOT NULL AUTO_INCREMENT PRIMARY KEY,
                                                                          `status`     VARCHAR(16)      NULL,
                                                                          `domains_id` INT(11)      NOT NULL,
                                                                          `password`   VARCHAR(106)     NULL,
@@ -89,7 +98,7 @@ function email_server_init($server, $database = 'mail'){
                                                                         ) ENGINE=InnoDB AUTO_INCREMENT='.$_CONFIG['db']['core']['autoincrement'].' DEFAULT CHARSET="'.$_CONFIG['db']['core']['charset'].'" COLLATE="'.$_CONFIG['db']['core']['collate'].'";', null, null, 'mail');
 
     }catch(Exception $e){
-        throw new bException('email_server_init(): Failed', $e);
+        throw new bException('email_servers_init(): Failed', $e);
     }
 }
 
@@ -101,22 +110,22 @@ function email_server_init($server, $database = 'mail'){
  * @copyright Copyright (c) 2018 Capmega
  * @license http://opensource.org/licenses/GPL-2.0 GNU Public License, Version 2
  * @category Function reference
- * @package email-server
+ * @package email-servers
  *
  * @return array
  */
-function email_server_clear_all($server, $database = 'mail'){
+function email_servers_clear_all($server, $database = 'mail'){
     try{
         $count = array();
 
-        $counts['accounts'] = sql_exec($server, 'USE `'.$database.'`; DELETE FROM `accounts`');
-        $counts['aliases']  = sql_exec($server, 'USE `'.$database.'`; DELETE FROM `aliases`');
-        $counts['domains']  = sql_exec($server, 'USE `'.$database.'`; DELETE FROM `domains`');
+        $counts['accounts'] = sql_exec($server, 'DELETE FROM `accounts`');
+        $counts['aliases']  = sql_exec($server, 'DELETE FROM `aliases`');
+        $counts['domains']  = sql_exec($server, 'DELETE FROM `domains`');
 
         return $count;
 
     }catch(Exception $e){
-        throw new bException('email_server_clear_all(): Failed', $e);
+        throw new bException('email_servers_clear_all(): Failed', $e);
     }
 }
 
@@ -128,13 +137,13 @@ function email_server_clear_all($server, $database = 'mail'){
  * @copyright Copyright (c) 2018 Capmega
  * @license http://opensource.org/licenses/GPL-2.0 GNU Public License, Version 2
  * @category Function reference
- * @package email-server
+ * @package email-servers
  *
  * @return array
  */
-function email_server_create_domain($domain){
+function email_servers_create_domain($domain){
     try{
-        $domain = email_server_validate_domain($domain);
+        $domain = email_servers_validate_domain($domain);
         $exists = sql_exec('SELECT `id` FROM `domains` WHERE `name` = "'.cfm($domain).'"');
 
         if($exists){
@@ -147,7 +156,7 @@ function email_server_create_domain($domain){
         return true;
 
     }catch(Exception $e){
-        throw new bException('email_server_create_domain(): Failed', $e);
+        throw new bException('email_servers_create_domain(): Failed', $e);
     }
 }
 
@@ -159,11 +168,11 @@ function email_server_create_domain($domain){
  * @copyright Copyright (c) 2018 Capmega
  * @license http://opensource.org/licenses/GPL-2.0 GNU Public License, Version 2
  * @category Function reference
- * @package email-server
+ * @package email-servers
  *
  * @return array
  */
-function email_server_create_accounts($accounts){
+function email_servers_create_accounts($accounts){
     try{
         /*
          * Validate all accounts
@@ -171,7 +180,7 @@ function email_server_create_accounts($accounts){
         foreach($accounts as $account){
             if(empty($account)) continue;
 
-            $account = email_server_validate_account($account);
+            $account = email_servers_validate_account($account);
 
             /*
              * Domain exists?
@@ -216,7 +225,7 @@ function email_server_create_accounts($accounts){
         return $counts;
 
     }catch(Exception $e){
-        throw new bException('email_server_create_accounts(): Failed', $e);
+        throw new bException('email_servers_create_accounts(): Failed', $e);
     }
 }
 
@@ -228,24 +237,24 @@ function email_server_create_accounts($accounts){
  * @copyright Copyright (c) 2018 Capmega
  * @license http://opensource.org/licenses/GPL-2.0 GNU Public License, Version 2
  * @category Function reference
- * @package email-server
+ * @package email-servers
  *
  * @return array
  */
-function email_server_create_aliases($aliases){
+function email_servers_create_aliases($aliases){
     try{
         /*
          * Validate all aliases
          */
         foreach($aliases as $source => $target){
-            email_server_validate_email($source);
-            email_server_validate_email($target);
+            email_servers_validate_email($source);
+            email_servers_validate_email($target);
 
             $source_domain = str_from($source, '@');
             $target_domain = str_from($target, '@');
 
-            $domains[$source_domain] = email_server_email_domain_exists($source_domain);
-            $domains[$target_domain] = email_server_email_domain_exists($target_domain);
+            $domains[$source_domain] = email_servers_email_domain_exists($source_domain);
+            $domains[$target_domain] = email_servers_email_domain_exists($target_domain);
         }
 
         /*
@@ -271,7 +280,7 @@ function email_server_create_aliases($aliases){
         }
 
     }catch(Exception $e){
-        throw new bException('email_server_create_aliases(): Failed', $e);
+        throw new bException('email_servers_create_aliases(): Failed', $e);
     }
 }
 
@@ -283,14 +292,14 @@ function email_server_create_aliases($aliases){
  * @copyright Copyright (c) 2018 Capmega
  * @license http://opensource.org/licenses/GPL-2.0 GNU Public License, Version 2
  * @category Function reference
- * @package email-server
+ * @package email-servers
  *
  * @return array
  */
-function email_server_delete_domains($domains){
+function email_servers_delete_domains($domains){
     try{
         foreach($domains as $domain){
-            email_server_validate_domain($domain);
+            email_servers_validate_domain($domain);
         }
 
         $count = 0;
@@ -311,7 +320,7 @@ function email_server_delete_domains($domains){
         }
 
     }catch(Exception $e){
-        throw new bException('email_server_delete_domains(): Failed', $e);
+        throw new bException('email_servers_delete_domains(): Failed', $e);
     }
 }
 
@@ -323,18 +332,18 @@ function email_server_delete_domains($domains){
  * @copyright Copyright (c) 2018 Capmega
  * @license http://opensource.org/licenses/GPL-2.0 GNU Public License, Version 2
  * @category Function reference
- * @package email-server
+ * @package email-servers
  *
  * @return array
  */
-function email_server_delete_accounts($accounts){
+function email_servers_delete_accounts($accounts){
     try{
         /*
          * Validate all accounts
          */
         foreach($accounts as $account){
             if(empty($account)) continue;
-            email_server_validate_email($account);
+            email_servers_validate_email($account);
         }
 
         $count = 0;
@@ -351,7 +360,7 @@ function email_server_delete_accounts($accounts){
         }
 
     }catch(Exception $e){
-        throw new bException('email_server_delete_accounts(): Failed', $e);
+        throw new bException('email_servers_delete_accounts(): Failed', $e);
     }
 }
 
@@ -363,24 +372,24 @@ function email_server_delete_accounts($accounts){
  * @copyright Copyright (c) 2018 Capmega
  * @license http://opensource.org/licenses/GPL-2.0 GNU Public License, Version 2
  * @category Function reference
- * @package email-server
+ * @package email-servers
  *
  * @return array
  */
-function email_server_delete_aliases($aliases){
+function email_servers_delete_aliases($aliases){
     try{
         /*
          * Validate all aliases
          */
         foreach($aliases as $source => $target){
-            email_server_validate_email($source);
-            email_server_validate_email($target);
+            email_servers_validate_email($source);
+            email_servers_validate_email($target);
 
             $source_domain = str_from($source, '@');
             $target_domain = str_from($target, '@');
 
-            $domains[$source_domain] = email_server_email_domain_exists($source_domain);
-            $domains[$target_domain] = email_server_email_domain_exists($target_domain);
+            $domains[$source_domain] = email_servers_email_domain_exists($source_domain);
+            $domains[$target_domain] = email_servers_email_domain_exists($target_domain);
         }
 
         $count = 0;
@@ -398,7 +407,7 @@ function email_server_delete_aliases($aliases){
         return $count;
 
     }catch(Exception $e){
-        throw new bException('email_server_delete_aliases(): Failed', $e);
+        throw new bException('email_servers_delete_aliases(): Failed', $e);
     }
 }
 
@@ -410,11 +419,11 @@ function email_server_delete_aliases($aliases){
  * @copyright Copyright (c) 2018 Capmega
  * @license http://opensource.org/licenses/GPL-2.0 GNU Public License, Version 2
  * @category Function reference
- * @package email-server
+ * @package email-servers
  *
  * @return array
  */
-function email_server_list_domains($domains){
+function email_servers_list_domains($domains){
     try{
         /*
          * Validate remote data
@@ -422,7 +431,7 @@ function email_server_list_domains($domains){
         if(!empty($domains)){
             foreach($domains as $domain){
                 if(empty($domain_name)) continue;
-                email_server_validate_domain($domain);
+                email_servers_validate_domain($domain);
             }
         }
 
@@ -436,7 +445,7 @@ function email_server_list_domains($domains){
         return $domains;
 
     }catch(Exception $e){
-        throw new bException('email_server_list_domains(): Failed', $e);
+        throw new bException('email_servers_list_domains(): Failed', $e);
     }
 }
 
@@ -448,17 +457,17 @@ function email_server_list_domains($domains){
  * @copyright Copyright (c) 2018 Capmega
  * @license http://opensource.org/licenses/GPL-2.0 GNU Public License, Version 2
  * @category Function reference
- * @package email-server
+ * @package email-servers
  *
  * @return array
  */
-function email_server_list_accounts($domain){
+function email_servers_list_accounts($domain){
     try{
         /*
          * Validate remote data
          */
         if(!empty($_POST['domains'])){
-            email_server_validate_domain($domain);
+            email_servers_validate_domain($domain);
         }
 
         $query = 'SELECT `id`, `email` FROM `accounts` ';
@@ -471,7 +480,7 @@ function email_server_list_accounts($domain){
         return $retval;
 
     }catch(Exception $e){
-        throw new bException('email_server_list_accounts(): Failed', $e);
+        throw new bException('email_servers_list_accounts(): Failed', $e);
     }
 }
 
@@ -483,14 +492,14 @@ function email_server_list_accounts($domain){
  * @copyright Copyright (c) 2018 Capmega
  * @license http://opensource.org/licenses/GPL-2.0 GNU Public License, Version 2
  * @category Function reference
- * @package email-server
+ * @package email-servers
  *
  * @return array
  */
-function email_server_list_aliases($domain){
+function email_servers_list_aliases($domain){
     try{
         if(!empty($_POST['domains'])){
-            email_server_validate_domain($domain);
+            email_servers_validate_domain($domain);
         }
 
         /*
@@ -509,7 +518,7 @@ function email_server_list_aliases($domain){
         return $aliases;
 
     }catch(Exception $e){
-        throw new bException('email_server_list_aliases(): Failed', $e);
+        throw new bException('email_servers_list_aliases(): Failed', $e);
     }
 }
 
@@ -522,24 +531,24 @@ function email_server_list_aliases($domain){
  * @copyright Copyright (c) 2018 Capmega
  * @license http://opensource.org/licenses/GPL-2.0 GNU Public License, Version 2
  * @category Function reference
- * @package email-server
+ * @package email-servers
  *
  * @param array $servers
  * @return void
  */
-function email_server_update_password($account, $password){
+function email_servers_update_password($account, $password){
     try{
         /*
          * Validate all accounts
          */
         foreach($_POST['accounts'] as $account){
-            email_server_validate_email($account);
+            email_servers_validate_email($account);
         }
 
         sql_exec('UPDATE `accounts` SET `password` = ENCRYPT(:password, CONCAT("$6$", SUBSTRING(SHA(RAND()), -16))) WHERE `email` = "'.$account.'"');
 
     }catch(Exception $e){
-        throw new bException('email_server_update_password(): Failed', $e);
+        throw new bException('email_servers_update_password(): Failed', $e);
     }
 }
 
@@ -551,11 +560,11 @@ function email_server_update_password($account, $password){
  * @copyright Copyright (c) 2018 Capmega
  * @license http://opensource.org/licenses/GPL-2.0 GNU Public License, Version 2
  * @category Function reference
- * @package email-server
+ * @package email-servers
  *
  * @return array
  */
-function email_server_get_servers($email){
+function email_servers_get_servers($email){
     try{
         /*
          * Domain exists?
@@ -569,18 +578,18 @@ function email_server_get_servers($email){
         $results = getmxrr($domain, $hostnames);
 
         if(!$results){
-            throw new bException(tr('email_server_get_servers(): Failed to get MX records for domain ":domain" for specified email ":email"', array(':domain' => $domain, ':email' => $email)));
+            throw new bException(tr('email_servers_get_servers(): Failed to get MX records for domain ":domain" for specified email ":email"', array(':domain' => $domain, ':email' => $email)));
         }
 
         if(!$hostnames){
-            throw new bException(tr('email_server_get_servers(): Domain ":domain" for specified email ":email" has no MX records registered', array(':domain' => $domain, ':email' => $email)));
+            throw new bException(tr('email_servers_get_servers(): Domain ":domain" for specified email ":email" has no MX records registered', array(':domain' => $domain, ':email' => $email)));
         }
 
         foreach($hostnames as $hostname){
             $servers_id = servers_get($hostname);
 
             if(!$servers_id){
-                throw new bException(tr('email_server_get_servers(): MX record ":hostname" for domain ":domain" for specified email ":email" has no MX records registered', array(':hostname' => $hostname, ':domain' => $domain, ':email' => $email)));
+                throw new bException(tr('email_servers_get_servers(): MX record ":hostname" for domain ":domain" for specified email ":email" has no MX records registered', array(':hostname' => $hostname, ':domain' => $domain, ':email' => $email)));
             }
 
             $servers[] = $servers_id;
@@ -589,7 +598,7 @@ function email_server_get_servers($email){
         return $servers;
 
     }catch(Exception $e){
-        throw new bException('email_server_get_servers(): Failed', $e);
+        throw new bException('email_servers_get_servers(): Failed', $e);
     }
 }
 
@@ -601,11 +610,11 @@ function email_server_get_servers($email){
  * @copyright Copyright (c) 2018 Capmega
  * @license http://opensource.org/licenses/GPL-2.0 GNU Public License, Version 2
  * @category Function reference
- * @package email-server
+ * @package email-servers
  *
  * @return array
  */
-function email_server_validate_server($server){
+function email_servers_validate_server($server){
     try{
         $v = new validate_form();
         $v->isRegex($server, '/\w{1,240}/', tr('The specified server ":server" is not valid', array(':server' => $server)));
@@ -614,7 +623,7 @@ function email_server_validate_server($server){
         return $server;
 
     }catch(Exception $e){
-        throw new bException('email_server_validate_server(): Failed', $e);
+        throw new bException('email_servers_validate_server(): Failed', $e);
     }
 }
 
@@ -626,11 +635,11 @@ function email_server_validate_server($server){
  * @copyright Copyright (c) 2018 Capmega
  * @license http://opensource.org/licenses/GPL-2.0 GNU Public License, Version 2
  * @category Function reference
- * @package email-server
+ * @package email-servers
  *
  * @return array
  */
-function email_server_validate_database($database){
+function email_servers_validate_database($database){
     try{
         $v = new validate_form();
         $v->isRegex($database, '/\w{1,32}\/', tr('The specified server ":server" is not valid', array(':server' => $database)));
@@ -639,7 +648,7 @@ function email_server_validate_database($database){
         return $database;
 
     }catch(Exception $e){
-        throw new bException('email_server_validate_database(): Failed', $e);
+        throw new bException('email_servers_validate_database(): Failed', $e);
     }
 }
 
@@ -651,11 +660,11 @@ function email_server_validate_database($database){
  * @copyright Copyright (c) 2018 Capmega
  * @license http://opensource.org/licenses/GPL-2.0 GNU Public License, Version 2
  * @category Function reference
- * @package email-server
+ * @package email-servers
  *
  * @return array
  */
-function email_server_validate_domain($domain){
+function email_servers_validate_domain($domain){
     try{
         $v = new validate_form($domain);
         $v->isRegex($domain, '/\w{1,128}/', tr('The specified email domain ":domain" is not valid', array(':domain' => $domain)));
@@ -664,7 +673,7 @@ function email_server_validate_domain($domain){
         return $domain;
 
     }catch(Exception $e){
-        throw new bException('email_server_validate_domain(): Failed', $e);
+        throw new bException('email_servers_validate_domain(): Failed', $e);
     }
 }
 
@@ -676,11 +685,11 @@ function email_server_validate_domain($domain){
  * @copyright Copyright (c) 2018 Capmega
  * @license http://opensource.org/licenses/GPL-2.0 GNU Public License, Version 2
  * @category Function reference
- * @package email-server
+ * @package email-servers
  *
  * @return array
  */
-function email_server_email_domain_exists($email){
+function email_servers_email_domain_exists($email){
     try{
         /*
          * Domain exists?
@@ -697,12 +706,12 @@ function email_server_email_domain_exists($email){
             throw new bException(tr('Domain ":domain" for specified email ":email" does not exist', array(':domain' => $domain, ':email' => $source['email'])));
         }
 
-        email_server_get_servers($email);
+        email_servers_get_servers($email);
 
         return $domains_id;
 
     }catch(Exception $e){
-        throw new bException('email_server_email_domain_exists(): Failed', $e);
+        throw new bException('email_servers_email_domain_exists(): Failed', $e);
     }
 }
 
@@ -714,11 +723,11 @@ function email_server_email_domain_exists($email){
  * @copyright Copyright (c) 2018 Capmega
  * @license http://opensource.org/licenses/GPL-2.0 GNU Public License, Version 2
  * @category Function reference
- * @package email-server
+ * @package email-servers
  *
  * @return array
  */
-function email_server_validate_email($email){
+function email_servers_validate_email($email){
     try{
         $v = new validate_form($email);
         $v->isEmail($email, tr('The specified email email ":email" is not valid', array(':email' => $email)));
@@ -727,7 +736,7 @@ function email_server_validate_email($email){
         return $email;
 
     }catch(Exception $e){
-        throw new bException('email_server_validate_email(): Failed', $e);
+        throw new bException('email_servers_validate_email(): Failed', $e);
     }
 }
 
@@ -739,11 +748,11 @@ function email_server_validate_email($email){
  * @copyright Copyright (c) 2018 Capmega
  * @license http://opensource.org/licenses/GPL-2.0 GNU Public License, Version 2
  * @category Function reference
- * @package email-server
+ * @package email-servers
  *
  * @return array
  */
-function email_server_validate_account($account){
+function email_servers_validate_account($account){
     try{
         $v = new validate_form($account, 'email,password');
         $v->isEmail($email['email'], tr('The specified email email ":email" is not valid', array(':email' => $account['email'])));
@@ -752,7 +761,7 @@ function email_server_validate_account($account){
         return $email;
 
     }catch(Exception $e){
-        throw new bException('email_server_validate_email(): Failed', $e);
+        throw new bException('email_servers_validate_email(): Failed', $e);
     }
 }
 ?>
