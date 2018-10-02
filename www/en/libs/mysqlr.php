@@ -995,6 +995,8 @@ function mysqlr_add_log($params){
          * Validate log type
          */
         switch($params['type']){
+            case 'mysql_issue':
+                // FALLTHROUGH
             case 'ssh_tunnel':
                 // FALLTHROUGH
             case 'table_issue':
@@ -1054,6 +1056,8 @@ function mysqlr_add_log($params){
  */
 function mysqlr_get_logs($database){
     try{
+        load_libs('mysql');
+        
         /*
          * Validate data
          */
@@ -1070,10 +1074,9 @@ function mysqlr_get_logs($database){
         /*
          * Get logs
          */
-        $replicator_logs = array();
         $replicator_logs = sql_list('SELECT    `replicator_logs`.`id`,
                                                `replicator_logs`.`status`,
-                                               `replicator_logs`.`type,
+                                               `replicator_logs`.`type`,
                                                `replicator_logs`.`projects_id`,
                                                `replicator_logs`.`servers_id`,
                                                `replicator_logs`.`databases_id`,
@@ -1083,6 +1086,8 @@ function mysqlr_get_logs($database){
                                                `servers`.`seohostname`,
                                                
                                                `projects`.`name`
+                                               
+                                     FROM      `replicator_logs`
                                             
                                      LEFT JOIN `projects`
                                      ON        `replicator_logs`.`projects_id`  = `projects`.`id`
@@ -1091,7 +1096,9 @@ function mysqlr_get_logs($database){
                                      ON        `replicator_logs`.`servers_id`   = `servers`.`id`
                                      
                                      WHERE     `replicator_logs`.`databases_id` = :databases_id
-                                     AND       `replicator_logs`.`status`       IS NULL');
+                                     AND       `replicator_logs`.`status`       IS NULL',
+                                     
+                                     array(':databases_id' => $database['id']));
 
         return $replicator_logs;
 
@@ -1177,6 +1184,46 @@ function mysqlr_monitor_database($database){
 
     }catch(Exception $e){
         throw new bException(tr('mysqlr_monitor_database(): Failed'), $e);
+    }
+}
+
+
+
+/*
+ *
+ */
+function mysqlr_log_type_human($type){
+    try{
+        $retval = '';
+        switch($type){
+            case 'mysql_issue':
+                $retval = 'MySQL Issue';
+                break;
+                
+            case 'ssh_tunnel':
+                $retval = 'SSH Tunnel Issue';
+                break;
+            
+            case 'table_issue':
+                $retval = 'Database Table Issue';
+                break;
+            
+            case 'misconfiguration':
+                $retval = 'Misconfiguration';
+                break;
+            
+            case 'other':
+                $retval = 'Other';
+                break;
+                
+            default:
+                throw new bException(tr('Specified type is not valid'), 'not-valid');
+        }
+        
+        return $retval;
+        
+    }catch(Exception $e){
+        throw new bException(tr('mysqlr_log_html_tag_type(): Failed'), $e);
     }
 }
 ?>
