@@ -52,7 +52,7 @@ function servers_validate($server, $password_strength = true){
     try{
         load_libs('validate,file,seo,customers,providers');
 
-        $v = new validate_form($server, 'ipv4,ipv6,port,hostname,hostnames,seoprovider,seocustomer,ssh_account,description,ssh_proxy,database_accounts_id');
+        $v = new validate_form($server, 'id,ipv4,ipv6,port,hostname,hostnames,seoprovider,seocustomer,ssh_account,description,ssh_proxy,database_accounts_id');
         $v->isNotEmpty($server['ssh_account'], tr('Please specifiy an SSH account'));
         $v->isNotEmpty($server['hostname']   , tr('Please specifiy a hostnames'));
         $v->isNotEmpty($server['port']       , tr('Please specifiy a port'));
@@ -147,7 +147,21 @@ function servers_validate($server, $password_strength = true){
             $server['hostnames'] = explode("\n", $server['hostnames']);
 
             foreach($server['hostnames'] as &$hostname){
+                $hostname = trim($hostname);
                 $v->isDomain($hostname, tr('The hostname ":hostname" is invalid', array(':hostname' => $hostname)));
+            }
+
+            $v->isValid();
+
+            /*
+             * Ensure that the specified hostnames do not yet exist
+             */
+            foreach($server['hostnames'] as &$hostname){
+                $exists = sql_get('SELECT `id` FROM `servers_hostnames` WHERE `servers_id` != :servers_id AND `hostname` = :hostname', true, array(':servers_id' => $server['id'], ':hostname' => $hostname));
+
+                if($exists){
+                    $v->setError(tr('Specified hostname ":hostname" already exists', array(':hostname' => $server['hostname'])));
+                }
             }
 
             $server['hostnames'][] = $server['hostname'];
@@ -301,13 +315,14 @@ function servers_update_hostnames($servers_id, $hostnames){
             return false;
         }
 
-        $insert  = sql_prepare('INSERT INTO `servers_hostnames` (`meta_id`, `servers_id`, `hostname`)
-                                VALUES                          (:meta_id , :servers_id , :hostname )');
+        $insert  = sql_prepare('INSERT INTO `servers_hostnames` (`meta_id`, `servers_id`, `hostname`, `seohostname`)
+                                VALUES                          (:meta_id , :servers_id , :hostname , :seohostname )');
 
         foreach($hostnames as $hostname){
-            $insert->execute(array(':meta_id'    => meta_action(),
-                                   ':servers_id' => $servers_id,
-                                   ':hostname'   => $hostname));
+            $insert->execute(array(':meta_id'     => meta_action(),
+                                   ':servers_id'  => $servers_id,
+                                   ':hostname'    => $hostname,
+                                   ':seohostname' => seo_unique($hostname, 'servers_hostnames', null, 'seohostname')));
         }
 
         return count($hostnames);
@@ -530,16 +545,19 @@ function servers_get($server, $database = false, $return_proxies = true, $limite
         $from  = ' FROM      `servers`
 
                    LEFT JOIN `users` AS `createdby`
-                   ON        `servers`.`createdby`       = `createdby`.`id`
+                   ON        `servers`.`createdby`            = `createdby`.`id`
 
                    LEFT JOIN `providers`
-                   ON        `providers`.`id`            = `servers`.`providers_id`
+                   ON        `providers`.`id`                 = `servers`.`providers_id`
 
                    LEFT JOIN `customers`
-                   ON        `customers`.`id`            = `servers`.`customers_id`
+                   ON        `customers`.`id`                 = `servers`.`customers_id`
 
                    LEFT JOIN `ssh_accounts`
-                   ON        `ssh_accounts`.`id`         = `servers`.`ssh_accounts_id`';
+                   ON        `ssh_accounts`.`id`              = `servers`.`ssh_accounts_id`
+
+                   LEFT JOIN `servers_hostnames`
+                   ON        `servers_hostnames`.`servers_id` = `servers`.`id` ';
 
         if(is_numeric($server)){
             /*
@@ -569,11 +587,11 @@ function servers_get($server, $database = false, $return_proxies = true, $limite
                  */
                 if(substr($server['hostname'], 0, 1) === '*'){
                     $server['hostname']  = substr($server['hostname'], 1);
-                    $where               = ' WHERE `servers`.`hostname` LIKE :hostname';
+                    $where               = ' WHERE `servers_hostnames`.`hostname` LIKE :hostname';
                     $execute             = array(':hostname' => '%'.$server['hostname'].'%');
 
                 }else{
-                    $where   = ' WHERE `servers`.`hostname` = :hostname';
+                    $where   = ' WHERE `servers_hostnames`.`hostname` = :hostname';
                     $execute = array(':hostname' => $server['hostname']);
                 }
 
@@ -587,12 +605,12 @@ function servers_get($server, $database = false, $return_proxies = true, $limite
              */
             if(substr($server, 0, 1) === '*'){
                 $server    = substr($server, 1);
-                $where   = ' WHERE `servers`.`hostname` LIKE :hostname';
+                $where   = ' WHERE `servers_hostnames`.`hostname` LIKE :hostname';
                 $execute = array(':hostname' => '%'.$server.'%');
 
             }else{
-                $where   = ' WHERE `servers`.`hostname`    = :hostname
-                             OR    `servers`.`seohostname` = :hostname';
+                $where   = ' WHERE `servers_hostnames`.`hostname`    = :hostname
+                             OR    `servers_hostnames`.`seohostname` = :hostname';
                 $execute = array(':hostname' => $server);
             }
 
@@ -657,16 +675,17 @@ function servers_get($server, $database = false, $return_proxies = true, $limite
 
 
 /*
- *
+ * Test SSH connection with the specified server
  *
  * @author Sven Olaf Oostenbrink <sven@capmega.com>
  * @copyright Copyright (c) 2018 Capmega
  * @license http://opensource.org/licenses/GPL-2.0 GNU Public License, Version 2
  * @category Function reference
  * @package servers
+ * @exception bException/failed-connect when server connection test fails
  *
- * @param mixed $server
- * @return
+ * @param mixed $server The server to be tested. Specified either by only a hostname string, or a server array
+ * @return void If the server test was executed succesfully, nothing happens
  */
 function servers_test($hostname){
     try{
@@ -676,7 +695,7 @@ function servers_test($hostname){
         $result = array_pop($result);
 
         if($result != '1'){
-            throw new bException(tr('servers_test(): Failed to SSH connect to ":server"', array(':server' => $user.'@'.$hostname.':'.$port)), 'failedconnect');
+            throw new bException(tr('servers_test(): Failed to SSH connect to ":server"', array(':server' => $user.'@'.$hostname.':'.$port)), 'failed-connect');
         }
 
         sql_query('UPDATE `servers` SET `status` = NULL WHERE `hostname` = :hostname', array(':hostname' => $hostname));
