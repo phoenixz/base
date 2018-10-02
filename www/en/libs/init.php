@@ -246,7 +246,7 @@ function init($projectfrom = null, $frameworkfrom = null){
 
                             try{
                                 if(file_exists($hook = $initpath.'hooks/post_'.$file)){
-                                    log_console('Executing newer init "post" hook file with version "'.$version.'"', 'cyan');
+                                    log_console('Executing newer init "post" hook file with version "'.$version.'"', 'VERBOSE/cyan');
                                     include_once($hook);
                                 }
 
@@ -631,7 +631,6 @@ function init_section($section, $version){
                     try{
                         log_console('Executing newer init file with version "'.$version.'"', 'VERBOSE/cyan');
                         init_include($path.$file, $section);
-                        log_console('Executed newer init file with version "'.$version.'"', 'cyan');
 
                     }catch(Exception $e){
                         /*
@@ -642,7 +641,7 @@ function init_section($section, $version){
 
                     try{
                         if(file_exists($hook = $path.'hooks/post_'.$file)){
-                            log_console('Executing newer init "post" hook file with version "'.$version.'"', 'cyan');
+                            log_console('Executing newer init "post" hook file with version "'.$version.'"', 'VERBOSE/cyan');
                             include_once($hook);
                         }
 
@@ -686,7 +685,7 @@ function init_section($section, $version){
         /*
          * Finished one init part (either type framework or type project)
          */
-        log_console('Finished init', 'green');
+        log_console(tr('Finished section ":section" init', array(':section' => $section)), 'green');
 
         /*
          * Reset the default connector
