@@ -324,7 +324,7 @@ function ssh_build_command(&$server = null, $ssh_command = 'ssh'){
                             throw new bException(tr('ssh_build_command(): No target_hostname specified for parameter "tunnel". Value should be the target hosts FQDN, IP, localhost, or host defined in the /etc/hosts of the target machine'), 'invalid');
                         }
 
-                        throw new bException(tr('ssh_build_command(): Invalid target_hostname specified for parameter "tunnel". Value should be scalar, and >= 1 and <= 253 characters'), 'invalid');
+                        throw new bException(tr('ssh_build_command(): Invalid target_hostname specified for parameter "tunnel". Value should be scalar, and between 1 and 253 characters'), 'invalid');
                     }
 
                     $command .= ' -L '.$value['source_port'].':'.$value['target_hostname'].':'.$value['target_port'];
