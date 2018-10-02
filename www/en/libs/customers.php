@@ -378,7 +378,7 @@ function customers_select($params = null){
  * @param string $column The specific column that has to be returned
  * @return mixed The customer data. If no column was specified, an array with all columns will be returned. If a column was specified, only the column will be returned (having the datatype of that column). If the specified customer does not exist, NULL will be returned.
  */
-function customers_get($customer, $column = null, $status = null){
+function customers_get($customer, $column = null, $status = null, $categories_id = null){
     try{
         if(is_numeric($customer)){
             $where[] = ' `customers`.`id` = :id ';
@@ -392,6 +392,11 @@ function customers_get($customer, $column = null, $status = null){
         if($status !== false){
             $execute[':status'] = $status;
             $where[] = ' `customers`.`status` '.sql_is($status).' :status';
+        }
+
+        if($categories_id !== false){
+            $execute[':categories_id'] = $categories_id;
+            $where[] = ' `customers`.`categories_id` '.sql_is($categories_id).' :categories_id';
         }
 
         $where   = ' WHERE '.implode(' AND ', $where).' ';
