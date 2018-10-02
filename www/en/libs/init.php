@@ -494,7 +494,7 @@ function init_version_upgrade($version, $part){
  * Have a function that executes the include to separate the variable scope and
  * avoid init files interfering with variables in this library
  */
-function init_include($file){
+function init_include($file, $section = null){
     global $_CONFIG;
 
     try{
@@ -523,10 +523,12 @@ function init_include($file){
  * @return void
  */
 function init_section($section, $version){
-    global $_CONFIG;
+    global $_CONFIG, $core;
 
     try{
-        $path = ROOT.'init/'.$section;
+        load_libs('file,sql_exists');
+
+        $path = ROOT.'init/'.$section.'/';
 
         if(!file_exists($path)){
             throw new bException(tr('init_section(): Specified section ":section" path ":path" does not exist', array(':section' => $section, ':path' => $path)), 'not-exist');
@@ -542,24 +544,33 @@ function init_section($section, $version){
          * Set the default connector to the connector for the specified section
          */
         $core->register('sql_connector', $section);
+        $exists = sql_get('SHOW TABLES LIKE "versions"', true);
 
-        if($version){
+        if($exists){
+            if($version){
+                /*
+                 * Reset the versions table to the specified version
+                 */
+                sql_query('DELETE FROM `versions` WHERE (SUBSTRING(`framework`, 1, 1) != "-") AND (INET_ATON(CONCAT(`framework`, REPEAT(".0", 3 - CHAR_LENGTH(`framework`) + CHAR_LENGTH(REPLACE(`framework`, ".", ""))))) >= INET_ATON(CONCAT("'.$version.'", REPEAT(".0", 3 - CHAR_LENGTH("'.$version.'") + CHAR_LENGTH(REPLACE("'.$version.'", ".", ""))))))');
+            }
+
+            $dbversion = sql_get('SELECT `version` FROM `versions` ORDER BY `id` DESC LIMIT 1', true);
+
+            if($dbversion === null){
+                /*
+                 * No version data found, we're at 0.0.0
+                 */
+                $dbversion = '0.0.0';
+            }
+
+        }else{
             /*
-             * Reset the versions table to the specified version
-             */
-            sql_query('DELETE FROM `versions` WHERE (SUBSTRING(`framework`, 1, 1) != "-") AND (INET_ATON(CONCAT(`framework`, REPEAT(".0", 3 - CHAR_LENGTH(`framework`) + CHAR_LENGTH(REPLACE(`framework`, ".", ""))))) >= INET_ATON(CONCAT("'.$version.'", REPEAT(".0", 3 - CHAR_LENGTH("'.$version.'") + CHAR_LENGTH(REPLACE("'.$version.'", ".", ""))))))');
-        }
-
-        $dbversion = sql_get('SELECT `version` FROM `versions` ORDER BY `id` DESC LIMIT 1', true);
-
-        if($dbversion === null){
-            /*
-             * No version data found, we're at 0.0.0
+             * No version table found, we're at 0.0.0
              */
             $dbversion = '0.0.0';
         }
 
-        log_console(tr('Starting ":section" init at version ":version"', array(':section' => $section, ':version' => $version)));
+        log_console(tr('Starting ":section" init at version ":version"', array(':section' => $section, ':version' => $dbversion)), 'cyan');
 
         $files = scandir($path);
 
@@ -597,9 +608,7 @@ function init_section($section, $version){
                 /*
                  * This init file has a higher version number than the current code, so it should not yet be executed (until a later time that is)
                  */
-                if(VERBOSE){
-                    log_console(tr('Skipped future init file "'.$version.'"', array(':version' => $version, ':section' => $section)));
-                }
+                log_console(tr('Skipped future section ":section" init file ":version"', array(':version' => $version, ':section' => $section)), 'VERBOSE');
 
             }else{
                 if(($dbversion === 0) or (version_compare($version, $dbversion) >= 1)){
@@ -616,18 +625,19 @@ function init_section($section, $version){
                         /*
                          * INIT FILE FAILED!
                          */
-                        throw new bException('init('.$type.'): Init "pre" hook file "'.$file.'" failed', $e);
+                        throw new bException('init('.$section.'): Init "pre" hook file "'.$file.'" failed', $e);
                     }
 
                     try{
-                        log_console('Executing newer init file with version "'.$version.'"', 'green');
-                        init_include($path.$file);
+                        log_console('Executing newer init file with version "'.$version.'"', 'VERBOSE/cyan');
+                        init_include($path.$file, $section);
+                        log_console('Executed newer init file with version "'.$version.'"', 'cyan');
 
                     }catch(Exception $e){
                         /*
                          * INIT FILE FAILED!
                          */
-                        throw new bException('init('.$type.'): Init file "'.$file.'" failed', $e);
+                        throw new bException('init('.$section.'): Init file "'.$file.'" failed', $e);
                     }
 
                     try{
@@ -640,13 +650,10 @@ function init_section($section, $version){
                         /*
                          * INIT FILE FAILED!
                          */
-                        throw new bException('init('.$type.'): Init "post" hook file "'.$file.'" failed', $e);
+                        throw new bException('init('.$section.'): Init "post" hook file "'.$file.'" failed', $e);
                     }
 
-                    $versions[$type] = $version;
-
-                    sql_query('INSERT INTO `versions` (`framework`, `project`) VALUES ("'.cfm($versions['framework']).'", "'.cfm($versions['project']).'")');
-
+                    sql_query('INSERT INTO `versions` (`version`) VALUES (:version)', array(':version' => $version));
                     log_console('Finished init version "'.$version.'"', 'green');
 
                 }else{
@@ -667,40 +674,19 @@ function init_section($section, $version){
          *
          * This way, the code version can be upped without having to add empty init files.
          */
-        if(version_compare(constant($utype.'CODEVERSION'), $versions[$type]) > 0){
-            log_console('Last init file was "'.$versions[$type].'" while code version is still higher at "'.constant($utype.'CODEVERSION').'"', 'yellow');
-            log_console('Updating database version to code version manually'                                                                  , 'yellow');
+        if(version_compare($dbversion, $version) > 0){
+            log_console('Last init file was "'.$version.'" while code version is still higher at "'.$connector['version'].'"', 'yellow');
+            log_console('Updating database version to code version manually'                                                 , 'yellow');
 
-            $versions[$type] = constant($utype.'CODEVERSION');
+            $version = $connector['version'];
 
-            sql_query('INSERT INTO `versions` (`framework`, `project`) VALUES ("'.cfm((string) $versions['framework']).'", "'.cfm((string) $versions['project']).'")');
+            sql_query('INSERT INTO `versions` (`version`) VALUES (:version)', array(':version' => $version));
         }
 
         /*
          * Finished one init part (either type framework or type project)
          */
         log_console('Finished init', 'green');
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
         /*
          * Reset the default connector

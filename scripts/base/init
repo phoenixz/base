@@ -67,7 +67,7 @@ require_once(__DIR__.'/../../libs/startup.php');
 $drop                 = cli_argument('--drop');
 $fromprojectversion   = not_empty(cli_argument('--from-project-version'  , true, null), cli_argument('-p', true, null));
 $fromframeworkversion = not_empty(cli_argument('--from-framework-version', true, null), cli_argument('-f', true, null));
-$section              = cli_argument('-s,--section');
+$section              = cli_argument('-s,--section', true);
 
 cli_only(true);
 load_libs('init');
@@ -78,7 +78,17 @@ if($section){
      */
     $version = cli_argument('-v,--section-version');
     cli_no_arguments_left();
-    init_section($section, $version);
+
+    try{
+        init_section($section, $version);
+
+    }catch(Exception $e){
+        if($e->getRealCode() == 'not-exist'){
+            $e->makeWarning(true);
+        }
+
+        throw $e;
+    }
 
 }else{
     cli_no_arguments_left();
