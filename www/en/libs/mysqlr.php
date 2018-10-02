@@ -1191,6 +1191,14 @@ function mysqlr_monitor_database($database){
 
 /*
  *
+ * @author Ismael Haro <isma@capmega.com>
+ * @copyright Copyright (c) 2018 Capmega
+ * @license http://opensource.org/licenses/GPL-2.0 GNU Public License, Version 2
+ * @category Function reference
+ * @package mysqlr
+ *
+ * @param
+ * @return
  */
 function mysqlr_log_type_human($type){
     try{
