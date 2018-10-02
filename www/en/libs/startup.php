@@ -1731,7 +1731,7 @@ function domain($current_url = false, $query = null, $root = null, $domain = nul
             //    $_SESSION['domain'] = $_SERVER['HTTP_HOST'];
             //}
 
-            $domain = $_CONFIG['domain'];
+            $domain = $_SESSION['domain'];
 
         }elseif($domain === true){
             /*
@@ -2817,7 +2817,7 @@ function session_reset_domain(){
                 /*
                  * white label domains are disabled, but sub domains from the $_CONFIG[domain] are allowed
                  */
-                session_set_cookie_params($_CONFIG['cookie']['lifetime'], $_CONFIG['cookie']['path'], $_CONFIG['domain'], $_CONFIG['cookie']['secure'], $_CONFIG['cookie']['httponly']);
+                session_set_cookie_params($_CONFIG['cookie']['lifetime'], $_CONFIG['cookie']['path'], $domain, $_CONFIG['cookie']['secure'], $_CONFIG['cookie']['httponly']);
 
             }elseif($_CONFIG['whitelabels']['enabled'] === 'list'){
                 /*
