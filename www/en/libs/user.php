@@ -1752,7 +1752,7 @@ function user_validate($user, $sections = array()){
          * Validate username
          */
         if($user['username']){
-            $v->isAlphaNumeric($user['username'], tr('Please provide a valid username, it can only contain letters and numbers'));
+            $v->isAlphaNumeric($user['username'], tr('Please provide a valid username, it can only contain letters and numbers'), VALIDATE_IGNORE_DOT|VALIDATE_IGNORE_DASH);
 
             if($v->isNumeric($user['username'])){
                 $v->setError(tr('Please provide a non numeric username'));
