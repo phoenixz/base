@@ -81,6 +81,14 @@ function servers_validate($server, $password_strength = true){
          */
         $v->isDomain($server['hostname'], tr('The hostname ":hostname" is invalid', array(':hostname' => $server['hostname'])));
 
+        $v->isValid();
+
+        $exists = sql_query('SELECT `id` FROM `servers` WHERE `hostname` = :hostname AND `id` != :id', array(':hostname' => $server['hostname'], ':id' => $server['id']));
+
+        if($exists){
+            $v->setError(tr('Specified hostname ":hostname" is already registered', array(':hostname' => $server['hostname'])));
+        }
+
         if(!empty($server['url']) and !FORCE){
             $v->setError(tr('Both hostname ":hostname" and URL ":url" specified, please specify one or the other', array(':hostname' => $server['hostname'], ':url' => $server['url'])));
 
