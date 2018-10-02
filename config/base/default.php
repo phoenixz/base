@@ -404,5 +404,5 @@ $_CONFIG['users']              = array('type_filter'                        => n
 //Xapian search
 $_CONFIG['xapian']             = array('dir'                                => ROOT.'data/xapian/');                                        // Base path for Xapian databases
 
-$_CONFIG['whitelabels']        = array('enabled'                            => false);                                                      // Either false (No whitelabel domains, only the normal site FQDN allowed), true (only default and registered FQDNs allowed), "sub" (only default FQDN and its sub domains allowed), or "all" (All domains allowed)
+$_CONFIG['whitelabels']        = array('enabled'                            => false);                                                      // Either false (No whitelabel domains, only the normal site FQDN allowed), "list" (only default and registered FQDNs allowed), "sub" (only default FQDN and its sub domains allowed), "all" (All domains allowed), or the specific FQDN that is allowed
 ?>
