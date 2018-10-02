@@ -1294,7 +1294,9 @@ function sql_merge($db, $post, $skip = null, $empty = null){
          * Skip POST variables that have NULL value
          */
         foreach($post as $key => $value){
-            if($value === $empty) continue;
+            if($value === $empty){
+                continue;
+            }
 
             $db[$key] = $value;
         }
@@ -1316,8 +1318,8 @@ function sql_merge($db, $post, $skip = null, $empty = null){
  * @category Function reference
  * @package sql
  *
- * @param
- * @return
+ * @param string $connector
+ * @return string The connector that should be used
  */
 function sql_connector_name($connector){
     global $_CONFIG, $core;
@@ -1327,7 +1329,7 @@ function sql_connector_name($connector){
             $connector = $core->register('sql_connector');
 
             if($connector){
-                return $_CONFIG['db']['default'];
+                return $connector;
             }
 
             return $_CONFIG['db']['default'];
@@ -1694,27 +1696,27 @@ function sql_get_database($db_name){
  * @param string $connector The requested connector name
  * @return array The requested connector data. NULL if the specified connector does not exist
  */
-function sql_get_connector($connector){
+function sql_get_connector($requested){
     global $_CONFIG;
 
     try{
-        if(!is_natural($connector)){
+        if(!is_natural($requested)){
             /*
              * Connector was specified by name
              */
-            if(isset($_CONFIG['db'][$connector])){
-                return $_CONFIG['db'][$connector];
+            if(isset($_CONFIG['db'][$requested])){
+                return $_CONFIG['db'][$requested];
             }
 
             $where   = ' `name` = :name ';
-            $execute = array(':name' => $connector);
+            $execute = array(':name' => $requested);
 
         }else{
             /*
              * Connector was specified by id
              */
             $where   = ' `id` = :id ';
-            $execute = array(':id' => $connector);
+            $execute = array(':id' => $requested);
         }
 
         $connector = sql_get('SELECT `id`,
@@ -1756,6 +1758,8 @@ function sql_get_connector($connector){
             unset($connector['ssh_tunnel_source_port']);
             unset($connector['ssh_tunnel_hostname']);
         }
+
+        $_CONFIG['db'][$requested] = $connector;
 
         return $connector;
 
