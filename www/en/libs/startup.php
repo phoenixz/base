@@ -1474,7 +1474,7 @@ function log_database($messages, $type = 'unknown'){
                            array(':createdby' => isset_get($_SESSION['user']['id']),
                                  ':ip'        => isset_get($_SERVER['REMOTE_ADDR']),
                                  ':type'      => cfm($type),
-                                 ':message'   => $message));
+                                 ':message'   => $message), 'core');
             }
 
             $busy = false;
