@@ -168,7 +168,7 @@ function providers_validate($provider){
  * @author Sven Olaf Oostenbrink <sven@capmega.com>
  * @copyright Copyright (c) 2018 Capmega
  * @license http://opensource.org/licenses/GPL-2.0 GNU Public License, Version 2
- * @provider Function reference
+ * @category Function reference
  * @package providers
  *
  * @param array $params The parameters required
@@ -237,7 +237,7 @@ function providers_select($params = null){
  * @author Sven Olaf Oostenbrink <sven@capmega.com>
  * @copyright Copyright (c) 2018 Capmega
  * @license http://opensource.org/licenses/GPL-2.0 GNU Public License, Version 2
- * @provider Function reference
+ * @category Function reference
  * @package providers
  *
  * @param mixed $provider The requested provider. Can either be specified by id (natural number) or string (seoname)

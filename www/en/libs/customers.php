@@ -292,7 +292,7 @@ function customers_validate($customer){
  * @author Sven Olaf Oostenbrink <sven@capmega.com>
  * @copyright Copyright (c) 2018 Capmega
  * @license http://opensource.org/licenses/GPL-2.0 GNU Public License, Version 2
- * @customer Function reference
+ * @category Function reference
  * @package customers
  *
  * @param array $params The parameters required
@@ -329,7 +329,7 @@ function customers_select($params = null){
             $params['categories_id'] = categories_get($params['seocategory'], 'id');
 
             if(!$params['categories_id']){
-                throw new bException(tr('companies_select(): The reqested category ":category" does exist, but is deleted', array(':category' => $params['seocategory'])), 'deleted');
+                throw new bException(tr('customers_select(): The reqested category ":category" does exist, but is deleted', array(':category' => $params['seocategory'])), 'deleted');
             }
         }
 
@@ -371,7 +371,7 @@ function customers_select($params = null){
  * @author Sven Olaf Oostenbrink <sven@capmega.com>
  * @copyright Copyright (c) 2018 Capmega
  * @license http://opensource.org/licenses/GPL-2.0 GNU Public License, Version 2
- * @customer Function reference
+ * @category Function reference
  * @package customers
  *
  * @param mixed $customer The requested customer. Can either be specified by id (natural number) or string (seoname)
