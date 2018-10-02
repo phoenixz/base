@@ -261,7 +261,14 @@ function email_servers_get($email_server, $column = null, $status = null){
  */
 function email_servers_update_password($email, $password){
     try{
-        sql_query('UPDATE `accounts` SET `password` = ENCRYPT(:password, CONCAT("$6$", SUBSTRING(SHA(RAND()), -16))) WHERE `email` = ":email"', array(':email' => $email, ':password' => $password), 'core');
+        sql_query('UPDATE `accounts`
+
+                   SET    `password` = ENCRYPT(:password, CONCAT("$6$", SUBSTRING(SHA(RAND()), -16)))
+
+                   WHERE  `email`    = :email',
+
+                   array(':email'    => $email,
+                         ':password' => $password));
 
     }catch(Exception $e){
         throw new bException('email_servers_update_password(): Failed', $e);
