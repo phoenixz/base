@@ -83,7 +83,13 @@ try{
                         $core->register['exit_code'] = 252;
                         die($core->register['exit_code']);
 
-                    case 'invalid_arguments':
+                    case 'missing-arguments':
+                        log_console(tr('Failed: :message', array(':message' => trim(str_from($e->getMessage(), '():')))), 'yellow');
+                        cli_show_usage(isset_get($GLOBALS['usage']), 'white');
+                        $core->register['exit_code'] = 253;
+                        die($core->register['exit_code']);
+
+                    case 'invalid-arguments':
                         log_console(tr('Failed: :message', array(':message' => trim(str_from($e->getMessage(), '():')))), 'yellow');
                         cli_show_usage(isset_get($GLOBALS['usage']), 'white');
                         $core->register['exit_code'] = 251;
