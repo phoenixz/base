@@ -152,7 +152,7 @@ function cache_write($value, $key, $namespace = null, $max_age = null){
          *
          * Notify and continue without the cache
          */
-        notify('cache_write_fail', tr('Failed write ":method" for key ":key"', array(':key' => $key, ':method' => $_CONFIG['cache']['method'])), 'development');
+        notify($e);
         return $value;
     }
 }
