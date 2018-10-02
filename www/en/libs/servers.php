@@ -66,7 +66,7 @@ function servers_validate($server, $password_strength = true){
         }
 
         if($server['database_accounts_id']){
-            $exists = sql_get('SELECT `id` FROM `database_accounts` WHERE `id` = :id', true, array(':id' => $server['database_accounts_id']));
+            $exists = sql_get('SELECT `id` FROM `database_accounts` WHERE `id` = :id', true, array(':id' => $server['database_accounts_id']), 'core');
 
             if(!$exists){
                 $v->setError(tr('The specified database account does not exist'));
@@ -157,7 +157,7 @@ function servers_validate($server, $password_strength = true){
              * Ensure that the specified hostnames do not yet exist
              */
             foreach($server['hostnames'] as &$hostname){
-                $exists = sql_get('SELECT `id` FROM `servers_hostnames` WHERE `servers_id` != :servers_id AND `hostname` = :hostname', true, array(':servers_id' => $server['id'], ':hostname' => $hostname));
+                $exists = sql_get('SELECT `id` FROM `servers_hostnames` WHERE `servers_id` != :servers_id AND `hostname` = :hostname', true, array(':servers_id' => $server['id'], ':hostname' => $hostname), 'core');
 
                 if($exists){
                     $v->setError(tr('Specified hostname ":hostname" already exists', array(':hostname' => $server['hostname'])));
@@ -174,7 +174,7 @@ function servers_validate($server, $password_strength = true){
          * Validate provider, customer, and ssh account
          */
         if($server['seoprovider']){
-            $server['providers_id'] = sql_get('SELECT `id` FROM `providers` WHERE `seoname` = :seoname AND `status` IS NULL', array(':seoname' => $server['seoprovider']), true);
+            $server['providers_id'] = sql_get('SELECT `id` FROM `providers` WHERE `seoname` = :seoname AND `status` IS NULL', true, array(':seoname' => $server['seoprovider']), 'core');
 
             if(!$server['providers_id']){
                 $v->setError(tr('Specified provider ":provider" does not exist', array(':provider' => $server['seoprovider'])));
@@ -186,7 +186,7 @@ function servers_validate($server, $password_strength = true){
         }
 
         if($server['seocustomer']){
-            $server['customers_id'] = sql_get('SELECT `id` FROM `customers` WHERE `seoname` = :seoname AND `status` IS NULL', array(':seoname' => $server['seocustomer']), true);
+            $server['customers_id'] = sql_get('SELECT `id` FROM `customers` WHERE `seoname` = :seoname AND `status` IS NULL', true, array(':seoname' => $server['seocustomer']), 'core');
 
             if(!$server['customers_id']){
                 $v->setError(tr('Specified customer ":customer" does not exist', array(':customer' => $server['seocustomer'])));
@@ -197,7 +197,7 @@ function servers_validate($server, $password_strength = true){
         }
 
         if($server['ssh_account']){
-            $server['ssh_accounts_id'] = sql_get('SELECT `id` FROM `ssh_accounts` WHERE `seoname` = :seoname AND `status` IS NULL', array(':seoname' => $server['ssh_account']), true);
+            $server['ssh_accounts_id'] = sql_get('SELECT `id` FROM `ssh_accounts` WHERE `seoname` = :seoname AND `status` IS NULL', true, array(':seoname' => $server['ssh_account']), 'core');
 
             if(!$server['ssh_accounts_id']){
                 $v->setError(tr('Specified SSH account ":account" does not exist', array(':account' => $server['ssh_account'])));
@@ -210,7 +210,7 @@ function servers_validate($server, $password_strength = true){
         /*
          * Already exists?
          */
-        $exists = sql_get('SELECT `id` FROM `servers` WHERE `hostname` = :hostname AND `ssh_accounts_id` = :ssh_accounts_id AND `id` != :id', array(':hostname' => $server['hostname'], ':ssh_accounts_id' => $server['ssh_account'], ':id' => isset_get($server['id'])), true);
+        $exists = sql_get('SELECT `id` FROM `servers` WHERE `hostname` = :hostname AND `ssh_accounts_id` = :ssh_accounts_id AND `id` != :id', true, array(':hostname' => $server['hostname'], ':ssh_accounts_id' => $server['ssh_account'], ':id' => isset_get($server['id'])), 'core');
 
         if($exists){
             $v->setError(tr('A server with hostname ":hostname" and user ":user" already exists', array(':hostname' => $server['hostname'], ':ssh_accounts_id' => $server['ssh_account'])));
@@ -281,7 +281,7 @@ function servers_select($params = null){
         }
 
         $query              = 'SELECT `seohostname`, CONCAT(`hostname`, " (", `ipv4`, ")") AS `name` FROM `servers` '.$where.' ORDER BY '.$params['orderby'];
-        $params['resource'] = sql_query($query, $execute);
+        $params['resource'] = sql_query($query, $execute, 'core');
         $retval             = html_select($params);
 
         return $retval;
@@ -309,14 +309,14 @@ function servers_select($params = null){
  */
 function servers_update_hostnames($servers_id, $hostnames){
     try{
-        sql_query('DELETE FROM `servers_hostnames` WHERE `servers_id` = :servers_id', array(':servers_id' => $servers_id));
+        sql_query('DELETE FROM `servers_hostnames` WHERE `servers_id` = :servers_id', array(':servers_id' => $servers_id), 'core');
 
         if(!$hostnames){
             return false;
         }
 
         $insert  = sql_prepare('INSERT INTO `servers_hostnames` (`meta_id`, `servers_id`, `hostname`, `seohostname`)
-                                VALUES                          (:meta_id , :servers_id , :hostname , :seohostname )');
+                                VALUES                          (:meta_id , :servers_id , :hostname , :seohostname )', 'core');
 
         foreach($hostnames as $hostname){
             $insert->execute(array(':meta_id'     => meta_action(),
@@ -628,10 +628,10 @@ function servers_get($server, $database = false, $return_proxies = true, $limite
                         ON        `database_accounts`.`id` = `servers`.`database_accounts_id` ';
         }
 
-        $dbserver = sql_get($query.$from.$where, $execute);
+        $dbserver = sql_get($query.$from.$where, null, $execute, 'core');
 
         if($dbserver){
-            $dbserver['hostnames'] = sql_list('SELECT `id`, `hostname` FROM `servers_hostnames` WHERE `servers_id` = :servers_id AND `status` IS NULL', array(':servers_id' => $dbserver['id']));
+            $dbserver['hostnames'] = sql_list('SELECT `id`, `hostname` FROM `servers_hostnames` WHERE `servers_id` = :servers_id AND `status` IS NULL', array(':servers_id' => $dbserver['id']), false, 'core');
 
             if($return_proxies){
                 $dbserver['proxies'] = array();
@@ -689,7 +689,7 @@ function servers_get($server, $database = false, $return_proxies = true, $limite
  */
 function servers_test($hostname){
     try{
-        sql_query('UPDATE `servers` SET `status` = "testing" WHERE `hostname` = :hostname', array(':hostname' => $hostname));
+        sql_query('UPDATE `servers` SET `status` = "testing" WHERE `hostname` = :hostname', array(':hostname' => $hostname), 'core');
 
         $result = servers_exec($hostname, 'echo 1');
         $result = array_pop($result);
@@ -698,7 +698,7 @@ function servers_test($hostname){
             throw new bException(tr('servers_test(): Failed to SSH connect to ":server"', array(':server' => $user.'@'.$hostname.':'.$port)), 'failed-connect');
         }
 
-        sql_query('UPDATE `servers` SET `status` = NULL WHERE `hostname` = :hostname', array(':hostname' => $hostname));
+        sql_query('UPDATE `servers` SET `status` = NULL WHERE `hostname` = :hostname', array(':hostname' => $hostname), 'core');
 
     }catch(Exception $e){
         throw new bException('servers_test(): Failed', $e);
@@ -721,7 +721,7 @@ function servers_test($hostname){
  */
 function servers_get_key($username){
     try{
-        return sql_get('SELECT `ssh_key` FROM `ssh_accounts` WHERE `username` = :username', 'ssh_key', array(':username' => $username));
+        return sql_get('SELECT `ssh_key` FROM `ssh_accounts` WHERE `username` = :username', 'ssh_key', null, array(':username' => $username), 'core');
 
     }catch(Exception $e){
         throw new bException('servers_get_key(): Failed', $e);
@@ -1000,7 +1000,7 @@ function servers_get_proxy($servers_id){
 
                            LIMIT     1',
 
-                           array(':servers_id' => $servers_id));
+                           array(':servers_id' => $servers_id), null, 'core');
 
         return $server;
 
@@ -1038,7 +1038,7 @@ function servers_list_proxies($servers_id){
 
                              WHERE     `servers_ssh_proxies`.`servers_id` = :servers_id',
 
-                             array(':servers_id' => $servers_id));
+                             array(':servers_id' => $servers_id), false, 'core');
 
         return $servers;
 
@@ -1076,9 +1076,9 @@ function servers_add_ssh_proxy($servers_id, $proxies_id){
                    VALUES                            (:servers_id , :proxies_id )',
 
                    array(':servers_id' => $servers_id,
-                         ':proxies_id' => $proxies_id));
+                         ':proxies_id' => $proxies_id), 'core');
 
-        return sql_insert_id();
+        return sql_insert_id('core');
 
     }catch(Exception $e){
 		throw new bException('servers_add_ssh_proxy(): Failed', $e);
@@ -1122,8 +1122,8 @@ function servers_update_ssh_proxy($servers_id, $old_proxies_id, $new_proxies_id)
                        WHERE  `servers_id` = :servers_id
                        AND    `proxies_id` = :proxies_id',
 
-                       true, array(':servers_id' => $servers_id,
-                                   ':proxies_id' => $old_proxies_id));
+                       array(':servers_id' => $servers_id,
+                             ':proxies_id' => $old_proxies_id), true, 'core');
 
         if($id){
             sql_query('UPDATE `servers_ssh_proxies`
@@ -1133,7 +1133,7 @@ function servers_update_ssh_proxy($servers_id, $old_proxies_id, $new_proxies_id)
                        WHERE  `id`         = :id',
 
                        array(':id'         => $id,
-                             ':proxies_id' => $new_proxies_id));
+                             ':proxies_id' => $new_proxies_id), 'core');
 
         }else{
             /*
@@ -1170,7 +1170,7 @@ function servers_delete_ssh_proxy($servers_id, $proxies_id){
                    AND         `proxies_id` = :proxies_id',
 
                    array(':servers_id' => $servers_id,
-                         ':proxies_id' => $proxies_id));
+                         ':proxies_id' => $proxies_id), 'core');
 
     }catch(Exception $e){
 		throw new bException('servers_delete_ssh_proxy(): Failed', $e);

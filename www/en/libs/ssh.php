@@ -1121,7 +1121,7 @@ under_construction();
 function ssh_tunnel($params){
     try{
         array_ensure ($params, 'hostname,source_port,target_port');
-        array_default($params, 'tunnel'  , 'localhost');
+        array_default($params, 'tunnel', 'localhost');
 
         /*
          * Ensure port is available.
