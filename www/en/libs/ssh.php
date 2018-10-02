@@ -135,6 +135,17 @@ function ssh_exec($server, $commands = null, $background = false, $function = nu
         return $results;
 
     }catch(Exception $e){
+        $data = $e->getData();
+
+        foreach($data as $line){
+            /*
+             * SSH key authentication failed
+             */
+            if($line === 'Host key verification failed.'){
+                $e->setCode('host-verification-failed');
+            }
+        }
+
         /*
          * Remove "Permanently added host blah" error, even in this exception
          */
@@ -799,7 +810,7 @@ function ssh_add_known_host($hostname, $port){
                 /*
                  * Check if the hash already exists
                  */
-                $test   = str_from(str_from($hash, ' '), ' ');
+                $test   = str_until($hash, ' ');
                 $exists = safe_exec('grep "'.$test.'" '.ROOT.'data/ssh/known_hosts', '0,1');
 
                 if(!$exists){
@@ -812,7 +823,7 @@ function ssh_add_known_host($hostname, $port){
                 }
             }
         }
-        
+
         sql_query('UPDATE `servers` SET `status` = NULL WHERE `hostname` = :hostname', array(':hostname' => $hostname));
 
         return $count;
