@@ -59,13 +59,13 @@ replication
                                   (e.g. s1.s.capmega.com)
 
         --database DATABASE      - The name/id of the database to replicate
-        
+
         --log-info               - Info useful on tasks script log
                                    (e.g. database name)
-                                   
+
     backup                       - Make remote backup on replication server
                                    for databases that are replicating';
-        
+
 
 require_once(__DIR__.'/../../libs/startup.php');
 load_libs('mysql,mysqlr');
@@ -357,7 +357,7 @@ switch(cli_method()){
                  */
                 cli_run_once_local();
                 log_console(tr('Checking databases replication status'), 'white');
-                
+
                 /*
                  * Get databases
                  */
@@ -369,7 +369,7 @@ switch(cli_method()){
                                                    `databases`.`servers_id` AS `servers_id`
 
                                         FROM       `databases`
-                                        
+
                                         LEFT JOIN  `servers`
                                         ON         `databases`.`servers_id` = `servers`.`id`
 
@@ -385,7 +385,8 @@ switch(cli_method()){
                         sleep(1);
 
                     }catch(Exception $e){
-                        $message = tr('mysqlr_monitor_database(): Failed to on database ":database", encountered error ":error"', array(':database' => $database['database'], ':error' => str_log($e->getMessage())));
+                        $message = tr('mysqlr_monitor_database(): Failed to on database ":database", encountered error ":error"', array(':database' => $database['database'], ':error' => $e->getMessage()));
+
                         mysqlr_add_log(array('databases_id' => $database['id'],
                                              'type'         => 'other',
                                              'message'      => $message));
@@ -394,7 +395,7 @@ switch(cli_method()){
                         sleep(1);
                     }
                 }
-                
+
                 /*
                  *
                  */
@@ -470,7 +471,7 @@ switch(cli_method()){
                  */
                 mysqlr_resume_replication($server['database']);
                 break;
-            
+
             case 'backup':
                 /*
                  * No arguments required

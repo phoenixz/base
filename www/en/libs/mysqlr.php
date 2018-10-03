@@ -488,7 +488,7 @@ function mysqlr_pause_replication($db, $restart_mysql = true){
          */
         if($restart_mysql){
             log_console(tr('Restarting Slave MySQL service'), 'DOT');
-            servers_exec($slave, 'sudo service mysql restart');   
+            servers_exec($slave, 'sudo service mysql restart');
         }
 
         mysqlr_update_replication_status($database, 'paused');
@@ -553,9 +553,9 @@ function mysqlr_resume_replication($db, $restart_mysql = true){
          */
         if($restart_mysql){
             log_console(tr('Restarting Slave MySQL service'), 'DOT');
-            servers_exec($slave, 'sudo service mysql restart');   
+            servers_exec($slave, 'sudo service mysql restart');
         }
-        
+
         mysqlr_update_replication_status($database, 'enabled');
         log_console(tr('Resumed replication for database :database', array(':database' => $database['database_name'])), 'DOT');
 
@@ -734,7 +734,7 @@ function mysqlr_slave_ssh_tunnel($server, $slave){
  */
 function mysqlr_full_backup(){
     global $_CONFIG;
-    
+
     try{
         /*
          * Get all servers replicating
@@ -743,9 +743,9 @@ function mysqlr_full_backup(){
         $servers = sql_query('SELECT `id`,
                                      `hostname`,
                                      `seohostname`
-                              
+
                               FROM   `servers`
-                              
+
                               WHERE  `replication_status` = "enabled"');
 
         if(!$servers->rowCount()){
@@ -754,7 +754,7 @@ function mysqlr_full_backup(){
              */
             return false;
         }
-        
+
         /*
          * Make a directory on the replication server
          */
@@ -768,14 +768,14 @@ function mysqlr_full_backup(){
         while($server = sql_fetch($servers)){
             $databases = sql_list('SELECT `id`,
                                            `name`
-                                    
+
                                    FROM   `databases`
-                                    
+
                                    WHERE  `replication_status` = "enabled"
                                    AND    `servers_id`         = :servers_id',
-                                    
+
                                    array(':servers_id' => $server['id']));
- 
+
             if(!count($databases)){
                 /*
                  * There are no databases replicating at this time
@@ -783,9 +783,9 @@ function mysqlr_full_backup(){
                  */
                 continue;
             }
-            
+
             log_console(tr('Making backups of server :server', array(':server' => $server['hostname'])), 'DOT');
-            
+
             /*
              * Disable replication of each database
              */
@@ -793,24 +793,24 @@ function mysqlr_full_backup(){
                 log_console(tr('Disabling replication of database :database', array(':database' => $name)), 'DOT');
                 mysqlr_pause_replication($id, false);
             }
-            
+
             /*
              * Restart mysql service on slave to disable replication on selected databases
              */
             servers_exec($slave, 'sudo service mysql restart');
-            
+
             /*
              * Create a directory for the current server inside the backup directory
              */
             $server_backup_path = $backup_path.'/'.$server['hostname'];
             servers_exec($slave, 'sudo mkdir '.$server_backup_path);
-            
+
             foreach($databases as $id => $name){
                 $db                 = mysql_get_database($id);
                 $db['root_db_user'] = 'root';
-                
+
                 log_console(tr('Making backup of database :database', array(':database' => $db['database_name'])), 'DOT');
-                
+
                 /*
                  * Make a dump and save it on the backups server backup directory
                  * And resume replication on this database
@@ -820,29 +820,29 @@ function mysqlr_full_backup(){
                                  'gzip'     => '',
                                  'redirect' => ' | sudo tee',
                                  'file'     => $server_backup_path.'/'.$db['database_name'].'.sql'));
-// :DELETE: the below code is deprecated since we are using mysql_dump function                
+// :DELETE: the below code is deprecated since we are using mysql_dump function
                 //servers_exec($slave, 'sudo mysqldump \"-u'.$db['root_db_user'].'\" \"-p'.$db['root_db_password'].'\" -K -R -n -e --dump-date --comments -B '.$db['database_name'].' | gzip | sudo tee '.$server_backup_path.'/'.$db['database_name'].'.sql.gz');
                 mysqlr_resume_replication($id, false);
             }
-            
+
             /*
              * Restart mysql service on slave to enable replication again on selected databases
              */
             servers_exec($slave, 'sudo service mysql restart');
         }
-        
+
         /*
          * rsync to backup server
          */
         servers_exec($slave, 'rsync -avze \"ssh -p '.$_CONFIG['mysqlr']['backup']['port'].'\" '.$backup_path.'/*'.' '.$_CONFIG['mysqlr']['backup']['hostname'].':'.$_CONFIG['mysqlr']['backup']['path']);
-        
+
         /*
          * delete replicate backup for today
          */
         servers_exec($slave, 'sudo rm -rf '.$backup_path);
-        
+
         log_console(tr('mysqlr_full_backup(): Finished backups'), 'DOT');
-        
+
     }catch(Exception $e){
         throw new bException(tr('mysqlr_full_backup(): Failed'), $e);
     }
@@ -990,7 +990,7 @@ function mysqlr_add_log($params){
         if(empty($params['type'])){
             throw new bException(tr('No type specified'), 'not-specified');
         }
-        
+
         /*
          * Validate log type
          */
@@ -1008,33 +1008,33 @@ function mysqlr_add_log($params){
                  * Do nothing
                  */
                 break;
-                
+
             default:
                 throw new bException(tr('Specified type is not valid'), 'not-valid');
         }
-        
+
         if(empty($params['message'])){
             throw new bException(tr('No message specified'), 'not-specified');
         }
-        
+
         /*
          * Get database
          * This function will throw an error is this database does not exist
          */
         $database = mysql_get_database($params['databases_id']);
-        
+
         /*
          * Update database
          */
         sql_query('INSERT INTO `replicator_logs` (`type`, `projects_id`, `servers_id`, `databases_id`, `message`)
                    VALUES                        (:type , :projects_id , :servers_id , :databases_id , :message )',
-                   
+
                    array(':type'         => $params['type'],
                          ':projects_id'  => $database['projects_id'],
                          ':servers_id'   => $database['servers_id'],
                          ':databases_id' => $database['databases_id'],
                          ':message'      => $params['message']));
-        
+
         /*
          * Notify
          */
@@ -1064,20 +1064,20 @@ function mysqlr_add_log($params){
 function mysqlr_get_logs($database, $limit = 50){
     try{
         load_libs('mysql');
-        
+
         /*
          * Validate data
          */
         if(empty($database)){
             throw new bException(tr('No database specified'), 'not-specified');
         }
-        
+
         /*
          * Get database
          * This function will throw an error is this database does not exist
          */
         $database = mysql_get_database($database);
-        
+
         /*
          * Get logs
          */
@@ -1089,27 +1089,27 @@ function mysqlr_get_logs($database, $limit = 50){
                                                `replicator_logs`.`servers_id`,
                                                `replicator_logs`.`databases_id`,
                                                `replicator_logs`.`message`,
-                                            
+
                                                `servers`.`hostname`,
                                                `servers`.`seohostname`,
-                                               
+
                                                `projects`.`name`
-                                               
+
                                      FROM      `replicator_logs`
-                                            
+
                                      LEFT JOIN `projects`
                                      ON        `replicator_logs`.`projects_id`  = `projects`.`id`
-                                     
+
                                      LEFT JOIN `servers`
                                      ON        `replicator_logs`.`servers_id`   = `servers`.`id`
-                                     
+
                                      WHERE     `replicator_logs`.`databases_id` = :databases_id
                                      AND       `replicator_logs`.`status`       IS NULL
-                                     
+
                                      ORDER BY  `replicator_logs`.`createdon` DESC
-                                     
+
                                      LIMIT     '.$limit,
-                                     
+
                                      array(':databases_id' => $database['id']));
 
         return $replicator_logs;
@@ -1136,30 +1136,39 @@ function mysqlr_get_logs($database, $limit = 50){
  */
 function mysqlr_monitor_database($database){
     global $_CONFIG;
-    
+
     try{
         $slave = $_CONFIG['mysqlr']['hostname'];
-        
+
         /*
          * Validate data
          */
         if(empty($database)){
             throw new bException(tr('No database specified'), 'not-specified');
         }
-        
+
         /*
          * Get database
          * This function will throw an error is this database does not exist
          */
         $database = mysql_get_database($database['databases_id']);
         log_console(tr('Checking database :database from server :server', array(':database' => $database['database_name'], ':server' => $database['hostname'])), 'white');
-        
+
         /*
          * Check if this db can replicate
          */
         if(!mysqlr_db_can_replicate($database['database_name'])){
             log_console(tr('This database can not replicate due to more databases with the same name, skipping'), 'yellow');
-            return 1;
+            return false;
+        }
+
+        if($database['server_replication_lock']){
+            /*
+             * Server is currently making another replication
+             * do not monitor this, next time
+             */
+            log_console(tr('This database can not be monitored at this time, the server is locked, wait until next round'), 'yellow');
+            return false;
         }
 
         /*
@@ -1176,7 +1185,7 @@ function mysqlr_monitor_database($database){
                                  'type'         => 'misconfiguration',
                                  'message'      => tr('mysqlr_monitor_database(): The mysql configuration file does not contain this database, meaning that this database is not replicating')));
             mysqlr_update_replication_status($database, 'disabled');
-            return 1;
+            return false;
         }
 
         /*
@@ -1192,22 +1201,67 @@ function mysqlr_monitor_database($database){
                                  'type'         => 'mysql_issue',
                                  'message'      => tr('mysqlr_monitor_database(): The mysql channel for this database does not exist, check the configuration for this slave')));
             mysqlr_update_replication_status($database, 'disabled');
-            return 1;
+            return false;
         }
 
         if(strtolower($result['Slave_IO_Running']) != 'yes' and strtolower($result['Slave_IO_Running']) != 'yes'){
+            /*
+             * Fix possible MYSQL Slave issues
+             */
+            switch($result['Last_IO_Errno']){
+                case '1236':
+                    /*
+                     * Got fatal error 1236 from master when reading data from binary log:
+                     * 'Could not find first log file name in binary log index file'
+                     *
+                     * Try by replicating again
+                     */
+                    load_libs('tasks');
+                    log_console(tr('Replication add master for database :database of server :server', array(':database' => $database['database_name'], ':server' => $database['hostname'])), 'white');
+                    mysqlr_update_replication_status($database, 'preparing');
+                    $task = tasks_add(array('command'     => 'base/mysql',
+                                            'time_limit'  => 1200,
+                                            'status'      => 'new',
+                                            'description' => tr('Add replication master of database ":database" on server ":server"', array(':database' => $database['database_name'], ':server' => $database['hostname'])),
+                                            'data'        => array('method'     => 'replication add-master',
+                                                                   '--env'      => ENVIRONMENT,
+                                                                   '--hostname' => $database['hostname'],
+                                                                   '--database' => $database['databases_id'],
+                                                                   '--log-info' => $database['database_name'])));
+                    break;
+
+                default:
+                    /*
+                     * Unkown issue
+                     * Try restarting the ssh tunnel
+                     */
+                    mysqlr_slave_ssh_tunnel($database, $slave);
+                    mysqlr_update_replication_status($database, 'error');
+            }
+
             mysqlr_add_log(array('databases_id' => $database['id'],
                                  'type'         => 'mysql_issue',
                                  'message'      => tr('mysqlr_monitor_database(): There is an error with the Slave, restarting ssh tunnel, Last_IO_Errno ":Last_IO_Errno", Last_IO_Error ":Last_IO_Error"', array(':Last_IO_Errno' => $result['Last_IO_Errno'], ':Last_IO_Error' => $result['Last_IO_Error']))));
-            mysqlr_slave_ssh_tunnel($database, $slave);
-            mysqlr_update_replication_status($database, 'error');
-            return 1;
+            return false;
         }
 
+        /*
+         * Everything is okay
+         */
         mysqlr_update_replication_status($database, 'enabled');
+        return true;
 
     }catch(Exception $e){
-        throw new bException(tr('mysqlr_monitor_database(): Failed'), $e);
+        if(strstr($e->getMessage(), 'MySQL server has gone away')){
+            /*
+             * Close the current connector so the next monitoring cycle can
+             * generate a new one
+             */
+            sql_close('replicator');
+
+        }else{
+            throw new bException(tr('mysqlr_monitor_database(): Failed'), $e);
+        }
     }
 }
 
@@ -1231,29 +1285,29 @@ function mysqlr_log_type_human($type){
             case 'mysql_issue':
                 $retval = 'MySQL Issue';
                 break;
-                
+
             case 'ssh_tunnel':
                 $retval = 'SSH Tunnel Issue';
                 break;
-            
+
             case 'table_issue':
                 $retval = 'Database Table Issue';
                 break;
-            
+
             case 'misconfiguration':
                 $retval = 'Misconfiguration';
                 break;
-            
+
             case 'other':
                 $retval = 'Other';
                 break;
-                
+
             default:
                 throw new bException(tr('Specified type is not valid'), 'not-valid');
         }
-        
+
         return $retval;
-        
+
     }catch(Exception $e){
         throw new bException(tr('mysqlr_log_html_tag_type(): Failed'), $e);
     }
@@ -1282,9 +1336,9 @@ function mysqlr_db_can_replicate($database_name){
         if($duplicates->rowCount() > 1){
             return false;
         }
-        
+
         return true;
-        
+
     }catch(Exception $e){
         throw new bException(tr('mysqlr_log_html_tag_type(): Failed'), $e);
     }

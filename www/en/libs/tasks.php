@@ -43,7 +43,7 @@ function tasks_add($task){
         sql_query('INSERT INTO `tasks` (`createdby`, `meta_id`, `after`, `status`, `command`, `method`, `time_limit`, `verbose`, `parents_id`, `parrallel`, `data`, `description`)
                    VALUES              (:createdby , :meta_id , :after , :status , :command , :method , :time_limit , :verbose , :parents_id , :parrallel , :data , :description )',
 
-                   array(':createdby'   => $_SESSION['user']['id'],
+                   array(':createdby'   => get_null(isset_get($_SESSION['user']['id'])),
                          ':meta_id'     => meta_action(),
                          ':status'      => cfm($task['status']),
                          ':command'     => cfm($task['command']),

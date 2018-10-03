@@ -221,6 +221,8 @@ function mysql_get_database($db_name){
                                        `servers`.`hostname`,
                                        `servers`.`ssh_port`,
                                        `servers`.`replication_status` AS `servers_replication_status`,
+                                       `servers`.`replication_lock`   AS `server_replication_lock`,
+                                       `servers`.`tasks_id`           AS `server_tasks_id`,
 
                                        `database_accounts`.`username`      AS `replication_db_user`,
                                        `database_accounts`.`password`      AS `replication_db_password`,
