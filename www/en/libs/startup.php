@@ -1728,16 +1728,16 @@ function domain($current_url = false, $query = null, $root = null, $domain = nul
             //}
             //
             //if($_SESSION['domain'] == 'auto'){
-            //    $_SESSION['domain'] = $_SERVER['SERVER_NAME'];
+            //    $_SESSION['domain'] = $_SERVER['HTTP_HOST'];
             //}
 
-            $domain = $_CONFIG['domain'];
+            $domain = $_SESSION['domain'];
 
         }elseif($domain === true){
             /*
              * Use current domain name
              */
-            $domain = $_SERVER['SERVER_NAME'];
+            $domain = $_SERVER['HTTP_HOST'];
         }
 
         if(empty($_CONFIG['language']['supported'])){
@@ -1975,7 +1975,7 @@ function user_or_signin(){
              * Is user restricted to a page? if so, keep him there
              */
             if(empty($_SESSION['lock']) and !empty($_SESSION['user']['redirect'])){
-                if(str_from($_SESSION['user']['redirect'], '://') != $_SERVER['SERVER_NAME'].$_SERVER['REQUEST_URI']){
+                if(str_from($_SESSION['user']['redirect'], '://') != $_SERVER['HTTP_HOST'].$_SERVER['REQUEST_URI']){
                     redirect(domain($_SESSION['user']['redirect']));
                 }
             }
@@ -2774,53 +2774,80 @@ function session_reset_domain(){
     try{
         $domain = cfm($_SERVER['HTTP_HOST']);
 
-        switch(true){
-            case ($_CONFIG['whitelabels']['enabled'] === false):
+        if(!$domain){
+            /*
+             * No domain was requested at all
+             */
+            redirect(domain());
+        }
+
+        /*
+         * Check the detected domain against the configured domain.
+         * If it doesnt match then check if its a registered whitelabel domain
+         */
+        if($domain === $_CONFIG['domain']){
+            /*
+             * This is the registered domain
+             */
+            session_set_cookie_params($_CONFIG['cookie']['lifetime'], $_CONFIG['cookie']['path'], $domain, $_CONFIG['cookie']['secure'], $_CONFIG['cookie']['httponly']);
+
+        }else{
+            /*
+             * This is not the registered domain!
+             */
+            if($_CONFIG['whitelabels']['enabled'] === false){
                 /*
                  * white label domains are disabled, so the detected domain MUST match the configured domain
                  */
-                if($domain !== $_CONFIG['domain']){
-                    $domain = null;
+                redirect(domain());
+
+            }elseif($_CONFIG['whitelabels']['enabled'] === 'all'){
+                /*
+                 * All domains are allowed
+                 */
+                session_set_cookie_params($_CONFIG['cookie']['lifetime'], $_CONFIG['cookie']['path'], $domain, $_CONFIG['cookie']['secure'], $_CONFIG['cookie']['httponly']);
+
+            }elseif($_CONFIG['whitelabels']['enabled'] === 'sub'){
+                $len = strlen($_CONFIG['domain']);
+
+                if(substr($domain, -$len, $len) !== $_CONFIG['domain']){
+                    redirect(domain());
                 }
 
-                break;
-
-            case ($_CONFIG['whitelabels']['enabled'] === 'sub'):
                 /*
                  * white label domains are disabled, but sub domains from the $_CONFIG[domain] are allowed
                  */
-                $length = strlen($_CONFIG['domain']);
+                session_set_cookie_params($_CONFIG['cookie']['lifetime'], $_CONFIG['cookie']['path'], $domain, $_CONFIG['cookie']['secure'], $_CONFIG['cookie']['httponly']);
 
-                if(substr($domain, -$length, $length) !== $_CONFIG['domain']){
-                    $domain = null;
+            }elseif($_CONFIG['whitelabels']['enabled'] === 'list'){
+                /*
+                 * This domain must be registered in the whitelabels list
+                 */
+                $domain = sql_get('SELECT `domain` FROM `whitelabels` WHERE `domain` = :domain AND `status` IS NULL', 'domain', array(':domain' => $_SERVER['HTTP_HOST']));
+
+                if(empty($domain)){
+                    redirect(domain());
                 }
 
-                break;
+                session_set_cookie_params($_CONFIG['cookie']['lifetime'], $_CONFIG['cookie']['path'], $domain, $_CONFIG['cookie']['secure'], $_CONFIG['cookie']['httponly']);
 
-            case ($_CONFIG['whitelabels']['enabled'] === 'all'):
+            }else{
                 /*
-                 * Permit whichever domain
+                 * The domain must match either $_CONFIG[domain] or the domain
+                 * specified in $_CONFIG[whitelabels][enabled]
                  */
-                break;
-
-            default:
-                /*
-                 * Check the detected domain against the configured domain.
-                 * If it doesnt match then check if its a registered whitelabel domain
-                 */
-                if($domain !== $_CONFIG['domain']){
-                    $domain = sql_get('SELECT `domain` FROM `whitelabels` WHERE `domain` = :domain AND `status` IS NULL', 'domain', array(':domain' => $_SERVER['HTTP_HOST']));
+                if($domain !== $_CONFIG['whitelabels']['enabled']){
+                    redirect(domain());
                 }
-        }
 
-        if(!$domain){
-            redirect($_CONFIG['protocol'].$_CONFIG['domain']);
+                session_set_cookie_params($_CONFIG['cookie']['lifetime'], $_CONFIG['cookie']['path'], $domain, $_CONFIG['cookie']['secure'], $_CONFIG['cookie']['httponly']);
+            }
         }
 
         $_SESSION['domain'] = $domain;
 
     }catch(Exception $e){
-        throw new bException(tr('set_session_domain(): Failed'), $e);
+        throw new bException(tr('session_reset_domain(): Failed'), $e);
     }
 }
 

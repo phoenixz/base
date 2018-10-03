@@ -81,14 +81,6 @@ function servers_validate($server, $password_strength = true){
          */
         $v->isDomain($server['hostname'], tr('The hostname ":hostname" is invalid', array(':hostname' => $server['hostname'])));
 
-        $v->isValid();
-
-        $exists = sql_query('SELECT `id` FROM `servers` WHERE `hostname` = :hostname AND `id` != :id', array(':hostname' => $server['hostname'], ':id' => $server['id']));
-
-        if($exists){
-            $v->setError(tr('Specified hostname ":hostname" is already registered', array(':hostname' => $server['hostname'])));
-        }
-
         if(!empty($server['url']) and !FORCE){
             $v->setError(tr('Both hostname ":hostname" and URL ":url" specified, please specify one or the other', array(':hostname' => $server['hostname'], ':url' => $server['url'])));
 
@@ -218,7 +210,7 @@ function servers_validate($server, $password_strength = true){
         /*
          * Already exists?
          */
-        $exists = sql_get('SELECT `id` FROM `servers` WHERE `hostname` = :hostname AND `ssh_accounts_id` = :ssh_accounts_id AND `id` != :id', true, array(':hostname' => $server['hostname'], ':ssh_accounts_id' => $server['ssh_account'], ':id' => isset_get($server['id'])), 'core');
+        $exists = sql_get('SELECT `id` FROM `servers` WHERE `hostname` = :hostname AND `ssh_accounts_id` = :ssh_accounts_id AND `id` != :id', true, array(':hostname' => $server['hostname'], ':ssh_accounts_id' => $server['ssh_account'], ':id' => isset_get($server['id'], 0)), 'core');
 
         if($exists){
             $v->setError(tr('A server with hostname ":hostname" and user ":user" already exists', array(':hostname' => $server['hostname'], ':ssh_accounts_id' => $server['ssh_account'])));
@@ -794,8 +786,8 @@ function servers_create_identity_file($ssh_key){
          * Ensure that ssh/keys directory exists and that its safe
          */
         load_libs('file');
-        file_ensure_path(ROOT.'data/ssh/keys', 0750);
-        chmod(ROOT.'data/ssh', 0750);
+        file_ensure_path(ROOT.'data/ssh/keys', 0770);
+        chmod(ROOT.'data/ssh', 0770);
 
         /*
          * Safely create SSH key file
@@ -803,9 +795,9 @@ function servers_create_identity_file($ssh_key){
         $identity_file = ROOT.'data/ssh/keys/'.str_random(8);
 
         touch($identity_file);
-        chmod($identity_file, 0600);
+        chmod($identity_file, 0660);
         file_put_contents($identity_file, $ssh_key, FILE_APPEND);
-        chmod($identity_file, 0400);
+        chmod($identity_file, 0440);
 
         $core->register('shutdown_servers_remove_identity_file', array($identity_file));
 
@@ -840,10 +832,10 @@ function servers_remove_identity_file($identity_file, $background = false){
 
         if(file_exists($identity_file)){
             if($background){
-                safe_exec('{ sleep 5; sudo chmod 0600 '.$identity_file.' ; sudo rm -rf '.$identity_file.' ; } &');
+                safe_exec('{ sleep 5; sudo chmod 0660 '.$identity_file.' ; sudo rm -rf '.$identity_file.' ; } &');
 
             }else{
-                chmod($identity_file, 0600);
+                chmod($identity_file, 0660);
                 file_delete($identity_file);
             }
         }
