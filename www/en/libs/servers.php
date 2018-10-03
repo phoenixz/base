@@ -81,14 +81,6 @@ function servers_validate($server, $password_strength = true){
          */
         $v->isDomain($server['hostname'], tr('The hostname ":hostname" is invalid', array(':hostname' => $server['hostname'])));
 
-        $v->isValid();
-
-        $exists = sql_query('SELECT `id` FROM `servers` WHERE `hostname` = :hostname AND `id` != :id', array(':hostname' => $server['hostname'], ':id' => $server['id']));
-
-        if($exists){
-            $v->setError(tr('Specified hostname ":hostname" is already registered', array(':hostname' => $server['hostname'])));
-        }
-
         if(!empty($server['url']) and !FORCE){
             $v->setError(tr('Both hostname ":hostname" and URL ":url" specified, please specify one or the other', array(':hostname' => $server['hostname'], ':url' => $server['url'])));
 
@@ -218,7 +210,7 @@ function servers_validate($server, $password_strength = true){
         /*
          * Already exists?
          */
-        $exists = sql_get('SELECT `id` FROM `servers` WHERE `hostname` = :hostname AND `ssh_accounts_id` = :ssh_accounts_id AND `id` != :id', true, array(':hostname' => $server['hostname'], ':ssh_accounts_id' => $server['ssh_account'], ':id' => isset_get($server['id'])), 'core');
+        $exists = sql_get('SELECT `id` FROM `servers` WHERE `hostname` = :hostname AND `ssh_accounts_id` = :ssh_accounts_id AND `id` != :id', true, array(':hostname' => $server['hostname'], ':ssh_accounts_id' => $server['ssh_account'], ':id' => isset_get($server['id'], 0)), 'core');
 
         if($exists){
             $v->setError(tr('A server with hostname ":hostname" and user ":user" already exists', array(':hostname' => $server['hostname'], ':ssh_accounts_id' => $server['ssh_account'])));
