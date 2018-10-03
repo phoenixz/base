@@ -135,15 +135,21 @@ function ssh_exec($server, $commands = null, $background = false, $function = nu
         return $results;
 
     }catch(Exception $e){
-        $data = $e->getData();
+        switch($e->getCode()){
+            case 'not-exist':
+                break;
 
-        foreach($data as $line){
-            /*
-             * SSH key authentication failed
-             */
-            if($line === 'Host key verification failed.'){
-                $e->setCode('host-verification-failed');
-            }
+            default:
+                $data = $e->getData();
+
+                foreach($data as $line){
+                    /*
+                     * SSH key authentication failed
+                     */
+                    if($line === 'Host key verification failed.'){
+                        $e->setCode('host-verification-failed');
+                    }
+                }
         }
 
         /*
