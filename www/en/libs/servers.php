@@ -786,8 +786,8 @@ function servers_create_identity_file($ssh_key){
          * Ensure that ssh/keys directory exists and that its safe
          */
         load_libs('file');
-        file_ensure_path(ROOT.'data/ssh/keys', 0750);
-        chmod(ROOT.'data/ssh', 0750);
+        file_ensure_path(ROOT.'data/ssh/keys', 0770);
+        chmod(ROOT.'data/ssh', 0770);
 
         /*
          * Safely create SSH key file
@@ -795,9 +795,9 @@ function servers_create_identity_file($ssh_key){
         $identity_file = ROOT.'data/ssh/keys/'.str_random(8);
 
         touch($identity_file);
-        chmod($identity_file, 0600);
+        chmod($identity_file, 0660);
         file_put_contents($identity_file, $ssh_key, FILE_APPEND);
-        chmod($identity_file, 0400);
+        chmod($identity_file, 0440);
 
         $core->register('shutdown_servers_remove_identity_file', array($identity_file));
 
@@ -832,10 +832,10 @@ function servers_remove_identity_file($identity_file, $background = false){
 
         if(file_exists($identity_file)){
             if($background){
-                safe_exec('{ sleep 5; sudo chmod 0600 '.$identity_file.' ; sudo rm -rf '.$identity_file.' ; } &');
+                safe_exec('{ sleep 5; sudo chmod 0660 '.$identity_file.' ; sudo rm -rf '.$identity_file.' ; } &');
 
             }else{
-                chmod($identity_file, 0600);
+                chmod($identity_file, 0660);
                 file_delete($identity_file);
             }
         }
