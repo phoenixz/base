@@ -853,7 +853,7 @@ function user_signin($user, $extended = false, $redirect = null, $html_flash = n
             if($_CONFIG['security']['signin']['destroy_session']){
                 session_destroy();
                 session_start();
-                session_reset_domain();
+                session_detect_domain();
                 session_regenerate_id();
             }
         }
@@ -1571,6 +1571,8 @@ function user_update_rights($user){
  */
 // :TODO: Improve. This function uses some bad algorithms that could cause false high ranking passwords
 function user_password_strength($password, $check_banned = true, $exception = true){
+    global $_CONFIG;
+
     try{
         /*
          * Get the length of the password
@@ -1672,11 +1674,9 @@ function user_password_strength($password, $check_banned = true, $exception = tr
         $strength = (($strength > 99) ? 99 : $strength);
         $strength = floor(($strength / 10) + 1);
 
-        if(VERBOSE){
-            log_console(tr('Password strength is ":strength"', array(':strength' => number_format($strength, 2))));
-        }
+        log_console(tr('Password strength is ":strength"', array(':strength' => number_format($strength, 2))), 'VERBOSE');
 
-        if($strength < 4){
+        if($strength < $_CONFIG['users']['password_minumum_strength']){
             if($exception){
                 throw new bException(tr('user_password_strength(): The specified password is too weak, please use a better password. Use more characters, add numbers, special characters, caps characters, etc. On a scale of 1-10, current strength is ":strength"', array(':strength' => $strength)), 'validation');
             }
