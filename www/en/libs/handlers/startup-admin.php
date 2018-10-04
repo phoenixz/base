@@ -60,7 +60,7 @@ define('ENVIRONMENT', $env);
  */
 load_config(' ');
 load_config('admin');
-load_libs('http,html,inet,atlant,cache'.(empty($_CONFIG['memcached']) ? '' : ',memcached').(empty($_CONFIG['cdn']['enabled']) ? '' : ',cdn'));
+load_libs('http,html,inet,atlant,file,cache'.(empty($_CONFIG['memcached']) ? '' : ',memcached').(empty($_CONFIG['cdn']['enabled']) ? '' : ',cdn'));
 
 
 

@@ -11,7 +11,7 @@
 /*
  * All scripts will execute cli_done() automatically once done
  */
-load_libs('cli');
+load_libs('cli,file');
 register_shutdown_function('cli_done');
 
 
