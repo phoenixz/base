@@ -417,7 +417,10 @@ switch(cli_method()){
                 throw new bException(tr('Failed to send translatable strings'), $result['status'], $result);
             }
 
-            log_console('Sent translatable strings', 'green');
+            log_console(tr('Scan method finished successfully'), 'green');
+            log_console(tr('Translation server processed data for ":count" translation strings from ":files" files', array(':count' => $result['stats']['strings_received'], ':files' => $result['stats']['files_received'])));
+            log_console(tr('Translation server added ":count" new translation strings', array(':count' => $result['stats']['strings_added'])));
+            log_console(tr('Translation server noted that for this project, ":done" translations have been done, and ":missing" are missing', array(':done' => $result['stats']['translations_done'], ':missing' => $result['stats']['translations_missing'])));
             die();
         }
 
