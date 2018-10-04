@@ -458,36 +458,43 @@ function http_cache($params, $headers = array()){
             $expires                = 0;
 
         }else{
-            if(empty($core->register['etag'])){
-                if(!empty($core->register['flash'])){
-                    $core->register['etag'] = md5(str_random());
-                    $params['policy']       = 'no-store';
-
-                }else{
-                    $core->register['etag'] = md5(PROJECT.$_SERVER['SCRIPT_FILENAME'].filemtime($_SERVER['SCRIPT_FILENAME']).isset_get($params['etag']));
-                }
-            }
-
-            if(!empty($core->callType('ajax')) or !empty($core->callType('api'))){
-                $params['policy'] = 'no-store';
-                $expires          = '0';
+            if($_CONFIG['cache']['http']['enabled'] === 'auto'){
+                /*
+                 * PHP will take care of the cache headers
+                 */
 
             }else{
-                if(!empty($core->callType('admin')) or !empty($_SESSION['user']['id'])){
-                    array_default($params, 'policy', 'no-store');
+                if(empty($core->register['etag'])){
+                    if(!empty($core->register['flash'])){
+                        $core->register['etag'] = md5(str_random());
+                        $params['policy']       = 'no-store';
 
-                }else{
-                    array_default($params, 'policy', $_CONFIG['cache']['http']['policy']);
+                    }else{
+                        $core->register['etag'] = md5(PROJECT.$_SERVER['SCRIPT_FILENAME'].filemtime($_SERVER['SCRIPT_FILENAME']).isset_get($params['etag']));
+                    }
                 }
 
-                /*
-                 * Extract expires time from cache-control header
-                 */
-                preg_match_all('/max-age=(\d+)/', $params['policy'], $matches);
+                if(!empty($core->callType('ajax')) or !empty($core->callType('api'))){
+                    $params['policy'] = 'no-store';
+                    $expires          = '0';
 
-                $expires = new DateTime();
-                $expires = $expires->add(new DateInterval('PT'.isset_get($matches[1][0], 0).'S'));
-                $expires = $expires->format('D, d M Y H:i:s \G\M\T');
+                }else{
+                    if(!empty($core->callType('admin')) or !empty($_SESSION['user']['id'])){
+                        array_default($params, 'policy', 'no-store');
+
+                    }else{
+                        array_default($params, 'policy', $_CONFIG['cache']['http']['policy']);
+                    }
+
+                    /*
+                     * Extract expires time from cache-control header
+                     */
+                    preg_match_all('/max-age=(\d+)/', $params['policy'], $matches);
+
+                    $expires = new DateTime();
+                    $expires = $expires->add(new DateInterval('PT'.isset_get($matches[1][0], 0).'S'));
+                    $expires = $expires->format('D, d M Y H:i:s \G\M\T');
+                }
             }
         }
 
