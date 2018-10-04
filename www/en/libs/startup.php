@@ -182,7 +182,7 @@ class core{
             /*
              * Load basic libraries
              */
-            load_libs('strings,array,sql,mb,meta');
+            load_libs('strings,array,sql,mb,meta,file');
 
             /*
              * Start the call type dependant startup script
@@ -2825,7 +2825,7 @@ function session_detect_domain(){
             /*
              * No domain was requested at all
              */
-            redirect(domain());
+            redirect($_CONFIG['protocol'].$_CONFIG['domain']);
         }
 
         /*
@@ -2846,7 +2846,7 @@ function session_detect_domain(){
                 /*
                  * white label domains are disabled, so the detected domain MUST match the configured domain
                  */
-                redirect(domain());
+                redirect($_CONFIG['protocol'].$_CONFIG['domain']);
 
             }elseif($_CONFIG['whitelabels']['enabled'] === 'all'){
                 /*
@@ -2858,7 +2858,7 @@ function session_detect_domain(){
                 $len = strlen($_CONFIG['domain']);
 
                 if(substr($domain, -$len, $len) !== $_CONFIG['domain']){
-                    redirect(domain());
+                    redirect($_CONFIG['protocol'].$_CONFIG['domain']);
                 }
 
                 /*
@@ -2873,7 +2873,7 @@ function session_detect_domain(){
                 $domain = sql_get('SELECT `domain` FROM `whitelabels` WHERE `domain` = :domain AND `status` IS NULL', 'domain', array(':domain' => $_SERVER['HTTP_HOST']));
 
                 if(empty($domain)){
-                    redirect(domain());
+                    redirect($_CONFIG['protocol'].$_CONFIG['domain']);
                 }
 
                 session_set_cookie_params($_CONFIG['cookie']['lifetime'], $_CONFIG['cookie']['path'], $domain, $_CONFIG['cookie']['secure'], $_CONFIG['cookie']['httponly']);
@@ -2884,7 +2884,7 @@ function session_detect_domain(){
                  * specified in $_CONFIG[whitelabels][enabled]
                  */
                 if($domain !== $_CONFIG['whitelabels']['enabled']){
-                    redirect(domain());
+                    redirect($_CONFIG['protocol'].$_CONFIG['domain']);
                 }
 
                 session_set_cookie_params($_CONFIG['cookie']['lifetime'], $_CONFIG['cookie']['path'], $domain, $_CONFIG['cookie']['secure'], $_CONFIG['cookie']['httponly']);
