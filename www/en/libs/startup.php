@@ -1580,14 +1580,16 @@ function log_file($messages, $class = 'syslog', $color = null){
                 $class = str_replace('/', '', str_replace('DEBUG', '', $class));
         }
 
-        if($messages == $last){
-            /*
-            * We already displayed this message, skip!
-            */
-            return;
-        }
+        if(is_scalar($messages)){
+            if($messages == $last){
+                /*
+                * We already displayed this message, skip!
+                */
+                return;
+            }
 
-        $last = $messages;
+            $last = $messages;
+        }
 
         if(is_object($messages)){
             if($messages instanceof bException){
