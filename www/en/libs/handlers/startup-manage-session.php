@@ -5,7 +5,7 @@
 ini_set('session.gc_maxlifetime' , $_CONFIG['sessions']['timeout']);
 ini_set('session.cookie_lifetime', $_CONFIG['sessions']['lifetime']);
 ini_set('session.use_strict_mode', $_CONFIG['sessions']['strict']);
-ini_set('session.name'           , $_CONFIG['domain']);
+ini_set('session.name'           , 'base');
 ini_set('session.cookie_httponly', $_CONFIG['sessions']['http_only']);
 ini_set('session.cookie_secure'  , $_CONFIG['sessions']['secure_only']);
 ini_set('session.cookie_samesite', $_CONFIG['sessions']['same_site']);
@@ -64,9 +64,56 @@ switch($_CONFIG['sessions']['handler']){
  */
 try{
     /*
-     *
+     * Detect if we're on an allowed domain
      */
     $domain = session_detect_domain();
+
+
+
+    /*
+     * Check the cookie domain configuration to see if its valid.
+     */
+    switch($_CONFIG['cookie']['domain']){
+        case '':
+            /*
+             * This domain has no cookies
+             */
+            break;
+
+        case 'auto':
+            $_CONFIG['domain'] = $_SERVER['HTTP_HOST'];
+            break;
+
+        case '.auto':
+            $_CONFIG['domain'] = '.'.$_SERVER['HTTP_HOST'];
+            break;
+
+        default:
+            /*
+             * Test cookie domain limitation
+             *
+             * If the configured cookie domain is different from the current domain then all cookie will inexplicably fail without warning,
+             * so this must be detected to avoid lots of hair pulling and throwing arturo off the balcony incidents :)
+             */
+            if(substr($_CONFIG['cookie']['domain'], 0, 1) == '.'){
+                $test = substr($_CONFIG['cookie']['domain'], 1);
+
+            }else{
+                $test = $_CONFIG['cookie']['domain'];
+            }
+
+            $length = strlen($test);
+
+            if(substr($_SERVER['HTTP_HOST'], -$length, $length) != $test){
+                notify(new bException(tr('core::startup(): Specified cookie domain ":cookie_domain" is invalid for current domain ":current_domain". Please fix $_CONFIG[cookie][domain]! Redirecting to ":domain"', array(':domain' => str_starts_not($_CONFIG['cookie']['domain'], '.'), ':cookie_domain' => $_CONFIG['cookie']['domain'], ':current_domain' => $_SERVER['HTTP_HOST'])), 'cookiedomain'));
+                redirect('http://'.str_starts_not($_CONFIG['cookie']['domain'], '.'));
+            }
+
+            unset($test);
+            unset($length);
+    }
+
+
 
     /*
      * Set cookie, but only if page is not API and domain has

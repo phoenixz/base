@@ -51,7 +51,7 @@ define('ENVIRONMENT', $env);
  * Load cache libraries (done until here since these need configuration @ load time)
  */
 load_config(' ');
-load_libs('http,html,inet,file,cache'.(empty($_CONFIG['memcached']) ? '' : ',memcached').(empty($_CONFIG['cdn']['enabled']) ? '' : ',cdn'));
+load_libs('http,html,inet,cache'.(empty($_CONFIG['memcached']) ? '' : ',memcached').(empty($_CONFIG['cdn']['enabled']) ? '' : ',cdn'));
 
 
 
@@ -145,50 +145,6 @@ if(empty($_SESSION['init'])){
      * Detect at what location client is
      */
     detect_location();
-
-
-
-    /*
-     * Check the cookie domain configuration to see if its valid.
-     */
-    switch($_CONFIG['cookie']['domain']){
-        case '':
-            /*
-             * This domain has no cookies
-             */
-            break;
-
-        case 'auto':
-            $_CONFIG['domain'] = $_SERVER['HTTP_HOST'];
-            break;
-
-        case '.auto':
-            $_CONFIG['domain'] = '.'.$_SERVER['HTTP_HOST'];
-            break;
-
-        default:
-            /*
-             * Test cookie domain limitation
-             *
-             * If the configured cookie domain is different from the current domain then all cookie will inexplicably fail without warning,
-             * so this must be detected to avoid lots of hair pulling and throwing arturo off the balcony incidents :)
-             */
-            if(substr($_CONFIG['cookie']['domain'], 0, 1) == '.'){
-                $test = substr($_CONFIG['cookie']['domain'], 1);
-
-            }else{
-                $test = $_CONFIG['cookie']['domain'];
-            }
-
-            $length = strlen($test);
-
-            if(substr($_SERVER['HTTP_HOST'], -$length, $length) != $test){
-                throw new bException(tr('startup-webpage(): Specified cookie domain ":cookie_domain" is invalid for current domain ":current_domain"', array(':cookie_domain' => $_CONFIG['cookie']['domain'], ':current_domain' => $_SERVER['HTTP_HOST'])), 'cookiedomain');
-            }
-
-            unset($test);
-            unset($length);
-    }
 }
 
 
@@ -241,7 +197,7 @@ try{
         define('LANGUAGE', 'en');
     }
 
-    $e = new bException('startup-webpage(): Language selection failed', $e);
+    $e = new bException('core::startup(): Language selection failed', $e);
 }
 
 

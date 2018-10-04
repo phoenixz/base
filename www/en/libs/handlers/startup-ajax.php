@@ -51,7 +51,7 @@ define('ENVIRONMENT', $env);
  * Load cache libraries (done until here since these need configuration @ load time)
  */
 load_config(' ');
-load_libs('http,html,inet,json,file,cache'.(empty($_CONFIG['memcached']) ? '' : ',memcached').(empty($_CONFIG['cdn']['enabled']) ? '' : ',cdn'));
+load_libs('http,html,inet,json,cache'.(empty($_CONFIG['memcached']) ? '' : ',memcached').(empty($_CONFIG['cdn']['enabled']) ? '' : ',cdn'));
 
 
 
@@ -167,7 +167,7 @@ try{
         define('LANGUAGE', 'en');
     }
 
-    $e = new bException('startup-webpage(): Language selection failed', $e);
+    $e = new bException('core::startup(): Language selection failed', $e);
 }
 
 
