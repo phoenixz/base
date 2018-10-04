@@ -162,6 +162,8 @@ class core{
         }
     }
 
+
+
     /*
      * The core::startup() method starts the correct call type handler
      *
@@ -182,7 +184,6 @@ class core{
              */
             load_libs('strings,array,sql,mb,meta');
 
-
             /*
              * Start the call type dependant startup script
              */
@@ -200,9 +201,18 @@ class core{
             }
 
         }catch(Exception $e){
+            if(headers_sent($file, $line)){
+                if(preg_match('/debug-.+\.php$/', $file)){
+                    throw new bException(tr('core::startup(): Failed because headers were already sent on ":location", so probably some added debug code caused this issue', array(':location' => $file.'@'.$line)), $e);
+                }
+
+                throw new bException(tr('core::startup(): Failed because headers were already sent on ":location"', array(':location' => $file.'@'.$line)), $e);
+            }
+
             throw new bException(tr('core::startup(): Failed'), $e);
         }
     }
+
 
     /*
      *
@@ -219,6 +229,8 @@ class core{
         $this->register['debug_queries'][] = $query_data;
         return count($this->register['debug_queries']);
     }
+
+
 
     /*
      * The register allows to store global variables without using the $GLOBALS scope
@@ -253,6 +265,8 @@ class core{
         return $this->register[$key] = $value;
     }
 
+
+
     /*
      * This method returns SCRIPT, or if $script is specified, it will return true if $script is equal to SCRIPT, or false if not.
      *
@@ -272,6 +286,8 @@ class core{
 
         return SCRIPT === $script;
     }
+
+
 
     /*
      * This method will return the calltype for this call, as is stored in the private variable core::callType or if $type is specified, will return true if $calltype is equal to core::callType, false if not.
@@ -421,6 +437,8 @@ class bException extends Exception{
         }
     }
 
+
+
     /*
      * Add specified $message to the exception messages list
      *
@@ -449,6 +467,8 @@ class bException extends Exception{
         return $this;
     }
 
+
+
     /*
      * Set the exception objects code to the specified $code
      *
@@ -466,6 +486,8 @@ class bException extends Exception{
         return $this;
     }
 
+
+
     /*
      * Returns the current exception code but without any warning prefix. If the exception code has a prefix, it will be separated from the actual code by a forward slash /. For example, "warning/invalid" would return "invalid"
      *
@@ -480,6 +502,8 @@ class bException extends Exception{
     public function getRealCode(){
         return str_from($this->code, '/');
     }
+
+
 
     /*
      * Returns all messages from this exception object
@@ -501,6 +525,8 @@ class bException extends Exception{
         return implode($separator, $this->messages);
     }
 
+
+
     /*
      * Returns the data associated with the exception
      *
@@ -516,6 +542,8 @@ class bException extends Exception{
         return $this->data;
     }
 
+
+
     /*
      * Set the data associated with the exception. This content could be a data structure received by the function or method that caused the exception, which could help with handling the exception, logging information, or debugging the issue
      *
@@ -530,6 +558,8 @@ class bException extends Exception{
     public function setData($data){
         $this->data = $data;
     }
+
+
 
     /*
      * Make this exception a warning or not.
@@ -1713,25 +1743,34 @@ function get_hash($source, $algorithm, $add_meta = true){
 
 /*
  * Return complete domain with HTTP and all
+ *
+ * @author Sven Olaf Oostenbrink <sven@capmega.com>
+ * @copyright Copyright (c) 2018 Capmega
+ * @license http://opensource.org/licenses/GPL-2.0 GNU Public License, Version 2
+ * @category Function reference
+ * @package startup
+ *
+ * @return void
  */
 function domain($current_url = false, $query = null, $root = null, $domain = null, $language = null){
     global $_CONFIG;
 
     try{
         if(!$domain){
-            //if(empty($_SESSION['domain'])){
-            //    if(PLATFORM_HTTP){
-            //        throw new bException(tr('domain(): $_SESSION[\'domain\'] is not configured'), 'not-specified');
-            //    }
-            //
-            //    $_SESSION['domain'] = $_CONFIG['domain'];
-            //}
-            //
-            //if($_SESSION['domain'] == 'auto'){
-            //    $_SESSION['domain'] = $_SERVER['HTTP_HOST'];
-            //}
+            /*
+             * Use current domain.
+             * Current domain MAY not be the same as the configured domain, so
+             * always use $_SESSION[domain] unless we're at the point where
+             * sessions are not available (yet) or are not available (cli, for
+             * example). In that case, fall back on the configured domain
+             * $_CONFIG[domain]
+             */
+            if(empty($_SESSION['domain'])){
+                $domain = $_CONFIG['domain'];
 
-            $domain = $_SESSION['domain'];
+            }else{
+                $domain = $_SESSION['domain'];
+            }
 
         }elseif($domain === true){
             /*
@@ -2767,8 +2806,16 @@ function disconnect(){
 
 /*
  *
+ *
+ * @author Sven Olaf Oostenbrink <sven@capmega.com>
+ * @copyright Copyright (c) 2018 Capmega
+ * @license http://opensource.org/licenses/GPL-2.0 GNU Public License, Version 2
+ * @category Function reference
+ * @package startup
+ *
+ * @return string The detected domain name
  */
-function session_reset_domain(){
+function session_detect_domain(){
     global $_CONFIG;
 
     try{
@@ -2844,10 +2891,10 @@ function session_reset_domain(){
             }
         }
 
-        $_SESSION['domain'] = $domain;
+        return $domain;
 
     }catch(Exception $e){
-        throw new bException(tr('session_reset_domain(): Failed'), $e);
+        throw new bException(tr('session_detect_domain(): Failed'), $e);
     }
 }
 
