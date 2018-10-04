@@ -631,10 +631,10 @@ switch(cli_method()){
              */
             if($_CONFIG['users']['type_filter'] !== false){
                 if($_CONFIG['users']['type_filter'] === null){
-                    $where[] .= ' `users`.`type` IS NULL';
+                    $where[] = ' `users`.`type` IS NULL';
 
                 }else{
-                    $where[] .= ' `users`.`type` = :type';
+                    $where[] = ' `users`.`type` = :type';
 
                     $execute[':type'] = $_CONFIG['users']['type_filter'];
                 }
