@@ -260,13 +260,7 @@ switch(cli_method()){
                 return;
             }
 
-            if(VERBOSE){
-                log_console(tr('Scanning file ":file"', array(':file' => $file)));
-
-            }else{
-                cli_dot();
-            }
-
+            log_console(tr('Scanning file ":file"', array(':file' => $file)), 'VERBOSE');
             $content = file_get_contents($file);
 
             /*
@@ -282,9 +276,7 @@ switch(cli_method()){
 
                     $forcedutf8[str_replace(ROOT, '', $file)] = true;
 
-                    if(VERBOSE){
-                        cli_dot();
-                    }
+                    cli_dot();
                 }
             }
 
@@ -298,7 +290,6 @@ switch(cli_method()){
                          * Translation string contains HTML!
                          */
                         $results['failed_html'][$value] = $file;
-                        $results['count']++;
 
                     }elseif(strstr($value,'.$')){
                         /*
@@ -312,16 +303,13 @@ switch(cli_method()){
                          */
                         $short_file = str_replace(ROOT, '', $file);
                         $results['translations'][$short_file][$value] = '';
+                        $results['count']++;
                     }
                 }
             }
         }));
 
         cli_dot(false);
-
-        if(VERBOSE){
-            log_console(tr('Found :count strings', array(':count' => number_format($count))), 'white');
-        }
 
 
 
@@ -333,9 +321,7 @@ switch(cli_method()){
 
             foreach($results['failed_html'] as $string => $file){
                 if($ignore_html){
-                    if(VERBOSE){
-                        log_console(tr('Ignoring file ":file" because of HTML', array(':file' => str_from($file, ROOT))), 'yellow');
-                    }
+                    log_console(tr('Ignoring file ":file" because of HTML', array(':file' => str_from($file, ROOT))), 'VERBOSE/yellow');
 
                 }else{
                     log_console(tr('Found HTML code ":html" in file ":file"', array(':html' => preg_replace('/<br\s*\/?>/', '.<.b.r.>. ', $string), ':file' => str_from($file, ROOT))), 'red');
@@ -360,9 +346,7 @@ switch(cli_method()){
 
             foreach($results['failed_php'] as $string => $file){
                 if($ignore_php){
-                    if(VERBOSE){
-                        log_console(tr('Ignoring file ":file" because of PHP', array(':file' => str_from($file, ROOT))), 'yellow');
-                    }
+                    log_console(tr('Ignoring file ":file" because of PHP', array(':file' => str_from($file, ROOT))), 'VERBOSE/yellow');
 
                 }else{
                     log_console(tr('Found PHP code ":php" in file ":file"', array(':php' => preg_replace('/<br\s*\/?>/', '.<.b.r.>. ', $string), ':file' => str_from($file, ROOT))), 'red');
@@ -383,7 +367,8 @@ switch(cli_method()){
          *
          */
         if(cli_method() == 'scan'){
-            log_console(tr('Sending translatable strings to server ":server"', array(':server' => $_CONFIG['translate']['url'])), 'green');
+            log_console(tr('Found ":count" strings in ":files" files', array(':count' => number_format($results['count']), ':files' => number_format(count($results['translations'])))), 'green');
+            log_console(tr('Sending translatable strings to server ":server"', array(':server' => $_CONFIG['translate']['url'])), 'cyan');
 
             try{
                 $response = curl_get(array('url'            => $_CONFIG['translate']['url'],
@@ -404,7 +389,8 @@ switch(cli_method()){
                     $code           = $e->getCode();
 
                     switch(substr($e->getCode(), 4)){
-                        case 401:
+                        case 403:
+                            throw new bException(tr('Translation server said that access to project ":project" was denied', array(':project' => PROJECT)), 'warning');
 
                         case 404:
                             throw new bException(tr('Translation server said that project ":project" does not exist', array(':project' => PROJECT)), 'warning');
@@ -466,7 +452,16 @@ switch(cli_method()){
                     $server_message = $e->getData()['data'];
                     $code           = $e->getCode();
 
-                    throw new bException(tr('Translation server gave HTTP code ":code" on URL ":url" with server message ":message"', array(':code' => $code, ':message' => $server_message, ':url' => $_CONFIG['translate']['url'])), $e);
+                    switch(substr($e->getCode(), 4)){
+                        case 403:
+                            throw new bException(tr('Translation server said that access to project ":project" was denied', array(':project' => PROJECT)), 'warning');
+
+                        case 404:
+                            throw new bException(tr('Translation server said that project ":project" does not exist', array(':project' => PROJECT)), 'warning');
+
+                        default:
+                            throw new bException(tr('Translation server gave HTTP code ":code" on URL ":url" with server message ":message"', array(':code' => $code, ':message' => $server_message, ':url' => $_CONFIG['translate']['url'])), $e);
+                    }
                 }
 
                 throw new bException(tr('Error trying to connect with server : ":error"', array(':error' => $e->getMessage())), $e);
@@ -501,10 +496,7 @@ switch(cli_method()){
              * Delete target dir
              */
             try{
-                // if(VERBOSE){
-                //     log_console('Deleting target dir '.$target_dir, 'translate', '', true);
-                // }
-
+                log_console(tr('Deleting target path ":path"', array(':path' => $target_dir)), 'VERBOSE');
                 shell_exec('rm -rf '.$target_dir);
 
                 // Copy english to target dir
@@ -520,21 +512,14 @@ switch(cli_method()){
                 log_console(tr('Applying translations'), '', true);
 
                 foreach($retval['translations'] as $short_file => $data){
-                    if(VERBOSE){
-                        log_console(tr('Translating ":file"', array(':file' => $short_file)), '', false);
-
-                    }else{
-                        cli_dot();
-                    }
+                    log_console(tr('Translating ":file"', array(':file' => $short_file)));
 
                     if(!empty($forcedutf8[$short_file])){
-                        if(VERBOSE){
-                            log_console(tr('*FORCED-UTF8* '), 'yellow', false);
-                        }
+                        log_console(tr('*FORCED-UTF8* '), 'VERBOSE/yellow');
                     }
 
                     if(!file_exists(ROOT.$short_file)){
-                        log_console(tr(' File ":file" not found', array(':file' => ROOT.$short_file)), 'red');
+                        log_console(tr(' File ":file" not found', array(':file' => ROOT.$short_file)), 'yellow');
 
                     }else{
                         //store new file
@@ -543,9 +528,7 @@ switch(cli_method()){
 
                         //replace strings
                         foreach($data as $source => $translation){
-                            if(VERBOSE){
-                                cli_dot();
-                            }
+                            cli_dot();
 
                             $from     = array('tr("'.$source.'"'     , "tr('".$source."'");
                             $to       = array('tr("'.$translation.'"', "tr('".$translation."'");
@@ -554,9 +537,7 @@ switch(cli_method()){
 
                         file_put_contents($target_file, $filedata);
 
-                        if(VERBOSE){
-                            log_console('Saved', 'green');
-                        }
+                        log_console(tr('Saved file ":file"', array(':file' => $target_file)), 'VERBOSE/green');
                     }
                 }
 
