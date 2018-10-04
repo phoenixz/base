@@ -48,7 +48,9 @@ $_CONFIG['cache']              = array('method'                             => '
                                        'max_age'                            => 86400,                                                   // Max local cache age is one day
                                        'key_hash'                           => 'sha256',
                                        'key_interlace'                      => 3,
-                                       'http'                               => array('enabled'            => true,                      // Enable HTTP cache or not
+                                       'http'                               => array('enabled'            => 'auto',                    // Enable HTTP cache or not. If set to "auto", use PHP caching
+                                                                                     'php_cache_limiter'  => 'public',                  // public | private | private_no_expire | nocache If $_CONFIG[cache][http][enabled] is set to auto, it will set PHP cache_limiter to this value. See https://secure.php.net/manual/en/function.session-cache-limiter.php
+                                                                                     'php_cache_expire'   => '604800',                  // Use null for system default, which is no-store for admin, public for no user, and private, no-store for user session pages. If not, either "no-store", or "no-cache" with "public" or "private", optionally with max-age=N" where N is a natural number
                                                                                      'policy'             => null,                      // Use null for system default, which is no-store for admin, public for no user, and private, no-store for user session pages. If not, either "no-store", or "no-cache" with "public" or "private", optionally with max-age=N" where N is a natural number
                                                                                      'max_age'            => '604800'));                // Either "no-store", or "no-cache" with "public" or "private", optionally with max-age=N" where N is a natural number
 
@@ -340,10 +342,15 @@ $_CONFIG['security']           = array('signin'                             => a
 
 
 // Sessions
-$_CONFIG['sessions']           = array('lifetime'                           => 3600,                                                        // Session lifetime before the session will be closed and reset
+$_CONFIG['sessions']           = array('lifetime'                           => 86400,                                                       // Total time that a session may exist until the user has to login again
+                                       'timeout'                            => 86400,                                                       // Time between pageloads that, when passed, will cause the session to be closed
+                                       'http_only'                          => true,                                                        // Sets if cookies can be sent over other protocols than HTTP. See https://secure.php.net/manual/en/session.configuration.php#ini.session.cookie_httponly
+                                       'secure_only'                        => true,                                                        // Sets if cookies can only be sent over secure connections. See https://secure.php.net/manual/en/session.configuration.php#ini.session.cookie_secure
+                                       'same_site'                          => 'Lax',                                                       // false | Lax | Strict : Sets if cookiets can be sent cross domain by browser. See https://secure.php.net/manual/en/session.configuration.php#ini.session.cookie_samesite
+                                       'strict'                             => true,                                                        // Forces session.use_strict_mode to the specified value. Recommended TRUE for session security! See https://secure.php.net/manual/en/session.configuration.php#ini.session.use_strict_mode
                                        'regenerate_id'                      => 600,                                                         // Time required to regenerate the session id, used to mitigate session fixation attacks. MUST BE LOWER THAN $_CONFIG[session][lifetime]!
-
-                                       'shared_memory'                      => false,                                                       // Store session data in shared memory, very useful for security on shared servers!
+                                       'check_referrer'                     => true,                                                        // If set to true, the referrer must contain the domain name
+                                       'handler'                            => false,                                                       // false | mm | mc | sql Use the default PHP session manager, shared memory manager (mm), memcached (mc) or sql_sessions library to manage sessions
 
                                        'extended'                           => array('age'           => 2592000,                            //
                                                                                      'clear'         => true),                              //
@@ -399,6 +406,7 @@ $_CONFIG['type']               = 'core';                                        
 // User configuration
 $_CONFIG['users']              = array('type_filter'                        => null,
                                        'unique_nicknames'                   => true,
+                                       'password_minumum_strength'          => 4,
                                        'duplicate_reference_codes'          => false);
 
 //Xapian search
