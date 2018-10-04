@@ -161,7 +161,12 @@ try{
                 die('pre ready exception');
             }
 
+            if($e->getCode() === 'validation'){
+                $e->setCode(400);
+            }
+
             if(is_numeric($e->getCode()) and page_show($e->getCode(), array('exists' => true))){
+                log_file(tr('Displaying exception page ":page"', array(':page' => $e->getCode())), 'exceptions', 'error');
                 page_show($e->getCode(), array('message' =>$e->getMessage()));
             }
 
