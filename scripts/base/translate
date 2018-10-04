@@ -447,7 +447,7 @@ switch(cli_method()){
                                                                      'target_language' => $language,
                                                                      'method'          => 'get',
                                                                      'options'         => array('mode' => $mode),
-                                                                     'translations'    => $results['translations']),
+                                                                     'translations'    => json_encode_custom($results['translations'])),
                                            'httpheaders'    => false));
 
             }catch(Exception $e){
