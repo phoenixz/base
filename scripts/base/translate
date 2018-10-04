@@ -380,7 +380,7 @@ switch(cli_method()){
                                                                      'api_key'      => $_CONFIG['translate']['api_key'],
                                                                      'method'       => 'post',
                                                                      'options'      => array('mode' => $mode),
-                                                                     'translations' => $results['translations']),
+                                                                     'translations' => json_encode_custom($results['translations'])),
                                            'httpheaders'    => false));
 
             }catch(Exception $e){
