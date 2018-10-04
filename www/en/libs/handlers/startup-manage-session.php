@@ -1,58 +1,78 @@
 <?php
 /*
- * Set cookie, but only if page is not API and domain has
- * cookie configured
+ * Force session cookie configuration
  */
-if(empty($_CONFIG['cookie']['domain'])){
-    /*
-     * Ensure we have a domain configured in $_SESSION[domain]
-     */
-    session_reset_domain();
+ini_set('session.gc_maxlifetime' , $_CONFIG['sessions']['timeout']);
+ini_set('session.cookie_lifetime', $_CONFIG['sessions']['lifetime']);
+ini_set('session.use_strict_mode', $_CONFIG['sessions']['strict']);
+ini_set('session.name'           , $_CONFIG['domain']);
+ini_set('session.cookie_httponly', $_CONFIG['sessions']['http_only']);
+ini_set('session.cookie_secure'  , $_CONFIG['sessions']['secure_only']);
+ini_set('session.cookie_samesite', $_CONFIG['sessions']['same_site']);
+ini_set('session.use_strict_mode', $_CONFIG['sessions']['strict']);
+
+if($_CONFIG['sessions']['check_referrer']){
+    ini_set('session.referer_check', $_CONFIG['domain']);
+}
+
+if(debug() or !$_CONFIG['cache']['http']['enabled']){
+     ini_set('session.cache_limiter', 'nocache');
 
 }else{
+    if($_CONFIG['cache']['http']['enabled'] === 'auto'){
+        ini_set('session.cache_limiter', $_CONFIG['cache']['http']['php_cache_limiter']);
+        ini_set('session.cache_expire' , $_CONFIG['cache']['http']['php_cache_expire']);
+    }
+}
+
+/*
+ * Setup session handlers
+ */
+switch($_CONFIG['sessions']['handler']){
+    case false:
+        file_ensure_path(ROOT.'data/cookies/');
+        ini_set('session.save_path', ROOT.'data/cookies/');
+        break;
+
+    case 'sql':
+        /*
+         * Store session data in MySQL
+         */
+        load_libs('sessions-sql');
+        session_set_save_handler('sessions_sql_open', 'sessions_sql_close', 'sessions_sql_read', 'sessions_sql_write', 'sessions_sql_destroy', 'sessions_sql_gc', 'sessions_sql_create_sid');
+        register_shutdown_function('session_write_close');
+
+    case 'mc':
+        /*
+         * Store session data in memcached
+         */
+        load_libs('sessions-mc');
+        session_set_save_handler('sessions_mc_open', 'sessions_mc_close', 'sessions_mc_read', 'sessions_mc_write', 'sessions_mc_destroy', 'sessions_mc_gc', 'sessions_mc_create_sid');
+        register_shutdown_function('session_write_close');
+
+    case 'mm':
+        /*
+         * Store session data in shared memory
+         */
+        load_libs('sessions-mm');
+        session_set_save_handler('sessions_mm_open', 'sessions_mm_close', 'sessions_mm_read', 'sessions_mm_write', 'sessions_mm_destroy', 'sessions_mm_gc', 'sessions_mm_create_sid');
+        register_shutdown_function('session_write_close');
+}
+
+/*
+ * Set session and cookie parameters
+ */
+try{
     /*
-     * Set session and cookie parameters
+     *
      */
-    try{
-        if(!empty($_CONFIG['sessions']['shared_memory'])){
-            /*
-             * Store session data in share memory. This is very
-             * useful for security on shared servers if you do not
-             * want your session data available to other users
-             */
-            ini_set('session.save_handler', 'mm');
-        }
+    $domain = session_detect_domain();
 
-        /*
-         *
-         */
-        session_reset_domain();
-
-
-        /*
-         *
-         */
-        if($_CONFIG['sessions']['lifetime']){
-            if(ini_get('session.gc_maxlifetime') < $_CONFIG['sessions']['lifetime']){
-                /*
-                 * Ensure that session data is not considdered
-                 * garbage within the configured session lifetime!
-                 */
-                ini_set('session.gc_maxlifetime', $_CONFIG['sessions']['lifetime']);
-            }
-        }
-
-
-
-        /*
-         * Disable PHP caching stuff
-         */
-// :TODO: WHY?
-        session_cache_limiter('');
-        session_cache_expire(0);
-
-
-
+    /*
+     * Set cookie, but only if page is not API and domain has
+     * cookie configured
+     */
+    if(!empty($_CONFIG['cookie']['domain']) and !$core->callType('api')){
         /*
          *
          */
@@ -76,7 +96,7 @@ if(empty($_CONFIG['cookie']['domain'])){
                  * headers already sent (the SCRIPT file has a space or BOM at the beginning maybe?)
                  * permissions of PHP session directory?
                  */
-// :TODO: Add check on SCRIPT file if it contains BOM!
+    // :TODO: Add check on SCRIPT file if it contains BOM!
                 throw new bException('startup-webpage(): session start and session regenerate both failed, check PHP session directory', $e);
             }
         }
@@ -102,28 +122,27 @@ if(empty($_CONFIG['cookie']['domain'])){
                 session_destroy();
                 session_start();
                 session_regenerate_id(true);
-                session_reset_domain();
             }
         }
 
 
 
-        /*
-         * Ensure we have domain information
-         *
-         * NOTE: This SHOULD be done before the session_start because
-         * there we set a cookie to a possibly invalid domain BUT
-         * if we do this before session_start(), then $_SESSION['domain']
-         * does not yet exist, and we would perfom this check every page
-         * load instead of just once every session.
-         */
-// :TODO: in this section, session_reset_domain() could be called like 5 times? Fix this!
-        if(isset_get($_SESSION['domain']) !== $_SERVER['HTTP_HOST']){
-            /*
-             * Check requested domain
-             */
-            session_reset_domain();
-        }
+    //        /*
+    //         * Ensure we have domain information
+    //         *
+    //         * NOTE: This SHOULD be done before the session_start because
+    //         * there we set a cookie to a possibly invalid domain BUT
+    //         * if we do this before session_start(), then $_SESSION['domain']
+    //         * does not yet exist, and we would perfom this check every page
+    //         * load instead of just once every session.
+    //         */
+    //// :TODO: in this section, session_detect_domain() could be called like 5 times? Fix this!
+    //        if(isset_get($_SESSION['domain']) !== $_SERVER['HTTP_HOST']){
+    //            /*
+    //             * Check requested domain
+    //             */
+    //            session_detect_domain();
+    //        }
 
 
 
@@ -164,13 +183,14 @@ if(empty($_CONFIG['cookie']['domain'])){
             }
         }
 
-    }catch(Exception $e){
-        if(!is_writable(session_save_path())){
-            throw new bException('startup-webpage(): Session startup failed because the session path ":path" is not writable for platform ":platform"', array(':path' => session_save_path(), ':platform' => PLATFORM), $e);
-        }
-
-        throw new bException('Session startup failed', $e);
+        $_SESSION['domain'] = $domain;
     }
 
+}catch(Exception $e){
+    if(!is_writable(session_save_path())){
+        throw new bException('startup-manage-session: Session startup failed because the session path ":path" is not writable for platform ":platform"', array(':path' => session_save_path(), ':platform' => PLATFORM), $e);
+    }
+
+    throw new bException('startup-manage-session: Session startup failed', $e);
 }
 ?>
