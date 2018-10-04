@@ -34,7 +34,7 @@ function notifications_send($params){
 
         }else{
             array_params($params, 'title');
-            log_file(isset_get($params['description'], tr('No description specified')), 'notification-'.isset_get($params['title'], tr('without-title')), isset_get($params['class'], 'cyan'));
+            log_file(isset_get($params['description'], tr('No description specified')), 'notification-'.isset_get($params['title'], tr('without-title')), 'yellow');
         }
 
 return false;
