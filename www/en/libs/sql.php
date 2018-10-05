@@ -1249,31 +1249,33 @@ function sql_fetch_column($r, $column){
 
 /*
  * Merge database entry with new posted entry, overwriting the old DB values,
- * while skipping the values specified in $filter
+ * while skipping the values specified in $skip
  *
  * @copyright Copyright (c) 2018 Capmega
  * @license http://opensource.org/licenses/GPL-2.0 GNU Public License, Version 2
  * @category Function reference
  * @package sql
  *
- * @param
- * @return
+ * @param array $database_entry
+ * @param array $post
+ * @param mixed $skup
+ * @return array The specified datab ase entry, updated with all the data from the specified $_POST entry
  */
-function sql_merge($db, $post, $skip = null, $empty = null){
+function sql_merge($database_entry, $post, $skip = null){
     try{
         if($skip === null){
             $skip = 'id,status';
         }
 
-        if(!is_array($db)){
-            if($db !== null){
+        if(!is_array($database_entry)){
+            if($database_entry !== null){
                 throw new bException(tr('sql_merge(): Specified database source data type should be an array but is a ":type"', array(':type' => gettype($db))), 'invalid');
             }
 
             /*
              * Nothing to merge
              */
-            $db = array();
+            $database_entry = array();
         }
 
         if(!is_array($post)){
@@ -1287,21 +1289,23 @@ function sql_merge($db, $post, $skip = null, $empty = null){
             $post = array();
         }
 
-        $post = array_remove($post, $skip);
+        $skip = array_force($skip);
 
         /*
          * Copy all POST variables over DB
          * Skip POST variables that have NULL value
          */
-        foreach($post as $key => $value){
-            if($value === $empty){
+        foreach($database_entry as $key => $value){
+            if(in_array($key, $skip)){
                 continue;
             }
 
-            $db[$key] = $value;
+            if(array_key_exists($key, $post)){
+                $database_entry[$key] = $post[$key];
+            }
         }
 
-        return $db;
+        return $database_entry;
 
     }catch(Exception $e){
         throw new bException('sql_merge(): Failed', $e);
