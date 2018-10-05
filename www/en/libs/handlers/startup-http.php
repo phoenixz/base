@@ -219,6 +219,7 @@ if(isset($_GET['redirect'])){
  */
 if($_SERVER['REQUEST_METHOD'] == 'POST'){
     html_untranslate();
+    html_fix_checkbox_values();
 
     if($_CONFIG['security']['csrf']['enabled'] === 'force'){
         /*
