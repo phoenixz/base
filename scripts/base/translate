@@ -522,26 +522,30 @@ switch(cli_method()){
                     }
 
                     if(!file_exists(ROOT.$short_file)){
-                        log_console(tr(' File ":file" not found', array(':file' => ROOT.$short_file)), 'yellow');
-
-                    }else{
-                        //store new file
-                        $filedata    = file_get_contents(ROOT.$short_file);
-                        $target_file = str_replace($source_dir, $target_dir, ROOT.$short_file);
-
-                        //replace strings
-                        foreach($data as $source => $translation){
-                            cli_dot();
-
-                            $from     = array('tr("'.$source.'"'     , "tr('".$source."'");
-                            $to       = array('tr("'.$translation.'"', "tr('".$translation."'");
-                            $filedata = str_replace($from, $to, $filedata);
-                        }
-
-                        file_put_contents($target_file, $filedata);
-
-                        log_console(tr('Saved file ":file"', array(':file' => $target_file)), 'VERBOSE/green');
+                        log_console(tr('File ":file" not found', array(':file' => ROOT.$short_file)), 'yellow');
+                        continue;
                     }
+
+                    if(file_path_contains_symlink($short_file, ROOT)){
+                        log_console(tr('File ":file" contains a symlink and will be ignored', array(':file' => $short_file)), 'yellow');
+                        continue;
+                    }
+
+                    //store new file
+                    $filedata    = file_get_contents(ROOT.$short_file);
+                    $target_file = str_replace($source_dir, $target_dir, ROOT.$short_file);
+
+                    //replace strings
+                    foreach($data as $source => $translation){
+                        cli_dot();
+
+                        $from     = array('tr("'.$source.'"'     , "tr('".$source."'");
+                        $to       = array('tr("'.$translation.'"', "tr('".$translation."'");
+                        $filedata = str_replace($from, $to, $filedata);
+                    }
+
+                    file_put_contents($target_file, $filedata);
+                    log_console(tr('Saved file ":file"', array(':file' => $target_file)), 'VERBOSE/green');
                 }
 
                 cli_dot(false);
