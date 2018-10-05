@@ -384,7 +384,7 @@ function mysqlr_slave_replication_setup($params){
         /*
          * Check if this server was already replicating
          */
-        if($database['servers_replication_status'] == 'enabled'){
+        if($database['servers_replication_status'] == 'enabled' and empty($params['force_channel'])){
             mysqlr_update_replication_status($database, 'enabled');
             return 0;
         }
@@ -1204,12 +1204,12 @@ function mysqlr_monitor_database($database){
             return false;
         }
 
-        if(strtolower($result['Slave_IO_Running']) != 'yes' and strtolower($result['Slave_IO_Running']) != 'yes'){
+        if(strtolower($result['Slave_IO_Running']) != 'yes' or strtolower($result['Slave_SQL_Running']) != 'yes'){
             /*
              * Fix possible MYSQL Slave issues
              */
             switch($result['Last_IO_Errno']){
-                case '1236':
+                case 1236:
                     /*
                      * Got fatal error 1236 from master when reading data from binary log:
                      * 'Could not find first log file name in binary log index file'
@@ -1223,11 +1223,18 @@ function mysqlr_monitor_database($database){
                                             'time_limit'  => 1200,
                                             'status'      => 'new',
                                             'description' => tr('Add replication master of database ":database" on server ":server"', array(':database' => $database['database_name'], ':server' => $database['hostname'])),
-                                            'data'        => array('method'     => 'replication add-master',
-                                                                   '--env'      => ENVIRONMENT,
-                                                                   '--hostname' => $database['hostname'],
-                                                                   '--database' => $database['databases_id'],
-                                                                   '--log-info' => $database['database_name'])));
+                                            'data'        => array('method'          => 'replication add-master',
+                                                                   '--env'           => ENVIRONMENT,
+                                                                   '--hostname'      => $database['hostname'],
+                                                                   '--database'      => $database['databases_id'],
+                                                                   '--force-channel' => true)));
+                    mysqlr_update_replication_status($database, 'error');
+                    break;
+
+                case 0:
+                    /*
+                     * Do nothing
+                     */
                     break;
 
                 default:
@@ -1239,9 +1246,58 @@ function mysqlr_monitor_database($database){
                     mysqlr_update_replication_status($database, 'error');
             }
 
+            /*
+             * Fix possible MYSQL Slave issues
+             */
+            switch($result['Last_Errno']){
+                case 1146:
+                    /*
+                     *
+                     * Try by replicating again
+                     */
+                    load_libs('tasks');
+                    log_console(tr('Replication add master for database :database of server :server', array(':database' => $database['database_name'], ':server' => $database['hostname'])), 'white');
+                    mysqlr_update_replication_status($database, 'preparing');
+                    $task = tasks_add(array('command'     => 'base/mysql',
+                                            'time_limit'  => 1200,
+                                            'status'      => 'new',
+                                            'description' => tr('Add replication master of database ":database" on server ":server"', array(':database' => $database['database_name'], ':server' => $database['hostname'])),
+                                            'data'        => array('method'          => 'replication add-master',
+                                                                   '--env'           => ENVIRONMENT,
+                                                                   '--hostname'      => $database['hostname'],
+                                                                   '--database'      => $database['databases_id'],
+                                                                   '--force-channel' => true)));
+                    mysqlr_update_replication_status($database, 'error');
+                    break;
+
+                case 0:
+                    /*
+                     * Do nothing
+                     */
+                    break;
+
+                default:
+                    /*
+                     * Unkown issue
+                     * Try restarting the ssh tunnel
+                     */
+                    mysqlr_slave_ssh_tunnel($database, $slave);
+            }
+
+            if($result['Last_Errno'] == 0 and $result['Last_IO_Errno'] == 0){
+                /*
+                 * The Slave is not running on this channel
+                 * Just try restarting the mysql server
+                 */
+                servers_exec($slave, 'sudo service mysql restart');
+            }
+
+            /*
+             * Add log
+             */
             mysqlr_add_log(array('databases_id' => $database['id'],
                                  'type'         => 'mysql_issue',
-                                 'message'      => tr('mysqlr_monitor_database(): There is an error with the Slave, restarting ssh tunnel, Last_IO_Errno ":Last_IO_Errno", Last_IO_Error ":Last_IO_Error"', array(':Last_IO_Errno' => $result['Last_IO_Errno'], ':Last_IO_Error' => $result['Last_IO_Error']))));
+                                 'message'      => tr('mysqlr_monitor_database(): There is an error with the Slave, restarting ssh tunnel, Last_IO_Errno ":Last_IO_Errno", Last_Errno ":Last_Errno", Last_Error ":Last_Error" Last_IO_Error ":Last_IO_Error"', array(':Last_IO_Errno' => $result['Last_IO_Errno'], ':Last_Errno' => $result['Last_Errno'], ':Last_Error' => $result['Last_Error'], ':Last_IO_Error' => $result['Last_IO_Error']))));
             return false;
         }
 
