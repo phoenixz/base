@@ -613,7 +613,7 @@ function user_authenticate($username, $password, $captcha = null){
         /*
          * Check if authentication for this user is limited to a specific domain
          */
-        if(($_CONFIG['whitelabels']['enabled'] === true) and $user['domain']){
+        if(($_CONFIG['whitelabels']['enabled']) and $user['domain']){
             if($user['domain'] !== $_SERVER['HTTP_HOST']){
                 throw new bException(tr('user_autohenticate(): User account ":name" is limited to authenticate only in domain ":domain"', array(':name' => name($user), ':domain' => $user['domain'])), 'domain-limit');
             }
@@ -812,7 +812,7 @@ function user_authentication_requires_captcha($failures = null){
         return $result;
 
     }catch(Exception $e){
-        throw new bException('user_log_authentication(): Failed', $e);
+        throw new bException('user_authentication_requires_captcha(): Failed', $e);
     }
 }
 
@@ -820,6 +820,18 @@ function user_authentication_requires_captcha($failures = null){
 
 /*
  * Do a user signin
+ *
+ * @author Sven Olaf Oostenbrink <sven@capmega.com>
+ * @copyright Copyright (c) 2018 Capmega
+ * @license http://opensource.org/licenses/GPL-2.0 GNU Public License, Version 2
+ * @category Function reference
+ * @package user
+ *
+ * @param array $user
+ * @param boolean $extended
+ * @param boolean $redirect
+ * @param boolean $html_flash
+ * @return void
  */
 function user_signin($user, $extended = false, $redirect = null, $html_flash = null) {
     global $_CONFIG;
