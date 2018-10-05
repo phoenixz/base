@@ -2351,4 +2351,66 @@ function file_chown($file, $user = null, $group = null){
         throw new bException('file_chown(): Failed', $e);
     }
 }
+
+
+
+/*
+ *
+ *
+ * @author Sven Olaf Oostenbrink <sven@capmega.com>
+ * @copyright Copyright (c) 2018 Capmega
+ * @license http://opensource.org/licenses/GPL-2.0 GNU Public License, Version 2
+ * @category Function reference
+ * @package file
+ *
+ * @param string $path
+ * @param string $prefix
+ * @return boolean True if the specified $path (optionally prefixed by $prefix) contains a symlink, false if not
+ */
+function file_path_contains_symlink($path, $prefix = null){
+    try{
+        if(!$path){
+            throw new bException(tr('file_path_contains_symlink(): No path specified'), 'not-specified');
+        }
+
+        if(substr($path, 0, 1) === '/'){
+            if($prefix){
+                throw new bException(tr('file_path_contains_symlink(): The specified path ":path" is absolute, which requires $prefix to be null, but it is ":prefix"', array(':path' => $path, ':prefix' => $prefix)), 'invalid');
+            }
+
+            $location = '/';
+
+        }else{
+            /*
+             * Specified $path is relative, so prefix it with $prefix
+             */
+            if(substr($prefix, 0, 1) !== '/'){
+                throw new bException(tr('file_path_contains_symlink(): The specified path ":path" is relative, which requires an absolute $prefix but it is ":prefix"', array(':path' => $path, ':prefix' => $prefix)), 'invalid');
+            }
+
+            $location = str_ends($prefix, '/');
+        }
+
+        $path = str_ends_not(str_starts_not($path, '/'), '/');
+
+        foreach(explode('/', $path) as $section){
+            $location .= $section;
+
+            if(!file_exists($location)){
+                throw new bException(tr('file_path_contains_symlink(): The specified path ":path" with prefix ":prefix" leads to ":location" which does not exist', array(':path' => $path, ':prefix' => $prefix, ':location' => $location)), 'not-exists');
+            }
+
+            if(is_link($location)){
+                return true;
+            }
+
+            $location .= '/';
+        }
+
+        return false;
+
+    }catch(Exception $e){
+        throw new bException('file_path_contains_symlink(): Failed', $e);
+    }
+}
 ?>
