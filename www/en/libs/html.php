@@ -2152,7 +2152,7 @@ function html_minify($html, $full = false){
 
      try{
  		if(!isset($translations[$name])){
- 			$translations[$name] = '__'.$name.'__'.substr(unique_code('sha256'), 0, 16);
+ 			$translations[$name] = '__HT'.$name.'__'.substr(unique_code('sha256'), 0, 16);
  		}
 
  		return $translations[$name];
@@ -2172,8 +2172,8 @@ function html_untranslate(){
         $count = 0;
 
         foreach($_POST as $key => $value){
-            if(substr($key, 0, 2) == '__'){
-                $_POST[str_until(substr($key, 2), '__')] = $_POST[$key];
+            if(substr($key, 0, 4) == '__HT'){
+                $_POST[str_until(substr($key, 4), '__')] = $_POST[$key];
                 unset($_POST[$key]);
                 $count++;
             }
@@ -2184,6 +2184,37 @@ function html_untranslate(){
     }catch(Exception $e){
         throw new bException(tr('html_untranslate(): Failed'), $e);
     }
+}
+
+
+
+/*
+ * Ensure that missing checkbox values are restored automatically (Seriously, sometimes web design is tiring...)
+ *
+ * This function works by assuming that each checkbox with name NAME has a hidden field with name _NAME. If NAME is missing, _NAME will be moved to NAME
+ *
+ * @copyright Copyright (c) 2018 Capmega
+ * @license http://opensource.org/licenses/GPL-2.0 GNU Public License, Version 2
+ * @category Function reference
+ * @package html
+ *
+ * @return void
+ */
+function html_fix_checkbox_values(){
+    try{
+        foreach($_POST as $key => $value){
+            if(substr($key, 0, 4) === '__CB'){
+                if(!array_key_exists(substr($key, 4), $_POST)){
+                    $_POST[substr($key, 4)] = $value;
+                }
+
+                unset($_POST[$key]);
+            }
+        }
+
+     }catch(Exception $e){
+         throw new bException(tr('html_fix_checkbox_values(): Failed'), $e);
+     }
 }
 
 
