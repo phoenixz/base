@@ -757,7 +757,7 @@ switch(cli_method()){
 
         foreach($user as $key => $value){
             if($key == 'password') continue;
-            log_console(cli_color(str_capitalize($key).':', 'white').' '.$value);
+            log_console(cli_color($key.':', 'white').' '.$value);
         }
 
         break;
