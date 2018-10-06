@@ -1195,17 +1195,41 @@ function html_submit($params, $class = ''){
 
 
 /*
- * Return an HTML <select> list
+ * Return HTML for a multi select submit button. This button, once clicked, will show a list of selectable submit buttons.
+ *
+ * @copyright Copyright (c) 2018 Capmega
+ * @license http://opensource.org/licenses/GPL-2.0 GNU Public License, Version 2
+ * @category Function reference
+ * @package html
+ * @see html_select()
+ *
+ * @param array $params The parameters for this HTML select button
+ * @params string name The HTML name for the button
+ * @params string id The HTML id for the button
+ * @params boolean autosubmit If set to true, clicking the button will automatically subimit the form where this button is placed
+ * @params string none The text that will be shown when the button is closed and not used
+ * @params array buttons
+ * @return string The HTML for the button selector
  */
 function html_select_submit($params){
     try{
         array_params ($params);
         array_default($params, 'name'      , 'dosubmit');
+        array_default($params, 'id'        , '');
         array_default($params, 'autosubmit', true);
-        array_default($params, 'buttons'   , array());
         array_default($params, 'none'      , tr('Select action'));
+        array_default($params, 'buttons'   , array());
 
-        $params['resource'] = $params['buttons'];
+        /*
+         * Build the html_select resource from the buttons
+         */
+        foreach($params['buttons'] as $key => $value){
+            if(is_numeric($key)){
+                $key = $value;
+            }
+
+            $params['resource'][$key] = $value;
+        }
 
         return html_select($params);
 
@@ -1217,7 +1241,17 @@ function html_select_submit($params){
 
 
 /*
- * Return an HTML <select> list
+ * Return HTML for a <select> list
+ *
+ * @copyright Copyright (c) 2018 Capmega
+ * @license http://opensource.org/licenses/GPL-2.0 GNU Public License, Version 2
+ * @category Function reference
+ * @package html
+ * @see html_select_body()
+ *
+ * @param array $params The parameters for this HTML select button
+ * @params
+ * @return string The HTML for the button selector
  */
 function html_select($params){
     static $count = 0;
@@ -1334,7 +1368,7 @@ function html_select($params){
             /*
              * By default autosubmit on the id
              */
-            $params['autosubmit'] = '#'.$params['id'];
+            $params['autosubmit'] = $params['name'];
         }
 
         /*
@@ -1343,7 +1377,7 @@ function html_select($params){
         $params['autosubmit'] = str_replace('[', '\\\\[', $params['autosubmit']);
         $params['autosubmit'] = str_replace(']', '\\\\]', $params['autosubmit']);
 
-        return $retval.html_script('$("'.$params['autosubmit'].'").change(function(){ $(this).closest("form").find("input,textarea,select").addClass("ignore"); $(this).closest("form").submit(); });');
+        return $retval.html_script('$("[name=\''.$params['autosubmit'].'\']").change(function(){ $(this).closest("form").find("input,textarea,select").addClass("ignore"); $(this).closest("form").submit(); });');
 
     }catch(Exception $e){
         throw new bException('html_select(): Failed', $e);
