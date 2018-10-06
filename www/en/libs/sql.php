@@ -1749,7 +1749,9 @@ function sql_get_connector($requested){
                                      `pdo_attributes`,
                                      `timezone`
 
-                              FROM   `sql_connectors`'.$where,
+                              FROM   `sql_connectors`
+
+                              WHERE  '.$where,
 
                               $execute);
 
@@ -1761,14 +1763,114 @@ function sql_get_connector($requested){
             unset($connector['ssh_tunnel_required']);
             unset($connector['ssh_tunnel_source_port']);
             unset($connector['ssh_tunnel_hostname']);
-        }
 
-        $_CONFIG['db'][$requested] = $connector;
+            $_CONFIG['db'][$requested] = $connector;
+        }
 
         return $connector;
 
     }catch(Exception $e){
         throw new bException(tr('sql_get_connector(): Failed'), $e);
+    }
+}
+
+
+
+/*
+ * Create an SQL connector in $_CONFIG['db'][$name] = $data
+ *
+ * @copyright Copyright (c) 2018 Capmega
+ * @license http://opensource.org/licenses/GPL-2.0 GNU Public License, Version 2
+ * @category Function reference
+ * @package sql
+ *
+ * @param string $name
+ * @param array $data
+ * @return array The specified connector data, with all informatinon completed if missing
+ */
+function sql_make_connector($name, $data){
+    global $_CONFIG;
+
+    try{
+        if(empty($data['ssh_tunnel'])){
+            $data['ssh_tunnel'] = array();
+        }
+
+        if(!is_array($data['ssh_tunnel'])){
+            throw new bException(tr('sql_make_connector(): Specified ssh_tunnel should be an array but is a ":type"', array(':type' => gettype($data['ssh_tunnel']))), 'invalid');
+        }
+
+        if(sql_get_connector($name)){
+            throw new bException(tr('sql_make_connector(): The specified connector name ":name" already exists', array(':name' => $name)), 'exists');
+        }
+
+        $template = array('driver'           => 'mysql',
+                          'host'             => '127.0.0.1',
+                          'port'             => 3310,
+                          'db'               => '',
+                          'user'             => '',
+                          'pass'             => '',
+                          'autoincrement'    => 1,
+                          'init'             => false,
+                          'buffered'         => false,
+                          'charset'          => 'utf8mb4',
+                          'collate'          => 'utf8mb4_general_ci',
+                          'limit_max'        => 10000,
+                          'mode'             => 'PIPES_AS_CONCAT,IGNORE_SPACE,NO_KEY_OPTIONS,NO_TABLE_OPTIONS,NO_FIELD_OPTIONS',
+                          'ssh_tunnel'       => array('required'    => false,
+                                                      'source_port' => 3307,
+                                                      'hostname'    => '',
+                                                      'usleep'      => 1200000),
+                          'pdo_attributes'   => array(),
+                          'version'          => '0.0.0',
+                          'timezone'         => 'UTC');
+
+        $data['ssh_tunnel'] = sql_merge($template['ssh_tunnel'], $data['ssh_tunnel']);
+        $data               = sql_merge($template, $data);
+
+        if($data['ssh_tunnel']){
+            $data['ssh_tunnel']['required'] = true;
+        }
+
+        $_CONFIG['db'][$name] = $data;
+        return $data;
+
+    }catch(Exception $e){
+        throw new bException(tr('sql_make_connector(): Failed'), $e);
+    }
+}
+
+
+
+/*
+ * Test SQL functions over SSH tunnel for the specified server
+ *
+ * @copyright Copyright (c) 2018 Capmega
+ * @license http://opensource.org/licenses/GPL-2.0 GNU Public License, Version 2
+ * @category Function reference
+ * @package sql
+ * @exception bException when the test failse
+ *
+ * @param mixed $server The server that is to be tested
+ * @return void
+ */
+function sql_test_tunnel($server){
+    global $_CONFIG;
+
+    try{
+        $connector_name = 'test';
+        $port           = 6000;
+
+        sql_make_connector($connector_name, array('port'       => $port,
+                                                  'user'       => $server['db_username'],
+                                                  'pass'       => $server['db_password'],
+                                                  'ssh_tunnel' => array('source_port' => $port,
+                                                                        'hostname'    => $server['hostname'])));
+
+        sql_get('SELECT TRUE', true, null, $connector_name);
+
+    }catch(Exception $e){
+        throw new bException(tr('sql_test_tunnel(): Failed'), $e);
     }
 }
 
