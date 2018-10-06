@@ -59,7 +59,6 @@ function servers_validate($server, $ensure_column_only = false, $password_streng
             return $server;
         }
 
-        $v->isNotEmpty($server['ssh_account'], tr('Please specifiy an SSH account'));
         $v->isNotEmpty($server['hostname']   , tr('Please specifiy a hostnames'));
         $v->isNotEmpty($server['port']       , tr('Please specifiy a port'));
         $v->isNotEmpty($server['seocustomer'], tr('Please specifiy a customer'));
@@ -466,7 +465,7 @@ function servers_get($server, $database = false, $return_proxies = true, $limite
              * Assume that if identity_file data is available, that we have a
              * complete one
              */
-            if(!empty($server['identity_file'])){
+            if(!empty($server['id'])){
                 return $server;
             }
 
@@ -501,8 +500,11 @@ function servers_get($server, $database = false, $return_proxies = true, $limite
                              `servers`.`ipv6`,
                              `servers`.`allow_sshd_modification`,
 
-                             `createdby`.`name`   AS `createdby_name`,
-                             `createdby`.`email`  AS `createdby_email`,
+                             `ssh_accounts`.`username`,
+                             `ssh_accounts`.`ssh_key`,
+
+                             `createdby`.`name`  AS `createdby_name`,
+                             `createdby`.`email` AS `createdby_email`,
 
                              `providers`.`name`       AS `provider`,
                              `customers`.`name`       AS `customer`,
@@ -510,8 +512,9 @@ function servers_get($server, $database = false, $return_proxies = true, $limite
                              `customers`.`seoname`    AS `seocustomer`,
                              `ssh_accounts`.`seoname` AS `ssh_account`,
 
-                             `ssh_accounts`.`username`,
-                             `ssh_accounts`.`ssh_key` ';
+                             `database_accounts`.`username`      AS `db_username`,
+                             `database_accounts`.`password`      AS `db_password`,
+                             `database_accounts`.`root_password` AS `db_root_password`';
         }
 
         $from  = ' FROM      `servers`
@@ -527,6 +530,9 @@ function servers_get($server, $database = false, $return_proxies = true, $limite
 
                    LEFT JOIN `ssh_accounts`
                    ON        `ssh_accounts`.`id`              = `servers`.`ssh_accounts_id`
+
+                   LEFT JOIN `database_accounts`
+                   ON        `database_accounts`.`id`         = `servers`.`database_accounts_id`
 
                    LEFT JOIN `servers_hostnames`
                    ON        `servers_hostnames`.`servers_id` = `servers`.`id` ';
