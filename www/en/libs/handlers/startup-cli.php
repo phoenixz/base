@@ -29,7 +29,10 @@ try{
     define('FORCE'      , cli_argument('-F,--force'));
     define('NOCOLOR'    , cli_argument('-C,--no-color'));
     define('TEST'       , cli_argument('-T,--test'));
-    define('LIMIT'      , cli_argument('--limit', true));
+    define('LIMIT'      , cli_argument('--limit'     , true));
+    define('ALL'        , cli_argument('-A,--all'    , true));
+    define('DELETED'    , cli_argument('-d,--deleted', true));
+    define('STATUS'     , cli_argument('-S,--status' , true));
     define('STARTDIR'   , slash(getcwd()));
 
 }catch(Exception $e){
@@ -394,7 +397,16 @@ if(FORCE){
     log_console(tr('Running in TEST mode'), 'yellow');
 }
 
+if(ALL){
+    if(DELETED){
+        throw new bException(tr('core::startup(): Both ALL and DELETED modes where specified, these modes are mutually exclusive'), 'invalid');
+    }
 
+    log_console(tr('Showing ALL entries', 'VERBOSE/cyan'));
+
+}elseif(DELETED){
+    log_console(tr('Showing DELETED entried', 'VERBOSE/cyan'));
+}
 
 /*
  * Load custom library, if available
