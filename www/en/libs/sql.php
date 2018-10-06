@@ -1858,8 +1858,11 @@ function sql_test_tunnel($server){
     global $_CONFIG;
 
     try{
+        load_libs('servers');
+
         $connector_name = 'test';
         $port           = 6000;
+        $server         = servers_get($server, true);
 
         sql_make_connector($connector_name, array('port'       => $port,
                                                   'user'       => $server['db_username'],
