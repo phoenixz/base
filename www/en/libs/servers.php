@@ -510,11 +510,7 @@ function servers_get($server, $database = false, $return_proxies = true, $limite
                              `customers`.`name`       AS `customer`,
                              `providers`.`seoname`    AS `seoprovider`,
                              `customers`.`seoname`    AS `seocustomer`,
-                             `ssh_accounts`.`seoname` AS `ssh_account`,
-
-                             `database_accounts`.`username`      AS `db_username`,
-                             `database_accounts`.`password`      AS `db_password`,
-                             `database_accounts`.`root_password` AS `db_root_password`';
+                             `ssh_accounts`.`seoname` AS `ssh_account`';
         }
 
         $from  = ' FROM      `servers`
@@ -530,9 +526,6 @@ function servers_get($server, $database = false, $return_proxies = true, $limite
 
                    LEFT JOIN `ssh_accounts`
                    ON        `ssh_accounts`.`id`              = `servers`.`ssh_accounts_id`
-
-                   LEFT JOIN `database_accounts`
-                   ON        `database_accounts`.`id`         = `servers`.`database_accounts_id`
 
                    LEFT JOIN `servers_hostnames`
                    ON        `servers_hostnames`.`servers_id` = `servers`.`id` ';
