@@ -60,8 +60,8 @@ replication
 
         --database DATABASE      - The name/id of the database to replicate
 
-        --log-info               - Info useful on tasks script log
-                                   (e.g. database name)
+        --force-channel          - Force slave sarver to create channel
+                                   on mysql
 
     backup                       - Make remote backup on replication server
                                    for databases that are replicating';
@@ -374,7 +374,9 @@ switch(cli_method()){
                                         ON         `databases`.`servers_id` = `servers`.`id`
 
                                         WHERE      `databases`.`status` IS NULL
-                                        AND        `servers`.`status`   IS NULL');
+                                        AND        `servers`.`status`   IS NULL
+
+                                        ORDER BY   `servers`.`id`');
 
                 load_libs('ssh,servers');
 
@@ -424,7 +426,8 @@ switch(cli_method()){
                 /*
                  * Get arguments and needed data
                  */
-                $server                 = cli_arguments('--hostname,--database,--log-info');
+                $server                 = cli_arguments('--hostname,--database');
+                $force_channel          = cli_arguments('--force-channel');
                 $server['root_db_user'] = 'root';
                 $server['arguments']    = '-q';
                 cli_no_arguments_left();
@@ -439,7 +442,8 @@ switch(cli_method()){
                  * Setup slave with master info
                  */
                 log_console(tr('Preparing slave'), 'white');
-                $slave = mysqlr_slave_replication_setup($master);
+                $master['force_channel']  = $force_channel;
+                $slave                    = mysqlr_slave_replication_setup($master);
                 break;
 
             case 'pause':
