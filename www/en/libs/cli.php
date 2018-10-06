@@ -1101,21 +1101,23 @@ function cli_done(){
                 continue;
             }
 
+            $key = substr($key, 9);
+
             /*
              * Execute this shutdown function with the specified value
              */
-            log_console(tr('cli_done(): Executing shutdown function ":function" with value ":value"', array(':function' => substr($key, 9), ':value' => $value)), 'VERBOSE/cyan');
+            log_console(tr('cli_done(): Executing shutdown function ":function" with value ":value"', array(':function' => $key, ':value' => $value)), 'VERBOSE/cyan');
 
             if(is_array($value)){
                 /*
                  * Shutdown function value is an array. Execute it for each entry
                  */
                 foreach($value as $entry){
-                    substr($key, 9)($entry);
+                    $key($entry);
                 }
 
             }else{
-                substr($key, 9)($value);
+                $key($value);
             }
 
         }
