@@ -7,6 +7,9 @@ try{
 
             }elseif(strstr($key, 'pass') !== false){
                 $value = '*** HIDDEN ***';
+
+            }elseif(strstr($key, 'ssh_key') !== false){
+                $value = '*** HIDDEN ***';
             }
         }
 
