@@ -22,6 +22,9 @@ define('VERYVERBOSE', false);
 define('QUIET'      , false);
 define('LIMIT'      , false);
 define('ORDERBY'    , false);
+define('ALL'        , false);
+define('DELETED'    , false);
+define('STATUS'     , false);
 define('STARTDIR'   , slash(getcwd()));
 
 
@@ -219,6 +222,7 @@ if(isset($_GET['redirect'])){
  */
 if($_SERVER['REQUEST_METHOD'] == 'POST'){
     html_untranslate();
+    html_fix_checkbox_values();
 
     if($_CONFIG['security']['csrf']['enabled'] === 'force'){
         /*

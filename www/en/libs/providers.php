@@ -242,9 +242,11 @@ function providers_select($params = null){
  *
  * @param mixed $provider The requested provider. Can either be specified by id (natural number) or string (seoname)
  * @param string $column The specific column that has to be returned
+ * @param string $status Filter by the specified status
+ * @param natural $categories_id Filter by the specified categories_id. If NULL, the customer must NOT belong to any category
  * @return mixed The provider data. If no column was specified, an array with all columns will be returned. If a column was specified, only the column will be returned (having the datatype of that column). If the specified provider does not exist, NULL will be returned.
  */
-function providers_get($provider, $column = null, $status = null){
+function providers_get($provider, $column = null, $status = null, $categories_id = false){
     try{
         if(is_numeric($provider)){
             $where[] = ' `providers`.`id` = :id ';
@@ -258,6 +260,11 @@ function providers_get($provider, $column = null, $status = null){
         if($status !== false){
             $execute[':status'] = $status;
             $where[] = ' `providers`.`status` '.sql_is($status).' :status';
+        }
+
+        if($categories_id !== false){
+            $execute[':categories_id'] = $categories_id;
+            $where[] = ' `customers`.`categories_id` '.sql_is($categories_id).' :categories_id';
         }
 
         $where   = ' WHERE '.implode(' AND ', $where).' ';

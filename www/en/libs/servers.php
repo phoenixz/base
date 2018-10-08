@@ -43,17 +43,22 @@ function servers_library_init(){
  * @package servers
  *
  * @param array $server
+ * @param boolean $reload_only
  * @param boolean $password_strength
  * @return array
  */
-function servers_validate($server, $password_strength = true){
+function servers_validate($server, $ensure_column_only = false, $password_strength = false){
     global $_CONFIG;
 
     try{
         load_libs('validate,file,seo,customers,providers');
 
-        $v = new validate_form($server, 'id,ipv4,ipv6,port,hostname,hostnames,seoprovider,seocustomer,ssh_account,description,ssh_proxy,database_accounts_id');
-        $v->isNotEmpty($server['ssh_account'], tr('Please specifiy an SSH account'));
+        $v = new validate_form($server, 'id,ipv4,ipv6,port,hostname,hostnames,seoprovider,seocustomer,ssh_account,description,ssh_proxy,database_accounts_id,allow_sshd_modification');
+
+        if($ensure_column_only){
+            return $server;
+        }
+
         $v->isNotEmpty($server['hostname']   , tr('Please specifiy a hostnames'));
         $v->isNotEmpty($server['port']       , tr('Please specifiy a port'));
         $v->isNotEmpty($server['seocustomer'], tr('Please specifiy a customer'));
@@ -140,6 +145,8 @@ function servers_validate($server, $password_strength = true){
         if(!is_numeric($server['port']) or ($server['port'] < 1) or ($server['port'] > 65535)){
             $v->setError(tr('Specified port ":port" is not valid', array(':port' => $server['port'])));
         }
+
+        $server['allow_sshd_modification'] = (boolean) $server['allow_sshd_modification'];
 
         if($server['hostnames']){
             $v->isScalar($server['hostnames'], tr('Please specify valid hostnames'));
@@ -359,33 +366,7 @@ function servers_exec($server, $commands = null, $background = false, $function 
         array_default($server, 'background'   , $background);
         array_default($server, 'commands'     , $commands);
 
-        if($server){
-            if(!is_scalar($server) and !is_array($server)){
-                throw new bException(tr('servers_exec(): The specified server ":server" is invalid', array(':server' => $server)), 'invalid');
-            }
-
-            if(!is_array($server) or (empty($server['identity_file']) and empty($server['ssh_key']))){
-                /*
-                 * Server is specified either by hostname, or in array without the required identity file. Load all server data from database
-                 */
-                $requested = $server;
-                $server    = servers_get($server, false, true, false, true);
-
-                if(!$server){
-                    /*
-                     * Specified server was not found
-                     */
-                    if(is_array($requested)){
-                        throw new bException(tr('servers_exec(): The specified server ":server" does not exist', array(':server' => isset_get($requested['hostname']))), 'not-exist');
-                    }
-
-                    throw new bException(tr('servers_exec(): The specified server ":server" does not exist', array(':server' => $requested)), 'not-exist');
-                }
-            }
-
-        }else{
-           $server = null;
-        }
+        $server = servers_get($server);
 
         if(empty($server['identity_file'])){
             if(empty($server['ssh_key'])){
@@ -442,33 +423,7 @@ function servers_exec($server, $commands = null, $background = false, $function 
  */
 function servers_register_host($server){
     try{
-        if(!$server){
-            throw new bException('servers_register_host(): No server specified', 'not-specified');
-        }
-
-        if(!is_scalar($server) and !is_array($server)){
-            throw new bException(tr('servers_exec(): The specified server ":server" is invalid', array(':server' => $server)), 'invalid');
-        }
-
-        if(!is_array($server) or (empty($server['identity_file']) and empty($server['ssh_key']))){
-            /*
-             * Server is specified either by hostname, or in array without the required identity file. Load all server data from database
-             */
-            $requested = $server;
-            $server    = servers_get($server);
-
-            if(!$server){
-                /*
-                 * Specified server was not found
-                 */
-                if(is_array($requested)){
-                    throw new bException(tr('servers_exec(): The specified server ":server" does not exist', array(':server' => isset_get($requested['hostname']))), 'not-exist');
-                }
-
-                throw new bException(tr('servers_exec(): The specified server ":server" does not exist', array(':server' => $requested)), 'not-exist');
-            }
-        }
-
+        $server = servers_get($server);
         return ssh_add_known_host($server['hostname'], $server['port']);
 
     }catch(Exception $e){
@@ -495,12 +450,27 @@ function servers_register_host($server){
  */
 function servers_get($server, $database = false, $return_proxies = true, $limited_columns = false){
     try{
-        if(is_array($server) and !empty($server['identity_file'])){
+        if($server === null){
+            /*
+             * This means local server, no network connection needed
+             */
+            return null;
+        }
+
+        if(is_array($server)){
             /*
              * Specified host is an array, so it should already contain all
              * information
+             *
+             * Assume that if identity_file data is available, that we have a
+             * complete one
              */
-            return $server;
+            if(!empty($server['id'])){
+                return $server;
+            }
+
+        }elseif(!is_scalar($server)){
+            throw new bException(tr('servers_get(): The specified server ":server" is invalid', array(':server' => $server)), 'invalid');
         }
 
         if($limited_columns){
@@ -528,18 +498,19 @@ function servers_get($server, $database = false, $return_proxies = true, $limite
                              `servers`.`description`,
                              `servers`.`ipv4`,
                              `servers`.`ipv6`,
+                             `servers`.`allow_sshd_modification`,
 
-                             `createdby`.`name`   AS `createdby_name`,
-                             `createdby`.`email`  AS `createdby_email`,
+                             `ssh_accounts`.`username`,
+                             `ssh_accounts`.`ssh_key`,
+
+                             `createdby`.`name`  AS `createdby_name`,
+                             `createdby`.`email` AS `createdby_email`,
 
                              `providers`.`name`       AS `provider`,
                              `customers`.`name`       AS `customer`,
                              `providers`.`seoname`    AS `seoprovider`,
                              `customers`.`seoname`    AS `seocustomer`,
-                             `ssh_accounts`.`seoname` AS `ssh_account`,
-
-                             `ssh_accounts`.`username`,
-                             `ssh_accounts`.`ssh_key` ';
+                             `ssh_accounts`.`seoname` AS `ssh_account`';
         }
 
         $from  = ' FROM      `servers`
@@ -630,34 +601,36 @@ function servers_get($server, $database = false, $return_proxies = true, $limite
 
         $dbserver = sql_get($query.$from.$where, null, $execute, 'core');
 
-        if($dbserver){
-            $dbserver['hostnames'] = sql_list('SELECT `id`, `hostname` FROM `servers_hostnames` WHERE `servers_id` = :servers_id AND `status` IS NULL', array(':servers_id' => $dbserver['id']), false, 'core');
+        if(!$dbserver){
+            throw new bException(tr('servers_get(): Specified server ":server" does not exist', array(':server' => $server)), 'not-exist');
+        }
 
-            if($return_proxies){
-                $dbserver['proxies'] = array();
+        $dbserver['hostnames'] = sql_list('SELECT `id`, `hostname` FROM `servers_hostnames` WHERE `servers_id` = :servers_id AND `status` IS NULL', array(':servers_id' => $dbserver['id']), false, 'core');
 
-                $dbserver_proxy = servers_get_proxy($dbserver['id']);
+        if($return_proxies){
+            $dbserver['proxies'] = array();
 
-                if($dbserver_proxy){
-                    $dbserver['proxies'][] = $dbserver_proxy;
-                    $proxy                 = $dbserver_proxy['proxies_id'];
+            $dbserver_proxy = servers_get_proxy($dbserver['id']);
 
-                    while($proxy){
-                        $dbserver_proxy = servers_get_proxy($proxy);
-                        $proxy          = false;
+            if($dbserver_proxy){
+                $dbserver['proxies'][] = $dbserver_proxy;
+                $proxy                 = $dbserver_proxy['proxies_id'];
 
-                        if(!empty($dbserver_proxy)){
-                            $dbserver['proxies'][] = $dbserver_proxy;
-                            $proxy                 = $dbserver_proxy['proxies_id'];
-                        }
+                while($proxy){
+                    $dbserver_proxy = servers_get_proxy($proxy);
+                    $proxy          = false;
+
+                    if(!empty($dbserver_proxy)){
+                        $dbserver['proxies'][] = $dbserver_proxy;
+                        $proxy                 = $dbserver_proxy['proxies_id'];
                     }
-
-                    $dbserver['proxies'] = array_filter($dbserver['proxies']);
                 }
 
-                if(is_array($server)){
-                    $dbserver = array_merge($server, $dbserver);
-                }
+                $dbserver['proxies'] = array_filter($dbserver['proxies']);
+            }
+
+            if(is_array($server)){
+                $dbserver = array_merge($server, $dbserver);
             }
         }
 

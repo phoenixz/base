@@ -155,6 +155,12 @@ function ssh_exec($server, $commands = null, $background = false, $function = nu
         }
 
         /*
+         * Check if SSH can connect to the specified server / port
+         */
+        load_libs('inet');
+        inet_test_host_port($server['hostname'], $server['port'], true);
+
+        /*
          * Remove "Permanently added host blah" error, even in this exception
          */
         notify($e);

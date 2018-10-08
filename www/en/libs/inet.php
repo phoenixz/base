@@ -93,28 +93,57 @@ function is_ipv6($version = null){
 
 
 /*
- * Correct domain name
+ * Test if the specified port on the specified hostname or IP responds
+ *
+ * @author Sven Olaf Oostenbrink <sven@capmega.com>
+ * @copyright Copyright (c) 2018 Capmega
+ * @license http://opensource.org/licenses/GPL-2.0 GNU Public License, Version 2
+ * @category Function reference
+ * @package inet
+ *
+ * @param string $host The hostname or IP to connect to
+ * @param natural $port (1 - 65535) The port on the specified hostname or IP to connect to
+ * @return boolean True if the specified host / port responds, false if not
  */
-function domain_correct($count){
-    $_SERVER['HTTP_HOST'] = substr($_SERVER['HTTP_HOST'], $count);
-    $_SERVER['HTTP_HOST']   = substr($_SERVER['HTTP_HOST']  , $count);
-}
-
-
-
-/*
- * Check if a domainname is valid
- */
-function is_valid_domain_name($domain_name) {
-    $pieces = explode('.', $domain_name);
-
-    foreach($pieces as $piece) {
-        if (!preg_match('/^[a-z\d][a-z\d-]{0,62}$/i', $piece) or preg_match('/-$/', $piece)) {
-            return false;
+function inet_test_host_port($host, $port, $exception = false){
+    try{
+        if(!is_natural($port) or ($port > 65535)){
+            throw new bException(tr('inet_test_host_port(): Specified port ":port" is invalid, please specify a natural number 1 - 65535', array(':port' => $port)), $e);
         }
-    }
 
-    return true;
+        if(!filter_var($host, FILTER_VALIDATE_IP)){
+            /*
+             * This is not an IP address, so assume its a hostname. Do a lookup
+             */
+            if(gethostbyname($host) === $host){
+                throw new bException(tr('inet_test_host_port(): Failed to lookup specified host ":host". Either there was a DNS lookup failure, or the specified host does not exist', array(':host' => $host)), 'dns-lookup-failure');
+            }
+        }
+
+        try{
+            safe_exec('nc -zv '.$host.' '.$port);
+            return true;
+
+        }catch(Exception $e){
+            $data = $e->getData();
+            $data = array_shift($data);
+            $data = strtolower($data);
+
+            if(strstr($data, 'connection refused')){
+                if($exception){
+                    $e->setCode('connect-failure');
+                    $e = new bException(tr('inet_test_host_port(): Failed to connect to specified host:port ":host::port"', array(':host' => $host, ':port' => $port)), $e);
+                }
+
+                return false;
+            }
+
+            throw $e;
+        }
+
+    }catch(Exception $e){
+        throw new bException(tr('inet_test_host_port(): Failed'), $e);
+    }
 }
 
 

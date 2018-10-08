@@ -376,9 +376,11 @@ function customers_select($params = null){
  *
  * @param mixed $customer The requested customer. Can either be specified by id (natural number) or string (seoname)
  * @param string $column The specific column that has to be returned
+ * @param string $status Filter by the specified status
+ * @param natural $categories_id Filter by the specified categories_id. If NULL, the customer must NOT belong to any category
  * @return mixed The customer data. If no column was specified, an array with all columns will be returned. If a column was specified, only the column will be returned (having the datatype of that column). If the specified customer does not exist, NULL will be returned.
  */
-function customers_get($customer, $column = null, $status = null, $categories_id = null){
+function customers_get($customer, $column = null, $status = null, $categories_id = false){
     try{
         if(is_numeric($customer)){
             $where[] = ' `customers`.`id` = :id ';
@@ -402,7 +404,7 @@ function customers_get($customer, $column = null, $status = null, $categories_id
         $where   = ' WHERE '.implode(' AND ', $where).' ';
 
         if($column){
-            $retval = sql_get('SELECT `'.$column.'` FROM `customers` '.$where, true, $execute);
+            $retval = sql_get(' SELECT `'.$column.'` FROM `customers` '.$where, true, $execute);
 
         }else{
             $retval = sql_get('SELECT    `customers`.`id`,

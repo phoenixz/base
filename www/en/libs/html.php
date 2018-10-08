@@ -1195,17 +1195,41 @@ function html_submit($params, $class = ''){
 
 
 /*
- * Return an HTML <select> list
+ * Return HTML for a multi select submit button. This button, once clicked, will show a list of selectable submit buttons.
+ *
+ * @copyright Copyright (c) 2018 Capmega
+ * @license http://opensource.org/licenses/GPL-2.0 GNU Public License, Version 2
+ * @category Function reference
+ * @package html
+ * @see html_select()
+ *
+ * @param array $params The parameters for this HTML select button
+ * @params string name The HTML name for the button
+ * @params string id The HTML id for the button
+ * @params boolean autosubmit If set to true, clicking the button will automatically subimit the form where this button is placed
+ * @params string none The text that will be shown when the button is closed and not used
+ * @params array buttons
+ * @return string The HTML for the button selector
  */
 function html_select_submit($params){
     try{
         array_params ($params);
         array_default($params, 'name'      , 'dosubmit');
+        array_default($params, 'id'        , '');
         array_default($params, 'autosubmit', true);
-        array_default($params, 'buttons'   , array());
         array_default($params, 'none'      , tr('Select action'));
+        array_default($params, 'buttons'   , array());
 
-        $params['resource'] = $params['buttons'];
+        /*
+         * Build the html_select resource from the buttons
+         */
+        foreach($params['buttons'] as $key => $value){
+            if(is_numeric($key)){
+                $key = $value;
+            }
+
+            $params['resource'][$key] = $value;
+        }
 
         return html_select($params);
 
@@ -1217,7 +1241,17 @@ function html_select_submit($params){
 
 
 /*
- * Return an HTML <select> list
+ * Return HTML for a <select> list
+ *
+ * @copyright Copyright (c) 2018 Capmega
+ * @license http://opensource.org/licenses/GPL-2.0 GNU Public License, Version 2
+ * @category Function reference
+ * @package html
+ * @see html_select_body()
+ *
+ * @param array $params The parameters for this HTML select button
+ * @params
+ * @return string The HTML for the button selector
  */
 function html_select($params){
     static $count = 0;
@@ -1334,7 +1368,7 @@ function html_select($params){
             /*
              * By default autosubmit on the id
              */
-            $params['autosubmit'] = '#'.$params['id'];
+            $params['autosubmit'] = $params['name'];
         }
 
         /*
@@ -1343,7 +1377,7 @@ function html_select($params){
         $params['autosubmit'] = str_replace('[', '\\\\[', $params['autosubmit']);
         $params['autosubmit'] = str_replace(']', '\\\\]', $params['autosubmit']);
 
-        return $retval.html_script('$("'.$params['autosubmit'].'").change(function(){ $(this).closest("form").find("input,textarea,select").addClass("ignore"); $(this).closest("form").submit(); });');
+        return $retval.html_script('$("[name=\''.$params['autosubmit'].'\']").change(function(){ $(this).closest("form").find("input,textarea,select").addClass("ignore"); $(this).closest("form").submit(); });');
 
     }catch(Exception $e){
         throw new bException('html_select(): Failed', $e);
@@ -2152,7 +2186,7 @@ function html_minify($html, $full = false){
 
      try{
  		if(!isset($translations[$name])){
- 			$translations[$name] = '__'.$name.'__'.substr(unique_code('sha256'), 0, 16);
+ 			$translations[$name] = '__HT'.$name.'__'.substr(unique_code('sha256'), 0, 16);
  		}
 
  		return $translations[$name];
@@ -2172,8 +2206,8 @@ function html_untranslate(){
         $count = 0;
 
         foreach($_POST as $key => $value){
-            if(substr($key, 0, 2) == '__'){
-                $_POST[str_until(substr($key, 2), '__')] = $_POST[$key];
+            if(substr($key, 0, 4) == '__HT'){
+                $_POST[str_until(substr($key, 4), '__')] = $_POST[$key];
                 unset($_POST[$key]);
                 $count++;
             }
@@ -2184,6 +2218,37 @@ function html_untranslate(){
     }catch(Exception $e){
         throw new bException(tr('html_untranslate(): Failed'), $e);
     }
+}
+
+
+
+/*
+ * Ensure that missing checkbox values are restored automatically (Seriously, sometimes web design is tiring...)
+ *
+ * This function works by assuming that each checkbox with name NAME has a hidden field with name _NAME. If NAME is missing, _NAME will be moved to NAME
+ *
+ * @copyright Copyright (c) 2018 Capmega
+ * @license http://opensource.org/licenses/GPL-2.0 GNU Public License, Version 2
+ * @category Function reference
+ * @package html
+ *
+ * @return void
+ */
+function html_fix_checkbox_values(){
+    try{
+        foreach($_POST as $key => $value){
+            if(substr($key, 0, 4) === '__CB'){
+                if(!array_key_exists(substr($key, 4), $_POST)){
+                    $_POST[substr($key, 4)] = $value;
+                }
+
+                unset($_POST[$key]);
+            }
+        }
+
+     }catch(Exception $e){
+         throw new bException(tr('html_fix_checkbox_values(): Failed'), $e);
+     }
 }
 
 

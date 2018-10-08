@@ -5,11 +5,14 @@
  */
 $usage = './scripts/servers
 ./scripts/servers list [options]
-./scripts/servers show SERVER';
+./scripts/servers test [ssh|database|tunnel-database] [HOSTNAME]
+./scripts/servers show SERVER
+./scripts/servers test TEST SERVER';
 
 $help  = 'This is the servers management script
 
-This script can manage the registered servers
+This script can manage the servers. Servers must be registered in toolkit before
+they can be managed.
 
 
 
@@ -17,7 +20,8 @@ METHODS
 
 
 
-list                            - List all registerd servers
+list [%HOSTNAME%]               - List all registerd servers, or by part of
+                                  specified hostname
 
     --only-hostnames            - Show only the hostnames. Useful with --quiet
 
@@ -33,25 +37,62 @@ proxies
     remove  ROOT-HOSTNAME REMOVEH-OSTNAME
                                 - Removes a server from the proxies chain
 
-show SERVER                     - Show detaisl about the specified server';
+show SERVER                     - Show detaisl about the specified server
+
+test TEST SERVER                - Execute the specified TEST on the specified
+                                  SERVER. Available tests are: ssh, database,
+                                  tunnel, database-tunnel
+
+add HOSTNAME                    - Add specified hostname to ';
 
 require_once(__DIR__.'/../../libs/startup.php');
 cli_only();
+load_libs('servers');
 
 switch(cli_method()){
     case 'list':
-        $deleted        = cli_argument('-d') or cli_argument('--deleted');
-        $all            = cli_argument('-a') or cli_argument('--all');
         $only_hostnames = cli_argument('--only-hostnames');
+        $customer       = cli_argument('--customer', true);
+        $provider       = cli_argument('--provider', true);
         $execute        = array();
+        $where          = array();
 
         cli_no_arguments_left();
 
-        if($deleted){
+        if(DELETED){
             $where[] = ' `servers`.`status` = "deleted" ';
 
-        }elseif(!$all){
+        }elseif(!ALL){
             $where[] = ' `servers`.`status` IS NULL ';
+        }
+
+        if(STATUS){
+            $execute = array_merge($execute, sql_in(ALL));
+            $where[] = ' `servers`.`status` IN ('.implode(', ', array_keys(ALL)).') ';
+        }
+
+        if($customer){
+            load_libs('customers');
+            $customers_id = customers_get($customer, 'id');
+
+            if(!$customers_id){
+                throw new bException(tr('The specified customer ":customer" does not exist', array(':customer' => $customer)), 'warning');
+            }
+
+            $execute[':customers_id'] = $customers_id;
+            $where[] = ' `servers`.`customers_id` = :customers_id ';
+        }
+
+        if($provider){
+            load_libs('providers');
+            $providers_id = customers_get($provider, 'id');
+
+            if(!$providers_id){
+                throw new bException(tr('The specified provider ":provider" does not exist', array(':provider' => $provider)), 'warning');
+            }
+
+            $execute[':providerss_id'] = $providers_id;
+            $where[] = ' `servers`.`providerss_id` = :providerss_id ';
         }
 
         $query   = 'SELECT    `servers`.`id`,
@@ -81,7 +122,10 @@ switch(cli_method()){
                     LEFT JOIN `users`
                     ON        `users`.`id` = `servers`.`createdby`';
 
-        if(!empty($where)){
+        if(empty($where)){
+            $where = '';
+
+        }else{
             $where = ' WHERE '.implode(' AND ', $where);
         }
 
@@ -172,6 +216,123 @@ switch(cli_method()){
         break;
 
     case 'show':
+        $requested = cli_argument();
+
+        if(!$requested){
+            throw new bException(tr('Specified server is invalid'), 'warning/not-specified');
+        }
+
+        if(is_numeric($requested)){
+            $where = ' WHERE `id` = :id ';
+
+            $execute = array(':id' => $requested);
+
+        }elseif(is_string($requested)){
+            $where   = ' WHERE `hostname` LIKE :hostname ';
+            $execute = array(':hostname' => '%'.$requested.'%');
+
+        }else{
+            throw new bException(tr('Specified server id or hostname is invalid'), 'warning/invalid');
+        }
+
+        try{
+            $server = sql_get('SELECT * FROM `servers` '.$where, $execute);
+
+            if($server['ssh_key']){
+                $server['allow_tcp_forward'] = linux_get_ssh_tcp_forwarding($server);
+            }
+
+        }catch(Exception $e){
+            if($e->getCode() === 'multiple'){
+                throw new bException(tr('Specified server hostname ":hostname" returned multiple results', array(':hostname' => $requested)), 'warning/multiple');
+            }
+        }
+
+        if(!$server){
+            throw new bException(tr('Specified server ":server" does not exist', array(':server' => $requested)), 'warning/not-exist');
+        }
+
+        ksort($server);
+
+        foreach($server as $key => $value){
+            if($key == 'password') continue;
+            log_console(cli_color($key.':', 'white').' '.$value);
+        }
+
+        break;
+
+    case 'test':
+        $test      = cli_argument(1);
+        $requested = cli_argument(2);
+
+        if(!$test){
+            throw new bException(tr('No test specified'), 'warning/not-exist');
+        }
+
+        if(!$requested){
+            throw new bException(tr('No server specified'), 'warning/not-exist');
+        }
+
+        try{
+            $server = servers_get($requested, true);
+
+            switch($test){
+                case 'ssh':
+                    if(!$server['ssh_accounts_id']){
+                        throw new bException(tr('Skipped SSH access test for server ":server", the server does not have an SSH account assigned', array(':server' => $anchor)), 'warning');
+                    }
+
+                    servers_test($server['hostname']);
+                    log_console(tr('Finished SSH test succesfully for server ":server"', array(':server' => $server['hostname'])), 'green');
+                    break;
+
+                case 'database':
+                    if(!$server['ssh_accounts_id'] or !$server['database_accounts_id']){
+                        throw new bException(tr('Cannot test database access, server ":server", the server does not have a database account specified', array(':server' => $anchor)), 'warning/not-specified');
+                    }
+
+                    load_libs('mysql');
+                    $results = mysql_exec($server['hostname'], 'SELECT 1');
+
+                    if((count($results) != 2) or ($results[end($results)] != 1)){
+                        throw new bException($results, 'failed');
+                    }
+
+                    log_console(tr('Successfully tested database access for server ":server"', array(':server' => $server['hostname'])), 'green');
+
+                    break;
+
+                case 'tunnel-database':
+                    if(!$server['ssh_accounts_id'] and !$server['database_accounts_id']){
+                        throw new bException(tr('Skipped database over SSH tunnel access test for server ":server", the server does not have an SSH account or database account assigned', array(':server' => $anchor)), 'warning');
+                    }
+
+                    sql_test_tunnel($server);
+                    log_console(tr('Successfully tested database access over SSH tunnel for server ":server"', array(':server' => $server['hostname'])), 'green');
+                    break;
+
+                default:
+                    throw new bException(tr('Unknown test ":test" specified', array(':test' => $test)), 'warning/unknown');
+            }
+
+        }catch(Exception $e){
+            switch($e->getCode()){
+                case 'host-verification-failed':
+                    throw new bException(tr('SSH acces test failed for server ":server" because the host key verification failed. Add the server to the known_hosts file first (currently only possible with executing "./scripts/base/ssh register :hostname")', array(':server' => $anchor, ':hostname' => $hostname)), 'warning/failed');
+
+                case 'not-specified':
+                    // FALLTHROUGH
+                case 'not-exist':
+                    // FALLTHROUGH
+                case 'connect-failure':
+                    // FALLTHROUGH
+                case 'dns-lookup-failure':
+                    $e->makeWarning(true);
+            }
+
+            throw $e;
+        }
+
         break;
 
     case '':
