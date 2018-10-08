@@ -115,7 +115,6 @@ try{
             }
 
             log_console(tr('*** UNCAUGHT EXCEPTION ":code" IN CONSOLE SCRIPT ":script" ***', array(':code' => $e->getCode(), ':script' => SCRIPT)), 'red');
-
             debug(true);
 
             if($e instanceof bException){
@@ -127,7 +126,33 @@ try{
                     /*
                      * Show the entire exception
                      */
-                    show($e, null, true);
+                    $messages = $e->getMessages();
+                    $data     = $e->getData();
+                    $code     = $e->getCode();
+                    $file     = $e->getFile();
+                    $line     = $e->getLine();
+                    $trace    = $e->getTrace();
+
+                    log_console(tr('Exception code    : ":code"'      , array(':code' => $code))                  , 'exception');
+                    log_console(tr('Exception location: ":file@:line"', array(':file' => $file, ':line' => $line)), 'exception');
+
+                    log_console(tr('Exception messages trace:'), 'exception');
+                    foreach($messages as $message){
+                        log_console('    '.$message, 'exception');
+                    }
+
+                    log_console(tr('Exception function trace:'), 'exception');
+                    if($trace){
+                        show($trace, null, true);
+
+                    }else{
+                        show('N/A');
+                    }
+
+                    if($data){
+                        log_console(tr('Exception data:'), 'exception');
+                        show($data, null, true);
+                    }
                 }
 
             }else{
