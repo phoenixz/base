@@ -28,7 +28,7 @@
     }
 
     try{
-        load_libs('sql_error');
+        load_libs('sql-error');
         return sql_error($e, $_CONFIG['db'][$connector], null, isset_get($core->sql[$connector]));
 
     }catch(Exception $e){
