@@ -1151,6 +1151,7 @@ function ssh_tunnel($params){
                                   'target_port'     => $params['target_port']);
 
         $retval = ssh_exec($params, null, false, 'exec');
+        $retval = array_shift($retval);
         log_console(tr('Created SSH tunnel ":source_port::target_hostname::target_port', array(':source_port' => $params['source_port'], ':target_hostname' => $params['target_hostname'], ':target_port' => $params['target_port'])), 'VERYVERBOSE');
 
         return $retval;
@@ -1175,7 +1176,22 @@ function ssh_tunnel($params){
  * @return void
  */
 function ssh_close_tunnel($pid){
+    global $core;
+
     try{
+        /*
+         * Ensure that the PID for this tunnel is no longer on the shutdown list
+         */
+        if(isset($core->register['shutdown_ssh_close_tunnel'])){
+            if(is_array($core->register['shutdown_ssh_close_tunnel'])){
+                foreach($core->register['shutdown_ssh_close_tunnel'] as $key => $registered_pid){
+                    if($pid == $registered_pid){
+                        unset($core->register['shutdown_ssh_close_tunnel'][$key]);
+                    }
+                }
+            }
+        }
+
         load_libs('cli');
         cli_kill($pid);
 
