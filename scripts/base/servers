@@ -216,29 +216,15 @@ switch(cli_method()){
         break;
 
     case 'show':
-        $requested = cli_argument();
-
-        if(!$requested){
-            throw new bException(tr('Specified server is invalid'), 'warning/not-specified');
-        }
-
-        if(is_numeric($requested)){
-            $where = ' WHERE `id` = :id ';
-
-            $execute = array(':id' => $requested);
-
-        }elseif(is_string($requested)){
-            $where   = ' WHERE `hostname` LIKE :hostname ';
-            $execute = array(':hostname' => '%'.$requested.'%');
-
-        }else{
-            throw new bException(tr('Specified server id or hostname is invalid'), 'warning/invalid');
-        }
-
         try{
-            $server = sql_get('SELECT * FROM `servers` '.$where, $execute);
+            $server = cli_argument();
+            $server = servers_get($server);
 
-            if($server['ssh_key']){
+            if(empty($server['ssh_accounts_id'])){
+                $server['allow_tcp_forward'] = 'N/A';
+
+            }else{
+                load_libs('linux');
                 $server['allow_tcp_forward'] = linux_get_ssh_tcp_forwarding($server);
             }
 
@@ -246,6 +232,8 @@ switch(cli_method()){
             if($e->getCode() === 'multiple'){
                 throw new bException(tr('Specified server hostname ":hostname" returned multiple results', array(':hostname' => $requested)), 'warning/multiple');
             }
+
+            throw $e;
         }
 
         if(!$server){
@@ -253,10 +241,11 @@ switch(cli_method()){
         }
 
         ksort($server);
+        unset($server['ssh_key']);
 
         foreach($server as $key => $value){
             if($key == 'password') continue;
-            log_console(cli_color($key.':', 'white').' '.$value);
+            log_console(cli_color($key.':', 'white').' '.json_encode_custom($value));
         }
 
         break;
