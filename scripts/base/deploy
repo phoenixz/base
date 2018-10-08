@@ -928,7 +928,7 @@ foreach($targets as $target_environment){
         log_console(tr('NOT deploying, due to "--no-deploy" or "--test" command line parameter'), 'yellow');
 
     }else{
-        $exclude = ' --exclude="data/log" --exclude="data/ssh_keys/" --exclude=*~ --exclude="data/mocks" --exclude="data/templates" --exclude="tmp" --exclude="data/mock*" --exclude="data/uploads" --exclude="data/packages" --exclude=".git*" --exclude="/data/system"  --exclude="/data/tmp" --exclude="sitemaps" --exclude="sitemap.xml" ';
+        $exclude = ' --exclude="data/log"  --exclude="data/cookies" --exclude="data/ssh_keys/" --exclude=*~ --exclude="data/mocks" --exclude="data/templates" --exclude="tmp" --exclude="data/mock*" --exclude="data/uploads" --exclude="data/packages" --exclude=".git*" --exclude="/data/system"  --exclude="/data/tmp" --exclude="sitemaps" --exclude="sitemap.xml" ';
         $include = '';
 
         if(!$send_content_photos){
@@ -967,7 +967,9 @@ foreach($targets as $target_environment){
 
         log_console(tr('Deploying project to target server ":server" on path ":path"', array(':server' => $deploy_config['target_server'], ':path' => $deploy_config['target_dir'])), 'white');
         passthru('rsync -aczvAXHS --progress -p --force --delete '.($deploy_config['sudo'] ? '--rsync-path="sudo rsync" ' : '').'-e "ssh -p '.$deploy_config['target_port'].'" '.ROOT.' '.$deploy_config['target_user'].'@'.$deploy_config['target_server'].':'.$deploy_config['target_dir'].' '.$include.' '.$exclude, $exitcode);
-        exec('ssh -t -p '.$target_port.' '.$deploy_config['target_user'].'@'.$deploy_config['target_server'].' \''.$sudo.'mkdir -p '.$deploy_config['target_dir'].'/data/system 2> /dev/null; '.$sudo.'touch '.$deploy_config['target_dir'].'/data/system/last_deploy\'', $contentoutput, $return);
+
+        log_console(tr('Setting ROOT/data/system/last-deploy'));
+        exec('ssh -t -p '.$target_port.' '.$deploy_config['target_user'].'@'.$deploy_config['target_server'].' \''.$sudo.'mkdir -p '.$deploy_config['target_dir'].'/data/system 2> /dev/null; '.$sudo.'touch '.$deploy_config['target_dir'].'/data/system/last-deploy\'', $contentoutput, $return);
 
         if($exitcode and !$ignore_rsync_errors){
             throw new bException('Rsync failed with exit code "'.str_log($exitcode).'"', 'warning/rsync');
