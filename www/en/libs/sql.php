@@ -160,7 +160,7 @@ function sql_query($query, $execute = false, $connector = null){
             /*
              * Let sql_error() try and generate more understandable errors
              */
-            load_libs('sql_error');
+            load_libs('sql-error');
             sql_error($e, $query, $execute, isset_get($core->sql[$connector]));
 
         }catch(Exception $e){
@@ -569,7 +569,7 @@ function sql_connect($connector, $use_database = true){
             $connector['ssh_tunnel'] = array_merge_null(array('target_hostname' => $_CONFIG['ssh']['tunnel']['target_hostname'],
                                                               'target_port'     => 3306), $connector['ssh_tunnel']);
 
-            ssh_tunnel($connector['ssh_tunnel']);
+            $connector['ssh_tunnel']['pid'] = ssh_tunnel($connector['ssh_tunnel']);
             usleep(isset_get($connector['ssh_tunnel']['usleep'], 10000));
         }
 
@@ -629,13 +629,6 @@ function sql_connect($connector, $use_database = true){
                     }
                 }
             }
-
-// :DELETE: The characterset is now set in the mysql init command
-//            /*
-//             * Ensure correct character set and timezone usage
-//             */
-//            $pdo->query('SET NAMES '.$connector['charset']);
-//            $pdo->query('SET CHARACTER SET '.$connector['charset']);
 
             try{
                 $pdo->query('SET time_zone = "'.$connector['timezone'].'";');
