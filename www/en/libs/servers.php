@@ -238,6 +238,142 @@ function servers_validate($server, $ensure_column_only = false, $password_streng
 
 
 /*
+ * Inserts a new server in the database
+ *
+ * @author Sven Olaf Oostenbrink <sven@capmega.com>
+ * @copyright Copyright (c) 2018 Capmega
+ * @license http://opensource.org/licenses/GPL-2.0 GNU Public License, Version 2
+ * @provider Function reference
+ * @package servers
+ *
+ * @param params $server The server data to be inserted into the database
+ * @return params The validated server data, including server[id]
+ */
+function servers_insert($server){
+    try{
+        $server = servers_validate($server);
+
+        sql_query('INSERT INTO `servers` (`createdby`, `meta_id`, `status`, `hostname`, `seohostname`, `port`, `database_accounts_id`, `bill_duedate`, `cost`, `interval`, `providers_id`, `customers_id`, `ssh_accounts_id`, `allow_sshd_modification`, `description`, `ipv4`)
+                   VALUES                (:createdby , :meta_id , :status , :hostname , :seohostname , :port , :database_accounts_id , :bill_duedate , :cost , :interval , :providers_id , :customers_id , :ssh_accounts_id , :allow_sshd_modification , :description , :ipv4)',
+
+                   array(':status'                  => ($server['ssh_accounts_id'] ? 'testing' : null),
+                         ':createdby'               => $_SESSION['user']['id'],
+                         ':meta_id'                 => meta_action(),
+                         ':hostname'                => $server['hostname'],
+                         ':seohostname'             => $server['seohostname'],
+                         ':port'                    => $server['port'],
+                         ':database_accounts_id'    => $server['database_accounts_id'],
+                         ':cost'                    => $server['cost'],
+                         ':interval'                => $server['interval'],
+                         ':bill_duedate'            => $server['bill_duedate'],
+                         ':providers_id'            => $server['providers_id'],
+                         ':customers_id'            => $server['customers_id'],
+                         ':ssh_accounts_id'         => $server['ssh_accounts_id'],
+                         ':allow_sshd_modification' => $server['allow_sshd_modification'],
+                         ':description'             => $server['description'],
+                         ':ipv4'                    => $server['ipv4']));
+
+        $server['id'] = sql_insert_id();
+        return $server;
+
+    }catch(Exception $e){
+        throw new bException('servers_insert(): Failed', $e);
+    }
+}
+
+
+
+/*
+ * Updates the specified server in the database
+ *
+ * @author Sven Olaf Oostenbrink <sven@capmega.com>
+ * @copyright Copyright (c) 2018 Capmega
+ * @license http://opensource.org/licenses/GPL-2.0 GNU Public License, Version 2
+ * @provider Function reference
+ * @package servers
+ *
+ * @param params $server The server data to be updated into the database
+ * @return params The validated server data
+ */
+function servers_update($server){
+    try{
+        $server = servers_validate($server);
+        meta_action($server['meta_id'], 'update');
+
+        sql_query('UPDATE `servers`
+
+                   SET    `status`                  = :status,
+                          `hostname`                = :hostname,
+                          `seohostname`             = :seohostname,
+                          `port`                    = :port,
+                          `database_accounts_id`    = :database_accounts_id,
+                          `cost`                    = :cost,
+                          `interval`                = :interval,
+                          `bill_duedate`            = :bill_duedate,
+                          `providers_id`            = :providers_id,
+                          `customers_id`            = :customers_id,
+                          `ssh_accounts_id`         = :ssh_accounts_id,
+                          `allow_sshd_modification` = :allow_sshd_modification,
+                          `description`             = :description,
+                          `ipv4`                    = :ipv4
+
+                   WHERE  `id`                      = :id',
+
+                   array(':id'                      => $server['id'],
+                         ':status'                  => ($server['ssh_accounts_id'] ? 'testing' : null),
+                         ':hostname'                => $server['hostname'],
+                         ':seohostname'             => $server['seohostname'],
+                         ':port'                    => $server['port'],
+                         ':database_accounts_id'    => $server['database_accounts_id'],
+                         ':cost'                    => $server['cost'],
+                         ':interval'                => $server['interval'],
+                         ':bill_duedate'            => $server['bill_duedate'],
+                         ':providers_id'            => $server['providers_id'],
+                         ':customers_id'            => $server['customers_id'],
+                         ':ssh_accounts_id'         => $server['ssh_accounts_id'],
+                         ':allow_sshd_modification' => $server['allow_sshd_modification'],
+                         ':description'             => $server['description'],
+                         ':ipv4'                    => $server['ipv4']));
+
+        return $server;
+
+    }catch(Exception $e){
+        throw new bException('servers_update(): Failed', $e);
+    }
+}
+
+
+
+/*
+ * Returns an array with all hostnames that are like the specified hostname
+ *
+ * @author Sven Olaf Oostenbrink <sven@capmega.com>
+ * @copyright Copyright (c) 2018 Capmega
+ * @license http://opensource.org/licenses/GPL-2.0 GNU Public License, Version 2
+ * @provider Function reference
+ * @package servers
+ *
+ * @param string $hostname The hostname section that is being searched for
+ * @return array The list of hostnames that was found
+ */
+function servers_like_hostname($hostname){
+    try{
+        $server = sql_get('SELECT `hostname` FROM `servers` WHERE `hostname` LIKE :hostname', true, array(':hostname' => '%'.$hostname.'%'));
+
+        if(!$server){
+            throw new bException(tr('servers_like_hostname(): Specified server ":server" does not exist', array(':server' => $requested)), 'not-exist');
+        }
+
+        return $server;
+
+    }catch(Exception $e){
+        throw new bException('servers_like_hostname(): Failed', $e);
+    }
+}
+
+
+
+/*
  * Return HTML for a servers select box
  *
  * This function will generate HTML for an HTML select box using html_select() and fill it with the available servers
