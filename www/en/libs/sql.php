@@ -1251,7 +1251,7 @@ function sql_fetch_column($r, $column){
  *
  * @param array $database_entry
  * @param array $post
- * @param mixed $skup
+ * @param mixed $skip
  * @return array The specified datab ase entry, updated with all the data from the specified $_POST entry
  */
 function sql_merge($database_entry, $post, $skip = null){
@@ -1294,7 +1294,26 @@ function sql_merge($database_entry, $post, $skip = null){
             }
 
             if(array_key_exists($key, $post)){
-                $database_entry[$key] = $post[$key];
+                if(is_array($post[$key])){
+                    /*
+                     * Validate datatype
+                     */
+                    if(!is_array($database_entry[$key])){
+                        throw new bException(tr('sql_merge(): The specified post key ":key" is an array, but the corresponding database key is not', array(':key' => $key)), 'validation');
+                    }
+
+                    $database_entry[$key] = sql_merge($database_entry[$key], $post[$key], '', $skip);
+
+                }else{
+                    /*
+                     * Validate datatype
+                     */
+                    if(is_array($database_entry[$key])){
+                        throw new bException(tr('sql_merge(): The specified post key ":key" is a scalar, but the corresponding database key is an array', array(':key' => $key)), 'validation');
+                    }
+
+                    $database_entry[$key] = $post[$key];
+                }
             }
         }
 
