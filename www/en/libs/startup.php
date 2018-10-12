@@ -20,7 +20,7 @@
 /*
  * Framework version
  */
-define('FRAMEWORKCODEVERSION', '1.20.2');
+define('FRAMEWORKCODEVERSION', '1.21.0');
 define('PHP_MINIMUM_VERSION' , '5.5.9');
 
 
@@ -584,6 +584,25 @@ class bException extends Exception{
         }
 
         return $this;
+    }
+
+
+
+    /*
+     * Returns if this exception is a warning exception or not
+     *
+     * Returns all messages from this exception object
+     *
+     * @author Sven Olaf Oostenbrink <sven@capmega.com>
+     * @copyright Copyright (c) 2018 Capmega
+     * @license http://opensource.org/licenses/GPL-2.0 GNU Public License, Version 2
+     * @category Function reference
+     * @package startup
+     *
+     * @return boolean True if thie exception is a warning, false if it is a real exception
+     */
+    public function isWarning(){
+        return (substr($this->code, 0, 7) === 'warning');
     }
 }
 
@@ -1329,7 +1348,7 @@ function log_console($messages = '', $color = null, $newline = true, $filter_dou
             }
 
             if($messages instanceof bException){
-                if(str_until($messages->getCode(), '/') === 'warning'){
+                if($messages->isWarning()){
                     $messages = array($messages->getMessage());
                     $color    = 'warning';
 
@@ -1593,7 +1612,13 @@ function log_file($messages, $class = 'syslog', $color = null){
 
         if(is_object($messages)){
             if($messages instanceof bException){
-                $color    = 'error';
+                if($messages->isWarning()){
+                    $color    = 'warning';
+
+                }else{
+                    $color    = 'error';
+                }
+
                 $data     = $messages->getData();
                 $messages = $messages->getMessages();
 
