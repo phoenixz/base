@@ -11,13 +11,13 @@ if(++$level > 20){
 }
 
 if(is_resource($variable)){
-    return '*** Variable is resource ***';
+    $variable = print_r($variable, true);
 }
 
 if(is_array($variable) or (is_object($variable) and (($variable instanceof Exception) or ($variable instanceof Error)))){
     foreach($variable as $key => &$value){
         if($key === 'object'){
-            return '*** Not showing objects due to possible segfaults ***';
+            $value = print_r($value, true);
 
         }else{
             $value = variable_zts_safe($value, $level);
@@ -25,7 +25,7 @@ if(is_array($variable) or (is_object($variable) and (($variable instanceof Excep
     }
 
 }elseif(is_object($variable)){
-    return '*** Not showing objects due to possible segfaults ***';
+    $variable = print_r($variable, true);
 }
 
 unset($value);
