@@ -25,12 +25,12 @@ function notifications_send($params){
             /*
              * Notify about an exception
              */
-            $params = array('title'       => tr('Exception'),
-                            'exception'   => true,
-                            'description' => $params,
-                            'class'       => 'exception');
+            $params  = array('title'       => ($params->isWarning() ? tr('Warning') : tr('Exception')),
+                             'exception'   => true,
+                             'description' => $params,
+                             'class'       => 'exception');
 
-            log_file($params['description'], 'notification-'.$params['title'], 'red');
+            log_file($params['description'], 'notification-'.strtolower($params['title']));
 
         }else{
             array_params($params, 'title');
