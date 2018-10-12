@@ -1203,12 +1203,12 @@ function html_submit($params, $class = ''){
  * @package html
  * @see html_select()
  *
- * @param array $params The parameters for this HTML select button
+ * @param params $params The parameters for this HTML select button
  * @params string name The HTML name for the button
  * @params string id The HTML id for the button
  * @params boolean autosubmit If set to true, clicking the button will automatically subimit the form where this button is placed
  * @params string none The text that will be shown when the button is closed and not used
- * @params array buttons
+ * @params midex buttons The buttons to be shown. This may be specified by array, or PDO SQL statement
  * @return string The HTML for the button selector
  */
 function html_select_submit($params){
@@ -1224,6 +1224,11 @@ function html_select_submit($params){
          * Build the html_select resource from the buttons
          */
         if(is_object($params['buttons'])){
+            /*
+             * This should be a PDO statement, do nothing, html_select will take
+             * care of it
+             */
+            $params['resource'] = $params['buttons'];
 
         }elseif(is_array($params['buttons'])){
             foreach($params['buttons'] as $key => $value){
