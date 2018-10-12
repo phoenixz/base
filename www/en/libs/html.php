@@ -1223,12 +1223,25 @@ function html_select_submit($params){
         /*
          * Build the html_select resource from the buttons
          */
-        foreach($params['buttons'] as $key => $value){
-            if(is_numeric($key)){
-                $key = $value;
+        if(is_object($params['buttons'])){
+
+        }elseif(is_array($params['buttons'])){
+            foreach($params['buttons'] as $key => $value){
+                if(is_numeric($key)){
+                    $key = $value;
+                }
+
+                $params['resource'][$key] = $value;
             }
 
-            $params['resource'][$key] = $value;
+        }else{
+            $type = gettype($params['buttons']);
+
+            if($type === 'object'){
+                $type .= tr(' of class :class', array(':class' => get_class($params['buttons'])));
+            }
+
+            throw new bException(tr('html_select_submit(): Invalid data type specified for params "buttons", it should be an array or PDO statement object, but it is an ":type"', array(':type' => $type)), 'invalid');
         }
 
         return html_select($params);
