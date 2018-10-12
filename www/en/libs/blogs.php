@@ -1271,11 +1271,12 @@ function blogs_validate_post($post, $params = null){
             }
         }
 
-        /*
-         * Merge in from old DB post
-         */
-        $db_post = blogs_post_get($post['blogs_id'], $post['id']);
-        $post    = sql_merge($db_post, $post, (empty($params['label_status']) ? 'id,status' : 'id'));
+// :DELETE: The following 5 lines cause key_values to no longer update as the key_values values are not loaded. Since data merging now should be done outside of validation functions (And in this case are done in blog_post), these lines should be removed
+        ///*
+        // * Merge in from old DB post
+        // */
+        //$db_post = blogs_post_get($post['blogs_id'], $post['id']);
+        //$post    = sql_merge($db_post, $post, (empty($params['label_status']) ? 'id,status' : 'id'));
 
         /*
          * Just ensure that the specified id is a valid number
