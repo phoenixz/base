@@ -43,13 +43,34 @@ test TEST SERVER                - Execute the specified TEST on the specified
                                   SERVER. Available tests are: ssh, database,
                                   tunnel, database-tunnel
 
-add HOSTNAME                    - Add specified hostname to ';
+add HOSTNAME [SSH-PORT]         - Add specified hostname to the database
+
+register HOSTNAME [SSH-PORT]    - Add the fingerprints for the specified
+                                  hostname / port to the ssh_fingerprints table
+                                  and the ROOT/data/ssh/known_host file
+
+unregister HOSTNAME [SSH-PORT]  - Remove the registered hostname / port
+                                  fingerprints from the ROOT/data/ssh/known_host
+                                  file and the ssh_fingerprints table
+
+update HOSTNAME                 - Update specified hostname in the database';
 
 require_once(__DIR__.'/../../libs/startup.php');
 cli_only();
 load_libs('servers');
 
 switch(cli_method()){
+    case 'add':
+        $server['hostname'] = cli_argument(0);
+        $server['port']     = cli_argument(1);
+        servers_insert($server);
+        break;
+
+    case 'update':
+        $server['hostname'] = cli_argument(0);
+        servers_update($server);
+        break;
+
     case 'list':
         $only_hostnames = cli_argument('--only-hostnames');
         $customer       = cli_argument('--customer', true);
@@ -143,10 +164,10 @@ switch(cli_method()){
                 }
 
             }else{
-                log_console(str_size(tr('#id'), 7).str_size(tr('Customer'), 33).str_size(tr('Provider'), 33).str_size(tr('Hostname'), 65).str_size(tr('Status'), 17).str_size(tr('Created by'), 32), 'QUIET/cyan');
+                log_console(str_size(tr('#id'), 7).str_size(tr('Customer'), 25).str_size(tr('Provider'), 25).str_size(tr('Hostname'), 33).str_size(tr('Status'), 13).str_size(tr('Created by'), 32), 'QUIET/cyan');
 
                 while($server = sql_fetch($servers)){
-                    log_console(str_size($server['id'], 6, ' ', true).' '.str_size(cli_status_color($server['customer']), 32).' '.str_size($server['provider'], 32).' '.str_size($server['hostname'], 64).' '.str_size($server['status'], 16).' '.name($server, 'user'));
+                    log_console(str_size($server['id'], 6, ' ', true).' '.str_size(cli_status_color($server['customer']), 24).' '.str_size($server['provider'], 24).' '.str_size($server['hostname'], 32).' '.str_size($server['status'], 12).' '.name($server, 'user'));
                 }
             }
         }
@@ -216,28 +237,25 @@ switch(cli_method()){
         break;
 
     case 'show':
-        try{
-            $server = cli_argument();
-            $server = servers_get($server);
+        $server = cli_argument();
+        $server = servers_like_hostname($server);
+        $server = servers_get($server);
 
-            if(empty($server['ssh_accounts_id'])){
-                $server['allow_tcp_forward'] = 'N/A';
+        if(empty($server['ssh_accounts_id'])){
+            $server['allow_tcp_forward'] = 'N/A';
 
-            }else{
+        }else{
+            try{
                 load_libs('linux');
                 $server['allow_tcp_forward'] = linux_get_ssh_tcp_forwarding($server);
+
+            }catch(Exception $e){
+                if($e->getRealCode() !== 'host-verification-missing'){
+                    throw $e;
+                }
+
+                log_console(tr('Failed to get allow_tcp_forward information for host ":hostname", it has no SSH key fingerprint in the known_hosts file.', array(':hostname' => $server['hostname'])), 'warning');
             }
-
-        }catch(Exception $e){
-            if($e->getCode() === 'multiple'){
-                throw new bException(tr('Specified server hostname ":hostname" returned multiple results', array(':hostname' => $requested)), 'warning/multiple');
-            }
-
-            throw $e;
-        }
-
-        if(!$server){
-            throw new bException(tr('Specified server ":server" does not exist', array(':server' => $requested)), 'warning/not-exist');
         }
 
         ksort($server);
@@ -306,8 +324,11 @@ switch(cli_method()){
 
         }catch(Exception $e){
             switch($e->getCode()){
+                case 'host-verification-missing':
+                    throw new bException(tr('SSH acces test failed for server ":server" because the host key verification showed this hosts key missing. Add the server to the known_hosts file first (currently only possible with executing "./scripts/base/ssh register :hostname")', array(':server' => $anchor, ':hostname' => $hostname)), 'warning/failed');
+
                 case 'host-verification-failed':
-                    throw new bException(tr('SSH acces test failed for server ":server" because the host key verification failed. Add the server to the known_hosts file first (currently only possible with executing "./scripts/base/ssh register :hostname")', array(':server' => $anchor, ':hostname' => $hostname)), 'warning/failed');
+                    throw new bException(tr('SSH acces test failed for server ":server" because the host key verification failed. Either somebody is trying to fake this server, or the server was reinstalled', array(':server' => $anchor, ':hostname' => $hostname)), 'failed');
 
                 case 'not-specified':
                     // FALLTHROUGH
