@@ -246,6 +246,7 @@ function rights_get($right){
 /*
  * Return an HTML select containing all posisble rights
  */
+// :TODO: Reimplement this using html_select()
 function rights_select($select = '', $name = 'rights_id', $god = true){
     global $pdo;
 
