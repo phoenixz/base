@@ -1346,6 +1346,7 @@ function user_get($user = null, $status = null){
 
             if(is_numeric($user)){
                 $retval = sql_get('SELECT    `users`.*,
+                                             `users`.`password`      AS `password2`,
 
                                              `createdby`.`name`      AS `createdby_name`,
                                              `createdby`.`email`     AS `createdby_email`,
@@ -1370,6 +1371,7 @@ function user_get($user = null, $status = null){
 
             }else{
                 $retval = sql_get('SELECT    `users`.*,
+                                             `users`.`password`      AS `password2`,
 
                                              `createdby`.`name`      AS `createdby_name`,
                                              `createdby`.`email`     AS `createdby_email`,
@@ -1400,6 +1402,7 @@ function user_get($user = null, $status = null){
              * Pre-create a new user
              */
             $retval = sql_get('SELECT    `users`.*,
+                                         `users`.`password`      AS `password2`,
 
                                          `createdby`.`name`      AS `createdby_name`,
                                          `createdby`.`email`     AS `createdby_email`,
