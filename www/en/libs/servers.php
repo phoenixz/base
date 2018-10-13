@@ -356,18 +356,18 @@ function servers_update($server){
  * @param string $hostname The hostname section that is being searched for
  * @return array The list of hostnames that was found
  */
-function servers_like_hostname($hostname){
+function servers_like($hostname){
     try{
         $server = sql_get('SELECT `hostname` FROM `servers` WHERE `hostname` LIKE :hostname', true, array(':hostname' => '%'.$hostname.'%'));
 
         if(!$server){
-            throw new bException(tr('servers_like_hostname(): Specified server ":server" does not exist', array(':server' => $requested)), 'not-exist');
+            throw new bException(tr('servers_like(): Specified server ":server" does not exist', array(':server' => $requested)), 'not-exist');
         }
 
         return $server;
 
     }catch(Exception $e){
-        throw new bException('servers_like_hostname(): Failed', $e);
+        throw new bException('servers_like(): Failed', $e);
     }
 }
 
@@ -546,7 +546,7 @@ function servers_exec($server, $commands = null, $background = false, $function 
 
 
 /*
- *
+ * Add SSH fingerprint all hostnames / ports for the specified server
  *
  * @author Sven Olaf Oostenbrink <sven@capmega.com>
  * @copyright Copyright (c) 2018 Capmega
@@ -559,11 +559,57 @@ function servers_exec($server, $commands = null, $background = false, $function 
  */
 function servers_register_host($server){
     try{
-        $server = servers_get($server);
-        return ssh_add_known_host($server['hostname'], $server['port']);
+        $server    = servers_get($server);
+        $hostnames = servers_get_hostnames($server);
+
+        foreach($hostnames as $hostname){
+            $server  = servers_get($hostname);
+            $entries = ssh_add_known_host($server['hostname'], $server['port']);
+
+            if($entries){
+                $retval = array_merge($entries, $entries);
+            }
+        }
+
+        return $retval;
 
     }catch(Exception $e){
         throw new bException('servers_register_host(): Failed', $e);
+    }
+}
+
+
+
+/*
+ * Remove the SSH fingerprint for all hostnames / ports for the specified server
+ *
+ * @author Sven Olaf Oostenbrink <sven@capmega.com>
+ * @copyright Copyright (c) 2018 Capmega
+ * @license http://opensource.org/licenses/GPL-2.0 GNU Public License, Version 2
+ * @category Function reference
+ * @package servers
+ *
+ * @param mixed $server
+ * @return void
+ */
+function servers_unregister_host($server){
+    try{
+        $server    = servers_get($server);
+        $hostnames = servers_get_hostnames($server);
+
+        foreach($hostnames as $hostname){
+            $server  = servers_get($hostname);
+            $entries = ssh_add_known_host($server['hostname'], $server['port']);
+
+            if($entries){
+                $retval = array_merge($entries, $entries);
+            }
+        }
+
+        return $retval;
+
+    }catch(Exception $e){
+        throw new bException('servers_unregister_host(): Failed', $e);
     }
 }
 
