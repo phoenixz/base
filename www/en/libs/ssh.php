@@ -190,7 +190,7 @@ function ssh_exec($server, $commands = null, $background = false, $function = nu
                                          * in ssh_fingerprints. Rebuild the
                                          * known_hosts file, and retry command
                                          */
-                                        log_console(tr('The host ":hostname" has no SSH key fingerprint in the known_hosts file, but the keys were found in the ssh_fingerprints table. Rebuilding known_hosts file and retrying execution', array(':hostname' => $server['hostname'])), 'yellow');
+                                        log_console(tr('The host ":hostname" has no SSH key fingerprint in the ROOT/data/ssh/known_hosts file, but the keys were found in the ssh_fingerprints table. Rebuilding known_hosts file and retrying execution', array(':hostname' => $server['hostname'])), 'yellow');
                                         ssh_rebuild_known_hosts();
                                         return ssh_exec($server, $commands, $background, $function, $ok_exitcodes);
                                     }
@@ -1558,7 +1558,7 @@ function ssh_close_tunnel($pid){
  * @param natural $port
  * @return natural If the specified port was not empty, it will be returned. If the specified port was empty, the default port configuration will be returned
  */
-function ssh_get_port($port){
+function ssh_get_port($port = null){
     global $_CONFIG;
 
     try{
@@ -1570,7 +1570,11 @@ function ssh_get_port($port){
           return $port;
         }
 
-        return $_CONFIG['servers']['ssh']['default_port'];
+        if($_CONFIG['servers']['ssh']['default_port']){
+            return $_CONFIG['servers']['ssh']['default_port'];
+        }
+
+        return 22;
 
     }catch(Exception $e){
         throw new bException('ssh_get_port(): Failed', $e);
