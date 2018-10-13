@@ -73,8 +73,8 @@ function ssh_exec($server, $commands = null, $background = false, $function = nu
          * If $server is a string, the load server information from servers
          * table
          */
-        if(!is_array($server)){
-            if(!is_scalar($server)){
+        if(!is_array($server) or (empty($server['identity_file']))){
+            if(!is_array($server) and !is_scalar($server)){
                 throw new bException(tr('ssh_exec(): Invalid $server specified. $server must be either a hostname, or server array'), 'invalid');
             }
 
@@ -147,8 +147,10 @@ function ssh_exec($server, $commands = null, $background = false, $function = nu
         return $results;
 
     }catch(Exception $e){
-        switch($e->getCode()){
+        switch($e->getRealCode()){
             case 'not-exist':
+                // FALLTHROUGH
+            case 'invalid':
                 break;
 
             default:
@@ -209,17 +211,27 @@ function ssh_exec($server, $commands = null, $background = false, $function = nu
                              * entries.
                              */
                             break;
+
+                        }else{
+                            /*
+                             * Search for other known errors
+                             */
+                            foreach($data as $line){
+                                if($line === 'sudo: no tty present and no askpass program specified'){
+                                    throw new bException(tr('ssh_exec(): The SSH user ":user" does not have password-less sudo privileges on the host ":hostname"', array(':hostname' => $server['hostname'], ':user' => $server['username'])), 'sudo');
+                                }
+                            }
                         }
                     }
                 }
-        }
 
-        /*
-         * Check if SSH can connect to the specified server / port
-         */
-        if(empty($not_check_inet)){
-            load_libs('inet');
-            inet_test_host_port($server['hostname'], $server['port'], true);
+                /*
+                 * Check if SSH can connect to the specified server / port
+                 */
+                if(empty($not_check_inet) and isset($server['port'])){
+                    load_libs('inet');
+                    inet_test_host_port($server['hostname'], $server['port'], true);
+                }
         }
 
         /*
@@ -978,8 +990,7 @@ function ssh_remove_known_host($hostname, $port){
 
         sql_query('DELETE FROM `ssh_fingerprints` WHERE `hostname` = :hostname AND `port` = :port', array(':hostname' => $hostname, ':port' => $port));
 
-        file_ensure_path(ROOT.'data/ssh/keys/', 0750);
-        file_ensure_file(ROOT.'data/ssh/known_hosts', 0640);
+        file_ensure_file(ROOT.'data/ssh/known_hosts', 0640, 0750);
         file_delete(ROOT.'data/ssh/known_hosts~update');
 
         $f1 = fopen(ROOT.'data/ssh/known_hosts'       , 'r');
@@ -1042,9 +1053,7 @@ function ssh_remove_known_host($hostname, $port){
  */
 function ssh_append_fingerprint($fingerprint){
     try{
-        file_ensure_path(ROOT.'data/ssh/keys/'      , 0750);
-        file_ensure_file(ROOT.'data/ssh/known_hosts', 0640);
-
+        file_ensure_file(ROOT.'data/ssh/known_hosts', 0640, 0750);
 
         $exists = safe_exec('grep "\['.$fingerprint['hostname'].'\]:'.$fingerprint['port'].' '.$fingerprint['algorithm'].' '.$fingerprint['fingerprint'].'" '.ROOT.'data/ssh/known_hosts', '0,1');
 
@@ -1161,6 +1170,58 @@ function ssh_rebuild_known_hosts($clear = false){
 
     }catch(Exception $e){
         throw new bException('ssh_rebuild_known_hosts(): Failed', $e);
+    }
+}
+
+
+
+/*
+ * Returns true if the specified hostname:port is registered in the ROOT/data/ssh/known_hosts file
+ *
+ * @Sven Olaf Oostenbrink <sven@capmega.com>
+ * @copyright Copyright (c) 2018 Capmega
+ * @license http://opensource.org/licenses/GPL-2.0 GNU Public License, Version 2
+ * @category Function reference
+ * @see ssh_get_fingerprints()
+ * @see ssh_rebuild_known_hosts()
+ * @package ssh
+ *
+ * @params string $hostname
+ * @params natural $port
+ * @params boolean $auto_register If set to true, if the hostname is not specified in the ROOT/data/ssh/known_hosts file but is available in the ssh_fingerprints table, then the function will automatically add the fingerprints to the ROOT/data/ssh/known_hosts file
+ * @return boolean True if the specified hostname:port is registered in the ROOT/data/ssh/known_hosts file
+ */
+function ssh_is_registered($hostname, $port, $auto_register = true){
+    try{
+        file_ensure_file(ROOT.'data/ssh/known_hosts', 0640, 0750);
+
+        $port       = ssh_get_port($port);
+        $db_count   = sql_get('SELECT COUNT(`id`) FROM `ssh_fingerprints` WHERE `hostname` = :hostname AND `port` = :port', true, array('hostname' => $hostname, ':port' => $port), 'core');
+        $file_count = safe_exec('grep "['.$hostname.']:'.$port.'" '.ROOT.'data/ssh/known_hosts | wc -l');
+        $file_count = array_shift($file_count);
+
+        if($file_count){
+            /*
+             * Fingerprints are avaialble in the known_hosts file
+             */
+            return true;
+        }
+
+        if(!$db_count or !$auto_register){
+            /*
+             * No fingerprints available at all, or we cannot auto register
+             */
+            return false;
+        }
+
+        /*
+         * Fingerprints are in the ssh_fingerprints table, but not in the
+         * known_hosts file, and we can auto register
+         */
+        return ssh_add_known_host($hostname, $port);
+
+    }catch(Exception $e){
+        throw new bException('ssh_is_registered(): Failed', $e);
     }
 }
 
@@ -1441,25 +1502,44 @@ under_construction();
  * @category Function reference
  * @package ssh
  * @exception Throws an exception if the ssh command does not return exit code 0
+ * @see inet_port_availalbe();
  *
- * @param array $params
+ * @param params $params
  * @params string $hostname The hostname where SSH should connect to
  * @params string $local_port The port on the local server where SSH should listen to 1-65535
  * @params string $remote_port The port on the remote server where SSH should connect to 1-65535
  * @params array $options The required SSH options
- * @return void
+ * @param boolean $reuse If set to true, ssh_tunnel() will first check if a tunnel with the requested configuration already exists. If it does, no new tunnel will be created and the PID for the already existing tunnel will be returned instead
+ * @return natural The process id of the created (or reused) SSH tunnel.
  */
-function ssh_tunnel($params){
+function ssh_tunnel($params, $reuse = true){
     try{
-        array_ensure ($params, 'hostname,source_port,target_port');
+        array_ensure ($params, 'hostname,source_port,target_port,target_hostname');
         array_default($params, 'tunnel', 'localhost');
+        load_libs('inet');
+
+        /*
+         * Is a tunnel with the requested configuration already available? If
+         * so, use that, don't make a new one!
+         */
+        if($reuse){
+            $exists = ssh_tunnel_exists($params['hostname'], $params['target_port'], $params['target_hostname']);
+
+            if($exists){
+                if($params['source_port'] === $exists['source_port']){
+                    log_console(tr('Found pre-existing SSH tunnel for requested configuration ":source_port::target_hostname::target_port" with pid ":pid" on the requested source port, not creating a new one', array(':source_port' => $params['source_port'], ':target_hostname' => $params['target_hostname'], ':target_port' => $params['target_port'], ':pid' => $exists['pid'])), 'VERBOSE/warning');
+
+                }else{
+                    log_console(tr('Found pre-existing SSH tunnel for requested configuration ":source_port::target_hostname::target_port" with pid ":pid" on different source port ":different_port", not creating a new one', array(':source_port' => $params['source_port'], ':target_hostname' => $params['target_hostname'], ':target_port' => $params['target_port'], ':pid' => $exists['pid'], ':different_port' => $exists['source_port'])), 'VERBOSE/warning');
+                }
+                return $exists;
+            }
+        }
 
         /*
          * Ensure port is available.
          */
-        $in_use = safe_exec('netstat -lnt | grep 127.0.0.1 | grep '.$params['source_port'], '0,1');
-
-        if($in_use){
+        if(!inet_port_available($params['source_port'], '127.0.0.1')){
             throw new bException(tr('ssh_tunnel(): Source port ":port" is already in use', array(':port' => $params['source_port'])), 'not-available');
         }
 
@@ -1467,11 +1547,16 @@ function ssh_tunnel($params){
                                   'target_hostname' => $params['target_hostname'],
                                   'target_port'     => $params['target_port']);
 
+        unset($params['source_port']);
+        unset($params['target_port']);
+        unset($params['target_hostname']);
+
         $retval = ssh_exec($params, null, false, 'exec');
         $retval = array_shift($retval);
-        log_console(tr('Created SSH tunnel ":source_port::target_hostname::target_port', array(':source_port' => $params['source_port'], ':target_hostname' => $params['target_hostname'], ':target_port' => $params['target_port'])), 'VERYVERBOSE');
+        log_console(tr('Created SSH tunnel ":source_port::target_hostname::target_port"', array(':source_port' => $params['tunnel']['source_port'], ':target_hostname' => $params['tunnel']['target_hostname'], ':target_port' => $params['tunnel']['target_port'])), 'VERYVERBOSE');
 
-        return $retval;
+        return array('pid'         => $retval,
+                     'source_port' => $params['tunnel']['source_port']);
 
     }catch(Exception $e){
         throw new bException('ssh_tunnel(): Failed', $e);
@@ -1489,16 +1574,77 @@ function ssh_tunnel($params){
  * @category Function reference
  * @package ssh
  *
- * @param numeric $source_port
  * @param numeric $hostname
  * @param numeric $target_port
  * @param numeric $target_hostname
- * @return numeric PID of the found tunnel with the specified parameters, null if no tunnel was found
+ * @return array Resulting array either is null, or an arry containing the pid (process id) and source_port of the found tunnel
  */
-function ssh_tunnel_exists($source_port, $hostname, $target_port, $target_hostname = 'localhost'){
+function ssh_tunnel_exists($hostname, $target_port, $target_hostname = null){
     global $core;
 
     try{
+        if(!$target_hostname){
+            $target_hostname = 'localhost';
+        }
+
+        $results   = array();
+        $processes = cli_list_processes('ssh,-L');
+
+        foreach($processes as $pid => $process){
+            if(!preg_match_all('/(\d+)(\:.+?\:\d+)/', $process, $matches)){
+                /*
+                 * Failed to identify the tunnel configuration
+                 */
+                log_console(tr('Failed to identify SSH tunnel configuration for process ":process"', array(':process' => $process)), 'yellow');
+            }
+
+            $process_hostname      = str_rfrom($process, ' ');
+            $process_source_port   = isset_get($matches[1][0]);
+            $process_configuration = isset_get($matches[2][0]);
+
+            if($process_hostname === $hostname){
+                /*
+                 * Target server matches, check tunnel configuration
+                 * In case of 127.0.0.1 or localhost, check for both alternatives
+                 */
+// :TODO: Check if maybe in the future we should check all alternative registrations of hostnames
+                switch($target_hostname){
+                    case 'localhost':
+                        $alt_hostname = '127.0.0.1';
+                        break;
+
+                    case '127.0.0.1':
+                        $alt_hostname = 'localhost';
+                        break;
+                }
+
+                if(($process_configuration === (':'.$target_hostname.':'.$target_port)) or ($process_configuration === (':'.$alt_hostname.':'.$target_port))){
+                    $results[$pid] = $process_source_port;
+                }
+            }
+        }
+
+        switch(count($results)){
+            case 0:
+                /*
+                 * No tunnel with the requeste configuration found
+                 */
+                return null;
+
+            case 1:
+                /*
+                 * Yay! Found a tunnel! Return its PID
+                 */
+                return array('pid'         => key($results),
+                             'source_port' => current($results));
+
+            default:
+                /*
+                 * Apparently there are multiple SSH tunnels with this configuration. Pick a random one
+                 */
+                log_console(tr('Found multiple SSH tunnels to host ":hostname" with configuration "::target_hostname::target_port"', array(':hostname' => $hostname, ':target_port' => $target_port, ':target_hostname' => $target_hostname)), 'yellow');
+                return array_random_value($pids);
+        }
 
     }catch(Exception $e){
         throw new bException('ssh_tunnel_exists(): Failed', $e);
