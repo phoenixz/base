@@ -53,7 +53,7 @@ function linux_library_init(){
 function linux_get_ssh_tcp_forwarding($server){
     try{
         $server   = servers_get($server);
-        $commands = 'sudo sshd -T | grep allowtcpforwarding';
+        $commands = 'sudo sshd -T 2> /dev/null | grep allowtcpforwarding';
         $results  = servers_exec($server, $commands);
         $result   = array_shift($results);
         $result   = strtolower(trim($result));
@@ -67,7 +67,7 @@ function linux_get_ssh_tcp_forwarding($server){
                 return false;
 
             default:
-                throw new bException('linux_get_ssh_tcp_forwarding(): Unknown result ":result" received from SSHD configuration on server ":server"', array(':server' => $server, ':result' => $result), 'unknown');
+                throw new bException(tr('linux_get_ssh_tcp_forwarding(): Unknown result ":result" received from SSHD configuration on server ":server"', array(':server' => $server, ':result' => $result)), 'unknown');
         }
 
     }catch(Exception $e){
