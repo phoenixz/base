@@ -64,7 +64,7 @@ unregister HOSTNAME [SSH-PORT]  - Remove the registered hostname / port
 
 require_once(__DIR__.'/../../libs/startup.php');
 cli_only();
-load_libs('servers');
+load_libs('servers,ssh');
 
 switch(cli_method()){
     case 'add':
@@ -82,13 +82,15 @@ switch(cli_method()){
         $hostname = cli_argument(1);
         cli_no_arguments_left();
 
-        $count = servers_register_host(array('hostname' => $hostname));
+        $server = servers_like($hostname);
+        $server = servers_get($server);
+        $count  = ssh_add_known_host($server['hostname'], $server['port']);
 
         if($count){
-            log_console(tr('Added ":count" hashed hostnames', array(':count' => $count)), 'green');
+            log_console(tr('Added ":count" hostnames', array(':count' => $count)), 'green');
 
         }else{
-            log_console(tr('Added no hashed hostnames, hostname was probably already registered'), 'yellow');
+            log_console(tr('Added no hostnames, hostname was probably already registered'), 'yellow');
         }
 
         break;
@@ -97,14 +99,15 @@ switch(cli_method()){
         $hostname = cli_argument(1);
         cli_no_arguments_left();
 
-        $count = servers_unregister_host(array('hostname'      => $hostname,
-                                               'identity_file' => $identity_file));
+        $server = servers_like($hostname);
+        $server = servers_get($server);
+        $count  = ssh_remove_known_host($server['hostname'], $server['port']);
 
         if($count){
-            log_console(tr('Removed ":count" hashed hostnames', array(':count' => $count)), 'green');
+            log_console(tr('Removed ":count" hostnames', array(':count' => $count)), 'green');
 
         }else{
-            log_console(tr('Removed no hashed hostnames, hostname was probably not registered'), 'yellow');
+            log_console(tr('Removed no hostnames, hostname was probably not registered'), 'yellow');
         }
 
         break;
@@ -338,11 +341,29 @@ switch(cli_method()){
         }
 
         ksort($server);
+        $hostnames = $server['hostnames'];
+
         unset($server['ssh_key']);
+        unset($server['hostnames']);
+        unset($hostnames[array_search($server['hostname'], $hostnames)]);
 
         foreach($server as $key => $value){
             if($key == 'password') continue;
             log_console(cli_color($key.':', 'white').' '.json_encode_custom($value));
+        }
+
+        if($hostnames){
+            foreach($hostnames as $key => $hostname){
+                if($key){
+                    log_console(cli_color('hostname aliases: ', 'white').$hostname);
+
+                }else{
+                    log_console(str_repeat(18, ' ').$value);
+                }
+            }
+
+        }else{
+            log_console(cli_color('hostname aliases: ', 'white').'-');
         }
 
         break;

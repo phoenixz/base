@@ -60,104 +60,114 @@ require_once(__DIR__.'/../../libs/startup.php');
 cli_only();
 load_libs('servers');
 
-switch(cli_method()){
-    case 'register':
-        $hostname = cli_argument(1);
-        $port     = cli_argument(2);
-        cli_no_arguments_left();
+try{
+    switch(cli_method()){
+        case 'register':
+            $hostname = cli_argument(1);
+            $port     = cli_argument(2);
+            cli_no_arguments_left();
 
-        $count = ssh_add_known_host($hostname, $port);
+            $count = ssh_add_known_host($hostname, $port);
 
-        if($count){
-            log_console(tr('Added ":count" hostnames', array(':count' => $count)), 'green');
+            if($count){
+                log_console(tr('Added ":count" hostnames', array(':count' => $count)), 'green');
 
-        }else{
-            log_console(tr('Added no hostnames, hostname was probably already registered'), 'yellow');
-        }
-
-        break;
-
-    case 'unregister':
-        $hostname = cli_argument(1);
-        $port     = cli_argument(2);
-        cli_no_arguments_left();
-
-        $count = ssh_remove_known_host($hostname, $port);
-
-        if($count){
-            log_console(tr('Removed ":count" hostnames', array(':count' => $count)), 'green');
-
-        }else{
-            log_console(tr('Removed no hostnames, hostname was probably not registered'), 'yellow');
-        }
-
-        break;
-
-    case 'rebuild':
-        cli_no_arguments_left();
-
-        $count = ssh_rebuild_known_hosts(FORCE);
-
-        if($count){
-            log_console(tr('Added ":count" hostnames', array(':count' => $count)), 'green');
-
-        }else{
-            log_console(tr('Added no hostnames, known_hosts file probably contains all hostnames from the `ssh_fingerprints` table'), 'yellow');
-        }
-
-        break;
-
-    case '':
-        throw new bException(tr('No method specified'), 'no-method');
-
-    default:
-        $background    = cli_argument('-b,--background');
-        $function      = not_empty(cli_argument('-f,--function'), 'passthru');
-        $identity_file = cli_argument('-i,--identity-file');
-        $hostname      = cli_method();
-        $port          = cli_method(1);
-        $commands      = cli_argument(1);
-
-        if(empty($hostname)){
-            throw new bException(tr('No hostname specified'), 'warning/not-specified');
-        }
-
-        if(!empty($port)){
-            if(!is_natural($port) or ($port > 65535)){
-                throw new bException(tr('Invalid port ":port" specified', array(':port' => $port)), 'warning/invalid');
+            }else{
+                log_console(tr('Added no hostnames, hostname was probably already registered'), 'yellow');
             }
-        }
 
-        if(empty($commands)){
-            /*
-             * Just run bash shell
-             */
-            $commands         = 'bash';
-            $force_terminal   = true;
-            $disable_terminal = false;
-            $function         = 'passthru';
-        }
+            die();
 
-        try{
-            $server = array('hostname'         => '*'.$hostname,
-                            'force_terminal'   => isset_get($force_terminal),
-                            'disable_terminal' => isset_get($disable_terminal),
-                            'commands'         => $commands,
-                            'identity_file'    => $identity_file);
+        case 'unregister':
+            $hostname = cli_argument(1);
+            $port     = cli_argument(2);
+            cli_no_arguments_left();
 
-            $result = servers_exec($server, $commands, $background, $function);
+            $count = ssh_remove_known_host($hostname, $port);
 
-        }catch(Exception $e){
-            switch($e->getCode()){
-                case 'multiple':
-                    throw new bException(tr('Specified hostname ":hostname" matched multiple registered servers, please be more specific', array(':hostname' => $hostname)), 'warning/multiple');
+            if($count){
+                log_console(tr('Removed ":count" hostnames', array(':count' => $count)), 'green');
 
-                case 'not-exist':
-                    throw new bException(tr('Specified hostname ":hostname" matched no registered servers', array(':hostname' => $hostname)), 'warning/not-exist');
-
-                default:
-                    throw $e;
+            }else{
+                log_console(tr('Removed no hostnames, hostname was probably not registered'), 'yellow');
             }
-        }
+
+            die();
+
+        case 'rebuild':
+            cli_no_arguments_left();
+
+            $count = ssh_rebuild_known_hosts(FORCE);
+
+            if($count){
+                log_console(tr('Added ":count" hostnames', array(':count' => $count)), 'green');
+
+            }else{
+                log_console(tr('Added no hostnames, known_hosts file probably contains all hostnames from the `ssh_fingerprints` table'), 'yellow');
+            }
+
+            die();
+
+        case '':
+            throw new bException(tr('No method or hostname specified'), 'no-method');
+    }
+
+}catch(Exception $e){
+    switch($e->getCode()){
+        case 'not-found':
+            throw new bException(tr('ssh-keyscan found no public keys for hostname ":hostname" on port ":port", are hostname and port correct?', array(':hostname' => $hostname, ':port' => ssh_get_port($port))), 'warning/not-found');
+    }
+}
+
+/*
+ * No method was specified, assume a servername was specified
+ */
+$background    = cli_argument('-b,--background');
+$function      = not_empty(cli_argument('-f,--function'), 'passthru');
+$identity_file = cli_argument('-i,--identity-file');
+$hostname      = cli_method();
+$port          = cli_method(1);
+$commands      = cli_argument(1);
+
+if(empty($hostname)){
+    throw new bException(tr('No hostname specified'), 'warning/not-specified');
+}
+
+if(!empty($port)){
+    if(!is_natural($port) or ($port > 65535)){
+        throw new bException(tr('Invalid port ":port" specified', array(':port' => $port)), 'warning/invalid');
+    }
+}
+
+if(empty($commands)){
+    /*
+     * Just run bash shell
+     */
+    $commands         = 'bash';
+    $force_terminal   = true;
+    $disable_terminal = false;
+    $function         = 'passthru';
+}
+
+try{
+    $server = array('hostname'         => '*'.$hostname,
+                    'force_terminal'   => isset_get($force_terminal),
+                    'disable_terminal' => isset_get($disable_terminal),
+                    'commands'         => $commands,
+                    'identity_file'    => $identity_file);
+
+    $result = servers_exec($server, $commands, $background, $function);
+
+}catch(Exception $e){
+    switch($e->getCode()){
+        case 'multiple':
+            throw new bException(tr('Specified hostname ":hostname" matched multiple registered servers, please be more specific', array(':hostname' => $hostname)), 'warning/multiple');
+
+        case 'not-exist':
+            throw new bException(tr('Specified hostname ":hostname" matched no registered servers', array(':hostname' => $hostname)), 'warning/not-exist');
+
+        default:
+            throw $e;
+    }
 }
 ?>
