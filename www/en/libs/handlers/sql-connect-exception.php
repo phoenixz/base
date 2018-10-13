@@ -22,6 +22,42 @@ try{
     }
 
     switch($e->getCode()){
+        case 2006:
+            // FALLTHROUGH
+        case 2002:
+            /*
+             * Connection refused
+             */
+            if(empty($connector['ssh_tunnel']['required'])){
+                throw new bException(tr('sql_connect(): Connection refused for host ":hostname::port"', array(':hostname' => $connector['host'], ':port' => $connector['port'])), $e);
+            }
+
+            /*
+             * This connection requires an SSH tunnel. Check if the tunnel process still exists
+             */
+            load_libs('cli,servers');
+
+            if(!cli_pidgrep($tunnel['pid'])){
+                $server     = servers_get($connector['ssh_tunnel']['hostname']);
+                $registered = ssh_is_registered($server['hostname'], $server['port']);
+
+                if($registered === false){
+                    throw new bException(tr('sql_connect(): Connection refused for host ":hostname::port" because the tunnel process was canceled due to missing server fingerprints in the ROOT/data/ssh/known_hosts file and `ssh_fingerprints` table. Please register the server first', array(':hostname' => $connector['host'], ':port' => $connector['port'])), $e);
+                }
+
+                if($registered === true){
+                    throw new bException(tr('sql_connect(): Connection refused for host ":hostname::port" because the tunnel process either started too late or already died. The server has its SSH fingerprints registered in the ROOT/data/ssh/known_hosts file.', array(':hostname' => $connector['host'], ':port' => $connector['port'])), $e);
+                }
+
+                /*
+                 * The server was not registerd in the ROOT/data/ssh/known_hosts file, but was registered in the ssh_fingerprints table, and automatically updated. Retry to connect
+                 */
+                return sql_connect($connector, $use_database);
+            }
+
+//:TODO: SSH to the server and check if the msyql process is up!
+            throw new bException(tr('sql_connect(): Connection refused for SSH tunnel requiring host ":hostname::port". The tunnel process is available, maybe the MySQL on the target server is down?', array(':hostname' => $connector['host'], ':port' => $connector['port'])), $e);
+
         case 1049:
             /*
              * Database not found!

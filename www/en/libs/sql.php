@@ -561,16 +561,7 @@ function sql_connect($connector, $use_database = true){
          * Does this connector require an SSH tunnel?
          */
         if(isset_get($connector['ssh_tunnel']['required'])){
-            /*
-             * Apply default configuration
-             */
-            load_libs('ssh');
-
-            $connector['ssh_tunnel'] = array_merge_null(array('target_hostname' => $_CONFIG['ssh']['tunnel']['target_hostname'],
-                                                              'target_port'     => 3306), $connector['ssh_tunnel']);
-
-            $connector['ssh_tunnel']['pid'] = ssh_tunnel($connector['ssh_tunnel']);
-            usleep(isset_get($connector['ssh_tunnel']['usleep'], 10000));
+            include(__DIR__.'/handlers/sql-ssh-tunnel.php');
         }
 
         /*
@@ -607,17 +598,20 @@ function sql_connect($connector, $use_database = true){
                      * "fix" still fixes the issue..
                      */
                     log_console(tr('Failed to connect with PDO connect string ":string"', array(':string' => $connect_string)), 'exception');
-                    log_console($e);
+                    log_console($e->getMessage(), 'exception');
 
                     $message = $e->getMessage();
 
-                    if(strstr($message, 'errno=32') === false){
+                    if(!strstr($message, 'errno=32')){
                         if($e->getMessage() == 'ERROR 2013 (HY000): Lost connection to MySQL server at \'reading initial communication packet\', system error: 0'){
                             if(isset_get($connector['ssh_tunnel']['required'])){
                                 /*
-                                 * The tunneling server has "AllowTcpForwarding" set to "no" in the sshd_config, attempt auto fix
+                                 * The tunneling server has "AllowTcpForwarding"
+                                 * set to "no" in the sshd_config, attempt auto
+                                 * fix
                                  */
                                 os_enable_ssh_tcp_forwarding($connector['ssh_tunnel']['server']);
+                                continue;
                             }
                         }
 
@@ -627,6 +621,12 @@ function sql_connect($connector, $use_database = true){
                          */
                         throw $e;
                     }
+
+                    /*
+                     * This error seems to happen when MySQL is VERY busy
+                     * processing queries. Wait a little before trying again
+                     */
+                    usleep(100000);
                 }
             }
 
