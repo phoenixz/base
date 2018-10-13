@@ -1583,6 +1583,8 @@ function ssh_tunnel_exists($hostname, $target_port, $target_hostname = null){
     global $core;
 
     try{
+        load_libs('cli');
+
         if(!$target_hostname){
             $target_hostname = 'localhost';
         }
