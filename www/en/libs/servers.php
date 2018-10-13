@@ -356,10 +356,10 @@ function servers_update($server){
  */
 function servers_like($hostname){
     try{
-        $server = sql_get('SELECT `hostname` FROM `servers` WHERE `hostname` LIKE :hostname', true, array(':hostname' => '%'.$hostname.'%'));
+        $server = sql_get('SELECT `hostname` FROM   `servers_hostnames` WHERE `hostname` LIKE :hostname', true, array(':hostname' => '%'.$hostname.'%'));
 
         if(!$server){
-            throw new bException(tr('servers_like(): Specified server ":server" does not exist', array(':server' => $requested)), 'not-exist');
+            throw new bException(tr('servers_like(): Specified server ":server" does not exist', array(':server' => $hostname)), 'not-exist');
         }
 
         return $server;
