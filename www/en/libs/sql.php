@@ -1256,6 +1256,13 @@ function sql_fetch_column($r, $column){
  */
 function sql_merge($database_entry, $post, $skip = null){
     try{
+        if(!$post){
+            /*
+             * No post was done, there is nothing to merge
+             */
+            return $database_entry;
+        }
+
         if($skip === null){
             $skip = 'id,status';
         }
@@ -1288,33 +1295,12 @@ function sql_merge($database_entry, $post, $skip = null){
          * Copy all POST variables over DB
          * Skip POST variables that have NULL value
          */
-        foreach($database_entry as $key => $value){
+        foreach($post as $key => $value){
             if(in_array($key, $skip)){
                 continue;
             }
 
-            if(array_key_exists($key, $post)){
-                if(is_array($post[$key])){
-                    /*
-                     * Validate datatype
-                     */
-                    if(!is_array($database_entry[$key])){
-                        throw new bException(tr('sql_merge(): The specified post key ":key" is an array, but the corresponding database key is not', array(':key' => $key)), 'validation');
-                    }
-
-                    $database_entry[$key] = sql_merge($database_entry[$key], $post[$key], '', $skip);
-
-                }else{
-                    /*
-                     * Validate datatype
-                     */
-                    if(is_array($database_entry[$key])){
-                        throw new bException(tr('sql_merge(): The specified post key ":key" is a scalar, but the corresponding database key is an array', array(':key' => $key)), 'validation');
-                    }
-
-                    $database_entry[$key] = $post[$key];
-                }
-            }
+            $database_entry[$key] = $post[$key];
         }
 
         return $database_entry;
