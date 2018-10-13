@@ -457,6 +457,10 @@ try{
 
 }catch(Exception $e){
     switch($e->getRealCode()){
+        case 'not-exist':
+            // FALLTHROUGH
+        case 'multiple':
+            // FALLTHROUGH
         case 'sudo':
             throw $e->makeWarning(true);
     }
