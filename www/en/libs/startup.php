@@ -20,7 +20,7 @@
 /*
  * Framework version
  */
-define('FRAMEWORKCODEVERSION', '1.21.0');
+define('FRAMEWORKCODEVERSION', '1.21.1');
 define('PHP_MINIMUM_VERSION' , '5.5.9');
 
 
@@ -3647,6 +3647,20 @@ function str_log($source, $truncate = 8187, $separator = ', '){
 
         if(!is_scalar($source)){
             if(is_array($source)){
+                foreach($source as $key => &$value){
+                    if(strstr($key, 'password')){
+                        $value = '*** HIDDEN ***';
+                        continue;
+                    }
+
+                    if(strstr($key, 'ssh_key')){
+                        $value = '*** HIDDEN ***';
+                        continue;
+                    }
+                }
+
+                unset($value);
+
                 $source = mb_trim($json_encode($source));
 
             }elseif(is_object($source) and ($source instanceof bException)){
