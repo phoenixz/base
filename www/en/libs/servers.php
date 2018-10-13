@@ -59,7 +59,7 @@ function servers_validate($server, $structure_only = false, $password_strength =
             return $server;
         }
 
-        $v->isNotEmpty($server['hostname']   , tr('Please specifiy a hostnames'));
+        $v->isNotEmpty($server['hostname']   , tr('Please specifiy a hostname'));
         $v->isNotEmpty($server['port']       , tr('Please specifiy a port'));
         $v->isNotEmpty($server['seocustomer'], tr('Please specifiy a customer'));
 
@@ -215,10 +215,10 @@ function servers_validate($server, $structure_only = false, $password_strength =
         /*
          * Already exists?
          */
-        $exists = sql_get('SELECT `id` FROM `servers` WHERE `hostname` = :hostname AND `ssh_accounts_id` = :ssh_accounts_id AND `id` != :id', true, array(':hostname' => $server['hostname'], ':ssh_accounts_id' => $server['ssh_account'], ':id' => isset_get($server['id'], 0)), 'core');
+        $exists = sql_get('SELECT `id` FROM `servers` WHERE `hostname` = :hostname AND `ssh_accounts_id` = :ssh_accounts_id AND `id` != :id', true, array(':hostname' => $server['hostname'], ':ssh_accounts_id' => $server['ssh_accounts_id'], ':id' => isset_get($server['id'], 0)), 'core');
 
         if($exists){
-            $v->setError(tr('A server with hostname ":hostname" and user ":user" already exists', array(':hostname' => $server['hostname'], ':ssh_accounts_id' => $server['ssh_account'])));
+            $v->setError(tr('A server with hostname ":hostname" and SSH account ":ssh_account" already exists', array(':hostname' => $server['hostname'], ':ssh_account' => $server['ssh_account'])));
         }
 
         $server['seohostname']  = seo_unique($server['hostname'], 'servers', isset_get($server['id']), 'seohostname');
@@ -736,15 +736,11 @@ function servers_get($server, $database = false, $return_proxies = true, $limite
                 /*
                  * Host specified by hostname
                  */
-                if(substr($server['hostname'], 0, 1) === '*'){
-                    $server['hostname']  = substr($server['hostname'], 1);
-                    $where               = ' WHERE `servers_hostnames`.`hostname` LIKE :hostname';
-                    $execute             = array(':hostname' => '%'.$server['hostname'].'%');
+                $where   = ' WHERE `servers_hostnames`.`hostname` = :hostnames
+                             OR    `servers`.`hostname`           = :hostname';
 
-                }else{
-                    $where   = ' WHERE `servers_hostnames`.`hostname` = :hostname';
-                    $execute = array(':hostname' => $server['hostname']);
-                }
+                $execute = array(':hostnames' => $server['hostname'],
+                                 ':hostname'  => $server['hostname']);
 
             }else{
                 throw new bException(tr('servers_get(): Specified server array hostname should be a natural numeric id or a hostname, but is a ":type"', array(':type' => gettype($server['hostname']))), 'invalid');
@@ -754,16 +750,15 @@ function servers_get($server, $database = false, $return_proxies = true, $limite
             /*
              * Hostname specified by name
              */
-            if(substr($server, 0, 1) === '*'){
-                $server    = substr($server, 1);
-                $where   = ' WHERE `servers_hostnames`.`hostname` LIKE :hostname';
-                $execute = array(':hostname' => '%'.$server.'%');
+            $where   = ' WHERE `servers_hostnames`.`hostname`    = :hostnames
+                         OR    `servers_hostnames`.`seohostname` = :seohostnames
+                         OR    `servers`.`hostname`              = :hostname
+                         OR    `servers`.`seohostname`           = :seohostname';
 
-            }else{
-                $where   = ' WHERE `servers_hostnames`.`hostname`    = :hostname
-                             OR    `servers_hostnames`.`seohostname` = :hostname';
-                $execute = array(':hostname' => $server);
-            }
+            $execute = array(':hostnames'    => $server,
+                             ':seohostnames' => $server,
+                             ':hostname'     => $server,
+                             ':seohostname'  => $server);
 
         }else{
             throw new bException(tr('servers_get(): Invalid server or hostname specified. Should be either a natural nuber, hostname, or array containing hostname information'), 'invalid');
@@ -779,7 +774,7 @@ function servers_get($server, $database = false, $return_proxies = true, $limite
                         ON        `database_accounts`.`id` = `servers`.`database_accounts_id` ';
         }
 
-        $dbserver = sql_get($query.$from.$where, null, $execute, 'core');
+        $dbserver = sql_get($query.$from.$where.' GROUP BY `servers`.`id`', null, $execute, 'core');
 
         if(!$dbserver){
             throw new bException(tr('servers_get(): Specified server ":server" does not exist', array(':server' => $server)), 'not-exist');
@@ -818,7 +813,7 @@ function servers_get($server, $database = false, $return_proxies = true, $limite
 
     }catch(Exception $e){
         if($e->getCode() == 'multiple'){
-            throw new bException(tr('servers_get(): Specified hostname ":hostname" matched multiple results, please specify a more exact hostname', array(':hostname' => $server)), 'multiple');
+            throw new bException(tr('servers_get(): Specified hostname ":hostname" matched multiple results, please specify a more exact hostname', array(':hostname' => (is_array($server) ? isset_get($server['hostname']) : $server))), 'multiple');
         }
 
         throw new bException('servers_get(): Failed', $e);
