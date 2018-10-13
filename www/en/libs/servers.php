@@ -43,11 +43,11 @@ function servers_library_init(){
  * @package servers
  *
  * @param array $server
- * @param boolean $reload_only
+ * @param boolean $structure_only
  * @param boolean $password_strength
  * @return array
  */
-function servers_validate($server, $ensure_column_only = false, $password_strength = false){
+function servers_validate($server, $structure_only = false, $password_strength = false){
     global $_CONFIG;
 
     try{
@@ -55,7 +55,7 @@ function servers_validate($server, $ensure_column_only = false, $password_streng
 
         $v = new validate_form($server, 'id,ipv4,ipv6,port,hostname,hostnames,seoprovider,seocustomer,ssh_account,description,ssh_proxy,database_accounts_id,allow_sshd_modification');
 
-        if($ensure_column_only){
+        if($structure_only){
             return $server;
         }
 
@@ -138,7 +138,7 @@ function servers_validate($server, $ensure_column_only = false, $password_streng
          * Port check
          */
         if(empty($server['port'])){
-            $server['port'] = not_empty($_CONFIG['scanner']['ssh']['default_port'], 22);
+            $server['port'] = ssh_get_port();
             log_console(tr('servers_validate(): No SSH port specified, using port ":port" as default', array(':port' => $server['port'])), 'yellow');
         }
 
@@ -149,9 +149,7 @@ function servers_validate($server, $ensure_column_only = false, $password_streng
         $server['allow_sshd_modification'] = (boolean) $server['allow_sshd_modification'];
 
         if($server['hostnames']){
-            $v->isScalar($server['hostnames'], tr('Please specify valid hostnames'));
-
-            $server['hostnames'] = explode("\n", $server['hostnames']);
+            $server['hostnames'] = array_force($server['hostnames'], "\n");
 
             foreach($server['hostnames'] as &$hostname){
                 $hostname = trim($hostname);
